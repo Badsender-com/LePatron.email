@@ -1,0 +1,5 @@
+src/js/**/*.js
+*.html
+
+!/src/js/**/badsender-*.js
+src/js/converter/badsender-editor.js

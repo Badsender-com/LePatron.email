@@ -1,0 +1,102 @@
+<!-- ko if: typeof $root.download !== 'undefined' -->
+
+<form
+  id="downloadForm"
+  class="download-form download-form--cdn"
+  action="#"
+  method="POST"
+  data-bind="
+    css: { 'download-form--cdn': $root.downloadCdn }
+  "
+>
+  <input type="hidden" name="action" value="download" />
+  <input type="hidden" name="downLoadForCdn" value="false" />
+  <input type="hidden" name="downLoadForFtp" value="false" />
+  <input
+    type="hidden"
+    name="filename"
+    value="email.html"
+    id="downloadHtmlFilename"
+  />
+  <input type="hidden" name="html" id="downloadHtmlTextarea" />
+
+  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp -->
+  <a
+    title="Download template"
+    href="javascript:void(0)"
+    data-bind="
+      attr: { title: $root.t('Download template') },
+      click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
+      clickBubble: false,
+      button: {
+        disabled: !$root.download.enabled(),
+        icons: { primary: 'fa fa-fw fa-download' },
+        label: $root.t($root.download.name),
+        text: true
+      }
+    "
+  >
+    DOWNLOAD
+  </a>
+  <!-- /ko -->
+
+  <!-- ko if: $root.downloadCdn || $root.downloadFtp  -->
+  <p
+    class="download-form__btn-menu"
+    data-bind="
+      button: {
+        icons: { primary: 'fa fa-fw fa-download' },
+        label: $root.t($root.download.name)
+      }"
+  >
+    DL CDN
+  </p>
+  <aside class="download-form__menu">
+    <a
+      href="javascript:void(0)"
+      data-bind="
+        click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
+        clickBubble: false,
+        button: {
+          disabled: !$root.download.enabled(),
+          label: $root.t('dl-btn-regular'),
+        }
+      "
+    >
+      DOWNLOAD REGULAR ZIP
+    </a>
+
+    <!-- ko if: $root.downloadCdn  -->
+    <a
+      href="javascript:void(0)"
+      data-bind="
+        click: function (){ $root.download.execute({forCdn: true, forFtp: false}) },
+        clickBubble: false,
+        button: {
+          disabled: !$root.download.enabled(),
+          label: $root.cdnButtonLabel,
+        }"
+    >
+      DOWNLOAD CDN
+    </a>
+    <!-- /ko -->
+
+    <!-- ko if: $root.downloadFtp  -->
+    <a
+      href="javascript:void(0)"
+      data-bind="
+        click: function (){ $root.download.execute({forCdn: false, forFtp: true}) },
+        clickBubble: false,
+        button: {
+          disabled: !$root.download.enabled(),
+          label: $root.ftpButtonLabel,
+        }"
+    >
+      DOWNLOAD FTP
+    </a>
+    <!-- /ko -->
+  </aside>
+  <!-- /ko -->
+</form>
+
+<!-- /ko -->

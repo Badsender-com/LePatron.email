@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title></title>
+    <!-- Styles for preview -->
+    <!-- https://github.com/voidlabs/mosaico/issues/246#issuecomment-265979320 -->
+    <style type="text/css" data-ko-remove>
+      .preview #preface div {
+        display: none;
+      }
+    </style>
+    <style type="text/css">
+      /* DATA MODEL
+
+      "type" : "template",
+      "myBrand" : "b3",
+      "preheaderVisible" : true,
+      "b1" : { … },
+      "b2" : { … },
+      "b3" : { … },
+
+      … + anything in template properties
+
+      "mainBlocks" : {
+          "type" : "blocks",
+          "blocks" : [
+            … blocks data
+          ]
+      },
+      "theme" : {
+        "globalTheme" : {
+          "overrideColor" : "",
+          "customSurtitreColor" : "#00b0f0",
+          "type" : "globalTheme"
+          …antyhing shared inside this theme
+        },
+        "type" : "theme"
+      }
+      */
+      @supports -ko-blockdefs {
+        /*
+        text widget will apply for bodyText
+        https://github.com/voidlabs/mosaico/wiki/Template-language
+        One important thing is that there is a "magic autodeprefix" so when you try to use a variable named "myImage" mosaico will try to see if you defined it as "myImage" (in the @supports section) and if it doesn't find it, it will look for "image" (camel-case deprefixing) and so on.
+        */
+        /* Define some base widgets */
+        text {
+          widget: text;
+        }
+        visible {
+          label: Visible?;
+          widget: boolean;
+        }
+        color {
+          label: Color;
+          widget: color;
+        }
+        url {
+          label: Lien;
+          widget: url;
+        }
+        src {
+          label: Image;
+          widget: src ;
+        }
+        bgimage {
+          label: Background Image;
+          widget: bgimage;
+        }
+        weight {
+          label: Graisse;
+          widget: select;
+          options:bold=Gras|normal=Normal;
+        }
+        alignement {
+          label: Alignement;
+          widget: select;
+          options: left=Gauche|right=Droite|center=Centré;
+        }
+        size {
+          label:    Taille;
+          widget:   select;
+          options: 16|18|20|24|28|36|50;
+        }
+        alt {
+          label: Text alternatif;
+          widget: text;
+          help: Le texte alternatif sera affiché sur les clients emails qui ne téléchargent pas les images automatiquement;
+        }
+
+        /* duplicate some widget to change a label */
+        surtitreColor {     label: Surtitre Color; extend: color; }
+        bgcolor {           label: Background pattern color fallback; extend: color; }
+        overrideColor {     label: Override Color; extend: color; }
+        buttonUrl {         label: Lien bouton; extend: url; }
+        imageUrl {          label: Lien image;  extend: url; }
+        titleVisible {      label: Titre visible; extend: visible; }
+        separatorVisible {  label: Séparateur visible; extend: visible; }
+        imageVisible {      label: Image visible; extend: visible; }
+        buttonVisible {     label: Bouton visible; extend: visible; }
+
+        /* Custom basic widgets */
+        myBrand {
+          label: Brand Color;
+          widget: select;
+          options: b1=Red leader|b2=Green hornet|b3=Blue water;
+        }
+        link {
+          label: Lien;
+          properties: buttonUrl;
+        }
+        image {
+          label: Image;
+          properties: src alt;
+        }
+        clickableimage {
+          label: Clickable image;
+          properties: src imageUrl alt imageWidth;
+        }
+        bgpattern {
+          label: background pattern;
+          properties: bgimage bgcolor;
+        }
+
+        titleStyle size {       label: Taille du titre; extend: size; }
+        titleStyle weight {     label: Graisse du titre; extend: weight; }
+        titleStyle alignement { label: Alignement du titre; extend: alignement; }
+        titleStyle {            label: Titre; properties: size weight alignement; }
+        coveroneImage {         label: Left Image in cover; extend: image; }
+        covertwoImage {         label: Right Image in cover; extend: image; }
+        resizeoneImage {        label: Left Image in resize; extend: image; }
+        resizetwoImage {        label: Right Image in resize; extend: image; }
+
+        /*
+          Theme
+          - good to provide one for the name it gives to the `Style` tab
+          - able to share “same name” styles between blocks (icon with 3 or 1 cubes)
+        */
+        /* setting a label to theme prevent waning about missing labels */
+        theme { label: Styles; }
+        globalTheme { label: My main styles; }
+        contentTheme { label: Style de l’élément; }
+
+        /* Theme variables needs to inherit from a widget */
+        /* but we don't want the user to mess with those variables */
+        /* fortunatly `category: hidden` hide them! */
+        /* “var” name is not related to JS “var” reserved word */
+        /* It is just for names to appear like: `coloraccentVar` */
+        var {
+          widget: text;
+          category: hidden;
+        }
+
+        /*
+          All those following blocks are a dictionary of user hidden variables
+          We organize them as objects for better dev readability: _root_.b1.coloraccentVar
+          in this example, b1 stand for brand one
+        */
+        b1 {
+          label: Red leader;
+          /*
+            Var postfix is mandatory for good inheritance
+            see var widget above
+          */
+          properties: coloraccentVar=#FF0000 colorprimaryVar=#330000;
+          /*
+            Because making those groups is making a new widget
+            And because we still don't want to show then on the right panels
+            => hide them also
+          */
+          category: hidden;
+        }
+        b2 {
+          label: Green hornet;
+          properties: coloraccentVar=#00FF00 colorprimaryVar=#003300;
+          category: hidden;
+        }
+        b3 {
+          label: Blue water;
+          properties: coloraccentVar=#0000FF colorprimaryVar=#000033;
+          category: hidden;
+        }
+
+        /*
+          template block is for global variables
+          - properties should be separate by spaces
+          - properties get put on the root of model
+          - inside blocks they can be accessed by _root_
+        */
+        template {
+          label: MY GLOBAL VARS;
+          blockDescription: This will affect all blocks you put in the mailing;
+          properties: myBrand=b1;
+        }
+        /*
+          This is to override some block datas.
+          The block model will be build automatically when calling widgets inside the Html portion defining them
+          - Label & blockDescription will go on Content tab
+            - no setting label will result in console warn
+          - styles seems to parsed from root “style” attribute
+          - theme will give Style tab name
+        */
+        CustomBlock {
+          label: my custom block;
+          blockDescription: Change with global brand but can be overrriden;
+          properties: myColor=#000000 customColor=#FFFF00;
+          theme: globalTheme;
+        }
+        WitnessBlock {
+          label: my witness block;
+          blockDescription: Only change with brand;
+          theme: globalTheme;
+        }
+        coverImagesBlock {
+          label: image testing block;
+          blockDescription: come with the 2 methods: resize and cover;
+          theme: contentTheme;
+        }
+
+        /*
+        // MULTI COLUMN OPTIONS
+        */
+
+        /*  define another group of widgets */
+
+        columnOptions {
+          label: Option de colonne;
+          properties: imageVisible=true titleVisible=true buttonVisible=true clickableimage buttonLink;
+        }
+        /* subclass to change label */
+        firstColumnOptions {label: Colonne 1 ; extend: columnOptions; }
+        secondColumnOptions {label: Colonne 2 ; extend: columnOptions; }
+
+        twoColumnsBlock {
+          label: 2 colonnes;
+          properties: separatorVisible=true;
+          theme: contentTheme;
+        }
+
+        /*
+        // BACKGROUND IMAGE BLOCK
+        */
+
+        bgimageBlock {
+          label: a block with 2 differents images;
+        }
+        bgimageBlock firstBgpattern {   label: left image; }
+        bgimageBlock secondBgpattern {  label: right image; }
+
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="preface" style="padding: 20px; background: #cccccc">
+      <h1>A test for global vars</h1>
+      <h2>
+        The main purpose is to be able to configure a variation of the template
+        with a single controls
+      </h2>
+      <div data-ko-display="_root_.myBrand eq 'b1'" data-ko-wrap="false">
+        <p>
+          Appear if myBrand = Brand1
+        </p>
+      </div>
+      <div data-ko-display="_root_.myBrand eq 'b2'" data-ko-wrap="false">
+        <p>
+          Appear if myBrand = Brand2
+        </p>
+      </div>
+      <div data-ko-display="_root_.myBrand eq 'b3'" data-ko-wrap="false">
+        <p>
+          Appear if myBrand = Brand3
+        </p>
+      </div>
+    </div>
+
+    <div data-ko-container="main" data-ko-wrap="false">
+      <!--
+  //// CUSTOM BLOCK
+  -->
+
+      <div data-ko-block="CustomBlock">
+        <p style="color:#FF00FF; -ko-color: @customSurtitreColor">
+          A complet independent color
+        </p>
+        <!--
+      Unfortunately we need ternary operations because expressions like :
+      @[ _root_[ _root_.myBrand ].coloraccentThemevar ]
+      won't work ( => throw an error )
+    */ -->
+        <!--
+      Using conditional operators doesn't allow us to have a default value defined in the HTML
+      BUT it is still needed for the template to be parsed without errors
+      so we have to live with this message: `Cannot apply default value to variable when using expressions`
+      in utils.js#59
+    -->
+        <h1
+          data-ko-editable="headerText"
+          style="color: #123456; -ko-color: @[ overrideColor ? overrideColor : _root_.myBrand eq 'b1' ? _root_.b1.coloraccentVar : _root_.myBrand eq 'b2' ? _root_.b2.coloraccentVar : _root_.b3.coloraccentVar]; "
+        >
+          this is header with the color
+        </h1>
+        <h2
+          style="color: #123456; -ko-color: @[ overrideColor ? overrideColor : _root_.myBrand eq 'b1' ? _root_.b1.coloraccentVar : _root_.myBrand eq 'b2' ? _root_.b2.coloraccentVar : _root_.b3.coloraccentVar];"
+        >
+          <p>with a selligent tag</p>
+          <p>~(FORMATDATETIME(GETDATE(), '%d%m%Y'))~</p>
+        </h2>
+        <div data-ko-editable="bodyText">
+          Sed velit reprehenderit autem nihil recusandae. Quae a ut optio autem
+          maiores fugit. Temporibus exercitationem optio itaque esse iusto nihil
+          aspernatur aut. Laudantium possimus nisi aspernatur inventore ut quis.
+          Animi excepturi odio voluptas occaecati quibusdam assumenda saepe
+          repellendus. Quia sit eos quibusdam. Facilis non non dolores tempore.
+          Rerum voluptatem qui qui enim suscipit. Qui eius praesentium assumenda
+          autem. Architecto laudantium et enim debitis sint perspiciatis. Illum
+          sed sint eos adipisci cupiditate id ducimus. Quisquam temporibus
+          distinctio molestias sint nemo officia.
+        </div>
+      </div>
+
+      <div data-ko-block="WitnessBlock">
+        <h3>
+          This is a witnessBlock
+        </h3>
+        <p
+          style="text-align: center; background-color: #123456; -ko-background-color: @[_root_.myBrand eq 'b1' ? _root_.b1.colorprimaryVar : _root_.myBrand eq 'b2' ? _root_.b2.colorprimaryVar : _root_.b3.colorprimaryVar];"
+        >
+          <br />
+          <br />
+          <br />
+          <span
+            style="color: #123456; -ko-color: @[_root_.myBrand eq 'b1' ? _root_.b1.coloraccentVar : _root_.myBrand eq 'b2' ? _root_.b2.coloraccentVar : _root_.b3.coloraccentVar];"
+            >TEST SECOND COLOR</span
+          >
+          <br />
+          <br />
+          <br />
+          <br />
+        </p>
+      </div>
+
+      <!--
+  //// BACKGROUND IMAGE TEST
+  -->
+
+      <div data-ko-block="bgimageBlock">
+        <h3>
+          Some background-image block
+        </h3>
+
+        <!--
+      It should be possible to combine background-image style et background attributes
+      But using both of them break in my case…
+      https://github.com/voidlabs/mosaico/issues/205 -
+    -->
+
+        <table width="100%" cellpadding="0" border="0" cellspacing="0">
+          <tr>
+            <td align="center" valign="top" width="50%">
+              <dl style="border: 5px solid #ebe;">
+                <dt style="background: #ebe;">use style background-image</dt>
+                <dd
+                  style="height: 100px; margin: 0; display: flex; align-items: center; justify-content: center;
+              background: repeat center center;
+              background-image: url('data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==');
+              -ko-background-image: url(@[firstBgpattern.bgimage]);
+              background-color: none;
+              -ko-background-color: @firstBgpattern.bgcolor;
+              "
+                >
+                  <!--
+                IMPORTANT
+                don't put default values in the IE9 hack
+                => It will break mosaico
+              -->
+                  <!--[if gte mso 9]>
+                    <v:background
+                      xmlns:v="urn:schemas-microsoft-com:vml"
+                      fill="t"
+                    >
+                      <v:fill
+                        type="tile"
+                        style="-ko-attr-src: @firstBgpattern.bgimage; -ko-attr-color: @firstBgpattern.bgcolor;"
+                      />
+                    </v:background>
+                  <![endif]-->
+                  <span
+                    style="background: rgba(255, 255, 255, .85); padding: 10px 20px;"
+                    >first column</span
+                  >
+                </dd>
+              </dl>
+            </td>
+            <td align="center" valign="top" width="50%">
+              <dl style="border: 5px solid #ebe;">
+                <dt style="background: #ebe;">
+                  use table background attribute
+                </dt>
+                <dd style="height: 100px; text-align: center; margin: 0">
+                  <table
+                    width="100%"
+                    bgcolor="#FFF"
+                    style="-ko-attr-bgcolor: @secondBgpattern.bgcolor;"
+                    cellpadding="0"
+                    border="0"
+                    cellspacing="0"
+                  >
+                    <tr>
+                      <td
+                        background="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="
+                        style="-ko-attr-background: @secondBgpattern.bgimage; height:100px;"
+                        align="center"
+                        valign="center"
+                      >
+                        <!--[if gte mso 9]>
+                          <v:background
+                            xmlns:v="urn:schemas-microsoft-com:vml"
+                            fill="t"
+                          >
+                            <v:fill
+                              type="tile"
+                              style="-ko-attr-src: @secondBgpattern.bgimage;"
+                            />
+                          </v:background>
+                        <![endif]-->
+                        <span
+                          style="background: rgba(255, 255, 255, .85); padding: 10px 20px;"
+                          >second column</span
+                        >
+                      </td>
+                    </tr>
+                  </table>
+                </dd>
+              </dl>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!--
+  //// TWO COLUMNS BLOCK
+  -->
+
+      <div data-ko-block="twoColumnsBlock">
+        <h2>
+          This is an example of showing multiple options gathered together
+        </h2>
+
+        <table
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          width="100%"
+          style="margin: 0px auto; font-size: 0px;"
+        >
+          <tr>
+            <td>
+              <div
+                data-ko-display="firstColumnOptions.imageVisible"
+                style="text-align: center;"
+              >
+                <center>
+                  <a
+                    data-ko-link="firstColumnOptions.clickableimage.imageUrl"
+                    href=""
+                    target="_blank"
+                  >
+                    <img
+                      data-ko-editable="firstColumnOptions.clickableimage.src"
+                      data-ko-placeholder-height="180"
+                      width="180"
+                      style="width:180px; margin: 0px auto;display: block;-ko-attr-alt: @firstColumnOptions.clickableimage.alt;"
+                      src="http://dummyimage.com/600x200/666666/fff"
+                      border="0"
+                      alt=""
+                    />
+                  </a>
+                </center>
+              </div>
+              <div data-ko-display="firstColumnOptions.titleVisible">
+                <p
+                  style="font-family: Trebuchet MS, Trebuchet, Arial, Helvetica, sans-serif; font-size: 14px; color: #000000; text-align: center; font-weight: normal; line-height: normal;-ko-font-size: @[columnTitleStyle.size]px; -ko-text-align: @columnTitleStyle.alignement; -ko-attr-align: @columnTitleStyle.alignement; -ko-font-weight: @columnTitleStyle.weight;"
+                  align="center"
+                  data-ko-editable="firstTitleText"
+                >
+                  TITRE 1
+                </p>
+              </div>
+              <div data-ko-display="firstColumnOptions.buttonVisible">
+                <a
+                  data-ko-editable="firstButtonText"
+                  href=""
+                  target="_blank"
+                  style="text-decoration: none; color: #ffffff; font-weight: normal; -ko-attr-href: @firstColumnOptions.buttonLink.buttonUrl;"
+                >
+                  Mon CTA
+                </a>
+              </div>
+              <p
+                data-ko-display="separatorVisible"
+                style="height: 10px; background: black;"
+              ></p>
+            </td>
+
+            <td>
+              <div
+                data-ko-display="secondColumnOptions.imageVisible"
+                style="text-align: center;"
+              >
+                <center>
+                  <a
+                    data-ko-link="secondColumnOptions.clickableimage.imageUrl"
+                    href=""
+                    target="_blank"
+                  >
+                    <img
+                      data-ko-editable="secondColumnOptions.clickableimage.src"
+                      data-ko-placeholder-height="180"
+                      width="180"
+                      style="width:180px; margin: 0px auto;display: block;-ko-attr-alt: @secondColumnOptions.clickableimage.alt;"
+                      src="http://dummyimage.com/600x200/666666/fff"
+                      border="0"
+                      alt=""
+                    />
+                  </a>
+                </center>
+              </div>
+              <div data-ko-display="secondColumnOptions.titleVisible">
+                <p
+                  style="font-family: Trebuchet MS, Trebuchet, Arial, Helvetica, sans-serif; font-size: 14px; color: #000000; text-align: center; font-weight: normal; line-height: normal;-ko-font-size: @[columnTitleStyle.size]px; -ko-text-align: @columnTitleStyle.alignement; -ko-attr-align: @columnTitleStyle.alignement; -ko-font-weight: @columnTitleStyle.weight;"
+                  align="center"
+                  data-ko-editable="secondTitleText"
+                >
+                  TITRE 1
+                </p>
+              </div>
+              <div data-ko-display="secondColumnOptions.buttonVisible">
+                <a
+                  data-ko-editable="secondButtonText"
+                  href=""
+                  target="_blank"
+                  style="text-decoration: none; color: #ffffff; font-weight: normal; -ko-attr-href: @secondColumnOptions.buttonLink.buttonUrl;"
+                >
+                  Mon CTA
+                </a>
+              </div>
+              <p
+                data-ko-display="separatorVisible"
+                style="height: 10px; background: black;"
+              ></p>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!--
+  //// DOUBLE IMAGE BLOCK
+  -->
+
+      <div data-ko-block="coverImagesBlock">
+        <h3 style="text-align: center;">
+          A block of 2 images with resize
+        </h3>
+        <h4 style="text-align: center;">
+          COVER
+        </h4>
+        <table width="100%" cellpadding="0" border="0" cellspacing="0">
+          <tr>
+            <td align="center" valign="top" width="50%">
+              <img
+                data-ko-editable="coveroneImage.src"
+                height="300"
+                width="300"
+                style="width:300px; height: 300px; margin: 0px auto; display: block; -ko-attr-alt: @coveroneImage.alt;"
+                src="http://dummyimage.com/300x300/666666/fff"
+                border="0"
+                alt=""
+              />
+            </td>
+            <td align="center" valign="top" width="50%">
+              <img
+                data-ko-editable="covertwoImage.src"
+                height="300"
+                width="300"
+                style="width:300px; height: 300px; margin: 0px auto; display: block; -ko-attr-alt: @covertwoImage.alt;"
+                src="http://dummyimage.com/300x300/666666/fff"
+                border="0"
+                alt=""
+              />
+            </td>
+          </tr>
+        </table>
+
+        <h4 style="text-align: center;">
+          RESIZE
+        </h4>
+        <table width="100%" cellpadding="0" border="0" cellspacing="0">
+          <tr>
+            <td align="center" valign="top" width="50%">
+              <img
+                data-ko-editable="resizeoneImage.src"
+                width="300"
+                data-ko-placeholder-height="300"
+                style="-ko-attr-alt: @resizeoneImage.alt; width: 100%; max-width: 300px;"
+                src="http://dummyimage.com/300x300/666666/fff"
+                vspace="0"
+                hspace="0"
+                border="0"
+                alt=""
+              />
+            </td>
+            <td align="center" valign="top" width="50%">
+              <img
+                data-ko-editable="resizetwoImage.src"
+                width="300"
+                data-ko-placeholder-height="300"
+                style="-ko-attr-alt: @resizetwoImage.alt; width: 100%; max-width: 300px;"
+                src="http://dummyimage.com/300x300/666666/fff"
+                vspace="0"
+                hspace="0"
+                border="0"
+                alt=""
+              />
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

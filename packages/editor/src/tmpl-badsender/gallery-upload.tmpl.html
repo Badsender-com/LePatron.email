@@ -1,0 +1,27 @@
+<div data-drop-content="Drop here" class="img-dropzone pane uploadzone" data-bind="attr: { 'data-drop-content': $root.t('Drop here') }, fudroppable: { activeClass: 'ui-state-highlight', hoverClass: 'ui-state-draghover' }">
+  <div class="mo-uploadzone">
+    <!-- ko if: type === 'mailing' -->
+      <input
+        class="fileupload"
+        type="file"
+        multiple
+        name="files[]"
+        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadMailingImage, cropImage: true }"
+      >
+    <!-- /ko -->
+    <!-- ko if: type === 'template' -->
+      <input
+        class="fileupload"
+        type="file"
+        multiple
+        name="files[]"
+        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadTemplateImage, uploadToTemplate: true, cropImage: true }">
+    <!-- /ko -->
+    <span data-bind="text: $root.t('Click or drag files here')">Click or drag files here</span>
+      <div class="workzone">
+        <div class="progress">
+          <div class="progress-bar progress-bar-success"></div>
+        </div>
+      </div>
+  </div>
+</div>

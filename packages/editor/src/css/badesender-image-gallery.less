@@ -1,0 +1,274 @@
+////////
+// GALLERY TABS & PANELS
+////////
+
+.gallery-panel {
+  text-align: center;
+
+  .uploadzone {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .mo-uploadzone {
+    position: relative;
+    padding: 2em;
+    border: 2px dotted #808080;
+  }
+  .fileupload {
+    z-index: 10;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 999px;
+    text-align: right;
+    opacity: 0;
+    outline: none;
+    cursor: inherit;
+    display: block;
+  }
+  .workzone {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+  .progress {
+    opacity: 0.5;
+    width: 80%;
+    margin-left: 10%;
+    position: absolute;
+    bottom: 30%;
+    height: 20px;
+    border: 2px solid black;
+  }
+  .progress-bar {
+    height: 20px;
+    background-color: black;
+  }
+}
+
+////////
+// TOOLBAR
+////////
+
+//----- IMAGE GALLERY TOOLBOX
+
+@gallery-gutter: 4px;
+
+#toolimagestab {
+  padding: 0;
+  position: absolute;
+  top: var(--top-bar-height);
+  right: 0;
+  height: calc(100vh - var(--top-bar-height));
+  left: 0;
+
+  .ui-tabs-panel {
+    position: absolute;
+    top: var(--top-bar-height);
+    right: 0;
+    height: calc(100vh - var(--top-bar-height));
+    left: 0;
+    display: flex;
+    flex-direction: column;
+
+    .gallery-thumbs {
+      .scrolling-shadow();
+      flex-grow: 1;
+      overflow: auto;
+      margin-left: -18px;
+      margin-right: -18px;
+    }
+  }
+}
+.gallery-thumbs--badsender > div {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: 18px;
+  margin-right: 18px;
+  margin-top: 1em;
+}
+
+.gallery-thumbs__remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: @link-color;
+  color: white;
+  border: 0;
+  outline: 0;
+  align-items: middle;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 24px;
+  line-height: 0;
+  transform: translate(25%, -25%);
+  z-index: 2;
+  display: none;
+}
+.draggable-item:hover .gallery-thumbs__remove {
+  display: flex;
+}
+
+////////
+// GALLERY TABS
+////////
+
+// `slidebar` is the wrapper of the gallery
+// originaly it's 3px less than the left bar
+.slidebar {
+  width: var(--left-bar-width);
+  height: 100vh;
+  background: white;
+
+  .pane-title {
+    height: var(--top-bar-height);
+  }
+}
+
+// .mo seems to be the wrapper for not interfering with mailing HTML
+.mo .tabs_horizontal:not(#tooltabs) {
+  .ui-tabs-nav {
+    background: @mosaico-background-color;
+
+    li {
+      margin: 0;
+      border-bottom: 0;
+
+      a {
+        padding-left: 1em;
+        padding-right: 1em;
+      }
+      &:not(.ui-state-active) {
+        color: rgba(255, 255, 255, 0.75);
+      }
+      &.ui-state-active a {
+        background: white;
+      }
+    }
+  }
+  .ui-tabs-panel {
+    border: 0;
+  }
+}
+
+//----- IMAGE GALLERY DIALOG
+
+@dialog-margin: 32px;
+
+#dialogGallery {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.8);
+  padding: @dialog-margin;
+  display: flex;
+  justify-content: center;
+
+  .tabs_horizontal {
+    background: white;
+    width: 100%;
+    max-width: 1024px;
+    position: relative;
+  }
+  .close {
+    visibility: hidden;
+    cursor: pointer;
+    width: 24px;
+    display: block;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+
+    &:before {
+      visibility: visible;
+      font-size: 24px;
+      font-family: FontAwesome;
+      content: '\f00d';
+      position: relative;
+      top: 0px;
+      right: 0px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+  .gallery-panel {
+    position: absolute;
+    top: @topbar-height;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    text-align: center;
+    padding: 0.5em 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .img-dropzone {
+    position: relative;
+    margin: 0 0.5em 0.5em;
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: @mosaico-background-color;
+    border-radius: 5px;
+    padding: 5px;
+
+    &.ui-state-highlight:before {
+      .makeDroppable();
+      line-height: 45px;
+      height: auto;
+      top: -10px;
+      bottom: -10px;
+    }
+    &.ui-state-draghover:before {
+      background-color: fade(@mosaico-selection-color, 80%);
+      animation: none;
+    }
+  }
+  .uploadzone {
+    font-size: 1.2em;
+  }
+  .dialog-gallery-wrapper {
+    .scrolling-shadow();
+    flex-grow: 1;
+    overflow: auto;
+    padding: 0 7px;
+
+    ul,
+    li {
+      list-style: none;
+      margin: 0;
+    }
+    ul {
+      display: inline-block;
+      font-size: 0;
+      line-height: 0;
+    }
+    li {
+      display: inline-block;
+      padding: 7px;
+      font-size: initial;
+      margin: 4px;
+      overflow: hidden;
+      width: 125px;
+      height: 125px;
+      box-shadow: 0 0 1px @mosaico-shadow-color;
+
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px @mosaico-shadow-color;
+      }
+    }
+  }
+}

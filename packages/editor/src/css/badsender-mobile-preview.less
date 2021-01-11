@@ -1,0 +1,60 @@
+// keep a #main-preview for better overrides
+#main-preview {
+  #preview-toolbar {
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+
+    .ui-buttonset {
+      // overrides JS styles
+      display: flex !important;
+    }
+    .ui-button {
+      width: 5rem;
+      background: none;
+      color: white;
+      &:hover {
+        background-color: var(--v-secondary-lighten1);
+      }
+      &.ui-state-active {
+        background-color: var(--v-secondary-darken1);
+        color: white;
+        pointer-events: none;
+        box-shadow: inset 0 -3px 0 0 var(--v-accent-base);
+      }
+    }
+    .fa {
+      color: currentColor;
+      font-size: 1.5rem;
+    }
+  }
+  #frame-container::after {
+    display: none;
+  }
+}
+
+.is-desktop-preview #main-wysiwyg-area .visibility_mobile,
+.is-mobile-preview #main-wysiwyg-area .visibility_desktop_only {
+  display: none !important;
+  mso-hide: all !important; /* hide elements in Outlook 2007-2013 */
+  visibility: hidden !important;
+  max-height: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+}
+
+.is-mobile-preview #main-wysiwyg-area replacedbody {
+  max-width: 350px;
+}
+
+// .is-mobile-preview #main-wysiwyg-area .visibility_mobile {
+//   max-height: none !important;
+//   font-size: 1px !important;
+//   display: block !important;
+//   overflow: visible !important;
+//   visibility: visible !important;
+//   line-height: 1px !important;
+//   float: none !important;
+// }

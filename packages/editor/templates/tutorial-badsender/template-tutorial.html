@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <!--[if !mso]><!-->
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!--<![endif]-->
+
+    <!--[if (gte mso 9)|(IE)]>
+    <style type="text/css">
+      table {border-collapse: collapse;}
+    </style>
+    <![endif]-->
+
+
+    <style type="text/css">
+        @supports -ko-blockdefs {
+          /* primitives */
+          text {
+            widget: text;
+          }
+
+          face { label: Font; widget: select; options: Arial, Helvetica, sans-serif=Arial|Arial Black, Arial Black, Gadget, sans-serif=Arial Black|Comic Sans MS, Comic Sans MS5, cursive=Comic Sans|Courier New, Courier New, monospace=Courier|Georgia, serif=Georgia|Impact, sans-serif=Impact|Lucida Console, Monaco, monospace=Lucida Console|Lucida Sans Unicode, Lucida Grande, sans-serif=Lucida Sans Unicode|Times New Roman, Times, serif=Times New Roman|Verdana, Geneva, sans-serif=Verdana
+          }
+
+          url {
+            label: Link;
+            widget: url;
+          }
+
+          listsize {
+            widget: select;
+            options: 1 | 2 | 3;
+          }
+
+          color {
+            widget: color;
+          }
+
+          radius {
+            label: Corner Radius;
+            widget: integer;
+            max: 20;
+            help: Attention - this property is not supported on all email clients (i.e. Outlook)
+          }
+
+          size {
+            label: Size;
+            widget: select;
+            options: 8|9|10|11|12|13|14|15|16|18|20|22|25|28|31;
+          }
+
+          buttonColor {
+            label: Button Color;
+            extend: color;
+          }
+          link {
+            label: Link;
+            properties: text url;
+          }
+          /* background */
+          externalBackgroundColor { label: External Background; extend: color }
+          /* buttons */
+          buttonStyle color { label: Text Color; extend: color }
+          buttonStyle size { label: Text Size; extend: size }
+          buttonStyle { label: Button; properties: face color size buttonColor radius }
+          buttonStyle:preview { -ko-bind-text: @['Button']; -ko-font-family: @face; -ko-color: @color; -ko-font-size: @[size]px; -ko-background-color: @buttonColor; padding-left: 5px; -ko-border-radius: @[radius]px; }
+          }
+
+          bigButtonStyle { label: Big Button; extend: buttonStyle }
+    </style>
+
+    <!--[if gte mso 9]><xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml><![endif]-->
+</head>
+
+<body >
+<div id="preface">
+    <h1>This is the test file for conditional comments and ESP tags</h1>
+    <p>Hello <% firstname %></p>
+</div>
+
+<div data-ko-container="main" data-ko-wrap="false">
+
+<!-- HEADER AND TEXT -->
+    <div data-ko-block="HeaderAndText">
+
+      <!--[if (gte mso 9)|(IE)]>
+      <table cellpadding="0" cellspacing="0" border="0" width="600" align="center" style="width: 600px;">
+      <tr>
+      <td>
+      <![endif]-->
+
+        <h1 data-ko-editable="headerText">this is header</h1>
+
+        <!--[if (gte mso 9)|(IE)]>
+        <div>
+        <![endif]-->
+        <div data-ko-editable="bodyText">
+            this is text
+        </div>
+        <!--[if (gte mso 9)|(IE)]>
+        </div>
+        <![endif]-->
+
+      <!--[if (gte mso 9)|(IE)]>
+      </td>
+      </tr>
+      </table>
+      <![endif]-->
+    </div>
+<!-- END HEADER AND TEXT -->
+
+   <!-- buttonBlock -->
+
+    <div class="oldwebkit" data-ko-block="buttonBlock">
+      <table width="100%" border="0" cellpadding="0" cellspacing="18" class="vb-container fullpad" bgcolor="#ffffff"
+        style="width: 100%; background-color: #ffffff; -ko-attr-bgcolor: @backgroundColor; -ko-background-color: @backgroundColor;">
+        <tr>
+          <td valign="top" bgcolor="#ffffff" style="background-color: #ffffff;
+            -ko-attr-bgcolor: @backgroundColor; -ko-background-color: @backgroundColor" align="center">
+
+            <table cellpadding="0" border="0" align="center" cellspacing="0" class="mobile-full">
+              <tr>
+                <td width="auto" valign="middle" bgcolor="#bfbfbf" align="center" height="50"
+                  style="font-size:22px; font-family: Arial, Helvetica, sans-serif; color: #3f3f3f; font-weight: normal;
+                  padding-left: 14px; padding-right: 14px; background-color: #bfbfbf; border-radius: 4px;
+                  -ko-attr-bgcolor: @bigButtonStyle.buttonColor; -ko-background-color: @bigButtonStyle.buttonColor;
+                   -ko-border-radius: @[bigButtonStyle.radius]px;
+                  -ko-font-size: @[bigButtonStyle.size]px; -ko-font-family: @bigButtonStyle.face; -ko-color: @bigButtonStyle.color; ">
+                  <a data-ko-link="link.url" data-ko-editable="link.text" href="" style="text-decoration: none; color: #3f3f3f; font-weight: normal;
+                    -ko-color: @bigButtonStyle.color;">BUTTON</a>
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+  <!-- /buttonBlock -->
+
+    <div data-ko-block="fixedlist" style="background-color: #f0f0f0; -ko-background-color: @color;">
+        <h1 data-ko-editable="headerText">fixed size list</h1>
+
+        <ul>
+            <li>
+                <div data-ko-editable="firstBodyText">item 1</div>
+            </li>
+            <li data-ko-display="listsize gt 1 ">
+                <div data-ko-editable="secondBodyText">item 2</div>
+            </li>
+            <li data-ko-display="listsize gt 2">
+                <div data-ko-editable="thirdBodyText"></div>
+            </li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="trailer">
+  <a href="<%@ include view='MirrorPageUrl' %>" target="_blank" style="color: #aea18e;text-decoration: underline;">
+    Voir la version en ligne
+  </a>
+  <br>
+  <a href="<%@ include view='MirrorPageUrl' %>">
+    Voir une autre version en ligne
+  </a>
+  <br>
+  Pour vous d&eacute;sinscrire, <a href="<%@ include option='NmsServer_URL' %>/webApp/unsubSushi?id=<%= escapeUrl(recipient.cryptedId)%>" target="_blank" style="color: #aea18e;text-decoration: underline;">veuillez cliquer ici</a>.
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+xvfb
+x11-xkb-utils
+xfonts-100dpi
+xfonts-75dpi
+xfonts-scalable
+xfonts-cyrillic
+libxfont1
+libnotify4
+libxss1

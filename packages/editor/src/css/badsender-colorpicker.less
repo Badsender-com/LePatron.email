@@ -1,0 +1,91 @@
+@import (less)
+  '../../../../node_modules/@easylogic/colorpicker/dist/colorpicker.css';
+
+.badsender-colorpicker__bucket {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  box-shadow: 1px 1px 3px #727272;
+  font-size: 1em;
+  line-height: normal;
+  vertical-align: middle;
+  display: inline-block;
+  border: 1px solid transparent;
+  padding: 5px 7px;
+  color: #303030;
+  background-color: white;
+  margin: 0;
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 0;
+}
+.badsender-colorpicker__picker {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  transform: translateX(calc(-50% + 15px));
+  transition: opacity 0.15;
+}
+.badsender-colorpicker__picker--hidden {
+  pointer-events: none;
+  opacity: 0;
+}
+// this rule mess-up with the colorpicker… reverse that
+.mo .propInput .data-color .badsender-colorpicker input[type='text'] {
+  &,
+  &:hover {
+    margin: 0;
+  }
+}
+// don't show input[number] spinner
+.easylogic-colorpicker
+  .colorpicker-body
+  > .information
+  > .information-item
+  > .input-field
+  input[type='number'] {
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+// but we need it for the placement of the color bucket
+// • make it more specific —__—'
+.mo .propInput .data-color > input[type='text'] {
+  margin-left: 35px;
+
+  &:hover,
+  &:focus {
+    box-shadow: none;
+    border-style: dashed;
+    background-color: transparent;
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+}
+// remove opacity control & resize color control
+.easylogic-colorpicker .colorpicker-body > .control > .hue > .hue-container {
+  height: 24px;
+}
+.easylogic-colorpicker.sketch > .colorpicker-body > .control .drag-bar {
+  height: 75%;
+}
+.easylogic-colorpicker.sketch > .colorpicker-body > .control > .opacity {
+  display: none;
+}
+// Fix context menu placement
+.easylogic-colorpicker .colorsets-contextmenu {
+  top: auto !important;
+  left: auto !important;
+  right: 0;
+  // mosaico editor styles interfere with colorpicker
+  margin: 0;
+  padding: 0;
+}
+// custom clear button
+.badsender-colorpicker__clear-button {
+  background: none;
+  border: 0;
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}

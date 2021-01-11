@@ -1,0 +1,57 @@
+{
+  "files.associations": {
+    ".badsenderrc-example": "jsonc",
+    ".badsenderrc": "jsonc",
+    ".lagardererc": "jsonc",
+    "Dockerfile*": "dockerfile"
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "path-intellisense.mappings": {
+    "~": "${workspaceRoot}/badsender-server"
+  },
+  "vetur.validation.template": false,
+  "cSpell.ignorePaths": [
+    "**/package-lock.json",
+    "**/node_modules/**",
+    "**/vscode-extension/**",
+    "**/.git/**",
+    "**/dist/**",
+    ".vscode",
+    "typings"
+  ],
+  "cSpell.words": [
+    "Badsender's",
+    "Lagardere",
+    "Selligent",
+    "Unarchiver",
+    "Unprocessable",
+    "Verdana",
+    "Vuetify",
+    "badsender",
+    "badsenderrc",
+    "blueimp",
+    "croppie",
+    "errored",
+    "fileupload",
+    "forcessl",
+    "gifsicle",
+    "heroku",
+    "ifnot",
+    "lazypipe",
+    "mosaico",
+    "mosaico's",
+    "promisify",
+    "scrollfix",
+    "snackbar",
+    "speakingurl",
+    "tinymce",
+    "tmpl",
+    "tooltabs",
+    "virtuals",
+    "wireframe",
+    "wireframes"
+  ]
+}

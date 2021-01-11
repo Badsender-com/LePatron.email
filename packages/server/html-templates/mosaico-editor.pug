@@ -1,0 +1,91 @@
+doctype html
+html(lang=getLocale())
+  head
+    title= __('editor-title')
+    meta(http-equiv="Content-Type" content="text/html; charset=UTF-8")
+    meta(name="Title", content=__('editor-title'))
+    meta(name="description", content=__('editor-description'))
+    meta(name="keywords" content="emailing responsive, éditeur email, éditeur emailing, éditeur template email, éditeur newsletter")
+    meta(name="author" content="VOXmail")
+    meta(name="application-name" content="Badsender Email Builder")
+
+    link(rel="canonical" href="http://agence.badsender.com")
+    link(rel="shortcut icon" href="/favicon.png" type="image/png")
+    link(rel="icon" href="/favicon.png" type="image/png")
+
+    link(href='https://fonts.googleapis.com/css?family=PT+Sans:400,700' rel='stylesheet' type='text/css')
+
+    meta(name="viewport" content="width=1024, initial-scale=1")
+
+    style#theme-colors.
+      :root {
+        !{ themeColors.join(`;`) }
+      }
+
+    if (_config.isDev)
+      link(rel="stylesheet" href='/badsender-editor.css')
+      script.
+        console.log('dev mode');
+      script(src='/lib/badsender-lib-editor.js')
+      script(src='/lib/badsender-editor-libraries.js')
+      script(src='/badsender-editor.js')
+    else
+      link(rel="stylesheet", href=md5Url('/badsender-editor.min.css') )
+      script(src=md5Url('/lib/badsender-lib-editor.min.js') )
+      script(src=md5Url('/lib/badsender-editor-libraries.min.js') )
+      script(src=md5Url('/badsender-editor.min.js'))
+
+    //- #{null && `message`}
+    //- is for removing Pug comments from HTML output
+    //- https://github.com/pugjs/pug/issues/938#issuecomment-25160626
+    script.
+      $(function() {
+        #{null && `can pass a “true” option to have a detailed error`}
+        #{null && `https://github.com/voidlabs/mosaico/issues/500#issuecomment-463172510`}
+        #{null && `https://github.com/voidlabs/mosaico/blob/master/src/js/template-loader.js#L344`}
+        if (!Badsender.isCompatible()) {
+          alert('Update your browser!');
+          return;
+        }
+        var basePath  = window.location.protocol + '//#{_config.host}';
+        var plugins   = [];
+        var initOptions = !{ printJS(data) };
+        #{null && `we need an absolute path for sending the email`}
+        initOptions.metadata.imagesUrl.images = basePath + initOptions.metadata.imagesUrl.images;
+        initOptions.metadata.imagesUrl.crop = basePath + initOptions.metadata.imagesUrl.crop;
+        initOptions.metadata.imagesUrl.cover = basePath + initOptions.metadata.imagesUrl.cover;
+        initOptions.metadata.imagesUrl.placeholder = basePath + initOptions.metadata.imagesUrl.placeholder;
+        #{null && `unsure wether or not we need an absolute path for this`}
+        initOptions.emailProcessorBackend = basePath + initOptions.emailProcessorBackend;
+        #{null && `this a general config for tinymce`}
+        #{null && `this will be used in badsender-extensions.js for both fullOptions & standardOptions`}
+        initOptions.tinymce = {
+
+          #{null && `https://www.tinymce.com/docs/configure/integration-and-setup/#external_plugins`}
+          external_plugins: {
+            paste:        "#{ _config.isDev ? '/lib/plugins/paste/plugin.js' : md5Url('/lib/plugins/paste/plugin.min.js') }",
+            link:         "#{ _config.isDev ? '/lib/plugins/link/plugin.js' : md5Url('/lib/plugins/link/plugin.min.js') }",
+            hr:           "#{ _config.isDev ? '/lib/plugins/hr/plugin.js' : md5Url('/lib/plugins/hr/plugin.min.js') }",
+            lists:        "#{ _config.isDev ? '/lib/plugins/lists/plugin.js' : md5Url('/lib/plugins/lists/plugin.min.js') }",
+            textcolor:    "#{ _config.isDev ? '/lib/plugins/textcolor/plugin.js' : md5Url('/lib/plugins/textcolor/plugin.min.js') }",
+            colorpicker:  "#{ _config.isDev ? '/lib/plugins/colorpicker/plugin.js' : md5Url('/lib/plugins/colorpicker/plugin.min.js') }",
+            code:         "#{ _config.isDev ? '/lib/plugins/code/plugin.js' : md5Url('/lib/plugins/code/plugin.min.js') }",
+          },
+
+          #{null && `https://www.tinymce.com/docs/configure/editor-appearance/#theme_url`}
+          theme_url:      "#{  _config.isDev ? '/lib/themes/modern/theme.js' : md5Url('/lib/themes/modern/theme.min.js') }",
+
+          #{null && `https://www.tinymce.com/docs/configure/editor-appearance/#skin_url`}
+          skin_url:       "/lib/skins/gray-flat",
+        };
+
+        console.log({initOptions});
+
+        var ok = Badsender.init(initOptions, plugins);
+        if (!ok) {
+          console.error('config in invalid');
+          $('.mo-standalone').html('<h1>error</h1><h2>config is invalid</h2>')
+        }
+      });
+
+  body.mo-standalone

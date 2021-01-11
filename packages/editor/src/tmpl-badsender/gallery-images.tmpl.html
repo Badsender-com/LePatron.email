@@ -1,0 +1,12 @@
+<aside class="gallery-thumbs gallery-thumbs--badsender" data-bind="attr: {'data-type': type}">
+  <div data-bind="foreach: items">
+    <div class="draggable-item" data-bind="if: typeof thumbnailUrl != 'undefined'">
+      <button class="gallery-thumbs__remove" data-bind="click: $root.removeImage.bind($data, $data, $parent.type)">
+        <i class="fa fa-times"></i>
+      </button>
+      <div class="draggable image" data-bind="click: $root.addImage, extdraggable: { data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.draggingImage, 'options': { 'appendTo': '#page' } }, style: { backgroundImage: 'url(\\'' + thumbnailUrl + '\\')' }">
+        <img title="Drag this image and drop it on any template image placeholder" style="display: block;" data-bind="tooltips: {}, attr: { src: thumbnailUrl, 'title': $root.t('Drag this image and drop it on any template image placeholder') }"/>
+      </div>
+    </div>
+  </div>
+</aside>

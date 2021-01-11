@@ -1,0 +1,123 @@
+#toolbar {
+  padding: 0 0 0 5px;
+  display: flex;
+  background: var(--v-secondary-base);
+
+  .rightButtons {
+    display: flex;
+  }
+
+  .ui-button {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    line-height: 22px;
+    color: white;
+    background-color: var(--v-secondary-base);
+    border-radius: 0;
+    border: 0;
+
+    .ui-icon,
+    .ui-button-text {
+      color: currentColor;
+    }
+
+    &:hover,
+    &.pressed {
+      background-color: var(--v-secondary-lighten1);
+    }
+    &.selected,
+    &.ui-state-active {
+      border-top: 0;
+    }
+    &.ui-button-disabled,
+    &.ui-button-disabled .ui-icon,
+    &.ui-button-disabled .ui-button-text {
+      opacity: 0.5;
+    }
+    &.ui-state-active {
+      background-color: var(--v-secondary-darken1);
+      box-shadow: inset 0 -3px 0 0 var(--v-accent-base);
+    }
+  }
+}
+// NAME INPUT
+.creation-name {
+  flex: 1 1 auto;
+  display: flex;
+  border: solid var(--v-secondary-lighten2);
+  border-width: 0 1px;
+
+  .ui-button {
+    margin-right: 0;
+    text-align: left;
+  }
+
+  input {
+    font: inherit;
+    color: white;
+    background: none;
+    padding-left: 7px;
+    border: 0;
+    outline: 0;
+  }
+
+  p,
+  input {
+    flex: 1 1 auto;
+  }
+}
+
+// DOWNLOAD BUTTON
+
+#toolbar #downloadForm {
+  display: inline-flex;
+}
+.download-form {
+  position: relative;
+}
+.download-form__menu {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: (@topbar-height - 4px);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+  transition: opacity 0.5s;
+  margin: 0;
+
+  .ui-button {
+    display: block;
+    margin: 0;
+    text-transform: capitalize;
+    border-radius: 0;
+  }
+}
+.download-form:hover .download-form__menu,
+.download-form__menu:hover {
+  opacity: 1;
+  pointer-events: initial;
+}
+#toolbar .download-form__btn-menu {
+  margin: 0;
+}
+// MOBILE PREVIEW
+// • revert some styles from mosaico
+@media (max-width: (@screen-lg-max)) {
+  #toolbar {
+    label[for='previewFrameToggle'] {
+      display: block;
+
+      .fa {
+        font-size: 1.25rem;
+      }
+    }
+    .ui-button[for='showGallery'] {
+      .ui-icon {
+        margin-right: 0;
+      }
+      .ui-button-text {
+        // display: block;
+      }
+    }
+  }
+}

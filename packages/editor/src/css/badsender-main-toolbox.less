@@ -1,0 +1,146 @@
+#main-toolbox {
+  .noSelectedBlock,
+  .customStyleHelp,
+  .objEmpty,
+  .galleryEmpty {
+    font-size: 1em;
+  }
+  .noSelectedBlock,
+  .customStyleHelp,
+  .objEmpty {
+    margin-left: -15px;
+    padding-left: 25px;
+    padding-right: 25px;
+    width: ~'calc(100% + 40px)';
+  }
+
+  .draggable-item {
+    margin-left: @gallery-gutter;
+    margin-right: @gallery-gutter;
+    // // http://stackoverflow.com/questions/28200574/make-math-happen-inside-css-calc-with-less#answer-28210969
+    width: calc(33% ~'-' (@gallery-gutter*2));
+  }
+  .draggable-item:nth-child(3) ~ .draggable-item {
+    margin-top: @gallery-gutter;
+  }
+  .draggable.image {
+    width: 111px;
+    height: 111px;
+  }
+
+  ////////
+  // TOPBAR
+  ////////
+
+  #tooltabs.ui-tabs {
+    .ui-tabs-nav {
+      background: var(--v-secondary-base);
+      box-shadow: 0 0 10px @shadow-color;
+      // position: absolute;
+      // left: 0;
+      // right: 0;
+      // z-index: 105; // the panel is 100, and the main toolbar 110
+      font-size: 1em;
+
+      .tooltabs__item {
+        margin: 0;
+        line-height: @topbar-height - 4px;
+        color: white;
+      }
+      .tooltabs__item:hover {
+        color: white;
+        background: var(--v-secondary-lighten1);
+      }
+      .tooltabs__item.ui-state-active {
+        background: var(--v-secondary-darken1);
+        color: var(--v-accent-base);
+        // border-bottom-color: var(--v-accent-base);
+      }
+    }
+  }
+
+  .tooltabs__top-bar {
+    display: flex;
+    height: @topbar-height;
+  }
+  .tooltabs__list {
+    flex: 1 1 auto;
+  }
+  .tooltabs__top-logo {
+    height: @topbar-height;
+    padding: 4px;
+    object-fit: contain;
+    // a {
+    // }
+
+    img {
+      display: block;
+      height: 100%;
+      width: auto;
+      // height: @topbar-height - 4px;
+      // width: auto;
+    }
+  }
+  // .ool
+  .objEdit.level1.selectable.selecteditem:after {
+    border-color: var(--v-accent-base);
+  }
+
+  ////////
+  // TOGGLES
+  ////////
+
+  .blockCheck input[type='checkbox'] {
+    &:checked + .checkbox-replacer:after,
+    & + .checkbox-replacer:before {
+      border-radius: 50%;
+      box-shadow: 1px 1px 2px @shadow-color;
+    }
+
+    & + .checkbox-replacer:after,
+    &:checked + .checkbox-replacer:before {
+      border-radius: 30px;
+      background-color: var(--v-accent-lighten3);
+      // color: @button-text-color;
+    }
+    & + .checkbox-replacer:after {
+      padding-left: 15px;
+      margin-left: -15px;
+      border-color: transparent;
+    }
+    &:checked + .checkbox-replacer:before {
+      padding-right: 15px;
+      margin-right: -15px;
+      border-color: transparent;
+    }
+  }
+
+  .objEdit .propInput input[type='checkbox'] {
+    &:checked + .checkbox-replacer:before {
+      margin-left: 20px;
+      background-color: var(--v-accent-base);
+    }
+    & + .checkbox-replacer:before {
+      content: ' ';
+      display: block;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 50%;
+      font-size: 120%;
+      box-shadow: 1px 1px 3px @shadow-color;
+    }
+    &:checked + .checkbox-replacer:after {
+      background-color: var(--v-accent-lighten3);
+    }
+    & + .checkbox-replacer:after {
+      content: ' ';
+      display: block;
+      width: 34px;
+      height: 14px;
+      margin: -16px 2px 0 2px;
+      border-radius: 7px;
+      background-color: lighten(@text-color, 30%);
+    }
+  }
+}

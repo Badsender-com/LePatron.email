@@ -1,0 +1,498 @@
+// this the equivalent of app_standalone_material.less
+
+@import '../../../../node_modules/font-awesome/less/font-awesome.less';
+
+@import 'style_mosaico.less';
+
+@fa-font-path: '/fa/fonts';
+
+@import (less) '../../../../node_modules/toastr/toastr.less';
+
+// Override variables
+
+@tab-text-color: #555;
+
+@font-family: 'PT Sans', sans-serif;
+@standard-border-radius: 2px;
+@info-border-radius: @standard-border-radius;
+@button-border-radius: @standard-border-radius;
+@large-balloon-border-radius: 2px;
+
+@object-background-color: #dddddd;
+
+@input-background-color: white;
+@input-border-color: lighten(@text-color, 20%);
+
+@mosaico-selection-color: @link-color;
+
+:root {
+  --left-bar-width: @leftsidebar-width;
+  --top-bar-height: @topbar-height;
+}
+
+body {
+  background: var(--v-secondary-base);
+}
+
+// http://lea.verou.me/2012/04/background-attachment-local/
+.scrolling-shadow() {
+  background:
+    /* Shadow covers */ linear-gradient(
+      white 30%,
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+    // Shadows
+      radial-gradient(
+        farthest-side at 50% 0,
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0)
+      ),
+    radial-gradient(
+        farthest-side at 50% 100%,
+        farthest-side,
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0)
+      )
+      0 100%;
+  background:
+    /* Shadow covers */ linear-gradient(
+      white 30%,
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+    // Shadows
+      radial-gradient(
+        farthest-side at 50% 0,
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0)
+      ),
+    radial-gradient(
+        farthest-side at 50% 100%,
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0)
+      )
+      0 100%;
+  background-repeat: no-repeat;
+  background-color: white;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+
+  /* Opera doesn't support this in the shorthand */
+  background-attachment: local, local, scroll, scroll;
+}
+.visually-hidden() {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+}
+
+.makeDroppable() {
+  .resetFont();
+  font-weight: bold;
+
+  content: attr(data-drop-content);
+  text-align: center;
+  line-height: 24px;
+  position: absolute;
+  // animation: pulse .5s ease-out 0s 4 alternate;
+  animation: droppable-pulsate 1s ease-in-out infinite alternate;
+  top: -14px;
+  left: -10px;
+  height: 24px;
+  background-color: var(--v-accent-darken2);
+  background-clip: content-box;
+  color: white;
+  right: -10px;
+  border: 2px dashed var(--v-accent-lighten2);
+  // this z-index prevent using fileupload by showing the droppable
+  // under the mo-dropzone
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes droppable-pulsate {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0.1;
+  }
+}
+
+// --------------- PAGE ---------------
+//              |       toolbar
+// main-toolbox |       main-edit-area
+//  tooltabs    |
+//  toolimages  |
+//  tooldebug   |
+//  tooltheme   |
+
+#main-preview #preview-toolbar {
+  padding: 1px 5px;
+}
+
+// remove absolute positioned logo
+#loading > a {
+  display: none;
+}
+
+@button-background-color: @link-color;
+@button-border-color: transparent;
+
+@ui-tabs-panel-padding: 0;
+
+.button-style() {
+  text-transform: uppercase;
+  background: var(--v-primary-base);
+
+  &:hover {
+    background: var(--v-primary-darken1);
+  }
+}
+
+@keyframes border-color-selection-pulsate {
+  0% {
+    border-color: @mosaico-outline-color;
+  }
+  40% {
+    border-color: var(--v-primary-base);
+  }
+  60% {
+    border-color: var(--v-primary-base);
+  }
+  100% {
+    border-color: @mosaico-outline-color;
+  }
+}
+
+#main-edit-area {
+  .isdragging .sortable-blocks-edit.empty:after {
+  }
+  // BUTTONS
+  .tool {
+    border-radius: 100%;
+    padding: 4px;
+    padding-bottom: 2px;
+    box-shadow: 1px 1px 3px @shadow-color;
+    background-color: var(--v-primary-base);
+
+    &:hover {
+      background-color: var(--v-primary-darken1);
+    }
+  }
+}
+
+@import 'badsender-main-toolbox.less';
+
+#main-wysiwyg-area {
+  // this fix glitching screen in Chrome when hovering editable blocs
+  background: white;
+}
+
+.addblockbutton {
+  box-shadow: 1px 1px 3px @shadow-color;
+}
+
+.mo {
+  a {
+    &:link,
+    &:visited {
+      color: white;
+    }
+  }
+}
+
+////////
+// EDITOR'S TOP TABS
+////////
+
+@tab-text-color: #555;
+
+.mo .ui-tabs-nav {
+  height: @topbar-height;
+  display: flex;
+  color: @tab-text-color;
+
+  li,
+  a {
+    height: 100%;
+  }
+
+  li {
+    border-bottom: 3px solid transparent;
+    color: @tab-text-color;
+
+    &.ui-state-active {
+      border-bottom-color: currentColor;
+    }
+    &:hover,
+    &.pressed {
+      background-color: lighten(@mosaico-ui-background-color, 10%);
+    }
+  }
+
+  a {
+    color: currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    outline: 0;
+  }
+  .fa {
+    margin-right: 0.5em;
+  }
+}
+
+@import 'badsender-topbar.less';
+
+////////
+// OTHER THINGS
+////////
+
+.mo .objEdit input[type='checkbox'] + .checkbox-replacer:before {
+  color: @button-background-color;
+}
+
+.mo .propInput .data-select select {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.mo .propInput .data-select:after {
+  background-color: transparent;
+  color: lighten(@text-color, 30%);
+}
+.mo .propInput .evo-pointer:before {
+  background-color: white;
+  color: lighten(@text-color, 30%);
+}
+.mo .propInput .data-integer .ui-spinner-button .ui-button-text {
+  background-color: transparent;
+  color: lighten(@text-color, 30%);
+}
+.mo .propInput .data-select:hover:after,
+.mo .propInput .evo-pointer:hover:before,
+.mo .ui-button.ui-spinner-button.ui-state-hover,
+.mo .propInput .data-integer .ui-button-text,
+.mo .propInput .data-integer .ui-spinner-button:hover .ui-button-text {
+  color: var(--v-accent-base);
+}
+
+.mo .propInput .ui-spinner .ui-spinner-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mo .ui-button.ui-spinner-button {
+  background-color: transparent;
+  // color: lighten(@text-color, 30%);
+  .ui-button-text .ui-icon {
+    color: lighten(@text-color, 30%);
+  }
+}
+
+#main-toolbox .objLabel.level1 {
+  font-weight: bold;
+  border-bottom-width: 1px;
+}
+
+.mo .objPreview {
+  border-width: 0;
+  box-shadow: 1px 1px 3px @shadow-color;
+}
+
+.mo .objLabel {
+  border-bottom: 0;
+  font-weight: bold;
+  font-size: 80%;
+}
+
+.mo .objEdit.level1 {
+  border-top: 2px solid @accent-color;
+}
+
+#main-toolbox .objLabel.level1 {
+  font-size: 1em;
+  padding-top: 0.5em;
+}
+
+.mo #toolstyles .objLabel.level1,
+.mo #tooltheme .objLabel.level1 {
+  padding-left: 70px;
+}
+
+.mo .objLabel.level0 {
+  border-bottom: none;
+}
+
+.input-style() {
+  box-shadow: none;
+}
+& when(true) {
+  .mo .objEdit.level1 {
+    background-color: white;
+    box-shadow: 1px 1px 3px #888;
+    border-top: 0;
+    padding: 6px;
+    padding-top: 0.5em;
+  }
+
+  .mo #toolstyles,
+  .mo #tooltheme {
+    .objEdit.level1 {
+      border-top-left-radius: 30px;
+      .objLabel.level1 {
+        padding-bottom: 0;
+        padding-top: 1em;
+      }
+    }
+  }
+
+  .mo .objPreview {
+    border-width: 0;
+    box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.3);
+    top: 4px;
+    left: 4px;
+  }
+
+  .mo #toolstyles .objLabel.level1,
+  .mo #tooltheme .objLabel.level1 {
+    padding-left: 60px;
+  }
+
+  .mo .propInput input[type='text'],
+  .mo .propInput input[type='number'],
+  .mo .propInput input[type='url'],
+  .mo .propInput select,
+  .mo .propInput .data-select select,
+  .mo .propInput .ui-spinner .ui-spinner-input {
+    border-width: 0 0 2px 0;
+    background-color: transparent;
+    &:hover,
+    &:focus {
+      border-color: @link-color;
+    }
+  }
+
+  .mo .propInput .data-color input[type='text'] {
+    margin-left: 35px;
+    &:hover,
+    &:focus {
+      margin-left: 35px;
+    }
+  }
+
+  .mo .propInput .evo-pointer {
+    border-radius: 50%;
+    width: 30px;
+    border: 0;
+    box-shadow: 1px 1px 3px @shadow-color;
+    &:before {
+      content: none;
+      display: none;
+    }
+  }
+
+  // file manager broser button
+  .mo .propInput .ui-textbutton .ui-textbutton-button {
+    border-radius: 50%;
+    box-shadow: 1px 1px 3px @shadow-color;
+  }
+}
+
+.mo {
+  .propEditor {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.wintitle() {
+  color: @button-text-color;
+  .ui-icon {
+    color: @button-text-color;
+  }
+}
+
+@import 'badesender-image-gallery.less';
+
+//----- BACKGROUND-IMAGE WIDGET
+
+.data-bgimage {
+  button {
+    .button-style();
+    text-transform: none;
+  }
+}
+
+////////
+// COLORPICKER
+////////
+
+// As a reminder
+// .mo .propInput .evo-pointer {
+//   z-index: 5;
+// }
+
+.evo-pop {
+  z-index: 10;
+
+  .evo-palette {
+    td {
+      height: 24px;
+    }
+    th {
+      background: white;
+    }
+  }
+}
+
+////////
+// tinyMCE custom style
+////////
+
+// add a class to fix button width for toolbar to compute size
+// see badsender-text-editor.js for more details
+
+.mce-fontsizedialogbutton {
+  width: 120px !important;
+}
+
+// make knockout effect available on block hover
+@media (min-width: 1100px) {
+  #main-wysiwyg-area replacedbody:before,
+  #main-wysiwyg-area replacedbody:after {
+    z-index: 12;
+    pointer-events: none;
+  }
+}
+
+.mo .propInput input[type='text']:hover,
+.mo .propInput input[type='number']:hover,
+.mo .propInput input[type='url']:hover,
+.mo .propInput select:hover,
+.mo .propInput .data-select select:hover,
+.mo .propInput .ui-spinner .ui-spinner-input:hover,
+.mo .propInput input[type='text']:focus,
+.mo .propInput input[type='number']:focus,
+.mo .propInput input[type='url']:focus,
+.mo .propInput select:focus,
+.mo .propInput .data-select select:focus,
+.mo .propInput .ui-spinner .ui-spinner-input:focus {
+  border-color: var(--v-accent-base);
+}
+
+.mo .ui-tabs-nav li:hover,
+.mo .ui-tabs-nav li.pressed {
+  background: var(--v-accent-lightent4);
+}
+
+@import (less) './badsender-image-cropper.less';
+@import (less) './badsender-mobile-preview.less';
+@import (less) './badsender-colorpicker.less';

@@ -1,0 +1,128 @@
+@import (less) '../../../../node_modules/cropperjs/dist/cropper.css';
+
+.bs-img-cropper {
+  --bs-ic-gutter: 2rem;
+  --bs-ic-actions: 200px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.bs-img-cropper--active {
+  opacity: 1;
+}
+.bs-img-cropper__in {
+  position: absolute;
+  top: var(--bs-ic-gutter);
+  bottom: var(--bs-ic-gutter);
+  left: 50%;
+  right: -50%;
+  max-width: 1280px;
+  transform: translateX(-50%);
+  background: white;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+
+  .fa-times {
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 2em;
+  }
+}
+.bs-img-cropper__croppie {
+  --bc-ic-zoom-slider: 25px;
+  --bc-ic-zoom-slider: 50px;
+  max-height: calc(
+    100vh - calc(var(--bs-ic-gutter) * 4) - var(--bc-ic-zoom-slider)
+  );
+  max-width: calc(100% - calc(var(--bs-ic-gutter) * 2));
+  position: absolute;
+  top: var(--bs-ic-gutter);
+  right: var(--bs-ic-gutter);
+  bottom: var(--bs-ic-gutter);
+  left: var(--bs-ic-gutter);
+}
+.bs-img-cropper__actions {
+  position: absolute;
+  right: var(--bs-ic-gutter);
+  bottom: calc(var(--bs-ic-gutter) / 2);
+  z-index: 2;
+  display: flex;
+}
+.bs-img-cropper__button {
+  background: var(--v-secondary-darken1);
+  border: 0;
+  font-size: inherit;
+  transition: background 0.3s;
+  padding: 0.5em 0.75em;
+  color: white;
+  margin-left: 1rem;
+  border-radius: 2px;
+
+  svg {
+    fill: currentColor;
+    display: block;
+  }
+
+  &:hover {
+    background: var(--v-secondary-darken2);
+  }
+}
+.bs-img-cropper__button--secondary {
+  background: white;
+  box-shadow: inset 0 0 0 1px var(--v-secondary-darken1);
+  color: var(--v-secondary-darken1);
+
+  &:hover {
+    color: white;
+  }
+}
+
+.bs-img-cropper__fa-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.bs-img-cropper__button--group {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+
+  + .bs-img-cropper__button {
+    margin: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+.bs-img-cropper__sizes {
+  border: 1px solid var(--v-secondary-darken1);
+  border-radius: 2px;
+  display: flex;
+}
+.bs-img-cropper__size {
+  width: 5rem;
+  display: flex;
+  flex-direction: column;
+
+  + .bs-img-cropper__size {
+    border-left: 1px solid var(--v-secondary-darken1);
+  }
+}
+.bs-img-cropper__size-label {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  background: var(--v-secondary-darken1);
+  color: white;
+}
+.bs-img-cropper__size-input {
+  width: 100%;
+  border: solid var(--v-secondary-darken1);
+  border-width: 1px 0 0;
+  flex: 1 1 auto;
+  text-align: right;
+}

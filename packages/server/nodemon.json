@@ -1,0 +1,12 @@
+{
+  "ignore": [
+    "nuxt-*",
+    "nuxt.config.js",
+    "packages/documentation/api",
+    "public/dist",
+    "maintenance-pages",
+    "packages/editor/src",
+    "build",
+    "res"
+  ]
+}

@@ -1,0 +1,88 @@
+#toolbar {
+  padding: 1px 0 1px 5px;
+  display: flex;
+
+  .ui-button {
+    color: @tab-text-color;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    line-height: 22px;
+    background-color: @mosaico-ui-background-color;
+    border-radius: 0;
+
+    .ui-icon,
+    .ui-button-text {
+      color: currentColor;
+    }
+
+    &:hover,
+    &.pressed {
+      background-color: lighten(@mosaico-ui-background-color, 10%);
+    }
+    &.selected,
+    &.ui-state-active {
+      border-top: 0;
+    }
+    &.ui-button-disabled,
+    &.ui-button-disabled .ui-icon,
+    &.ui-button-disabled .ui-button-text {
+      color: mix(@mosaico-ui-background-color, @tab-text-color);
+    }
+  }
+}
+// NAME INPUT
+.creation-name {
+  flex: 1 1 auto;
+  display: flex;
+  border: solid rgba(255, 255, 255, 0.3);
+  border-width: 0 1px;
+
+  .ui-button {
+    margin-right: 0;
+    text-align: left;
+  }
+
+  input {
+    font: inherit;
+    color: @tab-text-color;
+    background: none;
+    padding-left: 7px;
+    border: 0;
+    outline: 0;
+  }
+
+  p,
+  input {
+    flex: 1 1 auto;
+  }
+}
+
+// DOWNLOAD BUTTON
+.download-form {
+  position: relative;
+}
+.download-form__menu {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: (@topbar-height - 4px);
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+  transition: opacity 0.5s;
+  margin: 0;
+
+  .ui-button {
+    display: block;
+    margin: 0;
+    text-transform: capitalize;
+    border-radius: 0;
+  }
+}
+.download-form:hover .download-form__menu,
+.download-form__menu:hover {
+  opacity: 1;
+  pointer-events: initial;
+}
+#toolbar .download-form__btn-menu {
+  margin: 0;
+}

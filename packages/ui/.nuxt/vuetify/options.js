@@ -1,0 +1,1 @@
+export default {"icons":{"iconfont":"md"},"theme":{"options":{"customProperties":true},"themes":{"light":{"primary":"#62a7a5","secondary":"#18223e","accent":"#87cbc9","error":"#ff5252","info":"#2196f3","success":"#4caf50","warning":"#fb8c00"}}}}
