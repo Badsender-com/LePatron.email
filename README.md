@@ -5,9 +5,7 @@
 
 ## 🚀 Deploy on the Cloud
 
-### On Heroku
-
-Coming soon
+Documentation coming soon...
 
 ---
 

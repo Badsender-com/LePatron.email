@@ -5,7 +5,7 @@
   "main": "./packages/server/workers.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Badsender-com/LePatron.Email.git"
+    "url": "https://github.com/Badsender-com/LePatron.email.git"
   },
   "browserify": {
     "transform": [

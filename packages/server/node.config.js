@@ -11,7 +11,7 @@ const localEmail = Object.freeze({
   port: 1025,
 })
 // default config is made for an easy use on local dev
-const config = rc('badsender', {
+const config = rc('lepatron', {
   forcessl: false,
   host: `localhost:3000`,
   nuxt: {
@@ -37,7 +37,7 @@ const config = rc('badsender', {
     editorIcon: {
       logoPath: `/media/logo_lepatron.png`,
       logoUrl: `/`,
-      logoAlt: `Badsender`,
+      logoAlt: `LePatron.email`,
     },
   },
   emailOptions: {

@@ -53,29 +53,29 @@ Go to `Tags and alerts` and un-check the corresponding line.
 - variables name should follow this pattern:
 
 ```
-badsender_emailOptions__from
+lepatron_emailOptions__from
 ```
 
-- always put `badsender_` first
+- always put `lepatron_` first
 - then each level of config should be seperate with a double underscore: `__`
-- see `.badsenderrc-example` on the master branch for the config requirements
+- see `.lepatronrc-example` on the master branch for the config requirements
 
 below are the common environments variables you should want to set:
 
 ### mail sending
 
 ```
-badsender_emailTransport__service         Mailjet
-badsender_emailTransport__auth__user      your Username (or API key)
-badsender_emailTransport__auth__pass      your password (or Secret Key)
+lepatron_emailTransport__service         Mailjet
+lepatron_emailTransport__auth__user      your Username (or API key)
+lepatron_emailTransport__auth__pass      your password (or Secret Key)
 ```
 
-badsender_emailTransport\_\_service is for [nodemailer-wellknown](https://www.npmjs.com/package/nodemailer-wellknown) configuration
+lepatron_emailTransport\_\_service is for [nodemailer-wellknown](https://www.npmjs.com/package/nodemailer-wellknown) configuration
 
 ### from email address
 
 ```
-badsender_emailOptions__from              Badsender Builder <emailbuilder@badsender.com>
+lepatron_emailOptions__from              Badsender Builder <emailbuilder@badsender.com>
 ```
 
 ### MongoDB database
@@ -83,13 +83,13 @@ badsender_emailOptions__from              Badsender Builder <emailbuilder@badsen
 the path to your mongoDB instance
 
 ```
-badsender_database                        mongodb://localhost/badsender
+lepatron_database                        mongodb://localhost/badsender
 ```
 
 ### Admin password
 
 ```
-badsender_admin__password                 a password of your choice
+lepatron_admin__password                 a password of your choice
 ```
 
 ### Hostname
@@ -97,7 +97,7 @@ badsender_admin__password                 a password of your choice
 The domain name of your app
 
 ```
-badsender_host                            badsender-test.herokuapp.com
+lepatron_host                            badsender-test.herokuapp.com
 ```
 
 ### AWS S3
@@ -105,11 +105,11 @@ badsender_host                            badsender-test.herokuapp.com
 Those are the keys you should set for aws
 
 ```
-badsender_storage__type                   aws
-badsender_storage__aws__accessKeyId       20 characters key
-badsender_storage__aws__secretAccessKey   40 characters secret key
-badsender_storage__aws__bucketName        your bucket name
-badsender_storage__aws__region            region of your bucket (ex: ap-southeast-1)
+lepatron_storage__type                   aws
+lepatron_storage__aws__accessKeyId       20 characters key
+lepatron_storage__aws__secretAccessKey   40 characters secret key
+lepatron_storage__aws__bucketName        your bucket name
+lepatron_storage__aws__region            region of your bucket (ex: ap-southeast-1)
 ```
 
 #### getting an AWS id

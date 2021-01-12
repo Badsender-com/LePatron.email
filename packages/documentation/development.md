@@ -22,8 +22,8 @@ You need to have:
 
 ## Updating the code
 
-It should have a default config for dev already setup.  
-If you want to change some, create `.badsenderc` at the root of the project then fill with the values you want to overrride as described in the `.badsenderrc-example`
+It should have a default config for dev already setup.
+If you want to change some, create `.lepatronrc` at the root of the project then fill with the values you want to overrride as described in the `.lepatronrc-example`
 
 those are the main developer commands:
 
@@ -83,14 +83,14 @@ On heroku:
 
 #### legacy release (deprecated)
 
-Prior to the Nuxt Version a custom script was passed:  
+Prior to the Nuxt Version a custom script was passed:
 It builds the application on the `build` branch (thus the existence of this build branch)
 
 It's no longer relevant
 
 ### Databases scripts
 
-`.badsenderrc` should be provided with _dbConfigs_ infos. See `.badsenderrc-example` for more informations
+`.lepatronrc` should be provided with _dbConfigs_ infos. See `.lepatronrc-example` for more informations
 
 #### sync-db
 
@@ -120,13 +120,13 @@ yarn local-db
 
 ### S3 notes
 
-This is some script to backup a bucket or sync a bucket from a backup.  
+This is some script to backup a bucket or sync a bucket from a backup.
 This is mostly use for development purpose.
 
 #### requirements
 
 - [aws cli](http://docs.aws.amazon.com/cli/latest/reference/) – `brew install awscli` on a mac
-- `.badsenderc` filled with s3Configs parameters. See `.badsenderrc-example`
+- `.lepatronrc` filled with s3Configs parameters. See `.lepatronrc-example`
 
 [more details about why we use the aws cli](http://stackoverflow.com/questions/17832860/backup-strategies-for-aws-s3-bucket#answer-32927276)
 

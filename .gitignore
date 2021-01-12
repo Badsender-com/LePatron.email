@@ -20,9 +20,8 @@
 /s3-*
 /tests/ava/snapshots
 /tmp/**
-.badsenderrc
+.lepatronrc
 .DS_Store
-.lagardererc
 npm-debug.log
 yarn-error.log
 *.orig

@@ -1,7 +1,7 @@
 {
   "files.associations": {
-    ".badsenderrc-example": "jsonc",
-    ".badsenderrc": "jsonc",
+    ".lepatron-example": "jsonc",
+    ".lepatron": "jsonc",
   },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
@@ -24,8 +24,6 @@
     "Unprocessable",
     "Verdana",
     "Vuetify",
-    "badsender",
-    "badsenderrc",
     "blueimp",
     "croppie",
     "errored",
