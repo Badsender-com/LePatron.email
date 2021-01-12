@@ -38,6 +38,8 @@ Login with
 - **Email:** admin
 - **Password:** admin
 
+A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
+
 ---
 
 ## License

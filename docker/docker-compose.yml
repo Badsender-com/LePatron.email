@@ -12,12 +12,3 @@ services:
       - '27017-27019:27017-27019'
     volumes:
       - ../.mongodb:/data/db
-
-  smtp:
-    image: maildev/maildev
-    expose:
-      - 1080
-      - 80
-    environment:
-      VIRTUAL_PORT: '80'
-      VIRTUAL_HOST: 'smtp.lepatron.localhost'
