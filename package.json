@@ -194,8 +194,8 @@
     "toastr": "2.1.4",
     "uglifyify": "5.0.2",
     "url": "0.11.0",
-    "vinyl": "2.2.0",
-    "vinyl-buffer": "1.0.0",
+    "vinyl": "2.2.1",
+    "vinyl-buffer": "1.0.1",
     "vinyl-source-stream": "2.0.0",
     "vue": "2.6.11",
     "vue-loader": "15.9.0",
@@ -219,7 +219,6 @@
     "editor:build": "gulp build",
     "editor:build:prod": "gulp build --prod",
     "ui:build": "nuxt build",
-    
     "dev": "run-p serve:mail serve:dev",
     "docs:dev": "vuepress dev ./packages/documentation",
     "docs:dev:build": "vuepress build ./packages/documentation",

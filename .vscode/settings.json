@@ -53,5 +53,9 @@
     "virtuals",
     "wireframe",
     "wireframes"
+  ],
+  "i18n-ally.localesPaths": [
+    "public/lang",
+    "packages/ui/helpers/locales"
   ]
 }
