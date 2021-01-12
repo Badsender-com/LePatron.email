@@ -63,6 +63,7 @@
   "host": "www.your-hostname-without-protocal.com",
 
   "admin": {
+    "username": "admin",
     "password": "admin"
   },
 
@@ -74,59 +75,5 @@
   // DB CONNECTION
   //////
 
-  "database": "mongodb://localhost/my_database",
-
-  //////
-  // DB COPY (only used for syncing DBs, see ./bin/db-sync)
-  //////
-
-  "dbConfigs": {
-    "local": {
-      "host": "localhost:27017",
-      "folder": "badsender"
-    },
-    "dev": {
-      "host": "localhost:27017",
-      "folder": "badsender_copy",
-      "user": "####",
-      "password": "####"
-    },
-    "stage": {
-      "host": "localhost:27017",
-      "folder": "badsender_copy",
-      "user": "####",
-      "password": "####"
-    },
-    "production": {
-      "host": "localhost:27017",
-      "folder": "badsender_copy",
-      "user": "####",
-      "password": "####"
-    }
-  },
-
-  //////
-  // S3 COPY (only used for syncing DBs, see ./bin/s3-sync)
-  //////
-
-  "s3Configs": {
-    "dev": {
-      "bucketName": "badsender",
-      "accessKeyId": "####",
-      "region": "####",
-      "secretAccessKey": "####"
-    },
-    "stage": {
-      "bucketName": "badsender-stage",
-      "accessKeyId": "####",
-      "region": "####",
-      "secretAccessKey": "####"
-    },
-    "production": {
-      "bucketName": "builder.badsender.com",
-      "accessKeyId": "####",
-      "region": "####",
-      "secretAccessKey": "####"
-    }
-  }
+  "database": "mongodb://localhost/my_database"
 }

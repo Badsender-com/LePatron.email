@@ -18,7 +18,7 @@ const config = rc('badsender', {
     preventBuild: false,
     API_PREFIX: `/api`,
   },
-  database: `mongodb://localhost/badsender`,
+  database: `mongodb://localhost:27017/lepatron`,
   sessionSecret: `3MYdqy0lZZz2TXCr7YlxT9N6`,
   emailTransport: {
     ...localEmail,
@@ -41,10 +41,10 @@ const config = rc('badsender', {
     },
   },
   emailOptions: {
-    from: `Badsender local test <info@badsender-local-test.name>`,
-    passwordSubjectPrefix: `[badsender email builder]`,
+    from: `LePatron.email local test <info@lepatron-local-test.name>`,
+    passwordSubjectPrefix: `[lepatron email builder]`,
     // last space is needed
-    testSubjectPrefix: '[badsender email builder] ',
+    testSubjectPrefix: '[lepatron email builder] ',
   },
   storage: {
     type: `local`,
@@ -56,18 +56,12 @@ const config = rc('badsender', {
   },
   admin: {
     id: '576b90a441ceadc005124896',
-    username: 'badsender-admin',
+    username: 'admin',
     password: 'admin',
   },
-  // this is really optional.
-  // It's just to be able to backup/restore DB with scripts
-  dbConfigs: {
-    local: {
-      host: 'localhost:27017',
-      folder: 'badsender',
-    },
-  },
-  proxyUrl: process.env.QUOTAGUARDSTATIC_URL || 'http://zwaedt4fu4bmis:4ktaahtdb2yeak6x33u5buobusb@us-east-static-01.quotaguard.com:9293'
+  proxyUrl:
+    process.env.QUOTAGUARDSTATIC_URL ||
+    'http://zwaedt4fu4bmis:4ktaahtdb2yeak6x33u5buobusb@us-east-static-01.quotaguard.com:9293',
 })
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development'
@@ -93,7 +87,7 @@ if (config.isDev && isLocalEmailTransport) {
         rejectUnauthorized: false,
       },
     },
-    config.emailTransport
+    config.emailTransport,
   )
 }
 

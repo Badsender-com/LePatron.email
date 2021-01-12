@@ -229,7 +229,9 @@
     "serve:app": "node packages/server/workers.js",
     "serve:dev": "nodemon packages/server/workers.js --config packages/server/nodemon.json",
     "serve:mail": "maildev",
-    "serve:prod": "export NODE_ENV=production && yarn serve:app"
+    "serve:prod": "export NODE_ENV=production && yarn serve:app",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down"
   },
   "engines": {
     "node": ">=10.15.3 <11.0.0",
