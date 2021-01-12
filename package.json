@@ -221,7 +221,7 @@
     "dev": "run-p serve:mail serve:dev",
     "docs:dev": "vuepress dev ./packages/documentation",
     "docs:dev:build": "vuepress build ./packages/documentation",
-    "docs:api": "yarn docs:api:build && npx http-server ./packages/documentation/api -c-1",
+    "docs:api": "yarn docs:api:build && npx http-server ./packages/documentation/api -c-1 -o",
     "docs:api:build": "apidoc -i packages/server/ -o ./packages/documentation/api",
     "heroku-postbuild": "yarn build",
     "prod": "yarn build && yarn serve:prod",
