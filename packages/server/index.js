@@ -126,9 +126,9 @@ module.exports = function launchServer() {
   app.use(compiledStaticNoCache)
 
   // committed assets
-  app.use(express.static(path.join(__dirname, `../public`)))
+  app.use(express.static(path.join(__dirname, `../../public`)))
   // libs
-  app.use('/lib/skins', express.static(path.join(__dirname, `../public/skins`)))
+  app.use('/lib/skins', express.static(path.join(__dirname, `../../public/skins`)))
   // API documentation
   app.use(`/api/documentation`, apiDocumentationNoCache)
 

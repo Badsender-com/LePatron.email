@@ -247,8 +247,6 @@ function mosaicoEditor(debug = false) {
     standalone: `Badsender`,
   })
     .external(badsenderEditorLibs)
-    .transform(aliasify)
-    .transform(shim, { global: true })
     .transform(
       babelify.configure({
         presets: [`@babel/preset-env`],
@@ -257,6 +255,8 @@ function mosaicoEditor(debug = false) {
         only: [/badsender-/, /packages/],
       })
     )
+    .transform(aliasify)
+    .transform(shim, { global: true })
     .transform(
       envify(
         {
