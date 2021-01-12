@@ -14,7 +14,8 @@
 /.cache
 /.mongodb
 /.nuxt
-/badsender-api-documentation
+/packages/documentation/api
+/public/dist
 /server/maintenance-pages/*.html
 /s3-*
 /tests/ava/snapshots
