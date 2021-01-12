@@ -2,16 +2,10 @@
   "files.associations": {
     ".badsenderrc-example": "jsonc",
     ".badsenderrc": "jsonc",
-    ".lagardererc": "jsonc",
-    "Dockerfile*": "dockerfile"
   },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "editor.tabSize": 2,
-  "editor.formatOnSave": true,
-  "path-intellisense.mappings": {
-    "~": "${workspaceRoot}/badsender-server"
-  },
   "vetur.validation.template": false,
   "cSpell.ignorePaths": [
     "**/package-lock.json",
@@ -54,8 +48,5 @@
     "wireframe",
     "wireframes"
   ],
-  "i18n-ally.localesPaths": [
-    "public/lang",
-    "packages/ui/helpers/locales"
-  ]
+  "i18n-ally.localesPaths": ["public/lang", "packages/ui/helpers/locales"]
 }

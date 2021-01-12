@@ -46,14 +46,13 @@ module.exports = function launchServer() {
   )
 
   app.use(favicon(path.join(__dirname, `../../packages/ui/static/favicon.png`)))
-  
+
   // FORCE HTTPS
-  if(!config.isDev) {
+  if (!config.isDev) {
     app.use((req, res, next) => {
       if (req.header('x-forwarded-proto') !== 'https')
         res.redirect(`https://${req.header('host')}${req.url}`)
-      else
-        next()
+      else next()
     })
   }
 
@@ -84,7 +83,7 @@ module.exports = function launchServer() {
     path.join(__dirname, `../documentation/api`),
   )
 
-  app.locals.md5Url = url => {
+  app.locals.md5Url = (url) => {
     // disable md5 on dev
     // better for hot reload
     if (config.isDev) return url
@@ -128,7 +127,10 @@ module.exports = function launchServer() {
   // committed assets
   app.use(express.static(path.join(__dirname, `../../public`)))
   // libs
-  app.use('/lib/skins', express.static(path.join(__dirname, `../../public/skins`)))
+  app.use(
+    '/lib/skins',
+    express.static(path.join(__dirname, `../../public/skins`)),
+  )
   // API documentation
   app.use(`/api/documentation`, apiDocumentationNoCache)
 
@@ -213,9 +215,7 @@ module.exports = function launchServer() {
   // ])
 
   // Passport configuration
-  const {
-    GUARD_USER_REDIRECT,
-  } = require('./services/authentication.js')
+  const { GUARD_USER_REDIRECT } = require('./services/authentication.js')
 
   // API routes
   app.use(`/api`, apiRouter)
@@ -255,7 +255,7 @@ module.exports = function launchServer() {
     const errStatus = err.status || err.statusCode || (err.status = 500)
     const errMessage = err.message || `an error as occurred`
     const stack = err.stack ? err.stack : new Error(err).stack
-    const errStack = stack.split(`\n`).map(line => line.trim())
+    const errStack = stack.split(`\n`).map((line) => line.trim())
     const errorResponse = {
       ...err,
       status: errStatus,
@@ -266,7 +266,7 @@ module.exports = function launchServer() {
     res.status(errStatus).json(errorResponse)
   })
 
-  services.areReady.then(serviceStatus => {
+  services.areReady.then((serviceStatus) => {
     if (!serviceStatus) {
       return console.log(chalk.red(`[API] impossible to launch server`))
     }

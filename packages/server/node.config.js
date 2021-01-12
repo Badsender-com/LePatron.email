@@ -100,12 +100,12 @@ config.setup = new Promise((resolve, reject) => {
   var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath)
 
   Promise.all([tmpDir, uploadDir])
-    .then(folders => {
+    .then((folders) => {
       config.images.tmpDir = tmpPath
       config.images.uploadDir = uploadPath
       resolve(config)
     })
-    .catch(err => {
+    .catch((err) => {
       console.log('folder exception')
       console.log('attempt with os.tmpdir()')
       console.log(err)
@@ -115,13 +115,13 @@ config.setup = new Promise((resolve, reject) => {
       var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath)
 
       Promise.all([tmpDir, uploadDir])
-        .then(folders => {
+        .then((folders) => {
           console.log('all done with os.tmpdir()')
           config.images.tmpDir = tmpPath
           config.images.uploadDir = uploadPath
           resolve(config)
         })
-        .catch(err => {
+        .catch((err) => {
           reject(err)
           throw err
         })

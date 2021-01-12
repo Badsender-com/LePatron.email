@@ -12,10 +12,7 @@ const pkg = require('../../package.json')
 
 const router = express.Router()
 
-const {
-  GUARD_USER,
-  GUARD_ADMIN,
-} = require('./services/authentication.js')
+const { GUARD_USER, GUARD_ADMIN } = require('./services/authentication.js')
 const groups = require('./controllers/groups.js')
 const mailings = require('./controllers/mailings/index.js')
 const templates = require('./controllers/templates/index.js')
