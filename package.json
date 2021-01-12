@@ -1,11 +1,11 @@
 {
-  "name": "mosaico",
+  "name": "lepatron-email",
   "version": "0.17.4",
-  "description": "Mosaico - OpenSource Email Template Editor",
+  "description": "LePatron.email - Open Source Email Builder",
   "main": "./packages/server/workers.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Badsender/mosaico.git"
+    "url": "https://github.com/Badsender-com/LePatron.Email.git"
   },
   "browserify": {
     "transform": [
