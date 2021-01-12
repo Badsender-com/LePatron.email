@@ -27,3 +27,4 @@ npm-debug.log
 yarn-error.log
 *.orig
 /TODO.md
+/packages/server/md5public.json
