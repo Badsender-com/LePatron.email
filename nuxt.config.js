@@ -8,6 +8,7 @@ const pkg = require('./package.json')
 const config = require('./packages/server/node.config.js')
 
 module.exports = {
+  telemetry: false,
   srcDir: 'packages/ui',
   rootDir: __dirname,
   modulesDir: path.join(__dirname, '/node_modules'),
