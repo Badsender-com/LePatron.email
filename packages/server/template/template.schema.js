@@ -5,8 +5,8 @@ const { Schema } = require('mongoose')
 const { ObjectId } = Schema.Types
 const mongooseHidden = require('mongoose-hidden')()
 
-const { normalizeString } = require('./utils')
-const { GroupModel } = require('./names')
+const { normalizeString } = require('../utils/model')
+const { GroupModel } = require('../constant/model.names')
 
 /**
  * @apiDefine templates

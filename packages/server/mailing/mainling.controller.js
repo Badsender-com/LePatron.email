@@ -4,19 +4,19 @@ const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
 const { Types } = require('mongoose')
 
-const simpleI18n = require('../../helpers/server-simple-i18n.js')
-const logger = require('../../services/logger.js')
+const simpleI18n = require('../helpers/server-simple-i18n.js')
+const logger = require('../utils/logger.js')
 const {
   Mailings,
   Templates,
   Galleries,
   Users,
-} = require('../../services/models.js')
-const modelsUtils = require('../../models/utils.js')
-const sendTestMail = require('./send-test-mail.js')
-const downloadZip = require('./download-zip.js')
-const cleanTagName = require('../../helpers/clean-tag-name.js')
-const fileManager = require('../../services/file-manager/index.js')
+} = require('../common/models.common.js')
+const modelsUtils = require('../utils/model.js')
+const sendTestMail = require('./send-test-mail.controller.js')
+const downloadZip = require('./download-zip.controller.js')
+const cleanTagName = require('../helpers/clean-tag-name.js')
+const fileManager = require('../common/file-manage.service.js')
 
 module.exports = {
   list: asyncHandler(list),

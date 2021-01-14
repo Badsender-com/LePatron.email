@@ -10,7 +10,7 @@ const {
   OAuthClients,
   OAuthTokens,
   OAuthCodes,
-} = require('./services/models.js')
+} = require('./common/models.common.js')
 
 // Create OAuth 2.0 server
 const server = oauth2orize.createServer()

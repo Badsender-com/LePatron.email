@@ -5,8 +5,8 @@ const mongoose = require('mongoose')
 const mongooseHidden = require('mongoose-hidden')()
 
 const config = require('../node.config.js')
-const { normalizeString } = require('./utils')
-const { UserModel, TemplateModel, GroupModel } = require('./names')
+const { normalizeString } = require('../utils/model')
+const { UserModel, TemplateModel, GroupModel } = require('../constant/model.names')
 
 const { Schema, Types } = mongoose
 const { ObjectId } = Schema.Types

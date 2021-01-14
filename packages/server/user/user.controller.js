@@ -4,7 +4,7 @@ const _ = require('lodash')
 const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
 
-const { Users, Mailings, Groups } = require('../services/models.js')
+const { Users, Mailings, Groups } = require('../common/models.common.js')
 
 module.exports = {
   list: asyncHandler(list),

@@ -9,12 +9,12 @@ const {
   Mailings,
   Groups,
   Galleries,
-} = require('../../services/models.js')
-const logger = require('../../services/logger.js')
-const modelsUtils = require('../../models/utils.js')
-const fileManager = require('../../services/file-manager/index.js')
-const generatePreview = require('./generate-preview.js')
-const _getTemplateImagePrefix = require('./get-template-image-prefix.js')
+} = require('../common/models.common.js')
+const logger = require('../utils/logger.js')
+const modelsUtils = require('../utils/model.js')
+const fileManager = require('../common/file-manage.service.js')
+const generatePreview = require('./generate-preview.controller.js')
+const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 
 module.exports = {
   list: asyncHandler(list),

@@ -4,9 +4,9 @@ const fs = require('fs-extra')
 const AWS = require('aws-sdk')
 const denodeify = require('denodeify')
 
-const config = require('../../node.config.js')
-const defer = require('../../helpers/create-promise.js')
-const formatName = require('../../helpers/format-filename-for-jquery-fileupload.js')
+const config = require('../node.config.js')
+const defer = require('../helpers/create-promise.js')
+const formatName = require('../helpers/format-filename-for-jquery-fileupload.js')
 
 if (!config.isAws) return (module.exports = {})
 

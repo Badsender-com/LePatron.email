@@ -2,11 +2,11 @@
 
 const asyncHandler = require('express-async-handler')
 
-const config = require('../../node.config.js')
-const simpleI18n = require('../../helpers/server-simple-i18n.js')
-const brandColors = require('../../helpers/brand-colors.js')
-const modelsUtils = require('../../models/utils.js')
-const { Mailings } = require('../../services/models.js')
+const config = require('../node.config.js')
+const simpleI18n = require('../helpers/server-simple-i18n.js')
+const brandColors = require('../helpers/brand-colors.js')
+const modelsUtils = require('../utils/model.js')
+const { Mailings } = require('../common/models.common.js')
 
 module.exports = {
   exposeHelpersToPug: exposeHelpersToPug,

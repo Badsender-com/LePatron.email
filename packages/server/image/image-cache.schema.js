@@ -2,7 +2,7 @@
 
 const { Schema } = require('mongoose')
 
-const { normalizeString } = require('./utils')
+const { normalizeString } = require('../utils/model')
 
 const CacheImageSchema = Schema(
   {

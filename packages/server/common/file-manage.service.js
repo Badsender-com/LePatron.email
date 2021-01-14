@@ -7,10 +7,10 @@ const mime = require('mime-types')
 const chalk = require('chalk')
 const formidable = require('formidable')
 
-const config = require('../../node.config.js')
-const defer = require('../../helpers/create-promise.js')
-const formatName = require('../../helpers/format-filename-for-jquery-fileupload.js')
-const slugFilename = require('../../helpers/slug-filename.js')
+const config = require('../node.config.js')
+const defer = require('../helpers/create-promise.js')
+const formatName = require('../helpers/format-filename-for-jquery-fileupload.js')
+const slugFilename = require('../helpers/slug-filename.js')
 
 const { readFile } = fs
 // we want those methods to be as close as possible
@@ -20,7 +20,7 @@ const {
   writeStreamFromStream,
   listImages,
   copyImages,
-} = require(config.isAws ? './storage-s3' : './storage-local')
+} = require(config.isAws ? '../utils/storage-s3' : '../utils/storage-local')
 
 //////
 // UPLOAD

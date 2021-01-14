@@ -8,7 +8,7 @@ const {
   Users,
   Templates,
   Mailings,
-} = require('../services/models.js')
+} = require('../common/models.common.js')
 
 module.exports = {
   list: asyncHandler(list),

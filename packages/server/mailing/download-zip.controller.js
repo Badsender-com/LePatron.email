@@ -9,11 +9,11 @@ const request = require('request')
 const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
 
-const createPromise = require('../../helpers/create-promise.js')
-const { Mailings, Groups } = require('../../services/models.js')
-const modelsUtils = require('../../models/utils.js')
-const processMosaicoHtmlRender = require('./process-mosaico-html-render.js')
-const ftp = require('../../services/ftp-client.js')
+const createPromise = require('../helpers/create-promise.js')
+const { Mailings, Groups } = require('../common/models.common.js')
+const modelsUtils = require('../utils/model.js')
+const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js')
+const ftp = require('./ftp-client.service.js')
 
 module.exports = asyncHandler(downloadZip)
 

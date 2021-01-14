@@ -3,7 +3,7 @@
 const { Schema } = require('mongoose')
 const mongooseHidden = require('mongoose-hidden')()
 
-const { normalizeString, trimString } = require('./utils')
+const { normalizeString, trimString } = require('../utils/model')
 
 /**
  * @apiDefine group

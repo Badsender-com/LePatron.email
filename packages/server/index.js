@@ -16,10 +16,16 @@ const passport = require('passport')
 const moment = require('moment')
 
 const config = require('./node.config.js')
-const services = require('./services/initialization.js')
-const logger = require('./services/logger.js')
-const { mongoose } = require('./services/models.js')
+const services = require('./config/initialization.js')
+const logger = require('./utils/logger.js')
+const { mongoose } = require('./common/models.common.js')
 const apiRouter = require('./routes-api.js')
+const groupRouter = require('./group/group.routes')
+const mailingRouter = require('./mailing/mailing.routes')
+const templateRouter = require('./template/template.routes')
+const userRouter = require('./user/user.routes')
+const imageRouter = require('./image/image.routes')
+const accountRouter = require('./account/account.routes')
 
 module.exports = function launchServer() {
   const app = express()
@@ -215,15 +221,22 @@ module.exports = function launchServer() {
   // ])
 
   // Passport configuration
-  const { GUARD_USER_REDIRECT } = require('./services/authentication.js')
+  const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js')
 
   // API routes
-  app.use(`/api`, apiRouter)
-
+  app.use(`/api/groups`,groupRouter)
+  app.use(`/api/mailings`,mailingRouter)
+  app.use(`/api/templates`,templateRouter)
+  app.use(`/api/users`,userRouter)
+  app.use(`/api/images`,imageRouter)
+  app.use(`/api/account`,accountRouter)
+  //app.use(`/api`, apiRouter)
+  
   // Mosaico's editor route
-  const mosaicoEditor = require('./controllers/mailings/mosaico-editor.js')
+  const mosaicoEditor = require('./mailing/mosaico-editor.controller.js')
   app.get(
     `/mailings/:mailingId`,
+    GUARD_USER_REDIRECT,
     GUARD_USER_REDIRECT,
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render,

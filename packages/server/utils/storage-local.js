@@ -3,9 +3,9 @@
 const fs = require('fs-extra')
 const path = require('path')
 
-const config = require('../../node.config.js')
-const defer = require('../../helpers/create-promise.js')
-const formatName = require('../../helpers/format-filename-for-jquery-fileupload.js')
+const config = require('../node.config.js')
+const defer = require('../helpers/create-promise.js')
+const formatName = require('../helpers/format-filename-for-jquery-fileupload.js')
 
 // https://docs.nodejitsu.com/articles/advanced/streams/how-to-use-fs-create-read-stream/
 function streamImage(imageName) {

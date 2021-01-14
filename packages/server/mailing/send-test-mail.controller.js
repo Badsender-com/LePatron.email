@@ -3,11 +3,11 @@
 const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
 
-const config = require('../../node.config.js')
-const { Mailings } = require('../../services/models.js')
-const mail = require('../../services/mail.js')
-const modelsUtils = require('../../models/utils.js')
-const processMosaicoHtmlRender = require('./process-mosaico-html-render.js')
+const config = require('../node.config.js')
+const { Mailings } = require('../common/models.common.js')
+const mail = require('./mailing.service.js')
+const modelsUtils = require('../utils/model.js')
+const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js')
 
 module.exports = asyncHandler(sendTestMail)
 

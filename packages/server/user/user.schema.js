@@ -13,9 +13,9 @@ const moment = require('moment')
 const mongooseHidden = require('mongoose-hidden')()
 
 const config = require('../node.config.js')
-const mail = require('../services/mail.js')
-const { normalizeString } = require('./utils')
-const { GroupModel } = require('./names.js')
+const mail = require('../mailing/mailing.service.js')
+const { normalizeString } = require('../utils/model')
+const { GroupModel } = require('../constant/model.names.js')
 
 /**
  * @apiDefine users
@@ -188,7 +188,7 @@ UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
 //////
 
 tmpl.load = function(id) {
-  const filename = path.join(__dirname, `./${id}.html`)
+  const filename = path.join(__dirname, `../email-templates/${id}.html`)
   return fs.readFileSync(filename, `utf8`)
 }
 

@@ -4,8 +4,8 @@ const util = require('util')
 const chalk = require('chalk')
 
 const config = require('../node.config.js')
-const { mongoose } = require('./models.js')
-const { mailReady } = require('./mail.js')
+const { mongoose } = require('../common/models.common.js')
+const { mailReady } = require('../mailing/mailing.service.js')
 
 //----- MONGO DATABASE
 

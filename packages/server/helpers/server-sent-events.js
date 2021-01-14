@@ -1,6 +1,6 @@
 'use strict'
 
-const logger = require('../services/logger.js')
+const logger = require('../utils/logger.js')
 
 const SSE_FORMAT_ERROR = Symbol(`SSE_FORMAT_ERROR`)
 const SSE_CONNECTION_CLOSED = Symbol(`SSE_CONNECTION_CLOSED`)

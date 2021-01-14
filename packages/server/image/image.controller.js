@@ -12,8 +12,8 @@ const { duration } = require('moment')
 const { green, red } = require('chalk')
 
 const config = require('../node.config.js')
-const fileManager = require('../services/file-manager/index.js')
-const { CacheImages, Galleries } = require('../services/models.js')
+const fileManager = require('../common/file-manage.service.js')
+const { CacheImages, Galleries } = require('../common/models.common.js')
 
 console.log('[IMAGES] config.images.cache', config.images.cache)
 

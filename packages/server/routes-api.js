@@ -12,18 +12,18 @@ const pkg = require('../../package.json')
 
 const router = express.Router()
 
-const { GUARD_USER, GUARD_ADMIN } = require('./services/authentication.js')
-const groups = require('./controllers/groups.js')
-const mailings = require('./controllers/mailings/index.js')
-const templates = require('./controllers/templates/index.js')
-const users = require('./controllers/users.js')
-const images = require('./controllers/images.js')
+const { GUARD_USER, GUARD_ADMIN } = require('./account/auth.guard.js')
+const groups = require('./group/group.controller.js')
+const mailings = require('./mailing/mainling.controller.js')
+const templates = require('./template/template.controller.js')
+const users = require('./user/user.controller.js')
+const images = require('./image/image.controller.js')
 
 //////
 // GROUPS
 //////
 
-router.all(`/groups*`, GUARD_ADMIN)
+/* router.all(`/groups*`, GUARD_ADMIN)
 router.get(`/groups/:groupId/users`, groups.readUsers)
 router.get(`/groups/:groupId/templates`, groups.readTemplates)
 router.get(`/groups/:groupId/mailings`, groups.readMailings)
@@ -31,12 +31,12 @@ router.put(`/groups/:groupId`, groups.update)
 router.get(`/groups/:groupId`, groups.read)
 router.post(`/groups`, groups.create)
 router.get(`/groups`, groups.list)
-
+ */
 //////
 // MAILINGS
 //////
 
-router.post(
+/* router.post(
   `/mailings/:mailingId/mosaico/send-test-mail`,
   GUARD_USER,
   mailings.sendTestMail,
@@ -60,12 +60,12 @@ router.post(`/mailings`, GUARD_USER, mailings.create)
 router.delete(`/mailings`, GUARD_USER, mailings.bulkDestroy)
 router.put(`/mailings`, GUARD_USER, mailings.bulkUpdate)
 router.get(`/mailings`, GUARD_USER, mailings.list)
-
+ */
 //////
 // TEMPLATES
 //////
 
-router.get(`/templates/:templateId/markup`, GUARD_USER, templates.readMarkup)
+/* router.get(`/templates/:templateId/markup`, GUARD_USER, templates.readMarkup)
 router.get(
   `/templates/:templateId/preview`,
   GUARD_ADMIN,
@@ -91,18 +91,18 @@ router.put(`/templates/:templateId`, GUARD_ADMIN, templates.update)
 router.get(`/templates/:templateId`, GUARD_USER, templates.read)
 router.post(`/templates`, GUARD_ADMIN, templates.create)
 router.get(`/templates`, GUARD_USER, templates.list)
-
+ */
 //////
 // ACCOUNT
 //////
-
+/* 
 router.delete(`/account/:email/password`, users.forgotPassword)
 router.put(`/account/:email/password/:token`, users.setPassword)
-
+ */
 //////
 // USERS
 //////
-
+/* 
 router.all(`/users*`, GUARD_ADMIN)
 router.put(`/users/:userId/activate`, users.activate)
 router.put(`/users/:userId/password`, users.setPassword)
@@ -113,11 +113,11 @@ router.put(`/users/:userId`, users.update)
 router.get(`/users/:userId`, users.read)
 router.post(`/users`, users.create)
 router.get(`/users`, users.list)
-
+ */
 //////
 // IMAGES
 //////
-
+/* 
 router.get(
   `/images/placeholder/:placeholderSize`,
   images.checkImageCache,
@@ -140,7 +140,7 @@ router.get(`/images/gallery/:mongoId`, images.list)
 router.post(`/images/gallery/:mongoId`, images.create)
 router.get(`/images/:imageName`, images.read)
 router.delete(`/images/:imageName`, GUARD_USER, images.destroy)
-
+ */
 //////
 // MISCELLANEOUS
 //////

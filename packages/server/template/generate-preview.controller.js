@@ -7,14 +7,14 @@ const sharp = require('sharp')
 const puppeteer = require('puppeteer')
 const asyncHandler = require('express-async-handler')
 
-const config = require('../../node.config.js')
-const { Templates } = require('../../services/models.js')
-const fileManager = require('../../services/file-manager/index.js')
-const sseHelpers = require('../../helpers/server-sent-events.js')
-const slugFilename = require('../../helpers/slug-filename')
-const badsenderEvents = require('../../helpers/event-bus.js')
-const eventsNames = require('../../helpers/event-names.js')
-const _getTemplateImagePrefix = require('./get-template-image-prefix.js')
+const config = require('../node.config.js')
+const { Templates } = require('../common/models.common.js')
+const fileManager = require('../common/file-manage.service.js')
+const sseHelpers = require('../helpers/server-sent-events.js')
+const slugFilename = require('../helpers/slug-filename')
+const badsenderEvents = require('../helpers/event-bus.js')
+const eventsNames = require('../helpers/event-names.js')
+const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 
 // on heroku this build pack is needed
 // https://github.com/jontewks/puppeteer-heroku-buildpack
