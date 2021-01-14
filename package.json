@@ -227,7 +227,7 @@
     "serve:prod": "export NODE_ENV=production && yarn serve:app",
     "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
     "docker:down": "docker-compose -f docker/docker-compose.yml down",
-    "pretty": "yarn prettier ./packages/**/*.js -w"
+    "pretty": "yarn prettier ./packages -w"
   },
   "engines": {
     "node": ">=10.15.3 <11.0.0",
