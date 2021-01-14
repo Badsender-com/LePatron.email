@@ -19,7 +19,7 @@ const config = require('./node.config.js')
 const services = require('./config/initialization.js')
 const logger = require('./utils/logger.js')
 const { mongoose } = require('./common/models.common.js')
-const apiRouter = require('./routes-api.js')
+const versionRouter = require('./version/version.routes')
 const groupRouter = require('./group/group.routes')
 const mailingRouter = require('./mailing/mailing.routes')
 const templateRouter = require('./template/template.routes')
@@ -230,7 +230,7 @@ module.exports = function launchServer() {
   app.use(`/api/users`,userRouter)
   app.use(`/api/images`,imageRouter)
   app.use(`/api/account`,accountRouter)
-  //app.use(`/api`, apiRouter)
+  app.use(`/api/version`, versionRouter)
   
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js')
