@@ -8,6 +8,7 @@ const pkg = require('./package.json')
 const config = require('./packages/server/node.config.js')
 
 module.exports = {
+  telemetry: false,
   srcDir: 'packages/ui',
   rootDir: __dirname,
   modulesDir: path.join(__dirname, '/node_modules'),
@@ -81,7 +82,7 @@ module.exports = {
     // EXT_TOKEN: config.extToken,
   },
   head: {
-    titleTemplate: `Badsender – %s`,
+    titleTemplate: `LeParton.email – %s`,
     meta: [
       { charset: `utf-8` },
       { name: `viewport`, content: `width=device-width, initial-scale=1` },
