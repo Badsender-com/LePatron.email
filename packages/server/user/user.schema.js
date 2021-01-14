@@ -88,7 +88,7 @@ function encodePassword(password) {
   return bcrypt.hashSync(password, 10)
 }
 
-UserSchema.virtual(`status`).get(function() {
+UserSchema.virtual(`status`).get(function () {
   const status = this.isDeactivated
     ? `deactivated`
     : this.password
@@ -99,14 +99,14 @@ UserSchema.virtual(`status`).get(function() {
   return status
 })
 
-UserSchema.virtual(`isReinitialized`).get(function() {
+UserSchema.virtual(`isReinitialized`).get(function () {
   if (this.password) return false
   if (this.token) return true
   return false
 })
 
 // for better session handling
-UserSchema.virtual(`isAdmin`).get(function() {
+UserSchema.virtual(`isAdmin`).get(function () {
   return false
 })
 
@@ -135,7 +135,7 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.passwordSubjectPrefix} – password reset`,
+    subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
     text: `here is the link to enter your new password ${resetUrl}`,
     html: tmpReset(
       getTemplateData(`reset-password`, lang, {
@@ -159,7 +159,7 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
   const loginUrl = `http://${config.host}/account/login`
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.passwordSubjectPrefix} – password reset`,
+    subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
     text: `your password has been successfully been reinitialized. connect at ${loginUrl}`,
     html: tmpReset(
       getTemplateData(`reset-success`, lang, {
@@ -187,7 +187,7 @@ UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
 // DEFINING mailing templates
 //////
 
-tmpl.load = function(id) {
+tmpl.load = function (id) {
   const filename = path.join(__dirname, `../email-templates/${id}.html`)
   return fs.readFileSync(filename, `utf8`)
 }
