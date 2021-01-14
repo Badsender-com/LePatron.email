@@ -13,26 +13,10 @@ const templates = require('./template.controller.js')
 //////
 
 router.get(`/:templateId/markup`, GUARD_USER, templates.readMarkup)
-router.get(
-  `/:templateId/preview`,
-  GUARD_ADMIN,
-  templates.previewMarkup,
-)
-router.post(
-  `/:templateId/preview`,
-  GUARD_ADMIN,
-  templates.generatePreviews,
-)
-router.get(
-  `/:templateId/events`,
-  GUARD_ADMIN,
-  templates.previewEvents,
-)
-router.delete(
-  `/:templateId/images`,
-  GUARD_ADMIN,
-  templates.destroyImages,
-)
+router.get(`/:templateId/preview`, GUARD_ADMIN, templates.previewMarkup)
+router.post(`/:templateId/preview`, GUARD_ADMIN, templates.generatePreviews)
+router.get(`/:templateId/events`, GUARD_ADMIN, templates.previewEvents)
+router.delete(`/:templateId/images`, GUARD_ADMIN, templates.destroyImages)
 router.delete(`/:templateId`, GUARD_ADMIN, templates.destroy)
 router.put(`/:templateId`, GUARD_ADMIN, templates.update)
 router.get(`/:templateId`, GUARD_USER, templates.read)

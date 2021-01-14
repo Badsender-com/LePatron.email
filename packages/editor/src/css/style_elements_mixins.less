@@ -1,5 +1,5 @@
-@ie8hackprop: ~"\9"; // Match solo di IE8
-@ie10modernhack: ~"(-ms-high-contrast: active), (-ms-high-contrast: none), not screen\0"; // Match di IE10+ e altri browser moderni
+@ie8hackprop: ~'\9'; // Match solo di IE8
+@ie10modernhack: ~'(-ms-high-contrast: active), (-ms-high-contrast: none), not screen\0'; // Match di IE10+ e altri browser moderni
 
 @input-padding-v: 5px; // .35em
 @input-padding-h: 7px; // .5em
@@ -10,10 +10,12 @@
 @input-base-height: 18px;
 
 .input-button-common() {
-  font-size: 1.0em;
+  font-size: 1em;
   line-height: normal; // Firefox uses a "line-height: normal !important" for input elements, resulting in "1.2". If we use "1.2" on chrome we get bigger text (li has 1.25). Using "normal" works fine on both.
-  min-height: (@input-base-height + @input-border-size * 2 + @input-padding-v * 2); // Select size on Firefox is 18px, while another input is 16px, this creates differences fixed by min-height.
-  min-height: (@input-base-height + @input-border-size * 2 )@ie8hackprop; // IE8 ignores box-sizing for minheight, so we don't add @input-padding-v
+  min-height: (
+    @input-base-height + @input-border-size * 2 + @input-padding-v * 2
+  ); // Select size on Firefox is 18px, while another input is 16px, this creates differences fixed by min-height.
+  min-height: (@input-base-height + @input-border-size * 2) @ie8hackprop; // IE8 ignores box-sizing for minheight, so we don't add @input-padding-v
   vertical-align: middle;
 }
 
@@ -23,7 +25,9 @@
   background-color: @button-background-color;
   border: @input-border-size solid @button-border-color; // hidden, but declared to keep size consistency between input and buttons.
   color: @button-text-color;
-  li & { color: @button-text-color; } // Buttons inside LI should preserve their color (declared for "li a")
+  li & {
+    color: @button-text-color;
+  } // Buttons inside LI should preserve their color (declared for "li a")
   border-radius: @button-border-radius;
   font-weight: bold;
   cursor: pointer;
@@ -35,7 +39,7 @@
   font-weight: bold;
   img {
     vertical-align: middle;
-    margin: 0 .2em;
+    margin: 0 0.2em;
   }
   &:hover, &.pressed, &.selected /*, &.active*/ {
     text-decoration: none;
@@ -43,7 +47,9 @@
   }
   &.disabled {
     color: @button-text-color-disabled;
-    a, .link { // .link serve solo per poter fare l'import a style_elements_jquery.less
+    a,
+    .link {
+      // .link serve solo per poter fare l'import a style_elements_jquery.less
       color: @button-text-color-disabled;
     }
     &:hover {
@@ -53,7 +59,7 @@
     }
   }
   .container-inline & {
-   // width: auto; // IE8 has issues with this
+    // width: auto; // IE8 has issues with this
   }
   &.inline {
     margin: 0 @input-margin-right 0 0;
@@ -62,9 +68,11 @@
     color: @button-primary-text-color;
     background-color: @button-primary-background-color;
     border-color: @button-primary-border-color;
-    &:hover, &.pressed, &.selected {
+    &:hover,
+    &.pressed,
+    &.selected {
       background-color: @button-primary-hover-background-color;
-//      border-color: darken(@button-primary-border-color, 10%);
+      //      border-color: darken(@button-primary-border-color, 10%);
     }
   }
   &.big {
@@ -77,14 +85,15 @@
       vertical-align: middle;
     }
   }
-  &.with_button_dropdown_split { // Have to be AFTER .big and .primary
+  &.with_button_dropdown_split {
+    // Have to be AFTER .big and .primary
     padding-right: 1.2em;
     &.big {
       padding-right: 1.8em;
     }
   }
   &.loading {
-    opacity: .5;
+    opacity: 0.5;
     background-image: none; // Removes base ".loading" style
     /* interesting CONTENT REPLACING alternative
     position: relative;
@@ -140,11 +149,12 @@
 
   &:focus {
     border-color: @input-focus-border-color;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px fade(@input-focus-border-color, 60);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset,
+      0 0 8px fade(@input-focus-border-color, 60);
     outline: 0 none;
   }
   &.inline {
-    margin-right: .5em;
+    margin-right: 0.5em;
     width: auto;
   }
 }
@@ -161,7 +171,7 @@
         display: none;
       }
 
-      padding-right:30px;
+      padding-right: 30px;
 
       .input-button-common;
       // sovrapposizioni arrotondamenti
@@ -189,11 +199,11 @@
       */
 
       font-family: FontAwesome;
-      content: "\f0d7";
+      content: '\f0d7';
       font-weight: normal;
 
       // padding: 0 8px;
-      pointer-events:none;
+      pointer-events: none;
       // box-sizing: border-box;
     }
   }
@@ -203,7 +213,7 @@
   border-radius: @large-border-radius;
   // IE8 border
   border: 0px solid @shadow-color;
-  border-width: 1px@ie8hackprop;
+  border-width: 1px @ie8hackprop;
   border-color: fade(@shadow-color, 0%);
   box-shadow: 0 2px 20px @shadow-color;
   color: @helpwin-text-color;
@@ -213,7 +223,8 @@
 }
 
 .wintitle() {
-  position: relative; padding: .5em 1em .3em;
+  position: relative;
+  padding: 0.5em 1em 0.3em;
 
   color: @text-color;
   .ui-icon {
@@ -226,25 +237,29 @@
 }
 
 .popup-links-style() {
-  > li, > .dropdown-container > li {
+  > li,
+  > .dropdown-container > li {
     display: block;
-    padding: 0; margin: 0;
+    padding: 0;
+    margin: 0;
     //background-color: @popup-background-color;
 
-    > a { // Reverting .button()
+    > a {
+      // Reverting .button()
       display: block;
       border: none;
-      padding: .5em;
+      padding: 0.5em;
       margin: 0;
       border-radius: 0;
       position: relative;
-      overflow: hidden; text-overflow: ellipsis; // nowrap is in the container (usually .dropdown)
+      overflow: hidden;
+      text-overflow: ellipsis; // nowrap is in the container (usually .dropdown)
       font-weight: bold;
       background-color: transparent;
       color: @text-color;
       img {
         vertical-align: text-top;
-        margin: 0 .5em 0 0;
+        margin: 0 0.5em 0 0;
       }
       &.disabled {
         color: @text-greyed-color !important;
@@ -256,7 +271,7 @@
         position: absolute;
         right: 0;
         margin-left: 1em;
-        top: .6em;
+        top: 0.6em;
       }
     }
     > a when (@button-reversed = true) {
@@ -275,11 +290,12 @@
     }
     &.separator {
       border-top: 1px solid @button-background-color;
-      margin: .5em 0;
+      margin: 0.5em 0;
     }
   }
   &.table_columns {
-    > li, > .dropdown-container > li {
+    > li,
+    > .dropdown-container > li {
       > a {
         display: table-cell;
         vertical-align: middle;
@@ -298,7 +314,7 @@
   }
 }
 
-@dropdown-padding-v: .5em;
+@dropdown-padding-v: 0.5em;
 @dropdown-padding-h: 1em;
 
 .dropdown-style() {
@@ -309,27 +325,33 @@
   border-radius: @button-border-radius;
   // IE8 border
   border: 0px solid @shadow-color;
-  border-width: 1px@ie8hackprop;
+  border-width: 1px @ie8hackprop;
   // trasparented border for supporting browsers
   border-color: fade(@shadow-color, 0%);
   box-shadow: 0 4px 10px @shadow-color;
   background-color: @popup-background-color;
-//  border: 0;
+  //  border: 0;
   max-height: 300px;
   overflow: auto;
   min-width: 100%;
   max-width: 25em;
   white-space: normal; // dropdown-container inser a nowrap, but the dropdown content could be a simple div with text.
-  &.dropdown-right { right: 0; }
-  &.dropdown-bottom { bottom: 0; }
-  a.button + div.dropdown_spacer + &, .button_links &, .links.inline & {
-    margin: -.4em 0 0 0;
+  &.dropdown-right {
+    right: 0;
+  }
+  &.dropdown-bottom {
+    bottom: 0;
+  }
+  a.button + div.dropdown_spacer + &,
+  .button_links &,
+  .links.inline & {
+    margin: -0.4em 0 0 0;
   }
   .cell_links &, .top_links &, .box_top_links &, .slide_links & /*, .slide_links a.button + div.dropdown_spacer + &*/ {
-    margin: .2em 0 0 0;
+    margin: 0.2em 0 0 0;
   }
   hr {
-    margin: .5em -@dropdown-padding-h;
+    margin: 0.5em -@dropdown-padding-h;
     border-top: 1px solid lighten(@button-background-color, 40%); // Like button.active
     box-shadow: none;
   }
@@ -337,18 +359,24 @@
     display: block;
   }
   .dropdown_footer {
-    padding: @dropdown-padding-v 0 0 0; margin: 0;
+    padding: @dropdown-padding-v 0 0 0;
+    margin: 0;
   }
 }
 
 .clear-after() {
   &:after {
-    content: "";
+    content: '';
     display: table;
     clear: both;
   }
 }
 .no-focus() {
-  &:focus, &:-moz-focusring { outline: 0 none !important; }
-  &::-moz-focus-inner { border: none; }
+  &:focus,
+  &:-moz-focusring {
+    outline: 0 none !important;
+  }
+  &::-moz-focus-inner {
+    border: none;
+  }
 }

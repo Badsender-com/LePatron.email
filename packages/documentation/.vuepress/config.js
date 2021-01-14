@@ -9,4 +9,4 @@ module.exports = {
       { text: 'hosting', link: '/heroku-configuration.md' },
     ],
   },
-}
+};

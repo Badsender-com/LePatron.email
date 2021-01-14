@@ -13,15 +13,15 @@ export default {
       pickerCreatedEnd: false,
       pickerUpdatedStart: false,
       pickerUpdatedEnd: false,
-    }
+    };
   },
   computed: {
     localFilters: {
       get() {
-        return this.filters
+        return this.filters;
       },
       set(updatedFilters) {
-        this.$emit(`update`, updatedFilters)
+        this.$emit(`update`, updatedFilters);
       },
     },
   },
@@ -36,19 +36,25 @@ export default {
         updatedAtStart: ``,
         updatedAtEnd: ``,
         tags: [],
-      }
+      };
     },
   },
-}
+};
 </script>
 
 <template>
   <v-expansion-panels v-model="localFilters.show" flat focusable>
     <v-expansion-panel>
-      <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>{{ $t(`mailings.list`) }}</v-expansion-panel-header>
+      <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>{{
+        $t(`mailings.list`)
+      }}</v-expansion-panel-header>
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
-          <v-text-field v-model="localFilters.name" :label="$t(`global.name`)" clearable />
+          <v-text-field
+            v-model="localFilters.name"
+            :label="$t(`global.name`)"
+            clearable
+          />
           <div></div>
           <v-select
             v-model="localFilters.templates"
@@ -139,9 +145,16 @@ export default {
               <v-date-picker v-model="localFilters.updatedAtEnd" no-title />
             </v-menu>
           </div>
-          <v-select v-model="localFilters.tags" :label="$t(`global.tags`)" :items="tags" multiple />
+          <v-select
+            v-model="localFilters.tags"
+            :label="$t(`global.tags`)"
+            :items="tags"
+            multiple
+          />
           <div class="bs-mailings-filters__actions">
-            <v-btn color="primary" text @click="reset">{{$t(`global.reset`)}}</v-btn>
+            <v-btn color="primary" text @click="reset">{{
+              $t(`global.reset`)
+            }}</v-btn>
           </div>
         </div>
       </v-expansion-panel-content>

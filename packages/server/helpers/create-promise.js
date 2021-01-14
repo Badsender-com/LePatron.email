@@ -8,7 +8,7 @@ function defer() {
     rej = reject
   })
   promise.resolve = res
-  promise.reject  = rej
+  promise.reject = rej
   return promise
 }
 

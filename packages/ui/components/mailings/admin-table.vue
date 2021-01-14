@@ -11,13 +11,17 @@ export default {
       return [
         { text: this.$t('global.name'), align: `left`, value: `name` },
         { text: this.$t('global.author'), align: `left`, value: `userName` },
-        { text: this.$tc('global.template', 1), align: `left`, value: `templateName` },
+        {
+          text: this.$tc('global.template', 1),
+          align: `left`,
+          value: `templateName`,
+        },
         { text: this.$t('global.createdAt'), value: `createdAt` },
         { text: this.$t('global.updatedAt'), value: `updatedAt` },
-      ].filter(column => !this.hiddenCols.includes(column.value))
+      ].filter((column) => !this.hiddenCols.includes(column.value));
     },
   },
-}
+};
 </script>
 
 <template>

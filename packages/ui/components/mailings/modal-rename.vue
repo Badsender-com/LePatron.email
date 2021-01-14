@@ -11,26 +11,30 @@ export default {
   computed: {
     localModel: {
       get() {
-        return this.dialogInfo
+        return this.dialogInfo;
       },
       set(updatedValue) {
-        this.$emit(`update`, updatedValue)
+        this.$emit(`update`, updatedValue);
       },
     },
   },
   methods: {
     closeDialog() {
-      this.$emit(`close`)
+      this.$emit(`close`);
     },
     updateName() {
-      this.$emit(`update`, this.dialogInfo)
+      this.$emit(`update`, this.dialogInfo);
     },
   },
-}
+};
 </script>
 
 <template>
-  <v-dialog class="bs-mailings-modal-rename" v-model="localModel.show" width="500">
+  <v-dialog
+    class="bs-mailings-modal-rename"
+    v-model="localModel.show"
+    width="500"
+  >
     <v-card>
       <v-card-title class="headline">{{ $t(`mailings.rename`) }}</v-card-title>
       <v-card-text>
@@ -44,12 +48,15 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="closeDialog">{{ $t(`global.cancel`) }}</v-btn>
-        <v-btn color="primary" @click="updateName">{{ $t(`global.update`) }}</v-btn>
+        <v-btn color="primary" text @click="closeDialog">{{
+          $t(`global.cancel`)
+        }}</v-btn>
+        <v-btn color="primary" @click="updateName">{{
+          $t(`global.update`)
+        }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

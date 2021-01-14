@@ -1,10 +1,10 @@
 <script>
-import BsSnackBar from '~/components/snackbar.vue'
+import BsSnackBar from '~/components/snackbar.vue';
 
 export default {
   name: `bs-layout-authentication`,
   components: { BsSnackBar },
-}
+};
 </script>
 
 <template>

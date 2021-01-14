@@ -80,7 +80,7 @@ async function generatePreviews(req, res) {
   if (!template) throw createError(404)
   if (!template.markup) throw createError(404)
   // don't wait for the full preview to be generated
-  createPreviews({ templateId, cookies }).catch(error => console.log(error))
+  createPreviews({ templateId, cookies }).catch((error) => console.log(error))
   res.json({ id: templateId, status: `preview start` })
 }
 const PREVIEW_EVENTS = [
@@ -100,17 +100,19 @@ function previewEvents(req, res) {
     'Cache-Control': `no-cache`,
   })
 
-  const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(async data => {
-    if (data.payload.templateId !== templateId) return
-    await sseHelpers.writeResponse(res, data, isConnectionClosed)
-  })
-  PREVIEW_EVENTS.forEach(eventName =>
+  const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(
+    async (data) => {
+      if (data.payload.templateId !== templateId) return
+      await sseHelpers.writeResponse(res, data, isConnectionClosed)
+    },
+  )
+  PREVIEW_EVENTS.forEach((eventName) =>
     badsenderEvents.on(eventName, sendTemplatePreviewEvent),
   )
 
   res.on(`close`, function cleanListeners() {
     isConnectionClosed.resolve()
-    PREVIEW_EVENTS.forEach(eventName =>
+    PREVIEW_EVENTS.forEach((eventName) =>
       badsenderEvents.off(eventName, sendTemplatePreviewEvent),
     )
     res.end()
@@ -211,8 +213,8 @@ async function createPreviews({ templateId, cookies }) {
       payload: { templateId, message: logMessage },
     })
 
-    const blocksInformations = await page.$$eval(BLOCK_SELECTOR, $blocks => {
-      return $blocks.map($block => {
+    const blocksInformations = await page.$$eval(BLOCK_SELECTOR, ($blocks) => {
+      return $blocks.map(($block) => {
         // use dataset to preserve case
         const name = `${$block.dataset.koBlock}.png`
         const { left, top, width, height } = $block.getBoundingClientRect()
@@ -276,10 +278,7 @@ async function createPreviews({ templateId, cookies }) {
         console.log(`[PREVIEWS] ${imageLogName}`)
         // slug to be coherent with upload
         const originalName = slugFilename(blocksName[index])
-        const hash = crypto
-          .createHash(`md5`)
-          .update(imageBuffer)
-          .digest(`hex`)
+        const hash = crypto.createHash(`md5`).update(imageBuffer).digest(`hex`)
         const name = `${_getTemplateImagePrefix(templateId)}-${hash}.png`
         const filePath = path.join(config.images.tmpDir, `/${name}`)
         templateAssetsField[originalName] = name
@@ -300,7 +299,7 @@ async function createPreviews({ templateId, cookies }) {
     })
 
     await Promise.all(
-      files.map(file => {
+      files.map((file) => {
         const imageLogName = `upload ${file.name}`
         badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
           type: eventsNames.EVENT_UPDATE,

@@ -3,9 +3,7 @@
 Mosaico is a JavaScript library (or maybe a single page application) supporting the editing of email templates.
 The great thing is that Mosaico itself does not define what you can edit or what styles you can change: this is defined by the template. This makes Mosaico very flexible.
 
-
 ![Mosaico Screenshot](public/img/screenshot.png)
-
 
 At this time we provide a single "production ready" template to illustrate some best practice examples: more templates will come soon! Have a look at [Template Language](https://github.com/voidlabs/mosaico/wiki/Template-language) and get in touch with us if you want to make your email html template "Mosaico ready".
 
@@ -28,29 +26,37 @@ Subscribe to our newsletter to get updates: https://mosaico.voxmail.it/user/regi
 You need NodeJS v6.0 or higher + ImageMagick
 
 Download/install the dependencies (run again if you get an error, as it probably is a race issues in npm)
+
 ```
   npm install
 ```
+
 if you don't have it, install grunt-cli globally
+
 ```
   npm install -g grunt-cli
 ```
+
 compile and run a local webserver (http://127.0.0.1:9006) with incremental build and livereload
+
 ```
   grunt
 ```
-*IMPORTANT* in order to use image uploading/processing feature in Node you need imageMagick installed in your environment.
+
+_IMPORTANT_ in order to use image uploading/processing feature in Node you need imageMagick installed in your environment.
 e.g. running "convert" and "identify" on the command line should output imageMagick command line help (if you are on Windows and install imageMagick 7.x then make sure to install ["legacy utilities"](https://github.com/aheckmann/gm/issues/559)).
 
-*NOTE* we have reports that default Ubuntu node package have issues with building Mosaico via Grunt. If you see a ```Fatal error: watch ENOSPC``` then have a look at https://github.com/voidlabs/mosaico/issues/82
+_NOTE_ we have reports that default Ubuntu node package have issues with building Mosaico via Grunt. If you see a `Fatal error: watch ENOSPC` then have a look at https://github.com/voidlabs/mosaico/issues/82
 
 ### Docker
 
 We bundle a Dockerfile based on Alpine linux and another based on Centos 7 to test mosaico with no need to install dependencies.
+
 ```
 docker build -t mosaico/mosaico .
 docker run -p 9006:9006 mosaico/mosaico
 ```
+
 then open a browser to point to the port 9006 of your docker machine IP.
 
 ### Deploying Mosaico via Apache PHP or Django or something else?

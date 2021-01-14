@@ -1,6 +1,6 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsTemplateCoverImage from '~/components/template/cover-image.vue'
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 
 export default {
   name: `bs-template-card`,
@@ -10,22 +10,22 @@ export default {
   },
   computed: {
     hasCover() {
-      return this.template.coverImage != null
+      return this.template.coverImage != null;
     },
     coverSrc() {
       if (!this.hasCover) {
-        return apiRoutes.imagesPlaceholder({ width: 450, height: 250 })
+        return apiRoutes.imagesPlaceholder({ width: 450, height: 250 });
       }
-      const imageName = this.template.coverImage
-      return apiRoutes.imagesItem({ imageName })
+      const imageName = this.template.coverImage;
+      return apiRoutes.imagesItem({ imageName });
     },
   },
   methods: {
     onClick() {
-      this.$emit(`click`, this.template)
+      this.$emit(`click`, this.template);
     },
   },
-}
+};
 </script>
 
 <template>
@@ -34,7 +34,9 @@ export default {
     <v-card-title>
       <h2 class="bs-template-card__title headline">{{ template.name }}</h2>
     </v-card-title>
-    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">{{ template.description }}</v-card-subtitle>
+    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">{{
+      template.description
+    }}</v-card-subtitle>
   </v-card>
 </template>
 

@@ -1,23 +1,23 @@
-"use strict";
+'use strict';
 /* global Image: false */
 
-var ko = require("knockout");
+var ko = require('knockout');
 
 // experimental image preloading.
 ko.bindingHandlers['preloader'] = {
-  init: function(element, valueAccessor) {
+  init: function (element, valueAccessor) {
     var value = valueAccessor();
     if (typeof value.preloaded == 'undefined') {
-      value.preloaded = ko.observable("");
+      value.preloaded = ko.observable('');
 
-      var preloader = function(newValue) {
+      var preloader = function (newValue) {
         if (newValue != value.preloaded()) {
           if (newValue !== '') {
             var img = new Image();
-            img.onload = function() {
+            img.onload = function () {
               value.preloaded(newValue);
             };
-            img.onerror = function() {
+            img.onerror = function () {
               value.preloaded(newValue);
             };
             img.src = newValue;
@@ -30,5 +30,5 @@ ko.bindingHandlers['preloader'] = {
       value.subscribe(preloader);
       preloader(value());
     }
-  }
+  },
 };

@@ -11,18 +11,22 @@
 #main-toolbox {
   //font-size: 1.1em;
   line-height: normal;
-  
+
   .propEditor .propInput .checkbox-replacer {
     padding: 4px 2px;
     font-size: 1.2em;
   }
-  .objLabel.level0, .pane-title {
+  .objLabel.level0,
+  .pane-title {
     font-size: 1.2em;
   }
   .objLabel.level1 {
     font-size: 1.2em;
   }
-  .noSelectedBlock, .customStyleHelp, .objEmpty, .galleryEmpty {
+  .noSelectedBlock,
+  .customStyleHelp,
+  .objEmpty,
+  .galleryEmpty {
     font-size: 1.2em;
   }
   .propInput .data-select::after,
@@ -39,7 +43,10 @@
   }
   .propInput .ui-spinner-button {
     width: 30px;
-    .ui-icon { left: 6px; top: 8px }
+    .ui-icon {
+      left: 6px;
+      top: 8px;
+    }
   }
   .evo-pop .evo-more {
     font-size: 1em;
@@ -59,7 +66,7 @@
   .img-dropzone.ui-state-draghover:before {
     background-color: fade(@mosaico-selection-color, 80%);
     animation: none;
-  } 
+  }
 
   .uploadzone {
     font-size: 1.2em;
@@ -67,11 +74,11 @@
 }
 
 .mo {
-  @import "style_elements.less"; // (button, dropdown, tooltip, dialog...)
-  @import (optional) "style_elements_drupal.less"; // TODO remove me
-  @import "style_elements_jquery.less";
-  @import (optional) "style_elements_qtip.less"; // TODO remove me
-  
+  @import 'style_elements.less'; // (button, dropdown, tooltip, dialog...)
+  @import (optional) 'style_elements_drupal.less'; // TODO remove me
+  @import 'style_elements_jquery.less';
+  @import (optional) 'style_elements_qtip.less'; // TODO remove me
+
   *,
   *:before,
   *:after {
@@ -79,27 +86,32 @@
     padding: 0;
     box-sizing: border-box;
   }
-  
+
   .ui-icon {
     overflow: visible; // preview icons to select desktop/tablet/smartphone are truncated without this.
   }
 
-  .fa { // reset .fa
+  .fa {
+    // reset .fa
     display: inline-block;
     font-style: normal;
   }
-  
+
   .buttons {
     text-align: center;
     padding-top: 3px;
   }
-  
+
   .propInput {
-    input[type=text], input[type=number], input[type=url], select {
+    input[type='text'],
+    input[type='number'],
+    input[type='url'],
+    select {
       .input-style();
       margin: 0;
 
-      &.invalid, &.error {
+      &.invalid,
+      &.error {
         border: @input-error-border-style;
       }
     }
@@ -143,21 +155,21 @@
       }
     }
   }
-  
+
   .propEditor {
     display: table;
     width: 100%;
   }
-  
+
   .propLabel {
     padding: 8px 8px;
     padding-left: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 45%; 
-    float: left; 
-    text-align: right; 
+    width: 45%;
+    float: left;
+    text-align: right;
 
     // "?" for tooltips
     &[title]:before {
@@ -165,36 +177,43 @@
       float: right;
       position: initial;
       color: lighten(@text-color, 20%);
-      content: "\f059";
+      content: '\f059';
       font-size: 80%;
       line-height: 1.5em;
       margin-left: 0.5em;
     }
-
   }
 
-  .propInput { 
+  .propInput {
     width: 55%;
     float: left;
-    input,  select { width: 100%; }
+    input,
+    select {
+      width: 100%;
+    }
   }
 
   .notnull.propEditor.checkboxes .propInput {
     width: 50%;
   }
 
-  .propCheck { 
-    width: 5%; float: left; padding: 5px; display: none;
+  .propCheck {
+    width: 5%;
+    float: left;
+    padding: 5px;
+    display: none;
   }
   .notnull .propCheck {
-    display: block
+    display: block;
   }
 
-  .propLabel:after, .propInput:after, .objEdit:after {
-    content: "";
+  .propLabel:after,
+  .propInput:after,
+  .objEdit:after {
+    content: '';
     display: table;
   }
-  
+
   .objEdit {
     display: block;
     width: 100%;
@@ -212,20 +231,20 @@
     color: @mosaico-shadow-color;
   }
   .label.notused:before {
-    content: "[[[";
+    content: '[[[';
   }
   .label.notused:after {
-    content: "]]]";
+    content: ']]]';
   }
 
   .objLabel.level2 {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     float: left;
     position: absolute;
     display: none;
   }
   .objLabel.level3 {
-    color: rgba(255,255,255,0.4);
+    color: rgba(255, 255, 255, 0.4);
     float: left;
     position: absolute;
     top: 1em;
@@ -233,11 +252,11 @@
   }
 
   .objEdit.level1 {
-  /*  border-bottom: 2px solid #CCC; */
+    /*  border-bottom: 2px solid #CCC; */
     padding-top: 4px;
     padding-bottom: 2px;
     margin-bottom: 3px;
-  /*  padding: 2px; */
+    /*  padding: 2px; */
   }
   .objLabel.level1 {
     color: black;
@@ -334,11 +353,11 @@
     font-weight: bold;
     /* background-color: #FFFF80; */
   }
-  .propEditor.notnull input, 
+  .propEditor.notnull input,
   .propEditor.notnull select {
     font-weight: bold;
   }
-  .propEditor.notnull input[type=checkbox] {
+  .propEditor.notnull input[type='checkbox'] {
     font-weight: normal;
   }
 
@@ -355,7 +374,7 @@
     padding-right: 30px;
   }
 
-  .propInput .data-color input[type=text] {
+  .propInput .data-color input[type='text'] {
     font-size: 90%;
     font-family: monospace;
     width: 5.5em;
@@ -366,7 +385,8 @@
     box-shadow: none;
     border-style: dashed;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
       .input-style();
 
       font-size: 90%;
@@ -381,17 +401,14 @@
       border-style: solid;
       */
     }
-
-
-
   }
 
   .propInput .evo-pointer {
     position: absolute;
     .input-style();
     margin: 0;
-  //  right: 4px;
-  //  top: 6px;
+    //  right: 4px;
+    //  top: 6px;
     z-index: 5;
 
     left: 0px;
@@ -409,11 +426,12 @@
       .button-style();
 
       font-family: FontAwesome;
-      content: "\f0d7";
+      content: '\f0d7';
       font-weight: normal;
 
       // see .button_dropdown_split styles
-      border-left: @input-border-size solid fade(@button-border-color-split, 50%) !important; // !important to work also on .big and .primary
+      border-left: @input-border-size solid
+        fade(@button-border-color-split, 50%) !important; // !important to work also on .big and .primary
       border-top-left-radius: 0 !important;
       border-bottom-left-radius: 0 !important;
 
@@ -425,13 +443,12 @@
       width: 28px;
       padding: 0 8px;
       margin: 0;
-
     }
   }
 
-  .objEdit input[type=checkbox] {
+  .objEdit input[type='checkbox'] {
     display: none;
-  
+
     & + .checkbox-replacer {
       width: 1.28571429em;
       display: block;
@@ -439,14 +456,14 @@
       // Rompe IE10
       // visibility: hidden;
     }
-    
-    /* , &:checked + .checkbox-replacer:before */ 
+
+    /* , &:checked + .checkbox-replacer:before */
     & + .checkbox-replacer:before {
       .makeFontAwesome();
     }
   }
 
-  .objEdit input[type=checkbox] {
+  .objEdit input[type='checkbox'] {
     &:checked + .checkbox-replacer:before {
       content: '\f205'; /* '\f096'; */
     }
@@ -456,22 +473,22 @@
       content: '\f204'; /* '\f14a'; */
     }
   }
-  
-  .propCheck input[type=checkbox] {
+
+  .propCheck input[type='checkbox'] {
     &:checked + .checkbox-replacer:before {
-      content: "\f041"; /* tondo con punto '\f192';*/ /* '\f140'; *//* '\f14a'; */
-      content: "\f1b2"; /* cubo */
+      content: '\f041'; /* tondo con punto */
+      content: '\f1b2'; /* cubo */
       font-size: 14px;
       opacity: 1;
     }
     & + .checkbox-replacer:before {
-      content: '\f0ac'; /* asterisco "\f069"; *//* '\f096'; */
-      content: "\f1b3"; /* cubi */
+      content: '\f0ac'; /* asterisco "\f069"; */
+      content: '\f1b3'; /* cubi */
       font-size: 14px;
-      opacity: .8;
+      opacity: 0.8;
     }
   }
-  
+
   .propInput .ui-spinner {
     width: 100%;
     margin: 0;
@@ -494,24 +511,29 @@
     text-decoration: underline;
     cursor: help;
   }
-  
-  .noSelectedBlock, .customStyleHelp, .objEmpty, .galleryEmpty, .blockDescription {
+
+  .noSelectedBlock,
+  .customStyleHelp,
+  .objEmpty,
+  .galleryEmpty,
+  .blockDescription {
     padding: 1em;
-    margin-bottom: .5em;
+    margin-bottom: 0.5em;
     background-color: @mosaico-object-background-color;
     border-radius: @mosaico-object-border-radius;
     box-shadow: @mosaico-object-shadow;
-    color: #4F4F4F;
+    color: #4f4f4f;
   }
 
-  .customStyleHelp, .objEmpty {
+  .customStyleHelp,
+  .objEmpty {
     margin-bottom: 1em;
   }
 
   /***************
    * COLOR PICKER
    ***************/
-  
+
   .evo-pop {
     right: 0;
     width: auto;
@@ -523,10 +545,14 @@
       padding: 12px;
       border: none;
     }
-    .evo-palette th, .evo-palette-ie th, .evo-palette2 th {
+    .evo-palette th,
+    .evo-palette-ie th,
+    .evo-palette2 th {
       border: none;
     }
-    .evo-palette, .evo-palette-ie, .evo-palette2 {
+    .evo-palette,
+    .evo-palette-ie,
+    .evo-palette2 {
       border-spacing: 0px 0px;
       margin: 0 auto;
       width: auto;
@@ -557,7 +583,7 @@
       font-size: 17px;
       margin: 5px 0 4px 4px;
     }
-    
+
     .evo-more {
       padding: 4px 5px;
       a {
@@ -567,33 +593,39 @@
   }
 }
 
-
 /****************************************************************************************************************************
  * TOOLBAR
  ***************************************************************************************************************************/
 
 #toolbar {
   padding: 5px 10px;
-  
-  .button, .ui-button, .button_dropdown_split {
-    margin-top: 0; margin-bottom: 0;
+
+  .button,
+  .ui-button,
+  .button_dropdown_split {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   ul.top_right_links {
     float: right;
     .dropdown {
-      margin: .2em 0 0 0;
+      margin: 0.2em 0 0 0;
     }
   }
-  
+
   // When screen is not big enough to show the preview sidebar, let's hide the preview button
-  @media (max-width: (@screen-lg-max) ) {
-    label[for=previewFrameToggle] {
+  @media (max-width: (@screen-lg-max)) {
+    label[for='previewFrameToggle'] {
       display: none;
     }
-    .ui-button[for=showGallery] {
-      .ui-icon { margin-right: 0 }
-      .ui-button-text { display: none }
+    .ui-button[for='showGallery'] {
+      .ui-icon {
+        margin-right: 0;
+      }
+      .ui-button-text {
+        display: none;
+      }
     }
   }
 
@@ -619,7 +651,7 @@
     height: 100%;
     overflow: hidden;
   }
-  
+
   #tooltabs.ui-tabs {
     overflow: hidden;
     .ui-tabs-panel {
@@ -628,7 +660,7 @@
       overflow-x: hidden;
       z-index: 100;
     }
-    
+
     .ui-tabs-nav {
       font-size: 1.2em;
       padding: 0px 0px 0px 4px;
@@ -639,7 +671,7 @@
 
         a {
           width: 100%;
-          padding: 0 .5em;
+          padding: 0 0.5em;
         }
         /*
         a {
@@ -663,7 +695,8 @@
       }
     }
     .ui-tabs-panel {
-      margin: 0; padding: 0.7em;
+      margin: 0;
+      padding: 0.7em;
       position: absolute;
       bottom: @ui-tabs-panel-padding;
       left: @ui-tabs-panel-padding;
@@ -671,9 +704,8 @@
       z-index: 100;
       background-color: @mosaico-background-color;
     }
-    
   }
-  
+
   .draggable-item {
     display: inline-block;
   }
@@ -685,15 +717,17 @@
     z-index: 100;
     display: inline-block;
   }
-  
+
   .draggable-item .block {
     // margin: 3px;
     .handle {
       cursor: move;
       z-index: 120;
       position: absolute;
-      top: 0; bottom: 0;
-      left: 20px; right: 20px;
+      top: 0;
+      bottom: 0;
+      left: 20px;
+      right: 20px;
       // outline: 1px solid green;
     }
   }
@@ -708,15 +742,14 @@
       display: none;
     }
 
-    .image, .block img {
+    .image,
+    .block img {
       box-shadow: 0 0 1px @mosaico-shadow-color;
       margin: 3px 0;
     }
-
   }
 
   .draggable-item:hover {
-
     transform: scale(1.05, 1.05);
     z-index: 10;
     position: relative;
@@ -735,7 +768,7 @@
       }
     }
   }
-  
+
   .blockType {
     display: none;
   }
@@ -749,7 +782,7 @@
   .block-list .draggable-item img {
     width: 100%;
   }
-  
+
   .objEdit.level1.selectable {
     .makeSelectable(5px, ~'.selecteditem', 0);
   }
@@ -765,13 +798,12 @@
     }
     */
   }
-  
-  .blockCheck input[type=checkbox] {
-  
+
+  .blockCheck input[type='checkbox'] {
     & + .checkbox-replacer {
       width: 56px;
     }
-  
+
     & + .checkbox-replacer:after {
       .makeFontAwesome;
     }
@@ -796,14 +828,13 @@
 
     & + .checkbox-replacer:after,
     &:checked + .checkbox-replacer:after {
-      content: "\f1b2"; /* cubo */
+      content: '\f1b2'; /* cubo */
     }
 
     & + .checkbox-replacer:before,
     &:checked + .checkbox-replacer:before {
-      content: "\f1b3"; /* cubi */
+      content: '\f1b3'; /* cubi */
     }
-
 
     & + .checkbox-replacer:after,
     &:checked + .checkbox-replacer:before {
@@ -829,7 +860,6 @@
       padding-right: 4px;
     }
 
-    
     &:checked + .checkbox-replacer:after,
     & + .checkbox-replacer:before {
       .button-style();
@@ -843,43 +873,55 @@
       opacity: 1;
       z-index: 1;
     }
-
   }
-  
+
   /* while local-editing we always show the local editor */
   .workLocal {
-    .propInput.global, .propInput.global * { display: none; }
+    .propInput.global,
+    .propInput.global * {
+      display: none;
+    }
   }
   /* while global-editing show the global editor unless it is overwritten (not null) */
   .workGlobal {
-    .propInput.local.default, .propInput.local.default * { display: none; }
-    .propInput.global.overridden, .propInput.global.overridden * { display: none; }
+    .propInput.local.default,
+    .propInput.local.default * {
+      display: none;
+    }
+    .propInput.global.overridden,
+    .propInput.global.overridden * {
+      display: none;
+    }
   }
 
   .workGlobalContent {
-    .propInput.local, .propInput.local * { display: none; }
-    .blockCheck { display: none; }
+    .propInput.local,
+    .propInput.local * {
+      display: none;
+    }
+    .blockCheck {
+      display: none;
+    }
     .objLabel.level0 {
       margin-right: 0;
     }
   }
-  
+
   .customStyled span {
     display: none;
   }
 
   .customStyled:before {
-    content: " ";
+    content: ' ';
   }
 
   .customStyled:after {
     .makeFontAwesome();
-    content: "\f1b2";
+    content: '\f1b2';
     font-size: 14px;
     opacity: 1;
   }
 
-  
   #tooldebug {
     overflow: auto;
   }
@@ -897,20 +939,29 @@
 }
 
 @keyframes slideright {
-  0% { left: -(@leftsidebar-width+50px) }
-  100% { left: 0 }
+  0% {
+    left: -(@leftsidebar-width+50px);
+  }
+  100% {
+    left: 0;
+  }
 }
 @keyframes slideleft {
-  0% { left: 0 }
-  100% { left: -(@leftsidebar-width+50px) }
+  0% {
+    left: 0;
+  }
+  100% {
+    left: -(@leftsidebar-width+50px);
+  }
 }
 
 #toolimages {
   .pane {
     text-align: center;
   }
-  .loadbutton, .galleryPager {
-    margin: .5em;
+  .loadbutton,
+  .galleryPager {
+    margin: 0.5em;
   }
 }
 .slidebar {
@@ -919,11 +970,11 @@
   top: 0;
   width: @leftsidebar-width - 3px;
   left: 0;
-  animation: slideright .2s ease-out 0s 1;
+  animation: slideright 0.2s ease-out 0s 1;
   border-radius: 0;
   background-color: @mosaico-background-color;
   box-shadow: 1px 0px 3px @mosaico-shadow-color;
-  
+
   .close {
     float: right;
     visibility: hidden;
@@ -943,7 +994,7 @@
       height: 24px;
     }
   }
-  
+
   .pane {
     background-color: @mosaico-background-color;
     border-radius: 5px;
@@ -954,29 +1005,28 @@
     padding: 5px;
     display: block;
   }
-  
 }
 
 .slidebar.hidden {
   left: -(@leftsidebar-width+50px);
-  animation: slideleft .2s ease-out 0s 1;
+  animation: slideleft 0.2s ease-out 0s 1;
 }
 
 #toolimagestab {
   padding: 0.2em;
-  
+
   ul.ui-tabs-nav {
     padding: 0;
   }
   li.ui-state-active a {
-    background: none repeat scroll 0% 0% #FFF;
+    background: none repeat scroll 0% 0% #fff;
   }
   .ui-tabs-panel {
     display: block;
     margin-top: 0;
     // max padding to avoid breaking the gallery
     padding: 15px 18px;
-    background: none repeat scroll 0% 0% #FFF;
+    background: none repeat scroll 0% 0% #fff;
     border: 1px solid @mosaico-accent-color;
     border-width: 0px 1px 1px;
   }
@@ -987,8 +1037,11 @@
  ***************************************************************************************************************************/
 
 #main-preview {
-  .button, .ui-button, .button_dropdown_split {
-    margin-top: 0; margin-bottom: 0;
+  .button,
+  .ui-button,
+  .button_dropdown_split {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 }
 
@@ -1013,7 +1066,6 @@
 }
 
 #frame-container > iframe {
-  
   border: 0;
   box-sizing: border-box;
   padding: 0 6px;
@@ -1023,7 +1075,6 @@
   overflow: auto;
   transform-origin: 0 0;
   transform: scale(1);
-
 }
 
 #frame-container.desktop > iframe {
@@ -1036,7 +1087,7 @@
 
 #frame-container.large > iframe {
   padding: 15px;
-  
+
   width: 250%;
   height: 250%;
   transform: scale(0.4);

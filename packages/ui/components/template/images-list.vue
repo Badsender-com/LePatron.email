@@ -1,5 +1,5 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js'
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
   name: `bs-template-images-list`,
@@ -13,25 +13,31 @@ export default {
       return Object.entries(this.assets).map(([originalName, imageName]) => ({
         originalName,
         href: apiRoutes.imagesItem({ imageName }),
-      }))
+      }));
     },
   },
   methods: {
     deleteImages() {
-      this.$emit(`delete`)
+      this.$emit(`delete`);
     },
   },
-}
+};
 </script>
 
 <template>
   <v-card>
-    <v-card-title>{{ `${$tc('global.image', imagesList.length)} (${imagesList.length})` }}</v-card-title>
+    <v-card-title>{{
+      `${$tc('global.image', imagesList.length)} (${imagesList.length})`
+    }}</v-card-title>
     <v-card-text>
       <details>
-        <summary>{{$t('global.show')}}</summary>
+        <summary>{{ $t('global.show') }}</summary>
         <ul class="template-images">
-          <li class="template-images__item" v-for="image in imagesList" :key="image.originalName">
+          <li
+            class="template-images__item"
+            v-for="image in imagesList"
+            :key="image.originalName"
+          >
             <a :href="image.href">{{ image.originalName }}</a>
           </li>
         </ul>
@@ -39,7 +45,14 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn @click="deleteImages" :disabled="disabled" text large color="primary">{{$t('template.removeImages')}}</v-btn>
+      <v-btn
+        @click="deleteImages"
+        :disabled="disabled"
+        text
+        large
+        color="primary"
+        >{{ $t('template.removeImages') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

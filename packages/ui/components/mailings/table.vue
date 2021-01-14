@@ -1,10 +1,10 @@
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 
-import { USER, IS_ADMIN } from '~/store/user.js'
+import { USER, IS_ADMIN } from '~/store/user.js';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = [`userName`]
-const TABLE_HIDDEN_COLUMNS_USER = [`actionTransfer`]
+const TABLE_HIDDEN_COLUMNS_ADMIN = [`userName`];
+const TABLE_HIDDEN_COLUMNS_USER = [`actionTransfer`];
 
 export default {
   name: `bs-mailings-table`,
@@ -19,14 +19,14 @@ export default {
     hiddenCols() {
       return this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
-        : TABLE_HIDDEN_COLUMNS_USER
+        : TABLE_HIDDEN_COLUMNS_USER;
     },
     localSelection: {
       get() {
-        return this.mailingsSelection
+        return this.mailingsSelection;
       },
       set(newSelection) {
-        this.$emit(`input`, newSelection)
+        this.$emit(`input`, newSelection);
       },
     },
     tablesHeaders() {
@@ -67,27 +67,27 @@ export default {
           class: `table-column-action`,
           sortable: false,
         },
-      ].filter(column => !this.hiddenCols.includes(column.value))
+      ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     tableOptions() {
       return {
         sortBy: [`updatedAt`],
         sortDesc: [true],
-      }
+      };
     },
   },
   methods: {
     renameMailing(mailing) {
-      this.$emit(`rename`, mailing)
+      this.$emit(`rename`, mailing);
     },
     transferMailing(mailing) {
-      this.$emit(`transfer`, mailing)
+      this.$emit(`transfer`, mailing);
     },
     duplicateMailing(mailing) {
-      this.$emit(`duplicate`, mailing)
+      this.$emit(`duplicate`, mailing);
     },
   },
-}
+};
 </script>
 
 <template>
@@ -103,11 +103,15 @@ export default {
       <a :href="`/mailings/${item.id}`">{{ item.name }}</a>
     </template>
     <template v-slot:item.userName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">{{ item.userName }}</nuxt-link>
+      <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">{{
+        item.userName
+      }}</nuxt-link>
       <span v-else>{{ item.userName }}</span>
     </template>
     <template v-slot:item.templateName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">{{item.templateName }}</nuxt-link>
+      <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">{{
+        item.templateName
+      }}</nuxt-link>
       <span v-else>{{ item.templateName }}</span>
     </template>
     <template v-slot:item.tags="{ item }">
@@ -120,17 +124,32 @@ export default {
       <span>{{ item.updatedAt | preciseDateTime }}</span>
     </template>
     <template v-slot:item.actionRename="{ item }">
-      <v-btn @click="renameMailing(item)" :disabled="loading" icon color="primary">
+      <v-btn
+        @click="renameMailing(item)"
+        :disabled="loading"
+        icon
+        color="primary"
+      >
         <v-icon>title</v-icon>
       </v-btn>
     </template>
     <template v-slot:item.actionTransfer="{ item }">
-      <v-btn @click="transferMailing(item)" :disabled="loading" icon color="primary">
+      <v-btn
+        @click="transferMailing(item)"
+        :disabled="loading"
+        icon
+        color="primary"
+      >
         <v-icon>forward</v-icon>
       </v-btn>
     </template>
     <template v-slot:item.actionDuplicate="{ item }">
-      <v-btn @click="duplicateMailing(item)" :disabled="loading" icon color="primary">
+      <v-btn
+        @click="duplicateMailing(item)"
+        :disabled="loading"
+        icon
+        color="primary"
+      >
         <v-icon>content_copy</v-icon>
       </v-btn>
     </template>

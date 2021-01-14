@@ -52,7 +52,10 @@
 @mosaico-button-background-color: @button-background-color;
 @mosaico-button-background-color-hover: @button-hover-background-color;
 @mosaico-button-border-color: @button-border-color;
-@mosaico-button-shadow-color: lighten(#fff - @mosaico-button-background-color, 30%); // Used in content
+@mosaico-button-shadow-color: lighten(
+  #fff - @mosaico-button-background-color,
+  30%
+); // Used in content
 @mosaico-object-background-color: @object-background-color;
 @mosaico-object-border-radius: @object-border-radius;
 @mosaico-object-shadow: none;
@@ -61,13 +64,13 @@
 @mosaico-accent-color: @accent-color;
 @mosaico-outline-color: currentcolor;
 @mosaico-shadow-color: #808080;
-@mosaico-selection-color: #CC0000;
+@mosaico-selection-color: #cc0000;
 
 // Variabili base usate da voxmail: colori, stili
-@import "style_variables.less";
+@import 'style_variables.less';
 
 // Icone font-awesome (.fa-* , configurable via @fa-css-prefix)
-@import (optional) "font-awesome/less/font-awesome.less";
+@import (optional) 'font-awesome/less/font-awesome.less';
 
 // Mosaico: editing tools (toolbar, left toolbox, right preview)
 @import 'style_mosaico_tools.less';
@@ -77,9 +80,10 @@
 // Base mixins for style_elements_*
 @import 'style_elements_mixins.less';
 // Styles for tinymce/moxiemanager (uses .moxman-* and .moxie-*)
-@import "style_elements_moxie.less";
+@import 'style_elements_moxie.less';
 
-.makeFontAwesome() { // TODO move this in style_utils?
+.makeFontAwesome() {
+  // TODO move this in style_utils?
   visibility: visible;
   font-family: FontAwesome;
   color: #333332;
@@ -90,15 +94,27 @@
 }
 
 @keyframes border-color-selection-pulsate {
-    0% { border-color: @mosaico-outline-color; }
-   40% { border-color: @mosaico-selection-color; }
-   60% { border-color: @mosaico-selection-color; }
-  100% { border-color: @mosaico-outline-color; }
+  0% {
+    border-color: @mosaico-outline-color;
+  }
+  40% {
+    border-color: @mosaico-selection-color;
+  }
+  60% {
+    border-color: @mosaico-selection-color;
+  }
+  100% {
+    border-color: @mosaico-outline-color;
+  }
 }
 
 @keyframes droppable-pulsate {
-  0% { opacity: 1 }
-  100% { opacity: .1 }
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.1;
+  }
 }
 
 .makeDroppable() {
@@ -130,11 +146,12 @@
   position: relative;
 
   &@{borderElementSelector} {
-    content: "";
+    content: '';
     display: block;
     position: absolute;
     // z-index: 0;
-    top: -3px; bottom: -3px;
+    top: -3px;
+    bottom: -3px;
     left: -2px - @size;
     right: -2px - @size;
 
@@ -173,17 +190,18 @@
   &:hover {
     z-index: 11;
   }
-
 }
 
 .makeEditableHover(@size, @editableSelector, @borderElementSelector: ~':before') {
   @{editableSelector}@{borderElementSelector} {
-    content: "";
+    content: '';
     display: block;
     position: absolute;
     // z-index: 0;
-    top: -3px; bottom: -3px;
-    left: -7px; right: -7px;
+    top: -3px;
+    bottom: -3px;
+    left: -7px;
+    right: -7px;
     border: 1px dashed transparent;
     opacity: 0.3;
 
@@ -216,9 +234,13 @@ body {
   margin: 0;
   overflow: hidden; /* otherwsie TinyMCE menues sometimes makes scrollbars show in main body */
 }
-input, select, textarea, button { // input don't inherit font properties from body by default.
+input,
+select,
+textarea,
+button {
+  // input don't inherit font properties from body by default.
   font-family: inherit;
-  font-size: inherit; 
+  font-size: inherit;
   max-width: 100%;
 }
 
@@ -236,7 +258,7 @@ textarea,
 
 // IE/CH
 a[disabledhref] {
-  color: #06C;
+  color: #06c;
   color: -webkit-link;
   text-decoration: underline;
   cursor: auto;
@@ -267,7 +289,8 @@ a[disabledhref]:-moz-read-write {
   overflow: hidden;
 }
 
-#main-edit-area, #toolbar {
+#main-edit-area,
+#toolbar {
   min-width: @mainarea-minwidth;
 }
 
@@ -316,12 +339,13 @@ a[disabledhref]:-moz-read-write {
 #main-edit-area:after,
 #frame-container:before,
 #frame-container:after {
-  content: "";
+  content: '';
   display: block;
   position: absolute;
   border: 0;
   height: @topbar-height;
-  box-shadow: 0px 1px 10px @mosaico-shadow-color, 0px 0px 5px @mosaico-shadow-color;
+  box-shadow: 0px 1px 10px @mosaico-shadow-color,
+    0px 0px 5px @mosaico-shadow-color;
   left: 0;
   right: 0;
   top: 0;
@@ -346,7 +370,7 @@ a[disabledhref]:-moz-read-write {
   bottom: 0;
   overflow-y: auto;
   // http://blog.getpostman.com/2015/01/23/ui-repaint-issue-on-chrome/
-  -webkit-transform: translate3d(0,0,0);
+  -webkit-transform: translate3d(0, 0, 0);
   // overflow-x: hidden;
 }
 
@@ -357,7 +381,6 @@ a[disabledhref]:-moz-read-write {
 
 #main-toolbox .draggable {
   &.image {
-
     width: 85px;
     height: 85px;
     text-align: center;
@@ -382,7 +405,6 @@ a[disabledhref]:-moz-read-write {
   left: 0 !important;
 }
 
-
 .uploading .fileuploadtext {
   display: none;
 }
@@ -398,7 +420,8 @@ a[disabledhref]:-moz-read-write {
   .resetFont();
   font-weight: bold;
 }
-.isdragging, .isdraggingimg {
+.isdragging,
+.isdraggingimg {
   .uploadzone .fileuploadtext {
     display: none !important;
   }
@@ -435,7 +458,7 @@ a[disabledhref]:-moz-read-write {
 
 body > .ui-tooltip {
   .win();
-  
+
   .resetFont();
   // font-family: @font-family;
   // font-size: 1em;
@@ -446,7 +469,7 @@ body > .ui-tooltip {
   position: absolute;
   z-index: 9999;
   max-width: 300px;
-  box-shadow: 0px 0px 5px #AAA;
+  box-shadow: 0px 0px 5px #aaa;
 }
 
 .ui-helper-hidden-accessible {
@@ -463,14 +486,20 @@ body > .ui-tooltip {
 // Show "profile" icon in TinyMCE - TODO remove me
 i.mce-i-newsletter-profile:before {
   content: '\e826'; //@see icon-profile14-noout
-  font-family: "fontello";
+  font-family: 'fontello';
 }
 
 .mo-standalone {
   @keyframes loading {
-      0% { transform: scale(1, 1) rotate(0deg); }
-     50% { transform: scale(1.5, 1.5) rotate(360deg); }
-    100% { transform: scale(1, 1) rotate(720deg); }
+    0% {
+      transform: scale(1, 1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.5, 1.5) rotate(360deg);
+    }
+    100% {
+      transform: scale(1, 1) rotate(720deg);
+    }
   }
 
   #loading.loading img {
@@ -479,9 +508,15 @@ i.mce-i-newsletter-profile:before {
 }
 
 @keyframes broken {
-    0% { opacity: 0 }
-   95% { opacity: 0 }
-  100% { opacity: 1 }
+  0% {
+    opacity: 0;
+  }
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 #loading.loading div {
   animation: broken 10s linear forwards;
@@ -491,23 +526,31 @@ i.mce-i-newsletter-profile:before {
 
 #carousel-dialog {
   .carousel-buttons {
-    position: absolute; right: 5px; bottom: 10px;
+    position: absolute;
+    right: 5px;
+    bottom: 10px;
   }
   .carousel-buttons .button {
     font-size: 1.2em;
   }
   .carousel-remember {
     font-size: 1.2em;
-    position: absolute; left: 10px; bottom: 17px;
+    position: absolute;
+    left: 10px;
+    bottom: 17px;
   }
   .carousel-remember input {
-    vertical-align: middle; margin-right: .2em;
+    vertical-align: middle;
+    margin-right: 0.2em;
   }
   .owl-carousel {
     height: 550px;
   }
   .owl-controls {
-    position: absolute; left: 0; right: 0; bottom: 7px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7px;
   }
   .owl-controls .owl-page.active span {
     background-color: @button-background-color;
@@ -528,7 +571,7 @@ i.mce-i-newsletter-profile:before {
     margin: 0 auto;
   }
   .carousel-help-text p {
-    padding: .5em;
+    padding: 0.5em;
   }
   .carousel-help-image {
   }
@@ -539,14 +582,19 @@ i.mce-i-newsletter-profile:before {
     margin-bottom: 10px;
   }
   .carousel-help-balloon {
-    display: flex; display: -webkit-flex; display: -ms-flexbox;
-    align-items: center; -webkit-align-items: center;
+    display: flex;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    align-items: center;
+    -webkit-align-items: center;
     /*-ms-flex-align: center; -webkit-box-align: center;*/
     justify-content: center;
     text-align: center;
     overflow: auto;
-    padding: 0 .5em;
+    padding: 0 0.5em;
     // fix per IE10
-    > div { width: 100% }
+    > div {
+      width: 100%;
+    }
   }
 }

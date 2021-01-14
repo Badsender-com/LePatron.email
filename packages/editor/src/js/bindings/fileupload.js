@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /* global global: false, Image: false */
 
 // This module depends on those files, but it doesn't have a direct dependency, so we don't require them here.
@@ -10,17 +10,23 @@
 //require("jquery-file-upload/js/jquery.fileupload-image.js");
 //require("jquery-file-upload/js/jquery.fileupload-validate.js");
 
-var $       = require("jquery");
-var ko      = require("knockout");
-var console = require("console");
+var $ = require('jquery');
+var ko = require('knockout');
+var console = require('console');
 
 ko.bindingHandlers['fudroppable'] = {
-  init: function(element, valueAccessor) {
+  init: function (element, valueAccessor) {
     var opt = valueAccessor() || {};
     var timeoutsObj = {};
 
-    var over = function(timeouts, dropZoneTimeout, element, className, observable, event) {
-
+    var over = function (
+      timeouts,
+      dropZoneTimeout,
+      element,
+      className,
+      observable,
+      event
+    ) {
       if (!timeouts[dropZoneTimeout]) {
         if (typeof className !== 'undefined') {
           element.classList.add(className);
@@ -32,7 +38,7 @@ ko.bindingHandlers['fudroppable'] = {
         global.clearTimeout(timeouts[dropZoneTimeout]);
       }
 
-      var stop = function() {
+      var stop = function () {
         timeouts[dropZoneTimeout] = null;
         if (typeof className !== 'undefined') {
           element.classList.remove(className);
@@ -47,27 +53,48 @@ ko.bindingHandlers['fudroppable'] = {
         // Using 100 it doens't work fine on Linux (chome/firefox), using 200 still shows issues on slow Linux boxes
         timeouts[dropZoneTimeout] = global.setTimeout(stop, 500);
       }
-
     };
 
     if (opt.active || opt.activeClass) {
-      ko.utils.registerEventHandler(global, 'dragover', over.bind(undefined, timeoutsObj, 'activeTimeout', element, opt.activeClass, opt.active));
+      ko.utils.registerEventHandler(
+        global,
+        'dragover',
+        over.bind(
+          undefined,
+          timeoutsObj,
+          'activeTimeout',
+          element,
+          opt.activeClass,
+          opt.active
+        )
+      );
     }
     if (opt.hoverClass) {
       // dragenter and dragleave are not required but they speedup feedback when used.
-      ko.utils.registerEventHandler(element, 'dragover dragenter dragleave', over.bind(undefined, timeoutsObj, 'hoverTimeout', element, opt.hoverClass, undefined));
+      ko.utils.registerEventHandler(
+        element,
+        'dragover dragenter dragleave',
+        over.bind(
+          undefined,
+          timeoutsObj,
+          'hoverTimeout',
+          element,
+          opt.hoverClass,
+          undefined
+        )
+      );
     }
-  }
+  },
 };
 
 ko.bindingHandlers['fileupload'] = {
   extendOptions: {},
   // remoteFilePreprocessor method has been set in app.js
-  init: function(element, valueAccessor) {
+  init: function (element, valueAccessor) {
     // TODO domnodedisposal doesn't work when the upload is done by "clicking"
     // Probably jquery-fileupload moves the DOM somewhere else so that KO doesn't
     // detect the removal anymore.
-    ko.utils.domNodeDisposal.addDisposeCallback(element, function() {
+    ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
       $(element).fileupload('destroy');
     });
 
@@ -78,13 +105,17 @@ ko.bindingHandlers['fileupload'] = {
     // webkitNbspMode is not defined in Chrome
     // StyleMedia is defined only in IE/Edge
     // we tried "window.chrome.webstore" but Opera blink based doesn't have this property but still wants the Chrome workaround
-    if (('WebkitAppearance' in global.document.documentElement.style) && !('webkitNbspMode' in global.document.documentElement.style) && !('StyleMedia' in global)) // was global.webkitURL but this gave a deprecation warning
+    if (
+      'WebkitAppearance' in global.document.documentElement.style &&
+      !('webkitNbspMode' in global.document.documentElement.style) &&
+      !('StyleMedia' in global)
+    )
+      // was global.webkitURL but this gave a deprecation warning
       $(element).attr('title', ' ');
-    else
-      $(element).attr('title', '');
+    else $(element).attr('title', '');
   },
 
-  update: function(element, valueAccessor) {
+  update: function (element, valueAccessor) {
     var options = valueAccessor() || {};
 
     var $fu = $(element);
@@ -95,7 +126,6 @@ ko.bindingHandlers['fileupload'] = {
 
     var canvasPreview = options.canvasPreview;
     var cropImage = options.cropImage;
-
 
     // TODO remove hardcoded url
     ko.utils.extend(options, {
@@ -108,7 +138,9 @@ ko.bindingHandlers['fileupload'] = {
       // Enable image resizing, except for Android and Opera,
       // which actually support image resizing, but fail to
       // send Blob objects via XHR requests:
-      disableImageResize: /Android(?!.*Chrome)|Opera/.test(global.navigator.userAgent),
+      disableImageResize: /Android(?!.*Chrome)|Opera/.test(
+        global.navigator.userAgent
+      ),
       previewMaxWidth: 200,
       previewMaxHeight: 200,
       previewCrop: false,
@@ -123,7 +155,8 @@ ko.bindingHandlers['fileupload'] = {
         maxFileSize: 'File is too large',
         minFileSize: 'File is too small',
         // server side
-        post_max_size: 'The uploaded file exceeds the post_max_size directive in php.ini',
+        post_max_size:
+          'The uploaded file exceeds the post_max_size directive in php.ini',
         max_file_size: 'File is too big',
         min_file_size: 'File is too small',
         accept_file_types: 'Filetype not allowed',
@@ -140,8 +173,8 @@ ko.bindingHandlers['fileupload'] = {
         vertical_mirror: 'Vertical mirror',
         horizontal_mirror: 'Horizontal mirror',
         cancel: 'CANCEL',
-        upload: 'UPLOAD'
-      }
+        upload: 'UPLOAD',
+      },
     });
 
     // extendOptions is setted in app.js#start
@@ -150,7 +183,7 @@ ko.bindingHandlers['fileupload'] = {
     var working = 0;
     var firstWorked = '';
 
-    var cleanup = function() {
+    var cleanup = function () {
       if (--working === 0) {
         if (dataValue) {
           dataValue(firstWorked);
@@ -160,12 +193,12 @@ ko.bindingHandlers['fileupload'] = {
           $parent.find('img').show();
           $parent.find('canvas').remove();
         }
-        $parent.removeClass("uploading");
+        $parent.removeClass('uploading');
         $parent.find('.progress-bar').css('width', 0);
       }
     };
 
-    var translatedMessage = function(text) {
+    var translatedMessage = function (text) {
       if (typeof options.messages == 'object' && options.messages !== null) {
         var match = text.match(/^([^ ]+)(.*)$/);
         if (match) {
@@ -187,27 +220,33 @@ ko.bindingHandlers['fileupload'] = {
     }
     // resize images with croppie
     if (cropImage) {
-      options.processQueue = [
-        { action: 'cropImage', }
-      ]
+      options.processQueue = [{ action: 'cropImage' }];
     }
 
     //-----
 
     $fu.fileupload(options);
 
-    var events = ['fileuploadadd', 'fileuploadprocessalways', 'fileuploadprogressall', 'fileuploaddone', 'fileuploadfail'];
-    var eventHandler = function(e, data) {
+    var events = [
+      'fileuploadadd',
+      'fileuploadprocessalways',
+      'fileuploadprogressall',
+      'fileuploaddone',
+      'fileuploadfail',
+    ];
+    var eventHandler = function (e, data) {
       if (e.type == 'fileuploadadd') {
         working++;
       }
       if (e.type == 'fileuploadfail') {
-        console.log("fileuploadfail", e, data);
+        console.log('fileuploadfail', e, data);
         if (options.onerror) {
           if (data.errorThrown === '' && data.textStatus == 'error') {
             options.onerror(translatedMessage('generic'));
           } else {
-            options.onerror(translatedMessage('generic (' + data.errorThrown + ')'));
+            options.onerror(
+              translatedMessage('generic (' + data.errorThrown + ')')
+            );
           }
         }
         cleanup();
@@ -216,7 +255,9 @@ ko.bindingHandlers['fileupload'] = {
         if (typeof data.result.files[0].url !== 'undefined') {
           if (options.onfile) {
             for (var i = 0; i < data.result.files.length; i++) {
-              data.result.files[i] = ko.bindingHandlers['fileupload'].remoteFilePreprocessor(data.result.files[i]);
+              data.result.files[i] = ko.bindingHandlers[
+                'fileupload'
+              ].remoteFilePreprocessor(data.result.files[i]);
               options.onfile(data.result.files[i]);
             }
           }
@@ -232,15 +273,19 @@ ko.bindingHandlers['fileupload'] = {
             cleanup();
           }
         } else if (typeof data.result.files[0].error !== 'undefined') {
-          console.log("remote error", e, data);
+          console.log('remote error', e, data);
           if (options.onerror) {
             options.onerror(translatedMessage(data.result.files[0].error));
           }
           cleanup();
         } else {
-          console.log("unexpected error", e, data);
+          console.log('unexpected error', e, data);
           if (options.onerror) {
-            options.onerror(translatedMessage('generic (Unexpected Error retrieving uploaded file)'));
+            options.onerror(
+              translatedMessage(
+                'generic (Unexpected Error retrieving uploaded file)'
+              )
+            );
           }
           cleanup();
         }
@@ -256,7 +301,7 @@ ko.bindingHandlers['fileupload'] = {
               $parent.find('img').hide();
               $parent.prepend(el);
             }
-            $parent.addClass("uploading");
+            $parent.addClass('uploading');
             $parent.find('.progress-bar').css('width', 0);
           }
         }
@@ -270,7 +315,7 @@ ko.bindingHandlers['fileupload'] = {
         }
       }
       if (e.type == 'fileuploadprogressall') {
-        var progress = parseInt(data.loaded / data.total * 100, 10);
+        var progress = parseInt((data.loaded / data.total) * 100, 10);
         $parent.find('.progress-bar').css('width', progress + '%');
       }
     };
@@ -281,5 +326,5 @@ ko.bindingHandlers['fileupload'] = {
     if (!$.support.fileInput) {
       $fu.prop('disabled', true).parent().addClass('disabled');
     }
-  }
+  },
 };

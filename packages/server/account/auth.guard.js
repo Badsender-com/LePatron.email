@@ -13,7 +13,11 @@ const BearerStrategy = require('passport-http-bearer').Strategy
 const createError = require('http-errors')
 
 const config = require('../node.config.js')
-const { Users, OAuthClients, OAuthTokens } = require('../common/models.common.js')
+const {
+  Users,
+  OAuthClients,
+  OAuthTokens,
+} = require('../common/models.common.js')
 
 const adminUser = Object.freeze({
   isAdmin: true,

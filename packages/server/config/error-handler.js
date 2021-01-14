@@ -31,7 +31,7 @@ function handleValidationErrors(err) {
 // take care of everything
 function formatErrors(err, req, res, next) {
   handleValidationErrors(err)
-    .then(errorMessages => {
+    .then((errorMessages) => {
       req.flash('error', errorMessages)
       res.redirect(req.path)
     })

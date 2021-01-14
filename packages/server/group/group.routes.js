@@ -17,7 +17,6 @@ router.get(`/:groupId`, groups.read)
 router.post(``, groups.create)
 router.get(``, groups.list)
 
-
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   console.log(req.path)

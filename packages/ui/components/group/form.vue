@@ -1,6 +1,6 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
+import { validationMixin } from 'vuelidate';
+import { required } from 'vuelidate/lib/validators';
 
 export default {
   name: `bs-group-form`,
@@ -16,24 +16,30 @@ export default {
   computed: {
     localModel: {
       get() {
-        return this.group
+        return this.group;
       },
       set(updatedGroup) {
-        this.$emit(`update`, updatedGroup)
+        this.$emit(`update`, updatedGroup);
       },
     },
-    folderOptions(){
+    folderOptions() {
       return [
-        { text: this.$t(`forms.group.downloadWithoutEnclosingFolder.wrapped`), value: false },
-        { text: this.$t(`forms.group.downloadWithoutEnclosingFolder.unwrapped`), value: true },
-      ]
+        {
+          text: this.$t(`forms.group.downloadWithoutEnclosingFolder.wrapped`),
+          value: false,
+        },
+        {
+          text: this.$t(`forms.group.downloadWithoutEnclosingFolder.unwrapped`),
+          value: true,
+        },
+      ];
     },
   },
   validations() {
     const cdnValidations = {
       cdnEndPoint: { required },
       cdnButtonLabel: { required },
-    }
+    };
 
     const ftpValidations = {
       ftpHost: { required },
@@ -42,32 +48,32 @@ export default {
       ftpPort: { required },
       ftpPathOnServer: { required },
       ftpEndPoint: { required },
-      ftpButtonLabel: { required }
-    }
+      ftpButtonLabel: { required },
+    };
 
     return {
       group: {
         name: { required },
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
-        ...(this.group.downloadMailingWithFtpImages && ftpValidations)
-      }
-    }
+        ...(this.group.downloadMailingWithFtpImages && ftpValidations),
+      },
+    };
   },
   methods: {
     requiredErrors(fieldName) {
-      const errors = []
-      if (!this.$v.group[fieldName].$dirty) return errors
+      const errors = [];
+      if (!this.$v.group[fieldName].$dirty) return errors;
       !this.$v.group[fieldName].required &&
-        errors.push(this.$t('global.errors.required'))
-      return errors
+        errors.push(this.$t('global.errors.required'));
+      return errors;
     },
     onSubmit() {
-      this.$v.$touch()
-      if (this.$v.$invalid) return
-      this.$emit(`submit`, this.group)
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
+      this.$emit(`submit`, this.group);
     },
   },
-}
+};
 </script>
 
 <template>
@@ -104,7 +110,7 @@ export default {
 
           <v-row>
             <v-col cols="12">
-              <p class="caption ma-0">{{$t('forms.group.exportFtp')}}</p>
+              <p class="caption ma-0">{{ $t('forms.group.exportFtp') }}</p>
               <v-switch
                 :label="$t('global.enable')"
                 class="ma-0"
@@ -202,9 +208,9 @@ export default {
                     :items="$options.httpOptions"
                   />
                 </v-col>
-                
+
                 <v-col cols="4">
-                    <v-text-field
+                  <v-text-field
                     v-model="localModel.ftpEndPoint"
                     id="ftpEndPoint"
                     :label="$t('forms.group.endpoint')"
@@ -236,14 +242,17 @@ export default {
         </v-col>
 
         <v-col cols="5">
-          <p class="caption ma-0">{{$t('forms.group.exportCdn')}}</p>
+          <p class="caption ma-0">{{ $t('forms.group.exportCdn') }}</p>
           <v-switch
             :label="$t('global.enable')"
             class="ma-0"
             v-model="localModel.downloadMailingWithCdnImages"
             :disabled="disabled"
           />
-          <div class="cdn-options" v-if="localModel.downloadMailingWithCdnImages">
+          <div
+            class="cdn-options"
+            v-if="localModel.downloadMailingWithCdnImages"
+          >
             <v-select
               v-model="localModel.cdnProtocol"
               id="cdnProtocol"
@@ -281,7 +290,14 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large color="primary" @click="onSubmit" :disabled="disabled">{{$t('global.save')}}</v-btn>
+      <v-btn
+        text
+        large
+        color="primary"
+        @click="onSubmit"
+        :disabled="disabled"
+        >{{ $t('global.save') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

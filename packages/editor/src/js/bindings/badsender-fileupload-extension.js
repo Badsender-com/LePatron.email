@@ -1,10 +1,10 @@
-'use strict'
+'use strict';
 
-const $ = require('jquery')
-const Cropper = require('cropperjs')
+const $ = require('jquery');
+const Cropper = require('cropperjs');
 
-const raf = window.requestAnimationFrame
-const ACTIVE_CLASS = `bs-img-cropper--active`
+const raf = window.requestAnimationFrame;
+const ACTIVE_CLASS = `bs-img-cropper--active`;
 
 // https://github.com/gabn88/jQuery-File-Upload/commit/8041a660fe6703c048eb24282b18fa9cb7b17400
 // https://github.com/blueimp/jQuery-File-Upload/wiki/Process-queue-API-examples
@@ -13,39 +13,39 @@ const ACTIVE_CLASS = `bs-img-cropper--active`
 $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
   processActions: {
     cropImage(data) {
-      const dfd = $.Deferred()
-      const next = () => dfd.resolveWith(this, [data])
-      const abort = () => dfd.rejectWith(this, [data])
+      const dfd = $.Deferred();
+      const next = () => dfd.resolveWith(this, [data]);
+      const abort = () => dfd.rejectWith(this, [data]);
 
-      const { dropZone, files, index, messages } = data
-      const originalFile = files[index]
-      const { name, type } = originalFile
+      const { dropZone, files, index, messages } = data;
+      const originalFile = files[index];
+      const { name, type } = originalFile;
 
-      if (/gif|svg/.test(type)) return next()
+      if (/gif|svg/.test(type)) return next();
 
-      let imgCropper = false
+      let imgCropper = false;
 
       // convert file to base64
       // • this will be consumed by croppie
-      const reader = new FileReader()
-      reader.readAsDataURL(originalFile)
-      reader.addEventListener(`load`, onFileLoad)
+      const reader = new FileReader();
+      reader.readAsDataURL(originalFile);
+      reader.addEventListener(`load`, onFileLoad);
       reader.addEventListener(`error`, () => {
-        clean()
-        console.error(`can't read the file`)
-      })
+        clean();
+        console.error(`can't read the file`);
+      });
       // image is loaded, so is Croppie.
       // Let's start!
       function onFileLoad() {
-        const fileResult = reader.result
-        const image = new Image()
-        image.src = fileResult
-        image.onload = () => onImageSize(image)
+        const fileResult = reader.result;
+        const image = new Image();
+        image.src = fileResult;
+        image.onload = () => onImageSize(image);
       }
 
       // initialize cropping
       function onImageSize(image) {
-        $(`.js-crop-wrapper`).remove()
+        $(`.js-crop-wrapper`).remove();
         const {
           $wrapper,
           cropZone,
@@ -57,74 +57,74 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
           $submit,
           $width,
           $height,
-        } = createResizePopup(dropZone, messages)
+        } = createResizePopup(dropZone, messages);
 
         // cropper needs an image to begin with
-        $(image).appendTo(cropZone)
+        $(image).appendTo(cropZone);
         // viewMode: 1 restrict dragging
         // • https://github.com/fengyuanchen/cropperjs#viewmode
-        imgCropper = new Cropper(image, { viewMode: 1 })
+        imgCropper = new Cropper(image, { viewMode: 1 });
 
         // bind events
-        $(document).on(`keyup.bs-cropper`, domEvent => {
-          if (domEvent.keyCode === 27) clean(abort)
-        })
-        image.addEventListener(`crop`, cropperEvent => {
-          updateSizeFields({ imgCropper, $width, $height })
-        })
-        $cancel.on(`click`, domEvent => clean(abort))
-        $rotateLeft.on(`click`, domEvent => imgCropper.rotate(-90))
-        $rotateRight.on(`click`, domEvent => imgCropper.rotate(90))
-        let scaleX = 1
-        let scaleY = 1
-        $mirrorHorizontal.on(`click`, domEvent => {
-          scaleX = scaleX * -1
-          imgCropper.scaleX(scaleX)
-        })
-        $mirrorVertical.on(`click`, domEvent => {
-          scaleY = scaleY * -1
-          imgCropper.scaleY(scaleY)
-        })
-        const setSizeFromInput = () => setSize({ imgCropper, $width, $height })
-        $width.on(`input`, setSizeFromInput)
-        $height.on(`input`, setSizeFromInput)
-        $submit.on(`click`, domEvent => crop())
+        $(document).on(`keyup.bs-cropper`, (domEvent) => {
+          if (domEvent.keyCode === 27) clean(abort);
+        });
+        image.addEventListener(`crop`, (cropperEvent) => {
+          updateSizeFields({ imgCropper, $width, $height });
+        });
+        $cancel.on(`click`, (domEvent) => clean(abort));
+        $rotateLeft.on(`click`, (domEvent) => imgCropper.rotate(-90));
+        $rotateRight.on(`click`, (domEvent) => imgCropper.rotate(90));
+        let scaleX = 1;
+        let scaleY = 1;
+        $mirrorHorizontal.on(`click`, (domEvent) => {
+          scaleX = scaleX * -1;
+          imgCropper.scaleX(scaleX);
+        });
+        $mirrorVertical.on(`click`, (domEvent) => {
+          scaleY = scaleY * -1;
+          imgCropper.scaleY(scaleY);
+        });
+        const setSizeFromInput = () => setSize({ imgCropper, $width, $height });
+        $width.on(`input`, setSizeFromInput);
+        $height.on(`input`, setSizeFromInput);
+        $submit.on(`click`, (domEvent) => crop());
         raf(() => {
-          $wrapper.addClass(ACTIVE_CLASS)
-          updateSizeFields({ imgCropper, $width, $height })
-        })
+          $wrapper.addClass(ACTIVE_CLASS);
+          updateSizeFields({ imgCropper, $width, $height });
+        });
       }
 
       // we just need to replace the original File
       // • https://stackoverflow.com/a/43185450/2193440
       // • https://developer.mozilla.org/en-US/docs/Web/API/File/File#Syntax
       function crop() {
-        imgCropper.getCroppedCanvas().toBlob(resultBlob => {
-          const croppedImage = new File([resultBlob], name, { type })
-          data.files[index] = croppedImage
-          clean()
-        })
+        imgCropper.getCroppedCanvas().toBlob((resultBlob) => {
+          const croppedImage = new File([resultBlob], name, { type });
+          data.files[index] = croppedImage;
+          clean();
+        });
       }
 
       function clean(deferredCallback = next) {
-        imgCropper && imgCropper.destroy && imgCropper.destroy()
-        $(document).off(`keyup.bs-cropper`)
-        const $wrapper = $(`.js-crop-wrapper`)
+        imgCropper && imgCropper.destroy && imgCropper.destroy();
+        $(document).off(`keyup.bs-cropper`);
+        const $wrapper = $(`.js-crop-wrapper`);
         if (!$wrapper.length) {
-          console.warn(`image cropper not existing before cleaning`)
-          return deferredCallback()
+          console.warn(`image cropper not existing before cleaning`);
+          return deferredCallback();
         }
-        $wrapper.css(`pointer-events`, `none`)
-        raf(() => $wrapper.removeClass(ACTIVE_CLASS))
-        $wrapper.on(`transitionend`, event => {
-          $wrapper.remove()
-          deferredCallback()
-        })
+        $wrapper.css(`pointer-events`, `none`);
+        raf(() => $wrapper.removeClass(ACTIVE_CLASS));
+        $wrapper.on(`transitionend`, (event) => {
+          $wrapper.remove();
+          deferredCallback();
+        });
       }
-      return dfd.promise()
+      return dfd.promise();
     },
   },
-})
+});
 
 function createResizePopup(dropZone, messages) {
   const markup = `<aside class="bs-img-cropper js-crop-wrapper">
@@ -158,21 +158,21 @@ function createResizePopup(dropZone, messages) {
       <button class="js-crop-submit bs-img-cropper__button" type="button">${messages.upload}</button>
     </div>
   </div>
-</aside>`
+</aside>`;
 
-  dropZone.after(markup)
+  dropZone.after(markup);
 
-  const $wrapper = $(`.js-crop-wrapper`)
-  const $cropZone = $wrapper.find(`.js-crop`)
-  const cropZone = $cropZone[0]
-  const $cancel = $wrapper.find(`.js-crop-cancel`)
-  const $mirrorVertical = $wrapper.find(`.js-crop-mirror-vertical`)
-  const $mirrorHorizontal = $wrapper.find(`.js-crop-mirror-horizontal`)
-  const $rotateLeft = $wrapper.find(`.js-crop-rotate-left`)
-  const $rotateRight = $wrapper.find(`.js-crop-rotate-right`)
-  const $submit = $wrapper.find(`.js-crop-submit`)
-  const $width = $wrapper.find(`#cropper-width`)
-  const $height = $wrapper.find(`#cropper-height`)
+  const $wrapper = $(`.js-crop-wrapper`);
+  const $cropZone = $wrapper.find(`.js-crop`);
+  const cropZone = $cropZone[0];
+  const $cancel = $wrapper.find(`.js-crop-cancel`);
+  const $mirrorVertical = $wrapper.find(`.js-crop-mirror-vertical`);
+  const $mirrorHorizontal = $wrapper.find(`.js-crop-mirror-horizontal`);
+  const $rotateLeft = $wrapper.find(`.js-crop-rotate-left`);
+  const $rotateRight = $wrapper.find(`.js-crop-rotate-right`);
+  const $submit = $wrapper.find(`.js-crop-submit`);
+  const $width = $wrapper.find(`#cropper-width`);
+  const $height = $wrapper.find(`#cropper-height`);
   return {
     $wrapper,
     cropZone,
@@ -184,24 +184,24 @@ function createResizePopup(dropZone, messages) {
     $submit,
     $width,
     $height,
-  }
+  };
 }
 
 function stringToNumber(value) {
-  const parsed = parseInt(value, 10)
-  return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed;
 }
 
 function updateSizeFields({ imgCropper, $width, $height }) {
-  const cropperData = imgCropper.getData(true)
-  $width.val(cropperData.width)
-  $height.val(cropperData.height)
+  const cropperData = imgCropper.getData(true);
+  $width.val(cropperData.width);
+  $height.val(cropperData.height);
 }
 
 function setSize({ imgCropper, $width, $height }) {
-  const [width, height] = [$width, $height].map($el => {
-    return stringToNumber($el.val())
-  })
-  const cropperData = imgCropper.getData(true)
-  imgCropper.setData(Object.assign({}, cropperData, { width, height }))
+  const [width, height] = [$width, $height].map(($el) => {
+    return stringToNumber($el.val());
+  });
+  const cropperData = imgCropper.getData(true);
+  imgCropper.setData(Object.assign({}, cropperData, { width, height }));
 }

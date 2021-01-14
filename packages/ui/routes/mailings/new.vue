@@ -1,9 +1,9 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsTemplateCard from '~/components/template/card.vue'
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsTemplateCard from '~/components/template/card.vue';
 
 export default {
   name: `page-mailings-new`,
@@ -13,32 +13,32 @@ export default {
   },
   components: { BsTemplateCard },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
     return {
       templates: [],
       loading: true,
-    }
+    };
   },
   computed: {
     title() {
-      return `templates`
+      return `templates`;
     },
     safeTemplates() {
-      return this.templates.filter(template => template.hasMarkup)
+      return this.templates.filter((template) => template.hasMarkup);
     },
   },
   async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext
+    const { $axios } = nuxtContext;
     try {
-      const templatesResponse = await $axios.$get(apiRoutes.templates())
-      return { templates: templatesResponse.items }
+      const templatesResponse = await $axios.$get(apiRoutes.templates());
+      return { templates: templatesResponse.items };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   },
-}
+};
 </script>
 
 <template>

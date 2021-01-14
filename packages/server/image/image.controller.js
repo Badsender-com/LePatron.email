@@ -43,7 +43,7 @@ function addCacheControl(res) {
 
 function getTargetDimensions(sizes) {
   sizes = sizes.split('x')
-  sizes = sizes.map(s => (s === 'null' ? null : ~~s))
+  sizes = sizes.map((s) => (s === 'null' ? null : ~~s))
   return sizes
 }
 
@@ -57,7 +57,7 @@ function needResize(value, width, height) {
   return true
 }
 
-const handleFileStreamError = next => err => {
+const handleFileStreamError = (next) => (err) => {
   console.log(red('read stream error'))
   // Local => ENOENT || S3 => NoSuchKey
   const isNotFound = err.code === 'ENOENT' || err.code === 'NoSuchKey'
@@ -65,7 +65,7 @@ const handleFileStreamError = next => err => {
   next(err)
 }
 
-const onWriteResizeEnd = datas => () => {
+const onWriteResizeEnd = (datas) => () => {
   const { path, name, imageName } = datas
 
   // save in DB for cataloging
@@ -75,19 +75,19 @@ const onWriteResizeEnd = datas => () => {
     imageName,
   })
     .save()
-    .then(ci => console.log(green('cache image infos saved in DB', path)))
-    .catch(e => {
+    .then((ci) => console.log(green('cache image infos saved in DB', path)))
+    .catch((e) => {
       console.log(red(`[IMAGE] can't save cache image infos in DB`), path)
       console.log(inspect(e))
     })
 }
 
 // transform /cover/100x100/filename.jpg => cover_100x100_filename.jpg
-const getResizedImageName = path => {
+const getResizedImageName = (path) => {
   return path.replace(/^\//, '').replace(/\//g, '_')
 }
 
-const onWriteResizeError = path => e => {
+const onWriteResizeError = (path) => (e) => {
   console.log(`[IMAGE] can't upload resize/placeholder result`, path)
   console.log(inspect(e))
 }
@@ -144,7 +144,7 @@ const streamImageToResponse = (req, res, next, imageName) => {
   // If not done, we will have a memory leaks
   // https://groups.google.com/d/msg/nodejs/wtmIzV0lh8o/cz3wqBtDc-MJ
   // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
-  imageStream.once('readable', e => {
+  imageStream.once('readable', (e) => {
     addCacheControl(res)
     // try to guess content-type from filename
     // we should do a better thing like a fs-stat
@@ -180,7 +180,7 @@ function checkImageCache(req, res, next) {
   CacheImages.findOne({ path })
     .lean()
     .then(onCacheImage)
-    .catch(e => {
+    .catch((e) => {
       console.log('[CHECK SIZES] error in image cache check')
       console.log(inspect(e))
       next()
@@ -200,7 +200,7 @@ function checkSizes(req, res, next) {
   const imgStream = fileManager.streamImage(imageName)
 
   probe(imgStream)
-    .then(imageDatas => {
+    .then((imageDatas) => {
       // abort connection;
       // https://github.com/nodeca/probe-image-size/blob/master/README.md#example
       imgStream.destroy()
@@ -399,7 +399,7 @@ function read(req, res, next) {
 
 function createGallery(mongoId) {
   // create the gallery in DB
-  return fileManager.list(mongoId).then(files => {
+  return fileManager.list(mongoId).then((files) => {
     return new Galleries({
       creationOrWireframeId: mongoId,
       files,
@@ -462,10 +462,10 @@ async function create(req, res) {
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
   const safeGallery = gallery ? gallery : await createGallery(mongoId)
-  const galleryImages = safeGallery.files.map(file => ({ ...file }))
-  const galleryImagesName = galleryImages.map(file => file.name)
+  const galleryImages = safeGallery.files.map((file) => ({ ...file }))
+  const galleryImagesName = galleryImages.map((file) => file.name)
 
-  uploads.files.forEach(upload => {
+  uploads.files.forEach((upload) => {
     const imageName = upload.name
     const hasAlreadyCurrentFile = galleryImagesName.includes(imageName)
     if (hasAlreadyCurrentFile) return
@@ -498,16 +498,16 @@ function destroy(req, res, next) {
   Galleries.findOne({
     creationOrWireframeId: mongoId,
   })
-    .then(gallery => {
+    .then((gallery) => {
       // TODO: handle non existing gallery
       // mongoID could be incorrect
       const { files } = gallery
-      const imageIndex = files.findIndex(file => file.name === imageName)
+      const imageIndex = files.findIndex((file) => file.name === imageName)
       files.splice(imageIndex, 1)
       gallery.markModified('files')
       return gallery.save()
     })
-    .then(gallery => {
+    .then((gallery) => {
       res.send({ files: gallery.files })
     })
     .catch(next)

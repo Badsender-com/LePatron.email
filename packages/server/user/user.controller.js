@@ -52,9 +52,7 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { groupId } = req.body
-  const group = await Groups.findById(groupId)
-    .select(`_id`)
-    .lean()
+  const group = await Groups.findById(groupId).select(`_id`).lean()
   if (!group) throw new createError.BadRequest(`group not found`)
 
   const userParams = _.pick(req.body, [`name`, `email`, `lang`])
@@ -132,7 +130,7 @@ async function update(req, res) {
   const nameChange = user.name !== userParams.name
   if (nameChange) {
     Mailings.updateMany({ _user: userId }, { author: userParams.name }).then(
-      result => {
+      (result) => {
         console.log(result.nModified, `mailings updated for`, userParams.name)
       },
     )
@@ -265,7 +263,7 @@ async function setPassword(req, res) {
 
   await user.setPassword(req.body.password, user.lang)
   await new Promise((resolve, reject) => {
-    req.login(user, err => {
+    req.login(user, (err) => {
       if (err) return reject(err)
       resolve()
     })

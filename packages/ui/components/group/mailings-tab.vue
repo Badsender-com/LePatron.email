@@ -1,31 +1,31 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsMailingsAdminTable from '~/components/mailings/admin-table.vue'
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 
 export default {
   name: `bs-group-mailings-tab`,
   components: { BsMailingsAdminTable },
   data() {
-    return { mailings: [], loading: false }
+    return { mailings: [], loading: false };
   },
   async mounted() {
     const {
       $axios,
       $route: { params },
-    } = this
+    } = this;
     try {
-      this.loading = true
+      this.loading = true;
       const mailingsResponse = await $axios.$get(
-        apiRoutes.groupsItemMailings(params),
-      )
-      this.mailings = mailingsResponse.items
+        apiRoutes.groupsItemMailings(params)
+      );
+      this.mailings = mailingsResponse.items;
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
-      this.loading = false
+      this.loading = false;
     }
   },
-}
+};
 </script>
 
 <template>

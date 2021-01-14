@@ -1,24 +1,30 @@
-"use strict";
+'use strict';
 
-var $ = require("jquery");
-var ko = require("knockout");
+var $ = require('jquery');
+var ko = require('knockout');
 
 /* knockout droppable, with simplified UMD. */
-;(function(factory) {
+(function (factory) {
   factory(ko, $);
-})(function(ko, $) {
-  var ITEMKEY = "ko_sortItem",
-    INDEXKEY = "ko_sourceIndex",
-    LISTKEY = "ko_sortList",
-    PARENTKEY = "ko_parentList",
-    DRAGKEY = "ko_dragItem",
+})(function (ko, $) {
+  var ITEMKEY = 'ko_sortItem',
+    INDEXKEY = 'ko_sourceIndex',
+    LISTKEY = 'ko_sortList',
+    PARENTKEY = 'ko_parentList',
+    DRAGKEY = 'ko_dragItem',
     unwrap = ko.utils.unwrapObservable,
     dataGet = ko.utils.domData.get,
     dataSet = ko.utils.domData.set;
 
   // 20180308: renamed from droppable to extdroppable to avoid name clash with the newly implemented droppable binding from ko-sortable in version >=1.1.0.
   ko.bindingHandlers.extdroppable = {
-    init: function(element, valueAccessor, allBindingsAccessor, data, context) {
+    init: function (
+      element,
+      valueAccessor,
+      allBindingsAccessor,
+      data,
+      context
+    ) {
       var $element = $(element),
         value = ko.utils.unwrapObservable(valueAccessor()) || {},
         droppable = {},
@@ -37,52 +43,57 @@ var ko = require("knockout");
 
       dropActual = droppable.options.drop;
 
-      $element.droppable(ko.utils.extend(droppable.options, {
-        drop: function(event, ui) {
+      $element.droppable(
+        ko.utils.extend(droppable.options, {
+          drop: function (event, ui) {
+            var el = ui.draggable[0],
+              item = dataGet(el, ITEMKEY) || dataGet(el, DRAGKEY);
 
-          var el = ui.draggable[0],
-            item = dataGet(el, ITEMKEY) || dataGet(el, DRAGKEY);
+            if (item) {
+              if (item.clone) {
+                item = item.clone();
+              }
 
-          if (item) {
+              if (droppable.dragged) {
+                item = droppable.dragged.call(this, item, event, ui) || item;
+              }
 
-            if (item.clone) {
-              item = item.clone();
+              if (droppable.data) {
+                droppable.data(item);
+              }
             }
 
-            if (droppable.dragged) {
-              item = droppable.dragged.call(this, item, event, ui) || item;
+            if (dropActual) {
+              dropActual.apply(this, arguments);
             }
-
-            if (droppable.data) {
-              droppable.data(item);
-            }
-
-          }
-
-          if (dropActual) {
-            dropActual.apply(this, arguments);
-          }
-
-        }
-      }));
+          },
+        })
+      );
 
       //handle enabling/disabling
       if (droppable.isEnabled !== undefined) {
         ko.computed({
-          read: function() {
-            $element.droppable(ko.utils.unwrapObservable(droppable.isEnabled) ? "enable" : "disable");
+          read: function () {
+            $element.droppable(
+              ko.utils.unwrapObservable(droppable.isEnabled)
+                ? 'enable'
+                : 'disable'
+            );
           },
-          disposeWhenNodeIsRemoved: element
+          disposeWhenNodeIsRemoved: element,
         });
       }
-
     },
-    update: function(element, valueAccessor, allBindingsAccessor, data, context) {
-
-    },
+    update: function (
+      element,
+      valueAccessor,
+      allBindingsAccessor,
+      data,
+      context
+    ) {},
     targetIndex: null,
     afterMove: null,
     beforeMove: null,
-    options: {}
+    options: {},
   };
 });

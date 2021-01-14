@@ -4,7 +4,14 @@
 
 var mockery = require('mockery');
 mockery.enable();
-mockery.registerAllowables(['../src/js/converter/declarations.js', 'console', './utils.js', './domutils.js', 'console', '../node_modules/mensch']);
+mockery.registerAllowables([
+  '../src/js/converter/declarations.js',
+  'console',
+  './utils.js',
+  './domutils.js',
+  'console',
+  '../node_modules/mensch',
+]);
 
 /*
 var cheerio = require('cheerio');
@@ -18,47 +25,64 @@ return currentDocument.apply(currentDocument, arguments);
 mockery.registerMock('jquery', require('cheerio'));
 
 mockery.registerMock('jsep', require('../node_modules/jsep/src/jsep.js'));
-mockery.registerMock('mensch/lib/parser.js', function() {
+mockery.registerMock('mensch/lib/parser.js', function () {
   var parse = require('../node_modules/mensch').parse;
   return parse.apply(parse, arguments);
 });
 var elaborateDeclarations = require('../src/js/converter/declarations.js');
 
-var mockedBindingProvider = function(a, b) {
+var mockedBindingProvider = function (a, b) {
   // console.log("binding provider for", a, b);
-  return "$" + a + "[" + b + "]";
+  return '$' + a + '[' + b + ']';
 };
 
-var templateUrlConverter = function(url) {
+var templateUrlConverter = function (url) {
   return url;
-}
+};
 
-describe('Template converter', function() {
-
-  it('should handle basic template conversion', function() {
+describe('Template converter', function () {
+  it('should handle basic template conversion', function () {
     var modelDef = require('../src/js/converter/model.js');
     var translateTemplate = require('../src/js/converter/parser.js');
     var templates = [];
     var $ = require('jquery');
-    var myTemplateCreator = function(htmlOrElement, optionalName, templateMode) {
+    var myTemplateCreator = function (
+      htmlOrElement,
+      optionalName,
+      templateMode
+    ) {
       templates.push({
         optionalName: optionalName,
         templateMode: templateMode,
-        html: typeof htmlOrElement == 'object' ? $.html(htmlOrElement) : htmlOrElement
+        html:
+          typeof htmlOrElement == 'object'
+            ? $.html(htmlOrElement)
+            : htmlOrElement,
       });
     };
-    var html = '<replacedhtml><replacedhead></replacedhead><repleacedbody><div data-ko-container="main"><div data-ko-block="simpleBlock"><div data-ko-editable="text">block1</div></div></div></replacedbody></replacedhtml>';
-    var templateDef = translateTemplate('template', html, './basepath/', myTemplateCreator);
+    var html =
+      '<replacedhtml><replacedhead></replacedhead><repleacedbody><div data-ko-container="main"><div data-ko-block="simpleBlock"><div data-ko-editable="text">block1</div></div></div></replacedbody></replacedhtml>';
+    var templateDef = translateTemplate(
+      'template',
+      html,
+      './basepath/',
+      myTemplateCreator
+    );
 
-    var expectedTemplates = [{
-      optionalName: 'template',
-      templateMode: 'show',
-      html: '<replacedhtml data-bind=""><replacedhead></replacedhead><repleacedbody><div data-bind="block: mainBlocks"></div></repleacedbody></replacedhtml>'
-    }, {
-      optionalName: 'simpleBlock',
-      templateMode: 'show',
-      html: '<div data-bind="attr: { id: id }, uniqueId: $data"><div data-bind="wysiwygId: id()+&apos;_text&apos;, wysiwygClick: function(obj, evt) { $root.selectItem(text, $data); return false }, clickBubble: false, wysiwygCss: { selecteditem: $root.isSelectedItem(text) }, scrollIntoView: $root.isSelectedItem(text), wysiwygOrHtml: text"></div></div>'
-    }];
+    var expectedTemplates = [
+      {
+        optionalName: 'template',
+        templateMode: 'show',
+        html:
+          '<replacedhtml data-bind=""><replacedhead></replacedhead><repleacedbody><div data-bind="block: mainBlocks"></div></repleacedbody></replacedhtml>',
+      },
+      {
+        optionalName: 'simpleBlock',
+        templateMode: 'show',
+        html:
+          '<div data-bind="attr: { id: id }, uniqueId: $data"><div data-bind="wysiwygId: id()+&apos;_text&apos;, wysiwygClick: function(obj, evt) { $root.selectItem(text, $data); return false }, clickBubble: false, wysiwygCss: { selecteditem: $root.isSelectedItem(text) }, scrollIntoView: $root.isSelectedItem(text), wysiwygOrHtml: text"></div></div>',
+      },
+    ];
 
     expect(templates).toEqual(expectedTemplates);
 
@@ -68,12 +92,12 @@ describe('Template converter', function() {
       type: 'template',
       mainBlocks: {
         type: 'blocks',
-        blocks: []
+        blocks: [],
       },
       theme: {
         type: 'theme',
-        bodyTheme: null
-      }
+        bodyTheme: null,
+      },
     };
 
     expect(model).toEqual(expectedModel);
@@ -82,34 +106,54 @@ describe('Template converter', function() {
     // console.log("RESULT", templateDef);
   });
 
-  it('should handle versafix-1 template conversion', function() {
+  it('should handle versafix-1 template conversion', function () {
     var modelDef = require('../src/js/converter/model.js');
     var translateTemplate = require('../src/js/converter/parser.js');
     var templates = [];
     var $ = require('jquery');
-    var myTemplateCreator = function(htmlOrElement, optionalName, templateMode) {
+    var myTemplateCreator = function (
+      htmlOrElement,
+      optionalName,
+      templateMode
+    ) {
       templates.push({
         optionalName: optionalName,
         templateMode: templateMode,
-        html: typeof htmlOrElement == 'object' ? $.html(htmlOrElement) : htmlOrElement
+        html:
+          typeof htmlOrElement == 'object'
+            ? $.html(htmlOrElement)
+            : htmlOrElement,
       });
     };
 
     var fs = require('fs');
 
-    var templatecode = "" + fs.readFileSync("spec/data/template-versafix-1.html");
-    var res = templatecode.match(/^([\S\s]*)([<]html[^>]*>[\S\s]*<\/html>)([\S\s]*)$/i);
-    if (res === null) throw "Unable to find <html> opening and closing tags in the template";
-    var html = res[2].replace(/(<\/?)(html|head|body)([^>]*>)/gi, function(match, p1, p2, p3) {
-      return p1 + 'replaced' + p2 + p3;
-    });
+    var templatecode =
+      '' + fs.readFileSync('spec/data/template-versafix-1.html');
+    var res = templatecode.match(
+      /^([\S\s]*)([<]html[^>]*>[\S\s]*<\/html>)([\S\s]*)$/i
+    );
+    if (res === null)
+      throw 'Unable to find <html> opening and closing tags in the template';
+    var html = res[2].replace(
+      /(<\/?)(html|head|body)([^>]*>)/gi,
+      function (match, p1, p2, p3) {
+        return p1 + 'replaced' + p2 + p3;
+      }
+    );
 
-    var templateDef = translateTemplate('template', html, templateUrlConverter, myTemplateCreator);
+    var templateDef = translateTemplate(
+      'template',
+      html,
+      templateUrlConverter,
+      myTemplateCreator
+    );
     var model = modelDef.generateResultModel(templateDef);
 
-    var expectedModel = JSON.parse("" + fs.readFileSync("spec/data/template-versafix-1.model.json"));
+    var expectedModel = JSON.parse(
+      '' + fs.readFileSync('spec/data/template-versafix-1.model.json')
+    );
 
     expect(model).toEqual(expectedModel);
   });
-
 });

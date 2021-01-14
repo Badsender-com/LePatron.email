@@ -1,7 +1,7 @@
 <script>
 export default {
   name: `bs-layout-left-menu`,
-}
+};
 </script>
 
 <template>

@@ -1,14 +1,14 @@
-"use strict";
+'use strict';
 
 // Parses CSS/stylesheets declarations -ko-blockdefs/-ko-themes
 // It returns KO bindings but doesn't depend on KO
 // Needs a bindingProvider
 // Also uses a blockDefsUpdater to update definitions while parsing the stylesheet.
 
-var cssParse = require("mensch/lib/parser.js");
-var console = require("console");
-var converterUtils = require("./utils.js");
-var elaborateDeclarations = require("./declarations.js");
+var cssParse = require('mensch/lib/parser.js');
+var console = require('console');
+var converterUtils = require('./utils.js');
+var elaborateDeclarations = require('./declarations.js');
 
 /* Temporary experimental code not used
 var _processStyleSheetRules_processThemes = function (bindingProvider, themeUpdater, rules) {
@@ -32,18 +32,21 @@ var _processStyleSheetRules_processThemes = function (bindingProvider, themeUpda
 };
 */
 
-var _removeOptionalQuotes = function(str) {
-  if ((str[0] == "'" || str[0] == '"') && str[str.length-1] == str[0]) {
+var _removeOptionalQuotes = function (str) {
+  if ((str[0] == "'" || str[0] == '"') && str[str.length - 1] == str[0]) {
     // unescapeing
-    var res = str.substr(1, str.length-2).replace(/\\([\s\S])/gm, '$1');
+    var res = str.substr(1, str.length - 2).replace(/\\([\s\S])/gm, '$1');
     return res;
   }
   return str;
 };
 
-var _processStyleSheetRules_processBlockDef = function(blockDefsUpdater, rules) {
+var _processStyleSheetRules_processBlockDef = function (
+  blockDefsUpdater,
+  rules
+) {
   var properties, namedProps, decls;
-  // name, contextName, globalStyle, themeOverride, extend, min, max, widget, options, category, variant, help, blockDescription, version, 
+  // name, contextName, globalStyle, themeOverride, extend, min, max, widget, options, category, variant, help, blockDescription, version,
   for (var i = 0; i < rules.length; i++) {
     if (rules[i].type == 'rule') {
       var sels = rules[i].selectors;
@@ -57,31 +60,40 @@ var _processStyleSheetRules_processBlockDef = function(blockDefsUpdater, rules) 
         }
       }
       if (hasPreviews && hasDeclarations) {
-        console.log("cannot mix selectors type (:preview and declarations) in @supports -ko-blockdefs ", sels);
-        throw "Cannot mix selectors type (:preview and declarations) in @supports -ko-blockdefs";
+        console.log(
+          'cannot mix selectors type (:preview and declarations) in @supports -ko-blockdefs ',
+          sels
+        );
+        throw 'Cannot mix selectors type (:preview and declarations) in @supports -ko-blockdefs';
       }
       if (!hasPreviews && !hasDeclarations) {
-        console.log("cannot find known selectors in @supports -ko-blockdefs ", sels);
-        throw "Cannot find known selectors in @supports -ko-blockdefs";
+        console.log(
+          'cannot find known selectors in @supports -ko-blockdefs ',
+          sels
+        );
+        throw 'Cannot find known selectors in @supports -ko-blockdefs';
       }
       if (hasDeclarations) {
         properties = '';
         namedProps = {};
 
         decls = rules[i].declarations;
-        for (var k = 0, val; k < decls.length; k++) if (decls[k].type == 'property') {
-          val = _removeOptionalQuotes(decls[k].value);
-          if (decls[k].name == 'label') namedProps.name = val;
-          else if (decls[k].name == 'context') namedProps.contextName = val;
-          else if (decls[k].name == 'properties') properties = val;
-          else if (decls[k].name == 'theme') namedProps.globalStyle = '_theme_.' + val;
-          else if (decls[k].name == 'themeOverride') namedProps.themeOverride = String(val).toLowerCase() == 'true';
-          else namedProps[decls[k].name] = val;
-          // NOTE in past we detected unsupported properties, while now we simple push every declaration in a namedProperty.
-          // This make it harder to spot errors in declarations.
-          // Named properties we supported were extend, min, max, options, widget, category, variant, help, blockDescription, version
-          // console.warn("Unknown property processing @supports -ko-blockdefs ", decls[k], sels);
-        }
+        for (var k = 0, val; k < decls.length; k++)
+          if (decls[k].type == 'property') {
+            val = _removeOptionalQuotes(decls[k].value);
+            if (decls[k].name == 'label') namedProps.name = val;
+            else if (decls[k].name == 'context') namedProps.contextName = val;
+            else if (decls[k].name == 'properties') properties = val;
+            else if (decls[k].name == 'theme')
+              namedProps.globalStyle = '_theme_.' + val;
+            else if (decls[k].name == 'themeOverride')
+              namedProps.themeOverride = String(val).toLowerCase() == 'true';
+            else namedProps[decls[k].name] = val;
+            // NOTE in past we detected unsupported properties, while now we simple push every declaration in a namedProperty.
+            // This make it harder to spot errors in declarations.
+            // Named properties we supported were extend, min, max, options, widget, category, variant, help, blockDescription, version
+            // console.warn("Unknown property processing @supports -ko-blockdefs ", decls[k], sels);
+          }
         for (var l = 0; l < sels.length; l++) {
           blockDefsUpdater(sels[l], properties, namedProps);
         }
@@ -90,28 +102,41 @@ var _processStyleSheetRules_processBlockDef = function(blockDefsUpdater, rules) 
         for (var m = 0; m < sels.length; m++) {
           var localBlockName = sels[m].substr(0, sels[m].indexOf(':'));
           var previewBindings = rules[i].declarations;
-          blockDefsUpdater(localBlockName, undefined, { previewBindings: previewBindings });
+          blockDefsUpdater(localBlockName, undefined, {
+            previewBindings: previewBindings,
+          });
         }
       }
-
     } else {
       // Ignoring comments or other content
     }
   }
 };
 
-var processStylesheetRules = function(style, rules, localWithBindingProvider, blockDefsUpdater, themeUpdater, templateUrlConverter, rootModelName, templateName) {
+var processStylesheetRules = function (
+  style,
+  rules,
+  localWithBindingProvider,
+  blockDefsUpdater,
+  themeUpdater,
+  templateUrlConverter,
+  rootModelName,
+  templateName
+) {
   var newStyle = style;
   var lastStart = null;
 
   if (typeof rules == 'undefined') {
     var styleSheet = cssParse(style, {
       comments: true,
-      position: true
+      position: true,
     });
-    if (styleSheet.type != 'stylesheet' || typeof styleSheet.stylesheet == 'undefined') {
-      console.log("unable to process styleSheet", styleSheet);
-      throw "Unable to parse stylesheet";
+    if (
+      styleSheet.type != 'stylesheet' ||
+      typeof styleSheet.stylesheet == 'undefined'
+    ) {
+      console.log('unable to process styleSheet', styleSheet);
+      throw 'Unable to parse stylesheet';
     }
     rules = styleSheet.stylesheet.rules;
   }
@@ -125,7 +150,15 @@ var processStylesheetRules = function(style, rules, localWithBindingProvider, bl
   for (var i = rules.length - 1; i >= 0; i--) {
     if (rules[i].type == 'supports' && rules[i].name == '-ko-blockdefs') {
       _processStyleSheetRules_processBlockDef(blockDefsUpdater, rules[i].rules);
-      newStyle = converterUtils.removeStyle(newStyle, rules[i].position.start, lastStart, 0, 0, 0, '');
+      newStyle = converterUtils.removeStyle(
+        newStyle,
+        rules[i].position.start,
+        lastStart,
+        0,
+        0,
+        0,
+        ''
+      );
       /* temporary experimental code not used
       } else if (rules[i].type == 'supports' && rules[i].name == '-ko-themes') {
         bindingProvider = localWithBindingProvider.bind(this, 'theme', '');
@@ -133,41 +166,91 @@ var processStylesheetRules = function(style, rules, localWithBindingProvider, bl
         newStyle = converterUtils.removeStyle(newStyle, rules[i].position.start, lastStart, 0, 0, 0, '');
       */
     } else if (rules[i].type == 'media' || rules[i].type == 'supports') {
-      newStyle = processStylesheetRules(newStyle, rules[i].rules, localWithBindingProvider, blockDefsUpdater, themeUpdater, templateUrlConverter, rootModelName, templateName);
+      newStyle = processStylesheetRules(
+        newStyle,
+        rules[i].rules,
+        localWithBindingProvider,
+        blockDefsUpdater,
+        themeUpdater,
+        templateUrlConverter,
+        rootModelName,
+        templateName
+      );
     } else if (rules[i].type == 'comment') {
       // ignore comments
     } else if (rules[i].type == 'rule') {
       var sels = rules[i].selectors;
-      var newSel = "";
+      var newSel = '';
       var foundBlockMatch = null;
       for (var j = 0; j < sels.length; j++) {
-        if (newSel.length > 0) newSel += ", ";
+        if (newSel.length > 0) newSel += ', ';
         var match = sels[j].match(/\[data-ko-block=([^ ]*)\]/);
         if (match !== null) {
-          if (foundBlockMatch !== null && foundBlockMatch != match[1]) throw "Found multiple block-match attribute selectors: cannot translate it (" + foundBlockMatch + " vs " + match[1] + ")";
+          if (foundBlockMatch !== null && foundBlockMatch != match[1])
+            throw (
+              'Found multiple block-match attribute selectors: cannot translate it (' +
+              foundBlockMatch +
+              ' vs ' +
+              match[1] +
+              ')'
+            );
           foundBlockMatch = match[1];
         }
         if (sels[j].includes(`#main-wysiwyg-area`)) {
           newSel += sels[j];
         } else {
-          newSel += '<!-- ko text: templateMode ==\'wysiwyg\' ? \'#main-wysiwyg-area \' : \'\' --><!-- /ko -->' + sels[j];
+          newSel +=
+            "<!-- ko text: templateMode =='wysiwyg' ? '#main-wysiwyg-area ' : '' --><!-- /ko -->" +
+            sels[j];
         }
       }
       if (foundBlockMatch) {
-        var loopPrefix = '<!-- ko foreach: $root.findObjectsOfType($data, \'' + foundBlockMatch + '\') -->';
+        var loopPrefix =
+          "<!-- ko foreach: $root.findObjectsOfType($data, '" +
+          foundBlockMatch +
+          "') -->";
         var loopPostfix = '<!-- /ko -->';
         var end = lastStart;
-        var spacing = " ";
+        var spacing = ' ';
         if (rules[i].declarations.length > 0) {
-          if (rules[i].declarations[0].position.start.line != rules[i].position.end.line) {
-            spacing = "\n" + (new Array(rules[i].position.start.col)).join(" ");
+          if (
+            rules[i].declarations[0].position.start.line !=
+            rules[i].position.end.line
+          ) {
+            spacing = '\n' + new Array(rules[i].position.start.col).join(' ');
           }
-          end = rules[i].declarations[rules[i].declarations.length - 1].position.end;
+          end =
+            rules[i].declarations[rules[i].declarations.length - 1].position
+              .end;
         }
         if (end === null) newStyle += spacing + loopPostfix;
-        else if (end == lastStart) newStyle = converterUtils.removeStyle(newStyle, end, lastStart, 0, 0, 0, spacing + loopPostfix);
-        else newStyle = converterUtils.removeStyle(newStyle, end, lastStart, 0, 0, 0, spacing + '}' + spacing + loopPostfix);
-        newSel = loopPrefix + spacing + newSel.replace(new RegExp('\\[data-ko-block=' + foundBlockMatch + '\\]', 'g'), '<!-- ko text: \'#\'+id() -->' + foundBlockMatch + '<!-- /ko -->');
+        else if (end == lastStart)
+          newStyle = converterUtils.removeStyle(
+            newStyle,
+            end,
+            lastStart,
+            0,
+            0,
+            0,
+            spacing + loopPostfix
+          );
+        else
+          newStyle = converterUtils.removeStyle(
+            newStyle,
+            end,
+            lastStart,
+            0,
+            0,
+            0,
+            spacing + '}' + spacing + loopPostfix
+          );
+        newSel =
+          loopPrefix +
+          spacing +
+          newSel.replace(
+            new RegExp('\\[data-ko-block=' + foundBlockMatch + '\\]', 'g'),
+            "<!-- ko text: '#'+id() -->" + foundBlockMatch + '<!-- /ko -->'
+          );
 
         blockDefsUpdater(foundBlockMatch, '', { contextName: 'block' });
       }
@@ -175,12 +258,29 @@ var processStylesheetRules = function(style, rules, localWithBindingProvider, bl
       // newSel += " {";
       var localBlockName = foundBlockMatch ? foundBlockMatch : templateName;
       bindingProvider = localWithBindingProvider.bind(this, localBlockName, '');
-      var elaboratedStyle = elaborateDeclarations(newStyle, rules[i].declarations, templateUrlConverter, bindingProvider);
+      var elaboratedStyle = elaborateDeclarations(
+        newStyle,
+        rules[i].declarations,
+        templateUrlConverter,
+        bindingProvider
+      );
       if (elaboratedStyle !== null) newStyle = elaboratedStyle;
 
-      newStyle = converterUtils.removeStyle(newStyle, rules[i].position.start, rules[i].position.end, 0, 0, 0, newSel);
+      newStyle = converterUtils.removeStyle(
+        newStyle,
+        rules[i].position.start,
+        rules[i].position.end,
+        0,
+        0,
+        0,
+        newSel
+      );
     } else {
-      console.log("Unknown rule type", rules[i].type, "while parsing <style> rules");
+      console.log(
+        'Unknown rule type',
+        rules[i].type,
+        'while parsing <style> rules'
+      );
     }
     lastStart = rules[i].position.start;
   }

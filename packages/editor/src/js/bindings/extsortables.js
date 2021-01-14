@@ -1,26 +1,29 @@
-"use strict";
+'use strict';
 /* globals global: true */
 
-var $ = require("jquery");
-var ko = require("knockout");
-var sortable = require("jquery-ui/ui/widgets/sortable");
-var draggable = require("jquery-ui/ui/widgets/draggable");
-var console = require("console");
-require("knockout-sortable");
+var $ = require('jquery');
+var ko = require('knockout');
+var sortable = require('jquery-ui/ui/widgets/sortable');
+var draggable = require('jquery-ui/ui/widgets/draggable');
+var console = require('console');
+require('knockout-sortable');
 
-if (typeof sortable == 'undefined') throw "Cannot find jquery-ui sortable widget dependency!";
-if (typeof draggable == 'undefined') throw "Cannot find jquery-ui sortable widget dependency!";
+if (typeof sortable == 'undefined')
+  throw 'Cannot find jquery-ui sortable widget dependency!';
+if (typeof draggable == 'undefined')
+  throw 'Cannot find jquery-ui sortable widget dependency!';
 
-var isDraggingHelper = function(writable, e) {
+var isDraggingHelper = function (writable, e) {
   if (writable()) {
     if (e.type == writable() + 'stop') writable(false);
   } else {
-    if (e.type == 'dragstart' || e.type == 'sortstart') writable(e.type.substring(0, 4));
+    if (e.type == 'dragstart' || e.type == 'sortstart')
+      writable(e.type.substring(0, 4));
   }
 };
 
-var makeExtendedValueAccessor = function(valueAccessor) {
-  return function() {
+var makeExtendedValueAccessor = function (valueAccessor) {
+  return function () {
     var modelValue = valueAccessor(),
       unwrappedValue = ko.utils.peekObservable(modelValue); // Unwrap without setting a dependency here
 
@@ -31,10 +34,14 @@ var makeExtendedValueAccessor = function(valueAccessor) {
     }
 
     var origStart = modelValue.options.start;
-    modelValue.options.start = function(e, ui) {
-      if (typeof modelValue.dragging != 'undefined' && ko.isWritableObservable(modelValue.dragging)) isDraggingHelper(modelValue.dragging, e);
+    modelValue.options.start = function (e, ui) {
+      if (
+        typeof modelValue.dragging != 'undefined' &&
+        ko.isWritableObservable(modelValue.dragging)
+      )
+        isDraggingHelper(modelValue.dragging, e);
       if (typeof modelValue.dropContainer != 'undefined') {
-        modelValue.scrollInterval = global.setInterval(function() {
+        modelValue.scrollInterval = global.setInterval(function () {
           var foo = $(modelValue.dropContainer).scrollTop();
           $(modelValue.dropContainer).scrollTop(foo + modelValue.adding);
         }, 20);
@@ -42,15 +49,19 @@ var makeExtendedValueAccessor = function(valueAccessor) {
       if (typeof origStart != 'undefined') return origStart(e, ui);
     };
     var origStop = modelValue.options.stop;
-    modelValue.options.stop = function(e, ui) {
-      if (typeof modelValue.dragging != 'undefined' && ko.isWritableObservable(modelValue.dragging)) isDraggingHelper(modelValue.dragging, e);
+    modelValue.options.stop = function (e, ui) {
+      if (
+        typeof modelValue.dragging != 'undefined' &&
+        ko.isWritableObservable(modelValue.dragging)
+      )
+        isDraggingHelper(modelValue.dragging, e);
       if (typeof modelValue.dropContainer != 'undefined') {
         global.clearInterval(modelValue.scrollInterval);
       }
       if (typeof origStop != 'undefined') return origStop(e, ui);
     };
     var origDrag = modelValue.options.drag;
-    modelValue.options.drag = function(e, ui) {
+    modelValue.options.drag = function (e, ui) {
       if (typeof modelValue.dropContainer != 'undefined') {
         var top = e.pageY - $(modelValue.dropContainer).offset().top;
         var bottom = top - $(modelValue.dropContainer).height();
@@ -85,19 +96,55 @@ var makeExtendedValueAccessor = function(valueAccessor) {
 };
 
 ko.bindingHandlers.extsortable = {
-  init: function(element, valueAccessor, allBindingsAccessor, data, context) {
-    return ko.bindingHandlers.sortable.init(element, makeExtendedValueAccessor(valueAccessor), allBindingsAccessor, data, context);
+  init: function (element, valueAccessor, allBindingsAccessor, data, context) {
+    return ko.bindingHandlers.sortable.init(
+      element,
+      makeExtendedValueAccessor(valueAccessor),
+      allBindingsAccessor,
+      data,
+      context
+    );
   },
-  update: function(element, valueAccessor, allBindingsAccessor, data, context) {
-    return ko.bindingHandlers.sortable.update(element, makeExtendedValueAccessor(valueAccessor), allBindingsAccessor, data, context);
-  }
+  update: function (
+    element,
+    valueAccessor,
+    allBindingsAccessor,
+    data,
+    context
+  ) {
+    return ko.bindingHandlers.sortable.update(
+      element,
+      makeExtendedValueAccessor(valueAccessor),
+      allBindingsAccessor,
+      data,
+      context
+    );
+  },
 };
 
 ko.bindingHandlers.extdraggable = {
-  init: function(element, valueAccessor, allBindingsAccessor, data, context) {
-    return ko.bindingHandlers.draggable.init(element, makeExtendedValueAccessor(valueAccessor), allBindingsAccessor, data, context);
+  init: function (element, valueAccessor, allBindingsAccessor, data, context) {
+    return ko.bindingHandlers.draggable.init(
+      element,
+      makeExtendedValueAccessor(valueAccessor),
+      allBindingsAccessor,
+      data,
+      context
+    );
   },
-  update: function(element, valueAccessor, allBindingsAccessor, data, context) {
-    return ko.bindingHandlers.draggable.update(element, makeExtendedValueAccessor(valueAccessor), allBindingsAccessor, data, context);
-  }
+  update: function (
+    element,
+    valueAccessor,
+    allBindingsAccessor,
+    data,
+    context
+  ) {
+    return ko.bindingHandlers.draggable.update(
+      element,
+      makeExtendedValueAccessor(valueAccessor),
+      allBindingsAccessor,
+      data,
+      context
+    );
+  },
 };

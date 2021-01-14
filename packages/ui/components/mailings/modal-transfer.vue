@@ -1,10 +1,10 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
-import { mapMutations } from 'vuex'
+import { validationMixin } from 'vuelidate';
+import { required } from 'vuelidate/lib/validators';
+import { mapMutations } from 'vuex';
 
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
   name: `bs-mailings-modal-transfer`,
@@ -22,93 +22,103 @@ export default {
       loadingUsersList: false,
       group: {},
       users: [],
-    }
+    };
   },
   watch: {
     currentTemplateId(templateId) {
-      if (!templateId) return
-      this.getUsersList(templateId)
+      if (!templateId) return;
+      this.getUsersList(templateId);
     },
   },
   validations() {
     return {
       userId: { required },
-    }
+    };
   },
   computed: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
     localModel: {
       get() {
-        return this.dialogInfo
+        return this.dialogInfo;
       },
       set(updatedValue) {
-        this.$emit(`update`, updatedValue)
+        this.$emit(`update`, updatedValue);
       },
     },
     // make a computed so we can watch in a clean manner the nested prop change
     currentTemplateId() {
-      return this.dialogInfo.templateId
+      return this.dialogInfo.templateId;
     },
     userIdErrors() {
-      const errors = []
-      if (!this.$v.userId.$dirty) return errors
+      const errors = [];
+      if (!this.$v.userId.$dirty) return errors;
       !this.$v.userId.required &&
-        errors.push(this.$t('global.errors.userRequired'))
-      return errors
+        errors.push(this.$t('global.errors.userRequired'));
+      return errors;
     },
   },
 
   methods: {
     closeDialog() {
-      this.userId = ``
-      this.group = {}
-      this.users = []
-      this.$v.$reset()
-      this.$emit(`close`)
+      this.userId = ``;
+      this.group = {};
+      this.users = [];
+      this.$v.$reset();
+      this.$emit(`close`);
     },
     transferMailing() {
-      this.$v.$touch()
-      if (this.$v.$invalid) return
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
       this.$emit(`transfer`, {
         mailingId: this.dialogInfo.mailingId,
         userId: this.userId,
-      })
-      this.closeDialog()
+      });
+      this.closeDialog();
     },
     async getUsersList(templateId) {
-      this.loadingUsersList = true
-      const { $axios } = this
+      this.loadingUsersList = true;
+      const { $axios } = this;
       try {
         const template = await $axios.$get(
-          apiRoutes.templatesItem({ templateId }),
-        )
-        this.group = template.group
-        const groupId = template.group.id
+          apiRoutes.templatesItem({ templateId })
+        );
+        this.group = template.group;
+        const groupId = template.group.id;
         const groupUsers = await $axios.$get(
-          apiRoutes.groupsItemUsers({ groupId }),
-        )
-        this.users = groupUsers.items
+          apiRoutes.groupsItemUsers({ groupId })
+        );
+        this.users = groupUsers.items;
       } catch (error) {
         this.showSnackbar({
           text: this.$t('snackbars.userFetchError'),
           color: `error`,
-        })
-        this.closeDialog()
+        });
+        this.closeDialog();
       } finally {
-        this.loadingUsersList = false
+        this.loadingUsersList = false;
       }
     },
   },
-}
+};
 </script>
 
 <template>
-  <v-dialog class="bs-mailings-modal-rename" v-model="localModel.show" width="500">
+  <v-dialog
+    class="bs-mailings-modal-rename"
+    v-model="localModel.show"
+    width="500"
+  >
     <v-card>
-      <v-card-title class="headline">{{ $t('mailings.transfer.label') }}</v-card-title>
+      <v-card-title class="headline">{{
+        $t('mailings.transfer.label')
+      }}</v-card-title>
       <v-card-text>
-        <v-progress-linear :active="loadingUsersList" indeterminate color="light-blue" />
+        <v-progress-linear
+          :active="loadingUsersList"
+          indeterminate
+          color="light-blue"
+        />
         <v-select
           v-model="userId"
           id="transferUserId"
@@ -126,16 +136,18 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="closeDialog">{{ $t(`global.cancel`) }}</v-btn>
+        <v-btn color="primary" text @click="closeDialog">{{
+          $t(`global.cancel`)
+        }}</v-btn>
         <v-btn
           :disabled="loadingUsersList"
           color="primary"
           @click="transferMailing"
-        >{{ $t(`global.update`) }}</v-btn>
+          >{{ $t(`global.update`) }}</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

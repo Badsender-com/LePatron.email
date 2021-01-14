@@ -224,14 +224,14 @@ module.exports = function launchServer() {
   const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js')
 
   // API routes
-  app.use(`/api/groups`,groupRouter)
-  app.use(`/api/mailings`,mailingRouter)
-  app.use(`/api/templates`,templateRouter)
-  app.use(`/api/users`,userRouter)
-  app.use(`/api/images`,imageRouter)
-  app.use(`/api/account`,accountRouter)
+  app.use(`/api/groups`, groupRouter)
+  app.use(`/api/mailings`, mailingRouter)
+  app.use(`/api/templates`, templateRouter)
+  app.use(`/api/users`, userRouter)
+  app.use(`/api/images`, imageRouter)
+  app.use(`/api/account`, accountRouter)
   app.use(`/api/version`, versionRouter)
-  
+
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js')
   app.get(

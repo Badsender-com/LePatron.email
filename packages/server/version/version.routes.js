@@ -5,7 +5,6 @@ const createError = require('http-errors')
 
 const pkg = require('../../../package.json')
 
-
 const router = express.Router()
 
 //////

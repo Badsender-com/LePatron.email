@@ -78,7 +78,7 @@ const GroupSchema = Schema(
     },
     ftpPathOnServer: {
       type: String,
-      default: './'
+      default: './',
     },
     ftpEndPoint: {
       type: String,

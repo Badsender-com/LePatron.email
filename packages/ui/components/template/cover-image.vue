@@ -7,19 +7,24 @@ export default {
   },
   computed: {
     hasImage() {
-      return this.src !== ``
+      return this.src !== ``;
     },
     componentClasses() {
-      return { 'bs-template-cover-image--cover': this.fitCover }
+      return { 'bs-template-cover-image--cover': this.fitCover };
     },
   },
-}
+};
 </script>
 
 <template>
   <figure class="bs-template-cover-image" :class="componentClasses">
     <!-- https://web.dev/native-lazy-loading/ -->
-    <img v-if="hasImage" class="bs-template-cover-image__image" loading="lazy" :src="src" />
+    <img
+      v-if="hasImage"
+      class="bs-template-cover-image__image"
+      loading="lazy"
+      :src="src"
+    />
   </figure>
 </template>
 

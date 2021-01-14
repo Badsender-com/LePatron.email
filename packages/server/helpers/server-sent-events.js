@@ -7,7 +7,7 @@ const SSE_CONNECTION_CLOSED = Symbol(`SSE_CONNECTION_CLOSED`)
 
 function createConnectionStatusPromise() {
   let res
-  const promise = new Promise(resolve => {
+  const promise = new Promise((resolve) => {
     res = resolve
   })
   promise.resolve = () => res(SSE_CONNECTION_CLOSED)
@@ -49,7 +49,7 @@ async function writeSSEResponse(res, data, isConnectionClosed = isRequired()) {
   res.flush()
 }
 
-const safeEventsHandler = asyncCallback => async data => {
+const safeEventsHandler = (asyncCallback) => async (data) => {
   try {
     await asyncCallback(data)
   } catch (error) {

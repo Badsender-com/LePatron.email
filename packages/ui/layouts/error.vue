@@ -1,27 +1,27 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
 
 export default {
   name: `pio-template-error`,
   mixins: [mixinPageTitle],
   props: [`error`],
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   mounted() {
-    console.log(this.error)
+    console.log(this.error);
   },
   computed: {
     title() {
-      return `error – ${this.error.statusCode}`
+      return `error – ${this.error.statusCode}`;
     },
   },
-}
+};
 </script>
 
 <template>
   <main class="bs-page-error" role="main">
-    <h1 class="bs-page-error__code display-4">{{error.statusCode}}</h1>
+    <h1 class="bs-page-error__code display-4">{{ error.statusCode }}</h1>
     <h2 class="bs-page-error__message display-2" v-text="error.message" />
     <h3
       class="bs-page-error__server-message"
@@ -33,7 +33,6 @@ export default {
     </p>
   </main>
 </template>
-
 
 <style lang="scss" scoped>
 .bs-page-error {

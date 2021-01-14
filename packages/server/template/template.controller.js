@@ -60,9 +60,7 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { groupId } = req.body
-  const group = await Groups.findById(groupId)
-    .select(`_id`)
-    .lean()
+  const group = await Groups.findById(groupId).select(`_id`).lean()
   if (!group) throw new createError.BadRequest(`group not found`)
 
   const templateParams = _.pick(req.body, [`name`, `description`])
@@ -173,7 +171,7 @@ async function update(req, res, next) {
     Mailings.updateMany(
       { _wireframe: templateId },
       { wireframe: body.name },
-    ).then(result => {
+    ).then((result) => {
       console.log(result.nModified, `mailings updated for`, userParams.name)
     })
   }
@@ -205,7 +203,7 @@ async function destroy(req, res) {
   const mailings = await Mailings.find({ _wireframe: templateId })
     .select({ _id: 1 })
     .lean()
-  const mailingsId = mailings.map(mailing => mailing._id)
+  const mailingsId = mailings.map((mailing) => mailing._id)
   // Mongo responseFormat
   // { n: 1, ok: 1, deletedCount: 1 }
   const [mailingDeletionResult, galleryDeletionResult] = await Promise.all([

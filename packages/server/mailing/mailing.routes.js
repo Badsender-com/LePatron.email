@@ -3,13 +3,10 @@
 const express = require('express')
 const createError = require('http-errors')
 
-
-
 const router = express.Router()
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js')
 const mailings = require('./mainling.controller.js')
-
 
 router.post(
   `/:mailingId/mosaico/send-test-mail`,

@@ -19,10 +19,7 @@ function writeStreamFromPath(file) {
   const destPath = path.join(config.images.uploadDir, file.name)
   const source = fs.createReadStream(file.path)
   const dest = fs.createWriteStream(destPath)
-  source
-    .pipe(dest)
-    .on('error', deferred.reject)
-    .on('close', deferred.resolve)
+  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve)
   return deferred
 }
 
@@ -30,24 +27,21 @@ function writeStreamFromStream(source, name) {
   const deferred = defer()
   const destPath = path.join(config.images.uploadDir, name)
   const dest = fs.createWriteStream(destPath)
-  source
-    .pipe(dest)
-    .on('error', deferred.reject)
-    .on('close', deferred.resolve)
+  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve)
   return deferred
 }
 
 function listImages(prefix) {
   const prefixRegexp = new RegExp(`^${prefix}`)
 
-  return fs.readdir(config.images.uploadDir).then(files => {
-    files = files.filter(file => prefixRegexp.test(file)).map(formatName)
+  return fs.readdir(config.images.uploadDir).then((files) => {
+    files = files.filter((file) => prefixRegexp.test(file)).map(formatName)
     return Promise.resolve(files)
   })
 }
 
 function copyImages(oldPrefix, newPrefix) {
-  return listImages(oldPrefix).then(files => {
+  return listImages(oldPrefix).then((files) => {
     files = files.map(copy)
     return Promise.all(files)
   })

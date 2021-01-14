@@ -136,7 +136,10 @@ async function read(req, res) {
 async function readMosaico(req, res) {
   const { mailingId } = req.params
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId })
-  const mailingForMosaico = await Mailings.findOneForMosaico(query, req.user.lang)
+  const mailingForMosaico = await Mailings.findOneForMosaico(
+    query,
+    req.user.lang,
+  )
   if (!mailingForMosaico) throw new createError.NotFound()
 
   res.json(mailingForMosaico)
@@ -245,7 +248,10 @@ async function updateMosaico(req, res) {
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified(`data`)
   await mailing.save()
-  const mailingForMosaico = await Mailings.findOneForMosaico(query, req.user.lang)
+  const mailingForMosaico = await Mailings.findOneForMosaico(
+    query,
+    req.user.lang,
+  )
   res.json(mailingForMosaico)
 }
 
@@ -284,13 +290,13 @@ async function bulkUpdate(req, res) {
     _id: 1,
     tags: 1,
   })
-  const updateQueries = userMailings.map(mailing => {
+  const updateQueries = userMailings.map((mailing) => {
     const { tags: orignalTags } = mailing
     const uniqueUpdatedTags = [
       ...new Set([...tagsChanges.added, ...orignalTags]),
     ]
     const updatedTags = uniqueUpdatedTags.filter(
-      tag => !tagsChanges.removed.includes(tag),
+      (tag) => !tagsChanges.removed.includes(tag),
     )
     mailing.tags = updatedTags.map(cleanTagName).sort()
     return mailing.save()
@@ -331,7 +337,7 @@ async function bulkDestroy(req, res) {
   const userMailings = await Mailings.find(mailingQuery)
     .select({ _id: 1 })
     .lean()
-  const safeMailingsIdList = userMailings.map(mailing =>
+  const safeMailingsIdList = userMailings.map((mailing) =>
     Types.ObjectId(mailing._id),
   )
   // Mongo responseFormat
@@ -344,7 +350,9 @@ async function bulkDestroy(req, res) {
     }),
   ])
   console.log({ mailingDeletionResult, galleryDeletionResult })
-  const tags = await Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {}))
+  const tags = await Mailings.findTags(
+    modelsUtils.addStrictGroupFilter(req.user, {}),
+  )
 
   res.json({
     meta: { tags },

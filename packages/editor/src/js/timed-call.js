@@ -1,24 +1,26 @@
-"use strict";
+'use strict';
 
-var console = require("console");
+var console = require('console');
 
-var _call = function(whatToCall) {
+var _call = function (whatToCall) {
   return whatToCall();
 };
 
 var logs = [];
 
-var _timedCall = function(name, whatToCall) {
+var _timedCall = function (name, whatToCall) {
   var res;
   var start = new Date().getTime();
   if (typeof console == 'object' && console.time) console.time(name);
   res = _call(whatToCall);
   if (typeof console == 'object' && console.time) console.timeEnd(name);
   var diff = new Date().getTime() - start;
-  if (typeof console == 'object' && !console.time) if (typeof console.debug == 'function') console.debug(name, "took", diff, "ms");
+  if (typeof console == 'object' && !console.time)
+    if (typeof console.debug == 'function')
+      console.debug(name, 'took', diff, 'ms');
   logs.push({
     name: name,
-    time: diff
+    time: diff,
   });
   // max logs
   if (logs.length > 100) logs.unshift();
@@ -27,5 +29,5 @@ var _timedCall = function(name, whatToCall) {
 
 module.exports = {
   timedCall: _timedCall,
-  logs: logs
+  logs: logs,
 };

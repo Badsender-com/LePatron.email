@@ -1,16 +1,17 @@
-"use strict";
+'use strict';
 
 // Overrides native jQuery spinner to avoid validation of the "step".
 // We wants to use the step but also wants to leave the user the ability to select specific values.
 
 var $ = require('jquery');
-var spinner = require("jquery-ui/ui/widgets/spinner");
+var spinner = require('jquery-ui/ui/widgets/spinner');
 var console = require('console');
 
-if (typeof spinner == 'undefined') throw "Cannot find jquery-ui spinner widget dependency!";
+if (typeof spinner == 'undefined')
+  throw 'Cannot find jquery-ui spinner widget dependency!';
 
-$.widget("ui.spinner", spinner, {
-  _adjustValue: function(value) {
+$.widget('ui.spinner', spinner, {
+  _adjustValue: function (value) {
     var adj = this._super(value);
 
     var options = this.options;
@@ -27,5 +28,5 @@ $.widget("ui.spinner", spinner, {
     }
 
     return value;
-  }
+  },
 });

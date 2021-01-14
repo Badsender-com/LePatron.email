@@ -1,6 +1,6 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js'
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js'
+import * as apiRoutes from '~/helpers/api-routes.js';
+import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
 
 export default {
   name: `bs-templates-table`,
@@ -40,32 +40,34 @@ export default {
           align: `center`,
           class: `table-column-action`,
         },
-      ].filter(column => !this.hiddenCols.includes(column.value))
+      ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     localLoading: {
       get() {
-        return this.loading
+        return this.loading;
       },
       set(newLoading) {
-        this.$emit(`update`, newLoading)
+        this.$emit(`update`, newLoading);
       },
     },
   },
   methods: {
     async deleteItem(item) {
-      console.log(item)
+      console.log(item);
     },
   },
-}
+};
 </script>
 
 <template>
   <v-data-table :headers="tableHeaders" :items="templates" class="elevation-1">
     <template v-slot:item.name="{ item }">
-      <nuxt-link :to="`/templates/${item.id}`">{{item.name}}</nuxt-link>
+      <nuxt-link :to="`/templates/${item.id}`">{{ item.name }}</nuxt-link>
     </template>
     <template v-slot:item.group="{ item }">
-      <nuxt-link :to="`/groups/${item.group.id}`">{{item.group.name}}</nuxt-link>
+      <nuxt-link :to="`/groups/${item.group.id}`">{{
+        item.group.name
+      }}</nuxt-link>
     </template>
     <template v-slot:item.hasMarkup="{ item }">
       <v-icon v-if="item.hasMarkup">check</v-icon>

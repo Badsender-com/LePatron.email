@@ -38,7 +38,7 @@ function handleTemplatesUploads(fields, files, resolve) {
   // we want to store any images that have been uploaded on the current model
   if (files.images) {
     if (Array.isArray(files.images)) {
-      files.images.forEach(file => imageToFields(fields, file))
+      files.images.forEach((file) => imageToFields(fields, file))
     } else {
       imageToFields(fields, files.images)
     }
@@ -48,7 +48,7 @@ function handleTemplatesUploads(fields, files, resolve) {
   if (files.markup && files.markup.name) {
     // read content from file system
     // no worry about performance: only admin will do it
-    readFile(files.markup.path).then(text => {
+    readFile(files.markup.path).then((text) => {
       fields.markup = text
       resolve(fields)
     })

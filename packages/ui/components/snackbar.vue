@@ -1,13 +1,13 @@
 <script>
-import { mapState, mapMutations } from 'vuex'
+import { mapState, mapMutations } from 'vuex';
 
-import { PAGE, CLOSE_SNACKBAR } from '~/store/page.js'
+import { PAGE, CLOSE_SNACKBAR } from '~/store/page.js';
 
 export default {
   name: `bs-snackbar`,
   computed: {
     ...mapState(PAGE, {
-      snackbar: state => state.snackbar,
+      snackbar: (state) => state.snackbar,
     }),
   },
   methods: {
@@ -15,7 +15,7 @@ export default {
       closeSnackbar: CLOSE_SNACKBAR,
     }),
   },
-}
+};
 </script>
 
 <template>
@@ -28,6 +28,6 @@ export default {
     :multi-line="snackbar.multiline === true"
   >
     {{ snackbar.text }}
-    <v-btn text dark @click="closeSnackbar">{{$t('global.close')}}</v-btn>
+    <v-btn text dark @click="closeSnackbar">{{ $t('global.close') }}</v-btn>
   </v-snackbar>
 </template>

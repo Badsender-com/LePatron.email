@@ -68,7 +68,7 @@ async function downloadZip(req, res, next) {
     ftpPort,
     ftpEndPoint,
     ftpEndPointProtocol,
-    ftpPathOnServer
+    ftpPathOnServer,
   } = group
 
   const archive = archiver(`zip`)
@@ -130,7 +130,7 @@ async function downloadZip(req, res, next) {
   //       styleUrls.push(result[1])
   //     }
   //   })
-  
+
   const remainingUrlsRegex = /https?:\S+\.(jpg|jpeg|png|gif){1}/g
   const allImages = html.match(remainingUrlsRegex)
 
@@ -144,7 +144,7 @@ async function downloadZip(req, res, next) {
   // Don't use Cheerio because:
   // • when exporting it's messing with ESP tags
   // • Cheerio won't handle IE comments
-  allImages.forEach(imgUrl => {
+  allImages.forEach((imgUrl) => {
     const escImgUrl = _.escapeRegExp(imgUrl)
     const imageName = getImageName(imgUrl)
     const relativeUrl = `${IMAGES_FOLDER}/${imageName}`
@@ -153,7 +153,7 @@ async function downloadZip(req, res, next) {
     const search = new RegExp(escImgUrl, 'g')
     html = html.replace(search, relativeUrl)
   })
-  
+
   archive.on(`error`, next)
 
   // on stream closed we can end the request
@@ -168,18 +168,20 @@ async function downloadZip(req, res, next) {
   // this is the streaming magic
   archive.pipe(res)
 
-  const cdnDownload = downloadMailingWithCdnImages && downloadOptions.downLoadForCdn
-  const ftpDownload = downloadMailingWithFtpImages && downloadOptions.downLoadForFtp
+  const cdnDownload =
+    downloadMailingWithCdnImages && downloadOptions.downLoadForCdn
+  const ftpDownload =
+    downloadMailingWithFtpImages && downloadOptions.downLoadForFtp
   const regularDownload = !cdnDownload && !ftpDownload
 
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
-    const imagesRequest = allImages.map(imageUrl => {
+    const imagesRequest = allImages.map((imageUrl) => {
       const imageName = getImageName(imageUrl)
       const defer = createPromise()
       const imgRequest = request(imageUrl)
 
-      imgRequest.on('response', response => {
+      imgRequest.on('response', (response) => {
         // only happen images with a code of 200
         if (response.statusCode === 200) {
           archive.append(imgRequest, {
@@ -189,7 +191,7 @@ async function downloadZip(req, res, next) {
         }
         defer.resolve()
       })
-      imgRequest.on('error', imgError => {
+      imgRequest.on('error', (imgError) => {
         console.log('[ZIP] error during downloading', imageUrl)
         console.log(imgError)
         // still resolve, just don't add this errored image to the archive
@@ -201,8 +203,17 @@ async function downloadZip(req, res, next) {
 
     await Promise.all(imagesRequest)
   } else {
-    const ftpClient = new ftp(ftpHost, ftpPort, ftpUsername, ftpPassword, ftpProtocol)
-    const folderPath = ftpPathOnServer + (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') + `${name}/`
+    const ftpClient = new ftp(
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+    )
+    const folderPath =
+      ftpPathOnServer +
+      (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
+      `${name}/`
 
     ftpClient.upload(allImages, folderPath)
   }
@@ -219,11 +230,15 @@ async function downloadZip(req, res, next) {
     })
   } else {
     // archive
-    const endpointBase = cdnDownload ? `${cdnProtocol}${cdnEndPoint}` : `${ftpEndPointProtocol}${ftpEndPoint}`
-    const endpointPath = `${endpointBase}${endpointBase.substr(endpointBase.length - 1) === '/' ? '' : '/'}${name}`
+    const endpointBase = cdnDownload
+      ? `${cdnProtocol}${cdnEndPoint}`
+      : `${ftpEndPointProtocol}${ftpEndPoint}`
+    const endpointPath = `${endpointBase}${
+      endpointBase.substr(endpointBase.length - 1) === '/' ? '' : '/'
+    }${name}`
     let html = processedHtml
 
-    relativesImagesNames.forEach(imageName => {
+    relativesImagesNames.forEach((imageName) => {
       const imgRegex = new RegExp(`${IMAGES_FOLDER}\/${imageName}`, `g`)
       html = html.replace(imgRegex, `${endpointPath}/${imageName}`)
     })
@@ -237,7 +252,7 @@ async function downloadZip(req, res, next) {
       const CDN_MD_NOTICE = createCdnMarkdownNotice(
         name,
         endpointPath,
-        relativesImagesNames
+        relativesImagesNames,
       )
       archive.append(CDN_MD_NOTICE, {
         prefix,
@@ -246,7 +261,7 @@ async function downloadZip(req, res, next) {
       const CDN_HTML_NOTICE = createHtmlNotice(
         name,
         endpointPath,
-        relativesImagesNames
+        relativesImagesNames,
       )
       archive.append(CDN_HTML_NOTICE, {
         prefix,
@@ -280,11 +295,15 @@ ${CDN_PATH}
 
 ## Liste des images à mettre sur le CDN :
 
-${relativesImagesNames.map(img => `- [${img}](${CDN_PATH}/${img})`).join(`\n`)}
+${relativesImagesNames
+  .map((img) => `- [${img}](${CDN_PATH}/${img})`)
+  .join(`\n`)}
 
 ## Aperçu des images présentes sur le CDN
 
-${relativesImagesNames.map(img => `![${img}](${CDN_PATH}/${img})`).join(`\n\n`)}
+${relativesImagesNames
+  .map((img) => `![${img}](${CDN_PATH}/${img})`)
+  .join(`\n\n`)}
 
 `
 }
@@ -306,7 +325,7 @@ ${CDN_PATH}
 
 <ol>
 ${relativesImagesNames
-  .map(img => `<li><a href="${CDN_PATH}/${img}">${img}</a></li>`)
+  .map((img) => `<li><a href="${CDN_PATH}/${img}">${img}</a></li>`)
   .join(`\n`)}
 </ol>
 
@@ -314,7 +333,7 @@ ${relativesImagesNames
 
 <ol>
 ${relativesImagesNames
-  .map(img => `<li><img src="${CDN_PATH}/${img}" /></li>`)
+  .map((img) => `<li><img src="${CDN_PATH}/${img}" /></li>`)
   .join(`\n`)}
 </ol>
 `

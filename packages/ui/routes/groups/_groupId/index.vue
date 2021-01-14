@@ -1,15 +1,15 @@
 <script>
-import { mapMutations } from 'vuex'
+import { mapMutations } from 'vuex';
 
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js'
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsGroupMenu from '~/components/group/menu.vue'
-import BsGroupForm from '~/components/group/form.vue'
-import BsGroupTemplatesTab from '~/components/group/templates-tab.vue'
-import BsGroupMailingsTab from '~/components/group/mailings-tab.vue'
-import BsGroupUsersTab from '~/components/group/users-tab.vue'
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsGroupMenu from '~/components/group/menu.vue';
+import BsGroupForm from '~/components/group/form.vue';
+import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
+import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
+import BsGroupUsersTab from '~/components/group/users-tab.vue';
 
 export default {
   name: `bs-page-group`,
@@ -25,27 +25,27 @@ export default {
     BsGroupMailingsTab,
   },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
     return {
       tab: `group-templates`,
       group: {},
       loading: false,
-    }
+    };
   },
   computed: {
     title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name}`
+      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
     },
   },
   async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext
+    const { $axios, params } = nuxtContext;
     try {
-      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params))
-      return { group: groupResponse }
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+      return { group: groupResponse };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   },
   methods: {
@@ -54,24 +54,30 @@ export default {
       const {
         $axios,
         $route: { params },
-      } = this
+      } = this;
       try {
-        this.loading = true
+        this.loading = true;
         const group = await $axios.$put(
           apiRoutes.groupsItem(params),
-          this.group,
-        )
-        this.showSnackbar({ text: this.$t('snackbars.updated'), color: `success` })
-        this.mixinPageTitleUpdateTitle(this.title)
+          this.group
+        );
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: `success`,
+        });
+        this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
   },
-}
+};
 </script>
 
 <template>
@@ -81,12 +87,19 @@ export default {
     </template>
     <v-tabs centered v-model="tab">
       <v-tabs-slider color="accent" />
-      <v-tab href="#group-informations">{{$t('groups.tabs.informations')}}</v-tab>
-      <v-tab href="#group-templates">{{$tc('global.template', 2)}}</v-tab>
-      <v-tab href="#group-mailings">{{$tc('global.mailing', 2)}}</v-tab>
-      <v-tab href="#group-users">{{$tc('global.user', 2)}}</v-tab>
+      <v-tab href="#group-informations">{{
+        $t('groups.tabs.informations')
+      }}</v-tab>
+      <v-tab href="#group-templates">{{ $tc('global.template', 2) }}</v-tab>
+      <v-tab href="#group-mailings">{{ $tc('global.mailing', 2) }}</v-tab>
+      <v-tab href="#group-users">{{ $tc('global.user', 2) }}</v-tab>
       <v-tab-item value="group-informations" eager>
-        <bs-group-form v-model="group" flat :disabled="loading" @submit="updateGroup" />
+        <bs-group-form
+          v-model="group"
+          flat
+          :disabled="loading"
+          @submit="updateGroup"
+        />
       </v-tab-item>
       <v-tab-item value="group-templates">
         <bs-group-templates-tab />

@@ -6,21 +6,21 @@ export default {
     actionLabel: { type: String, default: '' },
   },
   data() {
-    return { show: false }
+    return { show: false };
   },
   methods: {
     open() {
-      this.show = true
+      this.show = true;
     },
     close() {
-      this.show = false
+      this.show = false;
     },
     action() {
-      this.close()
-      this.$emit(`confirm`)
+      this.close();
+      this.$emit(`confirm`);
     },
   },
-}
+};
 </script>
 
 <template>
@@ -33,7 +33,9 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">{{$t(`global.cancel`)}}</v-btn>
+        <v-btn color="primary" text @click="close">{{
+          $t(`global.cancel`)
+        }}</v-btn>
         <v-btn color="primary" @click="action">{{ actionLabel }}</v-btn>
       </v-card-actions>
     </v-card>

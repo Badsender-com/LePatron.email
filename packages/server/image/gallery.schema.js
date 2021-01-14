@@ -25,8 +25,8 @@ const GallerySchema = Schema(
     files: {
       type: [],
       // make sure we have the right format for a gallery
-      get: files => {
-        return files.map(file => formatFilenameForJqueryFileupload(file.name))
+      get: (files) => {
+        return files.map((file) => formatFilenameForJqueryFileupload(file.name))
       },
     },
   },
@@ -47,8 +47,8 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   this.creationOrWireframeId = newCreationId
 
   // update the files names & path
-  this.files = this.files.map(file => {
-    Object.keys(file).forEach(key => {
+  this.files = this.files.map((file) => {
+    Object.keys(file).forEach((key) => {
       file[key] = file[key].replace(oldCreationId, newCreationId)
     })
     return file

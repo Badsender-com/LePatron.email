@@ -6,7 +6,11 @@ const mongooseHidden = require('mongoose-hidden')()
 
 const config = require('../node.config.js')
 const { normalizeString } = require('../utils/model')
-const { UserModel, TemplateModel, GroupModel } = require('../constant/model.names')
+const {
+  UserModel,
+  TemplateModel,
+  GroupModel,
+} = require('../constant/model.names')
 
 const { Schema, Types } = mongoose
 const { ObjectId } = Schema.Types
@@ -121,12 +125,11 @@ MailingSchema.statics.findForApi = async function findForApi(
   query = {},
   sortParams = { updatedAt: -1 },
 ) {
-  const mailings = await this.find(query)
-    .populate({
-      path: `_company`,
-      select: { id: 1, name: 1 },
-    })
-    // .sort(sortParams)
+  const mailings = await this.find(query).populate({
+    path: `_company`,
+    select: { id: 1, name: 1 },
+  })
+  // .sort(sortParams)
   return mailings
 }
 
@@ -145,15 +148,16 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   //   // { $sort: { _id: 1 } },
   // ])
 
-  const mailings = await this.find(query)
-    .populate({
-      path: `_company`,
-      select: { tags: 1 },
-    })
-    // .sort({tags: -1})
+  const mailings = await this.find(query).populate({
+    path: `_company`,
+    select: { tags: 1 },
+  })
+  // .sort({tags: -1})
 
   let tags = []
-  mailings.forEach(mailing => tags = [...new Set([...tags, ...mailing.tags])])
+  mailings.forEach(
+    (mailing) => (tags = [...new Set([...tags, ...mailing.tags])]),
+  )
 
   return tags
 }
@@ -271,7 +275,6 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       cdnButtonLabel: group.cdnButtonLabel,
       ftpImages: group.downloadMailingWithFtpImages,
       ftpButtonLabel: group.ftpButtonLabel,
-      
     },
     // Mosaico absolutely need an object as `data`
     data: mailing.data || {},

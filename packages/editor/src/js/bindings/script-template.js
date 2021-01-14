@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /* globals global: false */
 
 function pushTemplate(templateName, templateText) {
@@ -26,5 +26,5 @@ module.exports = {
   init: init,
   addTemplate: pushTemplate,
   removeTemplate: removeTemplate,
-  getTemplateContent: getTemplateContent
+  getTemplateContent: getTemplateContent,
 };

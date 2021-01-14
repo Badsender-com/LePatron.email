@@ -1,6 +1,6 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
+import { validationMixin } from 'vuelidate';
+import { required } from 'vuelidate/lib/validators';
 
 export default {
   name: `bs-template-form`,
@@ -15,37 +15,38 @@ export default {
       template: {
         name: { required },
       },
-    }
+    };
   },
   computed: {
     localModel: {
       get() {
-        return this.template
+        return this.template;
       },
       set(updatedTemplate) {
-        this.$emit(`update`, updatedTemplate)
+        this.$emit(`update`, updatedTemplate);
       },
     },
     nameErrors() {
-      const errors = []
-      if (!this.$v.template.name.$dirty) return errors
-      !this.$v.template.name.required && errors.push(this.$t('global.errors.nameRequired'))
-      return errors
+      const errors = [];
+      if (!this.$v.template.name.$dirty) return errors;
+      !this.$v.template.name.required &&
+        errors.push(this.$t('global.errors.nameRequired'));
+      return errors;
     },
   },
   methods: {
     onSubmit() {
-      this.$v.$touch()
-      if (this.$v.$invalid) return
-      this.$emit(`submit`, this.template)
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
+      this.$emit(`submit`, this.template);
     },
   },
-}
+};
 </script>
 
 <template>
   <v-card tag="form">
-    <v-card-title>{{$t('global.newTemplate')}}</v-card-title>
+    <v-card-title>{{ $t('global.newTemplate') }}</v-card-title>
     <v-card-text>
       <v-text-field
         v-model="localModel.name"
@@ -69,7 +70,14 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large color="primary" @click="onSubmit" :disabled="disabled">{{$t('global.create')}}</v-btn>
+      <v-btn
+        text
+        large
+        color="primary"
+        @click="onSubmit"
+        :disabled="disabled"
+        >{{ $t('global.create') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

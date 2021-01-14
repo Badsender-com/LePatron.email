@@ -9,7 +9,7 @@ const { mailReady } = require('../mailing/mailing.service.js')
 
 //----- MONGO DATABASE
 
-mongoose.connection.once('open', e => {
+mongoose.connection.once('open', (e) => {
   console.log(chalk.green(`[SERVICES] DB – connection ok`))
 })
 
@@ -22,7 +22,7 @@ const dbConnection = mongoose.connect(config.database, {
   retryWrites: false,
 })
 
-dbConnection.catch(dbConnectionError => {
+dbConnection.catch((dbConnectionError) => {
   console.log(chalk.red(`[SERVICES] DB – can't connect`))
   console.log(util.inspect(dbConnectionError, { colors: true }))
 })
@@ -30,7 +30,7 @@ dbConnection.catch(dbConnectionError => {
 //----- GLOBAL CHECK
 
 const areReady = Promise.all([config.setup, dbConnection, mailReady]).catch(
-  serviceDependenciesError => {
+  (serviceDependenciesError) => {
     console.log(
       chalk.red(
         `[SERVICES] One or more service dependency is preventing the application from running properly`,

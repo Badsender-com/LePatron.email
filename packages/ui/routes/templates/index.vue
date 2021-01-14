@@ -1,8 +1,8 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsTemplatesTable from '~/components/templates/table.vue'
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsTemplatesTable from '~/components/templates/table.vue';
 
 export default {
   name: `page-templates`,
@@ -12,31 +12,31 @@ export default {
     acl: acls.ACL_ADMIN,
   },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
-    return { templates: [] }
+    return { templates: [] };
   },
   computed: {
     title() {
-      return this.$tc('global.template', 2)
+      return this.$tc('global.template', 2);
     },
   },
   async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext
+    const { $axios } = nuxtContext;
     try {
-      const templatesResponse = await $axios.$get(apiRoutes.templates())
-      return { templates: templatesResponse.items }
+      const templatesResponse = await $axios.$get(apiRoutes.templates());
+      return { templates: templatesResponse.items };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   },
   methods: {
     deleteItem(item) {
-      console.log(item)
+      console.log(item);
     },
   },
-}
+};
 </script>
 
 <template>

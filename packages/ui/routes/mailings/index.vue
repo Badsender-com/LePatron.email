@@ -1,17 +1,17 @@
 <script>
-import { mapMutations } from 'vuex'
+import { mapMutations } from 'vuex';
 
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js'
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import * as mailingsHelpers from '~/helpers/mailings.js'
-import BsMailingsFilter from '~/components/mailings/filters.vue'
-import BsMailingsSelectionActions from '~/components/mailings/selection-actions.vue'
-import BsMailingsTable from '~/components/mailings/table.vue'
-import BsMailingsModalRename from '~/components/mailings/modal-rename.vue'
-import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue'
-import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue'
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import * as mailingsHelpers from '~/helpers/mailings.js';
+import BsMailingsFilter from '~/components/mailings/filters.vue';
+import BsMailingsSelectionActions from '~/components/mailings/selection-actions.vue';
+import BsMailingsTable from '~/components/mailings/table.vue';
+import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
+import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 
 export default {
   name: `page-mailings`,
@@ -26,7 +26,7 @@ export default {
   },
   meta: { acl: acls.ACL_USER },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
     return {
@@ -60,92 +60,98 @@ export default {
         updatedAtEnd: ``,
         tags: [],
       },
-    }
+    };
   },
   computed: {
     title() {
-      return this.$tc('global.mailing', 2)
+      return this.$tc('global.mailing', 2);
     },
     selecteMailingsIdsList() {
-      return this.mailingsSelection.map(mailing => mailing.id)
+      return this.mailingsSelection.map((mailing) => mailing.id);
     },
     filteredMailings() {
-      const filterFunction = mailingsHelpers.createFilters(this.filters)
-      return this.mailings.filter(filterFunction)
+      const filterFunction = mailingsHelpers.createFilters(this.filters);
+      return this.mailings.filter(filterFunction);
     },
     hasMailingsSelection() {
-      return this.mailingsSelection.length > 0
+      return this.mailingsSelection.length > 0;
     },
   },
   // https://vuetifyjs.com/en/components/data-tables#custom-filtering
   async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext
+    const { $axios } = nuxtContext;
     try {
       const [mailingsResponse, templatesResponse] = await Promise.all([
         $axios.$get(apiRoutes.mailings()),
         $axios.$get(apiRoutes.templates()),
-      ])
+      ]);
       return {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         templates: templatesResponse.items,
-      }
+      };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async onDelete(mailingsId) {
-      const { $axios } = this
-      this.loading = true
+      const { $axios } = this;
+      this.loading = true;
       try {
         // we need to pass the `body` as `data` for DEL methods
         // • https://github.com/axios/axios/issues/736#issuecomment-377829542
         const mailingsResponse = await $axios.$delete(apiRoutes.mailings(), {
           data: { items: this.selecteMailingsIdsList },
-        })
-        this.tags = mailingsResponse.meta.tags
-        this.mailings = this.mailings.filter(mailing => {
-          return !mailingsResponse.items.includes(mailing.id)
-        })
-        this.mailingsSelection = []
+        });
+        this.tags = mailingsResponse.meta.tags;
+        this.mailings = this.mailings.filter((mailing) => {
+          return !mailingsResponse.items.includes(mailing.id);
+        });
+        this.mailingsSelection = [];
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     onTagCreate(newTag) {
-      this.tags = [...new Set([newTag, ...this.tags])]
+      this.tags = [...new Set([newTag, ...this.tags])];
     },
     async onTagsUpdate(tagsUpdates) {
-      const { $axios } = this
-      this.loading = true
+      const { $axios } = this;
+      this.loading = true;
       try {
         const mailingsResponse = await $axios.$put(apiRoutes.mailings(), {
           items: this.selecteMailingsIdsList,
           tags: tagsUpdates,
-        })
-        this.tags = mailingsResponse.meta.tags
-        mailingsResponse.items.forEach(updatedMailing => {
+        });
+        this.tags = mailingsResponse.meta.tags;
+        mailingsResponse.items.forEach((updatedMailing) => {
           const mailingIndex = this.mailings.findIndex(
-            mailing => mailing.id === updatedMailing.id,
-          )
+            (mailing) => mailing.id === updatedMailing.id
+          );
 
           const mailingSelectionIndex = this.mailingsSelection.findIndex(
-            mailing => mailing.id === updatedMailing.id,
-          )
+            (mailing) => mailing.id === updatedMailing.id
+          );
 
-          this.$set(this.mailings, mailingIndex, updatedMailing)
-          this.$set(this.mailingsSelection, mailingIndex, updatedMailing)
-        })
+          this.$set(this.mailings, mailingIndex, updatedMailing);
+          this.$set(this.mailingsSelection, mailingIndex, updatedMailing);
+        });
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     displayRenameModal(mailing) {
@@ -153,34 +159,40 @@ export default {
         show: true,
         newName: mailing.name,
         mailingId: mailing.id,
-      }
+      };
     },
     closeRenameModal() {
       this.renameModalInfo = {
         show: false,
         newName: ``,
         mailingId: false,
-      }
+      };
     },
     async updateName(renameModalInfo) {
-      const { $axios } = this
-      const { newName, mailingId } = renameModalInfo
-      this.closeRenameModal()
-      if (!mailingId) return
-      this.loading = true
-      const updateUri = apiRoutes.mailingsItem({ mailingId })
+      const { $axios } = this;
+      const { newName, mailingId } = renameModalInfo;
+      this.closeRenameModal();
+      if (!mailingId) return;
+      this.loading = true;
+      const updateUri = apiRoutes.mailingsItem({ mailingId });
       try {
-        const mailingResponse = await $axios.$put(updateUri, { name: newName })
+        const mailingResponse = await $axios.$put(updateUri, { name: newName });
         const mailingIndex = this.mailings.findIndex(
-          mailing => mailing.id === mailingResponse.id,
-        )
-        this.$set(this.mailings, mailingIndex, mailingResponse)
-        this.showSnackbar({ text: this.$t('snackbars.updated'), color: `success` })
+          (mailing) => mailing.id === mailingResponse.id
+        );
+        this.$set(this.mailings, mailingIndex, mailingResponse);
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: `success`,
+        });
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     displayDuplicateModal(mailing) {
@@ -188,31 +200,37 @@ export default {
         show: true,
         name: mailing.name,
         mailingId: mailing.id,
-      }
+      };
     },
     closeDuplicateModal() {
       this.duplicateModalInfo = {
         show: false,
         name: ``,
         mailingId: false,
-      }
+      };
     },
     async duplicateMailing(duplicateModalInfo) {
-      const { $axios } = this
-      const { mailingId } = duplicateModalInfo
-      this.closeDuplicateModal()
-      if (!mailingId) return
-      this.loading = true
-      const duplicateUri = apiRoutes.mailingsItemDuplicate({ mailingId })
+      const { $axios } = this;
+      const { mailingId } = duplicateModalInfo;
+      this.closeDuplicateModal();
+      if (!mailingId) return;
+      this.loading = true;
+      const duplicateUri = apiRoutes.mailingsItemDuplicate({ mailingId });
       try {
-        const mailingResponse = await $axios.$post(duplicateUri)
-        this.mailings.push(mailingResponse)
-        this.showSnackbar({ text: this.$t('snackbars.updated'), color: `success` })
+        const mailingResponse = await $axios.$post(duplicateUri);
+        this.mailings.push(mailingResponse);
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: `success`,
+        });
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     displayTransferModal(mailing) {
@@ -220,37 +238,43 @@ export default {
         show: true,
         mailingId: mailing.id,
         templateId: mailing.templateId,
-      }
+      };
     },
     closeTransferModal() {
       this.transferModalInfo = {
         show: false,
         mailingId: false,
         groupId: false,
-      }
+      };
     },
     async transferMailing(transferInfo = {}) {
-      const { $axios } = this
-      const { mailingId, userId } = transferInfo
-      this.closeTransferModal()
-      if (!mailingId || !userId) return
-      this.loading = true
-      const trasnferUri = apiRoutes.mailingsItemTransferToUser({ mailingId })
+      const { $axios } = this;
+      const { mailingId, userId } = transferInfo;
+      this.closeTransferModal();
+      if (!mailingId || !userId) return;
+      this.loading = true;
+      const trasnferUri = apiRoutes.mailingsItemTransferToUser({ mailingId });
       try {
-        const mailingResponse = await $axios.$post(trasnferUri, { userId })
+        const mailingResponse = await $axios.$post(trasnferUri, { userId });
         this.mailings = this.mailings.filter(
-          mailing => mailing.id !== mailingResponse.id,
-        )
-        this.showSnackbar({ text: this.$t('mailings.transfer.success'), color: `success` })
+          (mailing) => mailing.id !== mailingResponse.id
+        );
+        this.showSnackbar({
+          text: this.$t('mailings.transfer.success'),
+          color: `success`,
+        });
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
   },
-}
+};
 </script>
 
 <template>

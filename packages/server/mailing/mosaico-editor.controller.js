@@ -17,12 +17,12 @@ function exposeHelpersToPug(req, res, next) {
   res.locals.getLocale = function getLocale() {
     return req.user.lang
   }
-  res.locals.__ = key => simpleI18n(key, req.user.lang)
+  res.locals.__ = (key) => simpleI18n(key, req.user.lang)
   res.locals._config = {
     isDev: config.isDev,
     host: config.host,
   }
-  res.locals.printJS = function(data) {
+  res.locals.printJS = function (data) {
     return JSON.stringify(data, null, '  ')
   }
   next()
@@ -31,7 +31,10 @@ function exposeHelpersToPug(req, res, next) {
 async function render(req, res) {
   const { mailingId } = req.params
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId })
-  const mailingForMosaico = await Mailings.findOneForMosaico(query, req.user.lang)
+  const mailingForMosaico = await Mailings.findOneForMosaico(
+    query,
+    req.user.lang,
+  )
   if (!mailingForMosaico) return res.redirect(`/404`)
 
   res.render(`mosaico-editor`, {

@@ -1,9 +1,9 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import * as userStatusHelpers from '~/helpers/user-status.js'
-import BsUsersTable from '~/components/users/table.vue'
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import * as userStatusHelpers from '~/helpers/user-status.js';
+import BsUsersTable from '~/components/users/table.vue';
 
 export default {
   name: `page-users`,
@@ -13,42 +13,48 @@ export default {
     acl: acls.ACL_ADMIN,
   },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
     return {
       users: [],
       loading: false,
-    }
+    };
   },
   computed: {
     title() {
-      return this.$tc('global.user', 2)
+      return this.$tc('global.user', 2);
     },
   },
   async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext
+    const { $axios } = nuxtContext;
     try {
-      const usersResponse = await $axios.$get(apiRoutes.users())
-      return { users: usersResponse.items }
+      const usersResponse = await $axios.$get(apiRoutes.users());
+      return { users: usersResponse.items };
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   },
   methods: {
     updateUserFromActions(updatedUser) {
-      const userIndex = this.users.findIndex(user => user.id === updatedUser.id)
-      this.$set(this.users, userIndex, updatedUser)
+      const userIndex = this.users.findIndex(
+        (user) => user.id === updatedUser.id
+      );
+      this.$set(this.users, userIndex, updatedUser);
     },
   },
-}
+};
 </script>
 
 <template>
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <bs-users-table :users="users" @update="updateUserFromActions" v-model="loading" />
+        <bs-users-table
+          :users="users"
+          @update="updateUserFromActions"
+          v-model="loading"
+        />
       </v-col>
     </v-row>
   </v-container>

@@ -2,7 +2,7 @@
 
 const THUMBNAIL_SIZE = `111x111`
 
-module.exports = fileName => {
+module.exports = (fileName) => {
   return {
     name: fileName,
     // full urls will be done in the editor

@@ -3,7 +3,7 @@
 const { extend, pick } = require('lodash')
 const chalk = require('chalk')
 const nodemailer = require('nodemailer')
-const nodemailerSendgrid  = require('nodemailer-sendgrid')
+const nodemailerSendgrid = require('nodemailer-sendgrid')
 const wellknown = require('nodemailer-wellknown')
 const createError = require('http-errors')
 
@@ -16,10 +16,10 @@ if (mailConfig.service) {
 }
 const transporter = nodemailer.createTransport(
   config.isDev
-  ? config.emailTransport
-  : nodemailerSendgrid({
-      apiKey: config.emailTransport.apiKey
-    })  
+    ? config.emailTransport
+    : nodemailerSendgrid({
+        apiKey: config.emailTransport.apiKey,
+      }),
 )
 
 const mailReady = transporter.verify()
@@ -35,14 +35,14 @@ const mailReady = transporter.verify()
 
 function send(options) {
   var mailOptions = extend({}, options, pick(config.emailOptions, ['from']))
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     transporter
       .sendMail(mailOptions)
-      .then(function(info) {
+      .then(function (info) {
         console.log(chalk.green('email send to', info.accepted))
         resolve(info)
       })
-      .catch(function(err) {
+      .catch(function (err) {
         console.log(chalk.red('email error'))
         const message =
           err.code === 'ECONNREFUSED' ? 'smtp connection failed' : 'email error'

@@ -1,9 +1,9 @@
-var utilPlugin = function(vm) {
+var utilPlugin = function (vm) {
   global.Util = {
-    'decodeURI': decodeURI,
-    'encodeURI': encodeURI,
-    'decodeURIComponent': decodeURIComponent,
-    'encodeURIComponent': encodeURIComponent,
+    decodeURI: decodeURI,
+    encodeURI: encodeURI,
+    decodeURIComponent: decodeURIComponent,
+    encodeURIComponent: encodeURIComponent,
   };
 };
 

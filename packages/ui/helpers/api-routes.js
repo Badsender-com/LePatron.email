@@ -1,4 +1,4 @@
-const API_PREFIX = process.env.API_PREFIX
+const API_PREFIX = process.env.API_PREFIX;
 
 // a dictionary of API routes
 // • prefix is configured by axios (/api)
@@ -10,19 +10,19 @@ const API_PREFIX = process.env.API_PREFIX
 //////
 
 export function groups(routeParams = {}) {
-  return `/groups`
+  return `/groups`;
 }
 export function groupsItem(routeParams = {}) {
-  return `/groups/${routeParams.groupId}`
+  return `/groups/${routeParams.groupId}`;
 }
 export function groupsItemUsers(routeParams = {}) {
-  return `/groups/${routeParams.groupId}/users`
+  return `/groups/${routeParams.groupId}/users`;
 }
 export function groupsItemTemplates(routeParams = {}) {
-  return `/groups/${routeParams.groupId}/templates`
+  return `/groups/${routeParams.groupId}/templates`;
 }
 export function groupsItemMailings(routeParams = {}) {
-  return `/groups/${routeParams.groupId}/mailings`
+  return `/groups/${routeParams.groupId}/mailings`;
 }
 
 //////
@@ -30,28 +30,28 @@ export function groupsItemMailings(routeParams = {}) {
 //////
 
 export function templates(routeParams = {}) {
-  return `/templates`
+  return `/templates`;
 }
 /**
  * @param {Object} routeParams
  * @param {string} routeParams.templateId
  */
 export function templatesItem(routeParams = {}) {
-  return `/templates/${routeParams.templateId}`
+  return `/templates/${routeParams.templateId}`;
 }
 export function templatesItemPreview(routeParams = {}) {
-  return `/templates/${routeParams.templateId}/preview`
+  return `/templates/${routeParams.templateId}/preview`;
 }
 export function templatesItemImages(routeParams = {}) {
-  return `/templates/${routeParams.templateId}/images`
+  return `/templates/${routeParams.templateId}/images`;
 }
 // this is not used by axios (download/show)
 export function templatesItemMarkup(routeParams = {}) {
-  return `${API_PREFIX}/templates/${routeParams.templateId}/markup`
+  return `${API_PREFIX}/templates/${routeParams.templateId}/markup`;
 }
 // this is not used by axios (SSE with EventSource)
 export function templatesItemEvents(routeParams = {}) {
-  return `${API_PREFIX}/templates/${routeParams.templateId}/events`
+  return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
 }
 
 //////
@@ -59,10 +59,10 @@ export function templatesItemEvents(routeParams = {}) {
 //////
 
 export function accountResetPassword(routeParams = {}) {
-  return `/account/${routeParams.email}/password`
+  return `/account/${routeParams.email}/password`;
 }
 export function accountSetPassword(routeParams = {}) {
-  return `/account/${routeParams.email}/password/${routeParams.token}`
+  return `/account/${routeParams.email}/password/${routeParams.token}`;
 }
 
 //////
@@ -70,19 +70,19 @@ export function accountSetPassword(routeParams = {}) {
 //////
 
 export function users(routeParams = {}) {
-  return `/users`
+  return `/users`;
 }
 export function usersItem(routeParams = {}) {
-  return `/users/${routeParams.userId}`
+  return `/users/${routeParams.userId}`;
 }
 export function usersItemActivate(routeParams = {}) {
-  return `/users/${routeParams.userId}/activate`
+  return `/users/${routeParams.userId}/activate`;
 }
 export function usersItemPassword(routeParams = {}) {
-  return `/users/${routeParams.userId}/password`
+  return `/users/${routeParams.userId}/password`;
 }
 export function usersItemMailings(routeParams = {}) {
-  return `/users/${routeParams.userId}/mailings`
+  return `/users/${routeParams.userId}/mailings`;
 }
 
 //////
@@ -90,16 +90,16 @@ export function usersItemMailings(routeParams = {}) {
 //////
 
 export function mailings(routeParams = {}) {
-  return `/mailings`
+  return `/mailings`;
 }
 export function mailingsItem(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}`
+  return `/mailings/${routeParams.mailingId}`;
 }
 export function mailingsItemDuplicate(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}/duplicate`
+  return `/mailings/${routeParams.mailingId}/duplicate`;
 }
 export function mailingsItemTransferToUser(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}/transfer-to-user`
+  return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
 //////
@@ -108,8 +108,8 @@ export function mailingsItemTransferToUser(routeParams = {}) {
 
 // this is not used by axios (show an image…)
 export function imagesItem(routeParams = {}) {
-  return `${API_PREFIX}/images/${routeParams.imageName}`
+  return `${API_PREFIX}/images/${routeParams.imageName}`;
 }
 export function imagesPlaceholder(routeParams = {}) {
-  return `${API_PREFIX}/images/placeholder/${routeParams.width}x${routeParams.height}.png`
+  return `${API_PREFIX}/images/placeholder/${routeParams.width}x${routeParams.height}.png`;
 }

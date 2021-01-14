@@ -9,20 +9,20 @@ and shape of email.
 
 In the wireframe identify the points of interaction in the email editor
 
--   Main Blocks
--   editable content
--   variation point
--   user selectable styling
+- Main Blocks
+- editable content
+- variation point
+- user selectable styling
 
 ### Identify draggable blocks
 
--   Identify the smallest parts which can be dragged to the mail. These
-    are blocks. Note that a block must be one vertical element which
-    covers the entire width of the email. There are no nested blocks.
+- Identify the smallest parts which can be dragged to the mail. These
+  are blocks. Note that a block must be one vertical element which
+  covers the entire width of the email. There are no nested blocks.
 
--   Decide if you need an extra block or you can handle it by variations
-    in a block. You need to find a good compromse between having few
-    small block (atomic blocks) and many different complex blocks.
+- Decide if you need an extra block or you can handle it by variations
+  in a block. You need to find a good compromse between having few
+  small block (atomic blocks) and many different complex blocks.
 
 # Setup your initial environment
 
@@ -74,8 +74,8 @@ For sake of simplyicity, we make a very simple HTML - Template.
 
 3.  create the previews
 
-    for each block prepare a PNG thumbnail named templatefolder/edres/blockName.png 
-    with a width of 340px. Mosaico "demo" will also read a templatefolder/edres/_full.png
+    for each block prepare a PNG thumbnail named templatefolder/edres/blockName.png
+    with a width of 340px. Mosaico "demo" will also read a templatefolder/edres/\_full.png
     as a preview of the master template.
 
 4.  start the local server
@@ -86,13 +86,13 @@ For sake of simplyicity, we make a very simple HTML - Template.
 
     you see the selection of tempates with previews
 
-    ![editor][] 
+    ![editor][]
 
 6.  click on "tutorial" in order to create an email which is an instance
     of "tutorial". In other words, the new email is based on the
     template "tutorial"
 
-    ![tutorial template][] 
+    ![tutorial template][]
 
 # Create a draggable blocks
 
@@ -162,7 +162,7 @@ the email by drag and drop.
     The attribute "widget" says that this is a text
 
     TODO
-    :   do we really need this "text"? It seems to work even without it.
+    : do we really need this "text"? It seems to work even without it.
 
 2.  enhance the draggable block with markup for editable text
 
@@ -216,11 +216,11 @@ the email by drag and drop.
 
     At this time data-ko-editable autodetect a 2 kind of editable areas.
 
-    -   If you apply it to `<TD>` or `<DIV>` then you get a "multiline"
-        editor (full toolbar).
+    - If you apply it to `<TD>` or `<DIV>` then you get a "multiline"
+      editor (full toolbar).
 
-    -   If, instead, you apply it to another element, then you get a
-        simpler editor thought for single line.
+    - If, instead, you apply it to another element, then you get a
+      simpler editor thought for single line.
 
 # make the structure of the content customizable
 
@@ -262,8 +262,8 @@ parameters of an inserted block.
 
     The attributes of this class indicate that
 
-    -   it shall use the selector widget
-    -   the selectable options are "1", "2" or "3"
+    - it shall use the selector widget
+    - the selectable options are "1", "2" or "3"
 
 3.  refresh the previews (`node_modules/grunt-cli/bin/grunt makeThumbs`)
 
@@ -302,7 +302,7 @@ The style customization is the second concept how to compose an email.
     2.  a default for background-color is provided
 
         TODO
-        :   how can we provide a global default for 'color'
+        : how can we provide a global default for 'color'
 
 3.  create a new email from the template. (Note that we introduced an
     incompatible change in the template. Therefore emails of the
@@ -319,10 +319,10 @@ The style customization is the second concept how to compose an email.
 # Customize TinyMce
 
 TODO
-:   add contents here
+: add contents here
 
-  [editor]: screenshot_384.jpg
-  [tutorial template]: screenshot_385.jpg
-  [draggable]: screenshot_386.jpg
-  [customized content]: screenshot_407.jpg
-  [Customized Style]: screenshot_408.jpg
+[editor]: screenshot_384.jpg
+[tutorial template]: screenshot_385.jpg
+[draggable]: screenshot_386.jpg
+[customized content]: screenshot_407.jpg
+[customized style]: screenshot_408.jpg

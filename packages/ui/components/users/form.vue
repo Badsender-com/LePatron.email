@@ -1,6 +1,6 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required, maxLength, email } from 'vuelidate/lib/validators'
+import { validationMixin } from 'vuelidate';
+import { required, maxLength, email } from 'vuelidate/lib/validators';
 
 export default {
   name: `bs-user-form`,
@@ -22,39 +22,42 @@ export default {
         email: { required, email },
         name: { required },
       },
-    }
+    };
   },
   computed: {
     localModel: {
       get() {
-        return this.user
+        return this.user;
       },
       set(updatedUser) {
-        this.$emit(`update`, updatedUser)
+        this.$emit(`update`, updatedUser);
       },
     },
     emailErrors() {
-      const errors = []
-      if (!this.$v.user.email.$dirty) return errors
-      !this.$v.user.email.required && errors.push(this.$t('forms.user.errors.email.required'))
-      !this.$v.user.email.email && errors.push(this.$t('forms.user.errors.email.valid'))
-      return errors
+      const errors = [];
+      if (!this.$v.user.email.$dirty) return errors;
+      !this.$v.user.email.required &&
+        errors.push(this.$t('forms.user.errors.email.required'));
+      !this.$v.user.email.email &&
+        errors.push(this.$t('forms.user.errors.email.valid'));
+      return errors;
     },
     nameErrors() {
-      const errors = []
-      if (!this.$v.user.name.$dirty) return errors
-      !this.$v.user.name.required && errors.push(this.$t('global.errors.nameRequired'))
-      return errors
+      const errors = [];
+      if (!this.$v.user.name.$dirty) return errors;
+      !this.$v.user.name.required &&
+        errors.push(this.$t('global.errors.nameRequired'));
+      return errors;
     },
   },
   methods: {
     onSubmit() {
-      this.$v.$touch()
-      if (this.$v.$invalid) return
-      this.$emit(`submit`, this.user)
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
+      this.$emit(`submit`, this.user);
     },
   },
-}
+};
 </script>
 
 <template>
@@ -99,7 +102,14 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large color="primary" @click="onSubmit" :disabled="disabled">{{$t('global.save')}}</v-btn>
+      <v-btn
+        text
+        large
+        color="primary"
+        @click="onSubmit"
+        :disabled="disabled"
+        >{{ $t('global.save') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

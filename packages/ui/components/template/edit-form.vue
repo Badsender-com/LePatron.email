@@ -1,6 +1,6 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
+import { validationMixin } from 'vuelidate';
+import { required } from 'vuelidate/lib/validators';
 
 export default {
   name: `bs-template-edit-form`,
@@ -12,15 +12,15 @@ export default {
     disabled: { type: Boolean, default: false },
   },
   data() {
-    return { markup: ``, images: [] }
+    return { markup: ``, images: [] };
   },
   computed: {
     localModel: {
       get() {
-        return this.template
+        return this.template;
       },
       set(updatedTemplate) {
-        this.$emit(`update`, updatedTemplate)
+        this.$emit(`update`, updatedTemplate);
       },
     },
   },
@@ -29,50 +29,50 @@ export default {
       template: {
         name: { required },
       },
-    }
+    };
   },
   methods: {
     requiredErrors(fieldName) {
-      const errors = []
-      if (!this.$v.template[fieldName].$dirty) return errors
+      const errors = [];
+      if (!this.$v.template[fieldName].$dirty) return errors;
       !this.$v.template[fieldName].required &&
-        errors.push(this.$t('errors.required'))
-      return errors
+        errors.push(this.$t('errors.required'));
+      return errors;
     },
     onSubmit() {
-      console.log(`onSubmit`)
-      this.$v.$touch()
-      if (this.$v.$invalid) return
+      console.log(`onSubmit`);
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
       // Send a formData
       // https://developer.mozilla.org/en-US/docs/Web/API/FormData/append
       // https://alligator.io/vuejs/uploading-vue-picture-input/
-      const formData = new FormData()
-      formData.append(`name`, this.template.name)
-      formData.append(`description`, this.template.description)
-      if (this.markup) formData.append(`markup`, this.markup)
+      const formData = new FormData();
+      formData.append(`name`, this.template.name);
+      formData.append(`description`, this.template.description);
+      if (this.markup) formData.append(`markup`, this.markup);
       if (Array.isArray(this.images)) {
         this.images.forEach((image, imageIndex) => {
-          formData.append(`images`, image, image.name)
-        })
+          formData.append(`images`, image, image.name);
+        });
       }
-      this.$emit(`submit`, formData)
+      this.$emit(`submit`, formData);
     },
     updateMarkup(markup) {
-      this.markup = markup
+      this.markup = markup;
     },
     updateImages(images) {
-      console.log(`updateImages`, images)
-      this.images = images
+      console.log(`updateImages`, images);
+      this.images = images;
     },
   },
-}
+};
 </script>
 
 <template>
   <form class="template-edit-form" @submit.prevent="onSubmit">
     <v-col cols="6">
       <v-card>
-        <v-card-title>{{$t('forms.template.meta')}}</v-card-title>
+        <v-card-title>{{ $t('forms.template.meta') }}</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="localModel.name"
@@ -99,7 +99,7 @@ export default {
     </v-col>
     <v-col cols="6">
       <v-card>
-        <v-card-title>{{$t('forms.template.files')}}</v-card-title>
+        <v-card-title>{{ $t('forms.template.files') }}</v-card-title>
         <v-card-text>
           <v-file-input
             id="markup"
@@ -127,7 +127,15 @@ export default {
         </v-card-text>
       </v-card>
     </v-col>
-    <v-btn color="accent" fixed bottom right fab @click="onSubmit" :disabled="disabled">
+    <v-btn
+      color="accent"
+      fixed
+      bottom
+      right
+      fab
+      @click="onSubmit"
+      :disabled="disabled"
+    >
       <v-icon color="secondary">save</v-icon>
     </v-btn>
   </form>

@@ -1,14 +1,14 @@
-'use strict'
+'use strict';
 
-const WINDOW_CLICK = `WINDOW_CLICK`
+const WINDOW_CLICK = `WINDOW_CLICK`;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget
 class EventsHub extends EventTarget {
   windowClick(event) {
-    this.dispatchEvent(new CustomEvent(WINDOW_CLICK, { detail: event }))
+    this.dispatchEvent(new CustomEvent(WINDOW_CLICK, { detail: event }));
   }
 }
-const eventsHub = new EventsHub()
+const eventsHub = new EventsHub();
 
 // This will be called on the star of Knockout application
 // • so we are sure we have a body
@@ -20,15 +20,15 @@ const eventsHub = new EventsHub()
 function initEventHub() {
   document.body.addEventListener(
     `click`,
-    event => eventsHub.windowClick(event),
+    (event) => eventsHub.windowClick(event),
     {
       passive: true,
     }
-  )
+  );
 }
 
 function exposeToKnockout(vm) {
-  vm.bsEventsHub = eventsHub
+  vm.bsEventsHub = eventsHub;
 }
 
 module.exports = {
@@ -36,4 +36,4 @@ module.exports = {
   WINDOW_CLICK,
   initEventHub,
   exposeToKnockout,
-}
+};

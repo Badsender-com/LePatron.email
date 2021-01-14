@@ -1,5 +1,5 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js'
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
   name: `bs-template-html-preview`,
@@ -9,28 +9,38 @@ export default {
   },
   computed: {
     previewHref() {
-      return apiRoutes.templatesItemMarkup({ templateId: this.templateId })
+      return apiRoutes.templatesItemMarkup({ templateId: this.templateId });
     },
     downloadHref() {
-      return `${this.previewHref}?download=true`
+      return `${this.previewHref}?download=true`;
     },
   },
-}
+};
 </script>
 
 <template>
   <v-card>
-    <v-card-title>{{$t('template.markup')}}</v-card-title>
+    <v-card-title>{{ $t('template.markup') }}</v-card-title>
     <v-card-text>
       <details>
-        <summary>{{$t('global.show')}}</summary>
+        <summary>{{ $t('global.show') }}</summary>
         <pre class="html-content" v-text="markup" />
       </details>
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn link :href="downloadHref" text large color="primary">{{$t('template.download')}}</v-btn>
-      <v-btn link :href="previewHref" target="_blank" text large color="primary">{{$t('template.preview')}}</v-btn>
+      <v-btn link :href="downloadHref" text large color="primary">{{
+        $t('template.download')
+      }}</v-btn>
+      <v-btn
+        link
+        :href="previewHref"
+        target="_blank"
+        text
+        large
+        color="primary"
+        >{{ $t('template.preview') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

@@ -39,11 +39,11 @@ function writeStreamFromPath(file) {
       Key: name,
       Body: source,
     },
-    function(err, data) {
+    function (err, data) {
       // console.log(err, data)
     },
   )
-    .on('httpUploadProgress', progress => {
+    .on('httpUploadProgress', (progress) => {
       console.log(
         `writeStreamFromPath – ${name}`,
         (progress.loaded / progress.total) * 100,
@@ -70,7 +70,7 @@ function writeStreamFromStream(source, name) {
       // resolve( data )
     },
   )
-    .on('httpUploadProgress', progress => {
+    .on('httpUploadProgress', (progress) => {
       console.log(
         `writeStreamFromStream – ${name}`,
         (progress.loaded / progress.total) * 100,
@@ -86,7 +86,7 @@ function writeStreamFromStream(source, name) {
 // https://github.com/matthew-andrews/denodeify#advanced-usage
 const listObjectsV2 = denodeify(s3.listObjectsV2.bind(s3), (err, data) => {
   if (data && data.Contents) {
-    data = data.Contents.map(file => formatName(file.Key))
+    data = data.Contents.map((file) => formatName(file.Key))
   }
   return [err, data]
 })
@@ -100,7 +100,7 @@ function listImages(prefix) {
 // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
 const copyObject = denodeify(s3.copyObject.bind(s3))
 function copyImages(oldPrefix, newPrefix) {
-  return listImages(oldPrefix).then(files => Promise.all(files.map(copy)))
+  return listImages(oldPrefix).then((files) => Promise.all(files.map(copy)))
 
   function copy(file) {
     return copyObject({

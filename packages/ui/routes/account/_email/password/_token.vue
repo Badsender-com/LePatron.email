@@ -1,11 +1,11 @@
 <script>
-import { validationMixin } from 'vuelidate'
-import { required, sameAs } from 'vuelidate/lib/validators'
-import { mapMutations } from 'vuex'
+import { validationMixin } from 'vuelidate';
+import { required, sameAs } from 'vuelidate/lib/validators';
+import { mapMutations } from 'vuex';
 
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
   name: `bs-page-set-password`,
@@ -13,7 +13,7 @@ export default {
   meta: { acl: acls.ACL_NOT_CONNECTED },
   layout: `centered`,
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   validations() {
     return {
@@ -21,7 +21,7 @@ export default {
         password: { required },
         passwordConfirm: { required, sameAsPassword: sameAs(`password`) },
       },
-    }
+    };
   },
   data() {
     return {
@@ -30,57 +30,61 @@ export default {
         password: ``,
         passwordConfirm: ``,
       },
-    }
+    };
   },
   computed: {
     title() {
-      return `set password`
+      return `set password`;
     },
     passwordErrors() {
-      const errors = []
-      if (!this.$v.form.password.$dirty) return errors
-      !this.$v.form.password.required && errors.push(this.$t('forms.user.errors.password.required'))
-      return errors
+      const errors = [];
+      if (!this.$v.form.password.$dirty) return errors;
+      !this.$v.form.password.required &&
+        errors.push(this.$t('forms.user.errors.password.required'));
+      return errors;
     },
     passwordConfirmErrors() {
-      const errors = []
-      if (!this.$v.form.passwordConfirm.$dirty) return errors
+      const errors = [];
+      if (!this.$v.form.passwordConfirm.$dirty) return errors;
       !this.$v.form.passwordConfirm.required &&
-        errors.push(this.$t('forms.user.errors.password.confirm'))
+        errors.push(this.$t('forms.user.errors.password.confirm'));
       !this.$v.form.passwordConfirm.sameAsPassword &&
-        errors.push(this.$t('forms.user.errors.password.same'))
-      return errors
+        errors.push(this.$t('forms.user.errors.password.same'));
+      return errors;
     },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async setPassword() {
-      this.$v.$touch()
-      if (this.$v.$invalid) return
+      this.$v.$touch();
+      if (this.$v.$invalid) return;
 
-      const { $axios, $route, $router } = this
-      this.loading = true
+      const { $axios, $route, $router } = this;
+      this.loading = true;
       try {
         const user = await $axios.$put(
           apiRoutes.accountSetPassword($route.params),
-          this.form,
-        )
-        $router.push(`/`)
+          this.form
+        );
+        $router.push(`/`);
       } catch (error) {
-        this.showSnackbar({ text: this.$t('global.errors.errorOccured'), color: `error` })
-        console.log(error)
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: `error`,
+        });
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
   },
-}
+};
 </script>
 
 <template>
   <v-card class="elevation-12">
     <v-toolbar flat>
-      <v-toolbar-title>{{$t('forms.user.passwordReset')}}</v-toolbar-title>
+      <v-toolbar-title>{{ $t('forms.user.passwordReset') }}</v-toolbar-title>
     </v-toolbar>
     <v-divider />
     <v-card-text>
@@ -109,7 +113,13 @@ export default {
     </v-card-text>
     <v-card-actions>
       <v-spacer />
-      <v-btn color="primary" form="login-form" type="submit" :disabled="loading">{{$t('forms.user.validate')}}</v-btn>
+      <v-btn
+        color="primary"
+        form="login-form"
+        type="submit"
+        :disabled="loading"
+        >{{ $t('forms.user.validate') }}</v-btn
+      >
     </v-card-actions>
   </v-card>
 </template>

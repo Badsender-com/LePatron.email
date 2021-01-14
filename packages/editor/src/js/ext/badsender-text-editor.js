@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-var debounce = require('lodash.debounce')
+var debounce = require('lodash.debounce');
 
 //////
 // DEFINE TINYMCE CUSTOM PLUGINS
@@ -10,38 +10,38 @@ var debounce = require('lodash.debounce')
 
 // convert a fibonacci suite to em
 var defaults = [0, 1, 2, 3, 5, 8, 13]
-  .map(function(e) {
-    return Math.round(e * 0.1 * 100) / 100
+  .map(function (e) {
+    return Math.round(e * 0.1 * 100) / 100;
   })
-  .map(function(i) {
-    return i + '=' + i + 'em'
+  .map(function (i) {
+    return i + '=' + i + 'em';
   })
-  .join(' ')
+  .join(' ');
 
-tinymce.PluginManager.add('spacing', addLetterSpacing)
+tinymce.PluginManager.add('spacing', addLetterSpacing);
 
 function addLetterSpacing(editor, url) {
-  editor.addButton('letterspacingselect', function() {
-    var formats = editor.settings.spacing_formats || defaults
-    var items = formats.split(' ').map(function(item) {
-      var text = item
-      var value = item
+  editor.addButton('letterspacingselect', function () {
+    var formats = editor.settings.spacing_formats || defaults;
+    var items = formats.split(' ').map(function (item) {
+      var text = item;
+      var value = item;
       // Allow text=value font sizes.
-      var values = item.split('=')
+      var values = item.split('=');
       if (values.length > 1) {
-        text = values[0]
-        value = values[1]
+        text = values[0];
+        value = values[1];
       }
-      return { text: text, value: value }
-    })
+      return { text: text, value: value };
+    });
 
     function setLetterSpacing(e) {
-      if (!e.control.settings.value) return
+      if (!e.control.settings.value) return;
       tinymce.activeEditor.formatter.register('letter-spacing', {
         inline: 'span',
         styles: { 'letter-spacing': e.control.settings.value },
-      })
-      tinymce.activeEditor.formatter.apply('letter-spacing')
+      });
+      tinymce.activeEditor.formatter.apply('letter-spacing');
     }
 
     return {
@@ -51,27 +51,27 @@ function addLetterSpacing(editor, url) {
       values: items,
       fixedWidth: true,
       onclick: setLetterSpacing,
-    }
-  })
+    };
+  });
 }
 
 //----- FREE FONT SIZE
 
 // Util function copied from Tiny MCE
 function each(o, cb, s) {
-  var n, l
+  var n, l;
 
   if (!o) {
-    return 0
+    return 0;
   }
 
-  s = s || o
+  s = s || o;
 
   if (o.length !== undefined) {
     // Indexed arrays, needed for Safari
     for (n = 0, l = o.length; n < l; n++) {
       if (cb.call(s, o[n], n, o) === false) {
-        return 0
+        return 0;
       }
     }
   } else {
@@ -79,30 +79,30 @@ function each(o, cb, s) {
     for (n in o) {
       if (o.hasOwnProperty(n)) {
         if (cb.call(s, o[n], n, o) === false) {
-          return 0
+          return 0;
         }
       }
     }
   }
 
-  return 1
+  return 1;
 }
 
 // inspired by tinymce.js#44265
-tinymce.PluginManager.add('fontsizedialog', fontsizedialog)
+tinymce.PluginManager.add('fontsizedialog', fontsizedialog);
 
 function fontsizedialog(editor, url) {
-  var fontSizeMin = 8
-  var fontSizeMax = 666
-  var selectionFs = false
+  var fontSizeMin = 8;
+  var fontSizeMax = 666;
+  var selectionFs = false;
   var dialogHelpText = [
     tinymce.util.I18n.translate('minimum size: 8px'),
     tinymce.util.I18n.translate('no decimals'),
   ]
-    .map(function(t) {
-      return '• ' + t
+    .map(function (t) {
+      return '• ' + t;
     })
-    .join('<br>')
+    .join('<br>');
 
   editor.addButton('fontsizedialogbutton', {
     text: 'Font size',
@@ -115,21 +115,21 @@ function fontsizedialog(editor, url) {
     icon: false,
     onPostRender: afterBtnInit,
     onclick: openFsDialog,
-  })
+  });
 
   function afterBtnInit(initEvent) {
-    var btnInstance = initEvent.control
-    var formatName = 'fontsize'
-    var self = this
+    var btnInstance = initEvent.control;
+    var formatName = 'fontsize';
+    var self = this;
 
-    editor.on('nodeChange', debounce(onNodeChange, 150))
+    editor.on('nodeChange', debounce(onNodeChange, 150));
 
     function onNodeChange(e) {
-      each(e.parents, getFontSize)
+      each(e.parents, getFontSize);
       if (!selectionFs) {
         selectionFs = document.defaultView
           .getComputedStyle(e.parents[0] || e.element, null)
-          .getPropertyValue('font-size')
+          .getPropertyValue('font-size');
       }
     }
 
@@ -137,18 +137,18 @@ function fontsizedialog(editor, url) {
       if (node.style && node.style.fontSize) {
         btnInstance.text(
           tinymce.util.I18n.translate('Font size: ') + node.style.fontSize
-        )
-        selectionFs = node.style.fontSize
-        return false
+        );
+        selectionFs = node.style.fontSize;
+        return false;
       }
-      selectionFs = false
-      btnInstance.text(tinymce.util.I18n.translate('Font size'))
+      selectionFs = false;
+      btnInstance.text(tinymce.util.I18n.translate('Font size'));
     }
   }
 
   function openFsDialog(btnEvent) {
-    var initValue = selectionFs ? /^(\d+)/.exec(selectionFs) : null
-    initValue = Array.isArray(initValue) ? initValue[0] : ''
+    var initValue = selectionFs ? /^(\d+)/.exec(selectionFs) : null;
+    initValue = Array.isArray(initValue) ? initValue[0] : '';
 
     editor.windowManager.open({
       title: 'Enter a font-size',
@@ -161,8 +161,8 @@ function fontsizedialog(editor, url) {
           text: '',
           // multiline “hack” from:
           // http://www.devsumo.com/technotes/2014/07/tinymce-4-multi-line-labels-in-popup-dialogs/
-          onPostRender: function() {
-            this.getEl().innerHTML = dialogHelpText
+          onPostRender: function () {
+            this.getEl().innerHTML = dialogHelpText;
           },
         },
         {
@@ -171,19 +171,19 @@ function fontsizedialog(editor, url) {
           label: 'in pixel',
           autofocus: true,
           value: initValue,
-          onPostRender: function() {
+          onPostRender: function () {
             this.$el.attr({
               type: 'number',
               min: fontSizeMin,
               step: 1,
-            })
+            });
           },
         },
       ],
-      onsubmit: function(e) {
-        var newFontSize = ~~e.data.bsdialogfontsize
+      onsubmit: function (e) {
+        var newFontSize = ~~e.data.bsdialogfontsize;
         if (newFontSize >= fontSizeMin && newFontSize <= fontSizeMax) {
-          editor.execCommand('FontSize', false, newFontSize + 'px')
+          editor.execCommand('FontSize', false, newFontSize + 'px');
         } else {
           // tinyMCE notifications are very small…
           // no need to put them for now
@@ -193,7 +193,7 @@ function fontsizedialog(editor, url) {
           // })
         }
       },
-    })
+    });
   }
 }
 
@@ -263,6 +263,6 @@ var tinymceConfigFull = {
       ],
     },
   ],
-}
+};
 
-module.exports = tinymceConfigFull
+module.exports = tinymceConfigFull;

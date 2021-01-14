@@ -3,16 +3,15 @@ export default {
     updated: 'Mis à jour',
     created: 'Crée',
     deleted: 'Supprimé',
-    usersFetchError: 'Impossible d\'accéder à la liste des utilisateur',
-    emailSent: 'Un email a été envoyé'
-
+    usersFetchError: "Impossible d'accéder à la liste des utilisateur",
+    emailSent: 'Un email a été envoyé',
   },
   global: {
     errors: {
       errorOccured: 'Une erreur est survenue',
       required: 'Ce champ est requis',
       userRequired: 'Un utilisateur est requis',
-      nameRequired: 'Un nom est requis'
+      nameRequired: 'Un nom est requis',
     },
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -53,14 +52,14 @@ export default {
     updatedAt: 'Mis à jour le',
   },
   layout: {
-    logout: 'Déconnexion'
+    logout: 'Déconnexion',
   },
   forms: {
     group: {
       downloadWithoutEnclosingFolder: {
         label: 'Format du fichier zip',
         wrapped: 'Englober dans un dossier parent',
-        unwrapped: 'Laisser les fichiers à la racine'
+        unwrapped: 'Laisser les fichiers à la racine',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
@@ -72,7 +71,7 @@ export default {
       path: 'Chemin du dossier',
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
-      editorLabel: 'Libellé du bouton'
+      editorLabel: 'Libellé du bouton',
     },
     template: {
       meta: 'Meta',
@@ -95,10 +94,10 @@ export default {
         },
         email: {
           required: 'Un email est requis',
-          valid: 'Un email valide est requis'
+          valid: 'Un email valide est requis',
         },
       },
-    }
+    },
   },
   groups: {
     tabs: {
@@ -107,22 +106,24 @@ export default {
   },
   mailings: {
     transfer: {
-      label: 'Transférer l\'email',
-      success: 'Email transféré'
+      label: "Transférer l'email",
+      success: 'Email transféré',
     },
-    creationNotice: "Cliquez sur l'un des templates ci-dessous pour créer un nouvel email",
+    creationNotice:
+      "Cliquez sur l'un des templates ci-dessous pour créer un nouvel email",
     list: 'Liste des emails',
     filters: {
       createdBetween: 'Crée entre le',
       updatedBetween: 'Mis à jour entre le',
-      and: 'Et le'
+      and: 'Et le',
     },
-    duplicate: 'Dupliquer l\'email',
-    duplicateNotice: 'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
-    rename: 'Renommer l\'email',
+    duplicate: "Dupliquer l'email",
+    duplicateNotice:
+      'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
+    rename: "Renommer l'email",
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
-    deleteNotice: 'Cela supprimera définitivement:'
+    deleteNotice: 'Cela supprimera définitivement:',
   },
   template: {
     noId: 'Aucun ID',
@@ -132,7 +133,8 @@ export default {
     preview: 'Prévisualiser le template',
     removeImages: 'Supprimer toute les images',
     imagesRemoved: 'Images supprimées',
-    deleteNotice: 'Supprimer un template supprimera aussi tout les emails utilisant celui-ci'
+    deleteNotice:
+      'Supprimer un template supprimera aussi tout les emails utilisant celui-ci',
   },
   tags: {
     list: 'Liste des labels',
@@ -143,23 +145,23 @@ export default {
     actions: {
       reset: 'Réinitialiser',
       send: 'Envoyer',
-      resend: 'Renvoyer'
+      resend: 'Renvoyer',
     },
     passwordTooltip: {
       reset: 'Réinitialiser le mot de passe',
-      send: 'Envoyer l\'email de mot de passe',
-      resend: 'Renvoyer l\'email de mot de passe',
+      send: "Envoyer l'email de mot de passe",
+      resend: "Renvoyer l'email de mot de passe",
     },
     enableNotice: 'Êtes-vous sûr de vouloir activer',
     disableNotice: 'Êtes-vous sûr de vouloir désactiver',
     passwordNotice: {
       reset: 'Êtes-vous sûr de vouloir réinitialiser le mot de passe de',
-      send: 'Êtes-vous sûr de vouloir envoyer l\'email de mot de passe à',
-      resend: 'Êtes-vous sûr de vouloir renvoyer l\'email de mot de passe à',
+      send: "Êtes-vous sûr de vouloir envoyer l'email de mot de passe à",
+      resend: "Êtes-vous sûr de vouloir renvoyer l'email de mot de passe à",
     },
     email: 'Email',
     lang: 'Langue',
-    details: 'Informations'
+    details: 'Informations',
   },
   tableHeaders: {
     groups: {
@@ -168,15 +170,14 @@ export default {
       ftpDownload: 'Téléchargement FTP',
     },
     users: {
-      passwordMail: 'Mail de mot de passe'
+      passwordMail: 'Mail de mot de passe',
     },
     templates: {
-
       markup: 'Markup?',
     },
     mailings: {
       rename: 'Renommer',
-      transfer: 'Transférer'
-    }
-  }
-}
+      transfer: 'Transférer',
+    },
+  },
+};

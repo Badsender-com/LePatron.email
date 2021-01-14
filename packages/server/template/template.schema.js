@@ -71,14 +71,14 @@ const TemplateSchema = Schema(
     // won't work
     assets: {
       type: String,
-      get: v => {
+      get: (v) => {
         try {
           return JSON.parse(v)
         } catch (e) {
           return false
         }
       },
-      set: v => {
+      set: (v) => {
         return JSON.stringify(v)
       },
     },
@@ -96,7 +96,7 @@ TemplateSchema.plugin(mongooseHidden, {
 //   return `/img/${this._id}-`
 // })
 
-TemplateSchema.virtual(`hasMarkup`).get(function() {
+TemplateSchema.virtual(`hasMarkup`).get(function () {
   return this.markup != null
 })
 
@@ -110,7 +110,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   // • we don't want the markup to be send => remove
   // • we don't want all assets => remove
   // • BUT we still want the cover image => add
-  return templates.map(template => {
+  return templates.map((template) => {
     // pick is more performant than omit
     const templateRes = _.pick(template.toJSON(), [
       `id`,

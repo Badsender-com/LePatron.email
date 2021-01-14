@@ -1,8 +1,8 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js'
-import * as acls from '~/helpers/pages-acls.js'
-import * as apiRoutes from '~/helpers/api-routes.js'
-import BsGroupForm from '~/components/group/form.vue'
+import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import BsGroupForm from '~/components/group/form.vue';
 
 export default {
   name: `page-new-group`,
@@ -12,7 +12,7 @@ export default {
     acl: acls.ACL_ADMIN,
   },
   head() {
-    return { title: this.title }
+    return { title: this.title };
   },
   data() {
     return {
@@ -33,9 +33,9 @@ export default {
         ftpPathOnServer: `./`,
         ftpEndPoint: ``,
         ftpEndPointProtocol: `http://`,
-        ftpButtonLabel: ``
+        ftpButtonLabel: ``,
       },
-    }
+    };
   },
   computed: {
     title() {
@@ -44,26 +44,30 @@ export default {
   },
   methods: {
     async createGroup() {
-      const { $axios } = this
+      const { $axios } = this;
       try {
-        this.loading = true
-        const group = await $axios.$post(apiRoutes.groups(), this.newGroup)
-        this.$router.push(apiRoutes.groupsItem({ groupId: group.id }))
+        this.loading = true;
+        const group = await $axios.$post(apiRoutes.groups(), this.newGroup);
+        this.$router.push(apiRoutes.groupsItem({ groupId: group.id }));
       } catch (error) {
-        console.log(error)
+        console.log(error);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
   },
-}
+};
 </script>
 
 <template>
   <v-container fluid>
     <v-row>
       <v-col cols="8" offset="2">
-        <bs-group-form v-model="newGroup" @submit="createGroup" :disabled="loading" />
+        <bs-group-form
+          v-model="newGroup"
+          @submit="createGroup"
+          :disabled="loading"
+        />
       </v-col>
     </v-row>
   </v-container>
