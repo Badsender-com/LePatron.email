@@ -102,31 +102,10 @@ export default {
         <span>{{$t('layout.logout')}}</span>
       </v-tooltip>
     </v-app-bar>
-    <v-content>
+    <v-main>
       <nuxt />
-    </v-content>
+    </v-main>
 
     <bs-snack-bar />
   </v-app>
 </template>
-
-<style lang="scss" scoped>
-// .pio-wrapper {
-//     min-height: 100vh;
-//     display: grid;
-//     grid-template-columns: var(--sidebar-width) 1fr;
-//     grid-template-rows: var(--header-height) 1fr;
-//     grid-template-areas:
-//         'sidebar topbar'
-//         'sidebar .';
-// }
-// .pio-wrapper--sidebar-close {
-//     --sidebar-width: 60px;
-// }
-// .pio-sidebar {
-//     grid-area: sidebar;
-// }
-// .pio-topbar {
-//     grid-area: topbar;
-// }
-</style>
