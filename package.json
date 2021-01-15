@@ -155,8 +155,6 @@
     "gulp-strip-debug": "3.0.0",
     "gulp-uglify": "3.0.2",
     "inquirer": "6.3.1",
-    "jasmine-core": "3.5.0",
-    "jasmine-node": "1.16.2",
     "jquery": "3.4.1",
     "jquery-file-upload-middleware": "0.1.8",
     "jquery-migrate": "3.1.0",
