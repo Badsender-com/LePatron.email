@@ -40,6 +40,47 @@ Login with
 
 A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
 
+
+## Generate documentation
+
+### Run application documentation
+
+```bash
+yarn docs:dev
+```
+
+### Build application documentation
+
+```bash
+yarn docs:dev:build
+```
+
+### Run API documentation
+
+```bash
+yarn docs:api
+```
+
+### Build API documentation
+
+```bash
+yarn docs:api:build
+```
+
+### Troubleshooting
+
+If you encounter this error during documentation generation :
+
+```
+(node:24453) UnhandledPromiseRejectionWarning: Error: EACCES: permission denied, scandir '.../.mongodb/diagnostic.data'
+```
+
+Simply give access to .mongodb folder to your user :
+
+```
+chown $(whoami):$(whoami) -R ./.mongodb
+```
+
 ---
 
 ## License
