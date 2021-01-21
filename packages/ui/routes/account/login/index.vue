@@ -53,5 +53,9 @@ export default {
         $t('forms.user.login')
       }}</v-btn>
     </v-card-actions>
+    <v-card-actions>
+      <v-spacer />
+       <a href="/account/SAML-login">Authentification SAML</a>
+    </v-card-actions>
   </v-card>
 </template>

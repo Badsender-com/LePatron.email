@@ -4,6 +4,7 @@
 // https://github.com/awais786327/oauth2orize-examples
 // https://github.com/solderjs/example-oauth2orize-consumer
 
+const fs = require('fs')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const BasicStrategy = require('passport-http').BasicStrategy
@@ -11,6 +12,7 @@ const ClientPasswordStrategy = require('passport-oauth2-client-password')
   .Strategy
 const BearerStrategy = require('passport-http-bearer').Strategy
 const createError = require('http-errors')
+const saml = require('passport-saml');
 
 const config = require('../node.config.js')
 const {
@@ -168,3 +170,30 @@ passport.use(
     }
   }),
 )
+
+var MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
+
+passport.use(new MultiSamlStrategy(
+  {
+    passReqToCallback: true, //makes req available in callback
+    getSamlOptions: function (request, done) {
+      done(null, {
+        // path: '/jesaispasquoi',
+        entryPoint: 'https://bearstudio.okta.com/app/bearstudio_badsender_1/exk2qar21ofo1yVjU5d6/sso/saml',
+        issuer: "http://www.okta.com/exk2qar21ofo1yVjU5d6",
+      });
+    }
+  },
+  async (req, profile, done) => {
+    console.log({ profile });
+    const user = await Users.findOne({
+      email: profile.nameID,
+      isDeactivated: { $ne: true },
+      token: { $exists: false },
+    })
+
+    console.log({ user })
+    if (!user) return done(null, false, { message: 'password.error.nouser' })
+    return done(null, user);
+  })
+);

@@ -178,6 +178,23 @@ module.exports = function launchServer() {
     res.redirect(`/account/login`)
   })
 
+  app.get('/account/SAML-login', (req, res, next) => {
+    next()
+    },
+    passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+    (req, res) => {
+        res.redirect('/');
+    }
+  );
+
+  app.post('/SAML-login/callback',
+    bodyParser.urlencoded({ extended: false }),
+    passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+    function (req, res) {
+      res.redirect('/');
+    }
+  );
+
   // The code below is a WIP of oauth2 authentication
   // • this should be used to protect the API when consumed outside the context of application
 
