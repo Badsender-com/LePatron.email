@@ -12,13 +12,14 @@ const ClientPasswordStrategy = require('passport-oauth2-client-password')
   .Strategy
 const BearerStrategy = require('passport-http-bearer').Strategy
 const createError = require('http-errors')
-const saml = require('passport-saml');
+const xmlParser = require('xml2json');
 
 const config = require('../node.config.js')
 const {
   Users,
   OAuthClients,
   OAuthTokens,
+  Groups,
 } = require('../common/models.common.js')
 
 const adminUser = Object.freeze({
@@ -176,24 +177,48 @@ var MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
 passport.use(new MultiSamlStrategy(
   {
     passReqToCallback: true, //makes req available in callback
-    getSamlOptions: function (request, done) {
-      done(null, {
-        // path: '/jesaispasquoi',
-        entryPoint: 'https://bearstudio.okta.com/app/bearstudio_badsender_1/exk2qar21ofo1yVjU5d6/sso/saml',
-        issuer: "http://www.okta.com/exk2qar21ofo1yVjU5d6",
-      });
+    getSamlOptions: async (request, done) => {
+ 
+      let email = request.query.email;
+
+      if (!email ) {
+        let buff = Buffer.from(request.body.SAMLResponse, 'base64');
+        const jsonObject = xmlParser.toJson(buff.toString(), {
+          object: true,
+          sanitize: true,
+          trim: true
+        });
+        email = jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject']['saml2:NameID']['$t']
+      }
+      console.log({email})
+
+      const user = await Users.findOne({
+        email: email,
+        isDeactivated: { $ne: true },
+        token: { $exists: false },
+      })
+
+      if (user) {
+        const group = await Groups.findOne({
+          _id: user.group,
+        })
+        if (group && group.name === "bearstudio") {
+          return done(null, {
+            entryPoint: 'https://bearstudio.okta.com/app/bearstudio_badsender_1/exk2qar21ofo1yVjU5d6/sso/saml',
+            issuer: "http://www.okta.com/exk2qar21ofo1yVjU5d6",
+          });
+        }
+      } 
+      return done(new Error("SAML provider not found"), null);
     }
   },
   async (req, profile, done) => {
-    console.log({ profile });
     const user = await Users.findOne({
       email: profile.nameID,
       isDeactivated: { $ne: true },
       token: { $exists: false },
     })
-
-    console.log({ user })
-    if (!user) return done(null, false, { message: 'password.error.nouser' })
-    return done(null, user);
+    if (!user) return done(new Error("No user found"), false, { message: 'password.error.nouser' })
+    done(null, user);
   })
 );

@@ -27,7 +27,7 @@ const userRouter = require('./user/user.routes')
 const imageRouter = require('./image/image.routes')
 const accountRouter = require('./account/account.routes')
 
-module.exports = function launchServer() {
+
   const app = express()
 
   app.use(cookieParser())
@@ -179,11 +179,17 @@ module.exports = function launchServer() {
   })
 
   app.get('/account/SAML-login', (req, res, next) => {
-    next()
+      next()
     },
-    passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
-    (req, res) => {
-        res.redirect('/');
+    passport.authenticate('saml',  { failureRedirect: '/', failureFlash: true }),
+    (err, user, info) => {
+      console.log({err})
+      if (err) { 
+        return res.redirect('/');
+      }
+      console.log({user})
+      return res.redirect('/');
+
     }
   );
 
@@ -194,48 +200,6 @@ module.exports = function launchServer() {
       res.redirect('/');
     }
   );
-
-  // The code below is a WIP of oauth2 authentication
-  // • this should be used to protect the API when consumed outside the context of application
-
-  // const oauthRoutes = require('./routes-oauth2')
-
-  // // should be called with /dialog/authorize?response_type=code or /dialog/authorize?response_type=token
-  // // &client_id=" + CLIENT_ID+ "&redirect_uri=" + CALLBACK_URL + "
-  // // https://github.com/awais786327/oauth2orize-examples/issues/8#issuecomment-393417492
-  // app.get('/dialog/authorize', oauthRoutes.authorization)
-  // // internal route
-  // app.post('/dialog/authorize/decision', oauthRoutes.decision)
-  // app.post('/oauth/token', oauthRoutes.token)
-
-  // app.get('/api/userinfo', [
-  //   passport.authenticate('bearer', { session: false }),
-  //   (req, res) => {
-  //     // req.authInfo is set using the `info` argument supplied by
-  //     // `BearerStrategy`. It is typically used to indicate scope of the token,
-  //     // and used in access control checks. For illustrative purposes, this
-  //     // example simply returns the scope in the response.
-  //     res.json({
-  //       user_id: req.user.id,
-  //       name: req.user.name,
-  //       scope: req.authInfo.scope,
-  //     })
-  //   },
-  // ])
-  // app.get('/api/clientinfo', [
-  //   passport.authenticate('bearer', { session: false }),
-  //   (req, res) => {
-  //     // req.authInfo is set using the `info` argument supplied by
-  //     // `BearerStrategy`. It is typically used to indicate scope of the token,
-  //     // and used in access control checks. For illustrative purposes, this
-  //     // example simply returns the scope in the response.
-  //     res.json({
-  //       client_id: req.user.id,
-  //       name: req.user.name,
-  //       scope: req.authInfo.scope,
-  //     })
-  //   },
-  // ])
 
   // Passport configuration
   const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js')
@@ -259,11 +223,6 @@ module.exports = function launchServer() {
     mosaicoEditor.render,
   )
 
-  // app.use(function exposeUserToNuxt(req, res, next) {
-  //   // console.log(Object.keys(req))
-  //   console.log({ user: req.user })
-  //   next()
-  // })
 
   // NUXT integration
   // https://github.com/nuxt/create-nuxt-app/blob/master/template/frameworks/express/server/index.js
@@ -296,18 +255,12 @@ module.exports = function launchServer() {
     res.status(errStatus).json(errorResponse)
   })
 
-  services.areReady.then((serviceStatus) => {
-    if (!serviceStatus) {
-      return console.log(chalk.red(`[API] impossible to launch server`))
-    }
-    app.listen(config.PORT, function endInit() {
-      console.log(
-        chalk.green(`API is listening on port`),
-        // chalk.cyan(app.address().port),
-        chalk.cyan(config.PORT),
-        chalk.green(`on mode`),
-        chalk.cyan(config.NODE_ENV),
-      )
-    })
+  app.listen(config.PORT, function endInit() {
+    console.log(
+      chalk.green(`API is listening on port`),
+      // chalk.cyan(app.address().port),
+      chalk.cyan(config.PORT),
+      chalk.green(`on mode`),
+      chalk.cyan(config.NODE_ENV),
+    )
   })
-}

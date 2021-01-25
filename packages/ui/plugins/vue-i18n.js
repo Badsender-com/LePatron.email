@@ -7,6 +7,8 @@ import { SUPPORTED_LOCALES, messages } from '~/helpers/locales/index.js';
 import { USER, LOCALE } from '~/store/user';
 import { PAGE, DEFAULT_LOCALE } from '~/store/page';
 
+import Vuelidate from 'vuelidate';
+Vue.use(Vuelidate);
 Vue.use(VueI18n);
 
 export default ({ app, store }) => {
