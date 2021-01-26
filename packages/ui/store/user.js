@@ -29,7 +29,7 @@ export const getters = {
   },
 };
 
-const M_USER_SET = `M_USER_SET`;
+export const M_USER_SET = `M_USER_SET`;
 
 export const mutations = {
   [M_USER_SET](state, user) {

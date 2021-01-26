@@ -102,7 +102,6 @@
     "socks": "2.4.1",
     "speakingurl": "14.0.1",
     "ssh2-sftp-client": "5.1.2",
-    "throng": "4.0.0",
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
     "vuelidate": "0.7.4",
@@ -230,7 +229,7 @@
     "pretty": "yarn prettier ./packages -w"
   },
   "engines": {
-    "node": ">=10.15.3 <11.0.0",
+    "node": ">=10.15.3",
     "yarn": ">=1.12.1"
   }
 }

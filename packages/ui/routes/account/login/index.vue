@@ -1,8 +1,9 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
-
+import * as apiRoutes from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
+import { USER, M_USER_SET } from '~/store/user';
 
 export default {
   name: `bs-page-login`,
@@ -25,34 +26,46 @@ export default {
           isBasicAuthentication : true
       };
   },
-  // validations: {
-  //   username: { required },
-  // },
+  validations: {
+    username: { required },
+  },
   methods:{
-    checkEmailForm: function() {
+    checkEmailForm: async function() {
         this.submitted = true;
-          console.log(this)
-           console.log(this.username)
-        // this.$v.$touch();
-        // if (this.$v.$invalid) {
-        //     return;
-        // }
-        // TODO make API call
-        // mock result
+        this.$v.$touch();
+        if (this.$v.$invalid) {
+            return;
+        }
 
-
-        this.userIsFound = true;
-        if (true) {
-          window.location = `/account/SAML-login?email=${this.username}`;
-        } else {
-
-          this.isBasicAuthentication = true;
+        // move to service
+        try {
+          const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
+          this.userIsFound = true;
+          if (profile && profile.group && profile.group.isSAMLAuthentication) {
+            window.location = `/account/SAML-login?email=${this.username}`;
+          } else {
+            this.isBasicAuthentication = true;
+          }
+          console.log({profile})
+        } catch (error) {
+          // TODO error case
+          console.log(error);
         }
     }, 
-    handleSubmit: function() {
-      console.log("Submit")
-      console.log(this.username)
-      console.log(this.password)
+    handleSubmit: async function() {
+      try {
+        // move to service
+        const { $axios, $router, username, password} = this;
+        await $axios.$post('/account/login', {username, password});
+        // TODO
+        this.$store.commit(`${USER}/${M_USER_SET}`);
+        $router.push('/');
+           
+      } catch (error) {
+        // TODO error case
+        console.log(error);
+      }
+      
     }
   }
 };

@@ -158,13 +158,6 @@ const accountRouter = require('./account/account.routes')
   app.use(passport.session())
 
   app.post(
-    `/account/login`,
-    passport.authenticate(`local`, {
-      successReturnToOrRedirect: `/`,
-      failureRedirect: `/account/login`,
-    }),
-  )
-  app.post(
     `/account/login/admin/`,
     passport.authenticate(`local`, {
       successReturnToOrRedirect: `/groups`,
