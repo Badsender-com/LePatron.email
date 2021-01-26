@@ -501,9 +501,17 @@ function destroy(req, res, next) {
     .then((gallery) => {
       // TODO: handle non existing gallery
       // mongoID could be incorrect
+
       const { files } = gallery
+
       const imageIndex = files.findIndex((file) => file.name === imageName)
-      files.splice(imageIndex, 1)
+
+      const filesUpdated = files;
+
+      filesUpdated.splice(imageIndex, 1)
+
+      gallery.files = filesUpdated;
+
       gallery.markModified('files')
       return gallery.save()
     })
