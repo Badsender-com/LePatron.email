@@ -2,6 +2,8 @@
 
 var debounce = require('lodash.debounce');
 
+require('./link-with-colour');
+
 //////
 // DEFINE TINYMCE CUSTOM PLUGINS
 //////
@@ -203,11 +205,19 @@ function fontsizedialog(editor, url) {
 
 var tinymceConfigFull = {
   toolbar1:
-    'bold italic forecolor backcolor hr | fontsizedialogbutton styleselect letterspacingselect removeformat | link unlink | pastetext code',
+    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat charmap | linkcolorbutton unlinkcolorbutton | pastetext code',
   //- add colorpicker & custom plugins
   //- https://www.tinymce.com/docs/plugins/colorpicker/
   plugins: [
-    'link hr paste lists textcolor colorpicker code spacing fontsizedialog',
+    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog charmap',
+  ],
+  charmap: [
+    [0x00A0, 'Unbreakable space'],
+    [0x2011, 'Unbreakable hyphen']
+  ],
+  link_class_list: [
+    {title: 'Underline', value: ''},
+    {title: 'Normal', value: 'mce-text-decoration-none'}
   ],
   //- https://www.tinymce.com/docs/configure/content-formatting/#style_formats
   style_formats: [
@@ -231,35 +241,6 @@ var tinymceConfigFull = {
         { title: 'Superscript', icon: 'superscript', inline: 'sup' },
         { title: 'Subscript', icon: 'subscript', inline: 'sub' },
         { title: 'Code', icon: 'code', inline: 'code' },
-      ],
-    },
-    {
-      title: 'Alignment',
-      items: [
-        {
-          title: 'Left',
-          icon: 'alignleft',
-          block: 'div',
-          styles: { 'text-align': 'left' },
-        },
-        {
-          title: 'Center',
-          icon: 'aligncenter',
-          block: 'div',
-          styles: { 'text-align': 'center' },
-        },
-        {
-          title: 'Right',
-          icon: 'alignright',
-          block: 'div',
-          styles: { 'text-align': 'right' },
-        },
-        {
-          title: 'Justify',
-          icon: 'alignjustify',
-          block: 'div',
-          styles: { 'text-align': 'justify' },
-        },
       ],
     },
   ],
