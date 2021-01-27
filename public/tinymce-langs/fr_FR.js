@@ -217,4 +217,7 @@ tinymce.addI18n('fr_FR',{
 "Table": "Tableau",
 "Format": "Format",
 "Class": "Style",
+"Unbreakable space": "Espace insécable",
+"Unbreakable hyphen": "Trait d'union insécable",
+"Class": "Style",
 });
