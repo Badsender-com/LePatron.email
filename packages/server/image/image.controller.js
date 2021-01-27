@@ -14,6 +14,7 @@ const { green, red } = require('chalk')
 const config = require('../node.config.js')
 const fileManager = require('../common/file-manage.service.js')
 const { CacheImages, Galleries } = require('../common/models.common.js')
+const imageService = require('./image.service');
 
 console.log('[IMAGES] config.images.cache', config.images.cache)
 
@@ -494,27 +495,8 @@ function destroy(req, res, next) {
   let mongoId = /^([a-f\d]{24})-/.exec(imageName)
   if (!mongoId) return next(new createError.UnprocessableEntity())
   mongoId = mongoId[1]
-
-  Galleries.findOne({
-    creationOrWireframeId: mongoId,
-  })
-    .then((gallery) => {
-      // TODO: handle non existing gallery
-      // mongoID could be incorrect
-
-      const { files } = gallery
-
-      const imageIndex = files.findIndex((file) => file.name === imageName)
-
-      const filesUpdated = files;
-
-      filesUpdated.splice(imageIndex, 1)
-
-      gallery.files = filesUpdated;
-
-      gallery.markModified('files')
-      return gallery.save()
-    })
+  
+  imageService.destroy(mongoId, imageName)
     .then((gallery) => {
       res.send({ files: gallery.files })
     })
