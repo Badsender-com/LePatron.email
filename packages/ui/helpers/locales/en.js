@@ -72,6 +72,8 @@ export default {
       ftpProtocol: 'HTTP protocol',
       endpoint: "Images root'url",
       editorLabel: 'Button label',
+      entryPoint: 'Entry point',
+      issuer: 'Issuer',
     },
     template: {
       meta: 'Meta',

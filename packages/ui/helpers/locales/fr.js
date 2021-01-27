@@ -72,6 +72,8 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
       editorLabel: 'Libellé du bouton',
+      entryPoint: 'Entry point',
+      issuer: 'Issuer',
     },
     template: {
       meta: 'Meta',

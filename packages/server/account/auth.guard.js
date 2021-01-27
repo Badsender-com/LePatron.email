@@ -178,7 +178,7 @@ passport.use(new MultiSamlStrategy(
   {
     passReqToCallback: true, //makes req available in callback
     getSamlOptions: async (request, done) => {
- 
+
       let email = request.query.email;
 
       if (!email ) {
@@ -202,13 +202,14 @@ passport.use(new MultiSamlStrategy(
         const group = await Groups.findOne({
           _id: user.group,
         })
-        if (group && group.name === "bearstudio") {
+        if (group && group.entryPoint && group.issuer) {
           return done(null, {
-            entryPoint: 'https://bearstudio.okta.com/app/bearstudio_badsender_1/exk2qar21ofo1yVjU5d6/sso/saml',
-            issuer: "http://www.okta.com/exk2qar21ofo1yVjU5d6",
+            entryPoint: group.entryPoint,
+            issuer: group.issuer,
           });
         }
-      } 
+        return done(new Error("Provider informations not found"), null);
+      }
       return done(new Error("SAML provider not found"), null);
     }
   },

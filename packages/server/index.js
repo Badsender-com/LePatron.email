@@ -172,12 +172,15 @@ const accountRouter = require('./account/account.routes')
   })
 
   app.get('/account/SAML-login', (req, res, next) => {
+      if (!req.body.SAMLResponse && !req.query.email) {
+        return res.redirect('/');
+      }
       next()
     },
     passport.authenticate('saml',  { failureRedirect: '/', failureFlash: true }),
     (err, user, info) => {
       console.log({err})
-      if (err) { 
+      if (err) {
         return res.redirect('/');
       }
       console.log({user})

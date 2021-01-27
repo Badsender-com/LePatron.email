@@ -107,6 +107,27 @@ export default {
               />
             </v-col>
           </v-row>
+          <v-row>
+            <v-col cols="7">
+              <v-text-field
+                v-model="localModel.entryPoint"
+                id="entryPoint"
+                :label="$t('forms.group.entryPoint')"
+                name="entryPoint"
+                :disabled="disabled"
+              />
+            </v-col>
+
+            <v-col cols="5">
+              <v-text-field
+                v-model="localModel.issuer"
+                id="issuer"
+                :label="$t('forms.group.issuer')"
+                name="issuer"
+                :disabled="disabled"
+              />
+            </v-col>
+          </v-row>
 
           <v-row>
             <v-col cols="12">
