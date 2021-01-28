@@ -51,8 +51,8 @@ export default {
           }
           console.log({profile})
         } catch (error) {
-          // TODO error case
-          console.log(error);
+          console.error(error);
+          this.isLoading = false;
         }
     },
     handleSubmit: async function() {
@@ -65,8 +65,7 @@ export default {
         this.$store.commit(`${USER}/${M_USER_SET}`);
         $router.push('/');
       } catch (error) {
-        // TODO error case
-        console.log(error);
+        console.error(error);
         this.isLoading = false;
       }
 
@@ -81,7 +80,7 @@ export default {
       <v-toolbar-title>{{ $t('forms.user.login') }}</v-toolbar-title>
     </v-toolbar>
     <v-divider />
-    <v-div v-if="!userIsFound">
+    <div v-if="!userIsFound">
       <v-card-text>
         <v-form @submit.prevent="checkEmailForm" id="check-email-form">
           <v-text-field
@@ -102,10 +101,10 @@ export default {
             {{$t('forms.user.login')}}
           </v-btn>
       </v-card-actions>
-    </v-div>
+    </div>
 
     <!-- Password field  -->
-    <v-div v-if="userIsFound && isBasicAuthentication" >
+    <div v-if="userIsFound && isBasicAuthentication" >
       <v-card-text >
         <v-form @submit.prevent="handleSubmit" id="login-form" >
           <v-text-field
@@ -129,6 +128,6 @@ export default {
           $t('forms.user.login')
         }}</v-btn>
       </v-card-actions>
-     </v-div>
+     </div>
   </v-card>
 </template>
