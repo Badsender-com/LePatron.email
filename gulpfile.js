@@ -182,7 +182,6 @@ function copyTinymceFiles() {
     `${base}/tinymce.js`,
     `${base}/themes/modern/theme.js`,
     `${base}/plugins/paste/plugin.js`,
-    `${base}/plugins/link/plugin.js`,
     `${base}/plugins/hr/plugin.js`,
     `${base}/plugins/lists/plugin.js`,
     `${base}/plugins/textcolor/plugin.js`,
