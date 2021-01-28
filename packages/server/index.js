@@ -173,9 +173,6 @@ app.use(passport.session())
 
 app.post(`/account/login`, (req, res, next) => {
   passport.authenticate(`local`, (err, user, info) => {
-      console.log({ user })
-      console.log({ info })
-      console.log({ err })
       if (err) {
         return next(err);
       }
