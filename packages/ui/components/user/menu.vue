@@ -22,7 +22,6 @@ export default {
       return userStatusHelpers.getStatusIcon(this.user.status);
     },
     actionDisplay() {
-      console.log({ user: this.user })
       return userStatusHelpers.getStatusActions(this.user.status);
     },
   },
