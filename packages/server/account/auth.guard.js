@@ -76,7 +76,7 @@ passport.use(
       if (password === config.admin.password) {
         return done(null, { ...adminUser })
       }
-      return done(null, false, { message: 'password.error.incorrect' })
+      return done(new Error('Bad password'), false, { message: 'password.error.incorrect' })
     }
     // user
     try {
@@ -92,7 +92,8 @@ passport.use(
       }
       return done(null, user)
     } catch (err) {
-      return done(null, false, err)
+      console.error(err)
+      return done(new Error(err), false, err)
     }
   }),
 )
