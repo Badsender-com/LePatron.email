@@ -2,7 +2,7 @@
   "name": "lepatron-email",
   "version": "0.17.4",
   "description": "LePatron.email - Open Source Email Builder",
-  "main": "./packages/server/workers.js",
+  "main": "./packages/server/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Badsender-com/LePatron.email.git"
@@ -53,7 +53,8 @@
     "cheerio": "1.0.0-rc.3",
     "compression": "1.7.4",
     "connect-ensure-login": "0.1.1",
-    "connect-mongo": "2.0.3",
+    "connect-mongo": "3.2.0",
+    "connect-mongodb-session": "^2.4.1",
     "consola": "2.11.1",
     "cookie": "0.3.1",
     "cookie-parser": "1.4.4",
@@ -63,7 +64,7 @@
     "express-async-handler": "1.1.4",
     "express-favicon": "2.0.1",
     "express-oauth-server": "2.0.0",
-    "express-session": "1.16.2",
+    "express-session": "1.17.1",
     "font-awesome": "4.7.0",
     "formidable": "1.0.17",
     "fs-extra": "7.0.1",
@@ -75,7 +76,7 @@
     "lodash": "4.17.15",
     "mime-types": "2.1.24",
     "moment": "2.24.0",
-    "mongoose": "5.7.3",
+    "mongoose": "5.11.13",
     "mongoose-hidden": "1.8.1",
     "morgan": "1.9.1",
     "nodemailer": "6.3.0",
@@ -97,11 +98,10 @@
     "request": "2.88.0",
     "segfault-handler": "1.3.0",
     "serve-favicon": "2.4.3",
-    "sharp": "0.22.1",
+    "sharp": "0.27.0",
     "socks": "2.4.1",
     "speakingurl": "14.0.1",
     "ssh2-sftp-client": "5.1.2",
-    "throng": "4.0.0",
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
     "vuelidate": "0.7.4"
@@ -211,6 +211,7 @@
     "editor:build": "gulp build",
     "editor:build:prod": "gulp build --prod",
     "ui:build": "nuxt build",
+    "ui:start": "nuxt start",
     "dev": "run-p serve:mail serve:dev",
     "docs:dev": "vuepress dev ./packages/documentation",
     "docs:dev:build": "vuepress build ./packages/documentation",
@@ -219,8 +220,8 @@
     "heroku-postbuild": "yarn build",
     "prod": "yarn build && yarn serve:prod",
     "start": "yarn serve:app",
-    "serve:app": "node packages/server/workers.js",
-    "serve:dev": "nodemon packages/server/workers.js --config packages/server/nodemon.json",
+    "serve:app": "node packages/server/index.js",
+    "serve:dev": "nodemon packages/server/index.js --config packages/server/nodemon.json",
     "serve:mail": "maildev",
     "serve:prod": "export NODE_ENV=production && yarn serve:app",
     "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
@@ -228,7 +229,7 @@
     "pretty": "yarn prettier ./packages -w"
   },
   "engines": {
-    "node": ">=10.15.3 <11.0.0",
+    "node": ">=10.15.3",
     "yarn": ">=1.12.1"
   }
 }
