@@ -33,7 +33,7 @@ module.exports = {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: `_company`, select: `id name` })
+    .populate({ path: `_company`, select: `id name entryPoint issuer` })
     .sort({ isDeactivated: 1, createdAt: -1 })
   res.json({ items: users })
 }

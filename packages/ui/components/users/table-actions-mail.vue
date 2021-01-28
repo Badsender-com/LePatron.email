@@ -9,6 +9,7 @@ export default {
   },
   computed: {
     actionDisplay() {
+      console.log({ user: this.user })
       return userStatusHelpers.getStatusActions(this.user.status);
     },
     actionText() {
