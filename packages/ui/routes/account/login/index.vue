@@ -1,7 +1,9 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
+import { mapMutations } from 'vuex';
 
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 
 export default {
@@ -10,6 +12,22 @@ export default {
   layout: `centered`,
   head() {
     return { title: this.title };
+  },
+  data() {
+    return { baseaccount: '' }
+  },
+  created() {
+    if (this.$route.query.error) {
+      const errorMessage = this.$t(`global.errors.${this.$route.query.error}`);
+      this.$router.replace('/account/login');
+      this.showSnackbar({
+        text: errorMessage,
+        color: `error`,
+      });
+    }
+  },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
   },
   computed: {
     title() {
