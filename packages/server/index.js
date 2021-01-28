@@ -10,12 +10,6 @@ const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
 const compression = require('compression')
 const favicon = require('express-favicon')
-// Connect-mongo raise some warnings
-//  • DeprecationWarning: collection.update is deprecated. Use updateOne, updateMany, or bulkWrite instead.
-//  • https://github.com/jdesboeufs/connect-mongo/issues/300
-
-// const MongoStore = require('connect-mongo')(session)
-
 const passport = require('passport')
 const moment = require('moment')
 const { Nuxt, Builder } = require('nuxt')
@@ -212,8 +206,6 @@ app.get(`/account/logout`, (req, res) => {
   req.logout()
   res.redirect(`/account/login`)
 })
-
-
 
 // Passport configuration
 const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js')
