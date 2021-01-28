@@ -13,9 +13,6 @@ export default {
   head() {
     return { title: this.title };
   },
-  data() {
-    return { baseaccount: '' }
-  },
   created() {
     if (this.$route.query.error) {
       const errorMessage = this.$t(`global.errors.${this.$route.query.error}`);
