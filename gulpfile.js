@@ -187,7 +187,6 @@ function copyTinymceFiles() {
     `${base}/plugins/textcolor/plugin.js`,
     `${base}/plugins/colorpicker/plugin.js`,
     `${base}/plugins/code/plugin.js`,
-    `${base}/plugins/charmap/plugin.js`,
   ]
   const srcMin = src.map(filePath => {
     return filePath.replace(/\.js$/, `.min.js`)

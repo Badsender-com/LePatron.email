@@ -199,21 +199,45 @@ function fontsizedialog(editor, url) {
   }
 }
 
+tinymce.PluginManager.add('specialcharacters', specialcharacters);
+
+function specialcharacters(editor) {
+  editor.addButton('specialcharacters', function () {
+    const items = [
+      {
+        text: 'Unbreakable space',
+        onclick: function() {
+          editor.insertContent('&nbsp;');
+        }
+      },
+      {
+        text: 'Unbreakable hyphen',
+        onclick: function() {
+          editor.insertContent('&#8209;');
+        }
+      },
+    ];
+
+    return {
+      type: 'menubutton',
+      text: 'Special character',
+      icon: false,
+      menu: items,
+    };
+  });
+}
+
 //////
 // CONFIGURATION
 //////
 
 var tinymceConfigFull = {
   toolbar1:
-    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat charmap | linkcolorbutton unlinkcolorbutton | pastetext code',
+    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters | linkcolorbutton unlinkcolorbutton | pastetext code',
   //- add colorpicker & custom plugins
   //- https://www.tinymce.com/docs/plugins/colorpicker/
   plugins: [
-    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog charmap',
-  ],
-  charmap: [
-    [0x00A0, 'Unbreakable space'],
-    [0x2011, 'Unbreakable hyphen']
+    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters',
   ],
   link_class_list: [
     {title: 'Underline', value: ''},
