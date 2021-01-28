@@ -190,7 +190,6 @@ passport.use(new MultiSamlStrategy(
         });
         email = jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject']['saml2:NameID']['$t']
       }
-      console.log({email})
 
       const user = await Users.findOne({
         email: email,

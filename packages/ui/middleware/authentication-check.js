@@ -6,12 +6,10 @@ function flattenMeta(acc, meta) {
 }
 
 export default async function authMiddleware(nuxtContext) {
-  console.log("Middleware")
   const { store, redirect, route } = nuxtContext;
   const userSessionInfo = store.getters[`${USER}/${SESSION_ACL}`];
   const meta = route.meta.reduce(flattenMeta, {});
   const authorizations = pageAcl.getAuthorizations(meta.acl);
-  console.log({authorizations, userSessionInfo})
   if (authorizations.notConnected && userSessionInfo.isConnected) {
     if (userSessionInfo.isUser) return redirect(`/`);
     if (userSessionInfo.isAdmin) return redirect(`/groups`);
