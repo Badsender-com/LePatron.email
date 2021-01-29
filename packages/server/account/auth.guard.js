@@ -74,7 +74,6 @@ function guard(role = `user`, redirect = false) {
  */
 passport.use(
   new LocalStrategy(async (username, password, done) => {
-    console.log('enter in localstrategy')
     // admin
     if (username === config.admin.username) {
       if (password === config.admin.password) {

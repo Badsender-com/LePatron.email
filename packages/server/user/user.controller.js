@@ -279,7 +279,6 @@ async function setPassword(req, res) {
 
 async function getPublicProfile(req, res) {
   const { username } = req.params
-  console.log({ username })
 
   if (username === config.admin.username) {
     // TODO rework this
@@ -306,21 +305,21 @@ async function getPublicProfile(req, res) {
 async function login(req, res, next) {
   passport.authenticate(`local`, (err, user, info) => {
     if (err) {
-      next(new createError.InternalServerError(err))
+      return next(new createError.InternalServerError(err))
     }
 
     if (info && info.message) {
-      next(new createError.BadRequest(info.message));
+      return next(new createError.BadRequest(info.message));
     }
 
-    if (!user) next(new createError.BadRequest(`User not found`));
+    if (!user) return next(new createError.BadRequest(`User not found`));
 
     req.logIn(user, (err) => {
       if (err) {
-        next(new createError.InternalServerError(err));
+        return next(new createError.InternalServerError(err));
       }
 
-      return res.redirect('/');
+      return res.json({ isAdmin: user.isAdmin });
     });
   })(req, res);
 }

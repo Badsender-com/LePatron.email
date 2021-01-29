@@ -73,8 +73,8 @@ export default {
         const { $axios, $router, username, password} = this;
         this.isLoading = true;
         try {
-          await $axios.$post('/account/login', {username, password});
-          this.$store.commit(`${USER}/${M_USER_SET}`, { isAdmin: true });
+          const user = await $axios.$post('/account/login', {username, password});
+          this.$store.commit(`${USER}/${M_USER_SET}`, { isAdmin: user.isAdmin });
           $router.push('/');
         } catch (err) {
           this.isLoading = false;
