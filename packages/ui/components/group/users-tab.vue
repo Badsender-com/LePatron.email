@@ -7,7 +7,7 @@ export default {
   name: `bs-group-users-tab`,
   components: { BsUsersTable },
   data() {
-    return { users: [], loading: false };
+    return { users: [], loading: false, hiddenCols: ['group'] };
   },
   async mounted() {
     const {
@@ -19,6 +19,10 @@ export default {
       const usersResponse = await $axios.$get(
         apiRoutes.groupsItemUsers(params)
       );
+      const useSaml = usersResponse.items[0].status === 'saml-authentication';
+      if (useSaml) {
+        this.hiddenCols.push('actionSendPasswordMail')
+      }
       this.users = usersResponse.items;
     } catch (error) {
       console.log(error);
@@ -44,7 +48,7 @@ export default {
         :users="users"
         @update="updateUser"
         :loading="loading"
-        :hidden-cols="[`group`]"
+        :hidden-cols="hiddenCols"
       />
     </v-card-text>
   </v-card>

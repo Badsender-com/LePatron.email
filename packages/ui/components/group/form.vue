@@ -85,6 +85,11 @@ export default {
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
+      const currentGroup = this.group;
+      if (!this.useSamlAuthentication) {
+        currentGroup.entryPoint = ""
+        currentGroup.issuer = ""
+      }
       this.$emit(`submit`, this.group);
     },
   },

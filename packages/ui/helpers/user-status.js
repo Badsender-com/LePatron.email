@@ -2,12 +2,14 @@ const DEACTIVATED = `deactivated`;
 const CONFIRMED = `confirmed`;
 const PASSWORD_MAIL_SENT = `password-mail-sent`;
 const TO_BE_INITIALIZED = `to-be-initialized`;
+const SAML_AUTHENTICATION = `saml-authentication`;
 
 const statusIcons = {
   [DEACTIVATED]: `airline_seat_individual_suite`,
   [CONFIRMED]: `check`,
   [PASSWORD_MAIL_SENT]: `schedule`,
   [TO_BE_INITIALIZED]: `report_problem`,
+  [SAML_AUTHENTICATION]: `check`,
 };
 
 export const getStatusIcon = (statusName) => statusIcons[statusName];

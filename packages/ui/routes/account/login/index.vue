@@ -74,10 +74,9 @@ export default {
         this.isLoading = true;
         try {
           await $axios.$post('/account/login', {username, password});
-          this.$store.commit(`${USER}/${M_USER_SET}`);
+          this.$store.commit(`${USER}/${M_USER_SET}`, { isAdmin: true });
           $router.push('/');
         } catch (err) {
-          console.log({ err })
           this.isLoading = false;
           const errorMessage = this.$t(`global.errors.password.error.incorrect`);
           this.showSnackbar({

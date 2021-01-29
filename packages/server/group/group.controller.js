@@ -102,7 +102,9 @@ async function readUsers(req, res) {
     Users.find({
       _company: groupId,
       isDeactivated: { $ne: true },
-    }).sort({ email: 1 }),
+    })
+    .populate({ path: `_company`, select: `id name entryPoint issuer` })
+    .sort({ email: 1 }),
   ])
   if (!group) throw new createError.NotFound()
   res.json({ items: users })

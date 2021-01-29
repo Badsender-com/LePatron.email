@@ -110,6 +110,9 @@ export default {
           valid: 'A valid email is required',
         },
       },
+      tooltip: {
+        noPassword: 'Disabled cause of SAML Authentication',
+      },
     },
   },
   groups: {
