@@ -93,6 +93,14 @@ const GroupSchema = Schema(
       set: trimString,
       default: `FTP`,
     },
+    entryPoint: {
+      type: String,
+      default: ``,
+    },
+    issuer: {
+      type: String,
+      default: ``,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } },
 )

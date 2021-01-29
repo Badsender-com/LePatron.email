@@ -291,11 +291,11 @@ async function getPublicProfile(req, res) {
   const group = await Groups.findOne({
     _id: user.group,
   })
-    
+
   const { name, email, isDeactivated } = user;
-  const { name: groupName} = group;
+  const { name: groupName, entryPoint, issuer } = group;
 
   return res.json({
-      name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : groupName === "bearstudio"  }, 
+      name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : entryPoint && issuer },
   })
 }

@@ -23,7 +23,8 @@ export default {
           password: "",
           submitted: false,
           userIsFound: false,
-          isBasicAuthentication : true
+          isBasicAuthentication : true,
+          isLoading : false
       };
   },
   validations: {
@@ -39,33 +40,35 @@ export default {
 
         // move to service
         try {
+          this.isLoading = true;
           const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
-          this.userIsFound = true;
+          this.isLoading = false;
           if (profile && profile.group && profile.group.isSAMLAuthentication) {
             window.location = `/account/SAML-login?email=${this.username}`;
           } else {
             this.isBasicAuthentication = true;
+            this.userIsFound = true;
           }
           console.log({profile})
         } catch (error) {
-          // TODO error case
-          console.log(error);
+          console.error(error);
+          this.isLoading = false;
         }
-    }, 
+    },
     handleSubmit: async function() {
       try {
         // move to service
         const { $axios, $router, username, password} = this;
+        this.isLoading = true;
         await $axios.$post('/account/login', {username, password});
         // TODO
         this.$store.commit(`${USER}/${M_USER_SET}`);
         $router.push('/');
-           
       } catch (error) {
-        // TODO error case
-        console.log(error);
+        console.error(error);
+        this.isLoading = false;
       }
-      
+
     }
   }
 };
@@ -77,11 +80,12 @@ export default {
       <v-toolbar-title>{{ $t('forms.user.login') }}</v-toolbar-title>
     </v-toolbar>
     <v-divider />
-    <v-div v-if="!userIsFound"> 
+    <div v-if="!userIsFound">
       <v-card-text>
         <v-form @submit.prevent="checkEmailForm" id="check-email-form">
           <v-text-field
             v-model="username"
+            autofocus
             :label="$t('users.email')"
             name="username"
             prepend-icon="email"
@@ -93,18 +97,19 @@ export default {
 
       <v-card-actions >
         <v-spacer />
-        <v-btn color="primary" form="check-email-form" type="submit">
+        <v-btn :loading="isLoading" color="primary" form="check-email-form" type="submit">
             {{$t('forms.user.login')}}
           </v-btn>
       </v-card-actions>
-    </v-div>
+    </div>
 
     <!-- Password field  -->
-    <v-div v-if="userIsFound && isBasicAuthentication" > 
+    <div v-if="userIsFound && isBasicAuthentication" >
       <v-card-text >
         <v-form @submit.prevent="handleSubmit" id="login-form" >
           <v-text-field
             v-model="password"
+            autofocus
             id="password"
             :label="$t('global.password')"
             name="password"
@@ -119,10 +124,10 @@ export default {
         <v-btn nuxt text color="primary" to="/account/reset-password">{{
           $t('forms.user.forgottenPassword')
         }}</v-btn>
-        <v-btn color="primary" form="login-form" type="submit">{{
+        <v-btn :loading="isLoading" color="primary" form="login-form" type="submit">{{
           $t('forms.user.login')
         }}</v-btn>
       </v-card-actions>
-     </v-div> 
+     </div>
   </v-card>
 </template>
