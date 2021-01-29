@@ -14,19 +14,6 @@ export default {
   head() {
     return { title: this.title };
   },
-  created() {
-    if (this.$route.query.error) {
-      const errorMessage = this.$t(`global.errors.${this.$route.query.error}`);
-      this.$router.replace('/account/login');
-      this.showSnackbar({
-        text: errorMessage,
-        color: `error`,
-      });
-    }
-  },
-  methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-  },
   computed: {
     title() {
       return `login`;
@@ -46,6 +33,7 @@ export default {
     username: { required },
   },
   methods:{
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     checkEmailForm: async function() {
         this.submitted = true;
         this.$v.$touch();
@@ -56,15 +44,23 @@ export default {
         // move to service
         try {
           this.isLoading = true;
-          const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
-          this.isLoading = false;
-          if (profile && profile.group && profile.group.isSAMLAuthentication) {
-            window.location = `/account/SAML-login?email=${this.username}`;
-          } else {
-            this.isBasicAuthentication = true;
-            this.userIsFound = true;
+          try {
+            const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
+            this.isLoading = false;
+            if (profile && profile.group && profile.group.isSAMLAuthentication) {
+              window.location = `/account/SAML-login?email=${this.username}`;
+            } else {
+              this.isBasicAuthentication = true;
+              this.userIsFound = true;
+            }
+          } catch (err) {
+            this.isLoading = false;
+            const errorMessage = this.$t(`global.errors.password.error.nouser`);
+            this.showSnackbar({
+              text: errorMessage,
+              color: `error`,
+            });
           }
-          console.log({profile})
         } catch (error) {
           console.error(error);
           this.isLoading = false;
@@ -75,10 +71,19 @@ export default {
         // move to service
         const { $axios, $router, username, password} = this;
         this.isLoading = true;
-        await $axios.$post('/account/login', {username, password});
-        // TODO
-        this.$store.commit(`${USER}/${M_USER_SET}`);
-        $router.push('/');
+        try {
+          await $axios.$post('/account/login', {username, password});
+          this.$store.commit(`${USER}/${M_USER_SET}`);
+          $router.push('/');
+        } catch (err) {
+          console.log({ err })
+          this.isLoading = false;
+          const errorMessage = this.$t(`global.errors.password.error.incorrect`);
+          this.showSnackbar({
+            text: errorMessage,
+            color: `error`,
+          });
+        }
       } catch (error) {
         console.error(error);
         this.isLoading = false;
