@@ -171,12 +171,28 @@ app.use(logger.logResponse())
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.post(
-  `/account/login`,
-  passport.authenticate(`local`, {
-    successReturnToOrRedirect: `/`,
-    failureRedirect: `/account/login`,
-  }),
+app.post(`/account/login`, (req, res, next) => {
+  passport.authenticate(`local`, (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+
+      if (!user) {
+        if (info && info.message) {
+          return res.redirect(`/account/login?error=${info.message}`);
+        }
+        return res.redirect('/account/login');
+      }
+
+      req.logIn(user, (err) => {
+        if (!err) {
+          return next(err);
+        }
+
+        return res.redirect('/');
+      });
+    })(req, res, next);
+  },
 )
 app.post(
   `/account/login/admin/`,
