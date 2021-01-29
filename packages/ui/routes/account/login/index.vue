@@ -26,7 +26,8 @@ export default {
           submitted: false,
           userIsFound: false,
           isBasicAuthentication : true,
-          isLoading : false
+          isLoading : false,
+          showPassword: false,
       };
   },
   validations: {
@@ -88,7 +89,12 @@ export default {
         console.error(error);
         this.isLoading = false;
       }
-
+    },
+    back: function() {
+      this.username = ""
+      this.password = ""
+      this.userIsFound = false
+      this.isBasicAuthentication = true
     }
   }
 };
@@ -97,7 +103,14 @@ export default {
 <template>
   <v-card class="elevation-12">
     <v-toolbar flat>
-      <v-toolbar-title>{{ $t('forms.user.login') }}</v-toolbar-title>
+      <v-btn
+        icon
+        @click="back"
+        v-if="userIsFound && isBasicAuthentication"
+      >
+        <v-icon>{{ 'arrow_back' }}</v-icon>
+      </v-btn>
+      <v-toolbar-title class="pl-0">{{ $t('forms.user.login') }}</v-toolbar-title>
     </v-toolbar>
     <v-divider />
     <div v-if="!userIsFound">
@@ -134,8 +147,10 @@ export default {
             :label="$t('global.password')"
             name="password"
             prepend-icon="lock"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
+            :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
             required
+            @click:append="showPassword = !showPassword"
           />
         </v-form>
       </v-card-text>
