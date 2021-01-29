@@ -64,7 +64,6 @@ html(lang=getLocale())
           #{null && `https://www.tinymce.com/docs/configure/integration-and-setup/#external_plugins`}
           external_plugins: {
             paste:        "#{ _config.isDev ? '/lib/plugins/paste/plugin.js' : md5Url('/lib/plugins/paste/plugin.min.js') }",
-            link:         "#{ _config.isDev ? '/lib/plugins/link/plugin.js' : md5Url('/lib/plugins/link/plugin.min.js') }",
             hr:           "#{ _config.isDev ? '/lib/plugins/hr/plugin.js' : md5Url('/lib/plugins/hr/plugin.min.js') }",
             lists:        "#{ _config.isDev ? '/lib/plugins/lists/plugin.js' : md5Url('/lib/plugins/lists/plugin.min.js') }",
             textcolor:    "#{ _config.isDev ? '/lib/plugins/textcolor/plugin.js' : md5Url('/lib/plugins/textcolor/plugin.min.js') }",
