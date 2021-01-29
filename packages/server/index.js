@@ -171,29 +171,34 @@ app.use(logger.logResponse())
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.post(`/account/login`, (req, res, next) => {
-  passport.authenticate(`local`, (err, user, info) => {
-      if (err) {
-        return next(err);
-      }
-
-      if (!user) {
-        if (info && info.message) {
-          return res.redirect(`/account/login?error=${info.message}`);
-        }
-        return res.redirect('/account/login');
-      }
-
-      req.logIn(user, (err) => {
-        if (!err) {
-          return next(err);
-        }
-
-        return res.redirect('/');
-      });
-    })(req, res, next);
+app.get(
+  '/account/SAML-login',
+  (req, res, next) => {
+    if (!req.body.SAMLResponse && !req.query.email) {
+      return res.redirect('/')
+    }
+    next()
+  },
+  passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+  (err, user, info) => {
+    console.log({ err })
+    if (err) {
+      return res.redirect('/')
+    }
+    console.log({ user })
+    return res.redirect('/')
   },
 )
+
+app.post(
+  '/SAML-login/callback',
+  bodyParser.urlencoded({ extended: false }),
+  passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+  function (req, res) {
+    res.redirect('/')
+  },
+)
+
 app.post(
   `/account/login/admin/`,
   passport.authenticate(`local`, {

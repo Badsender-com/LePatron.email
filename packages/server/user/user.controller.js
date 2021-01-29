@@ -5,6 +5,7 @@ const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
 
 const { Users, Mailings, Groups } = require('../common/models.common.js')
+const config = require('../node.config.js')
 
 module.exports = {
   list: asyncHandler(list),
@@ -17,6 +18,7 @@ module.exports = {
   adminResetPassword: asyncHandler(adminResetPassword),
   forgotPassword: asyncHandler(forgotPassword),
   setPassword: asyncHandler(setPassword),
+  getPublicProfile: asyncHandler(getPublicProfile),
 }
 
 /**
@@ -272,15 +274,28 @@ async function setPassword(req, res) {
   res.json(updatedUser)
 }
 
-// function showSetPassword(req, res, next) {
-//   const { token } = req.params
-//   Users.findOne({
-//     token,
-//     tokenExpire: { $gt: Date.now() },
-//   })
-//     .then(user => {
-//       const data = !user ? { noToken: true } : { token }
-//       return res.render('password-reset', { data })
-//     })
-//     .catch(next)
-// }
+
+async function getPublicProfile(req, res) {
+  const { username } = req.params
+
+  if (username === config.admin.username) {
+    // TODO rework this
+    return res.json({ group: {isSAMLAuthentication : false}})
+  }
+  // todo move on service
+  const user = await Users.findOne({
+    email: username,
+    isDeactivated: { $ne: true },
+  })
+  if (!user) throw new createError.BadRequest(`User not found`)
+  const group = await Groups.findOne({
+    _id: user.group,
+  })
+
+  const { name, email, isDeactivated } = user;
+  const { name: groupName, entryPoint, issuer } = group;
+
+  return res.json({
+      name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : entryPoint && issuer },
+  })
+}

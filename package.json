@@ -87,6 +87,7 @@
     "passport-http-bearer": "1.0.1",
     "passport-local": "1.0.0",
     "passport-oauth2-client-password": "0.1.2",
+    "passport-saml": "2.0.4",
     "probe-image-size": "4.0.0",
     "promisify-child-process": "3.1.1",
     "pug": "2.0.4",
@@ -103,7 +104,8 @@
     "ssh2-sftp-client": "5.1.2",
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
-    "vuelidate": "0.7.4"
+    "vuelidate": "0.7.4",
+    "xml2json": "0.12.0"
   },
   "devDependencies": {
     "@babel/core": "7.12.10",
@@ -176,7 +178,7 @@
     "mensch": "0.3.3",
     "merge-stream": "1.0.1",
     "mockery": "2.1.0",
-    "nodemon": "1.19.3",
+    "nodemon": "2.0.7",
     "npm-run-all": "4.1.5",
     "parallelshell": "3.0.1",
     "prettier": "2.2.1",
