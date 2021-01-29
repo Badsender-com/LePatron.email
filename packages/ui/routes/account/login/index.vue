@@ -1,7 +1,9 @@
 <script>
-import { validationMixin } from 'vuelidate';
-import { required, email } from 'vuelidate/lib/validators';
+import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { mapMutations } from 'vuex';
+
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import { USER, M_USER_SET } from '~/store/user';
 
@@ -11,6 +13,19 @@ export default {
   layout: `centered`,
   head() {
     return { title: this.title };
+  },
+  created() {
+    if (this.$route.query.error) {
+      const errorMessage = this.$t(`global.errors.${this.$route.query.error}`);
+      this.$router.replace('/account/login');
+      this.showSnackbar({
+        text: errorMessage,
+        color: `error`,
+      });
+    }
+  },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
   },
   computed: {
     title() {

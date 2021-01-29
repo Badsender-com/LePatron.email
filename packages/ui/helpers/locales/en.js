@@ -12,6 +12,17 @@ export default {
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
+      password: {
+        error: {
+          nouser: 'User not found',
+          incorrect: 'Bad password'
+        }
+      },
+      login: {
+        error: {
+          internal: 'An error occurred',
+        }
+      }
     },
     newTemplate: 'Add a template',
     template: 'Template | Templates',

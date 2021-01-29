@@ -12,6 +12,17 @@ export default {
       required: 'Ce champ est requis',
       userRequired: 'Un utilisateur est requis',
       nameRequired: 'Un nom est requis',
+      password: {
+        error: {
+          nouser: 'Utilisateur introuvable',
+          incorrect: 'Identifiants incorrects'
+        }
+      },
+      login: {
+        error: {
+          internal: 'Une erreur est survenue',
+        }
+      }
     },
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
