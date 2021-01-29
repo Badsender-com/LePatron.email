@@ -87,7 +87,7 @@
     "passport-http-bearer": "1.0.1",
     "passport-local": "1.0.0",
     "passport-oauth2-client-password": "0.1.2",
-    "passport-saml": "^2.0.4",
+    "passport-saml": "2.0.4",
     "probe-image-size": "4.0.0",
     "promisify-child-process": "3.1.1",
     "pug": "2.0.4",

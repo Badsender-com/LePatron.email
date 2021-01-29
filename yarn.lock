@@ -11832,7 +11832,7 @@ passport-oauth2-client-password@0.1.2:
   dependencies:
     passport-strategy "1.x.x"
 
-passport-saml@^2.0.4:
+passport-saml@2.0.4:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/passport-saml/-/passport-saml-2.0.4.tgz#e5207d30408486c2c8f454c1f41a978710f95eae"
   integrity sha512-hIt8aZ8J6nDaAL0Q0N7QLMVt7vnb//524x/Cc0fnks6RHwTNtBXE7yCCiDaKvqIN8ybro3e7XjZzGzYAdlcSYg==
