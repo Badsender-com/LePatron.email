@@ -3,6 +3,7 @@
 const _ = require('lodash')
 const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
+const passport = require('passport')
 
 const { Users, Mailings, Groups } = require('../common/models.common.js')
 const config = require('../node.config.js')
@@ -19,6 +20,7 @@ module.exports = {
   forgotPassword: asyncHandler(forgotPassword),
   setPassword: asyncHandler(setPassword),
   getPublicProfile: asyncHandler(getPublicProfile),
+  login: asyncHandler(login),
 }
 
 /**
@@ -33,7 +35,7 @@ module.exports = {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: `_company`, select: `id name` })
+    .populate({ path: `_company`, select: `id name entryPoint issuer` })
     .sort({ isDeactivated: 1, createdAt: -1 })
   res.json({ items: users })
 }
@@ -298,4 +300,26 @@ async function getPublicProfile(req, res) {
   return res.json({
       name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : entryPoint && issuer },
   })
+}
+
+async function login(req, res, next) {
+  passport.authenticate(`local`, (err, user, info) => {
+    if (err) {
+      return next(new createError.InternalServerError(err))
+    }
+
+    if (info && info.message) {
+      return next(new createError.BadRequest(info.message));
+    }
+
+    if (!user) return next(new createError.BadRequest(`User not found`));
+
+    req.logIn(user, (err) => {
+      if (err) {
+        return next(new createError.InternalServerError(err));
+      }
+
+      return res.json({ isAdmin: user.isAdmin });
+    });
+  })(req, res);
 }

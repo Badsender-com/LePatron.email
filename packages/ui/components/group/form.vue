@@ -85,6 +85,11 @@ export default {
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
+      const currentGroup = this.group;
+      if (!this.useSamlAuthentication) {
+        currentGroup.entryPoint = ""
+        currentGroup.issuer = ""
+      }
       this.$emit(`submit`, this.group);
     },
   },
@@ -304,7 +309,7 @@ export default {
 
           <v-row>
             <v-col cols="12">
-              <p class="caption ma-0">Activer SAML Authentification</p>
+              <p class="caption ma-0">Activer l'authentification SAML</p>
               <v-switch
                 :label="$t('global.enable')"
                 class="ma-0"

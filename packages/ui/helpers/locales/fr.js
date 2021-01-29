@@ -175,6 +175,9 @@ export default {
     email: 'Email',
     lang: 'Langue',
     details: 'Informations',
+    tooltip: {
+      noPassword: 'Désactivé à cause de l\'authenfication SAML',
+    },
   },
   tableHeaders: {
     groups: {
