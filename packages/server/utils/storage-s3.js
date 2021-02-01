@@ -40,7 +40,7 @@ function writeStreamFromPath(file) {
       Body: source,
     },
     function (err, data) {
-      // console.log(err, data)
+      console.log(err, data);
     },
   )
     .on('httpUploadProgress', (progress) => {
@@ -65,7 +65,7 @@ function writeStreamFromStream(source, name) {
       Body: source,
     },
     (err, data) => {
-      // console.log(err, data)
+      console.log(err, data);
       // if (err) return reject( err )
       // resolve( data )
     },

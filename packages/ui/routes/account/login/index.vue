@@ -49,7 +49,7 @@ export default {
             const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
             this.isLoading = false;
             if (profile && profile.group && profile.group.isSAMLAuthentication) {
-              window.location = `/account/SAML-login?email=${this.username}`;
+              window.location = `/account/SAML-login?email=${encodeURIComponent(this.username)}`;
             } else {
               this.isBasicAuthentication = true;
               this.userIsFound = true;
