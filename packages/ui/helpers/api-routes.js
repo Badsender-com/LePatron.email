@@ -58,6 +58,14 @@ export function templatesItemEvents(routeParams = {}) {
 // ACCOUNT
 //////
 
+export function getPublicProfile({username}) {
+  return `/account/${username}`;
+}
+
+export function login() {
+  return `/account/login`;
+}
+
 export function accountResetPassword(routeParams = {}) {
   return `/account/${routeParams.email}/password`;
 }

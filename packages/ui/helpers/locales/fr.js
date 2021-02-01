@@ -12,6 +12,17 @@ export default {
       required: 'Ce champ est requis',
       userRequired: 'Un utilisateur est requis',
       nameRequired: 'Un nom est requis',
+      password: {
+        error: {
+          nouser: 'Utilisateur introuvable',
+          incorrect: 'Identifiants incorrects'
+        }
+      },
+      login: {
+        error: {
+          internal: 'Une erreur est survenue',
+        }
+      }
     },
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -72,6 +83,8 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
       editorLabel: 'Libellé du bouton',
+      entryPoint: 'Entry point',
+      issuer: 'Issuer',
     },
     template: {
       meta: 'Meta',
@@ -162,6 +175,9 @@ export default {
     email: 'Email',
     lang: 'Langue',
     details: 'Informations',
+    tooltip: {
+      noPassword: 'Désactivé à cause de l\'authenfication SAML',
+    },
   },
   tableHeaders: {
     groups: {

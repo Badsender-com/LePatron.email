@@ -91,6 +91,8 @@ function encodePassword(password) {
 UserSchema.virtual(`status`).get(function () {
   const status = this.isDeactivated
     ? `deactivated`
+    : this._company.issuer && this._company.issuer.length > 0 && this._company.entryPoint && this._company.entryPoint.length > 0
+    ? `saml-authentication`
     : this.password
     ? `confirmed`
     : this.token
@@ -178,7 +180,7 @@ UserSchema.methods.comparePassword = function comparePassword(password) {
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: `_company`,
-    select: `id name`,
+    select: `id name issuer entryPoint`,
   })
   return mailing
 }

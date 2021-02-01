@@ -12,6 +12,17 @@ export default {
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
+      password: {
+        error: {
+          nouser: 'User not found',
+          incorrect: 'Bad password'
+        }
+      },
+      login: {
+        error: {
+          internal: 'An error occurred',
+        }
+      }
     },
     newTemplate: 'Add a template',
     template: 'Template | Templates',
@@ -72,6 +83,8 @@ export default {
       ftpProtocol: 'HTTP protocol',
       endpoint: "Images root'url",
       editorLabel: 'Button label',
+      entryPoint: 'Entry point',
+      issuer: 'Issuer',
     },
     template: {
       meta: 'Meta',
@@ -96,6 +109,9 @@ export default {
           required: 'An email is required',
           valid: 'A valid email is required',
         },
+      },
+      tooltip: {
+        noPassword: 'Disabled cause of SAML Authentication',
       },
     },
   },

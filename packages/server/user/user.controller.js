@@ -3,8 +3,10 @@
 const _ = require('lodash')
 const createError = require('http-errors')
 const asyncHandler = require('express-async-handler')
+const passport = require('passport')
 
 const { Users, Mailings, Groups } = require('../common/models.common.js')
+const config = require('../node.config.js')
 
 module.exports = {
   list: asyncHandler(list),
@@ -17,6 +19,8 @@ module.exports = {
   adminResetPassword: asyncHandler(adminResetPassword),
   forgotPassword: asyncHandler(forgotPassword),
   setPassword: asyncHandler(setPassword),
+  getPublicProfile: asyncHandler(getPublicProfile),
+  login: asyncHandler(login),
 }
 
 /**
@@ -31,7 +35,7 @@ module.exports = {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: `_company`, select: `id name` })
+    .populate({ path: `_company`, select: `id name entryPoint issuer` })
     .sort({ isDeactivated: 1, createdAt: -1 })
   res.json({ items: users })
 }
@@ -272,15 +276,50 @@ async function setPassword(req, res) {
   res.json(updatedUser)
 }
 
-// function showSetPassword(req, res, next) {
-//   const { token } = req.params
-//   Users.findOne({
-//     token,
-//     tokenExpire: { $gt: Date.now() },
-//   })
-//     .then(user => {
-//       const data = !user ? { noToken: true } : { token }
-//       return res.render('password-reset', { data })
-//     })
-//     .catch(next)
-// }
+
+async function getPublicProfile(req, res) {
+  const { username } = req.params
+
+  if (username === config.admin.username) {
+    // TODO rework this
+    return res.json({ group: {isSAMLAuthentication : false}})
+  }
+  // todo move on service
+  const user = await Users.findOne({
+    email: username,
+    isDeactivated: { $ne: true },
+  })
+  if (!user) throw new createError.BadRequest(`User not found`)
+  const group = await Groups.findOne({
+    _id: user.group,
+  })
+
+  const { name, email, isDeactivated } = user;
+  const { name: groupName, entryPoint, issuer } = group;
+
+  return res.json({
+      name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : entryPoint && issuer },
+  })
+}
+
+async function login(req, res, next) {
+  passport.authenticate(`local`, (err, user, info) => {
+    if (err) {
+      return next(new createError.InternalServerError(err))
+    }
+
+    if (info && info.message) {
+      return next(new createError.BadRequest(info.message));
+    }
+
+    if (!user) return next(new createError.BadRequest(`User not found`));
+
+    req.logIn(user, (err) => {
+      if (err) {
+        return next(new createError.InternalServerError(err));
+      }
+
+      return res.json({ isAdmin: user.isAdmin });
+    });
+  })(req, res);
+}

@@ -13,6 +13,11 @@ export default {
   },
   httpOptions: [`http://`, `https://`],
   ftpOptions: [`sftp`],
+  data() {
+    return {
+      useSamlAuthentication: null
+    }
+  },
   computed: {
     localModel: {
       get() {
@@ -34,6 +39,16 @@ export default {
         },
       ];
     },
+  },
+  watch: {
+    useSamlAuthentication: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal === null) {
+          this.useSamlAuthentication = this.group.issuer.length > 0 || this.group.entryPoint.length > 0
+        }
+      }
+    }
   },
   validations() {
     const cdnValidations = {
@@ -70,6 +85,11 @@ export default {
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
+      const currentGroup = this.group;
+      if (!this.useSamlAuthentication) {
+        currentGroup.entryPoint = ""
+        currentGroup.issuer = ""
+      }
       this.$emit(`submit`, this.group);
     },
   },
@@ -80,7 +100,7 @@ export default {
   <v-card :flat="flat" :tile="flat" tag="form">
     <v-card-text>
       <v-row>
-        <v-col cols="7">
+        <v-col cols="12">
           <v-row>
             <v-col cols="7">
               <v-text-field
@@ -239,52 +259,81 @@ export default {
               </v-row>
             </v-col>
           </v-row>
-        </v-col>
+          <v-row>
+            <v-col cols="12">
+              <p class="caption ma-0">{{ $t('forms.group.exportCdn') }}</p>
+              <v-switch
+                :label="$t('global.enable')"
+                class="ma-0"
+                v-model="localModel.downloadMailingWithCdnImages"
+                :disabled="disabled"
+              />
+              <div
+                class="cdn-options"
+                v-if="localModel.downloadMailingWithCdnImages"
+              >
+                <v-select
+                  v-model="localModel.cdnProtocol"
+                  id="cdnProtocol"
+                  :label="$t('forms.group.httpProtocol')"
+                  name="cdnProtocol"
+                  :disabled="disabled"
+                  :items="$options.httpOptions"
+                />
+                <v-text-field
+                  v-model="localModel.cdnEndPoint"
+                  id="cdnEndPoint"
+                  :label="$t('forms.group.endpoint')"
+                  placeholder="ex: cdn.example.com"
+                  name="cdnEndPoint"
+                  :error-messages="requiredErrors(`cdnEndPoint`)"
+                  :disabled="disabled"
+                  @input="$v.group.cdnEndPoint.$touch()"
+                  @blur="$v.group.cdnEndPoint.$touch()"
+                />
+                <v-text-field
+                  class="cdn-options__button-label"
+                  v-model="localModel.cdnButtonLabel"
+                  id="cdnButtonLabel"
+                  :label="$t('forms.group.editorLabel')"
+                  placeholder="ex: Amazon S3"
+                  name="cdnButtonLabel"
+                  :error-messages="requiredErrors(`cdnButtonLabel`)"
+                  :disabled="disabled"
+                  @input="$v.group.cdnButtonLabel.$touch()"
+                  @blur="$v.group.cdnButtonLabel.$touch()"
+                />
+              </div>
+            </v-col>
+          </v-row>
 
-        <v-col cols="5">
-          <p class="caption ma-0">{{ $t('forms.group.exportCdn') }}</p>
-          <v-switch
-            :label="$t('global.enable')"
-            class="ma-0"
-            v-model="localModel.downloadMailingWithCdnImages"
-            :disabled="disabled"
-          />
-          <div
-            class="cdn-options"
-            v-if="localModel.downloadMailingWithCdnImages"
-          >
-            <v-select
-              v-model="localModel.cdnProtocol"
-              id="cdnProtocol"
-              :label="$t('forms.group.httpProtocol')"
-              name="cdnProtocol"
-              :disabled="disabled"
-              :items="$options.httpOptions"
-            />
-            <v-text-field
-              v-model="localModel.cdnEndPoint"
-              id="cdnEndPoint"
-              :label="$t('forms.group.endpoint')"
-              placeholder="ex: cdn.example.com"
-              name="cdnEndPoint"
-              :error-messages="requiredErrors(`cdnEndPoint`)"
-              :disabled="disabled"
-              @input="$v.group.cdnEndPoint.$touch()"
-              @blur="$v.group.cdnEndPoint.$touch()"
-            />
-            <v-text-field
-              class="cdn-options__button-label"
-              v-model="localModel.cdnButtonLabel"
-              id="cdnButtonLabel"
-              :label="$t('forms.group.editorLabel')"
-              placeholder="ex: Amazon S3"
-              name="cdnButtonLabel"
-              :error-messages="requiredErrors(`cdnButtonLabel`)"
-              :disabled="disabled"
-              @input="$v.group.cdnButtonLabel.$touch()"
-              @blur="$v.group.cdnButtonLabel.$touch()"
-            />
-          </div>
+          <v-row>
+            <v-col cols="12">
+              <p class="caption ma-0">Activer l'authentification SAML</p>
+              <v-switch
+                :label="$t('global.enable')"
+                class="ma-0"
+                v-model="useSamlAuthentication"
+                :disabled="disabled"
+              />
+              <div v-if="useSamlAuthentication">
+                <v-text-field
+                  v-model="localModel.entryPoint"
+                  id="entryPoint"
+                  :label="$t('forms.group.entryPoint')"
+                  name="entryPoint"
+                  :disabled="disabled"
+                />
+                <v-text-field
+                  v-model="localModel.issuer"
+                  id="issuer"
+                  :label="$t('forms.group.issuer')"
+                  name="issuer"
+                  :disabled="disabled"
+                />
+              </div>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
     </v-card-text>

@@ -123,12 +123,24 @@ export default {
       </template>
       <template v-slot:item.actionSendPasswordMail="{ item }">
         <bs-user-table-actions-mail
+          v-if="item.status !== 'saml-authentication'"
           :user="item"
           :loading="loading"
           @resetPassword="resetPassword"
           @sendPassword="sendPassword"
           @resendPassword="resendPassword"
         />
+        <v-tooltip bottom v-else>
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon
+              v-bind="attrs"
+              v-on="on"
+            >
+              {{ 'close' }}
+            </v-icon>
+          </template>
+          <span>{{ $t('users.tooltip.noPassword') }}</span>
+        </v-tooltip>
         <!-- <v-btn @click="mailAction(item)" :disabled="loading" icon color="primary">
         <v-icon>airline_seat_individual_suite</v-icon>
         </v-btn>-->
