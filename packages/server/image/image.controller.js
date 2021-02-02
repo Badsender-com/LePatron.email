@@ -451,7 +451,6 @@ async function list(req, res) {
 
 // upload & update gallery
 async function create(req, res) {
-  console.debug('WILL CREATE A NEW IMAGE');
   const { mongoId } = req.params
   const multipartOptions = {
     prefix: mongoId,
@@ -461,8 +460,6 @@ async function create(req, res) {
     fileManager.parseMultipart(req, multipartOptions),
     Galleries.findOne({ creationOrWireframeId: mongoId }),
   ])
-
-  console.log('AFTER PROMISE MULTIPART');
 
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
