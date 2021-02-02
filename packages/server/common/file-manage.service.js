@@ -72,7 +72,10 @@ const formatters = {
 
 // multipart/form-data
 function parseMultipart(req, options) {
+  console.log('PARSE MULTI PART');
   const deferred = defer()
+
+  console.log({ req });
 
   // parse a file upload
   const form = new formidable.IncomingForm()
