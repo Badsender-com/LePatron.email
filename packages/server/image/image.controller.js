@@ -451,6 +451,7 @@ async function list(req, res) {
 
 // upload & update gallery
 async function create(req, res) {
+  console.debug('WILL CREATE A NEW IMAGE');
   const { mongoId } = req.params
   const multipartOptions = {
     prefix: mongoId,
