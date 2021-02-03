@@ -65,7 +65,7 @@
     "express-oauth-server": "2.0.0",
     "express-session": "1.17.1",
     "font-awesome": "4.7.0",
-    "formidable": "1.0.17",
+    "formidable": "1.2.2",
     "fs-extra": "7.0.1",
     "gifsicle-stream": "0.3.1",
     "he": "1.2.0",
