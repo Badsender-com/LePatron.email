@@ -102,13 +102,10 @@ function parseMultipart(req, options) {
     file.name = `${options.prefix}-${file.hash}.${ext}`
     // original name is needed for templates assets (preview/other images…)
     file.originalName = `${fileName}.${ext}`
-    console.warn('JUST BEFORE AWS UPLOAD');
-    console.log({ file });
     uploads.push(writeStreamFromPath(file))
   }
 
   function onEnd(err, fields, files) {
-    console.log({ err });
     if (err) return deferred.reject(err)
     console.log(chalk.green('form.parse', uploads.length))
     // wait all TMP files to be moved in the good location (s3 or local)

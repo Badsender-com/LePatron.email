@@ -460,6 +460,7 @@ async function create(req, res) {
     fileManager.parseMultipart(req, multipartOptions),
     Galleries.findOne({ creationOrWireframeId: mongoId }),
   ])
+
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
   const safeGallery = gallery ? gallery : await createGallery(mongoId)
