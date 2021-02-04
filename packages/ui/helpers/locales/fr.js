@@ -83,7 +83,7 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
       editorLabel: 'Libellé du bouton',
-      entryPoint: 'Entry point',
+      entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
     },
     template: {
