@@ -472,10 +472,17 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     );
     content = content.replace(/ replaced(http-equiv="[^"]*")/gm, ' $1');
 
-    // BADSENDER: Restore ESP tags
-    // https://github.com/goodenough/mosaico/issues/2
-    content = content.replace(/&lt;%/g, '<%');
-    content = content.replace(/%&gt;/g, '%>');
+    // BADSENDER: ESP tags gestion
+
+    // Decode content between ESP tags and restore ESP tags
+    content = content.replace(/&lt;%.*%&gt;/g, function(match) {
+      var elem = document.createElement('textarea');
+      elem.innerHTML = match;
+      var decoded = elem.value;
+      elem.remove();
+    
+      return decoded;
+    });
 
     // We already replace style and http-equiv and we don't need this.
     // content = content.replace(/ replaced([^= ]*=)/gm, ' $1');
