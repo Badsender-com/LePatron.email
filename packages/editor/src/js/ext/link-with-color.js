@@ -326,17 +326,6 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 			data.title = value;
 		}
 
-		if ((value = dom.getAttrib(anchorElm, 'style'))) {
-			const valueSplited = value.split('#');
-
-			console.log({ dom });
-
-			if (valueSplited && valueSplited.length > 1) {
-				const currentColor = valueSplited[1].replace(';', '');
-				data.color = currentColor;
-			}
-		}
-
 		if (onlyText) {
 			textListCtrl = {
 				name: 'text',
