@@ -167,7 +167,7 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 	function showDialog(linkList) {
 		var data = {}, selection = editor.selection, dom = editor.dom, selectedElm, anchorElm, initialText;
 		var win, onlyText, textListCtrl, linkListCtrl, relListCtrl, targetListCtrl, classListCtrl, linkTitleCtrl, value;
-
+  	
 		function linkListChangeHandler(e) {
 			var textCtrl = win.find('#text');
 
@@ -274,11 +274,34 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 		}
 
 		function showPreview(hexColor) {
-			console.log({ hexColor });
 			win.find('#preview')[0].getEl().style.background = hexColor;
 		}
 
+		//Function to convert hex format to a rgb color
+		function rgb2hex(rgb){
+			rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
+			return (rgb && rgb.length === 4) ? "#" +
+			("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
+			("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
+			("0" + parseInt(rgb[3],10).toString(16)).slice(-2) : '';
+		}
+
 		selectedElm = selection.getNode();
+
+		if (selectedElm) {
+			var currentTextColor = document.defaultView
+			.getComputedStyle(selectedElm, null)
+			.getPropertyValue('color');
+
+			if (currentTextColor) {
+				var hexColor = rgb2hex(currentTextColor);
+
+				if (hexColor) {
+					data.color = hexColor.substr(1);
+				}
+			}
+		}
+
 		anchorElm = dom.getParent(selectedElm, 'a[href]');
 		onlyText = isOnlyTextSelected();
 
@@ -305,6 +328,8 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 
 		if ((value = dom.getAttrib(anchorElm, 'style'))) {
 			const valueSplited = value.split('#');
+
+			console.log({ dom });
 
 			if (valueSplited && valueSplited.length > 1) {
 				const currentColor = valueSplited[1].replace(';', '');
@@ -463,8 +488,6 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 									value: data.color,
 									onchange: function() {
 										data.color = this.value();
-
-										console.log(this.value());
 		
 										if (win) {
 											var colorPickerCtrl = win.find('colorpicker')[0];

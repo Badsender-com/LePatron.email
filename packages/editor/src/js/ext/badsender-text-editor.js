@@ -2,7 +2,7 @@
 
 var debounce = require('lodash.debounce');
 
-require('./link-with-colour');
+require('./link-with-color');
 
 //////
 // DEFINE TINYMCE CUSTOM PLUGINS
