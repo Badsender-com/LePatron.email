@@ -25,7 +25,8 @@ function replaceTabs(html) {
 // → better for mailing
 function secureHtml(html) {
   return htmlEntities.encode(html, {
-    useNamedReferences: true,
+    useNamedReferences: false,
+    decimal: true,
     allowUnsafeSymbols: true,
   })
 }
