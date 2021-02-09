@@ -132,7 +132,7 @@ async function downloadZip(req, res, next) {
   //   })
 
   const remainingUrlsRegex = /https?:\S+\.(jpg|jpeg|png|gif){1}/g
-  const allImages = html.match(remainingUrlsRegex)
+  const allImages = html.match(remainingUrlsRegex) || [];
 
   // const allImages = _.uniq([...imgUrls, ...bgUrls, ...styleUrls])
   // console.log(remainingUrls, allImages)
