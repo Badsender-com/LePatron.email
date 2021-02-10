@@ -45,9 +45,9 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal === null) {
-          this.useSamlAuthentication = this.group ?
-              this.group.issuer && this.group.issuer.length > 0
-          : this.group.entryPoint && this.group.entryPoint.length > 0
+          this.useSamlAuthentication = this.group &&
+              (this.group.issuer && this.group.issuer.length > 0
+          || this.group.entryPoint && this.group.entryPoint.length > 0)
         }
       }
     }
