@@ -30,7 +30,9 @@ export default ({ app, store }) => {
   store.watch(
     (state) => store.getters[`${USER}/${LOCALE}`],
     (userLocale) => {
-      app.i18n.locale = userLocale;
+      if (userLocale) {
+        app.i18n.locale = userLocale;
+      }
     }
   );
 
