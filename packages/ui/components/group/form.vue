@@ -15,8 +15,8 @@ export default {
   ftpOptions: [`sftp`],
   data() {
     return {
-      useSamlAuthentication: null
-    }
+      useSamlAuthentication: null,
+    };
   },
   computed: {
     localModel: {
@@ -45,12 +45,13 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal === null) {
-          this.useSamlAuthentication = this.group &&
-              (this.group.issuer && this.group.issuer.length > 0
-          || this.group.entryPoint && this.group.entryPoint.length > 0)
+          this.useSamlAuthentication =
+            this.group &&
+            ((this.group.issuer && this.group.issuer.length > 0) ||
+              (this.group.entryPoint && this.group.entryPoint.length > 0));
         }
-      }
-    }
+      },
+    },
   },
   validations() {
     const cdnValidations = {
@@ -89,8 +90,8 @@ export default {
       if (this.$v.$invalid) return;
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
-        currentGroup.entryPoint = ""
-        currentGroup.issuer = ""
+        currentGroup.entryPoint = '';
+        currentGroup.issuer = '';
       }
       this.$emit(`submit`, this.group);
     },

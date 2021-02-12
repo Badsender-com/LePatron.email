@@ -1,11 +1,11 @@
-'use strict'
+'use strict';
 
-const path = require('path')
+const path = require('path');
 
 // Don't use ESM
 // • this will be also required in express app
-const pkg = require('./package.json')
-const config = require('./packages/server/node.config.js')
+const pkg = require('./package.json');
+const config = require('./packages/server/node.config.js');
 
 module.exports = {
   telemetry: false,
@@ -21,13 +21,13 @@ module.exports = {
     store: `store`,
   },
   build: {
-    extend(config, { isDev, loaders }) {
+    extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
         resourceQuery: /blockType=i18n/,
         type: `javascript/auto`,
         loader: `@kazupon/vue-i18n-loader`,
-      })
+      });
     },
   },
   router: {
@@ -104,4 +104,4 @@ module.exports = {
   loading: {
     color: `#87cbc9`,
   },
-}
+};

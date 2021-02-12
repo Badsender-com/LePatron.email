@@ -1,15 +1,15 @@
-'use strict'
+'use strict';
 
-const os = require('os')
-const path = require('path')
-const rc = require('rc')
-const _ = require('lodash')
-const { mkdirp } = require('fs-extra')
+const os = require('os');
+const path = require('path');
+const rc = require('rc');
+const _ = require('lodash');
+const { mkdirp } = require('fs-extra');
 
 const localEmail = Object.freeze({
   host: `0.0.0.0`,
   port: 1025,
-})
+});
 // default config is made for an easy use on local dev
 const config = rc('lepatron', {
   forcessl: false,
@@ -62,19 +62,19 @@ const config = rc('lepatron', {
   proxyUrl:
     process.env.QUOTAGUARDSTATIC_URL ||
     'http://zwaedt4fu4bmis:4ktaahtdb2yeak6x33u5buobusb@us-east-static-01.quotaguard.com:9293',
-})
+});
 
-config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development'
-config.PORT = process.env.PORT || 3000
+config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';
+config.PORT = process.env.PORT || 3000;
 
-config.isDev = config.NODE_ENV === 'development'
-config.isProd = config.NODE_ENV === 'production'
-config.isPreProd = !config.isDev && !config.isProd
-config.isAws = config.storage.type === 'aws'
+config.isDev = config.NODE_ENV === 'development';
+config.isProd = config.NODE_ENV === 'production';
+config.isPreProd = !config.isDev && !config.isProd;
+config.isAws = config.storage.type === 'aws';
 
 const isLocalEmailTransport =
   config.emailTransport.port === localEmail.port &&
-  config.emailTransport.host === localEmail.host
+  config.emailTransport.host === localEmail.host;
 
 if (config.isDev && isLocalEmailTransport) {
   config.emailTransport = _.merge(
@@ -87,45 +87,45 @@ if (config.isDev && isLocalEmailTransport) {
         rejectUnauthorized: false,
       },
     },
-    config.emailTransport,
-  )
+    config.emailTransport
+  );
 }
 
 // if ( config.isDev ) console.log( config )
 // http://stackoverflow.com/questions/12416738/how-to-use-herokus-ephemeral-filesystem
 config.setup = new Promise((resolve, reject) => {
-  var tmpPath = path.join(`${__dirname}/../../`, config.images.tmpDir)
-  var uploadPath = path.join(`${__dirname}/../../`, config.images.uploadDir)
-  var tmpDir = mkdirp(tmpPath)
-  var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath)
+  var tmpPath = path.join(`${__dirname}/../../`, config.images.tmpDir);
+  var uploadPath = path.join(`${__dirname}/../../`, config.images.uploadDir);
+  var tmpDir = mkdirp(tmpPath);
+  var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
 
   Promise.all([tmpDir, uploadDir])
-    .then((folders) => {
-      config.images.tmpDir = tmpPath
-      config.images.uploadDir = uploadPath
-      resolve(config)
+    .then(() => {
+      config.images.tmpDir = tmpPath;
+      config.images.uploadDir = uploadPath;
+      resolve(config);
     })
     .catch((err) => {
-      console.log('folder exception')
-      console.log('attempt with os.tmpdir()')
-      console.log(err)
-      var tmpPath = path.join(os.tmpdir(), config.images.tmpDir)
-      var uploadPath = path.join(os.tmpdir(), config.images.uploadDir)
-      var tmpDir = mkdirp(tmpPath)
-      var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath)
+      console.log('folder exception');
+      console.log('attempt with os.tmpdir()');
+      console.log(err);
+      var tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
+      var uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
+      var tmpDir = mkdirp(tmpPath);
+      var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
 
       Promise.all([tmpDir, uploadDir])
-        .then((folders) => {
-          console.log('all done with os.tmpdir()')
-          config.images.tmpDir = tmpPath
-          config.images.uploadDir = uploadPath
-          resolve(config)
+        .then(() => {
+          console.log('all done with os.tmpdir()');
+          config.images.tmpDir = tmpPath;
+          config.images.uploadDir = uploadPath;
+          resolve(config);
         })
         .catch((err) => {
-          reject(err)
-          throw err
-        })
-    })
-})
+          reject(err);
+          throw err;
+        });
+    });
+});
 
-module.exports = config
+module.exports = config;

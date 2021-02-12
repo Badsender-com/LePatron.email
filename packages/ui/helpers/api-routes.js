@@ -1,7 +1,7 @@
 const API_PREFIX = process.env.API_PREFIX;
 
 // a dictionary of API routes
-// • prefix is configured by axios (/api)
+// • prefix is configured by axios (/api)
 // • it's just a way to centralize all our routes
 //   since we don't use a store for everything
 
@@ -9,7 +9,7 @@ const API_PREFIX = process.env.API_PREFIX;
 // GROUPS
 //////
 
-export function groups(routeParams = {}) {
+export function groups() {
   return `/groups`;
 }
 export function groupsItem(routeParams = {}) {
@@ -29,7 +29,7 @@ export function groupsItemMailings(routeParams = {}) {
 // TEMPLATES
 //////
 
-export function templates(routeParams = {}) {
+export function templates() {
   return `/templates`;
 }
 /**
@@ -58,7 +58,7 @@ export function templatesItemEvents(routeParams = {}) {
 // ACCOUNT
 //////
 
-export function getPublicProfile({username}) {
+export function getPublicProfile({ username }) {
   return `/account/${username}`;
 }
 
@@ -77,7 +77,7 @@ export function accountSetPassword(routeParams = {}) {
 // USERS
 //////
 
-export function users(routeParams = {}) {
+export function users() {
   return `/users`;
 }
 export function usersItem(routeParams = {}) {
@@ -97,7 +97,7 @@ export function usersItemMailings(routeParams = {}) {
 // MAILINGS
 //////
 
-export function mailings(routeParams = {}) {
+export function mailings() {
   return `/mailings`;
 }
 export function mailingsItem(routeParams = {}) {

@@ -1,9 +1,8 @@
-import Vue from 'vue';
 import _ from 'lodash';
 import { SUPPORTED_LOCALES } from '~/helpers/locales/index.js';
 import { PAGE, SET_PAGE_LANG } from '~/store/page';
 
-export default ({ app, store }) => {
+export default ({ store }) => {
   const browserLocal = getBrowserLocal() || SUPPORTED_LOCALES[0];
   store.commit(`${PAGE}/${SET_PAGE_LANG}`, browserLocal);
 };

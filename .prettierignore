@@ -1,5 +1,8 @@
 # Global
 *.html
+dist/
+.nuxt
+*.min.*
 
 # Per packages overrides
 packages/editor/

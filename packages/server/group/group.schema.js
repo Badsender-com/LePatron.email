@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const { Schema } = require('mongoose')
-const mongooseHidden = require('mongoose-hidden')()
+const { Schema } = require('mongoose');
+const mongooseHidden = require('mongoose-hidden')();
 
-const { normalizeString, trimString } = require('../utils/model')
+const { normalizeString, trimString } = require('../utils/model');
 
 /**
  * @apiDefine group
@@ -102,12 +102,12 @@ const GroupSchema = Schema(
       default: ``,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } },
-)
+  { timestamps: true, toJSON: { virtuals: true } }
+);
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
-GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } })
+GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 
 // GroupSchema.virtual(`url`).get(function() {
 //   return {
@@ -118,4 +118,4 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } })
 //   }
 // })
 
-module.exports = GroupSchema
+module.exports = GroupSchema;

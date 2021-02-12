@@ -1,1 +1,11 @@
+# Global
+*.html
+dist/
+.nuxt
+*.min.*
+
+# Per packages overrides
 packages/editor/
+
+packages/documentation/.vuepress/dist/
+packages/documentation/api/
