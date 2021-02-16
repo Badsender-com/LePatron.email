@@ -1,14 +1,14 @@
-'use strict'
+'use strict';
 
-const createError = require('http-errors')
-const asyncHandler = require('express-async-handler')
+const createError = require('http-errors');
+const asyncHandler = require('express-async-handler');
 
 const {
   Groups,
   Users,
   Templates,
   Mailings,
-} = require('../common/models.common.js')
+} = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -18,7 +18,7 @@ module.exports = {
   readTemplates: asyncHandler(readTemplates),
   readMailings: asyncHandler(readMailings),
   update: asyncHandler(update),
-}
+};
 
 /**
  * @api {get} /groups list of groups
@@ -31,8 +31,8 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const groups = await Groups.find({}).sort({ name: 1 })
-  res.json({ items: groups })
+  const groups = await Groups.find({}).sort({ name: 1 });
+  res.json({ items: groups });
 }
 
 /**
@@ -61,8 +61,8 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const newGroup = await Groups.create(req.body)
-  res.json(newGroup)
+  const newGroup = await Groups.create(req.body);
+  res.json(newGroup);
 }
 
 /**
@@ -77,10 +77,10 @@ async function create(req, res) {
  */
 
 async function read(req, res) {
-  const { groupId } = req.params
-  const group = await Groups.findById(groupId)
-  if (!group) throw new createError.NotFound()
-  res.json(group)
+  const { groupId } = req.params;
+  const group = await Groups.findById(groupId);
+  if (!group) throw new createError.NotFound();
+  res.json(group);
 }
 
 /**
@@ -96,18 +96,18 @@ async function read(req, res) {
  */
 
 async function readUsers(req, res) {
-  const { groupId } = req.params
+  const { groupId } = req.params;
   const [group, users] = await Promise.all([
     Groups.findById(groupId).select(`_id`),
     Users.find({
       _company: groupId,
       isDeactivated: { $ne: true },
     })
-    .populate({ path: `_company`, select: `id name entryPoint issuer` })
-    .sort({ email: 1 }),
-  ])
-  if (!group) throw new createError.NotFound()
-  res.json({ items: users })
+      .populate({ path: `_company`, select: `id name entryPoint issuer` })
+      .sort({ email: 1 }),
+  ]);
+  if (!group) throw new createError.NotFound();
+  res.json({ items: users });
 }
 
 /**
@@ -123,13 +123,13 @@ async function readUsers(req, res) {
  */
 
 async function readTemplates(req, res) {
-  const { groupId } = req.params
+  const { groupId } = req.params;
   const [group, templates] = await Promise.all([
     Groups.findById(groupId).select(`_id`),
     Templates.findForApi({ _company: groupId }),
-  ])
-  if (!group) throw new createError.NotFound()
-  res.json({ items: templates })
+  ]);
+  if (!group) throw new createError.NotFound();
+  res.json({ items: templates });
 }
 
 /**
@@ -145,13 +145,13 @@ async function readTemplates(req, res) {
  */
 
 async function readMailings(req, res) {
-  const { groupId } = req.params
+  const { groupId } = req.params;
   const [group, mailings] = await Promise.all([
     Groups.findById(groupId).select(`_id`),
     Mailings.findForApi({ _company: groupId }),
-  ])
-  if (!group) throw new createError.NotFound()
-  res.json({ items: mailings })
+  ]);
+  if (!group) throw new createError.NotFound();
+  res.json({ items: mailings });
 }
 
 /**
@@ -181,9 +181,9 @@ async function readMailings(req, res) {
  */
 
 async function update(req, res) {
-  const { groupId } = req.params
+  const { groupId } = req.params;
   const updatedGroup = await Groups.findByIdAndUpdate(groupId, req.body, {
     runValidators: true,
-  })
-  res.json(updatedGroup)
+  });
+  res.json(updatedGroup);
 }

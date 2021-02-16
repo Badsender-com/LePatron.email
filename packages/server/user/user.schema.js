@@ -1,21 +1,21 @@
-'use strict'
+'use strict';
 
-const { assign } = require('lodash')
-const fs = require('fs')
-const path = require('path')
-const { Schema } = require('mongoose')
-const { ObjectId } = Schema.Types
-const tmpl = require('blueimp-tmpl')
-const bcrypt = require('bcryptjs')
-const validator = require('validator')
-const randToken = require('rand-token')
-const moment = require('moment')
-const mongooseHidden = require('mongoose-hidden')()
+const { assign } = require('lodash');
+const fs = require('fs');
+const path = require('path');
+const { Schema } = require('mongoose');
+const { ObjectId } = Schema.Types;
+const tmpl = require('blueimp-tmpl');
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+const randToken = require('rand-token');
+const moment = require('moment');
+const mongooseHidden = require('mongoose-hidden')();
 
-const config = require('../node.config.js')
-const mail = require('../mailing/mailing.service.js')
-const { normalizeString } = require('../utils/model')
-const { GroupModel } = require('../constant/model.names.js')
+const config = require('../node.config.js');
+const mail = require('../mailing/mailing.service.js');
+const { normalizeString } = require('../utils/model');
+const { GroupModel } = require('../constant/model.names.js');
 
 /**
  * @apiDefine users
@@ -74,67 +74,70 @@ const UserSchema = Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  },
-)
+  }
+);
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 UserSchema.plugin(mongooseHidden, {
   hidden: { _id: true, __v: true, password: true, token: true, _company: true },
-})
+});
 
 function encodePassword(password) {
-  if (typeof password === 'undefined') return void 0
-  return bcrypt.hashSync(password, 10)
+  if (typeof password === 'undefined') return void 0;
+  return bcrypt.hashSync(password, 10);
 }
 
 UserSchema.virtual(`status`).get(function () {
   const status = this.isDeactivated
     ? `deactivated`
-    : this._company.issuer && this._company.issuer.length > 0 && this._company.entryPoint && this._company.entryPoint.length > 0
+    : this._company.issuer &&
+      this._company.issuer.length > 0 &&
+      this._company.entryPoint &&
+      this._company.entryPoint.length > 0
     ? `saml-authentication`
     : this.password
     ? `confirmed`
     : this.token
     ? `password-mail-sent`
-    : `to-be-initialized`
-  return status
-})
+    : `to-be-initialized`;
+  return status;
+});
 
 UserSchema.virtual(`isReinitialized`).get(function () {
-  if (this.password) return false
-  if (this.token) return true
-  return false
-})
+  if (this.password) return false;
+  if (this.token) return true;
+  return false;
+});
 
 // for better session handling
 UserSchema.virtual(`isAdmin`).get(function () {
-  return false
-})
+  return false;
+});
 
 UserSchema.methods.activate = function activate() {
-  var user = this
-  user.isDeactivated = false
-  return user.save()
-}
+  var user = this;
+  user.isDeactivated = false;
+  return user.save();
+};
 
 UserSchema.methods.deactivate = function deactivate() {
-  var user = this
-  user.password = void 0
-  user.token = void 0
-  user.isDeactivated = true
-  return user.save()
-}
+  var user = this;
+  user.password = void 0;
+  user.token = void 0;
+  user.isDeactivated = true;
+  return user.save();
+};
 
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
-  const user = this
-  user.password = void 0
-  user.token = randToken.generate(30)
-  user.tokenExpire = moment().add(1, 'weeks')
-  lang = lang ? lang : 'en'
+  const user = this;
+  user.password = void 0;
+  user.token = randToken.generate(30);
+  user.tokenExpire = moment().add(1, 'weeks');
+  lang = lang ? lang : 'en';
 
-  const updatedUser = await user.save()
-  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`
+  const updatedUser = await user.save();
+  const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
@@ -143,22 +146,22 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
       getTemplateData(`reset-password`, lang, {
         type: type,
         url: resetUrl,
-      }),
+      })
     ),
-  })
+  });
 
-  return updatedUser
-}
+  return updatedUser;
+};
 
 UserSchema.methods.setPassword = async function setPassword(password, lang) {
-  const user = this
-  user.token = void 0
-  user.tokenExpire = void 0
-  user.password = password
-  lang = lang ? lang : 'en'
+  const user = this;
+  user.token = void 0;
+  user.tokenExpire = void 0;
+  user.password = password;
+  lang = lang ? lang : 'en';
 
-  const updatedUser = await user.save()
-  const loginUrl = `http://${config.host}/account/login`
+  const updatedUser = await user.save();
+  const loginUrl = `http://${config.host}/account/login`;
   await mail.send({
     to: updatedUser.email,
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
@@ -167,35 +170,35 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
       getTemplateData(`reset-success`, lang, {
         type: `admin`,
         url: loginUrl,
-      }),
+      })
     ),
-  })
-  return updatedUser
-}
+  });
+  return updatedUser;
+};
 
 UserSchema.methods.comparePassword = function comparePassword(password) {
-  return bcrypt.compareSync(password, this.password)
-}
+  return bcrypt.compareSync(password, this.password);
+};
 
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: `_company`,
     select: `id name issuer entryPoint`,
-  })
-  return mailing
-}
+  });
+  return mailing;
+};
 
 //////
 // DEFINING mailing templates
 //////
 
 tmpl.load = function (id) {
-  const filename = path.join(__dirname, `../email-templates/${id}.html`)
-  return fs.readFileSync(filename, `utf8`)
-}
+  const filename = path.join(__dirname, `../email-templates/${id}.html`);
+  return fs.readFileSync(filename, `utf8`);
+};
 
 // put in cache
-const tmpReset = tmpl(`reset-password`)
+const tmpReset = tmpl(`reset-password`);
 
 function getTemplateData(templateName, lang, additionalDatas) {
   var i18n = {
@@ -236,14 +239,14 @@ function getTemplateData(templateName, lang, additionalDatas) {
         reset: `LOGIN`,
       },
     },
-  }
+  };
 
-  const traductions = assign({}, i18n.common[lang], i18n[templateName][lang])
-  return assign({}, { t: traductions }, additionalDatas)
+  const traductions = assign({}, i18n.common[lang], i18n[templateName][lang]);
+  return assign({}, { t: traductions }, additionalDatas);
 }
 
 //////
 // EXPORTS
 //////
 
-module.exports = UserSchema
+module.exports = UserSchema;

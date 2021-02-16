@@ -8,7 +8,7 @@ const dateOptions = {
   timeZone: `Europe/Paris`,
 };
 
-Vue.filter(`userStatus`, (value, locale = `fr`) => {
+Vue.filter(`userStatus`, (value) => {
   if (typeof value.status !== `string`) return `–`;
   return value.status.replace(/-/g, ` `);
 });

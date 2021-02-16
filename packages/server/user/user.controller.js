@@ -1,12 +1,12 @@
-'use strict'
+'use strict';
 
-const _ = require('lodash')
-const createError = require('http-errors')
-const asyncHandler = require('express-async-handler')
-const passport = require('passport')
+const _ = require('lodash');
+const createError = require('http-errors');
+const asyncHandler = require('express-async-handler');
+const passport = require('passport');
 
-const { Users, Mailings, Groups } = require('../common/models.common.js')
-const config = require('../node.config.js')
+const { Users, Mailings, Groups } = require('../common/models.common.js');
+const config = require('../node.config.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -21,7 +21,7 @@ module.exports = {
   setPassword: asyncHandler(setPassword),
   getPublicProfile: asyncHandler(getPublicProfile),
   login: asyncHandler(login),
-}
+};
 
 /**
  * @api {get} /users list of users
@@ -36,8 +36,8 @@ module.exports = {
 async function list(req, res) {
   const users = await Users.find({})
     .populate({ path: `_company`, select: `id name entryPoint issuer` })
-    .sort({ isDeactivated: 1, createdAt: -1 })
-  res.json({ items: users })
+    .sort({ isDeactivated: 1, createdAt: -1 });
+  res.json({ items: users });
 }
 
 /**
@@ -55,17 +55,17 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const { groupId } = req.body
-  const group = await Groups.findById(groupId).select(`_id`).lean()
-  if (!group) throw new createError.BadRequest(`group not found`)
+  const { groupId } = req.body;
+  const group = await Groups.findById(groupId).select(`_id`).lean();
+  if (!group) throw new createError.BadRequest(`group not found`);
 
-  const userParams = _.pick(req.body, [`name`, `email`, `lang`])
+  const userParams = _.pick(req.body, [`name`, `email`, `lang`]);
   const newUser = await Users.create({
     _company: groupId,
     ...userParams,
-  })
-  const user = await Users.findOneForApi({ _id: newUser._id })
-  res.json(user)
+  });
+  const user = await Users.findOneForApi({ _id: newUser._id });
+  res.json(user);
 }
 
 /**
@@ -80,11 +80,11 @@ async function create(req, res) {
  */
 
 async function read(req, res) {
-  const { userId } = req.params
-  const user = await Users.findOneForApi({ _id: userId })
-  if (!user) throw new createError.NotFound()
+  const { userId } = req.params;
+  const user = await Users.findOneForApi({ _id: userId });
+  if (!user) throw new createError.NotFound();
 
-  res.json(user)
+  res.json(user);
 }
 
 /**
@@ -100,14 +100,14 @@ async function read(req, res) {
  */
 
 async function readMailings(req, res) {
-  const { userId } = req.params
+  const { userId } = req.params;
   const [user, mailings] = await Promise.all([
     Users.findById(userId).select({ _id: 1 }),
     Mailings.findForApi({ _user: userId }),
-  ])
-  if (!user) throw new createError.NotFound()
+  ]);
+  if (!user) throw new createError.NotFound();
 
-  res.json({ items: mailings })
+  res.json({ items: mailings });
 }
 
 /**
@@ -125,27 +125,27 @@ async function readMailings(req, res) {
  */
 
 async function update(req, res) {
-  const { userId } = req.params
-  const userParams = _.pick(req.body, [`name`, `email`, `lang`])
-  const user = await Users.findOneForApi({ _id: userId })
-  if (!user) throw new createError.NotFound()
+  const { userId } = req.params;
+  const userParams = _.pick(req.body, [`name`, `email`, `lang`]);
+  const user = await Users.findOneForApi({ _id: userId });
+  if (!user) throw new createError.NotFound();
 
   // we don't need for this DB request to finish to give the user the response
-  const nameChange = user.name !== userParams.name
+  const nameChange = user.name !== userParams.name;
   if (nameChange) {
     Mailings.updateMany({ _user: userId }, { author: userParams.name }).then(
       (result) => {
-        console.log(result.nModified, `mailings updated for`, userParams.name)
-      },
-    )
+        console.log(result.nModified, `mailings updated for`, userParams.name);
+      }
+    );
   }
   const updatedUser = await Users.findByIdAndUpdate(userId, userParams, {
     runValidators: true,
   }).populate({
     path: `_company`,
     select: `id name`,
-  })
-  res.json(updatedUser)
+  });
+  res.json(updatedUser);
 }
 
 /**
@@ -161,13 +161,13 @@ async function update(req, res) {
  */
 
 async function activate(req, res) {
-  const { userId } = req.params
-  const user = await Users.findById(userId)
-  if (!user) throw new createError.NotFound()
+  const { userId } = req.params;
+  const user = await Users.findById(userId);
+  if (!user) throw new createError.NotFound();
 
-  await user.activate()
-  const updatedUser = await Users.findOneForApi({ _id: userId })
-  res.json(updatedUser)
+  await user.activate();
+  const updatedUser = await Users.findOneForApi({ _id: userId });
+  res.json(updatedUser);
 }
 
 /**
@@ -183,13 +183,13 @@ async function activate(req, res) {
  */
 
 async function deactivate(req, res) {
-  const { userId } = req.params
-  const user = await Users.findById(userId)
-  if (!user) throw new createError.NotFound()
+  const { userId } = req.params;
+  const user = await Users.findById(userId);
+  if (!user) throw new createError.NotFound();
 
-  await user.deactivate()
-  const updatedUser = await Users.findOneForApi({ _id: userId })
-  res.json(updatedUser)
+  await user.deactivate();
+  const updatedUser = await Users.findOneForApi({ _id: userId });
+  res.json(updatedUser);
 }
 
 /**
@@ -205,13 +205,13 @@ async function deactivate(req, res) {
  */
 
 async function adminResetPassword(req, res) {
-  const { userId } = req.params
-  const user = await Users.findById(userId)
-  if (!user) throw new createError.NotFound()
+  const { userId } = req.params;
+  const user = await Users.findById(userId);
+  if (!user) throw new createError.NotFound();
 
-  await user.resetPassword(`admin`, user.lang)
-  const updatedUser = await Users.findOneForApi({ _id: userId })
-  res.json(updatedUser)
+  await user.resetPassword(`admin`, user.lang);
+  const updatedUser = await Users.findOneForApi({ _id: userId });
+  res.json(updatedUser);
 }
 
 /**
@@ -227,13 +227,13 @@ async function adminResetPassword(req, res) {
  */
 
 async function forgotPassword(req, res) {
-  const { email } = req.params
-  const user = await Users.findOne({ email })
-  if (!user) throw new createError.BadRequest()
+  const { email } = req.params;
+  const user = await Users.findOne({ email });
+  if (!user) throw new createError.BadRequest();
 
-  await user.resetPassword(`user`, user.lang)
-  const updatedUser = await Users.findOneForApi({ _id: user._id })
-  res.json(updatedUser)
+  await user.resetPassword(`user`, user.lang);
+  const updatedUser = await Users.findOneForApi({ _id: user._id });
+  res.json(updatedUser);
 }
 
 /**
@@ -253,59 +253,61 @@ async function forgotPassword(req, res) {
  */
 
 async function setPassword(req, res) {
-  const { token } = req.params
+  const { token } = req.params;
   const user = await Users.findOne({
     token,
     tokenExpire: { $gt: Date.now() },
-  })
-  if (!user) throw new createError.BadRequest(`invalid or expired token`)
+  });
+  if (!user) throw new createError.BadRequest(`invalid or expired token`);
 
-  const isValidPassword = req.body.password === req.body.passwordConfirm
+  const isValidPassword = req.body.password === req.body.passwordConfirm;
   if (!isValidPassword) {
-    throw new createError.BadRequest(`passwords should be identical`)
+    throw new createError.BadRequest(`passwords should be identical`);
   }
 
-  await user.setPassword(req.body.password, user.lang)
+  await user.setPassword(req.body.password, user.lang);
   await new Promise((resolve, reject) => {
     req.login(user, (err) => {
-      if (err) return reject(err)
-      resolve()
-    })
-  })
-  const updatedUser = await Users.findOneForApi({ _id: user._id })
-  res.json(updatedUser)
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+  const updatedUser = await Users.findOneForApi({ _id: user._id });
+  res.json(updatedUser);
 }
 
-
 async function getPublicProfile(req, res) {
-  const { username } = req.params
+  const { username } = req.params;
 
   if (username === config.admin.username) {
     // TODO rework this
-    return res.json({ group: {isSAMLAuthentication : false}})
+    return res.json({ group: { isSAMLAuthentication: false } });
   }
   // todo move on service
   const user = await Users.findOne({
     email: username,
     isDeactivated: { $ne: true },
-  })
-  if (!user) throw new createError.BadRequest(`User not found`)
+  });
+  if (!user) throw new createError.BadRequest(`User not found`);
   const group = await Groups.findOne({
     _id: user.group,
-  })
+  });
 
   const { name, email, isDeactivated } = user;
   const { name: groupName, entryPoint, issuer } = group;
 
   return res.json({
-      name, email, isDeactivated, group: { name : groupName, isSAMLAuthentication : entryPoint && issuer },
-  })
+    name,
+    email,
+    isDeactivated,
+    group: { name: groupName, isSAMLAuthentication: entryPoint && issuer },
+  });
 }
 
 async function login(req, res, next) {
   passport.authenticate(`local`, (err, user, info) => {
     if (err) {
-      return next(new createError.InternalServerError(err))
+      return next(new createError.InternalServerError(err));
     }
 
     if (info && info.message) {

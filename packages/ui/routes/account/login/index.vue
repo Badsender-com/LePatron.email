@@ -20,65 +20,47 @@ export default {
     },
   },
   data() {
-      return {
-          username: "",
-          password: "",
-          submitted: false,
-          userIsFound: false,
-          isBasicAuthentication : true,
-          isLoading : false,
-          showPassword: false,
-      };
+    return {
+      username: '',
+      password: '',
+      submitted: false,
+      userIsFound: false,
+      isBasicAuthentication: true,
+      isLoading: false,
+      showPassword: false,
+    };
   },
   validations: {
     username: { required },
   },
-  methods:{
+  methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    checkEmailForm: async function() {
-        this.submitted = true;
-        this.$v.$touch();
-        if (this.$v.$invalid) {
-            return;
-        }
+    checkEmailForm: async function () {
+      this.submitted = true;
+      this.$v.$touch();
+      if (this.$v.$invalid) {
+        return;
+      }
 
-        // move to service
-        try {
-          this.isLoading = true;
-          try {
-            const profile = await this.$axios.$get(apiRoutes.getPublicProfile({username : this.username}));
-            this.isLoading = false;
-            if (profile && profile.group && profile.group.isSAMLAuthentication) {
-              window.location = `/account/SAML-login?email=${encodeURIComponent(this.username)}`;
-            } else {
-              this.isBasicAuthentication = true;
-              this.userIsFound = true;
-            }
-          } catch (err) {
-            this.isLoading = false;
-            const errorMessage = this.$t(`global.errors.password.error.nouser`);
-            this.showSnackbar({
-              text: errorMessage,
-              color: `error`,
-            });
-          }
-        } catch (error) {
-          console.error(error);
-          this.isLoading = false;
-        }
-    },
-    handleSubmit: async function() {
+      // move to service
       try {
-        // move to service
-        const { $axios, $router, username, password} = this;
         this.isLoading = true;
         try {
-          const user = await $axios.$post('/account/login', {username, password});
-          this.$store.commit(`${USER}/${M_USER_SET}`, { isAdmin: user.isAdmin });
-          $router.go();
+          const profile = await this.$axios.$get(
+            apiRoutes.getPublicProfile({ username: this.username })
+          );
+          this.isLoading = false;
+          if (profile && profile.group && profile.group.isSAMLAuthentication) {
+            window.location = `/account/SAML-login?email=${encodeURIComponent(
+              this.username
+            )}`;
+          } else {
+            this.isBasicAuthentication = true;
+            this.userIsFound = true;
+          }
         } catch (err) {
           this.isLoading = false;
-          const errorMessage = this.$t(`global.errors.password.error.incorrect`);
+          const errorMessage = this.$t(`global.errors.password.error.nouser`);
           this.showSnackbar({
             text: errorMessage,
             color: `error`,
@@ -89,27 +71,54 @@ export default {
         this.isLoading = false;
       }
     },
-    back: function() {
-      this.username = ""
-      this.password = ""
-      this.userIsFound = false
-      this.isBasicAuthentication = true
-    }
-  }
+    handleSubmit: async function () {
+      try {
+        // move to service
+        const { $axios, $router, username, password } = this;
+        this.isLoading = true;
+        try {
+          const user = await $axios.$post('/account/login', {
+            username,
+            password,
+          });
+          this.$store.commit(`${USER}/${M_USER_SET}`, {
+            isAdmin: user.isAdmin,
+          });
+          $router.go();
+        } catch (err) {
+          this.isLoading = false;
+          const errorMessage = this.$t(
+            `global.errors.password.error.incorrect`
+          );
+          this.showSnackbar({
+            text: errorMessage,
+            color: `error`,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        this.isLoading = false;
+      }
+    },
+    back: function () {
+      this.username = '';
+      this.password = '';
+      this.userIsFound = false;
+      this.isBasicAuthentication = true;
+    },
+  },
 };
 </script>
 
 <template>
   <v-card class="elevation-12">
     <v-toolbar flat>
-      <v-btn
-        icon
-        @click="back"
-        v-if="userIsFound && isBasicAuthentication"
-      >
+      <v-btn icon @click="back" v-if="userIsFound && isBasicAuthentication">
         <v-icon>{{ 'arrow_back' }}</v-icon>
       </v-btn>
-      <v-toolbar-title class="pl-0">{{ $t('forms.user.login') }}</v-toolbar-title>
+      <v-toolbar-title class="pl-0">{{
+        $t('forms.user.login')
+      }}</v-toolbar-title>
     </v-toolbar>
     <v-divider />
     <div v-if="!userIsFound">
@@ -127,18 +136,23 @@ export default {
         </v-form>
       </v-card-text>
 
-      <v-card-actions >
+      <v-card-actions>
         <v-spacer />
-        <v-btn :loading="isLoading" color="primary" form="check-email-form" type="submit">
-            {{$t('forms.user.login')}}
-          </v-btn>
+        <v-btn
+          :loading="isLoading"
+          color="primary"
+          form="check-email-form"
+          type="submit"
+        >
+          {{ $t('forms.user.login') }}
+        </v-btn>
       </v-card-actions>
     </div>
 
     <!-- Password field  -->
-    <div v-if="userIsFound && isBasicAuthentication" >
-      <v-card-text >
-        <v-form @submit.prevent="handleSubmit" id="login-form" >
+    <div v-if="userIsFound && isBasicAuthentication">
+      <v-card-text>
+        <v-form @submit.prevent="handleSubmit" id="login-form">
           <v-text-field
             v-model="password"
             autofocus
@@ -158,10 +172,14 @@ export default {
         <v-btn nuxt text color="primary" to="/account/reset-password">{{
           $t('forms.user.forgottenPassword')
         }}</v-btn>
-        <v-btn :loading="isLoading" color="primary" form="login-form" type="submit">{{
-          $t('forms.user.login')
-        }}</v-btn>
+        <v-btn
+          :loading="isLoading"
+          color="primary"
+          form="login-form"
+          type="submit"
+          >{{ $t('forms.user.login') }}</v-btn
+        >
       </v-card-actions>
-     </div>
+    </div>
   </v-card>
 </template>

@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-const { Schema } = require('mongoose')
+const { Schema } = require('mongoose');
 
 // code,
 // client.id,
@@ -14,10 +14,10 @@ const OAuthClientsCode = new Schema({
   redirectUri: { type: String },
   userId: { type: String },
   userEmail: { type: String },
-})
+});
 
 OAuthClientsCode.static.findByClientId = function findByClientId(clientId) {
-  return this.findOne({ clientId })
-}
+  return this.findOne({ clientId });
+};
 
-module.exports = OAuthClientsCode
+module.exports = OAuthClientsCode;

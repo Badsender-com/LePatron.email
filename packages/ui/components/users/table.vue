@@ -97,6 +97,7 @@ export default {
 </script>
 
 <template>
+  <!-- eslint-disable vue/valid-v-slot  -->
   <div class="bs-users-table">
     <v-data-table
       :headers="tableHeaders"
@@ -132,11 +133,8 @@ export default {
         />
         <v-tooltip bottom v-else>
           <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              v-bind="attrs"
-              v-on="on"
-            >
-              {{ 'close' }}
+            <v-icon v-bind="attrs" v-on="on">
+              {{ 'close' }}
             </v-icon>
           </template>
           <span>{{ $t('users.tooltip.noPassword') }}</span>

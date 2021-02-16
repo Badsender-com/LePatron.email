@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 // this GulpFile mirror & enhance the GruntFile
 // • another build tool was chosen to add more control & flexibility
@@ -6,37 +6,37 @@
 
 /* spell-checker: disable */
 
-const gulp = require('gulp')
-const path = require('path')
-const $ = require('gulp-load-plugins')()
-const lazypipe = require('lazypipe')
-const del = require('del')
-const args = require('yargs').argv
-const _ = require('lodash')
-const beeper = require('beeper')
-const log = require('fancy-log')
-const colors = require('ansi-colors')
-const Vinyl = require('vinyl')
-const mergeStream = require('merge-stream')
+const gulp = require('gulp');
+const path = require('path');
+const $ = require('gulp-load-plugins')();
+const lazypipe = require('lazypipe');
+const del = require('del');
+const args = require('yargs').argv;
+const _ = require('lodash');
+const beeper = require('beeper');
+const log = require('fancy-log');
+const colors = require('ansi-colors');
+const Vinyl = require('vinyl');
+const mergeStream = require('merge-stream');
 
-const isWatch = args.watch === true
-const isProd = args.prod === true
-const isDev = !isProd
-const env = isDev ? `development` : `production`
-const SERVER_DIR = `packages/server`
-const BUILD_DIR = `public/dist`
-const BUILD_DIR_LIB = `${BUILD_DIR}/lib`
+const isWatch = args.watch === true;
+const isProd = args.prod === true;
+const isDev = !isProd;
+const env = isDev ? `development` : `production`;
+const SERVER_DIR = `packages/server`;
+const BUILD_DIR = `public/dist`;
+const BUILD_DIR_LIB = `${BUILD_DIR}/lib`;
 
 function onError(err) {
-  beeper()
+  beeper();
   if (err.annotated) {
-    log(err.annotated)
+    log(err.annotated);
   } else if (err.message) {
-    log(err.message)
+    log(err.message);
   } else {
-    log(err)
+    log(err);
   }
-  return this.emit('end')
+  return this.emit('end');
 }
 
 log(
@@ -44,7 +44,7 @@ log(
   colors.magenta(env),
   `watch is`,
   isWatch ? colors.magenta(`enable`) : `disable`
-)
+);
 
 function bump() {
   return gulp
@@ -54,31 +54,31 @@ function bump() {
         version: args.pkg,
       })
     )
-    .pipe(gulp.dest('./'))
+    .pipe(gulp.dest('./'));
 }
-bump.description = `Bump versions on package.json. Used only in release script`
+bump.description = `Bump versions on package.json. Used only in release script`;
 
 ////////
 // CSS
 ////////
 
-const autoprefixer = require('autoprefixer')
-const csswring = require('csswring')
+const autoprefixer = require('autoprefixer');
+const csswring = require('csswring');
 
 const cssDev = lazypipe()
   .pipe($.postcss, [
     autoprefixer({ overrideBrowserslist: [`ie 10`, `last 2 versions`] }),
   ])
   .pipe($.beautify.css, { indent_size: 2 })
-  .pipe($.sourcemaps.write)
+  .pipe($.sourcemaps.write);
 const cssProd = lazypipe()
   .pipe($.purgeSourcemaps)
   .pipe($.postcss, [csswring({ removeAllComments: true })])
-  .pipe($.rename, { suffix: `.min` })
+  .pipe($.rename, { suffix: `.min` });
 
 function cleanCss(cb) {
-  if (isDev) return cb()
-  return del([BUILD_DIR + '/*.css', BUILD_DIR + '/*.css.map'], cb)
+  if (isDev) return cb();
+  return del([BUILD_DIR + '/*.css', BUILD_DIR + '/*.css.map'], cb);
 }
 
 function cssEditor() {
@@ -91,13 +91,13 @@ function cssEditor() {
     .pipe($.rename(`badsender-editor.css`))
     .pipe(gulp.dest(BUILD_DIR))
     .pipe(cssProd())
-    .pipe(gulp.dest(BUILD_DIR))
+    .pipe(gulp.dest(BUILD_DIR));
 }
-cssEditor.description = `build CSS for mosaico editor`
-exports[`css:mosaico`] = cssEditor
+cssEditor.description = `build CSS for mosaico editor`;
+exports[`css:mosaico`] = cssEditor;
 
-const css = gulp.series(cleanCss, cssEditor)
-css.description = `Build CSS for the mosaico editor`
+const css = gulp.series(cleanCss, cssEditor);
+css.description = `Build CSS for the mosaico editor`;
 
 ////////
 // JS
@@ -106,8 +106,8 @@ css.description = `Build CSS for the mosaico editor`
 //----- LIBRARIES
 
 function cleanLib(cb) {
-  if (isDev) return cb()
-  return del(BUILD_DIR, '/**/*.js')
+  if (isDev) return cb();
+  return del(BUILD_DIR, '/**/*.js');
 }
 
 const mosaicoLibList = [
@@ -130,7 +130,7 @@ const mosaicoLibList = [
   `node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js`,
   `node_modules/knockout-jqueryui/dist/knockout-jqueryui.js`,
   `node_modules/tinymce/tinymce.js`,
-]
+];
 
 // TODO: minifiy not minfied libs!
 const mosaicoLibListMin = [
@@ -149,33 +149,33 @@ const mosaicoLibListMin = [
   `node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js`, // no min files
   `node_modules/knockout-jqueryui/dist/knockout-jqueryui.js`, // no min files
   `node_modules/tinymce/tinymce.min.js`,
-]
+];
 
-const orderLibs = lib => /[^\/]*\.js$/.exec(lib)[0]
+const orderLibs = (lib) => /[^/]*\.js$/.exec(lib)[0];
 
 function mosaicoLib() {
   const devLibs = gulp
     .src(mosaicoLibList)
     .pipe($.order(mosaicoLibList.map(orderLibs)))
-    .pipe($.concat(`badsender-lib-editor.js`))
+    .pipe($.concat(`badsender-lib-editor.js`));
   const prodLibs = gulp
     .src(mosaicoLibListMin)
     .pipe($.order(mosaicoLibListMin.map(orderLibs)))
-    .pipe($.concat(`badsender-lib-editor.min.js`))
+    .pipe($.concat(`badsender-lib-editor.min.js`));
 
   const sourceMaps = gulp.src(
     `node_modules/blueimp-load-image/js/load-image.all.min.js.map`
-  )
+  );
 
   return mergeStream(devLibs, prodLibs, sourceMaps).pipe(
     gulp.dest(BUILD_DIR_LIB)
-  )
+  );
 }
-mosaicoLib.description = `concat all mosaico lib files`
-exports[`js:mosaico-lib`] = mosaicoLib
+mosaicoLib.description = `concat all mosaico lib files`;
+exports[`js:mosaico-lib`] = mosaicoLib;
 
 function copyTinymceFiles() {
-  const base = `node_modules/tinymce`
+  const base = `node_modules/tinymce`;
   // only copy necessary tinymce plugins
   // keep only minified files
   const src = [
@@ -187,37 +187,37 @@ function copyTinymceFiles() {
     `${base}/plugins/textcolor/plugin.js`,
     `${base}/plugins/colorpicker/plugin.js`,
     `${base}/plugins/code/plugin.js`,
-  ]
-  const srcMin = src.map(filePath => {
-    return filePath.replace(/\.js$/, `.min.js`)
-  })
-  const all = [...src, ...srcMin]
-  return gulp.src(all, { base: base }).pipe(gulp.dest(BUILD_DIR_LIB))
+  ];
+  const srcMin = src.map((filePath) => {
+    return filePath.replace(/\.js$/, `.min.js`);
+  });
+  const all = [...src, ...srcMin];
+  return gulp.src(all, { base: base }).pipe(gulp.dest(BUILD_DIR_LIB));
 }
-copyTinymceFiles.description = `copy all related tinymce files to the right place`
+copyTinymceFiles.description = `copy all related tinymce files to the right place`;
 
-exports[`js:tinymce`] = copyTinymceFiles
+exports[`js:tinymce`] = copyTinymceFiles;
 
 // Bundling mosaico libs is just a concat…
 const editorLib = gulp.series(
   cleanLib,
   gulp.parallel(mosaicoLib, copyTinymceFiles)
-)
-editorLib.description = `build JS for the mosaico editor`
+);
+editorLib.description = `build JS for the mosaico editor`;
 
 //----- MOSAICO APPLICATION
 
-const browserify = require('browserify')
-const source = require('vinyl-source-stream')
-const vinylBuffer = require('vinyl-buffer')
-const aliasify = require('aliasify')
-const shim = require('browserify-shim')
-const babelify = require('babelify')
-const envify = require('envify/custom')
-const watchify = require('watchify')
+const browserify = require('browserify');
+const source = require('vinyl-source-stream');
+const vinylBuffer = require('vinyl-buffer');
+const aliasify = require('aliasify');
+const shim = require('browserify-shim');
+const babelify = require('babelify');
+const envify = require('envify/custom');
+const watchify = require('watchify');
 
-const badsenderEditorLibs = [`lodash.find`, `lodash.debounce`, `cropperjs`]
-const basedir = __dirname + '/packages/editor/src/js'
+const badsenderEditorLibs = [`lodash.find`, `lodash.debounce`, `cropperjs`];
+const basedir = __dirname + '/packages/editor/src/js';
 
 function mosaicoBadsenderLib() {
   return browserify({
@@ -233,7 +233,7 @@ function mosaicoBadsenderLib() {
     .pipe($.stripDebug())
     .pipe($.uglify())
     .pipe($.rename({ suffix: `.min` }))
-    .pipe(gulp.dest(BUILD_DIR_LIB))
+    .pipe(gulp.dest(BUILD_DIR_LIB));
 }
 
 function mosaicoEditor(debug = false) {
@@ -266,7 +266,7 @@ function mosaicoEditor(debug = false) {
         },
         { global: true }
       )
-    )
+    );
   // use uglifyify instead of gulp.uglify
   // • when RELEASING ONLY purge wasn't done properly by envify
   //   and gulp.uglify was breaking
@@ -274,9 +274,9 @@ function mosaicoEditor(debug = false) {
     b.transform(`uglifyify`, {
       global: true,
       sourceMap: false,
-    })
+    });
   }
-  return b
+  return b;
 }
 
 function bundleShareDev(b) {
@@ -285,19 +285,19 @@ function bundleShareDev(b) {
     .on(`error`, onError)
     .pipe(source(`badsender-editor.js`))
     .pipe(vinylBuffer())
-    .pipe(gulp.dest(BUILD_DIR))
+    .pipe(gulp.dest(BUILD_DIR));
 }
 
 function jsMosaicoDev() {
-  let b = mosaicoEditor(true)
+  let b = mosaicoEditor(true);
   if (isWatch) {
-    b = watchify(b)
-    b.on(`update`, function() {
-      console.log(`bundle ${colors.magenta('editor')} app`)
-      bundleShareDev(b)
-    })
+    b = watchify(b);
+    b.on(`update`, function () {
+      console.log(`bundle ${colors.magenta('editor')} app`);
+      bundleShareDev(b);
+    });
   }
-  return bundleShareDev(b)
+  return bundleShareDev(b);
 }
 
 function jsMosaicoProd() {
@@ -308,43 +308,43 @@ function jsMosaicoProd() {
     .pipe(vinylBuffer())
     .pipe($.stripDebug())
     .pipe($.uglify())
-    .pipe(gulp.dest(BUILD_DIR))
+    .pipe(gulp.dest(BUILD_DIR));
 }
 const jsEditor = gulp.series(
   templates,
   !isWatch
     ? gulp.parallel(mosaicoBadsenderLib, jsMosaicoDev, jsMosaicoProd)
     : gulp.parallel(mosaicoBadsenderLib, jsMosaicoDev)
-)
-jsEditor.description = `Bundle mosaico app, without libraries`
+);
+jsEditor.description = `Bundle mosaico app, without libraries`;
 
-exports[`js:mosaico-editor`] = jsEditor
-exports[`js:mosaico-editor:badsender-libraries`] = mosaicoBadsenderLib
-exports[`js:mosaico`] = gulp.parallel(editorLib, jsEditor)
+exports[`js:mosaico-editor`] = jsEditor;
+exports[`js:mosaico-editor:badsender-libraries`] = mosaicoBadsenderLib;
+exports[`js:mosaico`] = gulp.parallel(editorLib, jsEditor);
 
 //----- MOSAICO'S KNOCKOUT TEMPLATES: see -> /packages/editor/tasks/combineKOTemplates.js
 
-const through = require('through2')
-const StringDecoder = require('string_decoder').StringDecoder
-const decoder = new StringDecoder('utf8')
+const through = require('through2');
+const StringDecoder = require('string_decoder').StringDecoder;
+const decoder = new StringDecoder('utf8');
 
 function templates() {
-  const templates = []
+  const templates = [];
   function passThrough(file, encoding, cb) {
-    let name = path.basename(file.path)
-    name = /^([^\.]*)/.exec(name)[1]
-    let content = decoder.write(file.contents)
-    content = content.replace(/"/g, '\\x22')
-    content = content.replace(/(\r\n|\n|\r)/gm, '')
-    content = `  templateSystem.addTemplate("${name}", "${content}");`
-    templates.push(content)
-    return cb(null)
+    let name = path.basename(file.path);
+    name = /^([^.]*)/.exec(name)[1];
+    let content = decoder.write(file.contents);
+    content = content.replace(/"/g, '\\x22');
+    content = content.replace(/(\r\n|\n|\r)/gm, '');
+    content = `  templateSystem.addTemplate("${name}", "${content}");`;
+    templates.push(content);
+    return cb(null);
   }
   function flush(cb) {
     const result = `var templateSystem = require('../src/js/bindings/choose-template.js');
 document.addEventListener('DOMContentLoaded', function(event) {
 ${templates.join(`\n`)}
-});`
+});`;
     this.push(
       new Vinyl({
         cwd: './',
@@ -352,8 +352,8 @@ ${templates.join(`\n`)}
         path: 'templates.js',
         contents: new Buffer.from(result),
       })
-    )
-    return cb()
+    );
+    return cb();
   }
   return (
     gulp
@@ -368,15 +368,15 @@ ${templates.join(`\n`)}
       // templates has to be build on “build” folder
       // they will be require by editor app application
       .pipe(gulp.dest('packages/editor/build'))
-  )
+  );
 }
-templates.description = `Bundle mosaico templates`
-exports[`js:mosaico:templates`] = templates
+templates.description = `Bundle mosaico templates`;
+exports[`js:mosaico:templates`] = templates;
 
 //----- ALL JS
 
-const js = jsEditor
-js.description = `build js for mosaico app`
+const js = jsEditor;
+js.description = `build js for mosaico app`;
 
 ////////
 // ASSETS
@@ -387,95 +387,99 @@ js.description = `build js for mosaico app`
 function fonts() {
   return gulp
     .src(`node_modules/font-awesome/fonts/*`)
-    .pipe(gulp.dest(`public/fa/fonts`))
+    .pipe(gulp.dest(`public/fa/fonts`));
 }
 
-const assets = fonts
-assets.description = `Copy font-awesome in the right place`
+const assets = fonts;
+assets.description = `Copy font-awesome in the right place`;
 
 //----- MAINTENANCE
 
-const MAINTENANCE_SRC = `packages/server/html-templates/maintenance-pages`
-const MAINTENANCE_DIST = `build/maintenance-pages`
+const MAINTENANCE_SRC = `packages/server/html-templates/maintenance-pages`;
+const MAINTENANCE_DIST = `build/maintenance-pages`;
 
-const cleanMaintenance = cb => del([`${MAINTENANCE_DIST}/*.html`], cb)
+const cleanMaintenance = (cb) => del([`${MAINTENANCE_DIST}/*.html`], cb);
 
 function maintenance() {
   return gulp
     .src([`${MAINTENANCE_SRC}/*.pug`, `!${MAINTENANCE_SRC}/_maintenance-*.pug`])
     .pipe($.pug())
-    .pipe(gulp.dest(MAINTENANCE_DIST))
+    .pipe(gulp.dest(MAINTENANCE_DIST));
 }
-maintenance.description = `build maintenance pages for Heroku`
+maintenance.description = `build maintenance pages for Heroku`;
 
 //----- REVS
 
-const crypto = require('crypto')
+const crypto = require('crypto');
 
 function rev() {
-  let revs = []
+  let revs = [];
   function sortByName(a, b) {
-    const nameA = a.name.toUpperCase()
-    const nameB = b.name.toUpperCase()
-    if (nameA < nameB) return -1
-    if (nameA > nameB) return 1
-    return 0
+    const nameA = a.name.toUpperCase();
+    const nameB = b.name.toUpperCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+    return 0;
   }
   function passThrough(file, enc, callback) {
-    var key = path.relative(file.base, file.path)
-    var md5 = crypto.createHash('md5')
-    if (!file.contents) return callback(null)
-    var hash = md5.update(file.contents.toString()).digest('hex')
-    revs.push({ name: '/' + key, hash })
-    callback(null)
+    var key = path.relative(file.base, file.path);
+    var md5 = crypto.createHash('md5');
+    if (!file.contents) return callback(null);
+    var hash = md5.update(file.contents.toString()).digest('hex');
+    revs.push({ name: '/' + key, hash });
+    callback(null);
   }
   function flush(cb) {
-    const md5Object = {}
+    const md5Object = {};
     // keep the json in alphabetical order
-    revs.sort(sortByName).forEach(r => {
-      md5Object[r.name] = r.hash
-    })
+    revs.sort(sortByName).forEach((r) => {
+      md5Object[r.name] = r.hash;
+    });
     let file = new Vinyl({
       path: `md5public.json`,
       contents: new Buffer.from(JSON.stringify(md5Object, null, '   ')),
-    })
-    this.push(file)
-    cb()
+    });
+    this.push(file);
+    cb();
   }
 
   return gulp
     .src([`${BUILD_DIR}/**/*.*`, `public/**/*.*`, `!public/lang/*.*`])
     .pipe(through.obj(passThrough, flush))
-    .pipe(gulp.dest(SERVER_DIR))
+    .pipe(gulp.dest(SERVER_DIR));
 }
-rev.description = `generate hash from mosaico's build files. This will help us to leverage browser caching`
+rev.description = `generate hash from mosaico's build files. This will help us to leverage browser caching`;
 
 ////////
 // DEV
 ////////
 
-const cleanTmp = cb => del(['tmp/upload_*'], cb)
-
-const cleanAll = cb => del([BUILD_DIR, 'build'], cb)
+const cleanAll = (cb) => del([BUILD_DIR, 'build'], cb);
 const build = gulp.series(
   cleanAll,
   gulp.parallel(editorLib, js, css, assets),
   rev
-)
-build.description = `rebuild all assets`
+);
+build.description = `rebuild all assets`;
 
 function watchNonBrowserifyMosaicoAssets(done) {
-  gulp.watch(['packages/editor/src/css/**/*.less'], css)
-  gulp.watch(['packages/editor/src/tmpl/*.html', 'packages/editor/src/tmpl-badsender/*.html'], templates)
-  done()
+  gulp.watch(['packages/editor/src/css/**/*.less'], css);
+  gulp.watch(
+    [
+      'packages/editor/src/tmpl/*.html',
+      'packages/editor/src/tmpl-badsender/*.html',
+    ],
+    templates
+  );
+  done();
 }
 
-gulp.task(`css`, css)
-gulp.task('js', js)
-gulp.task('assets', assets)
-gulp.task('rev', rev)
-gulp.task('templates', templates)
-gulp.task('build', build)
-gulp.task('maintenance', gulp.series(cleanMaintenance, maintenance))
-gulp.task('dev', gulp.series(build, watchNonBrowserifyMosaicoAssets))
-gulp.task('bump', bump)
+gulp.task(`css`, css);
+gulp.task('js', js);
+gulp.task('assets', assets);
+gulp.task('rev', rev);
+gulp.task('templates', templates);
+gulp.task('build', build);
+gulp.task('maintenance', gulp.series(cleanMaintenance, maintenance));
+gulp.task('dev', gulp.series(build, watchNonBrowserifyMosaicoAssets));
+gulp.task('bump', bump);

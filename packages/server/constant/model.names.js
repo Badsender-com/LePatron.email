@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 // we keep old collections name for compatibility issues
 module.exports = Object.freeze({
@@ -12,4 +12,4 @@ module.exports = Object.freeze({
   OAuthTokens: `OAuthTokens`,
   OAuthClients: `OAuthClients`,
   OAuthCodes: `OAuthCodes`,
-})
+});

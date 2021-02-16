@@ -15,14 +15,14 @@ export default {
       password: {
         error: {
           nouser: 'User not found',
-          incorrect: 'Bad password'
-        }
+          incorrect: 'Bad password',
+        },
       },
       login: {
         error: {
           internal: 'An error occurred',
-        }
-      }
+        },
+      },
     },
     newTemplate: 'Add a template',
     template: 'Template | Templates',
@@ -80,7 +80,6 @@ export default {
       username: 'Username',
       port: 'Port',
       path: "Folder's path",
-      ftpProtocol: 'HTTP protocol',
       endpoint: "Images root'url",
       editorLabel: 'Button label',
       entryPoint: 'Entry point',

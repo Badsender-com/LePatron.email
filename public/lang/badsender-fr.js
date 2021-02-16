@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 module.exports = {
   // edit title
@@ -37,6 +37,6 @@ module.exports = {
   'rotate-right': 'Incliner à droite',
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
-  'cancel': 'ANNULER',
-  'upload': 'UPLOADER'
-}
+  cancel: 'ANNULER',
+  upload: 'UPLOADER',
+};
