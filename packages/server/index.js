@@ -13,6 +13,7 @@ const favicon = require('express-favicon');
 const passport = require('passport');
 const moment = require('moment');
 const { Nuxt, Builder } = require('nuxt');
+const flash = require('connect-flash');
 
 const config = require('./node.config.js');
 const nuxtConfig = require('../../nuxt.config.js');
@@ -41,6 +42,8 @@ app.use(
     store: store,
   })
 );
+
+app.use(flash());
 
 mongoose.connect(config.database, {
   useNewUrlParser: true,
@@ -205,7 +208,7 @@ app.post(
   passport.authenticate(`local`, {
     successReturnToOrRedirect: `/groups`,
     failureRedirect: `/account/login/admin`,
-    // failureFlash: true,
+    failureFlash: true,
     successFlash: true,
   })
 );

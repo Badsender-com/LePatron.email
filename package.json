@@ -53,6 +53,7 @@
     "cheerio": "1.0.0-rc.3",
     "compression": "1.7.4",
     "connect-ensure-login": "0.1.1",
+    "connect-flash": "^0.1.1",
     "connect-mongodb-session": "2.4.1",
     "consola": "2.11.1",
     "cookie": "0.3.1",
@@ -235,8 +236,8 @@
     "serve:dev": "nodemon packages/server/index.js --config packages/server/nodemon.json",
     "serve:mail": "maildev",
     "serve:prod": "export NODE_ENV=production && yarn serve:app",
-    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
-    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:up": "sudo docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "sudo docker-compose -f docker/docker-compose.yml down",
     "code:pretty": "yarn prettier . -w",
     "code:lint": "yarn eslint .",
     "code:fix": "yarn code:pretty && yarn code:lint --fix"
