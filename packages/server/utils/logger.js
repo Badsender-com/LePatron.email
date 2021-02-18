@@ -10,7 +10,7 @@ const config = require('../node.config.js');
 consola.level = config.CONSOLA_LEVEL;
 
 const logger = consola.create({
-  reporters: [new consola[config.isDev ? `FancyReporter` : `JSONReporter`]()],
+  reporters: [new consola[config.isDev ? 'FancyReporter' : 'JSONReporter']()],
 });
 
 /// ///
@@ -24,13 +24,13 @@ function logRequest(tokens, req, res) {
 }
 
 const colorCodes = {
-  7: `magenta`,
-  5: `red`,
-  4: `yellow`,
-  3: `cyan`,
-  2: `green`,
-  1: `green`,
-  0: `yellow`,
+  7: 'magenta',
+  5: 'red',
+  4: 'yellow',
+  3: 'cyan',
+  2: 'green',
+  1: 'green',
+  0: 'yellow',
 };
 
 function logResponse(tokens, req, res) {

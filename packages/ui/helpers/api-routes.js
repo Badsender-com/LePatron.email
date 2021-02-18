@@ -10,7 +10,7 @@ const API_PREFIX = process.env.API_PREFIX;
 /// ///
 
 export function groups() {
-  return `/groups`;
+  return '/groups';
 }
 export function groupsItem(routeParams = {}) {
   return `/groups/${routeParams.groupId}`;
@@ -30,7 +30,7 @@ export function groupsItemMailings(routeParams = {}) {
 /// ///
 
 export function templates() {
-  return `/templates`;
+  return '/templates';
 }
 /**
  * @param {Object} routeParams
@@ -63,7 +63,7 @@ export function getPublicProfile({ username }) {
 }
 
 export function login() {
-  return `/account/login`;
+  return '/account/login';
 }
 
 export function accountResetPassword(routeParams = {}) {
@@ -78,7 +78,7 @@ export function accountSetPassword(routeParams = {}) {
 /// ///
 
 export function users() {
-  return `/users`;
+  return '/users';
 }
 export function usersItem(routeParams = {}) {
   return `/users/${routeParams.userId}`;
@@ -98,7 +98,7 @@ export function usersItemMailings(routeParams = {}) {
 /// ///
 
 export function mailings() {
-  return `/mailings`;
+  return '/mailings';
 }
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;

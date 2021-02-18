@@ -42,7 +42,7 @@ const TemplateSchema = Schema(
     name: {
       type: String,
       unique: true,
-      required: [true, `name is required`],
+      required: [true, 'name is required'],
       set: normalizeString,
     },
     description: {
@@ -51,11 +51,11 @@ const TemplateSchema = Schema(
     _company: {
       type: ObjectId,
       ref: GroupModel,
-      required: [true, `group is required`],
+      required: [true, 'group is required'],
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `group`,
+      alias: 'group',
     },
     markup: {
       type: String,
@@ -96,7 +96,7 @@ TemplateSchema.plugin(mongooseHidden, {
 //   return `/img/${this._id}-`
 // })
 
-TemplateSchema.virtual(`hasMarkup`).get(function () {
+TemplateSchema.virtual('hasMarkup').get(function () {
   return this.markup != null;
 });
 
@@ -104,7 +104,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   const templates = await this.find(query)
     // we need to keep markup in order for the virtual `hasMarkup` to have the right result
     // we also need all assets
-    .populate({ path: `_company`, select: `id name` })
+    .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 });
   // change some fields
   // • we don't want the markup to be send => remove
@@ -113,15 +113,15 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   return templates.map((template) => {
     // pick is more performant than omit
     const templateRes = _.pick(template.toJSON(), [
-      `id`,
-      `name`,
-      `description`,
-      `createdAt`,
-      `updatedAt`,
-      `hasMarkup`,
-      `group`,
+      'id',
+      'name',
+      'description',
+      'createdAt',
+      'updatedAt',
+      'hasMarkup',
+      'group',
     ]);
-    templateRes.coverImage = template.assets[`_full.png`];
+    templateRes.coverImage = template.assets['_full.png'];
     return templateRes;
   });
 };

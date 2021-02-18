@@ -83,9 +83,9 @@ class FTPClient {
     // eslint-disable-next-line node/no-deprecated-api
     return url
       .parse(fileUrl)
-      .pathname.replace(/\//g, ` `)
+      .pathname.replace(/\//g, ' ')
       .trim()
-      .replace(/\s/g, `-`);
+      .replace(/\s/g, '-');
   }
 
   getProxy() {

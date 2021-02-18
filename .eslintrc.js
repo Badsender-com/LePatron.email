@@ -24,6 +24,7 @@ module.exports = {
   rules: {
     'import/no-named-default': 'off',
     'no-var': 'error',
+    quotes: ['error', 'single'],
     'no-unused-vars': [
       'error',
       {

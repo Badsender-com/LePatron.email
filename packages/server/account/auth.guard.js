@@ -25,15 +25,15 @@ const adminUser = Object.freeze({
   isAdmin: true,
   id: config.admin.id,
   email: config.emailOptions.from,
-  name: `admin`,
+  name: 'admin',
 });
 
 module.exports = {
   adminUser,
-  GUARD_USER: guard(`user`),
-  GUARD_USER_REDIRECT: guard(`user`, true),
-  GUARD_ADMIN: guard(`admin`),
-  GUARD_ADMIN_REDIRECT: guard(`admin`, true),
+  GUARD_USER: guard('user'),
+  GUARD_USER_REDIRECT: guard('user', true),
+  GUARD_ADMIN: guard('admin'),
+  GUARD_ADMIN_REDIRECT: guard('admin', true),
 };
 
 /// ///
@@ -42,21 +42,21 @@ module.exports = {
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
-function guard(role = `user`, redirect = false) {
-  const isAdminRoute = role === `admin`;
+function guard(role = 'user', redirect = false) {
+  const isAdminRoute = role === 'admin';
   return function guardRoute(req, res, next) {
     const { user } = req;
     // non connected user shouldn't access those pages
     if (!user) {
       redirect
-        ? res.redirect(`/account/login`)
+        ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
       return;
     }
     // non admin user shouldn't access those pages
     if (isAdminRoute && !user.isAdmin) {
       redirect
-        ? res.redirect(`/account/admin`)
+        ? res.redirect('/account/admin')
         : next(new createError.Unauthorized());
       return;
     }

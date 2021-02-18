@@ -243,7 +243,7 @@
     "docker:down": "docker-compose -f docker/docker-compose.yml down",
     "code:pretty": "yarn prettier . -w",
     "code:lint": "yarn eslint .",
-    "code:fix": "yarn code:pretty && yarn code:lint --fix"
+    "code:fix": "yarn code:lint --fix && yarn code:pretty"
   },
   "engines": {
     "node": ">=10.15.3",
@@ -255,7 +255,7 @@
     }
   },
   "lint-staged": {
-    "*.{js,vue}": "eslint --cache --fix",
-    "*.{js,vue,css,scss,md}": "prettier --write"
+    "*.{js,vue,css,scss,md}": "prettier --write",
+    "*.{js,vue}": "eslint --cache --fix"
   }
 }

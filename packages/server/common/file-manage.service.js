@@ -77,17 +77,17 @@ function parseMultipart(req, options) {
   const form = new formidable.IncomingForm();
   const uploads = [];
   form.multiples = true;
-  form.hash = `md5`;
+  form.hash = 'md5';
   form.uploadDir = config.images.tmpDir;
   form.parse(req, onEnd);
-  form.on(`file`, onFile);
+  form.on('file', onFile);
 
   function onFile(name, file) {
-    console.log(`upload:`, name);
+    console.log('upload:', name);
     // remove empty files
     if (file.size === 0) return;
     // markup will be saved in DB
-    if (name === `markup`) return;
+    if (name === 'markup') return;
     // put all other files in the right place (S3 || local)
     // slug every uploaded file name
     // user may put accent and/or spaces…

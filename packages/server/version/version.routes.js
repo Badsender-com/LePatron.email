@@ -19,7 +19,7 @@ const router = express.Router();
  *
  * @apiSuccess {String} version
  */
-router.get(``, (req, res) => {
+router.get('', (req, res) => {
   res.json({ version: pkg.version });
 });
 

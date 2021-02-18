@@ -80,7 +80,7 @@ const onWriteResizeEnd = (datas) => () => {
     .save()
     .then(() => console.log(green('cache image infos saved in DB', path)))
     .catch((e) => {
-      console.log(red(`[IMAGE] can't save cache image infos in DB`), path);
+      console.log(red('[IMAGE] can\'t save cache image infos in DB'), path);
       console.log(inspect(e));
     });
 };
@@ -91,7 +91,7 @@ const getResizedImageName = (path) => {
 };
 
 const onWriteResizeError = (path) => (e) => {
-  console.log(`[IMAGE] can't upload resize/placeholder result`, path);
+  console.log('[IMAGE] can\'t upload resize/placeholder result', path);
   console.log(inspect(e));
 };
 
@@ -319,9 +319,9 @@ function cover(req, res, next) {
 }
 
 const stripeSize = 55;
-const lightStripe = `#808080`;
-const darkStripe = `#707070`;
-const textColor = `#B0B0B0`;
+const lightStripe = '#808080';
+const darkStripe = '#707070';
+const textColor = '#B0B0B0';
 function generatePlaceholderSVG(width, height) {
   // centering text in SVG
   // http://stackoverflow.com/questions/5546346/how-to-place-and-center-text-in-an-svg-rectangle#answer-31522006
@@ -431,7 +431,7 @@ async function list(req, res) {
     {
       creationOrWireframeId: mongoId,
     },
-    `files`
+    'files'
   );
 
   const responseGallery = gallery || (await createGallery(mongoId));
@@ -455,7 +455,7 @@ async function create(req, res) {
   const { mongoId } = req.params;
   const multipartOptions = {
     prefix: mongoId,
-    formatter: `editor`,
+    formatter: 'editor',
   };
   const [uploads, gallery] = await Promise.all([
     fileManager.parseMultipart(req, multipartOptions),
@@ -475,7 +475,7 @@ async function create(req, res) {
     galleryImages.push(upload);
   });
   safeGallery.files = galleryImages;
-  safeGallery.markModified(`files`);
+  safeGallery.markModified('files');
   await safeGallery.save();
 
   // send only the new uploads

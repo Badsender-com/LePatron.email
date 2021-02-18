@@ -21,7 +21,7 @@ const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js')
 // https://github.com/jontewks/puppeteer-heroku-buildpack
 const PROTOCOL = `http${config.forcessl ? 's' : ''}://`;
 const VERSION_PAGE = `${PROTOCOL}${config.host}/api/version`;
-const BLOCK_SELECTOR = `[data-ko-container] [data-ko-block]`;
+const BLOCK_SELECTOR = '[data-ko-container] [data-ko-block]';
 
 module.exports = {
   previewMarkup: asyncHandler(previewMarkup),
@@ -82,7 +82,7 @@ async function generatePreviews(req, res) {
   if (!template.markup) throw createError(404);
   // don't wait for the full preview to be generated
   createPreviews({ templateId, cookies }).catch((error) => console.log(error));
-  res.json({ id: templateId, status: `preview start` });
+  res.json({ id: templateId, status: 'preview start' });
 }
 const PREVIEW_EVENTS = [
   eventsNames.PREVIEW_START,
@@ -96,9 +96,9 @@ function previewEvents(req, res) {
   const isConnectionClosed = sseHelpers.createConnectionStatusPromise();
 
   res.writeHead(200, {
-    Connection: `keep-alive`,
-    'Content-Type': `text/event-stream`,
-    'Cache-Control': `no-cache`,
+    Connection: 'keep-alive',
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
   });
 
   const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(
@@ -111,7 +111,7 @@ function previewEvents(req, res) {
     badsenderEvents.on(eventName, sendTemplatePreviewEvent)
   );
 
-  res.on(`close`, function cleanListeners() {
+  res.on('close', function cleanListeners() {
     isConnectionClosed.resolve();
     PREVIEW_EVENTS.forEach((eventName) =>
       badsenderEvents.off(eventName, sendTemplatePreviewEvent)
@@ -141,7 +141,7 @@ function previewEvents(req, res) {
 
 async function createPreviews({ templateId, cookies }) {
   const start = Date.now();
-  let logMessage = `starting generating previews`;
+  let logMessage = 'starting generating previews';
   badsenderEvents.emit(eventsNames.PREVIEW_START, {
     type: eventsNames.EVENT_START,
     originalEventName: eventsNames.PREVIEW_START,
@@ -149,7 +149,7 @@ async function createPreviews({ templateId, cookies }) {
   });
 
   // ----- RENDER THE MARKUP
-  logMessage = `1/7 - get template markup`;
+  logMessage = '1/7 - get template markup';
   logDuration(`[PREVIEWS] ${logMessage}`, start);
   badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
     type: eventsNames.EVENT_UPDATE,
@@ -161,10 +161,10 @@ async function createPreviews({ templateId, cookies }) {
     // headless: false,
     args: [
       // https://peter.sh/experiments/chromium-command-line-switches/#hide-scrollbars
-      `--hide-scrollbars`,
-      `--mute-audio`,
+      '--hide-scrollbars',
+      '--mute-audio',
       // https://github.com/jontewks/puppeteer-heroku-buildpack#puppeteer-heroku-buildpack
-      `--no-sandbox`,
+      '--no-sandbox',
     ],
   });
   // make a big try/catch to close browser on error
@@ -183,7 +183,7 @@ async function createPreviews({ templateId, cookies }) {
     await page.goto(getMarkupPreviewUrl(templateId));
 
     // ----- RESIZE VIEWPORT (to have a fitted screenshot)
-    logMessage = `2/7 - resize viewport`;
+    logMessage = '2/7 - resize viewport';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -194,7 +194,7 @@ async function createPreviews({ templateId, cookies }) {
     const { width, height } = await page.evaluate(() => {
       // `preview` class is added to have more controls over previews
       // https://github.com/voidlabs/mosaico/issues/246#issuecomment-265979320
-      document.body.classList.add(`preview`);
+      document.body.classList.add('preview');
       return {
         width: Math.round(document.body.scrollWidth),
         height: Math.round(document.body.scrollHeight),
@@ -206,7 +206,7 @@ async function createPreviews({ templateId, cookies }) {
     });
 
     // ----- GATHER BLOCKS SIZES
-    logMessage = `3/7 - prepare block screenshots`;
+    logMessage = '3/7 - prepare block screenshots';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -231,7 +231,7 @@ async function createPreviews({ templateId, cookies }) {
       });
     });
     blocksInformations.push({
-      name: `_full.png`,
+      name: '_full.png',
       clip: {
         x: 0,
         y: 0,
@@ -241,7 +241,7 @@ async function createPreviews({ templateId, cookies }) {
     });
 
     // ----- TAKE SCREENSHOTS
-    logMessage = `4/7 - take screenshots`;
+    logMessage = '4/7 - take screenshots';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -257,7 +257,7 @@ async function createPreviews({ templateId, cookies }) {
     );
 
     // ----- SAVE SCREENSHOTS TO TMP
-    logMessage = `5/7 - save screenshots to temporary folder`;
+    logMessage = '5/7 - save screenshots to temporary folder';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -279,7 +279,7 @@ async function createPreviews({ templateId, cookies }) {
         console.log(`[PREVIEWS] ${imageLogName}`);
         // slug to be coherent with upload
         const originalName = slugFilename(blocksName[index]);
-        const hash = crypto.createHash(`md5`).update(imageBuffer).digest(`hex`);
+        const hash = crypto.createHash('md5').update(imageBuffer).digest('hex');
         const name = `${_getTemplateImagePrefix(templateId)}-${hash}.png`;
         const filePath = path.join(config.images.tmpDir, `/${name}`);
         templateAssetsField[originalName] = name;
@@ -291,7 +291,7 @@ async function createPreviews({ templateId, cookies }) {
       })
     );
     // ----- UPLOAD SCREENSHOTS
-    logMessage = `6/7 - upload screenshots`;
+    logMessage = '6/7 - upload screenshots';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -316,7 +316,7 @@ async function createPreviews({ templateId, cookies }) {
     );
 
     // ----- UPDATE WIREFRAME ASSETS
-    logMessage = `7/7 - update template assets in database`;
+    logMessage = '7/7 - update template assets in database';
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
       type: eventsNames.EVENT_UPDATE,
@@ -330,13 +330,13 @@ async function createPreviews({ templateId, cookies }) {
       template.assets || {},
       templateAssetsField
     );
-    template.markModified(`assets`);
+    template.markModified('assets');
     await template.save();
 
     // ----- THE END
     await Templates.findById(templateId).populate({
-      path: `_company`,
-      select: `id name`,
+      path: '_company',
+      select: 'id name',
     });
     badsenderEvents.emit(eventsNames.PREVIEW_END, {
       type: eventsNames.EVENT_END,
