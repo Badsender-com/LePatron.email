@@ -94,10 +94,10 @@ if (config.isDev && isLocalEmailTransport) {
 // if ( config.isDev ) console.log( config )
 // http://stackoverflow.com/questions/12416738/how-to-use-herokus-ephemeral-filesystem
 config.setup = new Promise((resolve, reject) => {
-  var tmpPath = path.join(`${__dirname}/../../`, config.images.tmpDir);
-  var uploadPath = path.join(`${__dirname}/../../`, config.images.uploadDir);
-  var tmpDir = mkdirp(tmpPath);
-  var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
+  const tmpPath = path.join(__dirname, '../../', config.images.tmpDir);
+  const uploadPath = path.join(__dirname, '../../', config.images.uploadDir);
+  const tmpDir = mkdirp(tmpPath);
+  const uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
 
   Promise.all([tmpDir, uploadDir])
     .then(() => {
@@ -109,10 +109,12 @@ config.setup = new Promise((resolve, reject) => {
       console.log('folder exception');
       console.log('attempt with os.tmpdir()');
       console.log(err);
-      var tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
-      var uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
-      var tmpDir = mkdirp(tmpPath);
-      var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
+      const tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
+      const uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
+      const tmpDir = mkdirp(tmpPath);
+      const uploadDir = config.isAws
+        ? Promise.resolve(null)
+        : mkdirp(uploadPath);
 
       Promise.all([tmpDir, uploadDir])
         .then(() => {

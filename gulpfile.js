@@ -58,9 +58,9 @@ function bump() {
 }
 bump.description = `Bump versions on package.json. Used only in release script`;
 
-////////
+/// /////
 // CSS
-////////
+/// /////
 
 const autoprefixer = require('autoprefixer');
 const csswring = require('csswring');
@@ -99,11 +99,11 @@ exports[`css:mosaico`] = cssEditor;
 const css = gulp.series(cleanCss, cssEditor);
 css.description = `Build CSS for the mosaico editor`;
 
-////////
+/// /////
 // JS
-////////
+/// /////
 
-//----- LIBRARIES
+// ----- LIBRARIES
 
 function cleanLib(cb) {
   if (isDev) return cb();
@@ -139,7 +139,7 @@ const mosaicoLibListMin = [
   `node_modules/knockout/build/output/knockout-latest.js`, // already min
   `node_modules/jquery-ui-package/jquery-ui.min.js`,
   `node_modules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js`,
-  `node_modules/default-passive-events/dist/index.js`, //already min
+  `node_modules/default-passive-events/dist/index.js`, // already min
   // NOTE: include these 2 BEFORE the fileupload libs
   `node_modules/blueimp-canvas-to-blob/js/canvas-to-blob.min.js`,
   `node_modules/blueimp-load-image/js/load-image.all.min.js`,
@@ -205,7 +205,7 @@ const editorLib = gulp.series(
 );
 editorLib.description = `build JS for the mosaico editor`;
 
-//----- MOSAICO APPLICATION
+// ----- MOSAICO APPLICATION
 
 const browserify = require('browserify');
 const source = require('vinyl-source-stream');
@@ -217,7 +217,7 @@ const envify = require('envify/custom');
 const watchify = require('watchify');
 
 const badsenderEditorLibs = [`lodash.find`, `lodash.debounce`, `cropperjs`];
-const basedir = __dirname + '/packages/editor/src/js';
+const basedir = path.join(__dirname, '/packages/editor/src/js');
 
 function mosaicoBadsenderLib() {
   return browserify({
@@ -237,7 +237,7 @@ function mosaicoBadsenderLib() {
 }
 
 function mosaicoEditor(debug = false) {
-  let b = browserify({
+  const b = browserify({
     basedir,
     cache: {},
     packageCache: {},
@@ -322,7 +322,7 @@ exports[`js:mosaico-editor`] = jsEditor;
 exports[`js:mosaico-editor:badsender-libraries`] = mosaicoBadsenderLib;
 exports[`js:mosaico`] = gulp.parallel(editorLib, jsEditor);
 
-//----- MOSAICO'S KNOCKOUT TEMPLATES: see -> /packages/editor/tasks/combineKOTemplates.js
+// ----- MOSAICO'S KNOCKOUT TEMPLATES: see -> /packages/editor/tasks/combineKOTemplates.js
 
 const through = require('through2');
 const StringDecoder = require('string_decoder').StringDecoder;
@@ -350,7 +350,7 @@ ${templates.join(`\n`)}
         cwd: './',
         base: './',
         path: 'templates.js',
-        contents: new Buffer.from(result),
+        contents: Buffer.from(result),
       })
     );
     return cb();
@@ -373,16 +373,16 @@ ${templates.join(`\n`)}
 templates.description = `Bundle mosaico templates`;
 exports[`js:mosaico:templates`] = templates;
 
-//----- ALL JS
+// ----- ALL JS
 
 const js = jsEditor;
 js.description = `build js for mosaico app`;
 
-////////
+/// /////
 // ASSETS
-////////
+/// /////
 
-//----- FONTS
+// ----- FONTS
 
 function fonts() {
   return gulp
@@ -393,7 +393,7 @@ function fonts() {
 const assets = fonts;
 assets.description = `Copy font-awesome in the right place`;
 
-//----- MAINTENANCE
+// ----- MAINTENANCE
 
 const MAINTENANCE_SRC = `packages/server/html-templates/maintenance-pages`;
 const MAINTENANCE_DIST = `build/maintenance-pages`;
@@ -408,12 +408,12 @@ function maintenance() {
 }
 maintenance.description = `build maintenance pages for Heroku`;
 
-//----- REVS
+// ----- REVS
 
 const crypto = require('crypto');
 
 function rev() {
-  let revs = [];
+  const revs = [];
   function sortByName(a, b) {
     const nameA = a.name.toUpperCase();
     const nameB = b.name.toUpperCase();
@@ -422,10 +422,10 @@ function rev() {
     return 0;
   }
   function passThrough(file, enc, callback) {
-    var key = path.relative(file.base, file.path);
-    var md5 = crypto.createHash('md5');
+    const key = path.relative(file.base, file.path);
+    const md5 = crypto.createHash('md5');
     if (!file.contents) return callback(null);
-    var hash = md5.update(file.contents.toString()).digest('hex');
+    const hash = md5.update(file.contents.toString()).digest('hex');
     revs.push({ name: '/' + key, hash });
     callback(null);
   }
@@ -435,9 +435,9 @@ function rev() {
     revs.sort(sortByName).forEach((r) => {
       md5Object[r.name] = r.hash;
     });
-    let file = new Vinyl({
+    const file = new Vinyl({
       path: `md5public.json`,
-      contents: new Buffer.from(JSON.stringify(md5Object, null, '   ')),
+      contents: Buffer.from(JSON.stringify(md5Object, null, '   ')),
     });
     this.push(file);
     cb();
@@ -450,9 +450,9 @@ function rev() {
 }
 rev.description = `generate hash from mosaico's build files. This will help us to leverage browser caching`;
 
-////////
+/// /////
 // DEV
-////////
+/// /////
 
 const cleanAll = (cb) => del([BUILD_DIR, 'build'], cb);
 const build = gulp.series(

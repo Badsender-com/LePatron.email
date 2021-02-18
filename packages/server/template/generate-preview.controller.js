@@ -148,7 +148,7 @@ async function createPreviews({ templateId, cookies }) {
     payload: { templateId, message: logMessage },
   });
 
-  //----- RENDER THE MARKUP
+  // ----- RENDER THE MARKUP
   logMessage = `1/7 - get template markup`;
   logDuration(`[PREVIEWS] ${logMessage}`, start);
   badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -182,7 +182,7 @@ async function createPreviews({ templateId, cookies }) {
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMarkupPreviewUrl(templateId));
 
-    //----- RESIZE VIEWPORT (to have a fitted screenshot)
+    // ----- RESIZE VIEWPORT (to have a fitted screenshot)
     logMessage = `2/7 - resize viewport`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -205,7 +205,7 @@ async function createPreviews({ templateId, cookies }) {
       height: Math.round(height),
     });
 
-    //----- GATHER BLOCKS SIZES
+    // ----- GATHER BLOCKS SIZES
     logMessage = `3/7 - prepare block screenshots`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -240,7 +240,7 @@ async function createPreviews({ templateId, cookies }) {
       },
     });
 
-    //----- TAKE SCREENSHOTS
+    // ----- TAKE SCREENSHOTS
     logMessage = `4/7 - take screenshots`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -256,7 +256,7 @@ async function createPreviews({ templateId, cookies }) {
       blocksInformations.map(({ clip }) => page.screenshot({ clip }))
     );
 
-    //----- SAVE SCREENSHOTS TO TMP
+    // ----- SAVE SCREENSHOTS TO TMP
     logMessage = `5/7 - save screenshots to temporary folder`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -290,7 +290,7 @@ async function createPreviews({ templateId, cookies }) {
         return fs.writeFile(filePath, imageBuffer);
       })
     );
-    //----- UPLOAD SCREENSHOTS
+    // ----- UPLOAD SCREENSHOTS
     logMessage = `6/7 - upload screenshots`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -315,7 +315,7 @@ async function createPreviews({ templateId, cookies }) {
       })
     );
 
-    //----- UPDATE WIREFRAME ASSETS
+    // ----- UPDATE WIREFRAME ASSETS
     logMessage = `7/7 - update template assets in database`;
     logDuration(`[PREVIEWS] ${logMessage}`, start);
     badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
@@ -333,7 +333,7 @@ async function createPreviews({ templateId, cookies }) {
     template.markModified(`assets`);
     await template.save();
 
-    //----- THE END
+    // ----- THE END
     await Templates.findById(templateId).populate({
       path: `_company`,
       select: `id name`,

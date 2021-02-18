@@ -8,9 +8,9 @@ const router = express.Router();
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 const templates = require('./template.controller.js');
 
-//////
+/// ///
 // TEMPLATES
-//////
+/// ///
 
 router.get(`/:templateId/markup`, GUARD_USER, templates.readMarkup);
 router.get(`/:templateId/preview`, GUARD_ADMIN, templates.previewMarkup);

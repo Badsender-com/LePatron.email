@@ -7,9 +7,9 @@ const router = express.Router();
 const { GUARD_ADMIN } = require('../account/auth.guard.js');
 const users = require('./user.controller.js');
 
-//////
+/// ///
 // USERS
-//////
+/// ///
 
 router.all(`*`, GUARD_ADMIN);
 router.put(`/:userId/activate`, users.activate);

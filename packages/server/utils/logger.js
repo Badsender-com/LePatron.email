@@ -13,9 +13,9 @@ const logger = consola.create({
   reporters: [new consola[config.isDev ? `FancyReporter` : `JSONReporter`]()],
 });
 
-//////
+/// ///
 // LOGGING
-//////
+/// ///
 
 function logRequest(tokens, req, res) {
   const method = chalk.blue(tokens.method(req, res));

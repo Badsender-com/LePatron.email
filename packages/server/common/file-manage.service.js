@@ -21,9 +21,9 @@ const {
   copyImages,
 } = require(config.isAws ? '../utils/storage-s3' : '../utils/storage-local');
 
-//////
+/// ///
 // UPLOAD
-//////
+/// ///
 
 function imageToFields(fields, file) {
   if (file.size === 0) return;
@@ -58,7 +58,7 @@ function handleTemplatesUploads(fields, files, resolve) {
 
 function handleEditorUpload(fields, files, resolve) {
   console.log('HANDLE JQUERY FILE UPLOAD');
-  var file = files['files[]'];
+  let file = files['files[]'];
   file = formatName(file.name);
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
@@ -118,9 +118,9 @@ function parseMultipart(req, options) {
   return deferred;
 }
 
-//////
+/// ///
 // EXPOSE
-//////
+/// ///
 
 module.exports = {
   streamImage,

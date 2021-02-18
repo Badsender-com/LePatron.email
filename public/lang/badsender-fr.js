@@ -32,7 +32,7 @@ module.exports = {
   // download button
   'dl-btn-regular': `Téléchargement régulier`,
   'dl-btn-cdn': `images ICOU`,
-  //Crop interface
+  // Crop interface
   'rotate-left': 'Incliner à gauche',
   'rotate-right': 'Incliner à droite',
   'vertical-mirror': 'Miroir vertical',

@@ -35,7 +35,7 @@ export const mutations = {
   [SHOW_SNACKBAR](state, payload) {
     if (payload.text == null) return;
     state.snackbar.text = payload.text;
-    state.snackbar.multiline = payload.text.length > 50 ? true : false;
+    state.snackbar.multiline = payload.text.length > 50;
     if (payload.multiline) state.snackbar.multiline = payload.multiline;
     if (payload.timeout) state.snackbar.timeout = payload.timeout;
     state.snackbar.color = payload.color;

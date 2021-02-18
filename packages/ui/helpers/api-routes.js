@@ -5,9 +5,9 @@ const API_PREFIX = process.env.API_PREFIX;
 // • it's just a way to centralize all our routes
 //   since we don't use a store for everything
 
-//////
+/// ///
 // GROUPS
-//////
+/// ///
 
 export function groups() {
   return `/groups`;
@@ -25,9 +25,9 @@ export function groupsItemMailings(routeParams = {}) {
   return `/groups/${routeParams.groupId}/mailings`;
 }
 
-//////
+/// ///
 // TEMPLATES
-//////
+/// ///
 
 export function templates() {
   return `/templates`;
@@ -54,9 +54,9 @@ export function templatesItemEvents(routeParams = {}) {
   return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
 }
 
-//////
+/// ///
 // ACCOUNT
-//////
+/// ///
 
 export function getPublicProfile({ username }) {
   return `/account/${username}`;
@@ -73,9 +73,9 @@ export function accountSetPassword(routeParams = {}) {
   return `/account/${routeParams.email}/password/${routeParams.token}`;
 }
 
-//////
+/// ///
 // USERS
-//////
+/// ///
 
 export function users() {
   return `/users`;
@@ -93,9 +93,9 @@ export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
 
-//////
+/// ///
 // MAILINGS
-//////
+/// ///
 
 export function mailings() {
   return `/mailings`;
@@ -110,9 +110,9 @@ export function mailingsItemTransferToUser(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
-//////
+/// ///
 // IMAGES
-//////
+/// ///
 
 // this is not used by axios (show an image…)
 export function imagesItem(routeParams = {}) {

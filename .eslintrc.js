@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es2021: true,
@@ -7,13 +8,22 @@ module.exports = {
   globals: {
     tinymce: true,
   },
-  extends: ['eslint:recommended', 'plugin:vue/essential', 'prettier'],
+  extends: [
+    'eslint:recommended',
+    'standard',
+    'plugin:vue/recommended',
+    'prettier',
+  ],
+  parser: 'babel-eslint',
   parserOptions: {
+    parser: 'babel-eslint',
     ecmaVersion: 12,
     sourceType: 'module',
   },
   plugins: ['vue'],
   rules: {
+    'import/no-named-default': 'off',
+    'no-var': 'error',
     'no-unused-vars': [
       'error',
       {

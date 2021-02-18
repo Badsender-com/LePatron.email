@@ -27,7 +27,7 @@ const accountRouter = require('./account/account.routes');
 
 const app = express();
 
-var store = new MongoDBStore({
+const store = new MongoDBStore({
   uri: config.database,
   collection: 'sessions',
 });
@@ -85,7 +85,7 @@ if (!config.isDev) {
   });
 }
 
-//----- TEMPLATES
+// ----- TEMPLATES
 
 // we need to keep a template engine to render Mosaico
 // • we could have done it without one…
@@ -94,7 +94,7 @@ if (!config.isDev) {
 app.set(`views`, path.join(__dirname, `./html-templates`));
 app.set(`view engine`, `pug`);
 
-//----- STATIC
+// ----- STATIC
 
 const md5public = require('./md5public.json');
 const maxAge = config.isDev
@@ -163,7 +163,7 @@ app.use(
 // API documentation
 app.use(`/api/documentation`, apiDocumentationNoCache);
 
-//----- SESSION & I18N
+// ----- SESSION & I18N
 
 app.use(logger.logRequest());
 app.use(logger.logResponse());

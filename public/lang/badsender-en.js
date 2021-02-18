@@ -32,7 +32,7 @@ module.exports = {
   // download button
   'dl-btn-regular': `Standard download`,
   'dl-btn-cdn': `zip with CDN`,
-  //Crop interface
+  // Crop interface
   'rotate-left': 'Rotate left',
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',

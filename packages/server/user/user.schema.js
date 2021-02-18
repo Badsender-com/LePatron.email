@@ -33,9 +33,9 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiSuccess {String} group.name
  */
 
-//////
+/// ///
 // USER
-//////
+/// ///
 
 const UserSchema = Schema(
   {
@@ -84,7 +84,7 @@ UserSchema.plugin(mongooseHidden, {
 });
 
 function encodePassword(password) {
-  if (typeof password === 'undefined') return void 0;
+  if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
 }
 
@@ -116,25 +116,25 @@ UserSchema.virtual(`isAdmin`).get(function () {
 });
 
 UserSchema.methods.activate = function activate() {
-  var user = this;
+  const user = this;
   user.isDeactivated = false;
   return user.save();
 };
 
 UserSchema.methods.deactivate = function deactivate() {
-  var user = this;
-  user.password = void 0;
-  user.token = void 0;
+  const user = this;
+  user.password = undefined;
+  user.token = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = void 0;
+  user.password = undefined;
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
-  lang = lang ? lang : 'en';
+  lang = lang || 'en';
 
   const updatedUser = await user.save();
   const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
@@ -155,10 +155,10 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
 
 UserSchema.methods.setPassword = async function setPassword(password, lang) {
   const user = this;
-  user.token = void 0;
-  user.tokenExpire = void 0;
+  user.token = undefined;
+  user.tokenExpire = undefined;
   user.password = password;
-  lang = lang ? lang : 'en';
+  lang = lang || 'en';
 
   const updatedUser = await user.save();
   const loginUrl = `http://${config.host}/account/login`;
@@ -188,9 +188,9 @@ UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   return mailing;
 };
 
-//////
+/// ///
 // DEFINING mailing templates
-//////
+/// ///
 
 tmpl.load = function (id) {
   const filename = path.join(__dirname, `../email-templates/${id}.html`);
@@ -201,7 +201,7 @@ tmpl.load = function (id) {
 const tmpReset = tmpl(`reset-password`);
 
 function getTemplateData(templateName, lang, additionalDatas) {
-  var i18n = {
+  const i18n = {
     common: {
       fr: {
         contact: `Contacter Badsender : `,
@@ -245,8 +245,8 @@ function getTemplateData(templateName, lang, additionalDatas) {
   return assign({}, { t: traductions }, additionalDatas);
 }
 
-//////
+/// ///
 // EXPORTS
-//////
+/// ///
 
 module.exports = UserSchema;

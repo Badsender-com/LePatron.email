@@ -33,7 +33,7 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    //cdn settings
+    // cdn settings
     downloadMailingWithCdnImages: {
       type: Boolean,
       default: false,
@@ -51,7 +51,7 @@ const GroupSchema = Schema(
       set: trimString,
       default: `CDN`,
     },
-    //ftp settings
+    // ftp settings
     downloadMailingWithFtpImages: {
       type: Boolean,
       default: false,

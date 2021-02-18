@@ -36,9 +36,9 @@ module.exports = {
   GUARD_ADMIN_REDIRECT: guard(`admin`, true),
 };
 
-//////
+/// ///
 // GUARD MIDDLEWARE
-//////
+/// ///
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
@@ -175,17 +175,17 @@ passport.use(
   })
 );
 
-var MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
+const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
 
 passport.use(
   new MultiSamlStrategy(
     {
-      passReqToCallback: true, //makes req available in callback
+      passReqToCallback: true, // makes req available in callback
       getSamlOptions: async (request, done) => {
         let email = request.query.email;
 
         if (!email) {
-          let buff = Buffer.from(request.body.SAMLResponse, 'base64');
+          const buff = Buffer.from(request.body.SAMLResponse, 'base64');
           const jsonObject = xmlParser.toJson(buff.toString(), {
             object: true,
             sanitize: true,
@@ -194,7 +194,7 @@ passport.use(
           email =
             jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject'][
               'saml2:NameID'
-            ]['$t'];
+            ].$t;
         }
 
         const user = await Users.findOne({

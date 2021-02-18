@@ -13,7 +13,7 @@ const createPromise = require('../helpers/create-promise.js');
 const { Mailings, Groups } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
-const ftp = require('./ftp-client.service.js');
+const Ftp = require('./ftp-client.service.js');
 
 module.exports = asyncHandler(downloadZip);
 
@@ -93,7 +93,7 @@ async function downloadZip(req, res, next) {
 
   console.log(`download zip`, name);
 
-  //----- IMAGES
+  // ----- IMAGES
 
   // keep a track of every images for latter download
   // be careful to avoid data uri
@@ -204,7 +204,7 @@ async function downloadZip(req, res, next) {
 
     await Promise.all(imagesRequest);
   } else {
-    const ftpClient = new ftp(
+    const ftpClient = new Ftp(
       ftpHost,
       ftpPort,
       ftpUsername,
@@ -219,7 +219,7 @@ async function downloadZip(req, res, next) {
     ftpClient.upload(allImages, folderPath);
   }
 
-  //----- HTML
+  // ----- HTML
 
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(html);
@@ -280,6 +280,7 @@ function getName(name) {
 }
 
 function getImageName(imageUrl) {
+  // eslint-disable-next-line node/no-deprecated-api
   return url
     .parse(imageUrl)
     .pathname.replace(/\//g, ` `)

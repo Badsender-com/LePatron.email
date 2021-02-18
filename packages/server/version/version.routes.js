@@ -7,9 +7,9 @@ const pkg = require('../../../package.json');
 
 const router = express.Router();
 
-//////
+/// ///
 // MISCELLANEOUS
-//////
+/// ///
 
 /**
  * @api {get} /version version

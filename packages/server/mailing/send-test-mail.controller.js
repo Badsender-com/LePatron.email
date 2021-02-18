@@ -42,7 +42,7 @@ async function sendTestMail(req, res) {
   const html = processMosaicoHtmlRender(req.body.html);
   const mailInfo = await mail.send({
     to: body.rcpt,
-    replyTo: user && user.email != null ? user.email : void 0,
+    replyTo: user && user.email != null ? user.email : undefined,
     subject: config.emailOptions.testSubjectPrefix + mailing.name,
     html,
   });
