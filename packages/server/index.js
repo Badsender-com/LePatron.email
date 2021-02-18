@@ -17,6 +17,7 @@ const { Nuxt, Builder } = require('nuxt')
 const config = require('./node.config.js')
 const nuxtConfig = require('../../nuxt.config.js')
 const logger = require('./utils/logger.js')
+const terminate = require('./utils/terminate.js')
 const versionRouter = require('./version/version.routes')
 const groupRouter = require('./group/group.routes')
 const mailingRouter = require('./mailing/mailing.routes')
@@ -26,6 +27,7 @@ const imageRouter = require('./image/image.routes')
 const accountRouter = require('./account/account.routes')
 
 const app = express()
+
 
 var store = new MongoDBStore({
   uri: config.database,
@@ -263,7 +265,7 @@ app.use(function apiErrorHandler(err, req, res, next) {
   res.status(errStatus).json(errorResponse)
 })
 
-app.listen(config.PORT, () => {
+var server =  app.listen(config.PORT, () => {
   console.log(
     chalk.green(`API is listening on port`),
     chalk.cyan(config.PORT),
@@ -271,3 +273,14 @@ app.listen(config.PORT, () => {
     chalk.cyan(config.NODE_ENV),
   )
 })
+
+
+const exitHandler = terminate(server, {
+  coredump: false,
+  timeout: 500
+})
+
+process.on('uncaughtException', exitHandler(1, 'Unexpected Error'))
+process.on('unhandledRejection', exitHandler(1, 'Unhandled Promise'))
+process.on('SIGTERM', exitHandler(0, 'SIGTERM'))
+process.on('SIGINT', exitHandler(0, 'SIGINT'))

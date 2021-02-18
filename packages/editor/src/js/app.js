@@ -214,7 +214,7 @@ var start = function (
 };
 
 if (process.env.MOSAICO) {
-  var initFromLocalStorage = function (options, hash_key, customExtensions) {
+  var initFromLocalStoprocessrage = function (options, hash_key, customExtensions) {
     try {
       var lsData = localStorageLoader(hash_key, options.emailProcessorBackend);
       var extensions =
