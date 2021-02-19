@@ -199,15 +199,6 @@ app.post(
   },
 )
 
-app.post(
-  `/account/login/admin/`,
-  passport.authenticate(`local`, {
-    successReturnToOrRedirect: `/groups`,
-    failureRedirect: `/account/login/admin`,
-    failureFlash: true,
-    successFlash: true,
-  }),
-)
 app.get(`/account/logout`, (req, res) => {
   req.logout()
   res.redirect(`/account/login`)
