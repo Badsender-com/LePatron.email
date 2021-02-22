@@ -72,6 +72,7 @@ export default {
     return {
       group: {
         name: { required },
+        defaultWorkspaceName: { required },
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
       },
@@ -116,6 +117,18 @@ export default {
                 :error-messages="requiredErrors(`name`)"
                 @input="$v.group.name.$touch()"
                 @blur="$v.group.name.$touch()"
+              />
+
+              <v-text-field
+                v-model="localModel.defaultWorkspaceName"
+                id="name"
+                :label="$t('forms.group.defaultWorkspace.name')"
+                name="defaultWorkspaceName"
+                required
+                :disabled="disabled"
+                :error-messages="requiredErrors(`name`)"
+                @input="$v.group.defaultWorkspaceName.$touch()"
+                @blur="$v.group.defaultWorkspaceName.$touch()"
               />
             </v-col>
 
