@@ -5,12 +5,12 @@ const API_PREFIX = process.env.API_PREFIX;
 // • it's just a way to centralize all our routes
 //   since we don't use a store for everything
 
-//////
+/// ///
 // GROUPS
-//////
+/// ///
 
 export function groups() {
-  return `/groups`;
+  return '/groups';
 }
 export function groupsItem(routeParams = {}) {
   return `/groups/${routeParams.groupId}`;
@@ -25,12 +25,12 @@ export function groupsItemMailings(routeParams = {}) {
   return `/groups/${routeParams.groupId}/mailings`;
 }
 
-//////
+/// ///
 // TEMPLATES
-//////
+/// ///
 
 export function templates() {
-  return `/templates`;
+  return '/templates';
 }
 /**
  * @param {Object} routeParams
@@ -54,16 +54,16 @@ export function templatesItemEvents(routeParams = {}) {
   return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
 }
 
-//////
+/// ///
 // ACCOUNT
-//////
+/// ///
 
 export function getPublicProfile({ username }) {
   return `/account/${username}`;
 }
 
 export function login() {
-  return `/account/login`;
+  return '/account/login';
 }
 
 export function accountResetPassword(routeParams = {}) {
@@ -73,12 +73,12 @@ export function accountSetPassword(routeParams = {}) {
   return `/account/${routeParams.email}/password/${routeParams.token}`;
 }
 
-//////
+/// ///
 // USERS
-//////
+/// ///
 
 export function users() {
-  return `/users`;
+  return '/users';
 }
 export function usersItem(routeParams = {}) {
   return `/users/${routeParams.userId}`;
@@ -93,12 +93,12 @@ export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
 
-//////
+/// ///
 // MAILINGS
-//////
+/// ///
 
 export function mailings() {
-  return `/mailings`;
+  return '/mailings';
 }
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;
@@ -110,9 +110,9 @@ export function mailingsItemTransferToUser(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
-//////
+/// ///
 // IMAGES
-//////
+/// ///
 
 // this is not used by axios (show an image…)
 export function imagesItem(routeParams = {}) {

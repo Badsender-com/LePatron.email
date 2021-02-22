@@ -1,13 +1,13 @@
-export const USER = `user`;
+export const USER = 'user';
 
 export const state = () => ({
   info: null,
 });
 
-export const LOCALE = `LOCALE`;
-export const IS_CONNECTED = `IS_CONNECTED`;
-export const IS_ADMIN = `IS_ADMIN`;
-export const SESSION_ACL = `SESSION_ACL`;
+export const LOCALE = 'LOCALE';
+export const IS_CONNECTED = 'IS_CONNECTED';
+export const IS_ADMIN = 'IS_ADMIN';
+export const SESSION_ACL = 'SESSION_ACL';
 
 export const getters = {
   [IS_CONNECTED](state) {
@@ -29,7 +29,7 @@ export const getters = {
   },
 };
 
-export const M_USER_SET = `M_USER_SET`;
+export const M_USER_SET = 'M_USER_SET';
 
 export const mutations = {
   [M_USER_SET](state, user) {
@@ -40,7 +40,7 @@ export const mutations = {
   },
 };
 
-export const USER_SET = `USER_SET`;
+export const USER_SET = 'USER_SET';
 
 export const actions = {
   async [USER_SET](vuexCtx, user) {

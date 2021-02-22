@@ -30,9 +30,9 @@ module.exports = {
   destroy,
 };
 
-//////
+/// ///
 // IMAGE UTILS
-//////
+/// ///
 
 let cacheControl = config.isDev
   ? duration(30, 'minutes')
@@ -80,7 +80,7 @@ const onWriteResizeEnd = (datas) => () => {
     .save()
     .then(() => console.log(green('cache image infos saved in DB', path)))
     .catch((e) => {
-      console.log(red(`[IMAGE] can't save cache image infos in DB`), path);
+      console.log(red('[IMAGE] can\'t save cache image infos in DB'), path);
       console.log(inspect(e));
     });
 };
@@ -91,7 +91,7 @@ const getResizedImageName = (path) => {
 };
 
 const onWriteResizeError = (path) => (e) => {
-  console.log(`[IMAGE] can't upload resize/placeholder result`, path);
+  console.log('[IMAGE] can\'t upload resize/placeholder result', path);
   console.log(inspect(e));
 };
 
@@ -165,9 +165,9 @@ const streamImageToResponse = (req, res, next, imageName) => {
   });
 };
 
-//////
+/// ///
 // IMAGE CHECKS
-//////
+/// ///
 
 // TODO gif can be optimized by using image-min
 // https://www.npmjs.com/package/image-min
@@ -219,9 +219,9 @@ function checkSizes(req, res, next) {
     .catch(handleFileStreamError(next));
 }
 
-//////
+/// ///
 // IMAGE GENERATION
-//////
+/// ///
 
 /**
  * @api {get} /images/resize/:sizes/:imageName image crop
@@ -247,7 +247,7 @@ function resize(req, res, next) {
   }
 
   const resize = ['--resize'];
-  resize.push(`${width ? width : '_'}x${height ? height : '_'}`);
+  resize.push(`${width || '_'}x${height || '_'}`);
   const gifProcessor = new GifSicle([...resize, '--resize-colors', '64']);
 
   return handleGifStream(req, res, next, gifProcessor);
@@ -319,9 +319,9 @@ function cover(req, res, next) {
 }
 
 const stripeSize = 55;
-const lightStripe = `#808080`;
-const darkStripe = `#707070`;
-const textColor = `#B0B0B0`;
+const lightStripe = '#808080';
+const darkStripe = '#707070';
+const textColor = '#B0B0B0';
 function generatePlaceholderSVG(width, height) {
   // centering text in SVG
   // http://stackoverflow.com/questions/5546346/how-to-place-and-center-text-in-an-svg-rectangle#answer-31522006
@@ -355,7 +355,7 @@ function placeholder(req, res) {
   const sizes = /(\d+)x(\d+)\.png/.exec(placeholderSize);
   const width = ~~sizes[1];
   const height = ~~sizes[2];
-  const svgBuffer = new Buffer.from(generatePlaceholderSVG(width, height));
+  const svgBuffer = Buffer.from(generatePlaceholderSVG(width, height));
   const pipeline = sharp(svgBuffer).png();
 
   addCacheControl(res);
@@ -376,9 +376,9 @@ function placeholder(req, res) {
     .catch(onWriteResizeError(path));
 }
 
-//////
+/// ///
 // OTHER THINGS
-//////
+/// ///
 
 /**
  * @api {get} /images/:imageName image display
@@ -395,9 +395,9 @@ function read(req, res, next) {
   streamImageToResponse(req, res, next, imageName);
 }
 
-//////
+/// ///
 // EDITOR SPECIFIC
-//////
+/// ///
 
 function createGallery(mongoId) {
   // create the gallery in DB
@@ -431,10 +431,10 @@ async function list(req, res) {
     {
       creationOrWireframeId: mongoId,
     },
-    `files`
+    'files'
   );
 
-  const responseGallery = gallery ? gallery : await createGallery(mongoId);
+  const responseGallery = gallery || (await createGallery(mongoId));
   res.json(responseGallery);
 }
 
@@ -455,7 +455,7 @@ async function create(req, res) {
   const { mongoId } = req.params;
   const multipartOptions = {
     prefix: mongoId,
-    formatter: `editor`,
+    formatter: 'editor',
   };
   const [uploads, gallery] = await Promise.all([
     fileManager.parseMultipart(req, multipartOptions),
@@ -464,7 +464,7 @@ async function create(req, res) {
 
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
-  const safeGallery = gallery ? gallery : await createGallery(mongoId);
+  const safeGallery = gallery || (await createGallery(mongoId));
   const galleryImages = safeGallery.files.map((file) => ({ ...file }));
   const galleryImagesName = galleryImages.map((file) => file.name);
 
@@ -475,7 +475,7 @@ async function create(req, res) {
     galleryImages.push(upload);
   });
   safeGallery.files = galleryImages;
-  safeGallery.markModified(`files`);
+  safeGallery.markModified('files');
   await safeGallery.save();
 
   // send only the new uploads

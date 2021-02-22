@@ -45,7 +45,7 @@ function colorToInt(color) {
     }
 
     if (c.length !== 6) {
-      console.warn("'".concat(color, "' is not a valid rgb color"));
+      console.warn('\''.concat(color, '\' is not a valid rgb color'));
     }
 
     rgb = parseInt(c, 16);
@@ -59,10 +59,10 @@ function colorToInt(color) {
   }
 
   if (rgb < 0) {
-    console.warn("Colors cannot be negative: '".concat(color, "'"));
+    console.warn('Colors cannot be negative: \''.concat(color, '\''));
     rgb = 0;
   } else if (rgb > 0xffffff || isNaN(rgb)) {
-    console.warn("'".concat(color, "' is not a valid rgb color"));
+    console.warn('\''.concat(color, '\' is not a valid rgb color'));
     rgb = 0xffffff;
   }
 
@@ -70,7 +70,7 @@ function colorToInt(color) {
 }
 
 function intToHex(color) {
-  var hexColor = color.toString(16);
+  let hexColor = color.toString(16);
   if (hexColor.length < 6)
     hexColor = '0'.repeat(6 - hexColor.length) + hexColor;
   return '#' + hexColor;

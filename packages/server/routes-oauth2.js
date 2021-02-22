@@ -80,7 +80,7 @@ server.grant(
 server.grant(
   oauth2orize.grant.token(async (client, user, ares, done) => {
     // const token = getUid()
-    console.log(`grant token`);
+    console.log('grant token');
     console.log({ client, user });
     try {
       const token = OAuthTokens.create({

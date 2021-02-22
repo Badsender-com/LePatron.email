@@ -12,13 +12,13 @@ export default async function authMiddleware(nuxtContext) {
   const authorizations = pageAcl.getAuthorizations(meta.acl);
 
   if (authorizations.notConnected && userSessionInfo.isConnected) {
-    if (userSessionInfo.isUser) return redirect(`/`);
-    if (userSessionInfo.isAdmin) return redirect(`/`);
+    if (userSessionInfo.isUser) return redirect('/');
+    if (userSessionInfo.isAdmin) return redirect('/');
   }
   if (authorizations.user && !userSessionInfo.isConnected) {
-    return redirect(`/account/login`);
+    return redirect('/account/login');
   }
   if (authorizations.admin && !userSessionInfo.isAdmin) {
-    return redirect(`/account/admin`);
+    return redirect('/account/admin');
   }
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-const THUMBNAIL_SIZE = `111x111`;
+const THUMBNAIL_SIZE = '111x111';
 
 module.exports = (fileName) => {
   return {

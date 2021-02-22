@@ -7,9 +7,9 @@ const pkg = require('../../../package.json');
 
 const router = express.Router();
 
-//////
+/// ///
 // MISCELLANEOUS
-//////
+/// ///
 
 /**
  * @api {get} /version version
@@ -19,7 +19,7 @@ const router = express.Router();
  *
  * @apiSuccess {String} version
  */
-router.get(``, (req, res) => {
+router.get('', (req, res) => {
   res.json({ version: pkg.version });
 });
 

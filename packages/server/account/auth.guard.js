@@ -25,38 +25,38 @@ const adminUser = Object.freeze({
   isAdmin: true,
   id: config.admin.id,
   email: config.emailOptions.from,
-  name: `admin`,
+  name: 'admin',
 });
 
 module.exports = {
   adminUser,
-  GUARD_USER: guard(`user`),
-  GUARD_USER_REDIRECT: guard(`user`, true),
-  GUARD_ADMIN: guard(`admin`),
-  GUARD_ADMIN_REDIRECT: guard(`admin`, true),
+  GUARD_USER: guard('user'),
+  GUARD_USER_REDIRECT: guard('user', true),
+  GUARD_ADMIN: guard('admin'),
+  GUARD_ADMIN_REDIRECT: guard('admin', true),
 };
 
-//////
+/// ///
 // GUARD MIDDLEWARE
-//////
+/// ///
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
-function guard(role = `user`, redirect = false) {
-  const isAdminRoute = role === `admin`;
+function guard(role = 'user', redirect = false) {
+  const isAdminRoute = role === 'admin';
   return function guardRoute(req, res, next) {
     const { user } = req;
     // non connected user shouldn't access those pages
     if (!user) {
       redirect
-        ? res.redirect(`/account/login`)
+        ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
       return;
     }
     // non admin user shouldn't access those pages
     if (isAdminRoute && !user.isAdmin) {
       redirect
-        ? res.redirect(`/account/admin`)
+        ? res.redirect('/account/admin')
         : next(new createError.Unauthorized());
       return;
     }
@@ -175,17 +175,17 @@ passport.use(
   })
 );
 
-var MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
+const MultiSamlStrategy = require('passport-saml/multiSamlStrategy');
 
 passport.use(
   new MultiSamlStrategy(
     {
-      passReqToCallback: true, //makes req available in callback
+      passReqToCallback: true, // makes req available in callback
       getSamlOptions: async (request, done) => {
         let email = request.query.email;
 
         if (!email) {
-          let buff = Buffer.from(request.body.SAMLResponse, 'base64');
+          const buff = Buffer.from(request.body.SAMLResponse, 'base64');
           const jsonObject = xmlParser.toJson(buff.toString(), {
             object: true,
             sanitize: true,
@@ -194,7 +194,7 @@ passport.use(
           email =
             jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject'][
               'saml2:NameID'
-            ]['$t'];
+            ].$t;
         }
 
         const user = await Users.findOne({
