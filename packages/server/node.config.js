@@ -7,47 +7,47 @@ const _ = require('lodash');
 const { mkdirp } = require('fs-extra');
 
 const localEmail = Object.freeze({
-  host: `0.0.0.0`,
+  host: '0.0.0.0',
   port: 1025,
 });
 // default config is made for an easy use on local dev
 const config = rc('lepatron', {
   forcessl: false,
-  host: `localhost:3000`,
+  host: 'localhost:3000',
   nuxt: {
     preventBuild: false,
-    API_PREFIX: `/api`,
+    API_PREFIX: '/api',
   },
-  database: `mongodb://localhost:27017/lepatron`,
-  sessionSecret: `3MYdqy0lZZz2TXCr7YlxT9N6`,
+  database: 'mongodb://localhost:27017/lepatron',
+  sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
   emailTransport: {
     ...localEmail,
   },
   brandOptions: {
     colors: {
-      primary: `#62a7a5`, // sky blue darkened (better for contrast)
-      secondary: `#18223e`, // deep blue
-      accent: `#87cbc9`, // sky blue
+      primary: '#62a7a5', // sky blue darkened (better for contrast)
+      secondary: '#18223e', // deep blue
+      accent: '#87cbc9', // sky blue
       // keep the same as default Vuetify
-      error: `#ff5252`,
-      info: `#2196f3`,
-      success: `#4caf50`,
-      warning: `#fb8c00`,
+      error: '#ff5252',
+      info: '#2196f3',
+      success: '#4caf50',
+      warning: '#fb8c00',
     },
     editorIcon: {
-      logoPath: `/media/logo_lepatron.png`,
-      logoUrl: `/`,
-      logoAlt: `LePatron.email`,
+      logoPath: '/media/logo_lepatron.png',
+      logoUrl: '/',
+      logoAlt: 'LePatron.email',
     },
   },
   emailOptions: {
-    from: `LePatron.email local test <info@lepatron-local-test.name>`,
-    passwordSubjectPrefix: `LePatron.email`,
+    from: 'LePatron.email local test <info@lepatron-local-test.name>',
+    passwordSubjectPrefix: 'LePatron.email',
     // last space is needed
     testSubjectPrefix: '[LePatron.email] ',
   },
   storage: {
-    type: `local`,
+    type: 'local',
   },
   images: {
     uploadDir: 'uploads',
@@ -94,10 +94,10 @@ if (config.isDev && isLocalEmailTransport) {
 // if ( config.isDev ) console.log( config )
 // http://stackoverflow.com/questions/12416738/how-to-use-herokus-ephemeral-filesystem
 config.setup = new Promise((resolve, reject) => {
-  var tmpPath = path.join(`${__dirname}/../../`, config.images.tmpDir);
-  var uploadPath = path.join(`${__dirname}/../../`, config.images.uploadDir);
-  var tmpDir = mkdirp(tmpPath);
-  var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
+  const tmpPath = path.join(__dirname, '../../', config.images.tmpDir);
+  const uploadPath = path.join(__dirname, '../../', config.images.uploadDir);
+  const tmpDir = mkdirp(tmpPath);
+  const uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
 
   Promise.all([tmpDir, uploadDir])
     .then(() => {
@@ -109,10 +109,12 @@ config.setup = new Promise((resolve, reject) => {
       console.log('folder exception');
       console.log('attempt with os.tmpdir()');
       console.log(err);
-      var tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
-      var uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
-      var tmpDir = mkdirp(tmpPath);
-      var uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
+      const tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
+      const uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
+      const tmpDir = mkdirp(tmpPath);
+      const uploadDir = config.isAws
+        ? Promise.resolve(null)
+        : mkdirp(uploadPath);
 
       Promise.all([tmpDir, uploadDir])
         .then(() => {

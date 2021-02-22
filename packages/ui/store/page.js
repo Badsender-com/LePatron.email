@@ -1,18 +1,18 @@
-export const PAGE = `page`;
+export const PAGE = 'page';
 
-export const SET_PAGE_TITLE = `SET_PAGE_TITLE`;
-export const SET_PAGE_LANG = `SET_PAGE_LANG`;
-export const SHOW_SNACKBAR = `SHOW_SNACKBAR`;
-export const CLOSE_SNACKBAR = `CLOSE_SNACKBAR`;
-export const DEFAULT_LOCALE = `DEFAULT_LOCALE`;
+export const SET_PAGE_TITLE = 'SET_PAGE_TITLE';
+export const SET_PAGE_LANG = 'SET_PAGE_LANG';
+export const SHOW_SNACKBAR = 'SHOW_SNACKBAR';
+export const CLOSE_SNACKBAR = 'CLOSE_SNACKBAR';
+export const DEFAULT_LOCALE = 'DEFAULT_LOCALE';
 
 export const state = () => ({
-  pageTitle: `Default Title`,
+  pageTitle: 'Default Title',
   lang: null,
   snackbar: {
-    color: `info`,
+    color: 'info',
     visible: false,
-    text: ``,
+    text: '',
     timeout: 6000,
     multiline: false,
   },
@@ -35,7 +35,7 @@ export const mutations = {
   [SHOW_SNACKBAR](state, payload) {
     if (payload.text == null) return;
     state.snackbar.text = payload.text;
-    state.snackbar.multiline = payload.text.length > 50 ? true : false;
+    state.snackbar.multiline = payload.text.length > 50;
     if (payload.multiline) state.snackbar.multiline = payload.multiline;
     if (payload.timeout) state.snackbar.timeout = payload.timeout;
     state.snackbar.color = payload.color;
@@ -45,6 +45,6 @@ export const mutations = {
     state.snackbar.visible = false;
     state.snackbar.multiline = false;
     state.snackbar.timeout = 6000;
-    state.snackbar.text = ``;
+    state.snackbar.text = '';
   },
 };

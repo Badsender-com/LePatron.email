@@ -13,7 +13,7 @@ const createPromise = require('../helpers/create-promise.js');
 const { Mailings, Groups } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
-const ftp = require('./ftp-client.service.js');
+const Ftp = require('./ftp-client.service.js');
 
 module.exports = asyncHandler(downloadZip);
 
@@ -22,7 +22,7 @@ function isHttpUrl(uri) {
   return /^http/.test(uri);
 }
 
-const IMAGES_FOLDER = `images`;
+const IMAGES_FOLDER = 'images';
 
 /**
  * @api {post} /mailings/:mailingId/mosaico/download-zip mailing download
@@ -49,7 +49,7 @@ async function downloadZip(req, res, next) {
   // • in order to retrieve the group, look at the wireframe
   const mailing = await Mailings.findOne(query)
     .select({ _wireframe: 1, name: 1 })
-    .populate(`_wireframe`);
+    .populate('_wireframe');
   if (!mailing) throw new createError.NotFound();
   // TODO: add back group check
   // if (!isFromCompany(user, mailing._company)) throw new createError.Unauthorized()
@@ -72,28 +72,28 @@ async function downloadZip(req, res, next) {
     ftpPathOnServer,
   } = group;
 
-  const archive = archiver(`zip`);
+  const archive = archiver('zip');
   const name = getName(mailing.name);
   // prefix is `zip-stream` file prefix => our enclosing folder ^_^
   // !WARNING default mac unzip will always put it in an folder if more than 1 file
   // => test with The Unarchiver
-  const prefix = downloadMailingWithoutEnclosingFolder ? `` : `${name}/`;
+  const prefix = downloadMailingWithoutEnclosingFolder ? '' : `${name}/`;
   let { html, ...downloadOptions } = body;
   // Because this is cans come as a real from submit
   // downLoadForCdn & downLoadForFtp might come as a string
   downloadOptions.downLoadForCdn =
-    downloadOptions.downLoadForCdn === `true` ||
+    downloadOptions.downLoadForCdn === 'true' ||
     downloadOptions.downLoadForCdn === true;
 
   downloadOptions.downLoadForFtp =
-    downloadOptions.downLoadForFtp === `true` ||
+    downloadOptions.downLoadForFtp === 'true' ||
     downloadOptions.downLoadForFtp === true;
 
   // const $ = cheerio.load(html)
 
-  console.log(`download zip`, name);
+  console.log('download zip', name);
 
-  //----- IMAGES
+  // ----- IMAGES
 
   // keep a track of every images for latter download
   // be careful to avoid data uri
@@ -155,10 +155,10 @@ async function downloadZip(req, res, next) {
     html = html.replace(search, relativeUrl);
   });
 
-  archive.on(`error`, next);
+  archive.on('error', next);
 
   // on stream closed we can end the request
-  archive.on(`end`, () => {
+  archive.on('end', () => {
     console.log(`Archive wrote ${archive.pointer()} bytes`);
     res.end();
   });
@@ -204,7 +204,7 @@ async function downloadZip(req, res, next) {
 
     await Promise.all(imagesRequest);
   } else {
-    const ftpClient = new ftp(
+    const ftpClient = new Ftp(
       ftpHost,
       ftpPort,
       ftpUsername,
@@ -219,7 +219,7 @@ async function downloadZip(req, res, next) {
     ftpClient.upload(allImages, folderPath);
   }
 
-  //----- HTML
+  // ----- HTML
 
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(html);
@@ -240,7 +240,7 @@ async function downloadZip(req, res, next) {
     let html = processedHtml;
 
     relativesImagesNames.forEach((imageName) => {
-      const imgRegex = new RegExp(`${IMAGES_FOLDER}/${imageName}`, `g`);
+      const imgRegex = new RegExp(`${IMAGES_FOLDER}/${imageName}`, 'g');
       html = html.replace(imgRegex, `${endpointPath}/${imageName}`);
     });
     archive.append(html, {
@@ -257,7 +257,7 @@ async function downloadZip(req, res, next) {
       );
       archive.append(CDN_MD_NOTICE, {
         prefix,
-        name: `notice.md`,
+        name: 'notice.md',
       });
       const CDN_HTML_NOTICE = createHtmlNotice(
         name,
@@ -266,7 +266,7 @@ async function downloadZip(req, res, next) {
       );
       archive.append(CDN_HTML_NOTICE, {
         prefix,
-        name: `notice.html`,
+        name: 'notice.html',
       });
     }
   }
@@ -275,16 +275,17 @@ async function downloadZip(req, res, next) {
 }
 
 function getName(name) {
-  name = name || `email`;
+  name = name || 'email';
   return getSlug(name.replace(/\.[0-9a-z]+$/, ''));
 }
 
 function getImageName(imageUrl) {
+  // eslint-disable-next-line node/no-deprecated-api
   return url
     .parse(imageUrl)
-    .pathname.replace(/\//g, ` `)
+    .pathname.replace(/\//g, ' ')
     .trim()
-    .replace(/\s/g, `-`);
+    .replace(/\s/g, '-');
 }
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
@@ -298,13 +299,13 @@ ${CDN_PATH}
 
 ${relativesImagesNames
   .map((img) => `- [${img}](${CDN_PATH}/${img})`)
-  .join(`\n`)}
+  .join('\n')}
 
 ## Aperçu des images présentes sur le CDN
 
 ${relativesImagesNames
   .map((img) => `![${img}](${CDN_PATH}/${img})`)
-  .join(`\n\n`)}
+  .join('\n\n')}
 
 `;
 }
@@ -327,7 +328,7 @@ ${CDN_PATH}
 <ol>
 ${relativesImagesNames
   .map((img) => `<li><a href="${CDN_PATH}/${img}">${img}</a></li>`)
-  .join(`\n`)}
+  .join('\n')}
 </ol>
 
 <h2>Aperçu des images présentes sur le CDN</h2>
@@ -335,7 +336,7 @@ ${relativesImagesNames
 <ol>
 ${relativesImagesNames
   .map((img) => `<li><img src="${CDN_PATH}/${img}" /></li>`)
-  .join(`\n`)}
+  .join('\n')}
 </ol>
 `;
 }

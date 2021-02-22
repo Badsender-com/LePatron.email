@@ -35,9 +35,9 @@ async function render(req, res) {
     query,
     req.user.lang
   );
-  if (!mailingForMosaico) return res.redirect(`/404`);
+  if (!mailingForMosaico) return res.redirect('/404');
 
-  res.render(`mosaico-editor`, {
+  res.render('mosaico-editor', {
     data: mailingForMosaico,
     // pass all theme as css custom properties
     themeColors: brandColors.asCssCustomProperties(),

@@ -10,6 +10,7 @@
 /build/maintenance-pages
 
 /.mongodb
+/packages/editor/build/
 /packages/documentation/api
 /public/dist
 /server/maintenance-pages/*.html

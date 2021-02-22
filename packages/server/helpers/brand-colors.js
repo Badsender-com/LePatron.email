@@ -70,7 +70,7 @@ function colorToInt(color) {
 }
 
 function intToHex(color) {
-  var hexColor = color.toString(16);
+  let hexColor = color.toString(16);
   if (hexColor.length < 6)
     hexColor = '0'.repeat(6 - hexColor.length) + hexColor;
   return '#' + hexColor;

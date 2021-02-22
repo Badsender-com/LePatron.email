@@ -39,12 +39,12 @@ const MailingSchema = Schema(
       required: true,
     },
     // _user can't be required: admin doesn't set a _user
-    _user: { type: ObjectId, ref: UserModel, alias: `userId` },
+    _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
     author: {
       type: String,
       set: normalizeString,
-      alias: `userName`,
+      alias: 'userName',
     },
     _wireframe: {
       type: ObjectId,
@@ -53,7 +53,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `templateId`,
+      alias: 'templateId',
     },
     // replicate wireframe name for ordering purpose
     wireframe: {
@@ -62,7 +62,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `templateName`,
+      alias: 'templateName',
     },
     // _company can't be required: admin doesn't have a _company
     _company: {
@@ -71,7 +71,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `group`,
+      alias: 'group',
     },
     tags: {
       type: [],
@@ -112,10 +112,10 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   if (this.data) {
     let data = JSON.stringify(this.data);
 
-    const replaceRegexp = new RegExp(oldId, `gm`);
+    const replaceRegexp = new RegExp(oldId, 'gm');
     data = data.replace(replaceRegexp, String(newId));
     this.data = JSON.parse(data);
-    this.markModified(`data`);
+    this.markModified('data');
   }
 
   return this;
@@ -127,7 +127,7 @@ MailingSchema.statics.findForApi = async function findForApi(
   sortParams = { updatedAt: -1 }
 ) {
   const mailings = await this.find(query).populate({
-    path: `_company`,
+    path: '_company',
     select: { id: 1, name: 1 },
   });
   // .sort(sortParams)
@@ -150,7 +150,7 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   // ])
 
   const mailings = await this.find(query).populate({
-    path: `_company`,
+    path: '_company',
     select: { tags: 1 },
   });
   // .sort({tags: -1})
@@ -201,15 +201,15 @@ const translations = {
 
 MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   query = {},
-  lang = `fr`
+  lang = 'fr'
 ) {
   const mailing = await this.findOne(query)
     .populate({
-      path: `_company`,
+      path: '_company',
       select: { id: 1, name: 1 },
     })
     .populate({
-      path: `_wireframe`,
+      path: '_wireframe',
       select: { _id: 1, name: 1, _company: 1, assets: 1 },
     });
   if (!mailing) return mailing;
@@ -250,15 +250,15 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         },
       },
       imagesUrl: {
-        images: `/api/images/`,
-        crop: `/api/images/crop/`,
-        cover: `/api/images/cover/`,
-        placeholder: `/api/images/placeholder/`,
+        images: '/api/images/',
+        crop: '/api/images/crop/',
+        cover: '/api/images/cover/',
+        placeholder: '/api/images/placeholder/',
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon },
     },
-    titleToken: `BADSENDER Responsive Email Designer`,
+    titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata
     // we will keep those URLS here for better control
     // • don't prepend basePath
