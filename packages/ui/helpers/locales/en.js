@@ -72,6 +72,9 @@ export default {
         wrapped: 'Wrap in a parent folder',
         unwrapped: 'Leave files in root folder',
       },
+      defaultWorkspace: {
+        name: 'Default workspace name',
+      },
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',
       enable: 'Enable',
