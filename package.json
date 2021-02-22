@@ -72,7 +72,6 @@
     "helmet": "3.21.1",
     "http-errors": "1.7.3",
     "i18n": "0.8.3",
-    "install": "^0.13.0",
     "lodash": "4.17.15",
     "mime-types": "2.1.24",
     "moment": "2.24.0",
