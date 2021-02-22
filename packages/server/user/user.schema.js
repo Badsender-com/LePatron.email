@@ -34,12 +34,22 @@ const { GroupModel } = require('../constant/model.names.js');
  */
 
 /// ///
+// Role
+/// ///
+const Roles = {
+  COMPANY_ADMIN: 'company_admin',
+  COMPANY_USER: 'company_user',
+};
+
+/// ///
 // USER
 /// ///
 
 const UserSchema = Schema(
   {
     name: { type: String, set: normalizeString },
+    role: Roles.COMPANY_ADMIN,
+
     email: {
       type: String,
       required: [true, 'Email address is required'],
