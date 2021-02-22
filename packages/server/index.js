@@ -28,7 +28,10 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 
-var workers = process.env.WORKERS || require('os').cpus().length;
+var workers =
+  (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
+    ? process.env.WORKERS
+    : require('os').cpus().length) || require('os').cpus().length;
 
 if (cluster.isMaster) {
   console.log('start cluster with %s workers', workers);
@@ -305,4 +308,10 @@ if (cluster.isMaster) {
   process.on('uncaughtException', exitHandler(1, 'Uncaught exception'));
 
   process.on('unhandledRejection', exitHandler(1, 'Unhandled promise'));
+
+  process.stdout.on('error', function (err) {
+    if (err.code == 'EPIPE') {
+      exitHandler(1, 'EPIPE Exception');
+    }
+  });
 }
