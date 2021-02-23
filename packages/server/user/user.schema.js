@@ -75,7 +75,7 @@ const UserSchema = Schema(
     lang: { type: String, default: 'en' },
     token: { type: String },
     tokenExpire: { type: Date },
-    isDeactivated: { type: String, default: false },
+    isDeactivated: { type: Boolean, default: false },
   },
   {
     timestamps: true,
