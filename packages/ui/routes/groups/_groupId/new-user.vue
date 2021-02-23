@@ -26,6 +26,7 @@ export default {
         email: ``,
         name: ``,
         lang: `fr`,
+        role: `REGULAR_USER`
       },
     };
   },

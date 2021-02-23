@@ -40,6 +40,7 @@ const { GroupModel } = require('../constant/model.names.js');
 const UserSchema = Schema(
   {
     name: { type: String, set: normalizeString },
+    role: { type: String },
     email: {
       type: String,
       required: [true, 'Email address is required'],
@@ -68,7 +69,7 @@ const UserSchema = Schema(
     lang: { type: String, default: 'en' },
     token: { type: String },
     tokenExpire: { type: Date },
-    isDeactivated: { type: Boolean, default: false },
+    isDeactivated: { type: String, default: false },
   },
   {
     timestamps: true,

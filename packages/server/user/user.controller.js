@@ -59,7 +59,7 @@ async function create(req, res) {
   const group = await Groups.findById(groupId).select('_id').lean();
   if (!group) throw new createError.BadRequest('group not found');
 
-  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
+  const userParams = _.pick(req.body, ['name', 'email', 'lang', 'role']);
   const newUser = await Users.create({
     _company: groupId,
     ...userParams,
@@ -126,7 +126,7 @@ async function readMailings(req, res) {
 
 async function update(req, res) {
   const { userId } = req.params;
-  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
+  const userParams = _.pick(req.body, ['name', 'email', 'lang', 'role']);
   const user = await Users.findOneForApi({ _id: userId });
   if (!user) throw new createError.NotFound();
 
