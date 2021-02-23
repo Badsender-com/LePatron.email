@@ -7,6 +7,8 @@ module.exports = Object.freeze({
   MailingModel: 'Creation',
   GroupModel: 'Company',
   CacheImageModel: 'Cacheimage',
+  FolderModel: 'Folder',
+  WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
   // OAuth
   OAuthTokens: 'OAuthTokens',

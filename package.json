@@ -132,7 +132,7 @@
     "default-passive-events": "1.0.10",
     "del": "4.1.1",
     "envify": "4.0.0",
-    "eslint": "^7.19.0",
+    "eslint": "7.19.0",
     "eslint-config-prettier": "^7.2.0",
     "eslint-config-standard": "16.0.2",
     "eslint-plugin-import": "2.22.1",

@@ -10,6 +10,8 @@ const {
   UserModel,
   TemplateModel,
   GroupModel,
+  WorkspaceModel,
+  FolderModel,
 } = require('../constant/model.names');
 
 const { Schema, Types } = mongoose;
@@ -45,6 +47,16 @@ const MailingSchema = Schema(
       type: String,
       set: normalizeString,
       alias: 'userName',
+    },
+    _workspace: {
+      type: ObjectId,
+      ref: WorkspaceModel,
+      required: false,
+    },
+    _parentFolder: {
+      type: ObjectId,
+      ref: FolderModel,
+      required: false,
     },
     _wireframe: {
       type: ObjectId,
