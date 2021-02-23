@@ -14,6 +14,7 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const config = require('../node.config.js');
 const mail = require('../mailing/mailing.service.js');
+const Roles = require('./role');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
@@ -34,21 +35,17 @@ const { GroupModel } = require('../constant/model.names.js');
  */
 
 /// ///
-// Role
-/// ///
-const Roles = {
-  COMPANY_ADMIN: 'company_admin',
-  COMPANY_USER: 'company_user',
-};
-
-/// ///
 // USER
 /// ///
 
 const UserSchema = Schema(
   {
     name: { type: String, set: normalizeString },
-    role: Roles.COMPANY_ADMIN,
+    role: {
+      type: String,
+      enum: [Roles.GROUP_ADMIN, Roles.GROUP_USER],
+      required: false,
+    },
 
     email: {
       type: String,
