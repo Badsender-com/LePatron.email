@@ -4,6 +4,7 @@ const _ = require('lodash');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
+const Roles = require('./role');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -59,9 +60,11 @@ async function create(req, res) {
   const group = await Groups.findById(groupId).select('_id').lean();
   if (!group) throw new createError.BadRequest('group not found');
 
-  const userParams = _.pick(req.body, ['name', 'email', 'lang', 'role']);
+  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
+  const role = (req.body.role === 'REGULAR_USER' ? Roles.REGULAR_USER : Roles.GROUP_ADMIN);
   const newUser = await Users.create({
     _company: groupId,
+    role,
     ...userParams,
   });
   const user = await Users.findOneForApi({ _id: newUser._id });

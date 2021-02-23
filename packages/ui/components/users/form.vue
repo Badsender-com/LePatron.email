@@ -11,8 +11,8 @@ export default {
     { text: `Français`, value: `fr` },
   ],
   roles: [
-    { text: `Group admin`, value: `GROUP_ADMIN`},
-    { text: `Regular user`, value: `REGULAR_USER`}
+    { text: `Group admin`, value: `GROUP_ADMIN` },
+    { text: `Regular user`, value: `REGULAR_USER` }
   ],
   props: {
     user: { type: Object, default: () => ({}) },
