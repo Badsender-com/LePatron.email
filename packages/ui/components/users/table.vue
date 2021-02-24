@@ -3,11 +3,12 @@ import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserTableActionsMail from '~/components/users/table-actions-mail.vue';
 import BsUserTableActionsActivation from '~/components/users/table-actions-activation.vue';
 import BsUserActions from '~/components/user/actions.vue';
+import BsActionsDropdown from "~/components/users/actions-dropdown";
 
 export default {
   name: `bs-users-table`,
-
   components: {
+    BsActionsDropdown,
     BsUserTableActionsMail,
     BsUserTableActionsActivation,
     BsUserActions,
@@ -41,15 +42,8 @@ export default {
         { text: this.$t('users.lang'), value: `lang` },
         { text: this.$t('global.createdAt'), value: `createdAt` },
         {
-          text: this.$t('global.password'),
-          value: `actionSendPasswordMail`,
-          sortable: false,
-          align: `center`,
-          class: `table-column-action`,
-        },
-        {
-          text: this.$t('global.disable'),
-          value: `actionDelete`,
+          text: this.$t('global.actions'),
+          value: `actions`,
           sortable: false,
           align: `center`,
           class: `table-column-action`,
@@ -122,33 +116,15 @@ export default {
       <template v-slot:item.createdAt="{ item }">
         <span>{{ item.createdAt | preciseDateTime }}</span>
       </template>
-      <template v-slot:item.actionSendPasswordMail="{ item }">
-        <bs-user-table-actions-mail
-          v-if="item.status !== 'saml-authentication'"
+      <template v-slot:item.actions="{ item }" >
+        <bs-actions-dropdown
           :user="item"
           :loading="loading"
-          @resetPassword="resetPassword"
-          @sendPassword="sendPassword"
-          @resendPassword="resendPassword"
-        />
-        <v-tooltip bottom v-else>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon v-bind="attrs" v-on="on">
-              {{ 'close' }}
-            </v-icon>
-          </template>
-          <span>{{ $t('users.tooltip.noPassword') }}</span>
-        </v-tooltip>
-        <!-- <v-btn @click="mailAction(item)" :disabled="loading" icon color="primary">
-        <v-icon>airline_seat_individual_suite</v-icon>
-        </v-btn>-->
-      </template>
-      <template v-slot:item.actionDelete="{ item }">
-        <bs-user-table-actions-activation
-          :user="item"
-          :loading="loading"
-          @activate="activate"
-          @deactivate="deactivate"
+          :activate="activate"
+          :deactivate="deactivate"
+          :resetPassword="resetPassword"
+          :sendPassword="sendPassword"
+          :resendPassword="resendPassword"
         />
       </template>
     </v-data-table>
