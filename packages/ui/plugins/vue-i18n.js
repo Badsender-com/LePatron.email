@@ -28,7 +28,7 @@ export default ({ app, store }) => {
 
   // https://vuex.vuejs.org/api/#watch
   store.watch(
-    (state) => store.getters[`${USER}/${LOCALE}`],
+    () => store.getters[`${USER}/${LOCALE}`],
     (userLocale) => {
       if (userLocale) {
         app.i18n.locale = userLocale;
@@ -37,7 +37,7 @@ export default ({ app, store }) => {
   );
 
   store.watch(
-    (state) => store.getters[`${PAGE}/${DEFAULT_LOCALE}`],
+    () => store.getters[`${PAGE}/${DEFAULT_LOCALE}`],
     (appLocale) => {
       app.i18n.locale = store.getters[`${USER}/${LOCALE}`] || appLocale;
     }

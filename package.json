@@ -115,6 +115,7 @@
     "async": "2.6.2",
     "autoprefixer": "9.6.4",
     "autoprefixer-core": "6.0.1",
+    "babel-eslint": "10.1.0",
     "babel-loader": "8.2.2",
     "babelify": "10.0.0",
     "beeper": "2.0.0",
@@ -131,6 +132,13 @@
     "default-passive-events": "1.0.10",
     "del": "4.1.1",
     "envify": "4.0.0",
+    "eslint": "^7.19.0",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-config-standard": "16.0.2",
+    "eslint-plugin-import": "2.22.1",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-promise": "4.3.1",
+    "eslint-plugin-vue": "7.5.0",
     "evol-colorpicker": "3.4.1",
     "fancy-log": "1.3.3",
     "glob": "7.1.4",
@@ -155,6 +163,7 @@
     "gulp-sourcemaps": "3.0.0",
     "gulp-strip-debug": "3.0.0",
     "gulp-uglify": "3.0.2",
+    "husky": "^5.0.9",
     "inquirer": "6.3.1",
     "jquery": "3.4.1",
     "jquery-file-upload-middleware": "0.1.8",
@@ -170,6 +179,7 @@
     "ko-reactor": "1.4.1",
     "lazypipe": "1.0.2",
     "license-checker": "25.0.1",
+    "lint-staged": ">=10",
     "lodash.debounce": "4.0.8",
     "lodash.find": "4.6.0",
     "lodash.omit": "4.5.0",
@@ -181,6 +191,7 @@
     "nodemon": "2.0.7",
     "npm-run-all": "4.1.5",
     "parallelshell": "3.0.1",
+    "pinst": "^2.1.4",
     "prettier": "2.2.1",
     "pug-loader": "2.4.0",
     "readline": "1.3.0",
@@ -207,6 +218,9 @@
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",
   "scripts": {
+    "postinstall": "husky install",
+    "prepublishOnly": "pinst --disable",
+    "postpublish": "pinst --enable",
     "build": "run-p editor:build ui:build docs:api:build",
     "maintenance:build": "gulp maintenance",
     "editor:build": "gulp build",
@@ -227,10 +241,21 @@
     "serve:prod": "export NODE_ENV=production && yarn serve:app",
     "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
     "docker:down": "docker-compose -f docker/docker-compose.yml down",
-    "pretty": "yarn prettier ./packages -w"
+    "code:pretty": "yarn prettier . -w",
+    "code:lint": "yarn eslint .",
+    "code:fix": "yarn code:lint --fix && yarn code:pretty"
   },
   "engines": {
     "node": ">=10.15.3",
     "yarn": ">=1.12.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,vue,css,scss,md}": "prettier --write",
+    "*.{js,vue}": "eslint --cache --fix"
   }
 }

@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const { Schema } = require('mongoose')
-const mongooseHidden = require('mongoose-hidden')()
+const { Schema } = require('mongoose');
+const mongooseHidden = require('mongoose-hidden')();
 
-const { normalizeString, trimString } = require('../utils/model')
+const { normalizeString, trimString } = require('../utils/model');
 
 /**
  * @apiDefine group
@@ -33,14 +33,14 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    //cdn settings
+    // cdn settings
     downloadMailingWithCdnImages: {
       type: Boolean,
       default: false,
     },
     cdnProtocol: {
       type: String,
-      default: `http://`,
+      default: 'http://',
     },
     cdnEndPoint: {
       type: String,
@@ -49,16 +49,16 @@ const GroupSchema = Schema(
     cdnButtonLabel: {
       type: String,
       set: trimString,
-      default: `CDN`,
+      default: 'CDN',
     },
-    //ftp settings
+    // ftp settings
     downloadMailingWithFtpImages: {
       type: Boolean,
       default: false,
     },
     ftpProtocol: {
       type: String,
-      default: `sftp`,
+      default: 'sftp',
     },
     ftpHost: {
       type: String,
@@ -91,23 +91,23 @@ const GroupSchema = Schema(
     ftpButtonLabel: {
       type: String,
       set: trimString,
-      default: `FTP`,
+      default: 'FTP',
     },
     entryPoint: {
       type: String,
-      default: ``,
+      default: '',
     },
     issuer: {
       type: String,
-      default: ``,
+      default: '',
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } },
-)
+  { timestamps: true, toJSON: { virtuals: true } }
+);
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
-GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } })
+GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 
 // GroupSchema.virtual(`url`).get(function() {
 //   return {
@@ -118,4 +118,4 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } })
 //   }
 // })
 
-module.exports = GroupSchema
+module.exports = GroupSchema;

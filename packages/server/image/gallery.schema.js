@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const { Schema, Types } = require('mongoose')
-const mongooseHidden = require('mongoose-hidden')()
+const { Schema, Types } = require('mongoose');
+const mongooseHidden = require('mongoose-hidden')();
 
-const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js')
+const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js');
 
 /**
  * @apiDefine galleryImages
@@ -26,37 +26,39 @@ const GallerySchema = Schema(
       type: [],
       // make sure we have the right format for a gallery
       get: (files) => {
-        return files.map((file) => formatFilenameForJqueryFileupload(file.name))
+        return files.map((file) =>
+          formatFilenameForJqueryFileupload(file.name)
+        );
       },
     },
   },
-  { timestamps: true, toJSON: { getters: true } },
-)
+  { timestamps: true, toJSON: { getters: true } }
+);
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
-GallerySchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } })
+GallerySchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 
 // http://stackoverflow.com/questions/18324843/easiest-way-to-copy-clone-a-mongoose-document-instance#answer-25845569
 GallerySchema.methods.duplicate = function duplicate(newCreationId) {
-  const newId = Types.ObjectId()
-  const oldCreationId = String(this.creationOrWireframeId)
+  const newId = Types.ObjectId();
+  const oldCreationId = String(this.creationOrWireframeId);
 
-  this._id = newId
-  this.isNew = true
-  this.creationOrWireframeId = newCreationId
+  this._id = newId;
+  this.isNew = true;
+  this.creationOrWireframeId = newCreationId;
 
   // update the files names & path
   this.files = this.files.map((file) => {
     Object.keys(file).forEach((key) => {
-      file[key] = file[key].replace(oldCreationId, newCreationId)
-    })
-    return file
-  })
+      file[key] = file[key].replace(oldCreationId, newCreationId);
+    });
+    return file;
+  });
 
-  this.markModified('files')
+  this.markModified('files');
 
-  return this
-}
+  return this;
+};
 
-module.exports = GallerySchema
+module.exports = GallerySchema;

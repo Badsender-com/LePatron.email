@@ -1,12 +1,12 @@
-'use strict'
+'use strict';
 
-const _ = require('lodash')
-const { Schema } = require('mongoose')
-const { ObjectId } = Schema.Types
-const mongooseHidden = require('mongoose-hidden')()
+const _ = require('lodash');
+const { Schema } = require('mongoose');
+const { ObjectId } = Schema.Types;
+const mongooseHidden = require('mongoose-hidden')();
 
-const { normalizeString } = require('../utils/model')
-const { GroupModel } = require('../constant/model.names')
+const { normalizeString } = require('../utils/model');
+const { GroupModel } = require('../constant/model.names');
 
 /**
  * @apiDefine templates
@@ -42,7 +42,7 @@ const TemplateSchema = Schema(
     name: {
       type: String,
       unique: true,
-      required: [true, `name is required`],
+      required: [true, 'name is required'],
       set: normalizeString,
     },
     description: {
@@ -51,11 +51,11 @@ const TemplateSchema = Schema(
     _company: {
       type: ObjectId,
       ref: GroupModel,
-      required: [true, `group is required`],
+      required: [true, 'group is required'],
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `group`,
+      alias: 'group',
     },
     markup: {
       type: String,
@@ -73,39 +73,39 @@ const TemplateSchema = Schema(
       type: String,
       get: (v) => {
         try {
-          return JSON.parse(v)
+          return JSON.parse(v);
         } catch (e) {
-          return false
+          return false;
         }
       },
       set: (v) => {
-        return JSON.stringify(v)
+        return JSON.stringify(v);
       },
     },
   },
-  { timestamps: true, toJSON: { virtuals: true, getters: true } },
-)
+  { timestamps: true, toJSON: { virtuals: true, getters: true } }
+);
 
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 TemplateSchema.plugin(mongooseHidden, {
   hidden: { _id: true, __v: true, _company: true },
-})
+});
 
 // TemplateSchema.virtual('imgPath').get(function() {
 //   return `/img/${this._id}-`
 // })
 
-TemplateSchema.virtual(`hasMarkup`).get(function () {
-  return this.markup != null
-})
+TemplateSchema.virtual('hasMarkup').get(function () {
+  return this.markup != null;
+});
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   const templates = await this.find(query)
     // we need to keep markup in order for the virtual `hasMarkup` to have the right result
     // we also need all assets
-    .populate({ path: `_company`, select: `id name` })
-    .sort({ name: 1 })
+    .populate({ path: '_company', select: 'id name' })
+    .sort({ name: 1 });
   // change some fields
   // • we don't want the markup to be send => remove
   // • we don't want all assets => remove
@@ -113,18 +113,18 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   return templates.map((template) => {
     // pick is more performant than omit
     const templateRes = _.pick(template.toJSON(), [
-      `id`,
-      `name`,
-      `description`,
-      `createdAt`,
-      `updatedAt`,
-      `hasMarkup`,
-      `group`,
-    ])
-    templateRes.coverImage = template.assets[`_full.png`]
-    return templateRes
-  })
-}
+      'id',
+      'name',
+      'description',
+      'createdAt',
+      'updatedAt',
+      'hasMarkup',
+      'group',
+    ]);
+    templateRes.coverImage = template.assets['_full.png'];
+    return templateRes;
+  });
+};
 
 // TemplateSchema.virtual('url').get(function() {
 //   let userId = this._user && this._user._id ? this._user._id : this._user
@@ -150,4 +150,4 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
 //   }
 // })
 
-module.exports = TemplateSchema
+module.exports = TemplateSchema;

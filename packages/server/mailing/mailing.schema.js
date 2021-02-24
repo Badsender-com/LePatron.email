@@ -1,19 +1,21 @@
-'use strict'
+'use strict';
 
-const _ = require('lodash')
-const mongoose = require('mongoose')
-const mongooseHidden = require('mongoose-hidden')()
+const _ = require('lodash');
+const mongoose = require('mongoose');
+const mongooseHidden = require('mongoose-hidden')();
 
-const config = require('../node.config.js')
-const { normalizeString } = require('../utils/model')
+const config = require('../node.config.js');
+const { normalizeString } = require('../utils/model');
 const {
   UserModel,
   TemplateModel,
   GroupModel,
-} = require('../constant/model.names')
+  WorkspaceModel,
+  FolderModel,
+} = require('../constant/model.names');
 
-const { Schema, Types } = mongoose
-const { ObjectId } = Schema.Types
+const { Schema, Types } = mongoose;
+const { ObjectId } = Schema.Types;
 
 /**
  * @apiDefine mailings
@@ -39,12 +41,22 @@ const MailingSchema = Schema(
       required: true,
     },
     // _user can't be required: admin doesn't set a _user
-    _user: { type: ObjectId, ref: UserModel, alias: `userId` },
+    _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
     author: {
       type: String,
       set: normalizeString,
-      alias: `userName`,
+      alias: 'userName',
+    },
+    _workspace: {
+      type: ObjectId,
+      ref: WorkspaceModel,
+      required: false,
+    },
+    _parentFolder: {
+      type: ObjectId,
+      ref: FolderModel,
+      required: false,
     },
     _wireframe: {
       type: ObjectId,
@@ -53,7 +65,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `templateId`,
+      alias: 'templateId',
     },
     // replicate wireframe name for ordering purpose
     wireframe: {
@@ -62,7 +74,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `templateName`,
+      alias: 'templateName',
     },
     // _company can't be required: admin doesn't have a _company
     _company: {
@@ -71,7 +83,7 @@ const MailingSchema = Schema(
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `group`,
+      alias: 'group',
     },
     tags: {
       type: [],
@@ -79,8 +91,8 @@ const MailingSchema = Schema(
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
   },
-  { timestamps: true, toJSON: { virtuals: true } },
-)
+  { timestamps: true, toJSON: { virtuals: true } }
+);
 
 MailingSchema.plugin(mongooseHidden, {
   hidden: {
@@ -92,46 +104,47 @@ MailingSchema.plugin(mongooseHidden, {
     _user: true,
     author: true,
   },
-})
+});
 
 // http://stackoverflow.com/questions/18324843/easiest-way-to-copy-clone-a-mongoose-document-instance#answer-25845569
 MailingSchema.methods.duplicate = function duplicate(_user) {
-  const oldId = this._id.toString()
-  const newId = Types.ObjectId()
-  this._id = newId
-  this.name = `${this.name.trim()} copy`
-  this.isNew = true
-  this.createdAt = new Date()
-  this.updatedAt = new Date()
+  const oldId = this._id.toString();
+  const newId = Types.ObjectId();
+  this._id = newId;
+  this.name = `${this.name.trim()} copy`;
+  this.isNew = true;
+  this.createdAt = new Date();
+  this.updatedAt = new Date();
   // set new user
   if (_user.id) {
-    this._user = _user._id
-    this.author = _user.name
+    this._user = _user._id;
+    this.author = _user.name;
   }
   // update all templates infos
   if (this.data) {
-    let data = JSON.stringify(this.data)
+    let data = JSON.stringify(this.data);
 
-    const replaceRegexp = new RegExp(oldId, `gm`)
-    data = data.replace(replaceRegexp, String(newId))
-    this.data = JSON.parse(data)
-    this.markModified(`data`)
+    const replaceRegexp = new RegExp(oldId, 'gm');
+    data = data.replace(replaceRegexp, String(newId));
+    this.data = JSON.parse(data);
+    this.markModified('data');
   }
 
-  return this
-}
+  return this;
+};
 
 MailingSchema.statics.findForApi = async function findForApi(
   query = {},
-  sortParams = { updatedAt: -1 },
+  // eslint-disable-next-line no-unused-vars
+  sortParams = { updatedAt: -1 }
 ) {
   const mailings = await this.find(query).populate({
-    path: `_company`,
+    path: '_company',
     select: { id: 1, name: 1 },
-  })
+  });
   // .sort(sortParams)
-  return mailings
-}
+  return mailings;
+};
 
 // Extract used tags from creations
 // http://stackoverflow.com/questions/14617379/mongoose-mongodb-count-elements-in-array
@@ -149,31 +162,31 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   // ])
 
   const mailings = await this.find(query).populate({
-    path: `_company`,
+    path: '_company',
     select: { tags: 1 },
-  })
+  });
   // .sort({tags: -1})
 
-  let tags = []
+  let tags = [];
   mailings.forEach(
-    (mailing) => (tags = [...new Set([...tags, ...mailing.tags])]),
-  )
+    (mailing) => (tags = [...new Set([...tags, ...mailing.tags])])
+  );
 
-  return tags
-}
+  return tags;
+};
 
 const translations = {
   en: _.assignIn(
     {},
     require('../../../public/lang/mosaico-en.json'),
-    require('../../../public/lang/badsender-en'),
+    require('../../../public/lang/badsender-en')
   ),
   fr: _.assignIn(
     {},
     require('../../../public/lang/mosaico-fr.json'),
-    require('../../../public/lang/badsender-fr'),
+    require('../../../public/lang/badsender-fr')
   ),
-}
+};
 
 /**
  * @apiDefine mailingMosaico
@@ -200,30 +213,30 @@ const translations = {
 
 MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   query = {},
-  lang = `fr`,
+  lang = 'fr'
 ) {
   const mailing = await this.findOne(query)
     .populate({
-      path: `_company`,
+      path: '_company',
       select: { id: 1, name: 1 },
     })
     .populate({
-      path: `_wireframe`,
+      path: '_wireframe',
       select: { _id: 1, name: 1, _company: 1, assets: 1 },
-    })
-  if (!mailing) return mailing
+    });
+  if (!mailing) return mailing;
 
   // group is needed to check zip format
   // • a mailing without a group is from the “admin”
   // • so group configuration will be find on the template
   // • admin will have the same option as a company user
-  const Groups = mongoose.models[GroupModel]
-  const group = await Groups.findById(mailing._wireframe._company)
-  if (!group) return group
+  const Groups = mongoose.models[GroupModel];
+  const group = await Groups.findById(mailing._wireframe._company);
+  if (!group) return group;
 
   // we try to keep a response as close as possible as the config used in the mosaico editor
-  const mailingId = mailing._id
-  const templateId = mailing._wireframe._id
+  const mailingId = mailing._id;
+  const templateId = mailing._wireframe._id;
   return {
     metadata: {
       id: mailingId,
@@ -249,19 +262,19 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         },
       },
       imagesUrl: {
-        images: `/api/images/`,
-        crop: `/api/images/crop/`,
-        cover: `/api/images/cover/`,
-        placeholder: `/api/images/placeholder/`,
+        images: '/api/images/',
+        crop: '/api/images/crop/',
+        cover: '/api/images/cover/',
+        placeholder: '/api/images/placeholder/',
       },
       assets: mailing._wireframe.assets,
       editorIcon: { ...config.brandOptions.editorIcon },
     },
-    titleToken: `BADSENDER Responsive Email Designer`,
+    titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata
     // we will keep those URLS here for better control
-    // • don't prepend basePath
-    // • CORS errors can occur while using browserSync
+    // • don't prepend basePath
+    // • CORS errors can occur while using browserSync
     fileuploadConfig: {
       url: {
         mailing: `/api/images/gallery/${mailingId}`,
@@ -280,7 +293,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     data: mailing.data || {},
     lang,
     strings: translations[lang],
-  }
-}
+  };
+};
 
-module.exports = MailingSchema
+module.exports = MailingSchema;

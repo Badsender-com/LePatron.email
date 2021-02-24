@@ -15,14 +15,14 @@ export default {
       password: {
         error: {
           nouser: 'Utilisateur introuvable',
-          incorrect: 'Identifiants incorrects'
-        }
+          incorrect: 'Identifiants incorrects',
+        },
       },
       login: {
         error: {
           internal: 'Une erreur est survenue',
-        }
-      }
+        },
+      },
     },
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -83,7 +83,7 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
       editorLabel: 'Libellé du bouton',
-      entryPoint: 'Point d\'entrée',
+      entryPoint: "Point d'entrée",
       issuer: 'Issuer',
     },
     template: {
@@ -176,7 +176,7 @@ export default {
     lang: 'Langue',
     details: 'Informations',
     tooltip: {
-      noPassword: 'Désactivé à cause de l\'authenfication SAML',
+      noPassword: "Désactivé à cause de l'authenfication SAML",
     },
   },
   tableHeaders: {

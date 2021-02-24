@@ -11,7 +11,7 @@ Documentation coming soon...
 
 ## Run locally
 
-###  1. Install dependencies
+### 1. Install dependencies
 
 ```bash
 yarn
@@ -35,11 +35,11 @@ yarn dev
 The application is available on [localhost:3000](http://localhost:3000)
 
 Login with
+
 - **Email:** admin
 - **Password:** admin
 
 A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
-
 
 ## Generate documentation
 

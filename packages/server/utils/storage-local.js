@@ -1,55 +1,55 @@
-'use strict'
+'use strict';
 
-const fs = require('fs-extra')
-const path = require('path')
+const fs = require('fs-extra');
+const path = require('path');
 
-const config = require('../node.config.js')
-const defer = require('../helpers/create-promise.js')
-const formatName = require('../helpers/format-filename-for-jquery-fileupload.js')
+const config = require('../node.config.js');
+const defer = require('../helpers/create-promise.js');
+const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 
 // https://docs.nodejitsu.com/articles/advanced/streams/how-to-use-fs-create-read-stream/
 function streamImage(imageName) {
-  const imagePath = path.join(config.images.uploadDir, imageName)
-  return fs.createReadStream(imagePath)
+  const imagePath = path.join(config.images.uploadDir, imageName);
+  return fs.createReadStream(imagePath);
 }
 
 function writeStreamFromPath(file) {
-  const deferred = defer()
+  const deferred = defer();
   // every files are uploaded to the uploadDir
-  const destPath = path.join(config.images.uploadDir, file.name)
-  const source = fs.createReadStream(file.path)
-  const dest = fs.createWriteStream(destPath)
-  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve)
-  return deferred
+  const destPath = path.join(config.images.uploadDir, file.name);
+  const source = fs.createReadStream(file.path);
+  const dest = fs.createWriteStream(destPath);
+  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve);
+  return deferred;
 }
 
 function writeStreamFromStream(source, name) {
-  const deferred = defer()
-  const destPath = path.join(config.images.uploadDir, name)
-  const dest = fs.createWriteStream(destPath)
-  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve)
-  return deferred
+  const deferred = defer();
+  const destPath = path.join(config.images.uploadDir, name);
+  const dest = fs.createWriteStream(destPath);
+  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve);
+  return deferred;
 }
 
 function listImages(prefix) {
-  const prefixRegexp = new RegExp(`^${prefix}`)
+  const prefixRegexp = new RegExp(`^${prefix}`);
 
   return fs.readdir(config.images.uploadDir).then((files) => {
-    files = files.filter((file) => prefixRegexp.test(file)).map(formatName)
-    return Promise.resolve(files)
-  })
+    files = files.filter((file) => prefixRegexp.test(file)).map(formatName);
+    return Promise.resolve(files);
+  });
 }
 
 function copyImages(oldPrefix, newPrefix) {
   return listImages(oldPrefix).then((files) => {
-    files = files.map(copy)
-    return Promise.all(files)
-  })
+    files = files.map(copy);
+    return Promise.all(files);
+  });
 
   function copy(file) {
-    const srcPath = path.join(config.images.uploadDir, file.name)
-    const dstPath = srcPath.replace(oldPrefix, newPrefix)
-    return fs.copy(srcPath, dstPath)
+    const srcPath = path.join(config.images.uploadDir, file.name);
+    const dstPath = srcPath.replace(oldPrefix, newPrefix);
+    return fs.copy(srcPath, dstPath);
   }
 }
 
@@ -59,4 +59,4 @@ module.exports = {
   writeStreamFromStream,
   listImages,
   copyImages,
-}
+};

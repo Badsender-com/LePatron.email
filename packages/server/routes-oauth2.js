@@ -1,19 +1,19 @@
-'use strict'
+'use strict';
 
 // https://aaronparecki.com/oauth-2-simplified/
-const oauth2orize = require('@poziworld/oauth2orize')
-const passport = require('passport')
-const login = require('connect-ensure-login')
+const oauth2orize = require('@poziworld/oauth2orize');
+const passport = require('passport');
+const login = require('connect-ensure-login');
 
 const {
   Users,
   OAuthClients,
   OAuthTokens,
   OAuthCodes,
-} = require('./common/models.common.js')
+} = require('./common/models.common.js');
 
 // Create OAuth 2.0 server
-const server = oauth2orize.createServer()
+const server = oauth2orize.createServer();
 
 // Register serialization and deserialization functions.
 //
@@ -28,16 +28,16 @@ const server = oauth2orize.createServer()
 // simple matter of serializing the client's ID, and deserializing by finding
 // the client by ID from the database.
 
-server.serializeClient((client, done) => done(null, client.id))
+server.serializeClient((client, done) => done(null, client.id));
 
 server.deserializeClient(async (id, done) => {
   try {
-    const client = await OAuthClients.findById(id)
-    done(null, client)
+    const client = await OAuthClients.findById(id);
+    done(null, client);
   } catch (error) {
-    done(error)
+    done(error);
   }
-})
+});
 
 // Register supported grant types.
 //
@@ -63,13 +63,13 @@ server.grant(
         redirectUri,
         userId: user.id,
         userEmail: user.email,
-      })
-      done(null, code._id)
+      });
+      done(null, code._id);
     } catch (error) {
-      done(error)
+      done(error);
     }
-  }),
-)
+  })
+);
 
 // Grant implicit authorization. The callback takes the `client` requesting
 // authorization, the authenticated `user` granting access, and
@@ -80,19 +80,19 @@ server.grant(
 server.grant(
   oauth2orize.grant.token(async (client, user, ares, done) => {
     // const token = getUid()
-    console.log(`grant token`)
-    console.log({ client, user })
+    console.log('grant token');
+    console.log({ client, user });
     try {
       const token = OAuthTokens.create({
         userId: user.id,
         clientId: client.clientId,
-      })
-      done(null, token._id)
+      });
+      done(null, token._id);
     } catch (error) {
-      done(error)
+      done(error);
     }
-  }),
-)
+  })
+);
 
 // Exchange authorization codes for access tokens. The callback accepts the
 // `client`, which is exchanging `code` and any `redirectUri` from the
@@ -104,23 +104,23 @@ server.grant(
 server.exchange(
   oauth2orize.exchange.code(async (client, code, redirectUri, done) => {
     try {
-      const authCode = await OAuthCodes.findById(code)
-      if (!authCode) return done(null, false)
-      if (client.id !== authCode.clientId) return done(null, false)
-      if (redirectUri !== authCode.redirectUri) return done(null, false)
+      const authCode = await OAuthCodes.findById(code);
+      if (!authCode) return done(null, false);
+      if (client.id !== authCode.clientId) return done(null, false);
+      if (redirectUri !== authCode.redirectUri) return done(null, false);
       const token = await OAuthTokens.create({
         userId: authCode.userId,
         clientId: authCode.clientId,
-      })
+      });
       // Add custom params, e.g. the username
-      const params = { email: authCode.userEmail }
+      const params = { email: authCode.userEmail };
       // Call `done(err, accessToken, [refreshToken], [params])` to issue an access token
-      return done(null, token._id, null, params)
+      return done(null, token._id, null, params);
     } catch (error) {
-      done(error)
+      done(error);
     }
-  }),
-)
+  })
+);
 
 // Exchange user id and password for access tokens. The callback accepts the
 // `client`, which is exchanging the user's name and password from the
@@ -132,28 +132,28 @@ server.exchange(
     async (client, userEmail, password, scope, done) => {
       try {
         // Validate the client
-        const localClient = await OAuthClients.findById(client.clientId)
-        if (!localClient) return done(null, false)
+        const localClient = await OAuthClients.findById(client.clientId);
+        if (!localClient) return done(null, false);
         if (localClient.clientSecret !== client.clientSecret) {
-          return done(null, false)
+          return done(null, false);
         }
         // Validate the user
-        const user = await Users.findOne({ email: userEmail })
-        if (!user) return done(null, false)
-        if (!user.comparePassword(password)) return done(null, false)
+        const user = await Users.findOne({ email: userEmail });
+        if (!user) return done(null, false);
+        if (!user.comparePassword(password)) return done(null, false);
         // Everything validated, return the token
         const token = await OAuthTokens.create({
           userId: user._id,
           clientId: client.clientId,
-        })
+        });
         // Call `done(err, accessToken, [refreshToken], [params])`, see oauth2orize.exchange.code
-        return done(null, token._id)
+        return done(null, token._id);
       } catch (error) {
-        done(null)
+        done(null);
       }
-    },
-  ),
-)
+    }
+  )
+);
 
 // Exchange the client id and password/secret for an access token. The callback accepts the
 // `client`, which is exchanging the client's id and password/secret from the
@@ -164,22 +164,22 @@ server.exchange(
   oauth2orize.exchange.clientCredentials(async (client, scope, done) => {
     try {
       // Validate the client
-      const localClient = await OAuthClients.findByClientId(client.clientId)
+      const localClient = await OAuthClients.findByClientId(client.clientId);
       if (localClient.clientSecret !== client.clientSecret) {
-        return done(null, false)
+        return done(null, false);
       }
       // Everything validated, return the token
       // Pass in a null for user id since there is no user with this grant type
       const token = await OAuthTokens.create({
         clientId: client.clientId,
-      })
+      });
       // Call `done(err, accessToken, [refreshToken], [params])`, see oauth2orize.exchange.code
-      return done(null, token._id)
+      return done(null, token._id);
     } catch (error) {
-      done(error)
+      done(error);
     }
-  }),
-)
+  })
+);
 
 // User authorization endpoint.
 //
@@ -202,38 +202,39 @@ module.exports.authorization = [
   server.authorization(
     async (clientId, redirectUri, done) => {
       try {
-        const client = await OAuthClients.findByClientId(clientId)
+        const client = await OAuthClients.findByClientId(clientId);
         // WARNING: For security purposes, it is highly advisable to check that
         //          redirectUri provided by the client matches one registered with
         //          the server. For simplicity, this example does not. You have
         //          been warned.
-        return done(null, client, redirectUri)
+        return done(null, client, redirectUri);
       } catch (error) {
-        done(error)
+        done(error);
       }
     },
     async (client, user, done) => {
       // Check if grant request qualifies for immediate approval
 
       // Auto-approve
-      if (client.isTrusted) return done(null, true)
+      if (client.isTrusted) return done(null, true);
 
       try {
         const token = await OAuthTokens.findByUserIdAndClientId(
           user.id,
-          client.clientId,
-        )
-        if (!token) return done(null, false)
-        return done(null, true)
+          client.clientId
+        );
+        if (!token) return done(null, false);
+        return done(null, true);
+        // eslint-disable-next-line no-empty
       } catch (error) {}
-    },
+    }
   ),
   (request, response) => {
     const {
       user,
       oauth2: { client },
       transactionID,
-    } = request
+    } = request;
     const html = `
     <p>Hi ${user.name}!</p>
     <p><b>${client.name}</b> is requesting access to your account.</p>
@@ -246,10 +247,10 @@ module.exports.authorization = [
         <input type="submit" value="Deny" name="cancel" id="deny" />
       </div>
     </form>
-`
-    response.send(html)
+`;
+    response.send(html);
   },
-]
+];
 
 // User decision endpoint.
 //
@@ -258,7 +259,7 @@ module.exports.authorization = [
 // client, the above grant middleware configured above will be invoked to send
 // a response.
 
-module.exports.decision = [login.ensureLoggedIn(), server.decision()]
+module.exports.decision = [login.ensureLoggedIn(), server.decision()];
 
 // Token endpoint.
 //
@@ -273,4 +274,4 @@ module.exports.token = [
   }),
   server.token(),
   server.errorHandler(),
-]
+];
