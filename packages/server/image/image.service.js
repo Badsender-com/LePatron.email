@@ -1,28 +1,27 @@
-const { Galleries } = require('../common/models.common.js')
+const { Galleries } = require('../common/models.common.js');
 
 function destroy(mongoId, imageName) {
   return Galleries.findOne({
     creationOrWireframeId: mongoId,
-  })
-    .then((gallery) => {
-      // TODO: handle non existing gallery
-      // mongoID could be incorrect
+  }).then((gallery) => {
+    // TODO: handle non existing gallery
+    // mongoID could be incorrect
 
-      const { files } = gallery
+    const { files } = gallery;
 
-      const imageIndex = files.findIndex((file) => file.name === imageName)
+    const imageIndex = files.findIndex((file) => file.name === imageName);
 
-      const filesUpdated = files;
+    const filesUpdated = files;
 
-      filesUpdated.splice(imageIndex, 1)
+    filesUpdated.splice(imageIndex, 1);
 
-      gallery.files = filesUpdated;
+    gallery.files = filesUpdated;
 
-      gallery.markModified('files')
-      return gallery.save()
-    })
+    gallery.markModified('files');
+    return gallery.save();
+  });
 }
 
 module.exports = {
   destroy,
-}
+};

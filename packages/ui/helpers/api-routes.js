@@ -1,16 +1,16 @@
 const API_PREFIX = process.env.API_PREFIX;
 
 // a dictionary of API routes
-// • prefix is configured by axios (/api)
+// • prefix is configured by axios (/api)
 // • it's just a way to centralize all our routes
 //   since we don't use a store for everything
 
-//////
+/// ///
 // GROUPS
-//////
+/// ///
 
-export function groups(routeParams = {}) {
-  return `/groups`;
+export function groups() {
+  return '/groups';
 }
 export function groupsItem(routeParams = {}) {
   return `/groups/${routeParams.groupId}`;
@@ -25,12 +25,12 @@ export function groupsItemMailings(routeParams = {}) {
   return `/groups/${routeParams.groupId}/mailings`;
 }
 
-//////
+/// ///
 // TEMPLATES
-//////
+/// ///
 
-export function templates(routeParams = {}) {
-  return `/templates`;
+export function templates() {
+  return '/templates';
 }
 /**
  * @param {Object} routeParams
@@ -54,16 +54,16 @@ export function templatesItemEvents(routeParams = {}) {
   return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
 }
 
-//////
+/// ///
 // ACCOUNT
-//////
+/// ///
 
-export function getPublicProfile({username}) {
+export function getPublicProfile({ username }) {
   return `/account/${username}`;
 }
 
 export function login() {
-  return `/account/login`;
+  return '/account/login';
 }
 
 export function accountResetPassword(routeParams = {}) {
@@ -73,12 +73,12 @@ export function accountSetPassword(routeParams = {}) {
   return `/account/${routeParams.email}/password/${routeParams.token}`;
 }
 
-//////
+/// ///
 // USERS
-//////
+/// ///
 
-export function users(routeParams = {}) {
-  return `/users`;
+export function users() {
+  return '/users';
 }
 export function usersItem(routeParams = {}) {
   return `/users/${routeParams.userId}`;
@@ -93,12 +93,12 @@ export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
 
-//////
+/// ///
 // MAILINGS
-//////
+/// ///
 
-export function mailings(routeParams = {}) {
-  return `/mailings`;
+export function mailings() {
+  return '/mailings';
 }
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;
@@ -110,9 +110,9 @@ export function mailingsItemTransferToUser(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
-//////
+/// ///
 // IMAGES
-//////
+/// ///
 
 // this is not used by axios (show an image…)
 export function imagesItem(routeParams = {}) {

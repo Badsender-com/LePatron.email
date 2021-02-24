@@ -5,7 +5,7 @@ export default {
     this.mixinPageTitleUpdateTitle(this.title);
   },
   destroyed() {
-    this.mixinPageTitleUpdateTitle(``);
+    this.mixinPageTitleUpdateTitle('');
   },
   methods: {
     mixinPageTitleUpdateTitle(title) {

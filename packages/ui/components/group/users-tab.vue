@@ -1,6 +1,5 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
-import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUsersTable from '~/components/users/table.vue';
 
 export default {
@@ -21,7 +20,7 @@ export default {
       );
       const useSaml = usersResponse.items[0].status === 'saml-authentication';
       if (useSaml) {
-        this.hiddenCols.push('actionSendPasswordMail')
+        this.hiddenCols.push('actionSendPasswordMail');
       }
       this.users = usersResponse.items;
     } catch (error) {

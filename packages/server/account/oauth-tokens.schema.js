@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-const { Schema } = require('mongoose')
+const { Schema } = require('mongoose');
 
 // const tokens = {}
 
@@ -31,13 +31,13 @@ const OAuthTokensSchema = new Schema({
   // refreshTokenExpiresOn: { type: Date },
   // user: { type: Object },
   userId: { type: String },
-})
+});
 
 OAuthTokensSchema.static.findByUserIdAndClientId = function findByUserIdAndClientId(
   userId,
-  clientId,
+  clientId
 ) {
-  return this.findOne({ userId, clientId })
-}
+  return this.findOne({ userId, clientId });
+};
 
-module.exports = OAuthTokensSchema
+module.exports = OAuthTokensSchema;

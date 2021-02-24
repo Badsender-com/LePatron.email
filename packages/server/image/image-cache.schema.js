@@ -1,8 +1,8 @@
-'use strict'
+'use strict';
 
-const { Schema } = require('mongoose')
+const { Schema } = require('mongoose');
 
-const { normalizeString } = require('../utils/model')
+const { normalizeString } = require('../utils/model');
 
 const CacheImageSchema = Schema(
   {
@@ -17,7 +17,7 @@ const CacheImageSchema = Schema(
       set: normalizeString,
     },
   },
-  { timestamps: true },
-)
+  { timestamps: true }
+);
 
-module.exports = CacheImageSchema
+module.exports = CacheImageSchema;

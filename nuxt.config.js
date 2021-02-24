@@ -1,11 +1,11 @@
-'use strict'
+'use strict';
 
-const path = require('path')
+const path = require('path');
 
 // Don't use ESM
 // • this will be also required in express app
-const pkg = require('./package.json')
-const config = require('./packages/server/node.config.js')
+const pkg = require('./package.json');
+const config = require('./packages/server/node.config.js');
 
 module.exports = {
   telemetry: false,
@@ -13,39 +13,39 @@ module.exports = {
   rootDir: __dirname,
   modulesDir: path.join(__dirname, '/node_modules'),
   dir: {
-    assets: `assets`,
-    layouts: `layouts`,
-    middleware: `middleware`,
-    pages: `routes`,
-    static: `static`,
-    store: `store`,
+    assets: 'assets',
+    layouts: 'layouts',
+    middleware: 'middleware',
+    pages: 'routes',
+    static: 'static',
+    store: 'store',
   },
   build: {
-    extend(config, { isDev, loaders }) {
+    extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
         resourceQuery: /blockType=i18n/,
-        type: `javascript/auto`,
-        loader: `@kazupon/vue-i18n-loader`,
-      })
+        type: 'javascript/auto',
+        loader: '@kazupon/vue-i18n-loader',
+      });
     },
   },
   router: {
-    middleware: [`authentication-check`],
+    middleware: ['authentication-check'],
   },
   plugins: [
-    { src: `~/plugins/vue-filters.js`, ssr: true },
-    { src: `~/plugins/badsender-global-components.js`, ssr: true },
-    { src: `~/plugins/vue-i18n.js`, ssr: true },
-    { src: `~/plugins/detect-browser-locale.js`, ssr: false },
+    { src: '~/plugins/vue-filters.js', ssr: true },
+    { src: '~/plugins/badsender-global-components.js', ssr: true },
+    { src: '~/plugins/vue-i18n.js', ssr: true },
+    { src: '~/plugins/detect-browser-locale.js', ssr: false },
   ],
   // https://vuetifyjs.com/en/getting-started/quick-start#nuxt-install
   // https://nuxtjs.org/guide/modules#build-only-modules
   buildModules: [
     [
-      `@nuxtjs/vuetify`,
+      '@nuxtjs/vuetify',
       {
-        icons: { iconfont: `md` },
+        icons: { iconfont: 'md' },
         theme: {
           options: { customProperties: true },
           themes: {
@@ -57,7 +57,7 @@ module.exports = {
       },
     ],
   ],
-  modules: [`@nuxtjs/style-resources`, `@nuxtjs/axios`],
+  modules: ['@nuxtjs/style-resources', '@nuxtjs/axios'],
   // mirror port in nuxt config
   // • We don't launch a “bare” nuxt server so this might sound not useful
   //   → Server listening is handled by expressJs
@@ -69,7 +69,7 @@ module.exports = {
     prefix: config.nuxt.API_PREFIX,
     browserBaseURL: config.nuxt.API_PREFIX,
   },
-  css: [`~/assets/global-styles/index.scss`],
+  css: ['~/assets/global-styles/index.scss'],
   styleResources: {
     // scss: [`~assets/global-styles/scss-mixins.scss`],
   },
@@ -82,26 +82,27 @@ module.exports = {
     // EXT_TOKEN: config.extToken,
   },
   head: {
-    titleTemplate: `LePatron.email – %s`,
+    titleTemplate: 'LePatron.email – %s',
     meta: [
-      { charset: `utf-8` },
-      { name: `viewport`, content: `width=device-width, initial-scale=1` },
-      { 'http-equiv': `X-UA-Compatible`, content: `IE=edge` },
-      { rel: `shortcut icon`, href: `/favicon.png`, type: `image/png` },
-      { rel: `icon`, href: `/favicon.png`, type: `image/png` },
+      { charset: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { 'http-equiv': 'X-UA-Compatible', content: 'IE=edge' },
+      { rel: 'shortcut icon', href: '/favicon.png', type: 'image/png' },
+      { rel: 'icon', href: '/favicon.png', type: 'image/png' },
     ],
     link: [
       {
-        rel: `stylesheet`,
-        href: `https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900`,
+        rel: 'stylesheet',
+        href:
+          'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900',
       },
       {
-        rel: `stylesheet`,
-        href: `https://fonts.googleapis.com/css?family=Material+Icons`,
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css?family=Material+Icons',
       },
     ],
   },
   loading: {
-    color: `#87cbc9`,
+    color: '#87cbc9',
   },
-}
+};
