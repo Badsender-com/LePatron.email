@@ -232,6 +232,7 @@ if (cluster.isMaster) {
       successFlash: true,
     })
   );
+
   app.get('/account/logout', (req, res) => {
     req.logout();
     res.redirect('/account/login');
