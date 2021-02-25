@@ -61,6 +61,7 @@ export default {
     status: 'Statut',
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
+    edit: 'Modifier'
   },
   layout: {
     logout: 'Déconnexion',

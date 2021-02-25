@@ -77,6 +77,21 @@ export default {
           {{ $t(passwordActionLabel) }}
         </v-list-item-title>
       </v-list-item>
+      <v-list-item>
+        <v-list-item-avatar>
+          <nuxt-link :to="`/users/${user.id}`">
+            <v-btn
+              color="primary"
+              icon
+            >
+              <v-icon>edit</v-icon>
+            </v-btn>
+          </nuxt-link>
+        </v-list-item-avatar>
+        <v-list-item-title>
+          {{ $t('global.edit') }}
+        </v-list-item-title>
+      </v-list-item>
     </v-list>
   </v-menu>
 </template>

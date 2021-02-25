@@ -61,6 +61,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
+    edit: 'Edit'
   },
   layout: {
     logout: 'Logout',
