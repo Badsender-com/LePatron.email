@@ -166,8 +166,10 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 
 	function showDialog(linkList) {
 		var data = {}, selection = editor.selection, dom = editor.dom, selectedElm, anchorElm, initialText;
-		var win, onlyText, textListCtrl, linkListCtrl, relListCtrl, targetListCtrl, classListCtrl, linkTitleCtrl, value;
-  	
+		var win, onlyText, textListCtrl, linkListCtrl, relListCtrl, targetListCtrl, classListCtrl, textDecorationListCtrl, linkTitleCtrl, value;
+		
+		data.textDecoration = '';
+
 		function linkListChangeHandler(e) {
 			var textCtrl = win.find('#text');
 
@@ -176,6 +178,10 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 			}
 
 			win.find('#href').value(e.control.value());
+		}
+
+		function linkTextDecorationListChangeHandler(e) {
+			data.textDecoration = e.control.value();
 		}
 
 		function buildAnchorListControl(url) {
@@ -289,9 +295,8 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 		selectedElm = selection.getNode();
 
 		if (selectedElm) {
-			var currentTextColor = document.defaultView
-			.getComputedStyle(selectedElm, null)
-			.getPropertyValue('color');
+			var computedStyle = document.defaultView.getComputedStyle(selectedElm, null);
+			var currentTextColor = computedStyle.getPropertyValue('color');
 
 			if (currentTextColor) {
 				var hexColor = rgb2hex(currentTextColor);
@@ -299,6 +304,12 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 				if (hexColor) {
 					data.color = hexColor.substr(1);
 				}
+			}
+
+			var currentTextDecoration = computedStyle.getPropertyValue('text-decoration');
+
+			if (currentTextDecoration && currentTextDecoration.includes('none')) {
+				data.textDecoration = 'none';
 			}
 		}
 
@@ -401,6 +412,17 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 			};
 		}
 
+		if (editor.settings.link_text_decoration_list) {
+			textDecorationListCtrl = {
+				name: 'style',
+				type: 'listbox',
+				label: 'Style',
+				values: editor.settings.link_text_decoration_list,
+				value: data.textDecoration,
+				onselect: linkTextDecorationListChangeHandler
+			};
+		}
+
 		if (editor.settings.link_title !== false) {
 			linkTitleCtrl = {
 				name: 'title',
@@ -431,7 +453,8 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 				linkListCtrl,
 				relListCtrl,
 				targetListCtrl,
-        classListCtrl,
+				classListCtrl,
+				textDecorationListCtrl,
         {
 					type: 'container',
 					layout: 'flex',
@@ -528,6 +551,19 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 					return isUnsafe ? addTargetRules(rel) : removeTargetRules(rel);
 				}
 
+				function getStyle() {
+					if (data.color && data.textDecoration && data.textDecoration.length > 0) {
+						return `color: #${data.color}; text-decoration: ${data.textDecoration}`;
+					}
+					if (data.color) {
+						return `color: #${data.color}`;
+					}
+					if (data.textDecoration && data.textDecoration.length > 0) {
+						return `text-decoration: ${data.textDecoration}`;
+					}
+					return '';
+				}
+
 				function createLink() {
 					var linkAttrs = {
 						href: href,
@@ -535,7 +571,7 @@ tinymce.PluginManager.add('linkcolor', function(editor) {
 						rel: data.rel ? data.rel : null,
 						"class": data["class"] ? data["class"] : null,
             title: data.title ? data.title : null,
-						style: data.color ? `color:#${data.color}` : null,
+						style: getStyle(),
 					};
 
 					if (!editor.settings.allow_unsafe_link_target) {

@@ -25,14 +25,14 @@ class FTPClient {
   }
 
   async upload(sourceArray, folderPath) {
-    const self = this,
-      client = this.client,
-      current_date = new Date().valueOf().toString(),
-      random = Math.random().toString(),
-      tmpDir = `/tmp/${crypto
-        .createHash('sha1')
-        .update(current_date + random)
-        .digest('hex')}`;
+    const self = this;
+    const client = this.client;
+    const currentDate = new Date().valueOf().toString();
+    const random = Math.random().toString();
+    const tmpDir = `/tmp/${crypto
+      .createHash('sha1')
+      .update(currentDate + random)
+      .digest('hex')}`;
 
     fs.mkdirSync(tmpDir);
 
@@ -80,16 +80,17 @@ class FTPClient {
   }
 
   fileName(fileUrl) {
+    // eslint-disable-next-line node/no-deprecated-api
     return url
       .parse(fileUrl)
-      .pathname.replace(/\//g, ` `)
+      .pathname.replace(/\//g, ' ')
       .trim()
-      .replace(/\s/g, `-`);
+      .replace(/\s/g, '-');
   }
 
   getProxy() {
-    const self = this,
-      proxy = new url.URL(config.proxyUrl);
+    const self = this;
+    const proxy = new url.URL(config.proxyUrl);
 
     return SocksClient.createConnection({
       proxy: {

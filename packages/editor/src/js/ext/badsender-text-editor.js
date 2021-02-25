@@ -239,9 +239,9 @@ var tinymceConfigFull = {
   plugins: [
     'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters',
   ],
-  link_class_list: [
-    {title: 'Underline', value: ''},
-    {title: 'Normal', value: 'mce-text-decoration-none'}
+  link_text_decoration_list: [
+    {text: 'Underline', value: ''},
+    {text: 'Normal', value: 'none'}
   ],
   //- https://www.tinymce.com/docs/configure/content-formatting/#style_formats
   style_formats: [

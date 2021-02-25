@@ -79,7 +79,7 @@ async function create(req, res) {
 
   const initParameters = {
     // Always give a default name: needed for ordering & filtering
-    name: simpleI18n(`default-mailing-name`, user.lang),
+    name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
   };
@@ -167,7 +167,7 @@ async function update(req, res) {
 
   mailing.name =
     modelsUtils.normalizeString(req.body.name) ||
-    simpleI18n(`default-mailing-name`, req.user.lang);
+    simpleI18n('default-mailing-name', req.user.lang);
   await mailing.save();
 
   const responseMailing = await Mailings.findOne(query);
@@ -244,9 +244,9 @@ async function updateMosaico(req, res) {
   mailing.data = req.body.data || mailing.data;
   mailing.name =
     modelsUtils.normalizeString(req.body.name) ||
-    simpleI18n(`default-mailing-name`, user.lang);
+    simpleI18n('default-mailing-name', user.lang);
   // http://mongoosejs.com/docs/schematypes.html#mixed
-  mailing.markModified(`data`);
+  mailing.markModified('data');
   await mailing.save();
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
@@ -380,7 +380,7 @@ async function transferToUser(req, res) {
 
   const [user, mailing] = await Promise.all([
     Users.findById(userId, { name: 1, _company: 1 }),
-    Mailings.findById(mailingId, { name: 1 }).populate(`_wireframe`, {
+    Mailings.findById(mailingId, { name: 1 }).populate('_wireframe', {
       _company: 1,
     }),
   ]);

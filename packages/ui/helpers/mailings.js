@@ -13,7 +13,7 @@ function haveSameTags(first, second) {
 }
 
 export function createFilters(filters) {
-  const nameRegexp = new RegExp(filters.name, `gi`);
+  const nameRegexp = new RegExp(filters.name, 'gi');
   const nameTest = !filters.name
     ? passThroughFilter
     : (mailing) => nameRegexp.test(mailing.name);

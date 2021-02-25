@@ -12,13 +12,13 @@ const decodeUriComponent = require('decode-uri-component');
 //   • when exporting it's messing with ESP tags
 //   • Cheerio won't handle IE comments
 function removeTinyMceExtraBrTag(html) {
-  return html.replace(/<br\sdata-mce-bogus="1">/g, ``);
+  return html.replace(/<br\sdata-mce-bogus="1">/g, '');
 }
 
 // replace all tabs by spaces so `he` don't replace them by `&#x9;`
 // `he` is an HTML entity encoder/decoder
 function replaceTabs(html) {
-  return html.replace(/\t/g, ` `);
+  return html.replace(/\t/g, ' ');
 }
 
 // encode what we can to HTML entities
@@ -43,7 +43,7 @@ const decodeSelligentTag = (match, tag) => {
   try {
     decodedTag = decodeUriComponent(decodedTag);
   } catch (err) {
-    console.log(`unable to decode URI`, tag);
+    console.log('unable to decode URI', tag);
   }
   return `~${decodedTag}~`;
 };

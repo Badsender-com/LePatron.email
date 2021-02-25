@@ -38,14 +38,14 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    //cdn settings
+    // cdn settings
     downloadMailingWithCdnImages: {
       type: Boolean,
       default: false,
     },
     cdnProtocol: {
       type: String,
-      default: `http://`,
+      default: 'http://',
     },
     cdnEndPoint: {
       type: String,
@@ -54,16 +54,16 @@ const GroupSchema = Schema(
     cdnButtonLabel: {
       type: String,
       set: trimString,
-      default: `CDN`,
+      default: 'CDN',
     },
-    //ftp settings
+    // ftp settings
     downloadMailingWithFtpImages: {
       type: Boolean,
       default: false,
     },
     ftpProtocol: {
       type: String,
-      default: `sftp`,
+      default: 'sftp',
     },
     ftpHost: {
       type: String,
@@ -96,15 +96,15 @@ const GroupSchema = Schema(
     ftpButtonLabel: {
       type: String,
       set: trimString,
-      default: `FTP`,
+      default: 'FTP',
     },
     entryPoint: {
       type: String,
-      default: ``,
+      default: '',
     },
     issuer: {
       type: String,
-      default: ``,
+      default: '',
     },
   },
   { timestamps: true, toJSON: { virtuals: true } }

@@ -16,9 +16,9 @@ const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
 
 const modelNames = require('../constant/model.names.js');
 
-//////
+/// ///
 // EXPORTS
-//////
+/// ///
 
 const Users = mongoose.model(modelNames.UserModel, UserSchema);
 const Templates = mongoose.model(modelNames.TemplateModel, TemplateSchema);

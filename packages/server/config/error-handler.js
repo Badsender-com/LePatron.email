@@ -2,9 +2,9 @@
 
 const util = require('util');
 
-//////
+/// ///
 // ERRORS HANDLING
-//////
+/// ///
 
 // normalize errors between mongoose & mongoDB
 function handleValidationErrors(err) {
@@ -18,8 +18,8 @@ function handleValidationErrors(err) {
   if (err.name === 'MongoError' && err.code === 11000) {
     // mongo doens't provide field name out of the box
     // fix that based on the error message
-    var fieldName = /index:\s([a-z]*)/.exec(err.message)[1];
-    var errorMsg = {};
+    const fieldName = /index:\s([a-z]*)/.exec(err.message)[1];
+    const errorMsg = {};
     errorMsg[fieldName] = {
       message: `this ${fieldName} is already taken`,
     };
@@ -38,9 +38,9 @@ function formatErrors(err, req, res, next) {
     .catch(next);
 }
 
-//////
+/// ///
 // EXPORTS
-//////
+/// ///
 
 module.exports = {
   formatErrors,

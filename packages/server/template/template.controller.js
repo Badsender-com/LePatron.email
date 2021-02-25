@@ -60,17 +60,17 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { groupId } = req.body;
-  const group = await Groups.findById(groupId).select(`_id`).lean();
-  if (!group) throw new createError.BadRequest(`group not found`);
+  const group = await Groups.findById(groupId).select('_id').lean();
+  if (!group) throw new createError.BadRequest('group not found');
 
-  const templateParams = _.pick(req.body, [`name`, `description`]);
+  const templateParams = _.pick(req.body, ['name', 'description']);
   const newTemplate = await Templates.create({
     _company: groupId,
     ...templateParams,
   });
   const template = await Templates.findById(newTemplate._id).populate({
-    path: `_company`,
-    select: `id name`,
+    path: '_company',
+    select: 'id name',
   });
   res.json(template);
 }
@@ -89,8 +89,8 @@ async function create(req, res) {
 async function read(req, res) {
   const { templateId } = req.params;
   const template = await Templates.findById(templateId).populate({
-    path: `_company`,
-    select: `id name`,
+    path: '_company',
+    select: 'id name',
   });
   if (!template) throw new createError.NotFound();
   res.json(template);
@@ -119,10 +119,10 @@ async function readMarkup(req, res) {
   if (!download) return res.send(template.markup);
   // let download content
   res.setHeader(
-    `Content-disposition`,
+    'Content-disposition',
     `attachment; filename=${template.name}.html`
   );
-  res.setHeader(`Content-type`, `text/html`);
+  res.setHeader('Content-type', 'text/html');
   res.write(template.markup);
   res.end();
 }
@@ -148,21 +148,21 @@ async function update(req, res) {
   const body = await fileManager.parseMultipart(req, {
     // add a `wireframe` prefix to differ from user uploaded template assets
     prefix: _getTemplateImagePrefix(templateId),
-    formatter: `templates`,
+    formatter: 'templates',
   });
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
   // custom update function
   const updatedTemplate = _.assignIn(
     template,
-    _.omit(body, [`images`, `assets`])
+    _.omit(body, ['images', 'assets'])
   );
   updatedTemplate.assets = _.assign(
     {},
     updatedTemplate.assets || {},
     body.assets
   );
-  updatedTemplate.markModified(`assets`);
+  updatedTemplate.markModified('assets');
 
   // copy template name in mailing
   // • we don't need for this DB request to finish to give the user the response
@@ -174,14 +174,14 @@ async function update(req, res) {
     ).then((result) => {
       // FIXME: declare userParams somewhere and remove linter ignore comment
       // eslint-disable-next-line no-undef
-      console.log(result.nModified, `mailings updated for`, userParams.name);
+      console.log(result.nModified, 'mailings updated for', userParams.name);
     });
   }
   await updatedTemplate.save();
   // make sure to have a fresh-well-formatted response
   const responseTemplate = await Templates.findById(templateId).populate({
-    path: `_company`,
-    select: `id name`,
+    path: '_company',
+    select: 'id name',
   });
   res.json(responseTemplate);
 }
@@ -243,12 +243,12 @@ async function destroyImages(req, res) {
     // we don't remove images on storage
     // we just empty the assets field
     // This could prevent old mailing to still access images
-    template.markModified(`assets`);
+    template.markModified('assets');
     await template.save();
   }
   const updatedTemplate = await Templates.findById(templateId).populate({
-    path: `_company`,
-    select: `id name`,
+    path: '_company',
+    select: 'id name',
   });
   res.json(updatedTemplate);
 }

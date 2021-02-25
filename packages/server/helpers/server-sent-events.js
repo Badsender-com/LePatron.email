@@ -2,8 +2,8 @@
 
 const logger = require('../utils/logger.js');
 
-const SSE_FORMAT_ERROR = Symbol(`SSE_FORMAT_ERROR`);
-const SSE_CONNECTION_CLOSED = Symbol(`SSE_CONNECTION_CLOSED`);
+const SSE_FORMAT_ERROR = Symbol('SSE_FORMAT_ERROR');
+const SSE_CONNECTION_CLOSED = Symbol('SSE_CONNECTION_CLOSED');
 
 function createConnectionStatusPromise() {
   let res;
@@ -19,14 +19,14 @@ async function formatResponseForSSE(data) {
     const stringifiedData = JSON.stringify(data);
     return `data: ${stringifiedData}\n\n`;
   } catch (error) {
-    logger.error(`unable to stringify data for SSE`);
+    logger.error('unable to stringify data for SSE');
     logger.error(error);
     return SSE_FORMAT_ERROR;
   }
 }
 
 const isRequired = () => {
-  throw new Error(`isConnectionClosed param is required for SSE events`);
+  throw new Error('isConnectionClosed param is required for SSE events');
 };
 
 async function writeSSEResponse(res, data, isConnectionClosed = isRequired()) {
@@ -53,7 +53,7 @@ const safeEventsHandler = (asyncCallback) => async (data) => {
   try {
     await asyncCallback(data);
   } catch (error) {
-    logger.error(`an error as occurred in some prevision events callback`);
+    logger.error('an error as occurred in some prevision events callback');
     logger.error(error);
   }
 };

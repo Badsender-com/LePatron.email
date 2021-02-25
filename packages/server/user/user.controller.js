@@ -35,7 +35,7 @@ module.exports = {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: `_company`, select: `id name entryPoint issuer` })
+    .populate({ path: '_company', select: 'id name entryPoint issuer' })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
 }
@@ -56,10 +56,10 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { groupId } = req.body;
-  const group = await Groups.findById(groupId).select(`_id`).lean();
-  if (!group) throw new createError.BadRequest(`group not found`);
+  const group = await Groups.findById(groupId).select('_id').lean();
+  if (!group) throw new createError.BadRequest('group not found');
 
-  const userParams = _.pick(req.body, [`name`, `email`, `lang`]);
+  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
   const newUser = await Users.create({
     _company: groupId,
     ...userParams,
@@ -126,7 +126,7 @@ async function readMailings(req, res) {
 
 async function update(req, res) {
   const { userId } = req.params;
-  const userParams = _.pick(req.body, [`name`, `email`, `lang`]);
+  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
   const user = await Users.findOneForApi({ _id: userId });
   if (!user) throw new createError.NotFound();
 
@@ -135,15 +135,15 @@ async function update(req, res) {
   if (nameChange) {
     Mailings.updateMany({ _user: userId }, { author: userParams.name }).then(
       (result) => {
-        console.log(result.nModified, `mailings updated for`, userParams.name);
+        console.log(result.nModified, 'mailings updated for', userParams.name);
       }
     );
   }
   const updatedUser = await Users.findByIdAndUpdate(userId, userParams, {
     runValidators: true,
   }).populate({
-    path: `_company`,
-    select: `id name`,
+    path: '_company',
+    select: 'id name',
   });
   res.json(updatedUser);
 }
@@ -209,7 +209,7 @@ async function adminResetPassword(req, res) {
   const user = await Users.findById(userId);
   if (!user) throw new createError.NotFound();
 
-  await user.resetPassword(`admin`, user.lang);
+  await user.resetPassword('admin', user.lang);
   const updatedUser = await Users.findOneForApi({ _id: userId });
   res.json(updatedUser);
 }
@@ -231,7 +231,7 @@ async function forgotPassword(req, res) {
   const user = await Users.findOne({ email });
   if (!user) throw new createError.BadRequest();
 
-  await user.resetPassword(`user`, user.lang);
+  await user.resetPassword('user', user.lang);
   const updatedUser = await Users.findOneForApi({ _id: user._id });
   res.json(updatedUser);
 }
@@ -258,11 +258,11 @@ async function setPassword(req, res) {
     token,
     tokenExpire: { $gt: Date.now() },
   });
-  if (!user) throw new createError.BadRequest(`invalid or expired token`);
+  if (!user) throw new createError.BadRequest('invalid or expired token');
 
   const isValidPassword = req.body.password === req.body.passwordConfirm;
   if (!isValidPassword) {
-    throw new createError.BadRequest(`passwords should be identical`);
+    throw new createError.BadRequest('passwords should be identical');
   }
 
   await user.setPassword(req.body.password, user.lang);
@@ -288,7 +288,7 @@ async function getPublicProfile(req, res) {
     email: username,
     isDeactivated: { $ne: true },
   });
-  if (!user) throw new createError.BadRequest(`User not found`);
+  if (!user) throw new createError.BadRequest('User not found');
   const group = await Groups.findOne({
     _id: user.group,
   });
@@ -305,7 +305,7 @@ async function getPublicProfile(req, res) {
 }
 
 async function login(req, res, next) {
-  passport.authenticate(`local`, (err, user, info) => {
+  passport.authenticate('local', (err, user, info) => {
     if (err) {
       return next(new createError.InternalServerError(err));
     }
@@ -314,7 +314,7 @@ async function login(req, res, next) {
       return next(new createError.BadRequest(info.message));
     }
 
-    if (!user) return next(new createError.BadRequest(`User not found`));
+    if (!user) return next(new createError.BadRequest('User not found'));
 
     req.logIn(user, (err) => {
       if (err) {

@@ -98,12 +98,12 @@ async function read(req, res) {
 async function readUsers(req, res) {
   const { groupId } = req.params;
   const [group, users] = await Promise.all([
-    Groups.findById(groupId).select(`_id`),
+    Groups.findById(groupId).select('_id'),
     Users.find({
       _company: groupId,
       isDeactivated: { $ne: true },
     })
-      .populate({ path: `_company`, select: `id name entryPoint issuer` })
+      .populate({ path: '_company', select: 'id name entryPoint issuer' })
       .sort({ email: 1 }),
   ]);
   if (!group) throw new createError.NotFound();
@@ -125,7 +125,7 @@ async function readUsers(req, res) {
 async function readTemplates(req, res) {
   const { groupId } = req.params;
   const [group, templates] = await Promise.all([
-    Groups.findById(groupId).select(`_id`),
+    Groups.findById(groupId).select('_id'),
     Templates.findForApi({ _company: groupId }),
   ]);
   if (!group) throw new createError.NotFound();
@@ -147,7 +147,7 @@ async function readTemplates(req, res) {
 async function readMailings(req, res) {
   const { groupId } = req.params;
   const [group, mailings] = await Promise.all([
-    Groups.findById(groupId).select(`_id`),
+    Groups.findById(groupId).select('_id'),
     Mailings.findForApi({ _company: groupId }),
   ]);
   if (!group) throw new createError.NotFound();

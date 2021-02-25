@@ -34,7 +34,7 @@ const mailReady = transporter.verify();
 //   })
 
 function send(options) {
-  var mailOptions = extend({}, options, pick(config.emailOptions, ['from']));
+  const mailOptions = extend({}, options, pick(config.emailOptions, ['from']));
   return new Promise(function (resolve, reject) {
     transporter
       .sendMail(mailOptions)

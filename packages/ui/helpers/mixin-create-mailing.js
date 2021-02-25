@@ -6,7 +6,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async mixinCreateMailing(template, loadingKey = `loading`) {
+    async mixinCreateMailing(template, loadingKey = 'loading') {
       if (!template.hasMarkup) return;
       const { $axios } = this;
       this[loadingKey] = true;
@@ -23,7 +23,7 @@ export default {
         });
         window.location.assign(`${origin}${redirectUrl}`);
       } catch (error) {
-        this.showSnackbar({ text: `an error as occurred`, color: `error` });
+        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
         console.log(error);
       } finally {
         this[loadingKey] = false;

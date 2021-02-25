@@ -14,6 +14,7 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const config = require('../node.config.js');
 const mail = require('../mailing/mailing.service.js');
+const Roles = require('./role');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
@@ -33,16 +34,22 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiSuccess {String} group.name
  */
 
-//////
+/// ///
 // USER
-//////
+/// ///
 
 const UserSchema = Schema(
   {
     name: { type: String, set: normalizeString },
+    role: {
+      type: String,
+      enum: [Roles.GROUP_ADMIN, Roles.GROUP_USER],
+      required: false,
+    },
+
     email: {
       type: String,
-      required: [true, `Email address is required`],
+      required: [true, 'Email address is required'],
       // http://mongoosejs.com/docs/api.html#schematype_SchemaType-unique
       // from mongoose doc:
       // violating the constraint returns an E11000 error from MongoDB when saving, not a Mongoose validation error.
@@ -50,7 +57,7 @@ const UserSchema = Schema(
       validate: [
         {
           validator: validator.isEmail,
-          message: `{VALUE} is not a valid email address`,
+          message: '{VALUE} is not a valid email address',
         },
       ],
       set: normalizeString,
@@ -58,14 +65,14 @@ const UserSchema = Schema(
     _company: {
       type: ObjectId,
       ref: GroupModel,
-      required: [true, `Group is required`],
+      required: [true, 'Group is required'],
       // Ideally we should have run a script to migrate fields
       // • don't have time
       // • so just make an alias
-      alias: `group`,
+      alias: 'group',
     },
     password: { type: String, set: encodePassword },
-    lang: { type: String, default: `en` },
+    lang: { type: String, default: 'en' },
     token: { type: String },
     tokenExpire: { type: Date },
     isDeactivated: { type: Boolean, default: false },
@@ -84,57 +91,57 @@ UserSchema.plugin(mongooseHidden, {
 });
 
 function encodePassword(password) {
-  if (typeof password === 'undefined') return void 0;
+  if (typeof password === 'undefined') return;
   return bcrypt.hashSync(password, 10);
 }
 
-UserSchema.virtual(`status`).get(function () {
+UserSchema.virtual('status').get(function () {
   const status = this.isDeactivated
-    ? `deactivated`
+    ? 'deactivated'
     : this._company.issuer &&
       this._company.issuer.length > 0 &&
       this._company.entryPoint &&
       this._company.entryPoint.length > 0
-    ? `saml-authentication`
+    ? 'saml-authentication'
     : this.password
-    ? `confirmed`
+    ? 'confirmed'
     : this.token
-    ? `password-mail-sent`
-    : `to-be-initialized`;
+    ? 'password-mail-sent'
+    : 'to-be-initialized';
   return status;
 });
 
-UserSchema.virtual(`isReinitialized`).get(function () {
+UserSchema.virtual('isReinitialized').get(function () {
   if (this.password) return false;
   if (this.token) return true;
   return false;
 });
 
 // for better session handling
-UserSchema.virtual(`isAdmin`).get(function () {
+UserSchema.virtual('isAdmin').get(function () {
   return false;
 });
 
 UserSchema.methods.activate = function activate() {
-  var user = this;
+  const user = this;
   user.isDeactivated = false;
   return user.save();
 };
 
 UserSchema.methods.deactivate = function deactivate() {
-  var user = this;
-  user.password = void 0;
-  user.token = void 0;
+  const user = this;
+  user.password = undefined;
+  user.token = undefined;
   user.isDeactivated = true;
   return user.save();
 };
 
 UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const user = this;
-  user.password = void 0;
+  user.password = undefined;
   user.token = randToken.generate(30);
   user.tokenExpire = moment().add(1, 'weeks');
-  lang = lang ? lang : 'en';
+  lang = lang || 'en';
 
   const updatedUser = await user.save();
   const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
@@ -143,7 +150,7 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
     text: `here is the link to enter your new password ${resetUrl}`,
     html: tmpReset(
-      getTemplateData(`reset-password`, lang, {
+      getTemplateData('reset-password', lang, {
         type: type,
         url: resetUrl,
       })
@@ -155,10 +162,10 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
 
 UserSchema.methods.setPassword = async function setPassword(password, lang) {
   const user = this;
-  user.token = void 0;
-  user.tokenExpire = void 0;
+  user.token = undefined;
+  user.tokenExpire = undefined;
   user.password = password;
-  lang = lang ? lang : 'en';
+  lang = lang || 'en';
 
   const updatedUser = await user.save();
   const loginUrl = `http://${config.host}/account/login`;
@@ -167,8 +174,8 @@ UserSchema.methods.setPassword = async function setPassword(password, lang) {
     subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
     text: `your password has been successfully been reinitialized. connect at ${loginUrl}`,
     html: tmpReset(
-      getTemplateData(`reset-success`, lang, {
-        type: `admin`,
+      getTemplateData('reset-success', lang, {
+        type: 'admin',
         url: loginUrl,
       })
     ),
@@ -182,61 +189,65 @@ UserSchema.methods.comparePassword = function comparePassword(password) {
 
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
-    path: `_company`,
-    select: `id name issuer entryPoint`,
+    path: '_company',
+    select: 'id name issuer entryPoint',
   });
   return mailing;
 };
 
-//////
+/// ///
 // DEFINING mailing templates
-//////
+/// ///
 
 tmpl.load = function (id) {
   const filename = path.join(__dirname, `../email-templates/${id}.html`);
-  return fs.readFileSync(filename, `utf8`);
+  return fs.readFileSync(filename, 'utf8');
 };
 
 // put in cache
-const tmpReset = tmpl(`reset-password`);
+const tmpReset = tmpl('reset-password');
 
 function getTemplateData(templateName, lang, additionalDatas) {
-  var i18n = {
+  const i18n = {
     common: {
       fr: {
-        contact: `Contacter Badsender : `,
-        or: `ou`,
+        contact: 'Contacter Badsender : ',
+        or: 'ou',
         // social: `Badsender sur les réseaux sociaux :`,
-        social: `Badsender sur les r&eacute;seaux sociaux :`,
+        social: 'Badsender sur les r&eacute;seaux sociaux :',
       },
       en: {
-        contact: `contact Badsender: `,
-        or: `or`,
-        social: `Badsender on social networks:`,
+        contact: 'contact Badsender: ',
+        or: 'or',
+        social: 'Badsender on social networks:',
       },
     },
     'reset-password': {
       fr: {
-        title: `Bienvenue sur l'email builder de Badsender`,
-        desc: `Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l'url suivante dans votre navigateur:`,
-        reset: `INITIALISER MON MOT DE PASSE`,
+        title: 'Bienvenue sur l\'email builder de Badsender',
+        desc:
+          'Cliquez sur le bouton ci-dessous pour initialiser votre mot de passe, ou copiez l\'url suivante dans votre navigateur:',
+        reset: 'INITIALISER MON MOT DE PASSE',
       },
       en: {
-        title: `Welcome to the Badsender's email builder`,
-        desc: `Click the button below to reset your password, or copy the following URL into your browser:`,
-        reset: `RESET MY PASSWORD`,
+        title: 'Welcome to the Badsender\'s email builder',
+        desc:
+          'Click the button below to reset your password, or copy the following URL into your browser:',
+        reset: 'RESET MY PASSWORD',
       },
     },
     'reset-success': {
       fr: {
-        title: `Votre mot de passe a bien été réinitialisé`,
-        desc: `Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l'url suivante dans votre navigateur:`,
-        reset: `SE CONNECTER`,
+        title: 'Votre mot de passe a bien été réinitialisé',
+        desc:
+          'Cliquez sur le bouton ci-dessous pour vous connecter, ou copiez l\'url suivante dans votre navigateur:',
+        reset: 'SE CONNECTER',
       },
       en: {
-        title: `Your password has been successfully updated`,
-        desc: `Click the button below to login, or copy the following URL into your browser:`,
-        reset: `LOGIN`,
+        title: 'Your password has been successfully updated',
+        desc:
+          'Click the button below to login, or copy the following URL into your browser:',
+        reset: 'LOGIN',
       },
     },
   };
@@ -245,8 +256,8 @@ function getTemplateData(templateName, lang, additionalDatas) {
   return assign({}, { t: traductions }, additionalDatas);
 }
 
-//////
+/// ///
 // EXPORTS
-//////
+/// ///
 
 module.exports = UserSchema;
