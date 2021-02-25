@@ -29,11 +29,6 @@ const GroupSchema = Schema(
       unique: true,
       set: normalizeString,
     },
-    defaultWorkspaceName: {
-      type: String,
-      required: [true, 'A default workspace name is required'],
-      set: normalizeString,
-    },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,
       default: false,

@@ -73,7 +73,7 @@ export default {
         unwrapped: 'Leave files in root folder',
       },
       defaultWorkspace: {
-        name: 'Default workspace name',
+        label: 'Default workspace\'s name',
       },
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',

@@ -8,6 +8,7 @@ const {
   Users,
   Templates,
   Mailings,
+  Workspaces
 } = require('../common/models.common.js');
 
 module.exports = {
@@ -61,7 +62,9 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
+  const defaultWorkspaceName = req.body.defaultWorkspaceName;
   const newGroup = await Groups.create(req.body);
+  await Workspaces.create({name: defaultWorkspaceName, _company: newGroup});
   res.json(newGroup);
 }
 

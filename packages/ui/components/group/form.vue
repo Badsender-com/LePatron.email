@@ -122,7 +122,7 @@ export default {
               <v-text-field
                 v-model="localModel.defaultWorkspaceName"
                 id="name"
-                :label="$t('forms.group.defaultWorkspace.name')"
+                :label="$t('forms.group.defaultWorkspace.label')"
                 name="defaultWorkspaceName"
                 required
                 :disabled="disabled"
