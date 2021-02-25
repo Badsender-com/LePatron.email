@@ -122,6 +122,11 @@ UserSchema.virtual('isAdmin').get(function () {
   return false;
 });
 
+UserSchema.virtual('isGroupAdmin').get(function () {
+  const user = this;
+  return user.role === Roles.GROUP_ADMIN;
+});
+
 UserSchema.methods.activate = function activate() {
   const user = this;
   user.isDeactivated = false;

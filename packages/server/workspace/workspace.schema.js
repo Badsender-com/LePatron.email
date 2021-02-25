@@ -5,7 +5,7 @@ const { normalizeString } = require('../utils/model');
 const { GroupModel, UserModel } = require('../constant/model.names.js');
 const { ObjectId } = Schema.Types;
 
-const WorkSpaceSchema = Schema(
+const WorkspaceSchema = Schema(
   {
     name: {
       type: String,
@@ -37,4 +37,11 @@ const WorkSpaceSchema = Schema(
   }
 );
 
-module.exports = WorkSpaceSchema;
+WorkspaceSchema.virtual('folders', {
+  ref: 'Folder',
+  localField: '_id',
+  foreignField: '_workspace',
+  justOne: false,
+});
+
+module.exports = WorkspaceSchema;
