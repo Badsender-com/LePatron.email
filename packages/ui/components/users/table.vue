@@ -101,6 +101,7 @@ export default {
     >
       <template v-slot:item.email="{ item }">
         <nuxt-link :to="`/users/${item.id}`">{{ item.email }}</nuxt-link>
+        <v-badge inline content="Admin"/>
       </template>
       <template v-slot:item.group="{ item }">
         <nuxt-link :to="`/groups/${item.group.id}`">{{
