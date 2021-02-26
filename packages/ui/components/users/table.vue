@@ -26,6 +26,7 @@ export default {
     tableHeaders() {
       return [
         { text: this.$t('users.email'), align: `left`, value: `email` },
+        { text: '', value: `role` },
         { text: this.$t('global.name'), align: `left`, value: `name` },
         {
           text: this.$tc('global.group', 1),
@@ -101,7 +102,13 @@ export default {
     >
       <template v-slot:item.email="{ item }">
         <nuxt-link :to="`/users/${item.id}`">{{ item.email }}</nuxt-link>
-        <v-badge inline content="Admin"/>
+      </template>
+      <template v-slot:item.role="{ item }">
+        <v-badge
+          v-if="item.role === 'company_admin'"
+          inline
+          content="Admin"
+        />
       </template>
       <template v-slot:item.group="{ item }">
         <nuxt-link :to="`/groups/${item.group.id}`">{{
