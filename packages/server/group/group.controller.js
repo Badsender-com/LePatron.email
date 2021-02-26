@@ -63,10 +63,7 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  let defaultWorkspaceName = req.body.defaultWorkspaceName;
-  if (!defaultWorkspaceName) {
-    defaultWorkspaceName = 'Workspace';
-  }
+  const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(req.body);
   const workspaceParams = { name: defaultWorkspaceName, group: newGroup };
   await workspaceService.createWorkspace(workspaceParams);
