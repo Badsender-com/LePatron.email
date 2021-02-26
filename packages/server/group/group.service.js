@@ -6,6 +6,7 @@ const { Groups } = require('../common/models.common.js');
 
 module.exports = {
   findById: asyncHandler(findById),
+  createGroup: asyncHandler(createGroup),
 }
 
 async function findById(groupId) {
@@ -16,3 +17,7 @@ async function findById(groupId) {
   return group;
 }
 
+async function createGroup(groupParams) {
+  const newGroup = await Groups.create(groupParams);
+  return newGroup;
+}

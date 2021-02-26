@@ -3,13 +3,13 @@
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const workspaceService = require('../workspace/workspace.service.js');
+const groupService = require('../group/group.service.js');
 
 const {
   Groups,
   Users,
   Templates,
   Mailings,
-  Workspaces
 } = require('../common/models.common.js');
 
 module.exports = {
@@ -64,7 +64,10 @@ async function list(req, res) {
 
 async function create(req, res) {
   const defaultWorkspaceName = req.body.defaultWorkspaceName;
-  const newGroup = await Groups.create(req.body);
+  if (!defaultWorkspaceName) {
+    throw new createError.BadRequestError('group.controller : in create, no name for default workspace provided in request')
+  }
+  const newGroup = await groupService.createGroup(req.body);
   await workspaceService.createWorkspace({ name: defaultWorkspaceName, group: newGroup });
   res.json(newGroup);
 }

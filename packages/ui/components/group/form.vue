@@ -39,6 +39,9 @@ export default {
         },
       ];
     },
+    groupCreationPage() {
+      return this.$route.path === '/groups/new';
+    }
   },
   watch: {
     useSamlAuthentication: {
@@ -119,7 +122,9 @@ export default {
                 @blur="$v.group.name.$touch()"
               />
 
+
               <v-text-field
+                v-if="groupCreationPage"
                 v-model="localModel.defaultWorkspaceName"
                 id="name"
                 :label="$t('forms.group.defaultWorkspace.label')"
