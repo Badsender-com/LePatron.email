@@ -2,6 +2,7 @@
 
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
+const workspaceService = require('../workspace/workspace.service.js');
 
 const {
   Groups,
@@ -64,7 +65,7 @@ async function list(req, res) {
 async function create(req, res) {
   const defaultWorkspaceName = req.body.defaultWorkspaceName;
   const newGroup = await Groups.create(req.body);
-  await Workspaces.create({name: defaultWorkspaceName, _company: newGroup});
+  await workspaceService.createWorkspace({ name: defaultWorkspaceName, group: newGroup });
   res.json(newGroup);
 }
 
