@@ -73,6 +73,9 @@ export default {
         wrapped: 'Englober dans un dossier parent',
         unwrapped: 'Laisser les fichiers à la racine',
       },
+      defaultWorkspace: {
+        label: 'Nom du workspace par défaut'
+      },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
       enable: 'Activer',

@@ -27,6 +27,9 @@ export default {
         this.$emit(`update`, updatedGroup);
       },
     },
+    isGroupCreationPage() {
+      return this.$route.path === '/groups/new';
+    },
     folderOptions() {
       return [
         {
@@ -72,6 +75,7 @@ export default {
     return {
       group: {
         name: { required },
+        defaultWorkspaceName: {},
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
       },
@@ -116,6 +120,19 @@ export default {
                 :error-messages="requiredErrors(`name`)"
                 @input="$v.group.name.$touch()"
                 @blur="$v.group.name.$touch()"
+              />
+
+
+              <v-text-field
+                v-if="this.isGroupCreationPage"
+                v-model="localModel.defaultWorkspaceName"
+                id="name"
+                :label="$t('forms.group.defaultWorkspace.label')"
+                name="defaultWorkspaceName"
+                required
+                :disabled="disabled"
+                @input="$v.group.defaultWorkspaceName.$touch()"
+                @blur="$v.group.defaultWorkspaceName.$touch()"
               />
             </v-col>
 
