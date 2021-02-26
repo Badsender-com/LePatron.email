@@ -2,8 +2,8 @@
 // Role
 /// ///
 const Roles = {
-  GROUP_ADMIN: 'GROUP_ADMIN',
-  REGULAR_USER: 'REGULAR_USER',
+  GROUP_ADMIN: 'company_admin',
+  REGULAR_USER: 'regular_user',
 };
 
 module.exports = Roles;

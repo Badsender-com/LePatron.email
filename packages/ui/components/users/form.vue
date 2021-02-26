@@ -1,6 +1,6 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required, maxLength, email } from 'vuelidate/lib/validators';
+import { required, email } from 'vuelidate/lib/validators';
 
 export default {
   name : `bs-user-form`,
@@ -11,8 +11,8 @@ export default {
     { text: `Français`, value: `fr` },
   ],
   roles: [
-    { text: `Group admin`, value: `GROUP_ADMIN` },
-    { text: `Regular user`, value: `REGULAR_USER` }
+    { text: `Group admin`, value: `company_admin` },
+    { text: `Regular user`, value: `regular_user` }
   ],
   props: {
     user: { type: Object, default: () => ({}) },

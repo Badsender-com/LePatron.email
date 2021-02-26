@@ -29,8 +29,14 @@ export default {
       return this.actionDisplay.activate ? 'global.enable' : 'global.disable';
     },
     passwordActionLabel() {
-      return this.actionDisplay.resetPassword ? 'users.passwordTooltip.reset' :
-        (this.actionDisplay.sendPassword ?  'users.passwordTooltip.send' : 'users.passwordTooltip.resend');
+      if (this.actionDisplay.resetPassword ) {
+        return 'users.passwordTooltip.reset';
+      } else {
+        if (this.actionDisplay.sendPassword) {
+          return 'users.passwordTooltip.send';
+        }
+        return 'users.passwordTooltip.resend';
+      }
     },
   },
 };
