@@ -16,7 +16,6 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
-      groupCreationPage:  this.$route.path === '/groups/new',
     };
   },
   computed: {
@@ -27,6 +26,9 @@ export default {
       set(updatedGroup) {
         this.$emit(`update`, updatedGroup);
       },
+    },
+    isGroupCreationPage() {
+      return this.$route.path === '/groups/new';
     },
     folderOptions() {
       return [
@@ -122,7 +124,7 @@ export default {
 
 
               <v-text-field
-                v-if="this.groupCreationPage"
+                v-if="this.isGroupCreationPage"
                 v-model="localModel.defaultWorkspaceName"
                 id="name"
                 :label="$t('forms.group.defaultWorkspace.label')"
