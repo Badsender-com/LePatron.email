@@ -1,6 +1,6 @@
 'use strict';
 
-const _ = require('lodash');
+const pick = require('lodash').pick;
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
@@ -64,12 +64,16 @@ async function create(req, res) {
   }
   await groupService.findById(groupId);
 
-  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
-  const role = (req.body.role === 'company_admin' ? Roles.GROUP_ADMIN : Roles.REGULAR_USER);
+  const userParams = pick(req.body, ['name', 'email', 'lang']);
+  const role = (req.body.role === Roles.GROUP_ADMIN ? Roles.GROUP_ADMIN : Roles.REGULAR_USER);
 
-  const newUser = await userService.createUser({groupId, role, ...userParams});
-
-  res.json(newUser);
+  try {
+    const newUser = await userService.createUser({groupId, role, ...userParams});
+    res.json(newUser);
+  } catch (e) {
+    console.error('user.controller : An error occurred while creating user', e)
+    res.json(e);
+  }
 }
 
 /**
@@ -134,7 +138,7 @@ async function update(req, res) {
     throw new createError.BadRequestError('user.controller :  in update function, no userId provided in request');
   }
 
-  const userParams = _.pick(req.body, ['name', 'email', 'lang', 'role']);
+  const userParams = pick(req.body, ['name', 'email', 'lang', 'role']);
   const updatedUser = await userService.updateUser({userId, ...userParams})
 
   res.json(updatedUser);

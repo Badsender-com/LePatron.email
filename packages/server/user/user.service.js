@@ -1,6 +1,5 @@
 'use strict'
 
-const _ = require('lodash');
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Users, Mailings } = require('../common/models.common.js');
@@ -26,8 +25,8 @@ async function updateUser(userParams) {
     throw new createError.NotFound();
   }
   // we don't need for this DB request to finish to give the user the response
-  const nameChange = user.name !== userParams.name;
-  if (nameChange) {
+  const nameChanged = user.name !== userParams.name;
+  if (nameChanged) {
     Mailings.updateMany({ _user: userParams.userId }, { author: userParams.name }).then(
       (result) => {
         console.log(result.nModified, 'mailings updated for', userParams.name);

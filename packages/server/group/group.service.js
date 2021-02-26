@@ -1,6 +1,5 @@
 'use strict'
 
-const _ = require('lodash');
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Groups } = require('../common/models.common.js');
@@ -12,7 +11,7 @@ module.exports = {
 async function findById(groupId) {
   const group = await Groups.findById(groupId).select('_id').lean();
   if (!group) {
-    throw new createError.BadRequest(`no group with id ${groupId} found`);
+    throw new createError.NotFound(`no group with id ${groupId} found`);
   }
   return group;
 }

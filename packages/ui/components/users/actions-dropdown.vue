@@ -18,10 +18,12 @@ export default {
     sendPassword: { type: Function, default: () => {}},
     resendPassword: { type: Function, default: () => {}},
   },
+  data() {
+    return {
+      actionsIcon: 'more_horiz',
+    }
+  },
   computed: {
-    actionsIcon() {
-      return `more_horiz`;
-    },
     actionDisplay() {
       return userStatusHelpers.getStatusActions(this.user.status);
     },
@@ -31,12 +33,11 @@ export default {
     passwordActionLabel() {
       if (this.actionDisplay.resetPassword ) {
         return 'users.passwordTooltip.reset';
-      } else {
-        if (this.actionDisplay.sendPassword) {
-          return 'users.passwordTooltip.send';
-        }
-        return 'users.passwordTooltip.resend';
       }
+      if (this.actionDisplay.sendPassword) {
+        return 'users.passwordTooltip.send';
+      }
+      return 'users.passwordTooltip.resend';
     },
   },
 };
