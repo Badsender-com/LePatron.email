@@ -46,8 +46,7 @@ async function list(req, res) {
 
 async function getUsersByGroupId(req, res) {
   const { groupId } = req.params;
-  const users = await Users.where('_company.id').equals(groupId);
-  console.log({users})
+  const users = await userService.findByGroupId(groupId);
   res.json({users});
 }
 

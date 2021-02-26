@@ -7,6 +7,7 @@ const { Users, Mailings } = require('../common/models.common.js');
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
+  findByGroupId: asyncHandler(findByGroupId),
 }
 
 async function createUser(userParams) {
@@ -42,3 +43,7 @@ async function updateUser(userParams) {
   return updatedUser;
 }
 
+async function findByGroupId(groupId) {
+  const users = await Users.where('_company.id').equals(groupId);
+  return users;
+}
