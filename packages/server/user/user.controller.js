@@ -10,6 +10,7 @@ const config = require('../node.config.js');
 
 module.exports = {
   list: asyncHandler(list),
+  getByGroupId: asyncHandler(getUsersByGroupId),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMailings: asyncHandler(readMailings),
@@ -38,6 +39,13 @@ async function list(req, res) {
     .populate({ path: '_company', select: 'id name entryPoint issuer' })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
+}
+
+async function getUsersByGroupId(req, res) {
+  const { groupId } = req.params;
+  const users = await Users.where('_company.id').equals(groupId);
+  console.log({users})
+  res.json({users});
 }
 
 /**

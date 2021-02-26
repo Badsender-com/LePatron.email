@@ -32,6 +32,8 @@ export default {
     newUser: 'Add a user',
     group: 'Group | Groups',
     newGroup: 'Add a group',
+    workspace: 'Workspace',
+    newWorkspace: 'Add a workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
@@ -112,6 +114,7 @@ export default {
       tooltip: {
         noPassword: 'Disabled cause of SAML Authentication',
       },
+      firstname: 'Firstname',
     },
   },
   groups: {
@@ -175,6 +178,11 @@ export default {
     email: 'Email',
     lang: 'Language',
     details: 'Details',
+  },
+  workspaces: {
+    name: 'Name',
+    description: 'Descritpion',
+    members: 'Members'
   },
   tableHeaders: {
     groups: {

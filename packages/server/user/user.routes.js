@@ -21,6 +21,7 @@ router.put('/:userId', users.update);
 router.get('/:userId', users.read);
 router.post('', users.create);
 router.get('', users.list);
+router.get('/group/:groupId', users.getByGroupId);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

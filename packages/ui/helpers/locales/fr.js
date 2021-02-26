@@ -32,6 +32,8 @@ export default {
     newUser: 'Ajouter un utilisateur',
     group: 'Groupe | Groupes',
     newGroup: 'Ajouter un groupe',
+    workspace: 'Workspace',
+    newWorkspace: 'Ajouter un workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
@@ -110,6 +112,7 @@ export default {
           valid: 'Un email valide est requis',
         },
       },
+      firstname: 'Prénom',
     },
   },
   groups: {
@@ -178,6 +181,11 @@ export default {
     tooltip: {
       noPassword: "Désactivé à cause de l'authenfication SAML",
     },
+  },
+  workspaces: {
+    name: 'Nom',
+    description: 'Descritpion',
+    members: 'Membres'
   },
   tableHeaders: {
     groups: {

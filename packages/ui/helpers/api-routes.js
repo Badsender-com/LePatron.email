@@ -93,6 +93,10 @@ export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
 
+export function usersByGroupId({groupId}) {
+  return `/users/group/${groupId}`
+}
+
 /// ///
 // MAILINGS
 /// ///
