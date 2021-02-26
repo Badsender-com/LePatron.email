@@ -43,7 +43,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.GROUP_USER],
+      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
       required: false,
     },
 
