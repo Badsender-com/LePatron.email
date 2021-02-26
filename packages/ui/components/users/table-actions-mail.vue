@@ -48,7 +48,9 @@ export default {
     text
     small
     color="primary"
-    >{{ actionText }}</v-btn
+    >
+    <v-icon>send</v-icon>
+  </v-btn
   >
 </template>
 

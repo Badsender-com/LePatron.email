@@ -3,7 +3,7 @@ export default {
     updated: 'Mis à jour',
     created: 'Crée',
     deleted: 'Supprimé',
-    usersFetchError: "Impossible d'accéder à la liste des utilisateur",
+    usersFetchError: 'Impossible d\'accéder à la liste des utilisateurs',
     emailSent: 'Un email a été envoyé',
   },
   global: {
@@ -63,6 +63,7 @@ export default {
     status: 'Statut',
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
+    edit: 'Modifier'
   },
   layout: {
     logout: 'Déconnexion',
@@ -85,7 +86,7 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'Url racine des images',
       editorLabel: 'Libellé du bouton',
-      entryPoint: "Point d'entrée",
+      entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
     },
     template: {
@@ -122,21 +123,21 @@ export default {
   },
   mailings: {
     transfer: {
-      label: "Transférer l'email",
+      label: 'Transférer l\'email',
       success: 'Email transféré',
     },
     creationNotice:
-      "Cliquez sur l'un des templates ci-dessous pour créer un nouvel email",
+      'Cliquez sur l\'un des templates ci-dessous pour créer un nouvel email',
     list: 'Liste des emails',
     filters: {
       createdBetween: 'Crée entre le',
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
-    duplicate: "Dupliquer l'email",
+    duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
-    rename: "Renommer l'email",
+    rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
@@ -165,21 +166,22 @@ export default {
     },
     passwordTooltip: {
       reset: 'Réinitialiser le mot de passe',
-      send: "Envoyer l'email de mot de passe",
-      resend: "Renvoyer l'email de mot de passe",
+      send: 'Envoyer l\'email de mot de passe',
+      resend: 'Renvoyer l\'email de mot de passe',
     },
     enableNotice: 'Êtes-vous sûr de vouloir activer',
     disableNotice: 'Êtes-vous sûr de vouloir désactiver',
     passwordNotice: {
       reset: 'Êtes-vous sûr de vouloir réinitialiser le mot de passe de',
-      send: "Êtes-vous sûr de vouloir envoyer l'email de mot de passe à",
-      resend: "Êtes-vous sûr de vouloir renvoyer l'email de mot de passe à",
+      send: 'Êtes-vous sûr de vouloir envoyer l\'email de mot de passe à',
+      resend: 'Êtes-vous sûr de vouloir renvoyer l\'email de mot de passe à',
     },
     email: 'Email',
     lang: 'Langue',
     details: 'Informations',
+    role: 'Rôle',
     tooltip: {
-      noPassword: "Désactivé à cause de l'authenfication SAML",
+      noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
   },
   workspaces: {

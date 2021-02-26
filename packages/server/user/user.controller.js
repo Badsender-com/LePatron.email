@@ -1,12 +1,15 @@
 'use strict';
 
-const _ = require('lodash');
+const pick = require('lodash').pick;
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
+const Roles = require('./role');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
+const userService = require('../user/user.service.js');
+const groupService = require('../group/group.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -64,16 +67,17 @@ async function getUsersByGroupId(req, res) {
 
 async function create(req, res) {
   const { groupId } = req.body;
-  const group = await Groups.findById(groupId).select('_id').lean();
-  if (!group) throw new createError.BadRequest('group not found');
+  if (!groupId) {
+    throw new createError.BadRequestError('user.controller : in create, no groupId provided in request');
+  }
+  await groupService.findById(groupId);
 
-  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
-  const newUser = await Users.create({
-    _company: groupId,
-    ...userParams,
-  });
-  const user = await Users.findOneForApi({ _id: newUser._id });
-  res.json(user);
+  const userParams = pick(req.body, ['name', 'email', 'lang']);
+  const role = (req.body.role === Roles.GROUP_ADMIN ? Roles.GROUP_ADMIN : Roles.REGULAR_USER);
+
+  const newUser = await userService.createUser({groupId, role, ...userParams});
+  res.json(newUser);
+
 }
 
 /**
@@ -134,25 +138,13 @@ async function readMailings(req, res) {
 
 async function update(req, res) {
   const { userId } = req.params;
-  const userParams = _.pick(req.body, ['name', 'email', 'lang']);
-  const user = await Users.findOneForApi({ _id: userId });
-  if (!user) throw new createError.NotFound();
-
-  // we don't need for this DB request to finish to give the user the response
-  const nameChange = user.name !== userParams.name;
-  if (nameChange) {
-    Mailings.updateMany({ _user: userId }, { author: userParams.name }).then(
-      (result) => {
-        console.log(result.nModified, 'mailings updated for', userParams.name);
-      }
-    );
+  if (!userId) {
+    throw new createError.BadRequestError('user.controller :  in update function, no userId provided in request');
   }
-  const updatedUser = await Users.findByIdAndUpdate(userId, userParams, {
-    runValidators: true,
-  }).populate({
-    path: '_company',
-    select: 'id name',
-  });
+
+  const userParams = pick(req.body, ['name', 'email', 'lang', 'role']);
+  const updatedUser = await userService.updateUser({userId, ...userParams})
+
   res.json(updatedUser);
 }
 
