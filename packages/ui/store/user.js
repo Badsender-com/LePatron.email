@@ -7,24 +7,39 @@ export const state = () => ({
 export const LOCALE = 'LOCALE';
 export const IS_CONNECTED = 'IS_CONNECTED';
 export const IS_ADMIN = 'IS_ADMIN';
+export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
 export const SESSION_ACL = 'SESSION_ACL';
 
 export const getters = {
   [IS_CONNECTED](state) {
+    console.log('IS_CONNECTED');
+    console.log({ user: state.info });
     return state.info != null;
   },
+  [IS_GROUP_ADMIN](state) {
+    console.log('IS_GROUP_ADMIN');
+    console.log({ user: state.info });
+    return state.info != null && state.info.isGroupAdmin === true;
+  },
   [IS_ADMIN](state) {
+    console.log('IS_ADMIN');
+    console.log({ user: state.info });
     return state.info != null && state.info.isAdmin === true;
   },
   [LOCALE](state) {
+    console.log('LOCALE');
+    console.log({ user: state.info });
     return state.info != null && state.info.lang;
   },
   [SESSION_ACL](state) {
+    console.log('SESSION_ACL');
+    console.log({ user: state.info });
     const hasSession = state.info != null;
     return {
       isConnected: hasSession,
       isUser: hasSession && state.info.isAdmin !== true,
       isAdmin: hasSession && state.info.isAdmin === true,
+      isGroupAdmin: hasSession && state.info.isGroupAdmin === true,
     };
   },
 };

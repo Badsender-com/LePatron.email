@@ -30,10 +30,10 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 
-const workers =
-  (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
-    ? process.env.WORKERS
-    : require('os').cpus().length) || require('os').cpus().length;
+const workers = 1;
+// (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
+// ? process.env.WORKERS
+// : require('os').cpus().length) || require('os').cpus().length;
 
 if (cluster.isMaster) {
   console.log('start cluster with %s workers', workers);

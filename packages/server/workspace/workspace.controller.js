@@ -19,9 +19,12 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const workspaces = await Workspaces.find({}).populate({
+  const workspace = req.user._company;
+  console.log(workspace);
+  const workspaces = await Workspaces.find({ _id: workspace }).populate({
     path: 'folders',
-    populate: { path: '_parentFolder' },
+    populate: { path: 'childFolders' },
   });
+
   res.json({ items: workspaces });
 }

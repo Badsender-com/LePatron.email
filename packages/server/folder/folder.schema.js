@@ -34,4 +34,11 @@ FolderSchema.add({
   },
 });
 
+FolderSchema.virtual('childFolders', {
+  ref: FolderModel,
+  localField: '_id',
+  foreignField: '_parentFolder',
+  justOne: false,
+});
+
 module.exports = FolderSchema;
