@@ -9,7 +9,6 @@ const WorkSpaceSchema = Schema(
   {
     name: {
       type: String,
-      unique: true,
       set: normalizeString,
       required: [true, 'Folder name is required'],
     },
