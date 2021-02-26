@@ -67,13 +67,9 @@ async function create(req, res) {
   const userParams = pick(req.body, ['name', 'email', 'lang']);
   const role = (req.body.role === Roles.GROUP_ADMIN ? Roles.GROUP_ADMIN : Roles.REGULAR_USER);
 
-  try {
-    const newUser = await userService.createUser({groupId, role, ...userParams});
-    res.json(newUser);
-  } catch (e) {
-    console.error('user.controller : An error occurred while creating user', e)
-    res.json(e);
-  }
+  const newUser = await userService.createUser({groupId, role, ...userParams});
+  res.json(newUser);
+
 }
 
 /**
