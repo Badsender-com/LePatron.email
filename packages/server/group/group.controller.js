@@ -63,12 +63,13 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const defaultWorkspaceName = req.body.defaultWorkspaceName;
+  let defaultWorkspaceName = req.body.defaultWorkspaceName;
   if (!defaultWorkspaceName) {
-    throw new createError.BadRequestError('group.controller : in create, no name for default workspace provided in request')
+    defaultWorkspaceName = 'Workspace';
   }
   const newGroup = await groupService.createGroup(req.body);
-  await workspaceService.createWorkspace({ name: defaultWorkspaceName, group: newGroup });
+  const workspaceParams = { name: defaultWorkspaceName, group: newGroup };
+  await workspaceService.createWorkspace(workspaceParams);
   res.json(newGroup);
 }
 

@@ -16,6 +16,7 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      groupCreationPage:  this.$route.path === '/groups/new',
     };
   },
   computed: {
@@ -39,9 +40,6 @@ export default {
         },
       ];
     },
-    groupCreationPage() {
-      return this.$route.path === '/groups/new';
-    }
   },
   watch: {
     useSamlAuthentication: {
@@ -72,12 +70,10 @@ export default {
       ftpButtonLabel: { required },
     };
 
-    const defaultWorkspaceName = this.groupCreationPage ? { required } : { };
-
     return {
       group: {
         name: { required },
-        defaultWorkspaceName,
+        defaultWorkspaceName: {},
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
       },
@@ -133,7 +129,6 @@ export default {
                 name="defaultWorkspaceName"
                 required
                 :disabled="disabled"
-                :error-messages="requiredErrors(`name`)"
                 @input="$v.group.defaultWorkspaceName.$touch()"
                 @blur="$v.group.defaultWorkspaceName.$touch()"
               />

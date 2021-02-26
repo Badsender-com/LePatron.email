@@ -18,6 +18,5 @@ async function findById(groupId) {
 }
 
 async function createGroup(groupParams) {
-  const newGroup = await Groups.create(groupParams);
-  return newGroup;
+  return Groups.create(groupParams);
 }
