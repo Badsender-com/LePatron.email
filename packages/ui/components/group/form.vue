@@ -72,10 +72,12 @@ export default {
       ftpButtonLabel: { required },
     };
 
+    const defaultWorkspaceName = this.groupCreationPage ? { required } : { };
+
     return {
       group: {
         name: { required },
-        defaultWorkspaceName: { required },
+        defaultWorkspaceName,
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
       },
@@ -124,7 +126,7 @@ export default {
 
 
               <v-text-field
-                v-if="groupCreationPage"
+                v-if="this.groupCreationPage"
                 v-model="localModel.defaultWorkspaceName"
                 id="name"
                 :label="$t('forms.group.defaultWorkspace.label')"
