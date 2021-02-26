@@ -3,12 +3,12 @@ export default {
     updated: 'Updated',
     created: 'Created',
     deleted: 'Deleted',
-    usersFetchError: "Unable to access users' list",
+    usersFetchError: 'Unable to access users\' list',
     emailSent: 'An email was sent',
   },
   global: {
     errors: {
-      errorOccured: 'An error has occured',
+      errorOccured: 'An error has occurred',
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
@@ -47,7 +47,7 @@ export default {
     show: 'Show',
     download: 'Download',
     preview: 'Preview',
-    newPreview: 'Create a previeq',
+    newPreview: 'Create a preview',
     name: 'Name',
     description: 'Description',
     author: 'Author',
@@ -61,6 +61,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
+    edit: 'Edit'
   },
   layout: {
     logout: 'Logout',
@@ -79,8 +80,8 @@ export default {
       host: 'Host',
       username: 'Username',
       port: 'Port',
-      path: "Folder's path",
-      endpoint: "Images root'url",
+      path: 'Folder\'s path',
+      endpoint: 'Images root\'url',
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
@@ -116,13 +117,13 @@ export default {
   },
   groups: {
     tabs: {
-      informations: 'Informations',
+      informations: 'Information',
     },
   },
   mailings: {
     transfer: {
       label: 'Transfer email',
-      success: 'Email transfered',
+      success: 'Email transferred',
     },
     creationNotice: 'Click on any of above templates to create email',
     list: 'Emails list',
@@ -131,7 +132,7 @@ export default {
       updatedBetween: 'Updated between',
       and: 'And',
     },
-    duplicate: 'Duplcate email',
+    duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
@@ -150,7 +151,7 @@ export default {
       'Deleting a template will also remove every mailings using this one',
   },
   tags: {
-    list: "Tags' list",
+    list: 'Tags\' list',
     new: 'New tags',
     handle: 'Handle tags',
   },
@@ -162,8 +163,8 @@ export default {
     },
     passwordTooltip: {
       reset: 'Reset password',
-      send: "Send password's email",
-      resend: "Resend password's email",
+      send: 'Send password\'s email',
+      resend: 'Resend password\'s email',
     },
     enableNotice: 'are you sure you want to enable',
     disableNotice: 'Are you sure you want to disable',
@@ -175,6 +176,7 @@ export default {
     email: 'Email',
     lang: 'Language',
     details: 'Details',
+    role: 'Role'
   },
   tableHeaders: {
     groups: {
@@ -183,7 +185,7 @@ export default {
       ftpDownload: 'FTP download',
     },
     users: {
-      passwordMail: "Password' mail",
+      passwordMail: 'Password\' mail',
     },
     templates: {
       markup: 'Markup?',

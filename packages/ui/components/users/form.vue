@@ -1,14 +1,18 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required, maxLength, email } from 'vuelidate/lib/validators';
+import { required, email } from 'vuelidate/lib/validators';
 
 export default {
-  name: `bs-user-form`,
+  name : `bs-user-form`,
   mixins: [validationMixin],
   model: { prop: `user`, event: `update` },
   supportedLanguages: [
     { text: `English`, value: `en` },
     { text: `Français`, value: `fr` },
+  ],
+  roles: [
+    { text: `Group admin`, value: `company_admin` },
+    { text: `Regular user`, value: `regular_user` }
   ],
   props: {
     user: { type: Object, default: () => ({}) },
@@ -21,6 +25,7 @@ export default {
       user: {
         email: { required, email },
         name: { required },
+        role: { required }
       },
     };
   },
@@ -96,6 +101,15 @@ export default {
             :label="$t('users.lang')"
             name="lang"
             :items="$options.supportedLanguages"
+          />
+        </v-col>
+        <v-col cols="6">
+          <v-select
+            v-model="user.role"
+            id="lang"
+            :label="$t('users.role')"
+            name="role"
+            :items="$options.roles"
           />
         </v-col>
       </v-row>
