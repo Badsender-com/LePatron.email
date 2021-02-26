@@ -4,6 +4,7 @@ import BsUserTableActionsMail from '~/components/users/table-actions-mail.vue';
 import BsUserTableActionsActivation from '~/components/users/table-actions-activation.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsActionsDropdown from "~/components/users/actions-dropdown";
+import { Roles } from '~/helpers/constants/roles';
 
 export default {
   name: `bs-users-table`,
@@ -20,7 +21,10 @@ export default {
     loading: { type: Boolean, default: false },
   },
   data() {
-    return { selectedUser: { group: {} } };
+    return {
+      selectedUser: { group: {} },
+      roles: Roles
+    };
   },
   computed: {
     tableHeaders() {
@@ -105,7 +109,8 @@ export default {
       </template>
       <template v-slot:item.role="{ item }">
         <v-badge
-          v-if="item.role === 'company_admin'"
+          v-if="
+          item.role === roles.GROUP_ADMIN"
           inline
           content="Company admin"
         />
