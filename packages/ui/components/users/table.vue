@@ -109,8 +109,7 @@ export default {
       </template>
       <template v-slot:item.role="{ item }">
         <v-badge
-          v-if="
-          item.role === roles.GROUP_ADMIN"
+          v-if="item.role === roles.GROUP_ADMIN"
           inline
           content="Company admin"
         />
