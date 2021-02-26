@@ -107,7 +107,7 @@ export default {
         <v-badge
           v-if="item.role === 'company_admin'"
           inline
-          content="Admin"
+          content="Company admin"
         />
       </template>
       <template v-slot:item.group="{ item }">
