@@ -81,13 +81,10 @@ export default {
             username,
             password,
           });
-          let paylod;
-          if (user.isAdmin) {
-            paylod = { isAdmin: user.isAdmin };
-          } else {
-            paylod = { isGroupAdmin: user.isGroupAdmin };
-          }
-          this.$store.commit(`${USER}/${M_USER_SET}`, paylod);
+
+          this.$store.commit(`${USER}/${M_USER_SET}`, {
+            isAdmin: user.isAdmin,
+          });
 
           $router.go();
         } catch (err) {
