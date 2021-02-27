@@ -2,7 +2,7 @@
 import * as userStatusHelpers from '~/helpers/user-status.js';
 
 export default {
-  name: `bs-users-table-actions-mail`,
+  name: 'BsUsersTableActionsMail',
   props: {
     user: { type: Object, default: () => ({ group: {} }) },
     loading: { type: Boolean, default: false },
@@ -13,26 +13,27 @@ export default {
     },
     actionText() {
       const { actionDisplay } = this;
-      if (actionDisplay.activate) return ``;
+      if (actionDisplay.activate) return '';
       if (actionDisplay.resetPassword)
         return `${this.$t('users.actions.reset')}`;
       if (actionDisplay.sendPassword) return `${this.$t('users.actions.send')}`;
       if (actionDisplay.reSendPassword)
         return `${this.$t('users.actions.resend')}`;
+      return '';
     },
   },
   methods: {
     mailAction() {
       const { actionDisplay } = this;
-      if (actionDisplay.activate) return ``;
+      if (actionDisplay.activate) return '';
       if (actionDisplay.resetPassword) {
-        return this.$emit(`resetPassword`, this.user);
+        return this.$emit('resetPassword', this.user);
       }
       if (actionDisplay.sendPassword) {
-        return this.$emit(`sendPassword`, this.user);
+        return this.$emit('sendPassword', this.user);
       }
       if (actionDisplay.reSendPassword) {
-        return this.$emit(`resendPassword`, this.user);
+        return this.$emit('resendPassword', this.user);
       }
     },
   },
@@ -43,13 +44,14 @@ export default {
   <v-btn
     v-if="!actionDisplay.activate"
     class="bs-users-table-actions-mail"
-    @click="mailAction"
     :disabled="loading"
     text
     small
     color="primary"
-    >{{ actionText }}</v-btn
+    @click="mailAction"
   >
+    <v-icon>send</v-icon>
+  </v-btn>
 </template>
 
 <style lang="scss" scoped></style>

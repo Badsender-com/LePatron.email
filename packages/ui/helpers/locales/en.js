@@ -8,7 +8,7 @@ export default {
   },
   global: {
     errors: {
-      errorOccured: 'An error has occured',
+      errorOccured: 'An error has occurred',
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
@@ -49,7 +49,7 @@ export default {
     settings: 'Settings',
     download: 'Download',
     preview: 'Preview',
-    newPreview: 'Create a previeq',
+    newPreview: 'Create a preview',
     name: 'Name',
     description: 'Description',
     author: 'Author',
@@ -63,6 +63,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
+    edit: 'Edit',
   },
   layout: {
     logout: 'Logout',
@@ -73,6 +74,9 @@ export default {
         label: 'Zip file format',
         wrapped: 'Wrap in a parent folder',
         unwrapped: 'Leave files in root folder',
+      },
+      defaultWorkspace: {
+        label: 'Default workspace\'s name',
       },
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',
@@ -118,13 +122,13 @@ export default {
   },
   groups: {
     tabs: {
-      informations: 'Informations',
+      informations: 'Information',
     },
   },
   mailings: {
     transfer: {
       label: 'Transfer email',
-      success: 'Email transfered',
+      success: 'Email transferred',
     },
     creationNotice: 'Click on any of above templates to create email',
     list: 'Emails list',
@@ -133,7 +137,7 @@ export default {
       updatedBetween: 'Updated between',
       and: 'And',
     },
-    duplicate: 'Duplcate email',
+    duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
@@ -177,6 +181,7 @@ export default {
     email: 'Email',
     lang: 'Language',
     details: 'Details',
+    role: 'Role',
   },
   tableHeaders: {
     groups: {

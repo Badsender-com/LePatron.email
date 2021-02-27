@@ -9,25 +9,35 @@ import BsGroupMenu from '~/components/group/menu.vue';
 import BsUserForm from '~/components/users/form.vue';
 
 export default {
-  name: `bs-page-group-new-user`,
-  mixins: [mixinPageTitle],
+  name: 'BsPageGroupNewUser',
   components: { BsGroupMenu, BsUserForm },
+  mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
   },
-  head() {
-    return { title: this.title };
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+    try {
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+      return { group: groupResponse };
+    } catch (error) {
+      console.log(error);
+    }
   },
   data() {
     return {
       group: {},
       loading: false,
       newUser: {
-        email: ``,
-        name: ``,
-        lang: `fr`,
+        email: '',
+        name: '',
+        lang: 'fr',
+        role: 'regular_user',
       },
     };
+  },
+  head() {
+    return { title: this.title };
   },
   computed: {
     title() {
@@ -38,15 +48,6 @@ export default {
     groupId() {
       return this.$route.params.groupId;
     },
-  },
-  async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
-    try {
-      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
-      return { group: groupResponse };
-    } catch (error) {
-      console.log(error);
-    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -60,13 +61,13 @@ export default {
         });
         this.showSnackbar({
           text: this.$t('snackbars.created'),
-          color: `success`,
+          color: 'success',
         });
         this.$router.push(apiRoutes.usersItem({ userId: user.id }));
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -79,12 +80,12 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-group-menu />
     </template>
     <bs-user-form
-      :title="$t('global.newUser')"
       v-model="newUser"
+      :title="$t('global.newUser')"
       :loading="loading"
       @submit="createUser"
     />

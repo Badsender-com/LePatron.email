@@ -63,6 +63,7 @@ export default {
     status: 'Statut',
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
+    edit: 'Modifier',
   },
   layout: {
     logout: 'Déconnexion',
@@ -73,6 +74,9 @@ export default {
         label: 'Format du fichier zip',
         wrapped: 'Englober dans un dossier parent',
         unwrapped: 'Laisser les fichiers à la racine',
+      },
+      defaultWorkspace: {
+        label: 'Nom du workspace par défaut',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
@@ -177,6 +181,7 @@ export default {
     email: 'Email',
     lang: 'Langue',
     details: 'Informations',
+    role: 'Rôle',
     tooltip: {
       noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
