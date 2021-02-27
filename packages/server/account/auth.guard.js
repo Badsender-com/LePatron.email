@@ -57,7 +57,7 @@ function guard(role = 'user', redirect = false) {
       return;
     }
 
-    if (isGroupAdminRoute && !!user.isAdmin) {
+    if (isGroupAdminRoute && !user.isGroupAdmin) {
       redirect
         ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
