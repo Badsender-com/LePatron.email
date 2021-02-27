@@ -1,11 +1,11 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
-const { Workspaces } = require('../common/models.common.js');
+const { createWorkspace, listWorkspace } = require('./workspace.service');
 
 module.exports = {
   list: asyncHandler(list),
+  create: asyncHandler(createWorkspace),
 };
 
 /**
@@ -19,13 +19,6 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const workspace = req.user._company;
-  const workspaces = await Workspaces.find({
-    _company: mongoose.Types.ObjectId(workspace.id),
-  }).populate({
-    path: 'folders',
-    populate: { path: 'childFolders' },
-  });
-
+  const workspaces = await listWorkspace(req.user._company);
   res.json({ items: workspaces });
 }

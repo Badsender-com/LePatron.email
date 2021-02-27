@@ -9,7 +9,6 @@ export default async function authMiddleware(nuxtContext) {
   const userSessionInfo = store.getters[`${USER}/${SESSION_ACL}`];
   const meta = route.meta.reduce(flattenMeta, {});
   const authorizations = pageAcl.getAuthorizations(meta.acl);
-  console.log({ authorizations });
   if (authorizations.notConnected && userSessionInfo.isConnected) {
     if (userSessionInfo.isUser) return redirect('/');
     if (userSessionInfo.isGroupAdmin) return redirect('/');

@@ -12,28 +12,18 @@ export const SESSION_ACL = 'SESSION_ACL';
 
 export const getters = {
   [IS_CONNECTED](state) {
-    console.log('IS_CONNECTED');
-    console.log({ user: state.info });
     return state.info != null;
   },
   [IS_GROUP_ADMIN](state) {
-    console.log('IS_GROUP_ADMIN');
-    console.log({ user: state.info });
     return state.info != null && state.info.isGroupAdmin === true;
   },
   [IS_ADMIN](state) {
-    console.log('IS_ADMIN');
-    console.log({ user: state.info });
     return state.info != null && state.info.isAdmin === true;
   },
   [LOCALE](state) {
-    console.log('LOCALE');
-    console.log({ user: state.info });
     return state.info != null && state.info.lang;
   },
   [SESSION_ACL](state) {
-    console.log('SESSION_ACL');
-    console.log({ user: state.info });
     const hasSession = state.info != null;
     return {
       isConnected: hasSession,

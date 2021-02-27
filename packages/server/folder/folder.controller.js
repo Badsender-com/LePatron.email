@@ -2,8 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 
-const { Folders } = require('../common/models.common.js');
-
+const { listFolders } = require('./folder.service');
 module.exports = {
   list: asyncHandler(list),
 };
@@ -19,7 +18,7 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const folders = await Folders.find({}).populate('_parentFolder');
+  const folders = await listFolders();
   res.json({
     items: folders,
   });
