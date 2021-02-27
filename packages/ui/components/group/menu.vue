@@ -1,9 +1,6 @@
 <script>
-import BsGroupWorkspaceList from './workspaces-list.vue';
-
 export default {
   name: 'BsGroupMenu',
-  components: { BsGroupWorkspaceList },
   computed: {
     groupId() {
       return this.$route.params.groupId;
@@ -33,9 +30,7 @@ export default {
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $t('global.newTemplate')
-              }}
+              {{ $t('global.newTemplate') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -52,8 +47,6 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <v-system-bar />
-      <bs-group-workspace-list />
     </v-col>
   </v-row>
 </template>

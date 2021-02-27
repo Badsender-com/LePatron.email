@@ -37,7 +37,10 @@ export const getters = {
     const hasSession = state.info != null;
     return {
       isConnected: hasSession,
-      isUser: hasSession && state.info.isAdmin !== true,
+      isUser:
+        hasSession &&
+        state.info.isAdmin !== true &&
+        state.info.isGroupAdmin !== true,
       isAdmin: hasSession && state.info.isAdmin === true,
       isGroupAdmin: hasSession && state.info.isGroupAdmin === true,
     };

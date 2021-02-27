@@ -67,9 +67,11 @@ export default {
     class="mx-auto"
     width="300"
   >
+    <v-subheader>{{ 'Workspaces' }}</v-subheader>
     <v-treeview
       v-model="tree"
       :items="items"
+      open-all
       activatable
       item-key="name"
     >
@@ -95,7 +97,6 @@ export default {
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
-
           <v-list>
             <v-list-item>
               <v-list-item-title>Éditer</v-list-item-title>
