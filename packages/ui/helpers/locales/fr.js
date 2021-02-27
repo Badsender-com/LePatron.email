@@ -61,7 +61,9 @@ export default {
     status: 'Statut',
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
-    edit: 'Modifier'
+    edit: 'Modifier',
+    workspace: 'Workspace',
+    workspaces: 'Workspaces',
   },
   layout: {
     logout: 'Déconnexion',

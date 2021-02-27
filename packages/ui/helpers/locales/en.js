@@ -61,7 +61,9 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
-    edit: 'Edit'
+    edit: 'Edit',
+    workspace: 'Workspace',
+    workspaces: 'Workspaces'
   },
   layout: {
     logout: 'Logout',

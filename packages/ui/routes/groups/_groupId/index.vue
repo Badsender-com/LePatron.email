@@ -10,6 +10,7 @@ import BsGroupForm from '~/components/group/form.vue';
 import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
+import BsWorkspacesTab from '~/components/group/workspaces-tab.vue';
 
 export default {
   name: `bs-page-group`,
@@ -23,6 +24,7 @@ export default {
     BsGroupUsersTab,
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
+    BsWorkspacesTab,
   },
   head() {
     return { title: this.title };
@@ -91,6 +93,7 @@ export default {
         $t('groups.tabs.informations')
       }}</v-tab>
       <v-tab href="#group-templates">{{ $tc('global.template', 2) }}</v-tab>
+      <v-tab href="#group-workspaces">{{ $tc('global.workspaces', 2) }}</v-tab>
       <v-tab href="#group-mailings">{{ $tc('global.mailing', 2) }}</v-tab>
       <v-tab href="#group-users">{{ $tc('global.user', 2) }}</v-tab>
       <v-tab-item value="group-informations" eager>
@@ -103,6 +106,9 @@ export default {
       </v-tab-item>
       <v-tab-item value="group-templates">
         <bs-group-templates-tab />
+      </v-tab-item>
+      <v-tab-item value="group-workspaces">
+        <bs-workspaces-tab />
       </v-tab-item>
       <v-tab-item value="group-mailings">
         <bs-group-mailings-tab />
