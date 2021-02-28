@@ -4,6 +4,7 @@ import BsUserTableActionsMail from '~/components/users/table-actions-mail.vue';
 import BsUserTableActionsActivation from '~/components/users/table-actions-activation.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsActionsDropdown from "~/components/users/actions-dropdown";
+import { Roles } from '~/helpers/constants/roles';
 
 export default {
   name: `bs-users-table`,
@@ -20,12 +21,16 @@ export default {
     loading: { type: Boolean, default: false },
   },
   data() {
-    return { selectedUser: { group: {} } };
+    return {
+      selectedUser: { group: {} },
+      roles: Roles
+    };
   },
   computed: {
     tableHeaders() {
       return [
         { text: this.$t('users.email'), align: `left`, value: `email` },
+        { text: '', value: `role` },
         { text: this.$t('global.name'), align: `left`, value: `name` },
         {
           text: this.$tc('global.group', 1),
@@ -101,6 +106,13 @@ export default {
     >
       <template v-slot:item.email="{ item }">
         <nuxt-link :to="`/users/${item.id}`">{{ item.email }}</nuxt-link>
+      </template>
+      <template v-slot:item.role="{ item }">
+        <v-badge
+          v-if="item.role === roles.GROUP_ADMIN"
+          inline
+          content="Company admin"
+        />
       </template>
       <template v-slot:item.group="{ item }">
         <nuxt-link :to="`/groups/${item.group.id}`">{{
