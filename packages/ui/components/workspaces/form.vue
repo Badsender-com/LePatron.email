@@ -67,7 +67,7 @@ export default {
     <v-card-title v-if="title">{{ title }}</v-card-title>
     <v-card-text>
       <v-row>
-        <v-col cols="4">
+        <v-col cols="5">
           <v-text-field
             v-model="workspace.name"
             id="email"
@@ -79,44 +79,21 @@ export default {
             @blur="$v.workspace.name.$touch()"
           />
         </v-col>
-        <v-col cols="6">
+        <v-col cols="6" class="ml-auto">
           <h4>{{this.$t('workspaces.members')}}</h4>
           <br/>
           <v-data-table
             v-model="selected"
-            v-bind:headers="headers"
-            v-bind:items="users"
+            :headers="headers"
+            :items="users"
             show-select
             item-key="id"
-          >
-            <template slot="headers" slot-scope="props">
-              <tr>
-                <th v-for="header in props.headers"
-                    :key="header.text"
-                >
-                  {{ header.text }}
-                </th>
-              </tr>
-            </template>
-            <template slot="items" slot-scope="props">
-              <tr :active="props.selected" @click="props.selected = !props.selected">
-                <td>
-                  <v-checkbox
-                    primary
-                    hide-details
-                    :input-value="props.selected">
+          />
 
-                  </v-checkbox>
-                </td>
-                <td> {{ props.item.name }}</td>
-                <td class="text-right"> {{ props.item.firstname }}</td>
-              </tr>
-            </template>
-          </v-data-table>
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="4">
+        <v-col cols="5">
           <v-text-field
             v-model="workspace.description"
             id="description"
