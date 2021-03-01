@@ -9,12 +9,12 @@ module.exports = {
 };
 
 /**
- * @api {get} /workspace list of mailings
+ * @api {get} /workspace list of workspaces with folders
  * @apiPermission group_admin
- * @apiName getWorkspaces
- * @apiGroup workspaces
+ * @apiName GetWorkspaces
+ * @apiGroup Workspaces
  *
- * @apiUse workspaces
+ * @apiUse workspace
  * @apiSuccess {workspace[]} items list of workspace
  */
 

@@ -10,11 +10,11 @@ module.exports = {
 /**
  * @api {get} /folders list of folders
  * @apiPermission group_admin
- * @apiName getFolders
+ * @apiName GetFolders
  * @apiGroup Folders
  *
- * @apiUse folders
- * @apiSuccess {folders[]} items list of folder
+ * @apiUse folder
+ * @apiSuccess {folders[]} items list of folders
  */
 
 async function list(req, res) {

@@ -5,6 +5,16 @@ const { normalizeString } = require('../utils/model');
 const { ObjectId } = Schema.Types;
 const { FolderModel, WorkspaceModel } = require('../constant/model.names.js');
 
+/**
+ * @apiDefine folder
+ * @apiSuccess {String} id
+ * @apiSuccess {String} name
+ * @apiSuccess {Date} createdAt
+ * @apiSuccess {Date} updatedAt
+ * @apiSuccess {String} _workspace if we want to directly link the folder to a workspace
+ * @apiSuccess {String} _parentFolder if we want to directly link the folder to another parent folder
+ */
+
 const FolderSchema = Schema(
   {
     name: {

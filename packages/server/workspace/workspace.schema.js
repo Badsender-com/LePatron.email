@@ -5,6 +5,16 @@ const { normalizeString } = require('../utils/model');
 const { GroupModel, UserModel } = require('../constant/model.names.js');
 const { ObjectId } = Schema.Types;
 
+/**
+ * @apiDefine workspace
+ * @apiSuccess {String} id
+ * @apiSuccess {String} name
+ * @apiSuccess {Date} createdAt
+ * @apiSuccess {Date} updatedAt
+ * @apiSuccess {String} _company group associated with the workspace
+ * @apiSuccess {String} _users list of users that are part of the workspace
+ */
+
 const WorkspaceSchema = Schema(
   {
     name: {

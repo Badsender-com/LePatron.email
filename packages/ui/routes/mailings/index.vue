@@ -316,9 +316,7 @@ export default {
                   </v-list-item-avatar>
                   <v-list-item-content>
                     <v-list-item-title>
-                      {{
-                        $t('global.settings')
-                      }}
+                      {{ $t('global.settings') }}
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>

@@ -38,9 +38,7 @@ export default {
         >
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $tc('global.mailing', 2)
-              }}
+              {{ $tc('global.mailing', 2) }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -61,9 +59,7 @@ export default {
           >
             <v-list-item-content>
               <v-list-item-title>
-                {{
-                  $tc('global.group', 2)
-                }}
+                {{ $tc('global.group', 2) }}
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
@@ -83,9 +79,7 @@ export default {
           >
             <v-list-item-content>
               <v-list-item-title>
-                {{
-                  $tc('global.template', 2)
-                }}
+                {{ $tc('global.template', 2) }}
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
@@ -116,9 +110,7 @@ export default {
         to="/"
         class="ml-2"
       >
-        {{
-          $tc('global.mailing', 2)
-        }}
+        {{ $tc('global.mailing', 2) }}
       </v-btn>
       <v-btn
         text
@@ -127,9 +119,7 @@ export default {
         to="/mailings/new"
         class="ml-2"
       >
-        {{
-          $t('global.newMailing')
-        }}
+        {{ $t('global.newMailing') }}
       </v-btn>
       <template v-if="isAdmin">
         <v-tooltip bottom>
