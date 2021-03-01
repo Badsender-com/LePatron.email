@@ -1,10 +1,11 @@
 <script>
 import { validationMixin } from 'vuelidate';
+import formMixin from '../../helpers/mixin-form';
 import { required, email } from 'vuelidate/lib/validators';
 
 export default {
   name: 'BsUserForm',
-  mixins: [validationMixin],
+  mixins: [validationMixin, formMixin],
   model: { prop: 'user', event: 'update' },
   supportedLanguages: [
     { text: 'English', value: 'en' },
@@ -57,8 +58,7 @@ export default {
   },
   methods: {
     onSubmit() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (!this.isValidForm()) return;
       this.$emit('submit', this.user);
     },
   },

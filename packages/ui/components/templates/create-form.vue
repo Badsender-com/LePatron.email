@@ -1,11 +1,12 @@
 <script>
 import { validationMixin } from 'vuelidate';
+import formMixin from '../../helpers/mixin-form';
 import { required } from 'vuelidate/lib/validators';
 
 export default {
-  name: `bs-template-form`,
-  mixins: [validationMixin],
-  model: { prop: `template`, event: `update` },
+  name: 'BsTemplateForm',
+  mixins: [validationMixin, formMixin],
+  model: { prop: 'template', event: 'update' },
   props: {
     template: { type: Object, default: () => ({}) },
     disabled: { type: Boolean, default: false },
@@ -23,7 +24,7 @@ export default {
         return this.template;
       },
       set(updatedTemplate) {
-        this.$emit(`update`, updatedTemplate);
+        this.$emit('update', updatedTemplate);
       },
     },
     nameErrors() {
@@ -36,9 +37,8 @@ export default {
   },
   methods: {
     onSubmit() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
-      this.$emit(`submit`, this.template);
+      if (!this.isValidForm()) return;
+      this.$emit('submit', this.template);
     },
   },
 };
@@ -49,8 +49,8 @@ export default {
     <v-card-title>{{ $t('global.newTemplate') }}</v-card-title>
     <v-card-text>
       <v-text-field
-        v-model="localModel.name"
         id="name"
+        v-model="localModel.name"
         :label="$t('global.name')"
         name="name"
         :error-messages="nameErrors"
@@ -59,8 +59,8 @@ export default {
         @blur="$v.template.name.$touch()"
       />
       <v-textarea
-        v-model="localModel.description"
         id="description"
+        v-model="localModel.description"
         :label="$t('global.description')"
         name="description"
         auto-grow
@@ -74,10 +74,11 @@ export default {
         text
         large
         color="primary"
-        @click="onSubmit"
         :disabled="disabled"
-        >{{ $t('global.create') }}</v-btn
+        @click="onSubmit"
       >
+        {{ $t('global.create') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

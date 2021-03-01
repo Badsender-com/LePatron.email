@@ -1,10 +1,11 @@
 <script>
 import { validationMixin } from 'vuelidate';
+import formMixin from '../../helpers/mixin-form';
 import { required } from 'vuelidate/lib/validators';
 
 export default {
   name: 'BsGroupForm',
-  mixins: [validationMixin],
+  mixins: [validationMixin, formMixin],
   model: { prop: 'group', event: 'update' },
   props: {
     group: { type: Object, default: () => ({}) },
@@ -82,16 +83,8 @@ export default {
     };
   },
   methods: {
-    requiredErrors(fieldName) {
-      const errors = [];
-      if (!this.$v.group[fieldName].$dirty) return errors;
-      !this.$v.group[fieldName].required &&
-        errors.push(this.$t('global.errors.required'));
-      return errors;
-    },
     onSubmit() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (!this.isValidForm()) return;
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
@@ -104,11 +97,7 @@ export default {
 </script>
 
 <template>
-  <v-card
-    :flat="flat"
-    :tile="flat"
-    tag="form"
-  >
+  <v-card :flat="flat" :tile="flat" tag="form">
     <v-card-text>
       <v-row>
         <v-col cols="12">
@@ -121,7 +110,7 @@ export default {
                 name="name"
                 required
                 :disabled="disabled"
-                :error-messages="requiredErrors(`name`)"
+                :error-messages="requiredErrors(`name`, group)"
                 @input="$v.group.name.$touch()"
                 @blur="$v.group.name.$touch()"
               />
@@ -181,7 +170,7 @@ export default {
                     :label="$t('forms.group.host')"
                     placeholder="ex: 127.0.0.1"
                     name="ftpHost"
-                    :error-messages="requiredErrors(`ftpHost`)"
+                    :error-messages="requiredErrors(`ftpHost`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpHost.$touch()"
                     @blur="$v.group.ftpHost.$touch()"
@@ -194,7 +183,7 @@ export default {
                     v-model="localModel.ftpUsername"
                     :label="$t('forms.group.username')"
                     name="ftpUsername"
-                    :error-messages="requiredErrors(`ftpUsername`)"
+                    :error-messages="requiredErrors(`ftpUsername`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpUsername.$touch()"
                     @blur="$v.group.ftpUsername.$touch()"
@@ -208,7 +197,7 @@ export default {
                     type="password"
                     :label="$t('global.password')"
                     name="ftpPassword"
-                    :error-messages="requiredErrors(`ftpPassword`)"
+                    :error-messages="requiredErrors(`ftpPassword`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpPassword.$touch()"
                     @blur="$v.group.ftpPassword.$touch()"
@@ -222,7 +211,7 @@ export default {
                     :label="$t('forms.group.port')"
                     placeholder="ex: 22"
                     name="ftpPort"
-                    :error-messages="requiredErrors(`ftpPort`)"
+                    :error-messages="requiredErrors(`ftpPort`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpPort.$touch()"
                     @blur="$v.group.ftpPort.$touch()"
@@ -236,7 +225,7 @@ export default {
                     :label="$t('forms.group.path')"
                     placeholder="ex: ./mailing/"
                     name="ftpPathOnServer"
-                    :error-messages="requiredErrors(`ftpPathOnServer`)"
+                    :error-messages="requiredErrors(`ftpPathOnServer`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpPathOnServer.$touch()"
                     @blur="$v.group.ftpPathOnServer.$touch()"
@@ -261,7 +250,7 @@ export default {
                     :label="$t('forms.group.endpoint')"
                     placeholder="ex: images.example.com"
                     name="ftpEndPoint"
-                    :error-messages="requiredErrors(`ftpEndPoint`)"
+                    :error-messages="requiredErrors(`ftpEndPoint`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpEndPoint.$touch()"
                     @blur="$v.group.ftpEndPoint.$touch()"
@@ -275,7 +264,7 @@ export default {
                     :label="$t('forms.group.editorLabel')"
                     placeholder="ex: FTP Download"
                     name="ftpButtonLabel"
-                    :error-messages="requiredErrors(`ftpButtonLabel`)"
+                    :error-messages="requiredErrors(`ftpButtonLabel`, group)"
                     :disabled="disabled"
                     @input="$v.group.ftpButtonLabel.$touch()"
                     @blur="$v.group.ftpButtonLabel.$touch()"
@@ -313,7 +302,7 @@ export default {
                   :label="$t('forms.group.endpoint')"
                   placeholder="ex: cdn.example.com"
                   name="cdnEndPoint"
-                  :error-messages="requiredErrors(`cdnEndPoint`)"
+                  :error-messages="requiredErrors(`cdnEndPoint`, group)"
                   :disabled="disabled"
                   @input="$v.group.cdnEndPoint.$touch()"
                   @blur="$v.group.cdnEndPoint.$touch()"
@@ -325,7 +314,7 @@ export default {
                   :label="$t('forms.group.editorLabel')"
                   placeholder="ex: Amazon S3"
                   name="cdnButtonLabel"
-                  :error-messages="requiredErrors(`cdnButtonLabel`)"
+                  :error-messages="requiredErrors(`cdnButtonLabel`, group)"
                   :disabled="disabled"
                   @input="$v.group.cdnButtonLabel.$touch()"
                   @blur="$v.group.cdnButtonLabel.$touch()"
@@ -336,9 +325,7 @@ export default {
 
           <v-row>
             <v-col cols="12">
-              <p class="caption ma-0">
-                Activer l'authentification SAML
-              </p>
+              <p class="caption ma-0">Activer l'authentification SAML</p>
               <v-switch
                 v-model="useSamlAuthentication"
                 :label="$t('global.enable')"
@@ -368,13 +355,7 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn
-        text
-        large
-        color="primary"
-        :disabled="disabled"
-        @click="onSubmit"
-      >
+      <v-btn text large color="primary" :disabled="disabled" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>
