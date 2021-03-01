@@ -22,6 +22,8 @@ const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
 const groupRouter = require('./group/group.routes');
+const workspaceRouter = require('./workspace/workspace.routes');
+const folderRouter = require('./folder/folder.routes');
 const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
@@ -242,6 +244,8 @@ if (cluster.isMaster) {
   const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js');
 
   // API routes
+  app.use('/api/folders', folderRouter);
+  app.use('/api/workspaces', workspaceRouter);
   app.use('/api/groups', groupRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);

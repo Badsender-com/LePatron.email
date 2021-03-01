@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
@@ -7,7 +7,7 @@ const { Groups } = require('../common/models.common.js');
 module.exports = {
   findById: asyncHandler(findById),
   createGroup: asyncHandler(createGroup),
-}
+};
 
 async function findById(groupId) {
   const group = await Groups.findById(groupId).select('_id').lean();

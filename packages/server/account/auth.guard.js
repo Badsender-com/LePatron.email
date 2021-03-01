@@ -33,6 +33,8 @@ module.exports = {
   GUARD_USER: guard('user'),
   GUARD_USER_REDIRECT: guard('user', true),
   GUARD_ADMIN: guard('admin'),
+  GUARD_GROUP_ADMIN: guard('group_admin'),
+  GUARD_GROUP_ADMIN_REDIRECT: guard('group_admin', true),
   GUARD_ADMIN_REDIRECT: guard('admin', true),
 };
 
@@ -44,6 +46,7 @@ module.exports = {
 // • like the mosaico editor
 function guard(role = 'user', redirect = false) {
   const isAdminRoute = role === 'admin';
+  const isGroupAdminRoute = role === 'group_admin';
   return function guardRoute(req, res, next) {
     const { user } = req;
     // non connected user shouldn't access those pages
@@ -53,6 +56,14 @@ function guard(role = 'user', redirect = false) {
         : next(new createError.Unauthorized());
       return;
     }
+
+    if (isGroupAdminRoute && !user.isGroupAdmin) {
+      redirect
+        ? res.redirect('/account/login')
+        : next(new createError.Unauthorized());
+      return;
+    }
+
     // non admin user shouldn't access those pages
     if (isAdminRoute && !user.isAdmin) {
       redirect

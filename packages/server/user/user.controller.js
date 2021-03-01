@@ -60,16 +60,24 @@ async function list(req, res) {
 async function create(req, res) {
   const { groupId } = req.body;
   if (!groupId) {
-    throw new createError.BadRequestError('user.controller : in create, no groupId provided in request');
+    throw new createError.BadRequestError(
+      'user.controller : in create, no groupId provided in request'
+    );
   }
   await groupService.findById(groupId);
 
   const userParams = pick(req.body, ['name', 'email', 'lang']);
-  const role = (req.body.role === Roles.GROUP_ADMIN ? Roles.GROUP_ADMIN : Roles.REGULAR_USER);
+  const role =
+    req.body.role === Roles.GROUP_ADMIN
+      ? Roles.GROUP_ADMIN
+      : Roles.REGULAR_USER;
 
-  const newUser = await userService.createUser({groupId, role, ...userParams});
+  const newUser = await userService.createUser({
+    groupId,
+    role,
+    ...userParams,
+  });
   res.json(newUser);
-
 }
 
 /**
@@ -131,11 +139,13 @@ async function readMailings(req, res) {
 async function update(req, res) {
   const { userId } = req.params;
   if (!userId) {
-    throw new createError.BadRequestError('user.controller :  in update function, no userId provided in request');
+    throw new createError.BadRequestError(
+      'user.controller :  in update function, no userId provided in request'
+    );
   }
 
   const userParams = pick(req.body, ['name', 'email', 'lang', 'role']);
-  const updatedUser = await userService.updateUser({userId, ...userParams})
+  const updatedUser = await userService.updateUser({ userId, ...userParams });
 
   res.json(updatedUser);
 }

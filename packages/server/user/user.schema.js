@@ -87,7 +87,7 @@ const UserSchema = Schema(
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 UserSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, __v: true, password: true, token: true, _company: true },
+  hidden: { _id: true, __v: true, password: true, token: true },
 });
 
 function encodePassword(password) {
@@ -120,6 +120,11 @@ UserSchema.virtual('isReinitialized').get(function () {
 // for better session handling
 UserSchema.virtual('isAdmin').get(function () {
   return false;
+});
+
+UserSchema.virtual('isGroupAdmin').get(function () {
+  const user = this;
+  return user.role === Roles.GROUP_ADMIN;
 });
 
 UserSchema.methods.activate = function activate() {

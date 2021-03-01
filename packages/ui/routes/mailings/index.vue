@@ -1,5 +1,5 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
@@ -12,10 +12,11 @@ import BsMailingsTable from '~/components/mailings/table.vue';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
+import { IS_ADMIN, USER } from '../../store/user';
+import BsGroupWorkspaceList from '../../components/group/workspaces-list';
 
 export default {
-  name: `page-mailings`,
-  mixins: [mixinPageTitle],
+  name: 'PageMailings',
   components: {
     BsMailingsFilter,
     BsMailingsSelectionActions,
@@ -23,60 +24,10 @@ export default {
     BsMailingsModalRename,
     BsMailingsModalDuplicate,
     BsMailingsModalTransfer,
+    BsGroupWorkspaceList,
   },
+  mixins: [mixinPageTitle],
   meta: { acl: acls.ACL_USER },
-  head() {
-    return { title: this.title };
-  },
-  data() {
-    return {
-      tags: [],
-      mailings: [],
-      mailingsSelection: [],
-      templates: [],
-      loading: false,
-      renameModalInfo: {
-        show: false,
-        newName: ``,
-        mailingId: false,
-      },
-      duplicateModalInfo: {
-        show: false,
-        name: ``,
-        mailingId: false,
-      },
-      transferModalInfo: {
-        show: false,
-        mailingId: false,
-        templateId: false,
-      },
-      filters: {
-        show: false,
-        name: ``,
-        templates: [],
-        createdAtStart: ``,
-        createdAtEnd: ``,
-        updatedAtStart: ``,
-        updatedAtEnd: ``,
-        tags: [],
-      },
-    };
-  },
-  computed: {
-    title() {
-      return this.$tc('global.mailing', 2);
-    },
-    selecteMailingsIdsList() {
-      return this.mailingsSelection.map((mailing) => mailing.id);
-    },
-    filteredMailings() {
-      const filterFunction = mailingsHelpers.createFilters(this.filters);
-      return this.mailings.filter(filterFunction);
-    },
-    hasMailingsSelection() {
-      return this.mailingsSelection.length > 0;
-    },
-  },
   // https://vuetifyjs.com/en/components/data-tables#custom-filtering
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
@@ -94,9 +45,68 @@ export default {
       console.log(error);
     }
   },
+  data() {
+    return {
+      tags: [],
+      mailings: [],
+      mailingsSelection: [],
+      templates: [],
+      loading: false,
+      renameModalInfo: {
+        show: false,
+        newName: '',
+        mailingId: false,
+      },
+      duplicateModalInfo: {
+        show: false,
+        name: '',
+        mailingId: false,
+      },
+      transferModalInfo: {
+        show: false,
+        mailingId: false,
+        templateId: false,
+      },
+      filters: {
+        show: false,
+        name: '',
+        templates: [],
+        createdAtStart: '',
+        createdAtEnd: '',
+        updatedAtStart: '',
+        updatedAtEnd: '',
+        tags: [],
+      },
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+  computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_ADMIN,
+    }),
+    title() {
+      return this.$tc('global.mailing', 2);
+    },
+    selecteMailingsIdsList() {
+      return this.mailingsSelection.map((mailing) => mailing.id);
+    },
+    filteredMailings() {
+      const filterFunction = mailingsHelpers.createFilters(this.filters);
+      return this.mailings.filter(filterFunction);
+    },
+    hasMailingsSelection() {
+      return this.mailingsSelection.length > 0;
+    },
+    colWidth() {
+      return this.isAdmin ? '12' : '10';
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async onDelete(mailingsId) {
+    async onDelete(_) {
       const { $axios } = this;
       this.loading = true;
       try {
@@ -113,7 +123,7 @@ export default {
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -137,7 +147,7 @@ export default {
             (mailing) => mailing.id === updatedMailing.id
           );
 
-          const mailingSelectionIndex = this.mailingsSelection.findIndex(
+          this.mailingsSelection.findIndex(
             (mailing) => mailing.id === updatedMailing.id
           );
 
@@ -147,7 +157,7 @@ export default {
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -164,7 +174,7 @@ export default {
     closeRenameModal() {
       this.renameModalInfo = {
         show: false,
-        newName: ``,
+        newName: '',
         mailingId: false,
       };
     },
@@ -183,12 +193,12 @@ export default {
         this.$set(this.mailings, mailingIndex, mailingResponse);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -205,7 +215,7 @@ export default {
     closeDuplicateModal() {
       this.duplicateModalInfo = {
         show: false,
-        name: ``,
+        name: '',
         mailingId: false,
       };
     },
@@ -221,12 +231,12 @@ export default {
         this.mailings.push(mailingResponse);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -261,12 +271,12 @@ export default {
         );
         this.showSnackbar({
           text: this.$t('mailings.transfer.success'),
-          color: `success`,
+          color: 'success',
         });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -278,9 +288,58 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
+  <v-container
+    fluid
+    class="fill-height"
+  >
+    <v-row class="fill-height">
+      <v-col
+        v-if="!isAdmin"
+        cols="2"
+      >
+        <v-navigation-drawer
+          class="d-flex"
+          permanent
+          width="300"
+        >
+          <bs-group-workspace-list />
+          <v-row>
+            <v-col cols="12">
+              <v-list dense>
+                <v-list-item
+                  nuxt
+                  link
+                  to="#"
+                >
+                  <v-list-item-avatar>
+                    <v-icon>settings</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ $t('global.settings') }}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item
+                  nuxt
+                  link
+                  to="#"
+                >
+                  <v-list-item-avatar>
+                    <v-icon>power_settings_new</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ $t('layout.logout') }}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-col>
+          </v-row>
+        </v-navigation-drawer>
+      </v-col>
+      <v-col :cols="colWidth">
         <v-card>
           <bs-mailings-selection-actions
             :mailings-selection="mailingsSelection"
@@ -292,13 +351,13 @@ export default {
           />
           <bs-mailings-filter
             v-if="!hasMailingsSelection"
+            v-model="filters"
             :tags="tags"
             :templates="templates"
-            v-model="filters"
           />
           <bs-mailings-table
-            :mailings="filteredMailings"
             v-model="mailingsSelection"
+            :mailings="filteredMailings"
             :loading="loading"
             @transfer="displayTransferModal"
             @duplicate="displayDuplicateModal"
