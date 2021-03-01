@@ -12,11 +12,26 @@ export default {
   props: {
     user: { type: Object, default: () => ({ group: {} }) },
     loading: { type: Boolean, default: false },
-    activate: { type: Function, default: () => {} },
-    deactivate: { type: Function, default: () => {} },
-    resetPassword: { type: Function, default: () => {} },
-    sendPassword: { type: Function, default: () => {} },
-    resendPassword: { type: Function, default: () => {} },
+    activate: {
+      type: Function,
+      default: () => {},
+    },
+    deactivate: {
+      type: Function,
+      default: () => {},
+    },
+    resetPassword: {
+      type: Function,
+      default: () => {},
+    },
+    sendPassword: {
+      type: Function,
+      default: () => {},
+    },
+    resendPassword: {
+      type: Function,
+      default: () => {},
+    },
   },
   data() {
     return {
@@ -55,8 +70,8 @@ export default {
         <v-icon>{{ actionsIcon }}</v-icon>
       </v-btn>
     </template>
-    <v-list>
-      <v-list-item>
+    <v-list activable>
+      <v-list-item link>
         <v-list-item-avatar>
           <bs-users-table-actions-activation
             :user="user"
@@ -69,7 +84,10 @@ export default {
           {{ $t(activationActionLabel) }}
         </v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="!actionDisplay.activate">
+      <v-list-item
+        v-if="!actionDisplay.activate"
+        link
+      >
         <v-list-item-avatar>
           <bs-user-table-actions-mail
             v-if="user.status !== 'saml-authentication'"
@@ -84,16 +102,18 @@ export default {
           {{ $t(passwordActionLabel) }}
         </v-list-item-title>
       </v-list-item>
-      <v-list-item>
+      <v-list-item
+        nuxt
+        link
+        :to="`/users/${user.id}`"
+      >
         <v-list-item-avatar>
-          <nuxt-link :to="`/users/${user.id}`">
-            <v-btn
-              color="primary"
-              icon
-            >
-              <v-icon>edit</v-icon>
-            </v-btn>
-          </nuxt-link>
+          <v-btn
+            color="primary"
+            icon
+          >
+            <v-icon>edit</v-icon>
+          </v-btn>
         </v-list-item-avatar>
         <v-list-item-title>
           {{ $t('global.edit') }}
@@ -107,7 +127,7 @@ export default {
 
 <i18n>
 {
-"en": {},
-"fr": {}
+  "en": {},
+  "fr": {}
 }
 </i18n>

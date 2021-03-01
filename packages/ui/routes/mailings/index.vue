@@ -320,21 +320,21 @@ export default {
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
+                <v-list-item
+                  nuxt
+                  link
+                  to="#"
+                >
+                  <v-list-item-avatar>
+                    <v-icon>power_settings_new</v-icon>
+                  </v-list-item-avatar>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      {{ $t('layout.logout') }}
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
               </v-list>
-              <v-list-item
-                nuxt
-                link
-                to="#"
-              >
-                <v-list-item-avatar>
-                  <v-icon>power_settings_new</v-icon>
-                </v-list-item-avatar>
-                <v-list-item-content>
-                  <v-list-item-title>
-                    {{ $t('layout.logout') }}
-                  </v-list-item-title>
-                </v-list-item-content>
-              </v-list-item>
             </v-col>
           </v-row>
         </v-navigation-drawer>

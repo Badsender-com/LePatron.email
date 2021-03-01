@@ -3,7 +3,7 @@ export default {
     updated: 'Mis à jour',
     created: 'Crée',
     deleted: 'Supprimé',
-    usersFetchError: 'Impossible d\'accéder à la liste des utilisateur',
+    usersFetchError: 'Impossible d\'accéder à la liste des utilisateurs',
     emailSent: 'Un email a été envoyé',
   },
   global: {

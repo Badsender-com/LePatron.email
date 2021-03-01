@@ -71,6 +71,7 @@ export default {
     <v-treeview
       v-model="tree"
       :items="items"
+      hoverable
       open-all
       activatable
       item-key="name"
@@ -98,10 +99,16 @@ export default {
             </v-btn>
           </template>
           <v-list>
-            <v-list-item>
+            <v-list-item
+              link
+              to="#"
+            >
               <v-list-item-title>Éditer</v-list-item-title>
             </v-list-item>
-            <v-list-item>
+            <v-list-item
+              link
+              to="#"
+            >
               <v-list-item-title>Déplacer</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -110,3 +117,9 @@ export default {
     </v-treeview>
   </v-card>
 </template>
+<style>
+.v-treeview-node--active,
+.v-treeview--hoverable {
+  cursor: pointer;
+}
+</style>
