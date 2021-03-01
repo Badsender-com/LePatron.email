@@ -12,11 +12,7 @@ import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
 
 export default {
-  name: `bs-page-group`,
-  mixins: [mixinPageTitle],
-  meta: {
-    acl: acls.ACL_ADMIN,
-  },
+  name: 'BsPageGroup',
   components: {
     BsGroupMenu,
     BsGroupForm,
@@ -24,20 +20,9 @@ export default {
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
   },
-  head() {
-    return { title: this.title };
-  },
-  data() {
-    return {
-      tab: `group-templates`,
-      group: {},
-      loading: false,
-    };
-  },
-  computed: {
-    title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
-    },
+  mixins: [mixinPageTitle],
+  meta: {
+    acl: acls.ACL_ADMIN || acls.ACL_GROUP_ADMIN,
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -48,6 +33,21 @@ export default {
       console.log(error);
     }
   },
+  data() {
+    return {
+      tab: 'group-templates',
+      group: {},
+      loading: false,
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+  computed: {
+    title() {
+      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateGroup() {
@@ -57,19 +57,19 @@ export default {
       } = this;
       try {
         this.loading = true;
-        const group = await $axios.$put(
+        this.group = await $axios.$put(
           apiRoutes.groupsItem(params),
           this.group
         );
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -82,18 +82,30 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs centered v-model="tab">
+    <v-tabs
+      v-model="tab"
+      centered
+    >
       <v-tabs-slider color="accent" />
-      <v-tab href="#group-informations">{{
-        $t('groups.tabs.informations')
-      }}</v-tab>
-      <v-tab href="#group-templates">{{ $tc('global.template', 2) }}</v-tab>
-      <v-tab href="#group-mailings">{{ $tc('global.mailing', 2) }}</v-tab>
-      <v-tab href="#group-users">{{ $tc('global.user', 2) }}</v-tab>
-      <v-tab-item value="group-informations" eager>
+      <v-tab href="#group-informations">
+        {{ $t('groups.tabs.informations') }}
+      </v-tab>
+      <v-tab href="#group-templates">
+        {{ $tc('global.template', 2) }}
+      </v-tab>
+      <v-tab href="#group-mailings">
+        {{ $tc('global.mailing', 2) }}
+      </v-tab>
+      <v-tab href="#group-users">
+        {{ $tc('global.user', 2) }}
+      </v-tab>
+      <v-tab-item
+        value="group-informations"
+        eager
+      >
         <bs-group-form
           v-model="group"
           flat

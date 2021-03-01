@@ -1,10 +1,10 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
-import BsUsersTableActionsActivation from "~/components/users/table-actions-activation";
+import BsUsersTableActionsActivation from '~/components/users/table-actions-activation';
 import BsUserTableActionsMail from '~/components/users/table-actions-mail.vue';
 
 export default {
-  name: `bs-actions-dropdown`,
+  name: 'BsActionsDropdown',
   components: {
     BsUsersTableActionsActivation,
     BsUserTableActionsMail,
@@ -12,16 +12,31 @@ export default {
   props: {
     user: { type: Object, default: () => ({ group: {} }) },
     loading: { type: Boolean, default: false },
-    activate: { type: Function, default: () => {}},
-    deactivate: { type: Function, default: () => {}},
-    resetPassword: { type: Function, default: () => {}},
-    sendPassword: { type: Function, default: () => {}},
-    resendPassword: { type: Function, default: () => {}},
+    activate: {
+      type: Function,
+      default: () => {},
+    },
+    deactivate: {
+      type: Function,
+      default: () => {},
+    },
+    resetPassword: {
+      type: Function,
+      default: () => {},
+    },
+    sendPassword: {
+      type: Function,
+      default: () => {},
+    },
+    resendPassword: {
+      type: Function,
+      default: () => {},
+    },
   },
   data() {
     return {
       actionsIcon: 'more_horiz',
-    }
+    };
   },
   computed: {
     actionDisplay() {
@@ -31,7 +46,7 @@ export default {
       return this.actionDisplay.activate ? 'global.enable' : 'global.disable';
     },
     passwordActionLabel() {
-      if (this.actionDisplay.resetPassword ) {
+      if (this.actionDisplay.resetPassword) {
         return 'users.passwordTooltip.reset';
       }
       if (this.actionDisplay.sendPassword) {
@@ -45,7 +60,7 @@ export default {
 
 <template>
   <v-menu offset-y>
-    <template v-slot:activator="{ on }">
+    <template #activator="{ on }">
       <v-btn
         color="primary"
         dark
@@ -55,8 +70,8 @@ export default {
         <v-icon>{{ actionsIcon }}</v-icon>
       </v-btn>
     </template>
-    <v-list>
-      <v-list-item>
+    <v-list activable>
+      <v-list-item link>
         <v-list-item-avatar>
           <bs-users-table-actions-activation
             :user="user"
@@ -69,7 +84,10 @@ export default {
           {{ $t(activationActionLabel) }}
         </v-list-item-title>
       </v-list-item>
-      <v-list-item v-if="!actionDisplay.activate">
+      <v-list-item
+        v-if="!actionDisplay.activate"
+        link
+      >
         <v-list-item-avatar>
           <bs-user-table-actions-mail
             v-if="user.status !== 'saml-authentication'"
@@ -84,16 +102,18 @@ export default {
           {{ $t(passwordActionLabel) }}
         </v-list-item-title>
       </v-list-item>
-      <v-list-item>
+      <v-list-item
+        nuxt
+        link
+        :to="`/users/${user.id}`"
+      >
         <v-list-item-avatar>
-          <nuxt-link :to="`/users/${user.id}`">
-            <v-btn
-              color="primary"
-              icon
-            >
-              <v-icon>edit</v-icon>
-            </v-btn>
-          </nuxt-link>
+          <v-btn
+            color="primary"
+            icon
+          >
+            <v-icon>edit</v-icon>
+          </v-btn>
         </v-list-item-avatar>
         <v-list-item-title>
           {{ $t('global.edit') }}
@@ -107,7 +127,7 @@ export default {
 
 <i18n>
 {
-"en": {},
-"fr": {}
+  "en": {},
+  "fr": {}
 }
 </i18n>

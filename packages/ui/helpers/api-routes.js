@@ -126,3 +126,12 @@ export function imagesItem(routeParams = {}) {
 export function imagesPlaceholder(routeParams = {}) {
   return `${API_PREFIX}/images/placeholder/${routeParams.width}x${routeParams.height}.png`;
 }
+
+/// ///
+// WORKSPACEs
+/// ///
+
+// this is not used by axios (show an image…)
+export function workspacesGroup() {
+  return '/workspaces';
+}

@@ -31,6 +31,7 @@ export default {
     user: 'User | Users',
     newUser: 'Add a user',
     group: 'Group | Groups',
+    workspaces: 'Workspaces',
     newGroup: 'Add a group',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
@@ -47,6 +48,7 @@ export default {
     confirm: 'Confirm',
     close: 'Close',
     show: 'Show',
+    settings: 'Settings',
     download: 'Download',
     preview: 'Preview',
     newPreview: 'Create a preview',
@@ -63,7 +65,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
-    edit: 'Edit'
+    edit: 'Edit',
   },
   layout: {
     logout: 'Logout',
@@ -182,7 +184,7 @@ export default {
     email: 'Email',
     lang: 'Language',
     details: 'Details',
-    role: 'Role'
+    role: 'Role',
   },
   workspaces: {
     name: 'Name',

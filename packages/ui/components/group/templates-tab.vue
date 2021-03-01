@@ -3,7 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTemplatesTable from '~/components/templates/table.vue';
 
 export default {
-  name: `bs-group-templates-tab`,
+  name: 'BsGroupTemplatesTab',
   components: { BsTemplatesTable },
   data() {
     return { templates: [], loading: false };
@@ -29,7 +29,10 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
+  <v-card
+    flat
+    tile
+  >
     <v-card-text>
       <bs-templates-table
         :templates="templates"

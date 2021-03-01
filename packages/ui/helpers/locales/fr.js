@@ -31,12 +31,14 @@ export default {
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
     group: 'Groupe | Groupes',
+    workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
     workspace: 'Workspace',
     newWorkspace: 'Ajouter un workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
+    settings: 'Réglages',
     cancel: 'Annuler',
     create: 'Créer',
     update: 'Mettre à jour',
@@ -63,7 +65,7 @@ export default {
     status: 'Statut',
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
-    edit: 'Modifier'
+    edit: 'Modifier',
   },
   layout: {
     logout: 'Déconnexion',
@@ -76,7 +78,7 @@ export default {
         unwrapped: 'Laisser les fichiers à la racine',
       },
       defaultWorkspace: {
-        label: 'Nom du workspace par défaut'
+        label: 'Nom du workspace par défaut',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',

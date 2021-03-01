@@ -1,10 +1,10 @@
 <script>
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 import * as acls from '~/helpers/pages-acls.js';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
 
 export default {
-  name: `bs-page-admin-login`,
-  layout: `centered`,
+  name: 'BsPageAdminLogin',
+  layout: 'centered',
   meta: { acl: acls.ACL_NOT_CONNECTED },
   ADMIN_USERNAME,
 };
@@ -17,8 +17,16 @@ export default {
     </v-toolbar>
     <v-divider />
     <v-card-text>
-      <v-form action="/account/login/admin" method="post" id="login-form">
-        <input type="hidden" name="username" :value="$options.ADMIN_USERNAME" />
+      <v-form
+        id="login-form"
+        action="/account/login/admin"
+        method="post"
+      >
+        <input
+          type="hidden"
+          name="username"
+          :value="$options.ADMIN_USERNAME"
+        >
         <v-text-field
           id="password"
           :label="$t('global.password')"
@@ -31,9 +39,13 @@ export default {
     </v-card-text>
     <v-card-actions>
       <v-spacer />
-      <v-btn color="primary" form="login-form" type="submit">{{
-        $t('forms.user.login')
-      }}</v-btn>
+      <v-btn
+        color="primary"
+        form="login-form"
+        type="submit"
+      >
+        {{ $t('forms.user.login') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
