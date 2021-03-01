@@ -44,6 +44,6 @@ async function updateUser(userParams) {
 }
 
 async function findByGroupId(groupId) {
-  const users = await Users.where('_company.id').equals(groupId);
+  const users = await Users.find({ _company: groupId });
   return users;
 }

@@ -93,7 +93,8 @@ export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
 
-export function usersByGroupId({groupId}) {
+export function usersByGroupId(groupId) {
+  console.log('api-routes: groupId in userBYGroupId', groupId)
   return `/users/group/${groupId}`
 }
 

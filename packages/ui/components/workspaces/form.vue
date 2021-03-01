@@ -14,6 +14,7 @@ export default {
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     title: { type: String, default: `` },
+    usersOfGroup: { type: Array, default: () => ([])}
   },
   data() {
     return {
@@ -22,14 +23,6 @@ export default {
         { text: this.$t('global.name'), value: 'name', align:'left' },
         { text: this.$t('forms.user.firstname'), value: 'firstname' },
       ],
-      users: [
-        {
-          id: 1, name: 'membre1', firstname: 'Mem',
-        },
-        {
-          id: 2, name: 'memebre2', firstname: 'MMe',
-        },
-      ]
     }
   },
   validations() {
@@ -51,6 +44,15 @@ export default {
       errors.push(this.$t('global.errors.nameRequired'));
       return errors;
     },
+    users() {
+      return this.usersOfGroup.map(user => {
+        return {
+          ...user.id,
+          name: user.name,
+          firstname: user.name
+        }
+      })
+    }
   },
   methods: {
     onSubmit() {

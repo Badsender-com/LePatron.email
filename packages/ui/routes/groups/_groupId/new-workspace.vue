@@ -20,7 +20,7 @@ export default {
   },
   data() {
     return {
-      usersOfGroup: {},
+      usersOfGroup: [],
       group: {},
       loading: false,
       newWorkspace: {
@@ -38,13 +38,14 @@ export default {
     groupId() {
       return this.$route.params.groupId;
     },
+
   },
   // fetch users by group id
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
-      return { group: groupResponse };
+      const usersOfGroupResponse = await $axios.$get(apiRoutes.usersByGroupId(params.groupId));
+      return { usersOfGroup: usersOfGroupResponse};
     } catch (error) {
       console.log(error);
     }
@@ -86,6 +87,7 @@ export default {
     <bs-workspace-form
       :title="$t('global.newWorkspace')"
       v-model="newWorkspace"
+      :usersOfGroup="usersOfGroup"
       :loading="loading"
       @submit="createWorkspace"
     />
