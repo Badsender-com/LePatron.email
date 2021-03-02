@@ -1,5 +1,5 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
@@ -10,6 +10,7 @@ import BsGroupForm from '~/components/group/form.vue';
 import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
+import { IS_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsPageGroup',
@@ -44,6 +45,10 @@ export default {
     return { title: this.title };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_ADMIN,
+    }),
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name}`;
     },
