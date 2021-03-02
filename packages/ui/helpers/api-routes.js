@@ -94,7 +94,6 @@ export function usersItemMailings(routeParams = {}) {
 }
 
 export function usersByGroupId(groupId) {
-  console.log('api-routes: groupId in userBYGroupId', groupId)
   return `/users/group/${groupId}`
 }
 
@@ -133,5 +132,9 @@ export function imagesPlaceholder(routeParams = {}) {
 
 // this is not used by axios (show an image…)
 export function workspacesGroup() {
+  return '/workspaces';
+}
+
+export function workspaces() {
   return '/workspaces';
 }

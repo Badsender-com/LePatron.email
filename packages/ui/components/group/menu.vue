@@ -49,16 +49,20 @@ export default {
             <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item nuxt link :to="newWorkspaceHref">
-      <v-list-item-avatar>
-        <v-icon>home_work</v-icon>
-      </v-list-item-avatar>
-      <v-list-item-content>
-        <v-list-item-title>{{ $t('global.newWorkspace') }}</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
+        <v-list-item
+          nuxt
+          link
+          :to="newWorkspaceHref"
+        >
+          <v-list-item-avatar>
+            <v-icon>home_work</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newWorkspace') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-col>
   </v-row>
-    
+
 </template>

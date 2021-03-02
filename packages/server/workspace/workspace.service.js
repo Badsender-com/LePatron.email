@@ -2,6 +2,7 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+const groupService = require('../group/group.service.js');
 
 module.exports = {
   createWorkspace,
@@ -11,7 +12,9 @@ module.exports = {
 async function createWorkspace(workspaceParams) {
   const newWorkspace = await Workspaces.create({
     name: workspaceParams.name,
-    _company: workspaceParams.group,
+    description: workspaceParams.description,
+    _company: workspaceParams.groupId,
+    _users: workspaceParams.selectedUsers.map(user => user.id),
   });
 
   return newWorkspace;

@@ -7,5 +7,6 @@ const workspaces = require('./workspace.controller.js');
 const { GUARD_GROUP_ADMIN } = require('../account/auth.guard');
 
 router.get('', GUARD_GROUP_ADMIN, workspaces.list);
+router.post('', workspaces.create);
 
 module.exports = router;

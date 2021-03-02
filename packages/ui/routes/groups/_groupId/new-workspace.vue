@@ -9,14 +9,21 @@ import BsGroupMenu from '~/components/group/menu.vue';
 import BsWorkspaceForm from "~/components/workspaces/form";
 
 export default {
-  name: `bs-page-group-new-user`,
+  name: `bs-page-group-new-workspace`,
   mixins: [mixinPageTitle],
   components: { BsWorkspaceForm, BsGroupMenu },
   meta: {
     acl: acls.ACL_ADMIN,
   },
-  head() {
-    return { title: this.title };
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+    try {
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+      const usersOfGroupResponse = await $axios.$get(apiRoutes.usersByGroupId(params.groupId));
+      return { group: groupResponse, usersOfGroup: usersOfGroupResponse };
+    } catch (error) {
+      console.log(error);
+    }
   },
   data() {
     return {
@@ -29,10 +36,13 @@ export default {
       },
     };
   },
+  head() {
+    return { title: this.title };
+  },
   computed: {
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
-        'global.newUser'
+        'global.newWorkspace'
       )}`;
     },
     groupId() {
@@ -40,35 +50,25 @@ export default {
     },
 
   },
-  // fetch users by group id
-  async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
-    try {
-      const usersOfGroupResponse = await $axios.$get(apiRoutes.usersByGroupId(params.groupId));
-      return { usersOfGroup: usersOfGroupResponse};
-    } catch (error) {
-      console.log(error);
-    }
-  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createWorkspace() {
       const { $axios } = this;
       try {
         this.loading = true;
-        //const user = await $axios.$post(apiRoutes.users(), {
-         // groupId: this.groupId,
-         // ...this.newUser,
-       // });
+        await $axios.$post(apiRoutes.workspaces(), {
+          groupId: this.groupId,
+          ...this.newWorkspace,
+        });
         this.showSnackbar({
           text: this.$t('snackbars.created'),
-          color: `success`,
+          color: 'success',
         });
-        this.$router.push(apiRoutes.usersItem({ userId: user.id }));
+        // redirect to workspace page on success
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {

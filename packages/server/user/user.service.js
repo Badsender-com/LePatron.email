@@ -3,10 +3,12 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Users, Mailings } = require('../common/models.common.js');
+const mongoose = require('mongoose');
 
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
+  findByGroupId: asyncHandler(findByGroupId)
 };
 
 async function createUser(userParams) {
@@ -48,6 +50,6 @@ async function updateUser(userParams) {
 }
 
 async function findByGroupId(groupId) {
-  const users = await Users.find({ _company: groupId });
+  const users = await Users.find({ _company: mongoose.Types.ObjectId(groupId) });
   return users;
 }
