@@ -118,7 +118,6 @@ export default {
           valid: 'Un email valide est requis',
         },
       },
-      firstname: 'Prénom',
     },
   },
   groups: {

@@ -120,7 +120,6 @@ export default {
       tooltip: {
         noPassword: 'Disabled cause of SAML Authentication',
       },
-      firstname: 'Firstname',
     },
   },
   groups: {
