@@ -59,7 +59,6 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
     const { user } = req;
     // non connected user shouldn't access those pages
     if (!user) {
-      console.log('unauthorized not connected');
       redirect
         ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
@@ -68,7 +67,6 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
 
     // non group admin user shouldn't access those pages
     if (isGroupAdminRoute && !isAdminRoute && !user.isGroupAdmin) {
-      console.log('unauthorized group admin');
       redirect
         ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
@@ -77,7 +75,6 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
 
     // non admin user shouldn't access those pages
     if (isAdminRoute && !isGroupAdminRoute && !user.isAdmin) {
-      console.log('unauthorized admin');
       redirect
         ? res.redirect('/account/admin')
         : next(new createError.Unauthorized());
@@ -91,7 +88,6 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
       !user.isGroupAdmin &&
       !user.isAdmin
     ) {
-      console.log('unauthorized neither group admin neither admin');
       redirect
         ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
