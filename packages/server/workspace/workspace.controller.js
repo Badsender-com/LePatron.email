@@ -1,12 +1,30 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const { createWorkspace, listWorkspace } = require('./workspace.service');
+const workspaceService = require('./workspace.service');
 
 module.exports = {
+  findByName: asyncHandler(findByName),
   list: asyncHandler(list),
   create: asyncHandler(create),
 };
+
+/**
+ * @api {get} /workspaces workspace
+ * @apiPermission group_admin
+ * @apiName GetWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiParam {string} workspaceId
+ *
+ * @apiUse workspace
+ */
+
+async function findByName(req, res) {
+  const { workspaceName } = req.params;
+  const workspace = await workspaceService.findByName(workspaceName);
+  res.json(workspace);
+}
 
 /**
  * @api {get} /workspace list of workspaces with folders
@@ -19,7 +37,7 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const workspaces = await listWorkspace(req.user._company);
+  const workspaces = await workspaceService.listWorkspace(req.user._company);
   res.json({ items: workspaces });
 }
 
@@ -41,6 +59,6 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const newWorkspace = await createWorkspace(req.body);
+  const newWorkspace = await workspaceService.createWorkspace(req.body);
   res.json(newWorkspace);
 }

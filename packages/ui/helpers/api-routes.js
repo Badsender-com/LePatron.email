@@ -130,11 +130,10 @@ export function imagesPlaceholder(routeParams = {}) {
 // WORKSPACEs
 /// ///
 
-// this is not used by axios (show an image…)
-export function workspacesGroup() {
+export function workspaces() {
   return '/workspaces';
 }
 
-export function workspaces() {
-  return '/workspaces';
+export function workspaceByName(name) {
+  return `/workspaces/name/${name}`;
 }

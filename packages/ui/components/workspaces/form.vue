@@ -1,6 +1,8 @@
 <script>
 import {validationMixin} from 'vuelidate';
-import {required, maxLength, email} from 'vuelidate/lib/validators';
+import {required} from 'vuelidate/lib/validators';
+import * as apiRoutes from '~/helpers/api-routes.js';
+
 
 export default {
   name: `bs-workspace-form`,
@@ -31,7 +33,18 @@ export default {
   validations() {
     return {
       workspace: {
-        name: {required},
+        name: {
+          required,
+          async isUnique(name) {
+            const { $axios } = this;
+            try {
+              const workspaceWithName = await $axios.$get(apiRoutes.workspaceByName(name));
+              return !workspaceWithName;
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        },
         description: {}
       },
     };
@@ -54,6 +67,9 @@ export default {
         return errors;
       }
       !this.$v.workspace.name.required && errors.push(this.$t('global.errors.nameRequired'));
+      if(!this.$v.workspace.name.isUnique) {
+        errors.push(this.$t('global.errors.workspaces.alreadyExists'));
+      }
       return errors;
     },
     users() {

@@ -34,7 +34,7 @@ export default {
 
     try {
       this.loading = true;
-      const workspaceResponse = await $axios.$get(apiRoutes.workspacesGroup());
+      const workspaceResponse = await $axios.$get(apiRoutes.workspaces());
       this.workspacesData = workspaceResponse.items;
     } catch (error) {
       console.log(error);

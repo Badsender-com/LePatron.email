@@ -23,6 +23,9 @@ export default {
           internal: 'Une erreur est survenue',
         },
       },
+      workspaces: {
+        alreadyExists: 'Il éxiste déjà un workspace ayant ce nom'
+      }
     },
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
