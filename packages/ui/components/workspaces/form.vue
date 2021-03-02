@@ -72,15 +72,6 @@ export default {
       }
       return errors;
     },
-    users() {
-      return this.usersOfGroup.map(user => {
-        return {
-          id: user.id,
-          name: user.name,
-          firstname: user.name
-        }
-      })
-    }
   },
   methods: {
     onSubmit() {
@@ -157,8 +148,7 @@ export default {
         @click="onSubmit"
         :disabled="disabled"
       >{{ $t('global.save') }}
-      </v-btn
-      >
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

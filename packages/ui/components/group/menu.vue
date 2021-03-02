@@ -64,5 +64,4 @@ export default {
       </v-list>
     </v-col>
   </v-row>
-
 </template>
