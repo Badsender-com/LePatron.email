@@ -2,7 +2,7 @@
 import { mapState, mapGetters } from 'vuex';
 
 import { PAGE } from '~/store/page.js';
-import { USER, IS_ADMIN } from '~/store/user.js';
+import { USER, IS_ADMIN, IS_GROUP_ADMIN } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
 
 export default {
@@ -17,7 +17,7 @@ export default {
     }),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
     }),
   },
 };
@@ -104,6 +104,7 @@ export default {
       <v-toolbar-title>{{ title | capitalize }}</v-toolbar-title>
       <v-spacer />
       <v-btn
+        v-if="isAdmin"
         text
         link
         nuxt
@@ -113,6 +114,7 @@ export default {
         {{ $tc('global.mailing', 2) }}
       </v-btn>
       <v-btn
+        v-if="isAdmin"
         text
         link
         nuxt

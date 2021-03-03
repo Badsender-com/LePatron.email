@@ -12,7 +12,7 @@ import BsMailingsTable from '~/components/mailings/table.vue';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
-import { IS_ADMIN, USER } from '../../store/user';
+import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
 import BsGroupWorkspaceList from '../../components/group/workspaces-list';
 
 export default {
@@ -85,7 +85,7 @@ export default {
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
-      isGroupAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
     }),
     title() {
       return this.$tc('global.mailing', 2);
@@ -102,6 +102,9 @@ export default {
     },
     colWidth() {
       return this.isAdmin ? '12' : '10';
+    },
+    groupAdminUrl() {
+      return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
   methods: {
@@ -307,9 +310,10 @@ export default {
             <v-col cols="12">
               <v-list dense>
                 <v-list-item
+                  v-if="isGroupAdmin"
                   nuxt
                   link
-                  to="#"
+                  :to="groupAdminUrl"
                 >
                   <v-list-item-avatar>
                     <v-icon>settings</v-icon>
