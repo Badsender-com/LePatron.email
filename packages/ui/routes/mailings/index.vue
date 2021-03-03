@@ -104,10 +104,7 @@ export default {
       return this.isAdmin ? '12' : '10';
     },
     groupAdminUrl() {
-      if (this.isGroupAdmin) {
-        return '/groups/' + this.$store?.state?.user?.info?.group?.id;
-      }
-      return '';
+      return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
   methods: {
@@ -316,7 +313,7 @@ export default {
                   v-if="isGroupAdmin"
                   nuxt
                   link
-                  :to="this.groupAdminUrl"
+                  :to="groupAdminUrl"
                 >
                   <v-list-item-avatar>
                     <v-icon>settings</v-icon>
