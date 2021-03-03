@@ -1,10 +1,6 @@
 <script>
 export default {
   name: 'BsGroupWorkspacesTab',
-  data() {
-    return { workspaces: [], loading: false };
-  },
-  methods: {},
 };
 </script>
 

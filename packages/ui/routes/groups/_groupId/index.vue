@@ -116,13 +116,13 @@ export default {
       </v-tab>
       <v-tab
         v-if="isGroupAdmin"
-        href="#group-templates"
+        href="#group-workspaces"
       >
         {{ $tc('global.teams', 2) }}
       </v-tab>
       <v-tab
         v-if="isGroupAdmin"
-        href="#group-mailings"
+        href="#group-tags"
       >
         {{ $tc('global.tags', 2) }}
       </v-tab>
@@ -154,13 +154,13 @@ export default {
       </v-tab-item>
       <v-tab-item
         v-if="isGroupAdmin"
-        value="group-templates"
+        value="group-workspaces"
       >
         <bs-group-workspaces-tab />
       </v-tab-item>
       <v-tab-item
         v-if="isGroupAdmin"
-        value="group-mailings"
+        value="group-tags"
       >
         <bs-group-tags-tab />
       </v-tab-item>

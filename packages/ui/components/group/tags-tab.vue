@@ -1,10 +1,6 @@
 <script>
 export default {
   name: 'BsGroupTagsTab',
-  data() {
-    return { tags: [], loading: false };
-  },
-  methods: {},
 };
 </script>
 
