@@ -133,7 +133,7 @@ export default {
             :items="usersOfGroup"
             show-select
             :search="search"
-            :loading="this.loading"
+            :loading="loading"
             item-key="id"
           />
         </v-col>
