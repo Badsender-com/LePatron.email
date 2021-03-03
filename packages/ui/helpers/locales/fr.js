@@ -27,12 +27,16 @@ export default {
         alreadyExists: 'Il éxiste déjà un workspace ayant ce nom'
       }
     },
+    teams: 'Équipes',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
+    newTeam: 'Ajouter une équipe',
+    newTag: 'Ajouter un tag',
+    backToMails: 'Retour aux mails',
     group: 'Groupe | Groupes',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',

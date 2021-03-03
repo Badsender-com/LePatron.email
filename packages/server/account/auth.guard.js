@@ -14,6 +14,8 @@ const createError = require('http-errors');
 const xmlParser = require('xml2json');
 
 const config = require('../node.config.js');
+const Roles = require('../user/role');
+
 const {
   Users,
   OAuthClients,
@@ -30,12 +32,14 @@ const adminUser = Object.freeze({
 
 module.exports = {
   adminUser,
-  GUARD_USER: guard('user'),
-  GUARD_USER_REDIRECT: guard('user', true),
-  GUARD_ADMIN: guard('admin'),
-  GUARD_GROUP_ADMIN: guard('group_admin'),
-  GUARD_GROUP_ADMIN_REDIRECT: guard('group_admin', true),
-  GUARD_ADMIN_REDIRECT: guard('admin', true),
+  GUARD_USER: guard(Roles.REGULAR_USER),
+  GUARD_USER_REDIRECT: guard(Roles.REGULAR_USER, true),
+  GUARD_ADMIN: guard(Roles.SUPER_ADMIN),
+  GUARD_GROUP_ADMIN: guard(Roles.GROUP_ADMIN),
+  GUARD_ADMIN_OR_GROUP_ADMIN: guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
+  GUARD_CAN_MANAGE_GROUP: guardCanManageGroup(),
+  GUARD_GROUP_ADMIN_REDIRECT: guard(Roles.GROUP_ADMIN, true),
+  GUARD_ADMIN_REDIRECT: guard(Roles.SUPER_ADMIN, true),
 };
 
 /// ///
@@ -44,9 +48,13 @@ module.exports = {
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
-function guard(role = 'user', redirect = false) {
-  const isAdminRoute = role === 'admin';
-  const isGroupAdminRoute = role === 'group_admin';
+function guard(role = Roles.REGULAR_USER, redirect = false) {
+  const isAdminRoute = Array.isArray(role)
+    ? role.includes(Roles.SUPER_ADMIN)
+    : role === Roles.SUPER_ADMIN;
+  const isGroupAdminRoute = Array.isArray(role)
+    ? role.includes(Roles.GROUP_ADMIN)
+    : role === Roles.GROUP_ADMIN;
   return function guardRoute(req, res, next) {
     const { user } = req;
     // non connected user shouldn't access those pages
@@ -57,7 +65,8 @@ function guard(role = 'user', redirect = false) {
       return;
     }
 
-    if (isGroupAdminRoute && !user.isGroupAdmin) {
+    // non group admin user shouldn't access those pages
+    if (isGroupAdminRoute && !isAdminRoute && !user.isGroupAdmin) {
       redirect
         ? res.redirect('/account/login')
         : next(new createError.Unauthorized());
@@ -65,11 +74,36 @@ function guard(role = 'user', redirect = false) {
     }
 
     // non admin user shouldn't access those pages
-    if (isAdminRoute && !user.isAdmin) {
+    if (isAdminRoute && !isGroupAdminRoute && !user.isAdmin) {
       redirect
         ? res.redirect('/account/admin')
         : next(new createError.Unauthorized());
       return;
+    }
+
+    // Prevent the case where the route is admin or group admin then we check if user is one of them
+    if (
+      isGroupAdminRoute &&
+      isAdminRoute &&
+      !user.isGroupAdmin &&
+      !user.isAdmin
+    ) {
+      redirect
+        ? res.redirect('/account/login')
+        : next(new createError.Unauthorized());
+      return;
+    }
+    console.log('called next() from guard');
+    next();
+  };
+}
+
+function guardCanManageGroup() {
+  return function guardManageGroup(req, res, next) {
+    const { user } = req;
+    const { groupId } = req.params;
+    if (user?._company?.id && groupId && groupId !== user?._company?.id) {
+      next(new createError.Unauthorized());
     }
     next();
   };

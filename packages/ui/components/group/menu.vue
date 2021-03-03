@@ -1,7 +1,14 @@
 <script>
+import { mapGetters } from 'vuex';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '../../store/user';
+
 export default {
   name: 'BsGroupMenu',
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
     groupId() {
       return this.$route.params.groupId;
     },
@@ -14,6 +21,12 @@ export default {
     newWorkspaceHref() {
       return `/groups/${this.groupId}/new-workspace`;
     }
+    newTagsHref() {
+      return `/groups/${this.groupId}/new-tag`;
+    },
+    newTeamsHref() {
+      return `/groups/${this.groupId}/new-workspace`;
+    },
   },
 };
 </script>
@@ -24,6 +37,7 @@ export default {
       <v-list dense>
         <v-subheader>{{ $t('global.actions') }}</v-subheader>
         <v-list-item
+          v-if="isAdmin"
           nuxt
           link
           :to="newTemplateHref"
@@ -47,6 +61,49 @@ export default {
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-if="isGroupAdmin"
+          nuxt
+          link
+          :to="newTeamsHref"
+        >
+          <v-list-item-avatar>
+            <v-icon>group_add</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newTeam') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-if="isGroupAdmin"
+          nuxt
+          link
+          :to="newTagsHref"
+        >
+          <v-list-item-avatar>
+            <v-icon>post_add</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newTag') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-if="isGroupAdmin"
+          nuxt
+          link
+          to="/"
+        >
+          <v-list-item-avatar>
+            <v-icon>arrow_back</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{
+                $t('global.backToMails')
+              }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item

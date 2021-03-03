@@ -1,5 +1,5 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
@@ -10,6 +10,9 @@ import BsGroupForm from '~/components/group/form.vue';
 import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
+import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
+import BsGroupTagsTab from '~/components/group/tags-tab.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsPageGroup',
@@ -19,10 +22,12 @@ export default {
     BsGroupUsersTab,
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
+    BsGroupWorkspacesTab,
+    BsGroupTagsTab,
   },
   mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN || acls.ACL_GROUP_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -44,6 +49,10 @@ export default {
     return { title: this.title };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name}`;
     },
@@ -93,11 +102,29 @@ export default {
       <v-tab href="#group-informations">
         {{ $t('groups.tabs.informations') }}
       </v-tab>
-      <v-tab href="#group-templates">
+      <v-tab
+        v-if="isAdmin"
+        href="#group-templates"
+      >
         {{ $tc('global.template', 2) }}
       </v-tab>
-      <v-tab href="#group-mailings">
+      <v-tab
+        v-if="isAdmin"
+        href="#group-mailings"
+      >
         {{ $tc('global.mailing', 2) }}
+      </v-tab>
+      <v-tab
+        v-if="isGroupAdmin"
+        href="#group-workspaces"
+      >
+        {{ $tc('global.teams', 2) }}
+      </v-tab>
+      <v-tab
+        v-if="isGroupAdmin"
+        href="#group-tags"
+      >
+        {{ $tc('global.tags', 2) }}
       </v-tab>
       <v-tab href="#group-users">
         {{ $tc('global.user', 2) }}
@@ -113,11 +140,29 @@ export default {
           @submit="updateGroup"
         />
       </v-tab-item>
-      <v-tab-item value="group-templates">
+      <v-tab-item
+        v-if="isAdmin"
+        value="group-templates"
+      >
         <bs-group-templates-tab />
       </v-tab-item>
-      <v-tab-item value="group-mailings">
+      <v-tab-item
+        v-if="isAdmin"
+        value="group-mailings"
+      >
         <bs-group-mailings-tab />
+      </v-tab-item>
+      <v-tab-item
+        v-if="isGroupAdmin"
+        value="group-workspaces"
+      >
+        <bs-group-workspaces-tab />
+      </v-tab-item>
+      <v-tab-item
+        v-if="isGroupAdmin"
+        value="group-tags"
+      >
+        <bs-group-tags-tab />
       </v-tab-item>
       <v-tab-item value="group-users">
         <bs-group-users-tab />
