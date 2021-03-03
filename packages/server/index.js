@@ -36,15 +36,18 @@ const workers =
     : require('os').cpus().length) || require('os').cpus().length;
 
 if (cluster.isMaster) {
-  console.log('start cluster with %s workers', workers);
+  logger.log(chalk.cyan('start cluster with %s workers'), workers);
 
   for (let i = 0; i < workers; ++i) {
     const worker = cluster.fork().process;
-    console.log('worker %s started.', worker.pid);
+    logger.log(chalk.green('worker %s started.'), worker.pid);
   }
 
   cluster.on('exit', function (worker) {
-    console.log('worker %s died. restart...', worker.process.pid);
+    logger.log(
+      chalk.bgYellow('worker %s died. restart...'),
+      worker.process.pid
+    );
     cluster.fork();
   });
 } else {
