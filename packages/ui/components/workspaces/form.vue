@@ -113,7 +113,7 @@ export default {
         <v-col cols="6" class="ml-auto">
           <v-row>
             <v-col>
-              <h3>{{this.$t('workspaces.members')}}</h3>
+              <h3>{{$t('workspaces.members')}}</h3>
             </v-col>
             <v-col>
               <v-text-field
