@@ -15,25 +15,18 @@ export function getAuthorizations(acl) {
 }
 
 function isUserPage(acl) {
-  const result = Array.isArray(acl)
-    ? acl.every(
-        (element) =>
-          [ACL_USER, ACL_ADMIN, ACL_GROUP_ADMIN].indexOf(element) !== 1
-      )
-    : acl === ACL_USER || acl === ACL_ADMIN || acl === ACL_GROUP_ADMIN;
-  return result;
+  const userRoles = [ACL_USER, ACL_ADMIN, ACL_GROUP_ADMIN];
+  return Array.isArray(acl)
+    ? acl.every((role) => userRoles.includes(role))
+    : userRoles.includes(acl);
 }
 
 function isGroupAdminPage(acl) {
-  const result = Array.isArray(acl)
+  return Array.isArray(acl)
     ? acl.includes(ACL_GROUP_ADMIN)
     : acl === ACL_GROUP_ADMIN;
-  return result;
 }
 
 function isAdminPage(acl) {
-  const result = Array.isArray(acl)
-    ? acl.includes(ACL_ADMIN)
-    : acl === ACL_ADMIN;
-  return result;
+  return Array.isArray(acl) ? acl.includes(ACL_ADMIN) : acl === ACL_ADMIN;
 }

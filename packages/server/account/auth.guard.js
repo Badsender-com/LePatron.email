@@ -81,7 +81,7 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
       return;
     }
 
-    // Prevent the case where the route is admin or group admin then we check if user is one of them
+    // Prevent the case where the route is admin and group admin then we check if user is one of them
     if (
       isGroupAdminRoute &&
       isAdminRoute &&
@@ -93,7 +93,6 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
         : next(new createError.Unauthorized());
       return;
     }
-    console.log('called next() from guard');
     next();
   };
 }
