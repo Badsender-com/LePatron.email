@@ -12,7 +12,12 @@ const {
 } = require('../account/auth.guard.js');
 const groups = require('./group.controller.js');
 
-router.get('/:groupId/users', GUARD_ADMIN, groups.readUsers);
+router.get(
+  '/:groupId/users',
+  GUARD_ADMIN_OR_GROUP_ADMIN,
+  GUARD_CAN_MANAGE_GROUP,
+  groups.readUsers
+);
 router.get('/:groupId/templates', GUARD_ADMIN, groups.readTemplates);
 router.get('/:groupId/mailings', GUARD_ADMIN, groups.readMailings);
 router.put(

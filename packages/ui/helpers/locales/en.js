@@ -24,8 +24,8 @@ export default {
         },
       },
       workspaces: {
-        alreadyExists: 'A workspace with this name already exists '
-      }
+        alreadyExists: 'A workspace with this name already exists ',
+      },
     },
     teams: 'Teams',
     newTemplate: 'Add a template',
@@ -34,7 +34,6 @@ export default {
     newMailing: 'Add an email',
     user: 'User | Users',
     newUser: 'Add a user',
-    newTeam: 'Add a team',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
     group: 'Group | Groups',
@@ -195,7 +194,7 @@ export default {
   workspaces: {
     name: 'Name',
     description: 'Descritpion',
-    members: 'Members'
+    members: 'Members',
   },
   tableHeaders: {
     groups: {

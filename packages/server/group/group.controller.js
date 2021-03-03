@@ -65,7 +65,7 @@ async function list(req, res) {
 async function create(req, res) {
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(req.body);
-  const workspaceParams = { name: defaultWorkspaceName, group: newGroup };
+  const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
   res.json(newGroup);
 }

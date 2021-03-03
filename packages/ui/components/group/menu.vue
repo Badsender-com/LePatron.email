@@ -20,12 +20,9 @@ export default {
     },
     newWorkspaceHref() {
       return `/groups/${this.groupId}/new-workspace`;
-    }
+    },
     newTagsHref() {
       return `/groups/${this.groupId}/new-tag`;
-    },
-    newTeamsHref() {
-      return `/groups/${this.groupId}/new-workspace`;
     },
   },
 };
@@ -67,19 +64,6 @@ export default {
           v-if="isGroupAdmin"
           nuxt
           link
-          :to="newTeamsHref"
-        >
-          <v-list-item-avatar>
-            <v-icon>group_add</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newTeam') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          v-if="isGroupAdmin"
-          nuxt
-          link
           :to="newTagsHref"
         >
           <v-list-item-avatar>
@@ -100,13 +84,12 @@ export default {
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $t('global.backToMails')
-              }}
+              {{ $t('global.backToMails') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item
+          v-if="isGroupAdmin"
           nuxt
           link
           :to="newWorkspaceHref"
@@ -115,7 +98,11 @@ export default {
             <v-icon>home_work</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newWorkspace') }}</v-list-item-title>
+            <v-list-item-title>
+              {{
+                $t('global.newWorkspace')
+              }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

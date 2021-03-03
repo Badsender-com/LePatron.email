@@ -6,23 +6,29 @@ import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupMenu from '~/components/group/menu.vue';
-import BsWorkspaceForm from "~/components/workspaces/form";
+import BsWorkspaceForm from '~/components/workspaces/form';
 
 export default {
-  name: `bs-page-group-new-workspace`,
-  mixins: [mixinPageTitle],
+  name: 'BsPageGroupNewWorkspace',
   components: { BsWorkspaceForm, BsGroupMenu },
+  mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
       const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
-      const usersOfGroupResponse = await $axios.$get(apiRoutes.usersByGroupId(params.groupId));
-      return { group: groupResponse, usersOfGroup: usersOfGroupResponse };
+      const usersOfGroupResponse = await $axios.$get(
+        apiRoutes.usersByGroupId(params.groupId)
+      );
+
+      return {
+        group: groupResponse,
+        usersOfGroup: usersOfGroupResponse,
+      };
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
   data() {
@@ -31,24 +37,20 @@ export default {
       group: {},
       loading: false,
       newWorkspace: {
-        description: ``,
-        name: ``,
+        description: '',
+        name: '',
       },
     };
   },
-  head() {
-    return { title: this.title };
-  },
   computed: {
+    groupId() {
+      return this.$route.params.groupId;
+    },
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
         'global.newWorkspace'
       )}`;
     },
-    groupId() {
-      return this.$route.params.groupId;
-    },
-
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -81,13 +83,13 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-group-menu />
     </template>
     <bs-workspace-form
-      :title="$t('global.newWorkspace')"
       v-model="newWorkspace"
-      :usersOfGroup="usersOfGroup"
+      :title="$t('global.newWorkspace')"
+      :users-of-group="usersOfGroup"
       :loading="loading"
       @submit="createWorkspace"
     />
