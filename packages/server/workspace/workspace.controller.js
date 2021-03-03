@@ -4,7 +4,7 @@ const asyncHandler = require('express-async-handler');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
-  findByName: asyncHandler(findByName),
+  findOneByName: asyncHandler(findOneByName),
   list: asyncHandler(list),
   create: asyncHandler(create),
 };
@@ -20,9 +20,9 @@ module.exports = {
  * @apiUse workspace
  */
 
-async function findByName(req, res) {
+async function findOneByName(req, res) {
   const { workspaceName } = req.params;
-  const workspace = await workspaceService.findByName(workspaceName);
+  const workspace = await workspaceService.findOneByName(workspaceName);
   res.json(workspace);
 }
 

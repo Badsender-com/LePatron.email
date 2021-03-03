@@ -4,12 +4,12 @@ const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 module.exports = {
-  findByName,
+  findOneByName,
   createWorkspace,
   listWorkspace,
 };
 
-async function findByName(workspaceName) {
+async function findOneByName(workspaceName) {
   return Workspaces.findOne({ name: workspaceName });
 }
 
