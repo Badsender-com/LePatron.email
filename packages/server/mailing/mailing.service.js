@@ -8,6 +8,7 @@ const wellknown = require('nodemailer-wellknown');
 const createError = require('http-errors');
 
 const config = require('../node.config.js');
+const logger = require('../utils/logger.js');
 
 let mailConfig = config.emailTransport;
 if (mailConfig.service) {
@@ -39,11 +40,12 @@ function send(options) {
     transporter
       .sendMail(mailOptions)
       .then(function (info) {
-        console.log(chalk.green('email send to', info.accepted));
+        logger.log(chalk.green('email send to', info.accepted));
         resolve(info);
       })
       .catch(function (err) {
-        console.log(chalk.red('email error'));
+        logger.log(chalk.red('email error'));
+        logger.log(chalk.red(err.message));
         const message =
           err.code === 'ECONNREFUSED'
             ? 'smtp connection failed'
