@@ -8,7 +8,7 @@ const router = express.Router();
 const {
   GUARD_ADMIN,
   GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
+  GUARD_CAN_ACCESS_GROUP,
 } = require('../account/auth.guard.js');
 const groups = require('./group.controller.js');
 
@@ -18,13 +18,13 @@ router.get('/:groupId/mailings', GUARD_ADMIN, groups.readMailings);
 router.put(
   '/:groupId',
   GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
+  GUARD_CAN_ACCESS_GROUP,
   groups.update
 );
 router.get(
   '/:groupId',
   GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
+  GUARD_CAN_ACCESS_GROUP,
   groups.read
 );
 router.post('', GUARD_ADMIN, groups.create);
