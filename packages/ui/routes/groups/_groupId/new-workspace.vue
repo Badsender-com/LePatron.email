@@ -13,7 +13,7 @@ export default {
   components: { BsWorkspaceForm, BsGroupMenu },
   mixins: [mixinPageTitle],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: acls.ACL_GROUP_ADMIN,
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -58,7 +58,7 @@ export default {
       const { $axios } = this;
       try {
         this.loading = true;
-        await $axios.$post(apiRoutes.workspaces(), {
+        await $axios.$post(apiRoutes.workspacesForCurrentUser(), {
           groupId: this.groupId,
           ...this.newWorkspace,
         });
@@ -88,6 +88,7 @@ export default {
     </template>
     <bs-workspace-form
       v-model="newWorkspace"
+      :group="group"
       :title="$t('global.newWorkspace')"
       :users-of-group="usersOfGroup"
       :loading="loading"

@@ -100,7 +100,7 @@ function guard(role = Roles.REGULAR_USER, redirect = false) {
 function guardCanManageGroup() {
   return function guardManageGroup(req, res, next) {
     const { user } = req;
-    const { groupId } = req.params;
+    const { groupId } = req.params || req.body;
     if (user?._company?.id && groupId && groupId !== user?._company?.id) {
       next(new createError.Unauthorized());
     }

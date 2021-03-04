@@ -130,10 +130,10 @@ export function imagesPlaceholder(routeParams = {}) {
 // WORKSPACEs
 /// ///
 
-export function workspaces() {
+export function workspacesForCurrentUser() {
   return '/workspaces';
 }
 
-export function workspaceByName(name) {
-  return `/workspaces/name/${name}`;
+export function workspaceByNameInGroup(routeParams= {}) {
+  return `/workspaces/name/${routeParams.workspaceName}/group/${routeParams.groupId}`;
 }

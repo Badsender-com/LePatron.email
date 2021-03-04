@@ -4,9 +4,9 @@ const asyncHandler = require('express-async-handler');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
-  findOneByName: asyncHandler(findOneByName),
-  list: asyncHandler(list),
-  create: asyncHandler(create),
+  findOneByNameInGroup: asyncHandler(findOneByNameInGroup),
+  findByGroupIdOfCurrentUser: asyncHandler(findByGroupIdOfCurrentUser),
+  createWorkspaceInGroup: asyncHandler(createWorkspaceInGroup),
 };
 
 /**
@@ -19,10 +19,9 @@ module.exports = {
  *
  * @apiUse workspace
  */
-
-async function findOneByName(req, res) {
-  const { workspaceName } = req.params;
-  const workspace = await workspaceService.findOneByName(workspaceName);
+async function findOneByNameInGroup(req, res) {
+  const { workspaceName, groupId } = req.params;
+  const workspace = await workspaceService.findOneByNameInGroup({workspaceName, groupId });
   res.json(workspace);
 }
 
@@ -35,9 +34,8 @@ async function findOneByName(req, res) {
  * @apiUse workspace
  * @apiSuccess {workspace[]} items list of workspace
  */
-
-async function list(req, res) {
-  const workspaces = await workspaceService.listWorkspace(req.user._company);
+async function findByGroupIdOfCurrentUser(req, res) {
+  const workspaces = await workspaceService.findByGroupId(req.user._company.id);
   res.json({ items: workspaces });
 }
 
@@ -58,7 +56,7 @@ async function list(req, res) {
  * @apiSuccess {workspace} workspace created
  */
 
-async function create(req, res) {
-  const newWorkspace = await workspaceService.createWorkspace(req.body);
+async function createWorkspaceInGroup(req, res) {
+  const newWorkspace = await workspaceService.createWorkspaceInGroup(req.body);
   res.json(newWorkspace);
 }

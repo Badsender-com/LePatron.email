@@ -4,16 +4,19 @@ const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 module.exports = {
-  findOneByName,
-  createWorkspace,
-  listWorkspace,
+  findOneByNameInGroup,
+  createWorkspaceInGroup,
+  findByGroupId,
 };
 
-async function findOneByName(workspaceName) {
-  return Workspaces.findOne({ name: workspaceName });
+async function findOneByNameInGroup(workspaceParams) {
+  return Workspaces.findOne({
+      name: workspaceParams.workspaceName,
+      _company: workspaceParams.groupId
+    });
 }
 
-async function createWorkspace(workspaceParams) {
+async function createWorkspaceInGroup(workspaceParams) {
   const newWorkspace = await Workspaces.create({
     name: workspaceParams.name,
     description: workspaceParams.description || '',
@@ -27,9 +30,9 @@ async function createWorkspace(workspaceParams) {
   return newWorkspace;
 }
 
-async function listWorkspace({ id }) {
+async function findByGroupId(groupId) {
   const workspaces = await Workspaces.find({
-    _company: mongoose.Types.ObjectId(id),
+    _company: mongoose.Types.ObjectId(groupId),
   }).populate({
     path: 'folders',
     populate: { path: 'childFolders' },

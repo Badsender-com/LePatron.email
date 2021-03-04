@@ -4,11 +4,21 @@ const express = require('express');
 const router = express.Router();
 
 const workspaces = require('./workspace.controller.js');
-const { GUARD_ADMIN_OR_GROUP_ADMIN } = require('../account/auth.guard');
+const {
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_MANAGE_GROUP,
+} = require('../account/auth.guard.js');
 
-router.all('*', GUARD_ADMIN_OR_GROUP_ADMIN);
-router.get('', workspaces.list);
-router.get('/name/:workspaceName', workspaces.findOneByName);
-router.post('', workspaces.create);
+router.get('', workspaces.findByGroupIdOfCurrentUser);
+
+router.get('/name/:workspaceName/group/:groupId',
+  GUARD_GROUP_ADMIN, GUARD_CAN_MANAGE_GROUP,
+  workspaces.findOneByNameInGroup
+);
+
+router.post('',
+  GUARD_GROUP_ADMIN, GUARD_CAN_MANAGE_GROUP,
+  workspaces.createWorkspaceInGroup
+);
 
 module.exports = router;
