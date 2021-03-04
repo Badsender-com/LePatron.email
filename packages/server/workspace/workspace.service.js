@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 module.exports = {
   createWorkspace,
   listWorkspace,
+  findByGroupWithUserCount
 };
 
 async function createWorkspace(workspaceParams) {
@@ -24,5 +25,19 @@ async function listWorkspace({ id }) {
     path: 'folders',
     populate: { path: 'childFolders' },
   });
+  return workspaces;
+}
+
+async function findByGroupWithUserCount(groupId) {
+  const workspaces = await Workspaces.aggregate([
+    { $match: { _company: mongoose.Types.ObjectId(groupId) } },
+    { $project: {
+        name: 1,
+        createdAt: 1,
+        users: { $size: '$_users'}
+      }
+    }
+  ]);
+  console.log({workspaces})
   return workspaces;
 }

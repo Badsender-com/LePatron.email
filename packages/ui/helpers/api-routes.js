@@ -130,3 +130,7 @@ export function imagesPlaceholder(routeParams = {}) {
 export function workspacesGroup() {
   return '/workspaces';
 }
+
+export function workspacesWithUserCount(routerParams = {}) {
+  return `/workspaces/${routerParams.groupId}/withUserCount`
+}

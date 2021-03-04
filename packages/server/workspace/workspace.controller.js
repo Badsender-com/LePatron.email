@@ -1,11 +1,11 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const { createWorkspace, listWorkspace } = require('./workspace.service');
+const workspaceService = require('./workspace.service');
 
 module.exports = {
   list: asyncHandler(list),
-  create: asyncHandler(createWorkspace),
+  findByGroupWithUserCount: asyncHandler(findByGroupWithUserCount)
 };
 
 /**
@@ -19,6 +19,13 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const workspaces = await listWorkspace(req.user._company);
+  const workspaces = await workspaceService.listWorkspace(req.user._company);
   res.json({ items: workspaces });
+}
+
+async function findByGroupWithUserCount(req, res) {
+  console.log({req})
+  const workspaces = await workspaceService.findByGroupWithUserCount(req.params.groupId);
+  console.log({workspaces})
+  res.json(workspaces)
 }

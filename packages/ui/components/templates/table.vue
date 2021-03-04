@@ -1,5 +1,4 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
 
 export default {
