@@ -4,7 +4,7 @@ const asyncHandler = require('express-async-handler');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
-  findOneByNameInGroup: asyncHandler(findOneByNameInGroup),
+  existsByNameInGroup: asyncHandler(existsByNameInGroup),
   findByGroupIdOfCurrentUser: asyncHandler(findByGroupIdOfCurrentUser),
   createWorkspaceInGroup: asyncHandler(createWorkspaceInGroup),
 };
@@ -19,11 +19,11 @@ module.exports = {
  *
  * @apiUse workspace
  */
-async function findOneByNameInGroup(req, res) {
+async function existsByNameInGroup(req, res) {
   const { workspaceName } = req.params;
   const groupId = req.user._company.id;
-  const workspace = await workspaceService.findOneByNameInGroup({ workspaceName, groupId });
-  res.json(workspace);
+  const workspaceExists = await workspaceService.existsByNameInGroup({ workspaceName, groupId });
+  res.json(workspaceExists);
 }
 
 /**

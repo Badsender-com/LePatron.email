@@ -13,7 +13,7 @@ router.get('', workspaces.findByGroupIdOfCurrentUser);
 
 router.get('/name/:workspaceName',
   GUARD_GROUP_ADMIN,
-  workspaces.findOneByNameInGroup
+  workspaces.existsByNameInGroup
 );
 
 router.post('',

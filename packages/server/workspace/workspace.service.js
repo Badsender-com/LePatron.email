@@ -4,12 +4,12 @@ const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 module.exports = {
-  findOneByNameInGroup,
+  existsByNameInGroup,
   createWorkspaceInGroup,
   findByGroupId,
 };
 
-async function findOneByNameInGroup(workspaceParams) {
+async function existsByNameInGroup(workspaceParams) {
   return Workspaces.exists({
       name: workspaceParams.workspaceName,
       _company: workspaceParams.groupId
