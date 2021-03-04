@@ -38,8 +38,8 @@ export default {
           async isUnique(workspaceName) {
             const { $axios } = this;
             try {
-              const workspaceWithName = await $axios.$get(apiRoutes.workspaceByNameInGroup(workspaceName));
-              return !workspaceWithName;
+              const workspaceWithNameExists = await $axios.$get(apiRoutes.workspaceByNameInGroup(workspaceName));
+              return !workspaceWithNameExists;
             } catch (e) {
               console.error(e);
             }
