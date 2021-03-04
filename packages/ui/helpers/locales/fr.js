@@ -68,6 +68,7 @@ export default {
     createdAt: 'Crée le',
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
+    move: 'Déplacer'
   },
   layout: {
     logout: 'Déconnexion',
@@ -189,6 +190,10 @@ export default {
     tooltip: {
       noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
+    deleteWorkspace: {
+      title: 'Supprimer le workspacee',
+      notice: 'Vous allez supprimer ce Workspace. Voulez-vous déplacer son contenu dans un autre Workspace ou le supprimer également ?' ,
+    }
   },
   tableHeaders: {
     groups: {

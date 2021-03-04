@@ -68,6 +68,7 @@ export default {
     createdAt: 'Created at',
     updatedAt: 'Updated at',
     edit: 'Edit',
+    move: 'Move'
   },
   layout: {
     logout: 'Logout',
@@ -186,6 +187,10 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    deleteWorkspace: {
+      title: 'Delete workspace',
+      notice: 'You\'re about to delete this workspace. Do you want to move its content to another workspace or delete it as well ?'
+    }
   },
   tableHeaders: {
     groups: {

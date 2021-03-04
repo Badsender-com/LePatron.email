@@ -1,16 +1,19 @@
 <script>
+import BsModalConfirm from '~/components/modal-confirm.vue';
+
 export default {
   name: `bs-workspaces-table`,
+  components: {BsModalConfirm},
   props: {
-    loading: { type: Boolean, default: false },
-    workspaces: { type: Array, default: () => [] },
+    loading: {type: Boolean, default: false},
+    workspaces: {type: Array, default: () => []},
   },
   computed: {
     tableHeaders() {
       return [
-        { text: this.$t('global.name'), align: `center`, value: `name` },
-        { text: this.$tc('global.user', 2), align:'center', value: `users`},
-        { text: this.$t('global.createdAt'), align: `center`, value: `createdAt`},
+        {text: this.$t('global.name'), align: `center`, value: `name`},
+        {text: this.$tc('global.user', 2), align: 'center', value: `users`},
+        {text: this.$t('global.createdAt'), align: `center`, value: `createdAt`},
         {
           text: this.$t('global.delete'),
           value: `actionDelete`,
@@ -20,16 +23,48 @@ export default {
         },
       ]
     },
-
   },
+  methods: {
+    async deleteWorkspace() {
+
+    },
+    triggerDeleteModal() {
+      console.log('in trigger fn')
+      this.$refs.deleteWorkspaceDialog.open();
+    }
+  }
 }
 </script>
 
 <template>
-  <v-data-table
-    :headers="tableHeaders"
-    :items="workspaces"
-  />
+  <div>
+    <v-data-table
+      :headers="tableHeaders"
+      :items="workspaces"
+    >
+      <template #item.actionDelete="{ item }">
+        <v-btn
+          icon
+          color="primary"
+          @click="triggerDeleteModal"
+        >
+          <v-icon>delete</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
+    <aside class="bs-user-modals-confirmation">
 
+      <bs-modal-confirm
+        ref="deleteWorkspaceDialog"
+        :title="$t('users.deleteWorkspace.title')"
+        :action-label="$t('global.delete')"
+        :close-label="'global.move'"
+        @confirm="deleteWorkspace"
+      >
+        {{ $t('users.deleteWorkspace.notice')}}
+      </bs-modal-confirm>
+
+    </aside>
+  </div>
 </template>
 

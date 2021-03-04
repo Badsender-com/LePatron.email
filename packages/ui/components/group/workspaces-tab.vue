@@ -21,7 +21,6 @@ export default {
       const workspacesResponse = await $axios.$get(
         apiRoutes.workspacesWithUserCount(params)
       );
-      console.log({workspacesResponse})
       this.workspaces = [
         ...workspacesResponse,
 

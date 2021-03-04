@@ -4,6 +4,8 @@ export default {
   props: {
     title: { type: String, default: '' },
     actionLabel: { type: String, default: '' },
+    closeLabel: { type: String, default:  'global.cancel'},
+    closeAction : { type: Function, default: () => {}}
   },
   data() {
     return { show: false };
@@ -33,9 +35,7 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">{{
-          $t(`global.cancel`)
-        }}</v-btn>
+        <v-btn color="primary" text @click="close">{{ $t(closeLabel) }}</v-btn>
         <v-btn color="primary" @click="action">{{ actionLabel }}</v-btn>
       </v-card-actions>
     </v-card>
