@@ -14,7 +14,6 @@ export default {
   model: {prop: 'workspace', event: 'update'},
   props: {
     workspace: {type: Object, default: () => ({})},
-    group: {type: Object, default: () => ({})},
     flat: {type: Boolean, default: false},
     disabled: {type: Boolean, default: false},
     loading: {type: Boolean, default: false},
@@ -39,7 +38,7 @@ export default {
           async isUnique(workspaceName) {
             const { $axios } = this;
             try {
-              const workspaceWithName = await $axios.$get(apiRoutes.workspaceByNameInGroup({ workspaceName, groupId: this.group.id }));
+              const workspaceWithName = await $axios.$get(apiRoutes.workspaceByNameInGroup(workspaceName));
               return !workspaceWithName;
             } catch (e) {
               console.error(e);

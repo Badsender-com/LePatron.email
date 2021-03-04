@@ -10,7 +10,7 @@ module.exports = {
 };
 
 async function findOneByNameInGroup(workspaceParams) {
-  return Workspaces.findOne({
+  return Workspaces.exists({
       name: workspaceParams.workspaceName,
       _company: workspaceParams.groupId
     });

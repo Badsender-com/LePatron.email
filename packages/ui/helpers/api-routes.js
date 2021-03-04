@@ -134,6 +134,6 @@ export function workspacesForCurrentUser() {
   return '/workspaces';
 }
 
-export function workspaceByNameInGroup(routeParams= {}) {
-  return `/workspaces/name/${routeParams.workspaceName}/group/${routeParams.groupId}`;
+export function workspaceByNameInGroup(workspaceName) {
+  return `/workspaces/name/${workspaceName}`;
 }

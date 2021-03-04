@@ -88,7 +88,6 @@ export default {
     </template>
     <bs-workspace-form
       v-model="newWorkspace"
-      :group="group"
       :title="$t('global.newWorkspace')"
       :users-of-group="usersOfGroup"
       :loading="loading"

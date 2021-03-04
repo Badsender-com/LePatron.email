@@ -11,8 +11,8 @@ const {
 
 router.get('', workspaces.findByGroupIdOfCurrentUser);
 
-router.get('/name/:workspaceName/group/:groupId',
-  GUARD_GROUP_ADMIN, GUARD_CAN_MANAGE_GROUP,
+router.get('/name/:workspaceName',
+  GUARD_GROUP_ADMIN,
   workspaces.findOneByNameInGroup
 );
 

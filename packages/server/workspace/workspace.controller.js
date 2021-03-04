@@ -20,8 +20,9 @@ module.exports = {
  * @apiUse workspace
  */
 async function findOneByNameInGroup(req, res) {
-  const { workspaceName, groupId } = req.params;
-  const workspace = await workspaceService.findOneByNameInGroup({workspaceName, groupId });
+  const { workspaceName } = req.params;
+  const groupId = req.user._company.id;
+  const workspace = await workspaceService.findOneByNameInGroup({ workspaceName, groupId });
   res.json(workspace);
 }
 
