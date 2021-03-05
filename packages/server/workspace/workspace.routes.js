@@ -1,11 +1,27 @@
 'use strict';
 
 const express = require('express');
+const { guard, GUARD_GROUP_ADMIN } = require('../account/auth.guard');
+const Roles = require('../account/roles');
 const router = express.Router();
-
 const workspaces = require('./workspace.controller.js');
-const { GUARD_GROUP_ADMIN_OR_REGULAR_USER } = require('../account/auth.guard');
 
-router.get('', GUARD_GROUP_ADMIN_OR_REGULAR_USER, workspaces.list);
+router.get(
+  '/',
+  guard([Roles.GROUP_ADMIN, Roles.REGULAR_USER]),
+  workspaces.list
+);
+
+router.post('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
+  return res.end('Endpoint workspace');
+});
+
+router.put('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
+  return res.end('Endpoint workspace');
+});
+
+router.delete('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
+  return res.end('Endpoint workspace');
+});
 
 module.exports = router;

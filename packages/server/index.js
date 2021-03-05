@@ -31,9 +31,7 @@ const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 
 const workers =
-  (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
-    ? process.env.WORKERS
-    : require('os').cpus().length) || require('os').cpus().length;
+  process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
 
 if (cluster.isMaster) {
   logger.log(chalk.cyan('start cluster with %s workers'), workers);
@@ -261,7 +259,6 @@ if (cluster.isMaster) {
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
   app.get(
     '/mailings/:mailingId',
-    GUARD_USER_REDIRECT,
     GUARD_USER_REDIRECT,
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render

@@ -14,7 +14,7 @@ const mongooseHidden = require('mongoose-hidden')();
 
 const config = require('../node.config.js');
 const mail = require('../mailing/mailing.service.js');
-const Roles = require('./role');
+const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
