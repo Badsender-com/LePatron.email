@@ -1,27 +1,33 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
+import { spaceType } from '~/helpers/constants/spaceType.js';
 
 export default {
   name: 'BsGroupWorkspaceList',
-  data: () => ({
-    workspacesData: [],
-    selection: [],
-    loading: false,
-  }),
+  props: {
+    defaultItem: { type: Object, default: () => ({}) },
+    workspacesData: { type: Array, default: () => [] },
+  },
   computed: {
     items() {
       return this.workspacesData.map((workspace) => {
+        const path = {
+          name: workspace.name,
+          id: workspace._id,
+          type: spaceType.WORKSPACE,
+        };
         let formatedWorkspace = {
           icon: 'mdi-account-multiple-outline',
           id: workspace._id,
           name: workspace.name,
           isAllowed: workspace.hasRights,
+          type: spaceType.WORKSPACE,
+          path,
         };
 
         if (workspace.folders?.length > 0) {
           formatedWorkspace = {
             children: workspace.folders.map((folder) =>
-              this.recursiveFolderMap(folder, workspace.hasRights)
+              this.recursiveFolderMap(folder, workspace.hasRights, path)
             ),
             ...formatedWorkspace,
           };
@@ -30,47 +36,52 @@ export default {
       });
     },
   },
-  watch: {
-    selection(newValue) {
-      this.handleSelectItemFromTreeView(newValue);
-    },
-  },
-  async mounted() {
-    const { $axios } = this;
-
-    try {
-      this.loading = true;
-      const workspaceResponse = await $axios.$get(apiRoutes.workspacesGroup());
-      this.workspacesData = workspaceResponse.items;
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.loading = false;
-    }
-  },
   methods: {
-    recursiveFolderMap(folder, isAllowed) {
+    recursiveFolderMap(folder, isAllowed, parentPath) {
+      const path = this.recursivePath(
+        {
+          name: folder.name,
+          type: spaceType.FOLDER,
+        },
+        parentPath
+      );
+
       let formatedData = {
         id: folder._id,
         name: folder.name,
         isAllowed,
+        type: spaceType.FOLDER,
+        path,
       };
       if (folder.childFolders?.length > 0) {
         formatedData = {
           ...formatedData,
           children: folder.childFolders.map((child) =>
-            this.recursiveFolderMap(child, isAllowed)
+            this.recursiveFolderMap(child, isAllowed, path)
           ),
         };
       }
       return formatedData;
     },
+    recursivePath(childPath, parentPath) {
+      if (parentPath?.pathChild) {
+        return {
+          ...parentPath,
+          pathChild: this.recursivePath(childPath, parentPath.pathChild),
+        };
+      } else {
+        return {
+          ...parentPath,
+          pathChild: childPath,
+        };
+      }
+    },
     handleSelectItemFromTreeView(event) {
-      console.log('call select item from tree view ');
-      console.log(event);
-      const iterator1 = this.selection.entries();
-      console.log(iterator1.next().value);
-      this.$emit('select-item');
+      const selectedElement = event[0];
+      this.$router.replace({
+        query: { id: selectedElement?.id, type: selectedElement?.type },
+      });
+      this.$emit('active-list-item', selectedElement);
     },
   },
 };
@@ -83,12 +94,13 @@ export default {
   >
     <v-subheader>{{ 'Workspaces' }}</v-subheader>
     <v-treeview
-      v-model="selection"
       :items="items"
-      selection-type="independent"
       hoverable
-      open-all
+      :open-all="true"
+      :active="[{ id: this.defaultItem }]"
       activatable
+      :return-object="true"
+      class="pb-8"
       item-key="id"
       @update:active="handleSelectItemFromTreeView"
     >

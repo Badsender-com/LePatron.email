@@ -14,6 +14,7 @@ import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue'
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
 import BsGroupWorkspaceList from '../../components/group/workspaces-list';
+import { spaceType } from '~/helpers/constants/spaceType';
 
 export default {
   name: 'PageMailings',
@@ -27,7 +28,7 @@ export default {
     BsGroupWorkspaceList,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_USER },
+  meta: { acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN, acls.ACL_USER] },
   // https://vuetifyjs.com/en/components/data-tables#custom-filtering
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
@@ -48,6 +49,8 @@ export default {
   data() {
     return {
       tags: [],
+      workspacesData: [],
+      defaultItem: null,
       mailings: [],
       mailingsSelection: [],
       templates: [],
@@ -106,6 +109,37 @@ export default {
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
+  },
+  watch: {
+    // call again the method if the route changes
+    $route: 'fetchData',
+  },
+  async mounted() {
+    const { $axios } = this;
+
+    try {
+      this.loading = true;
+      const workspaceResponse = await $axios.$get(apiRoutes.workspacesGroup());
+      this.workspacesData = workspaceResponse.items;
+      if (
+        Array.isArray(this.workspacesData) &&
+        this.workspacesData.length > 0
+      ) {
+        console.log('init');
+        this.defaultItem = {
+          id: this.workspacesData[0]?.id,
+          type: spaceType.WORKSPACE,
+        };
+        console.log({ defaultInit: this.defaultItem });
+        this.$router.replace({
+          query: { id: this.defaultItem.id, type: this.defaultItem.type },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.loading = false;
+    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -260,6 +294,10 @@ export default {
         groupId: false,
       };
     },
+    handleActiveListItem(event) {
+      console.log('called handleActiveListItem');
+      console.log(event);
+    },
     async transferMailing(transferInfo = {}) {
       const { $axios } = this;
       const { mailingId, userId } = transferInfo;
@@ -286,6 +324,9 @@ export default {
         this.loading = false;
       }
     },
+    fetchData() {
+      console.log('called fetch data ');
+    },
   },
 };
 </script>
@@ -305,7 +346,11 @@ export default {
           permanent
           width="300"
         >
-          <bs-group-workspace-list />
+          <bs-group-workspace-list
+            :default-item="this.defaultItem"
+            :workspaces-data="this.workspacesData"
+            @active-list-item="this.handleActiveListItem"
+          />
           <v-row>
             <v-col cols="12">
               <v-list dense>
