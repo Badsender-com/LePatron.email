@@ -51,7 +51,7 @@ export default {
 
 <template>
   <v-list-item
-    v-if="!actionDisplay.activate && !actionDisplay.saml"
+    v-if="!actionDisplay.activate"
     link
     @click="mailAction"
   >
