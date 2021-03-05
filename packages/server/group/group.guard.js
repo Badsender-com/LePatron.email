@@ -12,5 +12,5 @@ const guardCanAccessGroup = () => {
 };
 
 module.exports = {
-  GUARD_CAN_ACCESS_GROUP: guardCanAccessGroup,
+  GUARD_CAN_ACCESS_GROUP: guardCanAccessGroup(),
 };
