@@ -21,6 +21,15 @@ export default {
         return `${this.$t('users.actions.resend')}`;
       return '';
     },
+    passwordActionLabel() {
+      if (this.actionDisplay.resetPassword) {
+        return 'users.passwordTooltip.reset';
+      }
+      if (this.actionDisplay.sendPassword) {
+        return 'users.passwordTooltip.send';
+      }
+      return 'users.passwordTooltip.resend';
+    },
   },
   methods: {
     mailAction() {
@@ -41,17 +50,28 @@ export default {
 </script>
 
 <template>
-  <v-btn
-    v-if="!actionDisplay.activate"
-    class="bs-users-table-actions-mail"
-    :disabled="loading"
-    text
-    small
-    color="primary"
+  <v-list-item
+    v-if="!actionDisplay.activate && !actionDisplay.saml"
+    link
     @click="mailAction"
   >
-    <v-icon>send</v-icon>
-  </v-btn>
+    <v-list-item-avatar>
+      <v-btn
+        v-if="!actionDisplay.activate"
+        class="bs-users-table-actions-mail"
+        :disabled="loading"
+        text
+        small
+        color="primary"
+      >
+        <v-icon>send</v-icon>
+      </v-btn>
+    </v-list-item-avatar>
+    <v-list-item-title>
+      {{ $t(passwordActionLabel) }}
+    </v-list-item-title>
+  </v-list-item>
+
 </template>
 
 <style lang="scss" scoped></style>

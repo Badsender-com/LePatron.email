@@ -10,27 +10,32 @@ export default {
     BsUserTableActionsMail,
   },
   props: {
-    user: { type: Object, default: () => ({ group: {} }) },
-    loading: { type: Boolean, default: false },
+    user: {type: Object, default: () => ({group: {}})},
+    loading: {type: Boolean, default: false},
     activate: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
     deactivate: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
     resetPassword: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
     sendPassword: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
     resendPassword: {
       type: Function,
-      default: () => {},
+      default: () => {
+      },
     },
   },
   data() {
@@ -41,18 +46,6 @@ export default {
   computed: {
     actionDisplay() {
       return userStatusHelpers.getStatusActions(this.user.status);
-    },
-    activationActionLabel() {
-      return this.actionDisplay.activate ? 'global.enable' : 'global.disable';
-    },
-    passwordActionLabel() {
-      if (this.actionDisplay.resetPassword) {
-        return 'users.passwordTooltip.reset';
-      }
-      if (this.actionDisplay.sendPassword) {
-        return 'users.passwordTooltip.send';
-      }
-      return 'users.passwordTooltip.resend';
     },
   },
 };
@@ -71,37 +64,20 @@ export default {
       </v-btn>
     </template>
     <v-list activable>
-      <v-list-item link>
-        <v-list-item-avatar>
-          <bs-users-table-actions-activation
-            :user="user"
-            :loading="loading"
-            @activate="activate"
-            @deactivate="deactivate"
-          />
-        </v-list-item-avatar>
-        <v-list-item-title>
-          {{ $t(activationActionLabel) }}
-        </v-list-item-title>
-      </v-list-item>
-      <v-list-item
-        v-if="!actionDisplay.activate"
-        link
-      >
-        <v-list-item-avatar>
-          <bs-user-table-actions-mail
-            v-if="user.status !== 'saml-authentication'"
-            :user="user"
-            :loading="loading"
-            @resetPassword="resetPassword"
-            @sendPassword="sendPassword"
-            @resendPassword="resendPassword"
-          />
-        </v-list-item-avatar>
-        <v-list-item-title>
-          {{ $t(passwordActionLabel) }}
-        </v-list-item-title>
-      </v-list-item>
+      <bs-users-table-actions-activation
+        :user="user"
+        :loading="loading"
+        @activate="activate"
+        @deactivate="deactivate"
+      />
+      <bs-user-table-actions-mail
+        v-if="user.status !== 'saml-authentication'"
+        :user="user"
+        :loading="loading"
+        @resetPassword="resetPassword"
+        @sendPassword="sendPassword"
+        @resendPassword="resendPassword"
+      />
       <v-list-item
         nuxt
         link
@@ -127,7 +103,7 @@ export default {
 
 <i18n>
 {
-  "en": {},
-  "fr": {}
+"en": {},
+"fr": {}
 }
 </i18n>

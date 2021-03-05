@@ -11,6 +11,9 @@ export default {
     actionDisplay() {
       return userStatusHelpers.getStatusActions(this.user.status);
     },
+    activationActionLabel() {
+      return this.actionDisplay.activate ? 'global.enable' : 'global.disable';
+    },
     actionIcon() {
       return this.actionDisplay.activate
         ? `accessibility`
@@ -19,7 +22,9 @@ export default {
   },
   methods: {
     toggleUser() {
-      if (this.actionDisplay.activate) return this.$emit(`activate`, this.user);
+      if (this.actionDisplay.activate) {
+        return this.$emit(`activate`, this.user);
+      }
       this.$emit(`deactivate`, this.user);
     },
   },
@@ -27,9 +32,16 @@ export default {
 </script>
 
 <template>
-  <v-btn @click="toggleUser" :disabled="loading" icon color="primary">
-    <v-icon>{{ actionIcon }}</v-icon>
-  </v-btn>
+  <v-list-item link @click="toggleUser">
+    <v-list-item-avatar>
+      <v-btn :disabled="loading" icon color="primary">
+        <v-icon>{{ actionIcon }}</v-icon>
+      </v-btn>
+    </v-list-item-avatar>
+    <v-list-item-title>
+      {{ $t(activationActionLabel) }}
+    </v-list-item-title>
+  </v-list-item>
 </template>
 
 <style lang="scss" scoped></style>
