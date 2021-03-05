@@ -14,7 +14,7 @@ const createError = require('http-errors');
 const xmlParser = require('xml2json');
 
 const config = require('../node.config.js');
-const Roles = require('../user/role');
+const Roles = require('./roles');
 
 const {
   Users,
@@ -32,18 +32,12 @@ const adminUser = Object.freeze({
 
 module.exports = {
   adminUser,
-  GUARD_USER: guard(Roles.REGULAR_USER),
-  GUARD_USER_REDIRECT: guard(Roles.REGULAR_USER, true),
-  GUARD_ADMIN: guard(Roles.SUPER_ADMIN),
-  GUARD_GROUP_ADMIN: guard(Roles.GROUP_ADMIN),
-  GUARD_ADMIN_OR_GROUP_ADMIN: guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
-  GUARD_GROUP_ADMIN_OR_REGULAR_USER: guard([
-    Roles.GROUP_ADMIN,
-    Roles.REGULAR_USER,
-  ]),
-  GUARD_CAN_ACCESS_GROUP: guardCanAccessGroup(),
-  GUARD_GROUP_ADMIN_REDIRECT: guard(Roles.GROUP_ADMIN, true),
-  GUARD_ADMIN_REDIRECT: guard(Roles.SUPER_ADMIN, true),
+  guard,
+  GUARD_USER: guard([Roles.REGULAR_USER]),
+  GUARD_USER_REDIRECT: guard([Roles.REGULAR_USER], true),
+  GUARD_GROUP_ADMIN: guard([Roles.GROUP_ADMIN]),
+  GUARD_ADMIN: guard([Roles.SUPER_ADMIN]),
+  GUARD_ADMIN_REDIRECT: guard([Roles.SUPER_ADMIN], true),
 };
 
 /// ///
@@ -52,82 +46,26 @@ module.exports = {
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
-function guard(role = Roles.REGULAR_USER, redirect = false) {
-  const isAdminRoute = Array.isArray(role)
-    ? role.includes(Roles.SUPER_ADMIN)
-    : role === Roles.SUPER_ADMIN;
-  const isGroupAdminRoute = Array.isArray(role)
-    ? role.includes(Roles.GROUP_ADMIN)
-    : role === Roles.GROUP_ADMIN;
-  const isGroupUserRoute = Array.isArray(role)
-    ? role.includes(Roles.REGULAR_USER)
-    : role === Roles.REGULAR_USER;
-  const isOnlyGroupUserRoute =
-    isGroupUserRoute && !isAdminRoute && !isGroupAdminRoute;
-  const isOnlyGroupAdminRoute =
-    isGroupAdminRoute && !isAdminRoute && !isGroupUserRoute;
-  const isOnlyAdminRoute =
-    isAdminRoute && !isGroupAdminRoute && !isGroupUserRoute;
-  return function guardRoute(req, res, next) {
+function guard(roles = [Roles.REGULAR_USER], redirect) {
+  return (req, res, next) => {
     const { user } = req;
-    // non connected user shouldn't access those pages
-    if (!user) {
-      redirect
-        ? res.redirect('/account/login')
-        : next(new createError.Unauthorized());
-      return;
-    }
-    // Check if current user is a Regular user
-    const isRegularUser = !user.isGroupAdmin && !user.isAdmin;
 
-    // non group user user shouldn't access those pages
-    if (isOnlyGroupUserRoute && !isRegularUser) {
-      redirect
-        ? res.redirect('/account/login')
-        : next(new createError.Unauthorized());
-      return;
-    }
+    const isUserRoute = roles.includes(Roles.REGULAR_USER);
+    const isGroupUserRoute = roles.includes(Roles.GROUP_ADMIN);
+    const isAdminRoute = roles.includes(Roles.SUPER_ADMIN);
 
-    // non group admin user shouldn't access those pages
-    if (isOnlyGroupAdminRoute && !user.isGroupAdmin) {
-      redirect
-        ? res.redirect('/account/login')
-        : next(new createError.Unauthorized());
-      return;
-    }
-
-    // non admin user shouldn't access those pages
-    if (isOnlyAdminRoute && !user.isAdmin) {
-      redirect
-        ? res.redirect('/account/admin')
-        : next(new createError.Unauthorized());
-      return;
-    }
-
-    // Prevent the case where the route is admin and group admin then we check if user is one of them
     if (
-      isGroupAdminRoute &&
-      isAdminRoute &&
-      !user.isGroupAdmin &&
-      !user.isAdmin
+      (isAdminRoute && user?.isAdmin) ||
+      (isGroupUserRoute && user?.isGroupAdmin) ||
+      (isUserRoute && !!user)
     ) {
-      redirect
-        ? res.redirect('/account/login')
-        : next(new createError.Unauthorized());
+      next();
       return;
     }
-    next();
-  };
-}
 
-function guardCanAccessGroup() {
-  return function guardManageGroup(req, res, next) {
-    const { user } = req;
-    const { groupId } = req.params;
-    if (user?._company?.id && groupId && groupId !== user?._company?.id) {
-      next(new createError.Unauthorized());
-    }
-    next();
+    redirect
+      ? res.redirect('/account/login')
+      : next(new createError.Unauthorized());
   };
 }
 

@@ -4,7 +4,7 @@ const pick = require('lodash').pick;
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
-const Roles = require('./role');
+const Roles = require('../account/roles');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
