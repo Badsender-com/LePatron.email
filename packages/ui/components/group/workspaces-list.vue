@@ -5,7 +5,7 @@ export default {
   name: 'BsGroupWorkspaceList',
   data: () => ({
     workspacesData: [],
-    tree: [],
+    selection: [],
     loading: false,
   }),
   computed: {
@@ -28,6 +28,11 @@ export default {
         }
         return formatedWorkspace;
       });
+    },
+  },
+  watch: {
+    selection(newValue) {
+      this.handleSelectItemFromTreeView(newValue);
     },
   },
   async mounted() {
@@ -60,6 +65,13 @@ export default {
       }
       return formatedData;
     },
+    handleSelectItemFromTreeView(event) {
+      console.log('call select item from tree view ');
+      console.log(event);
+      const iterator1 = this.selection.entries();
+      console.log(iterator1.next().value);
+      this.$emit('select-item');
+    },
   },
 };
 </script>
@@ -71,12 +83,14 @@ export default {
   >
     <v-subheader>{{ 'Workspaces' }}</v-subheader>
     <v-treeview
-      v-model="tree"
+      v-model="selection"
       :items="items"
+      selection-type="independent"
       hoverable
       open-all
       activatable
-      item-key="name"
+      item-key="id"
+      @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">
         <v-icon
