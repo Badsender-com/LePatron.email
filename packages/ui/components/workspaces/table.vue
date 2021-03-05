@@ -11,9 +11,9 @@ export default {
   computed: {
     tableHeaders() {
       return [
-        {text: this.$t('global.name'), align: `center`, value: `name`},
-        {text: this.$tc('global.user', 2), align: 'center', value: `users`},
-        {text: this.$t('global.createdAt'), align: `center`, value: `createdAt`},
+        {text: this.$t('global.name'), align: `left`, value: `name`},
+        {text: this.$tc('global.user', 2), align: 'left', value: `users`},
+        {text: this.$t('global.createdAt'), align: `left`, value: `createdAt`},
         {
           text: this.$t('global.delete'),
           value: `actionDelete`,
@@ -25,11 +25,7 @@ export default {
     },
   },
   methods: {
-    async deleteWorkspace() {
-
-    },
     triggerDeleteModal() {
-      console.log('in trigger fn')
       this.$refs.deleteWorkspaceDialog.open();
     }
   }

@@ -65,7 +65,7 @@ export default {
     enabled: 'Activé',
     disabled: 'Désactivé',
     status: 'Statut',
-    createdAt: 'Crée le',
+    createdAt: 'Créé le',
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer'
@@ -191,7 +191,7 @@ export default {
       noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
     deleteWorkspace: {
-      title: 'Supprimer le workspacee',
+      title: 'Supprimer le workspace',
       notice: 'Vous allez supprimer ce Workspace. Voulez-vous déplacer son contenu dans un autre Workspace ou le supprimer également ?' ,
     }
   },

@@ -24,8 +24,6 @@ async function list(req, res) {
 }
 
 async function findByGroupWithUserCount(req, res) {
-  console.log({req})
   const workspaces = await workspaceService.findByGroupWithUserCount(req.params.groupId);
-  console.log({workspaces})
   res.json(workspaces)
 }
