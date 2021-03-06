@@ -15,12 +15,13 @@ export default {
           icon: 'mdi-account-multiple-outline',
           id: workspace._id,
           name: workspace.name,
+          isAllowed: workspace.hasRights,
         };
 
         if (workspace.folders?.length > 0) {
           formatedWorkspace = {
             children: workspace.folders.map((folder) =>
-              this.recursiveFolderMap(folder)
+              this.recursiveFolderMap(folder, workspace.hasRights)
             ),
             ...formatedWorkspace,
           };
@@ -43,16 +44,17 @@ export default {
     }
   },
   methods: {
-    recursiveFolderMap(folder) {
+    recursiveFolderMap(folder, isAllowed) {
       let formatedData = {
         id: folder._id,
         name: folder.name,
+        isAllowed,
       };
       if (folder.childFolders?.length > 0) {
         formatedData = {
           ...formatedData,
           children: folder.childFolders.map((child) =>
-            this.recursiveFolderMap(child)
+            this.recursiveFolderMap(child, isAllowed)
           ),
         };
       }
@@ -77,15 +79,22 @@ export default {
       item-key="name"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon">
+        <v-icon
+          v-if="!item.icon"
+          :color="item.isAllowed ? 'primary' : 'base'"
+        >
           {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
         </v-icon>
-        <v-icon v-else>
+        <v-icon
+          v-else
+          :color="item.isAllowed ? 'primary' : 'base'"
+        >
           {{ item.icon }}
         </v-icon>
       </template>
-      <template #append>
+      <template #append="{ item }">
         <v-menu
+          v-if="item.isAllowed"
           bottom
           left
         >
@@ -95,7 +104,9 @@ export default {
               v-bind="attrs"
               v-on="on"
             >
-              <v-icon>mdi-dots-vertical</v-icon>
+              <v-icon color="primary">
+                mdi-dots-vertical
+              </v-icon>
             </v-btn>
           </template>
           <v-list>
@@ -117,9 +128,14 @@ export default {
     </v-treeview>
   </v-card>
 </template>
-<style>
+<style scoped>
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
+}
+
+.v-treeview {
+  overflow-y: auto;
+  max-height: 450px;
 }
 </style>

@@ -1,7 +1,15 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const createError = require('http-errors');
+const mongoose = require('mongoose');
 const workspaceService = require('./workspace.service');
+
+const {
+  createWorkspace,
+  listWorkspaceForGroupAdmin,
+  listWorkspaceForRegularUser,
+} = require('./workspace.service');
 
 module.exports = {
   existsByNameInGroup: asyncHandler(existsByNameInGroup),
@@ -35,9 +43,20 @@ async function existsByNameInGroup(req, res) {
  * @apiUse workspace
  * @apiSuccess {workspace[]} items list of workspace
  */
-async function findByGroupIdOfCurrentUser(req, res) {
-  const workspaces = await workspaceService.findByGroupId(req.user._company.id);
-  res.json({ items: workspaces });
+
+async function list(req, res, next) {
+  if (!req?.user) {
+    next(new createError.Unauthorized());
+  }
+  let workspaces = null;
+  if (req.user.isAdmin || req.user.isGroupAdmin) {
+    workspaces = await listWorkspaceForGroupAdmin({
+      _company: mongoose.Types.ObjectId(req.user._company?.id),
+    });
+  } else {
+    workspaces = await listWorkspaceForRegularUser(req.user);
+  }
+  return res.json({ items: workspaces });
 }
 
 

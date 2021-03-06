@@ -32,7 +32,22 @@ export default {
   <v-row>
     <v-col cols="12">
       <v-list dense>
-        <v-subheader>{{ $t('global.actions') }}</v-subheader>
+        <v-list-item
+          v-if="isGroupAdmin"
+          nuxt
+          class="mb-8"
+          link
+          to="/"
+        >
+          <v-list-item-avatar>
+            <v-icon>arrow_back</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $t('global.backToMails') }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item
           v-if="isAdmin"
           nuxt

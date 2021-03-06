@@ -11,7 +11,6 @@ import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
-import BsGroupTagsTab from '~/components/group/tags-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
@@ -23,7 +22,6 @@ export default {
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
     BsGroupWorkspacesTab,
-    BsGroupTagsTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -120,12 +118,6 @@ export default {
       >
         {{ $tc('global.teams', 2) }}
       </v-tab>
-      <v-tab
-        v-if="isGroupAdmin"
-        href="#group-tags"
-      >
-        {{ $tc('global.tags', 2) }}
-      </v-tab>
       <v-tab href="#group-users">
         {{ $tc('global.user', 2) }}
       </v-tab>
@@ -157,12 +149,6 @@ export default {
         value="group-workspaces"
       >
         <bs-group-workspaces-tab />
-      </v-tab-item>
-      <v-tab-item
-        v-if="isGroupAdmin"
-        value="group-tags"
-      >
-        <bs-group-tags-tab />
       </v-tab-item>
       <v-tab-item value="group-users">
         <bs-group-users-tab />
