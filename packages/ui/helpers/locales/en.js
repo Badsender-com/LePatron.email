@@ -38,6 +38,7 @@ export default {
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
     group: 'Group | Groups',
+    searchLabel: 'Search directory',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',
     workspace: 'Workspace',

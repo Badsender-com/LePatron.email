@@ -14,6 +14,7 @@ import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue'
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
 import BsGroupWorkspaceList from '../../components/group/workspaces-list';
+import { spaceType } from '~/helpers/constants/spaceType';
 
 export default {
   name: 'PageMailings',
@@ -48,6 +49,9 @@ export default {
   data() {
     return {
       tags: [],
+      workspacesData: [],
+      defaultItem: null,
+      selectedSpaceItem: null,
       mailings: [],
       mailingsSelection: [],
       templates: [],
@@ -90,6 +94,9 @@ export default {
     title() {
       return this.$tc('global.mailing', 2);
     },
+    breadcrumbsData() {
+      return this.formatPathToBreadcrumbsData(this.selectedSpaceItem);
+    },
     selecteMailingsIdsList() {
       return this.mailingsSelection.map((mailing) => mailing.id);
     },
@@ -107,8 +114,61 @@ export default {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
+  watch: {
+    // call again the method if the route changes
+    $route: 'fetchData',
+  },
+  async mounted() {
+    const { $axios } = this;
+
+    try {
+      this.loading = true;
+      const workspaceResponse = await $axios.$get(
+        apiRoutes.workspacesForCurrentUser()
+      );
+      this.workspacesData = workspaceResponse.items;
+      if (
+        Array.isArray(this.workspacesData) &&
+        this.workspacesData.length > 0
+      ) {
+        this.defaultItem = {
+          id: this.workspacesData[0]?.id,
+          type: spaceType.WORKSPACE,
+        };
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.loading = false;
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    formatPathToBreadcrumbsData(formatData) {
+      let items = [];
+      if (formatData?.path) {
+        items[0] = {
+          text: formatData?.path?.name,
+          id: formatData?.path?.id,
+          type: formatData?.path?.type,
+          disabled: !formatData?.path?.pathChild,
+        };
+        items = this.getRecursivePathChild(items, formatData?.path);
+      }
+      return items;
+    },
+    getRecursivePathChild(array, path) {
+      if (path?.pathChild && Array.isArray(array)) {
+        array.push({
+          text: path?.pathChild?.name,
+          id: path?.pathChild?.id,
+          type: path?.pathChild?.type,
+          disabled: !path?.pathChild?.pathChild,
+        });
+        return this.getRecursivePathChild(array, path?.pathChild);
+      }
+      return array;
+    },
     async onDelete(_) {
       const { $axios } = this;
       this.loading = true;
@@ -208,6 +268,7 @@ export default {
         this.loading = false;
       }
     },
+
     displayDuplicateModal(mailing) {
       this.duplicateModalInfo = {
         show: true,
@@ -260,6 +321,9 @@ export default {
         groupId: false,
       };
     },
+    handleActiveListItem(event) {
+      this.selectedSpaceItem = event;
+    },
     async transferMailing(transferInfo = {}) {
       const { $axios } = this;
       const { mailingId, userId } = transferInfo;
@@ -286,6 +350,23 @@ export default {
         this.loading = false;
       }
     },
+    async fetchData() {
+      try {
+        this.defaultItem = {
+          ...this.$route.query,
+        };
+        const mailingsResponse = await this.$axios.$get(apiRoutes.mailings(), {
+          params: this.defaultItem,
+        });
+        this.mailings = mailingsResponse?.items || [];
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      }
+    },
   },
 };
 </script>
@@ -298,6 +379,7 @@ export default {
     <v-row class="fill-height">
       <v-col
         v-if="!isAdmin"
+        class="pl-0"
         cols="2"
       >
         <v-navigation-drawer
@@ -305,7 +387,11 @@ export default {
           permanent
           width="300"
         >
-          <bs-group-workspace-list />
+          <bs-group-workspace-list
+            :default-item="this.defaultItem"
+            :workspaces-data="this.workspacesData"
+            @active-list-item="this.handleActiveListItem"
+          />
           <v-row>
             <v-col cols="12">
               <v-list dense>
@@ -327,7 +413,7 @@ export default {
                 <v-list-item
                   nuxt
                   link
-                  to="#"
+                  href="/account/logout"
                 >
                   <v-list-item-avatar>
                     <v-icon>power_settings_new</v-icon>
@@ -344,6 +430,22 @@ export default {
         </v-navigation-drawer>
       </v-col>
       <v-col :cols="colWidth">
+        <v-card>
+          <v-breadcrumbs :items="breadcrumbsData">
+            <template #divider>
+              <v-icon>mdi-chevron-right</v-icon>
+            </template>
+            <template #item="{ item }">
+              <v-breadcrumbs-item
+                :replace="true"
+                :to="{ path: '/', query: { id: item.id, type: item.type } }"
+                :disabled="item.disabled"
+              >
+                {{ item.text.toUpperCase() }}
+              </v-breadcrumbs-item>
+            </template>
+          </v-breadcrumbs>
+        </v-card>
         <v-card>
           <bs-mailings-selection-actions
             :mailings-selection="mailingsSelection"
