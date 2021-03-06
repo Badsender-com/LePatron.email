@@ -21,9 +21,6 @@ export default {
     newWorkspaceHref() {
       return `/groups/${this.groupId}/new-workspace`;
     },
-    newTagsHref() {
-      return `/groups/${this.groupId}/new-tag`;
-    },
   },
 };
 </script>
@@ -79,19 +76,6 @@ export default {
           v-if="isGroupAdmin"
           nuxt
           link
-          :to="newTagsHref"
-        >
-          <v-list-item-avatar>
-            <v-icon>post_add</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newTag') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          v-if="isGroupAdmin"
-          nuxt
-          link
           :to="newWorkspaceHref"
         >
           <v-list-item-avatar>
@@ -102,21 +86,6 @@ export default {
               {{
                 $t('global.newWorkspace')
               }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          v-if="isGroupAdmin"
-          nuxt
-          link
-          to="/"
-        >
-          <v-list-item-avatar>
-            <v-icon>arrow_back</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $t('global.backToMails') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>

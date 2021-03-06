@@ -2,6 +2,8 @@
 
 const express = require('express');
 const { guard, GUARD_GROUP_ADMIN } = require('../account/auth.guard');
+const { GUARD_CAN_ACCESS_GROUP } = require('../group/group.guard.js');
+
 const Roles = require('../account/roles');
 const router = express.Router();
 const workspaces = require('./workspace.controller.js');
@@ -25,12 +27,12 @@ router.delete('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
 });
 
 router.get('/name/:workspaceName',
-  GUARD_GROUP_ADMIN,
+  GUARD_GROUP_ADMIN, GUARD_CAN_ACCESS_GROUP,
   workspaces.existsByNameInGroup
 );
 
 router.post('',
-  GUARD_GROUP_ADMIN, GUARD_CAN_MANAGE_GROUP,
+  GUARD_GROUP_ADMIN, GUARD_CAN_ACCESS_GROUP,
   workspaces.createWorkspaceInGroup
 );
 

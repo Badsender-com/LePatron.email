@@ -3,17 +3,17 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const mongoose = require('mongoose');
-const workspaceService = require('./workspace.service');
 
 const {
   createWorkspace,
   listWorkspaceForGroupAdmin,
   listWorkspaceForRegularUser,
+  existsByName
 } = require('./workspace.service');
 
 module.exports = {
   existsByNameInGroup: asyncHandler(existsByNameInGroup),
-  findByGroupIdOfCurrentUser: asyncHandler(findByGroupIdOfCurrentUser),
+  list: asyncHandler(list),
   createWorkspaceInGroup: asyncHandler(createWorkspaceInGroup),
 };
 
@@ -30,7 +30,7 @@ module.exports = {
 async function existsByNameInGroup(req, res) {
   const { workspaceName } = req.params;
   const groupId = req.user._company.id;
-  const workspaceExists = await workspaceService.existsByNameInGroup({ workspaceName, groupId });
+  const workspaceExists = await existsByName({ workspaceName, groupId });
   res.json(workspaceExists);
 }
 
@@ -77,6 +77,6 @@ async function list(req, res, next) {
  */
 
 async function createWorkspaceInGroup(req, res) {
-  const newWorkspace = await workspaceService.createWorkspaceInGroup(req.body);
+  const newWorkspace = await createWorkspace(req.body);
   res.json(newWorkspace);
 }

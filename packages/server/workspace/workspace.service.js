@@ -8,18 +8,17 @@ module.exports = {
   listWorkspace,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
-  existsByNameInGroup,
-  createWorkspaceInGroup,
+  existsByName,
 };
 
-async function existsByNameInGroup(workspaceParams) {
+async function existsByName(workspaceParams) {
   return Workspaces.exists({
       name: workspaceParams.workspaceName,
       _company: workspaceParams.groupId
     });
 }
 
-async function createWorkspaceInGroup(workspaceParams) {
+async function createWorkspace(workspaceParams) {
   const newWorkspace = await Workspaces.create({
     name: workspaceParams.name,
     description: workspaceParams.description || '',
@@ -40,6 +39,7 @@ async function listWorkspace(params) {
   });
   return workspaces;
 }
+
 async function listWorkspaceForGroupAdmin(params) {
   const listWorkspacesForGroupAdmin = await listWorkspace(params);
 

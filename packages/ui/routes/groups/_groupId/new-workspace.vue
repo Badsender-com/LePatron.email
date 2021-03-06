@@ -66,7 +66,8 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        // redirect to workspace page on success
+        // redirect to workspace edit page on success
+        this.$router.push('/');
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),

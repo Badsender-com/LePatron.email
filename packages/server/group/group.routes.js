@@ -12,8 +12,8 @@ const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 
 router.get(
   '/:groupId/users',
-  GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
+  guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]),
+  GUARD_CAN_ACCESS_GROUP,
   groups.readUsers
 );
 router.get('/:groupId/templates', GUARD_ADMIN, groups.readTemplates);
