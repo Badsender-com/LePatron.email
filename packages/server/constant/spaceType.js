@@ -1,7 +1,6 @@
 'use strict';
 
-// we keep old collections name for compatibility issues
-module.exports = Object.freeze({
+module.exports = {
   WORKSPACE: 'workspace',
   FOLDER: 'folder',
-});
+};

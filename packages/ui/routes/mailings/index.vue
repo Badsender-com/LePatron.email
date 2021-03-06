@@ -349,23 +349,42 @@ export default {
       }
     },
     async fetchData() {
-      this.defaultItem = {
-        ...this.$route.query,
-      };
-      const mailingsResponse = await this.$axios.$get(apiRoutes.mailings(), {
-        params: this.defaultItem,
-      });
-      this.mailings = mailingsResponse?.items || [];
+      try {
+        this.defaultItem = {
+          ...this.$route.query,
+        };
+        const mailingsResponse = await this.$axios.$get(apiRoutes.mailings(), {
+          params: this.defaultItem,
+        });
+        this.mailings = mailingsResponse?.items || [];
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      }
     },
   },
 };
 </script>
 
 <template>
-  <v-container fluid class="fill-height">
+  <v-container
+    fluid
+    class="fill-height"
+  >
     <v-row class="fill-height">
-      <v-col v-if="!isAdmin" class="pl-0" cols="2">
-        <v-navigation-drawer class="d-flex" permanent width="300">
+      <v-col
+        v-if="!isAdmin"
+        class="pl-0"
+        cols="2"
+      >
+        <v-navigation-drawer
+          class="d-flex"
+          permanent
+          width="300"
+        >
           <bs-group-workspace-list
             :default-item="this.defaultItem"
             :workspaces-data="this.workspacesData"
@@ -374,7 +393,12 @@ export default {
           <v-row>
             <v-col cols="12">
               <v-list dense>
-                <v-list-item v-if="isGroupAdmin" nuxt link :to="groupAdminUrl">
+                <v-list-item
+                  v-if="isGroupAdmin"
+                  nuxt
+                  link
+                  :to="groupAdminUrl"
+                >
                   <v-list-item-avatar>
                     <v-icon>settings</v-icon>
                   </v-list-item-avatar>
@@ -384,7 +408,11 @@ export default {
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item nuxt link href="/account/logout">
+                <v-list-item
+                  nuxt
+                  link
+                  href="/account/logout"
+                >
                   <v-list-item-avatar>
                     <v-icon>power_settings_new</v-icon>
                   </v-list-item-avatar>
