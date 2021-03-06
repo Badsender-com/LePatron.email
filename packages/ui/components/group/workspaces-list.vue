@@ -8,6 +8,9 @@ export default {
     workspacesData: { type: Array, default: () => [] },
   },
   computed: {
+    defaultItemId() {
+      return this.defaultItem?.id;
+    },
     items() {
       return this.workspacesData.map((workspace) => {
         const path = {
@@ -40,6 +43,7 @@ export default {
     recursiveFolderMap(folder, isAllowed, parentPath) {
       const path = this.recursivePath(
         {
+          id: folder.id,
           name: folder.name,
           type: spaceType.FOLDER,
         },
@@ -77,10 +81,31 @@ export default {
       }
     },
     handleSelectItemFromTreeView(event) {
-      const selectedElement = event[0];
-      this.$router.replace({
-        query: { id: selectedElement?.id, type: selectedElement?.type },
-      });
+      let selectedElement = null;
+      let querySelectedElement = null;
+      if (!event[0]) {
+        selectedElement = this.defaultItem;
+        querySelectedElement = {
+          id: this.defaultItem?.id,
+          type: this.defaultItem?.type,
+        };
+      } else {
+        selectedElement = event[0];
+        querySelectedElement = {
+          id: selectedElement?.id,
+          type: selectedElement?.type,
+        };
+      }
+
+      if (
+        JSON.stringify(this.$route.query) !==
+        JSON.stringify(querySelectedElement)
+      ) {
+        this.$router.replace({
+          query: querySelectedElement,
+        });
+      }
+
       this.$emit('active-list-item', selectedElement);
     },
   },
@@ -97,7 +122,7 @@ export default {
       :items="items"
       hoverable
       :open-all="true"
-      :active="[{ id: this.defaultItem }]"
+      :active="[{ id: defaultItemId }]"
       activatable
       :return-object="true"
       class="pb-8"
@@ -117,6 +142,11 @@ export default {
         >
           {{ item.icon }}
         </v-icon>
+      </template>
+      <template #label="{ item, active }">
+        <div @click="active ? $event.stopPropagation() : null">
+          {{ item.name }}
+        </div>
       </template>
       <template #append="{ item }">
         <v-menu

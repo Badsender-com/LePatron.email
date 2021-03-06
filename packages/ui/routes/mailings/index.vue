@@ -51,6 +51,7 @@ export default {
       tags: [],
       workspacesData: [],
       defaultItem: null,
+      selectedSpaceItem: null,
       mailings: [],
       mailingsSelection: [],
       templates: [],
@@ -93,6 +94,9 @@ export default {
     title() {
       return this.$tc('global.mailing', 2);
     },
+    breadcrumbsData() {
+      return this.formatPathToBreadcrumbsData(this.selectedSpaceItem);
+    },
     selecteMailingsIdsList() {
       return this.mailingsSelection.map((mailing) => mailing.id);
     },
@@ -125,15 +129,10 @@ export default {
         Array.isArray(this.workspacesData) &&
         this.workspacesData.length > 0
       ) {
-        console.log('init');
         this.defaultItem = {
           id: this.workspacesData[0]?.id,
           type: spaceType.WORKSPACE,
         };
-        console.log({ defaultInit: this.defaultItem });
-        this.$router.replace({
-          query: { id: this.defaultItem.id, type: this.defaultItem.type },
-        });
       }
     } catch (error) {
       console.log(error);
@@ -143,6 +142,31 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    formatPathToBreadcrumbsData(formatData) {
+      let items = [];
+      if (formatData?.path) {
+        items[0] = {
+          text: formatData?.path?.name,
+          id: formatData?.path?.id,
+          type: formatData?.path?.type,
+          disabled: !formatData?.path?.pathChild,
+        };
+        items = this.getRecursivePathChild(items, formatData?.path);
+      }
+      return items;
+    },
+    getRecursivePathChild(array, path) {
+      if (path?.pathChild && Array.isArray(array)) {
+        array.push({
+          text: path?.pathChild?.name,
+          id: path?.pathChild?.id,
+          type: path?.pathChild?.type,
+          disabled: !path?.pathChild?.pathChild,
+        });
+        return this.getRecursivePathChild(array, path?.pathChild);
+      }
+      return array;
+    },
     async onDelete(_) {
       const { $axios } = this;
       this.loading = true;
@@ -242,6 +266,7 @@ export default {
         this.loading = false;
       }
     },
+
     displayDuplicateModal(mailing) {
       this.duplicateModalInfo = {
         show: true,
@@ -295,8 +320,7 @@ export default {
       };
     },
     handleActiveListItem(event) {
-      console.log('called handleActiveListItem');
-      console.log(event);
+      this.selectedSpaceItem = event;
     },
     async transferMailing(transferInfo = {}) {
       const { $axios } = this;
@@ -324,8 +348,15 @@ export default {
         this.loading = false;
       }
     },
-    fetchData() {
-      console.log('called fetch data ');
+    async fetchData() {
+      console.log(this.$route.query);
+      this.defaultItem = {
+        ...this.$route.query,
+      };
+      const mailingsResponse = await this.$axios.$get(apiRoutes.mailings(), {
+        params: this.defaultItem,
+      });
+      this.mailings = mailingsResponse?.items || [];
     },
   },
 };
@@ -389,6 +420,22 @@ export default {
         </v-navigation-drawer>
       </v-col>
       <v-col :cols="colWidth">
+        <v-card>
+          <v-breadcrumbs :items="breadcrumbsData">
+            <template #divider>
+              <v-icon>mdi-chevron-right</v-icon>
+            </template>
+            <template #item="{ item }">
+              <v-breadcrumbs-item
+                :replace="true"
+                :to="{ path: '/', query: { id: item.id, type: item.type } }"
+                :disabled="item.disabled"
+              >
+                {{ item.text.toUpperCase() }}
+              </v-breadcrumbs-item>
+            </template>
+          </v-breadcrumbs>
+        </v-card>
         <v-card>
           <bs-mailings-selection-actions
             :mailings-selection="mailingsSelection"
