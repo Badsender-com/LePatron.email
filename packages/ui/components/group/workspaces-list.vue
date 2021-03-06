@@ -7,7 +7,15 @@ export default {
     defaultItem: { type: Object, default: () => ({}) },
     workspacesData: { type: Array, default: () => [] },
   },
+  data() {
+    return {
+      search: null,
+    };
+  },
   computed: {
+    filter() {
+      return (item, search, textKey) => item[textKey].indexOf(search) > -1;
+    },
     defaultItemId() {
       return this.defaultItem?.id;
     },
@@ -108,6 +116,11 @@ export default {
 
       this.$emit('active-list-item', selectedElement);
     },
+    handleSearch(input) {
+      if (input) {
+        this.$refs.tree.updateAll(true);
+      }
+    },
   },
 };
 </script>
@@ -118,12 +131,28 @@ export default {
     width="300"
   >
     <v-subheader>{{ 'Workspaces' }}</v-subheader>
+    <v-sheet class="pa-4 secondary">
+      <v-text-field
+        v-model="search"
+        :label="$t('global.searchLabel')"
+        dark
+        flat
+        solo-inverted
+        hide-details
+        clearable
+        clear-icon="mdi-close-circle-outline"
+        @input="handleSearch"
+      />
+    </v-sheet>
     <v-treeview
+      ref="tree"
+      open-all
       :items="items"
-      hoverable
-      :open-all="true"
-      :active="[{ id: defaultItemId }]"
       activatable
+      :search="search"
+      :filter="filter"
+      hoverable
+      :active="[{ id: defaultItemId }]"
       :return-object="true"
       class="pb-8"
       item-key="id"

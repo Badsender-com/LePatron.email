@@ -28,7 +28,7 @@ export default {
     BsGroupWorkspaceList,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN, acls.ACL_USER] },
+  meta: { acl: acls.ACL_USER },
   // https://vuetifyjs.com/en/components/data-tables#custom-filtering
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
@@ -349,7 +349,6 @@ export default {
       }
     },
     async fetchData() {
-      console.log(this.$route.query);
       this.defaultItem = {
         ...this.$route.query,
       };
@@ -370,6 +369,7 @@ export default {
     <v-row class="fill-height">
       <v-col
         v-if="!isAdmin"
+        class="pl-0"
         cols="2"
       >
         <v-navigation-drawer
