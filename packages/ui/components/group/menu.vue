@@ -18,10 +18,7 @@ export default {
     newUserHref() {
       return `/groups/${this.groupId}/new-user`;
     },
-    newTagsHref() {
-      return `/groups/${this.groupId}/new-tag`;
-    },
-    newTeamsHref() {
+    newWorkspaceHref() {
       return `/groups/${this.groupId}/new-workspace`;
     },
   },
@@ -79,13 +76,17 @@ export default {
           v-if="isGroupAdmin"
           nuxt
           link
-          :to="newTeamsHref"
+          :to="newWorkspaceHref"
         >
           <v-list-item-avatar>
-            <v-icon>group_add</v-icon>
+            <v-icon>home_work</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newTeam') }}</v-list-item-title>
+            <v-list-item-title>
+              {{
+                $t('global.newWorkspace')
+              }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

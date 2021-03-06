@@ -8,26 +8,43 @@ module.exports = {
   listWorkspace,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
+  existsByName,
 };
+
+async function existsByName(workspaceParams) {
+  return Workspaces.exists({
+    name: workspaceParams.workspaceName,
+    _company: workspaceParams.groupId,
+  });
+}
 
 async function createWorkspace(workspaceParams) {
   const newWorkspace = await Workspaces.create({
     name: workspaceParams.name,
-    _company: workspaceParams.group,
+    description: workspaceParams.description || '',
+    _company: workspaceParams.groupId,
+    _users:
+      (workspaceParams.selectedUsers &&
+        workspaceParams.selectedUsers.map((user) => user.id)) ||
+      [],
   });
 
   return newWorkspace;
 }
 
 async function listWorkspace(params) {
-  const workspaces = await Workspaces.find(params).populate({
+  console.log({ params });
+  const workspaces = await Workspaces.find().populate({
     path: 'folders',
     populate: { path: 'childFolders' },
   });
   return workspaces;
 }
-async function listWorkspaceForGroupAdmin(params) {
-  const listWorkspacesForGroupAdmin = await listWorkspace(params);
+
+async function listWorkspaceForGroupAdmin(groupId) {
+  const listWorkspacesForGroupAdmin = await listWorkspace({
+    _company: mongoose.Types.ObjectId(groupId),
+  });
 
   return listWorkspacesForGroupAdmin?.map((workSpace) => {
     return { ...workSpace.toObject(), hasRights: true };

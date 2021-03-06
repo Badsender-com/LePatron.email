@@ -1,8 +1,7 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const createError = require('http-errors');
-const mongoose = require('mongoose');
+const { default: createHttpError } = require('http-errors');
 
 const {
   createWorkspace,
@@ -12,7 +11,7 @@ const {
 
 module.exports = {
   list: asyncHandler(list),
-  create: asyncHandler(createWorkspace),
+  createWorkspace: asyncHandler(createWorkspaceInGroup),
 };
 
 /**
@@ -27,15 +26,36 @@ module.exports = {
 
 async function list(req, res, next) {
   if (!req?.user) {
-    next(new createError.Unauthorized());
+    next(new createHttpError.Unauthorized());
   }
   let workspaces = null;
-  if (req.user.isAdmin || req.user.isGroupAdmin) {
-    workspaces = await listWorkspaceForGroupAdmin({
-      _company: mongoose.Types.ObjectId(req.user._company?.id),
-    });
+  const user = req.user;
+  if (user?.isGroupAdmin) {
+    const { group } = user;
+    workspaces = await listWorkspaceForGroupAdmin(group.id);
   } else {
     workspaces = await listWorkspaceForRegularUser(req.user);
   }
-  return res.json({ items: workspaces });
+  return res.json({ workspaces });
+}
+
+/**
+ * @api {post} /workspaces workspace creation
+ * @apiPermission group_admin
+ * @apiName CreateWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiParam (Body) {String} groupId the group of the workspace
+ * @apiParam (Body) {String} email should be unique in the application
+ * @apiParam (Body) {String} [name]
+ * @apiParam (Body) {String} [description]
+ * @apiParam (Body) {Array} [userIds] Ids of the workspace's members
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspace} workspace created
+ */
+
+async function createWorkspaceInGroup(req, res) {
+  const newWorkspace = await createWorkspace(req.body);
+  res.json(newWorkspace);
 }

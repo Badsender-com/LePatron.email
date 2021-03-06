@@ -35,9 +35,10 @@ export default {
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux mails',
     group: 'Groupe | Groupes',
-    searchLabel: 'Recherche dans l\'annuaire',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
+    workspace: 'Workspace',
+    newWorkspace: 'Ajouter un workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
@@ -190,6 +191,11 @@ export default {
     tooltip: {
       noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
+  },
+  workspaces: {
+    name: 'Nom',
+    description: 'Descritpion',
+    members: 'Membres',
   },
   tableHeaders: {
     groups: {

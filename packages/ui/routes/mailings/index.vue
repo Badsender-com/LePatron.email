@@ -13,8 +13,7 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
-import BsGroupWorkspaceList from '../../components/group/workspaces-list';
-import { spaceType } from '~/helpers/constants/spaceType';
+import WorkspaceList from '~/components/group/workspaces-list';
 
 export default {
   name: 'PageMailings',
@@ -25,7 +24,7 @@ export default {
     BsMailingsModalRename,
     BsMailingsModalDuplicate,
     BsMailingsModalTransfer,
-    BsGroupWorkspaceList,
+    WorkspaceList,
   },
   mixins: [mixinPageTitle],
   meta: { acl: acls.ACL_USER },
@@ -49,7 +48,6 @@ export default {
   data() {
     return {
       tags: [],
-      workspacesData: [],
       defaultItem: null,
       selectedSpaceItem: null,
       mailings: [],
@@ -117,28 +115,6 @@ export default {
   watch: {
     // call again the method if the route changes
     $route: 'fetchData',
-  },
-  async mounted() {
-    const { $axios } = this;
-
-    try {
-      this.loading = true;
-      const workspaceResponse = await $axios.$get(apiRoutes.workspacesGroup());
-      this.workspacesData = workspaceResponse.items;
-      if (
-        Array.isArray(this.workspacesData) &&
-        this.workspacesData.length > 0
-      ) {
-        this.defaultItem = {
-          id: this.workspacesData[0]?.id,
-          type: spaceType.WORKSPACE,
-        };
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.loading = false;
-    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -370,35 +346,14 @@ export default {
 </script>
 
 <template>
-  <v-container
-    fluid
-    class="fill-height"
-  >
+  <v-container fluid class="fill-height">
     <v-row class="fill-height">
-      <v-col
-        v-if="!isAdmin"
-        class="pl-0"
-        cols="2"
-      >
-        <v-navigation-drawer
-          class="d-flex"
-          permanent
-          width="300"
-        >
-          <bs-group-workspace-list
-            :default-item="this.defaultItem"
-            :workspaces-data="this.workspacesData"
-            @active-list-item="this.handleActiveListItem"
-          />
+      <v-col v-if="!isAdmin" class="pl-0" cols="2">
+        <v-navigation-drawer class="d-flex" permanent width="300">
           <v-row>
             <v-col cols="12">
               <v-list dense>
-                <v-list-item
-                  v-if="isGroupAdmin"
-                  nuxt
-                  link
-                  :to="groupAdminUrl"
-                >
+                <v-list-item v-if="isGroupAdmin" nuxt link :to="groupAdminUrl">
                   <v-list-item-avatar>
                     <v-icon>settings</v-icon>
                   </v-list-item-avatar>
@@ -408,23 +363,10 @@ export default {
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item
-                  nuxt
-                  link
-                  href="/account/logout"
-                >
-                  <v-list-item-avatar>
-                    <v-icon>power_settings_new</v-icon>
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ $t('layout.logout') }}
-                    </v-list-item-title>
-                  </v-list-item-content>
-                </v-list-item>
               </v-list>
             </v-col>
           </v-row>
+          <workspace-list />
         </v-navigation-drawer>
       </v-col>
       <v-col :cols="colWidth">
