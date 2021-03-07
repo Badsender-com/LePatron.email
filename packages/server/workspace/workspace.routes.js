@@ -2,7 +2,6 @@
 
 const express = require('express');
 const { guard, GUARD_GROUP_ADMIN } = require('../account/auth.guard');
-const { GUARD_CAN_ACCESS_GROUP } = require('../group/group.guard.js');
 
 const Roles = require('../account/roles');
 const router = express.Router();
@@ -14,12 +13,7 @@ router.get(
   workspaces.list
 );
 
-router.post(
-  '/:workspaceId',
-  GUARD_GROUP_ADMIN,
-  GUARD_CAN_ACCESS_GROUP,
-  workspaces.createWorkspace
-);
+router.post('/', GUARD_GROUP_ADMIN, workspaces.createWorkspace);
 
 router.put('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
   return res.end('Endpoint workspace');

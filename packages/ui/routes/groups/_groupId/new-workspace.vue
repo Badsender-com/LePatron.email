@@ -19,6 +19,7 @@ export default {
         `/groups/${params?.groupId}/users`
       );
 
+      console.log({ users });
       return {
         users,
         isLoading: false,
@@ -31,51 +32,40 @@ export default {
     return {
       isLoading: true,
       isError: false,
-      group: null,
-      usersOfGroup: [],
-      // newWorkspace: {
-      //   description: '',
-      //   name: '',
-      // },
+      users: [],
     };
   },
-  // computed: {
-  //   groupId() {
-  //     return this.$route.params.groupId;
-  //   },
-  //   title() {
-  //     return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
-  //       'global.newWorkspace'
-  //     )}`;
-  //   },
-  // },
-  // methods: {
-  //   ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-  //   async createWorkspace() {
-  //     const { $axios } = this;
-  //     try {
-  //       this.loading = true;
-  //       await $axios.$post(apiRoutes.workspacesForCurrentUser(), {
-  //         groupId: this.groupId,
-  //         ...this.newWorkspace,
-  //       });
-  //       this.showSnackbar({
-  //         text: this.$t('snackbars.created'),
-  //         color: 'success',
-  //       });
-  //       // redirect to workspace edit page on success
-  //       this.$router.push('/');
-  //     } catch (error) {
-  //       this.showSnackbar({
-  //         text: this.$t('global.errors.errorOccured'),
-  //         color: 'error',
-  //       });
-  //       console.log(error);
-  //     } finally {
-  //       this.loading = false;
-  //     }
-  //   },
-  // },
+  methods: {
+    // ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async createWorkspace(values) {
+      const { $axios } = this;
+      console.log({
+        ...values,
+        groupId: this.$route.params?.groupId,
+      });
+      try {
+        this.loading = true;
+        const response = await $axios.$post('/workspaces', {
+          groupId: this.$route.params?.groupId,
+          ...values,
+        });
+        console.log({ response });
+        // this.showSnackbar({
+        //   text: this.$t('snackbars.created'),
+        //   color: 'success',
+        // });
+        // redirect to workspace edit page on success
+        this.$router.push('/');
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
 };
 </script>
 
