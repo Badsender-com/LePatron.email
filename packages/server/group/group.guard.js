@@ -7,6 +7,7 @@ const guardCanAccessGroup = () => {
       return next(new createError.Unauthorized());
     }
 
+    // We bypass the check if the user is a super admin
     if (user.isAdmin) {
       return next();
     }

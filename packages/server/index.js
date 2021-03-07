@@ -208,11 +208,9 @@ if (cluster.isMaster) {
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
     (err, req, res, _next) => {
       console.log({ err });
-      const { user } = req;
       if (err) {
         return res.redirect('/');
       }
-      console.log({ user });
       return res.redirect('/');
     }
   );

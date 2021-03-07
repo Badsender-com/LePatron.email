@@ -2,30 +2,42 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+const { BadRequest } = require('http-errors');
 
 module.exports = {
   createWorkspace,
   listWorkspace,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
-  existsByName,
 };
 
-async function existsByName(workspaceParams) {
+async function existsByName({ workspaceName, groupId }) {
   return Workspaces.exists({
-    name: workspaceParams.workspaceName,
-    _company: workspaceParams.groupId,
+    name: workspaceName,
+    _company: groupId,
   });
 }
 
-async function createWorkspace(workspaceParams) {
+async function createWorkspace(workspace) {
+  console.log({ workspace });
+
+  if (
+    existsByName({
+      workspaceName: workspace?.name,
+      groupId: workspace?.groupId,
+    })
+  ) {
+    throw new BadRequest(
+      'A workspace with this name already exists in this group'
+    );
+  }
   const newWorkspace = await Workspaces.create({
-    name: workspaceParams.name,
-    description: workspaceParams.description || '',
-    _company: workspaceParams.groupId,
+    name: workspace.name,
+    description: workspace.description || '',
+    _company: workspace.groupId,
     _users:
-      (workspaceParams.selectedUsers &&
-        workspaceParams.selectedUsers.map((user) => user.id)) ||
+      (workspace.selectedUsers &&
+        workspace.selectedUsers.map((user) => user.id)) ||
       [],
   });
 
@@ -33,8 +45,7 @@ async function createWorkspace(workspaceParams) {
 }
 
 async function listWorkspace(params) {
-  console.log({ params });
-  const workspaces = await Workspaces.find().populate({
+  const workspaces = await Workspaces.find(params).populate({
     path: 'folders',
     populate: { path: 'childFolders' },
   });

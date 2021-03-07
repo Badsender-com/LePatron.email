@@ -13,7 +13,8 @@ const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
 
-router.get('/:groupId', GUARD_CAN_ACCESS_GROUP, groups.read);
+// guard() will check if the user is logged
+router.get('/:groupId', guard(), GUARD_CAN_ACCESS_GROUP, groups.read);
 
 router.put(
   '/:groupId',
@@ -22,10 +23,25 @@ router.put(
   groups.update
 );
 
-router.get('/:groupId/users', GUARD_CAN_ACCESS_GROUP, groups.readUsers);
+router.get(
+  '/:groupId/users',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readUsers
+);
 
-router.get('/:groupId/templates', GUARD_ADMIN, groups.readTemplates);
-router.get('/:groupId/mailings', GUARD_ADMIN, groups.readMailings);
+router.get(
+  '/:groupId/templates',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readTemplates
+);
+router.get(
+  '/:groupId/mailings',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readMailings
+);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

@@ -5,7 +5,7 @@ import WorkspaceForm from '~/components/workspaces/workspace-form';
 import BsGroupMenu from '~/components/group/menu.vue';
 
 export default {
-  name: 'PageNewWorkspace',
+  name: 'PageEditWorkspace',
   components: { WorkspaceForm, BsGroupMenu },
   mixins: [mixinPageTitle],
   meta: {

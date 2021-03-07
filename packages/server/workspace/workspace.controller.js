@@ -1,17 +1,13 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const { default: createHttpError } = require('http-errors');
+const createHttpError = require('http-errors');
 
-const {
-  createWorkspace,
-  listWorkspaceForGroupAdmin,
-  listWorkspaceForRegularUser,
-} = require('./workspace.service');
+const workspaceService = require('./workspace.service');
 
 module.exports = {
   list: asyncHandler(list),
-  createWorkspace: asyncHandler(createWorkspaceInGroup),
+  createWorkspace: asyncHandler(createWorkspace),
 };
 
 /**
@@ -28,15 +24,12 @@ async function list(req, res, next) {
   if (!req?.user) {
     next(new createHttpError.Unauthorized());
   }
-  let workspaces = null;
   const user = req.user;
-  if (user?.isGroupAdmin) {
-    const { group } = user;
-    workspaces = await listWorkspaceForGroupAdmin(group.id);
-  } else {
-    workspaces = await listWorkspaceForRegularUser(req.user);
-  }
-  return res.json({ workspaces });
+  const { group } = user;
+  const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
+    group.id
+  );
+  return res.json({ items: workspaces });
 }
 
 /**
@@ -55,7 +48,19 @@ async function list(req, res, next) {
  * @apiSuccess {workspace} workspace created
  */
 
-async function createWorkspaceInGroup(req, res) {
-  const newWorkspace = await createWorkspace(req.body);
-  res.json(newWorkspace);
+async function createWorkspace(req, res) {
+  try {
+    if (!!req.user?.group?.id && req.body.groupId === req.user?.group?.id) {
+      const newWorkspace = await workspaceService.createWorkspace(req.body);
+      res.json(newWorkspace);
+    } else {
+      res.status(403).send();
+    }
+  } catch (error) {
+    console.error(error);
+    if (error.status) {
+      return res.status(error.status).send(error.message);
+    }
+    res.status(500).send();
+  }
 }

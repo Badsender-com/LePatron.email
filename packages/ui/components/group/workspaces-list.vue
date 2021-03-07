@@ -11,8 +11,8 @@ export default {
 
     try {
       this.workspacesIsLoading = true;
-      const response = await $axios.$get('/workspaces');
-      this.workspaces = response.workspaces;
+      const { items } = await $axios.$get('/workspaces');
+      this.workspaces = items;
     } catch (error) {
       this.workspaceIsError = true;
     } finally {
