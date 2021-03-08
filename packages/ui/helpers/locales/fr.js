@@ -115,7 +115,7 @@ export default {
         password: {
           required: 'Un mot de passe est requis',
           confirm: 'Vous devez confirmer votre mot de passe',
-          same: 'Vos mots de passes sont différents',
+          same: 'Vos mots de passe sont différents',
         },
         email: {
           required: 'Un email est requis',
