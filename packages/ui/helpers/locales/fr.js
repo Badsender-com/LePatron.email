@@ -192,11 +192,6 @@ export default {
     tooltip: {
       noPassword: 'Désactivé à cause de l\'authenfication SAML',
     },
-    deleteWorkspace: {
-      title: 'Supprimer le workspace',
-      notice:
-        'Vous allez supprimer ce Workspace. Voulez-vous déplacer son contenu dans un autre Workspace ou le supprimer également ?',
-    },
   },
   workspaces: {
     name: 'Nom',

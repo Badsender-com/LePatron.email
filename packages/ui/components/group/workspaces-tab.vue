@@ -25,10 +25,7 @@ export default {
     const { $axios } = this;
     try {
       this.loading = true;
-      const workspacesResponse = await $axios.$get(
-        apiRoutes.workspacesWithUserCount()
-      );
-      this.workspaces = [...workspacesResponse];
+      this.workspaces = await $axios.$get(apiRoutes.workspacesWithUserCount());
       this.workspaces.map((workspace) => {
         workspace.createdAt = moment(workspace.createdAt).format(DATE_FORMAT);
         return workspace;

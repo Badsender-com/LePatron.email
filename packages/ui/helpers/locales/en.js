@@ -189,11 +189,6 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
-    deleteWorkspace: {
-      title: 'Delete workspace',
-      notice:
-        'You\'re about to delete this workspace. Do you want to move its content to another workspace or delete it as well ?',
-    },
   },
   workspaces: {
     name: 'Name',
