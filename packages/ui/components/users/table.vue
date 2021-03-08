@@ -109,7 +109,7 @@ export default {
         <v-badge
           v-if="item.role === roles.GROUP_ADMIN"
           inline
-          content="Company admin"
+          content="Group admin"
         />
       </template>
       <template #item.group="{ item }">
