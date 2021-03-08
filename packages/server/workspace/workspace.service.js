@@ -7,6 +7,7 @@ const { Conflict } = require('http-errors');
 
 module.exports = {
   createWorkspace,
+  getWorkspace,
   listWorkspace,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
@@ -17,6 +18,10 @@ async function existsByName({ workspaceName, groupId }) {
     name: workspaceName,
     _company: groupId,
   });
+}
+
+async function getWorkspace(id) {
+  return Workspaces.findById(id);
 }
 
 async function createWorkspace(workspace) {

@@ -9,7 +9,7 @@ import WorkspaceForm from '~/components/workspaces/workspace-form';
 import BsGroupMenu from '~/components/group/menu.vue';
 
 export default {
-  name: 'PageNewWorkspace',
+  name: 'PageUpdateWorkspace',
   components: { WorkspaceForm, BsGroupMenu },
   mixins: [mixinPageTitle],
   meta: {
@@ -19,12 +19,11 @@ export default {
     const { $axios, params } = nuxtContext;
 
     try {
-      const { items: users } = await $axios.$get(
-        `/groups/${params?.groupId}/users`
-      );
+     const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
+      console.log({workspace})
 
       return {
-        users,
+        workspace,
         isLoading: false,
       };
     } catch (error) {
@@ -40,7 +39,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async createWorkspace(values) {
+    async updateWorkspace(values) {
       const { $axios } = this;
       try {
         this.isLoading = true;
@@ -54,8 +53,11 @@ export default {
         });
 
         // TODO: redirect to workspace edit page on success
-        console.log({createdWorkspace})
-        this.$router.push(`/groups/${this.$route.params?.groupId}/workspace/${createdWorkspace.id}`);
+        this.$router.push({
+          path:`/groups/${this.$route.params?.groupId}/edit-workspace`,
+          query: { id: createdWorkspace.id },
+
+        });
       } catch (error) {
         const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;
         this.showSnackbar({
@@ -77,7 +79,7 @@ export default {
     </template>
     <workspace-form
       :users="users"
-      @submit="createWorkspace"
+      @submit="updateWorkspace"
       :isLoading="isLoading"
     />
   </bs-layout-left-menu>

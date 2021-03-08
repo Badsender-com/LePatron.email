@@ -8,6 +8,7 @@ const workspaceService = require('./workspace.service');
 module.exports = {
   list: asyncHandler(list),
   createWorkspace: asyncHandler(createWorkspace),
+  getWorkspace: asyncHandler(getWorkspace),
 };
 
 /**
@@ -25,11 +26,11 @@ async function list(req, res, next) {
     next(new createHttpError.Unauthorized());
   }
   const user = req.user;
-  const { group } = user;
+  const {group} = user;
   const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
     group.id
   );
-  return res.json({ items: workspaces });
+  return res.json({items: workspaces});
 }
 
 /**
@@ -54,8 +55,37 @@ async function createWorkspace(req, res) {
       const newWorkspace = await workspaceService.createWorkspace(req.body);
       res.json(newWorkspace);
     } else {
-      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_CREATION);
+      return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_CREATION);
     }
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).send(error.message);
+    }
+    res.status(500).send();
+  }
+}
+
+/**
+ * @api {get} /workspaces/:workspaceId workspace
+ * @apiPermission group_admin
+ * @apiName GetWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiParam {string} workspaceId
+ *
+ * @apiUse group
+ */
+
+async function getWorkspace(req, res) {
+  try {
+    const { workspaceId } = req.params;
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+
+    if (`${workspace._company}` !== req.user?.group?.id) {
+      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    }
+    res.json(workspace);
+
   } catch (error) {
     if (error.status) {
       return res.status(error.status).send(error.message);
