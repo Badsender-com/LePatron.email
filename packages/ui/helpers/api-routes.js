@@ -127,7 +127,7 @@ export function imagesPlaceholder(routeParams = {}) {
 /// ///
 
 export function workspacesForCurrentUser() {
-  return '/workspaces';
+  return '/workspaces/folders';
 }
 
 export function workspaceByNameInGroup(workspaceName) {

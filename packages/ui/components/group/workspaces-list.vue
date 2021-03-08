@@ -1,4 +1,6 @@
 <script>
+import * as apiRoutes from '~/helpers/api-routes.js';
+
 export default {
   name: 'WorkspaceList',
   data: () => ({
@@ -11,7 +13,7 @@ export default {
 
     try {
       this.workspacesIsLoading = true;
-      const { items } = await $axios.$get('/workspaces');
+      const { items } = await $axios.$get(apiRoutes.workspacesForCurrentUser());
       this.workspaces = items;
     } catch (error) {
       this.workspaceIsError = true;

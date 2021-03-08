@@ -2,30 +2,26 @@
 
 const express = require('express');
 const { GUARD_GROUP_ADMIN } = require('../account/auth.guard');
-const { GUARD_CAN_ACCESS_GROUP } = require('../group/group.guard');
 
 const router = express.Router();
 const workspacesController = require('./workspace.controller.js');
+const { GUARD_USER_HAVE_GROUP_ID } = require('../group/group.guard');
+const { guard } = require('../account/auth.guard');
 
 router.get(
   '/',
   GUARD_GROUP_ADMIN,
-  GUARD_CAN_ACCESS_GROUP,
+  GUARD_USER_HAVE_GROUP_ID,
   workspacesController.findByGroupWithUserCount
 );
 router.get(
   '/folders',
-  GUARD_GROUP_ADMIN,
-  GUARD_CAN_ACCESS_GROUP,
+  guard(),
+  GUARD_USER_HAVE_GROUP_ID,
   workspacesController.list
 );
 
-router.post(
-  '/',
-  GUARD_GROUP_ADMIN,
-  GUARD_CAN_ACCESS_GROUP,
-  workspacesController.createWorkspace
-);
+router.post('/', GUARD_GROUP_ADMIN, workspacesController.createWorkspace);
 
 router.put('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
   return res.end('Endpoint workspace');
