@@ -26,9 +26,7 @@ async function createWorkspace(workspace) {
       groupId: workspace?.groupId,
     })
   ) {
-    throw new Conflict(
-      ERROR_CODES.WORKSPACE_ALREADY_EXISTS
-    );
+    throw new Conflict(ERROR_CODES.WORKSPACE_ALREADY_EXISTS);
   }
   const newWorkspace = await Workspaces.create({
     name: workspace.name,
