@@ -17,8 +17,9 @@ export default async function authMiddleware(nuxtContext) {
 
   if (
     (authorizations.groupAdmin && userSessionInfo.isGroupAdmin) ||
-    (authorizations.admin && userSessionInfo.isGroupAdmin) ||
-    (authorizations.user && userSessionInfo.isConnected)
+    (authorizations.admin && userSessionInfo.isAdmin) ||
+    (authorizations.user && userSessionInfo.isConnected) ||
+    (authorizations.notConnected && !userSessionInfo.isConnected)
   ) {
     return;
   }
