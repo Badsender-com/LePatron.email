@@ -15,10 +15,7 @@ export function getAuthorizations(acl) {
 }
 
 function isUserPage(acl) {
-  const userRoles = [ACL_USER, ACL_ADMIN, ACL_GROUP_ADMIN];
-  return Array.isArray(acl)
-    ? acl.every((role) => userRoles.includes(role))
-    : userRoles.includes(acl);
+  return Array.isArray(acl) ? acl.includes(ACL_USER) : acl === ACL_USER;
 }
 
 function isGroupAdminPage(acl) {

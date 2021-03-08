@@ -24,19 +24,21 @@ export default {
         },
       },
     },
-    teams: 'Équipes',
+    teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
-    newTeam: 'Ajouter une équipe',
+    newTeam: 'Ajouter un workspace',
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux mails',
     group: 'Groupe | Groupes',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
+    workspace: 'Workspace',
+    newWorkspace: 'Ajouter un workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
@@ -68,7 +70,7 @@ export default {
     createdAt: 'Créé le',
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
-    move: 'Déplacer'
+    move: 'Déplacer',
   },
   layout: {
     logout: 'Déconnexion',
@@ -114,7 +116,7 @@ export default {
         password: {
           required: 'Un mot de passe est requis',
           confirm: 'Vous devez confirmer votre mot de passe',
-          same: 'Vos mots de passes sont différents',
+          same: 'Vos mots de passe sont différents',
         },
         email: {
           required: 'Un email est requis',
@@ -192,8 +194,14 @@ export default {
     },
     deleteWorkspace: {
       title: 'Supprimer le workspace',
-      notice: 'Vous allez supprimer ce Workspace. Voulez-vous déplacer son contenu dans un autre Workspace ou le supprimer également ?' ,
-    }
+      notice:
+        'Vous allez supprimer ce Workspace. Voulez-vous déplacer son contenu dans un autre Workspace ou le supprimer également ?',
+    },
+  },
+  workspaces: {
+    name: 'Nom',
+    description: 'Descritpion',
+    members: 'Membres',
   },
   tableHeaders: {
     groups: {

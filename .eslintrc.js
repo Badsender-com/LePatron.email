@@ -22,6 +22,7 @@ module.exports = {
   plugins: ['vue'],
   rules: {
     'import/no-named-default': 'off',
+    'vue/max-attributes-per-line': 'off',
     'no-var': 'error',
     'vue/valid-v-slot': [
       'error',

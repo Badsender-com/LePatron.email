@@ -47,7 +47,19 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {});
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+    req.user,
+    {}
+  );
+  const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(
+    req.query
+  );
+  const mailingQuery = {
+    ...mailingQueryStrictGroup,
+    ...mailingQueryFolderParams,
+  };
+  // _workspace
+  // _parentFolder
   const [mailings, tags] = await Promise.all([
     Mailings.findForApi(mailingQuery),
     Mailings.findTags(mailingQuery),

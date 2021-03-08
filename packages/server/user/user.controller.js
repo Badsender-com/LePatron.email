@@ -4,7 +4,7 @@ const pick = require('lodash').pick;
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
-const Roles = require('./role');
+const Roles = require('../account/roles');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -13,6 +13,7 @@ const groupService = require('../group/group.service.js');
 
 module.exports = {
   list: asyncHandler(list),
+  getByGroupId: asyncHandler(getUsersByGroupId),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMailings: asyncHandler(readMailings),
@@ -41,6 +42,13 @@ async function list(req, res) {
     .populate({ path: '_company', select: 'id name entryPoint issuer' })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
+}
+
+async function getUsersByGroupId(req, res) {
+  const { user: connectedUser } = req;
+  console.log({ connectedUser });
+  const users = await userService.findByGroupId(connectedUser?.group?.id);
+  res.json(users);
 }
 
 /**

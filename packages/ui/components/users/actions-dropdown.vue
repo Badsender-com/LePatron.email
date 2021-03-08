@@ -42,18 +42,6 @@ export default {
     actionDisplay() {
       return userStatusHelpers.getStatusActions(this.user.status);
     },
-    activationActionLabel() {
-      return this.actionDisplay.activate ? 'global.enable' : 'global.disable';
-    },
-    passwordActionLabel() {
-      if (this.actionDisplay.resetPassword) {
-        return 'users.passwordTooltip.reset';
-      }
-      if (this.actionDisplay.sendPassword) {
-        return 'users.passwordTooltip.send';
-      }
-      return 'users.passwordTooltip.resend';
-    },
   },
 };
 </script>
@@ -61,57 +49,28 @@ export default {
 <template>
   <v-menu offset-y>
     <template #activator="{ on }">
-      <v-btn
-        color="primary"
-        dark
-        icon
-        v-on="on"
-      >
+      <v-btn color="primary" dark icon v-on="on">
         <v-icon>{{ actionsIcon }}</v-icon>
       </v-btn>
     </template>
     <v-list activable>
-      <v-list-item link>
+      <bs-users-table-actions-activation
+        :user="user"
+        :loading="loading"
+        @activate="activate"
+        @deactivate="deactivate"
+      />
+      <bs-user-table-actions-mail
+        v-if="user.status !== 'saml-authentication'"
+        :user="user"
+        :loading="loading"
+        @resetPassword="resetPassword"
+        @sendPassword="sendPassword"
+        @resendPassword="resendPassword"
+      />
+      <v-list-item nuxt link :to="`/users/${user.id}`">
         <v-list-item-avatar>
-          <bs-users-table-actions-activation
-            :user="user"
-            :loading="loading"
-            @activate="activate"
-            @deactivate="deactivate"
-          />
-        </v-list-item-avatar>
-        <v-list-item-title>
-          {{ $t(activationActionLabel) }}
-        </v-list-item-title>
-      </v-list-item>
-      <v-list-item
-        v-if="!actionDisplay.activate"
-        link
-      >
-        <v-list-item-avatar>
-          <bs-user-table-actions-mail
-            v-if="user.status !== 'saml-authentication'"
-            :user="user"
-            :loading="loading"
-            @resetPassword="resetPassword"
-            @sendPassword="sendPassword"
-            @resendPassword="resendPassword"
-          />
-        </v-list-item-avatar>
-        <v-list-item-title>
-          {{ $t(passwordActionLabel) }}
-        </v-list-item-title>
-      </v-list-item>
-      <v-list-item
-        nuxt
-        link
-        :to="`/users/${user.id}`"
-      >
-        <v-list-item-avatar>
-          <v-btn
-            color="primary"
-            icon
-          >
+          <v-btn color="primary" icon>
             <v-icon>edit</v-icon>
           </v-btn>
         </v-list-item-avatar>
@@ -127,7 +86,7 @@ export default {
 
 <i18n>
 {
-  "en": {},
-  "fr": {}
+"en": {},
+"fr": {}
 }
 </i18n>

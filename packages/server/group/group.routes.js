@@ -5,34 +5,46 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const {
-  GUARD_ADMIN,
-  GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
-} = require('../account/auth.guard.js');
+const { GUARD_ADMIN, guard } = require('../account/auth.guard.js');
+const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
+const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 
-router.get('/:groupId/users', GUARD_ADMIN, groups.readUsers);
-router.get('/:groupId/templates', GUARD_ADMIN, groups.readTemplates);
-router.get('/:groupId/mailings', GUARD_ADMIN, groups.readMailings);
+router.get('/', GUARD_ADMIN, groups.list);
+router.post('', GUARD_ADMIN, groups.create);
+
+// guard() will check if the user is logged
+router.get('/:groupId', guard(), GUARD_CAN_ACCESS_GROUP, groups.read);
+
 router.put(
   '/:groupId',
-  GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
+  guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]),
+  GUARD_CAN_ACCESS_GROUP,
   groups.update
 );
+
 router.get(
-  '/:groupId',
-  GUARD_ADMIN_OR_GROUP_ADMIN,
-  GUARD_CAN_MANAGE_GROUP,
-  groups.read
+  '/:groupId/users',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readUsers
 );
-router.post('', GUARD_ADMIN, groups.create);
-router.get('', GUARD_ADMIN, groups.list);
+
+router.get(
+  '/:groupId/templates',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readTemplates
+);
+router.get(
+  '/:groupId/mailings',
+  guard(), // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readMailings
+);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {
-  console.log(req.path);
   next(new createError.NotImplemented());
 });
 

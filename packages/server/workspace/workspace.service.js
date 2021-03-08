@@ -2,42 +2,104 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+const { BadRequest } = require('http-errors');
 
 module.exports = {
   createWorkspace,
   listWorkspace,
-  findByGroupWithUserCount
+  listWorkspaceForRegularUser,
+  listWorkspaceForGroupAdmin,
+  findByGroupWithUserCount,
 };
 
-async function createWorkspace(workspaceParams) {
+async function existsByName({ workspaceName, groupId }) {
+  return Workspaces.exists({
+    name: workspaceName,
+    _company: groupId,
+  });
+}
+
+async function createWorkspace(workspace) {
+  console.log({ workspace });
+
+  if (
+    existsByName({
+      workspaceName: workspace?.name,
+      groupId: workspace?.groupId,
+    })
+  ) {
+    throw new BadRequest(
+      'A workspace with this name already exists in this group'
+    );
+  }
   const newWorkspace = await Workspaces.create({
-    name: workspaceParams.name,
-    _company: workspaceParams.group,
+    name: workspace.name,
+    description: workspace.description || '',
+    _company: workspace.groupId,
+    _users:
+      (workspace.selectedUsers &&
+        workspace.selectedUsers.map((user) => user.id)) ||
+      [],
   });
 
   return newWorkspace;
 }
 
-async function listWorkspace({ id }) {
-  const workspaces = await Workspaces.find({
-    _company: mongoose.Types.ObjectId(id),
-  }).populate({
+async function listWorkspace(params) {
+  const workspaces = await Workspaces.find(params).populate({
     path: 'folders',
     populate: { path: 'childFolders' },
   });
   return workspaces;
 }
 
+async function listWorkspaceForGroupAdmin(groupId) {
+  const listWorkspacesForGroupAdmin = await listWorkspace({
+    _company: mongoose.Types.ObjectId(groupId),
+  });
+
+  return listWorkspacesForGroupAdmin?.map((workSpace) => {
+    return { ...workSpace.toObject(), hasRights: true };
+  });
+}
+
 async function findByGroupWithUserCount(groupId) {
   const workspaces = await Workspaces.aggregate([
     { $match: { _company: mongoose.Types.ObjectId(groupId) } },
-    { $project: {
+    {
+      $project: {
         name: 1,
         createdAt: 1,
-        users: { $size: '$_users'}
-      }
-    }
+        users: { $size: '$_users' },
+      },
+    },
   ]);
-  console.log({workspaces})
   return workspaces;
+}
+
+async function listWorkspaceForRegularUser(user) {
+  const promiseListWorkspaceForNotGroupUser = listWorkspace({
+    _company: mongoose.Types.ObjectId(user._company?.id),
+    _users: { $ne: user.id },
+  });
+  const promiseListWorkspaceForGroupUser = listWorkspace({
+    _company: mongoose.Types.ObjectId(user._company?.id),
+    _users: user.id,
+  });
+  const [otherWorkSpaces, workspacesForCurrentUser] = await Promise.all([
+    promiseListWorkspaceForNotGroupUser,
+    promiseListWorkspaceForGroupUser,
+  ]);
+
+  const formatWorkspacesForCurrentUser = workspacesForCurrentUser.map(
+    (workSpace) => {
+      return { ...workSpace.toObject(), hasRights: true };
+    }
+  );
+
+  const formatOtherWorkSpaces = otherWorkSpaces.map((workSpace) => {
+    return { ...workSpace.toObject(), hasRights: false };
+  });
+
+  return [...formatWorkspacesForCurrentUser, ...formatOtherWorkSpaces];
 }

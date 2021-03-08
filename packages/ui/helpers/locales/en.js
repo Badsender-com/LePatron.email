@@ -24,19 +24,21 @@ export default {
         },
       },
     },
-    teams: 'Teams',
+    teams: 'Workspaces',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
     user: 'User | Users',
     newUser: 'Add a user',
-    newTeam: 'Add a team',
+    newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
     group: 'Group | Groups',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',
+    workspace: 'Workspace',
+    newWorkspace: 'Add a workspace',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
@@ -68,7 +70,7 @@ export default {
     createdAt: 'Created at',
     updatedAt: 'Updated at',
     edit: 'Edit',
-    move: 'Move'
+    move: 'Move',
   },
   layout: {
     logout: 'Logout',
@@ -189,8 +191,14 @@ export default {
     role: 'Role',
     deleteWorkspace: {
       title: 'Delete workspace',
-      notice: 'You\'re about to delete this workspace. Do you want to move its content to another workspace or delete it as well ?'
-    }
+      notice:
+        'You\'re about to delete this workspace. Do you want to move its content to another workspace or delete it as well ?',
+    },
+  },
+  workspaces: {
+    name: 'Name',
+    description: 'Descritpion',
+    members: 'Members',
   },
   tableHeaders: {
     groups: {

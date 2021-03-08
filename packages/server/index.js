@@ -31,9 +31,7 @@ const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 
 const workers =
-  (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
-    ? process.env.WORKERS
-    : require('os').cpus().length) || require('os').cpus().length;
+  process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
 
 if (cluster.isMaster) {
   logger.log(chalk.cyan('start cluster with %s workers'), workers);
@@ -210,11 +208,9 @@ if (cluster.isMaster) {
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
     (err, req, res, _next) => {
       console.log({ err });
-      const { user } = req;
       if (err) {
         return res.redirect('/');
       }
-      console.log({ user });
       return res.redirect('/');
     }
   );
@@ -261,7 +257,6 @@ if (cluster.isMaster) {
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
   app.get(
     '/mailings/:mailingId',
-    GUARD_USER_REDIRECT,
     GUARD_USER_REDIRECT,
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render

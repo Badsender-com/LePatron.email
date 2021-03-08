@@ -126,11 +126,14 @@ export function imagesPlaceholder(routeParams = {}) {
 // WORKSPACEs
 /// ///
 
-// this is not used by axios (show an image…)
-export function workspacesGroup() {
+export function workspacesForCurrentUser() {
   return '/workspaces';
 }
 
-export function workspacesWithUserCount(routerParams = {}) {
-  return `/workspaces/${routerParams.groupId}/withUserCount`
+export function workspaceByNameInGroup(workspaceName) {
+  return `/workspaces/name/${workspaceName}`;
+}
+
+export function workspacesWithUserCount() {
+  return '/workspaces/';
 }

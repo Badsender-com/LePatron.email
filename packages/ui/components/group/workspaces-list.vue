@@ -1,125 +1,84 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
-
 export default {
-  name: 'BsGroupWorkspaceList',
+  name: 'WorkspaceList',
   data: () => ({
-    workspacesData: [],
-    tree: [],
-    loading: false,
+    workspacesIsLoading: true,
+    workspaceIsError: false,
+    workspaces: [],
   }),
-  computed: {
-    items() {
-      return this.workspacesData.map((workspace) => {
-        let formatedWorkspace = {
-          icon: 'mdi-account-multiple-outline',
-          id: workspace._id,
-          name: workspace.name,
-        };
-
-        if (workspace.folders?.length > 0) {
-          formatedWorkspace = {
-            children: workspace.folders.map((folder) =>
-              this.recursiveFolderMap(folder)
-            ),
-            ...formatedWorkspace,
-          };
-        }
-        return formatedWorkspace;
-      });
-    },
-  },
   async mounted() {
     const { $axios } = this;
 
     try {
-      this.loading = true;
-      const workspaceResponse = await $axios.$get(apiRoutes.workspacesGroup());
-      this.workspacesData = workspaceResponse.items;
+      this.workspacesIsLoading = true;
+      const { items } = await $axios.$get('/workspaces');
+      this.workspaces = items;
     } catch (error) {
-      console.log(error);
+      this.workspaceIsError = true;
     } finally {
-      this.loading = false;
+      this.workspacesIsLoading = false;
     }
-  },
-  methods: {
-    recursiveFolderMap(folder) {
-      let formatedData = {
-        id: folder._id,
-        name: folder.name,
-      };
-      if (folder.childFolders?.length > 0) {
-        formatedData = {
-          ...formatedData,
-          children: folder.childFolders.map((child) =>
-            this.recursiveFolderMap(child)
-          ),
-        };
-      }
-      return formatedData;
-    },
   },
 };
 </script>
 
 <template>
-  <v-card
-    class="mx-auto"
-    width="300"
+  <v-skeleton-loader
+    type="list-item, list-item, list-item"
+    :loading="workspacesIsLoading"
   >
-    <v-subheader>{{ 'Workspaces' }}</v-subheader>
     <v-treeview
-      v-model="tree"
-      :items="items"
-      hoverable
-      open-all
+      ref="tree"
+      item-key="id"
+      :items="workspaces"
       activatable
-      item-key="name"
+      hoverable
+      class="pb-8"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon">
+        <v-icon v-if="!item.icon" :color="item.isAllowed ? 'primary' : 'base'">
           {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
         </v-icon>
-        <v-icon v-else>
+        <v-icon v-else :color="item.isAllowed ? 'primary' : 'base'">
           {{ item.icon }}
         </v-icon>
       </template>
-      <template #append>
-        <v-menu
-          bottom
-          left
-        >
+      <template #label="{ item, active }">
+        <div @click="active ? $event.stopPropagation() : null">
+          {{ item.name }}
+        </div>
+      </template>
+      <template #append="{ item }">
+        <v-menu v-if="item.isAllowed" bottom left>
           <template #activator="{ on, attrs }">
-            <v-btn
-              icon
-              v-bind="attrs"
-              v-on="on"
-            >
-              <v-icon>mdi-dots-vertical</v-icon>
+            <v-btn icon v-bind="attrs" v-on="on">
+              <v-icon color="primary">
+                mdi-dots-vertical
+              </v-icon>
             </v-btn>
           </template>
           <v-list>
-            <v-list-item
-              link
-              to="#"
-            >
+            <v-list-item link to="#">
               <v-list-item-title>Éditer</v-list-item-title>
             </v-list-item>
-            <v-list-item
-              link
-              to="#"
-            >
+            <v-list-item link to="#">
               <v-list-item-title>Déplacer</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
       </template>
     </v-treeview>
-  </v-card>
+  </v-skeleton-loader>
 </template>
-<style>
+
+<style scoped>
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
+}
+
+.v-treeview {
+  overflow-y: auto;
+  max-height: 450px;
 }
 </style>
