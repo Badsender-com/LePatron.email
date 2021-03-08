@@ -1,6 +1,6 @@
 'use strict';
 
-const SpaceType = require('../constant/spaceType');
+const SPACE_TYPE = require('../constant/space-type');
 
 module.exports = {
   trimString,
@@ -50,9 +50,9 @@ function addStrictGroupFilter(user, filter) {
 // Filter form params query
 function addMailQueryParamFilter(query) {
   const params = {};
-  if (query?.type === SpaceType.FOLDER) {
+  if (query?.type === SPACE_TYPE.FOLDER) {
     params._parentFolder = query.id;
-  } else if (query?.type === SpaceType.WORKSPACE) {
+  } else if (query?.type === SPACE_TYPE.WORKSPACE) {
     params._workspace = query.id;
   }
   return params;
