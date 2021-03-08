@@ -2,7 +2,8 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const { BadRequest } = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js')
+const { Conflict } = require('http-errors');
 
 module.exports = {
   createWorkspace,
@@ -19,16 +20,14 @@ async function existsByName({ workspaceName, groupId }) {
 }
 
 async function createWorkspace(workspace) {
-  console.log({ workspace });
-
   if (
-    existsByName({
+    await existsByName({
       workspaceName: workspace?.name,
       groupId: workspace?.groupId,
     })
   ) {
-    throw new BadRequest(
-      'A workspace with this name already exists in this group'
+    throw new Conflict(
+      ERROR_CODES.WORKSPACE_ALREADY_EXISTS
     );
   }
   const newWorkspace = await Workspaces.create({

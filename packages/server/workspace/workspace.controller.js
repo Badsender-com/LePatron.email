@@ -2,7 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createHttpError = require('http-errors');
-
+const ERROR_CODES = require('../constant/error-codes.js');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
@@ -54,10 +54,9 @@ async function createWorkspace(req, res) {
       const newWorkspace = await workspaceService.createWorkspace(req.body);
       res.json(newWorkspace);
     } else {
-      res.status(403).send();
+      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_CREATION);
     }
   } catch (error) {
-    console.error(error);
     if (error.status) {
       return res.status(error.status).send(error.message);
     }

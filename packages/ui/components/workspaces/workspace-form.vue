@@ -11,6 +11,7 @@ export default {
   ],
   props: {
     users: { type: Array, default: () => [] },
+    isLoading: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -55,10 +56,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
-    <!-- <v-card-title v-if="title">
-      {{ title }}
-    </v-card-title> -->
+  <v-card tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <v-row>
         <v-col cols="5">
@@ -91,7 +89,12 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large color="primary" @click="onSubmit">
+      <v-btn
+        text
+        large
+        :loading="isLoading"
+        color="primary"
+        @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>

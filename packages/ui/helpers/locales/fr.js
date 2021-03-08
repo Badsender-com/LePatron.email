@@ -12,6 +12,8 @@ export default {
       required: 'Ce champ est requis',
       userRequired: 'Un utilisateur est requis',
       nameRequired: 'Un nom est requis',
+      WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
+      FORBIDDEN_WORKSPACE_CREATION: 'Vous n\'avez pas les droits pour créer ce workspace',
       password: {
         error: {
           nouser: 'Utilisateur introuvable',
