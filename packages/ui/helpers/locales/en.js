@@ -12,6 +12,9 @@ export default {
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
+      WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
+      FORBIDDEN_WORKSPACE_CREATION:
+        'You don\'t have the rights to create this workspace',
       password: {
         error: {
           nouser: 'User not found',
