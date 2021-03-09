@@ -41,7 +41,7 @@ const WorkspaceSchema = Schema(
     description: {
       type: String,
       set: normalizeString,
-    }
+    },
   },
   {
     timestamps: true,

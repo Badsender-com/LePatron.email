@@ -92,39 +92,24 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs
-      v-model="tab"
-      centered
-    >
+    <v-tabs v-model="tab" centered>
       <v-tabs-slider color="accent" />
       <v-tab href="#group-informations">
         {{ $t('groups.tabs.informations') }}
       </v-tab>
-      <v-tab
-        v-if="isAdmin"
-        href="#group-templates"
-      >
+      <v-tab v-if="isAdmin" href="#group-templates">
         {{ $tc('global.template', 2) }}
       </v-tab>
-      <v-tab
-        v-if="isAdmin"
-        href="#group-mailings"
-      >
+      <v-tab v-if="isAdmin" href="#group-mailings">
         {{ $tc('global.mailing', 2) }}
       </v-tab>
-      <v-tab
-        v-if="isGroupAdmin"
-        href="#group-workspaces"
-      >
+      <v-tab v-if="isGroupAdmin" href="#group-workspaces">
         {{ $tc('global.teams', 2) }}
       </v-tab>
       <v-tab href="#group-users">
         {{ $tc('global.user', 2) }}
       </v-tab>
-      <v-tab-item
-        value="group-informations"
-        eager
-      >
+      <v-tab-item value="group-informations" eager>
         <bs-group-form
           v-model="group"
           flat
@@ -132,22 +117,13 @@ export default {
           @submit="updateGroup"
         />
       </v-tab-item>
-      <v-tab-item
-        v-if="isAdmin"
-        value="group-templates"
-      >
+      <v-tab-item v-if="isAdmin" value="group-templates">
         <bs-group-templates-tab />
       </v-tab-item>
-      <v-tab-item
-        v-if="isAdmin"
-        value="group-mailings"
-      >
+      <v-tab-item v-if="isAdmin" value="group-mailings">
         <bs-group-mailings-tab />
       </v-tab-item>
-      <v-tab-item
-        v-if="isGroupAdmin"
-        value="group-workspaces"
-      >
+      <v-tab-item v-if="isGroupAdmin" value="group-workspaces">
         <bs-group-workspaces-tab />
       </v-tab-item>
       <v-tab-item value="group-users">

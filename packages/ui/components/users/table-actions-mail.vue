@@ -50,11 +50,7 @@ export default {
 </script>
 
 <template>
-  <v-list-item
-    v-if="!actionDisplay.activate"
-    link
-    @click="mailAction"
-  >
+  <v-list-item v-if="!actionDisplay.activate" link @click="mailAction">
     <v-list-item-avatar>
       <v-btn
         v-if="!actionDisplay.activate"
@@ -71,7 +67,6 @@ export default {
       {{ $t(passwordActionLabel) }}
     </v-list-item-title>
   </v-list-item>
-
 </template>
 
 <style lang="scss" scoped></style>

@@ -2,12 +2,13 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const ERROR_CODES = require('../constant/error-codes.js')
+const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict } = require('http-errors');
 
 module.exports = {
   createWorkspace,
   listWorkspace,
+  listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
 };
@@ -47,6 +48,12 @@ async function listWorkspace(params) {
     populate: { path: 'childFolders' },
   });
   return workspaces;
+}
+
+async function listWorkspaceWithUsers(params) {
+  return Workspaces.find(params).populate({
+    path: 'users',
+  });
 }
 
 async function listWorkspaceForGroupAdmin(groupId) {

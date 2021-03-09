@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
-  findByGroupId: asyncHandler(findByGroupId)
+  findByGroupId: asyncHandler(findByGroupId),
 };
 
 async function createUser(userParams) {
@@ -50,6 +50,8 @@ async function updateUser(userParams) {
 }
 
 async function findByGroupId(groupId) {
-  const users = await Users.find({ _company: mongoose.Types.ObjectId(groupId) });
+  const users = await Users.find({
+    _company: mongoose.Types.ObjectId(groupId),
+  });
   return users;
 }

@@ -13,7 +13,8 @@ export default {
       userRequired: 'Un utilisateur est requis',
       nameRequired: 'Un nom est requis',
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
-      FORBIDDEN_WORKSPACE_CREATION: 'Vous n\'avez pas les droits pour créer ce workspace',
+      FORBIDDEN_WORKSPACE_CREATION:
+        'Vous n\'avez pas les droits pour créer ce workspace',
       password: {
         error: {
           nouser: 'Utilisateur introuvable',
@@ -69,9 +70,10 @@ export default {
     enabled: 'Activé',
     disabled: 'Désactivé',
     status: 'Statut',
-    createdAt: 'Crée le',
+    createdAt: 'Créé le',
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
+    move: 'Déplacer',
   },
   layout: {
     logout: 'Déconnexion',

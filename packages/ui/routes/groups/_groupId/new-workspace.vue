@@ -56,7 +56,9 @@ export default {
         // TODO: redirect to workspace edit page on success
         this.$router.push('/');
       } catch (error) {
-        const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;
+        const errorKey = `global.errors.${
+          ERROR_CODES[error.response?.data] || 'errorOccured'
+        }`;
         this.showSnackbar({
           text: this.$t(errorKey),
           color: 'error',
@@ -76,8 +78,8 @@ export default {
     </template>
     <workspace-form
       :users="users"
+      :is-loading="isLoading"
       @submit="createWorkspace"
-      :isLoading="isLoading"
     />
   </bs-layout-left-menu>
 </template>

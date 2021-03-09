@@ -2,7 +2,7 @@
 import * as userStatusHelpers from '~/helpers/user-status.js';
 
 export default {
-  name: `bs-users-table-actions-activation`,
+  name: 'BsUsersTableActionsActivation',
   props: {
     user: { type: Object, default: () => ({ group: {} }) },
     loading: { type: Boolean, default: false },
@@ -16,16 +16,16 @@ export default {
     },
     actionIcon() {
       return this.actionDisplay.activate
-        ? `accessibility`
-        : `airline_seat_individual_suite`;
+        ? 'accessibility'
+        : 'airline_seat_individual_suite';
     },
   },
   methods: {
     toggleUser() {
       if (this.actionDisplay.activate) {
-        return this.$emit(`activate`, this.user);
+        return this.$emit('activate', this.user);
       }
-      this.$emit(`deactivate`, this.user);
+      this.$emit('deactivate', this.user);
     },
   },
 };
