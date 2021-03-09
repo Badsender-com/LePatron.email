@@ -28,6 +28,10 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    goToWorkspace(workspace) {
+      const { groupId } = this.$route.params;
+      this.$router.push(`/groups/${groupId}/workspace/${workspace.id}`)
+    }
   },
   async mounted() {
     const {
@@ -38,6 +42,7 @@ export default {
       this.loading = true;
       const workspacesResponse = await $axios.$get(groupsWorkspaces(params));
       this.workspaces = workspacesResponse?.items?.map((workspace) => ({
+        id: workspace.id,
         name: workspace.name,
         users: workspace?._users?.length,
         createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
@@ -68,6 +73,7 @@ export default {
           :loading="loading"
           :headers="tableHeaders"
           :items="workspaces"
+          @click:row="goToWorkspace"
         />
       </v-card>
     </v-card-text>

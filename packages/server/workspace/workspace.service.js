@@ -2,11 +2,13 @@
 
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const ERROR_CODES = require('../constant/error-codes.js');
-const { Conflict } = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js')
+const { Conflict, NotFound } = require('http-errors');
 
 module.exports = {
   createWorkspace,
+  getWorkspace,
+  updateWorkspace,
   listWorkspace,
   listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
@@ -18,6 +20,15 @@ async function existsByName({ workspaceName, groupId }) {
     name: workspaceName,
     _company: groupId,
   });
+}
+
+async function getWorkspace(id) {
+  if(
+    !await Workspaces.exists({_id: mongoose.Types.ObjectId(id)})
+  ) {
+      throw new NotFound()
+  }
+  return Workspaces.findById(id);
 }
 
 async function createWorkspace(workspace) {
@@ -40,6 +51,15 @@ async function createWorkspace(workspace) {
   });
 
   return newWorkspace;
+}
+
+async function updateWorkspace(workspace) {
+  const { id, ...otherProperties } = workspace;
+
+  return Workspaces.updateOne(
+    { _id: mongoose.Types.ObjectId(id) },
+    { ...otherProperties }
+  );
 }
 
 async function listWorkspace(params) {
