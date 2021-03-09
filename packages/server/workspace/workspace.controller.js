@@ -27,11 +27,11 @@ async function list(req, res, next) {
     next(new createHttpError.Unauthorized());
   }
   const user = req.user;
-  const {group} = user;
+  const { group } = user;
   const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
     group.id
   );
-  return res.json({items: workspaces});
+  return res.json({ items: workspaces });
 }
 
 /**
@@ -56,7 +56,7 @@ async function createWorkspace(req, res) {
       const newWorkspace = await workspaceService.createWorkspace(req.body);
       res.json(newWorkspace);
     } else {
-      return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_CREATION);
+      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_CREATION);
     }
   } catch (error) {
     if (error.status) {

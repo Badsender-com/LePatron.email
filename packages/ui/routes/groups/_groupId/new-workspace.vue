@@ -42,10 +42,11 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createWorkspace(values) {
       const { $axios } = this;
+      const groupId = this.$route.params?.groupId;
       try {
         this.isLoading = true;
         const createdWorkspace = await $axios.$post('/workspaces', {
-          groupId: this.$route.params?.groupId,
+          groupId,
           ...values,
         });
         this.showSnackbar({
@@ -53,9 +54,8 @@ export default {
           color: 'success',
         });
 
-        // TODO: redirect to workspace edit page on success
-        console.log({createdWorkspace})
-        this.$router.push(`/groups/${this.$route.params?.groupId}/workspace/${createdWorkspace.id}`);
+        this.$router.push(`/groups/${groupId}/workspace/${createdWorkspace.id}`);
+
       } catch (error) {
         const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;
         this.showSnackbar({

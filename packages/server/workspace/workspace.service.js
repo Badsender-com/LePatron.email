@@ -1,9 +1,9 @@
 'use strict';
 
-const {Workspaces} = require('../common/models.common.js');
+const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js')
-const {Conflict} = require('http-errors');
+const { Conflict } = require('http-errors');
 
 module.exports = {
   createWorkspace,
@@ -14,7 +14,7 @@ module.exports = {
   listWorkspaceForGroupAdmin,
 };
 
-async function existsByName({workspaceName, groupId}) {
+async function existsByName({ workspaceName, groupId }) {
   return Workspaces.exists({
     name: workspaceName,
     _company: groupId,
@@ -47,7 +47,7 @@ async function createWorkspace(workspace) {
   return newWorkspace;
 }
 
-async function updateWorkspace({workspaceId, name}) {
+async function updateWorkspace({ workspaceId, name }) {
   return Workspaces.updateOne(
     {_id: mongoose.Types.ObjectId(workspaceId)},
     {name}
@@ -88,12 +88,12 @@ async function listWorkspaceForRegularUser(user) {
 
   const formatWorkspacesForCurrentUser = workspacesForCurrentUser.map(
     (workSpace) => {
-      return {...workSpace.toObject(), hasRights: true};
+      return { ...workSpace.toObject(), hasRights: true };
     }
   );
 
   const formatOtherWorkSpaces = otherWorkSpaces.map((workSpace) => {
-    return {...workSpace.toObject(), hasRights: false};
+    return { ...workSpace.toObject(), hasRights: false };
   });
 
   return [...formatWorkspacesForCurrentUser, ...formatOtherWorkSpaces];
