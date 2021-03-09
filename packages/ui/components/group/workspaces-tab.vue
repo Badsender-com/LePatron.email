@@ -1,7 +1,9 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
+import { groupsWorkspaces } from '~/helpers/api-routes.js';
 import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
 import moment from 'moment';
+import { mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   name: 'BsGroupWorkspacesTab',
@@ -21,17 +23,27 @@ export default {
       ];
     },
   },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+  },
   async mounted() {
-    const { $axios } = this;
+    const {
+      $axios,
+      $route: { params },
+    } = this;
     try {
       this.loading = true;
-      this.workspaces = await $axios.$get(apiRoutes.workspacesWithUserCount());
-      this.workspaces.map((workspace) => {
-        workspace.createdAt = moment(workspace.createdAt).format(DATE_FORMAT);
-        return workspace;
-      });
+      const workspacesResponse = await $axios.$get(groupsWorkspaces(params));
+      this.workspaces = workspacesResponse?.items?.map((workspace) => ({
+        name: workspace.name,
+        users: workspace?._users?.length,
+        createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
+      }));
     } catch (error) {
-      console.log(error);
+      this.showSnackbar({
+        text: this.$t('global.errors.errorOccured'),
+        color: 'error',
+      });
     } finally {
       this.loading = false;
     }

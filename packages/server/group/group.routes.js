@@ -5,7 +5,11 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_ADMIN, guard } = require('../account/auth.guard.js');
+const {
+  GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
+  guard,
+} = require('../account/auth.guard.js');
 const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
@@ -36,6 +40,14 @@ router.get(
   GUARD_CAN_ACCESS_GROUP,
   groups.readTemplates
 );
+
+router.get(
+  '/:groupId/workspaces',
+  GUARD_GROUP_ADMIN, // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readWorkspaces
+);
+
 router.get(
   '/:groupId/mailings',
   guard(), // guard() will check if the user is logged

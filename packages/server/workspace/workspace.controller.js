@@ -1,19 +1,41 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const createHttpError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
   list: asyncHandler(list),
   createWorkspace: asyncHandler(createWorkspace),
-  findByGroupWithUserCount: asyncHandler(findByGroupWithUserCount),
 };
+
+/**
+ * @api {get} /workspace list of workspaces with folders
+ * @apiPermission group_admin
+ * @apiName GetWorkspaces
+ * @apiGroup Workspaces
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspace[]} items list of workspace
+ */
+
+async function list(req, res, next) {
+  if (!req?.user) {
+    next(new createHttpError.Unauthorized());
+  }
+  const user = req.user;
+  const { group } = user;
+  const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
+    group.id
+  );
+  return res.json({ items: workspaces });
+}
 
 /**
  * @api {post} /workspaces workspace creation
  * @apiPermission group_admin
- * @apiName CreateWorkspaceWithFolders
+ * @apiName CreateWorkspace
  * @apiGroup Workspaces
  *
  * @apiParam (Body) {String} groupId the group of the workspace
@@ -40,39 +62,4 @@ async function createWorkspace(req, res) {
     }
     res.status(500).send();
   }
-}
-
-/**
- * @api {get} /workspaces workspace creation
- * @apiPermission group_admin
- * @apiName getWorkspaces
- * @apiGroup Workspaces
- *
- * @apiUse workspace
- * @apiSuccess {workspace} items list of workspace
- */
-async function findByGroupWithUserCount(req, res) {
-  const user = req.user;
-  const { group } = user;
-  const workspaces = await workspaceService.findByGroupWithUserCount(group?.id);
-  res.json(workspaces);
-}
-
-/**
- * @api {get} /workspaces/folders list of workspaces with folders
- * @apiPermission group_admin
- * @apiName GetWorkspaces
- * @apiGroup Workspaces
- *
- * @apiUse workspace
- * @apiSuccess {workspace[]} items list of workspace with folders
- */
-
-async function list(req, res) {
-  const user = req.user;
-  const { group } = user;
-  const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
-    group?.id
-  );
-  return res.json({ items: workspaces });
 }

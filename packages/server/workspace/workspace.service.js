@@ -8,9 +8,9 @@ const { Conflict } = require('http-errors');
 module.exports = {
   createWorkspace,
   listWorkspace,
+  listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
-  findByGroupWithUserCount,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -50,6 +50,12 @@ async function listWorkspace(params) {
   return workspaces;
 }
 
+async function listWorkspaceWithUsers(params) {
+  return Workspaces.find(params).populate({
+    path: 'users',
+  });
+}
+
 async function listWorkspaceForGroupAdmin(groupId) {
   const listWorkspacesForGroupAdmin = await listWorkspace({
     _company: mongoose.Types.ObjectId(groupId),
@@ -58,20 +64,6 @@ async function listWorkspaceForGroupAdmin(groupId) {
   return listWorkspacesForGroupAdmin?.map((workSpace) => {
     return { ...workSpace.toObject(), hasRights: true };
   });
-}
-
-async function findByGroupWithUserCount(groupId) {
-  const workspaces = await Workspaces.aggregate([
-    { $match: { _company: mongoose.Types.ObjectId(groupId) } },
-    {
-      $project: {
-        name: 1,
-        createdAt: 1,
-        users: { $size: '$_users' },
-      },
-    },
-  ]);
-  return workspaces;
 }
 
 async function listWorkspaceForRegularUser(user) {
