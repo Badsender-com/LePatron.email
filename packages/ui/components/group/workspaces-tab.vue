@@ -58,9 +58,14 @@ export default {
   <v-card flat tile>
     <v-card-text>
       <v-card elevation="2">
-        <v-data-table
+        <v-skeleton-loader
+          v-if="loading"
           :loading="loading"
-          :loading-text="$t('global.loadingNotice')"
+          type="table"
+        />
+        <v-data-table
+          v-show="!loading"
+          :loading="loading"
           :headers="tableHeaders"
           :items="workspaces"
         />

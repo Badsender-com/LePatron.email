@@ -27,7 +27,6 @@ export default {
         },
       },
     },
-    loadingNotice: 'Chargement..., veuillez patienter',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
