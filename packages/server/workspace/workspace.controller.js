@@ -9,6 +9,7 @@ module.exports = {
   list: asyncHandler(list),
   createWorkspace: asyncHandler(createWorkspace),
   getWorkspace: asyncHandler(getWorkspace),
+  updateWorkspace: asyncHandler(updateWorkspace)
 };
 
 /**
@@ -66,8 +67,34 @@ async function createWorkspace(req, res) {
 }
 
 /**
- * @api {get} /workspaces/:workspaceId workspace
+ * @api {put} /workspaces/:workspaceId workspace
  * @apiPermission group_admin
+ * @apiName UpdateWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiParam (Body) {String} [name]
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspace} workspace updated
+ */
+
+async function updateWorkspace(req, res) {
+  try {
+    const { name } = req.body;
+    const { workspaceId } = req.params;
+    await workspaceService.updateWorkspace({workspaceId, name});
+    res.status(200).send('Workspace updated');
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).send(error.message);
+    }
+    res.status(500).send();
+  }
+}
+
+/**
+ * @api {get} /workspaces/:workspaceId workspace
+ * @apiPermission regular_user
  * @apiName GetWorkspace
  * @apiGroup Workspaces
  *

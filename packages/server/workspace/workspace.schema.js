@@ -19,7 +19,6 @@ const WorkspaceSchema = Schema(
   {
     name: {
       type: String,
-      set: normalizeString,
       required: [true, 'Folder name is required'],
     },
     _company: {

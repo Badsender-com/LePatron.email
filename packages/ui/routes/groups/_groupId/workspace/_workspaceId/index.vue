@@ -1,8 +1,8 @@
 <script>
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { mapMutations } from 'vuex';
+import {ERROR_CODES} from '~/helpers/constants/error-codes.js';
+import {PAGE, SHOW_SNACKBAR} from '~/store/page.js';
+import {mapMutations} from 'vuex';
 
 import * as acls from '~/helpers/pages-acls.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
@@ -10,24 +10,23 @@ import BsGroupMenu from '~/components/group/menu.vue';
 
 export default {
   name: 'PageUpdateWorkspace',
-  components: { WorkspaceForm, BsGroupMenu },
+  components: {WorkspaceForm, BsGroupMenu},
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_GROUP_ADMIN,
   },
   async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
+    const {$axios, params} = nuxtContext;
 
     try {
-     const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
-      console.log({workspace})
+      const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
 
       return {
         workspace,
         isLoading: false,
       };
     } catch (error) {
-      return { isLoading: false, isError: true };
+      return {isLoading: false, isError: true};
     }
   },
   data() {
@@ -35,29 +34,24 @@ export default {
       isLoading: true,
       isError: false,
       users: [],
+      workspace: {}
     };
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    ...mapMutations(PAGE, {showSnackbar: SHOW_SNACKBAR}),
     async updateWorkspace(values) {
-      const { $axios } = this;
+      const {$axios} = this;
       try {
         this.isLoading = true;
-        const createdWorkspace = await $axios.$post('/workspaces', {
-          groupId: this.$route.params?.groupId,
+        const { workspaceId } = this.$route.params;
+        await $axios.$put(`/workspaces/${workspaceId}`, {
           ...values,
         });
         this.showSnackbar({
-          text: this.$t('snackbars.created'),
+          text: this.$t('snackbars.updated'),
           color: 'success',
         });
 
-        // TODO: redirect to workspace edit page on success
-        this.$router.push({
-          path:`/groups/${this.$route.params?.groupId}/edit-workspace`,
-          query: { id: createdWorkspace.id },
-
-        });
       } catch (error) {
         const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;
         this.showSnackbar({
@@ -75,9 +69,10 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-group-menu />
+      <bs-group-menu/>
     </template>
     <workspace-form
+      :workspace="workspace"
       :users="users"
       @submit="updateWorkspace"
       :isLoading="isLoading"

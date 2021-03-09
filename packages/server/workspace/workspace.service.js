@@ -1,19 +1,20 @@
 'use strict';
 
-const { Workspaces } = require('../common/models.common.js');
+const {Workspaces} = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js')
-const { Conflict } = require('http-errors');
+const {Conflict} = require('http-errors');
 
 module.exports = {
   createWorkspace,
   getWorkspace,
+  updateWorkspace,
   listWorkspace,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
 };
 
-async function existsByName({ workspaceName, groupId }) {
+async function existsByName({workspaceName, groupId}) {
   return Workspaces.exists({
     name: workspaceName,
     _company: groupId,
@@ -46,10 +47,17 @@ async function createWorkspace(workspace) {
   return newWorkspace;
 }
 
+async function updateWorkspace({workspaceId, name}) {
+  return Workspaces.updateOne(
+    {_id: mongoose.Types.ObjectId(workspaceId)},
+    {name}
+  );
+}
+
 async function listWorkspace(params) {
   const workspaces = await Workspaces.find(params).populate({
     path: 'folders',
-    populate: { path: 'childFolders' },
+    populate: {path: 'childFolders'},
   });
   return workspaces;
 }
@@ -60,14 +68,14 @@ async function listWorkspaceForGroupAdmin(groupId) {
   });
 
   return listWorkspacesForGroupAdmin?.map((workSpace) => {
-    return { ...workSpace.toObject(), hasRights: true };
+    return {...workSpace.toObject(), hasRights: true};
   });
 }
 
 async function listWorkspaceForRegularUser(user) {
   const promiseListWorkspaceForNotGroupUser = listWorkspace({
     _company: mongoose.Types.ObjectId(user._company?.id),
-    _users: { $ne: user.id },
+    _users: {$ne: user.id},
   });
   const promiseListWorkspaceForGroupUser = listWorkspace({
     _company: mongoose.Types.ObjectId(user._company?.id),
@@ -80,12 +88,12 @@ async function listWorkspaceForRegularUser(user) {
 
   const formatWorkspacesForCurrentUser = workspacesForCurrentUser.map(
     (workSpace) => {
-      return { ...workSpace.toObject(), hasRights: true };
+      return {...workSpace.toObject(), hasRights: true};
     }
   );
 
   const formatOtherWorkSpaces = otherWorkSpaces.map((workSpace) => {
-    return { ...workSpace.toObject(), hasRights: false };
+    return {...workSpace.toObject(), hasRights: false};
   });
 
   return [...formatWorkspacesForCurrentUser, ...formatOtherWorkSpaces];

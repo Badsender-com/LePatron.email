@@ -12,4 +12,6 @@ router.get('/:workspaceId', guard(), workspacesController.getWorkspace);
 
 router.post('/', GUARD_GROUP_ADMIN, workspacesController.createWorkspace);
 
+router.put('/:workspaceId', guard(), workspacesController.updateWorkspace);
+
 module.exports = router;

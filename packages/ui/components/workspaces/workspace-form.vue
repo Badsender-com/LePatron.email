@@ -12,6 +12,7 @@ export default {
   props: {
     users: { type: Array, default: () => [] },
     isLoading: { type: Boolean, default: false },
+    workspace: { type: Object, default: () => ({})}
   },
   data() {
     return {
@@ -19,9 +20,6 @@ export default {
         { text: this.$t('global.name'), value: 'name', align: 'center' },
         { text: this.$t('global.email'), value: 'email', align: 'center' },
       ],
-      workspaceForm: {
-        name: '',
-      },
       submitStatus: null,
     };
   },
@@ -41,6 +39,11 @@ export default {
       !this.$v.workspaceForm.name.required &&
         errors.push(this.$t('global.errors.nameRequired'));
       return errors;
+    },
+    workspaceForm() {
+      return {
+        name: this.workspace.name || '',
+      }
     },
   },
   methods: {
