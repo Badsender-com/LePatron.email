@@ -20,20 +20,22 @@ export default {
 
     try {
       const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
+      const { items: users } = await $axios.$get(`/groups/${params?.groupId}/users`);
 
       return {
         workspace,
+        groupUsers: users,
         isLoading: false,
       };
     } catch (error) {
-      return {isLoading: false, isError: true};
+      return { isLoading: false, isError: true };
     }
   },
   data() {
     return {
       isLoading: true,
       isError: false,
-      users: [],
+      groupUsers: [],
       workspace: {}
     };
   },
@@ -73,7 +75,7 @@ export default {
     </template>
     <workspace-form
       :workspace="workspace"
-      :users="users"
+      :groupUsers="groupUsers"
       @submit="updateWorkspace"
       :isLoading="isLoading"
     />

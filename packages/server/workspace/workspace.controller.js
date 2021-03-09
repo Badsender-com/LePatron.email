@@ -80,10 +80,14 @@ async function createWorkspace(req, res) {
 
 async function updateWorkspace(req, res) {
   try {
-    const { name } = req.body;
-    const { workspaceId } = req.params;
-    await workspaceService.updateWorkspace({workspaceId, name});
-    res.status(200).send('Workspace updated');
+    const { selectedUsers, ...otherProperties} = req.body;
+    const workspace = {
+      id: req.params.workspaceId,
+      _users: selectedUsers && selectedUsers.map((user) => user.id) || [],
+      ...otherProperties,
+    };
+    await workspaceService.updateWorkspace(workspace);
+    res.send();
   } catch (error) {
     if (error.status) {
       return res.status(error.status).send(error.message);

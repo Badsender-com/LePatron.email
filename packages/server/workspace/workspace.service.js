@@ -52,10 +52,12 @@ async function createWorkspace(workspace) {
   return newWorkspace;
 }
 
-async function updateWorkspace({ workspaceId, name }) {
+async function updateWorkspace(workspace) {
+  const { id, ...otherProperties } = workspace;
+
   return Workspaces.updateOne(
-    { _id: mongoose.Types.ObjectId(workspaceId) },
-    { name }
+    { _id: mongoose.Types.ObjectId(id) },
+    { ...otherProperties }
   );
 }
 

@@ -19,12 +19,10 @@ export default {
     const { $axios, params } = nuxtContext;
 
     try {
-      const { items: users } = await $axios.$get(
-        `/groups/${params?.groupId}/users`
-      );
+      const { items: users } = await $axios.$get(`/groups/${params?.groupId}/users`);
 
       return {
-        users,
+        groupUsers: users,
         isLoading: false,
       };
     } catch (error) {
@@ -35,7 +33,7 @@ export default {
     return {
       isLoading: true,
       isError: false,
-      users: [],
+      groupUsers: [],
     };
   },
   methods: {
@@ -76,7 +74,7 @@ export default {
       <bs-group-menu />
     </template>
     <workspace-form
-      :users="users"
+      :groupUsers="groupUsers"
       @submit="createWorkspace"
       :isLoading="isLoading"
     />
