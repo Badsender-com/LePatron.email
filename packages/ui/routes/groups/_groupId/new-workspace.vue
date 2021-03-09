@@ -24,7 +24,7 @@ export default {
       );
 
       return {
-        users,
+        groupUsers: users,
         isLoading: false,
       };
     } catch (error) {
@@ -35,17 +35,18 @@ export default {
     return {
       isLoading: true,
       isError: false,
-      users: [],
+      groupUsers: [],
     };
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createWorkspace(values) {
       const { $axios } = this;
+      const groupId = this.$route.params?.groupId;
       try {
         this.isLoading = true;
         await $axios.$post('/workspaces', {
-          groupId: this.$route.params?.groupId,
+          groupId,
           ...values,
         });
         this.showSnackbar({
@@ -53,8 +54,7 @@ export default {
           color: 'success',
         });
 
-        // TODO: redirect to workspace edit page on success
-        this.$router.push('/');
+        this.$router.push(`/groups/${groupId}`);
       } catch (error) {
         const errorKey = `global.errors.${
           ERROR_CODES[error.response?.data] || 'errorOccured'
@@ -77,7 +77,7 @@ export default {
       <bs-group-menu />
     </template>
     <workspace-form
-      :users="users"
+      :group-users="groupUsers"
       :is-loading="isLoading"
       @submit="createWorkspace"
     />

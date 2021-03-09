@@ -41,6 +41,10 @@ export default {
     dialogDelete(val) {
       val || this.closeDelete();
     },
+    goToWorkspace(workspace) {
+      const { groupId } = this.$route.params;
+      this.$router.push(`/groups/${groupId}/workspace/${workspace.id}`);
+    },
   },
   async mounted() {
     const {
@@ -116,6 +120,7 @@ export default {
           :loading="loading"
           :headers="tableHeaders"
           :items="workspaces"
+          @click:row="goToWorkspace"
         >
           <template #item.actionDelete="{ item }">
             <v-btn

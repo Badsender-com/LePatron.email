@@ -1,11 +1,15 @@
 <script>
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { mapMutations } from 'vuex';
+
 import * as acls from '~/helpers/pages-acls.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
 import BsGroupMenu from '~/components/group/menu.vue';
 
 export default {
-  name: 'PageEditWorkspace',
+  name: 'PageUpdateWorkspace',
   components: { WorkspaceForm, BsGroupMenu },
   mixins: [mixinPageTitle],
   meta: {
@@ -15,12 +19,14 @@ export default {
     const { $axios, params } = nuxtContext;
 
     try {
+      const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
       const { items: users } = await $axios.$get(
         `/groups/${params?.groupId}/users`
       );
 
       return {
-        users,
+        workspace,
+        groupUsers: users,
         isLoading: false,
       };
     } catch (error) {
@@ -31,32 +37,36 @@ export default {
     return {
       isLoading: true,
       isError: false,
-      users: [],
+      groupUsers: [],
+      workspace: {},
     };
   },
   methods: {
-    // ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async createWorkspace(values) {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async updateWorkspace(values) {
       const { $axios } = this;
       try {
-        this.loading = true;
-        await $axios.$post('/workspaces', {
-          groupId: this.$route.params?.groupId,
+        this.isLoading = true;
+        const { groupId, workspaceId } = this.$route.params;
+        await $axios.$put(`/workspaces/${workspaceId}`, {
           ...values,
         });
-        // this.showSnackbar({
-        //   text: this.$t('snackbars.created'),
-        //   color: 'success',
-        // });
-        // redirect to workspace edit page on success
-        this.$router.push('/');
-      } catch (error) {
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+
+        this.$router.push(`/groups/${groupId}`);
+      } catch (error) {
+        const errorKey = `global.errors.${
+          ERROR_CODES[error.response?.data] || 'errorOccured'
+        }`;
+        this.showSnackbar({
+          text: this.$t(errorKey),
           color: 'error',
         });
       } finally {
-        this.loading = false;
+        this.isLoading = false;
       }
     },
   },
@@ -68,6 +78,11 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <workspace-form :users="users" @submit="createWorkspace" />
+    <workspace-form
+      :workspace="workspace"
+      :group-users="groupUsers"
+      :is-loading="isLoading"
+      @submit="updateWorkspace"
+    />
   </bs-layout-left-menu>
 </template>

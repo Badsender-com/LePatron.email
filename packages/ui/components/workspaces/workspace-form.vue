@@ -10,7 +10,8 @@ export default {
     { text: 'Français', value: 'fr' },
   ],
   props: {
-    users: { type: Array, default: () => [] },
+    workspace: { type: Object, default: () => ({}) },
+    groupUsers: { type: Array, default: () => [] },
     isLoading: { type: Boolean, default: false },
   },
   data() {
@@ -19,9 +20,6 @@ export default {
         { text: this.$t('global.name'), value: 'name', align: 'center' },
         { text: this.$t('global.email'), value: 'email', align: 'center' },
       ],
-      workspaceForm: {
-        name: '',
-      },
       submitStatus: null,
     };
   },
@@ -41,6 +39,15 @@ export default {
       !this.$v.workspaceForm.name.required &&
         errors.push(this.$t('global.errors.nameRequired'));
       return errors;
+    },
+    workspaceForm() {
+      const workspaceUsers = this.workspace?._users;
+      return {
+        name: this.workspace.name || '',
+        selectedUsers: workspaceUsers
+          ? this.groupUsers.filter((user) => workspaceUsers.includes(user.id))
+          : [],
+      };
     },
   },
   methods: {
@@ -78,11 +85,12 @@ export default {
             </v-col>
           </v-row>
           <v-data-table
+            v-model="workspaceForm.selectedUsers"
             :headers="headers"
             item-key="id"
             name="selectedUsers"
             show-select
-            :items="users"
+            :items="groupUsers"
           />
         </v-col>
       </v-row>
