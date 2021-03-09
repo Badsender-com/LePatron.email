@@ -15,6 +15,7 @@ router.put('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
 });
 
 router.delete('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
+  console.log('call delete workspace API');
   return res.end('Endpoint workspace');
 });
 

@@ -132,6 +132,12 @@ export default {
     tabs: {
       informations: 'Informations',
     },
+    workspaceTab: {
+      confirmationField: 'Tapez le nom du workspace pour confirmer',
+      deleteNotice:
+        'Attention: Les emails et les dossiers que contient le workspace seront supprimés aussi',
+      deleteSuccessful: 'Workspace supprimé',
+    },
   },
   mailings: {
     transfer: {

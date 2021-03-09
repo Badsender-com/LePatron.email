@@ -135,3 +135,7 @@ export function workspacesByGroup() {
 export function workspaceByNameInGroup(workspaceName) {
   return `/workspaces/name/${workspaceName}`;
 }
+
+export function deleteWorkspace(workspaceId) {
+  return `/workspaces/${workspaceId}`;
+}

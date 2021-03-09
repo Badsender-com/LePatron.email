@@ -11,6 +11,7 @@ module.exports = {
   listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
+  findWorkspace,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -18,6 +19,10 @@ async function existsByName({ workspaceName, groupId }) {
     name: workspaceName,
     _company: groupId,
   });
+}
+
+async function findWorkspace(params) {
+  return Workspaces.find(params);
 }
 
 async function createWorkspace(workspace) {

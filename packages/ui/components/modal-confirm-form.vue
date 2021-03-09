@@ -1,47 +1,64 @@
 <script>
+import BsModalConfirm from '~/components/modal-confirm';
+
 export default {
   name: 'BsModalConfirmForm',
+  components: {
+    BsModalConfirm,
+  },
   props: {
-    modelName: String,
+    confirmationInputLabel: { type: String, default: '' },
   },
   data() {
     return {
-      inputName: '',
+      data: {},
+      valid: true,
       nameRule: [
-        (v) => v === this.modalName || 'You need to provide the name', // this will have trads ofc
+        (v) => v === this.data?.name || 'You need to provide the name',
       ],
     };
   },
   methods: {
-    submit(data) {
-      this.close();
-      this.$emit('action', data);
+    submit() {
+      this.$refs.form.validate();
+      if (this.valid) {
+        this.close();
+        this.$emit('confirm', this.data);
+        // Reset the data
+        this.data = {};
+      }
+    },
+    open(item) {
+      this.data = item;
+      this.$refs.deleteDialog.open();
+    },
+    close() {
+      this.$refs.deleteDialog.close();
     },
   },
 };
 </script>
 <template>
   <bs-modal-confirm
-    ref="deleteDialogue"
-    :title="`${this.$t('global.delete')}`"
-    :action-label="$t('global.delete')"
+    ref="deleteDialog"
+    :title="`${this.$t('global.delete')} ${data.name}`"
     :is-form="true"
   >
-    <v-form v-model="valid" @submit="submit">
+    <v-form ref="form" v-model="valid" @submit.prevent="submit">
+      <slot />
+      <v-text-field
+        :rules="nameRule"
+        :label="confirmationInputLabel"
+        required
+      />
       <v-divider />
       <v-card-actions>
-        <v-text-field
-          v-model="inputName"
-          :rules="nameRule"
-          :label="modelName"
-          required
-        />
         <v-spacer />
         <v-btn color="primary" text @click="close">
-          {{ $t(`global.cancel`) }}
+          {{ $t('global.cancel') }}
         </v-btn>
         <v-btn type="submit" color="primary">
-          {{ actionLabel }}
+          {{ $t('global.delete') }}
         </v-btn>
       </v-card-actions>
     </v-form>

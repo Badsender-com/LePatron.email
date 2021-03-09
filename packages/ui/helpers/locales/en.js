@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+
     teams: 'Workspaces',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
@@ -133,6 +134,12 @@ export default {
   groups: {
     tabs: {
       informations: 'Information',
+    },
+    workspaceTab: {
+      confirmationField: 'Type the workspace name to confirm',
+      deleteNotice:
+        'Warning: Emails and folders contained in the workspace will also be deleted',
+      deleteSuccessful: 'Workspace deleted',
     },
   },
   mailings: {

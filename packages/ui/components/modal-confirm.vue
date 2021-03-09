@@ -41,7 +41,7 @@ export default {
         <v-card-actions>
           <v-spacer />
           <v-btn color="primary" text @click="close">
-            {{ $t(`global.cancel`) }}
+            {{ $t('global.cancel') }}
           </v-btn>
           <v-btn color="primary" @click="action">
             {{ actionLabel }}
