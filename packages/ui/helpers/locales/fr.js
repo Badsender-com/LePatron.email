@@ -217,5 +217,8 @@ export default {
       rename: 'Renommer',
       transfer: 'Transférer',
     },
+    workspaces: {
+      delete: 'Supprimer',
+    },
   },
 };
