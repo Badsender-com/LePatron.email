@@ -171,7 +171,7 @@ async function readMailings(req, res) {
  *
  * @apiParam {string} groupId
  *
- * @apiUse workspaces
+ * @apiUse workspace
  * @apiSuccess {workspaces[]} items list of workspaces
  */
 
