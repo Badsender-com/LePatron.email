@@ -24,7 +24,9 @@ export function groupsItemTemplates(routeParams = {}) {
 export function groupsItemMailings(routeParams = {}) {
   return `/groups/${routeParams.groupId}/mailings`;
 }
-
+export function groupsWorkspaces(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/workspaces`;
+}
 /// ///
 // TEMPLATES
 /// ///
@@ -126,7 +128,7 @@ export function imagesPlaceholder(routeParams = {}) {
 // WORKSPACEs
 /// ///
 
-export function workspacesForCurrentUser() {
+export function workspacesByGroup() {
   return '/workspaces';
 }
 

@@ -95,12 +95,7 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn
-        text
-        large
-        :loading="isLoading"
-        color="primary"
-        @click="onSubmit">
+      <v-btn text large :loading="isLoading" color="primary" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>

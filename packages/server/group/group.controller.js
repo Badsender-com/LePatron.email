@@ -2,7 +2,10 @@
 
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
-const { createWorkspace } = require('../workspace/workspace.service.js');
+const {
+  createWorkspace,
+  listWorkspaceWithUsers,
+} = require('../workspace/workspace.service.js');
 const groupService = require('../group/group.service.js');
 
 const {
@@ -19,6 +22,7 @@ module.exports = {
   readUsers: asyncHandler(readUsers),
   readTemplates: asyncHandler(readTemplates),
   readMailings: asyncHandler(readMailings),
+  readWorkspaces: asyncHandler(readWorkspaces),
   update: asyncHandler(update),
 };
 
@@ -157,6 +161,25 @@ async function readMailings(req, res) {
   ]);
   if (!group) throw new createError.NotFound();
   res.json({ items: mailings });
+}
+
+/**
+ * @api {get} /groups/:groupId/workspaces group workspaces
+ * @apiPermission admin
+ * @apiName GetGroupWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspaces[]} items list of workspaces
+ */
+
+async function readWorkspaces(req, res, next) {
+  const { groupId } = req.params;
+  if (!groupId) next(new createError.NotFound());
+  const workspaces = await listWorkspaceWithUsers({ _company: groupId });
+  return res.json({ items: workspaces });
 }
 
 /**

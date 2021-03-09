@@ -55,7 +55,9 @@ export default {
         this.$router.push(`/groups/${groupId}/workspace/${createdWorkspace.id}`);
 
       } catch (error) {
-        const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;
+        const errorKey = `global.errors.${
+          ERROR_CODES[error.response?.data] || 'errorOccured'
+        }`;
         this.showSnackbar({
           text: this.$t(errorKey),
           color: 'error',
@@ -75,8 +77,8 @@ export default {
     </template>
     <workspace-form
       :groupUsers="groupUsers"
+      :is-loading="isLoading"
       @submit="createWorkspace"
-      :isLoading="isLoading"
     />
   </bs-layout-left-menu>
 </template>

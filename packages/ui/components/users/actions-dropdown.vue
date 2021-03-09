@@ -10,32 +10,27 @@ export default {
     BsUserTableActionsMail,
   },
   props: {
-    user: {type: Object, default: () => ({group: {}})},
-    loading: {type: Boolean, default: false},
+    user: { type: Object, default: () => ({ group: {} }) },
+    loading: { type: Boolean, default: false },
     activate: {
       type: Function,
-      default: () => {
-      },
+      default: () => {},
     },
     deactivate: {
       type: Function,
-      default: () => {
-      },
+      default: () => {},
     },
     resetPassword: {
       type: Function,
-      default: () => {
-      },
+      default: () => {},
     },
     sendPassword: {
       type: Function,
-      default: () => {
-      },
+      default: () => {},
     },
     resendPassword: {
       type: Function,
-      default: () => {
-      },
+      default: () => {},
     },
   },
   data() {
@@ -54,12 +49,7 @@ export default {
 <template>
   <v-menu offset-y>
     <template #activator="{ on }">
-      <v-btn
-        color="primary"
-        dark
-        icon
-        v-on="on"
-      >
+      <v-btn color="primary" dark icon v-on="on">
         <v-icon>{{ actionsIcon }}</v-icon>
       </v-btn>
     </template>
@@ -78,16 +68,9 @@ export default {
         @sendPassword="sendPassword"
         @resendPassword="resendPassword"
       />
-      <v-list-item
-        nuxt
-        link
-        :to="`/users/${user.id}`"
-      >
+      <v-list-item nuxt link :to="`/users/${user.id}`">
         <v-list-item-avatar>
-          <v-btn
-            color="primary"
-            icon
-          >
+          <v-btn color="primary" icon>
             <v-icon>edit</v-icon>
           </v-btn>
         </v-list-item-avatar>
