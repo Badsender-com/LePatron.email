@@ -3,7 +3,7 @@
 const { Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js')
-const { Conflict } = require('http-errors');
+const { Conflict, NotFound } = require('http-errors');
 
 module.exports = {
   createWorkspace,
@@ -22,6 +22,11 @@ async function existsByName({ workspaceName, groupId }) {
 }
 
 async function getWorkspace(id) {
+  if(
+    !await Workspaces.exists({_id: mongoose.Types.ObjectId(id)})
+  ) {
+      throw new NotFound()
+  }
   return Workspaces.findById(id);
 }
 
