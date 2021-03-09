@@ -8,7 +8,10 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 export default {
   name: 'BsGroupWorkspacesTab',
   data() {
-    return { workspaces: [] };
+    return {
+      workspaces: [],
+      loading: false,
+    };
   },
   computed: {
     tableHeaders() {
@@ -55,7 +58,12 @@ export default {
   <v-card flat tile>
     <v-card-text>
       <v-card elevation="2">
-        <v-data-table :headers="tableHeaders" :items="workspaces" />
+        <v-data-table
+          :loading="loading"
+          :loading-text="$t('global.loadingNotice')"
+          :headers="tableHeaders"
+          :items="workspaces"
+        />
       </v-card>
     </v-card-text>
   </v-card>
