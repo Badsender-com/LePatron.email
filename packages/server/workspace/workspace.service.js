@@ -49,15 +49,15 @@ async function createWorkspace(workspace) {
 
 async function updateWorkspace({ workspaceId, name }) {
   return Workspaces.updateOne(
-    {_id: mongoose.Types.ObjectId(workspaceId)},
-    {name}
+    { _id: mongoose.Types.ObjectId(workspaceId) },
+    { name }
   );
 }
 
 async function listWorkspace(params) {
   const workspaces = await Workspaces.find(params).populate({
     path: 'folders',
-    populate: {path: 'childFolders'},
+    populate: { path: 'childFolders' },
   });
   return workspaces;
 }
@@ -68,14 +68,14 @@ async function listWorkspaceForGroupAdmin(groupId) {
   });
 
   return listWorkspacesForGroupAdmin?.map((workSpace) => {
-    return {...workSpace.toObject(), hasRights: true};
+    return { ...workSpace.toObject(), hasRights: true };
   });
 }
 
 async function listWorkspaceForRegularUser(user) {
   const promiseListWorkspaceForNotGroupUser = listWorkspace({
     _company: mongoose.Types.ObjectId(user._company?.id),
-    _users: {$ne: user.id},
+    _users: { $ne: user.id },
   });
   const promiseListWorkspaceForGroupUser = listWorkspace({
     _company: mongoose.Types.ObjectId(user._company?.id),
