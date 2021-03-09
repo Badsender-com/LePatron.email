@@ -45,7 +45,7 @@ export default {
       const {$axios} = this;
       try {
         this.isLoading = true;
-        const { workspaceId } = this.$route.params;
+        const { groupId, workspaceId } = this.$route.params;
         await $axios.$put(`/workspaces/${workspaceId}`, {
           ...values,
         });
@@ -53,6 +53,8 @@ export default {
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
+
+        this.$router.push(`/groups/${groupId}`);
 
       } catch (error) {
         const errorKey = `global.errors.${ERROR_CODES[error.response?.data] || 'errorOccured'}`;

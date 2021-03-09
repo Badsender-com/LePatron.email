@@ -41,7 +41,7 @@ export default {
       return errors;
     },
     workspaceForm() {
-      const workspaceUsers = !!this.workspace?._users;
+      const workspaceUsers = this.workspace?._users;
       return {
         name: this.workspace.name || '',
         selectedUsers: workspaceUsers ? this.groupUsers.filter(user => workspaceUsers.includes(user.id)) : []

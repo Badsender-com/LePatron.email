@@ -43,7 +43,7 @@ export default {
       const groupId = this.$route.params?.groupId;
       try {
         this.isLoading = true;
-        const createdWorkspace = await $axios.$post('/workspaces', {
+        await $axios.$post('/workspaces', {
           groupId,
           ...values,
         });
@@ -52,7 +52,7 @@ export default {
           color: 'success',
         });
 
-        this.$router.push(`/groups/${groupId}/workspace/${createdWorkspace.id}`);
+        this.$router.push(`/groups/${groupId}`);
 
       } catch (error) {
         const errorKey = `global.errors.${
@@ -77,7 +77,7 @@ export default {
     </template>
     <workspace-form
       :groupUsers="groupUsers"
-      :is-loading="isLoading"
+      :isLoading="isLoading"
       @submit="createWorkspace"
     />
   </bs-layout-left-menu>
