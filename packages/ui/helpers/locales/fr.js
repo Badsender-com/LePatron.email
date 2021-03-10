@@ -139,7 +139,7 @@ export default {
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
       deleteWarningMessage:
-        'Vous êtes sur le point de supprimer le workspace "<strong>{name}</strong>". Cette action ne peut pas être annulée.',
+        'Vous êtes sur le point de supprimer le workspace "<strong>{name}</strong>". Cette action est irréversible.',
       deleteNotice:
         'Les emails et les dossiers que contient le workspace seront supprimés aussi',
       deleteSuccessful: 'Workspace supprimé',
