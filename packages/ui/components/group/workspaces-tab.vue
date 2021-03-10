@@ -28,10 +28,6 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    goToWorkspace(workspace) {
-      const { groupId } = this.$route.params;
-      this.$router.push(`/groups/${groupId}/workspace/${workspace.id}`)
-    }
   },
   async mounted() {
     const {
@@ -73,8 +69,13 @@ export default {
           :loading="loading"
           :headers="tableHeaders"
           :items="workspaces"
-          @click:row="goToWorkspace"
-        />
+        >
+          <template #item.name="{ item }">
+            <nuxt-link :to="`/groups/${$route.params.groupId}/workspace/${item.id}`">
+              {{ item.name }}
+            </nuxt-link>
+          </template>
+        </v-data-table>
       </v-card>
     </v-card-text>
   </v-card>
