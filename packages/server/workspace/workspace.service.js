@@ -1,8 +1,9 @@
 'use strict';
 
-const { Workspaces } = require('../common/models.common.js');
+const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const ERROR_CODES = require('../constant/error-codes.js')
+const folderService = require('../folder/folder.service');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound } = require('http-errors');
 
 module.exports = {
@@ -13,6 +14,8 @@ module.exports = {
   listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
+  findWorkspace,
+  deleteWorkspace,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -22,11 +25,26 @@ async function existsByName({ workspaceName, groupId }) {
   });
 }
 
+async function findWorkspace(workspace) {
+  return Workspaces.findOne(workspace);
+}
+
+async function deleteWorkspace(workspaceId) {
+  return Workspaces.deleteOne({ _id: workspaceId }, async () => {
+    await Mailings.deleteMany({ _workspace: workspaceId });
+    const foldersToDelete = await Folders.find({ _workspace: workspaceId });
+    if (foldersToDelete && foldersToDelete.length > 0) {
+      foldersToDelete?.forEach((folder) =>
+        folderService.deleteFolderContent(folder?.id)
+      );
+    }
+    await Folders.deleteMany({ _workspace: workspaceId });
+  });
+}
+
 async function getWorkspace(id) {
-  if(
-    !await Workspaces.exists({_id: mongoose.Types.ObjectId(id)})
-  ) {
-      throw new NotFound()
+  if (!(await Workspaces.exists({ _id: mongoose.Types.ObjectId(id) }))) {
+    throw new NotFound();
   }
   return Workspaces.findById(id);
 }
@@ -71,9 +89,16 @@ async function listWorkspace(params) {
 }
 
 async function listWorkspaceWithUsers(params) {
-  return Workspaces.find(params).populate({
-    path: 'users',
-  });
+  return Workspaces.find(params)
+    .populate({
+      path: 'users',
+    })
+    .populate({
+      path: 'mails',
+    })
+    .populate({
+      path: 'folders',
+    });
 }
 
 async function listWorkspaceForGroupAdmin(groupId) {

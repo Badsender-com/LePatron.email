@@ -127,10 +127,22 @@ export default {
         },
       },
     },
+    workspace: {
+      checkBoxError: 'Vous devez accepter pour continuer!',
+      inputError: 'Vous devez entrer le nom',
+    },
   },
   groups: {
     tabs: {
       informations: 'Informations',
+    },
+    workspaceTab: {
+      confirmationField: 'Tapez le nom du workspace pour confirmer',
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer le workspace "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteNotice:
+        'Les emails et les dossiers que contient le workspace seront supprimés aussi',
+      deleteSuccessful: 'Workspace supprimé',
     },
   },
   mailings: {

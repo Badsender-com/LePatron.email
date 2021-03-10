@@ -10,7 +10,7 @@ export default {
     { text: 'Français', value: 'fr' },
   ],
   props: {
-    workspace: { type: Object, default: () => ({})},
+    workspace: { type: Object, default: () => ({}) },
     groupUsers: { type: Array, default: () => [] },
     isLoading: { type: Boolean, default: false },
   },
@@ -44,8 +44,10 @@ export default {
       const workspaceUsers = this.workspace?._users;
       return {
         name: this.workspace.name || '',
-        selectedUsers: workspaceUsers ? this.groupUsers.filter(user => workspaceUsers.includes(user.id)) : []
-      }
+        selectedUsers: workspaceUsers
+          ? this.groupUsers.filter((user) => workspaceUsers.includes(user.id))
+          : [],
+      };
     },
   },
   methods: {
@@ -83,8 +85,8 @@ export default {
             </v-col>
           </v-row>
           <v-data-table
-            :headers="headers"
             v-model="workspaceForm.selectedUsers"
+            :headers="headers"
             item-key="id"
             name="selectedUsers"
             show-select

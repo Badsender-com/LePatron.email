@@ -19,7 +19,9 @@ export default {
     const { $axios, params } = nuxtContext;
 
     try {
-      const { items: users } = await $axios.$get(`/groups/${params?.groupId}/users`);
+      const { items: users } = await $axios.$get(
+        `/groups/${params?.groupId}/users`
+      );
 
       return {
         groupUsers: users,
@@ -53,7 +55,6 @@ export default {
         });
 
         this.$router.push(`/groups/${groupId}`);
-
       } catch (error) {
         const errorKey = `global.errors.${
           ERROR_CODES[error.response?.data] || 'errorOccured'
@@ -76,8 +77,8 @@ export default {
       <bs-group-menu />
     </template>
     <workspace-form
-      :groupUsers="groupUsers"
-      :isLoading="isLoading"
+      :group-users="groupUsers"
+      :is-loading="isLoading"
       @submit="createWorkspace"
     />
   </bs-layout-left-menu>

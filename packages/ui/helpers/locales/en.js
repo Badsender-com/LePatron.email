@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+
     teams: 'Workspaces',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
@@ -129,10 +130,23 @@ export default {
         noPassword: 'Disabled cause of SAML Authentication',
       },
     },
+    workspace: {
+      checkBoxError: 'You must agree to continue!',
+      inputError: 'You need to provide the name',
+    },
   },
   groups: {
     tabs: {
       informations: 'Information',
+    },
+    workspaceTab: {
+      confirmationField: 'Type the workspace name to confirm',
+      deleteNotice:
+        'Emails and folders contained in the workspace will also be deleted',
+      deleteWarningMessage:
+        'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
+
+      deleteSuccessful: 'Workspace deleted',
     },
   },
   mailings: {

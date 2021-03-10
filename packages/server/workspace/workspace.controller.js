@@ -9,7 +9,8 @@ module.exports = {
   list: asyncHandler(list),
   createWorkspace: asyncHandler(createWorkspace),
   getWorkspace: asyncHandler(getWorkspace),
-  updateWorkspace: asyncHandler(updateWorkspace)
+  updateWorkspace: asyncHandler(updateWorkspace),
+  deleteWorkspace: asyncHandler(deleteWorkspace),
 };
 
 /**
@@ -80,10 +81,10 @@ async function createWorkspace(req, res) {
 
 async function updateWorkspace(req, res) {
   try {
-    const { selectedUsers, ...otherProperties} = req.body;
+    const { selectedUsers, ...otherProperties } = req.body;
     const workspace = {
       id: req.params.workspaceId,
-      _users: selectedUsers && selectedUsers.map((user) => user.id) || [],
+      _users: (selectedUsers && selectedUsers.map((user) => user.id)) || [],
       ...otherProperties,
     };
     await workspaceService.updateWorkspace(workspace);
@@ -93,6 +94,32 @@ async function updateWorkspace(req, res) {
       return res.status(error.status).send(error.message);
     }
     res.status(500).send();
+  }
+}
+
+/**
+ * @api {delete} /workspaces/:workspaceId workspace delete
+ * @apiPermission group_admin
+ * @apiName DeleteWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspace} workspace deleted
+ */
+
+async function deleteWorkspace(req, res) {
+  const { workspaceId } = req.params;
+  if (req.user?.group?.id) {
+    const workspace = await workspaceService.findWorkspace({
+      _id: workspaceId,
+    });
+    if (!workspace || workspace._company?.toString() !== req.user.group.id) {
+      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    }
+    await workspaceService.deleteWorkspace(workspaceId);
+    res.status(204).send();
+  } else {
+    res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
   }
 }
 
@@ -116,7 +143,6 @@ async function getWorkspace(req, res) {
       res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
     res.json(workspace);
-
   } catch (error) {
     if (error.status) {
       return res.status(error.status).send(error.message);

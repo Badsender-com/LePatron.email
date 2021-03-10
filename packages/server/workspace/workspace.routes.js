@@ -14,8 +14,15 @@ router.get('/:workspaceId', guard(), workspacesController.getWorkspace);
 
 router.post('/', GUARD_GROUP_ADMIN, workspacesController.createWorkspace);
 
-router.put('/:workspaceId',
+router.put(
+  '/:workspaceId',
   guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]),
-  workspacesController.updateWorkspace);
+  workspacesController.updateWorkspace
+);
 
+router.delete(
+  '/:workspaceId',
+  GUARD_GROUP_ADMIN,
+  workspacesController.deleteWorkspace
+);
 module.exports = router;

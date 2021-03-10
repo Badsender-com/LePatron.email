@@ -2,6 +2,10 @@
 export default {
   name: 'BsModalConfirm',
   props: {
+    isForm: {
+      type: Boolean,
+      default: false,
+    },
     title: { type: String, default: '' },
     actionLabel: { type: String, default: '' },
   },
@@ -32,18 +36,18 @@ export default {
       <v-card-text>
         <slot />
       </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="primary" text @click="close">
-          {{
-            $t(`global.cancel`)
-          }}
-        </v-btn>
-        <v-btn color="primary" @click="action">
-          {{ actionLabel }}
-        </v-btn>
-      </v-card-actions>
+      <template v-if="!isForm">
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="primary" text @click="close">
+            {{ $t('global.cancel') }}
+          </v-btn>
+          <v-btn color="primary" @click="action">
+            {{ actionLabel }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </v-dialog>
 </template>
