@@ -15,6 +15,7 @@ export default {
     return {
       workspaces: [],
       dialogDelete: false,
+      selectedWorkspace: {},
       loading: false,
     };
   },
@@ -36,14 +37,13 @@ export default {
         },
       ];
     },
+    confirmCheckBox() {
+      return this.selectedWorkspace?.folders || this.selectedWorkspace?.mails;
+    },
   },
   watch: {
     dialogDelete(val) {
       val || this.closeDelete();
-    },
-    goToWorkspace(workspace) {
-      const { groupId } = this.$route.params;
-      this.$router.push(`/groups/${groupId}/workspace/${workspace.id}`);
     },
   },
   async mounted() {
@@ -64,6 +64,8 @@ export default {
           name: workspace.name,
           users: workspace?._users?.length,
           createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
+          folders: workspace?.folders?.length,
+          mails: workspace?.mails?.length,
         }));
       } catch (error) {
         this.showSnackbar({
@@ -74,11 +76,16 @@ export default {
         this.loading = false;
       }
     },
+    goToWorkspace(workspace) {
+      const { groupId } = this.$route.params;
+      this.$router.push(`/groups/${groupId}/workspace/${workspace.id}`);
+    },
     closeDelete() {
       this.dialogDelete = false;
     },
     deleteItem(item) {
-      this.$refs.deleteDialog.open(item);
+      this.selectedWorkspace = item;
+      this.$refs.deleteDialog.open({ name: item.name, id: item.id });
     },
     async deleteWorkspace(selectedWorkspace) {
       try {
@@ -113,12 +120,10 @@ export default {
           :confirmation-input-label="
             $t('groups.workspaceTab.confirmationField')
           "
+          :confirm-check-box="confirmCheckBox"
+          :confirm-check-box-message="$t('groups.workspaceTab.deleteNotice')"
           @confirm="deleteWorkspace"
-        >
-          <v-alert prominent type="error">
-            {{ $t('groups.workspaceTab.deleteNotice') }}
-          </v-alert>
-        </bs-modal-confirm-form>
+        />
         <v-data-table
           v-show="!loading"
           :loading="loading"
@@ -127,12 +132,7 @@ export default {
           @click:row="goToWorkspace"
         >
           <template #item.actionDelete="{ item }">
-            <v-btn
-              icon
-              class="mx-2"
-              small
-              @click="deleteItem({ name: item.name, id: item.id })"
-            >
+            <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </template>

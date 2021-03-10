@@ -37,8 +37,8 @@ async function deleteWorkspace(workspaceId) {
       foldersToDelete?.forEach((folder) =>
         folderService.deleteFolderContains(folder?.id)
       );
-      await Folders.deleteMany({ _workspace: workspaceId });
     }
+    await Folders.deleteMany({ _workspace: workspaceId });
   });
 }
 
@@ -89,9 +89,16 @@ async function listWorkspace(params) {
 }
 
 async function listWorkspaceWithUsers(params) {
-  return Workspaces.find(params).populate({
-    path: 'users',
-  });
+  return Workspaces.find(params)
+    .populate({
+      path: 'users',
+    })
+    .populate({
+      path: 'mails',
+    })
+    .populate({
+      path: 'folders',
+    });
 }
 
 async function listWorkspaceForGroupAdmin(groupId) {

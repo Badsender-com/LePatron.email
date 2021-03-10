@@ -130,6 +130,10 @@ export default {
         noPassword: 'Disabled cause of SAML Authentication',
       },
     },
+    workspace: {
+      checkBoxError: 'You must agree to continue!',
+      inputError: 'You need to provide the name',
+    },
   },
   groups: {
     tabs: {
@@ -138,7 +142,7 @@ export default {
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
       deleteNotice:
-        'Warning: Emails and folders contained in the workspace will also be deleted',
+        'Emails and folders contained in the workspace will also be deleted',
       deleteSuccessful: 'Workspace deleted',
     },
   },

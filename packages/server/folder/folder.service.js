@@ -13,10 +13,12 @@ async function listFolders() {
 }
 
 async function deleteFolderContains(folderId) {
-  const folderContains = Folders.find({ _parentFolder: folderId });
+  const folderContains = await Folders.find({ _parentFolder: folderId });
   if (folderContains && folderContains.length > 0) {
-    folderContains.forEach((folder) => deleteFolderContains(folder?.id));
-    await Mailings.deleteMany({ _parentFolder: folderId });
-    await Folders.deleteMany({ _parentFolder: folderId });
+    folderContains.forEach((folder) => {
+      deleteFolderContains(folder?.id);
+    });
   }
+  await Mailings.deleteMany({ _parentFolder: folderId });
+  await Folders.deleteMany({ _parentFolder: folderId });
 }

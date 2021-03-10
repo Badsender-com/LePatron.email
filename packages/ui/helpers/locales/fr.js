@@ -127,6 +127,10 @@ export default {
         },
       },
     },
+    workspace: {
+      checkBoxError: 'Vous devez accepter de continuer!',
+      inputError: 'Vous devez retaper le nom',
+    },
   },
   groups: {
     tabs: {
@@ -135,7 +139,7 @@ export default {
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
       deleteNotice:
-        'Attention: Les emails et les dossiers que contient le workspace seront supprimés aussi',
+        'Les emails et les dossiers que contient le workspace seront supprimés aussi',
       deleteSuccessful: 'Workspace supprimé',
     },
   },

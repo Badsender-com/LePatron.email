@@ -47,6 +47,12 @@ export default {
   >
     <v-form ref="form" v-model="valid" @submit.prevent="submit">
       <slot />
+      <v-checkbox
+        v-if="confirmCheckBox"
+        :rules="[(v) => !!v || 'You must agree to continue!']"
+        :label="confirmCheckBoxMessage"
+        required
+      />
       <v-text-field
         :rules="nameRule"
         :label="confirmationInputLabel"
