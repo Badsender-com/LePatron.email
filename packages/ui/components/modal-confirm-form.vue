@@ -64,7 +64,7 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn type="submit" color="primary">
+        <v-btn type="submit" color="error">
           {{ $t('global.delete') }}
         </v-btn>
       </v-card-actions>
