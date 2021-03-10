@@ -128,8 +128,12 @@ export default {
           :loading="loading"
           :headers="tableHeaders"
           :items="workspaces"
-          @click:row="goToWorkspace"
         >
+          <template #item.name="{ item }">
+            <nuxt-link :to="`/groups/${$route.params.groupId}/workspace/${item.id}`">
+              {{ item.name }}
+            </nuxt-link>
+          </template>
           <template #item.actionDelete="{ item }">
             <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
               <v-icon>mdi-delete</v-icon>
