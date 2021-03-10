@@ -128,8 +128,8 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'Vous devez accepter de continuer!',
-      inputError: 'Vous devez retaper le nom',
+      checkBoxError: 'Vous devez accepter pour continuer!',
+      inputError: 'Vous devez entrer le nom',
     },
   },
   groups: {
@@ -226,9 +226,6 @@ export default {
     mailings: {
       rename: 'Renommer',
       transfer: 'Transférer',
-    },
-    workspaces: {
-      delete: 'Supprimer',
     },
   },
 };

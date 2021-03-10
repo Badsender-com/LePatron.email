@@ -16,7 +16,7 @@ export default {
       data: {},
       valid: true,
       nameRule: [
-        (v) => v === this.data?.name || 'You need to provide the name',
+        (v) => v === this.data?.name || this.$t('forms.workspace.inputError'),
       ],
     };
   },
@@ -49,7 +49,7 @@ export default {
       <slot />
       <v-checkbox
         v-if="confirmCheckBox"
-        :rules="[(v) => !!v || 'You must agree to continue!']"
+        :rules="[(v) => !!v || $t('forms.workspace.checkBoxError')]"
         :label="confirmCheckBoxMessage"
         required
       />

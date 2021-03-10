@@ -4,7 +4,7 @@ const { Folders, Mailings } = require('../common/models.common.js');
 
 module.exports = {
   listFolders,
-  deleteFolderContains,
+  deleteFolderContent,
 };
 
 async function listFolders() {
@@ -12,11 +12,11 @@ async function listFolders() {
   return folders;
 }
 
-async function deleteFolderContains(folderId) {
-  const folderContains = await Folders.find({ _parentFolder: folderId });
-  if (folderContains && folderContains.length > 0) {
-    folderContains.forEach((folder) => {
-      deleteFolderContains(folder?.id);
+async function deleteFolderContent(folderId) {
+  const folderContent = await Folders.find({ _parentFolder: folderId });
+  if (folderContent && folderContent.length > 0) {
+    folderContent.forEach((folder) => {
+      deleteFolderContent(folder?.id);
     });
   }
   await Mailings.deleteMany({ _parentFolder: folderId });

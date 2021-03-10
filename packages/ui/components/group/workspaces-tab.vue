@@ -30,7 +30,7 @@ export default {
           value: 'createdAt',
         },
         {
-          text: this.$t('tableHeaders.workspaces.delete'),
+          text: this.$t('global.delete'),
           value: 'actionDelete',
           align: 'center',
           sortable: false,
@@ -60,8 +60,7 @@ export default {
         this.loading = true;
         const workspacesResponse = await $axios.$get(groupsWorkspaces(params));
         this.workspaces = workspacesResponse?.items?.map((workspace) => ({
-          id: workspace.id,
-          name: workspace.name,
+          ...workspace,
           users: workspace?._users?.length,
           createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
           folders: workspace?.folders?.length,

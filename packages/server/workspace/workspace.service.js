@@ -25,8 +25,8 @@ async function existsByName({ workspaceName, groupId }) {
   });
 }
 
-async function findWorkspace(params) {
-  return Workspaces.findOne(params);
+async function findWorkspace(workspace) {
+  return Workspaces.findOne(workspace);
 }
 
 async function deleteWorkspace(workspaceId) {
@@ -35,7 +35,7 @@ async function deleteWorkspace(workspaceId) {
     const foldersToDelete = await Folders.find({ _workspace: workspaceId });
     if (foldersToDelete && foldersToDelete.length > 0) {
       foldersToDelete?.forEach((folder) =>
-        folderService.deleteFolderContains(folder?.id)
+        folderService.deleteFolderContent(folder?.id)
       );
     }
     await Folders.deleteMany({ _workspace: workspaceId });

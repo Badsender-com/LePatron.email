@@ -225,8 +225,5 @@ export default {
       rename: 'Rename',
       transfer: 'Transfer',
     },
-    workspaces: {
-      delete: 'Delete',
-    },
   },
 };
