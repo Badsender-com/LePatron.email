@@ -89,7 +89,6 @@ export default {
     },
     async deleteWorkspace(selectedWorkspace) {
       try {
-        console.log({ selectedWorkspace });
         await this.$axios.delete(deleteWorkspace(selectedWorkspace?.id));
         await this.fetchData();
         this.showSnackbar({

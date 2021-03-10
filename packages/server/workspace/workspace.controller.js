@@ -117,7 +117,7 @@ async function deleteWorkspace(req, res) {
       res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
     await workspaceService.deleteWorkspace(workspaceId);
-    res.status(204).send({ success: true });
+    res.status(204).send();
   } else {
     res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
   }
