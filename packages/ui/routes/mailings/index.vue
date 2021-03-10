@@ -13,7 +13,7 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
-import WorkspaceList from '~/components/group/workspaces-list';
+import WorkspacesList from '~/components/group/workspaces-list';
 
 export default {
   name: 'PageMailings',
@@ -24,7 +24,7 @@ export default {
     BsMailingsModalRename,
     BsMailingsModalDuplicate,
     BsMailingsModalTransfer,
-    WorkspaceList,
+    WorkspacesList,
   },
   mixins: [mixinPageTitle],
   meta: { acl: acls.ACL_USER },
@@ -366,7 +366,7 @@ export default {
               </v-list>
             </v-col>
           </v-row>
-          <workspace-list />
+          <workspaces-list />
         </v-navigation-drawer>
       </v-col>
       <v-col :cols="colWidth">
