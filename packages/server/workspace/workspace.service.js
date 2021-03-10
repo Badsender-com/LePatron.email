@@ -1,6 +1,6 @@
 'use strict';
 
-const { Workspaces } = require('../common/models.common.js');
+const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound } = require('http-errors');
@@ -14,6 +14,7 @@ module.exports = {
   listWorkspaceForRegularUser,
   listWorkspaceForGroupAdmin,
   findWorkspace,
+  deleteWorkspace,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -22,8 +23,16 @@ async function existsByName({ workspaceName, groupId }) {
     _company: groupId,
   });
 }
+
 async function findWorkspace(params) {
-  return Workspaces.find(params);
+  return Workspaces.findOne(params);
+}
+
+async function deleteWorkspace(workspaceId) {
+  return Workspaces.deleteOne({ _id: workspaceId }, async () => {
+    await Mailings.deleteMany({ _workspace: workspaceId });
+    await Folders.deleteMany({ _workspace: workspaceId });
+  });
 }
 
 async function getWorkspace(id) {

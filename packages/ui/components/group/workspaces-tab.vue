@@ -47,30 +47,33 @@ export default {
     },
   },
   async mounted() {
-    const {
-      $axios,
-      $route: { params },
-    } = this;
-    try {
-      this.loading = true;
-      const workspacesResponse = await $axios.$get(groupsWorkspaces(params));
-      this.workspaces = workspacesResponse?.items?.map((workspace) => ({
-        id: workspace.id,
-        name: workspace.name,
-        users: workspace?._users?.length,
-        createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
-      }));
-    } catch (error) {
-      this.showSnackbar({
-        text: this.$t('global.errors.errorOccured'),
-        color: 'error',
-      });
-    } finally {
-      this.loading = false;
-    }
+    await this.fetchData();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async fetchData() {
+      const {
+        $axios,
+        $route: { params },
+      } = this;
+      try {
+        this.loading = true;
+        const workspacesResponse = await $axios.$get(groupsWorkspaces(params));
+        this.workspaces = workspacesResponse?.items?.map((workspace) => ({
+          id: workspace.id,
+          name: workspace.name,
+          users: workspace?._users?.length,
+          createdAt: moment(workspace.createdAt).format(DATE_FORMAT),
+        }));
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
     closeDelete() {
       this.dialogDelete = false;
     },
@@ -81,6 +84,7 @@ export default {
       try {
         console.log({ selectedWorkspace });
         await this.$axios.delete(deleteWorkspace(selectedWorkspace?.id));
+        await this.fetchData();
         this.showSnackbar({
           text: this.$t('groups.workspaceTab.deleteSuccessful'),
           color: 'success',

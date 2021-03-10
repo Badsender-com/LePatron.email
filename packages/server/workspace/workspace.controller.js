@@ -10,6 +10,7 @@ module.exports = {
   createWorkspace: asyncHandler(createWorkspace),
   getWorkspace: asyncHandler(getWorkspace),
   updateWorkspace: asyncHandler(updateWorkspace),
+  deleteWorkspace: asyncHandler(deleteWorkspace),
 };
 
 /**
@@ -93,6 +94,36 @@ async function updateWorkspace(req, res) {
       return res.status(error.status).send(error.message);
     }
     res.status(500).send();
+  }
+}
+
+/**
+ * @api {delete} /workspaces/:workspaceId workspace delete
+ * @apiPermission group_admin
+ * @apiName DeleteWorkspace
+ * @apiGroup Workspaces
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspace} workspace deleted
+ */
+
+async function deleteWorkspace(req, res) {
+  const { workspaceId } = req.params;
+  if (req.user?.group?.id) {
+    const workspace = await workspaceService.findWorkspace({
+      _id: workspaceId,
+    });
+    if (!workspace || workspace._company?.toString() !== req.user.group.id) {
+      console.log(workspace);
+      console.log(workspace._company?.toString());
+      console.log(req.user.group.id);
+      console.log(workspace._company?.toString() !== req.user.group.id);
+      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    }
+    await workspaceService.deleteWorkspace(workspaceId);
+    res.status(204).send({ success: true });
+  } else {
+    res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
   }
 }
 

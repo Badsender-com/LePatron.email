@@ -20,8 +20,9 @@ router.put(
   workspacesController.updateWorkspace
 );
 
-router.delete('/:workspaceId', GUARD_GROUP_ADMIN, (req, res, _next) => {
-  console.log('call delete workspace API');
-  return res.end('Endpoint workspace');
-});
+router.delete(
+  '/:workspaceId',
+  GUARD_GROUP_ADMIN,
+  workspacesController.deleteWorkspace
+);
 module.exports = router;
