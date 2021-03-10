@@ -143,6 +143,9 @@ export default {
       confirmationField: 'Type the workspace name to confirm',
       deleteNotice:
         'Emails and folders contained in the workspace will also be deleted',
+      deleteWarningMessage:
+        'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
+
       deleteSuccessful: 'Workspace deleted',
     },
   },

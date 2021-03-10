@@ -121,7 +121,16 @@ export default {
           :confirm-check-box="confirmCheckBox"
           :confirm-check-box-message="$t('groups.workspaceTab.deleteNotice')"
           @confirm="deleteWorkspace"
-        />
+        >
+          <p
+            class="black--text"
+            v-html="
+              $t('groups.workspaceTab.deleteWarningMessage', {
+                name: selectedWorkspace.name,
+              })
+            "
+          />
+        </bs-modal-confirm-form>
         <v-data-table
           v-show="!loading"
           :loading="loading"
