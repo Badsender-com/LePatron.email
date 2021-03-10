@@ -12,6 +12,7 @@ import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { PAGE_NAMES } from '~/helpers/constants/page-names.js';
 
 export default {
   name: 'BsPageGroup',
@@ -38,19 +39,29 @@ export default {
   },
   data() {
     return {
-      tab: 'group-templates',
       group: {},
       loading: false,
+      fromCreateOrUpdate: false
     };
   },
   head() {
     return { title: this.title };
+  },
+  beforeRouteEnter(to, from, next) {
+    next(page => {
+      if (from.name === PAGE_NAMES.WORKSPACE_CREATE || from.name === PAGE_NAMES.WORKSPACE_UPDATE ) {
+        page.fromCreateOrUpdate = true;
+      }
+    })
   },
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    tab() {
+      return this.fromCreateOrUpdate ? 'group-workspaces' : 'group-templates';
+    },
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name}`;
     },
