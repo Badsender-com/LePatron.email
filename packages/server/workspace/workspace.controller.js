@@ -114,10 +114,6 @@ async function deleteWorkspace(req, res) {
       _id: workspaceId,
     });
     if (!workspace || workspace._company?.toString() !== req.user.group.id) {
-      console.log(workspace);
-      console.log(workspace._company?.toString());
-      console.log(req.user.group.id);
-      console.log(workspace._company?.toString() !== req.user.group.id);
       res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
     await workspaceService.deleteWorkspace(workspaceId);
