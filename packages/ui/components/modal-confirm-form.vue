@@ -8,6 +8,8 @@ export default {
   },
   props: {
     confirmationInputLabel: { type: String, default: '' },
+    confirmCheckBox: { type: Boolean, default: false },
+    confirmCheckBoxMessage: { type: String, default: '' },
   },
   data() {
     return {
@@ -24,8 +26,6 @@ export default {
       if (this.valid) {
         this.close();
         this.$emit('confirm', this.data);
-        // Reset the data
-        this.data = {};
       }
     },
     open(item) {
@@ -33,6 +33,7 @@ export default {
       this.$refs.deleteDialog.open();
     },
     close() {
+      this.$refs.form.reset();
       this.$refs.deleteDialog.close();
     },
   },

@@ -2,6 +2,7 @@
 
 const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+const folderService = require('../folder/folder.service');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound } = require('http-errors');
 
@@ -31,7 +32,13 @@ async function findWorkspace(params) {
 async function deleteWorkspace(workspaceId) {
   return Workspaces.deleteOne({ _id: workspaceId }, async () => {
     await Mailings.deleteMany({ _workspace: workspaceId });
-    await Folders.deleteMany({ _workspace: workspaceId });
+    const foldersToDelete = await Folders.find({ _workspace: workspaceId });
+    if (foldersToDelete && foldersToDelete.length > 0) {
+      foldersToDelete?.forEach((folder) =>
+        folderService.deleteFolderContains(folder?.id)
+      );
+      await Folders.deleteMany({ _workspace: workspaceId });
+    }
   });
 }
 
