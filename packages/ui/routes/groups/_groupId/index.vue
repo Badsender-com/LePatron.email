@@ -103,7 +103,7 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs v-model="tab" centered>
+    <v-tabs :value="tab" centered>
       <v-tabs-slider color="accent" />
       <v-tab href="#group-informations">
         {{ $t('groups.tabs.informations') }}
