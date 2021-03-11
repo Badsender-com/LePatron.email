@@ -13,7 +13,7 @@ export default {
   components: { BsGroupMenu, BsUserForm },
   mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
