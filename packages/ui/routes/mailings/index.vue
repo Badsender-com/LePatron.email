@@ -4,7 +4,14 @@ import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
-import * as apiRoutes from '~/helpers/api-routes.js';
+import {
+  mailings,
+  templates,
+  workspacesByGroup,
+  mailingsItem,
+  mailingsItemDuplicate,
+  mailingsItemTransferToUser,
+} from '~/helpers/api-routes.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import BsMailingsFilter from '~/components/mailings/filters.vue';
 import BsMailingsSelectionActions from '~/components/mailings/selection-actions.vue';
@@ -14,6 +21,7 @@ import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue'
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
 import WorkspaceList from '~/components/group/workspaces-list';
+import { WORKSPACE } from '../../../server/constant/space-type';
 
 export default {
   name: 'PageMailings',
@@ -33,8 +41,8 @@ export default {
     const { $axios } = nuxtContext;
     try {
       const [mailingsResponse, templatesResponse] = await Promise.all([
-        $axios.$get(apiRoutes.mailings()),
-        $axios.$get(apiRoutes.templates()),
+        $axios.$get(mailings()),
+        $axios.$get(templates()),
       ]);
       return {
         mailings: mailingsResponse.items,
@@ -48,7 +56,8 @@ export default {
   data() {
     return {
       tags: [],
-      defaultItem: null,
+      defaultWorkspace: null,
+      workspaces: [],
       selectedSpaceItem: null,
       mailings: [],
       mailingsSelection: [],
@@ -116,6 +125,28 @@ export default {
     // call again the method if the route changes
     $route: 'fetchData',
   },
+  async mounted() {
+    const { $axios } = this;
+
+    try {
+      this.loading = true;
+      const workspaceResponse = await $axios.$get(workspacesByGroup());
+      this.workspacesData = workspaceResponse.items;
+      if (
+        Array.isArray(this.workspacesData) &&
+        this.workspacesData.length > 0
+      ) {
+        this.defaultWorkspace = {
+          id: this.workspacesData[0]?.id,
+          type: WORKSPACE,
+        };
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.loading = false;
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     formatPathToBreadcrumbsData(formatData) {
@@ -149,7 +180,7 @@ export default {
       try {
         // we need to pass the `body` as `data` for DEL methods
         // • https://github.com/axios/axios/issues/736#issuecomment-377829542
-        const mailingsResponse = await $axios.$delete(apiRoutes.mailings(), {
+        const mailingsResponse = await $axios.$delete(mailings(), {
           data: { items: this.selecteMailingsIdsList },
         });
         this.tags = mailingsResponse.meta.tags;
@@ -174,7 +205,7 @@ export default {
       const { $axios } = this;
       this.loading = true;
       try {
-        const mailingsResponse = await $axios.$put(apiRoutes.mailings(), {
+        const mailingsResponse = await $axios.$put(mailings(), {
           items: this.selecteMailingsIdsList,
           tags: tagsUpdates,
         });
@@ -221,7 +252,7 @@ export default {
       this.closeRenameModal();
       if (!mailingId) return;
       this.loading = true;
-      const updateUri = apiRoutes.mailingsItem({ mailingId });
+      const updateUri = mailingsItem({ mailingId });
       try {
         const mailingResponse = await $axios.$put(updateUri, { name: newName });
         const mailingIndex = this.mailings.findIndex(
@@ -263,7 +294,7 @@ export default {
       this.closeDuplicateModal();
       if (!mailingId) return;
       this.loading = true;
-      const duplicateUri = apiRoutes.mailingsItemDuplicate({ mailingId });
+      const duplicateUri = mailingsItemDuplicate({ mailingId });
       try {
         const mailingResponse = await $axios.$post(duplicateUri);
         this.mailings.push(mailingResponse);
@@ -295,6 +326,12 @@ export default {
         groupId: false,
       };
     },
+    initWorkSpaceData(workspaceData) {
+      this.workspaces = workspaceData;
+    },
+    initDefaultWorkspace(defaultWorkspace) {
+      this.defaultWorkspace = defaultWorkspace;
+    },
     handleActiveListItem(event) {
       this.selectedSpaceItem = event;
     },
@@ -304,7 +341,7 @@ export default {
       this.closeTransferModal();
       if (!mailingId || !userId) return;
       this.loading = true;
-      const trasnferUri = apiRoutes.mailingsItemTransferToUser({ mailingId });
+      const trasnferUri = mailingsItemTransferToUser({ mailingId });
       try {
         const mailingResponse = await $axios.$post(trasnferUri, { userId });
         this.mailings = this.mailings.filter(
@@ -326,11 +363,11 @@ export default {
     },
     async fetchData() {
       try {
-        this.defaultItem = {
+        this.defaultWorkspace = {
           ...this.$route.query,
         };
-        const mailingsResponse = await this.$axios.$get(apiRoutes.mailings(), {
-          params: this.defaultItem,
+        const mailingsResponse = await this.$axios.$get(mailings(), {
+          params: this.defaultWorkspace,
         });
         this.mailings = mailingsResponse?.items || [];
       } catch (error) {
@@ -365,8 +402,15 @@ export default {
                 </v-list-item>
               </v-list>
             </v-col>
+            <v-col cols="12">
+              <workspace-list
+                :default-item="defaultWorkspace"
+                :set-parent-component-workspace-data="initWorkSpaceData"
+                :set-default-workspace="initDefaultWorkspace"
+                @active-list-item="handleActiveListItem"
+              />
+            </v-col>
           </v-row>
-          <workspace-list />
         </v-navigation-drawer>
       </v-col>
       <v-col :cols="colWidth">
