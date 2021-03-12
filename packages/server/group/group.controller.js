@@ -1,5 +1,6 @@
 'use strict';
 
+const { pick } = require('lodash');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
@@ -216,11 +217,16 @@ async function update(req, res, next) {
     return next(new createError.Forbidden());
   }
 
-  const group = {
+  let groupToUpdate = {
     id: req.params.groupId,
     ...req.body
   };
 
-  await groupService.updateGroup(group);
+  if (user.isGroupAdmin) {
+    groupToUpdate = pick(groupToUpdate, ['name', 'id']);
+  }
+
+  await groupService.updateGroup(groupToUpdate);
+
   res.send();
 }

@@ -26,7 +26,7 @@ async function createGroup(groupParams) {
 async function updateGroup(group) {
   const { id, ...otherProperties } = group;
 
-  return Groups.updateOne(
+  await Groups.updateOne(
     { _id: mongoose.Types.ObjectId(id) },
     { ...otherProperties }
   );
