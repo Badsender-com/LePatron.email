@@ -7,7 +7,6 @@ import * as acls from '~/helpers/pages-acls.js';
 import {
   mailings,
   templates,
-  workspacesByGroup,
   mailingsItem,
   mailingsItemDuplicate,
   mailingsItemTransferToUser,
@@ -21,7 +20,6 @@ import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue'
 import BsMailingsModalTransfer from '~/components/mailings/modal-transfer.vue';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '../../store/user';
 import WorkspaceList from '~/components/group/workspaces-list';
-import { WORKSPACE } from '../../../server/constant/space-type';
 
 export default {
   name: 'PageMailings',
@@ -124,28 +122,6 @@ export default {
   watch: {
     // call again the method if the route changes
     $route: 'fetchData',
-  },
-  async mounted() {
-    const { $axios } = this;
-
-    try {
-      this.loading = true;
-      const workspaceResponse = await $axios.$get(workspacesByGroup());
-      this.workspacesData = workspaceResponse.items;
-      if (
-        Array.isArray(this.workspacesData) &&
-        this.workspacesData.length > 0
-      ) {
-        this.defaultWorkspace = {
-          id: this.workspacesData[0]?.id,
-          type: WORKSPACE,
-        };
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.loading = false;
-    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
