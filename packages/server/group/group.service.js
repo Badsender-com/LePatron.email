@@ -3,10 +3,12 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Groups } = require('../common/models.common.js');
+const mongoose = require('mongoose');
 
 module.exports = {
   findById: asyncHandler(findById),
   createGroup: asyncHandler(createGroup),
+  updateGroup: asyncHandler(updateGroup)
 };
 
 async function findById(groupId) {
@@ -19,4 +21,13 @@ async function findById(groupId) {
 
 async function createGroup(groupParams) {
   return Groups.create(groupParams);
+}
+
+async function updateGroup(group) {
+  const { id, ...otherProperties } = group;
+
+  return Groups.updateOne(
+    { _id: mongoose.Types.ObjectId(id) },
+    { ...otherProperties }
+  );
 }

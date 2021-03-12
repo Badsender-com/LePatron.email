@@ -208,10 +208,19 @@ async function readWorkspaces(req, res, next) {
  * @apiUse group
  */
 
-async function update(req, res) {
-  const { groupId } = req.params;
-  const updatedGroup = await Groups.findByIdAndUpdate(groupId, req.body, {
-    runValidators: true,
-  });
-  res.json(updatedGroup);
+async function update(req, res, next) {
+  const { user } = req;
+  const properties = Object.keys(req.body);
+
+  if (user.isGroupAdmin && properties.includes('name') && properties.length > 1) {
+    return next(new createError.Forbidden());
+  }
+
+  const group = {
+    id: req.params.groupId,
+    ...req.body
+  };
+
+  await groupService.updateGroup(group);
+  res.send();
 }

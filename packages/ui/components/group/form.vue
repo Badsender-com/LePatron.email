@@ -1,6 +1,8 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
+import { mapGetters } from 'vuex';
+import { IS_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsGroupForm',
@@ -19,6 +21,9 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+    }),
     localModel: {
       get() {
         return this.group;
@@ -139,7 +144,7 @@ export default {
               />
             </v-col>
 
-            <v-col cols="5">
+            <v-col cols="5" v-if="isAdmin">
               <v-select
                 id="downloadMailingWithoutEnclosingFolder"
                 v-model="localModel.downloadMailingWithoutEnclosingFolder"
@@ -151,7 +156,7 @@ export default {
             </v-col>
           </v-row>
 
-          <v-row>
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 {{ $t('forms.group.exportFtp') }}
@@ -284,7 +289,7 @@ export default {
               </v-row>
             </v-col>
           </v-row>
-          <v-row>
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 {{ $t('forms.group.exportCdn') }}
@@ -334,7 +339,7 @@ export default {
             </v-col>
           </v-row>
 
-          <v-row>
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 Activer l'authentification SAML
