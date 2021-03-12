@@ -75,9 +75,10 @@ export default {
       } = this;
       try {
         this.loading = true;
-        this.group = await $axios.$put(
+        const payload = this.isGroupAdmin ? { name: this.group.name } : this.group;
+        await $axios.$put(
           apiRoutes.groupsItem(params),
-          this.group
+          payload
         );
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
