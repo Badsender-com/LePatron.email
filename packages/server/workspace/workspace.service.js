@@ -13,7 +13,7 @@ module.exports = {
   listWorkspace,
   listWorkspaceWithUsers,
   listWorkspaceForRegularUser,
-  listWorkspaceForGroupAdmin,
+  listWorkspaceForGroupMember,
   findWorkspace,
   deleteWorkspace,
 };
@@ -101,7 +101,7 @@ async function listWorkspaceWithUsers(params) {
     });
 }
 
-async function listWorkspaceForGroupAdmin(groupId) {
+async function listWorkspaceForGroupMember(groupId) {
   const listWorkspacesForGroupAdmin = await listWorkspace({
     _company: mongoose.Types.ObjectId(groupId),
   });
