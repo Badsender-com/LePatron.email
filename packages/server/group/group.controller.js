@@ -5,7 +5,7 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
-  listWorkspaceWithUsers,
+  findWorkspaces,
 } = require('../workspace/workspace.service.js');
 const groupService = require('../group/group.service.js');
 
@@ -179,7 +179,7 @@ async function readMailings(req, res) {
 async function readWorkspaces(req, res, next) {
   const { groupId } = req.params;
   if (!groupId) next(new createError.NotFound());
-  const workspaces = await listWorkspaceWithUsers({ _company: groupId });
+  const workspaces = await findWorkspaces({ groupId });
   return res.json({ items: workspaces });
 }
 
@@ -214,7 +214,7 @@ async function update(req, res) {
 
   let groupToUpdate = {
     id: req.params.groupId,
-    ...req.body
+    ...req.body,
   };
 
   if (user.isGroupAdmin) {
