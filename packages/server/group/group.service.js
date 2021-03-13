@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 module.exports = {
   findById: asyncHandler(findById),
   createGroup: asyncHandler(createGroup),
-  updateGroup: asyncHandler(updateGroup)
+  updateGroup: asyncHandler(updateGroup),
 };
 
 async function findById(groupId) {
@@ -19,8 +19,8 @@ async function findById(groupId) {
   return group;
 }
 
-async function createGroup(groupParams) {
-  return Groups.create(groupParams);
+async function createGroup(group) {
+  return Groups.create(group);
 }
 
 async function updateGroup(group) {
