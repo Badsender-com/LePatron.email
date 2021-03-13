@@ -29,7 +29,7 @@ async function listWorkspace(req, res, next) {
   }
   const user = req.user;
   const { group } = user;
-  let workspaces = await workspaceService.listWorkspaceForGroupMember(group.id);
+  let workspaces = await workspaceService.findWorkspaces({ groupId: group.id });
 
   if (!user.isGroupAdmin) {
     workspaces = workspaces
@@ -125,9 +125,7 @@ async function updateWorkspace(req, res) {
 async function deleteWorkspace(req, res) {
   const { workspaceId } = req.params;
   if (req.user?.group?.id) {
-    const workspace = await workspaceService.findWorkspace({
-      _id: workspaceId,
-    });
+    const workspace = await workspaceService.getWorkspace(workspaceId);
     if (!workspace || workspace._company?.toString() !== req.user.group.id) {
       res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
     }
