@@ -6,7 +6,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const workspaceService = require('./workspace.service');
 
 module.exports = {
-  list: asyncHandler(list),
+  listWorkspace: asyncHandler(listWorkspace),
   createWorkspace: asyncHandler(createWorkspace),
   getWorkspace: asyncHandler(getWorkspace),
   updateWorkspace: asyncHandler(updateWorkspace),
@@ -23,15 +23,30 @@ module.exports = {
  * @apiSuccess {workspace[]} items list of workspace
  */
 
-async function list(req, res, next) {
+async function listWorkspace(req, res, next) {
   if (!req?.user) {
     next(new createHttpError.Unauthorized());
   }
   const user = req.user;
   const { group } = user;
-  const workspaces = await workspaceService.listWorkspaceForGroupAdmin(
-    group.id
-  );
+  let workspaces = await workspaceService.listWorkspaceForGroupMember(group.id);
+
+  if (!user.isGroupAdmin) {
+    workspaces = workspaces
+      .map((workspace) => {
+        if (!workspace._users?.toString().includes(user.id)) {
+          return {
+            ...workspace,
+            hasRights: false,
+          };
+        }
+        return workspace;
+      })
+      .sort(
+        (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
+      );
+  }
+
   return res.json({ items: workspaces });
 }
 

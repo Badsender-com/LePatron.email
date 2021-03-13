@@ -8,7 +8,7 @@ const Roles = require('../account/roles.js');
 
 const workspacesController = require('./workspace.controller.js');
 
-router.get('/', guard(), workspacesController.list);
+router.get('/', guard(), workspacesController.listWorkspace);
 
 router.get('/:workspaceId', guard(), workspacesController.getWorkspace);
 
