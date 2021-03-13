@@ -179,7 +179,7 @@ async function readMailings(req, res) {
 async function readWorkspaces(req, res, next) {
   const { groupId } = req.params;
   if (!groupId) next(new createError.NotFound());
-  const workspaces = await findWorkspaces({ groupId: groupId });
+  const workspaces = await findWorkspaces({ groupId });
   return res.json({ items: workspaces });
 }
 
