@@ -16,7 +16,7 @@ async function findMailings({ workspaceId }) {
   if (workspaceId) {
     filterQuery._workspace = mongoose.Types.ObjectId(workspaceId);
   }
-  return await Mailings.find(filterQuery);
+  return Mailings.find(filterQuery);
 }
 
 async function createMailing(mailing) {
