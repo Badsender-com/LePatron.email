@@ -7,7 +7,7 @@ const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 
 export default {
-  name: 'BsMailingsTable',
+  name: 'MailingsTable',
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
@@ -96,26 +96,19 @@ export default {
     :headers="tablesHeaders"
     :options="tableOptions"
     :items="mailings"
-    :loading="loading"
     show-select
   >
     <template #item.name="{ item }">
-      <a :href="`/mailings/${item.id}`">{{ item.name }}</a>
+      <a :href="`/editor/${item.id}`">{{ item.name }}</a>
     </template>
     <template #item.userName="{ item }">
-      <nuxt-link
-        v-if="isAdmin"
-        :to="`/users/${item.userId}`"
-      >
+      <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
         {{ item.userName }}
       </nuxt-link>
       <span v-else>{{ item.userName }}</span>
     </template>
     <template #item.templateName="{ item }">
-      <nuxt-link
-        v-if="isAdmin"
-        :to="`/templates/${item.templateId}`"
-      >
+      <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
         {{ item.templateName }}
       </nuxt-link>
       <span v-else>{{ item.templateName }}</span>

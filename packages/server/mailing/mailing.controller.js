@@ -18,6 +18,8 @@ const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 
+const mailingService = require('./mailing.service.js');
+
 module.exports = {
   list: asyncHandler(list),
   create: asyncHandler(create),
@@ -33,7 +35,6 @@ module.exports = {
   sendTestMail,
   downloadZip,
 };
-
 /**
  * @api {get} /mailings list of mailings
  * @apiPermission user
@@ -47,23 +48,30 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
-    req.user,
-    {}
-  );
-  const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(
-    req.query
-  );
-  const mailingQuery = {
-    ...mailingQueryStrictGroup,
-    ...mailingQueryFolderParams,
-  };
-  // _workspace
-  // _parentFolder
-  const [mailings, tags] = await Promise.all([
-    Mailings.findForApi(mailingQuery),
-    Mailings.findTags(mailingQuery),
-  ]);
+  // const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+  //   req.user,
+  //   {}
+  // );
+  // const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(
+  //   req.query
+  // );
+  // const mailingQuery = {
+  //   ...mailingQueryStrictGroup,
+  //   ...mailingQueryFolderParams,
+  // };
+
+  let mailings = [];
+  const tags = [];
+  const { workspaceId } = req.query;
+  if (workspaceId) {
+    // TODO manage tag and other filter
+    mailings = await mailingService.findMailings({ workspaceId });
+  } else {
+    // [mailings, tags] = await Promise.all([
+    //   Mailings.findForApi(mailingQuery),
+    //   Mailings.findTags(mailingQuery),
+    // ]);
+  }
 
   res.json({
     meta: { tags },
@@ -84,9 +92,14 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId } = req.body;
+  const { templateId, workspaceId } = req.body;
+
   const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
-  const template = await Templates.findOne(query).select({ name: 1, _id: 1 });
+  const template = await Templates.findOne(query).select({
+    name: 1,
+    _id: 1,
+  });
+
   if (!template) throw new createError.NotFound();
 
   const initParameters = {
@@ -95,13 +108,15 @@ async function create(req, res) {
     templateId: template._id,
     templateName: template.name,
   };
+
   // admin doesn't have valid user id & company
   if (!user.isAdmin) {
     initParameters.userId = user.id;
     initParameters.userName = user.name;
     initParameters.group = user.group.id;
+    initParameters.workspace = workspaceId;
   }
-  const newMailing = await Mailings.create(initParameters);
+  const newMailing = await mailingService.createMailing(initParameters);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response

@@ -3,7 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 
 export default {
-  name: `bs-template-card`,
+  name: 'TemplateCard',
   components: { BsTemplateCoverImage },
   props: {
     template: { type: Object, default: () => ({}) },
@@ -22,7 +22,7 @@ export default {
   },
   methods: {
     onClick() {
-      this.$emit(`click`, this.template);
+      this.$emit('click', this.template);
     },
   },
 };
@@ -32,11 +32,13 @@ export default {
   <v-card class="bs-template-card" @click="onClick">
     <bs-template-cover-image :src="coverSrc" :fit-cover="!hasCover" />
     <v-card-title>
-      <h2 class="bs-template-card__title headline">{{ template.name }}</h2>
+      <h2 class="bs-template-card__title headline">
+        {{ template.name }}
+      </h2>
     </v-card-title>
-    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">{{
-      template.description
-    }}</v-card-subtitle>
+    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">
+      {{ template.description }}
+    </v-card-subtitle>
   </v-card>
 </template>
 

@@ -2,12 +2,13 @@
 import { workspacesByGroup } from '~/helpers/api-routes.js';
 
 export default {
-  name: 'WorkspaceList',
+  name: 'WorkspaceTree',
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     workspaces: [],
   }),
+
   async mounted() {
     const { $axios } = this;
 
@@ -46,9 +47,11 @@ export default {
         </v-icon>
       </template>
       <template #label="{ item, active }">
-        <div @click="active ? $event.stopPropagation() : null">
-          {{ item.name }}
-        </div>
+        <nuxt-link :to="`/mailings?wid=${item.id}`">
+          <div @click="active ? $event.stopPropagation() : null">
+            {{ item.name }}
+          </div>
+        </nuxt-link>
       </template>
       <template #append="{ item }">
         <v-menu v-if="item.isAllowed" bottom left>
