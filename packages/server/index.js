@@ -256,7 +256,7 @@ if (cluster.isMaster) {
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
   app.get(
-    '/mailings/:mailingId',
+    '/editor/:mailingId',
     GUARD_USER_REDIRECT,
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render
