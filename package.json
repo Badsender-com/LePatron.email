@@ -227,7 +227,7 @@
     "editor:build:prod": "gulp build --prod",
     "ui:build": "nuxt build",
     "ui:start": "nuxt start",
-    "dev": "run-p serve:mail serve:dev -- --trace-warnings",
+    "dev": "run-p serve:mail serve:dev",
     "docs:dev": "vuepress dev ./packages/documentation",
     "docs:dev:build": "vuepress build ./packages/documentation",
     "docs:api": "yarn docs:api:build && npx http-server ./packages/documentation/api -c-1 -o",
