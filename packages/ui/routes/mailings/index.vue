@@ -14,7 +14,6 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
-      console.log('On load les mail du workspace', query?.wid);
       const mailingsResponse = await $axios.$get(mailings(), {
         params: { workspaceId: query?.wid },
       });
@@ -33,6 +32,7 @@ export default {
     mailings: [],
     tags: [],
   }),
+
   computed: {
     title() {
       return 'Emails';
@@ -45,6 +45,8 @@ export default {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
+  watchQuery: ['wid'],
+
   methods: {},
 };
 </script>

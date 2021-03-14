@@ -1,5 +1,6 @@
 <script>
-import { templates } from '~/helpers/api-routes';
+import * as apiRoutes from '~/helpers/api-routes.js';
+
 export default {
   name: 'MailingsFilters',
   props: {
@@ -39,7 +40,7 @@ export default {
   async mounted() {
     const { $axios } = this;
     try {
-      const { items } = await $axios.$get(templates());
+      const { items } = await $axios.$get(apiRoutes.templates());
       this.templates = items;
     } catch (error) {
       this.templateIsError = true;
@@ -68,9 +69,7 @@ export default {
   <v-expansion-panels flat focusable>
     <v-expansion-panel>
       <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>
-        {{
-          $t(`mailings.list`)
-        }}
+        {{ $t(`mailings.list`) }}
       </v-expansion-panel-header>
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
@@ -176,9 +175,7 @@ export default {
           />
           <div class="bs-mailings-filters__actions">
             <v-btn color="primary" text @click="reset">
-              {{
-                $t(`global.reset`)
-              }}
+              {{ $t(`global.reset`) }}
             </v-btn>
           </div>
         </div>

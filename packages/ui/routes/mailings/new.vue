@@ -2,7 +2,7 @@
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
 import * as acls from '~/helpers/pages-acls.js';
-import { templates } from '~/helpers/api-routes.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 
 export default {
@@ -15,7 +15,7 @@ export default {
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
     try {
-      const { items } = await $axios.$get(templates());
+      const { items } = await $axios.$get(apiRoutes.templates());
       return {
         templates: items.filter((template) => template.hasMarkup),
         templatesIsLoading: false,

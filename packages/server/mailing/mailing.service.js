@@ -16,16 +16,15 @@ async function findMailings({ workspaceId }) {
   if (workspaceId) {
     filterQuery._workspace = mongoose.Types.ObjectId(workspaceId);
   }
-  return await Mailings.find(filterQuery);
+  return Mailings.find(filterQuery);
 }
 
 async function createMailing(mailing) {
-  console.log({ mailing });
   if (
     !mailing?.workspace ||
     !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing?.workspace) })
   ) {
     throw new NotFound('Workspace not found');
   }
-  return await Mailings.create(mailing);
+  return Mailings.create(mailing);
 }

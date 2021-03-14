@@ -93,7 +93,6 @@ async function list(req, res) {
 async function create(req, res) {
   const { user } = req;
   const { templateId, workspaceId } = req.body;
-  console.log({ body: req.body });
 
   const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
   const template = await Templates.findOne(query).select({
