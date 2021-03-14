@@ -99,7 +99,7 @@ export default {
     show-select
   >
     <template #item.name="{ item }">
-      <a :href="`/mailings/${item.id}`">{{ item.name }}</a>
+      <a :href="`/editor/${item.id}`">{{ item.name }}</a>
     </template>
     <template #item.userName="{ item }">
       <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
