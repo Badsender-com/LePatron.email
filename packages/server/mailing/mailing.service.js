@@ -23,7 +23,7 @@ async function findMailings(query) {
     query._parentFolder = mongoose.Types.ObjectId(_parentFolder);
   }
 
-  return Mailings.findForApi(query);
+  return Mailings.find(query);
 }
 
 async function findTags(query) {
