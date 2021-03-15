@@ -59,8 +59,9 @@ async function list(req, res, next) {
   if (!user.isAdmin) {
     const workspace = await workspaceService.getWorkspace(query.workspaceId);
 
-    if (workspace._company !== user.group.id) {
-      return next(new createError.NotFound());
+    // if workspaceId doesn't exist or user can't access 
+    if(workspace?._company !== user.group.id) {
+      return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
     }
   }
 
