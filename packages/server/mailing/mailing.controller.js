@@ -56,13 +56,11 @@ async function list(req, res, next) {
     return next(new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED));
   }
 
-  if (!user.isAdmin) {
-    const workspace = await workspaceService.getWorkspace(query.workspaceId);
+  const workspace = await workspaceService.getWorkspace(query.workspaceId);
 
-    // if workspaceId doesn't exist or user can't access 
-    if(workspace?._company !== user.group.id) {
-      return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
-    }
+  // if workspaceId doesn't exist or user can't access
+  if (workspace?._company !== user.group.id) {
+    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
   }
 
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
