@@ -31,26 +31,6 @@ export default {
       temporary
     >
       <v-list dense>
-        <v-list-item
-          link
-          nuxt
-          to="/"
-        >
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $tc('global.mailing', 2) }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          link
-          nuxt
-          to="/mailings/new"
-        >
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newMailing') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
         <template v-if="isAdmin">
           <v-list-item
             link
@@ -60,26 +40,6 @@ export default {
             <v-list-item-content>
               <v-list-item-title>
                 {{ $tc('global.group', 2) }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            link
-            nuxt
-            to="/users"
-          >
-            <v-list-item-content>
-              <v-list-item-title>{{ $tc('global.user', 2) }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            link
-            nuxt
-            to="/templates"
-          >
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ $tc('global.template', 2) }}
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
@@ -103,26 +63,6 @@ export default {
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>{{ title | capitalize }}</v-toolbar-title>
       <v-spacer />
-      <v-btn
-        v-if="isAdmin"
-        text
-        link
-        nuxt
-        to="/"
-        class="ml-2"
-      >
-        {{ $tc('global.mailing', 2) }}
-      </v-btn>
-      <v-btn
-        v-if="isAdmin"
-        text
-        link
-        nuxt
-        to="/mailings/new"
-        class="ml-2"
-      >
-        {{ $t('global.newMailing') }}
-      </v-btn>
       <template v-if="isAdmin">
         <v-tooltip bottom>
           <template #activator="{ on }">
@@ -137,34 +77,6 @@ export default {
             </v-btn>
           </template>
           <span>{{ $tc('global.group', 2) }}</span>
-        </v-tooltip>
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn
-              icon
-              nuxt
-              to="/users"
-              class="ml-2"
-              v-on="on"
-            >
-              <v-icon>person</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $tc('global.user', 2) }}</span>
-        </v-tooltip>
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn
-              icon
-              nuxt
-              to="/templates"
-              class="ml-2"
-              v-on="on"
-            >
-              <v-icon>web</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $tc('global.template', 2) }}</span>
         </v-tooltip>
       </template>
       <v-tooltip bottom>
