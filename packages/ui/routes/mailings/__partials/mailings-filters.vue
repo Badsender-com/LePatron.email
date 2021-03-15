@@ -15,8 +15,7 @@ export default {
       pickerCreatedEnd: false,
       pickerUpdatedStart: false,
       pickerUpdatedEnd: false,
-
-      filter: {
+      localFilters: {
         name: '',
         templates: [],
         createdAtStart: '',
@@ -27,16 +26,16 @@ export default {
       },
     };
   },
-  computed: {
+
+  watch: {
     localFilters: {
-      get() {
-        return this.filters;
+      handler: function (updatedFilters) {
+        this.$emit('change', updatedFilters);
       },
-      set(updatedFilters) {
-        this.$emit('update', updatedFilters);
-      },
+      deep: true,
     },
   },
+
   async mounted() {
     const { $axios } = this;
     try {
@@ -50,16 +49,16 @@ export default {
 
   methods: {
     reset() {
-      // this.localFilters = {
-      //   show: false,
-      //   name: ``,
-      //   templates: [],
-      //   createdAtStart: ``,
-      //   createdAtEnd: ``,
-      //   updatedAtStart: ``,
-      //   updatedAtEnd: ``,
-      //   tags: [],
-      // };
+      this.localFilters = {
+        show: false,
+        name: '',
+        templates: [],
+        createdAtStart: '',
+        createdAtEnd: '',
+        updatedAtStart: '',
+        updatedAtEnd: '',
+        tags: [],
+      };
     },
   },
 };
@@ -74,12 +73,12 @@ export default {
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
           <v-text-field
-            v-model="filter.name"
+            v-model="localFilters.name"
             :label="$t(`global.name`)"
             clearable
           />
           <v-select
-            v-model="filter.templates"
+            v-model="localFilters.templates"
             :label="$tc(`global.template`, 2)"
             :items="templates"
             item-text="name"
@@ -97,14 +96,14 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="filter.createdAtStart"
+                  v-model="localFilters.createdAtStart"
                   :label="$t(`mailings.filters.createdBetween`)"
                   prepend-icon="event"
                   clearable
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="filter.createdAtStart" no-title />
+              <v-date-picker v-model="localFilters.createdAtStart" no-title />
             </v-menu>
             <v-menu
               v-model="pickerCreatedEnd"
@@ -116,14 +115,14 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="filter.createdAtEnd"
+                  v-model="localFilters.createdAtEnd"
                   :label="$t(`mailings.filters.and`)"
                   prepend-icon="event"
                   clearable
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="filter.createdAtEnd" no-title />
+              <v-date-picker v-model="localFilters.createdAtEnd" no-title />
             </v-menu>
           </div>
           <div class="bs-mailings-filters__date-picker">
@@ -137,14 +136,14 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="filter.updatedAtStart"
+                  v-model="localFilters.updatedAtStart"
                   :label="$t(`mailings.filters.updatedBetween`)"
                   prepend-icon="event"
                   clearable
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="filter.updatedAtStart" no-title />
+              <v-date-picker v-model="localFilters.updatedAtStart" no-title />
             </v-menu>
 
             <v-menu
@@ -157,18 +156,18 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="filter.updatedAtEnd"
+                  v-model="localFilters.updatedAtEnd"
                   :label="$t(`mailings.filters.and`)"
                   prepend-icon="event"
                   clearable
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="filter.updatedAtEnd" no-title />
+              <v-date-picker v-model="localFilters.updatedAtEnd" no-title />
             </v-menu>
           </div>
           <v-select
-            v-model="filter.tags"
+            v-model="localFilters.tags"
             :label="$t(`global.tags`)"
             :items="tags"
             multiple
