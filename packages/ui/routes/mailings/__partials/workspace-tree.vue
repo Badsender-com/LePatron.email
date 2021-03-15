@@ -1,5 +1,7 @@
 <script>
 import { workspacesByGroup } from '~/helpers/api-routes.js';
+import { recursiveFolderMap } from '../../../utils/folders';
+import { WORKSPACE } from '../../../../server/constant/space-type';
 
 export default {
   name: 'WorkspaceTree',
@@ -8,7 +10,36 @@ export default {
     workspaceIsError: false,
     workspaces: [],
   }),
+  computed: {
+    treeviewLocationItems() {
+      return this.workspaces.map((workspace) => {
+        const path = {
+          name: workspace.name,
+          id: workspace._id,
+          type: WORKSPACE,
+        };
 
+        let formatedWorkspace = {
+          icon: 'mdi-account-multiple-outline',
+          id: workspace._id,
+          name: workspace.name,
+          isAllowed: workspace.hasRights,
+          type: WORKSPACE,
+          path,
+        };
+
+        if (workspace.folders?.length > 0) {
+          formatedWorkspace = {
+            children: workspace.folders.map((folder) =>
+              recursiveFolderMap(folder, workspace.hasRights, path)
+            ),
+            ...formatedWorkspace,
+          };
+        }
+        return formatedWorkspace;
+      });
+    },
+  },
   async mounted() {
     const { $axios } = this;
 
@@ -33,7 +64,7 @@ export default {
     <v-treeview
       ref="tree"
       item-key="id"
-      :items="workspaces"
+      :items="treeviewLocationItems"
       activatable
       hoverable
       class="pb-8"

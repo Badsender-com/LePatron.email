@@ -14,6 +14,8 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
+      console.log('calling asyncData');
+      console.log({ selectedTreeITem: this.selectedTreeItem });
       const mailingsResponse = await $axios.$get(mailings(), {
         params: { workspaceId: query?.wid },
       });
@@ -46,8 +48,16 @@ export default {
     },
   },
   watchQuery: ['wid'],
+  methods: {
+    fetchData() {
+      console.log('calling fetchData');
+      const defaultItem = {
+        ...this.$route.query,
+      };
 
-  methods: {},
+      console.log(defaultItem);
+    },
+  },
 };
 </script>
 
