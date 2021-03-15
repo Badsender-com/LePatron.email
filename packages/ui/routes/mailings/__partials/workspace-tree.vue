@@ -5,6 +5,12 @@ import { WORKSPACE } from '../../../../server/constant/space-type';
 
 export default {
   name: 'WorkspaceTree',
+  props: {
+    selectedItem: {
+      type: String,
+      default: '',
+    },
+  },
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
@@ -42,16 +48,33 @@ export default {
   },
   async mounted() {
     const { $axios } = this;
-
     try {
       this.workspacesIsLoading = true;
       const { items } = await $axios.$get(workspacesByGroup());
+      console.log({ items });
+      if (!this.selectedItem && items.length > 0) {
+        await this.$router.push({
+          query: { wid: items[0]?.id },
+        });
+      }
       this.workspaces = items;
     } catch (error) {
       this.workspaceIsError = true;
     } finally {
       this.workspacesIsLoading = false;
     }
+  },
+  methods: {
+    handleSelectItemFromTreeView(selectedItems) {
+      if (selectedItems[0]) {
+        const querySelectedElement = {
+          wid: selectedItems[0],
+        };
+        this.$router.push({
+          query: querySelectedElement,
+        });
+      }
+    },
   },
 };
 </script>
@@ -64,10 +87,13 @@ export default {
     <v-treeview
       ref="tree"
       item-key="id"
-      :items="treeviewLocationItems"
       activatable
+      :active="[selectedItem]"
+      :items="treeviewLocationItems"
       hoverable
+      open-all
       class="pb-8"
+      @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">
         <v-icon v-if="!item.icon" :color="item.isAllowed ? 'primary' : 'base'">
@@ -78,11 +104,9 @@ export default {
         </v-icon>
       </template>
       <template #label="{ item, active }">
-        <nuxt-link :to="`/mailings?wid=${item.id}`">
-          <div @click="active ? $event.stopPropagation() : null">
-            {{ item.name }}
-          </div>
-        </nuxt-link>
+        <div @click="active ? $event.stopPropagation() : null">
+          {{ item.name }}
+        </div>
       </template>
       <template #append="{ item }">
         <v-menu v-if="item.isAllowed" bottom left>

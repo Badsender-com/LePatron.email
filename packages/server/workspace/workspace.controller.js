@@ -31,6 +31,11 @@ async function listWorkspace(req, res, next) {
   const { group } = user;
   let workspaces = await workspaceService.findWorkspaces({ groupId: group.id });
 
+  workspaces = workspaces?.map((workspace) => ({
+    ...workspace.toObject(),
+    hasRights: true,
+  }));
+
   if (!user.isGroupAdmin) {
     workspaces = workspaces
       .map((workspace) => {
