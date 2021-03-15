@@ -9,14 +9,25 @@ const { NotFound } = require('http-errors');
 module.exports = {
   createMailing: asyncHandler(createMailing),
   findMailings: asyncHandler(findMailings),
+  findTags: asyncHandler(findTags),
 };
 
-async function findMailings({ workspaceId }) {
-  const filterQuery = {};
-  if (workspaceId) {
-    filterQuery._workspace = mongoose.Types.ObjectId(workspaceId);
+async function findMailings(query) {
+  const {_workspace, _parentFolder} = query;
+
+  if (_workspace) {
+    query._workspace = mongoose.Types.ObjectId(_workspace);
   }
-  return Mailings.find(filterQuery);
+
+  if (_parentFolder) {
+    query._parentFolder = mongoose.Types.ObjectId(_parentFolder);
+  }
+
+  return Mailings.findForApi(query);
+}
+
+async function findTags(query) {
+  return Mailings.findTags(query)
 }
 
 async function createMailing(mailing) {
