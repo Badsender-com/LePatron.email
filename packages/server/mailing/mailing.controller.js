@@ -20,7 +20,7 @@ const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 
 const mailingService = require('./mailing.service.js');
-const workspaceService = require('../workspace/workspace.service.js');
+const templateService = require('../template/template.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -93,17 +93,16 @@ async function list(req, res, next) {
  * @apiUse mailings
  */
 
-async function create(req, res) {
+async function create(req, res, next) {
   const { user } = req;
   const { templateId, workspaceId } = req.body;
 
-  const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
-  const template = await Templates.findOne(query).select({
-    name: 1,
-    _id: 1,
-  });
+  const query = modelsUtils.addGroupFilter(req.user, { templateId });
+  const template = await templateService.findOne(query);
 
-  if (!template) throw new createError.NotFound();
+  if (!template) {
+    return next(createError.NotFound());
+  }
 
   const initParameters = {
     // Always give a default name: needed for ordering & filtering
