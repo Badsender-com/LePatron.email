@@ -53,13 +53,17 @@ async function list(req, res, next) {
   const { user, query } = req;
 
   if (!query.workspaceId) {
-    return next(new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED));
+    return next(
+      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
+    );
   }
 
   const workspace = await workspaceService.getWorkspace(query.workspaceId);
 
   // if workspaceId doesn't exist or user can't access
-  if (workspace?._company !== user.group.id) {
+  if (workspace?._company.toString() !== user.group.id.toString()) {
+    console.log(workspace?._company.toString());
+    console.log(user.group.id.toString());
     return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
   }
 

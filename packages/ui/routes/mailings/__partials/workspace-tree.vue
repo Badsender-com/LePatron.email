@@ -1,6 +1,6 @@
 <script>
 import { workspacesByGroup } from '~/helpers/api-routes.js';
-import { recursiveFolderMap } from '../../../utils/folders';
+import { getRecursiveFolderMap } from '~/utils/folders';
 import { WORKSPACE } from '../../../../server/constant/space-type';
 
 export default {
@@ -29,7 +29,7 @@ export default {
           icon: 'mdi-account-multiple-outline',
           id: workspace._id,
           name: workspace.name,
-          isAllowed: workspace.hasRights,
+          hasAccess: workspace.hasRights,
           type: WORKSPACE,
           path,
         };
@@ -37,7 +37,7 @@ export default {
         if (workspace.folders?.length > 0) {
           formatedWorkspace = {
             children: workspace.folders.map((folder) =>
-              recursiveFolderMap(folder, workspace.hasRights, path)
+              getRecursiveFolderMap(folder, workspace.hasRights, path)
             ),
             ...formatedWorkspace,
           };
@@ -95,10 +95,10 @@ export default {
       @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon" :color="item.isAllowed ? 'primary' : 'base'">
+        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'primary' : 'base'">
           {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
         </v-icon>
-        <v-icon v-else :color="item.isAllowed ? 'primary' : 'base'">
+        <v-icon v-else :color="item.hasAccess ? 'primary' : 'base'">
           {{ item.icon }}
         </v-icon>
       </template>
@@ -108,7 +108,7 @@ export default {
         </div>
       </template>
       <template #append="{ item }">
-        <v-menu v-if="item.isAllowed" bottom left>
+        <v-menu v-if="item.hasAccess" bottom left>
           <template #activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon color="primary">

@@ -1,21 +1,22 @@
 import { FOLDER } from '../../server/constant/space-type';
 
-export function recursivePath(childPath, parentPath) {
+// This function will save the path of each workspace / folder in the tree structure so we can use that in the breadcrumb component
+export function getRecursivePath(childPath, parentPath) {
   if (parentPath?.pathChild) {
     return {
       ...parentPath,
-      pathChild: recursivePath(childPath, parentPath.pathChild),
-    };
-  } else {
-    return {
-      ...parentPath,
-      pathChild: childPath,
+      pathChild: getRecursivePath(childPath, parentPath.pathChild),
     };
   }
+  return {
+    ...parentPath,
+    pathChild: childPath,
+  };
 }
 
-export function recursiveFolderMap(folder, isAllowed, parentPath) {
-  const path = recursivePath(
+// This function will map workspace data from the server and map it to the format handled by the treeview component
+export function getRecursiveFolderMap(folder, hasAccess, parentPath) {
+  const path = getRecursivePath(
     {
       id: folder.id,
       name: folder.name,
@@ -24,21 +25,21 @@ export function recursiveFolderMap(folder, isAllowed, parentPath) {
     parentPath
   );
 
-  let formattedData = {
+  let mapFolderToTreeviewTypeData = {
     id: folder._id,
     name: folder.name,
-    isAllowed,
+    hasAccess,
     type: FOLDER,
     path,
   };
 
   if (folder.childFolders?.length > 0) {
-    formattedData = {
-      ...formattedData,
+    mapFolderToTreeviewTypeData = {
+      ...mapFolderToTreeviewTypeData,
       children: folder.childFolders.map((child) =>
-        this.recursiveFolderMap(child, isAllowed, path)
+        getRecursiveFolderMap(child, hasAccess, path)
       ),
     };
   }
-  return formattedData;
+  return mapFolderToTreeviewTypeData;
 }
