@@ -8,9 +8,6 @@ import BsSnackBar from '~/components/snackbar.vue';
 export default {
   name: 'BsLayoutDefault',
   components: { BsSnackBar },
-  data() {
-    return { drawer: false };
-  },
   computed: {
     ...mapState(PAGE, {
       title: (state) => state.pageTitle,
@@ -25,114 +22,19 @@ export default {
 
 <template>
   <v-app>
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      temporary
-    >
-      <v-list dense>
-        <v-list-item
-          link
-          nuxt
-          to="/"
-        >
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $tc('global.mailing', 2) }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-          link
-          nuxt
-          to="/mailings/new"
-        >
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newMailing') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <template v-if="isAdmin">
-          <v-list-item
-            link
-            nuxt
-            to="/groups"
-          >
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ $tc('global.group', 2) }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            link
-            nuxt
-            to="/users"
-          >
-            <v-list-item-content>
-              <v-list-item-title>{{ $tc('global.user', 2) }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            link
-            nuxt
-            to="/templates"
-          >
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ $tc('global.template', 2) }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </template>
-        <v-list-item
-          link
-          href="/account/logout"
-        >
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('layout.logout') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
-
-    <v-app-bar
-      app
-      color="secondary"
-      dark
-    >
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+    <v-app-bar app color="secondary" dark>
       <v-toolbar-title>{{ title | capitalize }}</v-toolbar-title>
       <v-spacer />
-      <v-btn
-        v-if="isAdmin"
-        text
-        link
-        nuxt
-        to="/"
-        class="ml-2"
-      >
+      <v-btn v-if="isAdmin" text link nuxt to="/" class="ml-2">
         {{ $tc('global.mailing', 2) }}
       </v-btn>
-      <v-btn
-        v-if="isAdmin"
-        text
-        link
-        nuxt
-        to="/mailings/new"
-        class="ml-2"
-      >
+      <v-btn v-if="isAdmin" text link nuxt to="/mailings/new" class="ml-2">
         {{ $t('global.newMailing') }}
       </v-btn>
       <template v-if="isAdmin">
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-btn
-              icon
-              nuxt
-              to="/groups"
-              class="ml-2"
-              v-on="on"
-            >
+            <v-btn icon nuxt to="/groups" class="ml-2" v-on="on">
               <v-icon>group</v-icon>
             </v-btn>
           </template>
@@ -140,13 +42,7 @@ export default {
         </v-tooltip>
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-btn
-              icon
-              nuxt
-              to="/users"
-              class="ml-2"
-              v-on="on"
-            >
+            <v-btn icon nuxt to="/users" class="ml-2" v-on="on">
               <v-icon>person</v-icon>
             </v-btn>
           </template>
@@ -154,13 +50,7 @@ export default {
         </v-tooltip>
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-btn
-              icon
-              nuxt
-              to="/templates"
-              class="ml-2"
-              v-on="on"
-            >
+            <v-btn icon nuxt to="/templates" class="ml-2" v-on="on">
               <v-icon>web</v-icon>
             </v-btn>
           </template>
@@ -169,12 +59,7 @@ export default {
       </template>
       <v-tooltip bottom>
         <template #activator="{ on }">
-          <v-btn
-            icon
-            href="/account/logout"
-            class="ml-2"
-            v-on="on"
-          >
+          <v-btn icon href="/account/logout" class="ml-2" v-on="on">
             <v-icon>power_settings_new</v-icon>
           </v-btn>
         </template>
