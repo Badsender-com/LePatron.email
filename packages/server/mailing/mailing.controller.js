@@ -9,7 +9,6 @@ const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
 const {
   Mailings,
-  Templates,
   Galleries,
   Users,
 } = require('../common/models.common.js');
@@ -20,6 +19,7 @@ const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 
 const mailingService = require('./mailing.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
 const templateService = require('../template/template.service.js');
 
 module.exports = {
