@@ -29,28 +29,11 @@ async function listWorkspace(req, res, next) {
   }
   const user = req.user;
   const { group } = user;
-  let workspaces = await workspaceService.findWorkspaces({ groupId: group.id });
-
-  workspaces = workspaces?.map((workspace) => ({
-    ...workspace.toObject(),
-    hasRights: true,
-  }));
-
-  if (!user.isGroupAdmin) {
-    workspaces = workspaces
-      .map((workspace) => {
-        if (!workspace._users?.toString().includes(user.id)) {
-          return {
-            ...workspace,
-            hasRights: false,
-          };
-        }
-        return workspace;
-      })
-      .sort(
-        (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
-      );
-  }
+  const workspaces = await workspaceService.findWorkspacesWithRights({
+    groupId: group.id,
+    userId: user.id,
+    isGroupAdmin: user.isGroupAdmin,
+  });
 
   return res.json({ items: workspaces });
 }

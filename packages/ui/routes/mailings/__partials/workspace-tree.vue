@@ -51,7 +51,6 @@ export default {
     try {
       this.workspacesIsLoading = true;
       const { items } = await $axios.$get(workspacesByGroup());
-      console.log({ items });
       if (!this.selectedItem && items.length > 0) {
         await this.$router.push({
           query: { wid: items[0]?.id },
@@ -140,5 +139,10 @@ export default {
 .v-treeview {
   overflow-y: auto;
   max-height: 450px;
+}
+.v-treeview-node__label > div {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 </style>
