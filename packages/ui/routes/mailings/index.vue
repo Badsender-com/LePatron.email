@@ -1,15 +1,28 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapMutations, mapGetters } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import { mailings } from '~/helpers/api-routes.js';
+import {
+  mailings,
+  mailingsItem,
+  mailingsItemDuplicate,
+} from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
+import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
-  components: { WorkspaceTree, MailingsTable, MailingsFilters },
+  components: {
+    WorkspaceTree,
+    MailingsTable,
+    MailingsFilters,
+    BsMailingsModalDuplicate,
+    BsMailingsModalRename,
+  },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
@@ -31,6 +44,16 @@ export default {
     mailingsIsError: false,
     mailings: [],
     tags: [],
+    renameModalInfo: {
+      show: false,
+      newName: '',
+      mailingId: false,
+    },
+    duplicateModalInfo: {
+      show: false,
+      newName: '',
+      mailingId: false,
+    },
   }),
 
   computed: {
@@ -48,11 +71,86 @@ export default {
   watchQuery: ['wid'],
 
   methods: {
-    handleRename(mailing) {
-      console.log('HANDLE Rename Mailing ', mailing);
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    displayRenameModal(mailing) {
+      this.renameModalInfo = {
+        show: true,
+        newName: mailing.name,
+        mailingId: mailing.id,
+      };
     },
-    handleDuplicate(mailing) {
-      console.log('HANDLE Duplicate Mailing ', mailing);
+    closeRenameModal() {
+      this.renameModalInfo = {
+        show: false,
+        newName: '',
+        mailingId: false,
+      };
+    },
+    async updateName(renameModalInfo) {
+      const { $axios } = this;
+      const { newName, mailingId } = renameModalInfo;
+      this.closeRenameModal();
+      if (!mailingId) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId });
+      try {
+        const mailingResponse = await $axios.$put(updateUri, { name: newName });
+        const mailingIndex = this.mailings.findIndex(
+          (mailing) => mailing.id === mailingResponse.id
+        );
+        this.$set(this.mailings, mailingIndex, mailingResponse);
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    displayDuplicateModal(mailing) {
+      this.duplicateModalInfo = {
+        show: true,
+        name: mailing.name,
+        mailingId: mailing.id,
+      };
+    },
+    closeDuplicateModal() {
+      this.duplicateModalInfo = {
+        show: false,
+        name: '',
+        mailingId: false,
+      };
+    },
+    async duplicateMailing(duplicateModalInfo) {
+      const { $axios } = this;
+      const { mailingId } = duplicateModalInfo;
+      this.closeDuplicateModal();
+      if (!mailingId) return;
+      this.loading = true;
+      const duplicateUri = mailingsItemDuplicate({ mailingId });
+      try {
+        const mailingResponse = await $axios.$post(duplicateUri);
+        this.mailings.push(mailingResponse);
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };
@@ -80,8 +178,18 @@ export default {
         <mailings-filters :tags="tags" />
         <mailings-table
           :mailings="mailings"
-          @rename="handleRename"
-          @duplicate="handleDuplicate"
+          @rename="displayRenameModal"
+          @duplicate="displayDuplicateModal"
+        />
+        <bs-mailings-modal-rename
+          v-model="renameModalInfo"
+          @update="updateName"
+          @close="closeRenameModal"
+        />
+        <bs-mailings-modal-duplicate
+          v-model="duplicateModalInfo"
+          @duplicate="duplicateMailing"
+          @close="closeDuplicateModal"
         />
       </v-skeleton-loader>
     </v-card>
