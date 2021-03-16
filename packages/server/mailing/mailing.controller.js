@@ -93,16 +93,16 @@ async function list(req, res, next) {
 
 async function create(req, res, next) {
   const { user } = req;
-  const { templateId, workspaceId } = req.body;
 
-  const query = modelsUtils.addGroupFilter(req.user, { templateId });
-  const template = await templateService.findOne(query);
+  const { templateId, workspaceId, folderId } = req.body;
+
+  const template = await templateService.findOne({templateId});
 
   if (!template) {
     return next(createError.NotFound());
   }
 
-  const initParameters = {
+  const mailing = {
     // Always give a default name: needed for ordering & filtering
     name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
@@ -111,12 +111,24 @@ async function create(req, res, next) {
 
   // admin doesn't have valid user id & company
   if (!user.isAdmin) {
-    initParameters.userId = user.id;
-    initParameters.userName = user.name;
-    initParameters.group = user.group.id;
-    initParameters.workspace = workspaceId;
+    mailing.userId = user.id;
+    mailing.userName = user.name;
+    mailing.group = user.group.id;
   }
-  const newMailing = await mailingService.createMailing(initParameters);
+
+  if (workspaceId) {
+    mailing.workspace = workspaceId;
+  }
+
+  if (folderId) {
+    mailing._parentFolder = folderId;
+  }
+
+  if (!workspaceId && !folderId) {
+    return next(createError.BadRequest())
+  }
+
+  const newMailing = await mailingService.createMailing(mailing);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response
