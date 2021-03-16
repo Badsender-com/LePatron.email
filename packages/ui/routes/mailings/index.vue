@@ -15,7 +15,6 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
-      console.log(this.isAdmin);
       const mailingsResponse = await $axios.$get(mailings(), {
         params: { workspaceId: query?.wid },
       });
