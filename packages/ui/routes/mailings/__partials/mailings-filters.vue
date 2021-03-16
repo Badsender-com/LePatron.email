@@ -51,7 +51,6 @@ export default {
   methods: {
     reset() {
       this.localFilters = {
-        show: false,
         name: '',
         templates: [],
         createdAtStart: '',
