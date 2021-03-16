@@ -1,5 +1,4 @@
 'use strict';
-const modelsUtils = require('../utils/model');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
@@ -19,8 +18,8 @@ const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 
 const mailingService = require('./mailing.service.js');
-const workspaceService = require('../workspace/workspace.service.js');
 const modelsUtils = require('../utils/model');
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
