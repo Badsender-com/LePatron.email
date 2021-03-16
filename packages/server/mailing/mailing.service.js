@@ -1,7 +1,5 @@
 'use strict';
 
-const asyncHandler = require('express-async-handler');
-
 const { Mailings, Workspaces } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const mongoose = require('mongoose');
@@ -9,9 +7,9 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
 
 module.exports = {
-  createMailing: asyncHandler(createMailing),
-  findMailings: asyncHandler(findMailings),
-  findTags: asyncHandler(findTags),
+  createMailing,
+  findMailings,
+  findTags,
 };
 
 async function findMailings(query) {
