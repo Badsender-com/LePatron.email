@@ -3,6 +3,7 @@
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
@@ -12,13 +13,14 @@ const {
   Galleries,
   Users,
 } = require('../common/models.common.js');
-const modelsUtils = require('../utils/model.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 
 const mailingService = require('./mailing.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
+const modelsUtils = require('~/server/utils/model');
 
 module.exports = {
   list: asyncHandler(list),
@@ -47,31 +49,24 @@ module.exports = {
  * @apiSuccess {String[]} meta.tags all the tags used in those templates
  */
 
-async function list(req, res) {
-  // const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
-  //   req.user,
-  //   {}
-  // );
-  // const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(
-  //   req.query
-  // );
-  // const mailingQuery = {
-  //   ...mailingQueryStrictGroup,
-  //   ...mailingQueryFolderParams,
-  // };
+async function list(req, res, next) {
+  const { user, query } = req;
+  const { workspaceId } = query;
 
-  let mailings = [];
-  const tags = [];
-  const { workspaceId } = req.query;
-  if (workspaceId) {
-    // TODO manage tag and other filter
-    mailings = await mailingService.findMailings({ workspaceId });
-  } else {
-    // [mailings, tags] = await Promise.all([
-    //   Mailings.findForApi(mailingQuery),
-    //   Mailings.findTags(mailingQuery),
-    // ]);
+  if (!workspaceId) {
+    return next(
+      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
+    );
   }
+
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (workspace?.group.toString() !== user.group.id) {
+    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
+  }
+
+  const mailings = await mailingService.findMailings({ workspaceId, user });
+  const tags = await mailingService.findTags({ workspaceId, user });
 
   res.json({
     meta: { tags },

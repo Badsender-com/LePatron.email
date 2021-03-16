@@ -3,20 +3,26 @@
 const asyncHandler = require('express-async-handler');
 
 const { Mailings, Workspaces } = require('../common/models.common.js');
+const modelsUtils = require('../utils/model.js');
 const mongoose = require('mongoose');
 const { NotFound } = require('http-errors');
 
 module.exports = {
   createMailing: asyncHandler(createMailing),
   findMailings: asyncHandler(findMailings),
+  findTags: asyncHandler(findTags),
 };
 
-async function findMailings({ workspaceId }) {
-  const filterQuery = {};
-  if (workspaceId) {
-    filterQuery._workspace = mongoose.Types.ObjectId(workspaceId);
-  }
-  return Mailings.find(filterQuery);
+async function findMailings(query) {
+  const mailingQuery = applyFilters(query);
+
+  return Mailings.find(mailingQuery);
+}
+
+async function findTags(query) {
+  const mailingQuery = applyFilters(query);
+
+  return Mailings.findTags(mailingQuery);
 }
 
 async function createMailing(mailing) {
@@ -27,4 +33,18 @@ async function createMailing(mailing) {
     throw new NotFound('Workspace not found');
   }
   return Mailings.create(mailing);
+}
+
+function applyFilters(query) {
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+    query.user,
+    {}
+  );
+  const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
+
+  return {
+    ...mailingQueryStrictGroup,
+    ...mailingQueryFolderParams,
+    workspace: query.workspaceId,
+  };
 }
