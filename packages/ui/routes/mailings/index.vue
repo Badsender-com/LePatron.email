@@ -21,7 +21,7 @@ export default {
         $axios.$get(getWorkspace(query?.wid)),
         $axios.$get(mailings(), params),
       ]);
-      console.log(workspaceHasAccessResponse.hasAccess);
+
       return {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
