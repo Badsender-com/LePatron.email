@@ -3,6 +3,7 @@ import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
+import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
@@ -33,9 +34,14 @@ export default {
     selectedItem: '',
     mailings: [],
     tags: [],
+    filterValues: null,
   }),
 
   computed: {
+    filteredMailings() {
+      const filterFunction = mailingsHelpers.createFilters(this.filterValues);
+      return this.mailings.filter(filterFunction);
+    },
     title() {
       return 'Emails';
     },
@@ -48,6 +54,11 @@ export default {
     },
   },
   watchQuery: ['wid'],
+  methods: {
+    handleFilterChange(filterValues) {
+      this.filterValues = filterValues;
+    },
+  },
 };
 </script>
 
@@ -70,8 +81,8 @@ export default {
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-filters :tags="tags" />
-        <mailings-table :mailings="mailings" />
+        <mailings-filters :tags="tags" @change="handleFilterChange" />
+        <mailings-table :mailings="filteredMailings" />
       </v-skeleton-loader>
     </v-card>
   </bs-layout-left-menu>
