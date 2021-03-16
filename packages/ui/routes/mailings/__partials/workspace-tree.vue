@@ -1,50 +1,23 @@
 <script>
 import { workspacesByGroup } from '~/helpers/api-routes.js';
-import { getRecursiveFolderMap } from '~/utils/folders';
-import { WORKSPACE } from '../../../../server/constant/space-type';
+import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 export default {
   name: 'WorkspaceTree',
-  props: {
-    selectedItem: {
-      type: String,
-      default: '',
-    },
-  },
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     workspaces: [],
+    selectedItem: '',
   }),
   computed: {
     treeviewLocationItems() {
-      return this.workspaces.map((workspace) => {
-        const path = {
-          name: workspace.name,
-          id: workspace._id,
-          type: WORKSPACE,
-        };
-
-        let formatedWorkspace = {
-          icon: 'mdi-account-multiple-outline',
-          id: workspace._id,
-          name: workspace.name,
-          hasAccess: workspace.hasRights,
-          type: WORKSPACE,
-          path,
-        };
-
-        if (workspace.folders?.length > 0) {
-          formatedWorkspace = {
-            children: workspace.folders.map((folder) =>
-              getRecursiveFolderMap(folder, workspace.hasRights, path)
-            ),
-            ...formatedWorkspace,
-          };
-        }
-        return formatedWorkspace;
-      });
+      return getTreeviewWorkspaces(this.workspaces);
     },
+  },
+  watch: {
+    // call again the method if the route changes
+    $route: 'setSelectedItem',
   },
   async mounted() {
     const { $axios } = this;
@@ -73,6 +46,9 @@ export default {
           query: querySelectedElement,
         });
       }
+    },
+    setSelectedItem() {
+      this.selectedItem = this.$route.query?.wid;
     },
   },
 };
