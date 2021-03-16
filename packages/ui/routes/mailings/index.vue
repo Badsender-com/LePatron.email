@@ -14,12 +14,11 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
-      const params = {
-        params: { workspaceId: query?.wid },
-      };
       const [workspaceHasAccessResponse, mailingsResponse] = await Promise.all([
         $axios.$get(getWorkspace(query?.wid)),
-        $axios.$get(mailings(), params),
+        $axios.$get(mailings(), {
+          params: { workspaceId: query?.wid },
+        }),
       ]);
 
       return {
