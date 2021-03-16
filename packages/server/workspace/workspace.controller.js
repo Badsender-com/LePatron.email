@@ -163,16 +163,10 @@ async function getWorkspace(req, res) {
       res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
-    if (user.isGroupAdmin) {
-      workspaceWithAccess = {
-        ...workspace,
-        hasAccess: true,
-      };
-    }
-
     if (
-      !user.isGroupAdmin &&
-      workspaceService.workspaceContainUser(workspace, user)
+      user.isGroupAdmin ||
+      (!user.isGroupAdmin &&
+        workspaceService.workspaceContainUser(workspace, user))
     ) {
       workspaceWithAccess = {
         ...workspace,
