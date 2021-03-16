@@ -65,29 +65,6 @@ export default {
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item link nuxt to="/">
-          <v-list-item-avatar>
-            <v-icon>settings</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $tc('global.mailing', 2) }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link nuxt to="/mailings/new">
-          <v-list-item-avatar>
-            <v-icon>settings</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newMailing') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link href="/account/logout">
-          <v-list-item-content>
-            <v-list-item-title>{{ $t('layout.logout') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
       </v-list>
       <workspace-tree />
     </template>
