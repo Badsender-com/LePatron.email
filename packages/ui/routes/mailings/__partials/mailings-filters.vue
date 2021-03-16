@@ -28,6 +28,7 @@ export default {
   },
 
   watch: {
+    $route: 'reset',
     localFilters: {
       handler: function (updatedFilters) {
         this.$emit('change', updatedFilters);
