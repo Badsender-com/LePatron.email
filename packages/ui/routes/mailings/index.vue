@@ -81,6 +81,7 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
+    },
     displayRenameModal(mailing) {
       this.renameModalInfo = {
         show: true,
