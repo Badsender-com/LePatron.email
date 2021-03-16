@@ -47,7 +47,14 @@ export default {
   },
   watchQuery: ['wid'],
 
-  methods: {},
+  methods: {
+    handleRename(mailing) {
+      console.log('HANDLE Rename Mailing ', mailing);
+    },
+    handleDuplicate(mailing) {
+      console.log('HANDLE Duplicate Mailing ', mailing);
+    },
+  },
 };
 </script>
 
@@ -71,7 +78,11 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-filters :tags="tags" />
-        <mailings-table :mailings="mailings" />
+        <mailings-table
+          :mailings="mailings"
+          @rename="handleRename"
+          @duplicate="handleDuplicate"
+        />
       </v-skeleton-loader>
     </v-card>
   </bs-layout-left-menu>
