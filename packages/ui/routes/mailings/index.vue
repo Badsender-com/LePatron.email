@@ -54,6 +54,11 @@ export default {
     },
   },
   watchQuery: ['wid'],
+  beforeMount() {
+    if (this.isAdmin) {
+      this.$router.push('/groups');
+    }
+  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
