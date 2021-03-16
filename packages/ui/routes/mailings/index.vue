@@ -15,6 +15,7 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
+      console.log(this.isAdmin);
       const mailingsResponse = await $axios.$get(mailings(), {
         params: { workspaceId: query?.wid },
       });
@@ -54,6 +55,11 @@ export default {
     },
   },
   watchQuery: ['wid'],
+  beforeMount() {
+    if (this.isAdmin) {
+      this.$router.push('/groups');
+    }
+  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
