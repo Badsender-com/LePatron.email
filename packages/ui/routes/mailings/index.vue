@@ -17,15 +17,16 @@ export default {
       const params = {
         params: { workspaceId: query?.wid },
       };
-      const [hasAccessResponse, mailingsResponse] = await Promise.all([
-        $axios.get(getWorkspace(), params),
+      const [workspaceHasAccessResponse, mailingsResponse] = await Promise.all([
+        $axios.$get(getWorkspace(query?.wid)),
         $axios.$get(mailings(), params),
       ]);
+      console.log(workspaceHasAccessResponse.hasAccess);
       return {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         mailingsIsLoading: false,
-        hasAccess: hasAccessResponse.hasAccess,
+        hasAccess: workspaceHasAccessResponse.hasAccess,
       };
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };

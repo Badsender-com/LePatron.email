@@ -36,7 +36,10 @@ async function createMailing(mailing) {
 }
 
 function applyFilters(query) {
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(query.user, {});
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+    query.user,
+    {}
+  );
   const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
 
   return {

@@ -12,6 +12,7 @@ module.exports = {
   deleteWorkspace,
   getWorkspace,
   findWorkspaces,
+  workspaceContainUser,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -82,4 +83,8 @@ async function findWorkspaces({ groupId }) {
       populate: { path: 'childFolders' },
     });
   return workspaces;
+}
+
+function workspaceContainUser(workspace, user) {
+  return workspace._users?.toString().includes(user.id);
 }
