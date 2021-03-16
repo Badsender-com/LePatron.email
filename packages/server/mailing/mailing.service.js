@@ -1,16 +1,15 @@
 'use strict';
 
-const asyncHandler = require('express-async-handler');
-
 const { Mailings, Workspaces } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const mongoose = require('mongoose');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
 
 module.exports = {
-  createMailing: asyncHandler(createMailing),
-  findMailings: asyncHandler(findMailings),
-  findTags: asyncHandler(findTags),
+  createMailing,
+  findMailings,
+  findTags,
 };
 
 async function findMailings(query) {
@@ -28,9 +27,9 @@ async function findTags(query) {
 async function createMailing(mailing) {
   if (
     !mailing?.workspace ||
-    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing?.workspace) })
+    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
   ) {
-    throw new NotFound('Workspace not found');
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Mailings.create(mailing);
 }

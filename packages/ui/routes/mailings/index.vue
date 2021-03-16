@@ -8,6 +8,7 @@ import {
   mailingsItemDuplicate,
 } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
+import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
@@ -34,6 +35,7 @@ export default {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         mailingsIsLoading: false,
+        selectedItem: query?.wid,
       };
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };
@@ -42,6 +44,7 @@ export default {
   data: () => ({
     mailingsIsLoading: true,
     mailingsIsError: false,
+    selectedItem: '',
     mailings: [],
     tags: [],
     renameModalInfo: {
@@ -54,9 +57,14 @@ export default {
       newName: '',
       mailingId: false,
     },
+    filterValues: null,
   }),
 
   computed: {
+    filteredMailings() {
+      const filterFunction = mailingsHelpers.createFilters(this.filterValues);
+      return this.mailings.filter(filterFunction);
+    },
     title() {
       return 'Emails';
     },
@@ -69,9 +77,10 @@ export default {
     },
   },
   watchQuery: ['wid'],
-
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    handleFilterChange(filterValues) {
+      this.filterValues = filterValues;
     displayRenameModal(mailing) {
       this.renameModalInfo = {
         show: true,
@@ -171,13 +180,13 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <workspace-tree />
+      <workspace-tree :selected-item="selectedItem" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-filters :tags="tags" />
+        <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
-          :mailings="mailings"
+          :mailings="filteredMailings"
           @rename="displayRenameModal"
           @duplicate="displayDuplicateModal"
         />
