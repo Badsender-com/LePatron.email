@@ -2,17 +2,12 @@
 import { mapMutations, mapGetters } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import {
-  mailings,
-  mailingsItem,
-  mailingsItemDuplicate,
-} from '~/helpers/api-routes.js';
+import { mailings, mailingsItem } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
-import BsMailingsModalDuplicate from '~/components/mailings/modal-duplicate.vue';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
@@ -21,7 +16,6 @@ export default {
     WorkspaceTree,
     MailingsTable,
     MailingsFilters,
-    BsMailingsModalDuplicate,
     BsMailingsModalRename,
   },
   mixins: [mixinPageTitle],
@@ -123,45 +117,6 @@ export default {
         this.loading = false;
       }
     },
-
-    displayDuplicateModal(mailing) {
-      this.duplicateModalInfo = {
-        show: true,
-        name: mailing.name,
-        mailingId: mailing.id,
-      };
-    },
-    closeDuplicateModal() {
-      this.duplicateModalInfo = {
-        show: false,
-        name: '',
-        mailingId: false,
-      };
-    },
-    async duplicateMailing(duplicateModalInfo) {
-      const { $axios } = this;
-      const { mailingId } = duplicateModalInfo;
-      this.closeDuplicateModal();
-      if (!mailingId) return;
-      this.loading = true;
-      const duplicateUri = mailingsItemDuplicate({ mailingId });
-      try {
-        const mailingResponse = await $axios.$post(duplicateUri);
-        this.mailings.push(mailingResponse);
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
-      }
-    },
   },
 };
 </script>
@@ -189,17 +144,11 @@ export default {
         <mailings-table
           :mailings="filteredMailings"
           @rename="displayRenameModal"
-          @duplicate="displayDuplicateModal"
         />
         <bs-mailings-modal-rename
           v-model="renameModalInfo"
           @update="updateName"
           @close="closeRenameModal"
-        />
-        <bs-mailings-modal-duplicate
-          v-model="duplicateModalInfo"
-          @duplicate="duplicateMailing"
-          @close="closeDuplicateModal"
         />
       </v-skeleton-loader>
     </v-card>
