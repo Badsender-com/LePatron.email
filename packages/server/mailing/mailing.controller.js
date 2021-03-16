@@ -13,7 +13,6 @@ const {
   Galleries,
   Users,
 } = require('../common/models.common.js');
-const modelsUtils = require('../utils/model.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
@@ -52,6 +51,7 @@ module.exports = {
 async function list(req, res, next) {
   const { user, query } = req;
   const { workspaceId } = query;
+
   if (!workspaceId) {
     return next(
       new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
@@ -60,22 +60,12 @@ async function list(req, res, next) {
 
   const workspace = await workspaceService.getWorkspace(workspaceId);
 
-  // if workspaceId doesn't exist or user can't access
   if (workspace?.group.toString() !== user.group.id) {
     return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
   }
 
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
-  const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
-
-  const mailingQuery = {
-    ...mailingQueryStrictGroup,
-    ...mailingQueryFolderParams,
-    _workspace: workspaceId,
-  };
-
-  const mailings = await mailingService.findMailings(mailingQuery);
-  const tags = await mailingService.findTags(mailingQuery);
+  const mailings = await mailingService.findMailings({ workspaceId, user });
+  const tags = await mailingService.findTags({ workspaceId, user });
 
   res.json({
     meta: { tags },
