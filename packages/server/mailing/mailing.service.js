@@ -40,7 +40,6 @@ function applyFilters(query) {
     query.user,
     {}
   );
-  // const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
 
   return {
     ...mailingQueryStrictGroup,
