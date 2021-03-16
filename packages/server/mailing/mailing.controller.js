@@ -18,7 +18,6 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const modelsUtils = require('../utils/model');
 const workspaceService = require('../workspace/workspace.service.js');
 const templateService = require('../template/template.service.js');
 
@@ -85,19 +84,23 @@ async function list(req, res, next) {
  * @apiUse mailings
  */
 
-async function create(req, res, next) {
+async function create(req, res) {
   const { user } = req;
   const { templateId, workspaceId } = req.body;
 
   if (!workspaceId) {
-    return next(createError.BadRequest('No workspaceId provided'))
+    throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
   }
 
   const template = await templateService.findOne({ templateId });
   const workspace = await workspaceService.getWorkspace(workspaceId);
 
-  if (!template || !workspace) {
-    return next(createError.NotFound('Template or workspace not found'));
+  if (!template) {
+    throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  }
+
+  if (!workspace) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
   const mailing = {
