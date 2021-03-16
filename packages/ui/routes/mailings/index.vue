@@ -3,6 +3,7 @@ import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
+import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
@@ -21,6 +22,7 @@ export default {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         mailingsIsLoading: false,
+        selectedItem: query?.wid,
       };
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };
@@ -29,11 +31,17 @@ export default {
   data: () => ({
     mailingsIsLoading: true,
     mailingsIsError: false,
+    selectedItem: '',
     mailings: [],
     tags: [],
+    filterValues: null,
   }),
 
   computed: {
+    filteredMailings() {
+      const filterFunction = mailingsHelpers.createFilters(this.filterValues);
+      return this.mailings.filter(filterFunction);
+    },
     title() {
       return 'Emails';
     },
@@ -46,8 +54,11 @@ export default {
     },
   },
   watchQuery: ['wid'],
-
-  methods: {},
+  methods: {
+    handleFilterChange(filterValues) {
+      this.filterValues = filterValues;
+    },
+  },
 };
 </script>
 
@@ -66,12 +77,12 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <workspace-tree />
+      <workspace-tree :selected-item="selectedItem" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-filters :tags="tags" />
-        <mailings-table :mailings="mailings" />
+        <mailings-filters :tags="tags" @change="handleFilterChange" />
+        <mailings-table :mailings="filteredMailings" />
       </v-skeleton-loader>
     </v-card>
   </bs-layout-left-menu>

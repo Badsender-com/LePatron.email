@@ -12,6 +12,7 @@ module.exports = {
   deleteWorkspace,
   getWorkspace,
   findWorkspaces,
+  findWorkspacesWithRights,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -23,7 +24,7 @@ async function existsByName({ workspaceName, groupId }) {
 
 async function getWorkspace(id) {
   if (!(await Workspaces.exists({ _id: mongoose.Types.ObjectId(id) }))) {
-    throw new NotFound();
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Workspaces.findById(id);
 }
@@ -82,4 +83,29 @@ async function findWorkspaces({ groupId }) {
       populate: { path: 'childFolders' },
     });
   return workspaces;
+}
+
+async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
+  const workspaces = await findWorkspaces({ groupId });
+
+  let workspacesWithRights = workspaces?.map((workspace) => ({
+    ...workspace.toObject(),
+    hasRights: true,
+  }));
+
+  if (!isGroupAdmin) {
+    workspacesWithRights = workspacesWithRights.map((workspace) => {
+      if (!workspace._users?.toString().includes(userId)) {
+        return {
+          ...workspace,
+          hasRights: false,
+        };
+      }
+      return workspace;
+    });
+  }
+
+  return workspacesWithRights.sort(
+    (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
+  );
 }
