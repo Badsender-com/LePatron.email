@@ -16,6 +16,7 @@ const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
+const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
@@ -86,13 +87,17 @@ async function list(req, res, next) {
 
 async function create(req, res, next) {
   const { user } = req;
+  const { templateId, workspaceId } = req.body;
 
-  const { templateId, workspaceId, folderId } = req.body;
+  if (!workspaceId) {
+    return next(createError.BadRequest('No workspaceId provided'))
+  }
 
-  const template = await templateService.findOne({templateId});
+  const template = await templateService.findOne({ templateId });
+  const workspace = await workspaceService.getWorkspace({ workspaceId });
 
-  if (!template) {
-    return next(createError.NotFound());
+  if (!template || !workspace) {
+    return next(createError.NotFound('Template or workspace not found'));
   }
 
   const mailing = {
@@ -100,6 +105,7 @@ async function create(req, res, next) {
     name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
+    workspace: workspaceId
   };
 
   // admin doesn't have valid user id & company
@@ -107,18 +113,6 @@ async function create(req, res, next) {
     mailing.userId = user.id;
     mailing.userName = user.name;
     mailing.group = user.group.id;
-  }
-
-  if (workspaceId) {
-    mailing.workspace = workspaceId;
-  }
-
-  if (folderId) {
-    mailing._parentFolder = folderId;
-  }
-
-  if (!workspaceId && !folderId) {
-    return next(createError.BadRequest())
   }
 
   const newMailing = await mailingService.createMailing(mailing);
