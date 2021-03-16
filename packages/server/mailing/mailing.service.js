@@ -36,12 +36,14 @@ async function createMailing(mailing) {
 }
 
 function applyFilters(query) {
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(query.user, {});
-  const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+    query.user,
+    {}
+  );
+  // const mailingQueryFolderParams = modelsUtils.addMailQueryParamFilter(query);
 
   return {
     ...mailingQueryStrictGroup,
-    ...mailingQueryFolderParams,
-    workspace: query.workspaceId,
+    _workspace: query.workspaceId,
   };
 }
