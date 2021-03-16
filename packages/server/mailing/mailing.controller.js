@@ -94,7 +94,7 @@ async function create(req, res, next) {
   }
 
   const template = await templateService.findOne({ templateId });
-  const workspace = await workspaceService.getWorkspace({ workspaceId });
+  const workspace = await workspaceService.getWorkspace(workspaceId);
 
   if (!template || !workspace) {
     return next(createError.NotFound('Template or workspace not found'));
