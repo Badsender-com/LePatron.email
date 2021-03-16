@@ -29,23 +29,11 @@ async function listWorkspace(req, res, next) {
   }
   const user = req.user;
   const { group } = user;
-  let workspaces = await workspaceService.findWorkspaces({ groupId: group.id });
-
-  if (!user.isGroupAdmin) {
-    workspaces = workspaces
-      .map((workspace) => {
-        if (!workspace._users?.toString().includes(user.id)) {
-          return {
-            ...workspace,
-            hasRights: false,
-          };
-        }
-        return workspace;
-      })
-      .sort(
-        (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
-      );
-  }
+  const workspaces = await workspaceService.findWorkspacesWithRights({
+    groupId: group.id,
+    userId: user.id,
+    isGroupAdmin: user.isGroupAdmin,
+  });
 
   return res.json({ items: workspaces });
 }
@@ -151,30 +139,26 @@ async function getWorkspace(req, res) {
   try {
     const { workspaceId } = req.params;
     const { user } = req;
+    console.log(workspaceId);
+    console.log(!workspaceId);
+    console.log(typeof workspaceId);
+    console.log(typeof 'undefined');
+    console.log(workspaceId === 'undefined');
+    console.log(workspaceId === 'undefined');
+    if (workspaceId === 'undefined') {
+      res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
 
-    const workspace = await workspaceService.getWorkspace(workspaceId);
-
-    let workspaceWithAccess = {
-      ...workspace,
-      hasAccess: false,
-    };
+    const workspace = await workspaceService.getWorkspaceWithAccessRight(
+      workspaceId,
+      user
+    );
 
     if (`${workspace._company}` !== req.user?.group?.id) {
       res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
-    if (
-      user.isGroupAdmin ||
-      (!user.isGroupAdmin &&
-        workspaceService.workspaceContainUser(workspace, user))
-    ) {
-      workspaceWithAccess = {
-        ...workspace,
-        hasAccess: true,
-      };
-    }
-
-    res.json(workspaceWithAccess);
+    res.json(workspace);
   } catch (error) {
     if (error.status) {
       return res.status(error.status).send(error.message);
