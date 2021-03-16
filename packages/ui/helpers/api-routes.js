@@ -139,3 +139,7 @@ export function workspaceByNameInGroup(workspaceName) {
 export function deleteWorkspace(workspaceId) {
   return `/workspaces/${workspaceId}`;
 }
+
+export function getWorkspace(workspaceId) {
+  return `/workspaces/${workspaceId}`;
+}

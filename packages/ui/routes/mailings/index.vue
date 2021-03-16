@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import { mailings } from '~/helpers/api-routes.js';
+import { mailings, getWorkspace } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
@@ -14,13 +14,18 @@ export default {
   meta: { acl: ACL_USER },
   async asyncData({ $axios, query }) {
     try {
-      const mailingsResponse = await $axios.$get(mailings(), {
+      const params = {
         params: { workspaceId: query?.wid },
-      });
+      };
+      const [hasAccessResponse, mailingsResponse] = await Promise.all([
+        $axios.get(getWorkspace(), params),
+        $axios.$get(mailings(), params),
+      ]);
       return {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         mailingsIsLoading: false,
+        hasAccess: hasAccessResponse.hasAccess,
       };
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };

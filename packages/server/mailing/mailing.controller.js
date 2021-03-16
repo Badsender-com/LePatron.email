@@ -20,6 +20,7 @@ const fileManager = require('../common/file-manage.service.js');
 
 const mailingService = require('./mailing.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const modelsUtils = require('../utils/model');
 
 module.exports = {
   list: asyncHandler(list),
