@@ -35,6 +35,7 @@ export default {
     mailingsIsLoading: true,
     mailingsIsError: false,
     mailings: [],
+    hasAccess: false,
     tags: [],
   }),
 
