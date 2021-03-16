@@ -51,19 +51,17 @@ module.exports = {
 
 async function list(req, res, next) {
   const { user, query } = req;
-
-  if (!query.workspaceId) {
+  const { workspaceId } = query;
+  if (!workspaceId) {
     return next(
       new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
     );
   }
 
-  const workspace = await workspaceService.getWorkspace(query.workspaceId);
+  const workspace = await workspaceService.getWorkspace(workspaceId);
 
   // if workspaceId doesn't exist or user can't access
-  if (workspace?._company.toString() !== user.group.id.toString()) {
-    console.log(workspace?._company.toString());
-    console.log(user.group.id.toString());
+  if (workspace?.group.toString() !== user.group.id) {
     return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
   }
 
@@ -73,6 +71,7 @@ async function list(req, res, next) {
   const mailingQuery = {
     ...mailingQueryStrictGroup,
     ...mailingQueryFolderParams,
+    _workspace: workspaceId,
   };
 
   const mailings = await mailingService.findMailings(mailingQuery);
