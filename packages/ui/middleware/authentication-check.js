@@ -12,7 +12,7 @@ export default async function authMiddleware(nuxtContext) {
   if (authorizations.notConnected && userSessionInfo.isConnected) {
     if (userSessionInfo.isUser) return redirect('/');
     if (userSessionInfo.isGroupAdmin) return redirect('/');
-    if (userSessionInfo.isAdmin) return redirect('/');
+    if (userSessionInfo.isAdmin) return redirect('/groups');
   }
 
   if (
