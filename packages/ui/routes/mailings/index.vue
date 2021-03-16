@@ -21,6 +21,7 @@ export default {
         mailings: mailingsResponse.items,
         tags: mailingsResponse.meta.tags,
         mailingsIsLoading: false,
+        selectedItem: query?.wid,
       };
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };
@@ -29,6 +30,7 @@ export default {
   data: () => ({
     mailingsIsLoading: true,
     mailingsIsError: false,
+    selectedItem: '',
     mailings: [],
     tags: [],
   }),
@@ -46,8 +48,6 @@ export default {
     },
   },
   watchQuery: ['wid'],
-
-  methods: {},
 };
 </script>
 
@@ -66,7 +66,7 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <workspace-tree />
+      <workspace-tree :selected-item="selectedItem" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
