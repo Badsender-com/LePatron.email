@@ -24,7 +24,7 @@ async function existsByName({ workspaceName, groupId }) {
 
 async function getWorkspace(id) {
   if (!(await Workspaces.exists({ _id: mongoose.Types.ObjectId(id) }))) {
-    throw new NotFound();
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Workspaces.findById(id);
 }

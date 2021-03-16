@@ -1,5 +1,4 @@
 'use strict';
-
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
@@ -7,20 +6,16 @@ const ERROR_CODES = require('../constant/error-codes.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
-const {
-  Mailings,
-  Templates,
-  Galleries,
-  Users,
-} = require('../common/models.common.js');
+const { Mailings, Galleries, Users } = require('../common/models.common.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
+const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
-const modelsUtils = require('../utils/model');
+const templateService = require('../template/template.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -89,29 +84,37 @@ async function create(req, res) {
   const { user } = req;
   const { templateId, workspaceId } = req.body;
 
-  const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
-  const template = await Templates.findOne(query).select({
-    name: 1,
-    _id: 1,
-  });
+  if (!workspaceId) {
+    throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
+  }
 
-  if (!template) throw new createError.NotFound();
+  const template = await templateService.findOne({ templateId });
+  const workspace = await workspaceService.getWorkspace(workspaceId);
 
-  const initParameters = {
+  if (!template) {
+    throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  }
+
+  if (!workspace) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  const mailing = {
     // Always give a default name: needed for ordering & filtering
     name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
+    workspace: workspaceId,
   };
 
   // admin doesn't have valid user id & company
   if (!user.isAdmin) {
-    initParameters.userId = user.id;
-    initParameters.userName = user.name;
-    initParameters.group = user.group.id;
-    initParameters.workspace = workspaceId;
+    mailing.userId = user.id;
+    mailing.userName = user.name;
+    mailing.group = user.group.id;
   }
-  const newMailing = await mailingService.createMailing(initParameters);
+
+  const newMailing = await mailingService.createMailing(mailing);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response
