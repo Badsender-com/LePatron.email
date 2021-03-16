@@ -1,5 +1,4 @@
 'use strict';
-
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
@@ -19,6 +18,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const modelsUtils = require('../utils/model');
 const workspaceService = require('../workspace/workspace.service.js');
 const templateService = require('../template/template.service.js');
 
