@@ -25,16 +25,6 @@ export default {
     <v-app-bar app color="secondary" dark>
       <v-toolbar-title>{{ title | capitalize }}</v-toolbar-title>
       <v-spacer />
-      <template v-if="isAdmin">
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn icon nuxt to="/groups" class="ml-2" v-on="on">
-              <v-icon>group</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $tc('global.group', 2) }}</span>
-        </v-tooltip>
-      </template>
       <v-tooltip bottom>
         <template #activator="{ on }">
           <v-btn icon href="/account/logout" class="ml-2" v-on="on">

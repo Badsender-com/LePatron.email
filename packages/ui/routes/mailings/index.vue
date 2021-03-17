@@ -13,6 +13,11 @@ export default {
   components: { WorkspaceTree, MailingsTable, MailingsFilters },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
+  middleware({ store, redirect }) {
+    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+      redirect('/groups');
+    }
+  },
   async asyncData({ $axios, query }) {
     try {
       const mailingsResponse = await $axios.$get(mailings(), {
@@ -54,11 +59,6 @@ export default {
     },
   },
   watchQuery: ['wid'],
-  beforeMount() {
-    if (this.isAdmin) {
-      this.$router.push('/groups');
-    }
-  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
