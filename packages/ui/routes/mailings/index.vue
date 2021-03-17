@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import { mailings } from '~/helpers/api-routes.js';
+import { mailings, getWorkspace } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
@@ -23,10 +23,10 @@ export default {
     }
   },
   data: () => ({
-    mailingsIsLoading: true,
+    mailingsIsLoading: false,
     mailingsIsError: false,
-    selectedItem: '',
     mailings: [],
+    hasAccess: false,
     tags: [],
     filterValues: null,
   }),
@@ -57,13 +57,20 @@ export default {
     },
     async fecthData() {
       try {
-        const mailingsResponse = await this.$axios.$get(mailings(), {
-          params: { workspaceId: this.$route.query?.wid },
-        });
-        this.mailings = mailingsResponse.items;
-        this.tags = mailingsResponse.meta.tags;
-        this.mailingsIsLoading = false;
-        this.selectedItem = this.$route.query?.wid;
+        if (this.$route.query?.wid) {
+          this.mailingsIsLoading = true;
+          const [workspace, mailingsResponse] = await Promise.all([
+            this.$axios.$get(getWorkspace(this.$route.query?.wid)),
+            this.$axios.$get(mailings(), {
+              params: { workspaceId: this.$route.query?.wid },
+            }),
+          ]);
+
+          this.mailings = mailingsResponse.items;
+          this.tags = mailingsResponse.meta.tags;
+          this.mailingsIsLoading = false;
+          this.hasAccess = workspace.hasAccess;
+        }
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
