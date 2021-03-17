@@ -95,7 +95,6 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
-  max-height: 450px;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
