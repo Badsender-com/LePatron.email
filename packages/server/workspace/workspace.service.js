@@ -13,6 +13,7 @@ module.exports = {
   getWorkspace,
   findWorkspaces,
   findWorkspacesWithRights,
+  getWorkspaceWithAccessRight,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -27,6 +28,27 @@ async function getWorkspace(id) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Workspaces.findById(id);
+}
+
+async function getWorkspaceWithAccessRight(id, user) {
+  const workspace = await getWorkspace(id);
+
+  let workspaceWithAccess = {
+    ...workspace?.toObject(),
+    hasAccess: false,
+  };
+
+  if (
+    user.isGroupAdmin ||
+    (!user.isGroupAdmin && workspaceContainUser(workspaceWithAccess, user))
+  ) {
+    workspaceWithAccess = {
+      ...workspaceWithAccess,
+      hasAccess: true,
+    };
+  }
+
+  return workspaceWithAccess;
 }
 
 async function deleteWorkspace(workspaceId) {
@@ -108,4 +130,8 @@ async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   return workspacesWithRights.sort(
     (a, b) => b.hasRights - a.hasRights || a.name?.localeCompare(b.name)
   );
+}
+
+function workspaceContainUser(workspace, user) {
+  return workspace._users?.toString().includes(user.id);
 }
