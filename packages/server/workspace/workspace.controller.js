@@ -138,11 +138,21 @@ async function deleteWorkspace(req, res) {
 async function getWorkspace(req, res) {
   try {
     const { workspaceId } = req.params;
-    const workspace = await workspaceService.getWorkspace(workspaceId);
+    const { user } = req;
+
+    if (workspaceId === 'undefined') {
+      res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+
+    const workspace = await workspaceService.getWorkspaceWithAccessRight(
+      workspaceId,
+      user
+    );
 
     if (`${workspace._company}` !== req.user?.group?.id) {
-      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+      res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
+
     res.json(workspace);
   } catch (error) {
     if (error.status) {
