@@ -196,7 +196,7 @@ async function rename(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if (!user.isGroupAdmin && workspace._users.includes(user.id)) {
+  if (!user.isGroupAdmin && !workspace._users.includes(user.id)) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
   }
 
@@ -207,7 +207,7 @@ async function rename(req, res) {
   }
 
   const updateResponse = await mailingService.renameMailing(mailing);
-  
+
   if (updateResponse.ok !== 1) {
     throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
   }
