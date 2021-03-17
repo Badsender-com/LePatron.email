@@ -30,7 +30,7 @@ export function getTreeviewWorkspaces(workspaces) {
   });
 }
 
-// Flattern the path from the current location element, this is required to match the data expected by the breadcrumbs component
+// Flatten the path from the current location element, this is required to match the data expected by the breadcrumbs component
 export function getPathToBreadcrumbsDataType(selectedMenuLocation) {
   let items = [];
   if (selectedMenuLocation?.path) {
