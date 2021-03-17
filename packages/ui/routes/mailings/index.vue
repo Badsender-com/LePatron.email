@@ -22,6 +22,26 @@ export default {
       redirect('/groups');
     }
   },
+  async asyncData({ $axios, query }) {
+    try {
+      if (query?.wid) {
+        const [workspace, mailingsResponse] = await Promise.all([
+          $axios.$get(getWorkspace(query?.wid)),
+          $axios.$get(mailings(), {
+            params: { workspaceId: query?.wid },
+          }),
+        ]);
+        return {
+          mailings: mailingsResponse.items,
+          tags: mailingsResponse.meta.tags,
+          mailingsIsLoading: false,
+          hasAccess: workspace.hasAccess,
+        };
+      }
+    } catch (error) {
+      return { mailingsIsLoading: false, mailingsIsError: true };
+    }
+  },
   data: () => ({
     mailingsIsLoading: false,
     mailingsIsError: false,
@@ -48,9 +68,6 @@ export default {
     },
   },
   watchQuery: ['wid'],
-  mounted() {
-    this.fecthData();
-  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
@@ -102,6 +119,7 @@ export default {
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           :mailings="filteredMailings"
+          :has-access="hasAccess"
           @change-mailing-index="fecthData()"
         />
       </v-skeleton-loader>

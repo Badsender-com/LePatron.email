@@ -9,6 +9,7 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDuplicate'];
 
 export default {
   name: 'MailingsTable',
@@ -18,6 +19,7 @@ export default {
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
+    hasAccess: { type: Boolean, default: false },
     mailingsSelection: { type: Array, default: () => [] },
   },
   data() {
@@ -33,9 +35,15 @@ export default {
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     hiddenCols() {
-      return this.isAdmin
+      const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
         : TABLE_HIDDEN_COLUMNS_USER;
+      if (!this.hasAccess) {
+        return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
+      }
+      return excludedRules.filter(
+        (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
+      );
     },
     localSelection: {
       get() {
