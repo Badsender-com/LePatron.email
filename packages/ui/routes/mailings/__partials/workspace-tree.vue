@@ -83,25 +83,6 @@ export default {
           {{ item.name }}
         </div>
       </template>
-      <template #append="{ item }">
-        <v-menu v-if="item.hasAccess" bottom left>
-          <template #activator="{ on, attrs }">
-            <v-btn icon v-bind="attrs" v-on="on">
-              <v-icon color="primary">
-                mdi-dots-vertical
-              </v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item link to="#">
-              <v-list-item-title>Éditer</v-list-item-title>
-            </v-list-item>
-            <v-list-item link to="#">
-              <v-list-item-title>Déplacer</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </template>
     </v-treeview>
   </v-skeleton-loader>
 </template>
