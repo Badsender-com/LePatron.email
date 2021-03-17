@@ -1,18 +1,35 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapMutations, mapGetters } from 'vuex';
 
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
+
+import { mailingsItem } from '~/helpers/api-routes.js';
+import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 
 export default {
   name: 'MailingsTable',
+  components: {
+    BsMailingsModalRename,
+  },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
-    loading: { type: Boolean, default: false },
+    // loading: { type: Boolean, default: false },
+  },
+  data() {
+    return {
+      loading: false,
+      renameModalInfo: {
+        show: false,
+        newName: '',
+        mailingId: false,
+      },
+    };
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
@@ -77,6 +94,51 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    displayRenameModal(mailing) {
+      this.renameModalInfo = {
+        show: true,
+        newName: mailing.name,
+        mailingId: mailing.id,
+      };
+    },
+    closeRenameModal() {
+      this.renameModalInfo = {
+        show: false,
+        newName: '',
+        mailingId: false,
+      };
+    },
+    async updateName(renameModalInfo) {
+      const { $axios } = this;
+      const { newName, mailingId } = renameModalInfo;
+      this.closeRenameModal();
+      if (!mailingId) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId });
+      try {
+        const mailingResponse = await $axios.$put(updateUri, { name: newName });
+        this.$emit('change-mailing-index', mailingResponse);
+
+        // const mailingIndex = this.mailings.findIndex(
+        //   (mailing) => mailing.id === mailingResponse.id
+        // );
+        // this.$set(this.mailings, mailingIndex, mailingResponse);
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+        this.renameModalInfo.mailingId = false;
+      }
+    },
     renameMailing(mailing) {
       this.$emit('rename', mailing);
     },
@@ -91,66 +153,73 @@ export default {
 </script>
 
 <template>
-  <v-data-table
-    v-model="localSelection"
-    :headers="tablesHeaders"
-    :options="tableOptions"
-    :items="mailings"
-    show-select
-  >
-    <template #item.name="{ item }">
-      <a :href="`/editor/${item.id}`">{{ item.name }}</a>
-    </template>
-    <template #item.userName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
-        {{ item.userName }}
-      </nuxt-link>
-      <span v-else>{{ item.userName }}</span>
-    </template>
-    <template #item.templateName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
-        {{ item.templateName }}
-      </nuxt-link>
-      <span v-else>{{ item.templateName }}</span>
-    </template>
-    <template #item.tags="{ item }">
-      <span>{{ item.tags.join(`, `) }}</span>
-    </template>
-    <template #item.createdAt="{ item }">
-      <span>{{ item.createdAt | preciseDateTime }}</span>
-    </template>
-    <template #item.updatedAt="{ item }">
-      <span>{{ item.updatedAt | preciseDateTime }}</span>
-    </template>
-    <template #item.actionRename="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="renameMailing(item)"
-      >
-        <v-icon>title</v-icon>
-      </v-btn>
-    </template>
-    <template #item.actionTransfer="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="transferMailing(item)"
-      >
-        <v-icon>forward</v-icon>
-      </v-btn>
-    </template>
-    <template #item.actionDuplicate="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="duplicateMailing(item)"
-      >
-        <v-icon>content_copy</v-icon>
-      </v-btn>
-    </template>
-  </v-data-table>
+  <div>
+    <v-data-table
+      v-model="localSelection"
+      :headers="tablesHeaders"
+      :options="tableOptions"
+      :items="mailings"
+      show-select
+    >
+      <template #item.name="{ item }">
+        <a :href="`/editor/${item.id}`">{{ item.name }}</a>
+      </template>
+      <template #item.userName="{ item }">
+        <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
+          {{ item.userName }}
+        </nuxt-link>
+        <span v-else>{{ item.userName }}</span>
+      </template>
+      <template #item.templateName="{ item }">
+        <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
+          {{ item.templateName }}
+        </nuxt-link>
+        <span v-else>{{ item.templateName }}</span>
+      </template>
+      <template #item.tags="{ item }">
+        <span>{{ item.tags.join(`, `) }}</span>
+      </template>
+      <template #item.createdAt="{ item }">
+        <span>{{ item.createdAt | preciseDateTime }}</span>
+      </template>
+      <template #item.updatedAt="{ item }">
+        <span>{{ item.updatedAt | preciseDateTime }}</span>
+      </template>
+      <template #item.actionRename="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="displayRenameModal(item)"
+        >
+          <v-icon>title</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionTransfer="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="transferMailing(item)"
+        >
+          <v-icon>forward</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionDuplicate="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="duplicateMailing(item)"
+        >
+          <v-icon>content_copy</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
+    <bs-mailings-modal-rename
+      v-model="renameModalInfo"
+      @update="updateName"
+      @close="closeRenameModal"
+    />
+  </div>
 </template>

@@ -1,13 +1,11 @@
 <script>
-import { mapMutations, mapGetters } from 'vuex';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import { mailings, mailingsItem } from '~/helpers/api-routes.js';
+import { mailings } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
-import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
@@ -16,7 +14,6 @@ export default {
     WorkspaceTree,
     MailingsTable,
     MailingsFilters,
-    BsMailingsModalRename,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -46,16 +43,6 @@ export default {
     selectedItem: '',
     mailings: [],
     tags: [],
-    renameModalInfo: {
-      show: false,
-      newName: '',
-      mailingId: false,
-    },
-    duplicateModalInfo: {
-      show: false,
-      newName: '',
-      mailingId: false,
-    },
     filterValues: null,
   }),
 
@@ -77,51 +64,10 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
-    displayRenameModal(mailing) {
-      this.renameModalInfo = {
-        show: true,
-        newName: mailing.name,
-        mailingId: mailing.id,
-      };
-    },
-    closeRenameModal() {
-      this.renameModalInfo = {
-        show: false,
-        newName: '',
-        mailingId: false,
-      };
-    },
-    async updateName(renameModalInfo) {
-      const { $axios } = this;
-      const { newName, mailingId } = renameModalInfo;
-      this.closeRenameModal();
-      if (!mailingId) return;
-      this.loading = true;
-      const updateUri = mailingsItem({ mailingId });
-      try {
-        const mailingResponse = await $axios.$put(updateUri, { name: newName });
-        const mailingIndex = this.mailings.findIndex(
-          (mailing) => mailing.id === mailingResponse.id
-        );
-        this.$set(this.mailings, mailingIndex, mailingResponse);
-        this.showSnackbar({
-          text: this.$t('snackbars.updated'),
-          color: 'success',
-        });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
-      }
-    },
+    handleReload() {},
   },
 };
 </script>
@@ -148,12 +94,7 @@ export default {
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           :mailings="filteredMailings"
-          @rename="displayRenameModal"
-        />
-        <bs-mailings-modal-rename
-          v-model="renameModalInfo"
-          @update="updateName"
-          @close="closeRenameModal"
+          @change-mailing-index="handleReload"
         />
       </v-skeleton-loader>
     </v-card>
