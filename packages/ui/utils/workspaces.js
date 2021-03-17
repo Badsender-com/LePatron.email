@@ -59,7 +59,7 @@ function getRecursivePathChild(array, path) {
   return array;
 }
 
-// This methode will allow us the find the current location from the collections of workspaces.
+// This method will allow us to find the current location from the collections of workspaces.
 export function findNestedLocation(collection, key, value) {
   for (const location of collection) {
     for (const [locationKey, locationValue] of Object.entries(location)) {
