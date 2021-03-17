@@ -20,19 +20,21 @@ export default {
   },
   async asyncData({ $axios, query }) {
     try {
-      const [workspace, mailingsResponse] = await Promise.all([
-        $axios.$get(getWorkspace(query?.wid)),
-        $axios.$get(mailings(), {
-          params: { workspaceId: query?.wid },
-        }),
-      ]);
-      console.log(workspace.hasAccess);
-      return {
-        mailings: mailingsResponse.items,
-        tags: mailingsResponse.meta.tags,
-        mailingsIsLoading: false,
-        hasAccess: workspace.hasAccess,
-      };
+      if (query?.wid) {
+        const [workspace, mailingsResponse] = await Promise.all([
+          $axios.$get(getWorkspace(query?.wid)),
+          $axios.$get(mailings(), {
+            params: { workspaceId: query?.wid },
+          }),
+        ]);
+
+        return {
+          mailings: mailingsResponse.items,
+          tags: mailingsResponse.meta.tags,
+          mailingsIsLoading: false,
+          hasAccess: workspace.hasAccess,
+        };
+      }
     } catch (error) {
       return { mailingsIsLoading: false, mailingsIsError: true };
     }

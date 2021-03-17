@@ -31,19 +31,19 @@ async function getWorkspace(id) {
 }
 
 async function getWorkspaceWithAccessRight(id, user) {
-  const workspace = getWorkspace(id);
+  const workspace = await getWorkspace(id);
 
   let workspaceWithAccess = {
-    ...workspace,
+    ...workspace?.toObject(),
     hasAccess: false,
   };
 
   if (
     user.isGroupAdmin ||
-    (!user.isGroupAdmin && workspaceContainUser(workspace, user))
+    (!user.isGroupAdmin && workspaceContainUser(workspaceWithAccess, user))
   ) {
     workspaceWithAccess = {
-      ...workspace,
+      ...workspaceWithAccess,
       hasAccess: true,
     };
   }

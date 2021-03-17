@@ -139,12 +139,7 @@ async function getWorkspace(req, res) {
   try {
     const { workspaceId } = req.params;
     const { user } = req;
-    console.log(workspaceId);
-    console.log(!workspaceId);
-    console.log(typeof workspaceId);
-    console.log(typeof 'undefined');
-    console.log(workspaceId === 'undefined');
-    console.log(workspaceId === 'undefined');
+
     if (workspaceId === 'undefined') {
       res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
