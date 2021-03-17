@@ -29,13 +29,32 @@ export default {
   <v-row>
     <v-col cols="12">
       <v-list dense>
-        <v-list-item v-if="isGroupAdmin" nuxt class="mb-8" link to="/">
+        <v-list-item
+          v-if="isGroupAdmin || isAdmin"
+          nuxt
+          class="mb-4"
+          link
+          to="/"
+        >
           <v-list-item-avatar>
             <v-icon>arrow_back</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{ $t('global.backToMails') }}
+              {{
+                isAdmin ? $t('global.backToGroups') : $t('global.backToMails')
+              }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item exact nuxt link :to="`/groups/${groupId}`">
+          <v-list-item-avatar>
+            <v-icon>home_work</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $t('groups.tabs.informations') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -49,22 +68,22 @@ export default {
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item v-if="isGroupAdmin" nuxt link :to="newWorkspaceHref">
+          <v-list-item-avatar>
+            <v-icon>group_add</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $t('global.newWorkspace') }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item nuxt link :to="newUserHref">
           <v-list-item-avatar>
             <v-icon>person_add</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item v-if="isGroupAdmin" nuxt link :to="newWorkspaceHref">
-          <v-list-item-avatar>
-            <v-icon>home_work</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $t('global.newWorkspace') }}
-            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

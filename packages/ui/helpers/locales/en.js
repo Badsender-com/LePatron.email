@@ -38,6 +38,7 @@ export default {
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
+    backToGroups: 'Back to groups',
     group: 'Group | Groups',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',

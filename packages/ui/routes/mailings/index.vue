@@ -13,6 +13,11 @@ export default {
   components: { WorkspaceTree, MailingsTable, MailingsFilters },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
+  middleware({ store, redirect }) {
+    if (store.getters[`${USER}/${IS_ADMIN}`]) {
+      redirect('/groups');
+    }
+  },
   async asyncData({ $axios, query }) {
     try {
       const [workspace, mailingsResponse] = await Promise.all([
@@ -59,11 +64,6 @@ export default {
     },
   },
   watchQuery: ['wid'],
-  beforeMount() {
-    if (this.isAdmin) {
-      this.$router.push('/groups');
-    }
-  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
@@ -87,7 +87,7 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <workspace-tree :selected-item="selectedItem" />
+      <workspace-tree />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
