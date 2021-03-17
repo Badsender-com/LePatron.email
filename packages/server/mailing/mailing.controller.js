@@ -27,6 +27,7 @@ module.exports = {
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
   bulkDestroy: asyncHandler(bulkDestroy),
+  delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
   // already wrapped in asyncHandler
   sendTestMail,
@@ -383,6 +384,34 @@ async function bulkDestroy(req, res) {
     meta: { tags },
     items: safeMailingsIdList.map(String),
   });
+}
+
+/**
+ * @api {del} /mailings/:mailingId mailing delete
+ * @apiPermission user
+ * @apiName MailingDelete
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ */
+
+async function deleteMailing(req, res) {
+  const { mailingId } = req.params;
+  const { user } = req;
+  const { workspaceId } = req.body;
+
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (workspace?.group.toString() !== user.group.id) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (!user.isGroupAdmin && workspace._users.includes(user.id)) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
+  }
+
 }
 
 /**
