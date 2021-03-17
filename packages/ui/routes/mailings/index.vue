@@ -82,7 +82,7 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <workspace-tree :selected-item="selectedItem" />
+      <workspace-tree />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
