@@ -22,7 +22,7 @@ module.exports = {
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMosaico: asyncHandler(readMosaico),
-  update: asyncHandler(update),
+  rename: asyncHandler(rename),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -32,6 +32,7 @@ module.exports = {
   sendTestMail,
   downloadZip,
 };
+
 /**
  * @api {get} /mailings list of mailings
  * @apiPermission user
@@ -171,36 +172,47 @@ async function readMosaico(req, res) {
 }
 
 /**
- * @api {put} /mailings/:mailingId mailing update
+ * @api {patch} /mailings/:mailingId mailing rename
  * @apiPermission user
- * @apiName UpdateMailing
+ * @apiName RenameMailing
  * @apiGroup Mailings
  *
  * @apiParam {string} mailingId
  *
- * @apiParam (Body) {Object} mailing
- * @apiParam (Body) {String} mailing.name
+ * @apiParam (Body) {String} name
+ * @apiParam (Body) {String} workspaceId
  *
  * @apiUse mailings
  */
 
-async function update(req, res) {
+async function rename(req, res) {
   const { mailingId } = req.params;
-  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
-  const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+  const { user } = req;
+  const { name, workspaceId } = req.body;
 
-  mailing.name =
-    modelsUtils.normalizeString(req.body.name) ||
-    simpleI18n('default-mailing-name', req.user.lang);
-  await mailing.save();
+  const workspace = await workspaceService.getWorkspace(workspaceId);
 
-  const responseMailing = await Mailings.findOne(query);
-  // strangely toJSON doesn't render the data object
-  // • BUT there is no use send it outside of mosaico response which has it's own format
-  // • if needed we can cope with that by manually copy it in the response (response.data = mailing.data)
-  const response = responseMailing.toJSON();
-  res.json(response);
+  if (workspace?.group.toString() !== user.group.id) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (!user.isGroupAdmin && workspace._users.includes(user.id)) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
+  }
+
+  const mailing = {
+    id: mailingId,
+    name,
+    workspace: workspaceId
+  }
+
+  const updateResponse = await mailingService.renameMailing(mailing);
+  
+  if (updateResponse.ok !== 1) {
+    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
+  }
+
+  res.send();
 }
 
 /**
