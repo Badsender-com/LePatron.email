@@ -25,7 +25,6 @@ export default {
     }
   },
   async asyncData({ $axios, query }) {
-    console.log('calling asyncData');
     try {
       if (query?.wid) {
         const [workspace, mailingsResponse] = await Promise.all([
@@ -54,7 +53,6 @@ export default {
     hasAccess: false,
     tags: [],
     filterValues: null,
-    selectedLocation: {},
   }),
 
   computed: {
