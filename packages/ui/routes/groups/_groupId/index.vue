@@ -28,6 +28,16 @@ export default {
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
+  beforeRouteEnter(to, from, next) {
+    next((page) => {
+      if (
+        from.name === PAGE_NAMES.WORKSPACE_CREATE ||
+        from.name === PAGE_NAMES.WORKSPACE_UPDATE
+      ) {
+        page.fromCreateOrUpdate = true;
+      }
+    });
+  },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
@@ -41,26 +51,22 @@ export default {
     return {
       group: {},
       loading: false,
-      fromCreateOrUpdate: false
+      fromCreateOrUpdate: false,
     };
   },
   head() {
     return { title: this.title };
   },
-  beforeRouteEnter(to, from, next) {
-    next(page => {
-      if (from.name === PAGE_NAMES.WORKSPACE_CREATE || from.name === PAGE_NAMES.WORKSPACE_UPDATE ) {
-        page.fromCreateOrUpdate = true;
-      }
-    })
-  },
+
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
     tab() {
-      return this.fromCreateOrUpdate ? 'group-workspaces' : 'group-templates';
+      return this.fromCreateOrUpdate
+        ? 'group-workspaces'
+        : 'group-informations';
     },
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name}`;
@@ -75,11 +81,10 @@ export default {
       } = this;
       try {
         this.loading = true;
-        const payload = this.isGroupAdmin ? { name: this.group.name } : this.group;
-        await $axios.$put(
-          apiRoutes.groupsItem(params),
-          payload
-        );
+        const payload = this.isGroupAdmin
+          ? { name: this.group.name }
+          : this.group;
+        await $axios.$put(apiRoutes.groupsItem(params), payload);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
@@ -112,14 +117,14 @@ export default {
       <v-tab v-if="isAdmin" href="#group-templates">
         {{ $tc('global.template', 2) }}
       </v-tab>
-      <v-tab v-if="isAdmin" href="#group-mailings">
-        {{ $tc('global.mailing', 2) }}
-      </v-tab>
       <v-tab v-if="isGroupAdmin" href="#group-workspaces">
         {{ $tc('global.teams', 2) }}
       </v-tab>
       <v-tab href="#group-users">
         {{ $tc('global.user', 2) }}
+      </v-tab>
+      <v-tab v-if="isAdmin" href="#group-mailings">
+        {{ $tc('global.mailing', 2) }}
       </v-tab>
       <v-tab-item value="group-informations" eager>
         <bs-group-form

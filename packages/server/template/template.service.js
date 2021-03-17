@@ -10,7 +10,5 @@ module.exports = {
 };
 
 async function findOne({ templateId }) {
-  return Templates.findOne({_id : mongoose.Types.ObjectId(templateId)});
+  return Templates.findOne({ _id: mongoose.Types.ObjectId(templateId) });
 }
-
-

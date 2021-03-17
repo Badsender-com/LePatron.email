@@ -6,11 +6,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
-const {
-  Mailings,
-  Galleries,
-  Users,
-} = require('../common/models.common.js');
+const { Mailings, Galleries, Users } = require('../common/models.common.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
@@ -108,7 +104,7 @@ async function create(req, res) {
     name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
-    workspace: workspaceId
+    workspace: workspaceId,
   };
 
   // admin doesn't have valid user id & company
