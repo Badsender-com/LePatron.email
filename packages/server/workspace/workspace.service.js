@@ -14,6 +14,7 @@ module.exports = {
   findWorkspaces,
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
+  workspaceContainsUser
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -40,7 +41,7 @@ async function getWorkspaceWithAccessRight(id, user) {
 
   if (
     user.isGroupAdmin ||
-    (!user.isGroupAdmin && workspaceContainUser(workspaceWithAccess, user))
+    (!user.isGroupAdmin && workspaceContainsUser(workspaceWithAccess, user))
   ) {
     workspaceWithAccess = {
       ...workspaceWithAccess,
@@ -132,6 +133,6 @@ async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   );
 }
 
-function workspaceContainUser(workspace, user) {
+function workspaceContainsUser(workspace, user) {
   return workspace._users?.toString().includes(user.id);
 }
