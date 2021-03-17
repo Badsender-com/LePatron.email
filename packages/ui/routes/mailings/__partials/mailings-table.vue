@@ -19,7 +19,6 @@ export default {
   props: {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
-    // loading: { type: Boolean, default: false },
   },
   data() {
     return {
