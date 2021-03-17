@@ -191,20 +191,19 @@ async function rename(req, res) {
   const { name, workspaceId } = req.body;
 
   const workspace = await workspaceService.getWorkspace(workspaceId);
+  const mailing = await mailingService.findOne(mailingId);
 
   if (workspace?.group.toString() !== user.group.id) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if (!user.isGroupAdmin && !workspace._users.includes(user.id)) {
+  if ((!user.isGroupAdmin && !workspace._users.includes(user.id)) ||
+      mailing?._workspace.toString() !== workspaceId
+  ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
   }
 
-  const mailing = {
-    id: mailingId,
-    name,
-    workspace: workspaceId
-  }
+  mailing.name = name;
 
   const updateResponse = await mailingService.renameMailing(mailing);
 

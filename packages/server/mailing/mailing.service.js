@@ -10,6 +10,7 @@ module.exports = {
   createMailing,
   findMailings,
   findTags,
+  findOne,
   renameMailing,
 };
 
@@ -23,6 +24,10 @@ async function findTags(query) {
   const mailingQuery = applyFilters(query);
 
   return Mailings.findTags(mailingQuery);
+}
+
+async function findOne(mailingId) {
+  return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
 }
 
 async function createMailing(mailing) {
