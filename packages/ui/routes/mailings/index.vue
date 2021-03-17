@@ -22,21 +22,6 @@ export default {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, query }) {
-    try {
-      const mailingsResponse = await $axios.$get(mailings(), {
-        params: { workspaceId: query?.wid },
-      });
-      return {
-        mailings: mailingsResponse.items,
-        tags: mailingsResponse.meta.tags,
-        mailingsIsLoading: false,
-        selectedItem: query?.wid,
-      };
-    } catch (error) {
-      return { mailingsIsLoading: false, mailingsIsError: true };
-    }
-  },
   data: () => ({
     mailingsIsLoading: true,
     mailingsIsError: false,
@@ -63,11 +48,27 @@ export default {
     },
   },
   watchQuery: ['wid'],
+  mounted() {
+    this.fecthData();
+  },
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
-    handleReload() {},
+    async fecthData() {
+      try {
+        const mailingsResponse = await this.$axios.$get(mailings(), {
+          params: { workspaceId: this.$route.query?.wid },
+        });
+        this.mailings = mailingsResponse.items;
+        this.tags = mailingsResponse.meta.tags;
+        this.mailingsIsLoading = false;
+        this.selectedItem = this.$route.query?.wid;
+      } catch (error) {
+        this.mailingsIsLoading = false;
+        this.mailingsIsError = true;
+      }
+    },
   },
 };
 </script>
@@ -94,7 +95,7 @@ export default {
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           :mailings="filteredMailings"
-          @change-mailing-index="handleReload"
+          @change-mailing-index="fecthData()"
         />
       </v-skeleton-loader>
     </v-card>

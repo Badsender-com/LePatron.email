@@ -118,12 +118,7 @@ export default {
       const updateUri = mailingsItem({ mailingId });
       try {
         const mailingResponse = await $axios.$put(updateUri, { name: newName });
-        this.$emit('change-mailing-index', mailingResponse);
-
-        // const mailingIndex = this.mailings.findIndex(
-        //   (mailing) => mailing.id === mailingResponse.id
-        // );
-        // this.$set(this.mailings, mailingIndex, mailingResponse);
+        await this.$emit('change-mailing-index', mailingResponse);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
