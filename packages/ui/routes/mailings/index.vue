@@ -7,10 +7,16 @@ import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
+import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
-  components: { WorkspaceTree, MailingsTable, MailingsFilters },
+  components: {
+    WorkspaceTree,
+    MailingsTable,
+    MailingsFilters,
+    MailingsBreadcrumbs,
+  },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
@@ -19,6 +25,7 @@ export default {
     }
   },
   async asyncData({ $axios, query }) {
+    console.log('calling asyncData');
     try {
       const mailingsResponse = await $axios.$get(mailings(), {
         params: { workspaceId: query?.wid },
@@ -40,6 +47,7 @@ export default {
     mailings: [],
     tags: [],
     filterValues: null,
+    selectedLocation: {},
   }),
 
   computed: {
@@ -86,6 +94,7 @@ export default {
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
+        <mailings-breadcrumbs />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table :mailings="filteredMailings" />
       </v-skeleton-loader>
