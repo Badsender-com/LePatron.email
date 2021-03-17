@@ -12,7 +12,6 @@ export default {
     return {
       workspacesWithPath: [],
       selectedLocation: {},
-      selectedMenuId: '',
     };
   },
   computed: {
