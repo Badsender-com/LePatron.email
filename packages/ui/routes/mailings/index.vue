@@ -120,7 +120,7 @@ export default {
         <mailings-table
           :mailings="filteredMailings"
           :has-access="hasAccess"
-          @change-mailing-index="fecthData()"
+          @on-refetch="fecthData()"
         />
       </v-skeleton-loader>
     </v-card>
