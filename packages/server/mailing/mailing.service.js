@@ -10,6 +10,8 @@ module.exports = {
   createMailing,
   findMailings,
   findTags,
+  findOne,
+  deleteOne
 };
 
 async function findMailings(query) {
@@ -24,6 +26,10 @@ async function findTags(query) {
   return Mailings.findTags(mailingQuery);
 }
 
+async function findOne(mailingId) {
+  return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
+}
+
 async function createMailing(mailing) {
   if (
     !mailing?.workspace ||
@@ -32,6 +38,10 @@ async function createMailing(mailing) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Mailings.create(mailing);
+}
+
+async function deleteOne(mailing) {
+  return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
 function applyFilters(query) {

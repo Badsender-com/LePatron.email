@@ -408,10 +408,19 @@ async function deleteMailing(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if (!user.isGroupAdmin && workspace._users.includes(user.id)) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
+  if ((!user.isGroupAdmin && !workspace._users.includes(user.id)) ||
+    mailing?._workspace.toString() !== workspaceId
+  ) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
   }
 
+  const deleteResponse = await mailingService.deleteOne(mailing);
+
+  if (deleteResponse.ok !== 1) {
+    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_DELETE);
+  }
+
+  res.send();
 }
 
 /**
