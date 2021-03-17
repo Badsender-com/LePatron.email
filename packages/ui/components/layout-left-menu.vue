@@ -5,16 +5,10 @@ export default {
 </script>
 
 <template>
-  <v-container
-    fluid
-    class="pa-0 fill-height"
-  >
-    <v-row
-      no-gutters
-      class="fill-height"
-    >
-      <v-col cols="2">
-        <v-navigation-drawer permanent>
+  <v-container fluid class="pa-0 fill-height">
+    <v-row no-gutters class="fill-height">
+      <v-col cols="2" :style="{ maxHeight: 'calc(100vh - 4rem)' }">
+        <v-navigation-drawer permanent :style="{ height: '100%' }">
           <slot name="menu" />
         </v-navigation-drawer>
       </v-col>
