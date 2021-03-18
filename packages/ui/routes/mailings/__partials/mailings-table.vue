@@ -164,8 +164,33 @@ export default {
         this.loading = false;
       }
     },
-    handleDelete(mailing) {
-      console.log({ mailing });
+    async handleDelete(mailing) {
+      const { $axios } = this;
+      const { id } = mailing;
+      this.closeDelete();
+      if (!id) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId: id });
+      try {
+        await $axios.$delete(updateUri, {
+          data: {
+            workspaceId: this.$route.query.wid,
+          },
+        });
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('snackbars.deleted'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
     },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
