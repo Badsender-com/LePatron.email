@@ -1,6 +1,5 @@
 'use strict';
 
-const { omit } = require('lodash');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
@@ -259,19 +258,12 @@ async function copy(req,res) {
   }
 
   if (!user.isGroupAdmin) {
-    if (workspaceService.workspaceContainsUser(destinationWorkspace, user)) {
+    if (!workspaceService.workspaceContainsUser(destinationWorkspace, user)) {
       throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_COPY);
     }
   }
 
-  const mailingProperties = omit(mailing, ['_id']);
-
-  const copy = {
-    ...mailingProperties,
-    workspace: destinationWorkspace.id
-  }
-
-  await mailingService.createMailing(copy);
+  await mailingService.copyMailing(mailing, destinationWorkspace);
 
   res.status(204).send()
 }
