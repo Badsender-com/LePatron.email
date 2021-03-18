@@ -11,17 +11,19 @@ export default {
   data() {
     return {
       workspacesWithPath: [],
-      selectedLocation: {},
     };
   },
   computed: {
+    selectedLocation() {
+      return findNestedLocation(
+        this.workspacesWithPath,
+        'id',
+        this.$route.query?.wid
+      );
+    },
     breadcrumbsData() {
       return getPathToBreadcrumbsDataType(this.selectedLocation);
     },
-  },
-  watch: {
-    // call again the method if the route changes
-    $route: 'setSelectedMenuId',
   },
   async mounted() {
     const { $axios } = this;
@@ -34,15 +36,6 @@ export default {
     } finally {
       this.workspacesIsLoading = false;
     }
-  },
-  methods: {
-    setSelectedMenuId() {
-      this.selectedLocation = findNestedLocation(
-        this.workspacesWithPath,
-        'id',
-        this.$route.query?.wid
-      );
-    },
   },
 };
 </script>
