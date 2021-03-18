@@ -10,11 +10,7 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
-  components: {
-    WorkspaceTree,
-    MailingsTable,
-    MailingsFilters,
-  },
+  components: { WorkspaceTree, MailingsTable, MailingsFilters },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
@@ -31,6 +27,7 @@ export default {
             params: { workspaceId: query?.wid },
           }),
         ]);
+
         return {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,
