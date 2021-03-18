@@ -124,7 +124,6 @@ export default {
       });
     },
     displayDeleteModal(mailing) {
-      console.log({ mailing });
       this.selectedMailing = mailing;
       this.$refs.deleteDialog.open({
         name: mailing.name,
@@ -279,8 +278,6 @@ export default {
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
     <bs-modal-confirm-form
       ref="deleteDialog"
-      title="Supprimer le mailing"
-      action-label="Supprimer"
       :confirmation-input-label="$t('groups.mailingTab.confirmationField')"
       @confirm="handleDelete"
     >
