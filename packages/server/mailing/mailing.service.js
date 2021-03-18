@@ -12,6 +12,7 @@ module.exports = {
   findTags,
   findOne,
   renameMailing,
+  deleteOne
 };
 
 async function findMailings(query) {
@@ -50,6 +51,10 @@ async function renameMailing(mailing) {
   const { id, name } = mailing;
 
   return Mailings.updateOne({ _id: mongoose.Types.ObjectId(id) }, { name });
+}
+
+async function deleteOne(mailing) {
+  return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
 function applyFilters(query) {
