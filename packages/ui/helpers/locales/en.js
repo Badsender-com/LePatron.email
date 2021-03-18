@@ -140,13 +140,18 @@ export default {
     tabs: {
       informations: 'Information',
     },
+    mailingTab: {
+      confirmationField: 'Type the mailing name to confirm',
+      deleteWarningMessage:
+        'You are about to delete the "<strong>{name}</strong>" mailing. This action can\'t be undone.',
+      deleteSuccessful: 'Mailing deleted',
+    },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
       deleteNotice:
         'Emails and folders contained in the workspace will also be deleted',
       deleteWarningMessage:
         'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
-
       deleteSuccessful: 'Workspace deleted',
     },
   },

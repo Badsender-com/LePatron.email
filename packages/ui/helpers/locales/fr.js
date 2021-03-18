@@ -137,6 +137,12 @@ export default {
     tabs: {
       informations: 'Informations',
     },
+    mailingTab: {
+      confirmationField: 'Tapez le nom du mailing pour confirmer',
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer le mailing "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteSuccessful: 'Mailing supprimé',
+    },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
       deleteWarningMessage:

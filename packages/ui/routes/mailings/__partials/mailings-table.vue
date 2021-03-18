@@ -6,15 +6,21 @@ import { USER, IS_ADMIN } from '~/store/user.js';
 
 import { mailingsItem } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDuplicate'];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  'actionRename',
+  'actionDuplicate',
+  'actionDelete',
+];
 
 export default {
   name: 'MailingsTable',
   components: {
     BsMailingsModalRename,
+    BsModalConfirmForm,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -26,6 +32,7 @@ export default {
     return {
       loading: false,
       dialogRename: false,
+      selectedMailing: {},
     };
   },
   computed: {
@@ -87,6 +94,13 @@ export default {
           class: 'table-column-action',
           sortable: false,
         },
+        {
+          text: this.$t('global.delete'),
+          value: 'actionDelete',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     tableOptions() {
@@ -109,8 +123,18 @@ export default {
         mailingId: mailing.id,
       });
     },
+    displayDeleteModal(mailing) {
+      this.selectedMailing = mailing;
+      this.$refs.deleteDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
     closeRename() {
       this.$refs.renameDialog.close();
+    },
+    closeDelete() {
+      this.$refs.deleteDialog.close();
     },
     async updateName(renameModalInfo) {
       const { $axios } = this;
@@ -127,6 +151,34 @@ export default {
         this.$emit('on-refetch');
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async handleDelete(mailing) {
+      const { $axios } = this;
+      const { id } = mailing;
+      this.closeDelete();
+      if (!id) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId: id });
+      try {
+        await $axios.$delete(updateUri, {
+          data: {
+            workspaceId: this.$route.query.wid,
+          },
+        });
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('snackbars.deleted'),
           color: 'success',
         });
       } catch (error) {
@@ -212,7 +264,31 @@ export default {
           <v-icon>content_copy</v-icon>
         </v-btn>
       </template>
+      <template #item.actionDelete="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="displayDeleteModal(item)"
+        >
+          <v-icon>delete</v-icon>
+        </v-btn>
+      </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :confirmation-input-label="$t('groups.mailingTab.confirmationField')"
+      @confirm="handleDelete"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.mailingTab.deleteWarningMessage', {
+            name: selectedMailing.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
   </div>
 </template>
