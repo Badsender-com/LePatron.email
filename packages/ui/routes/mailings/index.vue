@@ -117,15 +117,17 @@ export default {
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item class="justify-center">
+          <v-btn
+            class="my-4 new-mail-button"
+            color="primary"
+            :disabled="!hasAccess"
+            :to="`/mailings/new?wid=${$route.query.wid}`"
+          >
+            Nouveau
+          </v-btn>
+        </v-list-item>
       </v-list>
-      <v-btn
-        class="my-4"
-        color="primary"
-        :disabled="!hasAccess"
-        :to="`/mailings/new?wid=${$route.query.wid}`"
-      >
-        Nouveau
-      </v-btn>
       <workspace-tree />
     </template>
     <v-card>
@@ -141,3 +143,8 @@ export default {
     </v-card>
   </bs-layout-left-menu>
 </template>
+<style>
+.new-mail-button {
+  width: 90%;
+}
+</style>
