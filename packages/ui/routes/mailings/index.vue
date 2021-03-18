@@ -122,7 +122,7 @@ export default {
         class="my-4"
         color="primary"
         :disabled="!hasAccess"
-        :to="`/mailings/news?wid=1`"
+        :to="`/mailings/new?wid=${$route.query.wid}`"
       >
         Nouveau
       </v-btn>
