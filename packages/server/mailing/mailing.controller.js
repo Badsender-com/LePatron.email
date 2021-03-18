@@ -200,8 +200,10 @@ async function rename(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if ((!user.isGroupAdmin && !workspaceService.workspaceContainsUser(workspace, user)) ||
-      mailing?._workspace.toString() !== workspaceId
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
+    mailing?._workspace.toString() !== workspaceId
   ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
   }
@@ -211,7 +213,9 @@ async function rename(req, res) {
   const updateResponse = await mailingService.renameMailing(mailing);
 
   if (updateResponse.ok !== 1) {
-    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_RENAME
+    );
   }
 
   res.send();
@@ -240,21 +244,28 @@ async function rename(req, res) {
  * @apiUse mailings
  */
 
-async function copy(req,res) {
+async function copy(req, res) {
   const { user } = req;
   const { workspaceId, mailingId } = req.body;
 
   const mailing = await mailingService.findOne(mailingId);
 
   if (!mailing._workspace) {
-    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE)
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
   }
 
-  const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  const sourceWorkspace = await workspaceService.getWorkspace(
+    mailing._workspace
+  );
   const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
 
-  if (sourceWorkspace.group.toString() !== user.group.id || destinationWorkspace.group.toString() !== user.group.id) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND)
+  if (
+    sourceWorkspace.group.toString() !== user.group.id ||
+    destinationWorkspace.group.toString() !== user.group.id
+  ) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
   if (!user.isGroupAdmin) {
@@ -265,9 +276,8 @@ async function copy(req,res) {
 
   await mailingService.copyMailing(mailing, destinationWorkspace);
 
-  res.status(204).send()
+  res.status(204).send();
 }
-
 
 // TODO: while duplicating we should copy only the used images by the creation
 async function duplicate(req, res) {
@@ -462,7 +472,9 @@ async function deleteMailing(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if ((!user.isGroupAdmin && !workspaceService.workspaceContainsUser(workspace, user)) ||
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
     mailing?._workspace.toString() !== workspaceId
   ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
@@ -471,7 +483,9 @@ async function deleteMailing(req, res) {
   const deleteResponse = await mailingService.deleteOne(mailing);
 
   if (deleteResponse.ok !== 1) {
-    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_DELETE);
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_DELETE
+    );
   }
 
   res.send();

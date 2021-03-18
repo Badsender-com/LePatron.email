@@ -14,7 +14,7 @@ module.exports = {
   findOne,
   renameMailing,
   deleteOne,
-  copyMailing
+  copyMailing,
 };
 
 async function findMailings(query) {
@@ -44,7 +44,11 @@ async function createMailing(mailing) {
 }
 
 async function copyMailing(mailing, destinationWorkspace) {
-  if (!Workspaces.exists({ _id: mongoose.Types.ObjectId(destinationWorkspace.id) })) {
+  if (
+    !Workspaces.exists({
+      _id: mongoose.Types.ObjectId(destinationWorkspace.id),
+    })
+  ) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
@@ -52,8 +56,8 @@ async function copyMailing(mailing, destinationWorkspace) {
 
   const copy = {
     ...mailingProperties,
-    workspace: destinationWorkspace.id
-  }
+    workspace: destinationWorkspace.id,
+  };
 
   await Mailings.create(copy);
 }

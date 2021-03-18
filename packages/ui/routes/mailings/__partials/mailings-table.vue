@@ -3,12 +3,13 @@ import { mapMutations, mapGetters } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
+import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 
-import { mailingsItem } from '~/helpers/api-routes.js';
+import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
+const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   'actionRename',
@@ -21,6 +22,7 @@ export default {
   components: {
     BsMailingsModalRename,
     BsModalConfirmForm,
+    ModalCopyMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -101,6 +103,13 @@ export default {
           class: 'table-column-action',
           sortable: false,
         },
+        {
+          text: this.$t('global.copyMail'),
+          value: 'actionCopyMail',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     tableOptions() {
@@ -117,7 +126,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    displayRenameModal(mailing) {
+    openRenameModal(mailing) {
       this.$refs.renameDialog.open({
         newName: mailing.name,
         mailingId: mailing.id,
@@ -132,6 +141,15 @@ export default {
     },
     closeRename() {
       this.$refs.renameDialog.close();
+    },
+    openCopyMail(mailing) {
+      this.$refs.copyMailDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
+    closeCopyMailDialog() {
+      this.$refs.copyMailDialog.close();
     },
     closeDelete() {
       this.$refs.deleteDialog.close();
@@ -191,11 +209,40 @@ export default {
         this.loading = false;
       }
     },
+    async copyMail({ workspaceId, mailingId }) {
+      try {
+        await this.$axios.$post(copyMail(), {
+          mailingId,
+          workspaceId,
+        });
+        if (workspaceId === this.workspace?.id) {
+          this.$emit('on-refetch');
+        } else {
+          this.$router.push({
+            query: { wid: workspaceId },
+          });
+        }
+
+        this.showSnackbar({
+          text: this.$t('mailings.copyMailSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.closeCopyMailDialog();
+    },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
     },
     duplicateMailing(mailing) {
       this.$emit('duplicate', mailing);
+    },
+    display(mailing) {
+      this.$emit('copyMail', mailing);
     },
   },
 };
@@ -239,7 +286,7 @@ export default {
           :disabled="loading"
           icon
           color="primary"
-          @click="displayRenameModal(item)"
+          @click="openRenameModal(item)"
         >
           <v-icon>title</v-icon>
         </v-btn>
@@ -260,6 +307,16 @@ export default {
           icon
           color="primary"
           @click="duplicateMailing(item)"
+        >
+          <v-icon>content_paste</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionCopyMail="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="openCopyMail(item)"
         >
           <v-icon>content_copy</v-icon>
         </v-btn>
@@ -290,5 +347,11 @@ export default {
         "
       />
     </bs-modal-confirm-form>
+    <modal-copy-mail ref="copyMailDialog" @confirm="copyMail">
+      <p
+        class="black--text"
+        v-html="$t('mailings.copyMailConfirmationMessage')"
+      />
+    </modal-copy-mail>
   </div>
 </template>

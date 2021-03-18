@@ -11,6 +11,8 @@ export default {
   data() {
     return {
       workspacesWithPath: [],
+      workspaceIsError: false,
+      workspacesIsLoading: false,
     };
   },
   computed: {
