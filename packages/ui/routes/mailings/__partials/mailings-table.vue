@@ -23,17 +23,13 @@ export default {
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    hasAccess: { type: Boolean, default: false },
+    workspace: { type: Object, default: () => {} },
     mailingsSelection: { type: Array, default: () => [] },
   },
   data() {
     return {
       loading: false,
-      renameModalInfo: {
-        show: false,
-        newName: '',
-        mailingId: false,
-      },
+      dialogRename: false,
     };
   },
   computed: {
@@ -42,14 +38,14 @@ export default {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
         : TABLE_HIDDEN_COLUMNS_USER;
-      if (!this.hasAccess) {
+      if (!this.workspace.hasAccess) {
         return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }
       return excludedRules.filter(
         (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
       );
     },
-    localSelection: {
+    selectedRows: {
       get() {
         return this.mailingsSelection;
       },
@@ -111,26 +107,26 @@ export default {
       };
     },
   },
+  watch: {
+    dialogRename(val) {
+      val || this.closeRename();
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     displayRenameModal(mailing) {
-      this.renameModalInfo = {
-        show: true,
+      this.$refs.renameDialog.open({
         newName: mailing.name,
         mailingId: mailing.id,
-      };
+      });
     },
-    closeRenameModal() {
-      this.renameModalInfo = {
-        show: false,
-        newName: '',
-        mailingId: false,
-      };
+    closeRename() {
+      this.$refs.renameDialog.close();
     },
     async updateName(renameModalInfo) {
       const { $axios } = this;
       const { newName, mailingId } = renameModalInfo;
-      this.closeRenameModal();
+      this.closeRename();
       if (!mailingId) return;
       this.loading = true;
       const updateUri = mailingsItem({ mailingId });
@@ -152,11 +148,7 @@ export default {
         console.log(error);
       } finally {
         this.loading = false;
-        this.renameModalInfo.mailingId = false;
       }
-    },
-    renameMailing(mailing) {
-      this.$emit('rename', mailing);
     },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
@@ -171,7 +163,7 @@ export default {
 <template>
   <div>
     <v-data-table
-      v-model="localSelection"
+      v-model="selectedRows"
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
@@ -242,10 +234,6 @@ export default {
         </v-btn>
       </template>
     </v-data-table>
-    <bs-mailings-modal-rename
-      v-model="renameModalInfo"
-      @update="updateName"
-      @close="closeRenameModal"
-    />
+    <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
   </div>
 </template>
