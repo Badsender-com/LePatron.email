@@ -112,6 +112,10 @@ export function mailingsItemTransferToUser(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
+export function copyMail() {
+  return '/mailings/copy';
+}
+
 /// ///
 // IMAGES
 /// ///

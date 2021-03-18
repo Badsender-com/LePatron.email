@@ -27,6 +27,9 @@ export default {
     valid() {
       return !!this.selectedLocation?.id;
     },
+    mailName() {
+      return this.mail?.name;
+    },
   },
   async mounted() {
     const { $axios } = this;
@@ -42,9 +45,15 @@ export default {
   },
   methods: {
     submit() {
+      console.log('calling submit');
+      console.log(this.valid);
+      console.log(this.mail);
       if (this.valid) {
         this.close();
-        this.$emit('confirm', this.data);
+        this.$emit('confirm', {
+          workspaceId: this.selectedLocation?.id,
+          mailingId: this.mail?.id,
+        });
       }
     },
     handleSelectItemFromTreeView(selectedItems) {
@@ -57,7 +66,6 @@ export default {
       this.$refs.copyMailDialog.open();
     },
     close() {
-      this.$refs.form.reset();
       this.$refs.copyMailDialog.close();
     },
   },
@@ -66,7 +74,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMailTitle')}}`"
+    :title="`${this.$t('global.copyMailTitle')}}  ${mailName}`"
     :is-form="true"
   >
     <slot />
@@ -81,6 +89,8 @@ export default {
         :items="treeviewLocationItems"
         hoverable
         open-all
+        :dense="true"
+        :return-object="true"
         class="pb-8"
         @update:active="handleSelectItemFromTreeView"
       >
@@ -105,7 +115,7 @@ export default {
       <v-btn color="primary" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn color="error" @click="submit">
+      <v-btn :disabled="!valid" color="primary" @click="submit">
         {{ $t('global.copyMail') }}
       </v-btn>
     </v-card-actions>

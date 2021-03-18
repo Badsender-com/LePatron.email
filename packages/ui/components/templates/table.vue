@@ -60,9 +60,7 @@ export default {
     </template>
     <template #item.group="{ item }">
       <nuxt-link :to="`/groups/${item.group.id}`">
-        {{
-          item.group.name
-        }}
+        {{ item.group.name }}
       </nuxt-link>
     </template>
     <template #item.hasMarkup="{ item }">

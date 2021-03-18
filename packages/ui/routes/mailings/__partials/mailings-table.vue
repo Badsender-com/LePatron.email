@@ -1,29 +1,49 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapMutations, mapGetters } from 'vuex';
 
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 
+import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
+import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDuplicate'];
 
 export default {
   name: 'MailingsTable',
-  components: { ModalCopyMail },
+  components: {
+    BsMailingsModalRename,
+    ModalCopyMail,
+  },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
+    workspace: { type: Object, default: () => {} },
     mailingsSelection: { type: Array, default: () => [] },
-    loading: { type: Boolean, default: false },
+  },
+  data() {
+    return {
+      loading: false,
+      dialogRename: false,
+    };
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     hiddenCols() {
-      return this.isAdmin
+      const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
         : TABLE_HIDDEN_COLUMNS_USER;
+      if (!this.workspace.hasAccess) {
+        return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
+      }
+      return excludedRules.filter(
+        (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
+      );
     },
-    localSelection: {
+    selectedRows: {
       get() {
         return this.mailingsSelection;
       },
@@ -85,10 +105,76 @@ export default {
       };
     },
   },
+  watch: {
+    dialogRename(val) {
+      val || this.closeRename();
+    },
+  },
   methods: {
-    copyMail() {},
-    renameMailing(mailing) {
-      this.$emit('rename', mailing);
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    openRenameModal(mailing) {
+      this.$refs.renameDialog.open({
+        newName: mailing.name,
+        mailingId: mailing.id,
+      });
+    },
+    openCopyMail(mailing) {
+      this.$refs.copyMailDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
+    closeRename() {
+      this.$refs.renameDialog.close();
+    },
+    closeCopyMailDialog() {
+      this.$refs.copyMailDialog.close();
+    },
+    async updateName(renameModalInfo) {
+      const { $axios } = this;
+      const { newName, mailingId } = renameModalInfo;
+      this.closeRename();
+      if (!mailingId) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId });
+      try {
+        await $axios.$patch(updateUri, {
+          name: newName,
+          workspaceId: this.$route.query.wid,
+        });
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async copyMail({ workspaceId, mailingId }) {
+      try {
+        console.log({ workspaceId, mailingId });
+        await this.$axios.post(copyMail(), {
+          mailingId,
+          workspaceId,
+        });
+        this.showSnackbar({
+          text: this.$t('mailing.copyMailSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.closeCopyMailDialog();
     },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
@@ -96,7 +182,7 @@ export default {
     duplicateMailing(mailing) {
       this.$emit('duplicate', mailing);
     },
-    copyMailing(mailing) {
+    display(mailing) {
       this.$emit('copyMail', mailing);
     },
   },
@@ -106,7 +192,7 @@ export default {
 <template>
   <div>
     <v-data-table
-      v-model="localSelection"
+      v-model="selectedRows"
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
@@ -128,7 +214,7 @@ export default {
         <span v-else>{{ item.templateName }}</span>
       </template>
       <template #item.tags="{ item }">
-        <span>{{ item.tags.join(', ') }}</span>
+        <span>{{ item.tags.join(`, `) }}</span>
       </template>
       <template #item.createdAt="{ item }">
         <span>{{ item.createdAt | preciseDateTime }}</span>
@@ -141,7 +227,7 @@ export default {
           :disabled="loading"
           icon
           color="primary"
-          @click="renameMailing(item)"
+          @click="openRenameModal(item)"
         >
           <v-icon>title</v-icon>
         </v-btn>
@@ -163,7 +249,7 @@ export default {
           color="primary"
           @click="duplicateMailing(item)"
         >
-          <v-icon>content_paste</v-icon>
+          <v-icon>content_copy</v-icon>
         </v-btn>
       </template>
       <template #item.actionCopyMail="{ item }">
@@ -171,12 +257,13 @@ export default {
           :disabled="loading"
           icon
           color="primary"
-          @click="copyMailing(item)"
+          @click="openCopyMail(item)"
         >
           <v-icon>content_copy</v-icon>
         </v-btn>
       </template>
     </v-data-table>
+    <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
     <modal-copy-mail
       ref="copyMailDialog"
       :title="`${$t('global.copyMail')} ?`"
