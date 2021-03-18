@@ -2,12 +2,14 @@
 import { mapGetters } from 'vuex';
 
 import { USER, IS_ADMIN } from '~/store/user.js';
+import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
+const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 
 export default {
   name: 'MailingsTable',
+  components: { ModalCopyMail },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
@@ -67,6 +69,13 @@ export default {
           class: 'table-column-action',
           sortable: false,
         },
+        {
+          text: this.$t('global.copyMail'),
+          value: 'actionCopyMail',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     tableOptions() {
@@ -77,6 +86,7 @@ export default {
     },
   },
   methods: {
+    copyMail() {},
     renameMailing(mailing) {
       this.$emit('rename', mailing);
     },
@@ -86,71 +96,98 @@ export default {
     duplicateMailing(mailing) {
       this.$emit('duplicate', mailing);
     },
+    copyMailing(mailing) {
+      this.$emit('copyMail', mailing);
+    },
   },
 };
 </script>
 
 <template>
-  <v-data-table
-    v-model="localSelection"
-    :headers="tablesHeaders"
-    :options="tableOptions"
-    :items="mailings"
-    show-select
-  >
-    <template #item.name="{ item }">
-      <a :href="`/editor/${item.id}`">{{ item.name }}</a>
-    </template>
-    <template #item.userName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
-        {{ item.userName }}
-      </nuxt-link>
-      <span v-else>{{ item.userName }}</span>
-    </template>
-    <template #item.templateName="{ item }">
-      <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
-        {{ item.templateName }}
-      </nuxt-link>
-      <span v-else>{{ item.templateName }}</span>
-    </template>
-    <template #item.tags="{ item }">
-      <span>{{ item.tags.join(`, `) }}</span>
-    </template>
-    <template #item.createdAt="{ item }">
-      <span>{{ item.createdAt | preciseDateTime }}</span>
-    </template>
-    <template #item.updatedAt="{ item }">
-      <span>{{ item.updatedAt | preciseDateTime }}</span>
-    </template>
-    <template #item.actionRename="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="renameMailing(item)"
-      >
-        <v-icon>title</v-icon>
-      </v-btn>
-    </template>
-    <template #item.actionTransfer="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="transferMailing(item)"
-      >
-        <v-icon>forward</v-icon>
-      </v-btn>
-    </template>
-    <template #item.actionDuplicate="{ item }">
-      <v-btn
-        :disabled="loading"
-        icon
-        color="primary"
-        @click="duplicateMailing(item)"
-      >
-        <v-icon>content_copy</v-icon>
-      </v-btn>
-    </template>
-  </v-data-table>
+  <div>
+    <v-data-table
+      v-model="localSelection"
+      :headers="tablesHeaders"
+      :options="tableOptions"
+      :items="mailings"
+      show-select
+    >
+      <template #item.name="{ item }">
+        <a :href="`/editor/${item.id}`">{{ item.name }}</a>
+      </template>
+      <template #item.userName="{ item }">
+        <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
+          {{ item.userName }}
+        </nuxt-link>
+        <span v-else>{{ item.userName }}</span>
+      </template>
+      <template #item.templateName="{ item }">
+        <nuxt-link v-if="isAdmin" :to="`/templates/${item.templateId}`">
+          {{ item.templateName }}
+        </nuxt-link>
+        <span v-else>{{ item.templateName }}</span>
+      </template>
+      <template #item.tags="{ item }">
+        <span>{{ item.tags.join(', ') }}</span>
+      </template>
+      <template #item.createdAt="{ item }">
+        <span>{{ item.createdAt | preciseDateTime }}</span>
+      </template>
+      <template #item.updatedAt="{ item }">
+        <span>{{ item.updatedAt | preciseDateTime }}</span>
+      </template>
+      <template #item.actionRename="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="renameMailing(item)"
+        >
+          <v-icon>title</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionTransfer="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="transferMailing(item)"
+        >
+          <v-icon>forward</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionDuplicate="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="duplicateMailing(item)"
+        >
+          <v-icon>content_paste</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionCopyMail="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="copyMailing(item)"
+        >
+          <v-icon>content_copy</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
+    <modal-copy-mail
+      ref="copyMailDialog"
+      :title="`${$t('global.copyMail')} ?`"
+      :action-label="$t('global.copyMail')"
+      :confirmation-input-label="$t('mailing.copyMailConfirmation')"
+      @confirm="copyMail"
+    >
+      <p
+        class="black--text"
+        v-html="$t('mailing.copyMailConfirmationMessage')"
+      />
+    </modal-copy-mail>
+  </div>
 </template>
