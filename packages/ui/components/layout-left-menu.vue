@@ -22,6 +22,9 @@ export default {
 </template>
 
 <style scoped>
+.v-navigation-drawer {
+  width: 100% !important;
+}
 .navigation-drawer-container {
   max-height: calc(100vh - 4rem);
 }
