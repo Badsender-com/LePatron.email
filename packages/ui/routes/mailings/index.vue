@@ -32,7 +32,7 @@ export default {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,
           mailingsIsLoading: false,
-          hasAccess: workspace.hasAccess,
+          workspace,
         };
       }
     } catch (error) {
@@ -43,7 +43,7 @@ export default {
     mailingsIsLoading: false,
     mailingsIsError: false,
     mailings: [],
-    hasAccess: false,
+    workspace: {},
     tags: [],
     filterValues: null,
   }),
@@ -83,7 +83,7 @@ export default {
           this.mailings = mailingsResponse.items;
           this.tags = mailingsResponse.meta.tags;
           this.mailingsIsLoading = false;
-          this.hasAccess = workspace.hasAccess;
+          this.workspace = workspace;
         }
       } catch (error) {
         this.mailingsIsLoading = false;
@@ -116,7 +116,7 @@ export default {
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           :mailings="filteredMailings"
-          :has-access="hasAccess"
+          :workspace="workspace"
           @on-refetch="fecthData()"
         />
       </v-skeleton-loader>
