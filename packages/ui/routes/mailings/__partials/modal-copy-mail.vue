@@ -1,5 +1,7 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
+import { workspacesByGroup } from '~/helpers/api-routes';
+import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 export default {
   name: 'ModalCopyMail',
@@ -8,70 +10,35 @@ export default {
   },
   props: {
     confirmationInputLabel: { type: String, default: '' },
-    selectedLocation: {},
   },
   data() {
     return {
-      items: [
-        {
-          name: '.git',
-        },
-        {
-          name: 'node_modules',
-        },
-        {
-          name: 'public',
-          children: [
-            {
-              name: 'static',
-              children: [
-                {
-                  name: 'logo.png',
-                  file: 'png',
-                },
-              ],
-            },
-            {
-              name: 'favicon.ico',
-              file: 'png',
-            },
-            {
-              name: 'index.html',
-              file: 'html',
-            },
-          ],
-        },
-        {
-          name: '.gitignore',
-          file: 'txt',
-        },
-        {
-          name: 'babel.config.js',
-          file: 'js',
-        },
-        {
-          name: 'package.json',
-          file: 'json',
-        },
-        {
-          name: 'README.md',
-          file: 'md',
-        },
-        {
-          name: 'vue.config.js',
-          file: 'js',
-        },
-        {
-          name: 'yarn.lock',
-          file: 'txt',
-        },
-      ],
+      mail: null,
+      workspaces: [],
+      workspaceIsError: false,
+      workspacesIsLoading: false,
+      selectedLocation: {},
     };
   },
   computed: {
+    treeviewLocationItems() {
+      return getTreeviewWorkspaces(this.workspaces);
+    },
     valid() {
       return !!this.selectedLocation?.id;
     },
+  },
+  async mounted() {
+    const { $axios } = this;
+    try {
+      this.workspacesIsLoading = true;
+      const { items } = await $axios.$get(workspacesByGroup());
+      this.workspaces = items;
+    } catch (error) {
+      this.workspaceIsError = true;
+    } finally {
+      this.workspacesIsLoading = false;
+    }
   },
   methods: {
     submit() {
@@ -80,8 +47,13 @@ export default {
         this.$emit('confirm', this.data);
       }
     },
-    open(item) {
-      this.data = item;
+    handleSelectItemFromTreeView(selectedItems) {
+      if (selectedItems[0]) {
+        this.selectedLocation = selectedItems[0];
+      }
+    },
+    open(selectedMail) {
+      this.mail = selectedMail;
       this.$refs.copyMailDialog.open();
     },
     close() {
@@ -94,40 +66,64 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMailTitle')} ${data.name}`"
+    :title="`${this.$t('global.copyMailTitle')} ${selectedMail.name}`"
     :is-form="true"
   >
-    <v-form ref="form" v-model="valid" @submit.prevent="submit">
-      <slot />
-      <template>
-        <v-treeview
-          v-model="tree"
-          :open="initiallyOpen"
-          :items="items"
-          activatable
-          item-key="name"
-          open-on-click
-        >
-          <template #prepend="{ item, open }">
-            <v-icon v-if="!item.file">
-              {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-            </v-icon>
-            <v-icon v-else>
-              {{ files[item.file] }}
-            </v-icon>
-          </template>
-        </v-treeview>
-      </template>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="primary" text @click="close">
-          {{ $t('global.cancel') }}
-        </v-btn>
-        <v-btn type="submit" color="error">
-          {{ $t('global.delete') }}
-        </v-btn>
-      </v-card-actions>
-    </v-form>
+    <slot />
+    <v-skeleton-loader
+      type="list-item, list-item, list-item"
+      :loading="workspacesIsLoading"
+    >
+      <v-treeview
+        ref="tree"
+        item-key="id"
+        activatable
+        :items="treeviewLocationItems"
+        hoverable
+        open-all
+        class="pb-8"
+        @update:active="handleSelectItemFromTreeView"
+      >
+        <template #prepend="{ item, open }">
+          <v-icon v-if="!item.icon" color="primary">
+            {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+          </v-icon>
+          <v-icon v-else color="primary">
+            {{ item.icon }}
+          </v-icon>
+        </template>
+        <template #label="{ item, active }">
+          <div @click="active ? $event.stopPropagation() : null">
+            {{ item.name }}
+          </div>
+        </template>
+      </v-treeview>
+    </v-skeleton-loader>
+    <v-divider />
+    <v-card-actions>
+      <v-spacer />
+      <v-btn color="primary" text @click="close">
+        {{ $t('global.cancel') }}
+      </v-btn>
+      <v-btn color="error" @click="submit">
+        {{ $t('global.copyMail') }}
+      </v-btn>
+    </v-card-actions>
   </bs-modal-confirm>
 </template>
+
+<style scoped>
+.v-treeview-node--active,
+.v-treeview--hoverable {
+  cursor: pointer;
+}
+
+.v-treeview {
+  overflow-y: auto;
+}
+.v-treeview-node__label > div {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+</style>
