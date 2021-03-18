@@ -9,7 +9,11 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDuplicate'];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  'actionRename',
+  'actionDuplicate',
+  'actionDelete',
+];
 
 export default {
   name: 'MailingsTable',
@@ -87,6 +91,13 @@ export default {
         {
           text: this.$t('global.duplicate'),
           value: 'actionDuplicate',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
+        {
+          text: this.$t('global.delete'),
+          value: 'actionDelete',
           align: 'center',
           class: 'table-column-action',
           sortable: false,
@@ -218,6 +229,16 @@ export default {
           @click="duplicateMailing(item)"
         >
           <v-icon>content_copy</v-icon>
+        </v-btn>
+      </template>
+      <template #item.actionDelete="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="deleteMailing(item)"
+        >
+          <v-icon>delete</v-icon>
         </v-btn>
       </template>
     </v-data-table>
