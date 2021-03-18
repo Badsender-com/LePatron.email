@@ -11,7 +11,7 @@ const mailings = require('./mailing.controller.js');
 router.get('', GUARD_USER, mailings.list);
 router.post('', GUARD_USER, mailings.create);
 router.patch('/:mailingId', GUARD_USER, mailings.rename);
-router.delete('', GUARD_USER, mailings.bulkDestroy);
+router.delete('/:mailingId', GUARD_USER, mailings.delete);
 
 router.post(
   '/:mailingId/mosaico/send-test-mail',
