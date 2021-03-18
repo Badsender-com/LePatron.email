@@ -211,7 +211,7 @@ export default {
     },
     async copyMail({ workspaceId, mailingId }) {
       try {
-        await this.$axios.post(copyMail(), {
+        await this.$axios.$post(copyMail(), {
           mailingId,
           workspaceId,
         });
