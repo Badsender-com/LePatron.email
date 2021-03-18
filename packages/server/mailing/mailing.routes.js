@@ -10,7 +10,7 @@ const mailings = require('./mailing.controller.js');
 
 router.get('', GUARD_USER, mailings.list);
 router.post('', GUARD_USER, mailings.create);
-router.put('/:mailingId', GUARD_USER, mailings.update);
+router.patch('/:mailingId', GUARD_USER, mailings.rename);
 router.delete('/:mailingId', GUARD_USER, mailings.delete);
 
 router.post(

@@ -11,6 +11,7 @@ module.exports = {
   findMailings,
   findTags,
   findOne,
+  renameMailing,
   deleteOne
 };
 
@@ -38,6 +39,18 @@ async function createMailing(mailing) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Mailings.create(mailing);
+}
+
+async function renameMailing(mailing) {
+  if (
+    !mailing?.workspace ||
+    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
+  ) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  const { id, name } = mailing;
+
+  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(id) }, { name });
 }
 
 async function deleteOne(mailing) {
