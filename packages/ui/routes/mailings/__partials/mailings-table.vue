@@ -211,11 +211,18 @@ export default {
     },
     async copyMail({ workspaceId, mailingId }) {
       try {
-        console.log({ workspaceId, mailingId });
         await this.$axios.post(copyMail(), {
           mailingId,
           workspaceId,
         });
+        if (workspaceId === this.workspace?.id) {
+          this.$emit('on-refetch');
+        } else {
+          this.$router.push({
+            query: { wid: workspaceId },
+          });
+        }
+
         this.showSnackbar({
           text: this.$t('mailings.copyMailSuccessful'),
           color: 'success',
