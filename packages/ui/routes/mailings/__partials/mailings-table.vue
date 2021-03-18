@@ -124,14 +124,15 @@ export default {
       this.loading = true;
       const updateUri = mailingsItem({ mailingId });
       try {
-        const mailingResponse = await $axios.$put(updateUri, { name: newName });
-        if (mailingResponse) {
-          this.$emit('on-refetch');
-          this.showSnackbar({
-            text: this.$t('snackbars.updated'),
-            color: 'success',
-          });
-        }
+        await $axios.$patch(updateUri, {
+          name: newName,
+          workspaceId: this.$route.query.wid,
+        });
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
