@@ -48,7 +48,7 @@ async function copyMailing(mailing, destinationWorkspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  const mailingProperties = omit(mailing, ['_id']);
+  const mailingProperties = omit(mailing, ['_id', 'createdAt', 'updatedAt']);
 
   const copy = {
     ...mailingProperties,
