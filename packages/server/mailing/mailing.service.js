@@ -1,5 +1,6 @@
 'use strict';
 
+const { omit } = require('lodash');
 const { Mailings, Workspaces } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const mongoose = require('mongoose');
@@ -12,7 +13,8 @@ module.exports = {
   findTags,
   findOne,
   renameMailing,
-  deleteOne
+  deleteOne,
+  copyMailing
 };
 
 async function findMailings(query) {
@@ -39,6 +41,21 @@ async function createMailing(mailing) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Mailings.create(mailing);
+}
+
+async function copyMailing(mailing, destinationWorkspace) {
+  if (!Workspaces.exists({ _id: mongoose.Types.ObjectId(destinationWorkspace.id) })) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  const mailingProperties = omit(mailing, ['_id']);
+
+  const copy = {
+    ...mailingProperties,
+    workspace: destinationWorkspace.id
+  }
+
+  await Mailings.create(copy);
 }
 
 async function renameMailing(mailing) {
