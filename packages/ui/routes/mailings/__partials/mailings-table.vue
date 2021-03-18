@@ -126,7 +126,7 @@ export default {
       try {
         const mailingResponse = await $axios.$put(updateUri, { name: newName });
         if (mailingResponse) {
-          await this.$emit('on-refetch');
+          this.$emit('on-refetch');
           this.showSnackbar({
             text: this.$t('snackbars.updated'),
             color: 'success',
