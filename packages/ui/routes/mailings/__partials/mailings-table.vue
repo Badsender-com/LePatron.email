@@ -6,6 +6,7 @@ import { USER, IS_ADMIN } from '~/store/user.js';
 
 import { mailingsItem } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
@@ -19,6 +20,7 @@ export default {
   name: 'MailingsTable',
   components: {
     BsMailingsModalRename,
+    BsModalConfirmForm,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -30,6 +32,7 @@ export default {
     return {
       loading: false,
       dialogRename: false,
+      selectedMailing: {},
     };
   },
   computed: {
@@ -120,8 +123,19 @@ export default {
         mailingId: mailing.id,
       });
     },
+    displayDeleteModal(mailing) {
+      console.log({ mailing });
+      this.selectedMailing = mailing;
+      this.$refs.deleteDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
     closeRename() {
       this.$refs.renameDialog.close();
+    },
+    closeDelete() {
+      this.$refs.deleteDialog.close();
     },
     async updateName(renameModalInfo) {
       const { $axios } = this;
@@ -149,6 +163,9 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    handleDelete(mailing) {
+      console.log({ mailing });
     },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
@@ -228,12 +245,28 @@ export default {
           :disabled="loading"
           icon
           color="primary"
-          @click="deleteMailing(item)"
+          @click="displayDeleteModal(item)"
         >
           <v-icon>delete</v-icon>
         </v-btn>
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      title="Supprimer le mailing"
+      action-label="Supprimer"
+      :confirmation-input-label="$t('groups.workspaceTab.confirmationField')"
+      @confirm="handleDelete"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.workspaceTab.deleteWarningMessage', {
+            name: selectedMailing.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
   </div>
 </template>
