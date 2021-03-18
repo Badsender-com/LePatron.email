@@ -26,11 +26,6 @@ export default {
     return {
       loading: false,
       dialogRename: false,
-      // renameModalInfo: {
-      //   show: false,
-      //   newName: '',
-      //   mailingId: false,
-      // },
     };
   },
   computed: {
