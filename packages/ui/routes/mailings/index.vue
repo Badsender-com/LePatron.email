@@ -38,7 +38,7 @@ export default {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,
           mailingsIsLoading: false,
-          hasAccess: workspace.hasAccess,
+          workspace,
         };
       }
     } catch (error) {
@@ -50,7 +50,7 @@ export default {
     mailingsIsError: false,
     selectedItem: '',
     mailings: [],
-    hasAccess: false,
+    workspace: null,
     tags: [],
     filterValues: null,
   }),
@@ -69,6 +69,9 @@ export default {
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
+    },
+    hasAccess() {
+      return this.workspace?.hasAccess || false;
     },
   },
   watchQuery: ['wid'],
@@ -95,6 +98,14 @@ export default {
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <v-btn
+        class="my-4"
+        color="primary"
+        :disabled="!hasAccess"
+        :to="`/mailings/news?wid=1`"
+      >
+        Nouveau
+      </v-btn>
       <workspace-tree />
     </template>
     <v-card>
