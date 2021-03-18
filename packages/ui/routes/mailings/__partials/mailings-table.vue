@@ -46,7 +46,7 @@ export default {
         (rule) => !TABLE_HIDDEN_COLUMNS_NO_ACCESS.includes(rule)
       );
     },
-    localSelection: {
+    selectedRows: {
       get() {
         return this.mailingsSelection;
       },
@@ -157,7 +157,7 @@ export default {
 <template>
   <div>
     <v-data-table
-      v-model="localSelection"
+      v-model="selectedRows"
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
