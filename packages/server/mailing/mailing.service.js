@@ -1,8 +1,10 @@
 'use strict';
 
 const { omit } = require('lodash');
-const { Mailings, Workspaces } = require('../common/models.common.js');
+const { Mailings, Workspaces, Galleries } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
+const fileManager = require('../common/file-manage.service.js');
+const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
@@ -55,7 +57,20 @@ async function copyMailing(mailing, destinationWorkspace) {
     workspace: destinationWorkspace.id
   }
 
-  await Mailings.create(copy);
+  const copiedMailing = await Mailings.create(copy);
+  const gallery = await Galleries.findOne({ creationOrWireframeId: mailing._id });
+
+  await fileManager.copyImages(mailing._id, copiedMailing._id);
+  await copiedMailing.save();
+
+  try {
+    if (gallery) {
+      gallery.duplicate(copiedMailing._id).save();
+    }
+  } catch (error) {
+    logger.warn(`MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`);
+  }
+
 }
 
 async function renameMailing(mailing) {
