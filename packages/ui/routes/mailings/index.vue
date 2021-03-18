@@ -46,11 +46,10 @@ export default {
     }
   },
   data: () => ({
-    mailingsIsLoading: true,
+    mailingsIsLoading: false,
     mailingsIsError: false,
-    selectedItem: '',
     mailings: [],
-    workspace: null,
+    workspace: {},
     tags: [],
     filterValues: null,
   }),
@@ -78,6 +77,27 @@ export default {
   methods: {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
+    },
+    async fecthData() {
+      try {
+        if (this.$route.query?.wid) {
+          this.mailingsIsLoading = true;
+          const [workspace, mailingsResponse] = await Promise.all([
+            this.$axios.$get(getWorkspace(this.$route.query?.wid)),
+            this.$axios.$get(mailings(), {
+              params: { workspaceId: this.$route.query?.wid },
+            }),
+          ]);
+
+          this.mailings = mailingsResponse.items;
+          this.tags = mailingsResponse.meta.tags;
+          this.mailingsIsLoading = false;
+          this.workspace = workspace;
+        }
+      } catch (error) {
+        this.mailingsIsLoading = false;
+        this.mailingsIsError = true;
+      }
     },
   },
 };
@@ -112,7 +132,11 @@ export default {
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
-        <mailings-table :mailings="filteredMailings" />
+        <mailings-table
+          :mailings="filteredMailings"
+          :workspace="workspace"
+          @on-refetch="fecthData()"
+        />
       </v-skeleton-loader>
     </v-card>
   </bs-layout-left-menu>

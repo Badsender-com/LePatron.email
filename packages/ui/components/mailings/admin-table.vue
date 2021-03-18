@@ -37,9 +37,7 @@ export default {
     </template>
     <template #item.templateName="{ item }">
       <nuxt-link :to="`/templates/${item.templateId}`">
-        {{
-          item.templateName
-        }}
+        {{ item.templateName }}
       </nuxt-link>
     </template>
     <template #item.createdAt="{ item }">
