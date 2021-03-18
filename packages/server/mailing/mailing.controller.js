@@ -419,7 +419,7 @@ async function deleteMailing(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if ((!user.isGroupAdmin && !workspace._users.includes(user.id)) ||
+  if ((!user.isGroupAdmin && !workspaceService.workspaceContainsUser(workspace, user)) ||
     mailing?._workspace.toString() !== workspaceId
   ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
