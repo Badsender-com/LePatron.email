@@ -36,7 +36,7 @@ export default {
     try {
       this.workspacesIsLoading = true;
       const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items;
+      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
     } catch (error) {
       this.workspaceIsError = true;
     } finally {
@@ -45,9 +45,6 @@ export default {
   },
   methods: {
     submit() {
-      console.log('calling submit');
-      console.log(this.valid);
-      console.log(this.mail);
       if (this.valid) {
         this.close();
         this.$emit('confirm', {
@@ -74,8 +71,9 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMailTitle')}}  ${mailName}`"
+    :title="`${this.$t('global.copyMail')}  ${mailName}`"
     :is-form="true"
+    class="modal-confirm-copy-mail"
   >
     <slot />
     <v-skeleton-loader
@@ -116,7 +114,7 @@ export default {
         {{ $t('global.cancel') }}
       </v-btn>
       <v-btn :disabled="!valid" color="primary" @click="submit">
-        {{ $t('global.copyMail') }}
+        {{ $t('global.copyMailAction') }}
       </v-btn>
     </v-card-actions>
   </bs-modal-confirm>

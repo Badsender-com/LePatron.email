@@ -58,3 +58,9 @@ export default {
   "fr": {}
 }
 </i18n>
+
+<style>
+.v-card__text {
+  padding-bottom: 0 !important;
+}
+</style>

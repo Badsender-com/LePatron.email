@@ -29,6 +29,8 @@ export default {
     },
 
     teams: 'Workspaces',
+    copyMail: 'Copy mail ',
+    copyMailAction: 'Create copy',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
@@ -140,13 +142,18 @@ export default {
     tabs: {
       informations: 'Information',
     },
+    mailingTab: {
+      confirmationField: 'Type the mailing name to confirm',
+      deleteWarningMessage:
+        'You are about to delete the "<strong>{name}</strong>" mailing. This action can\'t be undone.',
+      deleteSuccessful: 'Mailing deleted',
+    },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
       deleteNotice:
         'Emails and folders contained in the workspace will also be deleted',
       deleteWarningMessage:
         'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
-
       deleteSuccessful: 'Workspace deleted',
     },
   },
@@ -168,6 +175,8 @@ export default {
     selectedCount: '{count} email selected | {count} emails selected',
     deleteCount: 'Delete {count} email | Delete {count} emails',
     deleteNotice: 'This will definitely remove:',
+    copyMailConfirmationMessage: 'Please choose the location of the new copy',
+    copyMailSuccessful: 'Mail copied',
   },
   template: {
     noId: 'No ID',

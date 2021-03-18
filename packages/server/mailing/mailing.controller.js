@@ -1,4 +1,5 @@
 'use strict';
+
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
@@ -23,6 +24,7 @@ module.exports = {
   read: asyncHandler(read),
   readMosaico: asyncHandler(readMosaico),
   rename: asyncHandler(rename),
+  copy: asyncHandler(copy),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -198,8 +200,10 @@ async function rename(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if ((!user.isGroupAdmin && !workspaceService.workspaceContainsUser(workspace, user)) ||
-      mailing?._workspace.toString() !== workspaceId
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
+    mailing?._workspace.toString() !== workspaceId
   ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
   }
@@ -209,7 +213,9 @@ async function rename(req, res) {
   const updateResponse = await mailingService.renameMailing(mailing);
 
   if (updateResponse.ok !== 1) {
-    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_RENAME
+    );
   }
 
   res.send();
@@ -225,6 +231,53 @@ async function rename(req, res) {
  *
  * @apiUse mailings
  */
+
+/**
+ * @api {post} /mailings/:mailingId/copy mailing copy
+ * @apiPermission user
+ * @apiName CopyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ * @apiParam (Body) {String} workspaceId
+
+ * @apiUse mailings
+ */
+
+async function copy(req, res) {
+  const { user } = req;
+  const { workspaceId, mailingId } = req.body;
+
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
+  }
+
+  const sourceWorkspace = await workspaceService.getWorkspace(
+    mailing._workspace
+  );
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (
+    sourceWorkspace.group.toString() !== user.group.id ||
+    destinationWorkspace.group.toString() !== user.group.id
+  ) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (!user.isGroupAdmin) {
+    if (!workspaceService.workspaceContainsUser(destinationWorkspace, user)) {
+      throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_COPY);
+    }
+  }
+
+  await mailingService.copyMailing(mailing, destinationWorkspace);
+
+  res.status(204).send();
+}
 
 // TODO: while duplicating we should copy only the used images by the creation
 async function duplicate(req, res) {
@@ -419,7 +472,9 @@ async function deleteMailing(req, res) {
     throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  if ((!user.isGroupAdmin && !workspaceService.workspaceContainsUser(workspace, user)) ||
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
     mailing?._workspace.toString() !== workspaceId
   ) {
     throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
@@ -428,7 +483,9 @@ async function deleteMailing(req, res) {
   const deleteResponse = await mailingService.deleteOne(mailing);
 
   if (deleteResponse.ok !== 1) {
-    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_DELETE);
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_DELETE
+    );
   }
 
   res.send();

@@ -27,6 +27,8 @@ export default {
         },
       },
     },
+    copyMail: 'Copie du mail',
+    copyMailAction: 'Créer une copie',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -137,6 +139,12 @@ export default {
     tabs: {
       informations: 'Informations',
     },
+    mailingTab: {
+      confirmationField: 'Tapez le nom du mailing pour confirmer',
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer le mailing "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteSuccessful: 'Mailing supprimé',
+    },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
       deleteWarningMessage:
@@ -166,6 +174,9 @@ export default {
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
+    copyMailConfirmationMessage:
+      'Veuillez choisir l\'emplacement de la nouvelle copie',
+    copyMailSuccessful: 'Mail copié',
   },
   template: {
     noId: 'Aucun ID',

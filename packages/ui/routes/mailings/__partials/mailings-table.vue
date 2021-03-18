@@ -7,15 +7,21 @@ import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 
 import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDuplicate'];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  'actionRename',
+  'actionDuplicate',
+  'actionDelete',
+];
 
 export default {
   name: 'MailingsTable',
   components: {
     BsMailingsModalRename,
+    BsModalConfirmForm,
     ModalCopyMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -28,6 +34,7 @@ export default {
     return {
       loading: false,
       dialogRename: false,
+      selectedMailing: {},
     };
   },
   computed: {
@@ -90,6 +97,13 @@ export default {
           sortable: false,
         },
         {
+          text: this.$t('global.delete'),
+          value: 'actionDelete',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
+        {
           text: this.$t('global.copyMail'),
           value: 'actionCopyMail',
           align: 'center',
@@ -118,8 +132,9 @@ export default {
         mailingId: mailing.id,
       });
     },
-    openCopyMail(mailing) {
-      this.$refs.copyMailDialog.open({
+    displayDeleteModal(mailing) {
+      this.selectedMailing = mailing;
+      this.$refs.deleteDialog.open({
         name: mailing.name,
         id: mailing.id,
       });
@@ -127,8 +142,17 @@ export default {
     closeRename() {
       this.$refs.renameDialog.close();
     },
+    openCopyMail(mailing) {
+      this.$refs.copyMailDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
     closeCopyMailDialog() {
       this.$refs.copyMailDialog.close();
+    },
+    closeDelete() {
+      this.$refs.deleteDialog.close();
     },
     async updateName(renameModalInfo) {
       const { $axios } = this;
@@ -157,6 +181,34 @@ export default {
         this.loading = false;
       }
     },
+    async handleDelete(mailing) {
+      const { $axios } = this;
+      const { id } = mailing;
+      this.closeDelete();
+      if (!id) return;
+      this.loading = true;
+      const updateUri = mailingsItem({ mailingId: id });
+      try {
+        await $axios.$delete(updateUri, {
+          data: {
+            workspaceId: this.$route.query.wid,
+          },
+        });
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('snackbars.deleted'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
     async copyMail({ workspaceId, mailingId }) {
       try {
         console.log({ workspaceId, mailingId });
@@ -165,7 +217,7 @@ export default {
           workspaceId,
         });
         this.showSnackbar({
-          text: this.$t('mailing.copyMailSuccessful'),
+          text: this.$t('mailings.copyMailSuccessful'),
           color: 'success',
         });
       } catch (error) {
@@ -249,7 +301,7 @@ export default {
           color="primary"
           @click="duplicateMailing(item)"
         >
-          <v-icon>content_copy</v-icon>
+          <v-icon>content_paste</v-icon>
         </v-btn>
       </template>
       <template #item.actionCopyMail="{ item }">
@@ -262,18 +314,36 @@ export default {
           <v-icon>content_copy</v-icon>
         </v-btn>
       </template>
+      <template #item.actionDelete="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="displayDeleteModal(item)"
+        >
+          <v-icon>delete</v-icon>
+        </v-btn>
+      </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
-    <modal-copy-mail
-      ref="copyMailDialog"
-      :title="`${$t('global.copyMail')} ?`"
-      :action-label="$t('global.copyMail')"
-      :confirmation-input-label="$t('mailing.copyMailConfirmation')"
-      @confirm="copyMail"
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :confirmation-input-label="$t('groups.mailingTab.confirmationField')"
+      @confirm="handleDelete"
     >
       <p
         class="black--text"
-        v-html="$t('mailing.copyMailConfirmationMessage')"
+        v-html="
+          $t('groups.mailingTab.deleteWarningMessage', {
+            name: selectedMailing.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
+    <modal-copy-mail ref="copyMailDialog" @confirm="copyMail">
+      <p
+        class="black--text"
+        v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
   </div>
