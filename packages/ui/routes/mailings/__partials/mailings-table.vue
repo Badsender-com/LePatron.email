@@ -256,13 +256,13 @@ export default {
       ref="deleteDialog"
       title="Supprimer le mailing"
       action-label="Supprimer"
-      :confirmation-input-label="$t('groups.workspaceTab.confirmationField')"
+      :confirmation-input-label="$t('groups.mailingTab.confirmationField')"
       @confirm="handleDelete"
     >
       <p
         class="black--text"
         v-html="
-          $t('groups.workspaceTab.deleteWarningMessage', {
+          $t('groups.mailingTab.deleteWarningMessage', {
             name: selectedMailing.name,
           })
         "
