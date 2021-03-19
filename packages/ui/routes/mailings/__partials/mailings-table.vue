@@ -11,11 +11,7 @@ import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
-  'actionRename',
-  'actionDuplicate',
-  'actionDelete',
-];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDelete'];
 
 export default {
   name: 'MailingsTable',
@@ -85,13 +81,6 @@ export default {
         {
           text: this.$t('tableHeaders.mailings.transfer'),
           value: 'actionTransfer',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.duplicate'),
-          value: 'actionDuplicate',
           align: 'center',
           class: 'table-column-action',
           sortable: false,
@@ -238,9 +227,6 @@ export default {
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
     },
-    duplicateMailing(mailing) {
-      this.$emit('duplicate', mailing);
-    },
     display(mailing) {
       this.$emit('copyMail', mailing);
     },
@@ -299,16 +285,6 @@ export default {
           @click="transferMailing(item)"
         >
           <v-icon>forward</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionDuplicate="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="duplicateMailing(item)"
-        >
-          <v-icon>content_paste</v-icon>
         </v-btn>
       </template>
       <template #item.actionCopyMail="{ item }">
