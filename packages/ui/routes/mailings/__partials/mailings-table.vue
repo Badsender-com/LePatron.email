@@ -335,7 +335,7 @@ export default {
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
     <bs-modal-confirm-form
       ref="deleteDialog"
-      :confirmation-input-label="$t('groups.mailingTab.confirmationField')"
+      :with-input-confirmation="false"
       @confirm="handleDelete"
     >
       <p
