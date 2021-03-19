@@ -110,7 +110,7 @@ if (!config.isAws) {
       return copyObject({
         Bucket: config.storage.aws.bucketName,
         CopySource: config.storage.aws.bucketName + '/' + file.name,
-        Key: file.name.replace(oldPrefix.toString(), newPrefix.toString()),
+        Key: file.name.replace(oldPrefix, newPrefix),
       });
     }
   };
