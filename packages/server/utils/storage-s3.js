@@ -3,6 +3,7 @@
 const fs = require('fs-extra');
 const AWS = require('aws-sdk');
 const denodeify = require('denodeify');
+const logger = require('../utils/logger.js');
 
 const config = require('../node.config.js');
 const defer = require('../helpers/create-promise.js');
@@ -102,6 +103,7 @@ if (!config.isAws) {
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
   const copyObject = denodeify(s3.copyObject.bind(s3));
   const copyImages = (oldPrefix, newPrefix) => {
+    logger.info('copying images with S3 storage');
     return listImages(oldPrefix).then((files) => Promise.all(files.map(copy)));
 
     function copy(file) {
