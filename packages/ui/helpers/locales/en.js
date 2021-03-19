@@ -46,6 +46,7 @@ export default {
     newGroup: 'Add a group',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
+    newMail: 'New mail',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
