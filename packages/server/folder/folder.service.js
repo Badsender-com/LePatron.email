@@ -1,6 +1,7 @@
 'use strict';
 
 const { Folders, Mailings } = require('../common/models.common.js');
+const mongoose = require('mongoose');
 
 module.exports = {
   listFolders,
@@ -21,4 +22,19 @@ async function deleteFolderContent(folderId) {
   }
   await Mailings.deleteMany({ _parentFolder: folderId });
   await Folders.deleteMany({ _parentFolder: folderId });
+}
+
+async function create(folder) {
+  const { parentFolderId } = folder;
+  if (parentFolderId) {
+    const parentFolder = await getFolder(parentFolderId);
+
+    if (parentFolder?._parentFolder) {
+      throw new c
+    }
+  }
+}
+
+async function getFolder(folderId) {
+  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId)})
 }
