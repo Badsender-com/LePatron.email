@@ -69,6 +69,9 @@ export default {
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
+    hasAccess() {
+      return this.workspace?.hasAccess || false;
+    },
   },
   watchQuery: ['wid'],
   methods: {
@@ -114,6 +117,16 @@ export default {
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item class="justify-center">
+          <v-btn
+            class="my-4 new-mail-button"
+            color="primary"
+            :disabled="!hasAccess"
+            :to="`/mailings/new?wid=${$route.query.wid}`"
+          >
+            Nouveau
+          </v-btn>
+        </v-list-item>
       </v-list>
       <workspace-tree />
     </template>
@@ -130,3 +143,8 @@ export default {
     </v-card>
   </bs-layout-left-menu>
 </template>
+<style>
+.new-mail-button {
+  width: 90%;
+}
+</style>
