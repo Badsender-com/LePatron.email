@@ -21,6 +21,7 @@ module.exports = {
   renameMailing,
   deleteOne,
   copyMailing,
+  moveMailing
 };
 
 async function findMailings(query) {
@@ -103,6 +104,10 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
+async function moveMailing(mailing, workspace) {
+  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailing.id) }, { _workspace: workspace})
+}
+
 function applyFilters(query) {
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
     query.user,
@@ -115,3 +120,4 @@ function applyFilters(query) {
     _workspace: query.workspaceId,
   };
 }
+

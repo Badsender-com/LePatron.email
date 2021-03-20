@@ -25,6 +25,7 @@ module.exports = {
   readMosaico: asyncHandler(readMosaico),
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
+  move: asyncHandler(move),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -172,6 +173,56 @@ async function readMosaico(req, res) {
   if (!mailingForMosaico) throw new createError.NotFound();
 
   res.json(mailingForMosaico);
+}
+
+/**
+ * @api {post} /mailings/:mailingId/move mailing move
+ * @apiPermission user
+ * @apiName MoveMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiParam (Body) {String} workspaceId
+ *
+ * @apiUse mailings
+ */
+
+async function move(req, res) {
+  const { mailingId } = req.params;
+  const { user } = req;
+  const { workspaceId } = req.body;
+
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+  }
+
+  const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (
+    sourceWorkspace.group.toString() !== user.group.id ||
+    destinationWorkspace.group.toString() !== user.group.id
+  ) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (!user.isGroupAdmin &&
+      !(workspaceService.workspaceContainsUser(sourceWorkspace, user) && workspaceService.workspaceContainsUser(destinationWorkspace, user))
+  ) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_MOVE);
+  }
+
+  const moveResponse = await mailingService.moveMailing(mailing, destinationWorkspace);
+
+  if (moveResponse.ok !== 1) {
+    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+  }
+
+  res.status(204).send();
+
 }
 
 /**
