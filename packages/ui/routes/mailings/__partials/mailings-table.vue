@@ -8,10 +8,18 @@ import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsMailingsActionsDropdown from './mailings-actions-dropdown';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
 const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDelete'];
+
+const TABLE_ACTIONS = [
+  'actionCopyMail',
+  'actionTransfer',
+  'actionRename',
+  'actionDelete',
+];
 
 export default {
   name: 'MailingsTable',
@@ -19,6 +27,7 @@ export default {
     BsMailingsModalRename,
     BsModalConfirmForm,
     ModalCopyMail,
+    BsMailingsActionsDropdown,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -35,6 +44,9 @@ export default {
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    tableActions() {
+      return TABLE_ACTIONS;
+    },
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
@@ -71,6 +83,11 @@ export default {
         },
         { text: this.$t('global.createdAt'), value: 'createdAt' },
         { text: this.$t('global.updatedAt'), value: 'updatedAt' },
+        {
+          text: this.$t('global.actions'),
+          value: 'actions',
+          align: 'center',
+        },
         {
           text: this.$t('tableHeaders.mailings.rename'),
           value: 'actionRename',
@@ -267,6 +284,15 @@ export default {
       <template #item.updatedAt="{ item }">
         <span>{{ item.updatedAt | preciseDateTime }}</span>
       </template>
+      <template #item.actions="{ item }">
+        <bs-mailings-actions-dropdown
+          :actions="
+            tableActions.filter((action) => !hiddenCols.includes(action))
+          "
+          :item="item"
+        />
+      </template>
+
       <template #item.actionRename="{ item }">
         <v-btn
           :disabled="loading"
