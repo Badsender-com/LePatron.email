@@ -258,7 +258,12 @@ export default {
       show-select
     >
       <template #item.name="{ item }">
-        <a :href="`/editor/${item.id}`">{{ item.name }}</a>
+        <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
+          item.name
+        }}</a>
+        <template v-else>
+          {{ item.name }}
+        </template>
       </template>
       <template #item.userName="{ item }">
         <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
