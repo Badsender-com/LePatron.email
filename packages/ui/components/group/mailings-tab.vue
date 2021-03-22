@@ -3,7 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 
 export default {
-  name: `bs-group-mailings-tab`,
+  name: 'BsGroupMailingsTab',
   components: { BsMailingsAdminTable },
   data() {
     return { mailings: [], loading: false };
@@ -29,9 +29,15 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
+  <v-card
+    flat
+    tile
+  >
     <v-card-text>
-      <bs-mailings-admin-table :mailings="mailings" :loading="loading" />
+      <bs-mailings-admin-table
+        :mailings="mailings"
+        :loading="loading"
+      />
     </v-card-text>
   </v-card>
 </template>

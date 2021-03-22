@@ -41,6 +41,23 @@ Login with
 
 A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
 
+## Access to the database
+
+- You need MongoDB on your computer. If you haven't, you can install [MongoDB Compass](https://www.mongodb.com/try/download/compass)
+- Install the version you need
+- In a shell terminal, launch the following commands:
+
+```bash
+docker ps # Check if your database docker container is launched
+docker exec -it lepatron_mongo_container bash # Run command prompt on your docker container
+mongo # To see the mongo connection name
+```
+
+- The connection name looks something like `mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb`
+- Remove all the queries parameters to have : `mongodb://127.0.0.1:27017/`
+- Paste it in MongoDB Compass UI
+- You have access to your database
+
 ## Generate documentation
 
 ### Run application documentation

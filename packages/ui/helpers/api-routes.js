@@ -24,7 +24,9 @@ export function groupsItemTemplates(routeParams = {}) {
 export function groupsItemMailings(routeParams = {}) {
   return `/groups/${routeParams.groupId}/mailings`;
 }
-
+export function groupsWorkspaces(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/workspaces`;
+}
 /// ///
 // TEMPLATES
 /// ///
@@ -110,6 +112,10 @@ export function mailingsItemTransferToUser(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/transfer-to-user`;
 }
 
+export function copyMail() {
+  return '/mailings/copy';
+}
+
 /// ///
 // IMAGES
 /// ///
@@ -120,4 +126,24 @@ export function imagesItem(routeParams = {}) {
 }
 export function imagesPlaceholder(routeParams = {}) {
   return `${API_PREFIX}/images/placeholder/${routeParams.width}x${routeParams.height}.png`;
+}
+
+/// ///
+// WORKSPACEs
+/// ///
+
+export function workspacesByGroup() {
+  return '/workspaces';
+}
+
+export function workspaceByNameInGroup(workspaceName) {
+  return `/workspaces/name/${workspaceName}`;
+}
+
+export function deleteWorkspace(workspaceId) {
+  return `/workspaces/${workspaceId}`;
+}
+
+export function getWorkspace(workspaceId) {
+  return `/workspaces/${workspaceId}`;
 }

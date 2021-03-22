@@ -14,7 +14,6 @@ module.exports = {
     'plugin:vue/recommended',
     'prettier',
   ],
-  parser: 'babel-eslint',
   parserOptions: {
     parser: 'babel-eslint',
     ecmaVersion: 12,
@@ -23,7 +22,14 @@ module.exports = {
   plugins: ['vue'],
   rules: {
     'import/no-named-default': 'off',
+    'vue/max-attributes-per-line': 'off',
     'no-var': 'error',
+    'vue/valid-v-slot': [
+      'error',
+      {
+        allowModifiers: true,
+      },
+    ],
     quotes: ['error', 'single'],
     'no-unused-vars': [
       'error',

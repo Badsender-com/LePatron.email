@@ -15,6 +15,8 @@ const OAuthTokensSchema = require('../account/oauth-tokens.schema.js');
 const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
 
 const modelNames = require('../constant/model.names.js');
+const FolderSchema = require('../folder/folder.schema');
+const WorkspaceSchema = require('../workspace/workspace.schema');
 
 /// ///
 // EXPORTS
@@ -24,6 +26,8 @@ const Users = mongoose.model(modelNames.UserModel, UserSchema);
 const Templates = mongoose.model(modelNames.TemplateModel, TemplateSchema);
 const Mailings = mongoose.model(modelNames.MailingModel, MailingSchema);
 const Groups = mongoose.model(modelNames.GroupModel, GroupSchema);
+const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
+const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
 const CacheImages = mongoose.model(
   modelNames.CacheImageModel,
   CacheImageSchema
@@ -40,6 +44,8 @@ module.exports = {
   mongoose,
   // Compiled schema
   Users,
+  Folders,
+  Workspaces,
   Templates,
   Mailings,
   Groups,

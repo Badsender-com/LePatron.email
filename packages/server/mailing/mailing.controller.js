@@ -3,31 +3,33 @@
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
-const {
-  Mailings,
-  Templates,
-  Galleries,
-  Users,
-} = require('../common/models.common.js');
-const modelsUtils = require('../utils/model.js');
+const { Mailings, Galleries, Users } = require('../common/models.common.js');
 const sendTestMail = require('./send-test-mail.controller.js');
 const downloadZip = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
+const modelsUtils = require('../utils/model.js');
+
+const mailingService = require('./mailing.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
+const templateService = require('../template/template.service.js');
 
 module.exports = {
   list: asyncHandler(list),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMosaico: asyncHandler(readMosaico),
-  update: asyncHandler(update),
+  rename: asyncHandler(rename),
+  copy: asyncHandler(copy),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
   bulkDestroy: asyncHandler(bulkDestroy),
+  delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
   // already wrapped in asyncHandler
   sendTestMail,
@@ -46,12 +48,24 @@ module.exports = {
  * @apiSuccess {String[]} meta.tags all the tags used in those templates
  */
 
-async function list(req, res) {
-  const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {});
-  const [mailings, tags] = await Promise.all([
-    Mailings.findForApi(mailingQuery),
-    Mailings.findTags(mailingQuery),
-  ]);
+async function list(req, res, next) {
+  const { user, query } = req;
+  const { workspaceId } = query;
+
+  if (!workspaceId) {
+    return next(
+      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
+    );
+  }
+
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (workspace?.group.toString() !== user.group.id) {
+    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
+  }
+
+  const mailings = await mailingService.findMailings({ workspaceId, user });
+  const tags = await mailingService.findTags({ workspaceId, user });
 
   res.json({
     meta: { tags },
@@ -72,24 +86,39 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId } = req.body;
-  const query = modelsUtils.addGroupFilter(req.user, { _id: templateId });
-  const template = await Templates.findOne(query).select({ name: 1, _id: 1 });
-  if (!template) throw new createError.NotFound();
+  const { templateId, workspaceId } = req.body;
 
-  const initParameters = {
+  if (!workspaceId) {
+    throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
+  }
+
+  const template = await templateService.findOne({ templateId });
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (!template) {
+    throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  }
+
+  if (!workspace) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  const mailing = {
     // Always give a default name: needed for ordering & filtering
     name: simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
+    workspace: workspaceId,
   };
+
   // admin doesn't have valid user id & company
   if (!user.isAdmin) {
-    initParameters.userId = user.id;
-    initParameters.userName = user.name;
-    initParameters.group = user.group.id;
+    mailing.userId = user.id;
+    mailing.userName = user.name;
+    mailing.group = user.group.id;
   }
-  const newMailing = await Mailings.create(initParameters);
+
+  const newMailing = await mailingService.createMailing(mailing);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response
@@ -146,36 +175,50 @@ async function readMosaico(req, res) {
 }
 
 /**
- * @api {put} /mailings/:mailingId mailing update
+ * @api {patch} /mailings/:mailingId mailing rename
  * @apiPermission user
- * @apiName UpdateMailing
+ * @apiName RenameMailing
  * @apiGroup Mailings
  *
  * @apiParam {string} mailingId
  *
- * @apiParam (Body) {Object} mailing
- * @apiParam (Body) {String} mailing.name
+ * @apiParam (Body) {String} name
+ * @apiParam (Body) {String} workspaceId
  *
  * @apiUse mailings
  */
 
-async function update(req, res) {
+async function rename(req, res) {
   const { mailingId } = req.params;
-  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
-  const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+  const { user } = req;
+  const { name, workspaceId } = req.body;
 
-  mailing.name =
-    modelsUtils.normalizeString(req.body.name) ||
-    simpleI18n('default-mailing-name', req.user.lang);
-  await mailing.save();
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+  const mailing = await mailingService.findOne(mailingId);
 
-  const responseMailing = await Mailings.findOne(query);
-  // strangely toJSON doesn't render the data object
-  // • BUT there is no use send it outside of mosaico response which has it's own format
-  // • if needed we can cope with that by manually copy it in the response (response.data = mailing.data)
-  const response = responseMailing.toJSON();
-  res.json(response);
+  if (workspace?.group.toString() !== user.group.id) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
+    mailing?._workspace.toString() !== workspaceId
+  ) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
+  }
+
+  mailing.name = name;
+
+  const updateResponse = await mailingService.renameMailing(mailing);
+
+  if (updateResponse.ok !== 1) {
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_RENAME
+    );
+  }
+
+  res.send();
 }
 
 /**
@@ -188,6 +231,53 @@ async function update(req, res) {
  *
  * @apiUse mailings
  */
+
+/**
+ * @api {post} /mailings/:mailingId/copy mailing copy
+ * @apiPermission user
+ * @apiName CopyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ * @apiParam (Body) {String} workspaceId
+
+ * @apiUse mailings
+ */
+
+async function copy(req, res) {
+  const { user } = req;
+  const { workspaceId, mailingId } = req.body;
+
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
+  }
+
+  const sourceWorkspace = await workspaceService.getWorkspace(
+    mailing._workspace
+  );
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  if (
+    sourceWorkspace.group.toString() !== user.group.id ||
+    destinationWorkspace.group.toString() !== user.group.id
+  ) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (!user.isGroupAdmin) {
+    if (!workspaceService.workspaceContainsUser(destinationWorkspace, user)) {
+      throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_COPY);
+    }
+  }
+
+  await mailingService.copyMailing(mailing, destinationWorkspace);
+
+  res.status(204).send();
+}
 
 // TODO: while duplicating we should copy only the used images by the creation
 async function duplicate(req, res) {
@@ -358,6 +448,47 @@ async function bulkDestroy(req, res) {
     meta: { tags },
     items: safeMailingsIdList.map(String),
   });
+}
+
+/**
+ * @api {del} /mailings/:mailingId mailing delete
+ * @apiPermission user
+ * @apiName MailingDelete
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ */
+
+async function deleteMailing(req, res) {
+  const { mailingId } = req.params;
+  const { user } = req;
+  const { workspaceId } = req.body;
+
+  const workspace = await workspaceService.getWorkspace(workspaceId);
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (workspace?.group.toString() !== user.group.id) {
+    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (
+    (!user.isGroupAdmin &&
+      !workspaceService.workspaceContainsUser(workspace, user)) ||
+    mailing?._workspace.toString() !== workspaceId
+  ) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
+  }
+
+  const deleteResponse = await mailingService.deleteOne(mailing);
+
+  if (deleteResponse.ok !== 1) {
+    throw new createError.InternalServerError(
+      ERROR_CODES.FAILED_MAILING_DELETE
+    );
+  }
+
+  res.send();
 }
 
 /**

@@ -3,7 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsUsersTable from '~/components/users/table.vue';
 
 export default {
-  name: `bs-group-users-tab`,
+  name: 'BsGroupUsersTab',
   components: { BsUsersTable },
   data() {
     return { users: [], loading: false, hiddenCols: ['group'] };
@@ -41,13 +41,16 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
+  <v-card
+    flat
+    tile
+  >
     <v-card-text>
       <bs-users-table
         :users="users"
-        @update="updateUser"
         :loading="loading"
         :hidden-cols="hiddenCols"
+        @update="updateUser"
       />
     </v-card-text>
   </v-card>

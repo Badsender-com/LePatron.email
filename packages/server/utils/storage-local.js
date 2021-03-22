@@ -6,6 +6,7 @@ const path = require('path');
 const config = require('../node.config.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
+const logger = require('../utils/logger.js');
 
 // https://docs.nodejitsu.com/articles/advanced/streams/how-to-use-fs-create-read-stream/
 function streamImage(imageName) {
@@ -41,6 +42,7 @@ function listImages(prefix) {
 }
 
 function copyImages(oldPrefix, newPrefix) {
+  logger.info('copying images with local storage');
   return listImages(oldPrefix).then((files) => {
     files = files.map(copy);
     return Promise.all(files);

@@ -1,7 +1,13 @@
 'use strict';
 
+const { pick } = require('lodash');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
+const {
+  createWorkspace,
+  findWorkspaces,
+} = require('../workspace/workspace.service.js');
+const groupService = require('../group/group.service.js');
 
 const {
   Groups,
@@ -17,6 +23,7 @@ module.exports = {
   readUsers: asyncHandler(readUsers),
   readTemplates: asyncHandler(readTemplates),
   readMailings: asyncHandler(readMailings),
+  readWorkspaces: asyncHandler(readWorkspaces),
   update: asyncHandler(update),
 };
 
@@ -61,7 +68,10 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const newGroup = await Groups.create(req.body);
+  const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
+  const newGroup = await groupService.createGroup(req.body);
+  const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
+  await createWorkspace(workspaceParams);
   res.json(newGroup);
 }
 
@@ -155,6 +165,25 @@ async function readMailings(req, res) {
 }
 
 /**
+ * @api {get} /groups/:groupId/workspaces group workspaces
+ * @apiPermission admin
+ * @apiName GetGroupWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspaces[]} items list of workspaces
+ */
+
+async function readWorkspaces(req, res, next) {
+  const { groupId } = req.params;
+  if (!groupId) next(new createError.NotFound());
+  const workspaces = await findWorkspaces({ groupId });
+  return res.json({ items: workspaces });
+}
+
+/**
  * @api {put} /groups/:groupId group update
  * @apiPermission admin
  * @apiName UpdateGroup
@@ -181,9 +210,18 @@ async function readMailings(req, res) {
  */
 
 async function update(req, res) {
-  const { groupId } = req.params;
-  const updatedGroup = await Groups.findByIdAndUpdate(groupId, req.body, {
-    runValidators: true,
-  });
-  res.json(updatedGroup);
+  const { user } = req;
+
+  let groupToUpdate = {
+    id: req.params.groupId,
+    ...req.body,
+  };
+
+  if (user.isGroupAdmin) {
+    groupToUpdate = pick(groupToUpdate, ['name', 'id']);
+  }
+
+  await groupService.updateGroup(groupToUpdate);
+
+  res.send();
 }

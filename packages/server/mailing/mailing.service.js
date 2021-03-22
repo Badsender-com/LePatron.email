@@ -1,60 +1,117 @@
 'use strict';
 
-const { extend, pick } = require('lodash');
-const chalk = require('chalk');
-const nodemailer = require('nodemailer');
-const nodemailerSendgrid = require('nodemailer-sendgrid');
-const wellknown = require('nodemailer-wellknown');
-const createError = require('http-errors');
-
-const config = require('../node.config.js');
-
-let mailConfig = config.emailTransport;
-if (mailConfig.service) {
-  mailConfig = extend({}, mailConfig, wellknown(mailConfig.service));
-  delete mailConfig.service;
-}
-const transporter = nodemailer.createTransport(
-  config.isDev
-    ? config.emailTransport
-    : nodemailerSendgrid({
-        apiKey: config.emailTransport.apiKey,
-      })
-);
-
-const mailReady = transporter.verify();
-
-// mailReady
-//   .then(() => {
-//     console.log(chalk.green('[SERVICES] EMAIL transport creation – SUCCESS'))
-//   })
-//   .catch(err => {
-//     console.log(chalk.red('[SERVICES] EMAIL transport creation – ERROR'))
-//     console.trace(err)
-//   })
-
-function send(options) {
-  const mailOptions = extend({}, options, pick(config.emailOptions, ['from']));
-  return new Promise(function (resolve, reject) {
-    transporter
-      .sendMail(mailOptions)
-      .then(function (info) {
-        console.log(chalk.green('email send to', info.accepted));
-        resolve(info);
-      })
-      .catch(function (err) {
-        console.log(chalk.red('email error'));
-        const message =
-          err.code === 'ECONNREFUSED'
-            ? 'smtp connection failed'
-            : 'email error';
-        reject(createError(500, message));
-      });
-  });
-}
+const { omit } = require('lodash');
+const {
+  Mailings,
+  Workspaces,
+  Galleries,
+} = require('../common/models.common.js');
+const modelsUtils = require('../utils/model.js');
+const fileManager = require('../common/file-manage.service.js');
+const logger = require('../utils/logger.js');
+const mongoose = require('mongoose');
+const ERROR_CODES = require('../constant/error-codes.js');
+const { NotFound } = require('http-errors');
 
 module.exports = {
-  transporter,
-  mailReady,
-  send,
+  createMailing,
+  findMailings,
+  findTags,
+  findOne,
+  renameMailing,
+  deleteOne,
+  copyMailing,
 };
+
+async function findMailings(query) {
+  const mailingQuery = applyFilters(query);
+
+  return Mailings.find(mailingQuery);
+}
+
+async function findTags(query) {
+  const mailingQuery = applyFilters(query);
+
+  return Mailings.findTags(mailingQuery);
+}
+
+async function findOne(mailingId) {
+  return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
+}
+
+async function createMailing(mailing) {
+  if (
+    !mailing?.workspace ||
+    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
+  ) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  return Mailings.create(mailing);
+}
+
+async function copyMailing(mailing, destinationWorkspace) {
+  if (
+    !Workspaces.exists({
+      _id: mongoose.Types.ObjectId(destinationWorkspace.id),
+    })
+  ) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  const mailingProperties = omit(mailing, ['_id', 'createdAt', 'updatedAt']);
+
+  const copy = {
+    ...mailingProperties,
+    workspace: destinationWorkspace.id,
+  };
+
+  const copiedMailing = await Mailings.create(copy);
+  const gallery = await Galleries.findOne({
+    creationOrWireframeId: mailing._id,
+  });
+
+  await fileManager.copyImages(
+    mailing._id?.toString(),
+    copiedMailing._id?.toString()
+  );
+  await copiedMailing.save();
+
+  try {
+    if (gallery) {
+      gallery.duplicate(copiedMailing._id).save();
+    }
+  } catch (error) {
+    logger.warn(
+      `MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`
+    );
+  }
+}
+
+async function renameMailing(mailing) {
+  if (
+    !mailing?.workspace ||
+    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
+  ) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  const { id, name } = mailing;
+
+  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(id) }, { name });
+}
+
+async function deleteOne(mailing) {
+  return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
+}
+
+function applyFilters(query) {
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
+    query.user,
+
+    {}
+  );
+
+  return {
+    ...mailingQueryStrictGroup,
+    _workspace: query.workspaceId,
+  };
+}

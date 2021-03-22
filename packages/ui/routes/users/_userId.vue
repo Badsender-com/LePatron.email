@@ -11,26 +11,11 @@ import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
 
 export default {
-  name: `bs-page-user`,
+  name: 'BsPageUser',
   components: { BsUserMenu, BsUserForm, BsMailingsAdminTable, BsUserActions },
   mixins: [mixinPageTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
-  },
-  head() {
-    return { title: this.title };
-  },
-  data() {
-    return {
-      user: {},
-      mailings: [],
-      loading: false,
-    };
-  },
-  computed: {
-    title() {
-      return `${this.$tc('global.user', 1)} – ${this.user.name}`;
-    },
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -44,6 +29,21 @@ export default {
       console.log(error);
     }
   },
+  data() {
+    return {
+      user: {},
+      mailings: [],
+      loading: false,
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+  computed: {
+    title() {
+      return `${this.$tc('global.user', 1)} – ${this.user.name}`;
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateUser() {
@@ -51,16 +51,16 @@ export default {
       const { params } = $route;
       try {
         this.loading = true;
-        const user = await $axios.$put(apiRoutes.usersItem(params), this.user);
+        await $axios.$put(apiRoutes.usersItem(params), this.user);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -92,7 +92,7 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-user-menu
         :user="user"
         :loading="loading"
@@ -119,9 +119,9 @@ export default {
       </v-card-text>
     </v-card>
     <bs-user-actions
-      :user="user"
-      v-model="loading"
       ref="userActions"
+      v-model="loading"
+      :user="user"
       @update="updateUserFromActions"
     />
   </bs-layout-left-menu>
