@@ -135,7 +135,7 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'The checkbox have to be checked',
+      checkBoxError: 'The checkbox has to be checked',
       inputError: 'The name is required',
     },
   },
