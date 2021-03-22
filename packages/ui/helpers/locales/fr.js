@@ -141,7 +141,7 @@ export default {
       informations: 'Informations',
     },
     mailingTab: {
-      confirmationField: 'Tapez le nom du l\'email pour confirmer',
+      confirmationField: 'Tapez le nom de l\'email pour confirmer',
       deleteWarningMessage:
         'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
       deleteSuccessful: 'Email supprimé',
