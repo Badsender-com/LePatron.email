@@ -132,8 +132,8 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'Vous devez accepter pour continuer!',
-      inputError: 'Vous devez entrer le nom',
+      checkBoxError: 'La case doit être cochée',
+      inputError: 'Le nom est requis',
     },
   },
   groups: {
