@@ -201,11 +201,7 @@ async function move(req, res) {
     throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
   }
 
-  const moveResponse = await mailingService.moveMailing(user, mailing, workspaceId);
-
-  if (moveResponse.ok !== 1) {
-    throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
-  }
+  await mailingService.moveMailing(user, mailing, workspaceId);
 
   res.status(204).send();
 }
