@@ -11,7 +11,10 @@ const fileManager = require('../common/file-manage.service.js');
 const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const { NotFound, Forbidden } = require('http-errors');
+
+const workspaceService = require('../workspace/workspace.service.js');
+const userService = require('../user/user.service.js');
 
 module.exports = {
   createMailing,
@@ -104,8 +107,27 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
-async function moveMailing(mailing, workspace) {
-  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailing.id) }, { _workspace: workspace})
+async function moveMailing(user, mailing, workspaceId) {
+
+  const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  const workspaces = [sourceWorkspace, destinationWorkspace];
+
+  workspaces.forEach(function(workspace) {
+    if (!workspaceService.isWorkspaceInGroup(workspace, user.group.id)) {
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+
+    if(!userService.isUserWorkspaceMember(user, workspace)){
+      throw new Forbidden(ERROR_CODES.FORBIDDEN_MAILING_MOVE);
+    }
+  });
+
+  return Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailing.id) },
+    { _workspace: destinationWorkspace }
+  );
 }
 
 function applyFilters(query) {
