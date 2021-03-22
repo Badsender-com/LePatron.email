@@ -27,7 +27,7 @@ export default {
         },
       },
     },
-    copyMail: 'Copie du mail',
+    copyMail: 'Copie de l\'email',
     copyMailAction: 'Créer une copie',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
@@ -38,14 +38,14 @@ export default {
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
     newTag: 'Ajouter un tag',
-    backToMails: 'Retour aux mails',
+    backToMails: 'Retour aux emails',
     backToGroups: 'Retour aux groupes',
     group: 'Groupe | Groupes',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
     workspace: 'Workspace',
     newWorkspace: 'Ajouter un workspace',
-    newMail: 'Nouveau email',
+    newMail: 'Nouvel email',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
@@ -141,10 +141,10 @@ export default {
       informations: 'Informations',
     },
     mailingTab: {
-      confirmationField: 'Tapez le nom du mailing pour confirmer',
+      confirmationField: 'Tapez le nom de l\'email pour confirmer',
       deleteWarningMessage:
-        'Vous êtes sur le point de supprimer le mailing "<strong>{name}</strong>". Cette action est irréversible.',
-      deleteSuccessful: 'Mailing supprimé',
+        'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteSuccessful: 'Email supprimé',
     },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
@@ -177,7 +177,7 @@ export default {
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
       'Veuillez choisir l\'emplacement de la nouvelle copie',
-    copyMailSuccessful: 'Mail copié',
+    copyMailSuccessful: 'Email copié',
   },
   template: {
     noId: 'Aucun ID',
@@ -233,7 +233,7 @@ export default {
       ftpDownload: 'Téléchargement FTP',
     },
     users: {
-      passwordMail: 'Mail de mot de passe',
+      passwordMail: 'Email de mot de passe',
     },
     templates: {
       markup: 'Markup?',
