@@ -5,18 +5,22 @@ const ACTIONS_DETAILS = {
   actionRename: {
     text: 'tableHeaders.mailings.rename',
     icon: 'settings',
+    emit: 'rename-action',
   },
   actionTransfer: {
     text: 'tableHeaders.mailings.transfer',
     icon: 'settings',
+    emit: 'transfer-action',
   },
   actionDelete: {
     text: 'global.delete',
     icon: 'settings',
+    emit: 'delete-action',
   },
   actionCopyMail: {
     text: 'global.copyMail',
     icon: 'settings',
+    emit: 'copy-mail-action',
   },
 };
 export default {
@@ -26,17 +30,26 @@ export default {
   },
   props: {
     actions: { type: Array, default: () => [] },
+    mailInformation: { type: Object, default: () => {} },
   },
   computed: {
     actionsDetails() {
       return this.actions.map((action) => ({
         name: this.$t(ACTIONS_DETAILS[action].text),
         icon: ACTIONS_DETAILS[action].icon,
+        emit: ACTIONS_DETAILS[action].emit,
       }));
     },
   },
   mounted() {
     console.log({ actions: this.actions });
+  },
+  methods: {
+    handleDropDownAction(emit) {
+      this.$emit(emit, this.mailInformation);
+      console.log({ emit: emit || 'item not found' });
+      console.log({ mailInformation: this.mailInformation });
+    },
   },
 };
 </script>
@@ -54,6 +67,7 @@ export default {
         :key="action.name"
         :name="action.name"
         :icon="action.icon"
+        :on-click="() => handleDropDownAction(action.emit)"
       />
     </v-list>
   </v-menu>

@@ -4,12 +4,13 @@ export default {
   props: {
     name: { type: String, default: () => '' },
     icon: { type: String, default: () => '' },
+    onClick: { type: Function, default: () => () => {} },
   },
 };
 </script>
 
 <template>
-  <v-list-item nuxt link :to="`/mailings`">
+  <v-list-item nuxt @click="onClick()">
     <v-list-item-avatar>
       <v-btn color="primary" icon>
         <v-icon>{{ icon }}</v-icon>

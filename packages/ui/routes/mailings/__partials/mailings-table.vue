@@ -289,7 +289,11 @@ export default {
           :actions="
             tableActions.filter((action) => !hiddenCols.includes(action))
           "
-          :item="item"
+          :mail-information="item"
+          @rename-action="openRenameModal"
+          @transfer-action="transferMailing"
+          @delete-action="displayDeleteModal"
+          @copy-mail-action="openCopyMail"
         />
       </template>
 
