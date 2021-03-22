@@ -4,6 +4,7 @@ import { mapMutations, mapGetters } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
+import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
 
 import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
@@ -23,6 +24,7 @@ export default {
     BsMailingsModalRename,
     BsModalConfirmForm,
     ModalCopyMail,
+    ModalMoveMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -110,6 +112,13 @@ export default {
           class: 'table-column-action',
           sortable: false,
         },
+        {
+          text: this.$t('global.moveMail'),
+          value: 'actionMoveMail',
+          align: 'center',
+          class: 'table-column-action',
+          sortable: false,
+        },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
     tableOptions() {
@@ -148,8 +157,17 @@ export default {
         id: mailing.id,
       });
     },
+    openMoveMail(mailing) {
+      this.$refs.moveMailDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
     closeCopyMailDialog() {
       this.$refs.copyMailDialog.close();
+    },
+    closeMoveMailDialog() {
+      this.$refs.moveMailDialog.close();
     },
     closeDelete() {
       this.$refs.deleteDialog.close();
@@ -234,6 +252,25 @@ export default {
         });
       }
       this.closeCopyMailDialog();
+    },
+    // FIXME: Remove underscores when variables will be used
+    async moveMail({ _destinationWorkspaceId, _mailingId }) {
+      try {
+        // TODO: Add the backend logic
+        await new Promise((resolve) => {
+          setTimeout(() => resolve(), 500);
+        });
+        this.showSnackbar({
+          text: this.$t('mailings.moveMailSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.closeMoveMailDialog();
     },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
@@ -321,6 +358,17 @@ export default {
           <v-icon>content_copy</v-icon>
         </v-btn>
       </template>
+      <template #item.actionMoveMail="{ item }">
+        <v-btn
+          :disabled="loading"
+          icon
+          color="primary"
+          @click="openMoveMail(item)"
+        >
+          <!-- TODO: Replace this icon with the good one -->
+          <v-icon>content_copy</v-icon>
+        </v-btn>
+      </template>
       <template #item.actionDelete="{ item }">
         <v-btn
           :disabled="loading"
@@ -353,5 +401,11 @@ export default {
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
+    <modal-move-mail ref="moveMailDialog" @confirm="moveMail">
+      <p
+        class="black--text"
+        v-html="$t('mailings.moveMailConfirmationMessage')"
+      />
+    </modal-move-mail>
   </div>
 </template>

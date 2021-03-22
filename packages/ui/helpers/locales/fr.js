@@ -29,6 +29,7 @@ export default {
     },
     copyMail: 'Copie de l\'email',
     copyMailAction: 'Créer une copie',
+    moveMail: 'Déplacer l\'email',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -179,6 +180,9 @@ export default {
     copyMailConfirmationMessage:
       'Veuillez choisir l\'emplacement de la nouvelle copie',
     copyMailSuccessful: 'Email copié',
+    moveMailConfirmationMessage:
+      'Veuillez choisir l\'emplacement de destination',
+    moveMailSuccessful: 'Email déplacé',
   },
   template: {
     noId: 'Aucun ID',
