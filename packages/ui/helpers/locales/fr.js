@@ -132,7 +132,8 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'La case doit être cochée',
+      checkBoxError:
+        'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
       inputError: 'Le nom est requis',
     },
   },

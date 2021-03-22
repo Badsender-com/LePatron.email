@@ -135,7 +135,8 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'The checkbox has to be checked',
+      checkBoxError:
+        'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
     },
   },
