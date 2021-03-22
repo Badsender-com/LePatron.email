@@ -4,22 +4,22 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 const ACTIONS_DETAILS = {
   actionRename: {
     text: 'tableHeaders.mailings.rename',
-    icon: 'settings',
+    icon: 'title',
     emit: 'rename-action',
   },
   actionTransfer: {
     text: 'tableHeaders.mailings.transfer',
-    icon: 'settings',
+    icon: 'forward',
     emit: 'transfer-action',
   },
   actionDelete: {
     text: 'global.delete',
-    icon: 'settings',
+    icon: 'delete',
     emit: 'delete-action',
   },
   actionCopyMail: {
     text: 'global.copyMail',
-    icon: 'settings',
+    icon: 'content_copy',
     emit: 'copy-mail-action',
   },
 };
@@ -41,14 +41,9 @@ export default {
       }));
     },
   },
-  mounted() {
-    console.log({ actions: this.actions });
-  },
   methods: {
     handleDropDownAction(emit) {
       this.$emit(emit, this.mailInformation);
-      console.log({ emit: emit || 'item not found' });
-      console.log({ mailInformation: this.mailInformation });
     },
   },
 };

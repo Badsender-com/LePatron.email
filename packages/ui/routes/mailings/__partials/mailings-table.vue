@@ -15,10 +15,10 @@ const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDelete'];
 
 const TABLE_ACTIONS = [
-  'actionCopyMail',
-  'actionTransfer',
   'actionRename',
+  'actionTransfer',
   'actionDelete',
+  'actionCopyMail',
 ];
 
 export default {
@@ -87,34 +87,6 @@ export default {
           text: this.$t('global.actions'),
           value: 'actions',
           align: 'center',
-        },
-        {
-          text: this.$t('tableHeaders.mailings.rename'),
-          value: 'actionRename',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('tableHeaders.mailings.transfer'),
-          value: 'actionTransfer',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.copyMail'),
-          value: 'actionCopyMail',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
@@ -295,47 +267,6 @@ export default {
           @delete-action="displayDeleteModal"
           @copy-mail-action="openCopyMail"
         />
-      </template>
-
-      <template #item.actionRename="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="openRenameModal(item)"
-        >
-          <v-icon>title</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionTransfer="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="transferMailing(item)"
-        >
-          <v-icon>forward</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionCopyMail="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="openCopyMail(item)"
-        >
-          <v-icon>content_copy</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionDelete="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="displayDeleteModal(item)"
-        >
-          <v-icon>delete</v-icon>
-        </v-btn>
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
