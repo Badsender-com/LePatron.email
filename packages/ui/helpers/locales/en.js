@@ -135,8 +135,9 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'You must agree to continue!',
-      inputError: 'You need to provide the name',
+      checkBoxError:
+        'I understand that workspace\'s emails and folders will be removed too',
+      inputError: 'The name is required',
     },
   },
   groups: {

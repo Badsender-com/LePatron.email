@@ -14,7 +14,7 @@ module.exports = {
   findWorkspaces,
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
-  workspaceContainsUser
+  workspaceContainsUser,
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -104,6 +104,9 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'folders',
       populate: { path: 'childFolders' },
+    })
+    .populate({
+      path: 'mails',
     });
   return workspaces;
 }

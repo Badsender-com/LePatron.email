@@ -132,8 +132,9 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'Vous devez accepter pour continuer!',
-      inputError: 'Vous devez entrer le nom',
+      checkBoxError:
+        'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
+      inputError: 'Le nom est requis',
     },
   },
   groups: {
