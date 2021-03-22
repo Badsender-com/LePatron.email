@@ -32,14 +32,14 @@ export default {
     actions: { type: Array, default: () => [] },
     mailInformation: { type: Object, default: () => {} },
   },
-  computed: {
-    actionsDetails() {
-      return this.actions.map((action) => ({
+  data() {
+    return {
+      actionsDetails: this.actions.map((action) => ({
         name: this.$t(ACTIONS_DETAILS[action].text),
         icon: ACTIONS_DETAILS[action].icon,
         emit: ACTIONS_DETAILS[action].emit,
-      }));
-    },
+      })),
+    };
   },
   methods: {
     handleDropDownAction(emit) {

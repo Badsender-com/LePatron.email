@@ -40,13 +40,11 @@ export default {
       loading: false,
       dialogRename: false,
       selectedMailing: {},
+      tableActions: TABLE_ACTIONS,
     };
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
-    tableActions() {
-      return TABLE_ACTIONS;
-    },
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
