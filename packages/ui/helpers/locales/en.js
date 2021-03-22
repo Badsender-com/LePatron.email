@@ -135,8 +135,8 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'You must agree to continue!',
-      inputError: 'You need to provide the name',
+      checkBoxError: 'The checkbox has to be checked',
+      inputError: 'The name is required',
     },
   },
   groups: {

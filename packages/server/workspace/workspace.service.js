@@ -105,6 +105,9 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'folders',
       populate: { path: 'childFolders' },
+    })
+    .populate({
+      path: 'mails',
     });
   return workspaces;
 }
