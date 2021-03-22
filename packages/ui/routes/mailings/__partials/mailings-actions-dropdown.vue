@@ -1,6 +1,24 @@
 <script>
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 
+const ACTIONS_DETAILS = {
+  actionRename: {
+    text: 'tableHeaders.mailings.rename',
+    icon: 'settings',
+  },
+  actionTransfer: {
+    text: 'tableHeaders.mailings.transfer',
+    icon: 'settings',
+  },
+  actionDelete: {
+    text: 'global.delete',
+    icon: 'settings',
+  },
+  actionCopyMail: {
+    text: 'global.copyMail',
+    icon: 'settings',
+  },
+};
 export default {
   name: 'BsMailingsActionsDropdown',
   components: {
@@ -8,6 +26,14 @@ export default {
   },
   props: {
     actions: { type: Array, default: () => [] },
+  },
+  computed: {
+    actionsDetails() {
+      return this.actions.map((action) => ({
+        name: this.$t(ACTIONS_DETAILS[action].text),
+        icon: ACTIONS_DETAILS[action].icon,
+      }));
+    },
   },
   mounted() {
     console.log({ actions: this.actions });
@@ -23,7 +49,12 @@ export default {
       </v-btn>
     </template>
     <v-list activable>
-      <bs-mailings-actions-dropdown-item />
+      <bs-mailings-actions-dropdown-item
+        v-for="action in actionsDetails"
+        :key="action.name"
+        :name="action.name"
+        :icon="action.icon"
+      />
     </v-list>
   </v-menu>
 </template>

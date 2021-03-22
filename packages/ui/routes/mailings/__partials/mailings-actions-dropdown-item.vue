@@ -1,7 +1,10 @@
 <script>
 export default {
   name: 'BsMailingsActionsDropdownItem',
-  props: {},
+  props: {
+    name: { type: String, default: () => '' },
+    icon: { type: String, default: () => '' },
+  },
 };
 </script>
 
@@ -9,11 +12,11 @@ export default {
   <v-list-item nuxt link :to="`/mailings`">
     <v-list-item-avatar>
       <v-btn color="primary" icon>
-        <v-icon>edit</v-icon>
+        <v-icon>{{ icon }}</v-icon>
       </v-btn>
     </v-list-item-avatar>
     <v-list-item-title>
-      {{ $t('global.edit') }}
+      {{ name }}
     </v-list-item-title>
   </v-list-item>
 </template>
