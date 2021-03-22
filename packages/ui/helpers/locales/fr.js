@@ -27,7 +27,7 @@ export default {
         },
       },
     },
-    copyMail: 'Copie du email',
+    copyMail: 'Copie de l\'email',
     copyMailAction: 'Créer une copie',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
