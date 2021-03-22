@@ -10,6 +10,7 @@ export default {
     confirmationInputLabel: { type: String, default: '' },
     confirmCheckBox: { type: Boolean, default: false },
     confirmCheckBoxMessage: { type: String, default: '' },
+    withInputConfirmation: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -54,6 +55,7 @@ export default {
         required
       />
       <v-text-field
+        v-if="withInputConfirmation"
         :rules="nameRule"
         :label="confirmationInputLabel"
         required
