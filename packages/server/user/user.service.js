@@ -4,13 +4,11 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const { Users, Mailings } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
   findByGroupId: asyncHandler(findByGroupId),
-  isUserWorkspaceMember
 };
 
 async function createUser(userParams) {
@@ -56,11 +54,4 @@ async function findByGroupId(groupId) {
     _company: mongoose.Types.ObjectId(groupId),
   });
   return users;
-}
-
-function isUserWorkspaceMember(user, workspace) {
-  if (user.isGroupAdmin) {
-    return true;
-  }
-  return workspaceService.workspaceContainsUser(workspace, user);
 }

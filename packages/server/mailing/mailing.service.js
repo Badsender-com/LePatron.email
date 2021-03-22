@@ -14,7 +14,6 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound, Forbidden } = require('http-errors');
 
 const workspaceService = require('../workspace/workspace.service.js');
-const userService = require('../user/user.service.js');
 
 module.exports = {
   createMailing,
@@ -115,13 +114,7 @@ async function moveMailing(user, mailing, workspaceId) {
   const workspaces = [sourceWorkspace, destinationWorkspace];
 
   workspaces.forEach(function(workspace) {
-    if (!workspaceService.isWorkspaceInGroup(workspace, user.group.id)) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
-
-    if(!userService.isUserWorkspaceMember(user, workspace)){
-      throw new Forbidden(ERROR_CODES.FORBIDDEN_MAILING_MOVE);
-    }
+    workspaceService.doesUserHaveWriteAccess(user, workspace)
   });
 
   return Mailings.updateOne(
