@@ -11,7 +11,9 @@ const fileManager = require('../common/file-manage.service.js');
 const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const { NotFound, InternalServerError } = require('http-errors');
+
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   createMailing,
@@ -21,6 +23,7 @@ module.exports = {
   renameMailing,
   deleteOne,
   copyMailing,
+  moveMailing
 };
 
 async function findMailings(query) {
@@ -103,6 +106,26 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
+async function moveMailing(user, mailing, workspaceId) {
+
+  const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+  workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+
+  const moveResponse = await Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailing.id) },
+    { _workspace: destinationWorkspace }
+  );
+
+  // update queries return objects with format { n, nModified, ok }
+  // ok != 1 indicates a failure
+  if (moveResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+  }
+}
+
 function applyFilters(query) {
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
     query.user,
@@ -115,3 +138,4 @@ function applyFilters(query) {
     _workspace: query.workspaceId,
   };
 }
+
