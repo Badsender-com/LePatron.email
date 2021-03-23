@@ -229,19 +229,7 @@ async function moveMany(req, res) {
     throw new createError.BadRequest();
   }
 
-  const mailings = [];
-
-  for (const mailingId of mailingsIds) {
-    const mailingFromDb = await mailingService.findOne(mailingId);
-
-    if (!mailingFromDb._workspace) {
-      throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
-    }
-
-    mailings.push(mailingFromDb);
-  }
-
-  await mailingService.moveManyMailings(user, mailings, workspaceId);
+  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
 
   res.status(204).send();
 }

@@ -11,7 +11,7 @@ const fileManager = require('../common/file-manage.service.js');
 const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound, InternalServerError } = require('http-errors');
+const { NotFound, InternalServerError, UnprocessableEntity } = require('http-errors');
 
 const workspaceService = require('../workspace/workspace.service.js');
 
@@ -24,7 +24,8 @@ module.exports = {
   deleteOne,
   copyMailing,
   moveMailing,
-  moveManyMailings
+  moveManyMailings,
+  findAllIn
 };
 
 async function findMailings(query) {
@@ -127,9 +128,42 @@ async function moveMailing(user, mailing, workspaceId) {
   }
 }
 
-async function moveManyMailings(user, mailings, workspaceId) {
-  for (const mailing of mailings) {
-    await moveMailing(user, mailing, workspaceId);
+async function findAllIn(mailingsIds) {
+  const mailings = await Mailings.find(
+      { _id : { $in: mailingsIds.map(id => mongoose.Types.ObjectId(id)) } }
+  )
+
+  if (mailings.length !== mailingsIds.length) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND)
+  }
+
+  return mailings;
+}
+
+async function moveManyMailings(user, mailingsIds, workspaceId) {
+
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+  workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+
+  const mailings = await findAllIn(mailingsIds);
+
+  for(const mailing of mailings) {
+
+    if (!mailing._workspace) {
+      throw new UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    }
+
+    const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+  }
+
+  const moveResponse = await Mailings.updateMany(
+      { _id: { $in: mailings.map(mailing => mailing.id) } },
+      { _workspace: destinationWorkspace }
+  )
+
+  if (moveResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
   }
 }
 
