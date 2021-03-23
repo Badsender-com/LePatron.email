@@ -26,6 +26,7 @@ module.exports = {
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
   move: asyncHandler(move),
+  moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -192,16 +193,45 @@ async function move(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { workspaceId }
+    body: { workspaceId },
   } = req;
 
   const mailing = await mailingService.findOne(mailingId);
 
   if (!mailing._workspace) {
-    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
   }
 
   await mailingService.moveMailing(user, mailing, workspaceId);
+
+  res.status(204).send();
+}
+
+/**
+ * @api {post} /mailings/moveMany move multiple mailings from one workspace to another
+ * @apiPermission user
+ * @apiName MoveManyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {Array} mailingsIds
+ *
+ * @apiUse mailings
+ */
+
+async function moveMany(req, res) {
+  const {
+    user,
+    body: { workspaceId, mailingsIds },
+  } = req;
+
+  if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
+    throw new createError.BadRequest();
+  }
+
+  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
 
   res.status(204).send();
 }

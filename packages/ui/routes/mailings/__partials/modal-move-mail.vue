@@ -27,7 +27,7 @@ export default {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-    valid() {
+    isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
         this.selectedLocation?.id !== this.currentWorkspace?.id
@@ -56,7 +56,7 @@ export default {
   },
   methods: {
     submit() {
-      if (this.valid) {
+      if (this.isValidToBeMoved) {
         this.close();
         this.$emit('confirm', {
           destinationWorkspaceId: this.selectedLocation?.id,
@@ -125,7 +125,7 @@ export default {
       <v-btn color="primary" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!valid" color="primary" @click="submit">
+      <v-btn :disabled="!isValidToBeMoved" color="primary" @click="submit">
         {{ moveLabelButton }}
       </v-btn>
     </v-card-actions>

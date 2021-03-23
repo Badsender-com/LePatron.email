@@ -121,7 +121,7 @@ export function moveMail(routeParams = {}) {
 }
 
 export function moveManyMails() {
-  return '/mailings/moveMany';
+  return '/mailings/move-many';
 }
 /// ///
 // IMAGES

@@ -40,7 +40,7 @@ export default {
     async moveManyMails({ destinationWorkspaceId, _ }) {
       try {
         await this.$axios.$post(moveManyMails(), {
-          mailings: this.mailingsSelection?.map((mail) => mail?.id),
+          mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
           workspaceId: destinationWorkspaceId,
         });
         this.$router.push({
@@ -56,7 +56,7 @@ export default {
           color: 'error',
         });
       }
-      this.closeMoveMailDialog();
+      this.closeMoveManyMailsDialog();
     },
   },
 };
