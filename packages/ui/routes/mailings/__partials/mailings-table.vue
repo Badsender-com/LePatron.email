@@ -11,9 +11,10 @@ import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 
-import { ACTIONS, ACTIONS_DETAILS } from '~/constants/mail';
+import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', ACTIONS.COPY_MAIL];
+const COLUMN_USERNAME = 'userName';
+const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [ACTIONS.RENAME, ACTIONS.DELETE];
 
