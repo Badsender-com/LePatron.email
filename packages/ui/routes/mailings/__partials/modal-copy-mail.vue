@@ -24,7 +24,7 @@ export default {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-    isValid() {
+    isValidToBeCopied() {
       return !!this.selectedLocation?.id;
     },
     mailName() {
@@ -45,7 +45,7 @@ export default {
   },
   methods: {
     submit() {
-      if (this.valid) {
+      if (this.isValidToBeCopied) {
         this.close();
         this.$emit('confirm', {
           workspaceId: this.selectedLocation?.id,
@@ -113,7 +113,7 @@ export default {
       <v-btn color="primary" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!valid" color="primary" @click="submit">
+      <v-btn :disabled="!isValidToBeCopied" color="primary" @click="submit">
         {{ $t('global.copyMailAction') }}
       </v-btn>
     </v-card-actions>
