@@ -22,6 +22,8 @@ export default {
       data: {},
       show: false,
       templates: [],
+      templatesIsLoading: true,
+      templatesIsError: false,
     };
   },
   mounted() {
@@ -55,11 +57,7 @@ export default {
           :label="$t(`global.name`)"
           name="new-mailing-name"
         />
-      </v-card-text>
-      <v-container fluid>
-        <p class="text-center display-1">
-          {{ $t(`mailings.creationNotice`) }}
-        </p>
+        <p>{{ $t(`mailings.creationNotice`) }}</p>
         <div class="page-mailings-new__templates">
           <template-card
             v-for="template in templates"
@@ -67,7 +65,7 @@ export default {
             :template="template"
           />
         </div>
-      </v-container>
+      </v-card-text>
       <v-divider />
       <v-card-actions>
         <v-spacer />
