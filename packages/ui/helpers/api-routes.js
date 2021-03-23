@@ -119,6 +119,10 @@ export function copyMail() {
 export function moveMail(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}/move`;
 }
+
+export function moveManyMails() {
+  return '/mailings/moveMany';
+}
 /// ///
 // IMAGES
 /// ///

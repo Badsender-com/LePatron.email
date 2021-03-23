@@ -10,6 +10,8 @@ export default {
   },
   props: {
     confirmationInputLabel: { type: String, default: '' },
+    confirmationTitleLabel: { type: String, default: '' },
+    isMovingManyMails: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -32,7 +34,12 @@ export default {
       );
     },
     mailName() {
-      return this.mail?.name;
+      return !this.isMovingManyMails ? this.mail?.name : '';
+    },
+    moveLabelButton() {
+      return !this.isMovingManyMails
+        ? this.$t('global.moveMail')
+        : this.$t('global.moveManyMail');
     },
   },
   async mounted() {
@@ -76,7 +83,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="moveMailDialog"
-    :title="`${this.$t('global.moveMail')}  ${mailName}`"
+    :title="`${confirmationTitleLabel} ${mailName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
   >
@@ -119,7 +126,7 @@ export default {
         {{ $t('global.cancel') }}
       </v-btn>
       <v-btn :disabled="!valid" color="primary" @click="submit">
-        {{ $t('global.moveMail') }}
+        {{ moveLabelButton }}
       </v-btn>
     </v-card-actions>
   </bs-modal-confirm>

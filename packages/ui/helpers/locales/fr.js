@@ -30,6 +30,7 @@ export default {
     copyMail: 'Copie de l\'email',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer l\'email',
+    moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -175,13 +176,14 @@ export default {
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
+    selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
+    moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
       'Veuillez choisir l\'emplacement de la nouvelle copie',
     copyMailSuccessful: 'Email copié',
-    moveMailConfirmationMessage:
-      'Veuillez choisir l\'emplacement de destination',
+    moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
   },
   template: {
