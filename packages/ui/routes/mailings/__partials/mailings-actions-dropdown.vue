@@ -1,12 +1,8 @@
 <script>
-import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
-import { ACTIONS_DETAILS } from '~/ui/constants/mail';
+import { ACTIONS_DETAILS } from '~/constants/mail';
 
 export default {
   name: 'BsMailingsActionsDropdown',
-  components: {
-    BsMailingsActionsDropdownItem,
-  },
   props: {
     actions: { type: Array, default: () => [] },
     mailInformation: { type: Object, default: () => {} },
@@ -36,13 +32,7 @@ export default {
       </v-btn>
     </template>
     <v-list activable>
-      <bs-mailings-actions-dropdown-item
-        v-for="action in actionsDetails"
-        :key="action.name"
-        :name="action.name"
-        :icon="action.icon"
-        :on-click="() => handleDropDownAction(action.emit)"
-      />
+      <slot name="dropDownItem" />
     </v-list>
   </v-menu>
 </template>

@@ -9,7 +9,9 @@ import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
-import { ACTIONS } from '~/ui/constants/mail';
+import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
+
+import { ACTIONS, ACTIONS_DETAILS } from '~/constants/mail';
 
 const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
@@ -29,6 +31,7 @@ export default {
     BsModalConfirmForm,
     ModalCopyMail,
     BsMailingsActionsDropdown,
+    BsMailingsActionsDropdownItem,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -94,6 +97,18 @@ export default {
         sortBy: ['updatedAt'],
         sortDesc: [true],
       };
+    },
+    filteredActions() {
+      return this.tableActions.filter(
+        (action) => !this.hiddenCols.includes(action)
+      );
+    },
+    actionsDropdown() {
+      return this.filteredActions.map((action) => ({
+        name: this.$t(ACTIONS_DETAILS[action].text),
+        icon: ACTIONS_DETAILS[action].icon,
+        emit: ACTIONS_DETAILS[action].emit,
+      }));
     },
   },
   watch: {
@@ -255,17 +270,17 @@ export default {
       <template #item.updatedAt="{ item }">
         <span>{{ item.updatedAt | preciseDateTime }}</span>
       </template>
-      <template #item.actions="{ item }">
-        <bs-mailings-actions-dropdown
-          :actions="
-            tableActions.filter((action) => !hiddenCols.includes(action))
-          "
-          :mail-information="item"
-          @rename-action="openRenameModal"
-          @transfer-action="transferMailing"
-          @delete-action="displayDeleteModal"
-          @copy-mail-action="openCopyMail"
-        />
+      <template #item.actions>
+        <bs-mailings-actions-dropdown>
+          <template #dropDownItem>
+            <bs-mailings-actions-dropdown-item
+              v-for="action in actionsDropdown"
+              :key="action.name"
+              :name="action.name"
+              :icon="action.icon"
+            />
+          </template>
+        </bs-mailings-actions-dropdown>
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
