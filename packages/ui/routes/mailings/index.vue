@@ -34,6 +34,8 @@ export default {
           }),
         ]);
 
+        console.log({ mailingsResponse });
+
         return {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,

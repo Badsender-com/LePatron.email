@@ -46,6 +46,7 @@ export default {
     mailings: { type: Array, default: () => [] },
     workspace: { type: Object, default: () => {} },
     mailingsSelection: { type: Array, default: () => [] },
+    tags: { type: Array, default: () => [] },
   },
   data() {
     return {
@@ -328,7 +329,7 @@ export default {
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
-    <bs-mailings-tags-menu ref="addTagsMenu" />
+    <bs-mailings-tags-menu ref="addTagsMenu" :tags="tags" />
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"

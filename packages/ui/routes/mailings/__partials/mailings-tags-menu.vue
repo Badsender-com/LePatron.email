@@ -1,14 +1,29 @@
 <script>
+const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
+const CHECKBOX_CHECKED = 'check_box';
 export default {
   name: 'BsMailingsTagsMenu',
+  props: {
+    tags: { type: Array, default: () => [] },
+  },
   data() {
     return {
       showTagMenu: false,
+      addedTags: [],
+      removedTags: [],
     };
   },
   computed: {
     tagsCheckboxList() {
-      return [];
+      return this.tags.map((tagName) => {
+        if (this.addedTags.includes(tagName)) {
+          return { name: tagName, checkIcon: CHECKBOX_CHECKED };
+        }
+        if (this.removedTags.includes(tagName)) {
+          return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
+        }
+        return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
+      });
     },
   },
   created() {},
@@ -19,7 +34,18 @@ export default {
     openMenu() {
       this.showTagMenu = true;
     },
-    onToggleTag() {},
+    toggleTag(tagCheckbox) {
+      const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
+
+      if (tagStatus === CHECKBOX_UNCHECKED) {
+        this.removedTags = this.removedTags.filter((tag) => tag !== tagName);
+        return this.addedTags.push(tagName);
+      }
+      if (tagStatus === CHECKBOX_CHECKED) {
+        this.addedTags = this.addedTags.filter((tag) => tag !== tagName);
+        return this.removedTags.push(tagName);
+      }
+    },
     onUpdateMailingsTags() {},
   },
 };
