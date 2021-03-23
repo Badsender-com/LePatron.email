@@ -24,7 +24,7 @@ export default {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-    valid() {
+    isValid() {
       return !!this.selectedLocation?.id;
     },
     mailName() {
