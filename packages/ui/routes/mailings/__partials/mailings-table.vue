@@ -264,7 +264,6 @@ export default {
     },
     async moveMail({ destinationWorkspaceId, mailingId }) {
       try {
-        // TODO: Add the backend logic
         await this.$axios.$post(
           moveMail({
             mailingId,
