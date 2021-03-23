@@ -50,6 +50,7 @@ export default {
         const { groupId, workspaceId } = this.$route.params;
         await $axios.$put(`/workspaces/${workspaceId}`, {
           ...values,
+          groupId
         });
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
