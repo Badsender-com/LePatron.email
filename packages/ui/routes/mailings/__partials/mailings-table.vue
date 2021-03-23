@@ -45,6 +45,8 @@ export default {
       dialogRename: false,
       selectedMailing: {},
       tableActions: TABLE_ACTIONS,
+      actions: ACTIONS,
+      actionsDetails: ACTIONS_DETAILS,
     };
   },
   computed: {
@@ -270,14 +272,32 @@ export default {
       <template #item.updatedAt="{ item }">
         <span>{{ item.updatedAt | preciseDateTime }}</span>
       </template>
-      <template #item.actions>
+      <template #item.actions="{ item }">
         <bs-mailings-actions-dropdown>
           <template #dropDownItem>
             <bs-mailings-actions-dropdown-item
-              v-for="action in actionsDropdown"
-              :key="action.name"
-              :name="action.name"
-              :icon="action.icon"
+              v-if="filteredActions.includes(actions.RENAME)"
+              :name="$t(actionsDetails[actions.RENAME].text)"
+              :icon="actionsDetails[actions.RENAME].icon"
+              :on-click="() => openRenameModal(item)"
+            />
+            <bs-mailings-actions-dropdown-item
+              v-if="filteredActions.includes(actions.TRANSFER)"
+              :name="$t(actionsDetails[actions.TRANSFER].text)"
+              :icon="actionsDetails[actions.TRANSFER].icon"
+              :on-click="() => transferMailing(item)"
+            />
+            <bs-mailings-actions-dropdown-item
+              v-if="filteredActions.includes(actions.DELETE)"
+              :name="$t(actionsDetails[actions.DELETE].text)"
+              :icon="actionsDetails[actions.DELETE].icon"
+              :on-click="() => displayDeleteModal(item)"
+            />
+            <bs-mailings-actions-dropdown-item
+              v-if="filteredActions.includes(actions.COPY_MAIL)"
+              :name="$t(actionsDetails[actions.COPY_MAIL].text)"
+              :icon="actionsDetails[actions.COPY_MAIL].icon"
+              :on-click="() => openCopyMail(item)"
             />
           </template>
         </bs-mailings-actions-dropdown>
