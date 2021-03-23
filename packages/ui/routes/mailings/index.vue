@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
+import BsMailingsModalNew from '~/components/mailings/modal-new.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
@@ -16,6 +17,7 @@ export default {
     MailingsTable,
     MailingsFilters,
     MailingsBreadcrumbs,
+    BsMailingsModalNew,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -129,7 +131,6 @@ export default {
             color="primary"
             tile
             :disabled="!hasAccess"
-            :to="`/mailings/new?wid=${$route.query.wid}`"
             @click="openModal"
           >
             <v-icon left>
@@ -152,6 +153,7 @@ export default {
         />
       </v-skeleton-loader>
     </v-card>
+    <bs-mailings-modal-new ref="modalDialog" @new="() => console.log('TEST')" />
   </bs-layout-left-menu>
 </template>
 <style>
