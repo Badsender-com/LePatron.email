@@ -1,8 +1,8 @@
 export const ACTIONS = {
-  RENAME: 'actionRename',
-  TRANSFER: 'actionTransfer',
-  DELETE: 'actionDelete',
-  COPY_MAIL: 'actionCopyMail',
+  RENAME: 'RENAME',
+  TRANSFER: 'TRANSFER',
+  DELETE: 'DELETE',
+  COPY_MAIL: 'COPY_MAIL',
 };
 
 export const ACTIONS_DETAILS = {
