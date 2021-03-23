@@ -20,7 +20,6 @@ const FolderSchema = Schema(
     name: {
       type: String,
       unique: true,
-      set: normalizeString,
       required: [true, 'Folder name is required'],
     },
     _workspace: {
