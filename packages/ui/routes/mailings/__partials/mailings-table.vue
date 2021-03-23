@@ -17,7 +17,11 @@ import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [ACTIONS.RENAME, ACTIONS.DELETE];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  ACTIONS.RENAME,
+  ACTIONS.DELETE,
+  ACTIONS.MOVE_MAIL,
+];
 
 const TABLE_ACTIONS = [
   ACTIONS.RENAME,
@@ -289,7 +293,7 @@ export default {
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
-      show-select
+      :show-select="workspace.hasAccess"
     >
       <template #item.name="{ item }">
         <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
@@ -383,7 +387,11 @@ export default {
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
-    <modal-move-mail ref="moveMailDialog" @confirm="moveMail">
+    <modal-move-mail
+      ref="moveMailDialog"
+      :title="`${this.$t('global.moveMail')}`"
+      @confirm="moveMail"
+    >
       <p
         class="black--text"
         v-html="$t('mailings.moveMailConfirmationMessage')"

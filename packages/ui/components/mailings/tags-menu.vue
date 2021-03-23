@@ -2,12 +2,12 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 
-const CHECKBOX_UNCHECKED = `check_box_outline_blank`;
-const CHECKBOX_CHECKED = `check_box`;
-const CHECKBOX_INDETERMINATE = `indeterminate_check_box`;
+const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
+const CHECKBOX_CHECKED = 'check_box';
+const CHECKBOX_INDETERMINATE = 'indeterminate_check_box';
 
 export default {
-  name: `bs-mailings-tags-menu`,
+  name: 'BsMailingsTagsMenu',
   mixins: [validationMixin],
   props: {
     mailingsSelection: { type: Array, default: () => [] },
@@ -17,7 +17,7 @@ export default {
     return {
       showMenu: false,
       newTagDialog: false,
-      newTagName: ``,
+      newTagName: '',
       addedTags: [],
       removedTags: [],
     };
@@ -90,7 +90,7 @@ export default {
       this.newTagDialog = true;
     },
     closeNewTagDialog() {
-      this.newTagName = ``;
+      this.newTagName = '';
       this.$v.$reset();
       this.newTagDialog = false;
     },
@@ -98,7 +98,7 @@ export default {
       this.$v.$touch();
       if (this.$v.$invalid) return;
       const { newTagName } = this;
-      this.$emit(`create`, newTagName);
+      this.$emit('create', newTagName);
       this.addedTags.push(newTagName);
       this.closeNewTagDialog();
     },
@@ -120,7 +120,7 @@ export default {
       if (!this.addedTags.length && !this.removedTags.length) {
         return this.closeMenu();
       }
-      this.$emit(`update`, {
+      this.$emit('update', {
         added: [...this.addedTags],
         removed: [...this.removedTags],
       });
@@ -139,23 +139,23 @@ export default {
     :close-on-content-click="false"
     :nudge-width="300"
   >
-    <template v-slot:activator="{ on: onMenu }">
+    <template #activator="{ on: onMenu }">
       <v-tooltip bottom :disabled="vShowTagMenu">
-        <template v-slot:activator="{ on: onTooltip }">
-          <v-btn icon v-on="{ ...onMenu, ...onTooltip }" color="info">
+        <template #activator="{ on: onTooltip }">
+          <v-btn icon color="info" v-on="{ ...onMenu, ...onTooltip }">
             <v-icon>label</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t(`tags.handle`) }}</span>
+        <span>{{ $t('tags.handle') }}</span>
       </v-tooltip>
     </template>
     <v-card>
       <v-list>
         <v-list-item>
           <v-list-item-content>
-            <v-list-item-title class="title">{{
-              $t(`tags.list`)
-            }}</v-list-item-title>
+            <v-list-item-title class="title">
+              {{ $t('tags.list') }}
+            </v-list-item-title>
           </v-list-item-content>
           <v-list-item-action>
             <v-btn icon @click="closeMenu">
@@ -179,21 +179,23 @@ export default {
       </v-list>
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="openNewTagDialog">{{
-          $t(`tags.new`)
-        }}</v-btn>
-        <v-btn color="primary" @click="updateMailingsTags">{{
-          $t(`global.apply`)
-        }}</v-btn>
+        <v-btn color="primary" text @click="openNewTagDialog">
+          {{ $t('tags.new') }}
+        </v-btn>
+        <v-btn color="primary" @click="updateMailingsTags">
+          {{ $t('global.apply') }}
+        </v-btn>
       </v-card-actions>
     </v-card>
     <v-dialog v-model="newTagDialog" width="500">
       <v-card>
-        <v-card-title class="headline">{{ $t(`tags.new`) }}</v-card-title>
+        <v-card-title class="headline">
+          {{ $t('tags.new') }}
+        </v-card-title>
         <v-card-text>
           <v-text-field
             v-model="newTagName"
-            :label="$t(`global.name`)"
+            :label="$t('global.name')"
             :error-messages="tagNameErrors"
             @input="$v.newTagName.$touch()"
             @blur="$v.newTagName.$touch()"
@@ -202,12 +204,12 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn text @click="closeNewTagDialog">{{
-            $t(`global.cancel`)
-          }}</v-btn>
-          <v-btn color="primary" @click="onCreateNewTag">{{
-            $t(`global.create`)
-          }}</v-btn>
+          <v-btn text @click="closeNewTagDialog">
+            {{ $t('global.cancel') }}
+          </v-btn>
+          <v-btn color="primary" @click="onCreateNewTag">
+            {{ $t('global.create') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
