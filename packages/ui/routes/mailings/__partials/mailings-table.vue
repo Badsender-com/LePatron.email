@@ -6,7 +6,7 @@ import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
 import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
 
-import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
+import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 
@@ -16,6 +16,7 @@ const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   'actionRename',
   'actionDuplicate',
   'actionDelete',
+  'actionMoveMail',
 ];
 
 export default {
@@ -29,7 +30,10 @@ export default {
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    workspace: { type: Object, default: () => {} },
+    workspace: {
+      type: Object,
+      default: () => {},
+    },
     mailingsSelection: { type: Array, default: () => [] },
   },
   data() {
@@ -159,8 +163,13 @@ export default {
     },
     openMoveMail(mailing) {
       this.$refs.moveMailDialog.open({
-        name: mailing.name,
-        id: mailing.id,
+        mail: {
+          name: mailing.name,
+          id: mailing.id,
+        },
+        workspace: {
+          id: this.workspace?.id,
+        },
       });
     },
     closeCopyMailDialog() {
@@ -253,12 +262,20 @@ export default {
       }
       this.closeCopyMailDialog();
     },
-    // FIXME: Remove underscores when variables will be used
-    async moveMail({ _destinationWorkspaceId, _mailingId }) {
+    async moveMail({ destinationWorkspaceId, mailingId }) {
       try {
         // TODO: Add the backend logic
-        await new Promise((resolve) => {
-          setTimeout(() => resolve(), 500);
+        await this.$axios.$post(
+          moveMail({
+            mailingId,
+          }),
+          {
+            mailingId,
+            workspaceId: destinationWorkspaceId,
+          }
+        );
+        this.$router.push({
+          query: { wid: destinationWorkspaceId },
         });
         this.showSnackbar({
           text: this.$t('mailings.moveMailSuccessful'),
@@ -370,8 +387,7 @@ export default {
           color="primary"
           @click="openMoveMail(item)"
         >
-          <!-- TODO: Replace this icon with the good one -->
-          <v-icon>content_copy</v-icon>
+          <v-icon>forward</v-icon>
         </v-btn>
       </template>
       <template #item.actionDelete="{ item }">

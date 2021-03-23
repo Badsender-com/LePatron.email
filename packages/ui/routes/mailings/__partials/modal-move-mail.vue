@@ -14,6 +14,7 @@ export default {
   data() {
     return {
       mail: null,
+      currentWorkspace: null,
       workspaces: [],
       workspaceIsError: false,
       workspacesIsLoading: false,
@@ -25,7 +26,10 @@ export default {
       return getTreeviewWorkspaces(this.workspaces);
     },
     valid() {
-      return !!this.selectedLocation?.id;
+      return (
+        !!this.selectedLocation?.id &&
+        this.selectedLocation?.id !== this.currentWorkspace?.id
+      );
     },
     mailName() {
       return this.mail?.name;
@@ -59,7 +63,8 @@ export default {
       }
     },
     open(selectedMail) {
-      this.mail = selectedMail;
+      this.mail = selectedMail.mail;
+      this.currentWorkspace = selectedMail.workspace;
       this.$refs.moveMailDialog.open();
     },
     close() {
