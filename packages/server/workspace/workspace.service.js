@@ -89,6 +89,15 @@ async function createWorkspace(workspace) {
 }
 
 async function updateWorkspace(workspace) {
+  if (
+    await existsByName({
+      workspaceName: workspace?.name,
+      groupId: workspace?.groupId,
+    })
+  ) {
+    throw new Conflict(ERROR_CODES.WORKSPACE_ALREADY_EXISTS);
+  }
+
   const { id, ...otherProperties } = workspace;
 
   return Workspaces.updateOne(
