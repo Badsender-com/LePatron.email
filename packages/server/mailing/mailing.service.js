@@ -23,7 +23,8 @@ module.exports = {
   renameMailing,
   deleteOne,
   copyMailing,
-  moveMailing
+  moveMailing,
+  moveManyMailings
 };
 
 async function findMailings(query) {
@@ -123,6 +124,12 @@ async function moveMailing(user, mailing, workspaceId) {
   // ok != 1 indicates a failure
   if (moveResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+  }
+}
+
+async function moveManyMailings(user, mailings, workspaceId) {
+  for (const mailing of mailings) {
+    await moveMailing(user, mailing, workspaceId);
   }
 }
 

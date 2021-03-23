@@ -26,6 +26,7 @@ module.exports = {
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
   move: asyncHandler(move),
+  moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -213,7 +214,7 @@ async function move(req, res) {
  * @apiGroup Mailings
  *
  * @apiParam (Body) {String} workspaceId
- * @apiParam (Body) {Array} mailings
+ * @apiParam (Body) {Array} mailingsIds
  *
  * @apiUse mailings
  */
@@ -221,22 +222,26 @@ async function move(req, res) {
 async function moveMany(req, res) {
   const {
     user,
-    body: { workspaceId, mailings }
+    body: { workspaceId, mailingsIds }
   } = req;
 
-  if (!Array.isArray(mailings) || mailings.length === 0) {
-    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+  if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
+    throw new createError.BadRequest();
   }
 
-  mailings.forEach(function (mailing) {
+  const mailings = [];
 
-  })
+  for (const mailingId of mailingsIds) {
+    const mailingFromDb = await mailingService.findOne(mailingId);
 
-  if (!mailing._workspace) {
-    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    if (!mailingFromDb._workspace) {
+      throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    }
+
+    mailings.push(mailingFromDb);
   }
 
-  await mailingService.moveMailing(user, mailing, workspaceId);
+  await mailingService.moveManyMailings(user, mailings, workspaceId);
 
   res.status(204).send();
 }
