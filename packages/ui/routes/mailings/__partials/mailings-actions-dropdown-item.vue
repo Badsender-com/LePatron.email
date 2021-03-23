@@ -2,7 +2,6 @@
 export default {
   name: 'BsMailingsActionsDropdownItem',
   props: {
-    name: { type: String, default: () => '' },
     icon: { type: String, default: () => '' },
     onClick: { type: Function, default: () => () => {} },
   },
@@ -17,7 +16,7 @@ export default {
       </v-btn>
     </v-list-item-avatar>
     <v-list-item-title>
-      {{ name }}
+      <slot />
     </v-list-item-title>
   </v-list-item>
 </template>

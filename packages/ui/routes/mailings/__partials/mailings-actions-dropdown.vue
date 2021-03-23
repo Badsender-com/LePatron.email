@@ -1,26 +1,6 @@
 <script>
-import { ACTIONS_DETAILS } from '~/constants/mail';
-
 export default {
   name: 'BsMailingsActionsDropdown',
-  props: {
-    actions: { type: Array, default: () => [] },
-    mailInformation: { type: Object, default: () => {} },
-  },
-  data() {
-    return {
-      actionsDetails: this.actions.map((action) => ({
-        name: this.$t(ACTIONS_DETAILS[action].text),
-        icon: ACTIONS_DETAILS[action].icon,
-        emit: ACTIONS_DETAILS[action].emit,
-      })),
-    };
-  },
-  methods: {
-    handleDropDownAction(emit) {
-      this.$emit(emit, this.mailInformation);
-    },
-  },
 };
 </script>
 
