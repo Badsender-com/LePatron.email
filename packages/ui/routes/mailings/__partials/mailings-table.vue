@@ -127,6 +127,12 @@ export default {
         id: mailing.id,
       });
     },
+    displayDeleteSelectionModal(item) {
+      this.$refs.deleteSelectionDialog.open({
+        name: 'Hello',
+        id: item,
+      });
+    },
     closeRename() {
       this.$refs.renameDialog.close();
     },
@@ -327,5 +333,27 @@ export default {
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
+    <v-btn
+      :disabled="loading"
+      icon
+      color="primary"
+      @click="displayDeleteSelectionModal(selectedRows)"
+    >
+      <v-icon>delete</v-icon>
+    </v-btn>
+    <bs-modal-confirm-form
+      ref="deleteSelectionDialog"
+      :with-input-confirmation="false"
+      @confirm="handleDelete"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.mailingTab.deleteWarningMessage', {
+            name: 'selection',
+          })
+        "
+      />
+    </bs-modal-confirm-form>
   </div>
 </template>
