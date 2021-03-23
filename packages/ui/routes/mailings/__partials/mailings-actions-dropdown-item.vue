@@ -21,12 +21,3 @@ export default {
     </v-list-item-title>
   </v-list-item>
 </template>
-
-<style lang="scss" scoped></style>
-
-<i18n>
-{
-"en": {},
-"fr": {}
-}
-</i18n>

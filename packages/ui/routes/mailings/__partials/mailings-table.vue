@@ -9,16 +9,17 @@ import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
+import { ACTIONS } from '~/ui/constants/mail';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
-const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = ['actionRename', 'actionDelete'];
+const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', ACTIONS.COPY_MAIL];
+const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [ACTIONS.RENAME, ACTIONS.DELETE];
 
 const TABLE_ACTIONS = [
-  'actionRename',
-  'actionTransfer',
-  'actionDelete',
-  'actionCopyMail',
+  ACTIONS.RENAME,
+  ACTIONS.TRANSFER,
+  ACTIONS.DELETE,
+  ACTIONS.COPY_MAIL,
 ];
 
 export default {

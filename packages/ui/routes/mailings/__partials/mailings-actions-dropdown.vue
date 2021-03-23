@@ -1,28 +1,7 @@
 <script>
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
+import { ACTIONS_DETAILS } from '~/ui/constants/mail';
 
-const ACTIONS_DETAILS = {
-  actionRename: {
-    text: 'tableHeaders.mailings.rename',
-    icon: 'title',
-    emit: 'rename-action',
-  },
-  actionTransfer: {
-    text: 'tableHeaders.mailings.transfer',
-    icon: 'forward',
-    emit: 'transfer-action',
-  },
-  actionDelete: {
-    text: 'global.delete',
-    icon: 'delete',
-    emit: 'delete-action',
-  },
-  actionCopyMail: {
-    text: 'global.copyMail',
-    icon: 'content_copy',
-    emit: 'copy-mail-action',
-  },
-};
 export default {
   name: 'BsMailingsActionsDropdown',
   components: {
@@ -67,12 +46,3 @@ export default {
     </v-list>
   </v-menu>
 </template>
-
-<style lang="scss" scoped></style>
-
-<i18n>
-{
-"en": {},
-"fr": {}
-}
-</i18n>
