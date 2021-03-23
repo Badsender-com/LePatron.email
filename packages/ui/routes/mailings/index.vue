@@ -141,6 +141,7 @@ export default {
         <mailings-table
           :mailings="filteredMailings"
           :workspace="workspace"
+          :tags="tags"
           @on-refetch="fecthData()"
         />
       </v-skeleton-loader>
