@@ -12,7 +12,7 @@ export default {
       </v-btn>
     </template>
     <v-list activable>
-      <slot name="dropDownItem" />
+      <slot />
     </v-list>
   </v-menu>
 </template>

@@ -267,38 +267,36 @@ export default {
       </template>
       <template #item.actions="{ item }">
         <bs-mailings-actions-dropdown>
-          <template #dropDownItem>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.RENAME)"
-              :icon="actionsDetails[actions.RENAME].icon"
-              :on-click="() => openRenameModal(item)"
-            >
-              {{ $t(actionsDetails[actions.RENAME].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.TRANSFER)"
-              :icon="actionsDetails[actions.TRANSFER].icon"
-              :on-click="() => transferMailing(item)"
-            >
-              {{ $t(actionsDetails[actions.TRANSFER].text) }}
-            </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.RENAME)"
+            :icon="actionsDetails[actions.RENAME].icon"
+            :on-click="() => openRenameModal(item)"
+          >
+            {{ $t(actionsDetails[actions.RENAME].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.TRANSFER)"
+            :icon="actionsDetails[actions.TRANSFER].icon"
+            :on-click="() => transferMailing(item)"
+          >
+            {{ $t(actionsDetails[actions.TRANSFER].text) }}
+          </bs-mailings-actions-dropdown-item>
 
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.DELETE)"
-              :icon="actionsDetails[actions.DELETE].icon"
-              :on-click="() => displayDeleteModal(item)"
-            >
-              {{ $t(actionsDetails[actions.DELETE].text) }}
-            </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.DELETE)"
+            :icon="actionsDetails[actions.DELETE].icon"
+            :on-click="() => displayDeleteModal(item)"
+          >
+            {{ $t(actionsDetails[actions.DELETE].text) }}
+          </bs-mailings-actions-dropdown-item>
 
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.COPY_MAIL)"
-              :icon="actionsDetails[actions.COPY_MAIL].icon"
-              :on-click="() => openCopyMail(item)"
-            >
-              {{ $t(actionsDetails[actions.COPY_MAIL].text) }}
-            </bs-mailings-actions-dropdown-item>
-          </template>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.COPY_MAIL)"
+            :icon="actionsDetails[actions.COPY_MAIL].icon"
+            :on-click="() => openCopyMail(item)"
+          >
+            {{ $t(actionsDetails[actions.COPY_MAIL].text) }}
+          </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>
     </v-data-table>
