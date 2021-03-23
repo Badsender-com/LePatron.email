@@ -75,6 +75,12 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
+    openModal() {
+      this.$refs.modalDialog.open();
+    },
+    closeModal() {
+      this.$refs.modalDialog.close();
+    },
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
@@ -124,6 +130,7 @@ export default {
             tile
             :disabled="!hasAccess"
             :to="`/mailings/new?wid=${$route.query.wid}`"
+            @click="openModal"
           >
             <v-icon left>
               mdi-plus
