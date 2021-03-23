@@ -193,13 +193,15 @@ async function move(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { workspaceId }
+    body: { workspaceId },
   } = req;
 
   const mailing = await mailingService.findOne(mailingId);
 
   if (!mailing._workspace) {
-    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
   }
 
   await mailingService.moveMailing(user, mailing, workspaceId);
@@ -222,7 +224,7 @@ async function move(req, res) {
 async function moveMany(req, res) {
   const {
     user,
-    body: { workspaceId, mailingsIds }
+    body: { workspaceId, mailingsIds },
   } = req;
 
   if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {

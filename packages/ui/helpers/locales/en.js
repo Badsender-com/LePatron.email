@@ -31,6 +31,7 @@ export default {
     teams: 'Workspaces',
     copyMail: 'Copy mail ',
     copyMailAction: 'Create copy',
+    moveMail: 'Move mail',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
@@ -179,6 +180,8 @@ export default {
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
     copyMailSuccessful: 'Mail copied',
+    moveMailConfirmationMessage: 'Please choose the destination\'s location',
+    moveMailSuccessful: 'Email moved',
   },
   template: {
     noId: 'No ID',
