@@ -207,6 +207,41 @@ async function move(req, res) {
 }
 
 /**
+ * @api {post} /mailings/moveMany move multiple mailings from one workspace to another
+ * @apiPermission user
+ * @apiName MoveManyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {Array} mailings
+ *
+ * @apiUse mailings
+ */
+
+async function moveMany(req, res) {
+  const {
+    user,
+    body: { workspaceId, mailings }
+  } = req;
+
+  if (!Array.isArray(mailings) || mailings.length === 0) {
+    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+  }
+
+  mailings.forEach(function (mailing) {
+
+  })
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+  }
+
+  await mailingService.moveMailing(user, mailing, workspaceId);
+
+  res.status(204).send();
+}
+
+/**
  * @api {patch} /mailings/:mailingId mailing rename
  * @apiPermission user
  * @apiName RenameMailing
