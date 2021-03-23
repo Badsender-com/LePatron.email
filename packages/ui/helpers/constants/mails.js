@@ -22,7 +22,6 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.COPY_MAIL]: {
     text: 'global.copyMail',
     icon: 'content_copy',
-    emit: 'copy-mail-action',
   },
   [ACTIONS.ADD_TAGS]: {
     text: 'global.addTags',

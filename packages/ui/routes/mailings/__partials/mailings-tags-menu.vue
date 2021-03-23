@@ -26,7 +26,7 @@ export default {
       });
     },
   },
-  created() {},
+
   methods: {
     closeMenu() {
       this.showTagMenu = false;
@@ -46,7 +46,12 @@ export default {
         return this.removedTags.push(tagName);
       }
     },
-    onUpdateMailingsTags() {},
+    onUpdateMailingsTags() {
+      this.$emit('update-tags', {
+        added: [...this.addedTags],
+        removed: [...this.removedTags],
+      });
+    },
   },
 };
 </script>

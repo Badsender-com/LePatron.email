@@ -244,6 +244,12 @@ export default {
     display(mailing) {
       this.$emit('copyMail', mailing);
     },
+    updateTags(tags) {
+      this.$emit('update-tags', {
+        selectedMailing: this.selectedMailing,
+        tags,
+      });
+    },
   },
 };
 </script>
@@ -329,7 +335,11 @@ export default {
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
-    <bs-mailings-tags-menu ref="addTagsMenu" :tags="tags" />
+    <bs-mailings-tags-menu
+      ref="addTagsMenu"
+      :tags="tags"
+      @update-tags="updateTags"
+    />
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"

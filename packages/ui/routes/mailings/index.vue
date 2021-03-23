@@ -101,6 +101,26 @@ export default {
         this.mailingsIsError = true;
       }
     },
+    async handleUpdateTag(tagsInformations) {
+      const { $axios } = this;
+      this.loading = true;
+      const { tags, selectedMailing } = tagsInformations;
+      try {
+        const mailingsResponse = await $axios.$put(mailings(), {
+          items: selectedMailing,
+          tags: tags,
+        });
+        console.log({ mailingsResponse });
+      } catch (error) {
+        /*         this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        }); */
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 };
 </script>
@@ -145,6 +165,7 @@ export default {
           :workspace="workspace"
           :tags="tags"
           @on-refetch="fecthData()"
+          @update-tags="handleUpdateTag"
         />
       </v-skeleton-loader>
     </v-card>
