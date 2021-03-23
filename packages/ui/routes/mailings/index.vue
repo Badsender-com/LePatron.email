@@ -121,10 +121,14 @@ export default {
           <v-btn
             class="my-4 new-mail-button"
             color="primary"
+            tile
             :disabled="!hasAccess"
             :to="`/mailings/new?wid=${$route.query.wid}`"
           >
-            Nouveau
+            <v-icon left>
+              mdi-plus
+            </v-icon>
+            {{ $t('global.newMail') }}
           </v-btn>
         </v-list-item>
       </v-list>

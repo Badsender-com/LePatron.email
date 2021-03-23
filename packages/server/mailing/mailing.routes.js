@@ -13,6 +13,7 @@ router.post('', GUARD_USER, mailings.create);
 router.patch('/:mailingId', GUARD_USER, mailings.rename);
 router.delete('/:mailingId', GUARD_USER, mailings.delete);
 router.post('/copy', GUARD_USER, mailings.copy);
+router.post('/:mailingId/move', GUARD_USER, mailings.move);
 router.post(
   '/:mailingId/mosaico/send-test-mail',
   GUARD_USER,

@@ -38,7 +38,9 @@ export default {
       ];
     },
     confirmCheckBox() {
-      return this.selectedWorkspace?.folders || this.selectedWorkspace?.mails;
+      return (
+        !!this.selectedWorkspace?.folders || !!this.selectedWorkspace?.mails
+      );
     },
   },
   watch: {
@@ -138,7 +140,9 @@ export default {
           :items="workspaces"
         >
           <template #item.name="{ item }">
-            <nuxt-link :to="`/groups/${$route.params.groupId}/workspace/${item.id}`">
+            <nuxt-link
+              :to="`/groups/${$route.params.groupId}/workspace/${item.id}`"
+            >
               {{ item.name }}
             </nuxt-link>
           </template>
