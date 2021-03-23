@@ -25,6 +25,7 @@ module.exports = {
   readMosaico: asyncHandler(readMosaico),
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
+  move: asyncHandler(move),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -172,6 +173,37 @@ async function readMosaico(req, res) {
   if (!mailingForMosaico) throw new createError.NotFound();
 
   res.json(mailingForMosaico);
+}
+
+/**
+ * @api {post} /mailings/:mailingId/move move mailing from its workspace to another
+ * @apiPermission user
+ * @apiName MoveMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiParam (Body) {String} workspaceId
+ *
+ * @apiUse mailings
+ */
+
+async function move(req, res) {
+  const {
+    user,
+    params: { mailingId },
+    body: { workspaceId }
+  } = req;
+
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+  }
+
+  await mailingService.moveMailing(user, mailing, workspaceId);
+
+  res.status(204).send();
 }
 
 /**
