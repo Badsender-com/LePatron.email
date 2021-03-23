@@ -10,17 +10,23 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
+import BsMailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [ACTIONS.RENAME, ACTIONS.DELETE];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  ACTIONS.RENAME,
+  ACTIONS.DELETE,
+  ACTIONS.ADD_TAGS,
+];
 
 const TABLE_ACTIONS = [
   ACTIONS.RENAME,
   ACTIONS.TRANSFER,
+  ACTIONS.ADD_TAGS,
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
 ];
@@ -33,6 +39,7 @@ export default {
     ModalCopyMail,
     BsMailingsActionsDropdown,
     BsMailingsActionsDropdownItem,
+    BsMailingsTagsMenu,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
@@ -123,6 +130,13 @@ export default {
     displayDeleteModal(mailing) {
       this.selectedMailing = mailing;
       this.$refs.deleteDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
+    openTagsMenu(mailing) {
+      this.selectedMailing = mailing;
+      this.$refs.addTagsMenu.openMenu({
         name: mailing.name,
         id: mailing.id,
       });
@@ -281,6 +295,13 @@ export default {
             {{ $t(actionsDetails[actions.RENAME].text) }}
           </bs-mailings-actions-dropdown-item>
           <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.ADD_TAGS)"
+            :icon="actionsDetails[actions.ADD_TAGS].icon"
+            :on-click="() => openTagsMenu(item)"
+          >
+            {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.TRANSFER)"
             :icon="actionsDetails[actions.TRANSFER].icon"
             :on-click="() => transferMailing(item)"
@@ -307,6 +328,7 @@ export default {
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
+    <bs-mailings-tags-menu ref="addTagsMenu" />
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"

@@ -30,6 +30,7 @@ export default {
 
     teams: 'Workspaces',
     copyMail: 'Copy mail ',
+    addTags: 'Add tags',
     copyMailAction: 'Create copy',
     newTemplate: 'Add a template',
     template: 'Template | Templates',

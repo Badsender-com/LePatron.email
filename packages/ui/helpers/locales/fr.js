@@ -28,6 +28,7 @@ export default {
       },
     },
     copyMail: 'Copie de l\'email',
+    addTags: 'Ajouter des labels',
     copyMailAction: 'Créer une copie',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
