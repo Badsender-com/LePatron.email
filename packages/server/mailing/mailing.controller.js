@@ -26,6 +26,7 @@ module.exports = {
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
   move: asyncHandler(move),
+  moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -202,6 +203,33 @@ async function move(req, res) {
   }
 
   await mailingService.moveMailing(user, mailing, workspaceId);
+
+  res.status(204).send();
+}
+
+/**
+ * @api {post} /mailings/moveMany move multiple mailings from one workspace to another
+ * @apiPermission user
+ * @apiName MoveManyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {Array} mailingsIds
+ *
+ * @apiUse mailings
+ */
+
+async function moveMany(req, res) {
+  const {
+    user,
+    body: { workspaceId, mailingsIds }
+  } = req;
+
+  if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
+    throw new createError.BadRequest();
+  }
+
+  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
 
   res.status(204).send();
 }
