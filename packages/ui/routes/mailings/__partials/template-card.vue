@@ -21,10 +21,6 @@ export default {
       return apiRoutes.imagesItem({ imageName });
     },
     selectedClass() {
-      console.log({
-        template: this.template,
-        selected: this.isSelected,
-      });
       return this.isSelected ? 'bs-template-card_selected' : '';
     },
   },

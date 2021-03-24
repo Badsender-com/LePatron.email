@@ -1,8 +1,9 @@
 <script>
 import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixin-create-mailing';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
-import BsMailingsModalNew from '~/components/mailings/modal-new.vue';
+import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
@@ -21,7 +22,7 @@ export default {
     MailingsSelectionActions,
     BsMailingsModalNew,
   },
-  mixins: [mixinPageTitle],
+  mixins: [mixinPageTitle, mixinCreateMailing],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
@@ -86,7 +87,14 @@ export default {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
-    async fecthData() {
+    handleCreateNewMail(createMailModalData) {
+      this.mixinCreateMailing(
+        createMailModalData.template,
+        'loading',
+        createMailModalData.defaultMailName
+      );
+    },
+    async fetchData() {
       try {
         if (this.$route.query?.wid) {
           this.mailingsIsLoading = true;
@@ -151,13 +159,13 @@ export default {
           v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
-          @on-refetch="fecthData()"
+          @on-refetch="fetchData()"
         />
       </v-skeleton-loader>
     </v-card>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
-      @createNewMail="() => console.log('TEST')"
+      @create-new-mail="handleCreateNewMail"
     />
   </bs-layout-left-menu>
 </template>

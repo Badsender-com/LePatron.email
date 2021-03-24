@@ -3,6 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import mixinCreateMailing from '~/helpers/mixin-create-mailing';
 
 export default {
   name: 'MailingsModalNew',
@@ -11,17 +12,24 @@ export default {
     MailingsBreadcrumbs,
     TemplateCard,
   },
+  mixins: [mixinCreateMailing],
   data() {
     return {
       templates: [],
+      defaultMailName: '',
       selectedTemplate: {},
-      isNewMailFormValid: true,
       templatesIsLoading: true,
       templatesIsError: false,
-      nameRule: [
-        (v) => v === this.data?.name || this.$t('forms.workspace.inputError'),
-      ],
+      nameRule: [(v) => !!v || this.$t('forms.workspace.inputError')],
     };
+  },
+  computed: {
+    destinationLabel() {
+      return `${this.$t('global.location')} :`;
+    },
+    isValidToCreate() {
+      return !!this.selectedTemplate?.id && !!this.defaultMailName;
+    },
   },
   async mounted() {
     this.templatesIsLoading = false;
@@ -43,14 +51,14 @@ export default {
       this.$refs.form.reset();
       this.$refs.createNewMailModal.close();
     },
-    submit() {
+    async submit() {
       this.$refs.form.validate();
-      console.log(this.$refs.form.values());
-      if (this.isNewMailFormValid) {
-        this.close();
-        this.$emit('create-new-mail', {
-          defaultMailName: this.$refs.form.values(),
+      if (this.isValidToCreate) {
+        await this.$emit('create-new-mail', {
+          defaultMailName: this.defaultMailName,
+          template: this.selectedTemplate,
         });
+        this.close();
       }
     },
     selectTemplate(template) {
@@ -67,17 +75,31 @@ export default {
   <bs-modal-confirm
     ref="createNewMailModal"
     modal-width="1000"
-    :title="`${this.$t('global.mailing')}`"
+    :title="$t('global.newMailing')"
     :is-form="true"
   >
-    <v-form ref="form" v-model="isNewMailFormValid" @submit.prevent="submit">
-      <mailings-breadcrumbs />
+    <v-form ref="form" @submit.prevent="submit">
+      <div class="d-flex align-center mb-2">
+        <p class="font-weight-bold">
+          {{ destinationLabel }}
+        </p>
+        <div class="pa-2">
+          <mailings-breadcrumbs />
+        </div>
+      </div>
+
       <v-text-field
+        v-model="defaultMailName"
+        class="pt-1"
         :rules="nameRule"
         :label="this.$t('mailings.name')"
         required
       />
-      <div class="bs-templates_container">
+
+      <div class="mt-8 bs-templates_container">
+        <p class="font-weight-bold">
+          {{ $t('mailings.creationNotice') }}
+        </p>
         <v-card
           class="d-flex flex-row justify-space-around flex-wrap-reverse"
           flat
@@ -98,7 +120,7 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn type="submit" color="error">
+        <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
           {{ $t('global.newMailing') }}
         </v-btn>
       </v-card-actions>

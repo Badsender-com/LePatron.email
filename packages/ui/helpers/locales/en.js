@@ -27,11 +27,11 @@ export default {
         },
       },
     },
-
     teams: 'Workspaces',
     copyMail: 'Copy',
     copyMailAction: 'Create copy',
     moveMail: 'Move',
+    location: 'Location',
     moveManyMail: 'Move',
     newTemplate: 'Add a template',
     template: 'Template | Templates',

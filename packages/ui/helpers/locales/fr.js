@@ -30,6 +30,7 @@ export default {
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer',
+    location: 'Destination',
     moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
