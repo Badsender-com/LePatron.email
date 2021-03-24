@@ -27,7 +27,7 @@ export default {
         },
       },
     },
-    copyMail: 'Copie de l\'email',
+    copyMail: 'Copier l\'email',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer l\'email',
     moveManyMail: 'Déplacer les emails',
