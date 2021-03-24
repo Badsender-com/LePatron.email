@@ -44,13 +44,16 @@ export default {
     async handleMultipleDelete() {
       const { $route } = this;
       try {
-        for (const mailing of this.mailingsSelection) {
-          await this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
-            data: {
-              workspaceId: $route.query.wid,
-            },
-          });
-        }
+        const mailSelectionDeletionPromises = this.mailingsSelection.map(
+          (mailing) =>
+            this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
+              data: {
+                workspaceId: $route.query.wid,
+              },
+            })
+        );
+        await Promise.all(mailSelectionDeletionPromises);
+
         this.$emit('on-refetch');
         this.showSnackbar({
           text: this.$t('mailings.deleteSuccessful'),
