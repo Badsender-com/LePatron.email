@@ -173,6 +173,7 @@ export default {
     },
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
+    name: 'Email name',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     deleteCount: 'Delete {count} email | Delete {count} emails',

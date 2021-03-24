@@ -172,6 +172,7 @@ export default {
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
+    name: 'Nommer l\'email',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',

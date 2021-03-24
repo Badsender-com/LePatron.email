@@ -77,11 +77,8 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
-    openModal() {
-      this.$refs.modalDialog.open();
-    },
-    closeModal() {
-      this.$refs.modalDialog.close();
+    openNewMailModal() {
+      this.$refs.modalNewMailDialog.open();
     },
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
@@ -131,7 +128,7 @@ export default {
             color="primary"
             tile
             :disabled="!hasAccess"
-            @click="openModal"
+            @click="openNewMailModal"
           >
             <v-icon left>
               mdi-plus
@@ -153,7 +150,10 @@ export default {
         />
       </v-skeleton-loader>
     </v-card>
-    <bs-mailings-modal-new ref="modalDialog" @new="() => console.log('TEST')" />
+    <bs-mailings-modal-new
+      ref="modalNewMailDialog"
+      @createNewMail="() => console.log('TEST')"
+    />
   </bs-layout-left-menu>
 </template>
 <style>
