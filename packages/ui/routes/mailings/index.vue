@@ -1,5 +1,6 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
@@ -78,6 +79,8 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
@@ -103,7 +106,6 @@ export default {
       }
     },
     async handleUpdateTag(tagsInformations) {
-      console.log({ tagsInformations });
       const { $axios } = this;
       this.loading = true;
       const { tags, selectedMailing } = tagsInformations;
@@ -112,7 +114,12 @@ export default {
           items: [selectedMailing.id],
           tags,
         });
+        this.fecthData();
       } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
         console.log(error);
       } finally {
         this.loading = false;
