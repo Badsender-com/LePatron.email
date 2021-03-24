@@ -4,17 +4,32 @@ import { mapMutations, mapGetters } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
+import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
 
-import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
+import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsMailingsActionsDropdown from './mailings-actions-dropdown';
+import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 
-const TABLE_HIDDEN_COLUMNS_ADMIN = ['userName', 'actionCopyMail'];
-const TABLE_HIDDEN_COLUMNS_USER = ['actionTransfer'];
+import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
+
+const COLUMN_USERNAME = 'userName';
+const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
+const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
-  'actionRename',
-  'actionDuplicate',
-  'actionDelete',
+  ACTIONS.RENAME,
+  ACTIONS.DELETE,
+  ACTIONS.MOVE_MAIL,
+];
+
+const TABLE_ACTIONS = [
+  ACTIONS.RENAME,
+  ACTIONS.TRANSFER,
+  ACTIONS.DELETE,
+  ACTIONS.COPY_MAIL,
+  ACTIONS.MOVE_MAIL,
+  'actionMoveMail',
 ];
 
 export default {
@@ -23,11 +38,17 @@ export default {
     BsMailingsModalRename,
     BsModalConfirmForm,
     ModalCopyMail,
+    BsMailingsActionsDropdown,
+    BsMailingsActionsDropdownItem,
+    ModalMoveMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    workspace: { type: Object, default: () => {} },
+    workspace: {
+      type: Object,
+      default: () => {},
+    },
     mailingsSelection: { type: Array, default: () => [] },
   },
   data() {
@@ -35,6 +56,9 @@ export default {
       loading: false,
       dialogRename: false,
       selectedMailing: {},
+      tableActions: TABLE_ACTIONS,
+      actions: ACTIONS,
+      actionsDetails: ACTIONS_DETAILS,
     };
   },
   computed: {
@@ -76,36 +100,8 @@ export default {
         { text: this.$t('global.createdAt'), value: 'createdAt' },
         { text: this.$t('global.updatedAt'), value: 'updatedAt' },
         {
-          text: this.$t('tableHeaders.mailings.rename'),
-          value: 'actionRename',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('tableHeaders.mailings.transfer'),
-          value: 'actionTransfer',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.duplicate'),
-          value: 'actionDuplicate',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
-          align: 'center',
-          class: 'table-column-action',
-          sortable: false,
-        },
-        {
-          text: this.$t('global.copyMail'),
-          value: 'actionCopyMail',
+          text: this.$t('global.actions'),
+          value: 'actions',
           align: 'center',
           class: 'table-column-action',
           sortable: false,
@@ -117,6 +113,11 @@ export default {
         sortBy: ['updatedAt'],
         sortDesc: [true],
       };
+    },
+    filteredActions() {
+      return this.tableActions.filter(
+        (action) => !this.hiddenCols.includes(action)
+      );
     },
   },
   watch: {
@@ -148,8 +149,22 @@ export default {
         id: mailing.id,
       });
     },
+    openMoveMail(mailing) {
+      this.$refs.moveMailDialog.open({
+        mail: {
+          name: mailing.name,
+          id: mailing.id,
+        },
+        workspace: {
+          id: this.workspace?.id,
+        },
+      });
+    },
     closeCopyMailDialog() {
       this.$refs.copyMailDialog.close();
+    },
+    closeMoveMailDialog() {
+      this.$refs.moveMailDialog.close();
     },
     closeDelete() {
       this.$refs.deleteDialog.close();
@@ -235,11 +250,34 @@ export default {
       }
       this.closeCopyMailDialog();
     },
+    async moveMail({ destinationWorkspaceId, mailingId }) {
+      try {
+        await this.$axios.$post(
+          moveMail({
+            mailingId,
+          }),
+          {
+            mailingId,
+            workspaceId: destinationWorkspaceId,
+          }
+        );
+        this.$router.push({
+          query: { wid: destinationWorkspaceId },
+        });
+        this.showSnackbar({
+          text: this.$t('mailings.moveMailSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.closeMoveMailDialog();
+    },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
-    },
-    duplicateMailing(mailing) {
-      this.$emit('duplicate', mailing);
     },
     display(mailing) {
       this.$emit('copyMail', mailing);
@@ -255,7 +293,7 @@ export default {
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
-      show-select
+      :show-select="workspace.hasAccess"
     >
       <template #item.name="{ item }">
         <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
@@ -286,55 +324,46 @@ export default {
       <template #item.updatedAt="{ item }">
         <span>{{ item.updatedAt | preciseDateTime }}</span>
       </template>
-      <template #item.actionRename="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="openRenameModal(item)"
-        >
-          <v-icon>title</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionTransfer="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="transferMailing(item)"
-        >
-          <v-icon>forward</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionDuplicate="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="duplicateMailing(item)"
-        >
-          <v-icon>content_paste</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionCopyMail="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="openCopyMail(item)"
-        >
-          <v-icon>content_copy</v-icon>
-        </v-btn>
-      </template>
-      <template #item.actionDelete="{ item }">
-        <v-btn
-          :disabled="loading"
-          icon
-          color="primary"
-          @click="displayDeleteModal(item)"
-        >
-          <v-icon>delete</v-icon>
-        </v-btn>
+      <template #item.actions="{ item }">
+        <bs-mailings-actions-dropdown>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.RENAME)"
+            :icon="actionsDetails[actions.RENAME].icon"
+            :on-click="() => openRenameModal(item)"
+          >
+            {{ $t(actionsDetails[actions.RENAME].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.TRANSFER)"
+            :icon="actionsDetails[actions.TRANSFER].icon"
+            :on-click="() => transferMailing(item)"
+          >
+            {{ $t(actionsDetails[actions.TRANSFER].text) }}
+          </bs-mailings-actions-dropdown-item>
+
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.DELETE)"
+            :icon="actionsDetails[actions.DELETE].icon"
+            :on-click="() => displayDeleteModal(item)"
+          >
+            {{ $t(actionsDetails[actions.DELETE].text) }}
+          </bs-mailings-actions-dropdown-item>
+
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.COPY_MAIL)"
+            :icon="actionsDetails[actions.COPY_MAIL].icon"
+            :on-click="() => openCopyMail(item)"
+          >
+            {{ $t(actionsDetails[actions.COPY_MAIL].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.MOVE_MAIL)"
+            :icon="actionsDetails[actions.MOVE_MAIL].icon"
+            :on-click="() => openMoveMail(item)"
+          >
+            {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
+          </bs-mailings-actions-dropdown-item>
+        </bs-mailings-actions-dropdown>
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
@@ -358,5 +387,15 @@ export default {
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
+    <modal-move-mail
+      ref="moveMailDialog"
+      :title="`${this.$t('global.moveMail')}`"
+      @confirm="moveMail"
+    >
+      <p
+        class="black--text"
+        v-html="$t('mailings.moveMailConfirmationMessage')"
+      />
+    </modal-move-mail>
   </div>
 </template>
