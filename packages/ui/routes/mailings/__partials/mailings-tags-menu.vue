@@ -79,7 +79,7 @@ export default {
         this.removedTags.push(tagName);
       }
     },
-    onUpdateMailingsTags() {
+    updateMailingsTags() {
       this.showTagMenu = false;
       this.$emit('update-tags', {
         added: [...this.addedTags],
@@ -130,7 +130,7 @@ export default {
           <v-btn color="primary" text @click="openNewTagDialog">
             {{ $t('tags.new') }}
           </v-btn>
-          <v-btn color="primary" @click="onUpdateMailingsTags">
+          <v-btn color="primary" @click="updateMailingsTags">
             {{ $t(`global.apply`) }}
           </v-btn>
         </v-card-actions>
