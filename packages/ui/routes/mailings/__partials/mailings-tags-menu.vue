@@ -22,7 +22,7 @@ export default {
         if (this.removedTags.includes(tagName)) {
           return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
         }
-        return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
+        return { name: tagName, checkIcon: CHECKBOX_CHECKED };
       });
     },
   },

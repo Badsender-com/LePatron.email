@@ -102,12 +102,13 @@ export default {
       }
     },
     async handleUpdateTag(tagsInformations) {
+      console.log({ tagsInformations });
       const { $axios } = this;
       this.loading = true;
       const { tags, selectedMailing } = tagsInformations;
       try {
         const mailingsResponse = await $axios.$put(mailings(), {
-          items: selectedMailing,
+          items: [selectedMailing],
           tags: tags,
         });
         console.log({ mailingsResponse });
