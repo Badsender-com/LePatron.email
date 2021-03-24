@@ -1,15 +1,12 @@
 <script>
-import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
-import BsModalTags from '~/components/mailings/modal-tags';
+import BsModalTagsForm from '~/components/mailings/modal-tags-form';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 export default {
   name: 'BsMailingsTagsMenu',
   components: {
-    BsModalTags,
+    BsModalTagsForm,
   },
-  mixins: [validationMixin],
 
   props: {
     tags: { type: Array, default: () => [] },
@@ -18,15 +15,9 @@ export default {
   data() {
     return {
       showTagMenu: false,
-      newTagName: '',
       addedTags: [],
       newTags: [],
       removedTags: [],
-    };
-  },
-  validations() {
-    return {
-      newTagName: { required },
     };
   },
   computed: {
@@ -40,13 +31,6 @@ export default {
         }
         return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
       });
-    },
-    tagNameErrors() {
-      const errors = [];
-      if (!this.$v?.newTagName?.$dirty) return errors;
-      !this.$v?.newTagName?.required &&
-        errors.push(this.$t('global.errors.nameRequired'));
-      return errors;
     },
   },
   watch: {
@@ -77,14 +61,11 @@ export default {
     openNewTagDialog() {
       this.$refs.createTags.open();
     },
-    onCreateNewTag() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
-      const { newTagName } = this;
-      if (![...this.tags, ...this.newTags].includes(newTagName)) {
-        this.newTags.push(newTagName);
+    onCreateNewTag(text) {
+      if (!text) return;
+      if (![...this.tags, ...this.newTags].includes(text)) {
+        this.newTags.push(text);
       }
-      this.$refs.createTags.close();
     },
     toggleTag(tagCheckbox) {
       const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
@@ -155,31 +136,12 @@ export default {
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <bs-modal-tags ref="createTags" width="500" :close-on-content-click="false">
-      <v-card>
-        <v-card-title class="headline">
-          {{ $t('tags.new') }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="newTagName"
-            :label="$t('global.name')"
-            :error-messages="tagNameErrors"
-            @input="$v.newTagName.$touch()"
-            @blur="$v.newTagName.$touch()"
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text @click="closeNewTagDialog">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn color="primary" @click="onCreateNewTag">
-            {{ $t('global.create') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </bs-modal-tags>
+    <bs-modal-tags-form
+      ref="createTags"
+      width="500"
+      :close-on-content-click="false"
+      :input-label="$t('global.name')"
+      @confirm="onCreateNewTag"
+    />
   </div>
 </template>
