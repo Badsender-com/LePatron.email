@@ -5,11 +5,12 @@ export default {
   name: 'BsMailingsTagsMenu',
   props: {
     tags: { type: Array, default: () => [] },
+    selectedMailTags: { type: Array, default: () => [] },
   },
   data() {
     return {
       showTagMenu: false,
-      addedTags: [],
+      addedTags: this.selectedMailTags || [],
       removedTags: [],
     };
   },

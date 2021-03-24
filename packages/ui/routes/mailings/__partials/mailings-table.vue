@@ -395,6 +395,7 @@ export default {
     <bs-mailings-tags-menu
       ref="addTagsMenu"
       :tags="tags"
+      :selected-mail-tags="selectedMailing.tags"
       @update-tags="updateTags"
     />
     <bs-modal-confirm-form
