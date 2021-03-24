@@ -175,7 +175,7 @@ export default {
     },
     deleteSuccessful: 'Mail deleted',
     deleteConfirmationMessage:
-      'You are about to delete the selected mailing. This action can\'t be undone.',
+      'You are about to delete the selected mailings. This action can\'t be undone.',
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     rename: 'Rename email',
