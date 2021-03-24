@@ -100,6 +100,8 @@ export default {
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
+      } finally {
+        this.mailingsSelection = [];
       }
     },
   },
@@ -140,7 +142,10 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
-        <mailings-selection-actions :mailings-selection="mailingsSelection" />
+        <mailings-selection-actions
+          :mailings-selection="mailingsSelection"
+          @on-refetch="fecthData()"
+        />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"

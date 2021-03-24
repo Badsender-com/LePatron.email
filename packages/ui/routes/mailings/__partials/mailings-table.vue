@@ -140,12 +140,6 @@ export default {
         id: mailing.id,
       });
     },
-    displayDeleteSelectionModal(item) {
-      this.$refs.deleteSelectionDialog.open({
-        name: 'Hello',
-        mailings: item,
-      });
-    },
     closeRename() {
       this.$refs.renameDialog.close();
     },
@@ -229,22 +223,6 @@ export default {
       } finally {
         this.loading = false;
       }
-    },
-    async handleMultipleDelete(mailings) {
-      // const { $axios } = this;
-      // this.loading = true;
-      console.log({ mailings });
-      // const updateUri = mailingsItem({ mailingId: id });
-      // try {
-      // } catch (error) {
-      //   this.showSnackbar({
-      //     text: this.$t('global.errors.errorOccured'),
-      //     color: 'error',
-      //   });
-      //   console.log(error);
-      // } finally {
-      //   this.loading = false;
-      // }
     },
     async copyMail({ workspaceId, mailingId }) {
       try {
