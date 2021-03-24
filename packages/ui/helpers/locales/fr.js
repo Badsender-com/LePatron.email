@@ -31,6 +31,7 @@ export default {
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer',
+    location: 'Destination',
     moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
@@ -179,6 +180,7 @@ export default {
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
+    name: 'Nommer l\'email',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
