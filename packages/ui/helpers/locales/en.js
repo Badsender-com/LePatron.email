@@ -55,6 +55,7 @@ export default {
     save: 'Save',
     cancel: 'Cancel',
     create: 'Create',
+    createTag: 'Create tag',
     update: 'Update',
     delete: 'Delete',
     reset: 'Reset',

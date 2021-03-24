@@ -61,7 +61,7 @@ export default {
     openNewTagDialog() {
       this.$refs.createTags.open();
     },
-    onCreateNewTag(text) {
+    createNewTag(text) {
       if (!text) return;
       if (![...this.tags, ...this.newTags].includes(text)) {
         this.newTags.push(text);
@@ -141,7 +141,7 @@ export default {
       width="500"
       :close-on-content-click="false"
       :input-label="$t('global.name')"
-      @confirm="onCreateNewTag"
+      @confirm="createNewTag"
     />
   </div>
 </template>

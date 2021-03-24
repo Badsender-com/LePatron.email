@@ -35,7 +35,6 @@ export default {
   methods: {
     submit() {
       this.$v.$touch();
-      console.log({ textInModal: this.text });
       if (this.$v.$invalid) return;
       this.$emit('confirm', this.text);
       this.close();
@@ -73,7 +72,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="primary" @click="submit">
-          {{ $t('global.create') }}
+          {{ $t('global.createTag') }}
         </v-btn>
       </v-card-actions>
     </v-form>
