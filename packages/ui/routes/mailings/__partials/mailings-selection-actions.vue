@@ -1,12 +1,13 @@
 <script>
 import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
-import { moveManyMails } from '~/helpers/api-routes';
+import BsModalConfirm from '~/components/modal-confirm';
+import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   name: 'MailingsSelectionActions',
-  components: { ModalMoveMail },
+  components: { ModalMoveMail, BsModalConfirm },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
@@ -34,8 +35,34 @@ export default {
         },
       });
     },
+    openDeleteSelectionModal() {
+      this.$refs.deleteSelectionDialog.open();
+    },
     closeMoveManyMailsDialog() {
       this.$refs.moveManyMailsDialog.close();
+    },
+    async handleMultipleDelete() {
+      const { $route } = this;
+      try {
+        for (const mailing of this.mailingsSelection) {
+          await this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
+            data: {
+              workspaceId: $route.query.wid,
+            },
+          });
+        }
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('mailings.deleteSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      }
     },
     async moveManyMails({ destinationWorkspaceId, _ }) {
       try {
@@ -90,9 +117,42 @@ export default {
               })
             }}</span>
           </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="openDeleteSelectionModal"
+              >
+                <v-icon>delete</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.deleteCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
         </div>
       </div>
     </v-alert>
+    <bs-modal-confirm
+      ref="deleteSelectionDialog"
+      :title="
+        $tc('mailings.deleteCount', selectionLength, {
+          count: selectionLength,
+        })
+      "
+      :action-label="$t('global.delete')"
+      action-button-color="error"
+      @confirm="handleMultipleDelete(se)"
+    >
+      <p
+        class="black--text"
+        v-html="$t('mailings.deleteConfirmationMessage')"
+      />
+    </bs-modal-confirm>
     <modal-move-mail
       ref="moveManyMailsDialog"
       :is-moving-many-mails="true"

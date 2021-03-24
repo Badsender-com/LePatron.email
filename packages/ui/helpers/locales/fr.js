@@ -171,6 +171,9 @@ export default {
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
+    deleteSuccessful: 'Email supprimé',
+    deleteConfirmationMessage:
+      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
