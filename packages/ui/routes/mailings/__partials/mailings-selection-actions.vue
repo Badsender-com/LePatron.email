@@ -56,7 +56,7 @@ export default {
         }
         this.$emit('on-refetch');
         this.showSnackbar({
-          text: this.$t('mailings.moveMailSuccessful'),
+          text: this.$t('mailings.deleteSuccessful'),
           color: 'success',
         });
       } catch (error) {
@@ -113,6 +113,15 @@ export default {
               >
                 <v-icon>drive_file_move</v-icon>
               </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.moveCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
               <v-btn
                 icon
                 color="info"
@@ -123,7 +132,7 @@ export default {
               </v-btn>
             </template>
             <span>{{
-              $tc('mailings.moveCount', selectionLength, {
+              $tc('mailings.deleteCount', selectionLength, {
                 count: selectionLength,
               })
             }}</span>
@@ -133,10 +142,19 @@ export default {
     </v-alert>
     <bs-modal-confirm
       ref="deleteSelectionDialog"
-      :title="`${this.$t('global.delete')}`"
-      :action-label="$t('global.enable')"
+      :title="
+        $tc('mailings.deleteCount', selectionLength, {
+          count: selectionLength,
+        })
+      "
+      :action-label="$t('global.delete')"
       @confirm="handleMultipleDelete(se)"
-    />
+    >
+      <p
+        class="black--text"
+        v-html="$t('mailings.deleteConfirmationMessage')"
+      />
+    </bs-modal-confirm>
     <modal-move-mail
       ref="moveManyMailsDialog"
       :is-moving-many-mails="true"
