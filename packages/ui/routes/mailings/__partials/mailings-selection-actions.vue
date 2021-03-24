@@ -1,13 +1,14 @@
 <script>
 import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
 import BsModalConfirm from '~/components/modal-confirm';
+import MailingsTagsMenu from '~/components/mailings/tags-menu.vue';
 import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   name: 'MailingsSelectionActions',
-  components: { ModalMoveMail, BsModalConfirm },
+  components: { ModalMoveMail, BsModalConfirm, MailingsTagsMenu },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
@@ -103,6 +104,12 @@ export default {
         }}</span>
 
         <div class="bs-mailing-selection-actions__actions">
+          <mailings-tags-menu
+            :tags="tags"
+            :mailings-selection="mailingsSelection"
+            @create="$emit(`createTag`, $event)"
+            @update="$emit(`updateTags`, $event)"
+          />
           <v-tooltip bottom>
             <template #activator="{ on }">
               <v-btn
