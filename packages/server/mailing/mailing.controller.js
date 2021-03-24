@@ -82,13 +82,15 @@ async function list(req, res, next) {
  * @apiGroup Mailings
  *
  * @apiParam (Body) {String} templateId the ID of the template used
+ * @apiParam (Body) {String} workspaceId the ID of the new mailing's workspace
+ * @apiParam (Body) {String} mailingName the name of the new mailing
  *
  * @apiUse mailings
  */
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId } = req.body;
+  const { templateId, workspaceId, mailingName } = req.body;
 
   if (!workspaceId) {
     throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
@@ -107,7 +109,7 @@ async function create(req, res) {
 
   const mailing = {
     // Always give a default name: needed for ordering & filtering
-    name: simpleI18n('default-mailing-name', user.lang),
+    name: mailingName || simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
     workspace: workspaceId,

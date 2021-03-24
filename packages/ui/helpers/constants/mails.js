@@ -30,7 +30,7 @@ export const ACTIONS_DETAILS = {
   },
   [ACTIONS.MOVE_MAIL]: {
     text: 'global.moveMail',
-    icon: 'forward',
+    icon: 'drive_file_move',
     emit: 'copy-mail-action',
   },
 };
