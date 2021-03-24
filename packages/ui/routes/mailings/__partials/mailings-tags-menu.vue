@@ -1,11 +1,14 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-
+import BsModalTags from '~/components/mailings/modal-tags';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 export default {
-  name: 'MailingsTagsMenu',
+  name: 'BsMailingsTagsMenu',
+  components: {
+    BsModalTags,
+  },
   mixins: [validationMixin],
 
   props: {
@@ -15,7 +18,6 @@ export default {
   data() {
     return {
       showTagMenu: false,
-      newTagDialog: false,
       newTagName: '',
       addedTags: [],
       newTags: [],
@@ -70,10 +72,10 @@ export default {
       this.showTagMenu = true;
     },
     closeNewTagDialog() {
-      this.newTagDialog = false;
+      this.$refs.createTags.close();
     },
     openNewTagDialog() {
-      this.newTagDialog = true;
+      this.$refs.createTags.open();
     },
     onCreateNewTag() {
       this.$v.$touch();
@@ -82,7 +84,7 @@ export default {
       if (![...this.tags, ...this.newTags].includes(newTagName)) {
         this.newTags.push(newTagName);
       }
-      this.closeNewTagDialog();
+      this.$refs.createTags.close();
     },
     toggleTag(tagCheckbox) {
       const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
@@ -153,7 +155,7 @@ export default {
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="newTagDialog" width="500">
+    <bs-modal-tags ref="createTags" width="500" :close-on-content-click="false">
       <v-card>
         <v-card-title class="headline">
           {{ $t('tags.new') }}
@@ -178,6 +180,6 @@ export default {
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </bs-modal-tags>
   </div>
 </template>
