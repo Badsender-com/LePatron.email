@@ -1,5 +1,6 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
@@ -78,6 +79,8 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
@@ -102,6 +105,26 @@ export default {
         this.mailingsIsError = true;
       } finally {
         this.mailingsSelection = [];
+      }
+    },
+    async handleUpdateTags(tagsInformations) {
+      const { $axios } = this;
+      this.loading = true;
+      const { tags, selectedMailing } = tagsInformations;
+      try {
+        await $axios.$put(mailings(), {
+          items: [selectedMailing.id],
+          tags,
+        });
+        this.fecthData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -151,7 +174,9 @@ export default {
           v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
+          :tags="tags"
           @on-refetch="fecthData()"
+          @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>
     </v-card>

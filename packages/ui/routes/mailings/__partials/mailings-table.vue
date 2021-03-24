@@ -11,6 +11,7 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
+import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 
@@ -20,12 +21,14 @@ const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
 const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
   ACTIONS.RENAME,
   ACTIONS.DELETE,
+  ACTIONS.ADD_TAGS,
   ACTIONS.MOVE_MAIL,
 ];
 
 const TABLE_ACTIONS = [
   ACTIONS.RENAME,
   ACTIONS.TRANSFER,
+  ACTIONS.ADD_TAGS,
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
@@ -40,6 +43,7 @@ export default {
     ModalCopyMail,
     BsMailingsActionsDropdown,
     BsMailingsActionsDropdownItem,
+    MailingsTagsMenu,
     ModalMoveMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -50,6 +54,7 @@ export default {
       default: () => {},
     },
     mailingsSelection: { type: Array, default: () => [] },
+    tags: { type: Array, default: () => [] },
   },
   data() {
     return {
@@ -119,6 +124,9 @@ export default {
         (action) => !this.hiddenCols.includes(action)
       );
     },
+    selectedMailTags() {
+      return this.selectedMailing?.tags || [];
+    },
   },
   watch: {
     dialogRename(val) {
@@ -136,6 +144,13 @@ export default {
     displayDeleteModal(mailing) {
       this.selectedMailing = mailing;
       this.$refs.deleteDialog.open({
+        name: mailing.name,
+        id: mailing.id,
+      });
+    },
+    openTagsMenu(mailing) {
+      this.selectedMailing = mailing;
+      this.$refs.addTagsMenu.openMenu({
         name: mailing.name,
         id: mailing.id,
       });
@@ -282,6 +297,12 @@ export default {
     display(mailing) {
       this.$emit('copyMail', mailing);
     },
+    updateTags(tags) {
+      this.$emit('update-tags', {
+        selectedMailing: this.selectedMailing,
+        tags,
+      });
+    },
   },
 };
 </script>
@@ -334,6 +355,13 @@ export default {
             {{ $t(actionsDetails[actions.RENAME].text) }}
           </bs-mailings-actions-dropdown-item>
           <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.ADD_TAGS)"
+            :icon="actionsDetails[actions.ADD_TAGS].icon"
+            :on-click="() => openTagsMenu(item)"
+          >
+            {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.TRANSFER)"
             :icon="actionsDetails[actions.TRANSFER].icon"
             :on-click="() => transferMailing(item)"
@@ -366,6 +394,12 @@ export default {
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
+    <mailings-tags-menu
+      ref="addTagsMenu"
+      :tags="tags"
+      :selected-mail-tags="selectedMailTags"
+      @update-tags="updateTags"
+    />
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"

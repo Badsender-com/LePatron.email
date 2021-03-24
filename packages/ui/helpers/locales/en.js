@@ -29,6 +29,7 @@ export default {
     },
 
     teams: 'Workspaces',
+    addTags: 'Add tags',
     copyMail: 'Copy',
     copyMailAction: 'Create copy',
     moveMail: 'Move',

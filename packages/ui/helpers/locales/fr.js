@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+    addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer',
