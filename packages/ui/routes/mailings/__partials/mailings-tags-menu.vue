@@ -10,10 +10,11 @@ export default {
   data() {
     return {
       showTagMenu: false,
-      addedTags: this.selectedMailTags || [],
+      addedTags: [],
       removedTags: [],
     };
   },
+
   computed: {
     tagsCheckboxList() {
       return this.tags.map((tagName) => {
@@ -23,8 +24,22 @@ export default {
         if (this.removedTags.includes(tagName)) {
           return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
         }
-        return { name: tagName, checkIcon: CHECKBOX_CHECKED };
+        return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
       });
+    },
+  },
+  watch: {
+    showTagMenu: {
+      handler: function (val) {
+        if (val) {
+          this.addedTags = [...this.selectedMailTags];
+          this.removedTags = [];
+          return;
+        }
+        this.addedTags = [];
+        this.removedTags = [];
+      },
+      deep: true,
     },
   },
 
@@ -37,14 +52,14 @@ export default {
     },
     toggleTag(tagCheckbox) {
       const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
-
       if (tagStatus === CHECKBOX_UNCHECKED) {
         this.removedTags = this.removedTags.filter((tag) => tag !== tagName);
-        return this.addedTags.push(tagName);
+        this.addedTags.push(tagName);
+        return;
       }
       if (tagStatus === CHECKBOX_CHECKED) {
         this.addedTags = this.addedTags.filter((tag) => tag !== tagName);
-        return this.removedTags.push(tagName);
+        this.removedTags.push(tagName);
       }
     },
     onUpdateMailingsTags() {
