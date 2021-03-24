@@ -2,7 +2,7 @@
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 export default {
-  name: 'BsMailingsTagsMenu',
+  name: 'MailingsTagsMenu',
   props: {
     tags: { type: Array, default: () => [] },
     selectedMailTags: { type: Array, default: () => [] },
