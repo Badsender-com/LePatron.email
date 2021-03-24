@@ -9,6 +9,7 @@ import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
@@ -17,6 +18,7 @@ export default {
     MailingsTable,
     MailingsFilters,
     MailingsBreadcrumbs,
+    MailingsSelectionActions,
     BsMailingsModalNew,
   },
   mixins: [mixinPageTitle],
@@ -51,6 +53,7 @@ export default {
     mailingsIsLoading: false,
     mailingsIsError: false,
     mailings: [],
+    mailingsSelection: [],
     workspace: {},
     tags: [],
     filterValues: null,
@@ -142,8 +145,10 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
+        <mailings-selection-actions :mailings-selection="mailingsSelection" />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
+          v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
           @on-refetch="fecthData()"

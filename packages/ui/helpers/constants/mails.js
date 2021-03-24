@@ -3,6 +3,7 @@ export const ACTIONS = {
   TRANSFER: 'TRANSFER',
   DELETE: 'DELETE',
   COPY_MAIL: 'COPY_MAIL',
+  MOVE_MAIL: 'MOVE_MAIL',
 };
 
 export const ACTIONS_DETAILS = {
@@ -24,6 +25,11 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.COPY_MAIL]: {
     text: 'global.copyMail',
     icon: 'content_copy',
+    emit: 'copy-mail-action',
+  },
+  [ACTIONS.MOVE_MAIL]: {
+    text: 'global.moveMail',
+    icon: 'drive_file_move',
     emit: 'copy-mail-action',
   },
 };

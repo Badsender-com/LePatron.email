@@ -7,6 +7,7 @@ export default {
       default: false,
     },
     title: { type: String, default: '' },
+    modalWidth: { type: String, default: '500' },
     actionLabel: { type: String, default: '' },
   },
   data() {
@@ -28,7 +29,7 @@ export default {
 </script>
 
 <template>
-  <v-dialog v-model="show" width="500" class="bs-modal-confirm">
+  <v-dialog v-model="show" :width="modalWidth" class="bs-modal-confirm">
     <v-card>
       <v-card-title class="headline">
         {{ title }}
