@@ -81,7 +81,7 @@ export default {
                 v-on="on"
                 @click="openMoveManyMailsDialog"
               >
-                <v-icon>forward</v-icon>
+                <v-icon>drive_file_move</v-icon>
               </v-btn>
             </template>
             <span>{{
