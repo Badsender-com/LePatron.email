@@ -4,6 +4,7 @@ export const ACTIONS = {
   DELETE: 'DELETE',
   COPY_MAIL: 'COPY_MAIL',
   ADD_TAGS: 'ADD_TAGS',
+  MOVE_MAIL: 'MOVE_MAIL',
 };
 
 export const ACTIONS_DETAILS = {
@@ -26,5 +27,10 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.ADD_TAGS]: {
     text: 'global.addTags',
     icon: 'label',
+  },
+  [ACTIONS.MOVE_MAIL]: {
+    text: 'global.moveMail',
+    icon: 'forward',
+    emit: 'copy-mail-action',
   },
 };

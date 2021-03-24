@@ -8,6 +8,7 @@ import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
@@ -16,6 +17,7 @@ export default {
     MailingsTable,
     MailingsFilters,
     MailingsBreadcrumbs,
+    MailingsSelectionActions,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -34,8 +36,6 @@ export default {
           }),
         ]);
 
-        console.log({ mailingsResponse });
-
         return {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,
@@ -51,6 +51,7 @@ export default {
     mailingsIsLoading: false,
     mailingsIsError: false,
     mailings: [],
+    mailingsSelection: [],
     workspace: {},
     tags: [],
     filterValues: null,
@@ -107,16 +108,11 @@ export default {
       this.loading = true;
       const { tags, selectedMailing } = tagsInformations;
       try {
-        const mailingsResponse = await $axios.$put(mailings(), {
-          items: [selectedMailing],
-          tags: tags,
+        await $axios.$put(mailings(), {
+          items: [selectedMailing.id],
+          tags,
         });
-        console.log({ mailingsResponse });
       } catch (error) {
-        /*         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        }); */
         console.log(error);
       } finally {
         this.loading = false;
@@ -160,8 +156,10 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
+        <mailings-selection-actions :mailings-selection="mailingsSelection" />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
+          v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
           :tags="tags"

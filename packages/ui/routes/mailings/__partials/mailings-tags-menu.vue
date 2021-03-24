@@ -47,6 +47,7 @@ export default {
       }
     },
     onUpdateMailingsTags() {
+      this.showTagMenu = false;
       this.$emit('update-tags', {
         added: [...this.addedTags],
         removed: [...this.removedTags],
