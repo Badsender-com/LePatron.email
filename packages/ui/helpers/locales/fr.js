@@ -55,7 +55,7 @@ export default {
     settings: 'Réglages',
     cancel: 'Annuler',
     create: 'Créer',
-    createTag: 'Créer un tag',
+    createTag: 'Créer un label',
     update: 'Mettre à jour',
     delete: 'Supprimer',
     reset: 'Réinitialiser',
