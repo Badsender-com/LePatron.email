@@ -27,10 +27,10 @@ export default {
         },
       },
     },
-    copyMail: 'Copie de l\'email',
     addTags: 'Ajouter des labels',
+    copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
-    moveMail: 'Déplacer l\'email',
+    moveMail: 'Déplacer',
     moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
@@ -173,6 +173,9 @@ export default {
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
+    deleteSuccessful: 'Email supprimé',
+    deleteConfirmationMessage:
+      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',

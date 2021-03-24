@@ -80,7 +80,6 @@ export default {
   watchQuery: ['wid'],
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
@@ -103,6 +102,31 @@ export default {
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
+      } finally {
+        this.mailingsSelection = [];
+      }
+    },
+    onTagCreate(newTag) {
+      this.tags = [...new Set([newTag, ...this.tags])];
+    },
+    async onTagsUpdate(tagsUpdates) {
+      const { $axios } = this;
+      this.loading = true;
+      try {
+        const mailingsResponse = await $axios.$put(mailings(), {
+          items: this.mailingsSelection.map(mailing => mailing.id),
+          tags: tagsUpdates,
+        });
+        this.tags = mailingsResponse.meta.tags;
+        this.fecthData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
       }
     },
     async handleUpdateTags(tagsInformations) {
@@ -163,7 +187,13 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
-        <mailings-selection-actions :mailings-selection="mailingsSelection" />
+        <mailings-selection-actions
+          :mailings-selection="mailingsSelection"
+          :tags="tags"
+          @createTag="onTagCreate"
+          @updateTags="onTagsUpdate"
+          @on-refetch="fecthData()"
+        />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"

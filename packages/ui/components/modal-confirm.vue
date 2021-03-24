@@ -8,6 +8,7 @@ export default {
     },
     title: { type: String, default: '' },
     actionLabel: { type: String, default: '' },
+    actionButtonColor: { type: String, default: 'primary' },
   },
   data() {
     return { show: false };
@@ -43,7 +44,7 @@ export default {
           <v-btn color="primary" text @click="close">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn color="primary" @click="action">
+          <v-btn :color="actionButtonColor" @click="action">
             {{ actionLabel }}
           </v-btn>
         </v-card-actions>
