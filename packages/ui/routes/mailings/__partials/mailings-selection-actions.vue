@@ -35,11 +35,8 @@ export default {
         },
       });
     },
-    openDeleteSelectionModal(item) {
-      this.$refs.deleteSelectionDialog.open({
-        name: 'Hello',
-        mailings: item,
-      });
+    openDeleteSelectionModal() {
+      this.$refs.deleteSelectionDialog.open();
     },
     closeMoveManyMailsDialog() {
       this.$refs.moveManyMailsDialog.close();
