@@ -1,5 +1,6 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
@@ -8,6 +9,7 @@ import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'PageMailings',
@@ -16,6 +18,7 @@ export default {
     MailingsTable,
     MailingsFilters,
     MailingsBreadcrumbs,
+    MailingsSelectionActions,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -49,6 +52,7 @@ export default {
     mailingsIsLoading: false,
     mailingsIsError: false,
     mailings: [],
+    mailingsSelection: [],
     workspace: {},
     tags: [],
     filterValues: null,
@@ -75,6 +79,8 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
@@ -97,6 +103,28 @@ export default {
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
+      } finally {
+        this.mailingsSelection = [];
+      }
+    },
+    async handleUpdateTags(tagsInformations) {
+      const { $axios } = this;
+      this.loading = true;
+      const { tags, selectedMailing } = tagsInformations;
+      try {
+        await $axios.$put(mailings(), {
+          items: [selectedMailing.id],
+          tags,
+        });
+        this.fecthData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -121,10 +149,14 @@ export default {
           <v-btn
             class="my-4 new-mail-button"
             color="primary"
+            tile
             :disabled="!hasAccess"
             :to="`/mailings/new?wid=${$route.query.wid}`"
           >
-            Nouveau
+            <v-icon left>
+              mdi-plus
+            </v-icon>
+            {{ $t('global.newMail') }}
           </v-btn>
         </v-list-item>
       </v-list>
@@ -133,11 +165,18 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
+        <mailings-selection-actions
+          :mailings-selection="mailingsSelection"
+          @on-refetch="fecthData()"
+        />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
+          v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
+          :tags="tags"
           @on-refetch="fecthData()"
+          @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>
     </v-card>

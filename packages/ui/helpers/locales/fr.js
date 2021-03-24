@@ -27,8 +27,11 @@ export default {
         },
       },
     },
-    copyMail: 'Copie du mail',
+    addTags: 'Ajouter des labels',
+    copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
+    moveMail: 'Déplacer',
+    moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     template: 'Template | Templates',
@@ -38,13 +41,14 @@ export default {
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
     newTag: 'Ajouter un tag',
-    backToMails: 'Retour aux mails',
+    backToMails: 'Retour aux emails',
     backToGroups: 'Retour aux groupes',
     group: 'Groupe | Groupes',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
     workspace: 'Workspace',
     newWorkspace: 'Ajouter un workspace',
+    newMail: 'Nouvel email',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
@@ -131,8 +135,9 @@ export default {
       },
     },
     workspace: {
-      checkBoxError: 'Vous devez accepter pour continuer!',
-      inputError: 'Vous devez entrer le nom',
+      checkBoxError:
+        'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
+      inputError: 'Le nom est requis',
     },
   },
   groups: {
@@ -140,10 +145,10 @@ export default {
       informations: 'Informations',
     },
     mailingTab: {
-      confirmationField: 'Tapez le nom du mailing pour confirmer',
+      confirmationField: 'Tapez le nom de l\'email pour confirmer',
       deleteWarningMessage:
-        'Vous êtes sur le point de supprimer le mailing "<strong>{name}</strong>". Cette action est irréversible.',
-      deleteSuccessful: 'Mailing supprimé',
+        'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteSuccessful: 'Email supprimé',
     },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
@@ -167,16 +172,23 @@ export default {
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
+    deleteSuccessful: 'Email supprimé',
+    deleteConfirmationMessage:
+      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
+    selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
+    moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
       'Veuillez choisir l\'emplacement de la nouvelle copie',
-    copyMailSuccessful: 'Mail copié',
+    copyMailSuccessful: 'Email copié',
+    moveMailConfirmationMessage: 'Veuillez choisir la destination',
+    moveMailSuccessful: 'Email déplacé',
   },
   template: {
     noId: 'Aucun ID',
@@ -232,7 +244,7 @@ export default {
       ftpDownload: 'Téléchargement FTP',
     },
     users: {
-      passwordMail: 'Mail de mot de passe',
+      passwordMail: 'Email de mot de passe',
     },
     templates: {
       markup: 'Markup?',

@@ -1,13 +1,23 @@
 'use strict';
 
 const { omit } = require('lodash');
-const { Mailings, Workspaces, Galleries } = require('../common/models.common.js');
+const {
+  Mailings,
+  Workspaces,
+  Galleries,
+} = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
 const fileManager = require('../common/file-manage.service.js');
 const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
+const {
+  NotFound,
+  InternalServerError,
+  UnprocessableEntity,
+} = require('http-errors');
+
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   createMailing,
@@ -17,6 +27,9 @@ module.exports = {
   renameMailing,
   deleteOne,
   copyMailing,
+  moveMailing,
+  moveManyMailings,
+  findAllIn,
 };
 
 async function findMailings(query) {
@@ -62,9 +75,14 @@ async function copyMailing(mailing, destinationWorkspace) {
   };
 
   const copiedMailing = await Mailings.create(copy);
-  const gallery = await Galleries.findOne({ creationOrWireframeId: mailing._id });
+  const gallery = await Galleries.findOne({
+    creationOrWireframeId: mailing._id,
+  });
 
-  await fileManager.copyImages(mailing._id, copiedMailing._id);
+  await fileManager.copyImages(
+    mailing._id?.toString(),
+    copiedMailing._id?.toString()
+  );
   await copiedMailing.save();
 
   try {
@@ -72,9 +90,10 @@ async function copyMailing(mailing, destinationWorkspace) {
       gallery.duplicate(copiedMailing._id).save();
     }
   } catch (error) {
-    logger.warn(`MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`);
+    logger.warn(
+      `MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`
+    );
   }
-
 }
 
 async function renameMailing(mailing) {
@@ -91,6 +110,66 @@ async function renameMailing(mailing) {
 
 async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
+}
+
+async function moveMailing(user, mailing, workspaceId) {
+  const sourceWorkspace = await workspaceService.getWorkspace(
+    mailing._workspace
+  );
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+
+  workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+  workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+
+  const moveResponse = await Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailing.id) },
+    { _workspace: destinationWorkspace }
+  );
+
+  // update queries return objects with format { n, nModified, ok }
+  // ok != 1 indicates a failure
+  if (moveResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+  }
+}
+
+async function findAllIn(mailingsIds) {
+  const mailings = await Mailings.find({
+    _id: { $in: mailingsIds.map((id) => mongoose.Types.ObjectId(id)) },
+  });
+
+  if (mailings.length !== mailingsIds.length) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  return mailings;
+}
+
+async function moveManyMailings(user, mailingsIds, workspaceId) {
+  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+  workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
+
+  const mailings = await findAllIn(mailingsIds);
+
+  for (const mailing of mailings) {
+    if (!mailing._workspace) {
+      throw new UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
+    }
+
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing._workspace
+    );
+    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+  }
+
+  const moveResponse = await Mailings.updateMany(
+    { _id: { $in: mailings.map((mailing) => mailing.id) } },
+    { _workspace: destinationWorkspace }
+  );
+
+  if (moveResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+  }
 }
 
 function applyFilters(query) {
