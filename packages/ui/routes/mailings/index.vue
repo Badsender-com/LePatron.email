@@ -105,7 +105,7 @@ export default {
         this.mailingsIsError = true;
       }
     },
-    async handleUpdateTag(tagsInformations) {
+    async handleUpdateTags(tagsInformations) {
       const { $axios } = this;
       this.loading = true;
       const { tags, selectedMailing } = tagsInformations;
@@ -171,7 +171,7 @@ export default {
           :workspace="workspace"
           :tags="tags"
           @on-refetch="fecthData()"
-          @update-tags="handleUpdateTag"
+          @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>
     </v-card>

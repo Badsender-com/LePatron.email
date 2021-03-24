@@ -11,7 +11,7 @@ import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
 import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
-import BsMailingsTagsMenu from './mailings-tags-menu';
+import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 
@@ -43,7 +43,7 @@ export default {
     ModalCopyMail,
     BsMailingsActionsDropdown,
     BsMailingsActionsDropdownItem,
-    BsMailingsTagsMenu,
+    MailingsTagsMenu,
     ModalMoveMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -123,6 +123,9 @@ export default {
       return this.tableActions.filter(
         (action) => !this.hiddenCols.includes(action)
       );
+    },
+    selectedMailTags() {
+      return this.selectedMailing?.tags || [];
     },
   },
   watch: {
@@ -392,10 +395,10 @@ export default {
       </template>
     </v-data-table>
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
-    <bs-mailings-tags-menu
+    <mailings-tags-menu
       ref="addTagsMenu"
       :tags="tags"
-      :selected-mail-tags="selectedMailing.tags"
+      :selected-mail-tags="selectedMailTags"
       @update-tags="updateTags"
     />
     <bs-modal-confirm-form

@@ -5,8 +5,9 @@ import { required } from 'vuelidate/lib/validators';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 export default {
-  name: 'BsMailingsTagsMenu',
+  name: 'MailingsTagsMenu',
   mixins: [validationMixin],
+
   props: {
     tags: { type: Array, default: () => [] },
     selectedMailTags: { type: Array, default: () => [] },
