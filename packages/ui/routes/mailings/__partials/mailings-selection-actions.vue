@@ -148,6 +148,7 @@ export default {
         })
       "
       :action-label="$t('global.delete')"
+      action-button-color="error"
       @confirm="handleMultipleDelete(se)"
     >
       <p

@@ -173,7 +173,7 @@ export default {
     },
     deleteSuccessful: 'Email supprimé',
     deleteConfirmationMessage:
-      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible',
+      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
