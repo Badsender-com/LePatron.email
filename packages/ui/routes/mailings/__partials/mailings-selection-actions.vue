@@ -57,7 +57,7 @@ export default {
 
         this.$emit('on-refetch');
         this.showSnackbar({
-          text: this.$t('mailings.deleteSuccessful'),
+          text: this.$t('mailings.deleteManySuccessful'),
           color: 'success',
         });
       } catch (error) {
@@ -78,7 +78,7 @@ export default {
           query: { wid: destinationWorkspaceId },
         });
         this.showSnackbar({
-          text: this.$t('mailings.moveMailSuccessful'),
+          text: this.$t('mailings.moveManySuccessful'),
           color: 'success',
         });
       } catch (error) {

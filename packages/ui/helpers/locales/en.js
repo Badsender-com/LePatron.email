@@ -175,7 +175,7 @@ export default {
       updatedBetween: 'Updated between',
       and: 'And',
     },
-    deleteSuccessful: 'Mail deleted',
+    deleteManySuccessful: 'Mailings deleted',
     deleteConfirmationMessage:
       'You are about to delete the selected mailings. This action can\'t be undone.',
     duplicate: 'Duplicate email',
@@ -191,6 +191,7 @@ export default {
     copyMailSuccessful: 'Mail copied',
     moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
+    moveManySuccessful: 'Emails moved',
   },
   template: {
     noId: 'No ID',

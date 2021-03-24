@@ -174,7 +174,7 @@ export default {
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
-    deleteSuccessful: 'Email supprimé',
+    deleteManySuccessful: 'Emails supprimés',
     deleteConfirmationMessage:
       'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
@@ -192,6 +192,7 @@ export default {
     copyMailSuccessful: 'Email copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
+    moveManySuccessful: 'Emails déplacés',
   },
   template: {
     noId: 'Aucun ID',
