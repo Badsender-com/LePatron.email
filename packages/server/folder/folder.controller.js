@@ -52,8 +52,8 @@ async function create(req, res) {
     parentFolderId
   };
 
-  const createdFolder = await folderService.create(folder);
+  const createdFolder = await folderService.create(folder, user);
 
-
+  res.send(createdFolder);
 }
 

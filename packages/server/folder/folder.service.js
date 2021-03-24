@@ -32,6 +32,10 @@ async function deleteFolderContent(folderId) {
 async function create(folder, user) {
   const { workspaceId, parentFolderId, name } = folder;
 
+  if (!name || name === '') {
+    throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
+  }
+
   if (!workspaceId && !parentFolderId) {
     throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
   }
@@ -49,10 +53,6 @@ async function create(folder, user) {
 
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
-    const folder = { n}
-
-    return Folders.create(folder)
-
     folder._workspace = workspace._id;
   }
 
@@ -69,6 +69,7 @@ async function create(folder, user) {
     folder._workspace = parentFolder._workspace;
   }
 
+  return Folders.create(folder);
 
 }
 
