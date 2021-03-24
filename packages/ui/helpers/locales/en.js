@@ -29,10 +29,10 @@ export default {
     },
 
     teams: 'Workspaces',
-    copyMail: 'Copy mail ',
+    copyMail: 'Copy',
     copyMailAction: 'Create copy',
-    moveMail: 'Move mail',
-    moveManyMail: 'Move mails',
+    moveMail: 'Move',
+    moveManyMail: 'Move',
     newTemplate: 'Add a template',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
