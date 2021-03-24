@@ -56,9 +56,3 @@ export default {
     </template>
   </v-breadcrumbs>
 </template>
-
-<style lang="scss" scoped>
-.v-breadcrumbs__item--disabled {
-  color: var(--v-grey-darken4);
-}
-</style>

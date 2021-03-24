@@ -16,7 +16,6 @@ export default {
       this[loadingKey] = true;
       const workspaceId = $route?.query?.wid;
       try {
-        console.log('trying to create a mail...');
         let requestCreateMailData = {
           templateId: template.id,
           workspaceId,

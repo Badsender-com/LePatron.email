@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixin-create-mailing';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
-import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new.vue';
+import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new-mail.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
@@ -53,6 +53,7 @@ export default {
   data: () => ({
     mailingsIsLoading: false,
     mailingsIsError: false,
+    loading: false,
     mailings: [],
     mailingsSelection: [],
     workspace: {},
@@ -87,12 +88,14 @@ export default {
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
-    handleCreateNewMail(createMailModalData) {
-      this.mixinCreateMailing(
+    async handleCreateNewMail(createMailModalData) {
+      this.loading = true;
+      await this.mixinCreateMailing(
         createMailModalData.template,
         'loading',
         createMailModalData.defaultMailName
       );
+      this.loading = false;
     },
     async fetchData() {
       try {
@@ -165,6 +168,7 @@ export default {
     </v-card>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
+      :loading-parent="loading"
       @create-new-mail="handleCreateNewMail"
     />
   </bs-layout-left-menu>

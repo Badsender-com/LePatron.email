@@ -13,6 +13,9 @@ export default {
     TemplateCard,
   },
   mixins: [mixinCreateMailing],
+  props: {
+    loadingParent: { type: Boolean, default: false },
+  },
   data() {
     return {
       templates: [],
@@ -28,7 +31,11 @@ export default {
       return `${this.$t('global.location')} :`;
     },
     isValidToCreate() {
-      return !!this.selectedTemplate?.id && !!this.defaultMailName;
+      return (
+        !!this.selectedTemplate?.id &&
+        !!this.defaultMailName &&
+        !this.loadingParent
+      );
     },
   },
   async mounted() {
@@ -58,7 +65,9 @@ export default {
           defaultMailName: this.defaultMailName,
           template: this.selectedTemplate,
         });
-        this.close();
+        if (!this.loadingParent) {
+          this.close();
+        }
       }
     },
     selectTemplate(template) {
@@ -80,9 +89,9 @@ export default {
   >
     <v-form ref="form" @submit.prevent="submit">
       <div class="d-flex align-center mb-2">
-        <p class="font-weight-bold">
+        <div class="font-weight-bold">
           {{ destinationLabel }}
-        </p>
+        </div>
         <div class="pa-2">
           <mailings-breadcrumbs />
         </div>
