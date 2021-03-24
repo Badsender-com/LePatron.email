@@ -25,6 +25,8 @@ module.exports = {
   readMosaico: asyncHandler(readMosaico),
   rename: asyncHandler(rename),
   copy: asyncHandler(copy),
+  move: asyncHandler(move),
+  moveMany: asyncHandler(moveMany),
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
@@ -80,13 +82,15 @@ async function list(req, res, next) {
  * @apiGroup Mailings
  *
  * @apiParam (Body) {String} templateId the ID of the template used
+ * @apiParam (Body) {String} workspaceId the ID of the new mailing's workspace
+ * @apiParam (Body) {String} mailingName the name of the new mailing
  *
  * @apiUse mailings
  */
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId } = req.body;
+  const { templateId, workspaceId, mailingName } = req.body;
 
   if (!workspaceId) {
     throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
@@ -105,7 +109,7 @@ async function create(req, res) {
 
   const mailing = {
     // Always give a default name: needed for ordering & filtering
-    name: simpleI18n('default-mailing-name', user.lang),
+    name: mailingName || simpleI18n('default-mailing-name', user.lang),
     templateId: template._id,
     templateName: template.name,
     workspace: workspaceId,
@@ -172,6 +176,66 @@ async function readMosaico(req, res) {
   if (!mailingForMosaico) throw new createError.NotFound();
 
   res.json(mailingForMosaico);
+}
+
+/**
+ * @api {post} /mailings/:mailingId/move move mailing from its workspace to another
+ * @apiPermission user
+ * @apiName MoveMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiParam (Body) {String} workspaceId
+ *
+ * @apiUse mailings
+ */
+
+async function move(req, res) {
+  const {
+    user,
+    params: { mailingId },
+    body: { workspaceId },
+  } = req;
+
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (!mailing._workspace) {
+    throw new createError.UnprocessableEntity(
+      ERROR_CODES.MAILING_MISSING_SOURCE
+    );
+  }
+
+  await mailingService.moveMailing(user, mailing, workspaceId);
+
+  res.status(204).send();
+}
+
+/**
+ * @api {post} /mailings/moveMany move multiple mailings from one workspace to another
+ * @apiPermission user
+ * @apiName MoveManyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {Array} mailingsIds
+ *
+ * @apiUse mailings
+ */
+
+async function moveMany(req, res) {
+  const {
+    user,
+    body: { workspaceId, mailingsIds },
+  } = req;
+
+  if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
+    throw new createError.BadRequest();
+  }
+
+  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
+
+  res.status(204).send();
 }
 
 /**

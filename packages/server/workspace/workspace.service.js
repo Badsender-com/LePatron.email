@@ -4,7 +4,7 @@ const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const folderService = require('../folder/folder.service');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { Conflict, NotFound } = require('http-errors');
+const { Conflict, NotFound, Forbidden } = require('http-errors');
 
 module.exports = {
   createWorkspace,
@@ -15,6 +15,7 @@ module.exports = {
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
   workspaceContainsUser,
+  doesUserHaveWriteAccess
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -88,6 +89,15 @@ async function createWorkspace(workspace) {
 }
 
 async function updateWorkspace(workspace) {
+  if (
+    await existsByName({
+      workspaceName: workspace?.name,
+      groupId: workspace?.groupId,
+    })
+  ) {
+    throw new Conflict(ERROR_CODES.WORKSPACE_ALREADY_EXISTS);
+  }
+
   const { id, ...otherProperties } = workspace;
 
   return Workspaces.updateOne(
@@ -136,6 +146,27 @@ async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   );
 }
 
+function isWorkspaceInGroup(workspace, groupId) {
+  return workspace?.group.toString() === groupId;
+}
+
 function workspaceContainsUser(workspace, user) {
   return workspace._users?.toString().includes(user.id);
+}
+
+function isUserWorkspaceMember(user, workspace) {
+  if (user.isGroupAdmin) {
+    return true;
+  }
+  return workspaceContainsUser(workspace, user);
+}
+
+function doesUserHaveWriteAccess(user, workspace) {
+  if(!isWorkspaceInGroup(workspace, user.group.id)) {
+    throw new NotFound(`${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`);
+  }
+
+  if(!isUserWorkspaceMember(user, workspace) ){
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_MAILING_MOVE);
+  }
 }
