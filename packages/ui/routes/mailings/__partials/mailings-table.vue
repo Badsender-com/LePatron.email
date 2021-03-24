@@ -342,14 +342,6 @@ export default {
           </bs-mailings-actions-dropdown-item>
 
           <bs-mailings-actions-dropdown-item
-            v-if="filteredActions.includes(actions.DELETE)"
-            :icon="actionsDetails[actions.DELETE].icon"
-            :on-click="() => displayDeleteModal(item)"
-          >
-            {{ $t(actionsDetails[actions.DELETE].text) }}
-          </bs-mailings-actions-dropdown-item>
-
-          <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.COPY_MAIL)"
             :icon="actionsDetails[actions.COPY_MAIL].icon"
             :on-click="() => openCopyMail(item)"
@@ -362,6 +354,13 @@ export default {
             :on-click="() => openMoveMail(item)"
           >
             {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.DELETE)"
+            :icon="actionsDetails[actions.DELETE].icon"
+            :on-click="() => displayDeleteModal(item)"
+          >
+            {{ $t(actionsDetails[actions.DELETE].text) }}
           </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>
