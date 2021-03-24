@@ -4,16 +4,19 @@ import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 export default {
-  name: 'ModalCopyMail',
+  name: 'ModalMoveMail',
   components: {
     BsModalConfirm,
   },
   props: {
     confirmationInputLabel: { type: String, default: '' },
+    confirmationTitleLabel: { type: String, default: '' },
+    isMovingManyMails: { type: Boolean, default: false },
   },
   data() {
     return {
       mail: null,
+      currentWorkspace: null,
       workspaces: [],
       workspaceIsError: false,
       workspacesIsLoading: false,
@@ -24,11 +27,19 @@ export default {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-    isValidToBeCopied() {
-      return !!this.selectedLocation?.id;
+    isValidToBeMoved() {
+      return (
+        !!this.selectedLocation?.id &&
+        this.selectedLocation?.id !== this.currentWorkspace?.id
+      );
     },
     mailName() {
-      return this.mail?.name;
+      return !this.isMovingManyMails ? this.mail?.name : '';
+    },
+    moveLabelButton() {
+      return !this.isMovingManyMails
+        ? this.$t('global.moveMail')
+        : this.$t('global.moveManyMail');
     },
   },
   async mounted() {
@@ -45,10 +56,10 @@ export default {
   },
   methods: {
     submit() {
-      if (this.isValidToBeCopied) {
+      if (this.isValidToBeMoved) {
         this.close();
         this.$emit('confirm', {
-          workspaceId: this.selectedLocation?.id,
+          destinationWorkspaceId: this.selectedLocation?.id,
           mailingId: this.mail?.id,
         });
       }
@@ -59,21 +70,22 @@ export default {
       }
     },
     open(selectedMail) {
-      this.mail = selectedMail;
-      this.$refs.copyMailDialog.open();
+      this.mail = selectedMail.mail;
+      this.currentWorkspace = selectedMail.workspace;
+      this.$refs.moveMailDialog.open();
     },
     close() {
-      this.$refs.copyMailDialog.close();
+      this.$refs.moveMailDialog.close();
     },
   },
 };
 </script>
 <template>
   <bs-modal-confirm
-    ref="copyMailDialog"
-    :title="`${this.$t('global.copyMail')}  ${mailName}`"
+    ref="moveMailDialog"
+    :title="`${confirmationTitleLabel} ${mailName}`"
     :is-form="true"
-    class="modal-confirm-copy-mail"
+    class="modal-confirm-move-mail"
   >
     <slot />
     <v-skeleton-loader
@@ -113,8 +125,8 @@ export default {
       <v-btn color="primary" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!isValidToBeCopied" color="primary" @click="submit">
-        {{ $t('global.copyMailAction') }}
+      <v-btn :disabled="!isValidToBeMoved" color="primary" @click="submit">
+        {{ moveLabelButton }}
       </v-btn>
     </v-card-actions>
   </bs-modal-confirm>

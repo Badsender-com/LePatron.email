@@ -4,8 +4,9 @@ import { mapMutations, mapGetters } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
+import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
 
-import { mailingsItem, copyMail } from '~/helpers/api-routes.js';
+import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -16,13 +17,19 @@ import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
 const TABLE_HIDDEN_COLUMNS_USER = [ACTIONS.TRANSFER];
-const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [ACTIONS.RENAME, ACTIONS.DELETE];
+const TABLE_HIDDEN_COLUMNS_NO_ACCESS = [
+  ACTIONS.RENAME,
+  ACTIONS.DELETE,
+  ACTIONS.MOVE_MAIL,
+];
 
 const TABLE_ACTIONS = [
   ACTIONS.RENAME,
   ACTIONS.TRANSFER,
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
+  ACTIONS.MOVE_MAIL,
+  'actionMoveMail',
 ];
 
 export default {
@@ -33,11 +40,15 @@ export default {
     ModalCopyMail,
     BsMailingsActionsDropdown,
     BsMailingsActionsDropdownItem,
+    ModalMoveMail,
   },
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    workspace: { type: Object, default: () => {} },
+    workspace: {
+      type: Object,
+      default: () => {},
+    },
     mailingsSelection: { type: Array, default: () => [] },
   },
   data() {
@@ -92,6 +103,8 @@ export default {
           text: this.$t('global.actions'),
           value: 'actions',
           align: 'center',
+          class: 'table-column-action',
+          sortable: false,
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
@@ -142,8 +155,22 @@ export default {
         id: mailing.id,
       });
     },
+    openMoveMail(mailing) {
+      this.$refs.moveMailDialog.open({
+        mail: {
+          name: mailing.name,
+          id: mailing.id,
+        },
+        workspace: {
+          id: this.workspace?.id,
+        },
+      });
+    },
     closeCopyMailDialog() {
       this.$refs.copyMailDialog.close();
+    },
+    closeMoveMailDialog() {
+      this.$refs.moveMailDialog.close();
     },
     closeDelete() {
       this.$refs.deleteDialog.close();
@@ -245,6 +272,32 @@ export default {
       }
       this.closeCopyMailDialog();
     },
+    async moveMail({ destinationWorkspaceId, mailingId }) {
+      try {
+        await this.$axios.$post(
+          moveMail({
+            mailingId,
+          }),
+          {
+            mailingId,
+            workspaceId: destinationWorkspaceId,
+          }
+        );
+        this.$router.push({
+          query: { wid: destinationWorkspaceId },
+        });
+        this.showSnackbar({
+          text: this.$t('mailings.moveMailSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.closeMoveMailDialog();
+    },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
     },
@@ -262,7 +315,7 @@ export default {
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
-      show-select
+      :show-select="workspace.hasAccess"
     >
       <template #item.name="{ item }">
         <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
@@ -325,6 +378,13 @@ export default {
           >
             {{ $t(actionsDetails[actions.COPY_MAIL].text) }}
           </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.MOVE_MAIL)"
+            :icon="actionsDetails[actions.MOVE_MAIL].icon"
+            :on-click="() => openMoveMail(item)"
+          >
+            {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
+          </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>
     </v-data-table>
@@ -349,27 +409,15 @@ export default {
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
     </modal-copy-mail>
-    <v-btn
-      :disabled="loading"
-      icon
-      color="primary"
-      @click="displayDeleteSelectionModal(selectedRows)"
-    >
-      <v-icon>delete</v-icon>
-    </v-btn>
-    <bs-modal-confirm-form
-      ref="deleteSelectionDialog"
-      :with-input-confirmation="false"
-      @confirm="handleMultipleDelete"
+    <modal-move-mail
+      ref="moveMailDialog"
+      :title="`${this.$t('global.moveMail')}`"
+      @confirm="moveMail"
     >
       <p
         class="black--text"
-        v-html="
-          $t('groups.mailingTab.deleteWarningMessage', {
-            name: 'selection',
-          })
-        "
+        v-html="$t('mailings.moveMailConfirmationMessage')"
       />
-    </bs-modal-confirm-form>
+    </modal-move-mail>
   </div>
 </template>
