@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+    addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
     moveMail: 'Déplacer',
@@ -55,6 +56,7 @@ export default {
     settings: 'Réglages',
     cancel: 'Annuler',
     create: 'Créer',
+    createTag: 'Créer un label',
     update: 'Mettre à jour',
     delete: 'Supprimer',
     reset: 'Réinitialiser',
@@ -172,6 +174,9 @@ export default {
       updatedBetween: 'Mis à jour entre le',
       and: 'Et le',
     },
+    deleteSuccessful: 'Email supprimé',
+    deleteConfirmationMessage:
+      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',

@@ -9,6 +9,7 @@ export default {
     title: { type: String, default: '' },
     modalWidth: { type: String, default: '500' },
     actionLabel: { type: String, default: '' },
+    actionButtonColor: { type: String, default: 'primary' },
   },
   data() {
     return { show: false };
@@ -29,7 +30,12 @@ export default {
 </script>
 
 <template>
-  <v-dialog v-model="show" :width="modalWidth" class="bs-modal-confirm">
+  <v-dialog
+    v-model="show"
+    v-bind="$attrs"
+    :width="modalWidth"
+    class="bs-modal-confirm"
+  >
     <v-card>
       <v-card-title class="headline">
         {{ title }}
@@ -44,7 +50,7 @@ export default {
           <v-btn color="primary" text @click="close">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn color="primary" @click="action">
+          <v-btn :color="actionButtonColor" @click="action">
             {{ actionLabel }}
           </v-btn>
         </v-card-actions>

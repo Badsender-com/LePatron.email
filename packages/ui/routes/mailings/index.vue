@@ -116,6 +116,51 @@ export default {
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
+      } finally {
+        this.mailingsSelection = [];
+      }
+    },
+    onTagCreate(newTag) {
+      this.tags = [...new Set([newTag, ...this.tags])];
+    },
+    async onTagsUpdate(tagsUpdates) {
+      const { $axios } = this;
+      this.loading = true;
+      try {
+        const mailingsResponse = await $axios.$put(mailings(), {
+          items: this.mailingsSelection.map((mailing) => mailing.id),
+          tags: tagsUpdates,
+        });
+        this.tags = mailingsResponse.meta.tags;
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async handleUpdateTags(tagsInformations) {
+      const { $axios } = this;
+      this.loading = true;
+      const { tags, selectedMailing } = tagsInformations;
+      try {
+        await $axios.$put(mailings(), {
+          items: [selectedMailing.id],
+          tags,
+        });
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -156,13 +201,21 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
-        <mailings-selection-actions :mailings-selection="mailingsSelection" />
+        <mailings-selection-actions
+          :mailings-selection="mailingsSelection"
+          :tags="tags"
+          @createTag="onTagCreate"
+          @updateTags="onTagsUpdate"
+          @on-refetch="fetchData()"
+        />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
+          :tags="tags"
           @on-refetch="fetchData()"
+          @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>
     </v-card>
