@@ -1,12 +1,14 @@
 <script>
 import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
-import { moveManyMails } from '~/helpers/api-routes';
+import BsModalConfirm from '~/components/modal-confirm';
+import MailingsTagsMenu from '~/components/mailings/tags-menu.vue';
+import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   name: 'MailingsSelectionActions',
-  components: { ModalMoveMail },
+  components: { ModalMoveMail, BsModalConfirm, MailingsTagsMenu },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
@@ -34,8 +36,37 @@ export default {
         },
       });
     },
+    openDeleteSelectionModal() {
+      this.$refs.deleteSelectionDialog.open();
+    },
     closeMoveManyMailsDialog() {
       this.$refs.moveManyMailsDialog.close();
+    },
+    async handleMultipleDelete() {
+      const { $route } = this;
+      try {
+        const mailSelectionDeletionPromises = this.mailingsSelection.map(
+          (mailing) =>
+            this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
+              data: {
+                workspaceId: $route.query.wid,
+              },
+            })
+        );
+        await Promise.all(mailSelectionDeletionPromises);
+
+        this.$emit('on-refetch');
+        this.showSnackbar({
+          text: this.$t('mailings.deleteManySuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      }
     },
     async moveManyMails({ destinationWorkspaceId, _ }) {
       try {
@@ -47,7 +78,7 @@ export default {
           query: { wid: destinationWorkspaceId },
         });
         this.showSnackbar({
-          text: this.$t('mailings.moveMailSuccessful'),
+          text: this.$t('mailings.moveManySuccessful'),
           color: 'success',
         });
       } catch (error) {
@@ -73,6 +104,12 @@ export default {
         }}</span>
 
         <div class="bs-mailing-selection-actions__actions">
+          <mailings-tags-menu
+            :tags="tags"
+            :mailings-selection="mailingsSelection"
+            @create="$emit(`createTag`, $event)"
+            @update="$emit(`updateTags`, $event)"
+          />
           <v-tooltip bottom>
             <template #activator="{ on }">
               <v-btn
@@ -81,7 +118,7 @@ export default {
                 v-on="on"
                 @click="openMoveManyMailsDialog"
               >
-                <v-icon>forward</v-icon>
+                <v-icon>drive_file_move</v-icon>
               </v-btn>
             </template>
             <span>{{
@@ -90,9 +127,42 @@ export default {
               })
             }}</span>
           </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="openDeleteSelectionModal"
+              >
+                <v-icon>delete</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.deleteCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
         </div>
       </div>
     </v-alert>
+    <bs-modal-confirm
+      ref="deleteSelectionDialog"
+      :title="
+        $tc('mailings.deleteCount', selectionLength, {
+          count: selectionLength,
+        })
+      "
+      :action-label="$t('global.delete')"
+      action-button-color="error"
+      @confirm="handleMultipleDelete(se)"
+    >
+      <p
+        class="black--text"
+        v-html="$t('mailings.deleteConfirmationMessage')"
+      />
+    </bs-modal-confirm>
     <modal-move-mail
       ref="moveManyMailsDialog"
       :is-moving-many-mails="true"

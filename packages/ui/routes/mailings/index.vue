@@ -1,7 +1,9 @@
 <script>
 import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixin-create-mailing';
 import { mailings, getWorkspace } from '~/helpers/api-routes.js';
+import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new-mail.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
@@ -18,8 +20,9 @@ export default {
     MailingsFilters,
     MailingsBreadcrumbs,
     MailingsSelectionActions,
+    BsMailingsModalNew,
   },
-  mixins: [mixinPageTitle],
+  mixins: [mixinPageTitle, mixinCreateMailing],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
@@ -50,6 +53,7 @@ export default {
   data: () => ({
     mailingsIsLoading: false,
     mailingsIsError: false,
+    loading: false,
     mailings: [],
     mailingsSelection: [],
     workspace: {},
@@ -78,10 +82,22 @@ export default {
   },
   watchQuery: ['wid'],
   methods: {
+    openNewMailModal() {
+      this.$refs.modalNewMailDialog.open();
+    },
     handleFilterChange(filterValues) {
       this.filterValues = filterValues;
     },
-    async fecthData() {
+    async handleCreateNewMail(createMailModalData) {
+      this.loading = true;
+      await this.mixinCreateMailing(
+        createMailModalData.template,
+        'loading',
+        createMailModalData.defaultMailName
+      );
+      this.loading = false;
+    },
+    async fetchData() {
       try {
         if (this.$route.query?.wid) {
           this.mailingsIsLoading = true;
@@ -100,6 +116,51 @@ export default {
       } catch (error) {
         this.mailingsIsLoading = false;
         this.mailingsIsError = true;
+      } finally {
+        this.mailingsSelection = [];
+      }
+    },
+    onTagCreate(newTag) {
+      this.tags = [...new Set([newTag, ...this.tags])];
+    },
+    async onTagsUpdate(tagsUpdates) {
+      const { $axios } = this;
+      this.loading = true;
+      try {
+        const mailingsResponse = await $axios.$put(mailings(), {
+          items: this.mailingsSelection.map((mailing) => mailing.id),
+          tags: tagsUpdates,
+        });
+        this.tags = mailingsResponse.meta.tags;
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async handleUpdateTags(tagsInformations) {
+      const { $axios } = this;
+      this.loading = true;
+      const { tags, selectedMailing } = tagsInformations;
+      try {
+        await $axios.$put(mailings(), {
+          items: [selectedMailing.id],
+          tags,
+        });
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -126,7 +187,7 @@ export default {
             color="primary"
             tile
             :disabled="!hasAccess"
-            :to="`/mailings/new?wid=${$route.query.wid}`"
+            @click="openNewMailModal"
           >
             <v-icon left>
               mdi-plus
@@ -140,16 +201,29 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-breadcrumbs />
-        <mailings-selection-actions :mailings-selection="mailingsSelection" />
+        <mailings-selection-actions
+          :mailings-selection="mailingsSelection"
+          :tags="tags"
+          @createTag="onTagCreate"
+          @updateTags="onTagsUpdate"
+          @on-refetch="fetchData()"
+        />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
           :workspace="workspace"
-          @on-refetch="fecthData()"
+          :tags="tags"
+          @on-refetch="fetchData()"
+          @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>
     </v-card>
+    <bs-mailings-modal-new
+      ref="modalNewMailDialog"
+      :loading-parent="loading"
+      @create-new-mail="handleCreateNewMail"
+    />
   </bs-layout-left-menu>
 </template>
 <style>
