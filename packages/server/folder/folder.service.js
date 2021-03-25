@@ -9,7 +9,8 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
-  create
+  create,
+  getFolder
 };
 
 async function listFolders() {
