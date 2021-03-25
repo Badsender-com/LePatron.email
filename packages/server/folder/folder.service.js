@@ -17,6 +17,40 @@ async function listFolders() {
 }
 
 async function create(folder, user) {
+  checkCreationPayload(folder);
+
+  const { workspaceId, parentFolderId, name } = folder;
+
+  const newFolder = { name };
+
+  // case where folder is added to workspace's root
+  if (workspaceId) {
+
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
+
+    newFolder._workspace = workspace._id;
+  }
+
+  // case where folder is a subfolder
+  if (parentFolderId) {
+    const parentFolder = await getFolder(parentFolderId);
+
+    if (parentFolder._parentFolder) {
+      throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
+    }
+    workspaceService.doesUserHaveWriteAccess(user, parentFolder._workspace);
+
+    newFolder._parentFolder = parentFolder._id;
+    newFolder._workspace = parentFolder._workspace.id;
+  }
+
+  await isNameUniqueAtSameLevel(newFolder);
+
+  return Folders.create(newFolder);
+}
+
+function checkCreationPayload(folder) {
   const { workspaceId, parentFolderId, name } = folder;
 
   if (!name || name === '') {
@@ -30,44 +64,13 @@ async function create(folder, user) {
   if (workspaceId && parentFolderId) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
-
-  const newFolder = { name };
-
-  if (workspaceId) {
-    const workspace = await workspaceService.getWorkspace(workspaceId);
-
-    if (!workspace) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
-
-    workspaceService.doesUserHaveWriteAccess(user, workspace);
-
-    newFolder._workspace = workspace._id;
-  }
-
-  if (parentFolderId) {
-    const parentFolder = await getFolder(parentFolderId);
-
-    if (!parentFolder) {
-      throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
-    }
-
-    if (parentFolder._parentFolder) {
-      throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
-    }
-
-    workspaceService.doesUserHaveWriteAccess(user, parentFolder._workspace);
-
-    newFolder._parentFolder = parentFolder._id;
-    newFolder._workspace = parentFolder._workspace.id;
-  }
-
-  await isNameUniqueAtSameLevel(newFolder);
-
-  return Folders.create(newFolder);
 }
 
 async function getFolder(folderId) {
+  if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+
   return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) })
       .populate('_workspace');
 }
