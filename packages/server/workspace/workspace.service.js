@@ -128,6 +128,14 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'mails',
     });
+
+  // to discard nested folders as direct children of each workspace
+  workspaces.forEach(workspace => {
+    if (workspace.folders) {
+      workspace.folders = workspace.folders?.filter(folder => !folder._parentFolder);
+    }
+  });
+
   return workspaces;
 }
 
