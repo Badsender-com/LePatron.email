@@ -208,7 +208,7 @@ export default {
             {{ $t('global.cancel') }}
           </v-btn>
           <v-btn color="primary" @click="onCreateNewTag">
-            {{ $t('global.create') }}
+            {{ $t('global.createTag') }}
           </v-btn>
         </v-card-actions>
       </v-card>
