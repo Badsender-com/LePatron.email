@@ -1,8 +1,6 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const createError = require('http-errors');
-const ERROR_CODES = require('../constant/error-codes.js');
 
 const folderService = require('./folder.service');
 
@@ -38,7 +36,8 @@ async function list(req, res) {
  * @apiParam (Body) {String} workspaceId
  * @apiParam (Body) {String} parentFolderId
  *
- * @apiUse folders
+ * @apiUse folder
+ * @apiSuccess {folder} created folder
  */
 async function create(req, res) {
   const {

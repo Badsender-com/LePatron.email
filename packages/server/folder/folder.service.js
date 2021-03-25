@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folders, Mailings } = require('../common/models.common.js');
+const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -9,24 +9,11 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
-  deleteFolderContent,
   create
 };
 
 async function listFolders() {
-  const folders = await Folders.find({}).populate('_parentFolder');
-  return folders;
-}
-
-async function deleteFolderContent(folderId) {
-  const folderContent = await Folders.find({ _parentFolder: folderId });
-  if (folderContent && folderContent.length > 0) {
-    folderContent.forEach((folder) => {
-      deleteFolderContent(folder?.id);
-    });
-  }
-  await Mailings.deleteMany({ _parentFolder: folderId });
-  await Folders.deleteMany({ _parentFolder: folderId });
+  return Folders.find({}).populate('_parentFolder');
 }
 
 async function create(folder, user) {
@@ -44,6 +31,8 @@ async function create(folder, user) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
 
+  const newFolder = { name };
+
   if (workspaceId) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
 
@@ -53,7 +42,7 @@ async function create(folder, user) {
 
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
-    folder._workspace = workspace._id;
+    newFolder._workspace = workspace._id;
   }
 
   if (parentFolderId) {
@@ -65,14 +54,14 @@ async function create(folder, user) {
 
     workspaceService.doesUserHaveWriteAccess(user, parentFolder._workspace);
 
-    folder._parentFolder = parentFolder._id;
-    folder._workspace = parentFolder._workspace;
+    newFolder._parentFolder = parentFolder._id;
+    newFolder._workspace = parentFolder._workspace;
   }
 
-  return Folders.create(folder);
+  return Folders.create(newFolder);
 
 }
 
 async function getFolder(folderId) {
-  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId)})
+  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) }).populate('_workspace');
 }
