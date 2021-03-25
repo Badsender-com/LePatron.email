@@ -2,7 +2,6 @@
 
 const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const folderService = require('../folder/folder.service');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound, Forbidden } = require('http-errors');
 
@@ -59,11 +58,22 @@ async function deleteWorkspace(workspaceId) {
     const foldersToDelete = await Folders.find({ _workspace: workspaceId });
     if (foldersToDelete && foldersToDelete.length > 0) {
       foldersToDelete?.forEach((folder) =>
-        folderService.deleteFolderContent(folder?.id)
+        deleteFolderContent(folder?.id)
       );
     }
     await Folders.deleteMany({ _workspace: workspaceId });
   });
+}
+
+async function deleteFolderContent(folderId) {
+  const folderContent = await Folders.find({ _parentFolder: folderId });
+  if (folderContent && folderContent.length > 0) {
+    folderContent.forEach((folder) => {
+      deleteFolderContent(folder?.id);
+    });
+  }
+  await Mailings.deleteMany({ _parentFolder: folderId });
+  await Folders.deleteMany({ _parentFolder: folderId });
 }
 
 async function createWorkspace(workspace) {
@@ -118,6 +128,14 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'mails',
     });
+
+  // to discard nested folders as direct children of each workspace
+  workspaces.forEach(workspace => {
+    if (workspace.folders) {
+      workspace.folders = workspace.folders?.filter(folder => !folder._parentFolder);
+    }
+  });
+
   return workspaces;
 }
 
