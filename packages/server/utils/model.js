@@ -6,7 +6,6 @@ module.exports = {
   trimString,
   normalizeString,
   isFromGroup,
-  addRoleFilter,
   addGroupFilter,
   addStrictGroupFilter,
   addMailQueryParamFilter,
@@ -57,12 +56,4 @@ function addMailQueryParamFilter(query) {
     params._workspace = query.id;
   }
   return params;
-}
-
-// Add filter by role if request from the params
-// admin everything
-function addRoleFilter(role, filter) {
-  if (!role) return filter;
-  filter.role = role;
-  return filter;
 }
