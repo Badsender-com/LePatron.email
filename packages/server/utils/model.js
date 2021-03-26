@@ -6,6 +6,7 @@ module.exports = {
   trimString,
   normalizeString,
   isFromGroup,
+  addRoleFilter,
   addGroupFilter,
   addStrictGroupFilter,
   addMailQueryParamFilter,
@@ -47,7 +48,7 @@ function addStrictGroupFilter(user, filter) {
   return filter;
 }
 
-// Filter form params query
+// Filter from params query
 function addMailQueryParamFilter(query) {
   const params = {};
   if (query?.type === SPACE_TYPE.FOLDER) {
@@ -56,4 +57,12 @@ function addMailQueryParamFilter(query) {
     params._workspace = query.id;
   }
   return params;
+}
+
+// Add filter by role if request from the params
+// admin everything
+function addRoleFilter(role, filter) {
+  if (!role) return filter;
+  filter.role = role;
+  return filter;
 }

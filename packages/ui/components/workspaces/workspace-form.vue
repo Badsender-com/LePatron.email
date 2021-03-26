@@ -91,7 +91,18 @@ export default {
             name="selectedUsers"
             show-select
             :items="groupUsers"
-          />
+          >
+            <template
+              #item.data-table-select="{ item, isSelected, select }"
+            >
+              <v-simple-checkbox
+                :value="isSelected || item.isGroupAdmin"
+                :readonly="item.isGroupAdmin"
+                :disabled="item.isGroupAdmin"
+                @input="select($event)"
+              />
+            </template>
+          </v-data-table>
         </v-col>
       </v-row>
     </v-card-text>
