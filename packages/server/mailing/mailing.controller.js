@@ -338,7 +338,7 @@ async function copy(req, res) {
     }
   }
 
-  await mailingService.copyMailing(mailing, destinationWorkspace);
+  await mailingService.copyMailing(mailing, destinationWorkspace, user);
 
   res.status(204).send();
 }
