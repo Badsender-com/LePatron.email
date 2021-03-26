@@ -53,6 +53,7 @@ export default {
 .bs-template-card {
   --cover-min-height: 250px;
   --cover-max-height: 250px;
+  max-width: 30%;
 }
 
 .bs-template-card_selected {

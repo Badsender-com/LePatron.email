@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+    add: 'Add',
     teams: 'Workspaces',
     addTags: 'Add tags',
     copyMail: 'Copy',

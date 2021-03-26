@@ -130,7 +130,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
-          {{ $t('global.newMailing') }}
+          {{ $t('global.add') }}
         </v-btn>
       </v-card-actions>
     </v-form>
@@ -139,7 +139,7 @@ export default {
 
 <style>
 .bs-templates_container {
-  max-height: 600px;
+  max-height: 500px;
   overflow: auto;
 }
 </style>
