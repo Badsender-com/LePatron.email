@@ -37,12 +37,10 @@ export default {
         let workspace;
 
         if (query?.wid || query?.fid) {
-          if (query?.wid) {
-            workspace = await $axios.$get(getWorkspace(query?.wid));
-          }
-
           if (query?.fid) {
             folder = await $axios.$get(getFolder(query?.fid));
+          } else {
+            workspace = await $axios.$get(getWorkspace(query?.wid));
           }
         }
 

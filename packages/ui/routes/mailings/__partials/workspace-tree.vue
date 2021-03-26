@@ -2,6 +2,7 @@
 import { workspacesByGroup } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'WorkspaceTree',
@@ -39,11 +40,17 @@ export default {
   },
   methods: {
     handleSelectItemFromTreeView(selectedItems) {
-      console.log(selectedItems[0]);
-      if (selectedItems[0]) {
-        const querySelectedElement = {
-          wid: selectedItems[0],
-        };
+      if (selectedItems[0]?.id) {
+        let querySelectedElement = null;
+        if (selectedItems[0]?.type === SPACE_TYPE.WORKSPACE) {
+          querySelectedElement = {
+            wid: selectedItems[0].id,
+          };
+        } else {
+          querySelectedElement = {
+            fid: selectedItems[0].id,
+          };
+        }
         this.$router.push({
           query: querySelectedElement,
         });
@@ -66,6 +73,7 @@ export default {
       :items="treeviewLocationItems"
       hoverable
       open-all
+      return-object
       class="pb-8"
       @update:active="handleSelectItemFromTreeView"
     >

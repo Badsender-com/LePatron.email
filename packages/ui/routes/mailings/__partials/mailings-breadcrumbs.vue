@@ -20,7 +20,7 @@ export default {
       return findNestedLocation(
         this.workspacesWithPath,
         'id',
-        this.$route.query?.wid
+        this.$route.query?.wid || this.$route.query?.fid
       );
     },
     breadcrumbsData() {
