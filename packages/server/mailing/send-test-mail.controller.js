@@ -5,7 +5,7 @@ const asyncHandler = require('express-async-handler');
 
 const config = require('../node.config.js');
 const { Mailings } = require('../common/models.common.js');
-const mail = require('./mailing.service.js');
+const mail = require('../mailing/mail.service.js');
 const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
 
