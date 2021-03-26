@@ -14,7 +14,8 @@ module.exports = {
   findWorkspacesWithRights,
   getWorkspaceWithAccessRight,
   workspaceContainsUser,
-  doesUserHaveWriteAccess
+  doesUserHaveWriteAccess,
+  doesUserHaveReadAccess
 };
 
 async function existsByName({ workspaceName, groupId }) {
@@ -180,11 +181,15 @@ function isUserWorkspaceMember(user, workspace) {
 }
 
 function doesUserHaveWriteAccess(user, workspace) {
-  if(!isWorkspaceInGroup(workspace, user.group.id)) {
-    throw new NotFound(`${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`);
-  }
+  doesUserHaveReadAccess(user, workspace);
 
   if(!isUserWorkspaceMember(user, workspace) ){
-    throw new Forbidden(ERROR_CODES.FORBIDDEN_MAILING_MOVE);
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+}
+
+function doesUserHaveReadAccess(user, workspace) {
+  if(!isWorkspaceInGroup(workspace, user.group.id)){
+    throw new NotFound(`${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`);
   }
 }

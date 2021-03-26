@@ -3,10 +3,12 @@
 const asyncHandler = require('express-async-handler');
 
 const folderService = require('./folder.service');
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
-  create: asyncHandler(create)
+  create: asyncHandler(create),
+  getFolder: asyncHandler(getFolder)
 };
 
 /**
@@ -18,7 +20,6 @@ module.exports = {
  * @apiUse folder
  * @apiSuccess {folders[]} items list of folders
  */
-
 async function list(req, res) {
   const folders = await folderService.listFolders();
   res.json({
@@ -56,3 +57,26 @@ async function create(req, res) {
   res.send(createdFolder);
 }
 
+/**
+ * @api {get} /folders/:folderId folder
+ * @apiPermission user
+ * @apiName GetFolder
+ * @apiGroup Folders
+ *
+ * @apiUse folder
+ * @apiSuccess {folder} folder
+ */
+async function getFolder(req, res) {
+  const {
+    user,
+    params: { folderId },
+  } = req;
+
+  const folder = await folderService.getFolder(folderId);
+
+  const workspace = await workspaceService.getWorkspace(folder._workspace);
+  workspaceService.doesUserHaveReadAccess(user, workspace);
+
+  res.json(folder)
+
+}
