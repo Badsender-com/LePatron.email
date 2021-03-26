@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+    add: 'Add',
     teams: 'Workspaces',
     addTags: 'Add tags',
     copyMail: 'Copy',
@@ -239,6 +240,7 @@ export default {
     name: 'Name',
     description: 'Descritpion',
     members: 'Members',
+    userIsGroupAdmin: 'The user is a group admin',
   },
   folders: {
     name: 'Folder name',

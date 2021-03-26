@@ -3,7 +3,7 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { mapMutations } from 'vuex';
-
+import { groupsItemUsers, getWorkspace } from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
 import BsGroupMenu from '~/components/group/menu.vue';
@@ -17,12 +17,9 @@ export default {
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
-
     try {
-      const workspace = await $axios.$get(`/workspaces/${params?.workspaceId}`);
-      const { items: users } = await $axios.$get(
-        `/groups/${params?.groupId}/users`
-      );
+      const workspace = await $axios.$get(getWorkspace(params?.workspaceId));
+      const { items: users } = await $axios.$get(groupsItemUsers(params));
 
       return {
         workspace,

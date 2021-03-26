@@ -47,7 +47,7 @@ function addStrictGroupFilter(user, filter) {
   return filter;
 }
 
-// Filter form params query
+// Filter from params query
 function addMailQueryParamFilter(query) {
   const params = {};
   if (query?.type === SPACE_TYPE.FOLDER) {

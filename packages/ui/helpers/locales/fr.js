@@ -27,6 +27,7 @@ export default {
         },
       },
     },
+    add: 'Ajouter',
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
@@ -183,7 +184,7 @@ export default {
     duplicate: 'Dupliquer l\'email',
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
-    name: 'Nommer l\'email',
+    name: 'Nom de l\'email',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
@@ -243,6 +244,7 @@ export default {
     name: 'Nom',
     description: 'Descritpion',
     members: 'Membres',
+    userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
   },
   folders: {
     name: 'Nom de dossier',
