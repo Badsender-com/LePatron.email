@@ -83,7 +83,6 @@ async function getFolder(req, res) {
   const workspace = await workspaceService.getWorkspace(folder._workspace);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
-  console.log({folder})
   res.json(folder)
 
 }
