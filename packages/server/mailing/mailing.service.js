@@ -58,7 +58,7 @@ async function createMailing(mailing) {
   return Mailings.create(mailing);
 }
 
-async function copyMailing(mailing, destinationWorkspace) {
+async function copyMailing(mailing, destinationWorkspace, user) {
   if (
     !Workspaces.exists({
       _id: mongoose.Types.ObjectId(destinationWorkspace.id),
@@ -67,7 +67,18 @@ async function copyMailing(mailing, destinationWorkspace) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  const mailingProperties = omit(mailing, ['_id', 'createdAt', 'updatedAt']);
+  const mailingProperties = omit(mailing, [
+    '_id',
+    'createdAt',
+    'updatedAt',
+    '_user',
+    'author',
+  ]);
+
+  if (user.id) {
+    mailingProperties._user = user._id;
+    mailingProperties.author = user.name;
+  }
 
   const copy = {
     ...mailingProperties,

@@ -18,8 +18,9 @@ module.exports = {
   doesUserHaveWriteAccess
 };
 
-async function existsByName({ workspaceName, groupId }) {
+async function existsByName({ workspaceId, workspaceName, groupId }) {
   return Workspaces.exists({
+    _id: { $ne: mongoose.Types.ObjectId(workspaceId)},
     name: workspaceName,
     _company: groupId,
   });
@@ -91,6 +92,7 @@ async function createWorkspace(workspace) {
 async function updateWorkspace(workspace) {
   if (
     await existsByName({
+      workspaceId: workspace.id,
       workspaceName: workspace?.name,
       groupId: workspace?.groupId,
     })
