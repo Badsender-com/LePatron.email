@@ -42,7 +42,7 @@ export default {
 };
 </script>
 <template>
-  <v-breadcrumbs :items="breadcrumbsData">
+  <v-breadcrumbs :large="true" :items="breadcrumbsData">
     <template #divider>
       <v-icon>mdi-chevron-right</v-icon>
     </template>

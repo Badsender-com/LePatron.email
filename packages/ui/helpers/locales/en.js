@@ -35,11 +35,14 @@ export default {
     location: 'Location',
     moveManyMail: 'Move',
     newTemplate: 'Add a template',
+    newFolder: 'Add a folder',
+    parentLocation: 'Parent location',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
     user: 'User | Users',
     newUser: 'Add a user',
+    add: 'Add',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
@@ -236,6 +239,9 @@ export default {
     name: 'Name',
     description: 'Descritpion',
     members: 'Members',
+  },
+  folders: {
+    name: 'Folder name',
   },
   tableHeaders: {
     groups: {

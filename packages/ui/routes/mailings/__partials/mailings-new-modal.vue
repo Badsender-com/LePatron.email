@@ -3,7 +3,6 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing';
 
 export default {
   name: 'MailingsModalNew',
@@ -12,7 +11,6 @@ export default {
     MailingsBreadcrumbs,
     TemplateCard,
   },
-  mixins: [mixinCreateMailing],
   props: {
     loadingParent: { type: Boolean, default: false },
   },
@@ -130,7 +128,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
-          {{ $t('global.newMailing') }}
+          {{ $t('global.add') }}
         </v-btn>
       </v-card-actions>
     </v-form>

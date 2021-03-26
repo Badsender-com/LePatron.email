@@ -1,15 +1,16 @@
 <script>
 import { mapGetters } from 'vuex';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing';
-import { mailings, getWorkspace } from '~/helpers/api-routes.js';
-import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new-mail.vue';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import { mailings } from '~/helpers/api-routes.js';
+import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
-import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
@@ -18,11 +19,11 @@ export default {
     WorkspaceTree,
     MailingsTable,
     MailingsFilters,
-    MailingsBreadcrumbs,
     MailingsSelectionActions,
     BsMailingsModalNew,
+    MailingsHeader,
   },
-  mixins: [mixinPageTitle, mixinCreateMailing],
+  mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
@@ -31,19 +32,21 @@ export default {
   },
   async asyncData({ $axios, query }) {
     try {
-      if (query?.wid) {
-        const [workspace, mailingsResponse] = await Promise.all([
-          $axios.$get(getWorkspace(query?.wid)),
-          $axios.$get(mailings(), {
-            params: { workspaceId: query?.wid },
-          }),
-        ]);
+      console.log('calling async data');
+
+      console.log(!!query?.wid || !!query?.fid);
+      if (!!query?.wid || !!query?.fid) {
+        console.log({ currentLocation: this.currentLocationParam });
+        console.log('called after currentLocation');
+        await this.getFolderAndWorkspaceData($axios, query);
+        const mailingsResponse = await $axios.$get(mailings(), {
+          params: this.currentLocationParam,
+        });
 
         return {
           mailings: mailingsResponse.items,
           tags: mailingsResponse.meta.tags,
           mailingsIsLoading: false,
-          workspace,
         };
       }
     } catch (error) {
@@ -76,9 +79,6 @@ export default {
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
-    hasAccess() {
-      return this.workspace?.hasAccess || false;
-    },
   },
   watchQuery: ['wid'],
   methods: {
@@ -98,20 +98,20 @@ export default {
       this.loading = false;
     },
     async fetchData() {
+      await this.getFolderAndWorkspaceData(this.$axios, this.$route?.query);
+      await this.fetchMailListingData();
+    },
+    async fetchMailListingData() {
       try {
-        if (this.$route.query?.wid) {
+        if (this.$route.query?.wid || this.$route.query?.fid) {
           this.mailingsIsLoading = true;
-          const [workspace, mailingsResponse] = await Promise.all([
-            this.$axios.$get(getWorkspace(this.$route.query?.wid)),
-            this.$axios.$get(mailings(), {
-              params: { workspaceId: this.$route.query?.wid },
-            }),
-          ]);
+          const mailingsResponse = await this.$axios.$get(mailings(), {
+            params: this.currentLocationParam,
+          });
 
           this.mailings = mailingsResponse.items;
           this.tags = mailingsResponse.meta.tags;
           this.mailingsIsLoading = false;
-          this.workspace = workspace;
         }
       } catch (error) {
         this.mailingsIsLoading = false;
@@ -152,7 +152,7 @@ export default {
           items: [selectedMailing.id],
           tags,
         });
-        await this.fetchData();
+        await this.fetchMailListingData();
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -200,21 +200,20 @@ export default {
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-breadcrumbs />
+        <mailings-header />
         <mailings-selection-actions
           :mailings-selection="mailingsSelection"
           :tags="tags"
           @createTag="onTagCreate"
           @updateTags="onTagsUpdate"
-          @on-refetch="fetchData()"
+          @on-refetch="fetchMailListingData()"
         />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
-          :workspace="workspace"
           :tags="tags"
-          @on-refetch="fetchData()"
+          @on-refetch="fetchMailListingData()"
           @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>

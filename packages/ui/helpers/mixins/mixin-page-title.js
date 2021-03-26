@@ -1,7 +1,7 @@
 import { PAGE, SET_PAGE_TITLE } from '~/store/page.js';
 
 export default {
-  mounted() {
+  data() {
     this.mixinPageTitleUpdateTitle(this.title);
   },
   destroyed() {

@@ -154,3 +154,11 @@ export function deleteWorkspace(workspaceId) {
 export function getWorkspace(workspaceId) {
   return `/workspaces/${workspaceId}`;
 }
+
+/// ///
+// FOLDERS
+/// ///
+
+export function getFolder(folderID) {
+  return `/folders/${folderID}`;
+}
