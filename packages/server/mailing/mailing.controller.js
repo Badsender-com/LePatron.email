@@ -338,6 +338,9 @@ async function copy(req, res) {
     }
   }
 
+  mailing.userId = user.id;
+  mailing.userName = user.name;
+
   await mailingService.copyMailing(mailing, destinationWorkspace);
 
   res.status(204).send();
