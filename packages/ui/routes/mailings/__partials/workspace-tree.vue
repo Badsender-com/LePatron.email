@@ -1,28 +1,29 @@
 <script>
 import { workspacesByGroup } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
 export default {
   name: 'WorkspaceTree',
+  mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     workspaces: [],
-    selectedItem: '',
   }),
   computed: {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-  },
-  watch: {
-    // call again the method if the route changes
-    $route: 'setSelectedItem',
+    selectedItem() {
+      return this.currentLocation;
+    },
   },
   async mounted() {
-    const { $axios } = this;
+    const { $axios, $route } = this;
     try {
       this.workspacesIsLoading = true;
+      await this.getFolderAndWorkspaceData($axios, $route.query);
       const { items } = await $axios.$get(workspacesByGroup());
       if (!this.selectedItem && items.length > 0) {
         await this.$router.push({
@@ -38,6 +39,7 @@ export default {
   },
   methods: {
     handleSelectItemFromTreeView(selectedItems) {
+      console.log(selectedItems[0]);
       if (selectedItems[0]) {
         const querySelectedElement = {
           wid: selectedItems[0],
@@ -46,9 +48,6 @@ export default {
           query: querySelectedElement,
         });
       }
-    },
-    setSelectedItem() {
-      this.selectedItem = this.$route.query?.wid;
     },
   },
 };

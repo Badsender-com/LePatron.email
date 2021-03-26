@@ -33,7 +33,7 @@ export default {
         }
 
         if (query?.fid) {
-          this.folder = $axios.$get(getFolder(this.$route.query?.wid));
+          this.folder = $axios.$get(getFolder(query?.fid));
         }
       }
 
