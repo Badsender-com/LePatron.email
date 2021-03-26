@@ -76,10 +76,6 @@ async function getFolder(req, res) {
 
   const folder = await folderService.getFolder(folderId);
 
-  if (!folder) {
-    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
-  }
-
   const workspace = await workspaceService.getWorkspace(folder._workspace);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
