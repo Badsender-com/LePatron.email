@@ -91,7 +91,22 @@ export default {
             name="selectedUsers"
             show-select
             :items="groupUsers"
-          />
+          >
+            <template #item.data-table-select="{ item, isSelected, select }">
+              <v-tooltip left :disabled="!item.isGroupAdmin">
+                <template #activator="{ on }">
+                  <v-simple-checkbox
+                    :value="isSelected || item.isGroupAdmin"
+                    :readonly="item.isGroupAdmin"
+                    :disabled="item.isGroupAdmin"
+                    v-on="on"
+                    @input="select($event)"
+                  />
+                </template>
+                <span>{{ $t('workspaces.userIsGroupAdmin') }}</span>
+              </v-tooltip>
+            </template>
+          </v-data-table>
         </v-col>
       </v-row>
     </v-card-text>

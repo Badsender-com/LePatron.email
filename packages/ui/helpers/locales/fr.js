@@ -241,6 +241,7 @@ export default {
     name: 'Nom',
     description: 'Descritpion',
     members: 'Membres',
+    userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
   },
   tableHeaders: {
     groups: {

@@ -9,12 +9,7 @@ const {
 } = require('../workspace/workspace.service.js');
 const groupService = require('../group/group.service.js');
 
-const {
-  Groups,
-  Users,
-  Templates,
-  Mailings,
-} = require('../common/models.common.js');
+const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -106,16 +101,11 @@ async function read(req, res) {
  */
 
 async function readUsers(req, res) {
-  const { groupId } = req.params;
-  const [group, users] = await Promise.all([
-    Groups.findById(groupId).select('_id'),
-    Users.find({
-      _company: groupId,
-    })
-      .populate({ path: '_company', select: 'id name entryPoint issuer' })
-      .sort({ email: 1 }),
-  ]);
-  if (!group) throw new createError.NotFound();
+  const {
+    params: { groupId },
+  } = req;
+
+  const users = await groupService.findUserByGroupId(groupId);
   res.json({ items: users });
 }
 
