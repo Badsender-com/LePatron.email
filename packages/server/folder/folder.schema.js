@@ -1,7 +1,6 @@
 'use strict';
 
 const { Schema } = require('mongoose');
-const { normalizeString } = require('../utils/model');
 const { ObjectId } = Schema.Types;
 const { FolderModel, WorkspaceModel } = require('../constant/model.names.js');
 
@@ -19,8 +18,6 @@ const FolderSchema = Schema(
   {
     name: {
       type: String,
-      unique: true,
-      set: normalizeString,
       required: [true, 'Folder name is required'],
     },
     _workspace: {
