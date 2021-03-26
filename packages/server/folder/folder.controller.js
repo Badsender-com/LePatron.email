@@ -1,8 +1,6 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const ERROR_CODES = require('../constant/error-codes.js');
-const { NotFound } = require('http-errors');
 
 const folderService = require('./folder.service');
 const workspaceService = require('../workspace/workspace.service.js');
