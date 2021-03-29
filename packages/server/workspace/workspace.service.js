@@ -15,7 +15,8 @@ module.exports = {
   getWorkspaceWithAccessRight,
   workspaceContainsUser,
   doesUserHaveWriteAccess,
-  doesUserHaveReadAccess
+  doesUserHaveReadAccess,
+  hasAccess
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
@@ -31,6 +32,26 @@ async function getWorkspace(id) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
   return Workspaces.findById(id);
+}
+
+async function hasAccess(user, workspaceOrFolderId) {
+  let workspace = await Workspaces.findById(workspaceOrFolderId);
+
+  if (!workspace) {
+    const folder = await Folders.findById(workspaceOrFolderId);
+
+    if (!folder) {
+      throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+    }
+
+    workspace = await Workspaces.findById(folder._workspace);
+  }
+
+  if (!isWorkspaceInGroup(workspace, user.group.id)) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  return true;
 }
 
 async function getWorkspaceWithAccessRight(id, user) {

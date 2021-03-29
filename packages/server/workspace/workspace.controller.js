@@ -7,11 +7,31 @@ const workspaceService = require('./workspace.service');
 
 module.exports = {
   listWorkspace: asyncHandler(listWorkspace),
+  hasAccess: asyncHandler(hasAccess),
   createWorkspace: asyncHandler(createWorkspace),
   getWorkspace: asyncHandler(getWorkspace),
   updateWorkspace: asyncHandler(updateWorkspace),
   deleteWorkspace: asyncHandler(deleteWorkspace),
 };
+
+/**
+ * @api {get} /workspaces/:workspaceOrFolderId/has-access workspace access
+ * @apiPermission regular_user
+ * @apiName GetWorkspaceAccess
+ * @apiGroup Workspaces
+ *
+ * @apiParam {string} workspaceOrFolderId
+ *
+ * @apiUse workspace
+ */
+
+async function hasAccess(req, res) {
+  const { user, params: { workspaceOrFolderId } } = req;
+
+  const hasAccess = await workspaceService.hasAccess(user, workspaceOrFolderId);
+
+  res.json({ hasAccess });
+}
 
 /**
  * @api {get} /workspace list of workspaces with folders

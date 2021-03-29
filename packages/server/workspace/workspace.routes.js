@@ -10,6 +10,8 @@ const workspacesController = require('./workspace.controller.js');
 
 router.get('/', guard(), workspacesController.listWorkspace);
 
+router.get('/:workspaceOrFolderId/has-access', guard(), workspacesController.hasAccess);
+
 router.get('/:workspaceId', guard(), workspacesController.getWorkspace);
 
 router.post('/', GUARD_GROUP_ADMIN, workspacesController.createWorkspace);
