@@ -9,12 +9,21 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
+  hasAccess,
   create,
   getFolder
 };
 
 async function listFolders() {
   return Folders.find({}).populate('_parentFolder');
+}
+
+async function hasAccess(folderId, user) {
+  const folder = await getFolder(folderId);
+
+  const workspace = await workspaceService.getWorkspace(folder._workspace);
+
+  return workspaceService.isWorkspaceInGroup(workspace, user.group.id);
 }
 
 async function create(folder, user) {

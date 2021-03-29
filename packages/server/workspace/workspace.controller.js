@@ -15,20 +15,20 @@ module.exports = {
 };
 
 /**
- * @api {get} /workspaces/:workspaceOrFolderId/has-access workspace access
+ * @api {get} /workspaces/:workspaceId/has-access workspace access
  * @apiPermission regular_user
  * @apiName GetWorkspaceAccess
  * @apiGroup Workspaces
  *
- * @apiParam {string} workspaceOrFolderId
+ * @apiParam {string} workspaceId
  *
  * @apiUse workspace
  */
 
 async function hasAccess(req, res) {
-  const { user, params: { workspaceOrFolderId } } = req;
+  const { user, params: { workspaceId } } = req;
 
-  const hasAccess = await workspaceService.hasAccess(user, workspaceOrFolderId);
+  const hasAccess = await workspaceService.hasAccess(user, workspaceId);
 
   res.json({ hasAccess });
 }
