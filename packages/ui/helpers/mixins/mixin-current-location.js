@@ -10,10 +10,13 @@ export default {
       return this.folder?.id || this.workspace?.id;
     },
     currentLocationParam() {
+      console.log('calling currentLocationParam');
       if (this.folder?.id) {
+        console.log('is folder this.folder?.id');
         return { folderId: this.folder?.id };
       }
       if (this.workspace?.id) {
+        console.log('is workspace this.workspace?.id');
         return { workspaceId: this.workspace?.id };
       }
     },
@@ -28,12 +31,12 @@ export default {
       }
 
       if (query?.wid || query?.fid) {
-        if (query?.wid) {
-          this.workspace = $axios.$get(getWorkspace(query?.wid));
+        if (query?.fid) {
+          this.folder = await $axios.$get(getFolder(query?.fid));
         }
 
-        if (query?.fid) {
-          this.folder = $axios.$get(getFolder(query?.fid));
+        if (query?.wid) {
+          this.workspace = await $axios.$get(getWorkspace(query?.wid));
         }
       }
 

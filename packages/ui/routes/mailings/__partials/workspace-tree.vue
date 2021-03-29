@@ -26,7 +26,7 @@ export default {
       this.workspacesIsLoading = true;
       await this.getFolderAndWorkspaceData($axios, $route.query);
       const { items } = await $axios.$get(workspacesByGroup());
-      if (!this.selectedItem && items.length > 0) {
+      if (!this.selectedItem?.id && items.length > 0) {
         await this.$router.push({
           query: { wid: items[0]?.id },
         });

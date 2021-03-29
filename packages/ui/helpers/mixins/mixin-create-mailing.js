@@ -20,16 +20,19 @@ export default {
           templateId: template.id,
           workspaceId,
         };
+
         if (defaultMailName) {
           requestCreateMailData = {
             ...requestCreateMailData,
             mailingName: defaultMailName,
           };
         }
+
         const newMailing = await $axios.$post(
           apiRoutes.mailings(),
           requestCreateMailData
         );
+
         // don't use Nuxt router
         // • we are redirecting to the mosaico app
         //   OUTSIDE the Vue app

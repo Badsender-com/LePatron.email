@@ -2,7 +2,12 @@
 
 const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const { NotFound, BadRequest, Conflict, NotAcceptable } = require('http-errors');
+const {
+  NotFound,
+  BadRequest,
+  Conflict,
+  NotAcceptable,
+} = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const workspaceService = require('../workspace/workspace.service.js');
@@ -10,7 +15,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 module.exports = {
   listFolders,
   create,
-  getFolder
+  getFolder,
 };
 
 async function listFolders() {
@@ -26,7 +31,6 @@ async function create(folder, user) {
 
   // case where folder is added to workspace's root
   if (workspaceId) {
-
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
@@ -72,16 +76,17 @@ async function getFolder(folderId) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) })
-      .populate('_workspace');
+  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
 }
 
-async function isNameUniqueAtSameLevel(folder){
+async function isNameUniqueAtSameLevel(folder) {
   const folders = await Folders.find({
-    ...folder
+    ...folder,
   });
 
   if (folders.length) {
-    throw new Conflict(`${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`);
+    throw new Conflict(
+      `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
+    );
   }
 }

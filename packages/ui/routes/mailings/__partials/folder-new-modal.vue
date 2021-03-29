@@ -34,7 +34,9 @@ export default {
       this.$refs.createNewFolderModal.close();
     },
     async submit() {
+      console.log('submit');
       this.$refs.form.validate();
+      console.log(this.isValidToCreate);
       if (this.isValidToCreate) {
         await this.$emit('create-new-folder', {
           folderName: this.folderName,

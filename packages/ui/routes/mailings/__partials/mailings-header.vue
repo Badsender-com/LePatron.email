@@ -13,12 +13,18 @@ export default {
   props: {
     loadingParent: { type: Boolean, default: false },
   },
+  computed: {},
+  async mounted() {
+    await this.getFolderAndWorkspaceData(this.$axios, this.$route?.query);
+  },
   methods: {
     openNewFolderModal() {
       this.$refs.folderNewModalRef.open();
     },
-    createNewFolder() {
-      this.$refs.folderNewModalRef.open();
+    createNewFolder(data) {
+      console.log('createNewFolder');
+      console.log(this.currentLocationParam);
+      console.log(data);
     },
   },
 };
@@ -32,10 +38,10 @@ export default {
       <v-spacer />
       <div class="pa-2">
         <v-btn
-          class="my-4 new-mail-button"
+          class="my-4 new-mail-button pl-10 pr-10"
           color="primary"
           tile
-          :disabled="!hasAccess"
+          :disabled="false"
           @click="openNewFolderModal"
         >
           <v-icon left>
@@ -47,8 +53,8 @@ export default {
     </v-toolbar>
     <folder-new-modal
       ref="folderNewModalRef"
-      :create-new-folder="createNewFolder"
       :loading-parent="loadingParent"
+      @create-new-folder="createNewFolder"
     />
   </div>
 

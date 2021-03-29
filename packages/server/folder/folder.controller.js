@@ -8,7 +8,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 module.exports = {
   list: asyncHandler(list),
   create: asyncHandler(create),
-  getFolder: asyncHandler(getFolder)
+  getFolder: asyncHandler(getFolder),
 };
 
 /**
@@ -43,13 +43,13 @@ async function list(req, res) {
 async function create(req, res) {
   const {
     user,
-    body: { name, workspaceId, parentFolderId }
+    body: { name, workspaceId, parentFolderId },
   } = req;
 
   const folder = {
     name,
     workspaceId,
-    parentFolderId
+    parentFolderId,
   };
 
   const createdFolder = await folderService.create(folder, user);
@@ -72,11 +72,12 @@ async function getFolder(req, res) {
     params: { folderId },
   } = req;
 
+  console.log(folderId);
   const folder = await folderService.getFolder(folderId);
 
   const workspace = await workspaceService.getWorkspace(folder._workspace);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
-  res.json(folder)
-
+  console.log(folder);
+  res.json(folder);
 }
