@@ -7,6 +7,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
+  hasAccess: asyncHandler(hasAccess),
   create: asyncHandler(create),
   getFolder: asyncHandler(getFolder)
 };
@@ -25,6 +26,22 @@ async function list(req, res) {
   res.json({
     items: folders,
   });
+}
+/**
+ * @api {get} /folders/:folderId/has-access check folder access
+ * @apiPermission regular_user
+ * @apiName GetFolderAccess
+ * @apiGroup Folders
+ *
+ * @apiUse folder
+ * @apiSuccess {hasAccess} boolean indicating access
+ */
+async function hasAccess(req, res) {
+  const { user, params: { folderId } } = req;
+
+  const hasAccess = await folderService.hasAccess(folderId, user);
+
+  res.json({ hasAccess });
 }
 
 /**
