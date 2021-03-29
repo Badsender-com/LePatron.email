@@ -40,10 +40,11 @@ async function create(folder, user) {
     if (parentFolder._parentFolder) {
       throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
     }
-    workspaceService.doesUserHaveWriteAccess(user, parentFolder._workspace);
+    const workspace = await workspaceService.getWorkspace(parentFolder._workspace);
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     newFolder._parentFolder = parentFolder._id;
-    newFolder._workspace = parentFolder._workspace.id;
+    newFolder._workspace = parentFolder._workspace;
   }
 
   await isNameUniqueAtSameLevel(newFolder);
@@ -72,8 +73,7 @@ async function getFolder(folderId) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) })
-      .populate('_workspace');
+  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) });
 }
 
 async function isNameUniqueAtSameLevel(folder){
