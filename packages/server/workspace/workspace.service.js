@@ -17,12 +17,12 @@ module.exports = {
   doesUserHaveWriteAccess,
   doesUserHaveReadAccess,
   hasAccess,
-  isWorkspaceInGroup
+  isWorkspaceInGroup,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
   return Workspaces.exists({
-    _id: { $ne: mongoose.Types.ObjectId(workspaceId)},
+    _id: { $ne: mongoose.Types.ObjectId(workspaceId) },
     name: workspaceName,
     _company: groupId,
   });
@@ -38,7 +38,10 @@ async function getWorkspace(id) {
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
-  return isWorkspaceInGroup(workspace, user.group.id);
+  return (
+    isWorkspaceInGroup(workspace, user.group.id) &&
+    workspaceContainsUser(workspace, user)
+  );
 }
 
 async function getWorkspaceWithAccessRight(id, user) {
@@ -67,9 +70,7 @@ async function deleteWorkspace(workspaceId) {
     await Mailings.deleteMany({ _workspace: workspaceId });
     const foldersToDelete = await Folders.find({ _workspace: workspaceId });
     if (foldersToDelete && foldersToDelete.length > 0) {
-      foldersToDelete?.forEach((folder) =>
-        deleteFolderContent(folder?.id)
-      );
+      foldersToDelete?.forEach((folder) => deleteFolderContent(folder?.id));
     }
     await Folders.deleteMany({ _workspace: workspaceId });
   });
@@ -141,9 +142,11 @@ async function findWorkspaces({ groupId }) {
     });
 
   // to discard nested folders as direct children of each workspace
-  workspaces.forEach(workspace => {
+  workspaces.forEach((workspace) => {
     if (workspace.folders) {
-      workspace.folders = workspace.folders?.filter(folder => !folder._parentFolder);
+      workspace.folders = workspace.folders?.filter(
+        (folder) => !folder._parentFolder
+      );
     }
   });
 
@@ -193,13 +196,15 @@ function isUserWorkspaceMember(user, workspace) {
 function doesUserHaveWriteAccess(user, workspace) {
   doesUserHaveReadAccess(user, workspace);
 
-  if(!isUserWorkspaceMember(user, workspace) ){
+  if (!isUserWorkspaceMember(user, workspace)) {
     throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
   }
 }
 
 function doesUserHaveReadAccess(user, workspace) {
-  if(!isWorkspaceInGroup(workspace, user.group.id)){
-    throw new NotFound(`${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`);
+  if (!isWorkspaceInGroup(workspace, user.group.id)) {
+    throw new NotFound(
+      `${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`
+    );
   }
 }
