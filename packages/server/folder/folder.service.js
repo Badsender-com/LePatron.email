@@ -30,7 +30,7 @@ async function hasAccess(folderId, user) {
 
   return (
     workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
-    workspaceService.isUserWorkspaceMember(workspace, user)
+    workspaceService.isUserWorkspaceMember(user, workspace)
   );
 }
 
