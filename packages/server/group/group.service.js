@@ -3,7 +3,7 @@
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { Groups, Users, Workspaces } = require('../common/models.common.js');
+const { Groups, Users, Workspaces, Mailings } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const workspaceService = require('../workspace/workspace.service.js');
 
@@ -33,9 +33,20 @@ async function seedGroups() {
     };
 
     const createdWorkspace = await workspaceService.createWorkspace(defaultWorkspace);
-    
+
     if (!createdWorkspace) {
       throw new createError.InternalServerError(ERROR_CODES.FAILED_WORKSPACE_CREATION)
+    }
+
+    const companyMailings = await Mailings.find({ _company: mongoose.Types.ObjectId(company.id) });
+
+    const moveMailingsToWorkspace = await Mailings.updateMany(
+      { _id: { $in: companyMailings.map(mailing => mailing.id) } },
+      { _workspace: createdWorkspace._id }
+    );
+
+    if (moveMailingsToWorkspace.ok !== 1) {
+      throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE)
     }
   }
 
