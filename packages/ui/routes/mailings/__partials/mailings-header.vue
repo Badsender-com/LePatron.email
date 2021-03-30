@@ -14,7 +14,11 @@ export default {
   props: {
     loadingParent: { type: Boolean, default: false },
   },
-  computed: {},
+  computed: {
+    hasRightToCreateFolder() {
+      return !this.hasAccess || !!this.folder?._parentFolder;
+    },
+  },
   async mounted() {
     await this.getFolderAndWorkspaceData(this.$axios, this.$route?.query);
   },
@@ -28,7 +32,9 @@ export default {
           name: folderName,
           ...this.currentLocationParam,
         });
-      } catch {}
+      } catch {
+        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
+      }
     },
   },
 };
@@ -45,7 +51,7 @@ export default {
           class="my-4 new-mail-button pl-10 pr-10"
           color="primary"
           tile
-          :disabled="false"
+          :disabled="hasRightToCreateFolder"
           @click="openNewFolderModal"
         >
           <v-icon left>

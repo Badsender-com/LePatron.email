@@ -11,7 +11,7 @@ export default {
   data: () => ({
     workspace: {},
     folder: {},
-    hasAccess() {},
+    hasAccess: false,
   }),
   computed: {
     currentLocation() {
@@ -24,9 +24,6 @@ export default {
       if (this.workspace?.id) {
         return { workspaceId: this.workspace?.id };
       }
-    },
-    hasAccess() {
-      return this.workspace?.hasAccess || false;
     },
   },
   watch: {
@@ -48,22 +45,23 @@ export default {
 
         if (query?.wid || query?.fid) {
           if (query?.fid) {
-            const [folder, hasAccess] = await Promise.all([
+            const [folder, hasAccessData] = await Promise.all([
               $axios.$get(getFolder(query?.fid)),
               $axios.$get(getFolderAccess(query?.fid)),
             ]);
             this.folder = folder;
-            this.hasAccess = hasAccess;
+            this.hasAccess = hasAccessData?.hasAccess;
             this.workspace = null;
           } else if (query?.wid) {
-            const [workspace, hasAccess] = await Promise.all([
+            const [workspace, hasAccessData] = await Promise.all([
               $axios.$get(getWorkspace(query?.wid)),
               $axios.$get(getWorkspaceAccess(query?.wid)),
             ]);
             this.workspace = workspace;
-            this.hasAccess = hasAccess;
+            this.hasAccess = hasAccessData?.hasAccess;
             this.folder = null;
           }
+          console.log('-------------------------');
           console.log(this.folder);
           console.log(this.workspace);
           console.log(this.hasAccess);
