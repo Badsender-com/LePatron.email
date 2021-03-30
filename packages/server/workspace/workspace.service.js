@@ -30,7 +30,6 @@ async function existsByName({ workspaceId, workspaceName, groupId }) {
 }
 
 async function getWorkspace(id) {
-  console.log(id);
   if (
     !(await Workspaces.exists({ _id: mongoose.Types.ObjectId(id.toString()) }))
   ) {

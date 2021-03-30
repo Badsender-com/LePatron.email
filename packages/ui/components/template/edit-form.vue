@@ -3,16 +3,16 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 
 export default {
-  name: `bs-template-edit-form`,
+  name: 'BsTemplateEditForm',
   mixins: [validationMixin],
-  SUPPORTED_IMAGES_FORMAT: `.png,.gif,.jpg`,
-  model: { prop: `template`, event: `update` },
+  SUPPORTED_IMAGES_FORMAT: '.png,.gif,.jpg',
+  model: { prop: 'template', event: 'update' },
   props: {
     template: { type: Object, default: () => ({}) },
     disabled: { type: Boolean, default: false },
   },
   data() {
-    return { markup: ``, images: [] };
+    return { markup: '', images: [] };
   },
   computed: {
     localModel: {
@@ -20,7 +20,7 @@ export default {
         return this.template;
       },
       set(updatedTemplate) {
-        this.$emit(`update`, updatedTemplate);
+        this.$emit('update', updatedTemplate);
       },
     },
   },
@@ -40,28 +40,27 @@ export default {
       return errors;
     },
     onSubmit() {
-      console.log(`onSubmit`);
       this.$v.$touch();
       if (this.$v.$invalid) return;
       // Send a formData
       // https://developer.mozilla.org/en-US/docs/Web/API/FormData/append
       // https://alligator.io/vuejs/uploading-vue-picture-input/
       const formData = new FormData();
-      formData.append(`name`, this.template.name);
-      formData.append(`description`, this.template.description);
-      if (this.markup) formData.append(`markup`, this.markup);
+      formData.append('name', this.template.name);
+      formData.append('description', this.template.description);
+      if (this.markup) formData.append('markup', this.markup);
       if (Array.isArray(this.images)) {
-        this.images.forEach((image, imageIndex) => {
-          formData.append(`images`, image, image.name);
+        this.images.forEach((image, _) => {
+          formData.append('images', image, image.name);
         });
       }
-      this.$emit(`submit`, formData);
+      this.$emit('submit', formData);
     },
     updateMarkup(markup) {
       this.markup = markup;
     },
     updateImages(images) {
-      console.log(`updateImages`, images);
+      console.log('updateImages', images);
       this.images = images;
     },
   },
@@ -75,8 +74,8 @@ export default {
         <v-card-title>{{ $t('forms.template.meta') }}</v-card-title>
         <v-card-text>
           <v-text-field
-            v-model="localModel.name"
             id="name"
+            v-model="localModel.name"
             :label="$t('global.name')"
             name="name"
             required
@@ -86,8 +85,8 @@ export default {
             @blur="$v.template.name.$touch()"
           />
           <v-textarea
-            v-model="localModel.description"
             id="description"
+            v-model="localModel.description"
             :label="$t('global.description')"
             name="description"
             auto-grow
@@ -133,10 +132,12 @@ export default {
       bottom
       right
       fab
-      @click="onSubmit"
       :disabled="disabled"
+      @click="onSubmit"
     >
-      <v-icon color="secondary">save</v-icon>
+      <v-icon color="secondary">
+        save
+      </v-icon>
     </v-btn>
   </form>
 </template>
