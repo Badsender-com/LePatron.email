@@ -247,6 +247,7 @@ export default {
   },
   folders: {
     name: 'Nom de dossier',
+    created: 'Dossier crée',
   },
   tableHeaders: {
     groups: {

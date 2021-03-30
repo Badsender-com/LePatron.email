@@ -36,6 +36,11 @@ export default {
         await this.$router.push({
           query: { fid: folder?._id },
         });
+
+        this.showSnackbar({
+          text: this.$t('folders.created'),
+          color: 'success',
+        });
       } catch {
         this.showSnackbar({ text: 'an error as occurred', color: 'error' });
       }
@@ -47,7 +52,7 @@ export default {
   <div>
     <v-toolbar flat>
       <v-toolbar-title>
-        <mailings-breadcrumbs />
+        <mailings-breadcrumbs :large="true" />
       </v-toolbar-title>
       <v-spacer />
       <div class="pa-2">
