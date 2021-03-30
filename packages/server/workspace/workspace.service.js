@@ -41,7 +41,10 @@ async function getWorkspace(id) {
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
-  return isWorkspaceInGroup(workspace, user.group.id);
+  return (
+    isWorkspaceInGroup(workspace, user.group.id) &&
+    workspaceContainsUser(workspace, user)
+  );
 }
 
 async function getWorkspaceWithAccessRight(id, user) {

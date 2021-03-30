@@ -28,7 +28,10 @@ async function hasAccess(folderId, user) {
 
   const workspace = await workspaceService.getWorkspace(folder._workspace);
 
-  return workspaceService.isWorkspaceInGroup(workspace, user.group.id);
+  return (
+    workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
+    workspaceService.workspaceContainsUser(workspace, user)
+  );
 }
 
 async function create(folder, user) {
