@@ -13,6 +13,7 @@ const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
+  seedGroups: asyncHandler(seedGroups),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readUsers: asyncHandler(readUsers),
@@ -68,6 +69,21 @@ async function create(req, res) {
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
   res.json(newGroup);
+}
+
+/**
+ * @api {post} /seed-groups update groups that have no workspace
+ * @apiPermission super_admin
+ * @apiName UpdateGroupsWithNoWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiUse group
+ */
+
+async function seedGroups(req, res) {
+  const seededGroups = await groupService.seedGroups();
+
+  res.json({ groups: seededGroups.map(group => group.name) });
 }
 
 /**
