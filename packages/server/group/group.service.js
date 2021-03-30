@@ -2,6 +2,7 @@
 
 const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js');
 const { Groups, Users, Workspaces } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const workspaceService = require('../workspace/workspace.service.js');
@@ -31,7 +32,11 @@ async function seedGroups() {
       selectedUsers: companyUsers
     };
 
-    await workspaceService.createWorkspace(defaultWorkspace);
+    const createdWorkspace = await workspaceService.createWorkspace(defaultWorkspace);
+    
+    if (!createdWorkspace) {
+      throw new createError.InternalServerError(ERROR_CODES.FAILED_WORKSPACE_CREATION)
+    }
   }
 
   return companiesWithNoWorkspaces;
