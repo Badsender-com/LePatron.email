@@ -44,7 +44,7 @@ async function hasAccess(user, workspaceId) {
 
   return (
     isWorkspaceInGroup(workspace, user.group.id) &&
-    isUserWorkspaceMember(workspace, user)
+    isUserWorkspaceMember(user, workspace)
   );
 }
 
