@@ -2,7 +2,12 @@
 
 const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const { NotFound, BadRequest, Conflict, NotAcceptable } = require('http-errors');
+const {
+  NotFound,
+  BadRequest,
+  Conflict,
+  NotAcceptable,
+} = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const workspaceService = require('../workspace/workspace.service.js');
@@ -11,7 +16,7 @@ module.exports = {
   listFolders,
   hasAccess,
   create,
-  getFolder
+  getFolder,
 };
 
 async function listFolders() {
@@ -23,7 +28,10 @@ async function hasAccess(folderId, user) {
 
   const workspace = await workspaceService.getWorkspace(folder._workspace);
 
-  return workspaceService.isWorkspaceInGroup(workspace, user.group.id);
+  return (
+    workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
+    workspaceService.isUserWorkspaceMember(user, workspace)
+  );
 }
 
 async function create(folder, user) {
@@ -35,7 +43,6 @@ async function create(folder, user) {
 
   // case where folder is added to workspace's root
   if (workspaceId) {
-
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
@@ -49,7 +56,9 @@ async function create(folder, user) {
     if (parentFolder._parentFolder) {
       throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
     }
-    const workspace = await workspaceService.getWorkspace(parentFolder._workspace);
+    const workspace = await workspaceService.getWorkspace(
+      parentFolder._workspace
+    );
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     newFolder._parentFolder = parentFolder._id;
@@ -82,15 +91,17 @@ async function getFolder(folderId) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Folders.findOne({ _id : mongoose.Types.ObjectId(folderId) });
+  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
 }
 
-async function isNameUniqueAtSameLevel(folder){
+async function isNameUniqueAtSameLevel(folder) {
   const folders = await Folders.find({
-    ...folder
+    ...folder,
   });
 
   if (folders.length) {
-    throw new Conflict(`${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`);
+    throw new Conflict(
+      `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
+    );
   }
 }
