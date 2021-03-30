@@ -36,6 +36,8 @@ export default {
     location: 'Location',
     moveManyMail: 'Move',
     newTemplate: 'Add a template',
+    newFolder: 'Add a folder',
+    parentLocation: 'Parent location',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
@@ -238,6 +240,9 @@ export default {
     description: 'Descritpion',
     members: 'Members',
     userIsGroupAdmin: 'The user is a group admin',
+  },
+  folders: {
+    name: 'Folder name',
   },
   tableHeaders: {
     groups: {
