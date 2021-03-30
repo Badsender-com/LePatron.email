@@ -27,17 +27,25 @@ export default {
       return getPathToBreadcrumbsDataType(this.selectedLocation);
     },
   },
+  watch: {
+    $route: 'fetchData',
+  },
   async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspacesWithPath = getTreeviewWorkspaces(items);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
+    await this.fetchData();
+  },
+  methods: {
+    async fetchData() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspacesWithPath = getTreeviewWorkspaces(items);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
+      }
+    },
   },
 };
 </script>

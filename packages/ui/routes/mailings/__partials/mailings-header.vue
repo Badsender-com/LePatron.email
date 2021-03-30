@@ -28,9 +28,13 @@ export default {
     },
     async createNewFolder({ folderName }) {
       try {
-        await this.$axios.$post(folders(), {
+        const folder = await this.$axios.$post(folders(), {
           name: folderName,
           ...this.currentLocationParam,
+        });
+        this.$emit('on-refresh');
+        await this.$router.push({
+          query: { fid: folder?._id },
         });
       } catch {
         this.showSnackbar({ text: 'an error as occurred', color: 'error' });

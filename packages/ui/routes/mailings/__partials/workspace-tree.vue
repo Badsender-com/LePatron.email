@@ -21,24 +21,27 @@ export default {
     },
   },
   async mounted() {
-    const { $axios, $route } = this;
-    try {
-      this.workspacesIsLoading = true;
-      await this.getFolderAndWorkspaceData($axios, $route.query);
-      const { items } = await $axios.$get(workspacesByGroup());
-      if (!this.selectedItem?.id && items.length > 0) {
-        await this.$router.push({
-          query: { wid: items[0]?.id },
-        });
-      }
-      this.workspaces = items;
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
+    await this.fetchData();
+    if (!this.selectedItem?.id && this.workspaces?.length > 0) {
+      await this.$router.push({
+        query: { wid: this.workspaces[0]?.id },
+      });
     }
   },
   methods: {
+    async fetchData() {
+      const { $axios, $route } = this;
+      try {
+        this.workspacesIsLoading = true;
+        await this.getFolderAndWorkspaceData($axios, $route.query);
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items;
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
+      }
+    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
         let querySelectedElement = null;

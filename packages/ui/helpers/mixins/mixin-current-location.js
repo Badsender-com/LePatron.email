@@ -61,10 +61,6 @@ export default {
             this.hasAccess = hasAccessData?.hasAccess;
             this.folder = null;
           }
-          console.log('-------------------------');
-          console.log(this.folder);
-          console.log(this.workspace);
-          console.log(this.hasAccess);
         }
         return { workspace: this.workspace, folder: this.folder };
       } catch {

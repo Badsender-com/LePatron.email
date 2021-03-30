@@ -90,7 +90,7 @@ export default {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
-  watchQuery: ['wid'],
+  watchQuery: ['wid', 'fid'],
   methods: {
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
@@ -173,6 +173,9 @@ export default {
         this.loading = false;
       }
     },
+    async refreshLeftMenuData() {
+      await this.$refs.workspaceTree.fetchData();
+    },
   },
 };
 </script>
@@ -206,11 +209,11 @@ export default {
           </v-btn>
         </v-list-item>
       </v-list>
-      <workspace-tree />
+      <workspace-tree ref="workspaceTree" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-header />
+        <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-selection-actions
           :mailings-selection="mailingsSelection"
           :tags="tags"
