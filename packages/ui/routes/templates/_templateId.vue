@@ -2,7 +2,7 @@
 import { mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
@@ -212,19 +212,13 @@ export default {
         :disabled="loading"
         @submit="updateTemplate"
       />
-      <v-col
-        v-if="template.hasMarkup"
-        cols="12"
-      >
+      <v-col v-if="template.hasMarkup" cols="12">
         <bs-template-html-preview
           :markup="template.markup"
           :template-id="template.id"
         />
       </v-col>
-      <v-col
-        v-if="hasImages"
-        cols="12"
-      >
+      <v-col v-if="hasImages" cols="12">
         <bs-template-images-list
           :assets="template.assets"
           :disabled="loading"

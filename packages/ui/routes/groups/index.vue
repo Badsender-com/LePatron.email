@@ -1,5 +1,5 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 
@@ -88,16 +88,7 @@ export default {
         </v-data-table>
       </v-col>
     </v-row>
-    <v-btn
-      color="accent"
-      fixed
-      bottom
-      right
-      fab
-      link
-      nuxt
-      to="/groups/new"
-    >
+    <v-btn color="accent" fixed bottom right fab link nuxt to="/groups/new">
       <v-icon color="secondary">
         group_add
       </v-icon>

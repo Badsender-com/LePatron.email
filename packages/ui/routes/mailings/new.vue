@@ -1,6 +1,6 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
