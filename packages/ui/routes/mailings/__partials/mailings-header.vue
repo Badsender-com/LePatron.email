@@ -14,6 +14,11 @@ export default {
   props: {
     loadingParent: { type: Boolean, default: false },
   },
+  data() {
+    return {
+      conflictError: false,
+    };
+  },
   computed: {
     hasRightToCreateFolder() {
       return !this.hasAccess || !!this.folder?._parentFolder;
@@ -36,12 +41,17 @@ export default {
         await this.$router.push({
           query: { fid: folder?._id },
         });
-
+        this.conflictError = false;
         this.showSnackbar({
           text: this.$t('folders.created'),
           color: 'success',
         });
-      } catch {
+
+        this.$refs.folderNewModalRef.close();
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          this.conflictError = true;
+        }
         this.showSnackbar({ text: 'an error as occurred', color: 'error' });
       }
     },
@@ -73,6 +83,7 @@ export default {
     <folder-new-modal
       ref="folderNewModalRef"
       :loading-parent="loadingParent"
+      :conflict-error="conflictError"
       @create-new-folder="createNewFolder"
     />
   </div>

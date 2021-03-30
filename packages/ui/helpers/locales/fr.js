@@ -248,6 +248,7 @@ export default {
   folders: {
     name: 'Nom de dossier',
     created: 'Dossier crée',
+    conflict: 'Le dossier existe déjà',
   },
   tableHeaders: {
     groups: {

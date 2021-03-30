@@ -244,6 +244,7 @@ export default {
   folders: {
     name: 'Folder name',
     created: 'Folder created',
+    conflict: 'Folder already exists',
   },
   tableHeaders: {
     groups: {

@@ -9,6 +9,7 @@ export default {
     MailingsBreadcrumbs,
   },
   props: {
+    conflictError: { type: Boolean, default: false },
     loadingParent: { type: Boolean, default: false },
   },
   data() {
@@ -27,6 +28,7 @@ export default {
   },
   methods: {
     open() {
+      console.log({ conflictError: this.conflictError });
       this.$refs.createNewFolderModal.open();
     },
     close() {
@@ -39,9 +41,6 @@ export default {
         await this.$emit('create-new-folder', {
           folderName: this.folderName,
         });
-        if (!this.loadingParent) {
-          this.close();
-        }
       }
     },
   },
@@ -64,7 +63,9 @@ export default {
           <mailings-breadcrumbs :large="false" />
         </div>
       </div>
-
+      <p v-if="conflictError" class="red--text">
+        {{ $t('folders.conflict') }}
+      </p>
       <v-text-field
         v-model="folderName"
         class="pt-1"
