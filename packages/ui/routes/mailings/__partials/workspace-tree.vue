@@ -17,7 +17,7 @@ export default {
       return getTreeviewWorkspaces(this.workspaces);
     },
     selectedItem() {
-      return this.currentLocation;
+      return { id: this.currentLocation };
     },
   },
   async mounted() {

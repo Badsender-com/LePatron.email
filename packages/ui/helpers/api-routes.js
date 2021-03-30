@@ -155,10 +155,22 @@ export function getWorkspace(workspaceId) {
   return `/workspaces/${workspaceId}`;
 }
 
+export function getWorkspaceAccess(folderID) {
+  return `/workspaces/${folderID}/has-access`;
+}
+
 /// ///
 // FOLDERS
 /// ///
 
+export function folders() {
+  return '/folders/';
+}
+
 export function getFolder(folderID) {
   return `/folders/${folderID}`;
+}
+
+export function getFolderAccess(folderID) {
+  return `/folders/${folderID}/has-access`;
 }

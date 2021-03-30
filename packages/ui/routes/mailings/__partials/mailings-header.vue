@@ -1,4 +1,5 @@
 <script>
+import { folders } from '~/helpers/api-routes.js';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -21,10 +22,13 @@ export default {
     openNewFolderModal() {
       this.$refs.folderNewModalRef.open();
     },
-    createNewFolder(data) {
-      console.log('createNewFolder');
-      console.log(this.currentLocationParam);
-      console.log(data);
+    async createNewFolder({ folderName }) {
+      try {
+        await this.$axios.$post(folders(), {
+          name: folderName,
+          ...this.currentLocationParam,
+        });
+      } catch {}
     },
   },
 };

@@ -14,12 +14,21 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
+  hasAccess,
   create,
   getFolder,
 };
 
 async function listFolders() {
   return Folders.find({}).populate('_parentFolder');
+}
+
+async function hasAccess(folderId, user) {
+  const folder = await getFolder(folderId);
+
+  const workspace = await workspaceService.getWorkspace(folder._workspace);
+
+  return workspaceService.isWorkspaceInGroup(workspace, user.group.id);
 }
 
 async function create(folder, user) {
@@ -44,10 +53,13 @@ async function create(folder, user) {
     if (parentFolder._parentFolder) {
       throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
     }
-    workspaceService.doesUserHaveWriteAccess(user, parentFolder._workspace);
+    const workspace = await workspaceService.getWorkspace(
+      parentFolder._workspace
+    );
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     newFolder._parentFolder = parentFolder._id;
-    newFolder._workspace = parentFolder._workspace.id;
+    newFolder._workspace = parentFolder._workspace;
   }
 
   await isNameUniqueAtSameLevel(newFolder);
