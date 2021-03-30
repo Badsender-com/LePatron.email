@@ -18,6 +18,7 @@ module.exports = {
   doesUserHaveReadAccess,
   hasAccess,
   isWorkspaceInGroup,
+  isUserWorkspaceMember,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
@@ -43,7 +44,7 @@ async function hasAccess(user, workspaceId) {
 
   return (
     isWorkspaceInGroup(workspace, user.group.id) &&
-    workspaceContainsUser(workspace, user)
+    isUserWorkspaceMember(workspace, user)
   );
 }
 
