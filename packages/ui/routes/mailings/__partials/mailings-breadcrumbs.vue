@@ -5,6 +5,7 @@ import {
   findNestedLocation,
 } from '~/utils/workspaces';
 import { workspacesByGroup } from '~/helpers/api-routes';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'MailingsBreadcrumbs',
@@ -46,6 +47,13 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
+    queryParamsBasedOnItemType(item) {
+      if (item?.type === SPACE_TYPE.WORKSPACE) {
+        return { wid: item.id };
+      } else {
+        return { fid: item.id };
+      }
+    },
   },
 };
 </script>
@@ -56,7 +64,7 @@ export default {
     </template>
     <template #item="{ item }">
       <v-breadcrumbs-item
-        :to="{ path: '/', query: { wid: item.id } }"
+        :to="{ path: '/', query: queryParamsBasedOnItemType(item) }"
         :disabled="item.disabled"
       >
         {{ item.text }}
