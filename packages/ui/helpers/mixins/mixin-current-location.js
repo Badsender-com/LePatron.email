@@ -27,17 +27,17 @@ export default {
     },
   },
   watch: {
-    $route: 'computedGetFolderAndWorkspaceData',
+    $route: 'getFolderAndWorkspaceData',
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async computedGetFolderAndWorkspaceData() {
-      return await this.getFolderAndWorkspaceData(
+    async getFolderAndWorkspaceData() {
+      return await this.fetchFolderAndWorkspaceData(
         this.$axios,
         this.$route?.query
       );
     },
-    async getFolderAndWorkspaceData($axios, query) {
+    async fetchFolderAndWorkspaceData($axios, query) {
       try {
         if (!$axios || !query) {
           return;
@@ -64,7 +64,10 @@ export default {
         }
         return { workspace: this.workspace, folder: this.folder };
       } catch {
-        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
       }
     },
   },
