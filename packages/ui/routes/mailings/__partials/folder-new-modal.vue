@@ -28,7 +28,6 @@ export default {
   },
   methods: {
     open() {
-      console.log({ conflictError: this.conflictError });
       this.$refs.createNewFolderModal.open();
     },
     close() {
