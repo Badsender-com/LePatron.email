@@ -3,7 +3,13 @@ import { mapGetters } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
-import { getFolder, getWorkspace, mailings } from '~/helpers/api-routes.js';
+import {
+  getFolder,
+  getFolderAccess,
+  getWorkspace,
+  getWorkspaceAccess,
+  mailings,
+} from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
@@ -35,28 +41,43 @@ export default {
       if (!!query?.wid || !!query?.fid) {
         let folder;
         let workspace;
+        let hasAccess;
 
         if (query?.wid || query?.fid) {
           if (query?.fid) {
-            folder = await $axios.$get(getFolder(query?.fid));
-          } else {
-            workspace = await $axios.$get(getWorkspace(query?.wid));
+            const [folderData, hasAccessData] = await Promise.all([
+              $axios.$get(getFolder(query?.fid)),
+              $axios.$get(getFolderAccess(query?.fid)),
+            ]);
+            folder = folderData;
+            hasAccess = hasAccessData?.hasAccess;
+            workspace = null;
+          } else if (query?.wid) {
+            const [workspaceData, hasAccessData] = await Promise.all([
+              $axios.$get(getWorkspace(query?.wid)),
+              $axios.$get(getWorkspaceAccess(query?.wid)),
+            ]);
+            workspace = workspaceData;
+            hasAccess = hasAccessData?.hasAccess;
+            folder = null;
           }
         }
 
         const queryMailing = folder
           ? { folderId: query?.fid }
           : { workspaceId: query?.wid };
+
         const mailingsResponse = await $axios.$get(mailings(), {
           params: queryMailing,
         });
 
         return {
-          mailings: mailingsResponse.items,
-          tags: mailingsResponse.meta.tags,
+          mailings: mailingsResponse?.items,
+          tags: mailingsResponse.meta?.tags,
           mailingsIsLoading: false,
           folder,
           workspace,
+          hasAccess,
         };
       }
     } catch (error) {
@@ -72,8 +93,8 @@ export default {
     workspace: {},
     tags: [],
     filterValues: null,
+    hasAccess: false,
   }),
-
   computed: {
     filteredMailings() {
       const filterFunction = mailingsHelpers.createFilters(this.filterValues);
@@ -108,8 +129,10 @@ export default {
       this.loading = false;
     },
     async fetchData() {
-      await this.getFolderAndWorkspaceData(this.$axios, this.$route?.query);
-      await this.fetchMailListingData();
+      await Promise.all([
+        this.getFolderAndWorkspaceData(this.$axios, this.$route?.query),
+        this.fetchMailListingData(),
+      ]);
     },
     async fetchMailListingData() {
       try {
