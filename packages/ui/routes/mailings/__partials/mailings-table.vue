@@ -3,8 +3,10 @@ import { mapMutations, mapGetters } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
-import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
-import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
+import ModalCopyMail from '~/routes/mailings/__partials/mailings-copy-modal';
+import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
+
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
 import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
@@ -46,13 +48,10 @@ export default {
     MailingsTagsMenu,
     ModalMoveMail,
   },
+  mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    workspace: {
-      type: Object,
-      default: () => {},
-    },
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
   },
@@ -66,13 +65,16 @@ export default {
       actionsDetails: ACTIONS_DETAILS,
     };
   },
+  async mounted() {
+    await this.getFolderAndWorkspaceData(this.$axios, this.$route);
+  },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
         : TABLE_HIDDEN_COLUMNS_USER;
-      if (!this.workspace.hasAccess) {
+      if (!this.hasAccess) {
         return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }
       return excludedRules.filter(
@@ -314,12 +316,10 @@ export default {
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
-      :show-select="workspace.hasAccess"
+      :show-select="hasAccess"
     >
       <template #item.name="{ item }">
-        <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
-          item.name
-        }}</a>
+        <a v-if="hasAccess" :href="`/editor/${item.id}`">{{ item.name }}</a>
         <template v-else>
           {{ item.name }}
         </template>

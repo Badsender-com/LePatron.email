@@ -1,54 +1,63 @@
 <script>
 import { workspacesByGroup } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'WorkspaceTree',
+  mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     workspaces: [],
-    selectedItem: '',
   }),
   computed: {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
     },
-  },
-  watch: {
-    // call again the method if the route changes
-    $route: 'setSelectedItem',
+    selectedItem() {
+      return { id: this.currentLocation };
+    },
   },
   async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      if (!this.selectedItem && items.length > 0) {
-        await this.$router.push({
-          query: { wid: items[0]?.id },
-        });
-      }
-      this.workspaces = items;
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
+    await this.fetchData();
+    if (!this.selectedItem?.id && this.workspaces?.length > 0) {
+      await this.$router.push({
+        query: { wid: this.workspaces[0]?.id },
+      });
     }
   },
   methods: {
+    async fetchData() {
+      const { $axios, $route } = this;
+      try {
+        this.workspacesIsLoading = true;
+        await this.getFolderAndWorkspaceData($axios, $route.query);
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items;
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
+      }
+    },
     handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]) {
-        const querySelectedElement = {
-          wid: selectedItems[0],
-        };
+      if (selectedItems[0]?.id) {
+        let querySelectedElement = null;
+        if (selectedItems[0]?.type === SPACE_TYPE.WORKSPACE) {
+          querySelectedElement = {
+            wid: selectedItems[0].id,
+          };
+        } else {
+          querySelectedElement = {
+            fid: selectedItems[0].id,
+          };
+        }
         this.$router.push({
           query: querySelectedElement,
         });
       }
-    },
-    setSelectedItem() {
-      this.selectedItem = this.$route.query?.wid;
     },
   },
 };
@@ -67,6 +76,7 @@ export default {
       :items="treeviewLocationItems"
       hoverable
       open-all
+      return-object
       class="pb-8"
       @update:active="handleSelectItemFromTreeView"
     >

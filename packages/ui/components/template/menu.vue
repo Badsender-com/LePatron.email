@@ -1,6 +1,6 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
