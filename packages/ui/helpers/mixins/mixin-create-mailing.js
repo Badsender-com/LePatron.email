@@ -16,7 +16,6 @@ export default {
       const { $axios } = this;
       this[loadingKey] = true;
 
-      console.log(currentLocationParams);
       if (
         !currentLocationParams.parentFolderId &&
         !currentLocationParams.workspaceId
@@ -29,12 +28,14 @@ export default {
           templateId: template.id,
           ...currentLocationParams,
         };
+
         if (defaultMailName) {
           requestCreateMailData = {
             ...requestCreateMailData,
             mailingName: defaultMailName,
           };
         }
+
         const newMailing = await $axios.$post(
           apiRoutes.mailings(),
           requestCreateMailData
