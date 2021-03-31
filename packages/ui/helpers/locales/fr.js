@@ -247,7 +247,7 @@ export default {
   },
   folders: {
     name: 'Nom du dossier',
-    created: 'Dossier crée',
+    created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
   },
   tableHeaders: {
