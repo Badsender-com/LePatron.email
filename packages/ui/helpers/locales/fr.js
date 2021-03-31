@@ -246,7 +246,7 @@ export default {
     userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
   },
   folders: {
-    name: 'Nom de dossier',
+    name: 'Nom du dossier',
     created: 'Dossier crée',
     conflict: 'Le dossier existe déjà',
   },
