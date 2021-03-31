@@ -64,6 +64,7 @@
     "express-favicon": "2.0.1",
     "express-oauth-server": "2.0.0",
     "express-session": "1.17.1",
+    "faker": "^5.5.2",
     "font-awesome": "4.7.0",
     "formidable": "1.2.2",
     "fs-extra": "7.0.1",
