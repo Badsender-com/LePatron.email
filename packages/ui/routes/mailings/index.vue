@@ -64,7 +64,7 @@ export default {
         }
 
         const queryMailing = folder
-          ? { folderId: query?.fid }
+          ? { parentFolderId: query?.fid }
           : { workspaceId: query?.wid };
 
         const mailingsResponse = await $axios.$get(mailings(), {

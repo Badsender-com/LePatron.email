@@ -50,29 +50,16 @@ module.exports = {
  * @apiSuccess {String[]} meta.tags all the tags used in those templates
  */
 
-async function list(req, res, next) {
+async function list(req, res) {
   const { user, query } = req;
-  const { workspaceId } = query;
+  const { workspaceId, parentFolderId } = query;
 
-  if (!workspaceId) {
-    return next(
-      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
-    );
-  }
+  const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
+    { workspaceId, parentFolderId, user }
+  );
 
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (workspace?.group.toString() !== user.group.id) {
-    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
-  }
-
-  const mailings = await mailingService.findMailings({ workspaceId, user });
-  const tags = await mailingService.findTags({ workspaceId, user });
-
-  res.json({
-    meta: { tags },
-    items: mailings,
-  });
+  console.log(responseMailingList);
+  res.json(responseMailingList);
 }
 
 /**

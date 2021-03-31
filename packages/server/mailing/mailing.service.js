@@ -13,11 +13,13 @@ const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const {
   NotFound,
+  BadRequest,
   InternalServerError,
   UnprocessableEntity,
 } = require('http-errors');
 
 const workspaceService = require('../workspace/workspace.service.js');
+const folderService = require('../folder/folder.service.js');
 
 module.exports = {
   createMailing,
@@ -30,7 +32,54 @@ module.exports = {
   moveMailing,
   moveManyMailings,
   findAllIn,
+  listMailingForWorkspaceOrFolder,
 };
+
+async function listMailingForWorkspaceOrFolder({
+  workspaceId,
+  parentFolderId,
+  user,
+}) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  let workspace;
+  let mailings;
+
+  if (parentFolderId) {
+    workspace = await folderService.getWorkspaceForFolder(parentFolderId);
+  } else {
+    workspace = await workspaceService.getWorkspace(workspaceId);
+  }
+
+  if (workspace?.group.toString() !== user.group.id) {
+    console.log(workspace);
+    console.log(user.group.id);
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (parentFolderId) {
+    mailings = await findMailings({ parentFolderId, user });
+  } else {
+    mailings = await findMailings({ workspaceId, user });
+  }
+
+  const tags = await findTags({ workspaceId, user });
+
+  console.log('pre return ');
+  return {
+    meta: { tags },
+    items: mailings,
+  };
+}
+
+function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
+  if (!workspaceId && !parentFolderId) {
+    throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
+  }
+
+  if (workspaceId && parentFolderId) {
+    throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
+  }
+}
 
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
@@ -186,12 +235,18 @@ async function moveManyMailings(user, mailingsIds, workspaceId) {
 function applyFilters(query) {
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
     query.user,
-
     {}
   );
 
-  return {
-    ...mailingQueryStrictGroup,
-    _workspace: query.workspaceId,
-  };
+  if (query.workspaceId) {
+    return {
+      ...mailingQueryStrictGroup,
+      _workspace: query.workspaceId,
+    };
+  } else {
+    return {
+      ...mailingQueryStrictGroup,
+      _parentFolder: query.parentFolderId,
+    };
+  }
 }
