@@ -98,9 +98,7 @@ async function create(req, res) {
     mailingName,
     user,
   });
-  console.log({
-    responseController: response,
-  });
+
   res.json(response);
 }
 
