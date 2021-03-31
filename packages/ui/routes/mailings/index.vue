@@ -124,7 +124,8 @@ export default {
       await this.mixinCreateMailing(
         createMailModalData.template,
         'loading',
-        createMailModalData.defaultMailName
+        createMailModalData.defaultMailName,
+        this.currentLocationParam
       );
       this.loading = false;
     },
