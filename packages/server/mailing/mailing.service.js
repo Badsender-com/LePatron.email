@@ -57,14 +57,14 @@ async function findOne(mailingId) {
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
-async function createInsideWorkspaceOrFolder(mailings) {
+async function createInsideWorkspaceOrFolder(mailingData) {
   const {
     templateId,
     workspaceId,
     parentFolderId,
     mailingName,
     user,
-  } = mailings;
+  } = mailingData;
 
   checkCreationPayload({
     templateId,
@@ -74,32 +74,18 @@ async function createInsideWorkspaceOrFolder(mailings) {
   });
 
   const template = await templateService.findOne({ templateId });
+  templateService.doesUserHaveAccess(user, template);
 
   let mailParentParam = null;
 
-  if (!template) {
-    throw new NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
-  }
-
   if (workspaceId) {
-    const hasAccessWorkspace = await workspaceService.hasAccess(
-      user,
-      workspaceId
-    );
-
-    if (!hasAccessWorkspace) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
+    await workspaceService.hasAccess(user, workspaceId);
 
     mailParentParam = { workspace: workspaceId };
   }
 
   if (parentFolderId) {
-    const hasAccessFolder = await folderService.hasAccess(parentFolderId, user);
-
-    if (!hasAccessFolder) {
-      throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
-    }
+    await folderService.hasAccess(parentFolderId, user);
 
     mailParentParam = { _parentFolder: parentFolderId };
   }
@@ -151,8 +137,6 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
   if (workspaceId && parentFolderId) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
-
-  return true;
 }
 
 async function createMailing(mailing) {
