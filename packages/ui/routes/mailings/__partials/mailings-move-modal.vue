@@ -29,6 +29,7 @@ export default {
       return getTreeviewWorkspaces(this.workspaces);
     },
     isValidToBeMoved() {
+      console.log();
       return (
         !!this.selectedLocation?.id &&
         this.selectedLocation?.id !== this.currentLocation?.id
@@ -59,7 +60,7 @@ export default {
     submit() {
       if (this.isValidToBeMoved) {
         this.close();
-        console.log({ selectedLocation: this.selectedLocation });
+
         let destinationParam;
         if (this.selectedLocation?.type === SPACE_TYPE.FOLDER) {
           destinationParam = {
