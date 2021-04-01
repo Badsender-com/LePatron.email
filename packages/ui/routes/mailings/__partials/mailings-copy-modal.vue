@@ -59,6 +59,7 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail;
       this.$refs.copyMailDialog.open();
     },

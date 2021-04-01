@@ -70,6 +70,7 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail.mail;
       this.currentWorkspace = selectedMail.workspace;
       this.$refs.moveMailDialog.open();
