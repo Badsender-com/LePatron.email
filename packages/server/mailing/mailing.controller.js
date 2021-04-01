@@ -16,7 +16,6 @@ const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
-const templateService = require('../template/template.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -90,44 +89,16 @@ async function list(req, res, next) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId, mailingName } = req.body;
+  const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
-  if (!workspaceId) {
-    throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
-  }
+  const response = await mailingService.createInsideWorkspaceOrFolder({
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+    user,
+  });
 
-  const template = await templateService.findOne({ templateId });
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (!template) {
-    throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
-  }
-
-  if (!workspace) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  const mailing = {
-    // Always give a default name: needed for ordering & filtering
-    name: mailingName || simpleI18n('default-mailing-name', user.lang),
-    templateId: template._id,
-    templateName: template.name,
-    workspace: workspaceId,
-  };
-
-  // admin doesn't have valid user id & company
-  if (!user.isAdmin) {
-    mailing.userId = user.id;
-    mailing.userName = user.name;
-    mailing.group = user.group.id;
-  }
-
-  const newMailing = await mailingService.createMailing(mailing);
-
-  // strangely toJSON doesn't render the data object
-  // • cope with that by manually copy it in the response
-  const response = newMailing.toJSON();
-  response.data = newMailing.data;
   res.json(response);
 }
 
