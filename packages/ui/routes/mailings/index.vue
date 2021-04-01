@@ -233,7 +233,9 @@ export default {
           </v-btn>
         </v-list-item>
       </v-list>
-      <workspace-tree ref="workspaceTree" />
+      <div class="list-container">
+        <workspace-tree ref="workspaceTree" />
+      </div>
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
@@ -265,5 +267,9 @@ export default {
 <style>
 .new-mail-button {
   width: 90%;
+}
+.list-container {
+  overflow-y: scroll;
+  height: calc(100vh - 13rem);
 }
 </style>
