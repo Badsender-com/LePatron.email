@@ -193,8 +193,9 @@ export default {
       const updateUri = mailingsItem({ mailingId });
       try {
         await $axios.$patch(updateUri, {
-          name: newName,
+          mailingName: newName,
           workspaceId: this.$route.query.wid,
+          parentFolderId: this.$route.query.fid
         });
         this.$emit('on-refetch');
         this.showSnackbar({
