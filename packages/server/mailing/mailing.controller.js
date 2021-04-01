@@ -49,29 +49,14 @@ module.exports = {
  * @apiSuccess {String[]} meta.tags all the tags used in those templates
  */
 
-async function list(req, res, next) {
+async function list(req, res) {
   const { user, query } = req;
-  const { workspaceId } = query;
+  const { workspaceId, parentFolderId } = query;
 
-  if (!workspaceId) {
-    return next(
-      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
-    );
-  }
-
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (workspace?.group.toString() !== user.group.id) {
-    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
-  }
-
-  const mailings = await mailingService.findMailings({ workspaceId, user });
-  const tags = await mailingService.findTags({ workspaceId, user });
-
-  res.json({
-    meta: { tags },
-    items: mailings,
-  });
+  const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
+    { workspaceId, parentFolderId, user }
+  );
+  res.json(responseMailingList);
 }
 
 /**
@@ -468,13 +453,12 @@ async function bulkDestroy(req, res) {
   // Mongo responseFormat
   // { n: 1, ok: 1, deletedCount: 1 }
   // => nothing useful for a response :/
-  const [mailingDeletionResult, galleryDeletionResult] = await Promise.all([
+  await Promise.all([
     Mailings.deleteMany({ _id: { $in: safeMailingsIdList } }),
     Galleries.deleteMany({
       creationOrWireframeId: { $in: safeMailingsIdList },
     }),
   ]);
-  console.log({ mailingDeletionResult, galleryDeletionResult });
   const tags = await Mailings.findTags(
     modelsUtils.addStrictGroupFilter(req.user, {})
   );

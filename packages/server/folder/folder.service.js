@@ -18,6 +18,7 @@ module.exports = {
   hasAccess,
   create,
   getFolder,
+  getWorkspaceForFolder,
 };
 
 async function listFolders() {
@@ -33,6 +34,23 @@ async function hasAccess(folderId, user) {
     workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)
   );
+}
+
+async function getWorkspaceForFolder(folderId) {
+  const folder = await getFolder(folderId);
+  if (!folder) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+
+  if (folder?._workspace) {
+    return await workspaceService.getWorkspace(folder?._workspace);
+  }
+
+  if (!folder?._parentFolder) {
+    return null;
+  }
+
+  return getWorkspaceForFolder(folder?._parentFolder);
 }
 
 async function create(folder, user) {
