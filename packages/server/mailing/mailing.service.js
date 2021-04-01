@@ -255,7 +255,7 @@ async function renameMailing({ mailingId, mailingName, workspaceId, parentFolder
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
   } else {
-    folderService.hasAccess(parentFolderId, user)
+    await folderService.hasAccess(parentFolderId, user)
   }
 
   const updateResponse = await Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailingId) }, { name: mailingName });
