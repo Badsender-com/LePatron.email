@@ -1,5 +1,5 @@
 <script>
-import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
+import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsTagsMenu from '~/components/mailings/tags-menu.vue';
 import { moveManyMails, mailingsItem } from '~/helpers/api-routes';

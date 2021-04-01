@@ -2,35 +2,18 @@
 import { mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupMenu from '~/components/group/menu.vue';
 import BsTemplateCreateForm from '~/components/templates/create-form.vue';
 
 export default {
-  name: `bs-page-group-new-template`,
-  mixins: [mixinPageTitle],
+  name: 'BsPageGroupNewTemplate',
   components: { BsGroupMenu, BsTemplateCreateForm },
+  mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
-  },
-  head() {
-    return { title: this.title };
-  },
-  data() {
-    return {
-      group: {},
-      loading: false,
-      newTemplate: { name: ``, description: `` },
-    };
-  },
-  computed: {
-    title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
-        'global.newTemplate'
-      )}`;
-    },
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -40,6 +23,23 @@ export default {
     } catch (error) {
       console.log(error);
     }
+  },
+  data() {
+    return {
+      group: {},
+      loading: false,
+      newTemplate: { name: '', description: '' },
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+  computed: {
+    title() {
+      return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
+        'global.newTemplate'
+      )}`;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -53,13 +53,13 @@ export default {
         });
         this.showSnackbar({
           text: this.$t('snackbars.created'),
-          color: `success`,
+          color: 'success',
         });
         this.$router.push(apiRoutes.templatesItem({ templateId: template.id }));
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -72,7 +72,7 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-group-menu />
     </template>
     <bs-template-create-form

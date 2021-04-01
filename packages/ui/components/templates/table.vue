@@ -1,5 +1,5 @@
 <script>
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 
 export default {
   name: 'BsTemplatesTable',

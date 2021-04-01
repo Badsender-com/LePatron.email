@@ -1,15 +1,22 @@
 <script>
 import { mapGetters } from 'vuex';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing';
-import { mailings, getWorkspace } from '~/helpers/api-routes.js';
-import BsMailingsModalNew from '~/routes/mailings/__partials/modal-new-mail.vue';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import {
+  getFolder,
+  getFolderAccess,
+  getWorkspace,
+  getWorkspaceAccess,
+  mailings,
+} from '~/helpers/api-routes.js';
+import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
-import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
@@ -18,11 +25,11 @@ export default {
     WorkspaceTree,
     MailingsTable,
     MailingsFilters,
-    MailingsBreadcrumbs,
     MailingsSelectionActions,
     BsMailingsModalNew,
+    MailingsHeader,
   },
-  mixins: [mixinPageTitle, mixinCreateMailing],
+  mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
@@ -31,19 +38,46 @@ export default {
   },
   async asyncData({ $axios, query }) {
     try {
-      if (query?.wid) {
-        const [workspace, mailingsResponse] = await Promise.all([
-          $axios.$get(getWorkspace(query?.wid)),
-          $axios.$get(mailings(), {
-            params: { workspaceId: query?.wid },
-          }),
-        ]);
+      if (!!query?.wid || !!query?.fid) {
+        let folder;
+        let workspace;
+        let hasAccess;
+
+        if (query?.wid || query?.fid) {
+          if (query?.fid) {
+            const [folderData, hasAccessData] = await Promise.all([
+              $axios.$get(getFolder(query?.fid)),
+              $axios.$get(getFolderAccess(query?.fid)),
+            ]);
+            folder = folderData;
+            hasAccess = hasAccessData?.hasAccess;
+            workspace = null;
+          } else if (query?.wid) {
+            const [workspaceData, hasAccessData] = await Promise.all([
+              $axios.$get(getWorkspace(query?.wid)),
+              $axios.$get(getWorkspaceAccess(query?.wid)),
+            ]);
+            workspace = workspaceData;
+            hasAccess = hasAccessData?.hasAccess;
+            folder = null;
+          }
+        }
+
+        const queryMailing = folder
+          ? { parentFolderId: query?.fid }
+          : { workspaceId: query?.wid };
+
+        const mailingsResponse = await $axios.$get(mailings(), {
+          params: queryMailing,
+        });
 
         return {
-          mailings: mailingsResponse.items,
-          tags: mailingsResponse.meta.tags,
+          mailings: mailingsResponse?.items,
+          tags: mailingsResponse.meta?.tags,
           mailingsIsLoading: false,
+          folder,
           workspace,
+          hasAccess,
         };
       }
     } catch (error) {
@@ -59,8 +93,8 @@ export default {
     workspace: {},
     tags: [],
     filterValues: null,
+    hasAccess: false,
   }),
-
   computed: {
     filteredMailings() {
       const filterFunction = mailingsHelpers.createFilters(this.filterValues);
@@ -76,11 +110,8 @@ export default {
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
-    hasAccess() {
-      return this.workspace?.hasAccess || false;
-    },
   },
-  watchQuery: ['wid'],
+  watchQuery: ['wid', 'fid'],
   methods: {
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
@@ -93,25 +124,28 @@ export default {
       await this.mixinCreateMailing(
         createMailModalData.template,
         'loading',
-        createMailModalData.defaultMailName
+        createMailModalData.defaultMailName,
+        this.currentLocationParam
       );
       this.loading = false;
     },
     async fetchData() {
+      await Promise.all([
+        this.getFolderAndWorkspaceData(this.$axios, this.$route?.query),
+        this.fetchMailListingData(),
+      ]);
+    },
+    async fetchMailListingData() {
       try {
-        if (this.$route.query?.wid) {
+        if (this.$route.query?.wid || this.$route.query?.fid) {
           this.mailingsIsLoading = true;
-          const [workspace, mailingsResponse] = await Promise.all([
-            this.$axios.$get(getWorkspace(this.$route.query?.wid)),
-            this.$axios.$get(mailings(), {
-              params: { workspaceId: this.$route.query?.wid },
-            }),
-          ]);
+          const mailingsResponse = await this.$axios.$get(mailings(), {
+            params: this.currentLocationParam,
+          });
 
           this.mailings = mailingsResponse.items;
           this.tags = mailingsResponse.meta.tags;
           this.mailingsIsLoading = false;
-          this.workspace = workspace;
         }
       } catch (error) {
         this.mailingsIsLoading = false;
@@ -152,7 +186,7 @@ export default {
           items: [selectedMailing.id],
           tags,
         });
-        await this.fetchData();
+        await this.fetchMailListingData();
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -162,6 +196,9 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    async refreshLeftMenuData() {
+      await this.$refs.workspaceTree.fetchData();
     },
   },
 };
@@ -196,25 +233,24 @@ export default {
           </v-btn>
         </v-list-item>
       </v-list>
-      <workspace-tree />
+      <workspace-tree ref="workspaceTree" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-breadcrumbs />
+        <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-selection-actions
           :mailings-selection="mailingsSelection"
           :tags="tags"
           @createTag="onTagCreate"
           @updateTags="onTagsUpdate"
-          @on-refetch="fetchData()"
+          @on-refetch="fetchMailListingData()"
         />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
-          :workspace="workspace"
           :tags="tags"
-          @on-refetch="fetchData()"
+          @on-refetch="fetchMailListingData()"
           @update-tags="handleUpdateTags"
         />
       </v-skeleton-loader>

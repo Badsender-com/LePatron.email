@@ -1,5 +1,5 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { mapMutations } from 'vuex';

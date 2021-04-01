@@ -1,22 +1,29 @@
 'use strict';
 
 const { omit } = require('lodash');
-const {
-  Mailings,
-  Workspaces,
-  Galleries,
-} = require('../common/models.common.js');
-const modelsUtils = require('../utils/model.js');
-const fileManager = require('../common/file-manage.service.js');
-const logger = require('../utils/logger.js');
 const mongoose = require('mongoose');
-const ERROR_CODES = require('../constant/error-codes.js');
 const {
   NotFound,
   InternalServerError,
   UnprocessableEntity,
+  BadRequest,
 } = require('http-errors');
 
+const {
+  Mailings,
+  Workspaces,
+  Galleries,
+  Folders,
+} = require('../common/models.common.js');
+const fileManager = require('../common/file-manage.service.js');
+const modelsUtils = require('../utils/model.js');
+const logger = require('../utils/logger.js');
+
+const simpleI18n = require('../helpers/server-simple-i18n.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+
+const templateService = require('../template/template.service.js');
+const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
@@ -30,7 +37,52 @@ module.exports = {
   moveMailing,
   moveManyMailings,
   findAllIn,
+  createInsideWorkspaceOrFolder,
+  listMailingForWorkspaceOrFolder,
 };
+
+async function listMailingForWorkspaceOrFolder({
+  workspaceId,
+  parentFolderId,
+  user,
+}) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  let workspace;
+  let mailings;
+
+  if (parentFolderId) {
+    workspace = await folderService.getWorkspaceForFolder(parentFolderId);
+  } else {
+    workspace = await workspaceService.getWorkspace(workspaceId);
+  }
+
+  if (workspace?.group.toString() !== user.group.id) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+
+  if (parentFolderId) {
+    mailings = await findMailings({ parentFolderId, user });
+  } else {
+    mailings = await findMailings({ workspaceId, user });
+  }
+
+  const tags = await findTags({ workspaceId, user });
+
+  return {
+    meta: { tags },
+    items: mailings,
+  };
+}
+
+function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
+  if (!workspaceId && !parentFolderId) {
+    throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
+  }
+
+  if (workspaceId && parentFolderId) {
+    throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
+  }
+}
 
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
@@ -48,13 +100,98 @@ async function findOne(mailingId) {
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
 }
 
+// create a mail inside a workspace or a folder ( depending on the parameters provided )
+async function createInsideWorkspaceOrFolder(mailingData) {
+  const {
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+    user,
+  } = mailingData;
+
+  checkCreationPayload({
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+  });
+
+  const template = await templateService.findOne({ templateId });
+  templateService.doesUserHaveAccess(user, template);
+
+  let mailParentParam = null;
+
+  if (workspaceId) {
+    await workspaceService.hasAccess(user, workspaceId);
+
+    mailParentParam = { workspace: workspaceId };
+  }
+
+  if (parentFolderId) {
+    await folderService.hasAccess(parentFolderId, user);
+
+    mailParentParam = { _parentFolder: parentFolderId };
+  }
+
+  const mailing = {
+    // Always give a default name: needed for ordering & filtering
+    name: mailingName || simpleI18n('default-mailing-name', user.lang),
+    templateId: template._id,
+    templateName: template.name,
+    ...mailParentParam,
+  };
+
+  // admin doesn't have valid user id & company
+  if (!user.isAdmin) {
+    mailing.userId = user.id;
+    mailing.userName = user.name;
+    mailing.group = user.group.id;
+  }
+
+  const newMailing = await createMailing(mailing);
+
+  // strangely toJSON doesn't render the data object
+  // • cope with that by manually copy it in the response
+  const response = newMailing.toJSON();
+  response.data = newMailing.data;
+
+  return response;
+}
+
+function checkCreationPayload(mailings) {
+  const { templateId, workspaceId, parentFolderId, mailingName } = mailings;
+
+  if (!mailingName || mailingName === '') {
+    throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
+  }
+
+  if (!templateId || templateId === '') {
+    throw new BadRequest(ERROR_CODES.TEMPLATE_NOT_PROVIDED);
+  }
+
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+}
+
 async function createMailing(mailing) {
+  if (!mailing?._parentFolder && !mailing?.workspace) {
+    throw new NotFound(ERROR_CODES.PARENT_NOT_PROVIDED);
+  }
+
   if (
-    !mailing?.workspace ||
+    mailing?.workspace &&
     !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
   ) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
+
+  if (
+    mailing?._parentFolder &&
+    !Folders.exists({ _id: mongoose.Types.ObjectId(mailing._parentFolder) })
+  ) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+
   return Mailings.create(mailing);
 }
 
@@ -186,12 +323,18 @@ async function moveManyMailings(user, mailingsIds, workspaceId) {
 function applyFilters(query) {
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
     query.user,
-
     {}
   );
 
-  return {
-    ...mailingQueryStrictGroup,
-    _workspace: query.workspaceId,
-  };
+  if (query.workspaceId) {
+    return {
+      ...mailingQueryStrictGroup,
+      _workspace: query.workspaceId,
+    };
+  } else {
+    return {
+      ...mailingQueryStrictGroup,
+      _parentFolder: query.parentFolderId,
+    };
+  }
 }
