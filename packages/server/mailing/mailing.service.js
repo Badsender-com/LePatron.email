@@ -244,34 +244,72 @@ async function copyMailing(mailing, destinationWorkspace, user) {
   }
 }
 
-async function renameMailing(mailing) {
-  if (
-    !mailing?.workspace ||
-    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
-  ) {
-    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+async function renameMailing({ mailingId, mailingName, workspaceId, parentFolderId}, user) {
+  if (!mailingName || mailingName === '') {
+    throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
-  const { id, name } = mailing;
 
-  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(id) }, { name });
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+
+  if (workspaceId) {
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
+  } else {
+    await folderService.hasAccess(parentFolderId, user)
+  }
+
+  const updateResponse = await Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailingId) }, { name: mailingName });
+
+  if (updateResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
+  }
 }
 
 async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
-async function moveMailing(user, mailing, workspaceId) {
-  const sourceWorkspace = await workspaceService.getWorkspace(
-    mailing._workspace
-  );
-  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+async function moveMailing(user, mailing, workspaceId, parentFolderId) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  let sourceWorkspace;
+  let destinationWorkspace;
+  let queryMovingParams;
+
+  if (mailing?._parentFolder) {
+    sourceWorkspace = await folderService.getWorkspaceForFolder(
+      mailing._parentFolder
+    );
+  }
+
+  if (mailing?._workspace) {
+    sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  }
+
+  if (parentFolderId) {
+    destinationWorkspace = await folderService.getWorkspaceForFolder(
+      parentFolderId
+    );
+
+    queryMovingParams = {
+      _parentFolder: parentFolderId,
+      _workspace: null,
+    };
+  }
+
+  if (workspaceId) {
+    destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+    queryMovingParams = {
+      _parentFolder: null,
+      _workspace: workspaceId,
+    };
+  }
 
   workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
   workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
 
   const moveResponse = await Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailing.id) },
-    { _workspace: destinationWorkspace }
+    queryMovingParams
   );
 
   // update queries return objects with format { n, nModified, ok }

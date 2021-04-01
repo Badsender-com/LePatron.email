@@ -172,9 +172,7 @@ export default {
           name: mailing.name,
           id: mailing.id,
         },
-        workspace: {
-          id: this.workspace?.id,
-        },
+        location: this.currentLocation,
       });
     },
     closeCopyMailDialog() {
@@ -195,8 +193,9 @@ export default {
       const updateUri = mailingsItem({ mailingId });
       try {
         await $axios.$patch(updateUri, {
-          name: newName,
+          mailingName: newName,
           workspaceId: this.$route.query.wid,
+          parentFolderId: this.$route.query.fid
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -267,7 +266,7 @@ export default {
       }
       this.closeCopyMailDialog();
     },
-    async moveMail({ destinationWorkspaceId, mailingId }) {
+    async moveMail({ destinationParam, mailingId }) {
       try {
         await this.$axios.$post(
           moveMail({
@@ -275,11 +274,19 @@ export default {
           }),
           {
             mailingId,
-            workspaceId: destinationWorkspaceId,
+            ...destinationParam,
           }
         );
-        this.$router.push({
-          query: { wid: destinationWorkspaceId },
+
+        let routerRedirectionParam;
+        if (destinationParam?.parentFolderId) {
+          routerRedirectionParam = { fid: destinationParam?.parentFolderId };
+        } else {
+          routerRedirectionParam = { wid: destinationParam?.workspaceId };
+        }
+
+        await this.$router.push({
+          query: routerRedirectionParam,
         });
         this.showSnackbar({
           text: this.$t('mailings.moveMailSuccessful'),
@@ -337,7 +344,7 @@ export default {
         <span v-else>{{ item.templateName }}</span>
       </template>
       <template #item.tags="{ item }">
-        <span>{{ item.tags.join(`, `) }}</span>
+        <span>{{ item.tags.join(', ') }}</span>
       </template>
       <template #item.createdAt="{ item }">
         <span>{{ item.createdAt | preciseDateTime }}</span>
