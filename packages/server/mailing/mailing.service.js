@@ -83,17 +83,6 @@ async function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) 
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
 
-  if (workspaceId) {
-    if (await !Workspaces.exists({ _id: mongoose.Types.ObjectId(workspaceId) })) {
-      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-    }
-  }
-
-  if (parentFolderId) {
-    if (await !Folders.exists({ _id: mongoose.Types.ObjectId(parentFolderId) })) {
-      throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
-    }
-  }
 }
 
 async function findMailings(query) {
