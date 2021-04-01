@@ -74,7 +74,7 @@ async function listMailingForWorkspaceOrFolder({
   };
 }
 
-async function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
+function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
   if (!workspaceId && !parentFolderId) {
     throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
   }
@@ -82,7 +82,6 @@ async function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) 
   if (workspaceId && parentFolderId) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
-
 }
 
 async function findMailings(query) {
