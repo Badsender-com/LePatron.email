@@ -29,10 +29,9 @@ export default {
       return getTreeviewWorkspaces(this.workspaces);
     },
     isValidToBeMoved() {
-      console.log();
       return (
         !!this.selectedLocation?.id &&
-        this.selectedLocation?.id !== this.currentLocation?.id
+        this.selectedLocation?.id !== this.currentLocation
       );
     },
     mailName() {
@@ -84,7 +83,7 @@ export default {
     },
     open(selectedMail) {
       this.mail = selectedMail.mail;
-      this.currentLocation = selectedMail.workspace;
+      this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
     },
     close() {
