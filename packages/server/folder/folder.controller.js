@@ -9,7 +9,8 @@ module.exports = {
   list: asyncHandler(list),
   hasAccess: asyncHandler(hasAccess),
   create: asyncHandler(create),
-  getFolder: asyncHandler(getFolder)
+  getFolder: asyncHandler(getFolder),
+  deleteFolder: asyncHandler(deleteFolder)
 };
 
 /**
@@ -96,4 +97,21 @@ async function getFolder(req, res) {
 
   res.json(folder)
 
+}
+
+/**
+ * @api {delete} /folders/:folderId folder delete
+ * @apiPermission regular_user
+ * @apiName DeleteFolder
+ * @apiGroup Folders
+ *
+ * @apiUse folder
+ * @apiSuccess {folder} folder deleted
+ */
+
+async function deleteFolder(req, res) {
+  const {
+    user,
+    params: { folderId }
+  } = req;
 }

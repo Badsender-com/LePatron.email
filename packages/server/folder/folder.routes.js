@@ -8,5 +8,6 @@ router.get('', folders.list);
 router.get('/:folderId/has-access', folders.hasAccess);
 router.post('', folders.create);
 router.get('/:folderId', folders.getFolder);
+router.delete('/:folderId', folders.deleteFolder);
 
 module.exports = router;

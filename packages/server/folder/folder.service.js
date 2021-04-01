@@ -17,6 +17,7 @@ module.exports = {
   hasAccess,
   create,
   getFolder,
+  deleteFolder
 };
 
 async function listFolders() {
@@ -94,6 +95,11 @@ async function getFolder(folderId) {
   return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
 }
 
+async function deleteFolder(user, folderId) {
+  if (hasAccess(folderId, user)) {
+    await Folders.deleteOne({ _id: mongoose.Types.ObjectId(folderId) })
+  }
+}
 async function isNameUniqueAtSameLevel(folder) {
   const folders = await Folders.find({
     ...folder,
