@@ -36,6 +36,8 @@ export default {
     moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
+    newFolder: 'Ajouter un dossier',
+    parentLocation: 'Emplacement du parent',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Ajouter un email',
@@ -242,6 +244,11 @@ export default {
     description: 'Descritpion',
     members: 'Membres',
     userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
+  },
+  folders: {
+    name: 'Nom du dossier',
+    created: 'Dossier créé',
+    conflict: 'Le dossier existe déjà',
   },
   tableHeaders: {
     groups: {

@@ -16,7 +16,7 @@ import * as mailingsHelpers from '~/helpers/mailings.js';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
-import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
+import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
@@ -25,9 +25,9 @@ export default {
     WorkspaceTree,
     MailingsTable,
     MailingsFilters,
-    MailingsBreadcrumbs,
     MailingsSelectionActions,
     BsMailingsModalNew,
+    MailingsHeader,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
@@ -124,7 +124,8 @@ export default {
       await this.mixinCreateMailing(
         createMailModalData.template,
         'loading',
-        createMailModalData.defaultMailName
+        createMailModalData.defaultMailName,
+        this.currentLocationParam
       );
       this.loading = false;
     },
@@ -196,6 +197,9 @@ export default {
         this.loading = false;
       }
     },
+    async refreshLeftMenuData() {
+      await this.$refs.workspaceTree.fetchData();
+    },
   },
 };
 </script>
@@ -233,7 +237,7 @@ export default {
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-breadcrumbs />
+        <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-selection-actions
           :mailings-selection="mailingsSelection"
           :tags="tags"
@@ -245,7 +249,6 @@ export default {
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
-          :workspace="workspace"
           :tags="tags"
           @on-refetch="fetchMailListingData()"
           @update-tags="handleUpdateTags"
