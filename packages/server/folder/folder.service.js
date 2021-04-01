@@ -43,7 +43,7 @@ async function getWorkspaceForFolder(folderId) {
   }
 
   if (folder?._workspace) {
-    return await workspaceService.getWorkspace(folder?._workspace);
+    return workspaceService.getWorkspace(folder?._workspace);
   }
 
   if (!folder?._parentFolder) {
