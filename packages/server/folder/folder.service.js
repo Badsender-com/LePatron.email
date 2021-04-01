@@ -27,10 +27,6 @@ async function listFolders() {
 async function hasAccess(folderId, user) {
   const folder = await getFolder(folderId);
 
-  if (!folder) {
-    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
-  }
-
   const workspace = await workspaceService.getWorkspace(folder._workspace);
 
   return (
