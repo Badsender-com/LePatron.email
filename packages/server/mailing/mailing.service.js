@@ -74,13 +74,25 @@ async function listMailingForWorkspaceOrFolder({
   };
 }
 
-function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
+async function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
   if (!workspaceId && !parentFolderId) {
     throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
   }
 
   if (workspaceId && parentFolderId) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
+  }
+
+  if (workspaceId) {
+    if (await !Workspaces.exists({ _id: mongoose.Types.ObjectId(workspaceId) })) {
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+  }
+
+  if (parentFolderId) {
+    if (await !Folders.exists({ _id: mongoose.Types.ObjectId(parentFolderId) })) {
+      throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+    }
   }
 }
 
@@ -244,16 +256,25 @@ async function copyMailing(mailing, destinationWorkspace, user) {
   }
 }
 
-async function renameMailing(mailing) {
-  if (
-    !mailing?.workspace ||
-    !Workspaces.exists({ _id: mongoose.Types.ObjectId(mailing.workspace) })
-  ) {
-    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+async function renameMailing({ mailingId, mailingName, workspaceId, parentFolderId}, user) {
+  if (!mailingName || mailingName === '') {
+    throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
-  const { id, name } = mailing;
 
-  return Mailings.updateOne({ _id: mongoose.Types.ObjectId(id) }, { name });
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+
+  if (workspaceId) {
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
+  } else {
+    folderService.hasAccess(parentFolderId, user)
+  }
+
+  const updateResponse = await Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailingId) }, { name: mailingName });
+
+  if (updateResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
+  }
 }
 
 async function deleteOne(mailing) {
