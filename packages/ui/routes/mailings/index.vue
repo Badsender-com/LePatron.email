@@ -269,7 +269,7 @@ export default {
   width: 90%;
 }
 .list-container {
-  overflow-y: scroll;
-  height: calc(100vh - 13rem);
+  overflow-y: auto;
+  max-height: calc(100vh - 13rem);
 }
 </style>
