@@ -9,6 +9,9 @@ import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'MailingsBreadcrumbs',
+  props: {
+    large: { type: Boolean, default: false },
+  },
   data() {
     return {
       workspacesWithPath: [],
@@ -58,7 +61,7 @@ export default {
 };
 </script>
 <template>
-  <v-breadcrumbs :large="true" :items="breadcrumbsData">
+  <v-breadcrumbs class="pl-0" :large="large" :items="breadcrumbsData">
     <template #divider>
       <v-icon>mdi-chevron-right</v-icon>
     </template>

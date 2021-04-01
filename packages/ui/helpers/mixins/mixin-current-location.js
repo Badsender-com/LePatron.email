@@ -32,7 +32,7 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async getFolderAndWorkspaceData() {
-      return await this.fetchFolderAndWorkspaceData(
+      return this.fetchFolderAndWorkspaceData(
         this.$axios,
         this.$route?.query
       );

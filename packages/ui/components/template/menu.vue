@@ -1,13 +1,11 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
-import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
   name: 'BsTemplateMenu',
   components: { BsModalConfirm, BsTemplateCoverImage },
-  mixins: [mixinCreateMailing],
   model: { prop: 'loading', event: 'update' },
   props: {
     loading: { type: Boolean, default: false },

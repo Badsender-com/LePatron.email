@@ -39,6 +39,9 @@ async function getWorkspace(id) {
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
+  if (!workspace) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
   return (
     isWorkspaceInGroup(workspace, user.group.id) &&
     isUserWorkspaceMember(user, workspace)

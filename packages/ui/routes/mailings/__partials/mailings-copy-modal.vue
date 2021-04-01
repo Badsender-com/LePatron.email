@@ -47,8 +47,9 @@ export default {
     submit() {
       if (this.isValidToBeCopied) {
         this.close();
+
         this.$emit('confirm', {
-          workspaceId: this.selectedLocation?.id,
+          selectedLocation: this.selectedLocation,
           mailingId: this.mail?.id,
         });
       }
@@ -128,6 +129,7 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
+  max-height: 400px;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;

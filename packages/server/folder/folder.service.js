@@ -8,6 +8,7 @@ const {
   Conflict,
   NotAcceptable,
 } = require('http-errors');
+
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const workspaceService = require('../workspace/workspace.service.js');
@@ -17,6 +18,7 @@ module.exports = {
   hasAccess,
   create,
   getFolder,
+  getWorkspaceForFolder,
   deleteFolder
 };
 
@@ -33,6 +35,23 @@ async function hasAccess(folderId, user) {
     workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)
   );
+}
+
+async function getWorkspaceForFolder(folderId) {
+  const folder = await getFolder(folderId);
+  if (!folder) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+
+  if (folder?._workspace) {
+    return workspaceService.getWorkspace(folder?._workspace);
+  }
+
+  if (!folder?._parentFolder) {
+    return null;
+  }
+
+  return getWorkspaceForFolder(folder?._parentFolder);
 }
 
 async function create(folder, user) {
