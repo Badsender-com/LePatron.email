@@ -209,36 +209,15 @@ async function moveMany(req, res) {
  */
 
 async function rename(req, res) {
-  const { mailingId } = req.params;
-  const { user } = req;
-  const { name, workspaceId } = req.body;
+  const {
+    user,
+    params: { mailingId },
+    body: { mailingName, workspaceId, parentFolderId }
+  } = req;
 
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-  const mailing = await mailingService.findOne(mailingId);
+  await mailingService.renameMailing({ mailingId, mailingName, workspaceId, parentFolderId }, user);
 
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  if (
-    (!user.isGroupAdmin &&
-      !workspaceService.workspaceContainsUser(workspace, user)) ||
-    mailing?._workspace.toString() !== workspaceId
-  ) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
-  }
-
-  mailing.name = name;
-
-  const updateResponse = await mailingService.renameMailing(mailing);
-
-  if (updateResponse.ok !== 1) {
-    throw new createError.InternalServerError(
-      ERROR_CODES.FAILED_MAILING_RENAME
-    );
-  }
-
-  res.send();
+  res.status(204).send();
 }
 
 /**
