@@ -37,13 +37,12 @@ async function hasAccess(folderId, user) {
 
 async function getWorkspaceForFolder(folderId) {
   const folder = await getFolder(folderId);
-
   if (!folder) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  if (folder?.workspace) {
-    return await workspaceService.getWorkspace(folder?.workspace);
+  if (folder?._workspace) {
+    return await workspaceService.getWorkspace(folder?._workspace);
   }
 
   if (!folder?._parentFolder) {

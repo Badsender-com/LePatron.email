@@ -51,8 +51,6 @@ async function listMailingForWorkspaceOrFolder({
   }
 
   if (workspace?.group.toString() !== user.group.id) {
-    console.log(workspace);
-    console.log(user.group.id);
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
@@ -64,7 +62,6 @@ async function listMailingForWorkspaceOrFolder({
 
   const tags = await findTags({ workspaceId, user });
 
-  console.log('pre return ');
   return {
     meta: { tags },
     items: mailings,

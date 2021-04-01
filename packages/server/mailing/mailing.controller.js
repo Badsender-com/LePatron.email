@@ -57,8 +57,6 @@ async function list(req, res) {
   const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
     { workspaceId, parentFolderId, user }
   );
-
-  console.log(responseMailingList);
   res.json(responseMailingList);
 }
 
@@ -484,13 +482,12 @@ async function bulkDestroy(req, res) {
   // Mongo responseFormat
   // { n: 1, ok: 1, deletedCount: 1 }
   // => nothing useful for a response :/
-  const [mailingDeletionResult, galleryDeletionResult] = await Promise.all([
+  await Promise.all([
     Mailings.deleteMany({ _id: { $in: safeMailingsIdList } }),
     Galleries.deleteMany({
       creationOrWireframeId: { $in: safeMailingsIdList },
     }),
   ]);
-  console.log({ mailingDeletionResult, galleryDeletionResult });
   const tags = await Mailings.findTags(
     modelsUtils.addStrictGroupFilter(req.user, {})
   );
