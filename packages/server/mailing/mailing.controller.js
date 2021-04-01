@@ -151,18 +151,18 @@ async function move(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { workspaceId },
+    body: { workspaceId, parentFolderId },
   } = req;
 
   const mailing = await mailingService.findOne(mailingId);
 
-  if (!mailing._workspace) {
+  if (!mailing._workspace && !mailing._parentFolder) {
     throw new createError.UnprocessableEntity(
       ERROR_CODES.MAILING_MISSING_SOURCE
     );
   }
 
-  await mailingService.moveMailing(user, mailing, workspaceId);
+  await mailingService.moveMailing(user, mailing, workspaceId, parentFolderId);
 
   res.status(204).send();
 }
