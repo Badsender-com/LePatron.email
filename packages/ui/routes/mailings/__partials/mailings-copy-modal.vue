@@ -31,18 +31,6 @@ export default {
       return this.mail?.name;
     },
   },
-  async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
-  },
   methods: {
     submit() {
       if (this.isValidToBeCopied) {
@@ -51,6 +39,18 @@ export default {
           workspaceId: this.selectedLocation?.id,
           mailingId: this.mail?.id,
         });
+      }
+    },
+    async fetchWorkspaces() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
       }
     },
     handleSelectItemFromTreeView(selectedItems) {

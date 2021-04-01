@@ -161,12 +161,14 @@ export default {
       this.$refs.renameDialog.close();
     },
     openCopyMail(mailing) {
+      this.$refs.copyMailDialog.fetchWorkspaces();
       this.$refs.copyMailDialog.open({
         name: mailing.name,
         id: mailing.id,
       });
     },
     openMoveMail(mailing) {
+      this.$refs.moveMailDialog.fetchWorkspaces();
       this.$refs.moveMailDialog.open({
         mail: {
           name: mailing.name,
