@@ -2,6 +2,7 @@
 import BsModalConfirm from '~/components/modal-confirm';
 import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'ModalMoveMail',
@@ -16,7 +17,7 @@ export default {
   data() {
     return {
       mail: null,
-      currentWorkspace: null,
+      currentLocation: null,
       workspaces: [],
       workspaceIsError: false,
       workspacesIsLoading: false,
@@ -30,7 +31,7 @@ export default {
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
-        this.selectedLocation?.id !== this.currentWorkspace?.id
+        this.selectedLocation?.id !== this.currentLocation?.id
       );
     },
     mailName() {
@@ -58,8 +59,19 @@ export default {
     submit() {
       if (this.isValidToBeMoved) {
         this.close();
+        console.log({ selectedLocation: this.selectedLocation });
+        let destinationParam;
+        if (this.selectedLocation?.type === SPACE_TYPE.FOLDER) {
+          destinationParam = {
+            parentFolderId: this.selectedLocation?.id,
+          };
+        } else {
+          destinationParam = {
+            workspaceId: this.selectedLocation?.id,
+          };
+        }
         this.$emit('confirm', {
-          destinationWorkspaceId: this.selectedLocation?.id,
+          destinationParam,
           mailingId: this.mail?.id,
         });
       }
@@ -71,7 +83,7 @@ export default {
     },
     open(selectedMail) {
       this.mail = selectedMail.mail;
-      this.currentWorkspace = selectedMail.workspace;
+      this.currentLocation = selectedMail.workspace;
       this.$refs.moveMailDialog.open();
     },
     close() {

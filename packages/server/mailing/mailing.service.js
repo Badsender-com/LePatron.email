@@ -260,18 +260,47 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
-async function moveMailing(user, mailing, workspaceId) {
-  const sourceWorkspace = await workspaceService.getWorkspace(
-    mailing._workspace
-  );
-  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+async function moveMailing(user, mailing, workspaceId, parentFolderId) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  let sourceWorkspace;
+  let destinationWorkspace;
+  let queryMovingParams;
+
+  if (mailing?._parentFolder) {
+    sourceWorkspace = await folderService.getWorkspaceForFolder(
+      mailing._parentFolder
+    );
+  }
+
+  if (mailing?._workspace) {
+    sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+  }
+
+  if (parentFolderId) {
+    destinationWorkspace = await folderService.getWorkspaceForFolder(
+      parentFolderId
+    );
+
+    queryMovingParams = {
+      _parentFolder: parentFolderId,
+      _workspace: null,
+    };
+  }
+
+  if (workspaceId) {
+    destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
+    queryMovingParams = {
+      _parentFolder: null,
+      _workspace: workspaceId,
+    };
+  }
 
   workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
   workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
 
   const moveResponse = await Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailing.id) },
-    { _workspace: destinationWorkspace }
+    queryMovingParams
   );
 
   // update queries return objects with format { n, nModified, ok }
