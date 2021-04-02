@@ -8,6 +8,7 @@ const { GUARD_USER } = require('../account/auth.guard');
 
 router.get('', folders.list);
 router.get('/:folderId/has-access', folders.hasAccess);
+router.post('/:folderId/move', GUARD_USER, folders.move);
 router.post('', folders.create);
 router.get('/:folderId', folders.getFolder);
 router.delete('/:folderId', folders.deleteFolder);
