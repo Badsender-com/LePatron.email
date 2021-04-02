@@ -112,7 +112,8 @@ async function getFolder(req, res) {
  *
  * @apiParam (Body) {String} folderName
  *
- * @apiUse folders
+ * @apiUse folder
+ * @apiSuccess {folder} folder renamed
  */
 
 async function rename(req, res) {
