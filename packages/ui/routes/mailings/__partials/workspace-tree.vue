@@ -94,9 +94,15 @@ export default {
         });
         console.log(error);
       } finally {
-        this.handleSelectItemFromTreeView(this.workspaces[0]);
-        await this.fetchData();
         this.loading = false;
+        const deletingCurrent = this.selectedItemToDelete.id === this.selectedItem.id;
+        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(child => child.id === this.selectedItem.id);
+        if ( deletingCurrent|| deletingParentOfCurrent ) {
+          await this.$router.replace({
+            query: { wid: this.workspaces[0]?.id },
+          });
+        }
+        await this.fetchData();
       }
     },
   },
@@ -166,7 +172,6 @@ export default {
         class="black--text"
         v-html="
           $t('groups.mailingTab.deleteFolderWarning', {
-            type: selectedItemToDelete.type,
             name: selectedItemToDelete.name,
           })
         "

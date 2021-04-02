@@ -156,7 +156,7 @@ export default {
         'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
       deleteSuccessful: 'Email supprimé',
       deleteFolderWarning:
-        'Vous êtes sur le point de supprimer le <i>{type}</i> "<strong>{name}</strong>". Cette action est irréversible.',
+        'Vous êtes sur le point de supprimer le dossier "<strong>{name}</strong>". Cette action est irréversible.',
       deleteFolderNotice: 'Les emails et les dossiers que contient le dossier seront supprimés aussi',
       deleteFolderSuccessful: 'Dossier supprimé',
     },

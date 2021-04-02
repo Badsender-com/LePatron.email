@@ -34,7 +34,7 @@ export default {
       this.$refs.deleteDialog.open();
     },
     close() {
-      this.$refs.form.reset();
+      this.$refs.form?.reset();
       this.$refs.deleteDialog.close();
     },
   },
