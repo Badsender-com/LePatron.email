@@ -7,6 +7,7 @@ const {
   BadRequest,
   Conflict,
   NotAcceptable,
+  InternalServerError
 } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -19,6 +20,7 @@ module.exports = {
   create,
   getFolder,
   getWorkspaceForFolder,
+  deleteFolder
 };
 
 async function listFolders() {
@@ -111,6 +113,21 @@ async function getFolder(folderId) {
   }
 
   return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
+}
+
+async function deleteFolder(user, folderId) {
+  if (!(await Folders.exists({_id: mongoose.Types.ObjectId(folderId)}))) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+  if (await hasAccess(folderId, user)) {
+    await workspaceService.deleteFolderContent(folderId);
+
+    const deleteResponse = await Folders.deleteOne({ _id: mongoose.Types.ObjectId(folderId) });
+
+    if (deleteResponse.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_DELETE)
+    }
+  }
 }
 
 async function isNameUniqueAtSameLevel(folder) {
