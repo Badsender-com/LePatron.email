@@ -89,6 +89,7 @@ export default {
     },
     close() {
       this.$refs.moveMailDialog.close();
+      this.selectedLocation = {};
     },
   },
 };
@@ -99,6 +100,7 @@ export default {
     :title="`${confirmationTitleLabel} ${mailName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
+    @click-outside="close"
   >
     <slot />
     <v-skeleton-loader

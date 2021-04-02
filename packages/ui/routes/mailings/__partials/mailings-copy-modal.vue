@@ -66,6 +66,7 @@ export default {
     },
     close() {
       this.$refs.copyMailDialog.close();
+      this.selectedLocation = {};
     },
   },
 };
@@ -76,6 +77,7 @@ export default {
     :title="`${this.$t('global.copyMail')}  ${mailName}`"
     :is-form="true"
     class="modal-confirm-copy-mail"
+    @click-outside="close"
   >
     <slot />
     <v-skeleton-loader

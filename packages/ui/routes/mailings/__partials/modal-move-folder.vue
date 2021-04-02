@@ -80,6 +80,7 @@ export default {
     :title="`${this.$t('global.moveFolder')}  ${folderName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
+    @click-outside="close"
   >
     <slot />
     <v-skeleton-loader
