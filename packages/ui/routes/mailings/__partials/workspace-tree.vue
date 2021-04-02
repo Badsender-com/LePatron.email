@@ -31,6 +31,7 @@ export default {
     confirmCheckBox() {
       return !!this.selectedItemToDelete?.children;
     },
+    console: () => console,
   },
   async mounted() {
     await this.fetchData();
@@ -79,6 +80,9 @@ export default {
       this.$refs.deleteDialog.open({
         ...this.selectedItemToDelete,
       });
+    },
+    displayMoveModal(item) {
+      console.info({ item });
     },
     async handleDelete(selected) {
       const { $axios } = this;
@@ -148,6 +152,7 @@ export default {
     type="list-item, list-item, list-item"
     :loading="workspacesIsLoading"
   >
+    {{ console.info({ treeviewLocationItems }) }}
     <v-treeview
       ref="tree"
       item-key="id"
@@ -197,6 +202,16 @@ export default {
               </v-list-item-avatar>
               <v-list-item-title>
                 {{ $t('global.delete') }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item nuxt @click="displayMoveModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>drive_file_move</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.move') }}
               </v-list-item-title>
             </v-list-item>
           </v-list>
