@@ -97,6 +97,9 @@ async function findTags(query) {
 }
 
 async function findOne(mailingId) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
 }
 
@@ -195,32 +198,51 @@ async function createMailing(mailing) {
   return Mailings.create(mailing);
 }
 
-async function copyMailing(mailing, destinationWorkspace, user) {
-  if (
-    !Workspaces.exists({
-      _id: mongoose.Types.ObjectId(destinationWorkspace.id),
-    })
-  ) {
-    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+async function copyMailing(mailingId, destination, user) {
+  const { workspaceId, folderId } = destination;
+
+  checkEitherWorkspaceOrFolderDefined(workspaceId, folderId);
+
+  const mailing = await findOne(mailingId);
+
+  if (mailing?._parentFolder) {
+    await folderService.hasAccess(mailing._parentFolder, user);
   }
 
-  const mailingProperties = omit(mailing, [
+  if (mailing?.workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing.workspace
+    );
+    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
+  }
+
+  const copy = omit(mailing, [
     '_id',
     'createdAt',
     'updatedAt',
     '_user',
     'author',
+    '_workspace',
+    'workspace',
+    '_parentFolder',
   ]);
 
-  if (user.id) {
-    mailingProperties._user = user._id;
-    mailingProperties.author = user.name;
+  if (workspaceId) {
+    const destination = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destination);
+
+    copy._workspace = destination;
+  } else {
+    await folderService.hasAccess(folderId, user);
+
+    const destination = await folderService.getFolder(folderId);
+    copy._parentFolder = destination;
   }
 
-  const copy = {
-    ...mailingProperties,
-    workspace: destinationWorkspace.id,
-  };
+  if (user.id) {
+    copy._user = user._id;
+    copy.author = user.name;
+  }
 
   const copiedMailing = await Mailings.create(copy);
   const gallery = await Galleries.findOne({
@@ -244,7 +266,10 @@ async function copyMailing(mailing, destinationWorkspace, user) {
   }
 }
 
-async function renameMailing({ mailingId, mailingName, workspaceId, parentFolderId}, user) {
+async function renameMailing(
+  { mailingId, mailingName, workspaceId, parentFolderId },
+  user
+) {
   if (!mailingName || mailingName === '') {
     throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
   }
@@ -255,10 +280,13 @@ async function renameMailing({ mailingId, mailingName, workspaceId, parentFolder
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
   } else {
-    await folderService.hasAccess(parentFolderId, user)
+    await folderService.hasAccess(parentFolderId, user);
   }
 
-  const updateResponse = await Mailings.updateOne({ _id: mongoose.Types.ObjectId(mailingId) }, { name: mailingName });
+  const updateResponse = await Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailingId) },
+    { name: mailingName }
+  );
 
   if (updateResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
