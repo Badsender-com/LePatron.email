@@ -197,6 +197,7 @@ export default {
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
     moveManySuccessful: 'Emails déplacés',
+    editTagsSuccessful: 'Labels mis à jour',
   },
   template: {
     noId: 'Aucun ID',

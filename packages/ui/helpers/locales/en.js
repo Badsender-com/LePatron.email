@@ -196,6 +196,7 @@ export default {
     moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
+    editTagsSuccessful: 'Tags updated',
   },
   template: {
     noId: 'No ID',
