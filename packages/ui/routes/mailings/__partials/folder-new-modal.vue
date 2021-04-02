@@ -25,7 +25,7 @@ export default {
       return `${this.$t('global.parentLocation')} :`;
     },
     isValidToCreate() {
-      return !!this.folderName;
+      return !!this.folderName && this.folderName?.length <= 70;
     },
   },
   methods: {

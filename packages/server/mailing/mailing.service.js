@@ -201,7 +201,6 @@ async function createMailing(mailing) {
 }
 
 async function copyMailing(mailingId, destination, user) {
-
   const { workspaceId, folderId } = destination;
 
   checkEitherWorkspaceOrFolderDefined(workspaceId, folderId);
@@ -213,7 +212,9 @@ async function copyMailing(mailingId, destination, user) {
   }
 
   if (mailing?.workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(mailing.workspace);
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing.workspace
+    );
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
@@ -225,7 +226,7 @@ async function copyMailing(mailingId, destination, user) {
     'author',
     '_workspace',
     'workspace',
-    '_parentFolder'
+    '_parentFolder',
   ]);
 
   if (workspaceId) {
