@@ -32,7 +32,7 @@ export default {
     async submit() {
       this.$refs.form.validate();
       if (this.isValidToRename) {
-        await this.$emit('create-rename-folder', {
+        await this.$emit('rename-folder', {
           folderName: this.folderName,
         });
       }

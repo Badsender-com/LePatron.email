@@ -1,16 +1,19 @@
 <script>
-import { workspacesByGroup } from '~/helpers/api-routes.js';
+import { folders, workspacesByGroup } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'WorkspaceTree',
+  components: { FolderRenameModal },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     workspaces: [],
+    conflictError: false,
   }),
   computed: {
     treeviewLocationItems() {
@@ -42,6 +45,9 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
+    checkIfAuthorizedMenu(item) {
+      return this.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
         let querySelectedElement = null;
@@ -56,6 +62,34 @@ export default {
         }
         this.$router.push({
           query: querySelectedElement,
+        });
+      }
+    },
+    openRenameFolderModal() {
+      this.$refs.modalRenameFolderDialog.open();
+    },
+    async handleRenameFolder({ folderName, folderId }) {
+      console.log({ folderName, folderId });
+      try {
+        await this.$axios.$put(folders(), {
+          name: folderName,
+          folderId,
+        });
+        this.$emit('on-refresh');
+        this.conflictError = false;
+        this.showSnackbar({
+          text: this.$t('folders.nameUpdated'),
+          color: 'success',
+        });
+
+        this.$refs.modalRenameFolderDialog.close();
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          this.conflictError = true;
+        }
+        this.showSnackbar({
+          text: this.$t('global.errors.error'),
+          color: 'error',
         });
       }
     },
@@ -93,7 +127,28 @@ export default {
           {{ item.name }}
         </div>
       </template>
+      <template #append="{ item }">
+        <v-menu v-if="checkIfAuthorizedMenu(item)" bottom left>
+          <template #activator="{ on, attrs }">
+            <v-btn icon v-bind="attrs" v-on="on">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+
+          <v-list>
+            <v-list-item link @click="openRenameFolderModal(item)">
+              <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
     </v-treeview>
+    <folder-rename-modal
+      ref="modalRenameFolderDialog"
+      :conflict-error="conflictError"
+      :loading-parent="loading"
+      @rename-folder="handleRenameFolder"
+    />
   </v-skeleton-loader>
 </template>
 
