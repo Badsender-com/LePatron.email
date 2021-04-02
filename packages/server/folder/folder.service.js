@@ -2,7 +2,6 @@
 
 const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
-const _ = require('lodash');
 
 const {
   NotFound,
@@ -148,7 +147,6 @@ async function deleteFolder(user, folderId) {
 }
 
 async function isNameUniqueAtSameLevel(folder) {
-  console.log(folder);
   const folders = await Folders.find({
     ...folder,
   });
