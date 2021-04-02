@@ -7,6 +7,7 @@ const {
   InternalServerError,
   UnprocessableEntity,
   BadRequest,
+  Forbidden,
 } = require('http-errors');
 
 const {
@@ -32,6 +33,7 @@ module.exports = {
   findTags,
   findOne,
   renameMailing,
+  deleteMailing,
   deleteOne,
   copyMailing,
   moveMailing,
@@ -297,6 +299,34 @@ async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
 }
 
+async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+
+  if (parentFolderId) {
+    await folderService.hasAccess(parentFolderId, user);
+  }
+
+  if (workspaceId) {
+    await workspaceService.hasAccess(user, workspaceId);
+  }
+
+  const mailing = await findOne(mailingId);
+
+  if (
+    mailing?._workspace?.toString() !== workspaceId &&
+    mailing?._parentFolder?.toString() !== parentFolderId
+  ) {
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
+  }
+
+  const deleteResponse = await deleteOne(mailing);
+
+  if (deleteResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_DELETE);
+  }
+
+  return deleteResponse;
+}
 async function moveMailing(user, mailing, workspaceId, parentFolderId) {
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   let sourceWorkspace;

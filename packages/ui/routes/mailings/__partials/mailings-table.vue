@@ -221,9 +221,7 @@ export default {
       const updateUri = mailingsItem({ mailingId: id });
       try {
         await $axios.$delete(updateUri, {
-          data: {
-            workspaceId: this.$route.query.wid,
-          },
+          data: this.currentLocationParam,
         });
         this.$emit('on-refetch');
         this.showSnackbar({

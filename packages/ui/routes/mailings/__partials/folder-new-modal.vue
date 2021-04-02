@@ -17,7 +17,7 @@ export default {
       folderName: '',
       nameRule: (v) => !!v || this.$t('forms.workspace.inputError'),
       maxLength: (value) =>
-        value.length <= 70 || this.$t('forms.workspace.inputMaxLength'),
+        (value || '').length <= 70 || this.$t('forms.workspace.inputMaxLength'),
     };
   },
   computed: {

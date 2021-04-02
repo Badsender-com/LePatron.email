@@ -43,19 +43,19 @@ export default {
         : this.$t('global.moveManyMail');
     },
   },
-  async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
-  },
   methods: {
+    async fetchWorkspaces() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
+      }
+    },
     submit() {
       if (this.isValidToBeMoved) {
         this.close();
@@ -82,6 +82,7 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail.mail;
       this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
