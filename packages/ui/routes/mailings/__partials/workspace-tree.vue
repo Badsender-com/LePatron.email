@@ -28,9 +28,6 @@ export default {
     selectedItem() {
       return { id: this.currentLocation };
     },
-    confirmCheckBox() {
-      return !!this.selectedItemToDelete?.children;
-    },
   },
   async mounted() {
     await this.fetchData();
@@ -206,7 +203,7 @@ export default {
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"
-      :confirm-check-box="confirmCheckBox"
+      confirm-check-box
       :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
       @confirm="handleDelete"
     >
