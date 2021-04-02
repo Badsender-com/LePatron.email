@@ -258,6 +258,7 @@ export default {
     created: 'Folder created',
     conflict: 'Folder already exists',
     moveFolderConfirmationMessage: 'Please choose the destination',
+    moveFolderSuccessful: 'Folder moved',
   },
   tableHeaders: {
     groups: {

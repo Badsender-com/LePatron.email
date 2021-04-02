@@ -2,6 +2,7 @@
 import BsModalConfirm from '~/components/modal-confirm';
 import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspacesFolders } from '~/utils/workspaces';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'ModalMoveFolder',
@@ -37,10 +38,22 @@ export default {
   methods: {
     submit() {
       if (this.isValidToBeMoved) {
+        const location = this.selectedLocation;
         this.close();
 
+        let destinationParam;
+        console.log({ location: location });
+        if (location?.type === SPACE_TYPE.FOLDER) {
+          destinationParam = {
+            destinationFolderId: location?.id,
+          };
+        } else {
+          destinationParam = {
+            workspaceId: location?.id,
+          };
+        }
         this.$emit('confirm', {
-          selectedLocation: this.selectedLocation,
+          destinationParam,
           folderId: this.folder?.id,
         });
       }

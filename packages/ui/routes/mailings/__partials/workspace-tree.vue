@@ -3,6 +3,7 @@ import {
   getFolder,
   workspacesByGroup,
   deleteFolder,
+  moveFolder,
 } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -144,8 +145,38 @@ export default {
         });
       }
     },
-    onMoveFolder(param) {
-      console.log({ param });
+    async onMoveFolder(params) {
+      console.log({ params });
+      const { destinationParam, folderId } = params;
+      try {
+        await this.$axios.$post(moveFolder(folderId), {
+          folderId,
+          ...destinationParam,
+        });
+
+        let routerRedirectionParam;
+        if (destinationParam?.parentFolderId) {
+          routerRedirectionParam = {
+            fid: destinationParam?.destinationFolderId,
+          };
+        } else {
+          routerRedirectionParam = { wid: destinationParam?.workspaceId };
+        }
+
+        await this.$router.push({
+          query: routerRedirectionParam,
+        });
+        this.showSnackbar({
+          text: this.$t('folders.moveFolderSuccessful'),
+          color: 'success',
+        });
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
       this.$refs.moveModal.close();
     },
   },

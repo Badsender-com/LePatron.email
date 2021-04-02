@@ -263,6 +263,7 @@ export default {
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
     moveFolderConfirmationMessage: 'Veuillez choisir la destination',
+    moveFolderSuccessful: 'Dossier déplacé',
   },
   tableHeaders: {
     groups: {

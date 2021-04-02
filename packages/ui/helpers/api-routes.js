@@ -167,6 +167,10 @@ export function folders() {
   return '/folders/';
 }
 
+export function moveFolder(folderID) {
+  return `/folders/${folderID}/move`;
+}
+
 export function deleteFolder(folderId) {
   return `/folders/${folderId}`;
 }

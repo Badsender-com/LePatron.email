@@ -59,15 +59,15 @@ export default {
     submit() {
       if (this.isValidToBeMoved) {
         this.close();
-
+        const location = this.selectedLocation;
         let destinationParam;
-        if (this.selectedLocation?.type === SPACE_TYPE.FOLDER) {
+        if (location?.type === SPACE_TYPE.FOLDER) {
           destinationParam = {
-            parentFolderId: this.selectedLocation?.id,
+            parentFolderId: location?.id,
           };
         } else {
           destinationParam = {
-            workspaceId: this.selectedLocation?.id,
+            workspaceId: location?.id,
           };
         }
         this.$emit('confirm', {

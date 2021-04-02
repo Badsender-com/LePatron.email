@@ -34,12 +34,12 @@ export default {
   methods: {
     submit() {
       if (this.isValidToBeCopied) {
-        this.close();
-
+        const location = this.selectedLocation;
         this.$emit('confirm', {
-          selectedLocation: this.selectedLocation,
+          selectedLocation: location,
           mailingId: this.mail?.id,
         });
+        this.close();
       }
     },
     async fetchWorkspaces() {
