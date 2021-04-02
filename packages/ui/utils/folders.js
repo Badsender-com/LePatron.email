@@ -43,3 +43,30 @@ export function getRecursiveFolderMap(folder, hasAccess, parentPath) {
   }
   return mapFolderToTreeviewTypeData;
 }
+
+// This function will map workspace data from the server and map it to the format handled by the treeview component
+export function getFolderMap(folder, hasAccess, parentPath) {
+  const path = getRecursivePath(
+    {
+      id: folder.id,
+      name: folder.name,
+      type: FOLDER,
+    },
+    parentPath
+  );
+
+  let mapFolderToTreeviewTypeData = {
+    id: folder._id,
+    name: folder.name,
+    hasAccess,
+    type: FOLDER,
+    path,
+  };
+
+  if (folder.childFolders?.length > 0) {
+    mapFolderToTreeviewTypeData = {
+      ...mapFolderToTreeviewTypeData,
+    };
+  }
+  return mapFolderToTreeviewTypeData;
+}

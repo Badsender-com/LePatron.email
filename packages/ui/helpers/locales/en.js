@@ -32,6 +32,7 @@ export default {
     addTags: 'Add tags',
     copyMail: 'Copy',
     copyMailAction: 'Create copy',
+    moveFolderAction: 'Move folder',
     moveMail: 'Move',
     location: 'Location',
     moveManyMail: 'Move',
@@ -86,6 +87,7 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
+    moveFolder: 'Move folder',
   },
   layout: {
     logout: 'Logout',
@@ -146,6 +148,7 @@ export default {
         'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
       inputMaxLength: 'Maximum 70 characters',
+      moveFolderConfirmationMessage: 'Please choose the destination',
     },
   },
   groups: {
@@ -198,7 +201,6 @@ export default {
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
     copyMailSuccessful: 'Mail copied',
-    moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
     editTagsSuccessful: 'Tags updated',
@@ -255,6 +257,7 @@ export default {
     rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
+    moveFolderConfirmationMessage: 'Please choose the destination',
   },
   tableHeaders: {
     groups: {

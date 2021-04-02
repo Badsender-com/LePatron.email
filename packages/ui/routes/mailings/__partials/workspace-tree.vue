@@ -9,10 +9,11 @@ import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import ModalMoveFolder from './modal-move-folder.vue';
 
 export default {
   name: 'WorkspaceTree',
-  components: { FolderRenameModal, BsModalConfirmForm },
+  components: { FolderRenameModal, BsModalConfirmForm, ModalMoveFolder },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
@@ -82,7 +83,7 @@ export default {
       });
     },
     displayMoveModal(item) {
-      console.info({ item });
+      this.$refs.moveModal.open(item);
     },
     async handleDelete(selected) {
       const { $axios } = this;
@@ -142,6 +143,10 @@ export default {
           color: 'error',
         });
       }
+    },
+    onMoveFolder(param) {
+      console.log({ param });
+      this.$refs.moveModal.close();
     },
   },
 };
@@ -240,6 +245,12 @@ export default {
       :loading-parent="workspacesIsLoading"
       @rename-folder="handleRenameFolder"
     />
+    <modal-move-folder ref="moveModal" @confirm="onMoveFolder">
+      <p
+        class="black--text"
+        v-html="$t('folders.moveFolderConfirmationMessage')"
+      />
+    </modal-move-folder>
   </v-skeleton-loader>
 </template>
 
