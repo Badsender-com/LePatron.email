@@ -12,6 +12,7 @@ module.exports = {
   getFolder: asyncHandler(getFolder),
   deleteFolder: asyncHandler(deleteFolder),
   rename: asyncHandler(rename),
+  move: asyncHandler(move)
 };
 
 /**
@@ -96,7 +97,7 @@ async function getFolder(req, res) {
 
   const folder = await folderService.getFolder(folderId);
 
-  const workspace = await workspaceService.getWorkspace(folder._workspace);
+  const workspace = await folderService.getWorkspaceForFolder(folderId);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
   res.json(folder);
@@ -145,6 +146,32 @@ async function deleteFolder(req, res) {
   } = req;
 
   await folderService.deleteFolder(user, folderId);
+
+  res.status(204).send();
+}
+
+/**
+ * @api {post} /folders/:folderId/move move folder from its source to a destination
+ * @apiPermission regular_user
+ * @apiName MoveFolder
+ * @apiGroup Folders
+ *
+ * @apiParam {string} folderId
+ *
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {String} destinationFolderId
+ *
+ * @apiUse folders
+ */
+
+async function move(req, res) {
+  const {
+    user,
+    params: { folderId },
+    body: { workspaceId, destinationFolderId },
+  } = req;
+
+  await folderService.move(folderId, { workspaceId, destinationFolderId }, user);
 
   res.status(204).send();
 }
