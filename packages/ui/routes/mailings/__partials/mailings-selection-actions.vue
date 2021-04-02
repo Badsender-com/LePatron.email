@@ -50,6 +50,7 @@ export default {
             this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
               data: {
                 workspaceId: $route.query.wid,
+                parentFolderId: $route.query.fid
               },
             })
         );
@@ -156,7 +157,7 @@ export default {
       "
       :action-label="$t('global.delete')"
       action-button-color="error"
-      @confirm="handleMultipleDelete(se)"
+      @confirm="handleMultipleDelete"
     >
       <p
         class="black--text"
