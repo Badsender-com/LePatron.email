@@ -38,10 +38,10 @@ export default {
       <v-card-actions>
         <v-spacer />
         <v-btn color="primary" text @click="close">
-          {{ $t(`global.cancel`) }}
+          {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="primary" @click="action">
-          {{ $t(`global.update`) }}
+          {{ $t('global.update') }}
         </v-btn>
       </v-card-actions>
     </v-card>

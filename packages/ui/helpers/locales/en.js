@@ -159,7 +159,8 @@ export default {
       deleteSuccessful: 'Mailing deleted',
       deleteFolderWarning:
         'You are about to delete the "<strong>{name}</strong>" folder. This action can\'t be undone.',
-      deleteFolderNotice: 'Emails and folders contained in the folder will also be deleted',
+      deleteFolderNotice:
+        'Emails and folders contained in the folder will also be deleted',
       deleteFolderSuccessful: 'Folder deleted',
     },
     workspaceTab: {
@@ -249,6 +250,9 @@ export default {
   },
   folders: {
     name: 'Folder name',
+    nameUpdated: 'Folder renamed',
+    renameTitle: 'Rename folder <strong  class="black--text">{name}</strong> ',
+    rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
   },

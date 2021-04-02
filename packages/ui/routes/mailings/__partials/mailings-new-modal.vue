@@ -55,7 +55,7 @@ export default {
       this.$refs.createNewMailModal.open();
     },
     close() {
-      this.$refs.form.reset();
+      this.$refs.form?.reset();
       this.$refs.createNewMailModal.close();
     },
     async submit() {

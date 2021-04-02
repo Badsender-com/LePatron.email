@@ -157,7 +157,8 @@ export default {
       deleteSuccessful: 'Email supprimé',
       deleteFolderWarning:
         'Vous êtes sur le point de supprimer le dossier "<strong>{name}</strong>". Cette action est irréversible.',
-      deleteFolderNotice: 'Les emails et les dossiers que contient le dossier seront supprimés aussi',
+      deleteFolderNotice:
+        'Les emails et les dossiers que contient le dossier seront supprimés aussi',
       deleteFolderSuccessful: 'Dossier supprimé',
     },
     workspaceTab: {
@@ -253,6 +254,10 @@ export default {
   },
   folders: {
     name: 'Nom du dossier',
+    nameUpdated: 'Dossier renommé',
+    renameTitle:
+      'Renommer le dossier <strong class="black--text">{name}</strong> ',
+    rename: 'Renommer',
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
   },

@@ -1,21 +1,25 @@
 <script>
-import { workspacesByGroup, deleteFolder } from '~/helpers/api-routes.js';
+import {
+  getFolder,
+  workspacesByGroup,
+  deleteFolder,
+} from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
+import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'WorkspaceTree',
+  components: { FolderRenameModal, BsModalConfirmForm },
   mixins: [mixinCurrentLocation],
-  components: {
-    BsModalConfirmForm
-  },
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
     selectedItemToDelete: {},
     workspaces: [],
+    conflictError: false,
   }),
   computed: {
     treeviewLocationItems() {
@@ -25,9 +29,7 @@ export default {
       return { id: this.currentLocation };
     },
     confirmCheckBox() {
-      return (
-        !!this.selectedItemToDelete?.children
-      );
+      return !!this.selectedItemToDelete?.children;
     },
   },
   async mounted() {
@@ -52,6 +54,9 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
+    checkIfAuthorizedMenu(item) {
+      return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
         let querySelectedElement = null;
@@ -72,7 +77,7 @@ export default {
     displayDeleteModal(selected) {
       this.selectedItemToDelete = selected;
       this.$refs.deleteDialog.open({
-        ...this.selectedItemToDelete
+        ...this.selectedItemToDelete,
       });
     },
     async handleDelete(selected) {
@@ -95,14 +100,43 @@ export default {
         console.log(error);
       } finally {
         this.loading = false;
-        const deletingCurrent = this.selectedItemToDelete.id === this.selectedItem.id;
-        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(child => child.id === this.selectedItem.id);
-        if ( deletingCurrent|| deletingParentOfCurrent ) {
+        const deletingCurrent =
+          this.selectedItemToDelete.id === this.selectedItem.id;
+        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(
+          (child) => child.id === this.selectedItem.id
+        );
+        if (deletingCurrent || deletingParentOfCurrent) {
           await this.$router.replace({
             query: { wid: this.workspaces[0]?.id },
           });
         }
         await this.fetchData();
+      }
+    },
+    openRenameFolderModal(folder) {
+      this.$refs.modalRenameFolderDialog.open(folder);
+    },
+    async handleRenameFolder({ folderName, folderId }) {
+      try {
+        await this.$axios.$patch(getFolder(folderId), {
+          folderName: folderName,
+        });
+        await this.fetchData();
+        this.conflictError = false;
+        this.showSnackbar({
+          text: this.$t('folders.nameUpdated'),
+          color: 'success',
+        });
+
+        this.$refs.modalRenameFolderDialog.close();
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          this.conflictError = true;
+        }
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
       }
     },
   },
@@ -140,13 +174,21 @@ export default {
         </div>
       </template>
       <template #append="{ item }">
-        <v-menu v-if="item.type === 'folder'" offset-y>
+        <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
           <template #activator="{ on }">
             <v-btn color="primary" dark icon v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
           <v-list activable>
+            <v-list-item nuxt @click="openRenameFolderModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>edit</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
+            </v-list-item>
             <v-list-item nuxt @click="displayDeleteModal(item)">
               <v-list-item-avatar>
                 <v-btn color="primary" icon>
@@ -154,7 +196,7 @@ export default {
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>
-                {{ $t('global.delete')}}
+                {{ $t('global.delete') }}
               </v-list-item-title>
             </v-list-item>
           </v-list>
@@ -164,9 +206,9 @@ export default {
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"
-      @confirm="handleDelete"
       :confirm-check-box="confirmCheckBox"
       :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
+      @confirm="handleDelete"
     >
       <p
         class="black--text"
@@ -177,8 +219,13 @@ export default {
         "
       />
     </bs-modal-confirm-form>
+    <folder-rename-modal
+      ref="modalRenameFolderDialog"
+      :conflict-error="conflictError"
+      :loading-parent="workspacesIsLoading"
+      @rename-folder="handleRenameFolder"
+    />
   </v-skeleton-loader>
-
 </template>
 
 <style scoped>

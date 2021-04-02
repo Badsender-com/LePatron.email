@@ -19,7 +19,7 @@ module.exports = {
   hasAccess,
   isWorkspaceInGroup,
   isUserWorkspaceMember,
-  deleteFolderContent
+  deleteFolderContent,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {

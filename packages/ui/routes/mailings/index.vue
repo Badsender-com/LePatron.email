@@ -74,6 +74,7 @@ export default {
         return {
           mailings: mailingsResponse?.items,
           tags: mailingsResponse.meta?.tags,
+          loading: false,
           mailingsIsLoading: false,
           folder,
           workspace,
