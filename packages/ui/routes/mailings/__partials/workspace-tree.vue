@@ -84,7 +84,7 @@ export default {
       try {
         await $axios.$delete(deleteFolder(id));
         this.showSnackbar({
-          text: this.$t('groups.mailingTab.deleteFolderSuccess'),
+          text: this.$t('groups.mailingTab.deleteFolderSuccessful'),
           color: 'success',
         });
       } catch (error) {
