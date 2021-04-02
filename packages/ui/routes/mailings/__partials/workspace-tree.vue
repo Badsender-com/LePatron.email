@@ -1,15 +1,20 @@
 <script>
-import { workspacesByGroup } from '~/helpers/api-routes.js';
+import { workspacesByGroup, deleteFolder } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'WorkspaceTree',
   mixins: [mixinCurrentLocation],
+  components: {
+    BsModalConfirmForm
+  },
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
+    selectedItemToDelete: {},
     workspaces: [],
   }),
   computed: {
@@ -18,6 +23,11 @@ export default {
     },
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    confirmCheckBox() {
+      return (
+        !!this.selectedItemToDelete?.children
+      );
     },
   },
   async mounted() {
@@ -59,6 +69,36 @@ export default {
         });
       }
     },
+    displayDeleteModal(selected) {
+      this.selectedItemToDelete = selected;
+      this.$refs.deleteDialog.open({
+        ...this.selectedItemToDelete
+      });
+    },
+    async handleDelete(selected) {
+      const { $axios } = this;
+      const { id } = selected;
+      this.$refs.deleteDialog.close();
+      if (!id) return;
+      this.loading = true;
+      try {
+        await $axios.$delete(deleteFolder(id));
+        this.showSnackbar({
+          text: this.$t('groups.mailingTab.deleteFolderSuccess'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.handleSelectItemFromTreeView(this.workspaces[0]);
+        await this.fetchData();
+        this.loading = false;
+      }
+    },
   },
 };
 </script>
@@ -93,8 +133,47 @@ export default {
           {{ item.name }}
         </div>
       </template>
+      <template #append="{ item }">
+        <v-menu v-if="item.type === 'folder'" offset-y>
+          <template #activator="{ on }">
+            <v-btn color="primary" dark icon v-on="on">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list activable>
+            <v-list-item nuxt @click="displayDeleteModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>delete</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.delete')}}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
     </v-treeview>
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :with-input-confirmation="false"
+      @confirm="handleDelete"
+      :confirm-check-box="confirmCheckBox"
+      :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.mailingTab.deleteFolderWarning', {
+            type: selectedItemToDelete.type,
+            name: selectedItemToDelete.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
   </v-skeleton-loader>
+
 </template>
 
 <style scoped>

@@ -234,7 +234,10 @@ export default {
         </v-list-item>
       </v-list>
       <div class="list-container">
-        <workspace-tree ref="workspaceTree" />
+        <workspace-tree
+          ref="workspaceTree"
+          @on-refetch="fetchMailListingData()"
+        />
       </div>
     </template>
     <v-card>

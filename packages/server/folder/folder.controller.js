@@ -114,4 +114,8 @@ async function deleteFolder(req, res) {
     user,
     params: { folderId }
   } = req;
+
+  await folderService.deleteFolder(user, folderId);
+
+  res.status(204).send();
 }
