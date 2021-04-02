@@ -15,7 +15,9 @@ export default {
   data() {
     return {
       folderName: '',
-      nameRule: [(v) => !!v || this.$t('forms.workspace.inputError')],
+      nameRule: (v) => !!v || this.$t('forms.workspace.inputError'),
+      maxLength: (value) =>
+        value.length <= 70 || this.$t('forms.workspace.inputMaxLength'),
     };
   },
   computed: {
@@ -68,7 +70,8 @@ export default {
       <v-text-field
         v-model="folderName"
         class="pt-1"
-        :rules="nameRule"
+        :rules="[nameRule, maxLength]"
+        counter
         :label="this.$t('folders.name')"
         required
       />
