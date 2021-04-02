@@ -22,6 +22,7 @@ module.exports = {
   getFolder,
   getWorkspaceForFolder,
   deleteFolder,
+  move
 };
 
 async function listFolders() {
@@ -29,9 +30,8 @@ async function listFolders() {
 }
 
 async function hasAccess(folderId, user) {
-  const folder = await getFolder(folderId);
 
-  const workspace = await workspaceService.getWorkspace(folder._workspace);
+  const workspace = await getWorkspaceForFolder(folderId);
 
   return (
     workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
@@ -142,6 +142,90 @@ async function isNameUniqueAtSameLevel(folder) {
     throw new Conflict(
       `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
     );
+  }
+}
+
+async function move(folderId, destination, user) {
+  const { workspaceId, destinationFolderId } = destination;
+  checkEitherWorkspaceOrFolderDefined(workspaceId, destinationFolderId);
+
+  await hasAccess(folderId, user);
+
+  // moving to another folder
+  if (destinationFolderId) {
+    await hasAccess(destinationFolderId, user);
+
+    // if moving to another folder, destination can't be a subfolder
+    await checkIsSubfolder(destinationFolderId);
+
+    // folder being moved can't have children, otherwise it becomes a sub-subfolder
+    await checkIsParent(folderId);
+
+    const moveToFolder = await Folders.updateOne(
+    { _id: mongoose.Types.ObjectId(folderId) },
+      {
+        _parentFolder: mongoose.Types.ObjectId(destinationFolderId),
+        $unset: { _workspace: '' }
+      }
+    )
+
+    if (moveToFolder.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_MOVE);
+    }
+
+    return;
+  }
+
+  // moving to a workspace
+  if (workspaceId) {
+    const workspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, workspace)
+
+    const moveToWorkspace = await Folders.updateOne(
+      { _id: mongoose.Types.ObjectId(folderId) },
+      {
+        _workspace : mongoose.Types.ObjectId(workspaceId) ,
+        $unset: { _parentFolder: '' }
+      }
+    )
+
+    if (moveToWorkspace.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_MOVE);
+    }
+  }
+
+}
+
+async function checkIsSubfolder(folderId) {
+  const folder = await Folders.findOne( {
+    _id: mongoose.Types.ObjectId(folderId),
+    _parentFolder: {
+      $exists: true
+    }
+  })
+
+  if (folder) {
+    throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
+  }
+}
+
+async function checkIsParent(folderId) {
+  const children = await Folders.find(
+    { _parentFolder: mongoose.Types.ObjectId(folderId) }
+  );
+
+  if (children.length) {
+    throw new NotAcceptable(ERROR_CODES.FOLDER_HAS_CHILDREN)
+  }
+}
+
+function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
+  if (!workspaceId && !parentFolderId) {
+    throw new BadRequest(ERROR_CODES.PARENT_NOT_PROVIDED);
+  }
+
+  if (workspaceId && parentFolderId) {
+    throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
   }
 }
 
