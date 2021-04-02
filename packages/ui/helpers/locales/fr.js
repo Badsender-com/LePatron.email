@@ -255,7 +255,8 @@ export default {
   folders: {
     name: 'Nom du dossier',
     nameUpdated: 'Dossier renommé',
-    renameTitle: 'Renommer le dossier <strong>{name}</strong> ',
+    renameTitle:
+      'Renommer le dossier <strong class="black--text">{name}</strong> ',
     rename: 'Renommer',
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
