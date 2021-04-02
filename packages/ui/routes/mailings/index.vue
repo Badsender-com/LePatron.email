@@ -267,6 +267,7 @@ export default {
 <style>
 .new-mail-button {
   width: 90%;
+  float: right;
 }
 .list-container {
   overflow-y: auto;
