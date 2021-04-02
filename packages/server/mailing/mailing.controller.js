@@ -212,10 +212,13 @@ async function rename(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { mailingName, workspaceId, parentFolderId }
+    body: { mailingName, workspaceId, parentFolderId },
   } = req;
 
-  await mailingService.renameMailing({ mailingId, mailingName, workspaceId, parentFolderId }, user);
+  await mailingService.renameMailing(
+    { mailingId, mailingName, workspaceId, parentFolderId },
+    user
+  );
 
   res.status(204).send();
 }
@@ -438,30 +441,14 @@ async function bulkDestroy(req, res) {
 async function deleteMailing(req, res) {
   const { mailingId } = req.params;
   const { user } = req;
-  const { workspaceId } = req.body;
+  const { workspaceId, parentFolderId } = req.body;
 
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-  const mailing = await mailingService.findOne(mailingId);
-
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  if (
-    (!user.isGroupAdmin &&
-      !workspaceService.workspaceContainsUser(workspace, user)) ||
-    mailing?._workspace.toString() !== workspaceId
-  ) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
-  }
-
-  const deleteResponse = await mailingService.deleteOne(mailing);
-
-  if (deleteResponse.ok !== 1) {
-    throw new createError.InternalServerError(
-      ERROR_CODES.FAILED_MAILING_DELETE
-    );
-  }
+  await mailingService.deleteMailing({
+    mailingId,
+    workspaceId,
+    parentFolderId,
+    user,
+  });
 
   res.send();
 }
