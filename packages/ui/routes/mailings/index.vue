@@ -167,6 +167,10 @@ export default {
           tags: tagsUpdates,
         });
         this.tags = mailingsResponse.meta.tags;
+        this.showSnackbar({
+          text: this.$t('mailings.editTagsSuccessful'),
+          color: 'success',
+        });
         await this.fetchData();
       } catch (error) {
         this.showSnackbar({
@@ -188,6 +192,10 @@ export default {
           tags,
         });
         await this.fetchMailListingData();
+        this.showSnackbar({
+          text: this.$t('mailings.editTagsSuccessful'),
+          color: 'success',
+        });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -268,6 +276,7 @@ export default {
 <style>
 .new-mail-button {
   width: 90%;
+  float: right;
 }
 .list-container {
   overflow-y: auto;

@@ -1,17 +1,23 @@
 <script>
-import { getFolder, workspacesByGroup } from '~/helpers/api-routes.js';
+import {
+  getFolder,
+  workspacesByGroup,
+  deleteFolder,
+} from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'WorkspaceTree',
-  components: { FolderRenameModal },
+  components: { FolderRenameModal, BsModalConfirmForm },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
+    selectedItemToDelete: {},
     workspaces: [],
     conflictError: false,
   }),
@@ -21,6 +27,9 @@ export default {
     },
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    confirmCheckBox() {
+      return !!this.selectedItemToDelete?.children;
     },
   },
   async mounted() {
@@ -63,6 +72,45 @@ export default {
         this.$router.push({
           query: querySelectedElement,
         });
+      }
+    },
+    displayDeleteModal(selected) {
+      this.selectedItemToDelete = selected;
+      this.$refs.deleteDialog.open({
+        ...this.selectedItemToDelete,
+      });
+    },
+    async handleDelete(selected) {
+      const { $axios } = this;
+      const { id } = selected;
+      this.$refs.deleteDialog.close();
+      if (!id) return;
+      this.loading = true;
+      try {
+        await $axios.$delete(deleteFolder(id));
+        this.showSnackbar({
+          text: this.$t('groups.mailingTab.deleteFolderSuccessful'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+        const deletingCurrent =
+          this.selectedItemToDelete.id === this.selectedItem.id;
+        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(
+          (child) => child.id === this.selectedItem.id
+        );
+        if (deletingCurrent || deletingParentOfCurrent) {
+          await this.$router.replace({
+            query: { wid: this.workspaces[0]?.id },
+          });
+        }
+        await this.fetchData();
       }
     },
     openRenameFolderModal(folder) {
@@ -127,13 +175,12 @@ export default {
       </template>
       <template #append="{ item }">
         <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
-          <template #activator="{ on, attrs }">
-            <v-btn icon v-bind="attrs" v-on="on">
+          <template #activator="{ on }">
+            <v-btn color="primary" dark icon v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
-
-          <v-list>
+          <v-list activable>
             <v-list-item nuxt @click="openRenameFolderModal(item)">
               <v-list-item-avatar>
                 <v-btn color="primary" icon>
@@ -142,10 +189,36 @@ export default {
               </v-list-item-avatar>
               <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
             </v-list-item>
+            <v-list-item nuxt @click="displayDeleteModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>delete</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.delete') }}
+              </v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
       </template>
     </v-treeview>
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :with-input-confirmation="false"
+      :confirm-check-box="confirmCheckBox"
+      :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
+      @confirm="handleDelete"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.mailingTab.deleteFolderWarning', {
+            name: selectedItemToDelete.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
     <folder-rename-modal
       ref="modalRenameFolderDialog"
       :conflict-error="conflictError"

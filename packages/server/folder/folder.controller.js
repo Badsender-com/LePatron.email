@@ -10,6 +10,7 @@ module.exports = {
   hasAccess: asyncHandler(hasAccess),
   create: asyncHandler(create),
   getFolder: asyncHandler(getFolder),
+  deleteFolder: asyncHandler(deleteFolder),
   rename: asyncHandler(rename),
 };
 
@@ -122,6 +123,27 @@ async function rename(req, res) {
   } = req;
 
   await folderService.rename({ folderId, folderName }, user);
+
+  res.status(204).send();
+}
+
+/**
+ * @api {delete} /folders/:folderId folder delete
+ * @apiPermission regular_user
+ * @apiName DeleteFolder
+ * @apiGroup Folders
+ *
+ * @apiUse folder
+ * @apiSuccess {folder} folder deleted
+ */
+
+async function deleteFolder(req, res) {
+  const {
+    user,
+    params: { folderId },
+  } = req;
+
+  await folderService.deleteFolder(user, folderId);
 
   res.status(204).send();
 }

@@ -31,26 +31,27 @@ export default {
       return this.mail?.name;
     },
   },
-  async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
-  },
   methods: {
     submit() {
       if (this.isValidToBeCopied) {
         this.close();
+
         this.$emit('confirm', {
-          workspaceId: this.selectedLocation?.id,
+          selectedLocation: this.selectedLocation,
           mailingId: this.mail?.id,
         });
+      }
+    },
+    async fetchWorkspaces() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
       }
     },
     handleSelectItemFromTreeView(selectedItems) {
@@ -59,6 +60,7 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail;
       this.$refs.copyMailDialog.open();
     },

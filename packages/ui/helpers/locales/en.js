@@ -145,6 +145,7 @@ export default {
       checkBoxError:
         'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
+      inputMaxLength: 'Maximum 70 characters',
     },
   },
   groups: {
@@ -156,6 +157,11 @@ export default {
       deleteWarningMessage:
         'You are about to delete the "<strong>{name}</strong>" mailing. This action can\'t be undone.',
       deleteSuccessful: 'Mailing deleted',
+      deleteFolderWarning:
+        'You are about to delete the "<strong>{name}</strong>" folder. This action can\'t be undone.',
+      deleteFolderNotice:
+        'Emails and folders contained in the folder will also be deleted',
+      deleteFolderSuccessful: 'Folder deleted',
     },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
@@ -195,6 +201,7 @@ export default {
     moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
+    editTagsSuccessful: 'Tags updated',
   },
   template: {
     noId: 'No ID',

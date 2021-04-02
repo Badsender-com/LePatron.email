@@ -195,7 +195,7 @@ export default {
         await $axios.$patch(updateUri, {
           mailingName: newName,
           workspaceId: this.$route.query.wid,
-          parentFolderId: this.$route.query.fid
+          parentFolderId: this.$route.query.fid,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -221,9 +221,7 @@ export default {
       const updateUri = mailingsItem({ mailingId: id });
       try {
         await $axios.$delete(updateUri, {
-          data: {
-            workspaceId: this.$route.query.wid,
-          },
+          data: this.currentLocationParam,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -240,19 +238,37 @@ export default {
         this.loading = false;
       }
     },
-    async copyMail({ workspaceId, mailingId }) {
+    async copyMail({ selectedLocation, mailingId }) {
       try {
         await this.$axios.$post(copyMail(), {
           mailingId,
-          workspaceId,
+          ...(selectedLocation.type === 'workspace' && {
+            workspaceId: selectedLocation.id,
+          }),
+          ...(selectedLocation.type === 'folder' && {
+            folderId: selectedLocation.id,
+          }),
         });
-        if (workspaceId === this.workspace?.id) {
+
+        // if copy to current location
+        if (
+          selectedLocation.id === this.workspace?.id ||
+          selectedLocation.id === this.folder?.id
+        ) {
           this.$emit('on-refetch');
-        } else {
-          this.$router.push({
-            query: { wid: workspaceId },
-          });
         }
+
+        // else, redirect to destination
+        this.$router.push({
+          query: {
+            ...(selectedLocation.type === 'workspace' && {
+              wid: selectedLocation.id,
+            }),
+            ...(selectedLocation.type === 'folder' && {
+              fid: selectedLocation.id,
+            }),
+          },
+        });
 
         this.showSnackbar({
           text: this.$t('mailings.copyMailSuccessful'),

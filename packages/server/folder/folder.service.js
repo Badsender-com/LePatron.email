@@ -21,6 +21,7 @@ module.exports = {
   rename,
   getFolder,
   getWorkspaceForFolder,
+  deleteFolder,
 };
 
 async function listFolders() {
@@ -45,7 +46,7 @@ async function getWorkspaceForFolder(folderId) {
   }
 
   if (folder?._workspace) {
-    return await workspaceService.getWorkspace(folder?._workspace);
+    return workspaceService.getWorkspace(folder?._workspace);
   }
 
   if (!folder?._parentFolder) {
@@ -108,12 +109,28 @@ function checkCreationPayload(folder) {
 }
 
 async function getFolder(folderId) {
-  console.log(folderId);
   if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
   return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
+}
+
+async function deleteFolder(user, folderId) {
+  if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
+  if (await hasAccess(folderId, user)) {
+    await workspaceService.deleteFolderContent(folderId);
+
+    const deleteResponse = await Folders.deleteOne({
+      _id: mongoose.Types.ObjectId(folderId),
+    });
+
+    if (deleteResponse.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_DELETE);
+    }
+  }
 }
 
 async function isNameUniqueAtSameLevel(folder) {
