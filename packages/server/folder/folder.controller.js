@@ -9,7 +9,8 @@ module.exports = {
   list: asyncHandler(list),
   hasAccess: asyncHandler(hasAccess),
   create: asyncHandler(create),
-  getFolder: asyncHandler(getFolder)
+  getFolder: asyncHandler(getFolder),
+  rename: asyncHandler(rename),
 };
 
 /**
@@ -37,7 +38,10 @@ async function list(req, res) {
  * @apiSuccess {hasAccess} boolean indicating access
  */
 async function hasAccess(req, res) {
-  const { user, params: { folderId } } = req;
+  const {
+    user,
+    params: { folderId },
+  } = req;
 
   const hasAccess = await folderService.hasAccess(folderId, user);
 
@@ -60,13 +64,13 @@ async function hasAccess(req, res) {
 async function create(req, res) {
   const {
     user,
-    body: { name, workspaceId, parentFolderId }
+    body: { name, workspaceId, parentFolderId },
   } = req;
 
   const folder = {
     name,
     workspaceId,
-    parentFolderId
+    parentFolderId,
   };
 
   const createdFolder = await folderService.create(folder, user);
@@ -94,6 +98,30 @@ async function getFolder(req, res) {
   const workspace = await workspaceService.getWorkspace(folder._workspace);
   workspaceService.doesUserHaveReadAccess(user, workspace);
 
-  res.json(folder)
+  res.json(folder);
+}
 
+/**
+ * @api {get} /folders/:folderId folder
+ * @apiPermission user
+ * @apiName PatchFolder
+ * @apiGroup Folders
+ *
+ * @apiParam {string} folderId
+ *
+ * @apiParam (Body) {String} folderName
+ *
+ * @apiUse folders
+ */
+
+async function rename(req, res) {
+  const {
+    user,
+    params: { folderId },
+    body: { folderName },
+  } = req;
+
+  await folderService.rename({ folderId, folderName }, user);
+
+  res.status(204).send();
 }

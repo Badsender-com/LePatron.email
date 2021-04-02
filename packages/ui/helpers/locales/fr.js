@@ -247,6 +247,9 @@ export default {
   },
   folders: {
     name: 'Nom du dossier',
+    nameUpdated: 'Dossier renommé',
+    renameTitle: 'Renommer le dossier <strong>{name}</strong> ',
+    rename: 'Renommer',
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
   },

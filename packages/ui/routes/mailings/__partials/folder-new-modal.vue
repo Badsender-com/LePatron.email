@@ -31,7 +31,7 @@ export default {
       this.$refs.createNewFolderModal.open();
     },
     close() {
-      this.$refs.form.reset();
+      this.$refs.form?.reset();
       this.$refs.createNewFolderModal.close();
     },
     async submit() {

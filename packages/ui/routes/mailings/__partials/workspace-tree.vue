@@ -1,5 +1,5 @@
 <script>
-import { folders, workspacesByGroup } from '~/helpers/api-routes.js';
+import { getFolder, workspacesByGroup } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
@@ -46,7 +46,7 @@ export default {
       }
     },
     checkIfAuthorizedMenu(item) {
-      return this.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+      return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
     },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
@@ -65,17 +65,15 @@ export default {
         });
       }
     },
-    openRenameFolderModal() {
-      this.$refs.modalRenameFolderDialog.open();
+    openRenameFolderModal(folder) {
+      this.$refs.modalRenameFolderDialog.open(folder);
     },
     async handleRenameFolder({ folderName, folderId }) {
-      console.log({ folderName, folderId });
       try {
-        await this.$axios.$put(folders(), {
-          name: folderName,
-          folderId,
+        await this.$axios.$patch(getFolder(folderId), {
+          folderName: folderName,
         });
-        this.$emit('on-refresh');
+        await this.fetchData();
         this.conflictError = false;
         this.showSnackbar({
           text: this.$t('folders.nameUpdated'),
@@ -88,7 +86,7 @@ export default {
           this.conflictError = true;
         }
         this.showSnackbar({
-          text: this.$t('global.errors.error'),
+          text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
       }
@@ -128,7 +126,7 @@ export default {
         </div>
       </template>
       <template #append="{ item }">
-        <v-menu v-if="checkIfAuthorizedMenu(item)" bottom left>
+        <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
           <template #activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
@@ -136,7 +134,12 @@ export default {
           </template>
 
           <v-list>
-            <v-list-item link @click="openRenameFolderModal(item)">
+            <v-list-item nuxt @click="openRenameFolderModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>edit</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
               <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
             </v-list-item>
           </v-list>
@@ -146,7 +149,7 @@ export default {
     <folder-rename-modal
       ref="modalRenameFolderDialog"
       :conflict-error="conflictError"
-      :loading-parent="loading"
+      :loading-parent="workspacesIsLoading"
       @rename-folder="handleRenameFolder"
     />
   </v-skeleton-loader>

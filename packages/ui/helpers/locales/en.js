@@ -243,6 +243,9 @@ export default {
   },
   folders: {
     name: 'Folder name',
+    nameUpdated: 'Folder renamed',
+    renameTitle: 'Renommer le dossier <strong>{name}</strong> ',
+    rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
   },

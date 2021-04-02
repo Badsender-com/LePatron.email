@@ -7,6 +7,7 @@ const {
   BadRequest,
   Conflict,
   NotAcceptable,
+  InternalServerError,
 } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -17,6 +18,7 @@ module.exports = {
   listFolders,
   hasAccess,
   create,
+  rename,
   getFolder,
   getWorkspaceForFolder,
 };
@@ -106,6 +108,7 @@ function checkCreationPayload(folder) {
 }
 
 async function getFolder(folderId) {
+  console.log(folderId);
   if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
@@ -122,5 +125,24 @@ async function isNameUniqueAtSameLevel(folder) {
     throw new Conflict(
       `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
     );
+  }
+}
+
+async function rename({ folderName, folderId }, user) {
+  if (!folderName || folderName === '') {
+    throw new BadRequest(ERROR_CODES.NAME_NOT_PROVIDED);
+  }
+
+  await hasAccess(folderId, user);
+
+  await isNameUniqueAtSameLevel({ name: folderName });
+
+  const updateResponse = await Folders.updateOne(
+    { _id: mongoose.Types.ObjectId(folderId) },
+    { name: folderName }
+  );
+
+  if (updateResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
   }
 }

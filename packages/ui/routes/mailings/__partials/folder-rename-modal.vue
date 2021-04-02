@@ -12,21 +12,28 @@ export default {
   },
   data() {
     return {
+      selectedFolder: {},
       folderName: '',
       nameRule: [(v) => !!v || this.$t('forms.workspace.inputError')],
     };
   },
   computed: {
+    titleRenameModal() {
+      return this.$t('folders.renameTitle', {
+        name: this.selectedFolder?.name,
+      });
+    },
     isValidToRename() {
       return !!this.folderName;
     },
   },
   methods: {
-    open() {
+    open(folder) {
+      this.selectedFolder = folder;
       this.$refs.createRenameFolderModal.open();
     },
     close() {
-      this.$refs.form.reset();
+      this.$refs.form?.reset();
       this.$refs.createRenameFolderModal.close();
     },
     async submit() {
@@ -34,6 +41,7 @@ export default {
       if (this.isValidToRename) {
         await this.$emit('rename-folder', {
           folderName: this.folderName,
+          folderId: this.selectedFolder?.id,
         });
       }
     },
@@ -45,7 +53,7 @@ export default {
   <bs-modal-confirm
     ref="createRenameFolderModal"
     modal-width="700"
-    :title="$t('global.renameFolder')"
+    :title="titleRenameModal"
     :is-form="true"
   >
     <v-form ref="form" @submit.prevent="submit">
@@ -66,7 +74,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn :disabled="!isValidToRename" type="submit" color="primary">
-          {{ $t('global.renameFolder') }}
+          {{ $t('folders.rename') }}
         </v-btn>
       </v-card-actions>
     </v-form>

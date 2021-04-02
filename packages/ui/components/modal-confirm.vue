@@ -38,7 +38,7 @@ export default {
   >
     <v-card>
       <v-card-title class="headline">
-        {{ title }}
+        <p v-html="title" />
       </v-card-title>
       <v-card-text>
         <slot />
