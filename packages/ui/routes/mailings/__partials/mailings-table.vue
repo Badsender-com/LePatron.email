@@ -195,7 +195,7 @@ export default {
         await $axios.$patch(updateUri, {
           mailingName: newName,
           workspaceId: this.$route.query.wid,
-          parentFolderId: this.$route.query.fid
+          parentFolderId: this.$route.query.fid,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -221,9 +221,7 @@ export default {
       const updateUri = mailingsItem({ mailingId: id });
       try {
         await $axios.$delete(updateUri, {
-          data: {
-            workspaceId: this.$route.query.wid,
-          },
+          data: this.currentLocationParam,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -244,20 +242,31 @@ export default {
       try {
         await this.$axios.$post(copyMail(), {
           mailingId,
-          ...(selectedLocation.type === 'workspace' && { workspaceId : selectedLocation.id }),
-          ...(selectedLocation.type === 'folder' && { folderId : selectedLocation.id }),
+          ...(selectedLocation.type === 'workspace' && {
+            workspaceId: selectedLocation.id,
+          }),
+          ...(selectedLocation.type === 'folder' && {
+            folderId: selectedLocation.id,
+          }),
         });
 
         // if copy to current location
-        if (selectedLocation.id === this.workspace?.id || selectedLocation.id === this.folder?.id) {
+        if (
+          selectedLocation.id === this.workspace?.id ||
+          selectedLocation.id === this.folder?.id
+        ) {
           this.$emit('on-refetch');
         }
 
         // else, redirect to destination
         this.$router.push({
           query: {
-            ...(selectedLocation.type === 'workspace' && { wid: selectedLocation.id }),
-            ...(selectedLocation.type === 'folder' && { fid: selectedLocation.id }),
+            ...(selectedLocation.type === 'workspace' && {
+              wid: selectedLocation.id,
+            }),
+            ...(selectedLocation.type === 'folder' && {
+              fid: selectedLocation.id,
+            }),
           },
         });
 
