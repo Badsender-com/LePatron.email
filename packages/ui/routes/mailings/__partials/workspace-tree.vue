@@ -12,6 +12,9 @@ import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'WorkspaceTree',
+  props: {
+    mailings: { type: Array, default: () => [] },
+  },
   components: { FolderRenameModal, BsModalConfirmForm },
   mixins: [mixinCurrentLocation],
   data: () => ({
@@ -27,6 +30,9 @@ export default {
     },
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    confirmCheckBox() {
+      return !!this.selectedItemToDelete?.children?.length || !!this.mailings?.length;
     },
   },
   async mounted() {
@@ -203,7 +209,7 @@ export default {
     <bs-modal-confirm-form
       ref="deleteDialog"
       :with-input-confirmation="false"
-      confirm-check-box
+      :confirm-check-box="confirmCheckBox"
       :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
       @confirm="handleDelete"
     >
