@@ -166,6 +166,12 @@ export default {
           tags: tagsUpdates,
         });
         this.tags = mailingsResponse.meta.tags;
+        if (mailingsResponse) {
+          this.showSnackbar({
+            text: this.$t('mailings.editTagsSuccessful'),
+            color: 'success',
+          });
+        }
         await this.fetchData();
       } catch (error) {
         this.showSnackbar({
@@ -182,11 +188,17 @@ export default {
       this.loading = true;
       const { tags, selectedMailing } = tagsInformations;
       try {
-        await $axios.$put(mailings(), {
+        const res = await $axios.$put(mailings(), {
           items: [selectedMailing.id],
           tags,
         });
         await this.fetchMailListingData();
+        if (res) {
+          this.showSnackbar({
+            text: this.$t('mailings.editTagsSuccessful'),
+            color: 'success',
+          });
+        }
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
