@@ -16,9 +16,6 @@ export default {
   name: 'WorkspaceTree',
   components: { FolderRenameModal, BsModalConfirmForm, ModalMoveFolder },
   mixins: [mixinCurrentLocation],
-  props: {
-    mailings: { type: Array, default: () => [] },
-  },
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
@@ -35,7 +32,9 @@ export default {
     },
     confirmCheckBox() {
       return (
-        !!this.selectedItemToDelete?.children?.length || !!this.mailings?.length
+        !!this.selectedItemToDelete?.children?.length ||
+        !!this.folder?.mails?.length ||
+        !!this.workspace?.mails?.length
       );
     },
   },
