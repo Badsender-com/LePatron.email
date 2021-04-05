@@ -30,7 +30,7 @@ export function getTreeviewWorkspaces(workspaces) {
   });
 }
 
-export function getTreeviewWorkspacesFolders(workspaces) {
+export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
   return workspaces.map((workspace) => {
     const path = {
       name: workspace.name,

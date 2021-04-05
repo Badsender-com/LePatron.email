@@ -1,7 +1,7 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import { workspacesByGroup } from '~/helpers/api-routes';
-import { getTreeviewWorkspacesFolders } from '~/utils/workspaces';
+import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
@@ -23,7 +23,7 @@ export default {
   },
   computed: {
     treeviewLocationItems() {
-      return getTreeviewWorkspacesFolders(this.workspaces);
+      return getTreeviewWorkspacesWithoutSubfolders(this.workspaces);
     },
     isValidToBeMoved() {
       return (
