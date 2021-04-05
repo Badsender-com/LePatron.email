@@ -1,36 +1,18 @@
 import { WORKSPACE } from '../../server/constant/space-type';
-import { getRecursiveFolderMap, getFolderMap } from '~/utils/folders';
+import {
+  getRecursiveFolderMap,
+  getFoldersMapWithoutSubFolder,
+} from '~/utils/folders';
 
 export function getTreeviewWorkspaces(workspaces) {
-  return workspaces.map((workspace) => {
-    const path = {
-      name: workspace.name,
-      id: workspace._id,
-      type: WORKSPACE,
-    };
-
-    let mapWorkspaceToTreeviewTypeData = {
-      icon: 'mdi-account-multiple-outline',
-      id: workspace._id,
-      name: workspace.name,
-      hasAccess: workspace.hasRights,
-      type: WORKSPACE,
-      path,
-    };
-
-    if (workspace.folders?.length > 0) {
-      mapWorkspaceToTreeviewTypeData = {
-        children: workspace.folders.map((folder) =>
-          getRecursiveFolderMap(folder, workspace.hasRights, path)
-        ),
-        ...mapWorkspaceToTreeviewTypeData,
-      };
-    }
-    return mapWorkspaceToTreeviewTypeData;
-  });
+  return getTreeview(workspaces, getRecursiveFolderMap);
 }
 
 export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
+  return getTreeview(workspaces, getFoldersMapWithoutSubFolder);
+}
+
+export function getTreeview(workspaces, callback) {
   return workspaces.map((workspace) => {
     const path = {
       name: workspace.name,
@@ -50,7 +32,7 @@ export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
     if (workspace.folders?.length > 0) {
       mapWorkspaceToTreeviewTypeData = {
         children: workspace.folders.map((folder) =>
-          getFolderMap(folder, workspace.hasRights, path)
+          callback(folder, workspace.hasRights, path)
         ),
         ...mapWorkspaceToTreeviewTypeData,
       };
@@ -58,7 +40,6 @@ export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
     return mapWorkspaceToTreeviewTypeData;
   });
 }
-
 // Flatten the path from the current location element, this is required to match the data expected by the breadcrumbs component
 export function getPathToBreadcrumbsDataType(selectedMenuLocation) {
   let items = [];

@@ -87,7 +87,6 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
-    moveFolder: 'Move folder',
   },
   layout: {
     logout: 'Logout',

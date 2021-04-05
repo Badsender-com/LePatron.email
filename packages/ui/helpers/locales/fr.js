@@ -87,7 +87,6 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
-    moveFolder: 'Déplacer dossier',
   },
   layout: {
     logout: 'Déconnexion',

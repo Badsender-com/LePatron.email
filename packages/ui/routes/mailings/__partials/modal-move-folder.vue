@@ -89,7 +89,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="moveFolderDialog"
-    :title="`${this.$t('global.moveFolder')}  ${folderName}`"
+    :title="`${this.$t('global.moveFolderAction')}  ${folderName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
     @click-outside="close"
