@@ -59,7 +59,6 @@ export default {
     submit() {
       if (this.isValidToBeMoved) {
         const location = this.selectedLocation;
-        console.log({ location });
         this.close();
         let destinationParam;
         if (location?.type === SPACE_TYPE.FOLDER) {
@@ -71,10 +70,6 @@ export default {
             workspaceId: location?.id,
           };
         }
-        console.log({
-          destinationParam,
-          mailingId: this.mail?.id,
-        });
         this.$emit('confirm', {
           destinationParam,
           mailingId: this.mail?.id,

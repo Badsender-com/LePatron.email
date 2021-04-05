@@ -71,10 +71,6 @@ export default {
     },
     async moveManyMails({ destinationParam }) {
       try {
-        console.log({
-          mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
-          ...destinationParam,
-        });
         await this.$axios.$post(moveManyMails(), {
           mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
           ...destinationParam,
