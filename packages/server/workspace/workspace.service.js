@@ -34,7 +34,14 @@ async function getWorkspace(id) {
   if (!(await Workspaces.exists({ _id: mongoose.Types.ObjectId(id) }))) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
-  return Workspaces.findById(id);
+
+  return Workspaces.findById(id)
+    .populate({
+      path: 'folders',
+    })
+    .populate({
+      path: 'mails',
+    });
 }
 
 async function hasAccess(user, workspaceId) {
