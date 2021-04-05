@@ -29,6 +29,7 @@ export default {
   },
   methods: {
     openNewFolderModal() {
+      this.conflictError = false;
       this.$refs.folderNewModalRef.open();
     },
     async createNewFolder({ folderName }) {
