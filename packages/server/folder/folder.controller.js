@@ -12,7 +12,7 @@ module.exports = {
   getFolder: asyncHandler(getFolder),
   deleteFolder: asyncHandler(deleteFolder),
   rename: asyncHandler(rename),
-  move: asyncHandler(move)
+  move: asyncHandler(move),
 };
 
 /**
@@ -161,7 +161,7 @@ async function deleteFolder(req, res) {
  * @apiParam (Body) {String} workspaceId
  * @apiParam (Body) {String} destinationFolderId
  *
- * @apiUse folders
+ * @apiUse folder
  */
 
 async function move(req, res) {
@@ -171,7 +171,11 @@ async function move(req, res) {
     body: { workspaceId, destinationFolderId },
   } = req;
 
-  await folderService.move(folderId, { workspaceId, destinationFolderId }, user);
+  await folderService.move(
+    folderId,
+    { workspaceId, destinationFolderId },
+    user
+  );
 
   res.status(204).send();
 }
