@@ -12,6 +12,9 @@ import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'WorkspaceTree',
+  props: {
+    mailings: { type: Array, default: () => [] },
+  },
   components: { FolderRenameModal, BsModalConfirmForm },
   mixins: [mixinCurrentLocation],
   data: () => ({
@@ -29,7 +32,7 @@ export default {
       return { id: this.currentLocation };
     },
     confirmCheckBox() {
-      return !!this.selectedItemToDelete?.children;
+      return !!this.selectedItemToDelete?.children?.length || !!this.mailings?.length;
     },
   },
   async mounted() {
