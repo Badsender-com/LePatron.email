@@ -42,7 +42,6 @@ export default {
         this.close();
 
         let destinationParam;
-        console.log({ location: location });
         if (location?.type === SPACE_TYPE.FOLDER) {
           destinationParam = {
             destinationFolderId: location?.id,

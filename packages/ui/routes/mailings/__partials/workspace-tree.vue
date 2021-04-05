@@ -33,7 +33,6 @@ export default {
     confirmCheckBox() {
       return !!this.selectedItemToDelete?.children;
     },
-    console: () => console,
   },
   async mounted() {
     await this.fetchData();
@@ -146,7 +145,6 @@ export default {
       }
     },
     async onMoveFolder(params) {
-      console.log({ params });
       const { destinationParam, folderId } = params;
       try {
         await this.$axios.$post(moveFolder(folderId), {
@@ -188,7 +186,6 @@ export default {
     type="list-item, list-item, list-item"
     :loading="workspacesIsLoading"
   >
-    {{ console.info({ treeviewLocationItems }) }}
     <v-treeview
       ref="tree"
       item-key="id"
