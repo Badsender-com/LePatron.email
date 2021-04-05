@@ -31,6 +31,7 @@ export default {
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
+    moveFolderAction: 'Déplacer le dossier',
     moveMail: 'Déplacer',
     location: 'Destination',
     moveManyMail: 'Déplacer les emails',
@@ -260,6 +261,8 @@ export default {
     rename: 'Renommer',
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',
+    moveFolderConfirmationMessage: 'Veuillez choisir la destination',
+    moveFolderSuccessful: 'Dossier déplacé',
   },
   tableHeaders: {
     groups: {

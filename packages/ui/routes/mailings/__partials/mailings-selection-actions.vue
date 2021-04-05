@@ -50,7 +50,7 @@ export default {
             this.$axios.$delete(mailingsItem({ mailingId: mailing.id }), {
               data: {
                 workspaceId: $route.query.wid,
-                parentFolderId: $route.query.fid
+                parentFolderId: $route.query.fid,
               },
             })
         );

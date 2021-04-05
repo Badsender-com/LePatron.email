@@ -1,23 +1,20 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import { workspacesByGroup } from '~/helpers/api-routes';
-import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
-  name: 'ModalMoveMail',
+  name: 'ModalMoveFolder',
   components: {
     BsModalConfirm,
   },
   props: {
     confirmationInputLabel: { type: String, default: '' },
-    confirmationTitleLabel: { type: String, default: '' },
-    isMovingManyMails: { type: Boolean, default: false },
   },
   data() {
     return {
-      mail: null,
-      currentLocation: null,
+      folder: null,
       workspaces: [],
       workspaceIsError: false,
       workspacesIsLoading: false,
@@ -26,24 +23,40 @@ export default {
   },
   computed: {
     treeviewLocationItems() {
-      return getTreeviewWorkspaces(this.workspaces);
+      return getTreeviewWorkspacesWithoutSubfolders(this.workspaces);
     },
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
-        this.selectedLocation?.id !== this.currentLocation
+        this.selectedLocation?.id !== this.folder?.id
       );
     },
-    mailName() {
-      return !this.isMovingManyMails ? this.mail?.name : '';
-    },
-    moveLabelButton() {
-      return !this.isMovingManyMails
-        ? this.$t('global.moveMail')
-        : this.$t('global.moveManyMail');
+    folderName() {
+      return this.folder?.name;
     },
   },
   methods: {
+    submit() {
+      if (this.isValidToBeMoved) {
+        const location = this.selectedLocation;
+        this.close();
+
+        let destinationParam;
+        if (location?.type === SPACE_TYPE.FOLDER) {
+          destinationParam = {
+            destinationFolderId: location?.id,
+          };
+        } else {
+          destinationParam = {
+            workspaceId: location?.id,
+          };
+        }
+        this.$emit('confirm', {
+          destinationParam,
+          folderId: this.folder?.id,
+        });
+      }
+    },
     async fetchWorkspaces() {
       const { $axios } = this;
       try {
@@ -56,39 +69,18 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
-    submit() {
-      if (this.isValidToBeMoved) {
-        this.close();
-        const location = this.selectedLocation;
-        let destinationParam;
-        if (location?.type === SPACE_TYPE.FOLDER) {
-          destinationParam = {
-            parentFolderId: location?.id,
-          };
-        } else {
-          destinationParam = {
-            workspaceId: location?.id,
-          };
-        }
-        this.$emit('confirm', {
-          destinationParam,
-          mailingId: this.mail?.id,
-        });
-      }
-    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]) {
         this.selectedLocation = selectedItems[0];
       }
     },
-    open(selectedMail) {
+    open(selectedFolder) {
       this.fetchWorkspaces();
-      this.mail = selectedMail.mail;
-      this.currentLocation = selectedMail.location;
-      this.$refs.moveMailDialog.open();
+      this.folder = selectedFolder;
+      this.$refs.moveFolderDialog.open();
     },
     close() {
-      this.$refs.moveMailDialog.close();
+      this.$refs.moveFolderDialog.close();
       this.selectedLocation = {};
     },
   },
@@ -96,8 +88,8 @@ export default {
 </script>
 <template>
   <bs-modal-confirm
-    ref="moveMailDialog"
-    :title="`${confirmationTitleLabel} ${mailName}`"
+    ref="moveFolderDialog"
+    :title="`${this.$t('global.moveFolderAction')}  ${folderName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
     @click-outside="close"
@@ -141,7 +133,7 @@ export default {
         {{ $t('global.cancel') }}
       </v-btn>
       <v-btn :disabled="!isValidToBeMoved" color="primary" @click="submit">
-        {{ moveLabelButton }}
+        {{ $t('global.moveFolderAction') }}
       </v-btn>
     </v-card-actions>
   </bs-modal-confirm>

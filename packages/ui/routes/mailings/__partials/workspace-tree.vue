@@ -3,20 +3,22 @@ import {
   getFolder,
   workspacesByGroup,
   deleteFolder,
+  moveFolder,
 } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import ModalMoveFolder from './modal-move-folder.vue';
 
 export default {
   name: 'WorkspaceTree',
+  components: { FolderRenameModal, BsModalConfirmForm, ModalMoveFolder },
+  mixins: [mixinCurrentLocation],
   props: {
     mailings: { type: Array, default: () => [] },
   },
-  components: { FolderRenameModal, BsModalConfirmForm },
-  mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
     workspaceIsError: false,
@@ -32,7 +34,9 @@ export default {
       return { id: this.currentLocation };
     },
     confirmCheckBox() {
-      return !!this.selectedItemToDelete?.children?.length || !!this.mailings?.length;
+      return (
+        !!this.selectedItemToDelete?.children?.length || !!this.mailings?.length
+      );
     },
   },
   async mounted() {
@@ -82,6 +86,9 @@ export default {
       this.$refs.deleteDialog.open({
         ...this.selectedItemToDelete,
       });
+    },
+    displayMoveModal(item) {
+      this.$refs.moveModal.open(item);
     },
     async handleDelete(selected) {
       const { $axios } = this;
@@ -141,6 +148,39 @@ export default {
           color: 'error',
         });
       }
+    },
+    async onMoveFolder(params) {
+      const { destinationParam, folderId } = params;
+      try {
+        await this.$axios.$post(moveFolder(folderId), {
+          folderId,
+          ...destinationParam,
+        });
+
+        let routerRedirectionParam;
+        if (destinationParam?.parentFolderId) {
+          routerRedirectionParam = {
+            fid: destinationParam?.destinationFolderId,
+          };
+        } else {
+          routerRedirectionParam = { wid: destinationParam?.workspaceId };
+        }
+
+        await this.$router.push({
+          query: routerRedirectionParam,
+        });
+        this.showSnackbar({
+          text: this.$t('folders.moveFolderSuccessful'),
+          color: 'success',
+        });
+        await this.fetchData();
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+      this.$refs.moveModal.close();
     },
   },
 };
@@ -202,6 +242,16 @@ export default {
                 {{ $t('global.delete') }}
               </v-list-item-title>
             </v-list-item>
+            <v-list-item nuxt @click="displayMoveModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>drive_file_move</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.move') }}
+              </v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
       </template>
@@ -228,6 +278,12 @@ export default {
       :loading-parent="workspacesIsLoading"
       @rename-folder="handleRenameFolder"
     />
+    <modal-move-folder ref="moveModal" @confirm="onMoveFolder">
+      <p
+        class="black--text"
+        v-html="$t('folders.moveFolderConfirmationMessage')"
+      />
+    </modal-move-folder>
   </v-skeleton-loader>
 </template>
 

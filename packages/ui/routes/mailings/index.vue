@@ -243,7 +243,7 @@ export default {
         </v-list-item>
       </v-list>
       <div class="list-container">
-        <workspace-tree ref="workspaceTree" :mailings="mailings"/>
+        <workspace-tree ref="workspaceTree" :mailings="mailings" />
       </div>
     </template>
     <v-card>
