@@ -392,7 +392,6 @@ async function findAllIn(mailingsIds) {
 async function checkAccessMailingsSource(mailings, user) {
   for (const mailing of mailings) {
     if (!mailing._workspace && !mailing._parentFolder) {
-      console.log({mailing})
       throw new UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
     }
 
