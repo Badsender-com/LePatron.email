@@ -142,6 +142,7 @@ export default {
       } catch (error) {
         if (error?.response?.status === 409) {
           this.conflictError = true;
+          return;
         }
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
