@@ -108,10 +108,7 @@ function checkCreationPayload(folder) {
   }
 }
 
-async function getOnlyWorkspaceOrParentFolderParam({
-  _workspace,
-  _parentFolder,
-}) {
+function getOnlyWorkspaceOrParentFolderParam({ _workspace, _parentFolder }) {
   if (_workspace) {
     return { _workspace };
   }
