@@ -389,31 +389,70 @@ async function findAllIn(mailingsIds) {
   return mailings;
 }
 
-async function moveManyMailings(user, mailingsIds, workspaceId) {
-  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
-  workspaceService.doesUserHaveWriteAccess(user, destinationWorkspace);
-
-  const mailings = await findAllIn(mailingsIds);
-
+async function checkAccessMailingsSource(mailings, user) {
   for (const mailing of mailings) {
-    if (!mailing._workspace) {
+    if (!mailing._workspace && !mailing._parentFolder) {
       throw new UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
     }
 
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing._workspace
+    if (mailing._workspace) {
+      const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+      workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+    }
+
+    if (mailing._parentFolder) {
+      await folderService.hasAccess(mailing._parentFolder, user);
+    }
+  }
+}
+
+async function moveManyMailings(user, mailingsIds, destination) {
+  const { workspaceId, parentFolderId } = destination;
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+
+  // moving to a folder
+  if (parentFolderId) {
+    await folderService.hasAccess(parentFolderId, user);
+
+    const mailings = await findAllIn(mailingsIds);
+    await checkAccessMailingsSource(mailings, user)
+
+    const moveResponse = await Mailings.updateMany(
+      { _id: { $in: mailings.map((mailing) => mailing.id) } },
+      {
+        _parentFolder: mongoose.Types.ObjectId(parentFolderId),
+        $unset: { _workspace: ''}
+      }
     );
-    workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
+
+    if (moveResponse.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+    }
+
+    return;
   }
 
-  const moveResponse = await Mailings.updateMany(
-    { _id: { $in: mailings.map((mailing) => mailing.id) } },
-    { _workspace: destinationWorkspace }
-  );
+  // moving to a workspace
+  if (workspaceId) {
+    const destination = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destination);
 
-  if (moveResponse.ok !== 1) {
-    throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+    const mailings = await findAllIn(mailingsIds);
+    await checkAccessMailingsSource(mailings, user)
+
+    const moveResponse = await Mailings.updateMany(
+      { _id: { $in: mailings.map((mailing) => mailing.id) } },
+      {
+        _workspace: mongoose.Types.ObjectId(workspaceId),
+        $unset: { _parentFolder: '' }
+      }
+    );
+
+    if (moveResponse.ok !== 1) {
+      throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
+    }
   }
+
 }
 
 function applyFilters(query) {
