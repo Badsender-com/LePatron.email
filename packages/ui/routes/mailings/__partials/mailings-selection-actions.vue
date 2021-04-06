@@ -76,9 +76,9 @@ export default {
           ...destinationParam,
         });
 
-        const queryParam = destinationParam?.workspaceId ?
-          { wid: destinationParam.workspaceId } :
-          { fid: destinationParam.parentFolderId };
+        const queryParam = destinationParam?.parentFolderId ?
+          { fid: destinationParam.parentFolderId } :
+          { wid: destinationParam.workspaceId };
 
         this.$router.push({
           query: queryParam,
