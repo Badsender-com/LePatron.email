@@ -75,12 +75,15 @@ export default {
           mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
           ...destinationParam,
         });
+
+        const queryParam = destinationParam?.workspaceId ?
+          { wid: destinationParam.workspaceId } :
+          { fid: destinationParam.parentFolderId };
+
         this.$router.push({
-          query: {
-            wid:
-              destinationParam?.workspaceId || destinationParam?.parentFolderId,
-          },
+          query: queryParam,
         });
+
         this.showSnackbar({
           text: this.$t('mailings.moveManySuccessful'),
           color: 'success',
