@@ -181,17 +181,14 @@ async function move(req, res) {
 async function moveMany(req, res) {
   const {
     user,
-    body: { workspaceId, parentFolderId, mailingsIds },
+    body: { workspaceId, mailingsIds },
   } = req;
 
   if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
     throw new createError.BadRequest();
   }
 
-  await mailingService.moveManyMailings(user, mailingsIds, {
-    parentFolderId,
-    workspaceId,
-  });
+  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
 
   res.status(204).send();
 }
