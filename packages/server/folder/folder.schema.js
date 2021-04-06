@@ -2,7 +2,11 @@
 
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
-const { FolderModel, WorkspaceModel } = require('../constant/model.names.js');
+const {
+  FolderModel,
+  WorkspaceModel,
+  MailingModel,
+} = require('../constant/model.names.js');
 
 /**
  * @apiDefine folder
@@ -43,6 +47,13 @@ FolderSchema.add({
 
 FolderSchema.virtual('childFolders', {
   ref: FolderModel,
+  localField: '_id',
+  foreignField: '_parentFolder',
+  justOne: false,
+});
+
+FolderSchema.virtual('mails', {
+  ref: MailingModel,
   localField: '_id',
   foreignField: '_parentFolder',
   justOne: false,

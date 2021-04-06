@@ -2,6 +2,7 @@
 
 const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+
 const {
   NotFound,
   BadRequest,
@@ -22,7 +23,7 @@ module.exports = {
   getFolder,
   getWorkspaceForFolder,
   deleteFolder,
-  move
+  move,
 };
 
 async function listFolders() {
@@ -30,7 +31,6 @@ async function listFolders() {
 }
 
 async function hasAccess(folderId, user) {
-
   const workspace = await getWorkspaceForFolder(folderId);
 
   return (
@@ -84,7 +84,6 @@ async function create(folder, user) {
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     newFolder._parentFolder = parentFolder._id;
-    newFolder._workspace = parentFolder._workspace;
   }
 
   await isNameUniqueAtSameLevel(newFolder);
@@ -108,12 +107,28 @@ function checkCreationPayload(folder) {
   }
 }
 
+function getOnlyWorkspaceOrParentFolderParam({ _workspace, _parentFolder }) {
+  if (_workspace) {
+    return { _workspace };
+  }
+
+  if (_parentFolder) {
+    return { _parentFolder };
+  }
+}
+
 async function getFolder(folderId) {
   if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) });
+  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) })
+    .populate({
+      path: 'childFolders',
+    })
+    .populate({
+      path: 'mails',
+    });
 }
 
 async function deleteFolder(user, folderId) {
@@ -162,12 +177,12 @@ async function move(folderId, destination, user) {
     await checkIsParent(folderId);
 
     const moveToFolder = await Folders.updateOne(
-    { _id: mongoose.Types.ObjectId(folderId) },
+      { _id: mongoose.Types.ObjectId(folderId) },
       {
         _parentFolder: mongoose.Types.ObjectId(destinationFolderId),
-        $unset: { _workspace: '' }
+        $unset: { _workspace: '' },
       }
-    )
+    );
 
     if (moveToFolder.ok !== 1) {
       throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_MOVE);
@@ -179,30 +194,29 @@ async function move(folderId, destination, user) {
   // moving to a workspace
   if (workspaceId) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
-    workspaceService.doesUserHaveWriteAccess(user, workspace)
+    workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     const moveToWorkspace = await Folders.updateOne(
       { _id: mongoose.Types.ObjectId(folderId) },
       {
-        _workspace : mongoose.Types.ObjectId(workspaceId) ,
-        $unset: { _parentFolder: '' }
+        _workspace: mongoose.Types.ObjectId(workspaceId),
+        $unset: { _parentFolder: '' },
       }
-    )
+    );
 
     if (moveToWorkspace.ok !== 1) {
       throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_MOVE);
     }
   }
-
 }
 
 async function checkIsSubfolder(folderId) {
-  const folder = await Folders.findOne( {
+  const folder = await Folders.findOne({
     _id: mongoose.Types.ObjectId(folderId),
     _parentFolder: {
-      $exists: true
-    }
-  })
+      $exists: true,
+    },
+  });
 
   if (folder) {
     throw new NotAcceptable(ERROR_CODES.PARENT_FOLDER_IS_SUBFOLDER);
@@ -210,12 +224,12 @@ async function checkIsSubfolder(folderId) {
 }
 
 async function checkIsParent(folderId) {
-  const children = await Folders.find(
-    { _parentFolder: mongoose.Types.ObjectId(folderId) }
-  );
+  const children = await Folders.find({
+    _parentFolder: mongoose.Types.ObjectId(folderId),
+  });
 
   if (children.length) {
-    throw new NotAcceptable(ERROR_CODES.FOLDER_HAS_CHILDREN)
+    throw new NotAcceptable(ERROR_CODES.FOLDER_HAS_CHILDREN);
   }
 }
 
@@ -235,8 +249,15 @@ async function rename({ folderName, folderId }, user) {
   }
 
   await hasAccess(folderId, user);
+  const folder = await getFolder(folderId);
+  const workspaceOrParentFolderParam = await getOnlyWorkspaceOrParentFolderParam(
+    folder
+  );
 
-  await isNameUniqueAtSameLevel({ name: folderName });
+  await isNameUniqueAtSameLevel({
+    ...workspaceOrParentFolderParam,
+    name: folderName,
+  });
 
   const updateResponse = await Folders.updateOne(
     { _id: mongoose.Types.ObjectId(folderId) },
