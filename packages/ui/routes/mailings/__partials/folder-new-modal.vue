@@ -31,6 +31,7 @@ export default {
   methods: {
     open() {
       this.folderName = '';
+      this.$refs.form?.resetValidation();
       this.$refs.createNewFolderModal.open();
     },
     close() {
@@ -55,6 +56,7 @@ export default {
     modal-width="700"
     :title="$t('global.newFolder')"
     :is-form="true"
+    @click:outside="close"
   >
     <v-form ref="form" @submit.prevent="submit">
       <div class="d-flex flex-column mb-2">
@@ -72,7 +74,7 @@ export default {
         v-model="folderName"
         class="pt-1"
         :rules="[nameRule, maxLength]"
-        counter
+        counter="70"
         :label="this.$t('folders.name')"
         required
       />
