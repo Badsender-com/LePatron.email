@@ -15,8 +15,6 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const workspaceService = require('../workspace/workspace.service.js');
-const templateService = require('../template/template.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -50,29 +48,14 @@ module.exports = {
  * @apiSuccess {String[]} meta.tags all the tags used in those templates
  */
 
-async function list(req, res, next) {
+async function list(req, res) {
   const { user, query } = req;
-  const { workspaceId } = query;
+  const { workspaceId, parentFolderId } = query;
 
-  if (!workspaceId) {
-    return next(
-      new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED)
-    );
-  }
-
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (workspace?.group.toString() !== user.group.id) {
-    return next(new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND));
-  }
-
-  const mailings = await mailingService.findMailings({ workspaceId, user });
-  const tags = await mailingService.findTags({ workspaceId, user });
-
-  res.json({
-    meta: { tags },
-    items: mailings,
-  });
+  const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
+    { workspaceId, parentFolderId, user }
+  );
+  res.json(responseMailingList);
 }
 
 /**
@@ -90,44 +73,16 @@ async function list(req, res, next) {
 
 async function create(req, res) {
   const { user } = req;
-  const { templateId, workspaceId, mailingName } = req.body;
+  const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
-  if (!workspaceId) {
-    throw new createError.BadRequest(ERROR_CODES.WORKSPACE_ID_NOT_PROVIDED);
-  }
+  const response = await mailingService.createInsideWorkspaceOrFolder({
+    templateId,
+    workspaceId,
+    parentFolderId,
+    mailingName,
+    user,
+  });
 
-  const template = await templateService.findOne({ templateId });
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (!template) {
-    throw new createError.NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
-  }
-
-  if (!workspace) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  const mailing = {
-    // Always give a default name: needed for ordering & filtering
-    name: mailingName || simpleI18n('default-mailing-name', user.lang),
-    templateId: template._id,
-    templateName: template.name,
-    workspace: workspaceId,
-  };
-
-  // admin doesn't have valid user id & company
-  if (!user.isAdmin) {
-    mailing.userId = user.id;
-    mailing.userName = user.name;
-    mailing.group = user.group.id;
-  }
-
-  const newMailing = await mailingService.createMailing(mailing);
-
-  // strangely toJSON doesn't render the data object
-  // • cope with that by manually copy it in the response
-  const response = newMailing.toJSON();
-  response.data = newMailing.data;
   res.json(response);
 }
 
@@ -195,18 +150,18 @@ async function move(req, res) {
   const {
     user,
     params: { mailingId },
-    body: { workspaceId },
+    body: { workspaceId, parentFolderId },
   } = req;
 
   const mailing = await mailingService.findOne(mailingId);
 
-  if (!mailing._workspace) {
+  if (!mailing._workspace && !mailing._parentFolder) {
     throw new createError.UnprocessableEntity(
       ERROR_CODES.MAILING_MISSING_SOURCE
     );
   }
 
-  await mailingService.moveMailing(user, mailing, workspaceId);
+  await mailingService.moveMailing(user, mailing, workspaceId, parentFolderId);
 
   res.status(204).send();
 }
@@ -226,14 +181,14 @@ async function move(req, res) {
 async function moveMany(req, res) {
   const {
     user,
-    body: { workspaceId, mailingsIds },
+    body: { workspaceId, parentFolderId, mailingsIds },
   } = req;
 
   if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
     throw new createError.BadRequest();
   }
 
-  await mailingService.moveManyMailings(user, mailingsIds, workspaceId);
+  await mailingService.moveManyMailings(user, mailingsIds, { workspaceId, parentFolderId });
 
   res.status(204).send();
 }
@@ -253,36 +208,42 @@ async function moveMany(req, res) {
  */
 
 async function rename(req, res) {
-  const { mailingId } = req.params;
-  const { user } = req;
-  const { name, workspaceId } = req.body;
+  const {
+    user,
+    params: { mailingId },
+    body: { mailingName, workspaceId, parentFolderId },
+  } = req;
 
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-  const mailing = await mailingService.findOne(mailingId);
+  await mailingService.renameMailing(
+    { mailingId, mailingName, workspaceId, parentFolderId },
+    user
+  );
 
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
+  res.status(204).send();
+}
 
-  if (
-    (!user.isGroupAdmin &&
-      !workspaceService.workspaceContainsUser(workspace, user)) ||
-    mailing?._workspace.toString() !== workspaceId
-  ) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_RENAME);
-  }
+/**
+ * @api {post} /mailings/copy mailing copy
+ * @apiPermission user
+ * @apiName CopyMailing
+ * @apiGroup Mailings
+ *
+ * @apiParam (Body) {String} mailingId
+ * @apiParam (Body) {String} workspaceId
+ * @apiParam (Body) {String} folderId
 
-  mailing.name = name;
+ * @apiUse mailings
+ */
 
-  const updateResponse = await mailingService.renameMailing(mailing);
+async function copy(req, res) {
+  const {
+    user,
+    body: { workspaceId, folderId, mailingId },
+  } = req;
 
-  if (updateResponse.ok !== 1) {
-    throw new createError.InternalServerError(
-      ERROR_CODES.FAILED_MAILING_RENAME
-    );
-  }
+  await mailingService.copyMailing(mailingId, { workspaceId, folderId }, user);
 
-  res.send();
+  res.status(204).send();
 }
 
 /**
@@ -295,53 +256,6 @@ async function rename(req, res) {
  *
  * @apiUse mailings
  */
-
-/**
- * @api {post} /mailings/:mailingId/copy mailing copy
- * @apiPermission user
- * @apiName CopyMailing
- * @apiGroup Mailings
- *
- * @apiParam {string} mailingId
- * @apiParam (Body) {String} workspaceId
-
- * @apiUse mailings
- */
-
-async function copy(req, res) {
-  const { user } = req;
-  const { workspaceId, mailingId } = req.body;
-
-  const mailing = await mailingService.findOne(mailingId);
-
-  if (!mailing._workspace) {
-    throw new createError.UnprocessableEntity(
-      ERROR_CODES.MAILING_MISSING_SOURCE
-    );
-  }
-
-  const sourceWorkspace = await workspaceService.getWorkspace(
-    mailing._workspace
-  );
-  const destinationWorkspace = await workspaceService.getWorkspace(workspaceId);
-
-  if (
-    sourceWorkspace.group.toString() !== user.group.id ||
-    destinationWorkspace.group.toString() !== user.group.id
-  ) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  if (!user.isGroupAdmin) {
-    if (!workspaceService.workspaceContainsUser(destinationWorkspace, user)) {
-      throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_COPY);
-    }
-  }
-
-  await mailingService.copyMailing(mailing, destinationWorkspace, user);
-
-  res.status(204).send();
-}
 
 // TODO: while duplicating we should copy only the used images by the creation
 async function duplicate(req, res) {
@@ -497,13 +411,12 @@ async function bulkDestroy(req, res) {
   // Mongo responseFormat
   // { n: 1, ok: 1, deletedCount: 1 }
   // => nothing useful for a response :/
-  const [mailingDeletionResult, galleryDeletionResult] = await Promise.all([
+  await Promise.all([
     Mailings.deleteMany({ _id: { $in: safeMailingsIdList } }),
     Galleries.deleteMany({
       creationOrWireframeId: { $in: safeMailingsIdList },
     }),
   ]);
-  console.log({ mailingDeletionResult, galleryDeletionResult });
   const tags = await Mailings.findTags(
     modelsUtils.addStrictGroupFilter(req.user, {})
   );
@@ -527,30 +440,14 @@ async function bulkDestroy(req, res) {
 async function deleteMailing(req, res) {
   const { mailingId } = req.params;
   const { user } = req;
-  const { workspaceId } = req.body;
+  const { workspaceId, parentFolderId } = req.body;
 
-  const workspace = await workspaceService.getWorkspace(workspaceId);
-  const mailing = await mailingService.findOne(mailingId);
-
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new createError.NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
-  }
-
-  if (
-    (!user.isGroupAdmin &&
-      !workspaceService.workspaceContainsUser(workspace, user)) ||
-    mailing?._workspace.toString() !== workspaceId
-  ) {
-    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_MAILING_DELETE);
-  }
-
-  const deleteResponse = await mailingService.deleteOne(mailing);
-
-  if (deleteResponse.ok !== 1) {
-    throw new createError.InternalServerError(
-      ERROR_CODES.FAILED_MAILING_DELETE
-    );
-  }
+  await mailingService.deleteMailing({
+    mailingId,
+    workspaceId,
+    parentFolderId,
+    user,
+  });
 
   res.send();
 }

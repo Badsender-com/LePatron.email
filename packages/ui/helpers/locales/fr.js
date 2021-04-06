@@ -31,11 +31,14 @@ export default {
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
+    moveFolderAction: 'Déplacer le dossier',
     moveMail: 'Déplacer',
     location: 'Destination',
     moveManyMail: 'Déplacer les emails',
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
+    newFolder: 'Ajouter un dossier',
+    parentLocation: 'Emplacement du parent',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Ajouter un email',
@@ -141,6 +144,7 @@ export default {
       checkBoxError:
         'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
       inputError: 'Le nom est requis',
+      inputMaxLength: 'Maximum 70 caractères',
     },
   },
   groups: {
@@ -152,6 +156,11 @@ export default {
       deleteWarningMessage:
         'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
       deleteSuccessful: 'Email supprimé',
+      deleteFolderWarning:
+        'Vous êtes sur le point de supprimer le dossier "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteFolderNotice:
+        'Les emails et les dossiers que contient le dossier seront supprimés aussi',
+      deleteFolderSuccessful: 'Dossier supprimé',
     },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
@@ -194,6 +203,7 @@ export default {
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
     moveManySuccessful: 'Emails déplacés',
+    editTagsSuccessful: 'Labels mis à jour',
   },
   template: {
     noId: 'Aucun ID',
@@ -242,6 +252,17 @@ export default {
     description: 'Descritpion',
     members: 'Membres',
     userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
+  },
+  folders: {
+    name: 'Nom du dossier',
+    nameUpdated: 'Dossier renommé',
+    renameTitle:
+      'Renommer le dossier <strong class="black--text">{name}</strong> ',
+    rename: 'Renommer',
+    created: 'Dossier créé',
+    conflict: 'Le dossier existe déjà',
+    moveFolderConfirmationMessage: 'Veuillez choisir la destination',
+    moveFolderSuccessful: 'Dossier déplacé',
   },
   tableHeaders: {
     groups: {

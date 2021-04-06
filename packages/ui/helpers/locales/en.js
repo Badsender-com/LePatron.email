@@ -32,10 +32,13 @@ export default {
     addTags: 'Add tags',
     copyMail: 'Copy',
     copyMailAction: 'Create copy',
+    moveFolderAction: 'Move folder',
     moveMail: 'Move',
     location: 'Location',
     moveManyMail: 'Move',
     newTemplate: 'Add a template',
+    newFolder: 'Add a folder',
+    parentLocation: 'Parent location',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
@@ -143,6 +146,8 @@ export default {
       checkBoxError:
         'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
+      inputMaxLength: 'Maximum 70 characters',
+      moveFolderConfirmationMessage: 'Please choose the destination',
     },
   },
   groups: {
@@ -154,6 +159,11 @@ export default {
       deleteWarningMessage:
         'You are about to delete the "<strong>{name}</strong>" mailing. This action can\'t be undone.',
       deleteSuccessful: 'Mailing deleted',
+      deleteFolderWarning:
+        'You are about to delete the "<strong>{name}</strong>" folder. This action can\'t be undone.',
+      deleteFolderNotice:
+        'Emails and folders contained in the folder will also be deleted',
+      deleteFolderSuccessful: 'Folder deleted',
     },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
@@ -190,9 +200,9 @@ export default {
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
     copyMailSuccessful: 'Mail copied',
-    moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
+    editTagsSuccessful: 'Tags updated',
   },
   template: {
     noId: 'No ID',
@@ -238,6 +248,16 @@ export default {
     description: 'Descritpion',
     members: 'Members',
     userIsGroupAdmin: 'The user is a group admin',
+  },
+  folders: {
+    name: 'Folder name',
+    nameUpdated: 'Folder renamed',
+    renameTitle: 'Rename folder <strong  class="black--text">{name}</strong> ',
+    rename: 'Rename',
+    created: 'Folder created',
+    conflict: 'Folder already exists',
+    moveFolderConfirmationMessage: 'Please choose the destination',
+    moveFolderSuccessful: 'Folder moved',
   },
   tableHeaders: {
     groups: {

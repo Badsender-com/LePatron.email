@@ -25,6 +25,9 @@ export default {
       this.close();
       this.$emit('confirm');
     },
+    onClickOutside() {
+      this.$emit('click-outside');
+    },
   },
 };
 </script>
@@ -35,10 +38,11 @@ export default {
     v-bind="$attrs"
     :width="modalWidth"
     class="bs-modal-confirm"
+    @click:outside="onClickOutside"
   >
     <v-card>
       <v-card-title class="headline">
-        {{ title }}
+        <p class="grey--text text--darken-3" v-html="title" />
       </v-card-title>
       <v-card-text>
         <slot />

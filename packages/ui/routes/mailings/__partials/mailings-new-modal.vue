@@ -3,7 +3,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 
 export default {
   name: 'MailingsModalNew',
@@ -55,7 +55,7 @@ export default {
       this.$refs.createNewMailModal.open();
     },
     close() {
-      this.$refs.form.reset();
+      this.$refs.form?.reset();
       this.$refs.createNewMailModal.close();
     },
     async submit() {

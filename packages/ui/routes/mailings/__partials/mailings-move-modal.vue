@@ -2,6 +2,7 @@
 import BsModalConfirm from '~/components/modal-confirm';
 import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'ModalMoveMail',
@@ -16,7 +17,7 @@ export default {
   data() {
     return {
       mail: null,
-      currentWorkspace: null,
+      currentLocation: null,
       workspaces: [],
       workspaceIsError: false,
       workspacesIsLoading: false,
@@ -30,7 +31,7 @@ export default {
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
-        this.selectedLocation?.id !== this.currentWorkspace?.id
+        this.selectedLocation?.id !== this.currentLocation
       );
     },
     mailName() {
@@ -42,24 +43,35 @@ export default {
         : this.$t('global.moveManyMail');
     },
   },
-  async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
-  },
   methods: {
+    async fetchWorkspaces() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
+      }
+    },
     submit() {
       if (this.isValidToBeMoved) {
+        const location = this.selectedLocation;
         this.close();
+        let destinationParam;
+        if (location?.type === SPACE_TYPE.FOLDER) {
+          destinationParam = {
+            parentFolderId: location?.id,
+          };
+        } else {
+          destinationParam = {
+            workspaceId: location?.id,
+          };
+        }
         this.$emit('confirm', {
-          destinationWorkspaceId: this.selectedLocation?.id,
+          destinationParam,
           mailingId: this.mail?.id,
         });
       }
@@ -70,12 +82,14 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail.mail;
-      this.currentWorkspace = selectedMail.workspace;
+      this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
     },
     close() {
       this.$refs.moveMailDialog.close();
+      this.selectedLocation = {};
     },
   },
 };
@@ -86,6 +100,7 @@ export default {
     :title="`${confirmationTitleLabel} ${mailName}`"
     :is-form="true"
     class="modal-confirm-move-mail"
+    @click-outside="close"
   >
     <slot />
     <v-skeleton-loader
@@ -140,6 +155,7 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
+  max-height: 400px;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;

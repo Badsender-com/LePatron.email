@@ -1,7 +1,18 @@
 import { WORKSPACE } from '../../server/constant/space-type';
-import { getRecursiveFolderMap } from '~/utils/folders';
+import {
+  getRecursiveFolderMap,
+  getFoldersMapWithoutSubFolder,
+} from '~/utils/folders';
 
 export function getTreeviewWorkspaces(workspaces) {
+  return getTreeview(workspaces, getRecursiveFolderMap);
+}
+
+export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
+  return getTreeview(workspaces, getFoldersMapWithoutSubFolder);
+}
+
+export function getTreeview(workspaces, callback) {
   return workspaces.map((workspace) => {
     const path = {
       name: workspace.name,
@@ -21,7 +32,7 @@ export function getTreeviewWorkspaces(workspaces) {
     if (workspace.folders?.length > 0) {
       mapWorkspaceToTreeviewTypeData = {
         children: workspace.folders.map((folder) =>
-          getRecursiveFolderMap(folder, workspace.hasRights, path)
+          callback(folder, workspace.hasRights, path)
         ),
         ...mapWorkspaceToTreeviewTypeData,
       };
@@ -29,7 +40,6 @@ export function getTreeviewWorkspaces(workspaces) {
     return mapWorkspaceToTreeviewTypeData;
   });
 }
-
 // Flatten the path from the current location element, this is required to match the data expected by the breadcrumbs component
 export function getPathToBreadcrumbsDataType(selectedMenuLocation) {
   let items = [];
