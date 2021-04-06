@@ -102,6 +102,7 @@ async function deleteFolderContent(folderId) {
 async function createWorkspace(workspace) {
   if (
     await existsByName({
+      workspaceId: null,
       workspaceName: workspace?.name,
       groupId: workspace?.groupId,
     })
