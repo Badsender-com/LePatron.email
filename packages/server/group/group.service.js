@@ -4,6 +4,8 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Groups, Users, Workspaces, Mailings } = require('../common/models.common.js');
+const Roles = require('../account/roles');
+
 const mongoose = require('mongoose');
 const workspaceService = require('../workspace/workspace.service.js');
 
@@ -25,6 +27,15 @@ async function seedGroups() {
   // for each of these groups, create default workspace and add group users to it
   for (const company of companiesWithNoWorkspaces) {
     const companyUsers = await Users.find({ _company: mongoose.Types.ObjectId(company.id) });
+
+    const updateUsers = await Users.updateMany(
+      { _id: { $in: companyUsers.map(user => mongoose.Types.ObjectId(user._id)) } },
+      { role: Roles.REGULAR_USER }
+    );
+
+    if (updateUsers.ok !== 1) {
+      throw new createError.InternalServerError(ERROR_CODES.FAILED_USERS_UPDATE)
+    }
 
     const defaultWorkspace = {
       name: 'Workspace',
