@@ -144,7 +144,7 @@ export default {
       checkBoxError:
         'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
       inputError: 'Le nom est requis',
-      inputMaxLength: 'Maximum 70 caractères',
+      inputMaxLength: 'Le nom ne doit pas dépasser 70 caractères',
     },
   },
   groups: {

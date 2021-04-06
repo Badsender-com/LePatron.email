@@ -146,7 +146,7 @@ export default {
       checkBoxError:
         'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
-      inputMaxLength: 'Maximum 70 characters',
+      inputMaxLength: 'Name must not exceed 70 characters',
       moveFolderConfirmationMessage: 'Please choose the destination',
     },
   },
