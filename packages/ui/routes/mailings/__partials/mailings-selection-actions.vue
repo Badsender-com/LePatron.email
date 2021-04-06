@@ -69,14 +69,17 @@ export default {
         console.log(error);
       }
     },
-    async moveManyMails({ destinationWorkspaceId, _ }) {
+    async moveManyMails({ destinationParam }) {
       try {
         await this.$axios.$post(moveManyMails(), {
           mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
-          workspaceId: destinationWorkspaceId,
+          ...destinationParam,
         });
         this.$router.push({
-          query: { wid: destinationWorkspaceId },
+          query: {
+            wid:
+              destinationParam?.workspaceId || destinationParam?.parentFolderId,
+          },
         });
         this.showSnackbar({
           text: this.$t('mailings.moveManySuccessful'),

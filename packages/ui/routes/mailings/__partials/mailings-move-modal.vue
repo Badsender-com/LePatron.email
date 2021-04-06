@@ -58,8 +58,8 @@ export default {
     },
     submit() {
       if (this.isValidToBeMoved) {
-        this.close();
         const location = this.selectedLocation;
+        this.close();
         let destinationParam;
         if (location?.type === SPACE_TYPE.FOLDER) {
           destinationParam = {
