@@ -123,6 +123,7 @@ export default {
       }
     },
     openRenameFolderModal(folder) {
+      this.conflictError = false;
       this.$refs.modalRenameFolderDialog.open(folder);
     },
     async handleRenameFolder({ folderName, folderId }) {
@@ -231,16 +232,6 @@ export default {
               </v-list-item-avatar>
               <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
             </v-list-item>
-            <v-list-item nuxt @click="displayDeleteModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="primary" icon>
-                  <v-icon>delete</v-icon>
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
-                {{ $t('global.delete') }}
-              </v-list-item-title>
-            </v-list-item>
             <v-list-item nuxt @click="displayMoveModal(item)">
               <v-list-item-avatar>
                 <v-btn color="primary" icon>
@@ -249,6 +240,16 @@ export default {
               </v-list-item-avatar>
               <v-list-item-title>
                 {{ $t('global.move') }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item nuxt @click="displayDeleteModal(item)">
+              <v-list-item-avatar>
+                <v-btn color="primary" icon>
+                  <v-icon>delete</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.delete') }}
               </v-list-item-title>
             </v-list-item>
           </v-list>

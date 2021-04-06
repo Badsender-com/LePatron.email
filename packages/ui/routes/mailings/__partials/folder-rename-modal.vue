@@ -30,6 +30,7 @@ export default {
   methods: {
     open(folder) {
       this.selectedFolder = folder;
+      this.folderName = folder?.name || '';
       this.$refs.createRenameFolderModal.open();
     },
     close() {

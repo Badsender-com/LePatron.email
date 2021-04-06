@@ -30,6 +30,7 @@ export default {
   },
   methods: {
     open() {
+      this.folderName = '';
       this.$refs.createNewFolderModal.open();
     },
     close() {
