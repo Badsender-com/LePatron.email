@@ -1,5 +1,6 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
+import { FOLDER_NAME_MAX_LENGTH } from '~/helpers/constants/folders.js';
 
 export default {
   name: 'FolderRenameModal',
@@ -14,9 +15,11 @@ export default {
     return {
       selectedFolder: {},
       folderName: '',
+      folderNameMaxLength: FOLDER_NAME_MAX_LENGTH,
       nameRule: (v) => !!v || this.$t('forms.workspace.inputError'),
       maxLength: (value) =>
-        (value || '').length <= 70 || this.$t('forms.workspace.inputMaxLength'),
+        (value || '').length <= FOLDER_NAME_MAX_LENGTH ||
+        this.$t('forms.workspace.inputMaxLength'),
     };
   },
   computed: {
@@ -26,7 +29,9 @@ export default {
       });
     },
     isValidToRename() {
-      return !!this.folderName && this.folderName?.length <= 70;
+      return (
+        !!this.folderName && this.folderName?.length <= FOLDER_NAME_MAX_LENGTH
+      );
     },
   },
   methods: {
@@ -68,7 +73,7 @@ export default {
         v-model="folderName"
         class="pt-1"
         :rules="[nameRule, maxLength]"
-        counter="70"
+        :counter="folderNameMaxLength"
         :label="this.$t('folders.name')"
         required
       />
