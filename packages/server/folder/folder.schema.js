@@ -27,7 +27,6 @@ const FolderSchema = Schema(
     _workspace: {
       type: ObjectId,
       ref: WorkspaceModel,
-      required: [true, 'Workspace is required'],
     },
   },
   {
