@@ -2,6 +2,7 @@
 
 const { Folders } = require('../common/models.common.js');
 const mongoose = require('mongoose');
+
 const {
   NotFound,
   BadRequest,
@@ -83,7 +84,6 @@ async function create(folder, user) {
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
     newFolder._parentFolder = parentFolder._id;
-    newFolder._workspace = parentFolder._workspace;
   }
 
   await isNameUniqueAtSameLevel(newFolder);
@@ -104,6 +104,16 @@ function checkCreationPayload(folder) {
 
   if (workspaceId && parentFolderId) {
     throw new BadRequest(ERROR_CODES.TWO_PARENTS_PROVIDED);
+  }
+}
+
+function getOnlyWorkspaceOrParentFolderParam({ _workspace, _parentFolder }) {
+  if (_workspace) {
+    return { _workspace };
+  }
+
+  if (_parentFolder) {
+    return { _parentFolder };
   }
 }
 
@@ -239,8 +249,15 @@ async function rename({ folderName, folderId }, user) {
   }
 
   await hasAccess(folderId, user);
+  const folder = await getFolder(folderId);
+  const workspaceOrParentFolderParam = await getOnlyWorkspaceOrParentFolderParam(
+    folder
+  );
 
-  await isNameUniqueAtSameLevel({ name: folderName });
+  await isNameUniqueAtSameLevel({
+    ...workspaceOrParentFolderParam,
+    name: folderName,
+  });
 
   const updateResponse = await Folders.updateOne(
     { _id: mongoose.Types.ObjectId(folderId) },
