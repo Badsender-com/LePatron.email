@@ -371,6 +371,7 @@ async function previewMail({ mailingId, cookies }) {
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
       waitUntil: 'networkidle0',
+      timeout: 0,
     });
 
     await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load

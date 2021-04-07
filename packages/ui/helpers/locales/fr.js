@@ -71,6 +71,7 @@ export default {
     show: 'Visualiser',
     download: 'Télécharger',
     preview: 'Prévisualiser',
+    previewMailAlt: 'Aperçu du template du mail',
     newPreview: 'Créer une prévisulisation',
     name: 'Nom',
     description: 'Description',
