@@ -123,6 +123,10 @@ export function moveMail(routeParams = {}) {
 export function moveManyMails() {
   return '/mailings/move-many';
 }
+
+export function preview(mailingId) {
+  return `/mailings/${mailingId}/preview`;
+}
 /// ///
 // IMAGES
 /// ///

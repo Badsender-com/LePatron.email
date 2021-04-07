@@ -5,6 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
 import ModalCopyMail from '~/routes/mailings/__partials/mailings-copy-modal';
 import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
+import PreviewMail from '~/routes/mailings/__partials/preview-mail';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
@@ -47,6 +48,7 @@ export default {
     BsMailingsActionsDropdownItem,
     MailingsTagsMenu,
     ModalMoveMail,
+    PreviewMail,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -64,9 +66,6 @@ export default {
       actions: ACTIONS,
       actionsDetails: ACTIONS_DETAILS,
     };
-  },
-  async mounted() {
-    await this.getFolderAndWorkspaceData(this.$axios, this.$route);
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
@@ -92,6 +91,7 @@ export default {
     tablesHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
+        { text: this.$t('global.preview'), align: 'left', value: 'preview' },
         { text: this.$t('global.author'), align: 'left', value: 'userName' },
         {
           text: this.$tc('global.template', 1),
@@ -134,6 +134,9 @@ export default {
     dialogRename(val) {
       val || this.closeRename();
     },
+  },
+  async mounted() {
+    await this.getFolderAndWorkspaceData(this.$axios, this.$route);
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -347,6 +350,18 @@ export default {
           {{ item.name }}
         </template>
       </template>
+      <template #item.preview="{ item }">
+        <v-menu open-on-hover center offset-overflow>
+          <template #activator="{ on }">
+            <v-btn color="primary" icon v-on="on">
+              <v-icon>visibility</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <preview-mail :mailing-id="item.id" />
+          </v-list>
+        </v-menu>
+      </template>
       <template #item.userName="{ item }">
         <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
           {{ item.userName }}
@@ -455,3 +470,9 @@ export default {
     </modal-move-mail>
   </div>
 </template>
+
+<style>
+.v-list {
+  cursor: pointer;
+}
+</style>

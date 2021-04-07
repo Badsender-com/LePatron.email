@@ -6,7 +6,10 @@ const path = require('path');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer');
 const asyncHandler = require('express-async-handler');
-const createError = require('http-errors');
+
+const { NotFound } = require('http-errors');
+
+const ERROR_CODES = require('../constant/error-codes.js');
 
 const config = require('../node.config.js');
 const { Templates } = require('../common/models.common.js');
@@ -16,16 +19,19 @@ const slugFilename = require('../helpers/slug-filename');
 const badsenderEvents = require('../helpers/event-bus.js');
 const eventsNames = require('../helpers/event-names.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const _getMailImagePrefix = require('../utils/get-mail-image-prefix.js');
 
 // on heroku this build pack is needed
 // https://github.com/jontewks/puppeteer-heroku-buildpack
 const PROTOCOL = `http${config.forcessl ? 's' : ''}://`;
 const VERSION_PAGE = `${PROTOCOL}${config.host}/api/version`;
 const BLOCK_SELECTOR = '[data-ko-container] [data-ko-block]';
-
+const BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP = 'main-wysiwyg-area';
+const BLOCK_BODY_MAIL_SELECTOR = `#${BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP}`;
 module.exports = {
   previewMarkup: asyncHandler(previewMarkup),
   generatePreviews: asyncHandler(generatePreviews),
+  previewMail: asyncHandler(previewMail),
   // asyncHandler for SSE routes is not needed
   previewEvents,
 };
@@ -46,8 +52,8 @@ module.exports = {
 async function previewMarkup(req, res) {
   const { templateId } = req.params;
   const template = await Templates.findById(templateId, { markup: 1 }).lean();
-  if (!template) throw createError(404);
-  if (!template.markup) throw createError(404);
+  if (!template) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  if (!template.markup) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   res.send(template.markup);
 }
 
@@ -55,6 +61,12 @@ function getMarkupPreviewUrl(templateId) {
   const markupPreviewUrl = `${PROTOCOL}${config.host}/api/templates/${templateId}/preview`;
   console.log({ markupPreviewUrl });
   return markupPreviewUrl;
+}
+
+function getMailPreviewUrl(mailingId) {
+  const mailPreviewUrl = `${PROTOCOL}${config.host}/editor/${mailingId}`;
+  console.log({ mailPreviewUrl });
+  return mailPreviewUrl;
 }
 
 function logDuration(message, start) {
@@ -78,8 +90,8 @@ async function generatePreviews(req, res) {
   const { cookies } = req;
   const { templateId } = req.params;
   const template = await Templates.findById(templateId, { markup: 1 }).lean();
-  if (!template) throw createError(404);
-  if (!template.markup) throw createError(404);
+  if (!template) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
+  if (!template.markup) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   // don't wait for the full preview to be generated
   createPreviews({ templateId, cookies }).catch((error) => console.log(error));
   res.json({ id: templateId, status: 'preview start' });
@@ -157,16 +169,7 @@ async function createPreviews({ templateId, cookies }) {
     payload: { templateId, message: logMessage },
   });
 
-  const browser = await puppeteer.launch({
-    // headless: false,
-    args: [
-      // https://peter.sh/experiments/chromium-command-line-switches/#hide-scrollbars
-      '--hide-scrollbars',
-      '--mute-audio',
-      // https://github.com/jontewks/puppeteer-heroku-buildpack#puppeteer-heroku-buildpack
-      '--no-sandbox',
-    ],
-  });
+  const browser = await getHeadlessBrowser();
   // make a big try/catch to close browser on error
   try {
     const page = await browser.newPage();
@@ -354,4 +357,82 @@ async function createPreviews({ templateId, cookies }) {
     await browser.close();
     throw error;
   }
+}
+
+async function previewMail({ mailingId, cookies }) {
+  const browser = await getHeadlessBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.goto(VERSION_PAGE);
+    // copy cookies to keep authentication
+    // • req.cookies are a big object
+    // • puppeteer expect each cookie as an argument
+    //   https://pptr.dev/#?product=Puppeteer&version=v1.11.0&show=api-pagesetcookiecookies
+    const puppeteersCookies = Object.entries(cookies).map(([name, value]) => ({
+      name,
+      value,
+    }));
+    await page.setCookie(...puppeteersCookies);
+    await page.goto(getMailPreviewUrl(mailingId), {
+      waitUntil: 'networkidle0',
+    });
+
+    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR); // wait for the selector to load
+    const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR);
+    const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
+
+    const {
+      width,
+      height,
+      imagePreviewNameWithExtension,
+    } = await page.evaluate(
+      ({
+        BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP,
+        imagePreviewNameWithoutExtension,
+      }) => {
+        const $element = document.getElementById(
+          BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP
+        );
+        return {
+          fileName: `${imagePreviewNameWithoutExtension}.png`,
+          width: Math.round($element.scrollWidth),
+          height: Math.round($element.scrollHeight),
+        };
+      },
+      {
+        BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP,
+        imagePreviewNameWithoutExtension,
+      }
+    );
+
+    await page.setViewport({
+      width: width,
+      height: height,
+    });
+
+    const screenShot = await $element.screenshot({
+      path: imagePreviewNameWithExtension,
+    });
+
+    await browser.close();
+
+    return screenShot;
+  } catch (error) {
+    // close browser even if there is a problem
+    await browser.close();
+    throw error;
+  }
+}
+
+async function getHeadlessBrowser() {
+  return puppeteer.launch({
+    // headless: false,
+    args: [
+      // https://peter.sh/experiments/chromium-command-line-switches/#hide-scrollbars
+      '--hide-scrollbars',
+      '--mute-audio',
+      // https://github.com/jontewks/puppeteer-heroku-buildpack#puppeteer-heroku-buildpack
+      '--no-sandbox',
+    ],
+  });
 }
