@@ -191,6 +191,7 @@ export default {
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
+    errorPreview: 'Erreur lors du chargement de l\'aperçu.',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',

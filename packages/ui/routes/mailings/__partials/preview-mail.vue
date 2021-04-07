@@ -9,29 +9,35 @@ export default {
   data() {
     return {
       loading: false,
+      errorPreview: false,
       previewImage: null,
     };
   },
   async mounted() {
-    this.loading = true;
-    const { $axios } = this;
-    const previewResponse = await $axios.$get(preview(this.mailingId), {
-      responseType: 'arraybuffer',
-    });
-    this.previewImage = Buffer.from(previewResponse, 'binary').toString(
-      'base64'
-    );
-    this.loading = false;
+    try {
+      this.loading = true;
+      const { $axios } = this;
+      const previewResponse = await $axios.$get(preview(this.mailingId), {
+        responseType: 'arraybuffer',
+      });
+      this.previewImage = Buffer.from(previewResponse, 'binary').toString(
+        'base64'
+      );
+      this.loading = false;
+    } catch (error) {
+      this.errorPreview = true;
+    }
   },
 };
 </script>
 <template>
   <div class="pr-4 pl-4 preview_container d-flex justify-center align-center">
-    <v-progress-circular
-      v-if="loading"
-      indeterminate
-      color="primary"
-    />
+    <div v-if="errorPreview">
+      <p class="red--text">
+        {{ $t('mailings.errorPreview') }}
+      </p>
+    </div>
+    <v-progress-circular v-else-if="loading" indeterminate color="primary" />
     <div v-else class="max_height_img_container">
       <img
         class="max_width_img"

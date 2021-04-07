@@ -58,15 +58,11 @@ async function previewMarkup(req, res) {
 }
 
 function getMarkupPreviewUrl(templateId) {
-  const markupPreviewUrl = `${PROTOCOL}${config.host}/api/templates/${templateId}/preview`;
-  console.log({ markupPreviewUrl });
-  return markupPreviewUrl;
+  return `${PROTOCOL}${config.host}/api/templates/${templateId}/preview`;
 }
 
 function getMailPreviewUrl(mailingId) {
-  const mailPreviewUrl = `${PROTOCOL}${config.host}/editor/${mailingId}`;
-  console.log({ mailPreviewUrl });
-  return mailPreviewUrl;
+  return `${PROTOCOL}${config.host}/editor/${mailingId}`;
 }
 
 function logDuration(message, start) {
