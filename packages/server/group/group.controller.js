@@ -9,15 +9,11 @@ const {
 } = require('../workspace/workspace.service.js');
 const groupService = require('../group/group.service.js');
 
-const {
-  Groups,
-  Users,
-  Templates,
-  Mailings,
-} = require('../common/models.common.js');
+const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
+  seedGroups: asyncHandler(seedGroups),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readUsers: asyncHandler(readUsers),
@@ -76,6 +72,21 @@ async function create(req, res) {
 }
 
 /**
+ * @api {post} /seed-groups update groups that have no workspace
+ * @apiPermission super_admin
+ * @apiName UpdateGroupsWithNoWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiUse group
+ */
+
+async function seedGroups(req, res) {
+  const seededGroups = await groupService.seedGroups();
+
+  res.json({ groups: seededGroups.map(group => group.name) });
+}
+
+/**
  * @api {get} /groups/:groupId group
  * @apiPermission admin
  * @apiName GetGroup
@@ -106,16 +117,11 @@ async function read(req, res) {
  */
 
 async function readUsers(req, res) {
-  const { groupId } = req.params;
-  const [group, users] = await Promise.all([
-    Groups.findById(groupId).select('_id'),
-    Users.find({
-      _company: groupId,
-    })
-      .populate({ path: '_company', select: 'id name entryPoint issuer' })
-      .sort({ email: 1 }),
-  ]);
-  if (!group) throw new createError.NotFound();
+  const {
+    params: { groupId },
+  } = req;
+
+  const users = await groupService.findUserByGroupId(groupId);
   res.json({ items: users });
 }
 

@@ -1,41 +1,41 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupForm from '~/components/group/form.vue';
 
 export default {
-  name: `page-new-group`,
+  name: 'PageNewGroup',
   components: { BsGroupForm },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
   },
-  head() {
-    return { title: this.title };
-  },
   data() {
     return {
       loading: false,
       newGroup: {
-        name: ``,
+        name: '',
         downloadMailingWithoutEnclosingFolder: false,
         downloadMailingWithCdnImages: false,
-        cdnProtocol: `http://`,
-        cdnEndPoint: ``,
-        cdnButtonLabel: ``,
+        cdnProtocol: 'http://',
+        cdnEndPoint: '',
+        cdnButtonLabel: '',
         downloadMailingWithFtpImages: false,
-        ftpProtocol: `sftp`,
-        ftpHost: ``,
-        ftpUsername: ``,
-        ftpPassword: ``,
+        ftpProtocol: 'sftp',
+        ftpHost: '',
+        ftpUsername: '',
+        ftpPassword: '',
         ftpPort: 22,
-        ftpPathOnServer: `./`,
-        ftpEndPoint: ``,
-        ftpEndPointProtocol: `http://`,
-        ftpButtonLabel: ``,
+        ftpPathOnServer: './',
+        ftpEndPoint: '',
+        ftpEndPointProtocol: 'http://',
+        ftpButtonLabel: '',
       },
     };
+  },
+  head() {
+    return { title: this.title };
   },
   computed: {
     title() {
@@ -65,8 +65,8 @@ export default {
       <v-col cols="8" offset="2">
         <bs-group-form
           v-model="newGroup"
-          @submit="createGroup"
           :disabled="loading"
+          @submit="createGroup"
         />
       </v-col>
     </v-row>

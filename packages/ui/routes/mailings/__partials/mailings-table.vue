@@ -3,8 +3,10 @@ import { mapMutations, mapGetters } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
-import ModalCopyMail from '~/routes/mailings/__partials/modal-copy-mail';
-import ModalMoveMail from '~/routes/mailings/__partials/modal-move-mail';
+import ModalCopyMail from '~/routes/mailings/__partials/mailings-copy-modal';
+import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
+
+import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
 import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
@@ -46,13 +48,10 @@ export default {
     MailingsTagsMenu,
     ModalMoveMail,
   },
+  mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
   props: {
     mailings: { type: Array, default: () => [] },
-    workspace: {
-      type: Object,
-      default: () => {},
-    },
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
   },
@@ -66,13 +65,16 @@ export default {
       actionsDetails: ACTIONS_DETAILS,
     };
   },
+  async mounted() {
+    await this.getFolderAndWorkspaceData(this.$axios, this.$route);
+  },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
         : TABLE_HIDDEN_COLUMNS_USER;
-      if (!this.workspace.hasAccess) {
+      if (!this.hasAccess) {
         return [...excludedRules, ...TABLE_HIDDEN_COLUMNS_NO_ACCESS];
       }
       return excludedRules.filter(
@@ -170,9 +172,7 @@ export default {
           name: mailing.name,
           id: mailing.id,
         },
-        workspace: {
-          id: this.workspace?.id,
-        },
+        location: this.currentLocation,
       });
     },
     closeCopyMailDialog() {
@@ -193,8 +193,9 @@ export default {
       const updateUri = mailingsItem({ mailingId });
       try {
         await $axios.$patch(updateUri, {
-          name: newName,
+          mailingName: newName,
           workspaceId: this.$route.query.wid,
+          parentFolderId: this.$route.query.fid,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -220,9 +221,7 @@ export default {
       const updateUri = mailingsItem({ mailingId: id });
       try {
         await $axios.$delete(updateUri, {
-          data: {
-            workspaceId: this.$route.query.wid,
-          },
+          data: this.currentLocationParam,
         });
         this.$emit('on-refetch');
         this.showSnackbar({
@@ -239,19 +238,37 @@ export default {
         this.loading = false;
       }
     },
-    async copyMail({ workspaceId, mailingId }) {
+    async copyMail({ selectedLocation, mailingId }) {
       try {
         await this.$axios.$post(copyMail(), {
           mailingId,
-          workspaceId,
+          ...(selectedLocation.type === 'workspace' && {
+            workspaceId: selectedLocation.id,
+          }),
+          ...(selectedLocation.type === 'folder' && {
+            folderId: selectedLocation.id,
+          }),
         });
-        if (workspaceId === this.workspace?.id) {
+
+        // if copy to current location
+        if (
+          selectedLocation.id === this.workspace?.id ||
+          selectedLocation.id === this.folder?.id
+        ) {
           this.$emit('on-refetch');
-        } else {
-          this.$router.push({
-            query: { wid: workspaceId },
-          });
         }
+
+        // else, redirect to destination
+        this.$router.push({
+          query: {
+            ...(selectedLocation.type === 'workspace' && {
+              wid: selectedLocation.id,
+            }),
+            ...(selectedLocation.type === 'folder' && {
+              fid: selectedLocation.id,
+            }),
+          },
+        });
 
         this.showSnackbar({
           text: this.$t('mailings.copyMailSuccessful'),
@@ -265,7 +282,7 @@ export default {
       }
       this.closeCopyMailDialog();
     },
-    async moveMail({ destinationWorkspaceId, mailingId }) {
+    async moveMail({ destinationParam, mailingId }) {
       try {
         await this.$axios.$post(
           moveMail({
@@ -273,11 +290,19 @@ export default {
           }),
           {
             mailingId,
-            workspaceId: destinationWorkspaceId,
+            ...destinationParam,
           }
         );
-        this.$router.push({
-          query: { wid: destinationWorkspaceId },
+
+        let routerRedirectionParam;
+        if (destinationParam?.parentFolderId) {
+          routerRedirectionParam = { fid: destinationParam?.parentFolderId };
+        } else {
+          routerRedirectionParam = { wid: destinationParam?.workspaceId };
+        }
+
+        await this.$router.push({
+          query: routerRedirectionParam,
         });
         this.showSnackbar({
           text: this.$t('mailings.moveMailSuccessful'),
@@ -314,12 +339,10 @@ export default {
       :headers="tablesHeaders"
       :options="tableOptions"
       :items="mailings"
-      :show-select="workspace.hasAccess"
+      :show-select="hasAccess"
     >
       <template #item.name="{ item }">
-        <a v-if="workspace.hasAccess" :href="`/editor/${item.id}`">{{
-          item.name
-        }}</a>
+        <a v-if="hasAccess" :href="`/editor/${item.id}`">{{ item.name }}</a>
         <template v-else>
           {{ item.name }}
         </template>
@@ -337,7 +360,7 @@ export default {
         <span v-else>{{ item.templateName }}</span>
       </template>
       <template #item.tags="{ item }">
-        <span>{{ item.tags.join(`, `) }}</span>
+        <span>{{ item.tags.join(', ') }}</span>
       </template>
       <template #item.createdAt="{ item }">
         <span>{{ item.createdAt | preciseDateTime }}</span>

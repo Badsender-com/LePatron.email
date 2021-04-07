@@ -1,11 +1,11 @@
 <script>
 export default {
-  name: `bs-mailing-modal-duplicate`,
-  model: { prop: `dialogInfo`, event: `update` },
+  name: 'BsMailingModalDuplicate',
+  model: { prop: 'dialogInfo', event: 'update' },
   props: {
     dialogInfo: {
       type: Object,
-      default: () => ({ name: ``, show: false }),
+      default: () => ({ name: '', show: false }),
     },
   },
   computed: {
@@ -14,16 +14,16 @@ export default {
         return this.dialogInfo;
       },
       set(updatedValue) {
-        this.$emit(`update`, updatedValue);
+        this.$emit('update', updatedValue);
       },
     },
   },
   methods: {
     closeDialog() {
-      this.$emit(`close`);
+      this.$emit('close');
     },
     duplicateMailing() {
-      this.$emit(`duplicate`, this.dialogInfo);
+      this.$emit('duplicate', this.dialogInfo);
     },
   },
 };
@@ -31,14 +31,16 @@ export default {
 
 <template>
   <v-dialog
-    class="bs-mailings-modal-duplicate"
     v-model="localModel.show"
+    class="bs-mailings-modal-duplicate"
     width="500"
   >
     <v-card>
-      <v-card-title class="headline">{{
-        $t(`mailings.duplicate`)
-      }}</v-card-title>
+      <v-card-title class="headline">
+        {{
+          $t('mailings.duplicate')
+        }}
+      </v-card-title>
       <v-card-text>
         <p
           v-html="
@@ -49,12 +51,16 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="closeDialog">{{
-          $t(`global.cancel`)
-        }}</v-btn>
-        <v-btn color="primary" @click="duplicateMailing">{{
-          $t(`global.duplicate`)
-        }}</v-btn>
+        <v-btn color="primary" text @click="closeDialog">
+          {{
+            $t(`global.cancel`)
+          }}
+        </v-btn>
+        <v-btn color="primary" @click="duplicateMailing">
+          {{
+            $t(`global.duplicate`)
+          }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

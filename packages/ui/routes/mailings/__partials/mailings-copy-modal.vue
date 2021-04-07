@@ -31,26 +31,27 @@ export default {
       return this.mail?.name;
     },
   },
-  async mounted() {
-    const { $axios } = this;
-    try {
-      this.workspacesIsLoading = true;
-      const { items } = await $axios.$get(workspacesByGroup());
-      this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-    } catch (error) {
-      this.workspaceIsError = true;
-    } finally {
-      this.workspacesIsLoading = false;
-    }
-  },
   methods: {
     submit() {
       if (this.isValidToBeCopied) {
-        this.close();
+        const location = this.selectedLocation;
         this.$emit('confirm', {
-          workspaceId: this.selectedLocation?.id,
+          selectedLocation: location,
           mailingId: this.mail?.id,
         });
+        this.close();
+      }
+    },
+    async fetchWorkspaces() {
+      const { $axios } = this;
+      try {
+        this.workspacesIsLoading = true;
+        const { items } = await $axios.$get(workspacesByGroup());
+        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
+      } catch (error) {
+        this.workspaceIsError = true;
+      } finally {
+        this.workspacesIsLoading = false;
       }
     },
     handleSelectItemFromTreeView(selectedItems) {
@@ -59,11 +60,13 @@ export default {
       }
     },
     open(selectedMail) {
+      this.fetchWorkspaces();
       this.mail = selectedMail;
       this.$refs.copyMailDialog.open();
     },
     close() {
       this.$refs.copyMailDialog.close();
+      this.selectedLocation = {};
     },
   },
 };
@@ -74,6 +77,7 @@ export default {
     :title="`${this.$t('global.copyMail')}  ${mailName}`"
     :is-form="true"
     class="modal-confirm-copy-mail"
+    @click-outside="close"
   >
     <slot />
     <v-skeleton-loader
@@ -128,6 +132,7 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
+  max-height: 400px;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;

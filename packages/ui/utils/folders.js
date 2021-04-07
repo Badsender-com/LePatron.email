@@ -16,6 +16,15 @@ export function getRecursivePath(childPath, parentPath) {
 
 // This function will map workspace data from the server and map it to the format handled by the treeview component
 export function getRecursiveFolderMap(folder, hasAccess, parentPath) {
+  return getFolders(folder, hasAccess, parentPath, getRecursiveFolderMap);
+}
+
+// This function will map workspace data from the server and map it to the format handled by the treeview component for one level sub folders
+export function getFoldersMapWithoutSubFolder(folder, hasAccess, parentPath) {
+  return getFolders(folder, hasAccess, parentPath, null);
+}
+
+export const getFolders = (folder, hasAccess, parentPath, callback) => {
   const path = getRecursivePath(
     {
       id: folder.id,
@@ -36,10 +45,14 @@ export function getRecursiveFolderMap(folder, hasAccess, parentPath) {
   if (folder.childFolders?.length > 0) {
     mapFolderToTreeviewTypeData = {
       ...mapFolderToTreeviewTypeData,
-      children: folder.childFolders.map((child) =>
-        getRecursiveFolderMap(child, hasAccess, path)
-      ),
+      ...(callback
+        ? {
+            children: folder.childFolders.map((child) =>
+              callback(child, hasAccess, path)
+            ),
+          }
+        : {}),
     };
   }
   return mapFolderToTreeviewTypeData;
-}
+};

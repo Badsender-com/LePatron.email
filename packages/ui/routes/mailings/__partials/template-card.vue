@@ -23,6 +23,9 @@ export default {
     selectedClass() {
       return this.isSelected ? 'bs-template-card_selected' : '';
     },
+    hoverClass() {
+      return !this.isSelected ? 'card-hover' : '';
+    },
   },
   methods: {
     onClick() {
@@ -34,7 +37,7 @@ export default {
 
 <template>
   <v-card
-    :class="`mr-2 mb-4 bs-template-card ${selectedClass}`"
+    :class="`mr-2 mb-4 bs-template-card ${selectedClass} ${hoverClass}`"
     @click="onClick"
   >
     <bs-template-cover-image :src="coverSrc" :fit-cover="!hasCover" />
@@ -54,6 +57,10 @@ export default {
   --cover-min-height: 250px;
   --cover-max-height: 250px;
   max-width: 30%;
+}
+
+.card-hover:hover {
+  box-shadow: 0 0 0 5px #a9d6d5 !important;
 }
 
 .bs-template-card_selected {

@@ -9,23 +9,33 @@ export default {
     async mixinCreateMailing(
       template,
       loadingKey = 'loading',
-      defaultMailName = ''
+      defaultMailName = '',
+      currentLocationParams
     ) {
       if (!template.hasMarkup) return;
-      const { $axios, $route } = this;
+      const { $axios } = this;
       this[loadingKey] = true;
-      const workspaceId = $route?.query?.wid;
+
+      if (
+        !currentLocationParams.parentFolderId &&
+        !currentLocationParams.workspaceId
+      ) {
+        return;
+      }
+
       try {
         let requestCreateMailData = {
           templateId: template.id,
-          workspaceId,
+          ...currentLocationParams,
         };
+
         if (defaultMailName) {
           requestCreateMailData = {
             ...requestCreateMailData,
             mailingName: defaultMailName,
           };
         }
+
         const newMailing = await $axios.$post(
           apiRoutes.mailings(),
           requestCreateMailData
