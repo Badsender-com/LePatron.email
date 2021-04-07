@@ -9,6 +9,7 @@ const {
   Conflict,
   NotAcceptable,
   InternalServerError,
+  UnprocessableEntity
 } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -160,11 +161,30 @@ async function isNameUniqueAtSameLevel(folder) {
   }
 }
 
+async function isNameTakenInDestination(destination, folderName) {
+  const { workspaceId, destinationFolderId } = destination;
+
+
+  const destinationFilter = destinationFolderId ?
+    { _parentFolder: destinationFolderId } : { _workspace : workspaceId }
+
+  return Folders.exists( {
+      ...destinationFilter,
+      name: folderName
+  })
+}
+
 async function move(folderId, destination, user) {
   const { workspaceId, destinationFolderId } = destination;
   checkEitherWorkspaceOrFolderDefined(workspaceId, destinationFolderId);
 
   await hasAccess(folderId, user);
+
+  const folder = await getFolder(folderId);
+
+  if (!folder.name) {
+    throw new UnprocessableEntity(ERROR_CODES.FOLDER_MISSING_NAME)
+  }
 
   // moving to another folder
   if (destinationFolderId) {
@@ -175,6 +195,12 @@ async function move(folderId, destination, user) {
 
     // folder being moved can't have children, otherwise it becomes a sub-subfolder
     await checkIsParent(folderId);
+
+    if (await isNameTakenInDestination({ destinationFolderId }, folder.name)){
+      throw new Conflict(
+        `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
+      );
+    }
 
     const moveToFolder = await Folders.updateOne(
       { _id: mongoose.Types.ObjectId(folderId) },
@@ -195,6 +221,12 @@ async function move(folderId, destination, user) {
   if (workspaceId) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
+
+    if (await isNameTakenInDestination({ workspaceId }, folder.name)){
+      throw new Conflict(
+        `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
+      );
+    }
 
     const moveToWorkspace = await Folders.updateOne(
       { _id: mongoose.Types.ObjectId(folderId) },
