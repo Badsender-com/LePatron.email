@@ -71,6 +71,7 @@ export default {
     settings: 'Settings',
     download: 'Download',
     preview: 'Preview',
+    previewMailAlt: 'Preview of the email template',
     newPreview: 'Create a preview',
     name: 'Name',
     description: 'Description',
