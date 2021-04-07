@@ -192,6 +192,7 @@ export default {
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',
+    errorPreview: 'Error on preview loading.',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
