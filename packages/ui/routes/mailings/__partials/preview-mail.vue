@@ -42,7 +42,7 @@ export default {
       <img
         class="max_width_img"
         :src="`data:image/png;base64,${previewImage}`"
-        alt=""
+        alt="aperçu du template du mail"
       >
     </div>
   </div>

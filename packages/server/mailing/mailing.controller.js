@@ -510,7 +510,7 @@ async function transferToUser(req, res) {
 
 async function previewMail(req, res) {
   const { cookies, params } = req;
-  const { mailingId } = params;
+  const { mailingId } = params || {};
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,

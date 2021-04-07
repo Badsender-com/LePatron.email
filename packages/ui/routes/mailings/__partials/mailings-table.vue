@@ -471,7 +471,7 @@ export default {
   </div>
 </template>
 
-<style>
+<style scoped>
 .v-list {
   cursor: pointer;
 }

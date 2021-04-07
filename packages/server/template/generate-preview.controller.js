@@ -26,8 +26,8 @@ const _getMailImagePrefix = require('../utils/get-mail-image-prefix.js');
 const PROTOCOL = `http${config.forcessl ? 's' : ''}://`;
 const VERSION_PAGE = `${PROTOCOL}${config.host}/api/version`;
 const BLOCK_SELECTOR = '[data-ko-container] [data-ko-block]';
-const BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP = 'main-wysiwyg-area';
-const BLOCK_BODY_MAIL_SELECTOR = `#${BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP}`;
+const BLOCK_BODY_MAIL_SELECTOR = 'main-wysiwyg-area';
+const BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP = `#${BLOCK_BODY_MAIL_SELECTOR}`;
 module.exports = {
   previewMarkup: asyncHandler(previewMarkup),
   generatePreviews: asyncHandler(generatePreviews),
@@ -373,8 +373,8 @@ async function previewMail({ mailingId, cookies }) {
       waitUntil: 'networkidle0',
     });
 
-    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR); // wait for the selector to load
-    const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR);
+    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load
+    const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
 
     const {
@@ -382,13 +382,8 @@ async function previewMail({ mailingId, cookies }) {
       height,
       imagePreviewNameWithExtension,
     } = await page.evaluate(
-      ({
-        BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP,
-        imagePreviewNameWithoutExtension,
-      }) => {
-        const $element = document.getElementById(
-          BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP
-        );
+      ({ BLOCK_BODY_MAIL_SELECTOR, imagePreviewNameWithoutExtension }) => {
+        const $element = document.getElementById(BLOCK_BODY_MAIL_SELECTOR);
         return {
           fileName: `${imagePreviewNameWithoutExtension}.png`,
           width: Math.round($element.scrollWidth),
@@ -396,7 +391,7 @@ async function previewMail({ mailingId, cookies }) {
         };
       },
       {
-        BLOCK_BODY_MAIL_SELECTOR_WITHOUT_SHARP,
+        BLOCK_BODY_MAIL_SELECTOR,
         imagePreviewNameWithoutExtension,
       }
     );
@@ -422,7 +417,6 @@ async function previewMail({ mailingId, cookies }) {
 
 async function getHeadlessBrowser() {
   return puppeteer.launch({
-    // headless: false,
     args: [
       // https://peter.sh/experiments/chromium-command-line-switches/#hide-scrollbars
       '--hide-scrollbars',
