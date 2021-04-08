@@ -31,19 +31,23 @@ export default {
 };
 </script>
 <template>
-  <div class="pr-4 pl-4 preview_container d-flex justify-center align-center">
+  <div class="px-1 preview_container">
     <div v-if="errorPreview">
       <p class="red--text">
         {{ $t('mailings.errorPreview') }}
       </p>
     </div>
-    <v-progress-circular v-else-if="loading" indeterminate color="primary" />
-    <div v-else class="max_height_img_container">
-      <img
-        class="max_width_img"
-        :src="`data:image/png;base64,${previewImage}`"
-        :alt="$t('global.previewMailAlt')"
-      >
+    <div class="max_height_img_container">
+      <v-skeleton-loader
+        :loading="loading"
+        class="preview_container"
+        type="image, image">
+        <img
+          class="max_width_img"
+          :src="`data:image/png;base64,${previewImage}`"
+          :alt="$t('global.previewMailAlt')"
+        />
+      </v-skeleton-loader>
     </div>
   </div>
 </template>
@@ -59,7 +63,7 @@ export default {
 }
 
 .preview_container {
-  min-height: 100px;
-  min-width: 100px;
+  min-height: 400px;
+  min-width: 300px;
 }
 </style>
