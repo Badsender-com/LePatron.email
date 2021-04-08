@@ -35,6 +35,7 @@ const TABLE_ACTIONS = [
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
+  ACTIONS.PREVIEW,
   'actionMoveMail',
 ];
 
@@ -91,7 +92,6 @@ export default {
     tablesHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        { text: this.$t('global.preview'), align: 'left', value: 'preview' },
         { text: this.$t('global.author'), align: 'left', value: 'userName' },
         {
           text: this.$tc('global.template', 1),
@@ -350,18 +350,6 @@ export default {
           {{ item.name }}
         </template>
       </template>
-      <template #item.preview="{ item }">
-        <v-menu open-on-hover center offset-overflow>
-          <template #activator="{ on }">
-            <v-btn color="primary" icon v-on="on">
-              <v-icon>visibility</v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <preview-mail :mailing-id="item.id" />
-          </v-list>
-        </v-menu>
-      </template>
       <template #item.userName="{ item }">
         <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
           {{ item.userName }}
@@ -406,6 +394,24 @@ export default {
           >
             {{ $t(actionsDetails[actions.TRANSFER].text) }}
           </bs-mailings-actions-dropdown-item>
+
+            <v-menu open-on-click center offset-overflow>
+              <template #activator="{ on }">
+                <v-list-item  v-on="on">
+                  <v-list-item-avatar>
+                    <v-btn color="primary" icon>
+                      <v-icon>{{actionsDetails[actions.PREVIEW].icon}}</v-icon>
+                    </v-btn>
+                  </v-list-item-avatar>
+                  <v-list-item-title >
+                    {{ $t(actionsDetails[actions.PREVIEW].text) }}
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+              <v-list>
+                <preview-mail :mailing-id="item.id" />
+              </v-list>
+            </v-menu>
 
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.COPY_MAIL)"
