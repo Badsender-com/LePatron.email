@@ -66,7 +66,6 @@ export default {
       cdnEndPoint: { required },
       cdnButtonLabel: { required },
     };
-
     const ftpValidations = {
       ftpHost: { required },
       ftpUsername: { required },
@@ -76,7 +75,6 @@ export default {
       ftpEndPoint: { required },
       ftpButtonLabel: { required },
     };
-
     return {
       group: {
         name: { required },
@@ -144,7 +142,7 @@ export default {
               />
             </v-col>
 
-            <v-col cols="5" v-if="isAdmin">
+            <v-col v-if="isAdmin" cols="5">
               <v-select
                 id="downloadMailingWithoutEnclosingFolder"
                 v-model="localModel.downloadMailingWithoutEnclosingFolder"

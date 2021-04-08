@@ -176,8 +176,12 @@ export default {
         });
         await this.fetchData();
       } catch (error) {
+        let errorKey = 'global.errors.errorOccured';
+        if (error.response.status === 409) {
+          errorKey = 'folders.conflict'
+        }
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text: this.$t(errorKey),
           color: 'error',
         });
       }
