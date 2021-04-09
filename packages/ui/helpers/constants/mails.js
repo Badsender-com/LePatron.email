@@ -5,6 +5,7 @@ export const ACTIONS = {
   COPY_MAIL: 'COPY_MAIL',
   ADD_TAGS: 'ADD_TAGS',
   MOVE_MAIL: 'MOVE_MAIL',
+  PREVIEW: 'PREVIEW',
 };
 
 export const ACTIONS_DETAILS = {
@@ -32,5 +33,9 @@ export const ACTIONS_DETAILS = {
     text: 'global.moveMail',
     icon: 'drive_file_move',
     emit: 'copy-mail-action',
+  },
+  [ACTIONS.PREVIEW]: {
+    text: 'global.preview',
+    icon: 'visibility',
   },
 };
