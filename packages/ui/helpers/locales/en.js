@@ -202,6 +202,7 @@ export default {
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
     copyMailSuccessful: 'Mail copied',
+    moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
     editTagsSuccessful: 'Tags updated',
