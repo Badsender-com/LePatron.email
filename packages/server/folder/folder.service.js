@@ -9,7 +9,7 @@ const {
   Conflict,
   NotAcceptable,
   InternalServerError,
-  UnprocessableEntity
+  UnprocessableEntity,
 } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -35,7 +35,7 @@ async function hasAccess(folderId, user) {
   const workspace = await getWorkspaceForFolder(folderId);
 
   return (
-    workspaceService.isWorkspaceInGroup(workspace, user.group.id) &&
+    workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)
   );
 }
@@ -164,14 +164,14 @@ async function isNameUniqueAtSameLevel(folder) {
 async function isNameTakenInDestination(destination, folderName) {
   const { workspaceId, destinationFolderId } = destination;
 
+  const destinationFilter = destinationFolderId
+    ? { _parentFolder: destinationFolderId }
+    : { _workspace: workspaceId };
 
-  const destinationFilter = destinationFolderId ?
-    { _parentFolder: destinationFolderId } : { _workspace : workspaceId }
-
-  return Folders.exists( {
-      ...destinationFilter,
-      name: folderName
-  })
+  return Folders.exists({
+    ...destinationFilter,
+    name: folderName,
+  });
 }
 
 async function move(folderId, destination, user) {
@@ -183,7 +183,7 @@ async function move(folderId, destination, user) {
   const folder = await getFolder(folderId);
 
   if (!folder.name) {
-    throw new UnprocessableEntity(ERROR_CODES.FOLDER_MISSING_NAME)
+    throw new UnprocessableEntity(ERROR_CODES.FOLDER_MISSING_NAME);
   }
 
   // moving to another folder
@@ -196,7 +196,7 @@ async function move(folderId, destination, user) {
     // folder being moved can't have children, otherwise it becomes a sub-subfolder
     await checkIsParent(folderId);
 
-    if (await isNameTakenInDestination({ destinationFolderId }, folder.name)){
+    if (await isNameTakenInDestination({ destinationFolderId }, folder.name)) {
       throw new Conflict(
         `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
       );
@@ -222,7 +222,7 @@ async function move(folderId, destination, user) {
     const workspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, workspace);
 
-    if (await isNameTakenInDestination({ workspaceId }, folder.name)){
+    if (await isNameTakenInDestination({ workspaceId }, folder.name)) {
       throw new Conflict(
         `${ERROR_CODES.NAME_ALREADY_TAKEN_AT_SAME_LEVEL} : ${folder.name}`
       );
