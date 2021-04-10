@@ -89,7 +89,7 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
 
-  return Mailings.find(mailingQuery);
+  return Mailings.find(mailingQuery, { data: 0 });
 }
 
 async function findTags(query) {
@@ -396,7 +396,9 @@ async function checkAccessMailingsSource(mailings, user) {
     }
 
     if (mailing._workspace) {
-      const sourceWorkspace = await workspaceService.getWorkspace(mailing._workspace);
+      const sourceWorkspace = await workspaceService.getWorkspace(
+        mailing._workspace
+      );
       workspaceService.doesUserHaveWriteAccess(user, sourceWorkspace);
     }
 
@@ -415,13 +417,13 @@ async function moveManyMailings(user, mailingsIds, destination) {
     await folderService.hasAccess(parentFolderId, user);
 
     const mailings = await findAllIn(mailingsIds);
-    await checkAccessMailingsSource(mailings, user)
+    await checkAccessMailingsSource(mailings, user);
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
       {
         _parentFolder: mongoose.Types.ObjectId(parentFolderId),
-        $unset: { _workspace: ''}
+        $unset: { _workspace: '' },
       }
     );
 
@@ -438,13 +440,13 @@ async function moveManyMailings(user, mailingsIds, destination) {
     workspaceService.doesUserHaveWriteAccess(user, destination);
 
     const mailings = await findAllIn(mailingsIds);
-    await checkAccessMailingsSource(mailings, user)
+    await checkAccessMailingsSource(mailings, user);
 
     const moveResponse = await Mailings.updateMany(
       { _id: { $in: mailings.map((mailing) => mailing.id) } },
       {
         _workspace: mongoose.Types.ObjectId(workspaceId),
-        $unset: { _parentFolder: '' }
+        $unset: { _parentFolder: '' },
       }
     );
 
@@ -452,7 +454,6 @@ async function moveManyMailings(user, mailingsIds, destination) {
       throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
     }
   }
-
 }
 
 function applyFilters(query) {
