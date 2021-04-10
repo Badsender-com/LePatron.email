@@ -83,7 +83,7 @@ export default {
     displayDeleteModal(selected) {
       this.selectedItemToDelete = selected;
       this.$refs.deleteDialog.open({
-        ...this.selectedItemToDelete,
+        ...selected,
       });
     },
     displayMoveModal(item) {
@@ -178,7 +178,7 @@ export default {
       } catch (error) {
         let errorKey = 'global.errors.errorOccured';
         if (error.response.status === 409) {
-          errorKey = 'folders.conflict'
+          errorKey = 'folders.conflict';
         }
         this.showSnackbar({
           text: this.$t(errorKey),
