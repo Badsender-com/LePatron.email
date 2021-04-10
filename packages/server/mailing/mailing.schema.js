@@ -134,17 +134,8 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   return this;
 };
 
-MailingSchema.statics.findForApi = async function findForApi(
-  query = {},
-  // eslint-disable-next-line no-unused-vars
-  sortParams = { updatedAt: -1 }
-) {
-  const mailings = await this.find(query, { data: 0 }).populate({
-    path: '_company',
-    select: { id: 1, name: 1 },
-  });
-  // .sort(sortParams)
-  return mailings;
+MailingSchema.statics.findForApi = async function findForApi(query = {}) {
+  return this.find(query, { data: 0 });
 };
 
 // Extract used tags from creations
