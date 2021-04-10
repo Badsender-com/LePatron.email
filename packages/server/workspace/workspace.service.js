@@ -215,7 +215,7 @@ function doesUserHaveWriteAccess(user, workspace) {
 }
 
 function doesUserHaveReadAccess(user, workspace) {
-  if (!isWorkspaceInGroup(workspace, user.group.id)) {
+  if (!isWorkspaceInGroup(workspace, user?.group?.id)) {
     throw new NotFound(
       `${ERROR_CODES.WORKSPACE_NOT_FOUND} : ${workspace.name}`
     );
