@@ -8,10 +8,16 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
-  name: `bs-page-reset-password`,
+  name: 'BsPageResetPassword',
   mixins: [validationMixin],
   meta: { acl: acls.ACL_NOT_CONNECTED },
-  layout: `centered`,
+  layout: 'centered',
+  data() {
+    return {
+      loading: false,
+      form: { email: '' },
+    };
+  },
   head() {
     return { title: this.title };
   },
@@ -22,15 +28,9 @@ export default {
       },
     };
   },
-  data() {
-    return {
-      loading: false,
-      form: { email: `` },
-    };
-  },
   computed: {
     title() {
-      return `reset password`;
+      return 'reset password';
     },
     emailErrors() {
       const errors = [];
@@ -50,7 +50,6 @@ export default {
 
       const { $axios } = this;
       this.loading = true;
-      const formBody = { ...this.form };
       try {
         const route = apiRoutes.accountResetPassword({
           email: this.form.email,
@@ -58,12 +57,12 @@ export default {
         await $axios.$delete(route);
         this.showSnackbar({
           text: this.$t('snackbars.emailSent'),
-          color: `success`,
+          color: 'success',
         });
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -82,15 +81,15 @@ export default {
     <v-divider />
     <v-card-text>
       <form
-        method="post"
         id="reset-password-form"
+        method="post"
         @submit.prevent="resetPassword"
       >
         <v-text-field
           id="email"
+          v-model="form.email"
           :label="$t('users.email')"
           name="email"
-          v-model="form.email"
           prepend-icon="email"
           type="email"
           :disabled="loading"
@@ -107,8 +106,9 @@ export default {
         form="reset-password-form"
         type="submit"
         :disabled="loading"
-        >{{ $t('forms.user.sendLink') }}</v-btn
       >
+        {{ $t('forms.user.sendLink') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

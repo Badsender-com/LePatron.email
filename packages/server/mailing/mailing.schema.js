@@ -52,6 +52,7 @@ const MailingSchema = Schema(
       type: ObjectId,
       ref: WorkspaceModel,
       required: false,
+      alias: 'workspace',
     },
     _parentFolder: {
       type: ObjectId,

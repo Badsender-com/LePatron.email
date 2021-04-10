@@ -2,7 +2,7 @@
 import { mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
@@ -12,27 +12,38 @@ import BsTemplateHtmlPreview from '~/components/template/html-preview.vue';
 import BsTemplateImagesList from '~/components/template/images-list.vue';
 
 const UPDATE_AXIOS_CONFIG = Object.freeze({
-  headers: { 'content-type': `multipart/form-data` },
+  headers: { 'content-type': 'multipart/form-data' },
 });
 
 export default {
-  name: `bs-page-template`,
-  mixins: [mixinPageTitle],
-  meta: { acl: acls.ACL_ADMIN },
+  name: 'BsPageTemplate',
   components: {
     BsTemplateMenu,
     BsTemplateEditForm,
     BsTemplateHtmlPreview,
     BsTemplateImagesList,
   },
-  head() {
-    return { title: this.title };
+  mixins: [mixinPageTitle],
+  meta: { acl: acls.ACL_ADMIN },
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+    try {
+      const templateResponse = await $axios.$get(
+        apiRoutes.templatesItem(params)
+      );
+      return { template: templateResponse };
+    } catch (error) {
+      console.log(error);
+    }
   },
   data() {
     return {
       template: { group: {} },
       loading: false,
     };
+  },
+  head() {
+    return { title: this.title };
   },
   computed: {
     title() {
@@ -48,17 +59,6 @@ export default {
   },
   beforeDestroy() {
     this.closeTemplateEvents();
-  },
-  async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
-    try {
-      const templateResponse = await $axios.$get(
-        apiRoutes.templatesItem(params)
-      );
-      return { template: templateResponse };
-    } catch (error) {
-      console.log(error);
-    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -79,13 +79,13 @@ export default {
           // update snackbar & data on end
           if (sseStatus.isCreate || sseStatus.isUpdate) {
             this.loading = true;
-            this.showSnackbar({ text: payload.message, color: `info` });
+            this.showSnackbar({ text: payload.message, color: 'info' });
           } else if (sseStatus.isError) {
             this.loading = false;
-            this.showSnackbar({ text: payload.message, color: `error` });
+            this.showSnackbar({ text: payload.message, color: 'error' });
           } else if (sseStatus.isEnd) {
             this.loading = false;
-            this.showSnackbar({ text: payload.message, color: `success` });
+            this.showSnackbar({ text: payload.message, color: 'success' });
             if (payload.template !== null) {
               this.template = payload.template;
             }
@@ -117,14 +117,14 @@ export default {
         );
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
         this.template = template;
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -136,16 +136,16 @@ export default {
       const { params } = $route;
       try {
         this.loading = true;
-        const template = await $axios.$delete(apiRoutes.templatesItem(params));
+        await $axios.$delete(apiRoutes.templatesItem(params));
         this.showSnackbar({
           text: this.$t('snackbars.deleted'),
-          color: `success`,
+          color: 'success',
         });
-        this.$router.push(`/templates`);
+        this.$router.push('/templates');
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -157,13 +157,11 @@ export default {
       const { params } = $route;
       try {
         this.loading = true;
-        const template = await $axios.$post(
-          apiRoutes.templatesItemPreview(params)
-        );
+        await $axios.$post(apiRoutes.templatesItemPreview(params));
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         // loading only error
         // • if request ok => SSE
@@ -181,13 +179,13 @@ export default {
         );
         this.showSnackbar({
           text: this.$t('template.imagesRemoved'),
-          color: `success`,
+          color: 'success',
         });
         this.template = template;
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -200,10 +198,10 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-template-menu
-        :template="template"
         v-model="loading"
+        :template="template"
         @delete="deleteTemplate"
         @generatePreviews="generatePreviews"
       />
@@ -214,13 +212,13 @@ export default {
         :disabled="loading"
         @submit="updateTemplate"
       />
-      <v-col cols="12" v-if="template.hasMarkup">
+      <v-col v-if="template.hasMarkup" cols="12">
         <bs-template-html-preview
           :markup="template.markup"
           :template-id="template.id"
         />
       </v-col>
-      <v-col cols="12" v-if="hasImages">
+      <v-col v-if="hasImages" cols="12">
         <bs-template-images-list
           :assets="template.assets"
           :disabled="loading"

@@ -5,7 +5,7 @@ const asyncHandler = require('express-async-handler');
 
 const config = require('../node.config.js');
 const { Mailings } = require('../common/models.common.js');
-const mail = require('./mailing.service.js');
+const mail = require('../mailing/mail.service.js');
 const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
 
@@ -40,6 +40,7 @@ async function sendTestMail(req, res) {
   // body.html is the result of viewModel.exportHTML()
   // • in /src/js/ext/badsender-server-storage.js
   const html = processMosaicoHtmlRender(req.body.html);
+
   const mailInfo = await mail.send({
     to: body.rcpt,
     replyTo: user && user.email != null ? user.email : undefined,

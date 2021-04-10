@@ -8,10 +8,19 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
-  name: `bs-page-set-password`,
+  name: 'BsPageSetPassword',
   mixins: [validationMixin],
   meta: { acl: acls.ACL_NOT_CONNECTED },
-  layout: `centered`,
+  layout: 'centered',
+  data() {
+    return {
+      loading: false,
+      form: {
+        password: '',
+        passwordConfirm: '',
+      },
+    };
+  },
   head() {
     return { title: this.title };
   },
@@ -19,22 +28,13 @@ export default {
     return {
       form: {
         password: { required },
-        passwordConfirm: { required, sameAsPassword: sameAs(`password`) },
-      },
-    };
-  },
-  data() {
-    return {
-      loading: false,
-      form: {
-        password: ``,
-        passwordConfirm: ``,
+        passwordConfirm: { required, sameAsPassword: sameAs('password') },
       },
     };
   },
   computed: {
     title() {
-      return `set password`;
+      return 'set password';
     },
     passwordErrors() {
       const errors = [];
@@ -62,15 +62,15 @@ export default {
       const { $axios, $route, $router } = this;
       this.loading = true;
       try {
-        const user = await $axios.$put(
+        await $axios.$put(
           apiRoutes.accountSetPassword($route.params),
           this.form
         );
-        $router.push(`/`);
+        $router.push('/');
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -88,22 +88,24 @@ export default {
     </v-toolbar>
     <v-divider />
     <v-card-text>
-      <v-form method="post" id="login-form" @submit.prevent="setPassword">
+      <v-form id="login-form" method="post" @submit.prevent="setPassword">
         <v-text-field
           id="password"
+          v-model="form.password"
           :label="$t('global.password')"
           name="password"
-          v-model="form.password"
           prepend-icon="lock"
+          :error-messages="passwordErrors"
           type="password"
           required
           :disabled="loading"
         />
         <v-text-field
           id="passwordConfirm"
+          v-model="form.passwordConfirm"
           :label="$t('forms.user.passwordConfirm')"
           name="passwordConfirm"
-          v-model="form.passwordConfirm"
+          :error-messages="passwordConfirmErrors"
           prepend-icon="lock"
           type="password"
           required
@@ -118,8 +120,9 @@ export default {
         form="login-form"
         type="submit"
         :disabled="loading"
-        >{{ $t('forms.user.validate') }}</v-btn
       >
+        {{ $t('forms.user.validate') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

@@ -1,14 +1,12 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
-  name: `bs-template-menu`,
-  mixins: [mixinCreateMailing],
+  name: 'BsTemplateMenu',
   components: { BsModalConfirm, BsTemplateCoverImage },
-  model: { prop: `loading`, event: `update` },
+  model: { prop: 'loading', event: 'update' },
   props: {
     loading: { type: Boolean, default: false },
     template: { type: Object, default: () => ({ group: {}, assets: {} }) },
@@ -16,11 +14,11 @@ export default {
   computed: {
     hasCover() {
       if (this.template.assets == null) return false;
-      return this.template.assets[`_full.png`] != null;
+      return this.template.assets['_full.png'] != null;
     },
     coverSrc() {
-      if (!this.hasCover) return ``;
-      const imageName = this.template.assets[`_full.png`];
+      if (!this.hasCover) return '';
+      const imageName = this.template.assets['_full.png'];
       return apiRoutes.imagesItem({ imageName });
     },
     localLoading: {
@@ -28,7 +26,7 @@ export default {
         return this.loading;
       },
       set(newLoading) {
-        this.$emit(`update`, newLoading);
+        this.$emit('update', newLoading);
       },
     },
   },
@@ -37,10 +35,10 @@ export default {
       this.$refs.deleteDialog.open();
     },
     deleteTemplate() {
-      this.$emit(`delete`);
+      this.$emit('delete');
     },
     generatePreviews() {
-      this.$emit(`generatePreviews`);
+      this.$emit('generatePreviews');
     },
   },
 };
@@ -58,20 +56,7 @@ export default {
       </v-list-item-content>
     </v-list-item>
     <v-subheader>{{ $t('global.actions') }}</v-subheader>
-    <v-list-item
-      v-if="template.hasMarkup"
-      @click="mixinCreateMailing(template, `localLoading`)"
-      :disabled="loading"
-      link
-    >
-      <v-list-item-avatar>
-        <v-icon>library_add</v-icon>
-      </v-list-item-avatar>
-      <v-list-item-content>
-        <v-list-item-title>{{ $t('global.newMailing') }}</v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
-    <v-list-item @click="confirmDeletion" :disabled="loading" link>
+    <v-list-item :disabled="loading" link @click="confirmDeletion">
       <v-list-item-avatar>
         <v-icon>delete_forever</v-icon>
       </v-list-item-avatar>
@@ -79,8 +64,10 @@ export default {
         <v-list-item-title>
           {{ $t('global.delete') }}
           <v-tooltip right>
-            <template v-slot:activator="{ on }">
-              <v-icon color="grey" small v-on="on">info</v-icon>
+            <template #activator="{ on }">
+              <v-icon color="grey" small v-on="on">
+                info
+              </v-icon>
             </template>
             <span>{{ $t('template.deleteNotice') }}</span>
           </v-tooltip>
@@ -88,9 +75,9 @@ export default {
       </v-list-item-content>
     </v-list-item>
     <v-list-item
-      @click="generatePreviews"
-      :disabled="loading"
       v-if="template.hasMarkup"
+      :disabled="loading"
+      @click="generatePreviews"
     >
       <v-list-item-avatar>
         <v-icon>camera_alt</v-icon>
@@ -109,8 +96,9 @@ export default {
       :title="`${$t('global.delete')} ${template.name}?`"
       :action-label="$t('global.delete')"
       @confirm="deleteTemplate"
-      >{{ $t('template.deleteNotice') }}</bs-modal-confirm
     >
+      {{ $t('template.deleteNotice') }}
+    </bs-modal-confirm>
 
     <!-- <v-list-item>
           <v-list-item-avatar>

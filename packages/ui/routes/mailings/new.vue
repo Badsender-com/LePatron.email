@@ -1,52 +1,55 @@
 <script>
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
-import mixinCreateMailing from '~/helpers/mixin-create-mailing.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsTemplateCard from '~/components/template/card.vue';
+import TemplateCard from '~/routes/mailings/__partials/template-card';
 
 export default {
-  name: `page-mailings-new`,
+  name: 'PageMailingsNew',
+  components: { TemplateCard },
   mixins: [mixinPageTitle, mixinCreateMailing],
   meta: {
     acl: acls.ACL_USER,
   },
-  components: { BsTemplateCard },
-  head() {
-    return { title: this.title };
+  async asyncData(nuxtContext) {
+    const { $axios } = nuxtContext;
+    try {
+      const { items } = await $axios.$get(apiRoutes.templates());
+      return {
+        templates: items.filter((template) => template.hasMarkup),
+        templatesIsLoading: false,
+      };
+    } catch (error) {
+      return { templatesIsError: true, templatesIsLoading: false };
+    }
   },
   data() {
     return {
       templates: [],
-      loading: true,
+      templatesIsLoading: true,
+      templatesIsError: false,
     };
+  },
+  head() {
+    return { title: this.title };
   },
   computed: {
     title() {
-      return `templates`;
+      return 'Templates';
     },
-    safeTemplates() {
-      return this.templates.filter((template) => template.hasMarkup);
-    },
-  },
-  async asyncData(nuxtContext) {
-    const { $axios } = nuxtContext;
-    try {
-      const templatesResponse = await $axios.$get(apiRoutes.templates());
-      return { templates: templatesResponse.items };
-    } catch (error) {
-      console.log(error);
-    }
   },
 };
 </script>
 
 <template>
   <v-container fluid>
-    <p class="text-center display-1">{{ $t(`mailings.creationNotice`) }}</p>
+    <p class="text-center display-1">
+      {{ $t(`mailings.creationNotice`) }}
+    </p>
     <div class="page-mailings-new__templates">
-      <bs-template-card
-        v-for="template in safeTemplates"
+      <template-card
+        v-for="template in templates"
         :key="template.id"
         :template="template"
         @click="mixinCreateMailing"

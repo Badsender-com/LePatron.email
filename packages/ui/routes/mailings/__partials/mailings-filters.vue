@@ -1,40 +1,62 @@
 <script>
+import * as apiRoutes from '~/helpers/api-routes.js';
+
 export default {
-  name: `bs-mailings-filters`,
-  model: { prop: `filters`, event: `update` },
+  name: 'MailingsFilters',
   props: {
-    filters: { type: Object, default: () => ({}) },
     tags: { type: Array, default: () => [] },
-    templates: { type: Array, default: () => [] },
   },
   data() {
     return {
+      templates: [],
+      templatesIsLoading: true,
+      templateIsError: false,
       pickerCreatedStart: false,
       pickerCreatedEnd: false,
       pickerUpdatedStart: false,
       pickerUpdatedEnd: false,
+      localFilters: {
+        name: '',
+        templates: [],
+        createdAtStart: '',
+        createdAtEnd: '',
+        updatedAtStart: '',
+        updatedAtEnd: '',
+        tags: [],
+      },
     };
   },
-  computed: {
+
+  watch: {
+    $route: 'reset',
     localFilters: {
-      get() {
-        return this.filters;
+      handler: function (updatedFilters) {
+        this.$emit('change', updatedFilters);
       },
-      set(updatedFilters) {
-        this.$emit(`update`, updatedFilters);
-      },
+      deep: true,
     },
   },
+
+  async mounted() {
+    const { $axios } = this;
+    try {
+      const { items } = await $axios.$get(apiRoutes.templates());
+      this.templates = items;
+    } catch (error) {
+      this.templateIsError = true;
+    }
+    this.templatesIsLoading = false;
+  },
+
   methods: {
     reset() {
       this.localFilters = {
-        show: 0,
-        name: ``,
+        name: '',
         templates: [],
-        createdAtStart: ``,
-        createdAtEnd: ``,
-        updatedAtStart: ``,
-        updatedAtEnd: ``,
+        createdAtStart: '',
+        createdAtEnd: '',
+        updatedAtStart: '',
+        updatedAtEnd: '',
         tags: [],
       };
     },
@@ -43,11 +65,11 @@ export default {
 </script>
 
 <template>
-  <v-expansion-panels v-model="localFilters.show" flat focusable>
+  <v-expansion-panels flat focusable>
     <v-expansion-panel>
-      <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>{{
-        $t(`mailings.list`)
-      }}</v-expansion-panel-header>
+      <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>
+        {{ $t(`mailings.list`) }}
+      </v-expansion-panel-header>
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
           <v-text-field
@@ -55,7 +77,6 @@ export default {
             :label="$t(`global.name`)"
             clearable
           />
-          <div></div>
           <v-select
             v-model="localFilters.templates"
             :label="$tc(`global.template`, 2)"
@@ -73,7 +94,7 @@ export default {
               offset-y
               min-width="290px"
             >
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-text-field
                   v-model="localFilters.createdAtStart"
                   :label="$t(`mailings.filters.createdBetween`)"
@@ -92,7 +113,7 @@ export default {
               offset-y
               min-width="290px"
             >
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-text-field
                   v-model="localFilters.createdAtEnd"
                   :label="$t(`mailings.filters.and`)"
@@ -113,7 +134,7 @@ export default {
               offset-y
               min-width="290px"
             >
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-text-field
                   v-model="localFilters.updatedAtStart"
                   :label="$t(`mailings.filters.updatedBetween`)"
@@ -133,7 +154,7 @@ export default {
               offset-y
               min-width="290px"
             >
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-text-field
                   v-model="localFilters.updatedAtEnd"
                   :label="$t(`mailings.filters.and`)"
@@ -152,9 +173,9 @@ export default {
             multiple
           />
           <div class="bs-mailings-filters__actions">
-            <v-btn color="primary" text @click="reset">{{
-              $t(`global.reset`)
-            }}</v-btn>
+            <v-btn color="primary" text @click="reset">
+              {{ $t(`global.reset`) }}
+            </v-btn>
           </div>
         </div>
       </v-expansion-panel-content>

@@ -1,9 +1,15 @@
 <script>
 export default {
-  name: `bs-modal-confirm`,
+  name: 'BsModalConfirm',
   props: {
+    isForm: {
+      type: Boolean,
+      default: false,
+    },
     title: { type: String, default: '' },
+    modalWidth: { type: String, default: '500' },
     actionLabel: { type: String, default: '' },
+    actionButtonColor: { type: String, default: 'primary' },
   },
   data() {
     return { show: false };
@@ -17,27 +23,42 @@ export default {
     },
     action() {
       this.close();
-      this.$emit(`confirm`);
+      this.$emit('confirm');
+    },
+    onClickOutside() {
+      this.$emit('click-outside');
     },
   },
 };
 </script>
 
 <template>
-  <v-dialog v-model="show" width="500" class="bs-modal-confirm">
+  <v-dialog
+    v-model="show"
+    v-bind="$attrs"
+    :width="modalWidth"
+    class="bs-modal-confirm"
+    @click:outside="onClickOutside"
+  >
     <v-card>
-      <v-card-title class="headline">{{ title }}</v-card-title>
+      <v-card-title class="headline">
+        <p class="grey--text text--darken-3" v-html="title" />
+      </v-card-title>
       <v-card-text>
         <slot />
       </v-card-text>
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="primary" text @click="close">{{
-          $t(`global.cancel`)
-        }}</v-btn>
-        <v-btn color="primary" @click="action">{{ actionLabel }}</v-btn>
-      </v-card-actions>
+      <template v-if="!isForm">
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="primary" text @click="close">
+            {{ $t('global.cancel') }}
+          </v-btn>
+          <v-btn :color="actionButtonColor" @click="action">
+            {{ actionLabel }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </v-dialog>
 </template>
@@ -48,3 +69,9 @@ export default {
   "fr": {}
 }
 </i18n>
+
+<style>
+.v-card__text {
+  padding-bottom: 0 !important;
+}
+</style>
