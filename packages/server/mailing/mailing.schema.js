@@ -13,6 +13,7 @@ const {
   WorkspaceModel,
   FolderModel,
 } = require('../constant/model.names');
+const logger = require('../utils/logger.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -94,6 +95,17 @@ const MailingSchema = Schema(
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
+
+MailingSchema.pre('find', function () {
+  this._startTime = Date.now();
+});
+
+MailingSchema.post('find', function () {
+  if (this._startTime != null) {
+    logger.log('find Mailing Runtime: ', Date.now() - this._startTime);
+  }
+  this._startTime = null;
+});
 
 MailingSchema.plugin(mongooseHidden, {
   hidden: {
