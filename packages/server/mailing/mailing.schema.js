@@ -135,7 +135,7 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
 };
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query);
+  return this.find(query, { data: 0 });
 };
 
 // Extract used tags from creations
@@ -153,7 +153,11 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   //   // { $sort: { _id: 1 } },
   // ])
 
-  const mailings = await this.find(query).populate({
+  const mailings = await this.find(query, {
+    _workspace: 0,
+    _parentFolder: 0,
+    data: 0,
+  }).populate({
     path: '_company',
     select: { tags: 1 },
   });

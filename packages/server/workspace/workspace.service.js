@@ -149,11 +149,7 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'folders',
       populate: { path: 'childFolders' },
-    })
-    .populate({
-      path: 'mails',
     });
-
   // to discard nested folders as direct children of each workspace
   workspaces.forEach((workspace) => {
     if (workspace.folders) {
