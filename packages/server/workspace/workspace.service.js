@@ -35,13 +35,9 @@ async function getWorkspace(id) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  return Workspaces.findById(id)
-    .populate({
-      path: 'folders',
-    })
-    .populate({
-      path: 'mails',
-    });
+  return Workspaces.findById(id).populate({
+    path: 'folders',
+  });
 }
 
 async function hasAccess(user, workspaceId) {
