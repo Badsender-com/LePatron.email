@@ -35,13 +35,9 @@ async function getWorkspace(id) {
     throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
   }
 
-  return Workspaces.findById(id)
-    .populate({
-      path: 'folders',
-    })
-    .populate({
-      path: 'mails',
-    });
+  return Workspaces.findById(id).populate({
+    path: 'folders',
+  });
 }
 
 async function hasAccess(user, workspaceId) {
@@ -149,11 +145,7 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'folders',
       populate: { path: 'childFolders' },
-    })
-    .populate({
-      path: 'mails',
     });
-
   // to discard nested folders as direct children of each workspace
   workspaces.forEach((workspace) => {
     if (workspace.folders) {
