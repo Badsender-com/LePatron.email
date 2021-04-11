@@ -21,6 +21,11 @@ export default {
       ],
     };
   },
+  computed: {
+    confirmModalHeaderTitle() {
+      return `${this.$t('global.delete')} ${this.data?.name}`;
+    },
+  },
   methods: {
     submit() {
       this.$refs.form.validate();
@@ -43,7 +48,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="deleteDialog"
-    :title="`${this.$t('global.delete')} ${data.name}`"
+    :title="confirmModalHeaderTitle"
     :is-form="true"
   >
     <v-form ref="form" v-model="valid" @submit.prevent="submit">

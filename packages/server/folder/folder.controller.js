@@ -12,6 +12,7 @@ module.exports = {
   getFolder: asyncHandler(getFolder),
   deleteFolder: asyncHandler(deleteFolder),
   rename: asyncHandler(rename),
+  hasContent: asyncHandler(hasContent),
   move: asyncHandler(move),
 };
 
@@ -48,6 +49,26 @@ async function hasAccess(req, res) {
   const hasAccess = await folderService.hasAccess(folderId, user);
 
   res.json({ hasAccess });
+}
+
+/**
+ * @api {get} /folders/:folderId/has-content check folder content status
+ * @apiPermission regular_user
+ * @apiName GetFolderContentStatus
+ * @apiGroup Folders
+ *
+ * @apiUse folder
+ * @apiSuccess {hasContent} boolean indicating content status
+ */
+async function hasContent(req, res) {
+  const {
+    user,
+    params: { folderId },
+  } = req;
+
+  const hasContent = await folderService.hasContent(folderId, user);
+
+  res.json({ hasContent });
 }
 
 /**
