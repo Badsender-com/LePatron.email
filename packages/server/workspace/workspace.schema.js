@@ -6,8 +6,8 @@ const {
   GroupModel,
   UserModel,
   FolderModel,
-  MailingModel,
 } = require('../constant/model.names.js');
+const logger = require('../utils/logger.js');
 const { ObjectId } = Schema.Types;
 
 /**
@@ -61,11 +61,15 @@ WorkspaceSchema.virtual('folders', {
   justOne: false,
 });
 
-WorkspaceSchema.virtual('mails', {
-  ref: MailingModel,
-  localField: '_id',
-  foreignField: '_workspace',
-  justOne: false,
+WorkspaceSchema.pre('find', function () {
+  this._startTime = Date.now();
+});
+
+WorkspaceSchema.post('find', function () {
+  if (this._startTime != null) {
+    logger.log('find Workspace Runtime: ', Date.now() - this._startTime);
+  }
+  this._startTime = null;
 });
 
 module.exports = WorkspaceSchema;
