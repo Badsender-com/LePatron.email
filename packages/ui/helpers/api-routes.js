@@ -186,3 +186,7 @@ export function getFolder(folderID) {
 export function getFolderAccess(folderID) {
   return `/folders/${folderID}/has-access`;
 }
+
+export function getFolderContentStatus(folderID) {
+  return `/folders/${folderID}/has-content`;
+}

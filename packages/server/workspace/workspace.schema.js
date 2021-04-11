@@ -6,7 +6,6 @@ const {
   GroupModel,
   UserModel,
   FolderModel,
-  MailingModel,
 } = require('../constant/model.names.js');
 const logger = require('../utils/logger.js');
 const { ObjectId } = Schema.Types;
@@ -57,13 +56,6 @@ const WorkspaceSchema = Schema(
 
 WorkspaceSchema.virtual('folders', {
   ref: FolderModel,
-  localField: '_id',
-  foreignField: '_workspace',
-  justOne: false,
-});
-
-WorkspaceSchema.virtual('mails', {
-  ref: MailingModel,
   localField: '_id',
   foreignField: '_workspace',
   justOne: false,

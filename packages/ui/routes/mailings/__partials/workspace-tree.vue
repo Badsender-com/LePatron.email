@@ -6,15 +6,17 @@ import {
   moveFolder,
 } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
-import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
+import FolderRenameModal from './folder-rename-modal';
+import FolderMoveModal from './folder-move-modal';
+import FolderDeleteModal from './folder-delete-modal';
+
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import BsModalConfirmForm from '~/components/modal-confirm-form';
-import ModalMoveFolder from './modal-move-folder.vue';
 
 export default {
   name: 'WorkspaceTree',
-  components: { FolderRenameModal, BsModalConfirmForm, ModalMoveFolder },
+  components: { FolderRenameModal, FolderDeleteModal, FolderMoveModal },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
@@ -29,13 +31,6 @@ export default {
     },
     selectedItem() {
       return { id: this.currentLocation };
-    },
-    confirmCheckBox() {
-      return (
-        !!this.selectedItemToDelete?.children?.length ||
-        !!this.folder?.mails?.length ||
-        !!this.workspace?.mails?.length
-      );
     },
   },
   async mounted() {
@@ -82,17 +77,16 @@ export default {
     },
     displayDeleteModal(selected) {
       this.selectedItemToDelete = selected;
-      this.$refs.deleteDialog.open({
-        ...this.selectedItemToDelete,
+      this.$refs.modalDeleteFolderDialog?.open({
+        ...selected,
       });
     },
     displayMoveModal(item) {
       this.$refs.moveModal.open(item);
     },
-    async handleDelete(selected) {
+    async handleDeleteFolder(selected) {
       const { $axios } = this;
       const { id } = selected;
-      this.$refs.deleteDialog.close();
       if (!id) return;
       this.loading = true;
       try {
@@ -178,7 +172,7 @@ export default {
       } catch (error) {
         let errorKey = 'global.errors.errorOccured';
         if (error.response.status === 409) {
-          errorKey = 'folders.conflict'
+          errorKey = 'folders.conflict';
         }
         this.showSnackbar({
           text: this.$t(errorKey),
@@ -261,34 +255,22 @@ export default {
         </v-menu>
       </template>
     </v-treeview>
-    <bs-modal-confirm-form
-      ref="deleteDialog"
-      :with-input-confirmation="false"
-      :confirm-check-box="confirmCheckBox"
-      :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
-      @confirm="handleDelete"
-    >
-      <p
-        class="black--text"
-        v-html="
-          $t('groups.mailingTab.deleteFolderWarning', {
-            name: selectedItemToDelete.name,
-          })
-        "
-      />
-    </bs-modal-confirm-form>
+    <folder-delete-modal
+      ref="modalDeleteFolderDialog"
+      @delete-folder="handleDeleteFolder"
+    />
     <folder-rename-modal
       ref="modalRenameFolderDialog"
       :conflict-error="conflictError"
       :loading-parent="workspacesIsLoading"
       @rename-folder="handleRenameFolder"
     />
-    <modal-move-folder ref="moveModal" @confirm="onMoveFolder">
+    <folder-move-modal ref="moveModal" @confirm="onMoveFolder">
       <p
         class="black--text"
         v-html="$t('folders.moveFolderConfirmationMessage')"
       />
-    </modal-move-folder>
+    </folder-move-modal>
   </v-skeleton-loader>
 </template>
 
