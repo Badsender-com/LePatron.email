@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folders } = require('../common/models.common.js');
+const { Folders, Mailings } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 const {
@@ -22,6 +22,7 @@ module.exports = {
   create,
   rename,
   getFolder,
+  hasContent,
   getWorkspaceForFolder,
   deleteFolder,
   move,
@@ -38,6 +39,18 @@ async function hasAccess(folderId, user) {
     workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)
   );
+}
+
+async function hasContent(folderId) {
+  const mail = await Mailings.findOne(
+    { _parentFolder: mongoose.Types.ObjectId(folderId) },
+    { data: 0 }
+  );
+  const folder = await findFirst({
+    _parentFolder: mongoose.Types.ObjectId(folderId),
+  });
+
+  return !!mail || !!folder;
 }
 
 async function getWorkspaceForFolder(folderId) {
@@ -123,13 +136,9 @@ async function getFolder(folderId) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
 
-  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) })
-    .populate({
-      path: 'childFolders',
-    })
-    .populate({
-      path: 'mails',
-    });
+  return Folders.findOne({ _id: mongoose.Types.ObjectId(folderId) }).populate({
+    path: 'childFolders',
+  });
 }
 
 async function deleteFolder(user, folderId) {
@@ -299,4 +308,8 @@ async function rename({ folderName, folderId }, user) {
   if (updateResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
   }
+}
+
+function findFirst(query) {
+  return Folders.findOne(query);
 }

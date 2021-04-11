@@ -5,7 +5,7 @@ import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
-  name: 'ModalMoveFolder',
+  name: 'FolderMoveModal',
   components: {
     BsModalConfirm,
   },

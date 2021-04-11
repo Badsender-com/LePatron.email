@@ -1,5 +1,6 @@
 <script>
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { getFolderContentStatus } from '~/helpers/api-routes';
 
 export default {
   name: 'FolderDeleteModal',
@@ -11,27 +12,28 @@ export default {
   },
   data() {
     return {
+      selectedFolder: {},
       hasContent: true,
     };
   },
   methods: {
     async fetchContent() {
-      this.hasContent = await this.$axios.get({});
+      const contentResponse = await this.$axios.get(
+        getFolderContentStatus(this.selectedFolder?.id)
+      );
+      this.hasContent = contentResponse?.data?.hasContent;
     },
-    open(folder) {
+    async open(folder) {
       this.selectedFolder = folder;
-      this.$refs.deleteDialog.open();
+      await this.fetchContent();
+      this.$refs.deleteDialog.open(folder);
     },
     close() {
-      this.$refs.form?.reset();
       this.$refs.deleteDialog.close();
     },
     async submit() {
-      this.$refs.form.validate();
-      if (this.isValidToDelete) {
-        await this.$emit('delete-folder', {
-          folder: this.selectedFolder,
-        });
+      if (this.$refs.deleteDialog.valid) {
+        await this.$emit('delete-folder', this.selectedFolder);
       }
     },
   },
@@ -50,7 +52,7 @@ export default {
       class="black--text"
       v-html="
         $t('groups.mailingTab.deleteFolderWarning', {
-          name: selectedItemToDelete.name,
+          name: selectedFolder.name,
         })
       "
     />
