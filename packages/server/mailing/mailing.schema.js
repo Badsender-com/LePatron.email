@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
+const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js');
 
 const config = require('../node.config.js');
 const { normalizeString } = require('../utils/model');
@@ -40,6 +41,15 @@ const MailingSchema = Schema(
       type: String,
       set: normalizeString,
       required: true,
+    },
+    files: {
+      type: [],
+      // make sure we have the right format for a gallery
+      get: (files) => {
+        return files.map((file) =>
+          formatFilenameForJqueryFileupload(file.name)
+        );
+      },
     },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },

@@ -15,7 +15,6 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const generatePreview = require('../template/generate-preview.controller.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -318,6 +317,7 @@ async function updateMosaico(req, res) {
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
   await mailing.save();
+
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
     req.user.lang

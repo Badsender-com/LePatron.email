@@ -6,13 +6,14 @@ const path = require('path');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer');
 const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose');
 
 const { NotFound } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const config = require('../node.config.js');
-const { Templates } = require('../common/models.common.js');
+const { Templates, Mailings } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const sseHelpers = require('../helpers/server-sent-events.js');
 const slugFilename = require('../helpers/slug-filename');
@@ -92,6 +93,7 @@ async function generatePreviews(req, res) {
   createPreviews({ templateId, cookies }).catch((error) => console.log(error));
   res.json({ id: templateId, status: 'preview start' });
 }
+
 const PREVIEW_EVENTS = [
   eventsNames.PREVIEW_START,
   eventsNames.PREVIEW_PROGRESS,
@@ -408,6 +410,31 @@ async function previewMail({ mailingId, cookies }) {
 
     await browser.close();
 
+    // files
+    const hash = crypto.createHash('md5').update(screenShot).digest('hex');
+    const name = `${mailingId}-${hash}.png`;
+    const filePath = path.join(config.images.tmpDir, `/${name}`);
+
+    console.log({ filePath });
+    const file = {
+      path: filePath,
+      name,
+    };
+    fs.writeFile(filePath, screenShot);
+
+    // ----- UPLOAD SCREENSHOTS
+    const pipeline = sharp().resize(340, null);
+    fs.createReadStream(file.path).pipe(pipeline);
+    fileManager.writeStreamFromStream(pipeline, file.name);
+
+    const mailing = await Mailings.findById(mongoose.Types.ObjectId(mailingId));
+
+    console.log({mailing, file})
+    mailing.files.push({ ...file });
+    console.log({files: mailing.files})
+    mailing.markModified('files');
+    await mailing.save();
+    // files
     return screenShot;
   } catch (error) {
     // close browser even if there is a problem

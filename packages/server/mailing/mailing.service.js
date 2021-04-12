@@ -156,6 +156,12 @@ async function createInsideWorkspaceOrFolder(mailingData) {
 
   const newMailing = await createMailing(mailing);
 
+  generatePreview.previewMail({
+    mailingId: mongoose.Types.ObjectId(newMailing._id),
+    cookies,
+  })
+
+
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response
   const response = newMailing.toJSON();

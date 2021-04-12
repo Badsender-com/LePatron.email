@@ -5,6 +5,7 @@ export default {
   name: 'PreviewMail',
   props: {
     mailingId: { type: String, default: null },
+    mailing: { type: Object, default: () => ({}) },
   },
   data() {
     return {
@@ -17,12 +18,13 @@ export default {
     try {
       this.loading = true;
       const { $axios } = this;
-      const previewResponse = await $axios.$get(preview(this.mailingId), {
+      /*const previewResponse = await $axios.$get(preview(this.mailingId), {
         responseType: 'arraybuffer',
       });
       this.previewImage = Buffer.from(previewResponse, 'binary').toString(
         'base64'
-      );
+      );*/
+      console.log({mailing: this.mailing})
       this.loading = false;
     } catch (error) {
       this.errorPreview = true;
