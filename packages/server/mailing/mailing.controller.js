@@ -81,9 +81,12 @@ async function create(req, res) {
     parentFolderId,
     mailingName,
     user,
-  }, cookies);
+  });
 
   res.json(response);
+
+  // not awaited on purpose
+  mailingService.generateMailingPreview(response.id, cookies);
 }
 
 /**
@@ -325,10 +328,10 @@ async function updateMosaico(req, res) {
     req.user.lang
   );
 
+  res.json(mailingForMosaico);
+
   // not awaited on purpose
   mailingService.generateMailingPreview(mailingId, req.cookies);
-
-  res.json(mailingForMosaico);
 }
 
 /**

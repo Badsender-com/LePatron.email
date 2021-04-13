@@ -29,6 +29,19 @@ if (!config.isAws) {
     return awsStream;
   };
 
+  const streamImageFromPreviews = (imageName, prefix) => {
+    const awsRequest = s3.getObject({
+      Bucket: config.storage.aws.bucketName,
+      Prefix: prefix,
+      Key: imageName,
+    });
+    const awsStream = awsRequest.createReadStream();
+    // break if no bind…
+    // mirror fs stream method name
+    awsStream.destroy = awsRequest.abort.bind(awsRequest);
+    return awsStream;
+  };
+
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
   const writeStreamFromPath = (file) => {
     const deferred = defer();
@@ -42,11 +55,11 @@ if (!config.isAws) {
         Body: source,
       },
       function (err, data) {
-        console.log(err, data);
+        logger.error(err, data);
       }
     )
       .on('httpUploadProgress', (progress) => {
-        console.log(
+        logger.info(
           `writeStreamFromPath – ${name}`,
           (progress.loaded / progress.total) * 100
         );
@@ -67,13 +80,13 @@ if (!config.isAws) {
         Body: source,
       },
       (err, data) => {
-        console.log(err, data);
+        logger.error(err, data);
         // if (err) return reject( err )
         // resolve( data )
       }
     )
       .on('httpUploadProgress', (progress) => {
-        console.log(
+        logger.info(
           `writeStreamFromStream – ${name}`,
           (progress.loaded / progress.total) * 100
         );
@@ -95,11 +108,11 @@ if (!config.isAws) {
         Body: source,
       },
       (err, data) => {
-        console.log(err, data);
+        logger.error(err, data);
       }
     )
       .on('httpUploadProgress', (progress) => {
-        console.log(
+        logger.info(
           `writeStreamFromStream – ${name}`,
           (progress.loaded / progress.total) * 100
         );
@@ -143,6 +156,7 @@ if (!config.isAws) {
 
   module.exports = {
     streamImage,
+    streamImageFromPreviews,
     writeStreamFromPath,
     writeStreamFromStream,
     writeStreamFromStreamWithPrefix,

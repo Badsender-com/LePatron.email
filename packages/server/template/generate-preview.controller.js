@@ -381,12 +381,8 @@ async function storePreview(mailingId, preview) {
 
   const stream = await fs.createReadStream(file.path);
 
-  if (config.isAws) {
-    const prefix = `groups/${_company}/mailings/${mailingId}/preview`;
-    await fileManager.writeStreamFromStreamWithPrefix(stream, file.name, prefix);
-  } else {
-    await fileManager.writeStreamFromStream(stream, file.name);
-  }
+  const prefix = `groups/${_company}/mailings/${mailingId}/preview`;
+  await fileManager.writeStreamFromStreamWithPrefix(stream, file.name, prefix);
 
   await Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailingId) },
@@ -395,6 +391,10 @@ async function storePreview(mailingId, preview) {
 }
 
 async function previewMail({ mailingId, cookies }) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId)})) ) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
   const browser = await getHeadlessBrowser();
   try {
     const page = await browser.newPage();

@@ -29,6 +29,7 @@ router.all('/gallery*', GUARD_USER);
 router.get('/gallery/:mongoId', images.list);
 router.post('/gallery/:mongoId', images.create);
 router.get('/:imageName', images.read);
+router.get('/groups/:groupId/mailings/:mailingId/preview/:imageName', images.readFromPreviews);
 router.delete('/:imageName', GUARD_USER, images.destroy);
 
 // catch anything and forward to error handler

@@ -108,7 +108,7 @@ async function findOne(mailingId) {
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
-async function createInsideWorkspaceOrFolder(mailingData, cookies) {
+async function createInsideWorkspaceOrFolder(mailingData) {
   const {
     templateId,
     workspaceId,
@@ -157,9 +157,6 @@ async function createInsideWorkspaceOrFolder(mailingData, cookies) {
   }
 
   const newMailing = await createMailing(mailing);
-
-  // not awaited on purpose
-  generateMailingPreview(newMailing._id, cookies);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response

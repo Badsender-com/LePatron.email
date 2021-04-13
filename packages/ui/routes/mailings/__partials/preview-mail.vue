@@ -1,15 +1,14 @@
 <script>
-import { images } from '~/helpers/api-routes';
+import { imageFromPreviews } from '~/helpers/api-routes';
 
 export default {
   name: 'PreviewMail',
   props: {
-    mailingId: { type: String, default: null },
     mailing: { type: Object, default: () => ({}) },
   },
   data() {
     return {
-      images,
+      imageFromPreviews,
       loading: false,
       errorPreview: false,
       previewImage: null,
@@ -41,7 +40,7 @@ export default {
       <v-img
         class="max_width_img"
         @load="onImageLoad"
-        :src="images(this.mailing.previewFileUrl)"
+        :src="imageFromPreviews(this.mailing.group, this.mailing.id, this.mailing.previewFileUrl)"
         :alt="$t('global.previewMailAlt')"
       />
     </div>
