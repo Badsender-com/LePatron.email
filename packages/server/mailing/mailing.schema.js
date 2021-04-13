@@ -3,7 +3,6 @@
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
-const formatFilenameForJqueryFileupload = require('../helpers/format-filename-for-jquery-fileupload.js');
 
 const config = require('../node.config.js');
 const { normalizeString } = require('../utils/model');
