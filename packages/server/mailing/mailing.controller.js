@@ -325,6 +325,7 @@ async function updateMosaico(req, res) {
     req.user.lang
   );
 
+  // not awaited on purpose
   mailingService.generateMailingPreview(mailingId, req.cookies);
 
   res.json(mailingForMosaico);

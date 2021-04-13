@@ -158,6 +158,7 @@ async function createInsideWorkspaceOrFolder(mailingData, cookies) {
 
   const newMailing = await createMailing(mailing);
 
+  // not awaited on purpose
   generateMailingPreview(newMailing._id, cookies);
 
   // strangely toJSON doesn't render the data object
