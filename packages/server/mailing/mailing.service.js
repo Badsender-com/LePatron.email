@@ -26,6 +26,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const generatePreview = require('../template/generate-preview.controller.js')
 
 module.exports = {
   createMailing,
@@ -41,6 +42,7 @@ module.exports = {
   findAllIn,
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
+  generateMailingPreview
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -106,7 +108,7 @@ async function findOne(mailingId) {
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
-async function createInsideWorkspaceOrFolder(mailingData) {
+async function createInsideWorkspaceOrFolder(mailingData, cookies) {
   const {
     templateId,
     workspaceId,
@@ -156,11 +158,7 @@ async function createInsideWorkspaceOrFolder(mailingData) {
 
   const newMailing = await createMailing(mailing);
 
-  generatePreview.previewMail({
-    mailingId: mongoose.Types.ObjectId(newMailing._id),
-    cookies,
-  })
-
+  generateMailingPreview(newMailing._id, cookies);
 
   // strangely toJSON doesn't render the data object
   // • cope with that by manually copy it in the response
@@ -168,6 +166,13 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   response.data = newMailing.data;
 
   return response;
+}
+
+async function generateMailingPreview(mailingId, cookies) {
+  await generatePreview.previewMail({
+    mailingId: mongoose.Types.ObjectId(mailingId._id),
+    cookies,
+  })
 }
 
 function checkCreationPayload(mailings) {

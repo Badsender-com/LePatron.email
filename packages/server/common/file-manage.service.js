@@ -17,6 +17,7 @@ const {
   streamImage,
   writeStreamFromPath,
   writeStreamFromStream,
+  writeStreamFromStreamWithPrefix,
   listImages,
   copyImages,
 } = require(config.isAws ? '../utils/storage-s3' : '../utils/storage-local');
@@ -129,4 +130,5 @@ module.exports = {
   copyImages,
   writeStreamFromPath,
   writeStreamFromStream,
+  writeStreamFromStreamWithPrefix
 };

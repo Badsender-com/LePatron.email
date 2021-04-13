@@ -476,8 +476,6 @@ async function create(req, res) {
   });
   safeGallery.files = galleryImages;
 
-  console.log({galleryFiles: safeGallery.files})
-
   safeGallery.markModified('files');
   await safeGallery.save();
 

@@ -84,6 +84,32 @@ if (!config.isAws) {
     return deferred;
   };
 
+  const writeStreamFromStreamWithPrefix = (source, name, prefix) => {
+    const deferred = defer();
+
+    s3.upload(
+      {
+        Bucket: config.storage.aws.bucketName,
+        Prefix: prefix,
+        Key: name,
+        Body: source,
+      },
+      (err, data) => {
+        console.log(err, data);
+      }
+    )
+      .on('httpUploadProgress', (progress) => {
+        console.log(
+          `writeStreamFromStream – ${name}`,
+          (progress.loaded / progress.total) * 100
+        );
+        if (progress.loaded >= progress.total) deferred.resolve();
+      })
+      .on('error', deferred.reject);
+
+    return deferred;
+  };
+
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#listObjectsV2-property
   // https://github.com/matthew-andrews/denodeify#advanced-usage
   const listObjectsV2 = denodeify(s3.listObjectsV2.bind(s3), (err, data) => {
@@ -119,6 +145,7 @@ if (!config.isAws) {
     streamImage,
     writeStreamFromPath,
     writeStreamFromStream,
+    writeStreamFromStreamWithPrefix,
     listImages,
     copyImages,
   };

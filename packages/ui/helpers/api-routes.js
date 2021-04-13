@@ -138,6 +138,9 @@ export function imagesItem(routeParams = {}) {
 export function imagesPlaceholder(routeParams = {}) {
   return `${API_PREFIX}/images/placeholder/${routeParams.width}x${routeParams.height}.png`;
 }
+export function images(preview) {
+  return `${API_PREFIX}/images/${preview}`;
+}
 
 /// ///
 // WORKSPACEs

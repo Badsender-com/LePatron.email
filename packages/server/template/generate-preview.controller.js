@@ -357,6 +357,43 @@ async function createPreviews({ templateId, cookies }) {
   }
 }
 
+async function storePreview(mailingId, preview) {
+
+  const { previewFileUrl, _company } = await Mailings.findOne({
+    _id: mongoose.Types.ObjectId(mailingId),
+  });
+
+  const file = {
+    name: previewFileUrl,
+    path: path.join(config.images.tmpDir, `/${previewFileUrl}`)
+  }
+
+  if (!previewFileUrl) {
+    const hash = crypto.createHash('md5').update(preview).digest('hex');
+    const name = `${mailingId}-${hash}.png`;
+    const filePath = path.join(config.images.tmpDir, `/${name}`);
+
+    file.name = name;
+    file.path = filePath;
+  }
+
+  await fs.writeFile(file.path, preview);
+
+  const stream = await fs.createReadStream(file.path);
+
+  if (config.isAws) {
+    const prefix = `groups/${_company}/mailings/${mailingId}/preview`;
+    await fileManager.writeStreamFromStreamWithPrefix(stream, file.name, prefix);
+  } else {
+    await fileManager.writeStreamFromStream(stream, file.name);
+  }
+
+  await Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailingId) },
+    { previewFileUrl: file.name }
+  );
+}
+
 async function previewMail({ mailingId, cookies }) {
   const browser = await getHeadlessBrowser();
   try {
@@ -410,31 +447,8 @@ async function previewMail({ mailingId, cookies }) {
 
     await browser.close();
 
-    // files
-    const hash = crypto.createHash('md5').update(screenShot).digest('hex');
-    const name = `${mailingId}-${hash}.png`;
-    const filePath = path.join(config.images.tmpDir, `/${name}`);
+    await storePreview(mailingId, screenShot);
 
-    console.log({ filePath });
-    const file = {
-      path: filePath,
-      name,
-    };
-    fs.writeFile(filePath, screenShot);
-
-    // ----- UPLOAD SCREENSHOTS
-    const pipeline = sharp().resize(340, null);
-    fs.createReadStream(file.path).pipe(pipeline);
-    fileManager.writeStreamFromStream(pipeline, file.name);
-
-    const mailing = await Mailings.findById(mongoose.Types.ObjectId(mailingId));
-
-    console.log({mailing, file})
-    mailing.files.push({ ...file });
-    console.log({files: mailing.files})
-    mailing.markModified('files');
-    await mailing.save();
-    // files
     return screenShot;
   } catch (error) {
     // close browser even if there is a problem

@@ -42,14 +42,8 @@ const MailingSchema = Schema(
       set: normalizeString,
       required: true,
     },
-    files: {
-      type: [],
-      // make sure we have the right format for a gallery
-      get: (files) => {
-        return files.map((file) =>
-          formatFilenameForJqueryFileupload(file.name)
-        );
-      },
+    previewFileUrl: {
+      type: String
     },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },

@@ -31,7 +31,6 @@ module.exports = {
   bulkDestroy: asyncHandler(bulkDestroy),
   delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
-  previewMail: asyncHandler(previewMail),
   // already wrapped in asyncHandler
   sendTestMail,
   downloadZip,
@@ -73,7 +72,7 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const { user } = req;
+  const { user, cookies } = req;
   const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
@@ -82,7 +81,7 @@ async function create(req, res) {
     parentFolderId,
     mailingName,
     user,
-  });
+  }, cookies);
 
   res.json(response);
 }
@@ -308,7 +307,10 @@ async function updateMosaico(req, res) {
   const { mailingId } = req.params;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+
+  if (!mailing) {
+    throw new createError.NotFound();
+  }
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
@@ -322,6 +324,9 @@ async function updateMosaico(req, res) {
     query,
     req.user.lang
   );
+
+  mailingService.generateMailingPreview(mailingId, req.cookies);
+
   res.json(mailingForMosaico);
 }
 
@@ -495,35 +500,4 @@ async function transferToUser(req, res) {
   // • if needed we can cope with that by manually copy it in the response (response.data = updatedMailing.data)
   const response = updatedMailing.toJSON();
   res.json(response);
-}
-
-/**
- * @api {put} /mailings/:mailingId/preview mailing preview from mosaico
- * @apiPermission user
- * @apiName PreviewMailingForMosaico
- * @apiGroup Mailings
- *
- * @apiParam {string} mailingId
- *
- * @apiUse mailings
- */
-
-async function previewMail(req, res) {
-  const { cookies, params } = req;
-  const { mailingId } = params || {};
-  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
-  const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
-    req.user.lang
-  );
-
-  if (!mailingForMosaico) throw new createError.NotFound();
-
-  const response = await generatePreview.previewMail({
-    mailingId,
-    cookies,
-    mailingForMosaico,
-  });
-  res.setHeader('Content-Type', 'image/png');
-  res.end(response);
 }
