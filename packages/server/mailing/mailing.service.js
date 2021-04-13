@@ -170,7 +170,7 @@ async function createInsideWorkspaceOrFolder(mailingData, cookies) {
 
 async function generateMailingPreview(mailingId, cookies) {
   await generatePreview.previewMail({
-    mailingId: mongoose.Types.ObjectId(mailingId._id),
+    mailingId: mongoose.Types.ObjectId(mailingId),
     cookies,
   })
 }
