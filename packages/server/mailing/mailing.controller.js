@@ -15,6 +15,7 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
 const generatePreview = require('../template/generate-preview.controller.js');
 
 module.exports = {
@@ -190,7 +191,10 @@ async function moveMany(req, res) {
     throw new createError.BadRequest();
   }
 
-  await mailingService.moveManyMailings(user, mailingsIds, { workspaceId, parentFolderId });
+  await mailingService.moveManyMailings(user, mailingsIds, {
+    workspaceId,
+    parentFolderId,
+  });
 
   res.status(204).send();
 }
@@ -309,20 +313,28 @@ async function updateMosaico(req, res) {
   const { mailingId } = req.params;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailing = await Mailings.findOne(query);
+  const hasAccess = await workspaceService.hasAccess(
+    user,
+    mailing._workspace._id
+  );
   if (!mailing) throw new createError.NotFound();
 
-  mailing.data = req.body.data || mailing.data;
-  mailing.name =
-    modelsUtils.normalizeString(req.body.name) ||
-    simpleI18n('default-mailing-name', user.lang);
-  // http://mongoosejs.com/docs/schematypes.html#mixed
-  mailing.markModified('data');
-  await mailing.save();
-  const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
-    req.user.lang
-  );
-  res.json(mailingForMosaico);
+  if (hasAccess) {
+    mailing.data = req.body.data || mailing.data;
+    mailing.name =
+      modelsUtils.normalizeString(req.body.name) ||
+      simpleI18n('default-mailing-name', user.lang);
+    // http://mongoosejs.com/docs/schematypes.html#mixed
+    mailing.markModified('data');
+    await mailing.save();
+    const mailingForMosaico = await Mailings.findOneForMosaico(
+      query,
+      req.user.lang
+    );
+    res.json(mailingForMosaico);
+  } else {
+    throw new createError.NotFound();
+  }
 }
 
 /**
