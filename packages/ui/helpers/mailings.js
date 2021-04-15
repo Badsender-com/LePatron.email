@@ -19,7 +19,7 @@ export function createFilters(filters) {
   const nameRegexp = new RegExp(filters.name, 'gi');
   const nameTest = !filters.name
     ? passThroughFilter
-    : (mailing) => nameRegexp.test(mailing.name);
+    : ({ name }) => name?.match(nameRegexp);
   const templateTest =
     filters.templates.length === 0
       ? passThroughFilter
