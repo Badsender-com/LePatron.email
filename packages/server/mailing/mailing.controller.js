@@ -15,6 +15,8 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
+const folderService = require('../folder/folder.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -312,7 +314,25 @@ async function updateMosaico(req, res) {
   const mailing = await Mailings.findOne(query);
 
   if (!mailing) {
-    throw new createError.NotFound();
+    throw new createError.NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  if (!user.isAdmin) {
+    const { _workspace, _parentFolder } = mailing;
+
+    let hasAccess;
+
+    if (_parentFolder) {
+      hasAccess = await folderService.hasAccess(_parentFolder, user);
+    }
+
+    if (_workspace) {
+      hasAccess = await workspaceService.hasAccess(user, _workspace);
+    }
+
+    if (!hasAccess) {
+      throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+    }
   }
 
   mailing.data = req.body.data || mailing.data;

@@ -1,17 +1,12 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const { NotFound } = require('http-errors');
 
 const config = require('../node.config.js');
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const brandColors = require('../helpers/brand-colors.js');
 const modelsUtils = require('../utils/model.js');
-const mailingService = require('../mailing/mailing.service.js');
-const workspaceService = require('../workspace/workspace.service.js');
-const folderService = require('../folder/folder.service.js');
 const { Mailings } = require('../common/models.common.js');
-const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   exposeHelpersToPug: exposeHelpersToPug,
@@ -38,25 +33,6 @@ async function render(req, res) {
     params: { mailingId },
     user,
   } = req;
-
-  const mailing = await mailingService.findOne(mailingId);
-
-  const { _workspace, _parentFolder } = mailing;
-
-  let hasAccess;
-
-  if (_parentFolder) {
-    hasAccess = await folderService.hasAccess(_parentFolder, user);
-  }
-
-  if (_workspace) {
-    hasAccess = await workspaceService.hasAccess(user, _workspace);
-  }
-
-  if (!hasAccess) {
-    res.redirect('/404');
-    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  }
 
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
