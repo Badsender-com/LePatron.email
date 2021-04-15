@@ -15,8 +15,10 @@ const { readFile } = fs;
 // we want those methods to be as close as possible
 const {
   streamImage,
+  streamImageFromPreviews,
   writeStreamFromPath,
   writeStreamFromStream,
+  writeStreamFromStreamWithPrefix,
   listImages,
   copyImages,
 } = require(config.isAws ? '../utils/storage-s3' : '../utils/storage-local');
@@ -124,9 +126,11 @@ function parseMultipart(req, options) {
 
 module.exports = {
   streamImage,
+  streamImageFromPreviews,
   list: listImages,
   parseMultipart,
   copyImages,
   writeStreamFromPath,
   writeStreamFromStream,
+  writeStreamFromStreamWithPrefix
 };

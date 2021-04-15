@@ -409,7 +409,7 @@ export default {
                 </v-list-item>
               </template>
               <v-list>
-                <preview-mail :mailing-id="item.id" />
+                <preview-mail :mailing="item" />
               </v-list>
             </v-menu>
 

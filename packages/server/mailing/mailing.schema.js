@@ -41,6 +41,9 @@ const MailingSchema = Schema(
       set: normalizeString,
       required: true,
     },
+    previewFileUrl: {
+      type: String
+    },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose

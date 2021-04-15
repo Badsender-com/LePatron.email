@@ -6,13 +6,14 @@ const path = require('path');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer');
 const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose');
 
 const { NotFound } = require('http-errors');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const config = require('../node.config.js');
-const { Templates } = require('../common/models.common.js');
+const { Templates, Mailings } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const sseHelpers = require('../helpers/server-sent-events.js');
 const slugFilename = require('../helpers/slug-filename');
@@ -92,6 +93,7 @@ async function generatePreviews(req, res) {
   createPreviews({ templateId, cookies }).catch((error) => console.log(error));
   res.json({ id: templateId, status: 'preview start' });
 }
+
 const PREVIEW_EVENTS = [
   eventsNames.PREVIEW_START,
   eventsNames.PREVIEW_PROGRESS,
@@ -355,7 +357,44 @@ async function createPreviews({ templateId, cookies }) {
   }
 }
 
+async function storePreview(mailingId, preview) {
+
+  const { previewFileUrl, _company } = await Mailings.findOne({
+    _id: mongoose.Types.ObjectId(mailingId),
+  });
+
+  const file = {
+    name: previewFileUrl,
+    path: path.join(config.images.tmpDir, `/${previewFileUrl}`)
+  }
+
+  if (!previewFileUrl) {
+    const hash = crypto.createHash('md5').update(preview).digest('hex');
+    const name = `${mailingId}-${hash}.png`;
+    const filePath = path.join(config.images.tmpDir, `/${name}`);
+
+    file.name = name;
+    file.path = filePath;
+  }
+
+  await fs.writeFile(file.path, preview);
+
+  const stream = await fs.createReadStream(file.path);
+
+  const prefix = `groups/${_company}/mailings/${mailingId}/preview`;
+  await fileManager.writeStreamFromStreamWithPrefix(stream, file.name, prefix);
+
+  await Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailingId) },
+    { previewFileUrl: file.name }
+  );
+}
+
 async function previewMail({ mailingId, cookies }) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId)})) ) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
   const browser = await getHeadlessBrowser();
   try {
     const page = await browser.newPage();
@@ -407,6 +446,8 @@ async function previewMail({ mailingId, cookies }) {
     });
 
     await browser.close();
+
+    await storePreview(mailingId, screenShot);
 
     return screenShot;
   } catch (error) {

@@ -1,4 +1,5 @@
 /uploads/**
+/previews/**
 !uploads/README.md
 .tmp/**
 !.tmp/README.md

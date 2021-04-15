@@ -26,6 +26,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const generatePreview = require('../template/generate-preview.controller.js')
 
 module.exports = {
   createMailing,
@@ -41,6 +42,7 @@ module.exports = {
   findAllIn,
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
+  generateMailingPreview
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -162,6 +164,13 @@ async function createInsideWorkspaceOrFolder(mailingData) {
   response.data = newMailing.data;
 
   return response;
+}
+
+async function generateMailingPreview(mailingId, cookies) {
+  await generatePreview.previewMail({
+    mailingId: mongoose.Types.ObjectId(mailingId),
+    cookies,
+  })
 }
 
 function checkCreationPayload(mailings) {

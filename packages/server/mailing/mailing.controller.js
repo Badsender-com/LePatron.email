@@ -15,7 +15,6 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const generatePreview = require('../template/generate-preview.controller.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -32,7 +31,6 @@ module.exports = {
   bulkDestroy: asyncHandler(bulkDestroy),
   delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
-  previewMail: asyncHandler(previewMail),
   // already wrapped in asyncHandler
   sendTestMail,
   downloadZip,
@@ -74,7 +72,7 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const { user } = req;
+  const { user, cookies } = req;
   const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
@@ -86,6 +84,9 @@ async function create(req, res) {
   });
 
   res.json(response);
+
+  // not awaited on purpose
+  mailingService.generateMailingPreview(response.id, cookies);
 }
 
 /**
@@ -309,7 +310,10 @@ async function updateMosaico(req, res) {
   const { mailingId } = req.params;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+
+  if (!mailing) {
+    throw new createError.NotFound();
+  }
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
@@ -318,11 +322,16 @@ async function updateMosaico(req, res) {
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
   await mailing.save();
+
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
     req.user.lang
   );
+
   res.json(mailingForMosaico);
+
+  // not awaited on purpose
+  mailingService.generateMailingPreview(mailingId, req.cookies);
 }
 
 /**
@@ -495,35 +504,4 @@ async function transferToUser(req, res) {
   // • if needed we can cope with that by manually copy it in the response (response.data = updatedMailing.data)
   const response = updatedMailing.toJSON();
   res.json(response);
-}
-
-/**
- * @api {put} /mailings/:mailingId/preview mailing preview from mosaico
- * @apiPermission user
- * @apiName PreviewMailingForMosaico
- * @apiGroup Mailings
- *
- * @apiParam {string} mailingId
- *
- * @apiUse mailings
- */
-
-async function previewMail(req, res) {
-  const { cookies, params } = req;
-  const { mailingId } = params || {};
-  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
-  const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
-    req.user.lang
-  );
-
-  if (!mailingForMosaico) throw new createError.NotFound();
-
-  const response = await generatePreview.previewMail({
-    mailingId,
-    cookies,
-    mailingForMosaico,
-  });
-  res.setHeader('Content-Type', 'image/png');
-  res.end(response);
 }

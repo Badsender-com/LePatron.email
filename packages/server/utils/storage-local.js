@@ -14,6 +14,13 @@ function streamImage(imageName) {
   return fs.createReadStream(imagePath);
 }
 
+function streamImageFromPreviews(imageName, prefix) {
+  const directory = `${config.images.previewsDir}/${prefix}`;
+
+  const imagePath = path.join(directory, imageName);
+  return fs.createReadStream(imagePath);
+}
+
 function writeStreamFromPath(file) {
   const deferred = defer();
   // every files are uploaded to the uploadDir
@@ -27,6 +34,22 @@ function writeStreamFromPath(file) {
 function writeStreamFromStream(source, name) {
   const deferred = defer();
   const destPath = path.join(config.images.uploadDir, name);
+  const dest = fs.createWriteStream(destPath);
+  source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve);
+  return deferred;
+}
+
+function writeStreamFromStreamWithPrefix(source, name, prefix) {
+  const deferred = defer();
+
+  const directory = `${config.images.previewsDir}/${prefix}`;
+
+  if(!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+
+  const destPath = path.join(directory, name);
+
   const dest = fs.createWriteStream(destPath);
   source.pipe(dest).on('error', deferred.reject).on('close', deferred.resolve);
   return deferred;
@@ -57,8 +80,10 @@ function copyImages(oldPrefix, newPrefix) {
 
 module.exports = {
   streamImage,
+  streamImageFromPreviews,
   writeStreamFromPath,
   writeStreamFromStream,
+  writeStreamFromStreamWithPrefix,
   listImages,
   copyImages,
 };

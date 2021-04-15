@@ -27,7 +27,6 @@ router.post(
 );
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
-router.get('/:mailingId/preview', GUARD_USER, mailings.previewMail);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);
 router.post(
   '/:mailingId/transfer-to-user',
