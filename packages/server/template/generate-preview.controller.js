@@ -358,15 +358,14 @@ async function createPreviews({ templateId, cookies }) {
 }
 
 async function storePreview(mailingId, preview) {
-
   const { previewFileUrl, _company } = await Mailings.findOne({
     _id: mongoose.Types.ObjectId(mailingId),
   });
 
   const file = {
     name: previewFileUrl,
-    path: path.join(config.images.tmpDir, `/${previewFileUrl}`)
-  }
+    path: path.join(config.images.tmpDir, `/${previewFileUrl}`),
+  };
 
   if (!previewFileUrl) {
     const hash = crypto.createHash('md5').update(preview).digest('hex');
@@ -391,7 +390,7 @@ async function storePreview(mailingId, preview) {
 }
 
 async function previewMail({ mailingId, cookies }) {
-  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId)})) ) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
 
@@ -399,6 +398,7 @@ async function previewMail({ mailingId, cookies }) {
   try {
     const page = await browser.newPage();
     await page.goto(VERSION_PAGE);
+    page.setDefaultNavigationTimeout(0);
     // copy cookies to keep authentication
     // • req.cookies are a big object
     // • puppeteer expect each cookie as an argument
@@ -409,7 +409,7 @@ async function previewMail({ mailingId, cookies }) {
     }));
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
-      waitUntil: 'networkidle0',
+      waitUntil: 'load',
       timeout: 0,
     });
 
