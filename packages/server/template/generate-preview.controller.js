@@ -397,6 +397,9 @@ async function previewMail({ mailingId, cookies }) {
   const browser = await getHeadlessBrowser();
   try {
     const page = await browser.newPage();
+    const navigationPromise = page.waitForNavigation({
+      waitUntil: 'domcontentloaded',
+    });
     page.setDefaultNavigationTimeout(0);
     // copy cookies to keep authentication
     // • req.cookies are a big object
@@ -407,13 +410,12 @@ async function previewMail({ mailingId, cookies }) {
       name,
       value,
     }));
-    console.log(puppeteersCookies);
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
       waitUntil: 'networkidle2',
       timeout: 3000000,
     });
-
+    await navigationPromise;
     await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load
     const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
