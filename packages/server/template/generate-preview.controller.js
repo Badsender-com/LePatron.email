@@ -413,10 +413,12 @@ async function previewMail({ mailingId, cookies }) {
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
       waitUntil: 'networkidle2',
-      timeout: 3000000,
+      timeout: 0,
     });
     await navigationPromise;
-    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load
+    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP, {
+      timeout: 0,
+    }); // wait for the selector to load
     const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
 
