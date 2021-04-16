@@ -397,20 +397,21 @@ async function previewMail({ mailingId, cookies }) {
   const browser = await getHeadlessBrowser();
   try {
     const page = await browser.newPage();
-    await page.goto(VERSION_PAGE);
     page.setDefaultNavigationTimeout(0);
     // copy cookies to keep authentication
     // • req.cookies are a big object
     // • puppeteer expect each cookie as an argument
     //   https://pptr.dev/#?product=Puppeteer&version=v1.11.0&show=api-pagesetcookiecookies
     const puppeteersCookies = Object.entries(cookies).map(([name, value]) => ({
+      url: getMailPreviewUrl(mailingId),
       name,
       value,
     }));
+    console.log(puppeteersCookies);
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
-      waitUntil: 'load',
-      timeout: 0,
+      waitUntil: 'networkidle2',
+      timeout: 3000000,
     });
 
     await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load
