@@ -410,7 +410,6 @@ async function previewMail({ mailingId, cookies }) {
       name,
       value,
     }));
-    console.log(puppeteersCookies);
     await page.setCookie(...puppeteersCookies);
     await page.goto(getMailPreviewUrl(mailingId), {
       waitUntil: 'networkidle2',
