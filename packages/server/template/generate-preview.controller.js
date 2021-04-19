@@ -398,39 +398,25 @@ async function previewMail({ mailingId, cookies }) {
   const browser = await getHeadlessBrowser();
   try {
     const page = await browser.newPage();
-    const navigationPromise = page.waitForNavigation({
-      waitUntil: 'domcontentloaded',
-    });
-    page.setDefaultNavigationTimeout(0);
+    await page.goto(VERSION_PAGE);
     // copy cookies to keep authentication
     // • req.cookies are a big object
     // • puppeteer expect each cookie as an argument
     //   https://pptr.dev/#?product=Puppeteer&version=v1.11.0&show=api-pagesetcookiecookies
     const puppeteersCookies = Object.entries(cookies).map(([name, value]) => ({
-      url: getMailPreviewUrl(mailingId),
       name,
       value,
     }));
-    await page.setCookie(...puppeteersCookies);
     logger.log('Loading page for mailing %s ...', mailingId);
-    await page.goto(getMailPreviewUrl(mailingId), {
-      waitUntil: 'networkidle0',
-      timeout: 0,
-    });
-    await navigationPromise;
-    logger.log(
-      'Waiting for selector %s to load ...',
-      BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP
-    );
-    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP, {
-      visible: true,
-    }); // wait for the selector to load
     await page.setCookie(...puppeteersCookies);
+    page.goto(getMailPreviewUrl(mailingId), {
+      waitUntil: 'domcontentloaded',
+    });
+    await Promise.all([
+      page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP),
+    ]);
+    logger.log('Loaded selector %s ', BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
 
-    logger.log(
-      'Waiting for %s selection...',
-      BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP
-    );
     const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
 
