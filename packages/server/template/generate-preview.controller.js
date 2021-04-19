@@ -412,9 +412,7 @@ async function previewMail({ mailingId, cookies }) {
     page.goto(getMailPreviewUrl(mailingId), {
       waitUntil: 'domcontentloaded',
     });
-    await Promise.all([
-      page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP),
-    ]);
+    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     logger.log('Loaded selector %s ', BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
 
     const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
