@@ -21,6 +21,7 @@ const badsenderEvents = require('../helpers/event-bus.js');
 const eventsNames = require('../helpers/event-names.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const _getMailImagePrefix = require('../utils/get-mail-image-prefix.js');
+const logger = require('../utils/logger.js');
 
 // on heroku this build pack is needed
 // https://github.com/jontewks/puppeteer-heroku-buildpack
@@ -67,7 +68,7 @@ function getMailPreviewUrl(mailingId) {
 }
 
 function logDuration(message, start) {
-  console.log(`${message} – ${(Date.now() - start) / 1000}s`);
+  logger.log(`${message} – ${(Date.now() - start) / 1000}s`);
 }
 
 /**
@@ -90,7 +91,7 @@ async function generatePreviews(req, res) {
   if (!template) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   if (!template.markup) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   // don't wait for the full preview to be generated
-  createPreviews({ templateId, cookies }).catch((error) => console.log(error));
+  createPreviews({ templateId, cookies }).catch((error) => logger.log(error));
   res.json({ id: templateId, status: 'preview start' });
 }
 
@@ -277,7 +278,7 @@ async function createPreviews({ templateId, cookies }) {
         //   originalEventName: eventsNames.PREVIEW_PROGRESS,
         //   payload: { templateId, message: imageLogName },
         // })
-        console.log(`[PREVIEWS] ${imageLogName}`);
+        logger.log(`[PREVIEWS] ${imageLogName}`);
         // slug to be coherent with upload
         const originalName = slugFilename(blocksName[index]);
         const hash = crypto.createHash('md5').update(imageBuffer).digest('hex');
@@ -308,7 +309,7 @@ async function createPreviews({ templateId, cookies }) {
           originalEventName: eventsNames.PREVIEW_PROGRESS,
           payload: { templateId, message: imageLogName },
         });
-        console.log(`[PREVIEWS] ${imageLogName}`);
+        logger.log(`[PREVIEWS] ${imageLogName}`);
         // images are captured at 680 but displayed at half the size
         const pipeline = sharp().resize(340, null);
         fs.createReadStream(file.path).pipe(pipeline);
@@ -411,14 +412,25 @@ async function previewMail({ mailingId, cookies }) {
       value,
     }));
     await page.setCookie(...puppeteersCookies);
+    logger.log('Loading page for mailing %s ...', mailingId);
     await page.goto(getMailPreviewUrl(mailingId), {
-      waitUntil: 'networkidle2',
+      waitUntil: 'networkidle0',
       timeout: 0,
     });
     await navigationPromise;
+    logger.log(
+      'Waiting for selector %s to load ...',
+      BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP
+    );
     await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP, {
-      timeout: 0,
+      visible: true,
     }); // wait for the selector to load
+    await page.setCookie(...puppeteersCookies);
+
+    logger.log(
+      'Waiting for %s selection...',
+      BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP
+    );
     const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
     const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
 
@@ -449,7 +461,8 @@ async function previewMail({ mailingId, cookies }) {
     const screenShot = await $element.screenshot({
       path: imagePreviewNameWithExtension,
     });
-
+    logger.log('Page successfully screenshot');
+    logger.log('Closing Browser');
     await browser.close();
 
     await storePreview(mailingId, screenShot);
