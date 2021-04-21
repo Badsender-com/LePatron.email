@@ -3,9 +3,9 @@ import { mapMutations, mapGetters } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
-import ModalCopyMail from '~/routes/mailings/__partials/mailings-copy-modal';
-import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
-import PreviewMail from '~/routes/mailings/__partials/preview-mail';
+import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
+import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
+import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-modal';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
@@ -44,12 +44,12 @@ export default {
   components: {
     BsMailingsModalRename,
     BsModalConfirmForm,
-    ModalCopyMail,
+    MailingsCopyModal,
     BsMailingsActionsDropdown,
     BsMailingsActionsDropdownItem,
     MailingsTagsMenu,
-    ModalMoveMail,
-    PreviewMail,
+    MailingsMoveModal,
+    MailingsPreviewModal,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -176,6 +176,14 @@ export default {
           id: mailing.id,
         },
         location: this.currentLocation,
+      });
+    },
+    openPreviewMail(mailing) {
+      this.$refs.previewMailDialog.open({
+        mail: {
+          name: mailing.name,
+          id: mailing.id,
+        },
       });
     },
     closeCopyMailDialog() {
@@ -394,25 +402,12 @@ export default {
           >
             {{ $t(actionsDetails[actions.TRANSFER].text) }}
           </bs-mailings-actions-dropdown-item>
-
-            <v-menu open-on-click center offset-overflow>
-              <template #activator="{ on }">
-                <v-list-item  v-on="on">
-                  <v-list-item-avatar>
-                    <v-btn color="primary" icon>
-                      <v-icon>{{actionsDetails[actions.PREVIEW].icon}}</v-icon>
-                    </v-btn>
-                  </v-list-item-avatar>
-                  <v-list-item-title >
-                    {{ $t(actionsDetails[actions.PREVIEW].text) }}
-                  </v-list-item-title>
-                </v-list-item>
-              </template>
-              <v-list>
-                <preview-mail :mailing="item" />
-              </v-list>
-            </v-menu>
-
+          <bs-mailings-actions-dropdown-item
+            :icon="actionsDetails[actions.PREVIEW].icon"
+            :on-click="() => openPreviewMail(item)"
+          >
+            {{ $t(actionsDetails[actions.PREVIEW].text) }}
+          </bs-mailings-actions-dropdown-item>
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.COPY_MAIL)"
             :icon="actionsDetails[actions.COPY_MAIL].icon"
@@ -458,13 +453,13 @@ export default {
         "
       />
     </bs-modal-confirm-form>
-    <modal-copy-mail ref="copyMailDialog" @confirm="copyMail">
+    <mailings-copy-modal ref="copyMailDialog" @confirm="copyMail">
       <p
         class="black--text"
         v-html="$t('mailings.copyMailConfirmationMessage')"
       />
-    </modal-copy-mail>
-    <modal-move-mail
+    </mailings-copy-modal>
+    <mailings-move-modal
       ref="moveMailDialog"
       :title="`${this.$t('global.moveMail')}`"
       @confirm="moveMail"
@@ -473,7 +468,8 @@ export default {
         class="black--text"
         v-html="$t('mailings.moveMailConfirmationMessage')"
       />
-    </modal-move-mail>
+    </mailings-move-modal>
+    <mailings-preview-modal ref="previewMailDialog" />
   </div>
 </template>
 

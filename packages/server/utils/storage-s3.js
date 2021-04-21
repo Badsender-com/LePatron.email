@@ -29,19 +29,6 @@ if (!config.isAws) {
     return awsStream;
   };
 
-  const streamImageFromPreviews = (imageName, prefix) => {
-    const awsRequest = s3.getObject({
-      Bucket: config.storage.aws.bucketName,
-      Prefix: prefix,
-      Key: imageName,
-    });
-    const awsStream = awsRequest.createReadStream();
-    // break if no bind…
-    // mirror fs stream method name
-    awsStream.destroy = awsRequest.abort.bind(awsRequest);
-    return awsStream;
-  };
-
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#upload-property
   const writeStreamFromPath = (file) => {
     const deferred = defer();
@@ -156,7 +143,6 @@ if (!config.isAws) {
 
   module.exports = {
     streamImage,
-    streamImageFromPreviews,
     writeStreamFromPath,
     writeStreamFromStream,
     writeStreamFromStreamWithPrefix,

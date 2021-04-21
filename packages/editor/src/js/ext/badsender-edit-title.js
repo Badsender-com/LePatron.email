@@ -29,13 +29,13 @@ function handleCreationName(viewModel) {
   viewModel.saveEditCreationName = function (data, event) {
     console.log('saveEditCreationName', viewModel.metadata.name());
     viewModel.titleMode('saving');
-    viewModel.notifier.info(viewModel.t('edit-title-ajax-pending'));
+    viewModel.notifier.info('bla bla bla');
 
     $.ajax({
       method: 'PUT',
       url: viewModel.metadata.url.update,
       data: {
-        name: viewModel.metadata.name(),
+        name: viewModel.metadata.name()
       },
       success: function (mosaicoCreation) {
         viewModel.metadata.name(mosaicoCreation.metadata.name);
