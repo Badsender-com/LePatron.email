@@ -54,7 +54,6 @@ function loader(opts) {
       }
 
       function onPostError(jqXHR, textStatus, errorThrown) {
-        console.log('amine');
         console.log('save error');
         console.log(errorThrown);
         viewModel.notifier.error(viewModel.t('save-message-error'));
