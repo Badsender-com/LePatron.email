@@ -15,9 +15,6 @@ export default {
       return `${this.previewHref}?download=true`;
     },
   },
-  mounted() {
-    console.log(this.markup);
-  },
 };
 </script>
 
@@ -27,7 +24,7 @@ export default {
     <v-card-text>
       <details>
         <summary>{{ $t('global.show') }}</summary>
-        <!--        <pre class="html-content" v-text="markup" />-->
+        <pre class="html-content" v-text="markup" />
       </details>
     </v-card-text>
     <v-divider />

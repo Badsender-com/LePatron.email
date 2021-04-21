@@ -29,7 +29,7 @@ function handleCreationName(viewModel) {
   viewModel.saveEditCreationName = function (data, event) {
     console.log('saveEditCreationName', viewModel.metadata.name());
     viewModel.titleMode('saving');
-    viewModel.notifier.info('bla bla bla');
+    viewModel.notifier.info(viewModel.t('edit-title-ajax-pending'));
 
     $.ajax({
       method: 'PUT',
