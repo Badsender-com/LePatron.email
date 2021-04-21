@@ -105,6 +105,12 @@ export default {
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',
       enable: 'Enable',
+      status: {
+        label: 'Status',
+        demo: 'Demo',
+        inactive: 'Inactive',
+        active: 'Active',
+      },
       ftpProtocol: 'FTP protocol',
       host: 'Host',
       username: 'Username',
