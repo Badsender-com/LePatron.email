@@ -81,10 +81,10 @@ function loader(opts) {
       // Don't validate `null` values => isEmail will error
       if (!email) return testCmd.enabled(true);
 
-      if (!isEmail(email)) {
-        global.alert(viewModel.t('Invalid email address'));
-        return testCmd.enabled(true);
-      }
+      // if (!isEmail(email)) {
+      //   global.alert(viewModel.t('Invalid email address'));
+      //   return testCmd.enabled(true);
+      // }
 
       console.log('TODO testing...', email);
       var metadata = ko.toJS(viewModel.metadata);
