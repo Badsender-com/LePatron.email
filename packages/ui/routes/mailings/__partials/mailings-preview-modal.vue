@@ -26,7 +26,6 @@ export default {
       this.loading = true;
       this.errorPreview = false;
       try {
-        console.log({ data: this.data });
         this.previewHtml = await this.$axios.$get(
           imageFromPreviews(this.data?.mail?.id),
           {
