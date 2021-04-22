@@ -115,6 +115,16 @@ function loader(opts) {
       function onTestComplete() {
         testCmd.enabled(true);
       }
+      function onTestSuccess(data, textStatus, jqXHR) {
+        console.log('test success');
+        viewModel.notifier.success(viewModel.t('Test email sent...'));
+      }
+      function onTestError(jqXHR, textStatus, errorThrown) {
+        console.log('test error');
+        console.log(errorThrown);
+        viewModel.notifier.error(
+          viewModel.t('Unexpected error talking to server: contact us!')
+        )}
     };
 
     //////
