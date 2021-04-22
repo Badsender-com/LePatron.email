@@ -83,48 +83,49 @@ function loader(opts) {
       testCmd.enabled(false);
       var email = viewModel.t('Insert here the recipient email address');
       email = global.prompt(viewModel.t('Test email address'), email);
-      const adresses = email.split(";");
 
-      for (const address of adresses){
-        // Don't validate `null` values => isEmail will error
-        if (!address) return testCmd.enabled(true);
+      // Don't validate `null` values => isEmail will error
+      if (!email) return testCmd.enabled(true);
 
+      const emails = email.split(";");
+      for (const address of emails){
         if (!isEmail(address)) {
           global.alert(viewModel.t('Invalid email address'));
           return testCmd.enabled(true);
         }
-        console.log('TODO testing...', address);
       }
 
-      for (const address of adresses){
-        const metadata = ko.toJS(viewModel.metadata);
-        const datas = {
-          rcpt: address,
-          html: viewModel.exportHTML(),
-        };
-        $.ajax({
-          url: viewModel.metadata.url.send,
-          method: 'POST',
-          data: datas,
-          success: onTestSuccess,
-          error: onTestError,
-          complete: onTestComplete,
-        });
-      }
+      console.log('TODO testing...', email);
+      var metadata = ko.toJS(viewModel.metadata);
+      var datas = {
+        rcpt: email,
+        html: viewModel.exportHTML(),
+      };
+      $.ajax({
+        url: viewModel.metadata.url.send,
+        method: 'POST',
+        data: datas,
+        success: onTestSuccess,
+        error: onTestError,
+        complete: onTestComplete,
+      });
 
-      function onTestComplete() {
-        testCmd.enabled(true);
-      }
       function onTestSuccess(data, textStatus, jqXHR) {
         console.log('test success');
         viewModel.notifier.success(viewModel.t('Test email sent...'));
       }
+
       function onTestError(jqXHR, textStatus, errorThrown) {
         console.log('test error');
         console.log(errorThrown);
         viewModel.notifier.error(
           viewModel.t('Unexpected error talking to server: contact us!')
-        )}
+        );
+      }
+
+      function onTestComplete() {
+        testCmd.enabled(true);
+      }
     };
 
     //////
