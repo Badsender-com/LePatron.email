@@ -246,7 +246,7 @@
     "code:fix": "yarn code:lint --fix && yarn code:pretty"
   },
   "engines": {
-    "node": "15.3.0",
+    "node": "14.16.0",
     "yarn": ">=1.12.1"
   },
   "husky": {
