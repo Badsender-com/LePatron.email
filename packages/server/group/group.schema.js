@@ -32,7 +32,7 @@ const GroupSchema = Schema(
     status: {
       type: String,
       enum: [Status.DEMO, Status.INACTIVE, Status.ACTIVE],
-      required: false, // this part is
+      required: [true, 'A status is required'],
     },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,

@@ -110,6 +110,7 @@ export default {
         demo: 'Demo',
         inactive: 'Inactive',
         active: 'Active',
+        requiredValidationMessage: 'A status is required',
       },
       ftpProtocol: 'FTP protocol',
       host: 'Host',
@@ -275,6 +276,7 @@ export default {
       downloadWithoutEnclosingFolder: 'Download without parent folder',
       cdnDownload: 'CDN download',
       ftpDownload: 'FTP download',
+      status: 'Status',
     },
     users: {
       passwordMail: 'Password\' mail',

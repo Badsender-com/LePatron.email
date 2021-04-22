@@ -158,9 +158,15 @@ export default {
               <v-select
                 id="groupStatus"
                 v-model="localModel.status"
+                :rules="[
+                  (v) =>
+                    !!v ||
+                    this.$t('forms.group.status.requiredValidationMessage'),
+                ]"
                 :label="$t('forms.group.status.label')"
                 name="status"
                 :items="statusOptions"
+                required
               />
             </v-col>
             <v-col v-if="isAdmin" cols="4">

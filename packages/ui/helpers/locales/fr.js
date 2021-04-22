@@ -107,6 +107,7 @@ export default {
         demo: 'Demo',
         inactive: 'Inactive',
         active: 'Active',
+        requiredValidationMessage: 'Le statut est requiss',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
@@ -279,6 +280,7 @@ export default {
       downloadWithoutEnclosingFolder: 'Télécharger sans dossier parent',
       cdnDownload: 'Téléchargement CDN',
       ftpDownload: 'Téléchargement FTP',
+      status: 'Statut',
     },
     users: {
       passwordMail: 'Email de mot de passe',
