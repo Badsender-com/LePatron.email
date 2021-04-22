@@ -51,7 +51,6 @@ const config = rc('lepatron', {
   },
   images: {
     uploadDir: 'uploads',
-    previewsDir: 'previews',
     tmpDir: 'tmp',
     cache: false,
   },
@@ -97,16 +96,13 @@ if (config.isDev && isLocalEmailTransport) {
 config.setup = new Promise((resolve, reject) => {
   const tmpPath = path.join(__dirname, '../../', config.images.tmpDir);
   const uploadPath = path.join(__dirname, '../../', config.images.uploadDir);
-  const previewsPath = path.join(__dirname, '../../', config.images.previewsDir);
   const tmpDir = mkdirp(tmpPath);
   const uploadDir = config.isAws ? Promise.resolve(null) : mkdirp(uploadPath);
-  const previewsDir = config.isAws ? Promise.resolve(null) : mkdirp(previewsPath);
 
-  Promise.all([tmpDir, uploadDir, previewsDir])
+  Promise.all([tmpDir, uploadDir])
     .then(() => {
       config.images.tmpDir = tmpPath;
       config.images.uploadDir = uploadPath;
-      config.images.previewsDir = previewsPath;
       resolve(config);
     })
     .catch((err) => {
@@ -115,21 +111,16 @@ config.setup = new Promise((resolve, reject) => {
       console.log(err);
       const tmpPath = path.join(os.tmpdir(), config.images.tmpDir);
       const uploadPath = path.join(os.tmpdir(), config.images.uploadDir);
-      const previewsPath = path.join(os.tmpdir(), config.images.previewsDir);
       const tmpDir = mkdirp(tmpPath);
       const uploadDir = config.isAws
         ? Promise.resolve(null)
         : mkdirp(uploadPath);
-      const previewsDir = config.isAws
-        ? Promise.resolve(null)
-        : mkdirp(previewsPath);
 
-      Promise.all([tmpDir, uploadDir, previewsDir])
+      Promise.all([tmpDir, uploadDir])
         .then(() => {
           console.log('all done with os.tmpdir()');
           config.images.tmpDir = tmpPath;
           config.images.uploadDir = uploadPath;
-          config.images.previewsDir = previewsPath;
           resolve(config);
         })
         .catch((err) => {

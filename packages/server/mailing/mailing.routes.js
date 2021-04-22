@@ -11,6 +11,7 @@ const mailings = require('./mailing.controller.js');
 router.get('', GUARD_USER, mailings.list);
 router.post('', GUARD_USER, mailings.create);
 router.patch('/:mailingId', GUARD_USER, mailings.rename);
+router.get('/:mailingId/preview', mailings.previewHtml);
 router.delete('/:mailingId', GUARD_USER, mailings.delete);
 router.post('/copy', GUARD_USER, mailings.copy);
 router.post('/:mailingId/move', GUARD_USER, mailings.move);

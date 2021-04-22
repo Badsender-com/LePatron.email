@@ -27,7 +27,6 @@ module.exports = {
   list: asyncHandler(list),
   create: asyncHandler(create),
   read,
-  readFromPreviews,
   destroy,
 };
 
@@ -142,33 +141,6 @@ const handleGifStream = (req, res, next, gifProcessor) => {
 
 const streamImageToResponse = (req, res, next, imageName) => {
   const imageStream = fileManager.streamImage(imageName);
-  const contentType = mime.lookup(imageName);
-  imageStream.on('error', handleFileStreamError(next));
-  // We have to end stream manually on res stream error (can happen if user close connection before end)
-  // If not done, we will have a memory leaks
-  // https://groups.google.com/d/msg/nodejs/wtmIzV0lh8o/cz3wqBtDc-MJ
-  // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
-  imageStream.once('readable', () => {
-    addCacheControl(res);
-    // try to guess content-type from filename
-    // we should do a better thing like a fs-stat
-    // http://stackoverflow.com/questions/13485933/createreadstream-send-file-http#answer-13486341
-    // but we want the response to be as quick as possible
-    if (contentType) res.set('Content-Type', contentType);
-
-    imageStream
-      .pipe(res)
-      // response doesn't have a 'close' event but a finish one
-      // this shouldn't be useful because at this point stream would be entirely consumed and released
-      .on('finish', imageStream.destroy.bind(imageStream))
-      // this is mandatory
-      .on('error', imageStream.destroy.bind(imageStream));
-  });
-};
-
-const streamImageToResponseForPreviews = (req, res, next, imageName, prefix) => {
-  const imageStream = fileManager.streamImageFromPreviews(imageName, prefix);
-
   const contentType = mime.lookup(imageName);
   imageStream.on('error', handleFileStreamError(next));
   // We have to end stream manually on res stream error (can happen if user close connection before end)
@@ -421,13 +393,6 @@ function placeholder(req, res) {
 function read(req, res, next) {
   const { imageName } = req.params;
   streamImageToResponse(req, res, next, imageName);
-}
-
-function readFromPreviews(req, res, next) {
-  const { imageName, groupId, mailingId } = req.params;
-  const prefix = `/groups/${groupId}/mailings/${mailingId}/preview`;
-
-  streamImageToResponseForPreviews(req, res, next, imageName, prefix)
 }
 
 /// ///

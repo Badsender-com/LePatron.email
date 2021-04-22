@@ -44,7 +44,7 @@ async function hasAccess(folderId, user) {
 async function hasContent(folderId) {
   const mail = await Mailings.findOne(
     { _parentFolder: mongoose.Types.ObjectId(folderId) },
-    { data: 0 }
+    { previewHtml: 0, data: 0 }
   );
   const folder = await findFirst({
     _parentFolder: mongoose.Types.ObjectId(folderId),
