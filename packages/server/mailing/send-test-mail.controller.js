@@ -10,6 +10,7 @@ const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
 const isEmail = require('validator/lib/isEmail');
 const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
 
 module.exports = asyncHandler(sendTestMail);
 
@@ -44,7 +45,6 @@ async function sendTestMail(req, res) {
   const html = processMosaicoHtmlRender(req.body.html);
 
   const adresses = body.rcpt.split(';');
-  console.log('adresses', adresses);
   for (const mail of adresses) {
     if (!isEmail(mail)) {
       throw new BadRequest(ERROR_CODES.EMAIL_NOT_VALID);
@@ -58,7 +58,7 @@ async function sendTestMail(req, res) {
       html,
     });
 
-    console.log(`Message sent: ${mailInfo.response}`);
+    logger.log('Message sent: ', mailInfo.response);
   }
   res.json({ mailingList: body.rcpt });
 }
