@@ -95,6 +95,7 @@ export default {
     return {
       group: {
         name: { required },
+        status: { required },
         defaultWorkspaceName: {},
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
@@ -158,15 +159,13 @@ export default {
               <v-select
                 id="groupStatus"
                 v-model="localModel.status"
-                :rules="[
-                  (v) =>
-                    !!v ||
-                    this.$t('forms.group.status.requiredValidationMessage'),
-                ]"
+                :error-messages="requiredErrors('status')"
                 :label="$t('forms.group.status.label')"
                 name="status"
-                :items="statusOptions"
                 required
+                :items="statusOptions"
+                @input="$v.group.status.$touch()"
+                @blur="$v.group.status.$touch()"
               />
             </v-col>
             <v-col v-if="isAdmin" cols="4">
