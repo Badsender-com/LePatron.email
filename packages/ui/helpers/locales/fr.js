@@ -102,6 +102,12 @@ export default {
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
       },
+      status: {
+        label: 'Statut',
+        demo: 'Demo',
+        inactive: 'Inactive',
+        active: 'Active',
+      },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
       enable: 'Activer',

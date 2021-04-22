@@ -4,7 +4,7 @@ const { Schema } = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
 
 const { normalizeString, trimString } = require('../utils/model');
-
+const Status = require('./status');
 /**
  * @apiDefine group
  * @apiSuccess {String} id
@@ -28,6 +28,11 @@ const GroupSchema = Schema(
       // violating the constraint returns an E11000 error from MongoDB when saving, not a Mongoose validation error.
       unique: true,
       set: normalizeString,
+    },
+    status: {
+      type: String,
+      enum: [Status.DEMO, Status.INACTIVE, Status.ACTIVE],
+      required: false, // this part is
     },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,
