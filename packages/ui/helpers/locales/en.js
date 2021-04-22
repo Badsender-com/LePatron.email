@@ -105,6 +105,12 @@ export default {
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',
       enable: 'Enable',
+      status: {
+        label: 'Status',
+        demo: 'Demo',
+        inactive: 'Inactive',
+        active: 'Active',
+      },
       ftpProtocol: 'FTP protocol',
       host: 'Host',
       username: 'Username',
@@ -193,7 +199,9 @@ export default {
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',
-    errorPreview: 'Error on preview loading.',
+    errorPreview: 'No preview available for this email.',
+    subErrorPreview:
+      'A preview will be generated when opening the mail editor.',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',

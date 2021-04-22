@@ -3,6 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, USER } from '~/store/user';
+import { Status } from '~/helpers/constants/status';
 
 export default {
   name: 'BsGroupForm',
@@ -44,6 +45,22 @@ export default {
         {
           text: this.$t('forms.group.downloadWithoutEnclosingFolder.unwrapped'),
           value: true,
+        },
+      ];
+    },
+    statusOptions() {
+      return [
+        {
+          text: this.$t('forms.group.status.demo'),
+          value: Status.DEMO,
+        },
+        {
+          text: this.$t('forms.group.status.active'),
+          value: Status.ACTIVE,
+        },
+        {
+          text: this.$t('forms.group.status.inactive'),
+          value: Status.INACTIVE,
         },
       ];
     },
@@ -107,16 +124,12 @@ export default {
 </script>
 
 <template>
-  <v-card
-    :flat="flat"
-    :tile="flat"
-    tag="form"
-  >
+  <v-card :flat="flat" :tile="flat" tag="form">
     <v-card-text>
       <v-row>
         <v-col cols="12">
           <v-row>
-            <v-col cols="7">
+            <v-col cols="4">
               <v-text-field
                 id="name"
                 v-model="localModel.name"
@@ -141,8 +154,16 @@ export default {
                 @blur="$v.group.defaultWorkspaceName.$touch()"
               />
             </v-col>
-
-            <v-col v-if="isAdmin" cols="5">
+            <v-col v-if="isAdmin" cols="4">
+              <v-select
+                id="groupStatus"
+                v-model="localModel.status"
+                :label="$t('forms.group.status.label')"
+                name="status"
+                :items="statusOptions"
+              />
+            </v-col>
+            <v-col v-if="isAdmin" cols="4">
               <v-select
                 id="downloadMailingWithoutEnclosingFolder"
                 v-model="localModel.downloadMailingWithoutEnclosingFolder"
@@ -153,7 +174,6 @@ export default {
               />
             </v-col>
           </v-row>
-
           <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
@@ -371,13 +391,7 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn
-        text
-        large
-        color="primary"
-        :disabled="disabled"
-        @click="onSubmit"
-      >
+      <v-btn text large color="primary" :disabled="disabled" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>

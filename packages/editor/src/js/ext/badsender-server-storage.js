@@ -18,7 +18,6 @@ function loader(opts) {
   var updateRoute = opts.metadata.url.update;
   return function (viewModel) {
     console.info('init server storage (save, test, download)');
-
     //////
     // SAVE
     //////
@@ -31,8 +30,10 @@ function loader(opts) {
       saveCmd.enabled(false);
       var data = getData(viewModel);
       console.info('SAVE DATA');
-      console.log(data);
-
+      data = {
+        ...data,
+        htmlToExport: viewModel.exportHTML()
+      };
       // force JSON for bodyparser to catch up
       // => keep types server side
       $.ajax({
@@ -62,6 +63,11 @@ function loader(opts) {
         saveCmd.enabled(true);
       }
     };
+
+    // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
+    if(!opts.metadata.hasHtmlPreview) {
+      saveCmd.execute();
+    }
 
     //////
     // EMAIL

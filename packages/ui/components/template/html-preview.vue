@@ -2,7 +2,7 @@
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
-  name: `bs-template-html-preview`,
+  name: 'BsTemplateHtmlPreview',
   props: {
     markup: { type: String, default: '' },
     templateId: { type: String, default: '' },
@@ -29,9 +29,9 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn link :href="downloadHref" text large color="primary">{{
-        $t('template.download')
-      }}</v-btn>
+      <v-btn link :href="downloadHref" text large color="primary">
+        {{ $t('template.download') }}
+      </v-btn>
       <v-btn
         link
         :href="previewHref"
@@ -39,8 +39,9 @@ export default {
         text
         large
         color="primary"
-        >{{ $t('template.preview') }}</v-btn
       >
+        {{ $t('template.preview') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

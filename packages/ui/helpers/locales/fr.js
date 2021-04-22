@@ -102,6 +102,12 @@ export default {
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
       },
+      status: {
+        label: 'Statut',
+        demo: 'Demo',
+        inactive: 'Inactive',
+        active: 'Active',
+      },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
       enable: 'Activer',
@@ -192,7 +198,9 @@ export default {
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
-    errorPreview: 'Erreur lors du chargement de l\'aperçu.',
+    errorPreview: 'Pas d’aperçu disponible pour ce mail.',
+    subErrorPreview:
+      'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
