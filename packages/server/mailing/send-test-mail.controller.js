@@ -53,7 +53,7 @@ async function sendTestMail(req, res) {
   for (const address of adresses) {
     const mailInfo = await mail.send({
       to: address,
-      replyTo: user && user.email != null ? user.email : undefined,
+      replyTo: user?.email,
       subject: config.emailOptions.testSubjectPrefix + mailing.name,
       html,
     });
