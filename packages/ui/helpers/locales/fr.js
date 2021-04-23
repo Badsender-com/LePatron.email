@@ -107,7 +107,7 @@ export default {
         demo: 'Demo',
         inactive: 'Inactive',
         active: 'Active',
-        requiredValidationMessage: 'Le statut est requiss',
+        requiredValidationMessage: 'Le statut est requis',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
