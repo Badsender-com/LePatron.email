@@ -29,7 +29,7 @@ function loader(opts) {
     saveCmd.execute = function () {
       saveCmd.enabled(false);
       var data = getData(viewModel);
-      console.info('SAVE DATA');
+
       data = {
         ...data,
         htmlToExport: viewModel.exportHTML()
