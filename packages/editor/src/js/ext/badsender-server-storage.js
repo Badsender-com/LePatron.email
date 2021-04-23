@@ -64,10 +64,9 @@ function loader(opts) {
       }
     };
 
-    // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
-    if(!opts.metadata.hasHtmlPreview) {
-      saveCmd.execute();
-    }
+
+
+
 
     //////
     // EMAIL
