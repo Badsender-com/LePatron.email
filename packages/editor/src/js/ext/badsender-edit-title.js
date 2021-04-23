@@ -35,7 +35,7 @@ function handleCreationName(viewModel) {
       method: 'PUT',
       url: viewModel.metadata.url.update,
       data: {
-        name: viewModel.metadata.name(),
+        name: viewModel.metadata.name()
       },
       success: function (mosaicoCreation) {
         viewModel.metadata.name(mosaicoCreation.metadata.name);

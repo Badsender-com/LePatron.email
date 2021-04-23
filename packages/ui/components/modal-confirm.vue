@@ -63,13 +63,6 @@ export default {
   </v-dialog>
 </template>
 
-<i18n>
-{
-  "en": {},
-  "fr": {}
-}
-</i18n>
-
 <style>
 .v-card__text {
   padding-bottom: 0 !important;

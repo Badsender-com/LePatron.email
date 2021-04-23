@@ -41,6 +41,7 @@ module.exports = {
   findAllIn,
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
+  previewMail,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -89,7 +90,7 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
 
-  return Mailings.find(mailingQuery, { data: 0 });
+  return Mailings.find(mailingQuery, { previewHtml: 0, data: 0 });
 }
 
 async function findTags(query) {
@@ -297,6 +298,16 @@ async function renameMailing(
 
 async function deleteOne(mailing) {
   return Mailings.deleteOne({ _id: mongoose.Types.ObjectId(mailing.id) });
+}
+
+async function previewMail(mailingId) {
+  const mailWithPreview = await Mailings.findById(mailingId, {
+    previewHtml: 1,
+  }).lean();
+  if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  if (!mailWithPreview.previewHtml)
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  return mailWithPreview.previewHtml;
 }
 
 async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {

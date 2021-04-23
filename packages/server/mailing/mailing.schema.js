@@ -41,6 +41,9 @@ const MailingSchema = Schema(
       set: normalizeString,
       required: true,
     },
+    previewHtml: {
+      type: String,
+    },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
@@ -147,7 +150,7 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
 };
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
-  return this.find(query, { data: 0 });
+  return this.find(query, { previewHtml: 0, data: 0 });
 };
 
 // Extract used tags from creations
@@ -168,6 +171,7 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   const mailings = await this.find(query, {
     _workspace: 0,
     _parentFolder: 0,
+    previewHtml: 0,
     data: 0,
   }).populate({
     path: '_company',
@@ -250,6 +254,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       id: mailingId,
       templateId,
       name: mailing.name,
+      hasHtmlPreview: !!mailing.previewHtml,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

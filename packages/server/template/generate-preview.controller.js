@@ -20,18 +20,17 @@ const badsenderEvents = require('../helpers/event-bus.js');
 const eventsNames = require('../helpers/event-names.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const _getMailImagePrefix = require('../utils/get-mail-image-prefix.js');
+const logger = require('../utils/logger.js');
 
 // on heroku this build pack is needed
 // https://github.com/jontewks/puppeteer-heroku-buildpack
 const PROTOCOL = `http${config.forcessl ? 's' : ''}://`;
 const VERSION_PAGE = `${PROTOCOL}${config.host}/api/version`;
 const BLOCK_SELECTOR = '[data-ko-container] [data-ko-block]';
-const BLOCK_BODY_MAIL_SELECTOR = 'main-wysiwyg-area';
-const BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP = `#${BLOCK_BODY_MAIL_SELECTOR}`;
+
 module.exports = {
   previewMarkup: asyncHandler(previewMarkup),
   generatePreviews: asyncHandler(generatePreviews),
-  previewMail: asyncHandler(previewMail),
   // asyncHandler for SSE routes is not needed
   previewEvents,
 };
@@ -61,12 +60,8 @@ function getMarkupPreviewUrl(templateId) {
   return `${PROTOCOL}${config.host}/api/templates/${templateId}/preview`;
 }
 
-function getMailPreviewUrl(mailingId) {
-  return `${PROTOCOL}${config.host}/editor/${mailingId}`;
-}
-
 function logDuration(message, start) {
-  console.log(`${message} – ${(Date.now() - start) / 1000}s`);
+  logger.log(`${message} – ${(Date.now() - start) / 1000}s`);
 }
 
 /**
@@ -89,9 +84,10 @@ async function generatePreviews(req, res) {
   if (!template) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   if (!template.markup) throw NotFound(ERROR_CODES.TEMPLATE_NOT_FOUND);
   // don't wait for the full preview to be generated
-  createPreviews({ templateId, cookies }).catch((error) => console.log(error));
+  createPreviews({ templateId, cookies }).catch((error) => logger.log(error));
   res.json({ id: templateId, status: 'preview start' });
 }
+
 const PREVIEW_EVENTS = [
   eventsNames.PREVIEW_START,
   eventsNames.PREVIEW_PROGRESS,
@@ -275,7 +271,7 @@ async function createPreviews({ templateId, cookies }) {
         //   originalEventName: eventsNames.PREVIEW_PROGRESS,
         //   payload: { templateId, message: imageLogName },
         // })
-        console.log(`[PREVIEWS] ${imageLogName}`);
+        logger.log(`[PREVIEWS] ${imageLogName}`);
         // slug to be coherent with upload
         const originalName = slugFilename(blocksName[index]);
         const hash = crypto.createHash('md5').update(imageBuffer).digest('hex');
@@ -306,7 +302,7 @@ async function createPreviews({ templateId, cookies }) {
           originalEventName: eventsNames.PREVIEW_PROGRESS,
           payload: { templateId, message: imageLogName },
         });
-        console.log(`[PREVIEWS] ${imageLogName}`);
+        logger.log(`[PREVIEWS] ${imageLogName}`);
         // images are captured at 680 but displayed at half the size
         const pipeline = sharp().resize(340, null);
         fs.createReadStream(file.path).pipe(pipeline);
@@ -349,67 +345,6 @@ async function createPreviews({ templateId, cookies }) {
       originalEventName: eventsNames.PREVIEW_ERROR,
       payload: { templateId, error },
     });
-    // close browser even if there is a problem
-    await browser.close();
-    throw error;
-  }
-}
-
-async function previewMail({ mailingId, cookies }) {
-  const browser = await getHeadlessBrowser();
-  try {
-    const page = await browser.newPage();
-    await page.goto(VERSION_PAGE);
-    // copy cookies to keep authentication
-    // • req.cookies are a big object
-    // • puppeteer expect each cookie as an argument
-    //   https://pptr.dev/#?product=Puppeteer&version=v1.11.0&show=api-pagesetcookiecookies
-    const puppeteersCookies = Object.entries(cookies).map(([name, value]) => ({
-      name,
-      value,
-    }));
-    await page.setCookie(...puppeteersCookies);
-    await page.goto(getMailPreviewUrl(mailingId), {
-      waitUntil: 'networkidle0',
-      timeout: 0,
-    });
-
-    await page.waitForSelector(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP); // wait for the selector to load
-    const $element = await page.$(BLOCK_BODY_MAIL_SELECTOR_WITH_SHARP);
-    const imagePreviewNameWithoutExtension = _getMailImagePrefix(mailingId);
-
-    const {
-      width,
-      height,
-      imagePreviewNameWithExtension,
-    } = await page.evaluate(
-      ({ BLOCK_BODY_MAIL_SELECTOR, imagePreviewNameWithoutExtension }) => {
-        const $element = document.getElementById(BLOCK_BODY_MAIL_SELECTOR);
-        return {
-          fileName: `${imagePreviewNameWithoutExtension}.png`,
-          width: Math.round($element.scrollWidth),
-          height: Math.round($element.scrollHeight),
-        };
-      },
-      {
-        BLOCK_BODY_MAIL_SELECTOR,
-        imagePreviewNameWithoutExtension,
-      }
-    );
-
-    await page.setViewport({
-      width: width,
-      height: height,
-    });
-
-    const screenShot = await $element.screenshot({
-      path: imagePreviewNameWithExtension,
-    });
-
-    await browser.close();
-
-    return screenShot;
-  } catch (error) {
     // close browser even if there is a problem
     await browser.close();
     throw error;

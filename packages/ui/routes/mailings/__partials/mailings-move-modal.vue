@@ -5,7 +5,7 @@ import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
-  name: 'ModalMoveMail',
+  name: 'MailingsMoveModal',
   components: {
     BsModalConfirm,
   },

@@ -1,6 +1,11 @@
 'use strict';
 
-const createError = require('http-errors');
+const {
+  NotFound,
+  BadRequest,
+  UnprocessableEntity,
+  Forbidden,
+} = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const { Types } = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -15,7 +20,8 @@ const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
 const mailingService = require('./mailing.service.js');
-const generatePreview = require('../template/generate-preview.controller.js');
+const folderService = require('../folder/folder.service.js');
+const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -23,6 +29,7 @@ module.exports = {
   read: asyncHandler(read),
   readMosaico: asyncHandler(readMosaico),
   rename: asyncHandler(rename),
+  previewHtml: asyncHandler(previewHtml),
   copy: asyncHandler(copy),
   move: asyncHandler(move),
   moveMany: asyncHandler(moveMany),
@@ -32,7 +39,6 @@ module.exports = {
   bulkDestroy: asyncHandler(bulkDestroy),
   delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
-  previewMail: asyncHandler(previewMail),
   // already wrapped in asyncHandler
   sendTestMail,
   downloadZip,
@@ -74,7 +80,7 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const { user } = req;
+  const { user, cookies } = req;
   const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
@@ -86,6 +92,9 @@ async function create(req, res) {
   });
 
   res.json(response);
+
+  // not awaited on purpose
+  mailingService.generateMailingPreview(response.id, cookies);
 }
 
 /**
@@ -103,7 +112,7 @@ async function read(req, res) {
   const { mailingId } = req.params;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+  if (!mailing) throw new NotFound();
 
   // strangely toJSON doesn't render the data object
   // • BUT there is no use send it outside of mosaico response which has it's own format
@@ -130,7 +139,7 @@ async function readMosaico(req, res) {
     query,
     req.user.lang
   );
-  if (!mailingForMosaico) throw new createError.NotFound();
+  if (!mailingForMosaico) throw new NotFound();
 
   res.json(mailingForMosaico);
 }
@@ -158,9 +167,7 @@ async function move(req, res) {
   const mailing = await mailingService.findOne(mailingId);
 
   if (!mailing._workspace && !mailing._parentFolder) {
-    throw new createError.UnprocessableEntity(
-      ERROR_CODES.MAILING_MISSING_SOURCE
-    );
+    throw new UnprocessableEntity(ERROR_CODES.MAILING_MISSING_SOURCE);
   }
 
   await mailingService.moveMailing(user, mailing, workspaceId, parentFolderId);
@@ -187,10 +194,13 @@ async function moveMany(req, res) {
   } = req;
 
   if (!Array.isArray(mailingsIds) || mailingsIds.length === 0) {
-    throw new createError.BadRequest();
+    throw new BadRequest();
   }
 
-  await mailingService.moveManyMailings(user, mailingsIds, { workspaceId, parentFolderId });
+  await mailingService.moveManyMailings(user, mailingsIds, {
+    workspaceId,
+    parentFolderId,
+  });
 
   res.status(204).send();
 }
@@ -267,7 +277,7 @@ async function duplicate(req, res) {
     Mailings.findOne(query),
     Galleries.findOne({ creationOrWireframeId: mailingId }),
   ]);
-  if (!mailing) throw new createError.NotFound();
+  if (!mailing) throw new NotFound();
 
   const duplicatedMailing = mailing.duplicate(req.user);
   // Be sure that all images are duplicated before saving the duplicated creation
@@ -294,6 +304,24 @@ async function duplicate(req, res) {
 }
 
 /**
+ * @api {get} /mailings/:mailingId/preview get mail preview
+ * @apiPermission regular_user
+ * @apiName MailPreview
+ * @apiDescription Show a mail preview
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiSuccess {String} body the mail preview html
+ */
+
+async function previewHtml(req, res) {
+  const { mailingId } = req.params;
+  const previewMailHtml = await mailingService.previewMail(mailingId);
+  res.send(previewMailHtml);
+}
+
+/**
  * @api {put} /mailings/:mailingId/mosaico mailing update from mosaico
  * @apiPermission user
  * @apiName UpdateMailingForMosaico
@@ -307,9 +335,36 @@ async function duplicate(req, res) {
 async function updateMosaico(req, res) {
   const { user } = req;
   const { mailingId } = req.params;
+  const requestHtml = req.body.htmlToExport;
+
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailing = await Mailings.findOne(query);
-  if (!mailing) throw new createError.NotFound();
+
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  if (!requestHtml) {
+    throw new NotFound(ERROR_CODES.MAILING_HTML_MISSING);
+  }
+
+  if (!user.isAdmin) {
+    const { _workspace, _parentFolder } = mailing;
+
+    let hasAccess;
+
+    if (_parentFolder) {
+      hasAccess = await folderService.hasAccess(_parentFolder, user);
+    }
+
+    if (_workspace) {
+      hasAccess = await workspaceService.hasAccess(user, _workspace);
+    }
+
+    if (!hasAccess) {
+      throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+    }
+  }
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
@@ -317,11 +372,14 @@ async function updateMosaico(req, res) {
     simpleI18n('default-mailing-name', user.lang);
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
+  mailing.previewHtml = requestHtml;
   await mailing.save();
+
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
     req.user.lang
   );
+
   res.json(mailingForMosaico);
 }
 
@@ -349,7 +407,7 @@ async function bulkUpdate(req, res) {
   const hasTagsChanges =
     Array.isArray(tagsChanges.added) && Array.isArray(tagsChanges.removed);
   if (!hadId || !hasTagsChanges) {
-    throw new createError.UnprocessableEntity();
+    throw new UnprocessableEntity();
   }
 
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
@@ -397,8 +455,7 @@ async function bulkUpdate(req, res) {
 
 async function bulkDestroy(req, res) {
   const { items } = req.body;
-  if (!Array.isArray(items) || !items.length)
-    throw new createError.UnprocessableEntity();
+  if (!Array.isArray(items) || !items.length) throw new UnprocessableEntity();
 
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
     _id: { $in: items.map(Types.ObjectId) },
@@ -479,10 +536,10 @@ async function transferToUser(req, res) {
     }),
   ]);
 
-  if (!user || !mailing) throw new createError.NotFound();
+  if (!user || !mailing) throw new NotFound();
   const isMailingFromSameGroupThanUser =
     String(user._company) === String(mailing._wireframe._company);
-  if (!isMailingFromSameGroupThanUser) throw new createError.BadRequest();
+  if (!isMailingFromSameGroupThanUser) throw new BadRequest();
 
   mailing.userId = user._id;
   mailing.userName = user.name;
@@ -495,35 +552,4 @@ async function transferToUser(req, res) {
   // • if needed we can cope with that by manually copy it in the response (response.data = updatedMailing.data)
   const response = updatedMailing.toJSON();
   res.json(response);
-}
-
-/**
- * @api {put} /mailings/:mailingId/preview mailing preview from mosaico
- * @apiPermission user
- * @apiName PreviewMailingForMosaico
- * @apiGroup Mailings
- *
- * @apiParam {string} mailingId
- *
- * @apiUse mailings
- */
-
-async function previewMail(req, res) {
-  const { cookies, params } = req;
-  const { mailingId } = params || {};
-  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
-  const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
-    req.user.lang
-  );
-
-  if (!mailingForMosaico) throw new createError.NotFound();
-
-  const response = await generatePreview.previewMail({
-    mailingId,
-    cookies,
-    mailingForMosaico,
-  });
-  res.setHeader('Content-Type', 'image/png');
-  res.end(response);
 }
