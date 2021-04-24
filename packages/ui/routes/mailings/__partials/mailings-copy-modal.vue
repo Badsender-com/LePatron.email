@@ -4,7 +4,7 @@ import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 export default {
-  name: 'ModalCopyMail',
+  name: 'MailingsCopyModal',
   components: {
     BsModalConfirm,
   },

@@ -144,7 +144,11 @@ async function findWorkspaces({ groupId }) {
     })
     .populate({
       path: 'folders',
-      populate: { path: 'childFolders' },
+      options: { sort: { name: 1 } },
+      populate: {
+        path: 'childFolders',
+        options: { sort: { name: 1 } },
+      },
     });
   // to discard nested folders as direct children of each workspace
   workspaces.forEach((workspace) => {

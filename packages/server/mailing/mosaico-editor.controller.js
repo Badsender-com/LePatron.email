@@ -29,11 +29,15 @@ function exposeHelpersToPug(req, res, next) {
 }
 
 async function render(req, res) {
-  const { mailingId } = req.params;
+  const {
+    params: { mailingId },
+    user,
+  } = req;
+
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
-    req.user.lang
+    user.lang
   );
   if (!mailingForMosaico) return res.redirect('/404');
 
