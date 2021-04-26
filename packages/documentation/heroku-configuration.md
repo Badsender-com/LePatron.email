@@ -100,6 +100,13 @@ The domain name of your app
 lepatron_host                            badsender-test.herokuapp.com
 ```
 
+### Error pages:
+
+```
+MAINTENANCE_PAGE_URL                    Url of maintenance page in case you application is in maintenance mode.
+ERROR_PAGE_URL                          Url of the page that will be displayed in case your application crashs
+```
+
 ### AWS S3
 
 Those are the keys you should set for aws
