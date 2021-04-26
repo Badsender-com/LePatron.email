@@ -38,6 +38,10 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    hasAccessRight: {
+      type: Boolean,
+      default: false,
+    },
     // cdn settings
     downloadMailingWithCdnImages: {
       type: Boolean,

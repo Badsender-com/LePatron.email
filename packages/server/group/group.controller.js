@@ -65,6 +65,8 @@ async function list(req, res) {
 
 async function create(req, res) {
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
+  const hasAccessRight = req.body.hasAccessRight;
+  console.log('hasRight', hasAccessRight);
   const newGroup = await groupService.createGroup(req.body);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
@@ -83,7 +85,7 @@ async function create(req, res) {
 async function seedGroups(req, res) {
   const seededGroups = await groupService.seedGroups();
 
-  res.json({ groups: seededGroups.map(group => group.name) });
+  res.json({ groups: seededGroups.map((group) => group.name) });
 }
 
 /**

@@ -389,6 +389,10 @@ export default {
                   :disabled="disabled"
                 />
               </div>
+              <v-checkbox
+                v-model="localModel.hasAccessRight"
+                :label="`Check if user have access to view/copy email`"
+              />
             </v-col>
           </v-row>
         </v-col>

@@ -121,6 +121,7 @@ export default {
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
+      hasAccessRight: 'hasAccessRight',
     },
     template: {
       meta: 'Meta',

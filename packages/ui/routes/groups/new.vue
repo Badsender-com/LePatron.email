@@ -31,6 +31,7 @@ export default {
         ftpEndPoint: '',
         ftpEndPointProtocol: 'http://',
         ftpButtonLabel: '',
+        hasAccessRight: false,
       },
     };
   },
@@ -47,6 +48,7 @@ export default {
       const { $axios } = this;
       try {
         this.loading = true;
+        console.log(this.newGroup);
         const group = await $axios.$post(apiRoutes.groups(), this.newGroup);
         this.$router.push(apiRoutes.groupsItem({ groupId: group.id }));
       } catch (error) {
