@@ -364,9 +364,7 @@ export default {
 
           <v-row v-if="isAdmin">
             <v-col cols="12">
-              <p class="caption ma-0">
-                Activer l'authentification SAML
-              </p>
+              <p class="caption ma-0">Activer l'authentification SAML</p>
               <v-switch
                 v-model="useSamlAuthentication"
                 :label="$t('global.enable')"
@@ -391,7 +389,7 @@ export default {
               </div>
               <v-checkbox
                 v-model="localModel.hasAccessRight"
-                :label="`Check if user have access to view/copy email`"
+                :label="$t('forms.group.hasAccessRight')"
               />
             </v-col>
           </v-row>
