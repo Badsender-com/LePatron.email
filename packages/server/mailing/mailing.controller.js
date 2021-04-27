@@ -80,7 +80,7 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const { user, cookies } = req;
+  const { user } = req;
   const { templateId, workspaceId, parentFolderId, mailingName } = req.body;
 
   const response = await mailingService.createInsideWorkspaceOrFolder({
@@ -92,9 +92,6 @@ async function create(req, res) {
   });
 
   res.json(response);
-
-  // not awaited on purpose
-  mailingService.generateMailingPreview(response.id, cookies);
 }
 
 /**
