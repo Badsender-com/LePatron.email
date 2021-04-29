@@ -59,8 +59,14 @@ async function listMailingForWorkspaceOrFolder({
     workspace = await workspaceService.getWorkspace(workspaceId);
   }
 
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  if (!user.isGroupAdmin) {
+    if (
+      !workspaceService.workspaceContainsUser(workspace, user) &&
+      user.group.userHasAccessToAllWorkspaces === false
+    ) {
+      // Condition changed
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
   }
 
   if (parentFolderId) {

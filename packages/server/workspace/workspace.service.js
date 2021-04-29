@@ -1,6 +1,11 @@
 'use strict';
 
-const { Workspaces, Mailings, Folders } = require('../common/models.common.js');
+const {
+  Workspaces,
+  Mailings,
+  Folders,
+  Groups,
+} = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound, Forbidden } = require('http-errors');
@@ -54,7 +59,16 @@ async function hasAccess(user, workspaceId) {
 
 async function getWorkspaceWithAccessRight(id, user) {
   const workspace = await getWorkspace(id);
+  const group = await Groups.findById(workspace.group);
 
+  if (!user.isGroupAdmin) {
+    if (
+      !workspaceContainsUser(workspace, user) &&
+      group.userHasAccessToAllWorkspaces === false
+    ) {
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+  }
   let workspaceWithAccess = {
     ...workspace?.toObject(),
     hasAccess: false,
@@ -164,6 +178,7 @@ async function findWorkspaces({ groupId }) {
 
 async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   const workspaces = await findWorkspaces({ groupId });
+  const group = await Groups.findById(groupId);
 
   let workspacesWithRights = workspaces?.map((workspace) => ({
     ...workspace.toObject(),
@@ -171,15 +186,22 @@ async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   }));
 
   if (!isGroupAdmin) {
-    workspacesWithRights = workspacesWithRights.map((workspace) => {
-      if (!workspace._users?.toString().includes(userId)) {
-        return {
-          ...workspace,
-          hasRights: false,
-        };
-      }
-      return workspace;
-    });
+    workspacesWithRights = workspacesWithRights
+      .filter(
+        (workspace) =>
+          (!group.userHasAccessToAllWorkspaces &&
+            workspace._users?.toString().includes(userId)) ||
+          group.userHasAccessToAllWorkspaces
+      )
+      .map((workspace) => {
+        if (!workspace._users?.toString().includes(userId)) {
+          return {
+            ...workspace,
+            hasRights: false,
+          };
+        }
+        return workspace;
+      });
   }
 
   return workspacesWithRights.sort(

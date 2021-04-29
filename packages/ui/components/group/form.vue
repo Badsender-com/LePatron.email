@@ -389,6 +389,10 @@ export default {
                   :disabled="disabled"
                 />
               </div>
+              <v-checkbox
+                v-model="localModel.userHasAccessToAllWorkspaces"
+                :label="`Donner l'accès l'utilisateur de consulter tous les workspaces`"
+              />
             </v-col>
           </v-row>
         </v-col>

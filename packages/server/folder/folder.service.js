@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folders, Mailings } = require('../common/models.common.js');
+const { Folders, Mailings, Groups } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 const {
@@ -34,7 +34,14 @@ async function listFolders() {
 
 async function hasAccess(folderId, user) {
   const workspace = await getWorkspaceForFolder(folderId);
+  const group = await Groups.findById(workspace.group);
 
+  if (
+    !workspaceService.workspaceContainsUser(workspace, user) &&
+    group.userHasAccessToAllWorkspaces === false
+  ) {
+    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  }
   return (
     workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)

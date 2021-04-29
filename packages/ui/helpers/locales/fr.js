@@ -122,6 +122,8 @@ export default {
       editorLabel: 'Libellé du bouton',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
+      userHasAccessToAllWorkspaces:
+        'Cocher si l\'utilisateur aura accès à lire ou copier l\'email',
     },
     template: {
       meta: 'Meta',
