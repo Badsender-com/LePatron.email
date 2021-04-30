@@ -36,7 +36,7 @@ const GroupSchema = Schema(
     },
     userHasAccessToAllWorkspaces: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,
