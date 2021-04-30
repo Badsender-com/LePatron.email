@@ -15,6 +15,7 @@ const {
   Workspaces,
   Galleries,
   Folders,
+  Groups,
 } = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
@@ -52,15 +53,26 @@ async function listMailingForWorkspaceOrFolder({
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   let workspace;
   let mailings;
+  let group;
 
   if (parentFolderId) {
     workspace = await folderService.getWorkspaceForFolder(parentFolderId);
+    group = await Groups.findById(workspace.group);
   } else {
     workspace = await workspaceService.getWorkspace(workspaceId);
+    group = await Groups.findById(workspace.group);
   }
 
-  if (workspace?.group.toString() !== user.group.id) {
-    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  if (!user.isGroupAdmin) {
+    if (
+      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
+        workspace,
+        user,
+        group
+      )
+    ) {
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
   }
 
   if (parentFolderId) {
