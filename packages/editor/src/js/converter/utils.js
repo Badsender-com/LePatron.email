@@ -40,9 +40,6 @@ var removeStyle = function (
 };
 
 var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
-  if(keepSlach) {
-    console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$');
-  }
   function mapOperator(op) {
     switch (op) {
       case 'or':
@@ -81,24 +78,11 @@ var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
         );
 
     if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
-      var leftExpression = gen(node.left, bindingProvider, lookupmember, keepSlach );
-      console.log({ leftExpression });
-      var rightExpression = gen(node.right, bindingProvider, lookupmember, keepSlach );
-      console.log({ rightExpression });
       return (
         '(' + gen(node.left, bindingProvider, lookupmember, keepSlach ) +
         mapOperator(node.operator) +
         ' ' + gen(node.right, bindingProvider, lookupmember, keepSlach ) + ')'
       );
-      // return (
-      //   '(' +
-      //   gen(node.left, bindingProvider, lookupmember) +
-      //   ' ' +
-      //   mapOperator(node.operator) +
-      //   ' ' +
-      //   gen(node.right, bindingProvider, lookupmember) +
-      //   ')'
-      // );
     } else if (node.type === 'CallExpression') {
       var args = node.arguments.map(function (n) {
         return gen(n, bindingProvider, lookupmember, keepSlach);
@@ -129,26 +113,13 @@ var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
       return me;
     } else if (node.type === 'Literal') {
       if(keepSlach) {
-        console.log('++++++++++++++++++++++++++++++++')
-        var rowNode = '"' + node.raw + '"';
-        console.log(node.raw);
-        console.log(node.value);
-        console.log(keepSlach);
-        console.log('url(\'');
-        console.log("'url(''");
-
-        console.log(node.raw === "'url(''");
-
         if(keepSlach && node.raw === "'url(''") {
-          console.log(' is  "\'url(\'\'"');
-          return "'url(/\''"
+          return "'url(\\''"
         }
 
         if(keepSlach && node.raw === "'')'") {
-          console.log(' is  "\'\')\'"');
-          return "'/\')'"
+          return "'\\')'"
         }
-        console.log(rowNode);
       }
       return node.raw;
     } else if (node.type === 'Identifier') {
@@ -181,15 +152,6 @@ var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
 var expressionBinding = function (expression, bindingProvider, defaultValue, bindName) {
   var matches;
   if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
-
-    if(bindName === 'backgroundImage') {
-      console.log('+++++++++++++++++++++++++');
-      console.log(bindingProvider);
-      console.log(defaultValue);
-      console.log('before');
-      console.log(expression);
-    }
-
     var check = expression
       .trim()
       .replace(/@\[([^\]]+)\]|@([a-zA-Z0-9\._]+)\b/g, '###var###');
@@ -243,16 +205,7 @@ var expressionBinding = function (expression, bindingProvider, defaultValue, bin
           }
           // in case we found p1 we are in a @[sequence] so we start an expression parser
           if (p1) {
-            if(bindName === 'backgroundImage') {
-              console.log('before jsep');
-              console.log(p1);
-            }
             var parsetree = jsep(p1);
-
-            if(bindName === 'backgroundImage') {
-              console.log('after parsetree');
-              console.log(parsetree);
-            }
 
             var gentree = null;
             if(bindName === 'backgroundImage') {
@@ -269,13 +222,6 @@ var expressionBinding = function (expression, bindingProvider, defaultValue, bin
                 defVal
               );
             }
-
-
-            if(bindName === 'backgroundImage') {
-              console.log('after gentree');
-              console.log(gentree);
-            }
-
             return "'+" + gentree + "+'";
           }
           return "'+" + bindingProvider(varName, defVal) + "()+'";
@@ -291,10 +237,6 @@ var expressionBinding = function (expression, bindingProvider, defaultValue, bin
         'Unexpected expression with no valid @variable references',
         expression
       );
-    }
-    if(bindName === 'backgroundImage') {
-      console.log('FinalResult');
-      console.log(result);
     }
     return result;
   } catch (e) {

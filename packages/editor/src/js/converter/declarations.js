@@ -36,7 +36,6 @@ var _propToCamelCase = function (propName) {
 
 var _declarationValueUrlPrefixer = function (value, templateUrlConverter) {
   if (value.match(/url\(.*\)/)) {
-    console.log({ value });
     var replaced = value.replace(
       /(url\()([^\)]*)(\))/g,
       function (matched, prefix, url, postfix) {
@@ -84,9 +83,6 @@ var elaborateDeclarations = function (
     declarations = styleSheet.stylesheet.rules[0].declarations;
     skipLines = 1;
   }
-
-  console.log();
-
   for (var i = declarations.length - 1; i >= 0; i--)
     if (declarations[i].type == 'property') {
       if (
@@ -209,6 +205,7 @@ var elaborateDeclarations = function (
                 : propName.indexOf('-') != -1
                 ? "'" + propName + "'"
                 : propName;
+
             try {
               bindValue = converterUtils.expressionBinding(
                 declarations[i].value,
@@ -389,10 +386,6 @@ var elaborateDeclarations = function (
           }
 
           if (typeof bindVal2 !== 'undefined') {
-            // if(bindName2 === 'backgroundImage') {
-            //   console.log(bindVal2);
-            //   console.log(bindName2);
-            // }
             newBindings[bind] =
               "'" +
               declarations[i].name +
