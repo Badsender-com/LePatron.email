@@ -389,6 +389,10 @@ export default {
                   :disabled="disabled"
                 />
               </div>
+              <v-checkbox
+                v-model="localModel.userHasAccessToAllWorkspaces"
+                :label="$t('forms.group.userHasAccessToAllWorkspaces')"
+              />
             </v-col>
           </v-row>
         </v-col>
