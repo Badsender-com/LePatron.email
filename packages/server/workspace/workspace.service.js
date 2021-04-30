@@ -25,6 +25,7 @@ module.exports = {
   isWorkspaceInGroup,
   isUserWorkspaceMember,
   deleteFolderContent,
+  restrictAccessingWorkspacesForNonMemberUser,
 };
 
 async function existsByName({ workspaceId, workspaceName, groupId }) {
@@ -45,6 +46,17 @@ async function getWorkspace(id) {
   });
 }
 
+async function restrictAccessingWorkspacesForNonMemberUser(
+  workspace,
+  user,
+  group
+) {
+  return (
+    !workspaceContainsUser(workspace, user) &&
+    group.userHasAccessToAllWorkspaces === false
+  );
+}
+
 async function hasAccess(user, workspaceId) {
   const workspace = await getWorkspace(workspaceId);
 
@@ -63,8 +75,7 @@ async function getWorkspaceWithAccessRight(id, user) {
 
   if (!user.isGroupAdmin) {
     if (
-      !workspaceContainsUser(workspace, user) &&
-      group.userHasAccessToAllWorkspaces === false
+      await restrictAccessingWorkspacesForNonMemberUser(workspace, user, group)
     ) {
       throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }

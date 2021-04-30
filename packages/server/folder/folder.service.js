@@ -36,11 +36,16 @@ async function hasAccess(folderId, user) {
   const workspace = await getWorkspaceForFolder(folderId);
   const group = await Groups.findById(workspace.group);
 
-  if (
-    !workspaceService.workspaceContainsUser(workspace, user) &&
-    group.userHasAccessToAllWorkspaces === false
-  ) {
-    throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
+  if (!user.isGroupAdmin) {
+    if (
+      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
+        workspace,
+        user,
+        group
+      )
+    ) {
+      throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
   }
   return (
     workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&

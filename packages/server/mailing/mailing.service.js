@@ -65,10 +65,12 @@ async function listMailingForWorkspaceOrFolder({
 
   if (!user.isGroupAdmin) {
     if (
-      !workspaceService.workspaceContainsUser(workspace, user) &&
-      group.userHasAccessToAllWorkspaces === false
+      await workspaceService.restrictAccessingWorkspacesForNonMemberUser(
+        workspace,
+        user,
+        group
+      )
     ) {
-      // Condition changed
       throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
   }
