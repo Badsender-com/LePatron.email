@@ -123,7 +123,7 @@ export default {
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
       userHasAccessToAllWorkspaces:
-        'Cocher si l\'utilisateur aura accès à lire ou copier l\'email',
+        'Les utilisateurs réguliers ont accès à tous les workspaces.',
     },
     template: {
       meta: 'Meta',
