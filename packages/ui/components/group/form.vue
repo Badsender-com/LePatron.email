@@ -391,7 +391,7 @@ export default {
               </div>
               <v-checkbox
                 v-model="localModel.userHasAccessToAllWorkspaces"
-                :label="`Donner l'accès l'utilisateur de consulter tous les workspaces`"
+                :label="$t('forms.group.userHasAccessToAllWorkspaces')"
               />
             </v-col>
           </v-row>

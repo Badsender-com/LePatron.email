@@ -121,7 +121,7 @@ export default {
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
-      userHasAccessToAllWorkspaces: 'userHasAccessToAllWorkspaces',
+      userHasAccessToAllWorkspaces: 'User has access to all workspaces',
     },
     template: {
       meta: 'Meta',
