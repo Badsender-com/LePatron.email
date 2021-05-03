@@ -39,7 +39,7 @@ var removeStyle = function (
   return newStyle;
 };
 
-var expressionGenerator = function (node, bindingProvider, defVal) {
+var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
   function mapOperator(op) {
     switch (op) {
       case 'or':
@@ -63,7 +63,8 @@ var expressionGenerator = function (node, bindingProvider, defVal) {
     }
   }
 
-  function gen(node, bindingProvider, lookupmember, defVal) {
+  function gen(node, bindingProvider, lookupmember, keepSlach, defVal) {
+    if (typeof keepSlach == 'undefined') keepSlach = false;
     if (typeof lookupmember == 'undefined') lookupmember = true;
 
     if (
@@ -78,34 +79,30 @@ var expressionGenerator = function (node, bindingProvider, defVal) {
 
     if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
       return (
-        '(' +
-        gen(node.left, bindingProvider, lookupmember) +
-        ' ' +
+        '(' + gen(node.left, bindingProvider, lookupmember, keepSlach ) +
         mapOperator(node.operator) +
-        ' ' +
-        gen(node.right, bindingProvider, lookupmember) +
-        ')'
+        ' ' + gen(node.right, bindingProvider, lookupmember, keepSlach ) + ')'
       );
     } else if (node.type === 'CallExpression') {
       var args = node.arguments.map(function (n) {
-        return gen(n, bindingProvider, lookupmember);
+        return gen(n, bindingProvider, lookupmember, keepSlach);
       });
       return (
-        gen(node.callee, bindingProvider, lookupmember) +
+        gen(node.callee, bindingProvider, lookupmember, keepSlach) +
         '(' +
         args.join(', ') +
         ')'
       );
     } else if (node.type === 'UnaryExpression') {
-      return node.operator + gen(node.argument, bindingProvider, lookupmember);
+      return node.operator + gen(node.argument, bindingProvider, lookupmember, keepSlach);
     } else if (node.type == 'MemberExpression' && node.computed) {
       throw 'Unexpected computed member expression';
       // return gen(node.object) + '[' + gen(node.property) + ']';
     } else if (node.type == 'MemberExpression' && !node.computed) {
       var me =
-        gen(node.object, bindingProvider, false) +
+        gen(node.object, bindingProvider, false, keepSlach) +
         '.' +
-        gen(node.property, bindingProvider, false);
+        gen(node.property, bindingProvider, false, keepSlach);
       if (
         lookupmember &&
         node.object.name !== 'Math' &&
@@ -115,6 +112,15 @@ var expressionGenerator = function (node, bindingProvider, defVal) {
         return bindingProvider(me, defVal) + '()';
       return me;
     } else if (node.type === 'Literal') {
+      if(keepSlach) {
+        if(keepSlach && node.raw === "'url(''") {
+          return "'url(\\''"
+        }
+
+        if(keepSlach && node.raw === "'')'") {
+          return "'\\')'"
+        }
+      }
       return node.raw;
     } else if (node.type === 'Identifier') {
       var id = node.name;
@@ -123,27 +129,27 @@ var expressionGenerator = function (node, bindingProvider, defVal) {
     } else if (node.type === 'ConditionalExpression') {
       return (
         '(' +
-        gen(node.test, bindingProvider, lookupmember) +
+        gen(node.test, bindingProvider, lookupmember, keepSlach) +
         ' ? ' +
-        gen(node.consequent, bindingProvider, lookupmember) +
+        gen(node.consequent, bindingProvider, lookupmember, keepSlach) +
         ' : ' +
-        gen(node.alternate, bindingProvider, lookupmember) +
+        gen(node.alternate, bindingProvider, lookupmember, keepSlach) +
         ')'
       );
     } else if (node.type === 'Compound') {
       throw (
         'Syntax error in expression: operator expected after ' +
-        gen(node.body[0], bindingProvider, false)
+        gen(node.body[0], bindingProvider, false, keepSlach)
       );
     } else {
       throw 'Found an unsupported expression type: ' + node.type;
     }
   }
 
-  return gen(node, bindingProvider, undefined, defVal);
+  return gen(node, bindingProvider, undefined, keepSlach, defVal);
 };
 
-var expressionBinding = function (expression, bindingProvider, defaultValue) {
+var expressionBinding = function (expression, bindingProvider, defaultValue, bindName) {
   var matches;
   if (typeof defaultValue !== 'undefined' && defaultValue !== null) {
     var check = expression
@@ -200,18 +206,31 @@ var expressionBinding = function (expression, bindingProvider, defaultValue) {
           // in case we found p1 we are in a @[sequence] so we start an expression parser
           if (p1) {
             var parsetree = jsep(p1);
-            var gentree = expressionGenerator(
-              parsetree,
-              bindingProvider,
-              defVal
-            );
+
+            var gentree = null;
+            if(bindName === 'backgroundImage') {
+              gentree = expressionGenerator(
+                parsetree,
+                bindingProvider,
+                defVal,
+                true
+              );
+            } else {
+              gentree = expressionGenerator(
+                parsetree,
+                bindingProvider,
+                defVal
+              );
+            }
             return "'+" + gentree + "+'";
           }
           return "'+" + bindingProvider(varName, defVal) + "()+'";
         }
       ) +
       "'";
-    result = result.replace(/(^|[^\\])''\+/g, '$1').replace(/\+''/g, '');
+    if(bindName !== 'backgroundImage') {
+      result = result.replace(/(^|[^\\])''\+/g, '$1').replace(/\+''/g, '');
+    }
 
     if (vars === 0 && result !== 'false' && result !== 'true') {
       console.error(

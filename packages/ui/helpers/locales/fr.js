@@ -122,6 +122,8 @@ export default {
       editorLabel: 'Libellé du bouton',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
+      userHasAccessToAllWorkspaces:
+        'Les utilisateurs réguliers ont accès à tous les workspaces.',
     },
     template: {
       meta: 'Meta',

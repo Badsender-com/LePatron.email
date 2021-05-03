@@ -210,7 +210,8 @@ var elaborateDeclarations = function (
               bindValue = converterUtils.expressionBinding(
                 declarations[i].value,
                 bindingProvider,
-                bindDefaultValue
+                bindDefaultValue,
+                bindName
               );
             } catch (e) {
               console.error(

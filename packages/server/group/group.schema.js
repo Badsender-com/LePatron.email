@@ -34,6 +34,10 @@ const GroupSchema = Schema(
       enum: [Status.DEMO, Status.INACTIVE, Status.ACTIVE],
       required: [true, 'A status is required'],
     },
+    userHasAccessToAllWorkspaces: {
+      type: Boolean,
+      default: true,
+    },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,
       default: false,
