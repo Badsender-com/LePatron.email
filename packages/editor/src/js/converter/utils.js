@@ -22,11 +22,20 @@ var removeStyle = function (
   skipRows,
   startOffset,
   endOffset,
-  insert
+  insert,
+  lastElement,
 ) {
   var styleRows = style.split('\n');
   var start = startOffset;
   var end = endOffset;
+  var missingParts = "";
+
+  if(!!lastElement && styleRows.length > startPos.line) {
+    for (var j = 1 + startPos.line; j < styleRows.length; j++) {
+      missingParts += styleRows[j];
+    }
+  }
+
   for (var r = 1 + skipRows; r < startPos.line; r++)
     start += styleRows[r - 1 - skipRows].length + 1;
   start += startPos.col;
@@ -35,7 +44,9 @@ var removeStyle = function (
       end += styleRows[r2 - 1 - skipRows].length + 1;
     end += endPos.col;
   } else end += style.length + 1;
-  var newStyle = style.substr(0, start - 1) + insert + style.substr(end - 1);
+
+  var newStyle = style.substr(0, start - 1) + insert + missingParts + style.substr(end  - 1);
+
   return newStyle;
 };
 

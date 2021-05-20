@@ -232,7 +232,8 @@ var processStylesheetRules = function (
             0,
             0,
             0,
-            spacing + loopPostfix
+            spacing + loopPostfix,
+            rules.length - 1 === i
           );
         else
           newStyle = converterUtils.removeStyle(
@@ -242,7 +243,8 @@ var processStylesheetRules = function (
             0,
             0,
             0,
-            spacing + '}' + spacing + loopPostfix
+            spacing + '}' + spacing + loopPostfix,
+            rules.length - 1 === i
           );
         newSel =
           loopPrefix +
