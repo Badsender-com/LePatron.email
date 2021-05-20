@@ -480,7 +480,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       elem.innerHTML = match;
       var decoded = elem.value;
       elem.remove();
-    
+
       return decoded;
     });
 
