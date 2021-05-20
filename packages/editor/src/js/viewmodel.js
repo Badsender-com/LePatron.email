@@ -6,6 +6,8 @@ var ko = require('knockout');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
+const MAX_SIZE = 102000;
+
 var toastr = require('toastr');
 toastr.options = {
   closeButton: false,
@@ -480,7 +482,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       elem.innerHTML = match;
       var decoded = elem.value;
       elem.remove();
-    
+
       return decoded;
     });
 
@@ -497,6 +499,17 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         trash
       );
     }
+
+    // Remove successful blink lines
+    var blackLinesRegex = /^\s*[\r\n]/gm;
+    content = content.replace(blackLinesRegex,"");
+
+    // Remove successif empty indentation and empty spaces if content exceeds 102k
+    if(content.length > MAX_SIZE) {
+      content = content.replace(/\n|\t/g, ' ');
+      content = content.replace(/\s\s+/g, ' ');
+    }
+
 
     return content;
   };
