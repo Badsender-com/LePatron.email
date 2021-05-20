@@ -82,11 +82,13 @@ var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
       typeof defVal !== 'undefined' &&
       node.type !== 'Identifier' &&
       node.type !== 'MemberExpression'
-    )
+    ){
       if (typeof console.debug == 'function')
         console.debug(
           'Cannot apply default value to variable when using expressions'
         );
+    }
+
 
     if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
       return (
