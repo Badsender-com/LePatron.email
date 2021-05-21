@@ -415,6 +415,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   viewModel.exportHTML = function () {
     console.log('viewModel.exportHTML');
+
     var id = 'exportframe';
     $('body').append(
       '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'
@@ -444,6 +445,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       /<script ([^>]* )?type="text\/html"[^>]*>[\s\S]*?<\/script>/gm,
       ''
     );
+    console.log({ content });
     // content = content.replace(/<!-- ko .*? -->/g, ''); // sometimes we have expressions like (<!-- ko var > 2 -->)
     content = content.replace(/<!-- ko ((?!--).)*? -->/g, ''); // this replaces the above with a more formal (but slower) solution
     content = content.replace(/<!-- \/ko -->/g, '');
@@ -499,6 +501,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         trash
       );
     }
+
+    // Close with slash unclosed autoclose tags
+    var unclosedAutoTagsRegex = /(<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)("[^"]*"|[^\/">])*)>/gm;
+    content = content.replace(unclosedAutoTagsRegex,"$1/>");
 
     // Remove successful blink lines
     var blackLinesRegex = /^\s*[\r\n]/gm;
