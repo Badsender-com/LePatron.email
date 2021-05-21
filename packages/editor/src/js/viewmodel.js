@@ -415,6 +415,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   viewModel.exportHTML = function () {
     console.log('viewModel.exportHTML');
+
     var id = 'exportframe';
     $('body').append(
       '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'
@@ -499,6 +500,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         trash
       );
     }
+
+    // Close with slash unclosed autoclose tags
+    var unclosedAutoTagsRegex = /(<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)("[^"]*"|[^\/">])*)>/gm;
+    content = content.replace(unclosedAutoTagsRegex,"$1/>");
 
     // Remove successful blink lines
     var blackLinesRegex = /^\s*[\r\n]/gm;
