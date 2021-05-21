@@ -445,7 +445,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       /<script ([^>]* )?type="text\/html"[^>]*>[\s\S]*?<\/script>/gm,
       ''
     );
-    console.log({ content });
     // content = content.replace(/<!-- ko .*? -->/g, ''); // sometimes we have expressions like (<!-- ko var > 2 -->)
     content = content.replace(/<!-- ko ((?!--).)*? -->/g, ''); // this replaces the above with a more formal (but slower) solution
     content = content.replace(/<!-- \/ko -->/g, '');
