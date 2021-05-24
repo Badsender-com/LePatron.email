@@ -1,28 +1,9 @@
 <h1 align="center">✉️ LePatron.email</h1>
 <h2 align="center">Open Source Email Builder</h2>
 
----
+## Deployment
 
-## 🚀 Deploy on the Cloud
-
-## How to deploy on Heroku:
-
-#### Prerequired:
-
-- Hosted and accessible `Mongo DB`
-- `Aws` bucket
-
-#### Steps:
-
-1. Fork the `github repo`.
-2. Go to heroku, press `New` then Click on `Create new app`
-3. Select you app name, and choose a server location ( this will affect your server ping ), then press `create app`.
-4. Go to deploy tab, In the deployment method click on `Github connect`, search for you repo nam and then click on `connect`.
-5. In the `Automatic deploys` section, Click on `Enable automatic deploys`.
-6. Go to `Settings` tab, Flow readme instruction for [configuring heroku environments variables](./packages/documentation/heroku-configuration.md##-configuring-heroku-environments-variables).
-7. Go back on the `Deploy` tab, in the `Manual deploy` section, click on `deploy branch`. You got your application up and running now.
-
----
+Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:), [CleverCloud](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-CleverCloud) and [Infomaniak](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-Informaniak) are provided in the readme file.
 
 ## Run locally
 
