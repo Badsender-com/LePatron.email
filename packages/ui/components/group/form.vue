@@ -95,6 +95,7 @@ export default {
     return {
       group: {
         name: { required },
+        status: { required },
         defaultWorkspaceName: {},
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
         ...(this.group.downloadMailingWithFtpImages && ftpValidations),
@@ -158,9 +159,13 @@ export default {
               <v-select
                 id="groupStatus"
                 v-model="localModel.status"
+                :error-messages="requiredErrors('status')"
                 :label="$t('forms.group.status.label')"
                 name="status"
+                required
                 :items="statusOptions"
+                @input="$v.group.status.$touch()"
+                @blur="$v.group.status.$touch()"
               />
             </v-col>
             <v-col v-if="isAdmin" cols="4">
@@ -384,6 +389,10 @@ export default {
                   :disabled="disabled"
                 />
               </div>
+              <v-checkbox
+                v-model="localModel.userHasAccessToAllWorkspaces"
+                :label="$t('forms.group.userHasAccessToAllWorkspaces')"
+              />
             </v-col>
           </v-row>
         </v-col>

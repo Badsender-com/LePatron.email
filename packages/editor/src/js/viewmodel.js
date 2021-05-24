@@ -6,6 +6,8 @@ var ko = require('knockout');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
+const MAX_SIZE = 102000;
+
 var toastr = require('toastr');
 toastr.options = {
   closeButton: false,
@@ -413,6 +415,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   viewModel.exportHTML = function () {
     console.log('viewModel.exportHTML');
+
     var id = 'exportframe';
     $('body').append(
       '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'
@@ -480,7 +483,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       elem.innerHTML = match;
       var decoded = elem.value;
       elem.remove();
-    
+
       return decoded;
     });
 
@@ -497,6 +500,21 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         trash
       );
     }
+
+    // Close with slash unclosed autoclose tags
+    var unclosedAutoTagsRegex = /(<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)("[^"]*"|[^\/">])*)>/gm;
+    content = content.replace(unclosedAutoTagsRegex,"$1/>");
+
+    // Remove successful blink lines
+    var blackLinesRegex = /^\s*[\r\n]/gm;
+    content = content.replace(blackLinesRegex,"");
+
+    // Remove successif empty indentation and empty spaces if content exceeds 102k
+    if(content.length > MAX_SIZE) {
+      content = content.replace(/\n|\t/g, ' ');
+      content = content.replace(/\s\s+/g, ' ');
+    }
+
 
     return content;
   };

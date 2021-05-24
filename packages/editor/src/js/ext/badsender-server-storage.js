@@ -29,7 +29,7 @@ function loader(opts) {
     saveCmd.execute = function () {
       saveCmd.enabled(false);
       var data = getData(viewModel);
-      console.info('SAVE DATA');
+
       data = {
         ...data,
         htmlToExport: viewModel.exportHTML()
@@ -64,10 +64,9 @@ function loader(opts) {
       }
     };
 
-    // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
-    if(!opts.metadata.hasHtmlPreview) {
-      saveCmd.execute();
-    }
+
+
+
 
     //////
     // EMAIL
@@ -87,9 +86,12 @@ function loader(opts) {
       // Don't validate `null` values => isEmail will error
       if (!email) return testCmd.enabled(true);
 
-      if (!isEmail(email)) {
-        global.alert(viewModel.t('Invalid email address'));
-        return testCmd.enabled(true);
+      const emails = email.split(";");
+      for (const address of emails){
+        if (!isEmail(address)) {
+          global.alert(viewModel.t('Invalid email address'));
+          return testCmd.enabled(true);
+        }
       }
 
       console.log('TODO testing...', email);

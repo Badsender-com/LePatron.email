@@ -110,6 +110,7 @@ export default {
         demo: 'Demo',
         inactive: 'Inactive',
         active: 'Active',
+        requiredValidationMessage: 'A status is required',
       },
       ftpProtocol: 'FTP protocol',
       host: 'Host',
@@ -120,6 +121,8 @@ export default {
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
+      userHasAccessToAllWorkspaces:
+        'Regular users have access to all workspaces',
     },
     template: {
       meta: 'Meta',
@@ -275,6 +278,7 @@ export default {
       downloadWithoutEnclosingFolder: 'Download without parent folder',
       cdnDownload: 'CDN download',
       ftpDownload: 'FTP download',
+      status: 'Status',
     },
     users: {
       passwordMail: 'Password\' mail',

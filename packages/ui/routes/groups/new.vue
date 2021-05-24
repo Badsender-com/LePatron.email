@@ -31,6 +31,7 @@ export default {
         ftpEndPoint: '',
         ftpEndPointProtocol: 'http://',
         ftpButtonLabel: '',
+        userHasAccessToAllWorkspaces: false,
       },
     };
   },

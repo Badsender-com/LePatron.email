@@ -38,6 +38,11 @@ export default {
           value: 'downloadMailingWithoutEnclosingFolder',
         },
         {
+          text: this.$t('tableHeaders.groups.status'),
+          align: 'center',
+          value: 'status',
+        },
+        {
           text: this.$t('tableHeaders.groups.cdnDownload'),
           align: 'center',
           value: 'downloadMailingWithCdnImages',

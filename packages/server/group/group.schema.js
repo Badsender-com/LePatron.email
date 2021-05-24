@@ -32,7 +32,11 @@ const GroupSchema = Schema(
     status: {
       type: String,
       enum: [Status.DEMO, Status.INACTIVE, Status.ACTIVE],
-      required: false, // this part is
+      required: [true, 'A status is required'],
+    },
+    userHasAccessToAllWorkspaces: {
+      type: Boolean,
+      default: true,
     },
     downloadMailingWithoutEnclosingFolder: {
       type: Boolean,
