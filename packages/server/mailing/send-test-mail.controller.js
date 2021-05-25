@@ -1,13 +1,16 @@
 'use strict';
 
-const createError = require('http-errors');
+const { createError, BadRequest } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 
 const config = require('../node.config.js');
 const { Mailings } = require('../common/models.common.js');
-const mail = require('./mailing.service.js');
+const mail = require('../mailing/mail.service.js');
 const modelsUtils = require('../utils/model.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
+const isEmail = require('validator/lib/isEmail');
+const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
 
 module.exports = asyncHandler(sendTestMail);
 
@@ -40,13 +43,22 @@ async function sendTestMail(req, res) {
   // body.html is the result of viewModel.exportHTML()
   // • in /src/js/ext/badsender-server-storage.js
   const html = processMosaicoHtmlRender(req.body.html);
-  const mailInfo = await mail.send({
-    to: body.rcpt,
-    replyTo: user && user.email != null ? user.email : undefined,
-    subject: config.emailOptions.testSubjectPrefix + mailing.name,
-    html,
-  });
 
-  console.log(`Message sent: ${mailInfo.response}`);
+  const adresses = body.rcpt.split(';');
+  for (const mail of adresses) {
+    if (!isEmail(mail)) {
+      throw new BadRequest(ERROR_CODES.EMAIL_NOT_VALID);
+    }
+  }
+  for (const address of adresses) {
+    const mailInfo = await mail.send({
+      to: address,
+      replyTo: user?.email,
+      subject: config.emailOptions.testSubjectPrefix + mailing.name,
+      html,
+    });
+
+    logger.log('Message sent: ', mailInfo.response);
+  }
   res.json({ mailingList: body.rcpt });
 }

@@ -60,6 +60,19 @@ var _declarationValueUrlPrefixer = function (value, templateUrlConverter) {
   }
 };
 
+var _findInDeclarationsByName = function(declarations, name) {
+  if(!declarations) {
+    return;
+  }
+  for (var i = 0; i < declarations.length; i++) {
+     var declaration = declarations[i];
+     if (declaration.name === name) {
+       return declaration
+     }
+  }
+  return null;
+};
+
 var elaborateDeclarations = function (
   style,
   declarations,
@@ -210,7 +223,8 @@ var elaborateDeclarations = function (
               bindValue = converterUtils.expressionBinding(
                 declarations[i].value,
                 bindingProvider,
-                bindDefaultValue
+                bindDefaultValue,
+                bindName
               );
             } catch (e) {
               console.error(
@@ -323,6 +337,20 @@ var elaborateDeclarations = function (
                     ' -->' +
                     propDefaultValue +
                     '<!-- /ko -->';
+
+                var declarationToDelete = _findInDeclarationsByName(declarations, propName);
+                  if(!!declarationToDelete) {
+                    newStyle = converterUtils.removeStyle(
+                      newStyle,
+                      declarationToDelete.position.start,
+                      declarationToDelete.position.end,
+                      0,
+                      0,
+                      1,
+                      ''
+                    );
+                }
+
                 newStyle = converterUtils.removeStyle(
                   newStyle,
                   declarations[i].position.start,

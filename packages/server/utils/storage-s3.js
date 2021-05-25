@@ -3,6 +3,7 @@
 const fs = require('fs-extra');
 const AWS = require('aws-sdk');
 const denodeify = require('denodeify');
+const logger = require('../utils/logger.js');
 
 const config = require('../node.config.js');
 const defer = require('../helpers/create-promise.js');
@@ -41,11 +42,11 @@ if (!config.isAws) {
         Body: source,
       },
       function (err, data) {
-        console.log(err, data);
+        logger.error(err, data);
       }
     )
       .on('httpUploadProgress', (progress) => {
-        console.log(
+        logger.info(
           `writeStreamFromPath – ${name}`,
           (progress.loaded / progress.total) * 100
         );
@@ -66,13 +67,39 @@ if (!config.isAws) {
         Body: source,
       },
       (err, data) => {
-        console.log(err, data);
+        logger.error(err, data);
         // if (err) return reject( err )
         // resolve( data )
       }
     )
       .on('httpUploadProgress', (progress) => {
-        console.log(
+        logger.info(
+          `writeStreamFromStream – ${name}`,
+          (progress.loaded / progress.total) * 100
+        );
+        if (progress.loaded >= progress.total) deferred.resolve();
+      })
+      .on('error', deferred.reject);
+
+    return deferred;
+  };
+
+  const writeStreamFromStreamWithPrefix = (source, name, prefix) => {
+    const deferred = defer();
+
+    s3.upload(
+      {
+        Bucket: config.storage.aws.bucketName,
+        Prefix: prefix,
+        Key: name,
+        Body: source,
+      },
+      (err, data) => {
+        logger.error(err, data);
+      }
+    )
+      .on('httpUploadProgress', (progress) => {
+        logger.info(
           `writeStreamFromStream – ${name}`,
           (progress.loaded / progress.total) * 100
         );
@@ -102,6 +129,7 @@ if (!config.isAws) {
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#copyObject-property
   const copyObject = denodeify(s3.copyObject.bind(s3));
   const copyImages = (oldPrefix, newPrefix) => {
+    logger.info('copying images with S3 storage');
     return listImages(oldPrefix).then((files) => Promise.all(files.map(copy)));
 
     function copy(file) {
@@ -117,6 +145,7 @@ if (!config.isAws) {
     streamImage,
     writeStreamFromPath,
     writeStreamFromStream,
+    writeStreamFromStreamWithPrefix,
     listImages,
     copyImages,
   };

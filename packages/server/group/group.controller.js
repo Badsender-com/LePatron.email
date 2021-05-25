@@ -1,22 +1,25 @@
 'use strict';
 
+const { pick } = require('lodash');
 const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
-
 const {
-  Groups,
-  Users,
-  Templates,
-  Mailings,
-} = require('../common/models.common.js');
+  createWorkspace,
+  findWorkspaces,
+} = require('../workspace/workspace.service.js');
+const groupService = require('../group/group.service.js');
+
+const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
+  seedGroups: asyncHandler(seedGroups),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readUsers: asyncHandler(readUsers),
   readTemplates: asyncHandler(readTemplates),
   readMailings: asyncHandler(readMailings),
+  readWorkspaces: asyncHandler(readWorkspaces),
   update: asyncHandler(update),
 };
 
@@ -61,8 +64,26 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
-  const newGroup = await Groups.create(req.body);
+  const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
+  const newGroup = await groupService.createGroup(req.body);
+  const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
+  await createWorkspace(workspaceParams);
   res.json(newGroup);
+}
+
+/**
+ * @api {post} /seed-groups update groups that have no workspace
+ * @apiPermission super_admin
+ * @apiName UpdateGroupsWithNoWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiUse group
+ */
+
+async function seedGroups(req, res) {
+  const seededGroups = await groupService.seedGroups();
+
+  res.json({ groups: seededGroups.map(group => group.name) });
 }
 
 /**
@@ -96,17 +117,11 @@ async function read(req, res) {
  */
 
 async function readUsers(req, res) {
-  const { groupId } = req.params;
-  const [group, users] = await Promise.all([
-    Groups.findById(groupId).select('_id'),
-    Users.find({
-      _company: groupId,
-      isDeactivated: { $ne: true },
-    })
-      .populate({ path: '_company', select: 'id name entryPoint issuer' })
-      .sort({ email: 1 }),
-  ]);
-  if (!group) throw new createError.NotFound();
+  const {
+    params: { groupId },
+  } = req;
+
+  const users = await groupService.findUserByGroupId(groupId);
   res.json({ items: users });
 }
 
@@ -155,6 +170,25 @@ async function readMailings(req, res) {
 }
 
 /**
+ * @api {get} /groups/:groupId/workspaces group workspaces
+ * @apiPermission admin
+ * @apiName GetGroupWorkspaces
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse workspace
+ * @apiSuccess {workspaces[]} items list of workspaces
+ */
+
+async function readWorkspaces(req, res, next) {
+  const { groupId } = req.params;
+  if (!groupId) next(new createError.NotFound());
+  const workspaces = await findWorkspaces({ groupId });
+  return res.json({ items: workspaces });
+}
+
+/**
  * @api {put} /groups/:groupId group update
  * @apiPermission admin
  * @apiName UpdateGroup
@@ -181,9 +215,18 @@ async function readMailings(req, res) {
  */
 
 async function update(req, res) {
-  const { groupId } = req.params;
-  const updatedGroup = await Groups.findByIdAndUpdate(groupId, req.body, {
-    runValidators: true,
-  });
-  res.json(updatedGroup);
+  const { user } = req;
+
+  let groupToUpdate = {
+    id: req.params.groupId,
+    ...req.body,
+  };
+
+  if (user.isGroupAdmin) {
+    groupToUpdate = pick(groupToUpdate, ['name', 'id']);
+  }
+
+  await groupService.updateGroup(groupToUpdate);
+
+  res.send();
 }

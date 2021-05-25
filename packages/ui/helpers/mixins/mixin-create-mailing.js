@@ -6,25 +6,47 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async mixinCreateMailing(template, loadingKey = 'loading') {
+    async mixinCreateMailing(
+      template,
+      loadingKey = 'loading',
+      defaultMailName = '',
+      currentLocationParams
+    ) {
       if (!template.hasMarkup) return;
       const { $axios } = this;
       this[loadingKey] = true;
+
+      if (
+        !currentLocationParams.parentFolderId &&
+        !currentLocationParams.workspaceId
+      ) {
+        return;
+      }
+
       try {
-        const newMailing = await $axios.$post(apiRoutes.mailings(), {
+        let requestCreateMailData = {
           templateId: template.id,
-        });
+          ...currentLocationParams,
+        };
+
+        if (defaultMailName) {
+          requestCreateMailData = {
+            ...requestCreateMailData,
+            mailingName: defaultMailName,
+          };
+        }
+
+        const newMailing = await $axios.$post(
+          apiRoutes.mailings(),
+          requestCreateMailData
+        );
         // don't use Nuxt router
         // • we are redirecting to the mosaico app
         //   OUTSIDE the Vue app
         const { origin } = window.location;
-        const redirectUrl = apiRoutes.mailingsItem({
-          mailingId: newMailing.id,
-        });
-        window.location.assign(`${origin}${redirectUrl}`);
+        window.location = `${origin}/editor/${newMailing.id}`;
       } catch (error) {
         this.showSnackbar({ text: 'an error as occurred', color: 'error' });
-        console.log(error);
       } finally {
         this[loadingKey] = false;
       }

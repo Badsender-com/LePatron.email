@@ -3,10 +3,11 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 
 export default {
-  name: `bs-template-card`,
+  name: 'TemplateCard',
   components: { BsTemplateCoverImage },
   props: {
     template: { type: Object, default: () => ({}) },
+    isSelected: { type: Boolean, default: false },
   },
   computed: {
     hasCover() {
@@ -19,24 +20,35 @@ export default {
       const imageName = this.template.coverImage;
       return apiRoutes.imagesItem({ imageName });
     },
+    selectedClass() {
+      return this.isSelected ? 'bs-template-card_selected' : '';
+    },
+    hoverClass() {
+      return !this.isSelected ? 'card-hover' : '';
+    },
   },
   methods: {
     onClick() {
-      this.$emit(`click`, this.template);
+      this.$emit('click', this.template);
     },
   },
 };
 </script>
 
 <template>
-  <v-card class="bs-template-card" @click="onClick">
+  <v-card
+    :class="`mr-2 mb-4 bs-template-card ${selectedClass} ${hoverClass}`"
+    @click="onClick"
+  >
     <bs-template-cover-image :src="coverSrc" :fit-cover="!hasCover" />
     <v-card-title>
-      <h2 class="bs-template-card__title headline">{{ template.name }}</h2>
+      <h2 class="bs-template-card__title headline">
+        {{ template.name }}
+      </h2>
     </v-card-title>
-    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">{{
-      template.description
-    }}</v-card-subtitle>
+    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">
+      {{ template.description }}
+    </v-card-subtitle>
   </v-card>
 </template>
 
@@ -44,11 +56,17 @@ export default {
 .bs-template-card {
   --cover-min-height: 250px;
   --cover-max-height: 250px;
-
-  &:hover {
-    box-shadow: 0 0 0 5px var(--v-primary-base);
-  }
+  max-width: 30%;
 }
+
+.card-hover:hover {
+  box-shadow: 0 0 0 5px #a9d6d5 !important;
+}
+
+.bs-template-card_selected {
+  box-shadow: 0 0 0 5px var(--v-primary-base) !important;
+}
+
 .bs-template-card__title {
   text-align: center;
   flex-grow: 1;

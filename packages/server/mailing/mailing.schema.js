@@ -13,6 +13,7 @@ const {
   WorkspaceModel,
   FolderModel,
 } = require('../constant/model.names');
+const logger = require('../utils/logger.js');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -40,6 +41,9 @@ const MailingSchema = Schema(
       set: normalizeString,
       required: true,
     },
+    previewHtml: {
+      type: String,
+    },
     // _user can't be required: admin doesn't set a _user
     _user: { type: ObjectId, ref: UserModel, alias: 'userId' },
     // replicate user name for ordering purpose
@@ -52,6 +56,7 @@ const MailingSchema = Schema(
       type: ObjectId,
       ref: WorkspaceModel,
       required: false,
+      alias: 'workspace',
     },
     _parentFolder: {
       type: ObjectId,
@@ -94,6 +99,17 @@ const MailingSchema = Schema(
   { timestamps: true, toJSON: { virtuals: true } }
 );
 
+MailingSchema.pre('find', function () {
+  this._startTime = Date.now();
+});
+
+MailingSchema.post('find', function () {
+  if (this._startTime != null) {
+    logger.log('find Mailing Runtime: ', Date.now() - this._startTime);
+  }
+  this._startTime = null;
+});
+
 MailingSchema.plugin(mongooseHidden, {
   hidden: {
     _id: true,
@@ -133,17 +149,8 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   return this;
 };
 
-MailingSchema.statics.findForApi = async function findForApi(
-  query = {},
-  // eslint-disable-next-line no-unused-vars
-  sortParams = { updatedAt: -1 }
-) {
-  const mailings = await this.find(query).populate({
-    path: '_company',
-    select: { id: 1, name: 1 },
-  });
-  // .sort(sortParams)
-  return mailings;
+MailingSchema.statics.findForApi = async function findForApi(query = {}) {
+  return this.find(query, { previewHtml: 0, data: 0 });
 };
 
 // Extract used tags from creations
@@ -161,7 +168,12 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   //   // { $sort: { _id: 1 } },
   // ])
 
-  const mailings = await this.find(query).populate({
+  const mailings = await this.find(query, {
+    _workspace: 0,
+    _parentFolder: 0,
+    previewHtml: 0,
+    data: 0,
+  }).populate({
     path: '_company',
     select: { tags: 1 },
   });
@@ -242,6 +254,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       id: mailingId,
       templateId,
       name: mailing.name,
+      hasHtmlPreview: !!mailing.previewHtml,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

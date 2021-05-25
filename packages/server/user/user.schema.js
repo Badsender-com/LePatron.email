@@ -13,8 +13,8 @@ const moment = require('moment');
 const mongooseHidden = require('mongoose-hidden')();
 
 const config = require('../node.config.js');
-const mail = require('../mailing/mailing.service.js');
-const Roles = require('./role');
+const mail = require('../mailing/mail.service.js');
+const Roles = require('../account/roles');
 const { normalizeString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names.js');
 
@@ -43,7 +43,7 @@ const UserSchema = Schema(
     name: { type: String, set: normalizeString },
     role: {
       type: String,
-      enum: [Roles.GROUP_ADMIN, Roles.GROUP_USER],
+      enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
       required: false,
     },
 
@@ -87,7 +87,7 @@ const UserSchema = Schema(
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 UserSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, __v: true, password: true, token: true, _company: true },
+  hidden: { _id: true, __v: true, password: true, token: true },
 });
 
 function encodePassword(password) {
@@ -120,6 +120,11 @@ UserSchema.virtual('isReinitialized').get(function () {
 // for better session handling
 UserSchema.virtual('isAdmin').get(function () {
   return false;
+});
+
+UserSchema.virtual('isGroupAdmin').get(function () {
+  const user = this;
+  return user.role === Roles.GROUP_ADMIN;
 });
 
 UserSchema.methods.activate = function activate() {

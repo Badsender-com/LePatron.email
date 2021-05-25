@@ -22,6 +22,8 @@ const nuxtConfig = require('../../nuxt.config.js');
 const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
 const groupRouter = require('./group/group.routes');
+const workspaceRouter = require('./workspace/workspace.routes');
+const folderRouter = require('./folder/folder.routes');
 const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
@@ -29,20 +31,21 @@ const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 
 const workers =
-  (process.env.WORKERS && process.env.WORKERS <= require('os').cpus().length
-    ? process.env.WORKERS
-    : require('os').cpus().length) || require('os').cpus().length;
+  process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
 
 if (cluster.isMaster) {
-  console.log('start cluster with %s workers', workers);
+  logger.log(chalk.cyan('start cluster with %s workers'), workers);
 
   for (let i = 0; i < workers; ++i) {
     const worker = cluster.fork().process;
-    console.log('worker %s started.', worker.pid);
+    logger.log(chalk.green('worker %s started.'), worker.pid);
   }
 
   cluster.on('exit', function (worker) {
-    console.log('worker %s died. restart...', worker.process.pid);
+    logger.log(
+      chalk.bgYellow('worker %s died. restart...'),
+      worker.process.pid
+    );
     cluster.fork();
   });
 } else {
@@ -205,11 +208,9 @@ if (cluster.isMaster) {
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
     (err, req, res, _next) => {
       console.log({ err });
-      const { user } = req;
       if (err) {
         return res.redirect('/');
       }
-      console.log({ user });
       return res.redirect('/');
     }
   );
@@ -242,6 +243,8 @@ if (cluster.isMaster) {
   const { GUARD_USER_REDIRECT } = require('./account/auth.guard.js');
 
   // API routes
+  app.use('/api/folders', folderRouter);
+  app.use('/api/workspaces', workspaceRouter);
   app.use('/api/groups', groupRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
@@ -253,8 +256,7 @@ if (cluster.isMaster) {
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
   app.get(
-    '/mailings/:mailingId',
-    GUARD_USER_REDIRECT,
+    '/editor/:mailingId',
     GUARD_USER_REDIRECT,
     mosaicoEditor.exposeHelpersToPug,
     mosaicoEditor.render

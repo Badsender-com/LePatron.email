@@ -8,17 +8,9 @@ import * as acls from '~/helpers/pages-acls.js';
 import { USER, M_USER_SET } from '~/store/user';
 
 export default {
-  name: `bs-page-login`,
+  name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
-  layout: `centered`,
-  head() {
-    return { title: this.title };
-  },
-  computed: {
-    title() {
-      return `login`;
-    },
-  },
+  layout: 'centered',
   data() {
     return {
       username: '',
@@ -29,6 +21,14 @@ export default {
       isLoading: false,
       showPassword: false,
     };
+  },
+  head() {
+    return { title: this.title };
+  },
+  computed: {
+    title() {
+      return 'login';
+    },
   },
   validations: {
     username: { required },
@@ -60,10 +60,10 @@ export default {
           }
         } catch (err) {
           this.isLoading = false;
-          const errorMessage = this.$t(`global.errors.password.error.nouser`);
+          const errorMessage = this.$t('global.errors.password.error.nouser');
           this.showSnackbar({
             text: errorMessage,
-            color: `error`,
+            color: 'error',
           });
         }
       } catch (error) {
@@ -81,18 +81,20 @@ export default {
             username,
             password,
           });
+
           this.$store.commit(`${USER}/${M_USER_SET}`, {
             isAdmin: user.isAdmin,
           });
+
           $router.go();
         } catch (err) {
           this.isLoading = false;
           const errorMessage = this.$t(
-            `global.errors.password.error.incorrect`
+            'global.errors.password.error.incorrect'
           );
           this.showSnackbar({
             text: errorMessage,
-            color: `error`,
+            color: 'error',
           });
         }
       } catch (error) {
@@ -113,17 +115,24 @@ export default {
 <template>
   <v-card class="elevation-12">
     <v-toolbar flat>
-      <v-btn icon @click="back" v-if="userIsFound && isBasicAuthentication">
+      <v-btn
+        v-if="userIsFound && isBasicAuthentication"
+        icon
+        @click="back"
+      >
         <v-icon>{{ 'arrow_back' }}</v-icon>
       </v-btn>
-      <v-toolbar-title class="pl-0">{{
-        $t('forms.user.login')
-      }}</v-toolbar-title>
+      <v-toolbar-title class="pl-0">
+        {{ $t('forms.user.login') }}
+      </v-toolbar-title>
     </v-toolbar>
     <v-divider />
     <div v-if="!userIsFound">
       <v-card-text>
-        <v-form @submit.prevent="checkEmailForm" id="check-email-form">
+        <v-form
+          id="check-email-form"
+          @submit.prevent="checkEmailForm"
+        >
           <v-text-field
             v-model="username"
             autofocus
@@ -152,11 +161,14 @@ export default {
     <!-- Password field  -->
     <div v-if="userIsFound && isBasicAuthentication">
       <v-card-text>
-        <v-form @submit.prevent="handleSubmit" id="login-form">
+        <v-form
+          id="login-form"
+          @submit.prevent="handleSubmit"
+        >
           <v-text-field
+            id="password"
             v-model="password"
             autofocus
-            id="password"
             :label="$t('global.password')"
             name="password"
             prepend-icon="lock"
@@ -169,16 +181,22 @@ export default {
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn nuxt text color="primary" to="/account/reset-password">{{
-          $t('forms.user.forgottenPassword')
-        }}</v-btn>
+        <v-btn
+          nuxt
+          text
+          color="primary"
+          to="/account/reset-password"
+        >
+          {{ $t('forms.user.forgottenPassword') }}
+        </v-btn>
         <v-btn
           :loading="isLoading"
           color="primary"
           form="login-form"
           type="submit"
-          >{{ $t('forms.user.login') }}</v-btn
         >
+          {{ $t('forms.user.login') }}
+        </v-btn>
       </v-card-actions>
     </div>
   </v-card>

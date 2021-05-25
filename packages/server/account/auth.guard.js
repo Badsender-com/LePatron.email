@@ -14,6 +14,8 @@ const createError = require('http-errors');
 const xmlParser = require('xml2json');
 
 const config = require('../node.config.js');
+const Roles = require('./roles');
+
 const {
   Users,
   OAuthClients,
@@ -30,10 +32,12 @@ const adminUser = Object.freeze({
 
 module.exports = {
   adminUser,
-  GUARD_USER: guard('user'),
-  GUARD_USER_REDIRECT: guard('user', true),
-  GUARD_ADMIN: guard('admin'),
-  GUARD_ADMIN_REDIRECT: guard('admin', true),
+  guard,
+  GUARD_USER: guard([Roles.REGULAR_USER]),
+  GUARD_USER_REDIRECT: guard([Roles.REGULAR_USER], true),
+  GUARD_GROUP_ADMIN: guard([Roles.GROUP_ADMIN]),
+  GUARD_ADMIN: guard([Roles.SUPER_ADMIN]),
+  GUARD_ADMIN_REDIRECT: guard([Roles.SUPER_ADMIN], true),
 };
 
 /// ///
@@ -42,25 +46,25 @@ module.exports = {
 
 // redirect parameter is used for pages outside Nuxt application
 // • like the mosaico editor
-function guard(role = 'user', redirect = false) {
-  const isAdminRoute = role === 'admin';
-  return function guardRoute(req, res, next) {
+function guard(roles = [Roles.REGULAR_USER], redirect) {
+  return (req, res, next) => {
     const { user } = req;
-    // non connected user shouldn't access those pages
-    if (!user) {
-      redirect
-        ? res.redirect('/account/login')
-        : next(new createError.Unauthorized());
-      return;
+
+    const isUserRoute = roles.includes(Roles.REGULAR_USER);
+    const isGroupUserRoute = roles.includes(Roles.GROUP_ADMIN);
+    const isAdminRoute = roles.includes(Roles.SUPER_ADMIN);
+
+    if (
+      (isAdminRoute && user?.isAdmin) ||
+      (isGroupUserRoute && user?.isGroupAdmin) ||
+      (isUserRoute && !!user)
+    ) {
+      return next();
     }
-    // non admin user shouldn't access those pages
-    if (isAdminRoute && !user.isAdmin) {
-      redirect
-        ? res.redirect('/account/admin')
-        : next(new createError.Unauthorized());
-      return;
-    }
-    next();
+
+    redirect
+      ? res.redirect('/account/login')
+      : next(new createError.Unauthorized());
   };
 }
 

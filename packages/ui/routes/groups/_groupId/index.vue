@@ -1,8 +1,8 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixin-page-title.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupMenu from '~/components/group/menu.vue';
@@ -10,34 +10,33 @@ import BsGroupForm from '~/components/group/form.vue';
 import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
+import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { PAGE_NAMES } from '~/helpers/constants/page-names.js';
 
 export default {
-  name: `bs-page-group`,
-  mixins: [mixinPageTitle],
-  meta: {
-    acl: acls.ACL_ADMIN,
-  },
+  name: 'BsPageGroup',
   components: {
     BsGroupMenu,
     BsGroupForm,
     BsGroupUsersTab,
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
+    BsGroupWorkspacesTab,
   },
-  head() {
-    return { title: this.title };
+  mixins: [mixinPageTitle],
+  meta: {
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
-  data() {
-    return {
-      tab: `group-templates`,
-      group: {},
-      loading: false,
-    };
-  },
-  computed: {
-    title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
-    },
+  beforeRouteEnter(to, from, next) {
+    next((page) => {
+      if (
+        from.name === PAGE_NAMES.WORKSPACE_CREATE ||
+        from.name === PAGE_NAMES.WORKSPACE_UPDATE
+      ) {
+        page.fromCreateOrUpdate = true;
+      }
+    });
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -48,6 +47,31 @@ export default {
       console.log(error);
     }
   },
+  data() {
+    return {
+      group: {},
+      loading: false,
+      fromCreateOrUpdate: false,
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+
+  computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
+    tab() {
+      return this.fromCreateOrUpdate
+        ? 'group-workspaces'
+        : 'group-informations';
+    },
+    title() {
+      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateGroup() {
@@ -57,19 +81,19 @@ export default {
       } = this;
       try {
         this.loading = true;
-        const group = await $axios.$put(
-          apiRoutes.groupsItem(params),
-          this.group
-        );
+        const payload = this.isGroupAdmin
+          ? { name: this.group.name }
+          : this.group;
+        await $axios.$put(apiRoutes.groupsItem(params), payload);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
-          color: `success`,
+          color: 'success',
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
-          color: `error`,
+          color: 'error',
         });
         console.log(error);
       } finally {
@@ -82,17 +106,26 @@ export default {
 
 <template>
   <bs-layout-left-menu>
-    <template v-slot:menu>
+    <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs centered v-model="tab">
+    <v-tabs :value="tab" centered>
       <v-tabs-slider color="accent" />
-      <v-tab href="#group-informations">{{
-        $t('groups.tabs.informations')
-      }}</v-tab>
-      <v-tab href="#group-templates">{{ $tc('global.template', 2) }}</v-tab>
-      <v-tab href="#group-mailings">{{ $tc('global.mailing', 2) }}</v-tab>
-      <v-tab href="#group-users">{{ $tc('global.user', 2) }}</v-tab>
+      <v-tab href="#group-informations">
+        {{ $t('groups.tabs.informations') }}
+      </v-tab>
+      <v-tab v-if="isAdmin" href="#group-templates">
+        {{ $tc('global.template', 2) }}
+      </v-tab>
+      <v-tab v-if="isGroupAdmin" href="#group-workspaces">
+        {{ $tc('global.teams', 2) }}
+      </v-tab>
+      <v-tab href="#group-users">
+        {{ $tc('global.user', 2) }}
+      </v-tab>
+      <v-tab v-if="isAdmin" href="#group-mailings">
+        {{ $tc('global.mailing', 2) }}
+      </v-tab>
       <v-tab-item value="group-informations" eager>
         <bs-group-form
           v-model="group"
@@ -101,11 +134,14 @@ export default {
           @submit="updateGroup"
         />
       </v-tab-item>
-      <v-tab-item value="group-templates">
+      <v-tab-item v-if="isAdmin" value="group-templates">
         <bs-group-templates-tab />
       </v-tab-item>
-      <v-tab-item value="group-mailings">
+      <v-tab-item v-if="isAdmin" value="group-mailings">
         <bs-group-mailings-tab />
+      </v-tab-item>
+      <v-tab-item v-if="isGroupAdmin" value="group-workspaces">
+        <bs-group-workspaces-tab />
       </v-tab-item>
       <v-tab-item value="group-users">
         <bs-group-users-tab />

@@ -1,11 +1,14 @@
 'use strict';
 
+const SPACE_TYPE = require('../constant/space-type');
+
 module.exports = {
   trimString,
   normalizeString,
   isFromGroup,
   addGroupFilter,
   addStrictGroupFilter,
+  addMailQueryParamFilter,
 };
 
 // normalize string to have a better ordering
@@ -42,4 +45,15 @@ function addStrictGroupFilter(user, filter) {
   const group = user.isAdmin ? { $exists: false } : user.group.id;
   filter._company = group;
   return filter;
+}
+
+// Filter from params query
+function addMailQueryParamFilter(query) {
+  const params = {};
+  if (query?.type === SPACE_TYPE.FOLDER) {
+    params._parentFolder = query.id;
+  } else if (query?.type === SPACE_TYPE.WORKSPACE) {
+    params._workspace = query.id;
+  }
+  return params;
 }

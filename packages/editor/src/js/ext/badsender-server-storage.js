@@ -18,7 +18,6 @@ function loader(opts) {
   var updateRoute = opts.metadata.url.update;
   return function (viewModel) {
     console.info('init server storage (save, test, download)');
-
     //////
     // SAVE
     //////
@@ -30,9 +29,11 @@ function loader(opts) {
     saveCmd.execute = function () {
       saveCmd.enabled(false);
       var data = getData(viewModel);
-      console.info('SAVE DATA');
-      console.log(data);
 
+      data = {
+        ...data,
+        htmlToExport: viewModel.exportHTML()
+      };
       // force JSON for bodyparser to catch up
       // => keep types server side
       $.ajax({
@@ -63,6 +64,10 @@ function loader(opts) {
       }
     };
 
+
+
+
+
     //////
     // EMAIL
     //////
@@ -81,9 +86,12 @@ function loader(opts) {
       // Don't validate `null` values => isEmail will error
       if (!email) return testCmd.enabled(true);
 
-      if (!isEmail(email)) {
-        global.alert(viewModel.t('Invalid email address'));
-        return testCmd.enabled(true);
+      const emails = email.split(";");
+      for (const address of emails){
+        if (!isEmail(address)) {
+          global.alert(viewModel.t('Invalid email address'));
+          return testCmd.enabled(true);
+        }
       }
 
       console.log('TODO testing...', email);
