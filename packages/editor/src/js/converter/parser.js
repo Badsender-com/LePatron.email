@@ -446,7 +446,6 @@ var processBlock = function (
           else if (align == 'bottom')
             containerBind += ", verticalAlign: 'bottom'";
         containerBind += '}';
-        console.log({ _stylebind: containerBind });
         $(element).before(
           '<!-- ko wysiwygImg: { _data: $data, _item: ' +
             itemBindValue +
