@@ -432,7 +432,7 @@ var processBlock = function (
 
         var tmplName = templateCreator(element);
 
-        var containerBind = '{ maxWidth: ' + width;
+        var containerBind = '{';
         if (align == 'left') containerBind += ", float: 'left'";
         else if (align == 'right') containerBind += ", float: 'right'";
         else if (align == 'center')
@@ -446,7 +446,7 @@ var processBlock = function (
           else if (align == 'bottom')
             containerBind += ", verticalAlign: 'bottom'";
         containerBind += '}';
-
+        console.log({ _stylebind: containerBind });
         $(element).before(
           '<!-- ko wysiwygImg: { _data: $data, _item: ' +
             itemBindValue +
