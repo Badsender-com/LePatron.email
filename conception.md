@@ -47,7 +47,7 @@ Server side: Le ProductController existe.
     {
       name: {
         type: String,
-        required: [true, 'Folder name is required'],
+        required: [true, 'Profile name is required'],
       },
        type: {
         type: String,
@@ -69,6 +69,6 @@ Server side: Le ProductController existe.
     }
   );
 
-  module.exports = FolderSchema;
+  module.exports = ProfileSchema;
 
   ```
