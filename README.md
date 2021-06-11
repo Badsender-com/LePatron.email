@@ -39,9 +39,9 @@ To get a local copy up and running follow these simple steps.
 
 You will need the following tools to be able to run the project locally:
 
-- [Node]()
-- [Yarn]()
-- [Docker]() 💡 Make sure you can run `docker-compose` in you terminal
+- [Node](https://nodejs.org)
+- [Yarn](https://yarnpkg.com/)
+- [Docker](https://www.docker.com/get-started) 💡 Make sure you can run `docker-compose` in you terminal
 
 ### Installation
 
