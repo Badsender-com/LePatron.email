@@ -3,7 +3,7 @@
 
 ## Deployment
 
-Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:), [CleverCloud](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-CleverCloud) and [Infomaniak](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-Informaniak) are provided in the readme file.
+Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:) and [CleverCloud](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-CleverCloud) are provided in the readme file.
 
 ## Run locally
 
