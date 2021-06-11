@@ -178,17 +178,7 @@ Distributed under the GPL-3.0 License. See `LICENSE` for more information.
 
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email
-
-Project Link: [https://github.com/Badsender-com/LePatron.email](https://github.com/Badsender-com/LePatron.email)
-
-<!-- ACKNOWLEDGEMENTS -->
-
-## Acknowledgements
-
-- []()
-- []()
-- []()
+Project Link: [https://lepatron.email/](https://lepatron.email/)
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
