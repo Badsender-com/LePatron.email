@@ -1,9 +1,3 @@
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![GPL-3.0 License][license-shield]][license-url]
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
@@ -26,8 +20,6 @@
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 **LePatron is an intuitive email builder.**
 
@@ -179,17 +171,3 @@ Distributed under the GPL-3.0 License. See `LICENSE` for more information.
 ## Contact
 
 Project Link: [https://lepatron.email/](https://lepatron.email/)
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/Badsender-com/repo.svg?style=for-the-badge
-[contributors-url]: https://github.com/Badsender-com/repo/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Badsender-com/repo.svg?style=for-the-badge
-[forks-url]: https://github.com/Badsender-com/repo/network/members
-[stars-shield]: https://img.shields.io/github/stars/Badsender-com/repo.svg?style=for-the-badge
-[stars-url]: https://github.com/Badsender-com/repo/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Badsender-com/repo.svg?style=for-the-badge
-[issues-url]: https://github.com/Badsender-com/repo/issues
-[license-shield]: https://img.shields.io/github/license/Badsender-com/repo.svg?style=for-the-badge
-[license-url]: https://github.com/Badsender-com/repo/blob/master/LICENSE.txt
