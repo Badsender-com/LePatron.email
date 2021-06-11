@@ -1,10 +1,6 @@
 <h1 align="center">✉️ LePatron.email</h1>
 <h2 align="center">Open Source Email Builder</h2>
 
-## Deployment
-
-Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:) and [CleverCloud](./packages/documentation/heroku-configuration.md##-How-to-deploy-on-CleverCloud) are provided in the readme file.
-
 ## Run locally
 
 ### 1. Install dependencies
@@ -93,6 +89,10 @@ Simply give access to .mongodb folder to your user :
 ```
 chown $(whoami):$(whoami) -R ./.mongodb
 ```
+
+## Deployment
+
+Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:) and [CleverCloud](./DEPLOYMENT.md##-How-to-deploy-on-CleverCloud) are provided in the readme file.
 
 ---
 
