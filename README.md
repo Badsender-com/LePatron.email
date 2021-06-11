@@ -26,8 +26,7 @@
 Key features:
 
 - No technical skills required
-- Drag'n'drop prebuild templates block to build your emails
-- Manage template accesses
+- WYSIWYG mail editor
 
 ### Built With
 
