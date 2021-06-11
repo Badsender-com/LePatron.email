@@ -21,12 +21,7 @@
 
 ## About The Project
 
-**LePatron is an intuitive email builder.**
-
-Key features:
-
-- No technical skills required
-- WYSIWYG mail editor
+**LePatron is an email builder allowing to industrialize your email template production. Build tailor made email templates and make them available to your non-technical users.**
 
 ### Built With
 
