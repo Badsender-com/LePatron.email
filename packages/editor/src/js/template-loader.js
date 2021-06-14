@@ -344,15 +344,15 @@ var templateCompiler = function (
     adder: function (id, html) {
       if (typeof html !== 'string')
         throw 'Template system: cannot create new template ' + id;
-      var trash = html.match(/(data)?-ko-[^ =:]*/g);
-      if (trash) {
-        console.error(
-          'ERROR: found unexpected -ko- attribute in compiled template',
-          id,
-          ', you probably mispelled it:',
-          trash
-        );
-      }
+      // var trash = html.match(/(data)?-ko-[^ =:]*/g);
+      // if (trash) {
+      //   console.error(
+      //     'ERROR: found unexpected -ko- attribute in compiled template',
+      //     id,
+      //     ', you probably mispelled it:',
+      //     trash
+      //   );
+      // }
       templateSystem.addTemplate(id, html);
       createdTemplates.push(id);
     },

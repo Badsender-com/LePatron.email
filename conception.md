@@ -40,6 +40,37 @@ PR to add profile section to Group admin interface
      </v-tab-item>
 ```
 
+- [ ] Add new profile page
+
+  ```
+    <script>
+      import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+
+      import * as acls from '~/helpers/pages-acls.js';
+      import ProfileForm from '~/components/profiles/profile-form';
+      import BsGroupMenu from '~/components/group/menu.vue';
+
+      export default {
+        name: 'PageNewProfile',
+        components: { ProfileForm, BsGroupMenu },
+        mixins: [mixinPageTitle],
+        meta: {
+          acl: acls.ACL_GROUP_ADMIN,
+        },
+      };
+      </script>
+
+      <template>
+        <bs-layout-left-menu>
+          <template #menu>
+            <bs-group-menu />
+          </template>
+          <profile-form />
+        </bs-layout-left-menu>
+      </template>
+
+  ```
+
 - [ ] Edit menu `packages/ui/components/group/menu.vue` add to computed method
   ```
   newWorkspaceHref() {
@@ -49,10 +80,35 @@ PR to add profile section to Group admin interface
     // Add to the template
         <v-list-item nuxt link :to="newUserHref">
           <v-list-item-avatar>
-            <v-icon>person_add</v-icon>
+            <v-icon>note_add</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
-            <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
+            <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
   ```
+- [ ] Add component `packages/ui/components/profiles/profile-form.vue`
+
+```
+  <script>
+  import { validationMixin } from 'vuelidate';
+
+  export default {
+    name: 'ProfileForm',
+    mixins: [validationMixin],
+    supportedLanguages: [
+      { text: 'English', value: 'en' },
+      { text: 'Français', value: 'fr' },
+    ],
+  };
+  </script>
+
+  <template>
+    <v-card tag="form">
+      Profile form
+    </v-card>
+  </template>
+
+```
+
+- [ ] Add trads to `public/lang/badsender-en.js` and `public/lang/badsender-fr.js`.
