@@ -193,7 +193,6 @@ var processBlock = function (
 
       if (newStyle != style) {
         if (newStyle.trim() !== '') {
-          console.log({ newStyle });
           var tmpName = templateCreator(newStyle);
           domutils.setAttribute(
             element,

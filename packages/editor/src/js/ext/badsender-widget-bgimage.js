@@ -43,9 +43,6 @@ module.exports = (opts) => {
     vm.showDialogGallery = ko.observable(false);
     vm.currentBgimage = ko.observable(false);
     vm.setBgImage = (imageName, img, event) => {
-      console.log({ imageName });
-      console.log({ img });
-      console.log({ event });
       // images have to be on an absolute path
       // => Testing by email needs it that way
       // => ZIP download needs it that way
@@ -53,9 +50,6 @@ module.exports = (opts) => {
       vm.closeDialogGallery();
     };
     vm.resetBgimage = (propAccessor, parameters, blockProperties, event) => {
-      console.log({ blockProperties });
-      console.log({ propAccessor });
-      console.log({ parameters });
       blockProperties[propAccessor](transparentGif);
     };
     vm.openDialogGallery = (
@@ -64,9 +58,6 @@ module.exports = (opts) => {
       blockProperties,
       event
     ) => {
-      console.log({ propAccessor });
-      console.log({ parameters });
-      console.log({ blockProperties });
       // to set the right property, store the concerned setter
       vm.currentBgimage(blockProperties[propAccessor].bind(blockProperties));
       vm.showDialogGallery(true);
