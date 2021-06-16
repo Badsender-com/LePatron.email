@@ -43,7 +43,7 @@ export default {
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
     newProfile: 'Add an export profile',
-    profile: 'Profile',
+    profile: 'Profile | Profiles',
     user: 'User | Users',
     newUser: 'Add a user',
     newTeam: 'Add a workspace',
@@ -258,6 +258,14 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+  },
+  profiles: {
+    name: 'Name',
+    type: 'Type',
+    createdAt: 'Creation date',
+    actions: 'Actions',
+    edit: 'Edit',
+    delete: 'Delete',
   },
   workspaces: {
     name: 'Name',
