@@ -2,19 +2,25 @@
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import ProfilesActionsDropdown from './profiles-actions-dropdown.vue';
 import ProfilesActionsDropdownItem from './profiles-actions-dropdown-item.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form';
 
 export default {
   name: 'BsProfilesTable',
   components: {
     ProfilesActionsDropdown,
     ProfilesActionsDropdownItem,
+    BsModalConfirmForm,
   },
   model: { prop: 'loading', event: 'update' },
   props: {
     profiles: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
   },
-
+  data() {
+    return {
+      selectedProfile: {},
+    };
+  },
   computed: {
     tableHeaders() {
       return [
@@ -49,6 +55,16 @@ export default {
     getStatusIcon(item) {
       return userStatusHelpers.getStatusIcon(item.status);
     },
+    openDeleteModal(profile = {}) {
+      this.selectedProfile = profile;
+      this.$refs.deleteDialog.open({
+        name: profile.name,
+        id: profile.id,
+      });
+    },
+    handleDelete() {
+      console.log({ selectedProfile: this.selectedProfile });
+    },
   },
 };
 </script>
@@ -72,16 +88,33 @@ export default {
       <template #item.createdAt="{ item }">
         <span> {{ item.createdAt }} </span>
       </template>
-      <template #item.actions>
+      <template #item.actions="{ item }">
         <profiles-actions-dropdown>
           <profiles-actions-dropdown-item icon="edit" disabled>
             {{ $t('profiles.edit') }}
           </profiles-actions-dropdown-item>
-          <profiles-actions-dropdown-item icon="delete" disabled>
+          <profiles-actions-dropdown-item
+            icon="delete"
+            :on-click="() => openDeleteModal(item)"
+          >
             {{ $t('profiles.delete') }}
           </profiles-actions-dropdown-item>
         </profiles-actions-dropdown>
       </template>
     </v-data-table>
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :with-input-confirmation="false"
+      @confirm="handleDelete"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('profiles.deleteWarningMessage', {
+            name: selectedProfile.name,
+          })
+        "
+      />
+    </bs-modal-confirm-form>
   </div>
 </template>
