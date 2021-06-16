@@ -45,6 +45,8 @@ export default {
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
+    newProfile: 'Ajouter un profil d\'exportation',
+    profile: 'Profile',
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux emails',
     backToGroups: 'Retour aux groupes',

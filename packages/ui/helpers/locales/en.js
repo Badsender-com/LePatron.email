@@ -42,6 +42,8 @@ export default {
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
+    newProfile: 'Add an export profile',
+    profile: 'Profile',
     user: 'User | Users',
     newUser: 'Add a user',
     newTeam: 'Add a workspace',
