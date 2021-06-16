@@ -3,6 +3,6 @@
 /// ///
 const ProfileTypes = {
   ACTITO: 'actity',
-  SENDINGBLUE: 'sendingblue',
+  SENDINBLUE: 'sendinblue',
 };
 module.exports = ProfileTypes;
