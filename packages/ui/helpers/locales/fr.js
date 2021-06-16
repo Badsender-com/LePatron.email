@@ -46,7 +46,7 @@ export default {
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil d\'exportation',
-    profile: 'Profil | Profils',
+    profile: 'Profile',
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux emails',
     backToGroups: 'Retour aux groupes',
@@ -267,14 +267,6 @@ export default {
     description: 'Descritpion',
     members: 'Membres',
     userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
-  },
-  profiles: {
-    name: 'Nom',
-    type: 'Type',
-    createdAt: 'Data de création',
-    actions: 'Actions',
-    edit: 'Editer',
-    delete: 'Supprimer',
   },
   folders: {
     name: 'Nom du dossier',
