@@ -37,13 +37,28 @@ export default {
     this.profiles = profilesData;
     this.loading = false;
   },
+  methods: {
+    async handleDelete(profile) {
+      this.loading = true;
+      await timeout(1000);
+      // after the success of the delete action remove the deleted profile from the list
+      this.profiles = this.profiles.filter(
+        (profileElement) => profileElement.id !== profile.id
+      );
+      this.loading = false;
+    },
+  },
 };
 </script>
 
 <template>
   <v-card flat tile>
     <v-card-text>
-      <bs-profiles-table :profiles="profiles" :loading="loading" />
+      <bs-profiles-table
+        :profiles="profiles"
+        :loading="loading"
+        @delete="handleDelete"
+      />
     </v-card-text>
   </v-card>
 </template>

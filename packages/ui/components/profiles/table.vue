@@ -63,7 +63,7 @@ export default {
       });
     },
     handleDelete() {
-      console.log({ selectedProfile: this.selectedProfile });
+      this.$emit('delete', this.selectedProfile);
     },
   },
 };
