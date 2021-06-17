@@ -20,7 +20,7 @@ const ProfileSchema = Schema(
     },
     type: {
       type: String,
-      enum: [ProfileTypes.ACTITO, ProfileTypes.SENDINGBLUE],
+      enum: [ProfileTypes.ACTITO, ProfileTypes.SENDINBLUE],
       required: false,
     },
     _company: {

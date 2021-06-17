@@ -13,13 +13,13 @@ const profilesData = [
   {
     id: 2,
     name: 'Profil 2',
-    type: 'sendingblue',
+    type: 'sendinblue',
     createdAt: '14/06/2021',
   },
   {
     id: 3,
     name: 'Profil 3',
-    type: 'sendingblue',
+    type: 'sendinblue',
     createdAt: '10/06/2021',
   },
 ];
