@@ -7,6 +7,7 @@ mongoose.Promise = global.Promise; // Use native promises
 const UserSchema = require('../user/user.schema.js');
 const TemplateSchema = require('../template/template.schema.js');
 const MailingSchema = require('../mailing/mailing.schema.js');
+const ProfileSchema = require('../profile/profile.schema.js');
 const GroupSchema = require('../group/group.schema.js');
 const CacheImageSchema = require('../image/image-cache.schema.js');
 const GallerySchema = require('../image/gallery.schema.js');
@@ -28,6 +29,7 @@ const Mailings = mongoose.model(modelNames.MailingModel, MailingSchema);
 const Groups = mongoose.model(modelNames.GroupModel, GroupSchema);
 const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
 const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
+const Profiles = mongoose.model(modelNames.ProfileModel, ProfileSchema);
 const CacheImages = mongoose.model(
   modelNames.CacheImageModel,
   CacheImageSchema
@@ -48,6 +50,7 @@ module.exports = {
   Workspaces,
   Templates,
   Mailings,
+  Profiles,
   Groups,
   CacheImages,
   Galleries,
