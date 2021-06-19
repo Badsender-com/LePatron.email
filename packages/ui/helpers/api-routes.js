@@ -193,3 +193,11 @@ export function getFolderAccess(folderID) {
 export function getFolderContentStatus(folderID) {
   return `/folders/${folderID}/has-content`;
 }
+
+/// ///
+// PROFILES
+/// ///
+
+export function getProfiles() {
+  return '/profiles/';
+}

@@ -9,6 +9,7 @@ const mailingService = require('../mailing/mailing.service.js');
 module.exports = {
   create,
   sendCampaignMail,
+  findAll,
 };
 
 async function create({ name, type, apiKey, _company, additionalApiData }) {
@@ -109,4 +110,8 @@ async function checkIfMailAlreadySentToProfile({ profileId, mailingId }) {
   });
 
   return true;
+}
+
+async function findAll() {
+  return Profiles.find({}).sort({ name: 1 });
 }

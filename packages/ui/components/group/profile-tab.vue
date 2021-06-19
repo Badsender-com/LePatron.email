@@ -1,28 +1,9 @@
 <script>
 import BsProfilesTable from '~/components/profiles/table.vue';
+import { getProfiles } from '~/helpers/api-routes';
 
 const timeout = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const profilesData = [
-  {
-    id: 0,
-    name: 'Profil 1',
-    type: 'actity',
-    createdAt: '16/06/2021',
-  },
-  {
-    id: 2,
-    name: 'Profil 2',
-    type: 'sendinblue',
-    createdAt: '14/06/2021',
-  },
-  {
-    id: 3,
-    name: 'Profil 3',
-    type: 'sendinblue',
-    createdAt: '10/06/2021',
-  },
-];
 export default {
   name: 'BsGroupProfilesTab',
   components: {
@@ -32,9 +13,10 @@ export default {
     return { profiles: [], loading: false };
   },
   async mounted() {
+    const { $axios } = this;
     this.loading = true;
-    await timeout(1000);
-    this.profiles = profilesData;
+    const { items } = await $axios.$get(getProfiles());
+    this.profiles = items;
     this.loading = false;
   },
   methods: {
