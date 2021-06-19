@@ -1,4 +1,10 @@
+'use_strict';
+
 const SibApiV3Sdk = require('sib-api-v3-sdk');
+const mailingService = require('../mailing/mailing.service.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+
+const { InternalServerError } = require('http-errors');
 
 class SendinBlueProvider {
   constructor({ apiKey, ...data }) {
@@ -6,7 +12,6 @@ class SendinBlueProvider {
     this.apiKey = defaultClient.authentications['api-key'];
     this.apiKey.apiKey = apiKey;
     this.data = data;
-    console.log(this.data);
   }
 
   async connectApi() {
@@ -14,17 +19,27 @@ class SendinBlueProvider {
     return await apiEmailCampaignsInstance.getAccount();
   }
 
-  async createCampaignMail(data) {
+  async createCampaignMail({ espSendingMailData, user, html, mailingId }) {
     const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
     let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
+    const processedHtml = mailingService.processHtmlWithFTPOption({
+      user,
+      html,
+      mailingId,
+    });
+
     emailCampaignsData = {
       emailCampaignsData,
-      ...data,
+      ...espSendingMailData,
+      htmlContent: processedHtml,
     };
-    console.log(emailCampaignsData);
-    return await apiEmailCampaignsInstance.createEmailCampaign(
+    const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
       emailCampaignsData
     );
+    if (!createCampaignApiResult?.id) {
+      throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+    }
+    return createCampaignApiResult?.id;
   }
 }
 

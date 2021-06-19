@@ -63,6 +63,9 @@ module.exports = {
   listMailingForWorkspaceOrFolder,
   previewMail,
   downloadZip,
+  validateMailExist,
+  processHtmlWithFTPOption,
+  updateMailEspIds,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -119,6 +122,22 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
   }
 }
 
+async function updateMailEspIds(mailingId, espId) {
+  if (!espId?.profileId || !espId?.mailCampaignId) {
+    throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ESP_ID);
+  }
+  const mailing = findOne(mailingId);
+
+  const mailEspIds = [...(mailing?.espIds || [])];
+  mailEspIds.push(espId);
+
+  await validateMailExist();
+  return Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailingId) },
+    { espIds: mailEspIds }
+  );
+}
+
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
 
@@ -132,9 +151,7 @@ async function findTags(query) {
 }
 
 async function findOne(mailingId) {
-  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
-    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  }
+  await validateMailExist(mailingId);
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
 }
 
@@ -233,8 +250,71 @@ async function createMailing(mailing) {
   return Mailings.create(mailing);
 }
 
-// This will handle downloading email as a ZIP file
+// Process html to the final result state based on ftp
+async function processHtmlWithFTPOption({ mailingId, html, user }) {
+  const {
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+    cdnProtocol,
+    cdnEndPoint,
+    name,
+  } = await extractFTPparams({
+    mailingId,
+    user,
+    downloadOptions: {
+      downLoadForCdn: false,
+      downLoadForFtp: true,
+    },
+  });
 
+  if (cdnDownload || regularDownload) {
+    throw new InternalServerError(
+      ERROR_CODES.CONFLICT_CDN_AND_REGULAR_DOWNLOAD_VALUES
+    );
+  }
+
+  const { relativesImagesNames } = await handleRelativeOrFtpImages({
+    html,
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+  });
+
+  // Add html with relatives url
+  const processedHtml = processMosaicoHtmlRender(html);
+
+  const {
+    html: processedHtmlWithFtpAbsolutePathImages,
+  } = replaceImageWithFTPEndpointBaseInProcessedHtml({
+    cdnDownload,
+    cdnProtocol,
+    cdnEndPoint,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    processedHtml,
+    relativesImagesNames,
+    name,
+  });
+
+  return processedHtmlWithFtpAbsolutePathImages;
+}
+
+// This will handle downloading email as a ZIP file
 async function downloadZip({
   mailingId,
   html,
@@ -341,6 +421,7 @@ async function downloadZip({
   return { archive: processedImageArchive, name };
 }
 
+// Extract information related to ftp and download state based on mailing id, user and download options
 async function extractFTPparams({ mailingId, user, downloadOptions }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   // mailing can come without group if created by the admin
@@ -372,12 +453,6 @@ async function extractFTPparams({ mailingId, user, downloadOptions }) {
     ftpPathOnServer,
   } = group;
 
-  const name = getName(mailing.name);
-  // prefix is `zip-stream` file prefix => our enclosing folder ^_^
-  // !WARNING default mac unzip will always put it in an folder if more than 1 file
-  // => test with The Unarchiver
-  const prefix = downloadMailingWithoutEnclosingFolder ? '' : `${name}/`;
-
   // Because this is cans come as a real from submit
   // downLoadForCdn & downLoadForFtp might come as a string
   downloadOptions.downLoadForCdn =
@@ -387,6 +462,19 @@ async function extractFTPparams({ mailingId, user, downloadOptions }) {
   downloadOptions.downLoadForFtp =
     downloadOptions.downLoadForFtp === 'true' ||
     downloadOptions.downLoadForFtp === true;
+
+  if (
+    downloadOptions.downLoadForFtp &&
+    (!ftpHost || !ftpUsername || !ftpPassword || !ftpPort || !ftpEndPoint)
+  ) {
+    throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
+  }
+
+  const name = getName(mailing.name);
+  // prefix is `zip-stream` file prefix => our enclosing folder ^_^
+  // !WARNING default mac unzip will always put it in an folder if more than 1 file
+  // => test with The Unarchiver
+  const prefix = downloadMailingWithoutEnclosingFolder ? '' : `${name}/`;
 
   // const $ = cheerio.load(html)
 
@@ -836,6 +924,13 @@ async function moveManyMailings(user, mailingsIds, destination) {
       throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
     }
   }
+}
+
+async function validateMailExist(mailingId) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  return true;
 }
 
 function applyFilters(query) {

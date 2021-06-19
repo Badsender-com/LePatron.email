@@ -4,6 +4,7 @@ const { Types } = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const { NotFound, Conflict } = require('http-errors');
+const mailingService = require('../mailing/mailing.service.js');
 
 module.exports = {
   create,
@@ -34,8 +35,18 @@ async function create({ name, type, apiKey, _company, additionalApiData }) {
   });
 }
 
-async function sendCampaignMail({ espRequestData, profileId, type }) {
+async function sendCampaignMail({
+  user,
+  espSendingMailData,
+  profileId,
+  html,
+  mailingId,
+  type,
+}) {
   const profile = await findOne(profileId);
+
+  await checkIfMailAlreadySentToProfile({ profileId, mailingId });
+
   if (!profile) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
@@ -57,11 +68,23 @@ async function sendCampaignMail({ espRequestData, profileId, type }) {
     _company,
     additionalApiData,
   });
-  const espCampaignMailResult = await espProvider.createCampaignMail(
-    espRequestData
-  );
 
-  console.log({ espCampaignMailResult });
+  const espMailCampaignId = await espProvider.createCampaignMail({
+    espSendingMailData,
+    user,
+    html,
+    mailingId,
+  });
+
+  await mailingService.updateMailEspIds(profileId, {
+    profileId,
+    mailCampaignId: espMailCampaignId,
+  });
+
+  return {
+    profileId,
+    mailCampaignId: espMailCampaignId,
+  };
 }
 
 async function findOne(profileId) {
@@ -69,4 +92,21 @@ async function findOne(profileId) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
   return Profiles.findOne({ _id: Types.ObjectId(profileId) });
+}
+
+// Check if we have already sent mail to profile
+async function checkIfMailAlreadySentToProfile({ profileId, mailingId }) {
+  const mailing = await mailingService.findOne(mailingId);
+
+  if (mailing.espIds?.length === 0) {
+    return true;
+  }
+
+  mailing.espIds.forEach((espId) => {
+    if (espId?.id === profileId) {
+      throw new Conflict(ERROR_CODES.MAIL_ALREADY_SENT_TO_PROFILE);
+    }
+  });
+
+  return true;
 }

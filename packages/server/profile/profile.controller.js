@@ -1,5 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
+const mailingService = require('../mailing/mailing.service');
+
 module.exports = {
   create: asyncHandler(create),
   sendCampaignMail: asyncHandler(sendCampaignMail),
@@ -21,7 +23,6 @@ module.exports = {
  */
 
 async function create(req, res) {
-  console.log('create profile log');
   const { user } = req;
   const { name, type, apiKey, _company, additionalApiData } = req.body;
 
@@ -52,13 +53,18 @@ async function create(req, res) {
  */
 
 async function sendCampaignMail(req, res) {
-  const { user } = req;
-  const { espRequestData, profileId, type, _company } = req.body;
+  const { user, body } = req;
+  const { mailingId } = req.params;
+  const { espSendingMailData, html, profileId, type, _company } = body;
+
+  await mailingService.validateMailExist(mailingId);
 
   const response = await profileService.sendCampaignMail({
     user,
-    espRequestData,
+    espSendingMailData,
     profileId,
+    html,
+    mailingId,
     type,
     _company,
   });
