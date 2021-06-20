@@ -1,14 +1,16 @@
 const EspProvider = require('../esp/esp.service');
 const { Profiles } = require('../common/models.common');
 const { Types } = require('mongoose');
+
 const ERROR_CODES = require('../constant/error-codes.js');
 
-const { NotFound, Conflict } = require('http-errors');
+const { NotFound, Conflict, InternalServerError } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
 
 module.exports = {
   create,
   sendCampaignMail,
+  deleteProfile,
 };
 
 async function create({ name, type, apiKey, _company, additionalApiData }) {
@@ -109,4 +111,20 @@ async function checkIfMailAlreadySentToProfile({ profileId, mailingId }) {
   });
 
   return true;
+}
+
+async function deleteProfile({ profileId }) {
+  const profile = await findOne(profileId);
+
+  const deleteProfileResponse = deleteOne(profile.id);
+
+  if (deleteProfileResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_PROFILE_DELETE);
+  }
+
+  return deleteProfileResponse;
+}
+
+async function deleteOne(profileId) {
+  return Profiles.deleteOne({ _id: Types.ObjectId(profileId) });
 }
