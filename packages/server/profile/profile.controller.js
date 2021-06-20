@@ -9,7 +9,7 @@ module.exports = {
 
 /**
  * @api {post} /profiles profile creation
- * @apiPermission group_admin
+ * @apiPermission admin
  * @apiName CreateProfile
  * @apiGroup Profiles
  *
@@ -39,8 +39,8 @@ async function create(req, res) {
 }
 
 /**
- * @api {post} /profiles send campaign mail to ESP
- * @apiPermission group_admin
+ * @api {post} /profiles/send-campaign-mail send campaign mail to ESP
+ * @apiPermission admin
  * @apiName sendCampaignMail
  * @apiGroup Profiles
  *
