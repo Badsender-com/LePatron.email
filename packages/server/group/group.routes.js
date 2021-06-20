@@ -57,6 +57,13 @@ router.get(
   groups.readMailings
 );
 
+router.get(
+  '/:groupId/profiles',
+  guard(), // guard() will check if the user is logged
+  GUARD_ADMIN,
+  groups.readProfiles
+);
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());

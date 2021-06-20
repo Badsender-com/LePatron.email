@@ -7,7 +7,9 @@ const {
   createWorkspace,
   findWorkspaces,
 } = require('../workspace/workspace.service.js');
+
 const groupService = require('../group/group.service.js');
+const profileService = require('../profile/profile.service.js');
 
 const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
@@ -19,6 +21,7 @@ module.exports = {
   readUsers: asyncHandler(readUsers),
   readTemplates: asyncHandler(readTemplates),
   readMailings: asyncHandler(readMailings),
+  readProfiles: asyncHandler(readProfiles),
   readWorkspaces: asyncHandler(readWorkspaces),
   update: asyncHandler(update),
 };
@@ -83,7 +86,7 @@ async function create(req, res) {
 async function seedGroups(req, res) {
   const seededGroups = await groupService.seedGroups();
 
-  res.json({ groups: seededGroups.map(group => group.name) });
+  res.json({ groups: seededGroups.map((group) => group.name) });
 }
 
 /**
@@ -145,6 +148,24 @@ async function readTemplates(req, res) {
   ]);
   if (!group) throw new createError.NotFound();
   res.json({ items: templates });
+}
+
+/**
+ * @api {GET}  /groups/:groupId/profiles group profiles
+ * @apiPermission admin
+ * @apiName profilesList
+ * @apiGroup Profiles
+ *
+ * @apiUse profile
+ */
+
+async function readProfiles(req, res) {
+  const { groupId } = req.params;
+
+  await groupService.findById(groupId);
+
+  const profiles = await profileService.findAllByGroup({ groupId });
+  res.json({ items: profiles });
 }
 
 /**

@@ -6,11 +6,12 @@ const ERROR_CODES = require('../constant/error-codes.js');
 
 const { NotFound, Conflict, InternalServerError } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
+const groupService = require('../group/group.service.js');
 
 module.exports = {
   create,
   sendCampaignMail,
-  findAll,
+  findAllByGroup,
   deleteProfile,
 };
 
@@ -114,8 +115,10 @@ async function checkIfMailAlreadySentToProfile({ profileId, mailingId }) {
   return true;
 }
 
-async function findAll() {
-  return Profiles.find({}).sort({ name: 1 });
+async function findAllByGroup({ groupId }) {
+  await groupService.findById(groupId);
+
+  return Profiles.find({ _company: groupId }).sort({ name: 1 });
 }
 
 async function deleteProfile({ profileId }) {
