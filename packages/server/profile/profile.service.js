@@ -121,7 +121,7 @@ async function findAll() {
 async function deleteProfile({ profileId }) {
   const profile = await findOne(profileId);
 
-  const deleteProfileResponse = deleteOne(profile.id);
+  const deleteProfileResponse = await deleteOne(profile.id);
 
   if (deleteProfileResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_PROFILE_DELETE);
