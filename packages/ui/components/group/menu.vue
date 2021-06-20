@@ -21,6 +21,9 @@ export default {
     newWorkspaceHref() {
       return `/groups/${this.groupId}/new-workspace`;
     },
+    newProfileHref() {
+      return `/groups/${this.groupId}/new-profile`;
+    },
   },
 };
 </script>
@@ -84,6 +87,14 @@ export default {
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item nuxt link :to="newProfileHref">
+          <v-list-item-avatar>
+            <v-icon>note_add</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>

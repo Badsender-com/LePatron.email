@@ -45,6 +45,8 @@ export default {
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
+    newProfile: 'Ajouter un profil d\'exportation',
+    profile: 'Profil | Profils',
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux emails',
     backToGroups: 'Retour aux groupes',
@@ -265,6 +267,17 @@ export default {
     description: 'Descritpion',
     members: 'Membres',
     userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
+  },
+  profiles: {
+    name: 'Nom',
+    type: 'Type',
+    createdAt: 'Data de création',
+    actions: 'Actions',
+    edit: 'Editer',
+    delete: 'Supprimer',
+    emptyState: 'Aucun profil disponible',
+    deleteWarningMessage:
+      'Vous êtes sur le point de supprimer le profil "<strong>{name}</strong>".Cette action ne peut pas être annulée.',
   },
   folders: {
     name: 'Nom du dossier',
