@@ -269,6 +269,7 @@ export default {
     emptyState: 'No profile available',
     deleteWarningMessage:
       'You are about to delete the "<strong>{name}</strong>" profile. This action can\'t be undone.',
+    profileType: 'Profile type',
   },
   workspaces: {
     name: 'Name',

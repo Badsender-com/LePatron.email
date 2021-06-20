@@ -278,6 +278,7 @@ export default {
     emptyState: 'Aucun profil disponible',
     deleteWarningMessage:
       'Vous êtes sur le point de supprimer le profil "<strong>{name}</strong>".Cette action ne peut pas être annulée.',
+    profileType: 'Type de profil',
   },
   folders: {
     name: 'Nom du dossier',
