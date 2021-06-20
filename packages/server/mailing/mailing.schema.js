@@ -95,6 +95,9 @@ const MailingSchema = Schema(
     },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
+    espIds: {
+      type: [],
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
