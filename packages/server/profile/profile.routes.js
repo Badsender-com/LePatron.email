@@ -6,9 +6,10 @@ const router = express.Router();
 
 const profiles = require('./profile.controller.js');
 
-const { GUARD_ADMIN } = require('../account/auth.guard.js');
+const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 
-router.post('/create', profiles.create);
-router.post('/send-campaign', profiles.sendCampaignMail);
+router.post('/', GUARD_ADMIN, profiles.create);
 router.get('/', GUARD_ADMIN, profiles.list);
+router.post('/send-campaign-mail', GUARD_USER, profiles.sendCampaignMail);
+
 module.exports = router;

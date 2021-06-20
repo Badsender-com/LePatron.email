@@ -15132,7 +15132,7 @@ shell-quote@^1.4.2, shell-quote@^1.6.1:
   resolved "https://registry.yarnpkg.com/shell-quote/-/shell-quote-1.7.2.tgz#67a7d02c76c9da24f99d20808fcaded0e0e04be2"
   integrity sha512-mRz/m/JVscCrkMyPqHc/bczi3OQHkLTqXHEFu0zDhK/qfv3UcOA4SVmRCLmos4bhjr9ekVQubj/R7waKapmiQg==
 
-sib-api-v3-sdk@^8.2.0:
+sib-api-v3-sdk@8.2.0:
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/sib-api-v3-sdk/-/sib-api-v3-sdk-8.2.0.tgz#a1ab13dc8840114a4a97275547a73ba7ee14ce09"
   integrity sha512-Qqr6y1wT7BZMWAKn5ouuCyqz8X0L3fB6jFRJK4pOIcnzvaSK2HLKwj0Enxz8Rsk+wuitWRptiJOBJgkcGm6dxA==
