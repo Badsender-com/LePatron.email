@@ -128,7 +128,7 @@ export default {
       <v-tab v-if="isAdmin" href="#group-mailings">
         {{ $tc('global.mailing', 2) }}
       </v-tab>
-      <v-tab v-if="isGroupAdmin" href="#group-profile">
+      <v-tab v-if="isAdmin" href="#group-profile">
         {{ $tc('global.profile', 2) }}
       </v-tab>
       <v-tab-item value="group-informations" eager>
@@ -151,7 +151,7 @@ export default {
       <v-tab-item value="group-users">
         <bs-group-users-tab />
       </v-tab-item>
-      <v-tab-item v-if="isGroupAdmin" value="group-profile">
+      <v-tab-item v-if="isAdmin" value="group-profile">
         <bs-group-profiles-tab />
       </v-tab-item>
     </v-tabs>

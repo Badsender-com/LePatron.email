@@ -5,12 +5,13 @@ const mailingService = require('../mailing/mailing.service');
 module.exports = {
   create: asyncHandler(create),
   sendCampaignMail: asyncHandler(sendCampaignMail),
+  list: asyncHandler(list),
   deleteProfile: asyncHandler(deleteProfile),
 };
 
 /**
  * @api {post} /profiles profile creation
- * @apiPermission group_admin
+ * @apiPermission admin
  * @apiName CreateProfile
  * @apiGroup Profiles
  *
@@ -40,8 +41,8 @@ async function create(req, res) {
 }
 
 /**
- * @api {post} /profiles send campaign mail to ESP
- * @apiPermission group_admin
+ * @api {post} /profiles/send-campaign-mail send campaign mail to ESP
+ * @apiPermission admin
  * @apiName sendCampaignMail
  * @apiGroup Profiles
  *
@@ -71,6 +72,20 @@ async function sendCampaignMail(req, res) {
   });
 
   res.json(response);
+}
+
+/**
+ * @api {GET} /profiles get profiles list
+ * @apiPermission admin
+ * @apiName profilesList
+ * @apiGroup Profiles
+ *
+ * @apiUse profile
+ */
+
+async function list(req, res) {
+  const profiles = await profileService.findAll();
+  res.json({ items: profiles });
 }
 
 /**

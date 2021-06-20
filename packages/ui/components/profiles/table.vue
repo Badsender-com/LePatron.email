@@ -86,7 +86,7 @@ export default {
         <span> {{ item.type }} </span>
       </template>
       <template #item.createdAt="{ item }">
-        <span> {{ item.createdAt }} </span>
+        <span> {{ item.createdAt | preciseDateTime }} </span>
       </template>
       <template #item.actions="{ item }">
         <profiles-actions-dropdown>

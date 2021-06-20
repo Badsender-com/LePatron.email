@@ -194,6 +194,14 @@ export function getFolderContentStatus(folderID) {
   return `/folders/${folderID}/has-content`;
 }
 
+/// ///
+// PROFILES
+/// ///
+
+export function getProfiles() {
+  return '/profiles/';
+}
+
 export function getProfileId(getProfileId) {
   return `/profiles/${getProfileId}`;
 }
