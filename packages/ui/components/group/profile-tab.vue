@@ -1,6 +1,6 @@
 <script>
 import BsProfilesTable from '~/components/profiles/table.vue';
-import { getProfileId, getProfiles } from '~/helpers/api-routes';
+import { getProfileId, groupsProfiles } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
@@ -18,9 +18,12 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async fetchData() {
-      const { $axios } = this;
+      const {
+        $axios,
+        $route: { params },
+      } = this;
       this.loading = true;
-      const { items } = await $axios.$get(getProfiles());
+      const { items } = await $axios.$get(groupsProfiles(params));
       this.profiles = items;
       this.loading = false;
     },

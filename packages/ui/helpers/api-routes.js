@@ -27,6 +27,11 @@ export function groupsItemMailings(routeParams = {}) {
 export function groupsWorkspaces(routeParams = {}) {
   return `/groups/${routeParams.groupId}/workspaces`;
 }
+
+export function groupsProfiles(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/profiles`;
+}
+
 /// ///
 // TEMPLATES
 /// ///
@@ -197,10 +202,6 @@ export function getFolderContentStatus(folderID) {
 /// ///
 // PROFILES
 /// ///
-
-export function getProfiles() {
-  return '/profiles/';
-}
 
 export function getProfileId(getProfileId) {
   return `/profiles/${getProfileId}`;

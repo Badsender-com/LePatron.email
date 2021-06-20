@@ -5,7 +5,6 @@ const mailingService = require('../mailing/mailing.service');
 module.exports = {
   create: asyncHandler(create),
   sendCampaignMail: asyncHandler(sendCampaignMail),
-  list: asyncHandler(list),
   deleteProfile: asyncHandler(deleteProfile),
 };
 
@@ -72,20 +71,6 @@ async function sendCampaignMail(req, res) {
   });
 
   res.json(response);
-}
-
-/**
- * @api {GET} /profiles get profiles list
- * @apiPermission admin
- * @apiName profilesList
- * @apiGroup Profiles
- *
- * @apiUse profile
- */
-
-async function list(req, res) {
-  const profiles = await profileService.findAll();
-  res.json({ items: profiles });
 }
 
 /**
