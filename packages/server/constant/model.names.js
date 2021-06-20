@@ -5,6 +5,7 @@ module.exports = Object.freeze({
   UserModel: 'User',
   TemplateModel: 'Wireframe',
   MailingModel: 'Creation',
+  ProfileModel: 'Profile',
   GroupModel: 'Company',
   CacheImageModel: 'Cacheimage',
   FolderModel: 'Folder',

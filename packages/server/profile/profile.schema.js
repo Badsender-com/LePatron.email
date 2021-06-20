@@ -2,7 +2,7 @@
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
-const { ProfileTypes } = require('./profiletypes.js');
+const EspTypes = require('../constant/esp-type');
 /**
  * @apiDefine profile
  * @apiSuccess {String} id
@@ -20,7 +20,7 @@ const ProfileSchema = Schema(
     },
     type: {
       type: String,
-      enum: [ProfileTypes.ACTITO, ProfileTypes.SENDINBLUE],
+      enum: [EspTypes.ACTITO, EspTypes.SENDINBLUE],
       required: false,
     },
     _company: {
@@ -28,8 +28,12 @@ const ProfileSchema = Schema(
       ref: GroupModel,
       alias: 'group',
     },
+    apiKey: {
+      type: String,
+      required: true,
+    },
     // http://mongoosejs.com/docs/schematypes.html#mixed
-    data: {},
+    additionalApiData: {},
   },
   {
     timestamps: true,

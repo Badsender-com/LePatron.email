@@ -17,6 +17,25 @@ const {
   Folders,
   Groups,
 } = require('../common/models.common.js');
+
+const _ = require('lodash');
+
+const {
+  getName,
+  getImageName,
+  createCdnMarkdownNotice,
+  createHtmlNotice,
+} = require('../utils/download-zip-markdown');
+
+const IMAGES_FOLDER = 'images';
+
+const createPromise = require('../helpers/create-promise.js');
+const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
+const Ftp = require('./ftp-client.service.js');
+
+const request = require('request');
+const createError = require('http-errors');
+
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 const logger = require('../utils/logger.js');
@@ -43,6 +62,10 @@ module.exports = {
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
   previewMail,
+  downloadZip,
+  validateMailExist,
+  processHtmlWithFTPOption,
+  updateMailEspIds,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -99,6 +122,22 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
   }
 }
 
+async function updateMailEspIds(mailingId, espId) {
+  if (!espId?.profileId || !espId?.mailCampaignId) {
+    throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ESP_ID);
+  }
+  const mailing = findOne(mailingId);
+
+  const mailEspIds = [...(mailing?.espIds || [])];
+  mailEspIds.push(espId);
+
+  await validateMailExist();
+  return Mailings.updateOne(
+    { _id: mongoose.Types.ObjectId(mailingId) },
+    { espIds: mailEspIds }
+  );
+}
+
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
 
@@ -112,9 +151,7 @@ async function findTags(query) {
 }
 
 async function findOne(mailingId) {
-  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
-    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  }
+  await validateMailExist(mailingId);
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
 }
 
@@ -211,6 +248,416 @@ async function createMailing(mailing) {
   }
 
   return Mailings.create(mailing);
+}
+
+// Process html to the final result state based on ftp
+async function processHtmlWithFTPOption({ mailingId, html, user }) {
+  const {
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+    cdnProtocol,
+    cdnEndPoint,
+    name,
+  } = await extractFTPparams({
+    mailingId,
+    user,
+    downloadOptions: {
+      downLoadForCdn: false,
+      downLoadForFtp: true,
+    },
+  });
+
+  if (cdnDownload || regularDownload) {
+    throw new InternalServerError(
+      ERROR_CODES.CONFLICT_CDN_AND_REGULAR_DOWNLOAD_VALUES
+    );
+  }
+
+  const { relativesImagesNames } = await handleRelativeOrFtpImages({
+    html,
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+  });
+
+  // Add html with relatives url
+  const processedHtml = processMosaicoHtmlRender(html);
+
+  const {
+    html: processedHtmlWithFtpAbsolutePathImages,
+  } = replaceImageWithFTPEndpointBaseInProcessedHtml({
+    cdnDownload,
+    cdnProtocol,
+    cdnEndPoint,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    processedHtml,
+    relativesImagesNames,
+    name,
+  });
+
+  return processedHtmlWithFtpAbsolutePathImages;
+}
+
+// This will handle downloading email as a ZIP file
+async function downloadZip({
+  mailingId,
+  html,
+  archive,
+  user,
+  downloadOptions,
+}) {
+  if (!archive) {
+    throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
+  }
+
+  const {
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+    cdnProtocol,
+    cdnEndPoint,
+    name,
+  } = await extractFTPparams({
+    mailingId,
+    user,
+    downloadOptions,
+  });
+
+  const {
+    relativesImagesNames,
+    archive: processedImageArchive,
+  } = await handleRelativeOrFtpImages({
+    html,
+    cdnDownload,
+    regularDownload,
+    archive,
+    prefix,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+  });
+  // ----- HTML
+
+  // Add html with relatives url
+  const processedHtml = processMosaicoHtmlRender(html);
+
+  if (regularDownload) {
+    processedImageArchive.append(processedHtml, {
+      prefix,
+      name: `${name}.html`,
+    });
+  } else {
+    // replace image with absolute url
+
+    const {
+      html,
+      endpointPath,
+    } = replaceImageWithFTPEndpointBaseInProcessedHtml({
+      cdnDownload,
+      cdnProtocol,
+      cdnEndPoint,
+      ftpEndPointProtocol,
+      ftpEndPoint,
+      processedHtml,
+      relativesImagesNames,
+      name,
+    });
+    // archive
+    processedImageArchive.append(html, {
+      prefix,
+      name: `${name}.html`,
+    });
+
+    if (cdnDownload) {
+      // notice
+      const CDN_MD_NOTICE = createCdnMarkdownNotice(
+        name,
+        endpointPath,
+        relativesImagesNames
+      );
+      processedImageArchive.append(CDN_MD_NOTICE, {
+        prefix,
+        name: 'notice.md',
+      });
+      const CDN_HTML_NOTICE = createHtmlNotice(
+        name,
+        endpointPath,
+        relativesImagesNames
+      );
+      processedImageArchive.append(CDN_HTML_NOTICE, {
+        prefix,
+        name: 'notice.html',
+      });
+    }
+  }
+
+  return { archive: processedImageArchive, name };
+}
+
+// Extract information related to ftp and download state based on mailing id, user and download options
+async function extractFTPparams({ mailingId, user, downloadOptions }) {
+  const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
+  // mailing can come without group if created by the admin
+  // • in order to retrieve the group, look at the wireframe
+  const mailing = await Mailings.findOne(query)
+    .select({ _wireframe: 1, name: 1 })
+    .populate('_wireframe');
+  if (!mailing) throw new createError.NotFound();
+
+  // if (!isFromCompany(user, mailing._company)) throw new createError.Unauthorized()
+
+  // group is needed to check zip format & DL configuration
+  const group = await Groups.findById(mailing._wireframe._company).lean();
+  if (!group) throw new createError.NotFound();
+
+  const {
+    downloadMailingWithoutEnclosingFolder,
+    downloadMailingWithCdnImages,
+    cdnProtocol,
+    cdnEndPoint,
+    downloadMailingWithFtpImages,
+    ftpProtocol,
+    ftpHost,
+    ftpUsername,
+    ftpPassword,
+    ftpPort,
+    ftpEndPoint,
+    ftpEndPointProtocol,
+    ftpPathOnServer,
+  } = group;
+
+  // Because this is cans come as a real from submit
+  // downLoadForCdn & downLoadForFtp might come as a string
+  downloadOptions.downLoadForCdn =
+    downloadOptions.downLoadForCdn === 'true' ||
+    downloadOptions.downLoadForCdn === true;
+
+  downloadOptions.downLoadForFtp =
+    downloadOptions.downLoadForFtp === 'true' ||
+    downloadOptions.downLoadForFtp === true;
+
+  if (
+    downloadOptions.downLoadForFtp &&
+    (!ftpHost || !ftpUsername || !ftpPassword || !ftpPort || !ftpEndPoint)
+  ) {
+    throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
+  }
+
+  const name = getName(mailing.name);
+  // prefix is `zip-stream` file prefix => our enclosing folder ^_^
+  // !WARNING default mac unzip will always put it in an folder if more than 1 file
+  // => test with The Unarchiver
+  const prefix = downloadMailingWithoutEnclosingFolder ? '' : `${name}/`;
+
+  // const $ = cheerio.load(html)
+
+  const cdnDownload =
+    downloadMailingWithCdnImages && downloadOptions.downLoadForCdn;
+  const ftpDownload =
+    downloadMailingWithFtpImages && downloadOptions.downLoadForFtp;
+  const regularDownload = !cdnDownload && !ftpDownload;
+
+  console.log('download zip', name);
+  // Image
+  return {
+    cdnDownload,
+    regularDownload,
+    prefix,
+    ftpEndPointProtocol,
+    ftpEndPoint,
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+    cdnProtocol,
+    cdnEndPoint,
+    name,
+  };
+}
+
+async function replaceImageWithFTPEndpointBaseInProcessedHtml({
+  cdnDownload,
+  cdnProtocol,
+  cdnEndPoint,
+  ftpEndPointProtocol,
+  ftpEndPoint,
+  processedHtml,
+  relativesImagesNames,
+  name,
+}) {
+  const endpointBase = cdnDownload
+    ? `${cdnProtocol}${cdnEndPoint}`
+    : `${ftpEndPointProtocol}${ftpEndPoint}`;
+  const endpointPath = `${endpointBase}${
+    endpointBase.substr(endpointBase.length - 1) === '/' ? '' : '/'
+  }${name}`;
+  let html = processedHtml;
+
+  relativesImagesNames.forEach((imageName) => {
+    const imgRegex = new RegExp(`${IMAGES_FOLDER}/${imageName}`, 'g');
+    html = html.replace(imgRegex, `${endpointPath}/${imageName}`);
+  });
+
+  return { html, endpointBase };
+}
+
+// This will either add images to archive ( zip file ) or upload an image depending on the value of the cdnDownload and regularDownload
+async function handleRelativeOrFtpImages({
+  html,
+  cdnDownload,
+  regularDownload,
+  archive,
+  prefix,
+  ftpHost,
+  ftpPort,
+  ftpUsername,
+  ftpPassword,
+  ftpProtocol,
+  ftpPathOnServer,
+}) {
+  if (!html) {
+    throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);
+  }
+
+  if ((cdnDownload || regularDownload) && !archive) {
+    throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
+  }
+  // ----- IMAGES
+
+  // keep a track of every images for latter download
+  // be careful to avoid data uri
+  // relatives path are not handled:
+  //  - the mailing should work also by email test
+  //  - SO no need to handle them
+  // const $images = $(`img`)
+  // const imgUrls = _.uniq(
+  //   $images
+  //     .map((i, el) => $(el).attr(`src`))
+  //     .get()
+  //     .filter(isHttpUrl),
+  // )
+  // const $background = $(`[background]`)
+  // const bgUrls = _.uniq(
+  //   $background
+  //     .map((i, el) => $(el).attr(`background`))
+  //     .get()
+  //     .filter(isHttpUrl),
+  // )
+  // const $style = $(`[style]`)
+  // const styleUrls = []
+  // $style
+  //   .filter((i, el) => /url\(/.test($(el).attr(`style`)))
+  //   .each((i, el) => {
+  //     const urlReg = /url\('?([^)']*)/
+  //     const style = $(el).attr(`style`)
+  //     const result = urlReg.exec(style)
+  //     if (
+  //       result &&
+  //       result[1] &&
+  //       isHttpUrl(result[1]) &&
+  //       !styleUrls.includes(result[1])
+  //     ) {
+  //       styleUrls.push(result[1])
+  //     }
+  //   })
+
+  const remainingUrlsRegex = /https?:\S+\.(jpg|jpeg|png|gif){1}/g;
+  const allImages = html.match(remainingUrlsRegex) || [];
+
+  // const allImages = _.uniq([...imgUrls, ...bgUrls, ...styleUrls])
+  // console.log(remainingUrls, allImages)
+
+  // keep a dictionary of all downloaded images
+  // • this will help us for CDN images
+  const relativesImagesNames = [];
+  // change path to match downloaded images
+  // Don't use Cheerio because:
+  // • when exporting it's messing with ESP tags
+  // • Cheerio won't handle IE comments
+  allImages.forEach((imgUrl) => {
+    const escImgUrl = _.escapeRegExp(imgUrl);
+    const imageName = getImageName(imgUrl);
+    const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
+    relativesImagesNames.push(imageName);
+    console.log(imgUrl, relativeUrl);
+    const search = new RegExp(escImgUrl, 'g');
+    html = html.replace(search, relativeUrl);
+  });
+
+  // Pipe all images BUT don't add errored images
+  if (cdnDownload || regularDownload) {
+    const imagesRequest = allImages.map((imageUrl) => {
+      const imageName = getImageName(imageUrl);
+      const defer = createPromise();
+      const imgRequest = request(imageUrl);
+
+      imgRequest.on('response', (response) => {
+        // only happen images with a code of 200
+        if (response.statusCode === 200) {
+          archive.append(imgRequest, {
+            prefix: `${prefix}${IMAGES_FOLDER}/`,
+            name: imageName,
+          });
+        }
+        defer.resolve();
+      });
+      imgRequest.on('error', (imgError) => {
+        console.log('[ZIP] error during downloading', imageUrl);
+        console.log(imgError);
+        // still resolve, just don't add this errored image to the archive
+        defer.resolve();
+      });
+
+      return defer;
+    });
+
+    await Promise.all(imagesRequest);
+  } else {
+    const ftpClient = new Ftp(
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol
+    );
+    const folderPath =
+      ftpPathOnServer +
+      (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
+      `${name}/`;
+
+    ftpClient.upload(allImages, folderPath);
+  }
+
+  return { relativesImagesNames, archive };
 }
 
 async function copyMailing(mailingId, destination, user) {
@@ -477,6 +924,13 @@ async function moveManyMailings(user, mailingsIds, destination) {
       throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
     }
   }
+}
+
+async function validateMailExist(mailingId) {
+  if (!(await Mailings.exists({ _id: mongoose.Types.ObjectId(mailingId) }))) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  return true;
 }
 
 function applyFilters(query) {
