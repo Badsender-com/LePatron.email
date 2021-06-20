@@ -65,6 +65,9 @@ export default {
     handleDelete() {
       this.$emit('delete', this.selectedProfile);
     },
+    closeModal() {
+      this.$refs.deleteDialog.close();
+    },
   },
 };
 </script>

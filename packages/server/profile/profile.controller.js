@@ -6,6 +6,7 @@ module.exports = {
   create: asyncHandler(create),
   sendCampaignMail: asyncHandler(sendCampaignMail),
   list: asyncHandler(list),
+  deleteProfile: asyncHandler(deleteProfile),
 };
 
 /**
@@ -85,4 +86,23 @@ async function sendCampaignMail(req, res) {
 async function list(req, res) {
   const profiles = await profileService.findAll();
   res.json({ items: profiles });
+}
+
+/**
+ * @api {del} /profiles/:profileId profile delete
+ * @apiPermission admin
+ * @apiName ProfileDelete
+ * @apiGroup Profiles
+ *
+ * @apiParam {string} profileId
+ *
+ */
+async function deleteProfile(req, res) {
+  const { profileId } = req.params;
+
+  const deleteProfileResponse = await profileService.deleteProfile({
+    profileId,
+  });
+
+  res.send({ result: deleteProfileResponse });
 }

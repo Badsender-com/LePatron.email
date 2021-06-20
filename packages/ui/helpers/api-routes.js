@@ -201,3 +201,7 @@ export function getFolderContentStatus(folderID) {
 export function getProfiles() {
   return '/profiles/';
 }
+
+export function getProfileId(getProfileId) {
+  return `/profiles/${getProfileId}`;
+}
