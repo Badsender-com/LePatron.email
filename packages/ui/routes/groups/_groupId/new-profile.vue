@@ -20,6 +20,6 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <profile-form />
+    <profile-form :title="$t('global.newProfile')" />
   </bs-layout-left-menu>
 </template>

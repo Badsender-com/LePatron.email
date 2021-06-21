@@ -465,7 +465,7 @@ async function extractFTPparams({ mailingId, user, downloadOptions }) {
 
   if (
     downloadOptions.downLoadForFtp &&
-    (!ftpHost || !ftpUsername || !ftpPassword || !ftpPort || !ftpEndPoint)
+    (!ftpHost || !ftpUsername || !ftpPassword || !ftpEndPoint)
   ) {
     throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
   }
