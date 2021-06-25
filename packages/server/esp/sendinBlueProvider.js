@@ -15,8 +15,30 @@ class SendinBlueProvider {
   }
 
   async connectApi() {
-    const apiEmailCampaignsInstance = new SibApiV3Sdk.AccountApi();
-    return await apiEmailCampaignsInstance.getAccount();
+    const apiAccountInstance = new SibApiV3Sdk.AccountApi();
+    return await apiAccountInstance.getAccount();
+  }
+
+  async getCampaignMail({ campaignMailId }) {
+    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+
+    if (!campaignMailId) {
+      throw new InternalServerError(
+        ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
+      );
+    }
+    const campaignId = campaignMailId;
+    const apiEmailCampaignResult = await apiEmailCampaignsInstance.getEmailCampaign(
+      campaignId
+    );
+
+    return {
+      name: apiEmailCampaignResult?.name,
+      senderName: apiEmailCampaignResult?.sender.name,
+      senderMail: apiEmailCampaignResult?.sender.email,
+      replyTo: apiEmailCampaignResult?.replyTo,
+      subject: apiEmailCampaignResult?.subject,
+    };
   }
 
   async createCampaignMail({ espSendingMailData, user, html, mailingId }) {

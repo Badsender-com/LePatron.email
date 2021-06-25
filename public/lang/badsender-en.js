@@ -38,6 +38,7 @@ module.exports = {
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
+  'error-server': 'An error has occured while calling server api',
   cancel: 'CANCEL',
   upload: 'UPLOAD',
 };

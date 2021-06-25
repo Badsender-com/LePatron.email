@@ -251,6 +251,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
 
   // we try to keep a response as close as possible as the config used in the mosaico editor
   const mailingId = mailing._id;
+  const groupId = group._id;
   const templateId = mailing._wireframe._id;
   return {
     metadata: {
@@ -264,6 +265,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         update: `/api/mailings/${mailingId}/mosaico`,
         send: `/api/mailings/${mailingId}/mosaico/send-test-mail`,
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
+        profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
       },
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,
