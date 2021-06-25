@@ -76,4 +76,5 @@
   //////
 
   "database": "mongodb://localhost/my_database"
+  "proxyUrl": "" // Needed if you want to enable FTP export (mainly used for static IP restrictions)
 }

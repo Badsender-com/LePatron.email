@@ -33,6 +33,13 @@ They provide an easy way to install all necessary service but can be omitted if 
 
 [mongolab addon's detail](https://devcenter.heroku.com/articles/mongolab)
 
+### QuotaGuard static IP's
+
+If you need static IP's, you can add this addon on heroku.
+A `QUOTAGUARDSTATIC_URL` should be automatically added on your heroku env.
+
+[QuotaGuard static IP's addon details](https://elements.heroku.com/addons/quotaguardstatic)
+
 ### sendgrid
 
 [sendgrid addon's detail](https://devcenter.heroku.com/articles/sendgrid)
