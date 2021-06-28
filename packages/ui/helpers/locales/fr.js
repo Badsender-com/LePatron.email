@@ -12,6 +12,9 @@ export default {
       required: 'Ce champ est requis',
       userRequired: 'Un utilisateur est requis',
       nameRequired: 'Un nom est requis',
+      apiKeyRequired: 'La clé api est requise',
+      senderNameRequired: 'Nom de l\'expéditeur est requis',
+      senderMailRequired: 'Mail de l\'expéditeur est requis',
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
       FORBIDDEN_WORKSPACE_CREATION:
         'Vous n\'avez pas les droits pour créer ce workspace',
@@ -28,6 +31,7 @@ export default {
       },
     },
     add: 'Ajouter',
+    apiKey: 'Clé API',
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
@@ -158,6 +162,16 @@ export default {
       inputError: 'Le nom est requis',
       inputMaxLength: 'Le nom ne doit pas dépasser 70 caractères',
     },
+    profile: {
+      errors: {
+        email: {
+          valid: 'Un email valide est requis',
+        },
+        apiKey: {
+          unauthorized: 'La clé API que vous avez fournie n\'est pas autorisée',
+        },
+      },
+    },
   },
   groups: {
     tabs: {
@@ -271,11 +285,16 @@ export default {
   profiles: {
     name: 'Nom',
     type: 'Type',
+    senderName: 'Nom de l\'expéditeur',
+    senderMail: 'Mail de l\'expéditeur',
+    replyTo: 'Répondre à',
     createdAt: 'Data de création',
     actions: 'Actions',
     edit: 'Editer',
     delete: 'Supprimer',
     emptyState: 'Aucun profil disponible',
+    warningNoFTP:
+      'Vous ne pouvez pas ajouter de profil sans avoir configuré le serveur FTP',
     deleteWarningMessage:
       'Vous êtes sur le point de supprimer le profil "<strong>{name}</strong>".Cette action ne peut pas être annulée.',
   },
