@@ -14,7 +14,8 @@ const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
 
 module.exports = {
-  create,
+  createProfile,
+  updateProfile,
   sendCampaignMail,
   findAllByGroup,
   deleteProfile,
@@ -35,7 +36,13 @@ async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   }
 }
 
-async function create({ name, type, apiKey, _company, additionalApiData }) {
+async function createProfile({
+  name,
+  type,
+  apiKey,
+  _company,
+  additionalApiData,
+}) {
   const espProvider = new EspProvider({
     apiKey,
     type,
@@ -57,6 +64,41 @@ async function create({ name, type, apiKey, _company, additionalApiData }) {
     _company,
     additionalApiData,
   });
+}
+
+async function updateProfile({
+  id,
+  name,
+  type,
+  apiKey,
+  _company,
+  additionalApiData,
+}) {
+  await findOne(id);
+
+  const espProvider = new EspProvider({
+    apiKey,
+    type,
+    name,
+    _company,
+    additionalApiData,
+  });
+
+  const espConnectionResult = await espProvider.connectApi();
+  if (!espConnectionResult) {
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
+  }
+
+  return Profiles.updateOne(
+    { _id: Types.ObjectId(id) },
+    {
+      name,
+      type,
+      apiKey,
+      _company,
+      additionalApiData,
+    }
+  );
 }
 
 async function sendCampaignMail({

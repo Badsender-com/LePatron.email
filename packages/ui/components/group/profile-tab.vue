@@ -10,7 +10,7 @@ export default {
     BsProfilesTable,
   },
   data() {
-    return { profiles: [], loading: false };
+    return { profiles: [], loading: false, groupId: null };
   },
   async mounted() {
     await this.fetchData();
@@ -22,6 +22,7 @@ export default {
         $axios,
         $route: { params },
       } = this;
+      this.groupId = params.groupId;
       this.loading = true;
       const { items } = await $axios.$get(groupsProfiles(params));
       this.profiles = items;
@@ -51,6 +52,7 @@ export default {
     <v-card-text>
       <bs-profiles-table
         :profiles="profiles"
+        :group-id="groupId"
         :loading="loading"
         @delete="handleDelete"
       />

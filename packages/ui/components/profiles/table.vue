@@ -15,6 +15,7 @@ export default {
   props: {
     profiles: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    groupId: { type: String, default: null },
   },
   data() {
     return {
@@ -93,8 +94,11 @@ export default {
       </template>
       <template #item.actions="{ item }">
         <profiles-actions-dropdown>
-          <profiles-actions-dropdown-item icon="edit" disabled>
-            {{ $t('profiles.edit') }}
+          <profiles-actions-dropdown-item
+            icon="delete"
+            :to="`/groups/${groupId}/profiles/${item.id}`"
+          >
+            {{ $t('global.edit') }}
           </profiles-actions-dropdown-item>
           <profiles-actions-dropdown-item
             icon="delete"

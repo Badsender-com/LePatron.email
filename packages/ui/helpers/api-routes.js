@@ -209,3 +209,7 @@ export function getProfiles() {
 export function getProfileId(getProfileId) {
   return `/profiles/${getProfileId}`;
 }
+
+export function getProfileForAdmin(getProfileId) {
+  return `/profiles/${getProfileId}/admin`;
+}
