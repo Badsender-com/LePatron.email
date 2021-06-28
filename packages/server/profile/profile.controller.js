@@ -1,3 +1,4 @@
+import { ERROR_CODES } from '../constant/error-codes';
 const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
 const mailingService = require('../mailing/mailing.service');
@@ -217,14 +218,12 @@ async function readProfileForAdmin(req, res) {
   const { profileId } = params;
 
   if (!user.isAdmin) {
-    throw new NotFound();
+    throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
   await profileService.checkIfUserIsAuthorizedToAccessProfile({
     user,
     profileId,
   });
-
-  console.log({ profileId });
 
   const getProfileResult = await profileService.findOne(profileId);
 
