@@ -18,6 +18,7 @@ var utilPlugin = require('./ext/util.js');
 var inlinerPlugin = require('./ext/inliner.js');
 
 var localStorageLoader = require('./ext/localstorage.js');
+const vuePlugin = require("./vue/vuePlugin");
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
@@ -180,6 +181,7 @@ var start = function (
     colorPlugin,
     utilPlugin,
     inlinerPlugin,
+    vuePlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)

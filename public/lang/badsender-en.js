@@ -38,6 +38,21 @@ module.exports = {
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
+  'error-server': 'An error has occured while calling server api',
   cancel: 'CANCEL',
   upload: 'UPLOAD',
+
+  // Profile form esp
+  'sender-name': 'Sender name',
+  'sender-mail': 'Sender mail',
+  replyto: 'Reply to',
+  subject: 'Subject',
+  name: 'Name',
+  'export-to': 'Export to',
+  submit: 'Submit',
+  close: 'Close',
+  // profile form validation
+  'name-required': 'Name is required',
+  'subject-required': 'Subject is required',
+  'success-esp-send': 'Mail exported successfully',
 };

@@ -123,6 +123,8 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
 }
 
 async function updateMailEspIds(mailingId, espId) {
+  await validateMailExist(mailingId);
+
   if (!espId?.profileId || !espId?.mailCampaignId) {
     throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ESP_ID);
   }
@@ -131,7 +133,6 @@ async function updateMailEspIds(mailingId, espId) {
   const mailEspIds = [...(mailing?.espIds || [])];
   mailEspIds.push(espId);
 
-  await validateMailExist();
   return Mailings.updateOne(
     { _id: mongoose.Types.ObjectId(mailingId) },
     { espIds: mailEspIds }
@@ -362,6 +363,7 @@ async function downloadZip({
     ftpPassword,
     ftpProtocol,
     ftpPathOnServer,
+    name,
   });
   // ----- HTML
 
@@ -543,6 +545,7 @@ async function handleRelativeOrFtpImages({
   ftpPassword,
   ftpProtocol,
   ftpPathOnServer,
+  name,
 }) {
   if (!html) {
     throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);

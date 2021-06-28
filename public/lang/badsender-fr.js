@@ -38,6 +38,23 @@ module.exports = {
   'rotate-right': 'Incliner à droite',
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
+  'error-server':
+    'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
   cancel: 'ANNULER',
   upload: 'UPLOADER',
+
+  // Profile form esp
+  'sender-name': 'Nom de l\'expéditeur',
+  'sender-mail': 'Mail de l\'expéditeur',
+  replyto: 'Répondre à',
+  subject: 'Sujet',
+  name: 'Nom',
+  'export-to': 'Exporter vers',
+  submit: 'Enregistrer',
+  close: 'Fermer',
+
+  // profile form validation
+  'name-required': 'Le nom est requis',
+  'subject-required': 'Le sujet est requis',
+  'success-esp-send': 'Mail exporté avec succès',
 };

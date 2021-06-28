@@ -50,6 +50,11 @@ class EspService {
     return await this.providerInstance.createCampaignMail(sendingMailData);
   }
 
+  async getCampaignMail(campaignMail) {
+    this.validateProviderInstance();
+    return await this.providerInstance.getCampaignMail(campaignMail);
+  }
+
   validateProviderInstance() {
     if (typeof this.providerInstance === 'undefined') {
       throw new InternalServerError(

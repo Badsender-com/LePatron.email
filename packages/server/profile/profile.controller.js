@@ -1,11 +1,15 @@
 const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
 const mailingService = require('../mailing/mailing.service');
+const groupService = require('../group/group.service');
 
 module.exports = {
   create: asyncHandler(create),
   sendCampaignMail: asyncHandler(sendCampaignMail),
   deleteProfile: asyncHandler(deleteProfile),
+  profileListEditor: asyncHandler(profileListEditor),
+  getCampaignMail: asyncHandler(getCampaignMail),
+  readProfile: asyncHandler(readProfile),
 };
 
 /**
@@ -56,7 +60,7 @@ async function create(req, res) {
 async function sendCampaignMail(req, res) {
   const { user, body } = req;
   const { mailingId } = req.params;
-  const { espSendingMailData, html, profileId, type, _company } = body;
+  const { espSendingMailData, html, profileId, type } = body;
 
   await mailingService.validateMailExist(mailingId);
 
@@ -67,7 +71,6 @@ async function sendCampaignMail(req, res) {
     html,
     mailingId,
     type,
-    _company,
   });
 
   res.json(response);
@@ -90,4 +93,76 @@ async function deleteProfile(req, res) {
   });
 
   res.send({ result: deleteProfileResponse });
+}
+
+/**
+ * @api {get} /profiles/:groupId/profile-list-for-editor list profiles for editor for a group id
+ * @apiPermission user
+ * @apiName ProfileListEditor
+ * @apiGroup Profiles
+ *
+ * @apiParam {string} groupId
+ *
+ */
+async function profileListEditor(req, res) {
+  const { user, params } = req;
+  const { groupId } = params;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+
+  const profileListEditorResult = await profileService.profileListEditor({
+    groupId,
+  });
+
+  res.send({ result: profileListEditorResult });
+}
+
+/**
+ * @api {get} /profiles/:profileId/campaign-mail/:mailCampaignId Campaign mail report from provider
+ * @apiPermission user
+ * @apiName ProfileCampaign
+ * @apiGroup Profiles
+ *
+ * @apiParam {string} campaignMailId
+ *
+ */
+async function getCampaignMail(req, res) {
+  const { user, params } = req;
+  const { campaignMailId, profileId } = params;
+
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+  const getCampaignMailData = await profileService.getCampaignMail({
+    campaignMailId,
+    profileId,
+  });
+
+  res.send({ result: getCampaignMailData });
+}
+
+/**
+ * @api {get} /profiles/:profileId Get profile detail
+ * @apiPermission user
+ * @apiName ProfileCampaign
+ * @apiGroup Profiles
+ *
+ * @apiParam {string} profileId
+ *
+ */
+async function readProfile(req, res) {
+  const { user, params } = req;
+  const { profileId } = params;
+
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+
+  const getProfileResult = await profileService.findOneWithoutApiKey({
+    profileId,
+  });
+
+  res.send({ result: getProfileResult });
 }
