@@ -245,6 +245,28 @@ var _propEditor = function (
 ) {
   if (typeof level == 'undefined') level = 0;
 
+  if (
+    typeof prop !== 'undefined' &&
+    typeof model == 'object' &&
+    model !== null &&
+    typeof model._usecount === 'undefined'
+  ) {
+    if (typeof console.debug == 'function')
+      console.debug(
+        'Ignoring',
+        path,
+        'property because it is not used by the template',
+        'prop:',
+        prop,
+        'type:',
+        editType,
+        'level:',
+        level,
+        withBindingProvider._templateName
+      );
+    return '';
+  }
+
   var propAccessor =
     typeof globalStyleProp != 'undefined' ? prop + '._defaultComputed' : prop;
 

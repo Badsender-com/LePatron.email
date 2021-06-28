@@ -2,6 +2,7 @@ import {required} from "vuelidate/lib/validators";
 
 var Vue = require('vue/dist/vue.common');
 var { SEND_MODE } = require('../../../constant/send-mode');
+var { ESP_TYPE } = require('../../../constant/esp-type');
 var { getCampaignDetail, getProfileDetail } = require('../../../utils/apis');
 var  { validationMixin } = require('vuelidate');
 var axios = require('axios');
@@ -123,9 +124,8 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       senderMail: '',
       replyTo: '',
       subject: '',
-      type: 'SENDINBLUE',
+      type: ESP_TYPE.SENDINBLUE,
     },
-    loading: false,
     style: {
       mb0:{
         marginBottom: 0,
@@ -155,7 +155,6 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
   },
   methods: {
     fetchData() {
-      this.loading = false;
       let getProfileApi = this.type === SEND_MODE.CREATION ?
         getProfileDetail({ profileId: this.selectedProfile?.id })
         : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });

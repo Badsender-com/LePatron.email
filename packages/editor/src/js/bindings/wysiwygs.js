@@ -396,7 +396,11 @@ ko.bindingHandlers.wysiwyg = {
     }
 
     ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+      if (doDebug)
+        console.debug('Editor for selector', selectorId, 'is being removed...');
       tinymce.remove('#' + element.getAttribute('id'));
+      if (doDebug)
+        console.debug('Editor for selector', selectorId, 'has been removed.');
     });
 
     var value = valueAccessor();
@@ -449,8 +453,27 @@ ko.bindingHandlers.wysiwyg = {
         // Warn about editing inline elements. Please note that we force wellknown HTML inline element to display as inline-block
         // in our default style, so this should not happen unless you use unknown elements or you force the display: inline.
         // NOTE: we do this in a setTimeout to let the browser apply the CSS styles to the elements!
+        if (typeof console.debug == 'function') {
+          var elementStyle = element.currentStyle
+            ? element.currentStyle.display
+            : global.getComputedStyle(element, null).display;
+          if (elementStyle == 'inline') {
+            console.debug(
+              'Initializing an editor on an inline element: please note that while it may work, this is unsupported because of a multitude of browser issues',
+              element.tagName,
+              elementStyle,
+              selectorId
+            );
+          }
+        }
       },
       setup: function (editor) {
+        if (doDebug)
+          console.debug(
+            'Editor for selector',
+            selectorId,
+            'is now in the setup phase.'
+          );
 
         var emptyClassHandler = function () {
           var textContent = (
@@ -568,9 +591,29 @@ ko.bindingHandlers.wysiwyg = {
     // will start the new editors before disposing the old ones and IDs get temporarily duplicated.
     // using setTimeout the dispose/create order is correct on every browser tested.
     global.setTimeout(function () {
+      if (doDebug)
+        console.debug(
+          'Editor for selector',
+          selectorId,
+          'is being inizialized ...'
+        );
       var res = tinymce.init(options);
+      if (doDebug)
+        console.debug(
+          'Editor for selector',
+          selectorId,
+          'init has just been called returning',
+          res
+        );
       res.then(
-        function () {},
+        function () {
+          if (doDebug)
+            console.debug(
+              'Editor for selector',
+              selectorId,
+              'init promise has resolved.'
+            );
+        },
         function (failure) {
           console.log(
             'Editor for selector',

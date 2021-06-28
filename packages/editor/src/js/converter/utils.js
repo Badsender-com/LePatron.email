@@ -78,16 +78,16 @@ var expressionGenerator = function (node, bindingProvider, defVal, keepSlach) {
     if (typeof keepSlach == 'undefined') keepSlach = false;
     if (typeof lookupmember == 'undefined') lookupmember = true;
 
-    // if (
-    //   typeof defVal !== 'undefined' &&
-    //   node.type !== 'Identifier' &&
-    //   node.type !== 'MemberExpression'
-    // ){
-    //   if (typeof console.debug == 'function')
-    //     console.debug(
-    //       'Cannot apply default value to variable when using expressions'
-    //     );
-    // }
+    if (
+      typeof defVal !== 'undefined' &&
+      node.type !== 'Identifier' &&
+      node.type !== 'MemberExpression'
+    ){
+      if (typeof console.debug == 'function')
+        console.debug(
+          'Cannot apply default value to variable when using expressions'
+        );
+    }
 
 
     if (node.type === 'BinaryExpression' || node.type === 'LogicalExpression') {
