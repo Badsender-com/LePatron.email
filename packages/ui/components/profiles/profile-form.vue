@@ -2,9 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import SENDINBLUEComponent from '../../components/profiles/esp/SENDINBLUEComponent';
 import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
-import { mapMutations } from 'vuex';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { groupsItem, getProfiles } from '~/helpers/api-routes';
+import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 
 export default {
@@ -16,6 +14,7 @@ export default {
   mixins: [validationMixin],
   props: {
     title: { type: String, default: '' },
+    profile: { type: Object, default: () => ({}) },
   },
   data: () => {
     return {
@@ -40,43 +39,12 @@ export default {
     },
   },
   async mounted() {
+    if (this.profile.type) {
+      this.selectedEsp = this.profile.type;
+    }
     await this.fetchGroup();
   },
   methods: {
-    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async createProfile(data) {
-      const { $axios, $route } = this;
-      const { groupId } = $route.params;
-      try {
-        console.log({ data });
-        this.loading = true;
-        await $axios.$post(getProfiles(), {
-          _company: groupId,
-          ...data,
-        });
-        this.showSnackbar({
-          text: this.$t('snackbars.created'),
-          color: 'success',
-        });
-        this.$router.push(`/groups/${groupId}`);
-      } catch (error) {
-        switch (error?.response?.status) {
-          case 401:
-            this.showSnackbar({
-              text: this.$t('forms.profile.errors.apiKey.unauthorized'),
-              color: 'error',
-            });
-            break;
-          default:
-            this.showSnackbar({
-              text: this.$t('global.errors.errorOccured'),
-              color: 'error',
-            });
-        }
-      } finally {
-        this.loading = false;
-      }
-    },
     handleEspChange(value) {
       this.selectedEsp = value;
     },
@@ -89,6 +57,9 @@ export default {
       } catch (error) {
         console.log(error);
       }
+    },
+    handleSubmit(newProfile) {
+      this.$emit('submit', newProfile);
     },
   },
 };
@@ -131,9 +102,10 @@ export default {
           <client-only>
             <component
               :is="selectedEspName"
+              :profile-data="profile"
               :disabled="!group.downloadMailingWithFtpImages"
               :loading="loading"
-              @submit="createProfile($event)"
+              @submit="handleSubmit"
             />
           </client-only>
         </v-col>

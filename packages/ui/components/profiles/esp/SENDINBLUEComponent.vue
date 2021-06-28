@@ -8,16 +8,18 @@ export default {
   props: {
     disabled: { type: Boolean, default: false },
     isLoading: { type: Boolean, default: false },
+    profileData: { type: Object, default: () => ({}) },
   },
   data() {
     return {
       submitStatus: null,
       profile: {
-        name: '',
-        apiKey: '',
-        senderName: '',
-        senderMail: '',
-        replyTo: '',
+        id: this.profileData.id ?? '',
+        name: this.profileData.name ?? '',
+        apiKey: this.profileData.apiKey ?? '',
+        senderName: this.profileData.senderName ?? '',
+        senderMail: this.profileData.senderMail ?? '',
+        replyTo: this.profileData.replyTo ?? '',
         type: 'SENDINBLUE',
       },
     };

@@ -8,7 +8,8 @@ const profiles = require('./profile.controller.js');
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 
-router.post('/', GUARD_ADMIN, profiles.create);
+router.post('/', GUARD_ADMIN, profiles.createProfile);
+router.post('/:profileId', GUARD_ADMIN, profiles.updateProfile);
 router.post(
   '/:mailingId/send-campaign-mail',
   GUARD_USER,
@@ -16,6 +17,7 @@ router.post(
 );
 router.delete('/:profileId', GUARD_ADMIN, profiles.deleteProfile);
 router.get('/:profileId', GUARD_USER, profiles.readProfile);
+router.get('/:profileId/admin', GUARD_ADMIN, profiles.readProfileForAdmin);
 router.get(
   '/:groupId/profile-list-for-editor',
   GUARD_USER,

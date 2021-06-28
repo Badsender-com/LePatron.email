@@ -47,6 +47,7 @@ export default {
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
     newProfile: 'Add an export profile',
+    editProfile: 'Edit export profile {name}',
     profile: 'Profile | Profiles',
     user: 'User | Users',
     newUser: 'Add a user',

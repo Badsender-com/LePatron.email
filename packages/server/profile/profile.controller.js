@@ -2,14 +2,17 @@ const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
 const mailingService = require('../mailing/mailing.service');
 const groupService = require('../group/group.service');
+const { NotFound } = require('http-errors');
 
 module.exports = {
-  create: asyncHandler(create),
+  createProfile: asyncHandler(createProfile),
+  updateProfile: asyncHandler(updateProfile),
   sendCampaignMail: asyncHandler(sendCampaignMail),
   deleteProfile: asyncHandler(deleteProfile),
   profileListEditor: asyncHandler(profileListEditor),
   getCampaignMail: asyncHandler(getCampaignMail),
   readProfile: asyncHandler(readProfile),
+  readProfileForAdmin: asyncHandler(readProfileForAdmin),
 };
 
 /**
@@ -27,12 +30,45 @@ module.exports = {
  * @apiUse profile
  */
 
-async function create(req, res) {
+async function createProfile(req, res) {
   const { user } = req;
   const { name, type, apiKey, _company, ...additionalApiData } = req.body;
 
-  const response = await profileService.create({
+  const response = await profileService.createProfile({
     user,
+    name,
+    type,
+    apiKey,
+    _company,
+    additionalApiData,
+  });
+
+  res.json(response);
+}
+
+/**
+ * @api {post} /profiles/:profileId profile edition
+ * @apiPermission admin
+ * @apiName UpdateProfile
+ * @apiGroup Profiles
+ *
+ * @apiParam (Body) {String} name profile name.
+ * @apiParam (Body) {String} type Profile type
+ * @apiParam (Body) {String} apiKey the provider key
+ * @apiParam (Body) {String} _company the ID of the group
+ * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
+ *
+ * @apiUse profile
+ * @apiSuccess {profile} profile updated
+ */
+
+async function updateProfile(req, res) {
+  const { user } = req;
+  const { name, type, apiKey, _company, id, ...additionalApiData } = req.body;
+
+  const response = await profileService.updateProfile({
+    user,
+    id,
     name,
     type,
     apiKey,
@@ -163,6 +199,34 @@ async function readProfile(req, res) {
   const getProfileResult = await profileService.findOneWithoutApiKey({
     profileId,
   });
+
+  res.send({ result: getProfileResult });
+}
+
+/**
+ * @api {get} /profiles/:profileId/admin Get profile detail for admin
+ * @apiPermission admin
+ * @apiName ProfileCampaign
+ * @apiGroup Profiles
+ *
+ * @apiParam {string} profileId
+ *
+ */
+async function readProfileForAdmin(req, res) {
+  const { user, params } = req;
+  const { profileId } = params;
+
+  if (!user.isAdmin) {
+    throw new NotFound();
+  }
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+
+  console.log({ profileId });
+
+  const getProfileResult = await profileService.findOne(profileId);
 
   res.send({ result: getProfileResult });
 }

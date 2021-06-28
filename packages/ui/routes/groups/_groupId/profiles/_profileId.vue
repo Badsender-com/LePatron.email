@@ -4,30 +4,65 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import ProfileForm from '~/components/profiles/profile-form';
 import BsGroupMenu from '~/components/group/menu.vue';
+import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { getProfiles } from '~/helpers/api-routes';
 
 export default {
-  name: 'PageNewProfile',
+  name: 'PageEditProfile',
   components: { ProfileForm, BsGroupMenu },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
   },
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+    try {
+      const profileResponse = await $axios.$get(
+        getProfileForAdmin(params.profileId)
+      );
+
+      const {
+        id,
+        name,
+        apiKey,
+        additionalApiData: { senderName, senderMail, replyTo },
+        type,
+      } = profileResponse.result;
+      return {
+        profile: {
+          id,
+          name,
+          apiKey,
+          replyTo,
+          senderName,
+          senderMail,
+          type,
+        },
+      };
+    } catch (error) {
+      console.log(error);
+    }
+  },
+  data() {
+    return {
+      profile: {},
+      loading: false,
+    };
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async createProfile(data) {
+    async updateProfile(data) {
       const { $axios, $route } = this;
-      const { groupId } = $route.params;
+      const { groupId, profileId } = $route.params;
       try {
         this.loading = true;
-        await $axios.$post(getProfiles(), {
+        await $axios.$post(getProfileId(profileId), {
           _company: groupId,
           ...data,
         });
         this.showSnackbar({
-          text: this.$t('snackbars.created'),
+          text: this.$t('snackbars.updated'),
           color: 'success',
         });
         this.$router.push(`/groups/${groupId}`);
@@ -58,6 +93,14 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <profile-form :title="$t('global.newProfile')" @submit="createProfile" />
+    <profile-form
+      :title="
+        $t('global.editProfile', {
+          name: profile.name,
+        })
+      "
+      :profile="profile"
+      @submit="updateProfile"
+    />
   </bs-layout-left-menu>
 </template>

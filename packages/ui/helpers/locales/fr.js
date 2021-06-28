@@ -50,6 +50,7 @@ export default {
     newUser: 'Ajouter un utilisateur',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil d\'exportation',
+    editProfile: 'Éditer le profil d\'exportation {name}',
     profile: 'Profil | Profils',
     newTag: 'Ajouter un tag',
     backToMails: 'Retour aux emails',
