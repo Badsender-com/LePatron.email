@@ -266,6 +266,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         send: `/api/mailings/${mailingId}/mosaico/send-test-mail`,
         zip: `/api/mailings/${mailingId}/mosaico/download-zip`,
         profileList: `/api/profiles/${groupId}/profile-list-for-editor`,
+        sendCampaignMail: `/api/profiles/${mailingId}/send-campaign-mail`,
       },
       downloadConfig: {
         cdnImages: group.downloadMailingWithCdnImages,

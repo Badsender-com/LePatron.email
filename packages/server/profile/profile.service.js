@@ -67,6 +67,7 @@ async function sendCampaignMail({
   mailingId,
   type,
 }) {
+  const { subject, campaignMailName } = espSendingMailData;
   const profile = await findOne(profileId);
 
   await checkIfMailAlreadySentToProfile({ profileId, mailingId });
@@ -91,14 +92,20 @@ async function sendCampaignMail({
     additionalApiData,
   });
 
+  const campaignMailData = {
+    ...additionalApiData,
+    subject,
+    name: campaignMailName,
+  };
+
   const espMailCampaignId = await espProvider.createCampaignMail({
-    espSendingMailData,
     user,
     html,
     mailingId,
+    campaignMailData,
   });
 
-  await mailingService.updateMailEspIds(profileId, {
+  await mailingService.updateMailEspIds(mailingId, {
     profileId,
     mailCampaignId: espMailCampaignId,
   });
@@ -196,7 +203,15 @@ async function getCampaignMail({ campaignMailId, profileId }) {
     additionalApiData,
   });
 
-  return await espProvider.getCampaignMail({ campaignMailId });
+  const campaignMailResponse = await espProvider.getCampaignMail({
+    campaignMailId,
+  });
+
+  return {
+    ...campaignMailResponse,
+    id: profileId,
+    type,
+  };
 }
 
 async function deleteOne(profileId) {

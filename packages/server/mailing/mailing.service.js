@@ -363,6 +363,7 @@ async function downloadZip({
     ftpPassword,
     ftpProtocol,
     ftpPathOnServer,
+    name,
   });
   // ----- HTML
 
@@ -544,6 +545,7 @@ async function handleRelativeOrFtpImages({
   ftpPassword,
   ftpProtocol,
   ftpPathOnServer,
+  name,
 }) {
   if (!html) {
     throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);

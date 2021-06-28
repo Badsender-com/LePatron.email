@@ -12,7 +12,6 @@ const EspComponent = Vue.component('esp-form', {
   },
   props: {
     vm: { type: Object, default: () => ({}) },
-    type: { type: Number, default: SEND_MODE.CREATION }
   },
   template: `
     <div>
@@ -21,18 +20,20 @@ const EspComponent = Vue.component('esp-form', {
         :vm="vm"
       ></profile-list>
       <div class="material-css">
-        <div id="modal1" class="modal" ref="modalRef">
-          <component
-            :key="selectedProfileId"
-            :vm="vm"
-            :type="type"
-            :is="espComponent"
-            v-if="!!selectedProfileId"
-            :selectedProfileId="selectedProfileId"
-            :campaignId="campaignId"
-            :campaignMailName="''"
-          >
-          </component>
+        <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
+            <component
+              :key="selectedProfile.id"
+              :vm="vm"
+              :type="type"
+              :is="espComponent"
+              v-if="!!selectedProfile"
+              :selectedProfile="selectedProfile"
+              :campaignId="campaignId"
+              :closeModal="closeModal"
+              :campaignMailName="''"
+              @submit="submitEsp"
+            >
+            </component>
         </div>
       </div>
     </div>
@@ -41,18 +42,20 @@ const EspComponent = Vue.component('esp-form', {
   data: () => ({
     espComponent: 'SendinBlueComponent',
     mailingId: null,
-    selectedProfileId: null,
+    selectedProfile: null,
     dialog: false,
     modalInstance: null,
+    type: SEND_MODE.CREATION,
     campaignId: null,
     espIds: []
   }),
   mounted() {
-    console.log({ vm: this.vm });
     this.mailingId = this.vm?.metadata?.id;
 
     const modalRef = this.$refs.modalRef;
-    const options = {};
+    const options = {
+      dismissible: false
+    };
     this.modalInstance = M.Modal.init(modalRef, options);
     this.fetchData();
   },
@@ -60,42 +63,64 @@ const EspComponent = Vue.component('esp-form', {
     fetchData() {
        axios.get(getEspIds({mailingId: this.mailingId }))
           .then((response)=> {
-          // handle success
-            console.log('success');
-            this.espResult = (response?.data.result || []);
+            this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
-            this.vm.notifier.success(this.vm.t('error-server'));
+            this.vm.notifier.error(this.vm.t('error-server'));
         });
     },
     handleProfileSelect(profile) {
-      console.log({ newProfile : profile });
-      this.selectedProfileId = profile.id;
+      this.selectedProfile = profile;
+      this.fetchData();
       this.checkIfAlreadySendMailWithProfile();
-      this.modalInstance?.open();
+      this.openModal();
     },
     checkIfAlreadySendMailWithProfile() {
-      console.log({
-        selectedProfileId: this.selectedProfileId
-      });
-      if(!this.selectedProfileId || !this.espIds) {
-        console.log('canceled checkIfAlreadySendMailWithProfile');
+      if(!this.selectedProfile?.id || !this.espIds) {
         return;
       }
       this.type = SEND_MODE.CREATION;
       this.espIds.forEach((espId) => {
-          if (espId?.profileId === this.selectedProfileId) {
+          if (espId?.profileId === this.selectedProfile?.id) {
             console.log('found match espIds')
-            this.campaignId = espId.mailCampaignId
+            this.campaignId = espId.mailCampaignId.toString()
             this.type = SEND_MODE.EDIT
           }
       });
-
-      console.log({ type: this.type});
     },
     openModal() {
       this.modalInstance?.open();
     },
+    closeModal() {
+      this.modalInstance?.close();
+    },
+    submitEsp(profile) {
+
+      if(!this.vm?.metadata?.url?.sendCampaignMail) {
+        return;
+      }
+
+      const unprocessedHtml = this.vm.exportHTML();
+
+      axios.post(this.vm.metadata.url.sendCampaignMail, {
+        html: unprocessedHtml,
+        actionType: this.type,
+        profileId: profile?.id,
+        type: profile.type,
+        espSendingMailData: {
+          campaignMailName: profile.campaignMailName,
+          subject: profile.subject,
+        }
+      })
+        .then((response)=> {
+          // handle success
+          this.vm.notifier.success(this.vm.t('success-esp-send'));
+          this.closeModal();
+        }).catch((error) => {
+        // handle error
+        this.vm.notifier.error(this.vm.t('error-server'));
+      });
+    }
   },
 });
 

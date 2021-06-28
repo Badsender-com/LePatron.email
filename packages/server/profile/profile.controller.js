@@ -60,7 +60,7 @@ async function create(req, res) {
 async function sendCampaignMail(req, res) {
   const { user, body } = req;
   const { mailingId } = req.params;
-  const { espSendingMailData, html, profileId, type, _company } = body;
+  const { espSendingMailData, html, profileId, type } = body;
 
   await mailingService.validateMailExist(mailingId);
 
@@ -71,7 +71,6 @@ async function sendCampaignMail(req, res) {
     html,
     mailingId,
     type,
-    _company,
   });
 
   res.json(response);

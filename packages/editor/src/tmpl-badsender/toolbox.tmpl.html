@@ -8,13 +8,9 @@
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Blocks ready to be added to the template" data-local="true" href="#toolblocks" data-bind="attr: { title: $root.t('Blocks ready to be added to the template') }"><i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Blocks')">Blocks</span></a></li>
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit content options" href="#toolcontents" data-local="true" data-bind="attr: { title: $root.t('Edit content options') }"><i class="fa fa-fw fa-pencil"></i> <span data-bind="html: $root.t('Content')">Content</span></a></li>
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit style options" href="#toolstyles" data-local="true" data-bind="attr: { title: $root.t('Edit style options') }"><i class="fa fa-fw fa-paint-brush"></i> <span data-bind="html: $root.t('Style')">Style</span></a></li>
-      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Juste a vue section to test" href="#toolVue" data-local="true" data-bind="attr: { title: $root.t('VueJs code') }"><i class="fa fa-fw fa-paint-brush"></i> <span data-bind="html: $root.t('Vue')">Vue section</span></a></li>
-    </ul>
+   </ul>
   </div>
 
-  <div id="toolVue">
-    <app-vue />
-  </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
     <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">

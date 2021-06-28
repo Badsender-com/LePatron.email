@@ -8,11 +8,11 @@ const ProfileListComponent = Vue.component('profile-list', {
   },
   template: `
     <div>
-     <ul id="example-1">
-       <li v-for="profile in profiles" :key="profile.id" @click.prevent="() => selectProfile(profile)">>
+     <a
+       v-for="profile in profiles" :key="profile.id" @click.prevent="() => selectProfile(profile)"
+       class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ui-state-hover ui-state-focus">
          {{ profile.name }}
-       </li>
-     </ul>
+     </a>
     </div>
       `,
   data: () => ({
@@ -33,7 +33,7 @@ const ProfileListComponent = Vue.component('profile-list', {
           this.profiles = response?.data?.result;
         }).catch((error) => {
         // handle error
-          vm.notifier.success(this.vm.t('error-server'));
+          vm.notifier.error(this.vm.t('error-server'));
         });
     }
   },

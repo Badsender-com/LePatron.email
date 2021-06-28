@@ -34,34 +34,52 @@ class SendinBlueProvider {
 
     return {
       name: apiEmailCampaignResult?.name,
-      senderName: apiEmailCampaignResult?.sender.name,
-      senderMail: apiEmailCampaignResult?.sender.email,
-      replyTo: apiEmailCampaignResult?.replyTo,
+      additionalApiData: {
+        senderName: apiEmailCampaignResult?.sender.name,
+        senderMail: apiEmailCampaignResult?.sender.email,
+        replyTo: apiEmailCampaignResult?.replyTo,
+      },
       subject: apiEmailCampaignResult?.subject,
     };
   }
 
-  async createCampaignMail({ espSendingMailData, user, html, mailingId }) {
-    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
-    let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
-    const processedHtml = mailingService.processHtmlWithFTPOption({
-      user,
-      html,
-      mailingId,
-    });
+  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+    try {
+      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+      let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
+      const processedHtml = await mailingService.processHtmlWithFTPOption({
+        user,
+        html,
+        mailingId,
+      });
+      const {
+        senderName,
+        senderMail,
+        subject,
+        name,
+        replyTo,
+      } = campaignMailData;
+      emailCampaignsData = {
+        subject,
+        name,
+        replyTo,
+        sender: {
+          name: senderName,
+          email: senderMail,
+        },
+        htmlContent: processedHtml,
+      };
 
-    emailCampaignsData = {
-      emailCampaignsData,
-      ...espSendingMailData,
-      htmlContent: processedHtml,
-    };
-    const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
-      emailCampaignsData
-    );
-    if (!createCampaignApiResult?.id) {
-      throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+      const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
+        emailCampaignsData
+      );
+      if (!createCampaignApiResult?.id) {
+        throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+      }
+      return createCampaignApiResult?.id;
+    } catch (error) {
+      console.log(error);
     }
-    return createCampaignApiResult?.id;
   }
 }
 

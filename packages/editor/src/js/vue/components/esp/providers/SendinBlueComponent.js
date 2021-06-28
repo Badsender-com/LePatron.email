@@ -3,94 +3,118 @@ import {required} from "vuelidate/lib/validators";
 var Vue = require('vue/dist/vue.common');
 var { SEND_MODE } = require('../../../constant/send-mode');
 var { getCampaignDetail, getProfileDetail } = require('../../../utils/apis');
-var validationMixin = require('vuelidate');
+var  { validationMixin } = require('vuelidate');
 var axios = require('axios');
 
 const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
+    closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
-    selectedProfileId: { type: String, default: null },
+    selectedProfile: { type: Object, default: () => ({}) },
     campaignId: { type: String, default: null },
     type: { type: Number, default: SEND_MODE.CREATION  },
   },
   mixins: [validationMixin],
   template: `
+<div>
+  <div class="modal-content">
     <div class="row">
-    <form class="col s12">
-      <div class="row">
-        <div class="input-field col s12">
-          <input
-            id="name"
-            v-model="profile.campaignMailName"
-            type="text"
-            name="name"
-            class="validate">
-          <label for="name">name</label>
-        </div>
+      <div class="col s12">
+        <h2>{{vm.t('export-to')}} {{selectedProfile.name}}</h2>
       </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <input
-            id="sender"
-            type="text"
-            v-model="profile.senderName"
-            name="sender"
-            disabled
-            class="validate">
-          <label for="sender">Sender</label>
+      <form class="col s12">
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="name"
+              v-model="profile.campaignMailName"
+              type="text"
+              name="name"
+              required
+              :placeholder="vm.t('name')"
+              @input="$v.profile.campaignMailName.$touch()"
+              @blur="$v.profile.campaignMailName.$touch()"
+              class="validate">
+            <label for="name">{{ vm.t('name') }}</label>
+            <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t('name-required')"></span>
+
+          </div>
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="sender-name"
+              type="text"
+              v-model="profile.senderName"
+              disabled
+              :placeholder="vm.t('sender-name')"
+              name="senderName"
+            >
+            <label for="sender-name" class="active">{{ vm.t('sender-name') }}</label>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <input
-            id="sender-mail"
-            type="email"
-            v-model="profile.senderMail"
-            name="sendermail"
-            class="validate"
-            disabled
-          >
-          <label for="sender-mail">Sender mail</label>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="sender-mail"
+              type="text"
+              v-model="profile.senderMail"
+              disabled
+              :placeholder="vm.t('sender-mail')"
+              name="senderMail"
+            >
+            <label for="sender-mail" class="active">{{ vm.t('sender-mail') }}</label>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <input
-            id="subject"
-            type="text"
-            v-model="profile.subject"
-            name="subject"
-            class="validate">
-          <label for="subject">Subject</label>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="subject"
+              type="text"
+              v-model="profile.subject"
+              :placeholder="vm.t('subject')"
+              name="subject"
+              required
+              class="validate"
+            >
+            <label for="subject" class="active">{{ vm.t('subject') }}</label>
+            <span class="helper-text" v-if="!$v.profile.subject.required" :data-error="vm.t('subject-required')"></span>
+
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <input
-            id="replyto"
-            type="text"
-            v-model="profile.replyTo"
-            name="replyto"
-            disabled
-            class="validate">
-          <label for="replyto">ReplyTo</label>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="replyto"
+              type="text"
+              :placeholder="vm.t('replyto')"
+              v-model="profile.replyTo"
+              name="replyto"
+              disabled>
+            <label for="replyto" class="active">{{ vm.t('replyto') }}</label>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="input-field col s12">
-          <button
-            @click.prevent="onSubmit"
-            class="btn waves-effect waves-light"
-            type="submit"
-            name="action">
-            Submit
-          </button>
-        </div>
-      </div>
-    </form>
+      </form>
     </div>
+  </div>
+  <div class="modal-footer">
+        <button
+          @click.prevent="closeModal"
+          class="btn-flat waves-effect waves-light"
+          name="closeAction">
+          {{ vm.t('close') }}
+        </button>
+        <button
+          @click.prevent="onSubmit"
+          :style="[style.mb0, style.mt0]"
+          class="btn waves-effect waves-light"
+          type="submit"
+          name="submitAction">
+          {{ vm.t('submit') }}
+        </button>
+  </div>
+</div>
+
       `,
   data: () => ({
     profile: {
@@ -101,40 +125,45 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       subject: '',
       type: 'SENDINBLUE',
     },
+    loading: false,
+    style: {
+      mb0:{
+        marginBottom: 0,
+      },
+      mt0:{
+        marginTop: 0,
+      },
+    }
   }),
   validations() {
     return {
       profile: {
+        campaignMailName: {
+          required,
+        },
         subject: {
           required,
         },
       }
     }
   },
-  computed: {
-    nameErrors() {
-      const errors = [];
-      if (!this.$v.profile.subject.$dirty) return errors;
-      !this.$v.profile.subject.required &&
-      errors.push(this.vm.t('global.errors.nameRequired'));
-      return errors;
-    },
-  },
   mounted() {
-    // TODO: Get profile detail based on mode (creation or edition)
+    if(!!this.vm) {
+      this.profile.campaignMailName = this.vm.creationName();
+    }
     this.fetchData();
   },
   methods: {
     fetchData() {
+      this.loading = false;
       let getProfileApi = this.type === SEND_MODE.CREATION ?
-        getProfileDetail({ profileId: this.selectedProfileId })
-        : getCampaignDetail({ profileId: this.selectedProfileId, campaignId: this.campaignId });
+        getProfileDetail({ profileId: this.selectedProfile?.id })
+        : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });
 
       axios.get(getProfileApi)
         .then( (response) => {
           // handle success
-          console.log({ response });
-          console.log({ result: response?.data?.result });
+
           const profileResult = response?.data?.result;
           const {
             type,
@@ -143,26 +172,27 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               senderName,
               senderMail,
               replyTo
-            }
+            },
+            subject
           } = profileResult;
-          const formattedProfileData = {
-            campaignMailName: this.profile.campaignMailName,
+
+          this.profile = {
+            campaignMailName: this.type === SEND_MODE.CREATION ? this.profile.campaignMailName : profileResult.name,
             senderName,
             senderMail,
             replyTo,
             type,
+            subject,
             id
           };
-          this.profile = formattedProfileData;
-          console.log({
-            profile: this.profile
-          })
+          M.updateTextFields();
         }).catch((error) => {
         // handle error
-        this.vm.notifier.success(this.vm.t('error-server'));
+        this.vm.notifier.error(this.vm.t('error-server'));
       });
     },
     onSubmit() {
+      M.updateTextFields();
       this.$v.$touch();
       if (this.$v.$invalid) {
         return;
