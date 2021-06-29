@@ -286,6 +286,7 @@ async function getProfile({ profileId }) {
 }
 
 async function getCampaignMail({ campaignMailId, profileId }) {
+  console.log('retrieving Campaign Mail');
   const profile = await findOne(profileId);
 
   const { apiKey, type, name, _company, additionalApiData } = profile;

@@ -214,6 +214,7 @@ async function getCampaignMail(req, res) {
  *
  */
 async function readProfile(req, res) {
+  console.log('reading a profile');
   const { user, params } = req;
   const { profileId } = params;
 

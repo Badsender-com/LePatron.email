@@ -89,6 +89,15 @@ const EspComponent = Vue.component('esp-form', {
             this.type = SEND_MODE.EDIT
           }
       });
+
+      if(this.type === SEND_MODE.CREATION) {
+        this.campaignId = null;
+      }
+
+      console.log({
+        type: this.type,
+        campaignId: this.campaignId
+      });
     },
     openModal() {
       this.modalInstance?.open();

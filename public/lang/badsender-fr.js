@@ -56,7 +56,7 @@ module.exports = {
   close: 'Fermer',
   export: 'Exporter',
   'warning-esp-message':
-    'Toute mise à jour effectuée dans l\'ESP sera remplacée par la nouvelle version',
+    'Toute mise à jour remplacera le mail dans le fournisseur de services de messagerie',
   // profile form validation
   'name-required': 'Le nom est requis',
   'subject-required': 'Le sujet est requis',

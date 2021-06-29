@@ -1,4 +1,5 @@
 'use_strict';
+const logger = require('../utils/logger.js');
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 const mailingService = require('../mailing/mailing.service.js');
@@ -44,23 +45,28 @@ class SendinBlueProvider {
   }
 
   async createCampaignMail({ campaignMailData, user, html, mailingId }) {
-    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
-    let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
-    emailCampaignsData = await this.formatSendinBlueData({
-      campaignMailData,
-      user,
-      html,
-      mailingId,
-    });
+    try {
+      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+      let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
+      emailCampaignsData = await this.formatSendinBlueData({
+        campaignMailData,
+        user,
+        html,
+        mailingId,
+      });
 
-    const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
-      emailCampaignsData
-    );
+      const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
+        emailCampaignsData
+      );
 
-    if (!createCampaignApiResult?.id) {
-      throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+      if (!createCampaignApiResult?.id) {
+        throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+      }
+      return createCampaignApiResult?.id;
+    } catch (e) {
+      logger.error(e.text);
+      throw e;
     }
-    return createCampaignApiResult?.id;
   }
 
   async updateCampaignMail({
@@ -70,19 +76,24 @@ class SendinBlueProvider {
     mailingId,
     campaignId,
   }) {
-    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
-    let emailCampaignsData = new SibApiV3Sdk.UpdateEmailCampaign();
-    emailCampaignsData = await this.formatSendinBlueData({
-      campaignMailData,
-      user,
-      html,
-      mailingId,
-    });
+    try {
+      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+      let emailCampaignsData = new SibApiV3Sdk.UpdateEmailCampaign();
+      emailCampaignsData = await this.formatSendinBlueData({
+        campaignMailData,
+        user,
+        html,
+        mailingId,
+      });
 
-    return await apiEmailCampaignsInstance.updateEmailCampaign(
-      campaignId,
-      emailCampaignsData
-    );
+      return await apiEmailCampaignsInstance.updateEmailCampaign(
+        campaignId,
+        emailCampaignsData
+      );
+    } catch (e) {
+      logger.error(e.text);
+      throw e;
+    }
   }
 
   async formatSendinBlueData({ campaignMailData, user, html, mailingId }) {

@@ -30,11 +30,11 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
         <div class="row" v-if="isEditMode">
           <div class="col s12">
             <div class="card-panel blue-grey lighten-5">
-              <div class="row" :style="style.mb0">
-                <div class="col s1" :style="style.floatRight">
+              <div>
+                <div :style="style.floatLeft">
                   <i class="fa fa-exclamation-circle fa-2x" aria-hidden="true" :style="style.colorOrange"></i>
                 </div>
-                <div class="col s11">
+                <div :style="style.pl4">
                   <span>{{vm.t('warning-esp-message')}}</span>
                 </div>
               </div>
@@ -159,8 +159,11 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       mt0:{
         marginTop: 0,
       },
-      floatRight: {
-        textAlign: 'right'
+      pl4:{
+        paddingLeft: '40px',
+      },
+      floatLeft: {
+        float: 'left'
       },
       colorOrange:{
         color: '#f57c00'
@@ -185,10 +188,15 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
     }
     this.fetchData();
   },
+  watch: {
+    type: function(newVal, oldVal) {
+      this.fetchData();
+    }
+  },
   computed: {
     isEditMode() {
       return this.type === SEND_MODE.EDIT
-    }
+    },
   },
   methods: {
     fetchData() {
@@ -201,6 +209,8 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
           // handle success
 
           const profileResult = response?.data?.result;
+
+          console.log({ profileResult });
           const {
             type,
             id,

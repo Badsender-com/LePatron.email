@@ -56,7 +56,7 @@ module.exports = {
   close: 'Close',
   // profile form validation
   'warning-esp-message':
-    'Any update made in the ESP will be replaced by the new version',
+    'Any update will override the mail campaign in the email service provider.',
   'name-required': 'Name is required',
   'subject-required': 'Subject is required',
   'success-esp-send': 'Mail exported successfully',
