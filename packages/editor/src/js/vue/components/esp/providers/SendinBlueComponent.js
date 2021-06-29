@@ -232,6 +232,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
           M.updateTextFields();
         }).catch((error) => {
         // handle error
+        console.log({ profileApiError: error})
         this.vm.notifier.error(this.vm.t('error-server'));
       });
     },
