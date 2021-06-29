@@ -149,6 +149,7 @@ const mosaicoLibListMin = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-image.js', // no min files
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js', // no min files
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
+  'node_modules/materialize-css/dist/js/materialize.min.js',
   'node_modules/tinymce/tinymce.min.js',
 ];
 
