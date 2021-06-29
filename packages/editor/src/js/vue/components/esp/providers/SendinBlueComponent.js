@@ -27,17 +27,15 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
         <h2>{{vm.t('export-to')}} {{selectedProfile.name}}</h2>
       </div>
       <form class="col s12">
-        <div class="row">
-          <div class="col s12 m5">
-            <div class="card-panel orange lighten-5">
-              <div class="row">
-                <div class="col s1">
-                  <i class="material-icons">warning</i>
+        <div class="row" v-if="isEditMode">
+          <div class="col s12">
+            <div class="card-panel blue-grey lighten-5">
+              <div class="row" :style="style.mb0">
+                <div class="col s1" :style="style.floatRight">
+                  <i class="fa fa-exclamation-circle fa-2x" aria-hidden="true" :style="style.colorOrange"></i>
                 </div>
                 <div class="col s11">
-                  <span>I am a very simple card. I am good at containing small bits of information.
-                  I am convenient because I require little markup to use effectively. I am similar to what is called a panel in other frameworks.
-                  </span>
+                  <span>{{vm.t('warning-esp-message')}}</span>
                 </div>
               </div>
 
@@ -138,9 +136,8 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          <span v-if="loading">{{ vm.t('exporting') }} ...</span>
-          <span v-else>{{ vm.t('submit') }}<i class="material-icons">send</i></span>
-
+          <span v-if="loading">{{ vm.t('exporting') }}</span>
+          <span v-else>{{ vm.t('export') }} <i class="fa fa-paper-plane" aria-hidden="true"></i></span>
         </button>
   </div>
 </div>
@@ -162,6 +159,12 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       mt0:{
         marginTop: 0,
       },
+      floatRight: {
+        textAlign: 'right'
+      },
+      colorOrange:{
+        color: '#f57c00'
+      }
     }
   }),
   validations() {
@@ -181,6 +184,11 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       this.profile.campaignMailName = this.vm.creationName();
     }
     this.fetchData();
+  },
+  computed: {
+    isEditMode() {
+      return this.type === SEND_MODE.EDIT
+    }
   },
   methods: {
     fetchData() {

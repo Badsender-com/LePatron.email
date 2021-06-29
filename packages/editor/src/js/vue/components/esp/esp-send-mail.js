@@ -126,11 +126,17 @@ const EspComponent = Vue.component('esp-form', {
         .then((response)=> {
           // handle success
           this.vm.notifier.success(this.vm.t('success-esp-send'));
-          this.loading = false;
           this.closeModal();
         }).catch((error) => {
         // handle error
-        this.vm.notifier.error(this.vm.t('error-server'));
+        const errorCode = error.response.status;
+        const handledErrorCodes = [400, 500, 402 ];
+        const errorMessageCode = handledErrorCodes.includes(errorCode) ?  `error-server-${errorCode}` : 'error-server';
+        console.log(errorMessageCode);
+        this.vm.notifier.error(this.vm.t(errorMessageCode));
+
+      }).finally(()=> {
+        this.loading = false;
       });
     }
   },
