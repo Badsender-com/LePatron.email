@@ -64,7 +64,7 @@ class SendinBlueProvider {
       }
       return createCampaignApiResult?.id;
     } catch (e) {
-      logger.error(e.text);
+      logger.error(e.response.text);
       throw e;
     }
   }
@@ -91,7 +91,7 @@ class SendinBlueProvider {
         emailCampaignsData
       );
     } catch (e) {
-      logger.error(e.text);
+      logger.error(e.response.text);
       throw e;
     }
   }
