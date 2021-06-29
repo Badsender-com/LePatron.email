@@ -209,8 +209,6 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
           // handle success
 
           const profileResult = response?.data?.result;
-
-          console.log({ profileResult });
           const {
             type,
             id,

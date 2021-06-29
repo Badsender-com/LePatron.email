@@ -93,11 +93,6 @@ const EspComponent = Vue.component('esp-form', {
       if(this.type === SEND_MODE.CREATION) {
         this.campaignId = null;
       }
-
-      console.log({
-        type: this.type,
-        campaignId: this.campaignId
-      });
     },
     openModal() {
       this.modalInstance?.open();
