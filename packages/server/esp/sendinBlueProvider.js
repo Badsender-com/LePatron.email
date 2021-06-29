@@ -44,7 +44,6 @@ class SendinBlueProvider {
   }
 
   async createCampaignMail({ campaignMailData, user, html, mailingId }) {
-    console.log('creating a new campaign mail ...');
     const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
     let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
     emailCampaignsData = await this.formatSendinBlueData({

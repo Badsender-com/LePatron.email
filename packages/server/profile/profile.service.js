@@ -111,7 +111,6 @@ async function updateCampaignMail({
   campaignId,
   type,
 }) {
-  console.log('updating mail ...');
   const { subject, campaignMailName } = espSendingMailData;
   const profile = await findOne(profileId);
 
@@ -163,7 +162,6 @@ async function sendCampaignMail({
   mailingId,
   type,
 }) {
-  console.log('sending mail ...');
   const { subject, campaignMailName } = espSendingMailData;
   const profile = await findOne(profileId);
 

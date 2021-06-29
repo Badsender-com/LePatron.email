@@ -64,7 +64,6 @@ const EspComponent = Vue.component('esp-form', {
     fetchData() {
       return axios.get(getEspIds({mailingId: this.mailingId }))
           .then((response) => {
-            console.log({ result: response?.data.result });
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
@@ -79,10 +78,6 @@ const EspComponent = Vue.component('esp-form', {
       });
 
     },
-    preventMouseLeave(event) {
-      event.stopPropagation();
-      event.preventDefault();
-    },
     checkIfAlreadySendMailWithProfile() {
       if(!this.selectedProfile?.id || !this.espIds) {
         return;
@@ -90,13 +85,10 @@ const EspComponent = Vue.component('esp-form', {
       this.type = SEND_MODE.CREATION;
       this.espIds.forEach((espId) => {
           if (espId?.profileId === this.selectedProfile?.id) {
-            console.log('found match espIds');
             this.campaignId = espId.mailCampaignId.toString();
             this.type = SEND_MODE.EDIT
           }
       });
-
-      console.log({ mailCampaign: this.campaignId });
     },
     openModal() {
       this.modalInstance?.open();
@@ -132,7 +124,6 @@ const EspComponent = Vue.component('esp-form', {
         const errorCode = error.response.status;
         const handledErrorCodes = [400, 500, 402 ];
         const errorMessageCode = handledErrorCodes.includes(errorCode) ?  `error-server-${errorCode}` : 'error-server';
-        console.log(errorMessageCode);
         this.vm.notifier.error(this.vm.t(errorMessageCode));
 
       }).finally(()=> {
