@@ -11,6 +11,7 @@ import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
+import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import { PAGE_NAMES } from '~/helpers/constants/page-names.js';
 
@@ -23,6 +24,7 @@ export default {
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
     BsGroupWorkspacesTab,
+    BsGroupProfilesTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -126,6 +128,9 @@ export default {
       <v-tab v-if="isAdmin" href="#group-mailings">
         {{ $tc('global.mailing', 2) }}
       </v-tab>
+      <v-tab v-if="isAdmin" href="#group-profile">
+        {{ $tc('global.profile', 2) }}
+      </v-tab>
       <v-tab-item value="group-informations" eager>
         <bs-group-form
           v-model="group"
@@ -145,6 +150,9 @@ export default {
       </v-tab-item>
       <v-tab-item value="group-users">
         <bs-group-users-tab />
+      </v-tab-item>
+      <v-tab-item v-if="isAdmin" value="group-profile">
+        <bs-group-profiles-tab />
       </v-tab-item>
     </v-tabs>
   </bs-layout-left-menu>

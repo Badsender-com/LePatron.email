@@ -59,9 +59,7 @@ const config = rc('lepatron', {
     username: 'admin',
     password: 'admin',
   },
-  proxyUrl:
-    process.env.QUOTAGUARDSTATIC_URL ||
-    'http://zwaedt4fu4bmis:4ktaahtdb2yeak6x33u5buobusb@us-east-static-01.quotaguard.com:9293',
+  proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';

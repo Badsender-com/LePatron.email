@@ -33,6 +33,13 @@ They provide an easy way to install all necessary service but can be omitted if 
 
 [mongolab addon's detail](https://devcenter.heroku.com/articles/mongolab)
 
+### QuotaGuard static IP's
+
+If you need static IP's, you can add this addon on heroku.
+A `QUOTAGUARDSTATIC_URL` should be automatically added on your heroku env.
+
+[QuotaGuard static IP's addon details](https://elements.heroku.com/addons/quotaguardstatic)
+
 ### sendgrid
 
 [sendgrid addon's detail](https://devcenter.heroku.com/articles/sendgrid)
@@ -72,6 +79,54 @@ lepatron_emailTransport__auth__pass      your password (or Secret Key)
 
 lepatron_emailTransport\_\_service is for [nodemailer-wellknown](https://www.npmjs.com/package/nodemailer-wellknown) configuration
 
+### Mail providers supported by Nodemailer
+
+Service names are case insensitive
+
+```
+"126"
+"163"
+"1und1"
+"AOL"
+"DebugMail"
+"DynectEmail"
+"FastMail"
+"GandiMail"
+"Gmail"
+"Godaddy"
+"GodaddyAsia"
+"GodaddyEurope"
+"hot.ee"
+"Hotmail"
+"iCloud"
+"mail.ee"
+"Mail.ru"
+"Maildev"
+"Mailgun"
+"Mailjet"
+"Mailosaur"
+"Mandrill"
+"Naver"
+"OpenMailBox"
+"Outlook365"
+"Postmark"
+"QQ"
+"QQex"
+"SendCloud"
+"SendGrid"
+"SendinBlue"
+"SendPulse"
+"SES"
+"SES-US-EAST-1"
+"SES-US-WEST-2"
+"SES-EU-WEST-1"
+"Sparkpost"
+"Yahoo"
+"Yandex"
+"Zoho"
+"qiye.aliyun"
+```
+
 ### from email address
 
 ```
@@ -98,6 +153,13 @@ The domain name of your app
 
 ```
 lepatron_host                            badsender-test.herokuapp.com
+```
+
+### Error pages:
+
+```
+MAINTENANCE_PAGE_URL                    Url of maintenance page in case you application is in maintenance mode.
+ERROR_PAGE_URL                          Url of the page that will be displayed in case your application crashs
 ```
 
 ### AWS S3

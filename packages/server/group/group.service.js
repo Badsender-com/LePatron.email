@@ -1,9 +1,14 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const createError = require('http-errors');
+const { InternalServerError, NotFound, Unauthorized } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { Groups, Users, Workspaces, Mailings } = require('../common/models.common.js');
+const {
+  Groups,
+  Users,
+  Workspaces,
+  Mailings,
+} = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
 const mongoose = require('mongoose');
@@ -14,50 +19,73 @@ module.exports = {
   createGroup: asyncHandler(createGroup),
   updateGroup: asyncHandler(updateGroup),
   findUserByGroupId: asyncHandler(findUserByGroupId),
-  seedGroups
+  checkIfUserIsAuthorizedToAccessGroup: asyncHandler(
+    checkIfUserIsAuthorizedToAccessGroup
+  ),
+  seedGroups,
 };
+
+async function checkIfUserIsAuthorizedToAccessGroup({ user, groupId }) {
+  if (!!user && !user.isAdmin) {
+    if (user?.group.id !== groupId) {
+      throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
+    }
+  }
+}
 
 async function seedGroups() {
   // retrieving groups that need to be updated
   const companiesWithWorkspacesIds = await Workspaces.distinct('_company');
-  const companiesWithNoWorkspaces = await Groups.find(
-    { _id: { $nin: companiesWithWorkspacesIds.map(id => mongoose.Types.ObjectId(id)) } }
-  );
+  const companiesWithNoWorkspaces = await Groups.find({
+    _id: {
+      $nin: companiesWithWorkspacesIds.map((id) => mongoose.Types.ObjectId(id)),
+    },
+  });
 
   // for each of these groups, create default workspace and add group users to it
   for (const company of companiesWithNoWorkspaces) {
-    const companyUsers = await Users.find({ _company: mongoose.Types.ObjectId(company.id) });
+    const companyUsers = await Users.find({
+      _company: mongoose.Types.ObjectId(company.id),
+    });
 
     const updateUsers = await Users.updateMany(
-      { _id: { $in: companyUsers.map(user => mongoose.Types.ObjectId(user._id)) } },
+      {
+        _id: {
+          $in: companyUsers.map((user) => mongoose.Types.ObjectId(user._id)),
+        },
+      },
       { role: Roles.REGULAR_USER }
     );
 
     if (updateUsers.ok !== 1) {
-      throw new createError.InternalServerError(ERROR_CODES.FAILED_USERS_UPDATE)
+      throw new InternalServerError(ERROR_CODES.FAILED_USERS_UPDATE);
     }
 
     const defaultWorkspace = {
       name: 'Workspace',
       groupId: company.id,
-      selectedUsers: companyUsers
+      selectedUsers: companyUsers,
     };
 
-    const createdWorkspace = await workspaceService.createWorkspace(defaultWorkspace);
+    const createdWorkspace = await workspaceService.createWorkspace(
+      defaultWorkspace
+    );
 
     if (!createdWorkspace) {
-      throw new createError.InternalServerError(ERROR_CODES.FAILED_WORKSPACE_CREATION)
+      throw new InternalServerError(ERROR_CODES.FAILED_WORKSPACE_CREATION);
     }
 
-    const companyMailings = await Mailings.find({ _company: mongoose.Types.ObjectId(company.id) });
+    const companyMailings = await Mailings.find({
+      _company: mongoose.Types.ObjectId(company.id),
+    });
 
     const moveMailingsToWorkspace = await Mailings.updateMany(
-      { _id: { $in: companyMailings.map(mailing => mailing.id) } },
+      { _id: { $in: companyMailings.map((mailing) => mailing.id) } },
       { _workspace: createdWorkspace._id }
     );
 
     if (moveMailingsToWorkspace.ok !== 1) {
-      throw new createError.InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE)
+      throw new InternalServerError(ERROR_CODES.FAILED_MAILING_MOVE);
     }
   }
 
@@ -67,7 +95,7 @@ async function seedGroups() {
 async function findById(groupId) {
   const group = await Groups.findById(groupId).select('_id').lean();
   if (!group) {
-    throw new createError.NotFound(`no group with id ${groupId} found`);
+    throw new NotFound(`no group with id ${groupId} found`);
   }
   return group;
 }
@@ -81,7 +109,7 @@ async function findUserByGroupId(groupId) {
       .populate({ path: '_company', select: 'id name entryPoint issuer' })
       .sort({ email: 1 }),
   ]);
-  if (!group) throw new createError.NotFound();
+  if (!group) throw new NotFound();
   return users;
 }
 async function createGroup(group) {

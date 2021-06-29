@@ -24,6 +24,7 @@ const versionRouter = require('./version/version.routes');
 const groupRouter = require('./group/group.routes');
 const workspaceRouter = require('./workspace/workspace.routes');
 const folderRouter = require('./folder/folder.routes');
+const profileRouter = require('./profile/profile.routes');
 const mailingRouter = require('./mailing/mailing.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
@@ -244,6 +245,7 @@ if (cluster.isMaster) {
 
   // API routes
   app.use('/api/folders', folderRouter);
+  app.use('/api/profiles', profileRouter);
   app.use('/api/workspaces', workspaceRouter);
   app.use('/api/groups', groupRouter);
   app.use('/api/mailings', mailingRouter);

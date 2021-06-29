@@ -5,7 +5,7 @@ lang: en-US
 
 ## Dev prerequisite
 
-- [NodeJS 10](https://nodejs.org/en/)
+- [NodeJS 14.16](https://nodejs.org/en/)
 - [Yarn v1.13.0](https://yarnpkg.com/en/)
 - [MongoDB >= v3.4.18](https://www.mongodb.com/)
   - if installed locally `mongod` to start

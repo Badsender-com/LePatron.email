@@ -12,6 +12,9 @@ export default {
       required: 'This field is required',
       userRequired: 'A user is required',
       nameRequired: 'A name is required',
+      apiKeyRequired: 'Api Key is Required',
+      senderNameRequired: 'Sender name is Required',
+      senderMailRequired: 'Sender mail is Required',
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
       FORBIDDEN_WORKSPACE_CREATION:
         'You don\'t have the rights to create this workspace',
@@ -27,6 +30,7 @@ export default {
         },
       },
     },
+    apiKey: 'Api key',
     add: 'Add',
     teams: 'Workspaces',
     addTags: 'Add tags',
@@ -42,6 +46,9 @@ export default {
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
+    newProfile: 'Add an export profile',
+    editProfile: 'Edit export profile {name}',
+    profile: 'Profile | Profiles',
     user: 'User | Users',
     newUser: 'Add a user',
     newTeam: 'Add a workspace',
@@ -159,6 +166,16 @@ export default {
       inputMaxLength: 'Name must not exceed 70 characters',
       moveFolderConfirmationMessage: 'Please choose the destination',
     },
+    profile: {
+      errors: {
+        email: {
+          valid: 'A valid email is required',
+        },
+        apiKey: {
+          unauthorized: 'The API key you provided is not authorized',
+        },
+      },
+    },
   },
   groups: {
     tabs: {
@@ -256,6 +273,22 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+  },
+  profiles: {
+    name: 'Name',
+    type: 'Type',
+    senderName: 'Sender name',
+    senderMail: 'Sender mail',
+    replyTo: 'Reply to',
+    createdAt: 'Creation date',
+    actions: 'Actions',
+    edit: 'Edit',
+    delete: 'Delete',
+    warningNoFTP:
+      'You cannot add profile without having configured FTP server.',
+    emptyState: 'No profile available',
+    deleteWarningMessage:
+      'You are about to delete the "<strong>{name}</strong>" profile. This action can\'t be undone.',
   },
   workspaces: {
     name: 'Name',

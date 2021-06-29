@@ -38,6 +38,32 @@ module.exports = {
   'rotate-right': 'Incliner à droite',
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
+  'error-server':
+    'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
   cancel: 'ANNULER',
   upload: 'UPLOADER',
+
+  // Profile form esp
+  'sender-name': 'Nom de l\'expéditeur',
+  'sender-mail': 'Mail de l\'expéditeur',
+  replyto: 'Répondre à',
+  subject: 'Sujet',
+  name: 'Nom',
+  'export-to': 'Exporter vers',
+  exporting: 'Exportation en cours ...',
+  loading: 'Loading',
+  submit: 'Enregistrer',
+  close: 'Fermer',
+  export: 'Exporter',
+  'warning-esp-message':
+    'Toute mise à jour remplacera le mail dans le fournisseur de services de messagerie',
+  // profile form validation
+  'name-required': 'Le nom est requis',
+  'subject-required': 'Le sujet est requis',
+  'success-esp-send': 'Mail exporté avec succès',
+  'error-server-400':
+    'Paramètres Esp invalides, vérifiez si le courrier de l\'expéditeur correspond à la clé API',
+  'error-server-402': 'Échec de l\'exportation, l\'ESP exige un paiement',
+  'error-server-500':
+    'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
 };
