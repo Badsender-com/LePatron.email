@@ -49,6 +49,8 @@ module.exports = {
   subject: 'Subject',
   name: 'Name',
   'export-to': 'Export to',
+  exporting: 'Exporting',
+  loading: 'Loading',
   submit: 'Submit',
   close: 'Close',
   // profile form validation

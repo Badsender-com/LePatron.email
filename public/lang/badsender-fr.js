@@ -50,6 +50,8 @@ module.exports = {
   subject: 'Sujet',
   name: 'Nom',
   'export-to': 'Exporter vers',
+  exporting: 'Exportation en cours ...',
+  loading: 'Loading',
   submit: 'Enregistrer',
   close: 'Fermer',
 

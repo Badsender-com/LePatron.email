@@ -44,14 +44,56 @@ class SendinBlueProvider {
   }
 
   async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+    console.log('creating a new campaign mail ...');
+    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+    let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
+    emailCampaignsData = await this.formatSendinBlueData({
+      campaignMailData,
+      user,
+      html,
+      mailingId,
+    });
+
+    const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
+      emailCampaignsData
+    );
+
+    if (!createCampaignApiResult?.id) {
+      throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
+    }
+    return createCampaignApiResult?.id;
+  }
+
+  async updateCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    campaignId,
+  }) {
+    const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
+    let emailCampaignsData = new SibApiV3Sdk.UpdateEmailCampaign();
+    emailCampaignsData = await this.formatSendinBlueData({
+      campaignMailData,
+      user,
+      html,
+      mailingId,
+    });
+
+    return await apiEmailCampaignsInstance.updateEmailCampaign(
+      campaignId,
+      emailCampaignsData
+    );
+  }
+
+  async formatSendinBlueData({ campaignMailData, user, html, mailingId }) {
     try {
-      const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
-      let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
       const processedHtml = await mailingService.processHtmlWithFTPOption({
         user,
         html,
         mailingId,
       });
+
       const {
         senderName,
         senderMail,
@@ -59,7 +101,8 @@ class SendinBlueProvider {
         name,
         replyTo,
       } = campaignMailData;
-      emailCampaignsData = {
+
+      return {
         subject,
         name,
         replyTo,
@@ -69,16 +112,10 @@ class SendinBlueProvider {
         },
         htmlContent: processedHtml,
       };
-
-      const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
-        emailCampaignsData
+    } catch (e) {
+      throw new InternalServerError(
+        ERROR_CODES.UNEXPECTED_ERROR_WHILE_PROCESSING_HTML
       );
-      if (!createCampaignApiResult?.id) {
-        throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
-      }
-      return createCampaignApiResult?.id;
-    } catch (error) {
-      console.log(error);
     }
   }
 }

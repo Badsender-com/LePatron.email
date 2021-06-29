@@ -295,13 +295,12 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     ftpProtocol,
     ftpPathOnServer,
   });
-
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(html);
 
   const {
-    html: processedHtmlWithFtpAbsolutePathImages,
-  } = replaceImageWithFTPEndpointBaseInProcessedHtml({
+    htmlProcessedWithFtp,
+  } = await replaceImageWithFTPEndpointBaseInProcessedHtml({
     cdnDownload,
     cdnProtocol,
     cdnEndPoint,
@@ -312,7 +311,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     name,
   });
 
-  return processedHtmlWithFtpAbsolutePathImages;
+  return htmlProcessedWithFtp;
 }
 
 // This will handle downloading email as a ZIP file
@@ -348,6 +347,8 @@ async function downloadZip({
     downloadOptions,
   });
 
+  console.log('download zip', name);
+
   const {
     relativesImagesNames,
     archive: processedImageArchive,
@@ -365,6 +366,7 @@ async function downloadZip({
     ftpPathOnServer,
     name,
   });
+
   // ----- HTML
 
   // Add html with relatives url
@@ -376,12 +378,10 @@ async function downloadZip({
       name: `${name}.html`,
     });
   } else {
-    // replace image with absolute url
-
     const {
-      html,
+      htmlProcessedWithFtp,
       endpointPath,
-    } = replaceImageWithFTPEndpointBaseInProcessedHtml({
+    } = await replaceImageWithFTPEndpointBaseInProcessedHtml({
       cdnDownload,
       cdnProtocol,
       cdnEndPoint,
@@ -392,7 +392,8 @@ async function downloadZip({
       name,
     });
     // archive
-    processedImageArchive.append(html, {
+
+    processedImageArchive.append(htmlProcessedWithFtp, {
       prefix,
       name: `${name}.html`,
     });
@@ -486,7 +487,6 @@ async function extractFTPparams({ mailingId, user, downloadOptions }) {
     downloadMailingWithFtpImages && downloadOptions.downLoadForFtp;
   const regularDownload = !cdnDownload && !ftpDownload;
 
-  console.log('download zip', name);
   // Image
   return {
     cdnDownload,
@@ -522,14 +522,18 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
   const endpointPath = `${endpointBase}${
     endpointBase.substr(endpointBase.length - 1) === '/' ? '' : '/'
   }${name}`;
-  let html = processedHtml;
+
+  let htmlProcessedWithFtp = processedHtml;
 
   relativesImagesNames.forEach((imageName) => {
     const imgRegex = new RegExp(`${IMAGES_FOLDER}/${imageName}`, 'g');
-    html = html.replace(imgRegex, `${endpointPath}/${imageName}`);
+    htmlProcessedWithFtp = htmlProcessedWithFtp.replace(
+      imgRegex,
+      `${endpointPath}/${imageName}`
+    );
   });
 
-  return { html, endpointBase };
+  return { htmlProcessedWithFtp, endpointBase };
 }
 
 // This will either add images to archive ( zip file ) or upload an image depending on the value of the cdnDownload and regularDownload
@@ -657,7 +661,7 @@ async function handleRelativeOrFtpImages({
       (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
       `${name}/`;
 
-    ftpClient.upload(allImages, folderPath);
+    await ftpClient.upload(allImages, folderPath);
   }
 
   return { relativesImagesNames, archive };

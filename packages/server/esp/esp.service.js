@@ -21,6 +21,7 @@ class EspService {
     };
 
     this.providerInstance = this.createEsp(additionalApiData);
+    this.validateProviderInstance();
   }
 
   createEsp(data) {
@@ -53,6 +54,11 @@ class EspService {
   async getCampaignMail(campaignMail) {
     this.validateProviderInstance();
     return await this.providerInstance.getCampaignMail(campaignMail);
+  }
+
+  async updateCampaignMail(campaignMail) {
+    this.validateProviderInstance();
+    return await this.providerInstance.updateCampaignMail(campaignMail);
   }
 
   validateProviderInstance() {

@@ -22,6 +22,7 @@ const EspComponent = Vue.component('esp-form', {
       <div class="material-css">
         <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
             <component
+              :loading="loading"
               :key="selectedProfile.id"
               :vm="vm"
               :type="type"
@@ -42,6 +43,7 @@ const EspComponent = Vue.component('esp-form', {
   data: () => ({
     espComponent: 'SendinBlueComponent',
     mailingId: null,
+    loading: false,
     selectedProfile: null,
     dialog: false,
     modalInstance: null,
@@ -51,7 +53,6 @@ const EspComponent = Vue.component('esp-form', {
   }),
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
-
     const modalRef = this.$refs.modalRef;
     const options = {
       dismissible: false
@@ -61,8 +62,9 @@ const EspComponent = Vue.component('esp-form', {
   },
   methods: {
     fetchData() {
-       axios.get(getEspIds({mailingId: this.mailingId }))
-          .then((response)=> {
+      return axios.get(getEspIds({mailingId: this.mailingId }))
+          .then((response) => {
+            console.log({ result: response?.data.result });
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
@@ -71,9 +73,15 @@ const EspComponent = Vue.component('esp-form', {
     },
     handleProfileSelect(profile) {
       this.selectedProfile = profile;
-      this.fetchData();
-      this.checkIfAlreadySendMailWithProfile();
-      this.openModal();
+      this.fetchData().then(() => {
+        this.checkIfAlreadySendMailWithProfile();
+        this.openModal();
+      });
+
+    },
+    preventMouseLeave(event) {
+      event.stopPropagation();
+      event.preventDefault();
     },
     checkIfAlreadySendMailWithProfile() {
       if(!this.selectedProfile?.id || !this.espIds) {
@@ -82,11 +90,13 @@ const EspComponent = Vue.component('esp-form', {
       this.type = SEND_MODE.CREATION;
       this.espIds.forEach((espId) => {
           if (espId?.profileId === this.selectedProfile?.id) {
-            console.log('found match espIds')
-            this.campaignId = espId.mailCampaignId.toString()
+            console.log('found match espIds');
+            this.campaignId = espId.mailCampaignId.toString();
             this.type = SEND_MODE.EDIT
           }
       });
+
+      console.log({ mailCampaign: this.campaignId });
     },
     openModal() {
       this.modalInstance?.open();
@@ -95,11 +105,11 @@ const EspComponent = Vue.component('esp-form', {
       this.modalInstance?.close();
     },
     submitEsp(profile) {
-
       if(!this.vm?.metadata?.url?.sendCampaignMail) {
         return;
       }
 
+      this.loading = true;
       const unprocessedHtml = this.vm.exportHTML();
 
       axios.post(this.vm.metadata.url.sendCampaignMail, {
@@ -107,6 +117,7 @@ const EspComponent = Vue.component('esp-form', {
         actionType: this.type,
         profileId: profile?.id,
         type: profile.type,
+        campaignId: this.campaignId,
         espSendingMailData: {
           campaignMailName: profile.campaignMailName,
           subject: profile.subject,
@@ -115,6 +126,7 @@ const EspComponent = Vue.component('esp-form', {
         .then((response)=> {
           // handle success
           this.vm.notifier.success(this.vm.t('success-esp-send'));
+          this.loading = false;
           this.closeModal();
         }).catch((error) => {
         // handle error

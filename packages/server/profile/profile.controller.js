@@ -1,9 +1,10 @@
-import { ERROR_CODES } from '../constant/error-codes';
+const ERROR_CODES = require('../constant/error-codes');
 const asyncHandler = require('express-async-handler');
 const profileService = require('./profile.service');
 const mailingService = require('../mailing/mailing.service');
 const groupService = require('../group/group.service');
-const { NotFound } = require('http-errors');
+const MODE_TYPE = require('../constant/mode-type');
+const { NotFound, BadRequest } = require('http-errors');
 
 module.exports = {
   createProfile: asyncHandler(createProfile),
@@ -97,18 +98,42 @@ async function updateProfile(req, res) {
 async function sendCampaignMail(req, res) {
   const { user, body } = req;
   const { mailingId } = req.params;
-  const { espSendingMailData, html, profileId, type } = body;
+  const {
+    espSendingMailData,
+    html,
+    profileId,
+    type,
+    actionType,
+    campaignId,
+  } = body;
+
+  if (actionType === MODE_TYPE.EDIT && !campaignId) {
+    throw new BadRequest(ERROR_CODES.CAMPAIGN_ID_MUST_BE_DEFINED);
+  }
 
   await mailingService.validateMailExist(mailingId);
+  let response = null;
 
-  const response = await profileService.sendCampaignMail({
-    user,
-    espSendingMailData,
-    profileId,
-    html,
-    mailingId,
-    type,
-  });
+  if (actionType === MODE_TYPE.EDIT) {
+    response = await profileService.updateCampaignMail({
+      user,
+      espSendingMailData,
+      profileId,
+      html,
+      mailingId,
+      type,
+      campaignId,
+    });
+  } else {
+    response = await profileService.sendCampaignMail({
+      user,
+      espSendingMailData,
+      profileId,
+      html,
+      mailingId,
+      type,
+    });
+  }
 
   res.json(response);
 }

@@ -11,6 +11,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
+    loading: { type: Boolean, default: false},
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
     selectedProfile: { type: Object, default: () => ({}) },
@@ -26,6 +27,23 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
         <h2>{{vm.t('export-to')}} {{selectedProfile.name}}</h2>
       </div>
       <form class="col s12">
+        <div class="row">
+          <div class="col s12 m5">
+            <div class="card-panel orange lighten-5">
+              <div class="row">
+                <div class="col s1">
+                  <i class="material-icons">warning</i>
+                </div>
+                <div class="col s11">
+                  <span>I am a very simple card. I am good at containing small bits of information.
+                  I am convenient because I require little markup to use effectively. I am similar to what is called a panel in other frameworks.
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
         <div class="row" :style="style.mb0">
           <div class="input-field col s12" :style="style.mb0">
             <input
@@ -37,7 +55,11 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               :placeholder="vm.t('name')"
               @input="$v.profile.campaignMailName.$touch()"
               @blur="$v.profile.campaignMailName.$touch()"
-              class="validate">
+              :class="[
+                    'validate',
+                    $v.profile.campaignMailName.required ? 'valid' : 'invalid',
+                ]"
+            >
             <label for="name">{{ vm.t('name') }}</label>
             <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t('name-required')"></span>
 
@@ -76,10 +98,14 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               :placeholder="vm.t('subject')"
               name="subject"
               required
+              :class="[
+                    'validate',
+                    $v.profile.subject.required ? 'valid' : 'invalid',
+                ]"
               class="validate"
             >
             <label for="subject" class="active">{{ vm.t('subject') }}</label>
-            <span class="helper-text" v-if="!$v.profile.subject.required" :data-error="vm.t('subject-required')"></span>
+            <span class="helper-text" :data-error="vm.t('subject-required')"></span>
 
           </div>
         </div>
@@ -107,11 +133,14 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
         </button>
         <button
           @click.prevent="onSubmit"
+          :disabled="loading"
           :style="[style.mb0, style.mt0]"
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          {{ vm.t('submit') }}
+          <span v-if="loading">{{ vm.t('exporting') }} ...</span>
+          <span v-else>{{ vm.t('submit') }}<i class="material-icons">send</i></span>
+
         </button>
   </div>
 </div>

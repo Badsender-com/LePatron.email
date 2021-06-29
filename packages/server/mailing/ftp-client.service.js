@@ -37,10 +37,10 @@ class FTPClient {
     fs.mkdirSync(tmpDir);
 
     try {
-      const { socket } = await this.getProxy();
+      // const { socket } = await this.getProxy();
 
       await client.connect({
-        sock: socket,
+        // sock: socket,
         ...self.settings,
       });
       await client.mkdir(folderPath, true);
