@@ -67,6 +67,7 @@ const EspComponent = Vue.component('esp-form', {
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
+            console.log({espIdsError: error});
             this.vm.notifier.error(this.vm.t('error-server'));
         });
     },
