@@ -49,10 +49,19 @@ module.exports = {
   subject: 'Subject',
   name: 'Name',
   'export-to': 'Export to',
+  exporting: 'Exporting ...',
+  loading: 'Loading',
   submit: 'Submit',
+  export: 'Export',
   close: 'Close',
   // profile form validation
+  'warning-esp-message':
+    'Any update will override the mail campaign in the email service provider.',
   'name-required': 'Name is required',
   'subject-required': 'Subject is required',
   'success-esp-send': 'Mail exported successfully',
+  'error-server-400':
+    'Esp parameters invalids, check if sender mail matches  API key.',
+  'error-server-402': 'Export fail, provider require payment',
+  'error-server-500': 'An error has occured while calling server api',
 };

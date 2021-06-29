@@ -25,6 +25,7 @@ module.exports = {
   getProfile,
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
+  updateCampaignMail,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -99,6 +100,58 @@ async function updateProfile({
       additionalApiData,
     }
   );
+}
+
+async function updateCampaignMail({
+  user,
+  espSendingMailData,
+  profileId,
+  html,
+  mailingId,
+  campaignId,
+  type,
+}) {
+  const { subject, campaignMailName } = espSendingMailData;
+  const profile = await findOne(profileId);
+
+  const {
+    apiKey,
+    type: profileType,
+    name,
+    _company,
+    additionalApiData,
+  } = profile;
+
+  if (profileType !== type) {
+    throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
+  }
+
+  const espProvider = new EspProvider({
+    apiKey,
+    type,
+    name,
+    _company,
+    additionalApiData,
+  });
+
+  const campaignMailData = {
+    ...additionalApiData,
+    subject,
+    name: campaignMailName,
+  };
+
+  const espMailCampaignId = await espProvider.updateCampaignMail({
+    user,
+    html,
+    mailingId,
+    campaignMailData,
+    campaignId,
+  });
+
+  return {
+    profileId,
+    mailCampaignId: espMailCampaignId,
+  };
 }
 
 async function sendCampaignMail({
@@ -233,6 +286,7 @@ async function getProfile({ profileId }) {
 }
 
 async function getCampaignMail({ campaignMailId, profileId }) {
+  console.log('retrieving Campaign Mail');
   const profile = await findOne(profileId);
 
   const { apiKey, type, name, _company, additionalApiData } = profile;

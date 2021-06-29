@@ -95,7 +95,7 @@ export default {
       <template #item.actions="{ item }">
         <profiles-actions-dropdown>
           <profiles-actions-dropdown-item
-            icon="delete"
+            icon="edit"
             :to="`/groups/${groupId}/profiles/${item.id}`"
           >
             {{ $t('global.edit') }}

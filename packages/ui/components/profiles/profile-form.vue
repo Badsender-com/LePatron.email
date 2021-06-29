@@ -24,10 +24,6 @@ export default {
           text: 'SendinBlue',
           value: ESP_TYPES.SENDINBLUE,
         },
-        {
-          text: 'Actito',
-          value: ESP_TYPES.ACTITO,
-        },
       ],
       selectedEsp: ESP_TYPES.SENDINBLUE,
       loading: false,
