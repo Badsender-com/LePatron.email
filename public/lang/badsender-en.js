@@ -44,10 +44,11 @@ module.exports = {
 
   // Profile form esp
   'sender-name': 'Sender name',
-  'sender-mail': 'Sender mail',
-  replyto: 'Reply to',
+  'sender-mail': 'Sender email address',
+  replyto: 'Reply email address',
   subject: 'Subject',
   name: 'Name',
+  emailName: 'Email name',
   'export-to': 'Export to',
   exporting: 'Exporting ...',
   loading: 'Loading',
