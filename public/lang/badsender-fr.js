@@ -31,7 +31,7 @@ module.exports = {
   'Fake image editor': '',
   '<p>Fake image editor</p>': '',
   // download button
-  'dl-btn-regular': 'Téléchargement régulier',
+  'dl-btn-regular': 'Téléchargement local',
   'dl-btn-cdn': 'images ICOU',
   // Crop interface
   'rotate-left': 'Incliner à gauche',
@@ -45,10 +45,11 @@ module.exports = {
 
   // Profile form esp
   'sender-name': 'Nom de l\'expéditeur',
-  'sender-mail': 'Mail de l\'expéditeur',
-  replyto: 'Répondre à',
-  subject: 'Sujet',
+  'sender-mail': 'Adresse email de l\'expéditeur',
+  replyto: 'Adresse email de réponse',
+  subject: 'Objet de l\'email',
   name: 'Nom',
+  emailName: 'Nom de l\'email',
   'export-to': 'Exporter vers',
   exporting: 'Exportation en cours ...',
   loading: 'Loading',
@@ -58,8 +59,8 @@ module.exports = {
   'warning-esp-message':
     'Toute mise à jour remplacera le mail dans le fournisseur de services de messagerie',
   // profile form validation
-  'name-required': 'Le nom est requis',
-  'subject-required': 'Le sujet est requis',
+  'name-required': 'Le nom de l\'email est requis',
+  'subject-required': 'L\'Objet de l\'email est requis',
   'success-esp-send': 'Mail exporté avec succès',
   'error-server-400':
     'Paramètres Esp invalides, vérifiez si le courrier de l\'expéditeur correspond à la clé API',

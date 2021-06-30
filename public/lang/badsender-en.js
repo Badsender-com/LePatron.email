@@ -44,10 +44,11 @@ module.exports = {
 
   // Profile form esp
   'sender-name': 'Sender name',
-  'sender-mail': 'Sender mail',
-  replyto: 'Reply to',
+  'sender-mail': 'Sender email address',
+  replyto: 'Reply email address',
   subject: 'Subject',
   name: 'Name',
+  emailName: 'Email name',
   'export-to': 'Export to',
   exporting: 'Exporting ...',
   loading: 'Loading',
@@ -57,7 +58,7 @@ module.exports = {
   // profile form validation
   'warning-esp-message':
     'Any update will override the mail campaign in the email service provider.',
-  'name-required': 'Name is required',
+  'name-required': 'Email name is required',
   'subject-required': 'Subject is required',
   'success-esp-send': 'Mail exported successfully',
   'error-server-400':

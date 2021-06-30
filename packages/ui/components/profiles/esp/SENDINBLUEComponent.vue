@@ -100,7 +100,7 @@ export default {
           <v-text-field
             id="name"
             v-model="profile.name"
-            :label="$t('global.name')"
+            :label="$t('global.profileName')"
             name="name"
             required
             :error-messages="nameErrors"
