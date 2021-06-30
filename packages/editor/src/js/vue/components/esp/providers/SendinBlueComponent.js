@@ -50,7 +50,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               type="text"
               name="name"
               required
-              :placeholder="vm.t('name')"
+              :placeholder="vm.t('emailName')"
               @input="$v.profile.campaignMailName.$touch()"
               @blur="$v.profile.campaignMailName.$touch()"
               :class="[
@@ -58,7 +58,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
                     $v.profile.campaignMailName.required ? 'valid' : 'invalid',
                 ]"
             >
-            <label for="name">{{ vm.t('name') }}</label>
+            <label for="name">{{ vm.t('emailName') }}</label>
             <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t('name-required')"></span>
 
           </div>
