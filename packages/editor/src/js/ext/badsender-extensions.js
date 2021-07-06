@@ -15,6 +15,7 @@ var serverStorage = require('./badsender-server-storage');
 var editTitle = require('./badsender-edit-title');
 var gallery = require('./badsender-gallery');
 var removeImage = require('./badsender-remove-gallery-image');
+var espProfiles = require('./badsender-esp-profiles');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
 
@@ -45,6 +46,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(editorIcon(opts));
   customExtensions.push(editTitle);
   customExtensions.push(gallery(opts));
+  customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);

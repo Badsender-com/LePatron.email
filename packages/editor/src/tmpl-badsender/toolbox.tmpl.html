@@ -1,5 +1,8 @@
 <div id="tooltabs" class="tabs_horizontal button_color" data-bind="tabs: { active: $root.selectedTool }">
-
+  <!-- VueJs for the esp component-->
+  <div id="espModal">
+    <app-vue />
+  </div>
   <div class="tooltabs__top-bar">
     <a class="tooltabs__top-logo" href="/" data-bind="attr: { href: $root.logoUrl }">
       <img data-bind="attr: { src: $root.logoPath, alt: $root.logoAlt }" alt="mosaico"  />

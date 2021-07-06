@@ -15,10 +15,6 @@ const EspComponent = Vue.component('esp-form', {
   },
   template: `
     <div>
-      <profile-list
-        :select-profile="handleProfileSelect"
-        :vm="vm"
-      ></profile-list>
       <div class="material-css">
         <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
             <component
@@ -59,6 +55,12 @@ const EspComponent = Vue.component('esp-form', {
     };
     this.modalInstance = M.Modal.init(modalRef, options);
     this.fetchData();
+    this.subscriptions = [
+      this.vm.selectedProfile.subscribe(this.handleProfileSelect)
+    ];
+  },
+  beforeDestroy() {
+    this.subscriptions.forEach(subscription => subscription.dispose());
   },
   methods: {
     fetchData() {
@@ -67,7 +69,6 @@ const EspComponent = Vue.component('esp-form', {
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
-            console.log({espIdsError: error});
             this.vm.notifier.error(this.vm.t('error-server'));
         });
     },
@@ -77,7 +78,6 @@ const EspComponent = Vue.component('esp-form', {
         this.checkIfAlreadySendMailWithProfile();
         this.openModal();
       });
-
     },
     checkIfAlreadySendMailWithProfile() {
       if(!this.selectedProfile?.id || !this.espIds) {
