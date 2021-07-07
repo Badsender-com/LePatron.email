@@ -864,12 +864,8 @@ var generateEditors = function (
   baseThreshold
 ) {
   var defs = templateDef._defs;
-
-  console.log({ defs });
   var templateName = templateDef.templateName;
   var blocks = templateDef._blocks;
-
-  console.log({ blocks });
   var idx;
   var blockDefs = [];
   for (idx = 0; idx < blocks.length; idx++) {
