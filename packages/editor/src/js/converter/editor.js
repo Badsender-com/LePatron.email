@@ -251,19 +251,6 @@ var _propEditor = function (
     model !== null &&
     typeof model._usecount === 'undefined'
   ) {
-    if (typeof console.debug == 'function')
-      console.debug(
-        'Ignoring',
-        path,
-        'property because it is not used by the template',
-        'prop:',
-        prop,
-        'type:',
-        editType,
-        'level:',
-        level,
-        withBindingProvider._templateName
-      );
     return '';
   }
 

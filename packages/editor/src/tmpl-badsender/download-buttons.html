@@ -94,10 +94,18 @@
     >
       DOWNLOAD FTP
     </a>
+      <div data-bind="foreach: profiles">
+        <a href="javascript:void(0)" data-bind="
+          click: $root.setSelectedProfile.bind($index()),
+          button: {
+          disabled: !$root.download.enabled(),
+          label: name,
+        }">
+          Link
+        </a>
+      </div>
     <!-- /ko -->
-    <div id="toolVue">
-      <app-vue />
-    </div>
+
   </aside>
   <!-- /ko -->
 </form>

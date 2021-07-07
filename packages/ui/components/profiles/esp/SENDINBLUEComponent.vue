@@ -40,9 +40,6 @@ export default {
           required,
           email,
         },
-        replyTo: {
-          required,
-        },
         type: {},
       },
     };
@@ -112,7 +109,7 @@ export default {
       <v-row>
         <v-col cols="12">
           <v-text-field
-            id="name"
+            id="apiKey"
             v-model="profile.apiKey"
             :label="$t('global.apiKey')"
             name="apiKey"
@@ -126,7 +123,7 @@ export default {
       <v-row>
         <v-col cols="12">
           <v-text-field
-            id="name"
+            id="senderName"
             v-model="profile.senderName"
             :label="$t('profiles.senderName')"
             name="senderName"
@@ -140,7 +137,7 @@ export default {
       <v-row>
         <v-col cols="12">
           <v-text-field
-            id="name"
+            id="senderMail"
             v-model="profile.senderMail"
             :label="$t('profiles.senderMail')"
             name="senderMail"
@@ -154,7 +151,7 @@ export default {
       <v-row>
         <v-col cols="12">
           <v-text-field
-            id="name"
+            id="replyTo"
             v-model="profile.replyTo"
             :label="$t('profiles.replyTo')"
             name="replyTo"
