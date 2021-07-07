@@ -19,6 +19,7 @@ export default {
   data() {
     return {
       useSamlAuthentication: null,
+      isReadOnlyActive: true,
     };
   },
   computed: {
@@ -109,6 +110,9 @@ export default {
       !this.$v.group[fieldName].required &&
         errors.push(this.$t('global.errors.required'));
       return errors;
+    },
+    disableReadOnlyAttribute() {
+      this.isReadOnlyActive = false;
     },
     onSubmit() {
       this.$v.$touch();
@@ -220,10 +224,13 @@ export default {
                   <v-text-field
                     id="ftpUsername"
                     v-model="localModel.ftpUsername"
+                    autocomplete="username"
                     :label="$t('forms.group.username')"
                     name="ftpUsername"
                     :error-messages="requiredErrors(`ftpUsername`)"
                     :disabled="disabled"
+                    :readonly="isReadOnlyActive"
+                    @focus="disableReadOnlyAttribute"
                     @input="$v.group.ftpUsername.$touch()"
                     @blur="$v.group.ftpUsername.$touch()"
                   />
@@ -233,11 +240,14 @@ export default {
                   <v-text-field
                     id="ftpPassword"
                     v-model="localModel.ftpPassword"
+                    :readonly="isReadOnlyActive"
+                    autocomplete="username"
                     type="password"
                     :label="$t('global.password')"
                     name="ftpPassword"
                     :error-messages="requiredErrors(`ftpPassword`)"
                     :disabled="disabled"
+                    @focus="disableReadOnlyAttribute"
                     @input="$v.group.ftpPassword.$touch()"
                     @blur="$v.group.ftpPassword.$touch()"
                   />

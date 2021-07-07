@@ -62,6 +62,28 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
             <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t('name-required')"></span>
 
           </div>
+        </div>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="subject"
+              type="text"
+              v-model="profile.subject"
+              :placeholder="vm.t('subject')"
+              name="subject"
+              required
+              :class="[
+                    'validate',
+                    $v.profile.subject.required ? 'valid' : 'invalid',
+                ]"
+              class="validate"
+            >
+            <label for="subject" class="active">{{ vm.t('subject') }}</label>
+            <span class="helper-text" :data-error="vm.t('subject-required')"></span>
+
+          </div>
+        </div>
+        <div class="row" :style="style.mb0">
           <div class="input-field col s12" :style="style.mb0">
             <input
               id="sender-name"
@@ -85,26 +107,6 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               name="senderMail"
             >
             <label for="sender-mail" class="active">{{ vm.t('sender-mail') }}</label>
-          </div>
-        </div>
-        <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
-            <input
-              id="subject"
-              type="text"
-              v-model="profile.subject"
-              :placeholder="vm.t('subject')"
-              name="subject"
-              required
-              :class="[
-                    'validate',
-                    $v.profile.subject.required ? 'valid' : 'invalid',
-                ]"
-              class="validate"
-            >
-            <label for="subject" class="active">{{ vm.t('subject') }}</label>
-            <span class="helper-text" :data-error="vm.t('subject-required')"></span>
-
           </div>
         </div>
         <div class="row" :style="style.mb0">
