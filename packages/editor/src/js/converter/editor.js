@@ -251,19 +251,6 @@ var _propEditor = function (
     model !== null &&
     typeof model._usecount === 'undefined'
   ) {
-    if (typeof console.debug == 'function')
-      console.debug(
-        'Ignoring',
-        path,
-        'property because it is not used by the template',
-        'prop:',
-        prop,
-        'type:',
-        editType,
-        'level:',
-        level,
-        withBindingProvider._templateName
-      );
     return '';
   }
 
@@ -877,8 +864,12 @@ var generateEditors = function (
   baseThreshold
 ) {
   var defs = templateDef._defs;
+
+  console.log({ defs });
   var templateName = templateDef.templateName;
   var blocks = templateDef._blocks;
+
+  console.log({ blocks });
   var idx;
   var blockDefs = [];
   for (idx = 0; idx < blocks.length; idx++) {
