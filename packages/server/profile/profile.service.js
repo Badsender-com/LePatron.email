@@ -1,6 +1,7 @@
 const EspProvider = require('../esp/esp.service');
 const { Profiles } = require('../common/models.common');
 const { Types } = require('mongoose');
+const ESP_CONTENT_TYPE = require('../constant/content-esp-type.js');
 
 const ERROR_CODES = require('../constant/error-codes.js');
 
@@ -16,7 +17,7 @@ const groupService = require('../group/group.service.js');
 module.exports = {
   createProfile,
   updateProfile,
-  sendCampaignMail,
+  sendEspCampaign,
   findAllByGroup,
   deleteProfile,
   findOne,
@@ -25,7 +26,7 @@ module.exports = {
   getProfile,
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
-  updateCampaignMail,
+  updateEspCampaign,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -102,7 +103,7 @@ async function updateProfile({
   );
 }
 
-async function updateCampaignMail({
+async function updateEspCampaign({
   user,
   espSendingMailData,
   profileId,
@@ -122,6 +123,8 @@ async function updateCampaignMail({
     additionalApiData,
   } = profile;
 
+  const { contentSendType } = additionalApiData;
+
   if (profileType !== type) {
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
@@ -140,21 +143,30 @@ async function updateCampaignMail({
     name: campaignMailName,
   };
 
-  const espMailCampaignId = await espProvider.updateCampaignMail({
-    user,
-    html,
-    mailingId,
-    campaignMailData,
-    campaignId,
-  });
+  const espCampaignId =
+    contentSendType === ESP_CONTENT_TYPE.MAIL
+      ? await espProvider.updateCampaignMail({
+          user,
+          html,
+          mailingId,
+          campaignMailData,
+          campaignId,
+        })
+      : await espProvider.updateTemplate({
+          user,
+          html,
+          mailingId,
+          campaignMailData,
+          campaignId,
+        });
 
   return {
     profileId,
-    mailCampaignId: espMailCampaignId,
+    campaignId: espCampaignId,
   };
 }
 
-async function sendCampaignMail({
+async function sendEspCampaign({
   user,
   espSendingMailData,
   profileId,
@@ -193,21 +205,31 @@ async function sendCampaignMail({
     name: campaignMailName,
   };
 
-  const espMailCampaignId = await espProvider.createCampaignMail({
-    user,
-    html,
-    mailingId,
-    campaignMailData,
-  });
+  const { contentSendType } = additionalApiData;
+
+  const espCampaignId =
+    contentSendType === ESP_CONTENT_TYPE.MAIL
+      ? await espProvider.createCampaignMail({
+          user,
+          html,
+          mailingId,
+          campaignMailData,
+        })
+      : await espProvider.createTemplate({
+          user,
+          html,
+          mailingId,
+          campaignMailData,
+        });
 
   await mailingService.updateMailEspIds(mailingId, {
     profileId,
-    mailCampaignId: espMailCampaignId,
+    campaignId: espCampaignId,
   });
 
   return {
     profileId,
-    mailCampaignId: espMailCampaignId,
+    campaignId: espCampaignId,
   };
 }
 
@@ -285,11 +307,13 @@ async function getProfile({ profileId }) {
   return await findOne(profileId);
 }
 
-async function getCampaignMail({ campaignMailId, profileId }) {
+async function getCampaignMail({ campaignId, profileId }) {
   console.log('retrieving Campaign Mail');
   const profile = await findOne(profileId);
 
   const { apiKey, type, name, _company, additionalApiData } = profile;
+
+  const { contentSendType } = additionalApiData;
 
   const espProvider = new EspProvider({
     apiKey,
@@ -299,14 +323,27 @@ async function getCampaignMail({ campaignMailId, profileId }) {
     additionalApiData,
   });
 
-  const campaignMailResponse = await espProvider.getCampaignMail({
-    campaignMailId,
-  });
+  let campaignMailResponse = null;
+
+  if (contentSendType === ESP_CONTENT_TYPE.MAIL) {
+    campaignMailResponse = await espProvider.getCampaignMail({
+      campaignId,
+    });
+  } else {
+    campaignMailResponse = await espProvider.getTemplate({
+      campaignId,
+    });
+  }
+  const { additionalApiData: additionalApiDataFromESP } = campaignMailResponse;
 
   return {
     ...campaignMailResponse,
     id: profileId,
     type,
+    additionalApiData: {
+      ...additionalApiDataFromESP,
+      contentSendType,
+    },
   };
 }
 

@@ -3,9 +3,7 @@ import {required} from "vuelidate/lib/validators";
 var Vue = require('vue/dist/vue.common');
 var { SEND_MODE } = require('../../../constant/send-mode');
 var { ESP_TYPE } = require('../../../constant/esp-type');
-var { getCampaignDetail, getProfileDetail } = require('../../../utils/apis');
 var  { validationMixin } = require('vuelidate');
-var axios = require('axios');
 
 const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
   props: {
@@ -15,6 +13,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
     selectedProfile: { type: Object, default: () => ({}) },
+    fetchedProfile: {type: Object, default: () => ({})},
     campaignId: { type: String, default: null },
     type: { type: Number, default: SEND_MODE.CREATION  },
   },
@@ -50,7 +49,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               type="text"
               name="name"
               required
-              :placeholder="vm.t('emailName')"
+              :placeholder="vm.t(nameLabelText)"
               @input="$v.profile.campaignMailName.$touch()"
               @blur="$v.profile.campaignMailName.$touch()"
               :class="[
@@ -58,8 +57,8 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
                     $v.profile.campaignMailName.required ? 'valid' : 'invalid',
                 ]"
             >
-            <label for="name">{{ vm.t('emailName') }}</label>
-            <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t('name-required')"></span>
+            <label for="name">{{ vm.t(nameLabelText) }}</label>
+            <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t(nameRequiredText)"></span>
 
           </div>
         </div>
@@ -69,7 +68,7 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
               id="subject"
               type="text"
               v-model="profile.subject"
-              :placeholder="vm.t('subject')"
+              :placeholder="vm.t(subjectLabelText)"
               name="subject"
               required
               :class="[
@@ -78,8 +77,8 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
                 ]"
               class="validate"
             >
-            <label for="subject" class="active">{{ vm.t('subject') }}</label>
-            <span class="helper-text" :data-error="vm.t('subject-required')"></span>
+            <label for="subject" class="active">{{ vm.t(subjectLabelText) }}</label>
+            <span class="helper-text" :data-error="vm.t(subjectRequiredText)"></span>
 
           </div>
         </div>
@@ -143,35 +142,36 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
         </button>
   </div>
 </div>
-
       `,
-  data: () => ({
-    profile: {
-      campaignMailName: '',
-      senderName: '',
-      senderMail: '',
-      replyTo: '',
-      subject: '',
-      type: ESP_TYPE.SENDINBLUE,
-    },
-    style: {
-      mb0:{
-        marginBottom: 0,
+  data() {
+    return {
+      profile: {
+        campaignMailName: this.fetchedProfile?.campaignMailName ?? '',
+        senderName: this.fetchedProfile?.senderName ?? '',
+        senderMail: this.fetchedProfile?.senderMail ?? '',
+        replyTo: this.fetchedProfile?.replyTo ?? '',
+        subject: this.fetchedProfile?.subject ?? '',
+        type: ESP_TYPE.SENDINBLUE,
       },
-      mt0:{
-        marginTop: 0,
-      },
-      pl4:{
-        paddingLeft: '40px',
-      },
-      floatLeft: {
-        float: 'left'
-      },
-      colorOrange:{
-        color: '#f57c00'
+      style: {
+        mb0:{
+          marginBottom: 0,
+        },
+        mt0:{
+          marginTop: 0,
+        },
+        pl4:{
+          paddingLeft: '40px',
+        },
+        floatLeft: {
+          float: 'left'
+        },
+        colorOrange:{
+          color: '#f57c00'
+        }
       }
     }
-  }),
+  },
   validations() {
     return {
       profile: {
@@ -185,59 +185,27 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
     }
   },
   mounted() {
-    if(!!this.vm) {
-      this.profile.campaignMailName = this.vm.creationName();
-    }
-    this.fetchData();
-  },
-  watch: {
-    type: function(newVal, oldVal) {
-      this.fetchData();
-    }
+    this.profile = this.fetchedProfile;
+    M.updateTextFields();
   },
   computed: {
     isEditMode() {
       return this.type === SEND_MODE.EDIT
     },
+    nameLabelText() {
+      return this.contentSendTypeLowerCase() + 'Name'
+    },
+    subjectLabelText() {
+      return this.contentSendTypeLowerCase() + 'Subject'
+    },
+    nameRequiredText() {
+      return this.contentSendTypeLowerCase() + '-name-required'
+    },
+    subjectRequiredText() {
+      return this.contentSendTypeLowerCase() + '-subject-required'
+    }
   },
   methods: {
-    fetchData() {
-      let getProfileApi = this.type === SEND_MODE.CREATION ?
-        getProfileDetail({ profileId: this.selectedProfile?.id })
-        : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });
-
-      axios.get(getProfileApi)
-        .then( (response) => {
-          // handle success
-
-          const profileResult = response?.data?.result;
-          const {
-            type,
-            id,
-            additionalApiData: {
-              senderName,
-              senderMail,
-              replyTo
-            },
-            subject
-          } = profileResult;
-
-          this.profile = {
-            campaignMailName: this.type === SEND_MODE.CREATION ? this.profile.campaignMailName : profileResult.name,
-            senderName,
-            senderMail,
-            replyTo,
-            type,
-            subject,
-            id
-          };
-          M.updateTextFields();
-        }).catch((error) => {
-        // handle error
-        console.log({ profileApiError: error})
-        this.vm.notifier.error(this.vm.t('error-server'));
-      });
-    },
     onSubmit() {
       M.updateTextFields();
       this.$v.$touch();
@@ -246,6 +214,9 @@ const SENDINBLUEComponent = Vue.component('SendinBlueComponent', {
       }
 
       this.$emit('submit', this.profile);
+    },
+    contentSendTypeLowerCase() {
+      return this.fetchedProfile?.contentSendType?.toString()?.toLowerCase() ?? 'mail';
     },
   },
 })

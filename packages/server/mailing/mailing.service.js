@@ -125,10 +125,11 @@ function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
 async function updateMailEspIds(mailingId, espId) {
   await validateMailExist(mailingId);
 
-  if (!espId?.profileId || !espId?.mailCampaignId) {
+  if (!espId?.profileId || !espId?.campaignId) {
     throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ESP_ID);
   }
-  const mailing = findOne(mailingId);
+
+  const mailing = await findOne(mailingId);
 
   const mailEspIds = [...(mailing?.espIds || [])];
   mailEspIds.push(espId);

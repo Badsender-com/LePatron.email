@@ -1,7 +1,8 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { email, required } from 'vuelidate/lib/validators';
-
+import { ESP_TYPES } from '~/helpers/constants/esp-type';
+import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 export default {
   name: 'SENDINGBLUEComponent',
   mixins: [validationMixin],
@@ -13,15 +14,28 @@ export default {
   data() {
     return {
       submitStatus: null,
+      possibleContentSendType: [
+        {
+          text: 'Mail',
+          value: CONTENT_ESP_TYPES.MAIL,
+        },
+        {
+          text: 'Template',
+          value: CONTENT_ESP_TYPES.TEMPLATE,
+        },
+      ],
       profile: {
         id: this.profileData.id ?? '',
         name: this.profileData.name ?? '',
         apiKey: this.profileData.apiKey ?? '',
         senderName: this.profileData.senderName ?? '',
         senderMail: this.profileData.senderMail ?? '',
+        contentSendType:
+          this.profileData.contentSendType ?? CONTENT_ESP_TYPES.MAIL,
         replyTo: this.profileData.replyTo ?? '',
-        type: 'SENDINBLUE',
+        type: ESP_TYPES.SENDINBLUE,
       },
+      contentSendTypeSelect: null,
     };
   },
   validations() {
@@ -36,10 +50,12 @@ export default {
         senderName: {
           required,
         },
+        contentSendType: {},
         senderMail: {
           required,
           email,
         },
+        replyTo: {},
         type: {},
       },
     };
@@ -117,6 +133,16 @@ export default {
             :error-messages="apiKeyErrors"
             @input="$v.profile.apiKey.$touch()"
             @blur="$v.profile.apiKey.$touch()"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-select
+            v-model="profile.contentSendType"
+            name="contentSendType"
+            :items="possibleContentSendType"
+            :label="$t('profiles.contentSendType')"
           />
         </v-col>
       </v-row>

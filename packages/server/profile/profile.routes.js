@@ -24,7 +24,7 @@ router.get(
   profiles.profileListEditor
 );
 router.get(
-  '/:profileId/campaign-mail/:campaignMailId',
+  '/:profileId/campaign-mail/:campaignId',
   GUARD_USER,
   profiles.getCampaignMail
 );
