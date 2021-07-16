@@ -33,7 +33,6 @@ const ProfileListComponent = Vue.component('profile-list', {
           this.profiles = response?.data?.result;
         }).catch((error) => {
         // handle error
-          console.log({profileListError: error});
           vm.notifier.error(this.vm.t('error-server'));
         });
     }

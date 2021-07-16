@@ -46,9 +46,10 @@ module.exports = {
   'sender-name': 'Sender name',
   'sender-mail': 'Sender email address',
   replyto: 'Reply email address',
-  subject: 'Subject',
+  mailSubject: 'Subject',
+  templateSubject: 'Subject',
   name: 'Name',
-  emailName: 'Email name',
+  mailName: 'Mail name',
   'export-to': 'Export to',
   exporting: 'Exporting ...',
   loading: 'Loading',
@@ -58,9 +59,12 @@ module.exports = {
   // profile form validation
   'warning-esp-message':
     'Any update will override the mail campaign in the email service provider.',
-  'name-required': 'Email name is required',
-  'subject-required': 'Subject is required',
-  'success-esp-send': 'Mail exported successfully',
+  'mail-name-required': 'Mail name is required',
+  'template-name-required': 'Template name is required',
+  'mail-subject-required': 'Subject is required',
+  'template-subject-required': 'Subject is required',
+  'mail-success-esp-send': 'Mail exported successfully',
+  'template-success-esp-send': 'Template exported successfully',
   'error-server-400':
     'Esp parameters invalids, check if sender mail matches  API key.',
   'error-server-402': 'Export fail, provider require payment',

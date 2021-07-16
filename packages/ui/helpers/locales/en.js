@@ -285,6 +285,7 @@ export default {
     actions: 'Actions',
     edit: 'Edit',
     delete: 'Delete',
+    contentSendType: 'The content type',
     warningNoFTP:
       'You cannot add profile without having configured FTP server.',
     emptyState: 'No profile available',

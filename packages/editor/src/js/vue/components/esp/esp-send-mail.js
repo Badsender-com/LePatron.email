@@ -3,6 +3,7 @@ var { SENDINBLUEComponent } = require('./providers/SendinBlueComponent');
 var { ProfileListComponent } = require('../esp/profile-list');
 var { getEspIds } = require('../../utils/apis');
 var { SEND_MODE } = require('../../constant/send-mode');
+var { getCampaignDetail, getProfileDetail } = require('../../../vue/utils/apis');
 var axios = require('axios');
 
 const EspComponent = Vue.component('esp-form', {
@@ -17,17 +18,30 @@ const EspComponent = Vue.component('esp-form', {
     <div>
       <div class="material-css">
         <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
+          <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="loading">
+            <div class="preloader-wrapper small active">
+                <div class="spinner-layer spinner-green-only">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                  <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                  <div class="circle"></div>
+                </div>
+                </div>
+              </div>
+          </div>
             <component
-              :loading="loading"
+              :loading="loadingExport"
               :key="selectedProfile.id"
               :vm="vm"
               :type="type"
+              :fetched-profile="profile"
               :is="espComponent"
-              v-if="!!selectedProfile"
+              v-else-if="!!selectedProfile && !!profile.id"
               :selectedProfile="selectedProfile"
               :campaignId="campaignId"
               :closeModal="closeModal"
-              :campaignMailName="''"
               @submit="submitEsp"
             >
             </component>
@@ -40,12 +54,14 @@ const EspComponent = Vue.component('esp-form', {
     espComponent: 'SendinBlueComponent',
     mailingId: null,
     loading: false,
+    loadingExport: false,
     selectedProfile: null,
     dialog: false,
     modalInstance: null,
     type: SEND_MODE.CREATION,
     campaignId: null,
-    espIds: []
+    espIds: [],
+    profile: {}
   }),
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
@@ -64,18 +80,66 @@ const EspComponent = Vue.component('esp-form', {
   },
   methods: {
     fetchData() {
+      this.loading = false;
       return axios.get(getEspIds({mailingId: this.mailingId }))
           .then((response) => {
+            this.loading = false;
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
             this.vm.notifier.error(this.vm.t('error-server'));
+        }).finally(()=> {
+          this.loading = true;
         });
+    },
+    fetchProfileData(message) {
+      this.loading = true;
+      let getProfileApi = this.type === SEND_MODE.CREATION ?
+        getProfileDetail({ profileId: this.selectedProfile?.id })
+        : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });
+
+      axios.get(getProfileApi)
+        .then( (response) => {
+          // handle success
+
+          const profileResult = response?.data?.result;
+
+          const {
+            type,
+            id,
+            additionalApiData: {
+              senderName,
+              senderMail,
+              replyTo,
+              contentSendType
+            },
+            subject
+          } = profileResult;
+
+          this.profile = {
+            campaignMailName: this.type === SEND_MODE.CREATION ? this.vm.creationName() : profileResult.name,
+            contentSendType: contentSendType,
+            senderName,
+            senderMail,
+            replyTo,
+            type,
+            subject,
+            id
+          };
+
+          M.updateTextFields();
+        }).catch((error) => {
+        // handle error
+        this.vm.notifier.error(this.vm.t('error-server'));
+      }).finally(() => {
+        this.loading = false;
+      });
     },
     handleProfileSelect(profile) {
       this.selectedProfile = profile;
       this.fetchData().then(() => {
         this.checkIfAlreadySendMailWithProfile();
+        this.fetchProfileData();
         this.openModal();
       });
     },
@@ -86,7 +150,7 @@ const EspComponent = Vue.component('esp-form', {
       this.type = SEND_MODE.CREATION;
       this.espIds.forEach((espId) => {
           if (espId?.profileId === this.selectedProfile?.id) {
-            this.campaignId = espId.mailCampaignId.toString();
+            this.campaignId = espId.campaignId.toString();
             this.type = SEND_MODE.EDIT
           }
       });
@@ -101,28 +165,31 @@ const EspComponent = Vue.component('esp-form', {
     closeModal() {
       this.modalInstance?.close();
     },
-    submitEsp(profile) {
+    submitEsp(data) {
+
       if(!this.vm?.metadata?.url?.sendCampaignMail) {
         return;
       }
 
-      this.loading = true;
+      this.loadingExport = true;
       const unprocessedHtml = this.vm.exportHTML();
 
       axios.post(this.vm.metadata.url.sendCampaignMail, {
         html: unprocessedHtml,
         actionType: this.type,
-        profileId: profile?.id,
-        type: profile.type,
+        profileId: this.profile?.id,
+        type: this.profile.type,
+        contentSentType: this.profile.contentSentType,
         campaignId: this.campaignId,
         espSendingMailData: {
-          campaignMailName: profile.campaignMailName,
-          subject: profile.subject,
+          campaignMailName: data.campaignMailName,
+          subject: data.subject,
         }
       })
         .then((response)=> {
           // handle success
-          this.vm.notifier.success(this.vm.t('success-esp-send'));
+          const successText = this.profile?.contentSendType?.toString().toLowerCase()+'-success-esp-send'
+          this.vm.notifier.success(this.vm.t(successText));
           this.closeModal();
         }).catch((error) => {
         // handle error
@@ -132,7 +199,7 @@ const EspComponent = Vue.component('esp-form', {
         this.vm.notifier.error(this.vm.t(errorMessageCode));
 
       }).finally(()=> {
-        this.loading = false;
+        this.loadingExport = false;
       });
     }
   },

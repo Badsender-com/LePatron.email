@@ -114,25 +114,23 @@ async function sendCampaignMail(req, res) {
   await mailingService.validateMailExist(mailingId);
   let response = null;
 
+  const communEspApiFields = {
+    user,
+    espSendingMailData,
+    profileId,
+    html,
+    mailingId,
+    type,
+  };
+
+  console.log({ actionType });
   if (actionType === MODE_TYPE.EDIT) {
-    response = await profileService.updateCampaignMail({
-      user,
-      espSendingMailData,
-      profileId,
-      html,
-      mailingId,
-      type,
+    response = await profileService.updateEspCampaign({
+      ...communEspApiFields,
       campaignId,
     });
   } else {
-    response = await profileService.sendCampaignMail({
-      user,
-      espSendingMailData,
-      profileId,
-      html,
-      mailingId,
-      type,
-    });
+    response = await profileService.sendEspCampaign(communEspApiFields);
   }
 
   res.json(response);
@@ -190,14 +188,14 @@ async function profileListEditor(req, res) {
  */
 async function getCampaignMail(req, res) {
   const { user, params } = req;
-  const { campaignMailId, profileId } = params;
+  const { campaignId, profileId } = params;
 
   await profileService.checkIfUserIsAuthorizedToAccessProfile({
     user,
     profileId,
   });
   const getCampaignMailData = await profileService.getCampaignMail({
-    campaignMailId,
+    campaignId,
     profileId,
   });
 
@@ -251,7 +249,7 @@ async function readProfileForAdmin(req, res) {
     profileId,
   });
 
-  const getProfileResult = await profileService.findOne(profileId);
+  const profileResult = await profileService.findOne(profileId);
 
-  res.send({ result: getProfileResult });
+  res.send({ result: profileResult });
 }
