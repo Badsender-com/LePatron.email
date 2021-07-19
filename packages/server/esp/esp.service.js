@@ -51,14 +51,29 @@ class EspService {
     return await this.providerInstance.createCampaignMail(sendingMailData);
   }
 
+  async createTemplate(campaignTemplate) {
+    this.validateProviderInstance();
+    return await this.providerInstance.createTemplate(campaignTemplate);
+  }
+
   async getCampaignMail(campaignMail) {
     this.validateProviderInstance();
     return await this.providerInstance.getCampaignMail(campaignMail);
   }
 
+  async getTemplate(campaignTemplate) {
+    this.validateProviderInstance();
+    return await this.providerInstance.getTemplate(campaignTemplate);
+  }
+
   async updateCampaignMail(campaignMail) {
     this.validateProviderInstance();
     return await this.providerInstance.updateCampaignMail(campaignMail);
+  }
+
+  async updateTemplate(campaignTemplate) {
+    this.validateProviderInstance();
+    return await this.providerInstance.updateTemplate(campaignTemplate);
   }
 
   validateProviderInstance() {

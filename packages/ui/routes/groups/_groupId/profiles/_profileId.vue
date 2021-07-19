@@ -26,7 +26,7 @@ export default {
         id,
         name,
         apiKey,
-        additionalApiData: { senderName, senderMail, replyTo },
+        additionalApiData: { senderName, senderMail, replyTo, contentSendType },
         type,
       } = profileResponse.result;
       return {
@@ -36,6 +36,7 @@ export default {
           apiKey,
           replyTo,
           senderName,
+          contentSendType,
           senderMail,
           type,
         },
