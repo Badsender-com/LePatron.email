@@ -264,7 +264,7 @@ var processBlock = function (
     $('[data-ko-display]', element).each(function (index, element) {
       wrapElementWithCondition('data-ko-display', element, bindingProvider);
     });
-
+    console.log('looping througt data-ko-editable');
     $('[data-ko-editable]', element).each(function (index, element) {
       var newBinding, defaultValue, model, currentBindings, dataBind;
 
@@ -290,6 +290,7 @@ var processBlock = function (
         ')';
 
       if (domutils.getLowerTagName(element) != 'img') {
+
         defaultValue = domutils.getInnerHtml(element);
         var modelBindValue = bindingProvider(
           dataEditable,
@@ -329,6 +330,7 @@ var processBlock = function (
         }
         domutils.removeAttribute(element, 'data-ko-editable');
       } else {
+
         var width = domutils.getAttribute(element, 'width');
         if (width === '') width = null;
         if (width === null) {
@@ -432,7 +434,22 @@ var processBlock = function (
 
         var tmplName = templateCreator(element);
 
-        var containerBind = '{';
+        const elementStyle = domutils.getAttribute(element, 'style');
+        const styleToJavascriptFormat =  domutils.getStyleObjectFromString(elementStyle);
+        var  bindingStyleValues = domutils.concatObjectProperties(styleToJavascriptFormat);
+
+        console.log({
+          elementStyle,
+          styleToJavascriptFormat:  styleToJavascriptFormat,
+          bindingStyleValues
+        })
+
+
+        var containerBind = '{ maxWidth: ' + width;
+        // if(styleToJavascriptFormat && typeof styleToJavascriptFormat != "undefined") {
+        //   containerBind += bindingStyleValues;
+        // }
+
         if (align == 'left') containerBind += ", float: 'left'";
         else if (align == 'right') containerBind += ", float: 'right'";
         else if (align == 'center')
@@ -446,6 +463,8 @@ var processBlock = function (
           else if (align == 'bottom')
             containerBind += ", verticalAlign: 'bottom'";
         containerBind += '}';
+
+        console.log({ tmplName, containerBind });
         $(element).before(
           '<!-- ko wysiwygImg: { _data: $data, _item: ' +
             itemBindValue +
