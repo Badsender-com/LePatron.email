@@ -345,14 +345,6 @@ var templateCompiler = function (
       if (typeof html !== 'string')
         throw 'Template system: cannot create new template ' + id;
       var trash = html.match(/(data)?-ko-[^ =:]*/g);
-      if (trash) {
-        console.error(
-          'ERROR: found unexpected -ko- attribute in compiled template',
-          id,
-          ', you probably mispelled it:',
-          trash
-        );
-      }
       templateSystem.addTemplate(id, html);
       createdTemplates.push(id);
     },
@@ -524,7 +516,7 @@ var templateCompiler = function (
   // everything's ready, start knockout bindings.
   plugins.push(bindingPluginMaker(performanceAwareCaller));
 
-  pluginsCall(plugins, 'viewModel', [viewModel]);
+  pluginsCall(plugins, 'viewModel', [viewModel, ko]);
 
   if (incompatibleTemplate) {
     $('#incompatible-template').dialog({
@@ -543,7 +535,7 @@ var templateCompiler = function (
   return {
     model: viewModel,
     init: function () {
-      pluginsCall(plugins, 'init', undefined, true);
+      pluginsCall(plugins, 'init',  [viewModel], true);
       // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
       if(!metadata.hasHtmlPreview && viewModel.save && viewModel.save.execute) {
         viewModel.save.execute();

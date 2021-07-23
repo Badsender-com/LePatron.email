@@ -39,10 +39,31 @@ module.exports = {
   bulkDestroy: asyncHandler(bulkDestroy),
   delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
+  readMailingEpsIds: asyncHandler(readMailingEpsIds),
   // already wrapped in asyncHandler
   sendTestMail,
   downloadZip,
 };
+
+/**
+ * @api {get} /mailings/:mailingId/esp-ids Get esp ids based on service provider
+ * @apiPermission user
+ * @apiName GetMailEpsIds
+ * @apiGroup Mailings
+ *
+ * @apiParam {string} mailingId
+ *
+ * @apiUse mailings
+ */
+
+async function readMailingEpsIds(req, res) {
+  const { mailingId } = req.params;
+  const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
+  const mailing = await Mailings.findOne(query);
+  if (!mailing) throw new NotFound();
+  const { espIds } = mailing;
+  res.json({ result: espIds });
+}
 
 /**
  * @api {get} /mailings list of mailings

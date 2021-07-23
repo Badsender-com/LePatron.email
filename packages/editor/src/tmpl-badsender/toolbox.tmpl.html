@@ -1,5 +1,8 @@
 <div id="tooltabs" class="tabs_horizontal button_color" data-bind="tabs: { active: $root.selectedTool }">
-
+  <!-- VueJs for the esp component-->
+  <div id="espModal">
+    <app-vue />
+  </div>
   <div class="tooltabs__top-bar">
     <a class="tooltabs__top-logo" href="/" data-bind="attr: { href: $root.logoUrl }">
       <img data-bind="attr: { src: $root.logoPath, alt: $root.logoAlt }" alt="mosaico"  />
@@ -8,7 +11,7 @@
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Blocks ready to be added to the template" data-local="true" href="#toolblocks" data-bind="attr: { title: $root.t('Blocks ready to be added to the template') }"><i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Blocks')">Blocks</span></a></li>
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit content options" href="#toolcontents" data-local="true" data-bind="attr: { title: $root.t('Edit content options') }"><i class="fa fa-fw fa-pencil"></i> <span data-bind="html: $root.t('Content')">Content</span></a></li>
       <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit style options" href="#toolstyles" data-local="true" data-bind="attr: { title: $root.t('Edit style options') }"><i class="fa fa-fw fa-paint-brush"></i> <span data-bind="html: $root.t('Style')">Style</span></a></li>
-    </ul>
+   </ul>
   </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
@@ -46,7 +49,7 @@
       </div>
     <!-- /ko -->
   </div>
-<//div>div>
+</div>
 
 <div id="toolimages" class="slidebar" data-bind="scrollable: true, css: { hidden: $root.showGallery() === false }">
   <div class="close" data-bind="click: $root.showGallery.bind($element, false);">X</div>

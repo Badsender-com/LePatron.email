@@ -3,9 +3,9 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 
 export default {
-  name: `bs-template-form`,
+  name: 'BsTemplateForm',
   mixins: [validationMixin],
-  model: { prop: `template`, event: `update` },
+  model: { prop: 'template', event: 'update' },
   props: {
     template: { type: Object, default: () => ({}) },
     disabled: { type: Boolean, default: false },
@@ -23,7 +23,7 @@ export default {
         return this.template;
       },
       set(updatedTemplate) {
-        this.$emit(`update`, updatedTemplate);
+        this.$emit('update', updatedTemplate);
       },
     },
     nameErrors() {
@@ -38,7 +38,7 @@ export default {
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
-      this.$emit(`submit`, this.template);
+      this.$emit('submit', this.template);
     },
   },
 };
@@ -49,8 +49,8 @@ export default {
     <v-card-title>{{ $t('global.newTemplate') }}</v-card-title>
     <v-card-text>
       <v-text-field
-        v-model="localModel.name"
         id="name"
+        v-model="localModel.name"
         :label="$t('global.name')"
         name="name"
         :error-messages="nameErrors"
@@ -59,8 +59,8 @@ export default {
         @blur="$v.template.name.$touch()"
       />
       <v-textarea
-        v-model="localModel.description"
         id="description"
+        v-model="localModel.description"
         :label="$t('global.description')"
         name="description"
         auto-grow
@@ -70,14 +70,9 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn
-        text
-        large
-        color="primary"
-        @click="onSubmit"
-        :disabled="disabled"
-        >{{ $t('global.create') }}</v-btn
-      >
+      <v-btn text large color="primary" :disabled="disabled" @click="onSubmit">
+        {{ $t('global.create') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

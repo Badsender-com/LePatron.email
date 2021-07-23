@@ -1,47 +1,87 @@
-<h1 align="center">✉️ LePatron.email</h1>
-<h2 align="center">Open Source Email Builder</h2>
+<!-- PROJECT LOGO -->
+<br />
+<p align="center">
+  <a href="https://github.com/Badsender-com/LePatron.email">
+    <img src="public/media/logo_blanc.png" alt="Logo">
+  </a>
 
----
+  <h3 align="center">LePatron.email</h3>
 
-## 🚀 Deploy on the Cloud
+  <p align="center">
+    Open source email builder
+    <br />
+    <br />
+    <a href="https://github.com/Badsender-com/LePatron.email/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/Badsender-com/LePatron.email/issues">Request Feature</a>
+  </p>
+</p>
 
-Documentation coming soon...
+<!-- ABOUT THE PROJECT -->
 
----
+## About The Project
 
-## Run locally
+**LePatron is an email builder allowing to industrialize your email template production. Build tailor made email templates and make them available to your non-technical users.**
 
-### 1. Install dependencies
+### Built With
 
-```bash
-yarn
-yarn build
-```
+- [Mosaico](https://github.com/voidlabs/mosaico)
+- [Vue.js](https://vuejs.org/)
+- [Express](https://expressjs.com/)
 
-### 2. Run the database
+<!-- GETTING STARTED -->
 
-```bash
-yarn docker:up
-```
+## Getting Started
 
-(You will be able to stop the docker compose with `yarn docker:down`)
+To get a local copy up and running follow these simple steps.
 
-### 3. Run the application
+### Prerequisites
 
-```bash
-yarn dev
-```
+You will need the following tools to be able to run the project locally:
 
-The application is available on [localhost:3000](http://localhost:3000)
+- [Node](https://nodejs.org)
+- [Yarn](https://yarnpkg.com/)
+- [Docker](https://www.docker.com/get-started) 💡 Make sure you can run `docker-compose` in you terminal
 
-Login with
+### Installation
 
-- **Email:** admin
-- **Password:** admin
+1. Clone the repo
 
-A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
+   ```sh
+   git clone https://github.com/Badsender-com/LePatron.email.git
+   ```
 
-## Access to the database
+2. Install NPM packages
+
+   ```bash
+   yarn
+   yarn build
+   ```
+
+3. Run the local database
+
+   ```bash
+   yarn docker:up
+   ```
+
+   (You will be able to stop the docker compose with `yarn docker:down`)
+
+4. Run the application
+
+   ```bash
+   yarn dev
+   ```
+
+   The application is available on [localhost:3000](http://localhost:3000)
+
+   Login with
+
+   - **Email:** admin
+   - **Password:** admin
+
+   A catch all mailbox is available on [localhost:1080](http://localhost:1080/)
+
+### Database access
 
 - You need MongoDB on your computer. If you haven't, you can install [MongoDB Compass](https://www.mongodb.com/try/download/compass)
 - Install the version you need
@@ -58,33 +98,49 @@ mongo # To see the mongo connection name
 - Paste it in MongoDB Compass UI
 - You have access to your database
 
-## Generate documentation
+### Documentation generation
 
-### Run application documentation
+#### Run application documentation
 
 ```bash
 yarn docs:dev
 ```
 
-### Build application documentation
+#### Build application documentation
 
 ```bash
 yarn docs:dev:build
 ```
 
-### Run API documentation
+#### Run API documentation
 
 ```bash
 yarn docs:api
 ```
 
-### Build API documentation
+#### Build API documentation
 
 ```bash
 yarn docs:api:build
 ```
 
-### Troubleshooting
+## Deployment
+
+Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:) and [CleverCloud](./DEPLOYMENT.md##-How-to-deploy-on-CleverCloud) are provided in the readme file.
+
+<!-- CONTRIBUTING -->
+
+## Contributing
+
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feat/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feat/AmazingFeature`)
+5. Open a Pull Request
+
+## Troubleshooting
 
 If you encounter this error during documentation generation :
 
@@ -98,8 +154,14 @@ Simply give access to .mongodb folder to your user :
 chown $(whoami):$(whoami) -R ./.mongodb
 ```
 
----
+<!-- LICENSE -->
 
 ## License
 
-**GPL-3.0**
+Distributed under the GPL-3.0 License. See `LICENSE` for more information.
+
+<!-- CONTACT -->
+
+## Contact
+
+Project Link: [https://lepatron.email/](https://lepatron.email/)

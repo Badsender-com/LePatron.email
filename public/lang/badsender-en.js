@@ -38,6 +38,35 @@ module.exports = {
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
+  'error-server': 'An error has occured while calling server api',
   cancel: 'CANCEL',
   upload: 'UPLOAD',
+
+  // Profile form esp
+  'sender-name': 'Sender name',
+  'sender-mail': 'Sender email address',
+  replyto: 'Reply email address',
+  mailSubject: 'Subject',
+  templateSubject: 'Subject',
+  name: 'Name',
+  mailName: 'Mail name',
+  'export-to': 'Export to',
+  exporting: 'Exporting ...',
+  loading: 'Loading',
+  submit: 'Submit',
+  export: 'Export',
+  close: 'Close',
+  // profile form validation
+  'warning-esp-message':
+    'Any update will override the mail campaign in the email service provider.',
+  'mail-name-required': 'Mail name is required',
+  'template-name-required': 'Template name is required',
+  'mail-subject-required': 'Subject is required',
+  'template-subject-required': 'Subject is required',
+  'mail-success-esp-send': 'Mail exported successfully',
+  'template-success-esp-send': 'Template exported successfully',
+  'error-server-400':
+    'Esp parameters invalids, check if sender mail matches  API key.',
+  'error-server-402': 'Export fail, provider require payment',
+  'error-server-500': 'An error has occured while calling server api',
 };
