@@ -17,7 +17,7 @@ router.post('/', GUARD_GROUP_ADMIN, workspacesController.createWorkspace);
 
 router.put(
   '/:workspaceId',
-  guard(GUARD_GROUP_ADMIN),
+  GUARD_GROUP_ADMIN,
   workspacesController.updateWorkspace
 );
 
