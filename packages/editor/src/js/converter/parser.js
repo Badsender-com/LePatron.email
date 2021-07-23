@@ -438,33 +438,39 @@ var processBlock = function (
         const styleToJavascriptFormat =  domutils.getStyleObjectFromString(elementStyle);
         var  bindingStyleValues = domutils.concatObjectProperties(styleToJavascriptFormat);
 
-        console.log({
-          elementStyle,
-          styleToJavascriptFormat:  styleToJavascriptFormat,
-          bindingStyleValues
-        })
+        var containerBind = '{';
 
 
-        var containerBind = '{ maxWidth: ' + width;
-        // if(styleToJavascriptFormat && typeof styleToJavascriptFormat != "undefined") {
-        //   containerBind += bindingStyleValues;
-        // }
-
-        if (align == 'left') containerBind += ", float: 'left'";
-        else if (align == 'right') containerBind += ", float: 'right'";
+        if (align == 'left') containerBind += " float: 'left'";
+        else if (align == 'right') containerBind += " float: 'right'";
         else if (align == 'center')
           if (typeof console.debug == 'function')
             console.debug(
               "Ignoring align=center on an img tag: we don't know how to emulate this alignment in the editor!"
             );
-          else if (align == 'top') containerBind += ", verticalAlign: 'top'";
+          else if (align == 'top') containerBind += "verticalAlign: 'top'";
           else if (align == 'middle')
-            containerBind += ", verticalAlign: 'middle'";
+            containerBind += " verticalAlign: 'middle'";
           else if (align == 'bottom')
-            containerBind += ", verticalAlign: 'bottom'";
+            containerBind += "verticalAlign: 'bottom'";
+
+        if(styleToJavascriptFormat && typeof styleToJavascriptFormat != "undefined") {
+          if(containerBind === '{' && bindingStyleValues.charAt(0) === ',')
+            bindingStyleValues = bindingStyleValues.substring(1);
+          containerBind += bindingStyleValues;
+        }
+
         containerBind += '}';
 
-        console.log({ tmplName, containerBind });
+        var cssBindling = '{ selecteditem: $root.isSelectedItem('+itemBindValue+')';
+        var elementClass = domutils.getAttribute(element, 'class');
+
+        if(!!elementClass &&  !!elementClass.trim()) {
+          cssBindling += `, '${elementClass}': true`;
+        }
+
+        cssBindling += '}';
+
         $(element).before(
           '<!-- ko wysiwygImg: { _data: $data, _item: ' +
             itemBindValue +
@@ -482,6 +488,8 @@ var processBlock = function (
             size +
             ', _method: ' +
             method +
+            ', _css: ' +
+            cssBindling +
             ', _placeholdersrc: ' +
             placeholdersrc +
             ', _stylebind: ' +
