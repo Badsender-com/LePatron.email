@@ -351,23 +351,6 @@ async function downloadZip({
     downloadOptions,
   });
 
-  console.log({
-    cdnDownload,
-    regularDownload,
-    prefix,
-    ftpEndPointProtocol,
-    ftpEndPoint,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
-    cdnProtocol,
-    cdnEndPoint,
-    name,
-  });
-
   console.log('download zip', name);
 
   const {
