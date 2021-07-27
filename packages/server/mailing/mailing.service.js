@@ -284,7 +284,10 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     );
   }
 
-  const { relativesImagesNames } = await handleRelativeOrFtpImages({
+  const {
+    relativesImagesNames,
+    html: relativeImagesHtml,
+  } = await handleRelativeOrFtpImages({
     html,
     cdnDownload,
     regularDownload,
@@ -297,7 +300,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     ftpPathOnServer,
   });
   // Add html with relatives url
-  const processedHtml = processMosaicoHtmlRender(html);
+  const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
 
   const {
     htmlProcessedWithFtp,
@@ -353,6 +356,7 @@ async function downloadZip({
   const {
     relativesImagesNames,
     archive: processedImageArchive,
+    html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
     html,
     cdnDownload,
@@ -371,7 +375,7 @@ async function downloadZip({
   // ----- HTML
 
   // Add html with relatives url
-  const processedHtml = processMosaicoHtmlRender(html);
+  const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
 
   if (regularDownload) {
     processedImageArchive.append(processedHtml, {
@@ -600,7 +604,6 @@ async function handleRelativeOrFtpImages({
 
   const remainingUrlsRegex = /https?:\S+\.(jpg|jpeg|png|gif){1}/g;
   const allImages = html.match(remainingUrlsRegex) || [];
-
   // const allImages = _.uniq([...imgUrls, ...bgUrls, ...styleUrls])
   // console.log(remainingUrls, allImages)
 
@@ -665,7 +668,7 @@ async function handleRelativeOrFtpImages({
     await ftpClient.upload(allImages, folderPath);
   }
 
-  return { relativesImagesNames, archive };
+  return { relativesImagesNames, archive, html };
 }
 
 async function copyMailing(mailingId, destination, user) {
