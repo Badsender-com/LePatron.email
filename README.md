@@ -124,6 +124,17 @@ yarn docs:api
 yarn docs:api:build
 ```
 
+## Tests
+
+When you open a feature / fix PR, make sure to include tests that covers this feature.
+
+Units tests are written using the [jest](https://jestjs.io/) testing framework.
+
+```bash
+yarn test # run tests in watch mode, usefull when developing
+yarn test-ci # run all tests, no watch. Mainly used in the CI
+```
+
 ## Deployment
 
 Instructions on how to deploy on [Heroku](./DEPLOYMENT.md##-How-to-deploy-on-Heroku:) and [CleverCloud](./DEPLOYMENT.md##-How-to-deploy-on-CleverCloud) are provided in the readme file.
