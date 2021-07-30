@@ -79,7 +79,7 @@
     "mongoose": "5.12.0",
     "mongoose-hidden": "1.8.1",
     "morgan": "1.9.1",
-    "nodemailer": "6.3.0",
+    "nodemailer": "6.4.16",
     "nodemailer-sendgrid": "1.0.3",
     "nodemailer-wellknown": "0.2.3",
     "nuxt": "2.14.12",
