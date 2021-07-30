@@ -14,13 +14,14 @@ module.exports = {
     'standard',
     'plugin:vue/recommended',
     'prettier',
+    'plugin:cypress/recommended',
   ],
   parserOptions: {
     parser: 'babel-eslint',
     ecmaVersion: 12,
     sourceType: 'module',
   },
-  plugins: ['vue'],
+  plugins: ['vue', 'cypress'],
   rules: {
     'import/no-named-default': 'off',
     'vue/max-attributes-per-line': 'off',

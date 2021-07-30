@@ -112,6 +112,7 @@
   "devDependencies": {
     "@babel/core": "7.12.10",
     "@babel/preset-env": "7.12.11",
+    "@testing-library/cypress": "8.0.0",
     "aliasify": "2.1.0",
     "ansi-colors": "3.2.4",
     "async": "2.6.2",
@@ -131,12 +132,15 @@
     "console-browserify": "1.1.0",
     "cropperjs": "1.5.6",
     "csswring": "7.0.0",
+    "cypress": "8.1.0",
+    "cypress-jest-adapter": "0.1.1",
     "default-passive-events": "1.0.10",
     "del": "4.1.1",
     "envify": "4.0.0",
     "eslint": "^7.19.0",
     "eslint-config-prettier": "^7.2.0",
     "eslint-config-standard": "16.0.2",
+    "eslint-plugin-cypress": "2.11.3",
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.3.1",
@@ -248,7 +252,9 @@
     "code:lint": "yarn eslint .",
     "code:fix": "yarn code:lint --fix && yarn code:pretty",
     "test": "jest --watch",
-    "test-ci": "jest"
+    "test-ci": "jest",
+    "test:e2e": "cypress",
+    "test:e2e-ci": "cypress run"
   },
   "engines": {
     "node": "14.16.0",
