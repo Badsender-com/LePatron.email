@@ -167,6 +167,7 @@
     "gulp-uglify": "3.0.2",
     "husky": "^5.0.9",
     "inquirer": "6.3.1",
+    "jest": "27.0.6",
     "jquery": "3.4.1",
     "jquery-file-upload-middleware": "0.1.8",
     "jquery-migrate": "3.1.0",
@@ -245,7 +246,9 @@
     "docker:down": "docker-compose -f docker/docker-compose.yml down",
     "code:pretty": "yarn prettier . -w",
     "code:lint": "yarn eslint .",
-    "code:fix": "yarn code:lint --fix && yarn code:pretty"
+    "code:fix": "yarn code:lint --fix && yarn code:pretty",
+    "test": "jest --watch",
+    "test-ci": "jest"
   },
   "engines": {
     "node": "14.16.0",
