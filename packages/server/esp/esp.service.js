@@ -1,8 +1,8 @@
 const ERROR_CODES = require('../constant/error-codes');
 const { InternalServerError } = require('http-errors');
 const EspTypes = require('../constant/esp-type');
-const SendinBlueProvider = require('../esp/sendinBlueProvider');
-const ActitoProvider = require('../esp/actitoProvider');
+const SendinBlueProvider = require('../esp/sendinblue/sendinBlueProvider');
+const ActitoProvider = require('../esp/actito/actitoProvider');
 
 class EspService {
   constructor({
