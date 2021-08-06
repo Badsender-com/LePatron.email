@@ -18,6 +18,12 @@ router.post(
 router.delete('/:profileId', GUARD_ADMIN, profiles.deleteProfile);
 router.get('/:profileId', GUARD_USER, profiles.readProfile);
 router.get('/:profileId/admin', GUARD_ADMIN, profiles.readProfileForAdmin);
+router.post('/actito-entities-list', GUARD_ADMIN, profiles.actitoEntitiesList);
+router.post(
+  '/actito-target-tables-list',
+  GUARD_ADMIN,
+  profiles.actitoTargetTableList
+);
 router.get(
   '/:groupId/profile-list-for-editor',
   GUARD_USER,

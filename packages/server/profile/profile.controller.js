@@ -13,6 +13,8 @@ module.exports = {
   deleteProfile: asyncHandler(deleteProfile),
   profileListEditor: asyncHandler(profileListEditor),
   getCampaignMail: asyncHandler(getCampaignMail),
+  actitoEntitiesList: asyncHandler(actitoEntitiesList),
+  actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
 };
@@ -175,6 +177,48 @@ async function profileListEditor(req, res) {
   });
 
   res.send({ result: profileListEditorResult });
+}
+
+/**
+ * @api {post} /profiles/actito-entities-list list entities from Actito email service provider
+ * @apiPermission user
+ * @apiName actitoEntitiesList
+ * @apiGroup Profiles
+ *
+ * @apiParam (Body) {String} apiKey Actito api key
+ *
+ */
+async function actitoEntitiesList(req, res) {
+  const { apiKey } = req.body;
+
+  const actitoEntitiesListResult = await profileService.actitoEntitiesList({
+    apiKey,
+  });
+
+  res.send({ result: actitoEntitiesListResult });
+}
+
+/**
+ * @api {post} /profiles/actito-target-tables-list Target tables list from Actito email service provider
+ * @apiPermission user
+ * @apiName actitoTargetTablesList
+ * @apiGroup Profiles
+ *
+ * @apiParam (Body) {String} apiKey Actito api key
+ * @apiParam (Body) {String} entity Actito entity
+ *
+ */
+async function actitoTargetTablesList(req, res) {
+  const { apiKey, entity } = req.body;
+
+  const actitoTargetTablesListResult = await profileService.actitoTargetTablesList(
+    {
+      apiKey,
+      entity,
+    }
+  );
+
+  res.send({ result: actitoTargetTablesListResult });
 }
 
 /**

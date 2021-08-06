@@ -52,8 +52,14 @@ class EspService {
   }
 
   async createTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.createTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return await this.providerInstance.createTemplate(campaignTemplate);
+    } else {
+      throw new InternalServerError(
+        ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+      );
+    }
   }
 
   async getCampaignMail(campaignMail) {
@@ -62,8 +68,14 @@ class EspService {
   }
 
   async getTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.getTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return await this.providerInstance.getTemplate(campaignTemplate);
+    } else {
+      throw new InternalServerError(
+        ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+      );
+    }
   }
 
   async updateCampaignMail(campaignMail) {
@@ -72,8 +84,38 @@ class EspService {
   }
 
   async updateTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.updateTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return await this.providerInstance.updateTemplate(campaignTemplate);
+    } else {
+      throw new InternalServerError(
+        ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+      );
+    }
+  }
+
+  async getAllEspEntities() {
+    if (this?.settings?.type === EspTypes.ACTITO) {
+      this.validateProviderInstance();
+      return await this.providerInstance.getAllEspEntities();
+    } else {
+      throw new InternalServerError(
+        ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+      );
+    }
+  }
+
+  async getAllEspProfileTableName(getAllEspProfileTableData) {
+    if (this?.settings?.type === EspTypes.ACTITO) {
+      this.validateProviderInstance();
+      return await this.providerInstance.getAllEspProfileTableName(
+        getAllEspProfileTableData
+      );
+    } else {
+      throw new InternalServerError(
+        ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+      );
+    }
   }
 
   validateProviderInstance() {
