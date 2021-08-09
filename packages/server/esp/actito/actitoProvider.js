@@ -21,14 +21,12 @@ class ActitoProvider {
   }
 
   async connectApi() {
-    console.log({ apiKeyFromConnectApi: this.apiKey });
     return await axios.get(API_AUTHENTIFICATION, {
       headers: { Authorization: this.apiKey, Accept: 'application/json' },
     });
   }
 
   async getHeaderAccessToken(connectApiData) {
-    console.log({ connectApiData });
     if (
       !connectApiData ||
       !connectApiData.data ||
@@ -46,23 +44,33 @@ class ActitoProvider {
   }
 
   async getAllEspEntities() {
-    const headerAccess = await this.getHeaderAccess();
-    const allEntitesResult = await axios.get(
-      `${API3_ACTITO_V4}/entity`,
-      headerAccess
-    );
+    try {
+      const headerAccess = await this.getHeaderAccess();
+      const allEntitesResult = await axios.get(
+        `${API3_ACTITO_V4}/entity`,
+        headerAccess
+      );
 
-    return allEntitesResult?.data;
+      return allEntitesResult?.data;
+    } catch (e) {
+      logger.error(e.response.statusText);
+      throw e;
+    }
   }
 
   async getAllEspProfileTableName({ entity }) {
-    const headerAccess = await this.getHeaderAccess();
+    try {
+      const headerAccess = await this.getHeaderAccess();
 
-    const allEspProfileTableResult = await axios.get(
-      `${API3_ACTITO_V4}/entity/${entity}/table/ `,
-      headerAccess
-    );
-    return allEspProfileTableResult?.data;
+      const allEspProfileTableResult = await axios.get(
+        `${API3_ACTITO_V4}/entity/${entity}/table/ `,
+        headerAccess
+      );
+      return allEspProfileTableResult?.data;
+    } catch (e) {
+      logger.error(e.response.statusText);
+      throw e;
+    }
   }
 
   async getHeaderAccess() {
@@ -73,86 +81,110 @@ class ActitoProvider {
 
       return this.getHeaderAccessToken(this.accessDataFromApi);
     } catch (e) {
-      console.log(e);
-      logger.error(e.response.text);
+      logger.error(e.response.statusText);
       throw e;
     }
   }
 
   async getCampaignMail({ campaignId, entity }) {
-    if (!campaignId) {
-      throw new InternalServerError(
-        ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
+    try {
+      if (!campaignId) {
+        throw new InternalServerError(
+          ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
+        );
+      }
+
+      if (!entity) {
+        throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ENTITY);
+      }
+
+      const headerAccess = await this.getHeaderAccess();
+      const apiEmailCampaignResult = await axios.get(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+        headerAccess
       );
+
+      const mailSubjectResult = await this.getCampaignMailSubjectLine({
+        campaignId,
+        entity,
+      });
+
+      return {
+        name: apiEmailCampaignResult?.name,
+        additionalApiData: {
+          from: apiEmailCampaignResult?.from,
+          replyTo: apiEmailCampaignResult?.replyTo,
+          subject: mailSubjectResult?.subject,
+          entityOfTarget: apiEmailCampaignResult?.entityOfTarget,
+          supportedLanguages: apiEmailCampaignResult?.supportedLanguages,
+          targetTable: apiEmailCampaignResult?.targetTable,
+          encoding: apiEmailCampaignResult?.encoding,
+        },
+      };
+    } catch (e) {
+      logger.error(e.response.statusText);
+      throw e;
     }
-
-    if (!entity) {
-      throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ENTITY);
-    }
-
-    const headerAccess = await this.getHeaderAccess();
-    const apiEmailCampaignResult = await axios.get(
-      `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
-      headerAccess
-    );
-
-    const mailSubjectResult = await this.getCampaignMailSubjectLine({
-      campaignId,
-      entity,
-    });
-
-    return {
-      name: apiEmailCampaignResult?.name,
-      additionalApiData: {
-        from: apiEmailCampaignResult?.from,
-        replyTo: apiEmailCampaignResult?.replyTo,
-        subject: mailSubjectResult?.subject,
-        entityOfTarget: apiEmailCampaignResult?.entityOfTarget,
-        supportedLanguages: apiEmailCampaignResult?.supportedLanguages,
-        targetTable: apiEmailCampaignResult?.targetTable,
-        encoding: apiEmailCampaignResult?.encoding,
-      },
-    };
   }
 
   async setCampaignHtmlMail({ archive, campaignId, entity }) {
-    const form = new FormData();
-    form.append('inputForm', archive);
-    this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
-    const headerAccess = await this.getHeaderAccess();
-    return await axios.post(
-      `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
-      form,
-      { headers: { ...headerAccess, ...form.getHeaders() } }
-    );
+    try {
+      const form = new FormData();
+      form.append('inputForm', archive);
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      const headerAccess = await this.getHeaderAccess();
+      return await axios.post(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
+        form,
+        { headers: { ...headerAccess, ...form.getHeaders() } }
+      );
+    } catch (e) {
+      logger.error(e.response.text);
+      throw e;
+    }
   }
 
   async getCampaignHtmlMail({ campaignId, entity }) {
-    this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
-    const headerAccess = await this.getHeaderAccess();
-    return await axios.get(
-      `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
-      { headers: headerAccess }
-    );
+    try {
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      const headerAccess = await this.getHeaderAccess();
+      return await axios.get(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
+        { headers: headerAccess }
+      );
+    } catch (e) {
+      logger.error(e.response.text);
+      throw e;
+    }
   }
 
   async setCampaignMailSubjectLine({ subject, campaignId, entity }) {
-    this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
-    const headerAccess = await this.getHeaderAccess();
-    return await axios.post(
-      `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
-      subject,
-      { headers: headerAccess }
-    );
+    try {
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      const headerAccess = await this.getHeaderAccess();
+      return await axios.post(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
+        subject,
+        { headers: headerAccess }
+      );
+    } catch (e) {
+      logger.error(e.response.statusText);
+      throw e;
+    }
   }
 
   async getCampaignMailSubjectLine({ campaignId, entity }) {
-    this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
-    const headerAccess = await this.getHeaderAccess();
-    return await axios.get(
-      `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
-      { headers: headerAccess }
-    );
+    try {
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      const headerAccess = await this.getHeaderAccess();
+      return await axios.get(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
+        { headers: headerAccess }
+      );
+    } catch (e) {
+      logger.error(e.response.statusText);
+      throw e;
+    }
   }
 
   checkIfCampaignIdAndEntityExists({ campaignId, entity }) {
@@ -219,68 +251,73 @@ class ActitoProvider {
     entity,
     mailCampaignApi,
   }) {
-    if (typeof mailCampaignApi !== 'function') {
-      throw new InternalServerError(ERROR_CODES.API_CALL_IS_NOT_A_FUNCTION);
+    try {
+      if (typeof mailCampaignApi !== 'function') {
+        throw new InternalServerError(ERROR_CODES.API_CALL_IS_NOT_A_FUNCTION);
+      }
+
+      const {
+        from,
+        entityOfTarget,
+        supportedLanguages,
+        name,
+        replyTo,
+        targetTable,
+        encoding,
+        processedArchive,
+        subject,
+      } = await this.formatActitoData({
+        campaignMailData,
+        html,
+        user,
+        mailingId,
+      });
+
+      const createdCampaignMailResult = await mailCampaignApi({
+        from,
+        entityOfTarget,
+        supportedLanguages,
+        name,
+        replyTo,
+        targetTable,
+        encoding,
+      });
+
+      if (!createdCampaignMailResult?.campaignId) {
+        throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
+      }
+
+      const campaignHtmlMailResult = await this.setCampaignHtmlMail({
+        archive: processedArchive,
+        campaignId: createdCampaignMailResult?.campaignId,
+        entity,
+      });
+
+      this.checkIfCampaignIdIsDefined(campaignHtmlMailResult);
+
+      const campaignSubjectMailResult = await this.setCampaignMailSubjectLine({
+        subject,
+        campaignId: createdCampaignMailResult?.campaignId,
+        entity,
+      });
+
+      this.checkIfCampaignIdIsDefined(campaignSubjectMailResult);
+
+      return {
+        id: createdCampaignMailResult?.campaignId,
+        from,
+        entityOfTarget,
+        supportedLanguages,
+        name,
+        replyTo,
+        targetTable,
+        encoding,
+        subject,
+      };
+    } catch (e) {
+      logger.error(e.response.text);
+      throw e;
     }
-
-    const {
-      from,
-      entityOfTarget,
-      supportedLanguages,
-      name,
-      replyTo,
-      targetTable,
-      encoding,
-      processedArchive,
-      subject,
-    } = await this.formatActitoData({
-      campaignMailData,
-      html,
-      user,
-      mailingId,
-    });
-
-    const createdCampaignMailResult = await mailCampaignApi({
-      from,
-      entityOfTarget,
-      supportedLanguages,
-      name,
-      replyTo,
-      targetTable,
-      encoding,
-    });
-
-    if (!createdCampaignMailResult?.campaignId) {
-      throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
-    }
-
-    const campaignHtmlMailResult = await this.setCampaignHtmlMail({
-      archive: processedArchive,
-      campaignId: createdCampaignMailResult?.campaignId,
-      entity,
-    });
-
-    this.checkIfCampaignIdIsDefined(campaignHtmlMailResult);
-
-    const campaignSubjectMailResult = await this.setCampaignMailSubjectLine({
-      subject,
-      campaignId: createdCampaignMailResult?.campaignId,
-      entity,
-    });
-
-    this.checkIfCampaignIdIsDefined(campaignSubjectMailResult);
-
-    return {
-      id: createdCampaignMailResult?.campaignId,
-      from,
-      entityOfTarget,
-      supportedLanguages,
-      name,
-      replyTo,
-      targetTable,
-      encoding,
-      subject,
-    };
   }
 
   async formatActitoData({ campaignMailData, user, html, mailingId }) {
