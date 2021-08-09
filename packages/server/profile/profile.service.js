@@ -42,6 +42,7 @@ async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
 }
 
 async function actitoEntitiesList({ apiKey }) {
+  console.log({ apiKeyFromActitoServiceEntitiesList: apiKey });
   const espProvider = new EspProvider({
     apiKey,
     type: EspTypes.ACTITO,

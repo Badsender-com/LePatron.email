@@ -8,9 +8,10 @@ const FormData = require('form-data');
 
 const { InternalServerError } = require('http-errors');
 const archiver = require('archiver');
-// const API_ACTITO_V4 = 'https://api.actito.com/v4';
-const API3_ACTITO_V4 = 'https://api3.actito.com/v4';
-const API_AUTHENTIFICATION = 'https://api.actito.com/auth/token';
+// const API_ACTITO_V4 = 'api.actito.com/v4';
+const API3_ACTITO = 'https://api3.actito.com';
+const API3_ACTITO_V4 = API3_ACTITO + '/v4';
+const API_AUTHENTIFICATION = API3_ACTITO + '/auth/token';
 
 class ActitoProvider {
   constructor({ apiKey, ...data }) {
@@ -20,19 +21,25 @@ class ActitoProvider {
   }
 
   async connectApi() {
+    console.log({ apiKeyFromConnectApi: this.apiKey });
     return await axios.get(API_AUTHENTIFICATION, {
       headers: { Authorization: this.apiKey, Accept: 'application/json' },
     });
   }
 
   async getHeaderAccessToken(connectApiData) {
-    if (!connectApiData || !connectApiData.accessToken) {
+    console.log({ connectApiData });
+    if (
+      !connectApiData ||
+      !connectApiData.data ||
+      !connectApiData.data.accessToken
+    ) {
       throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
     }
 
     return {
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${connectApiData.data.accessToken}`,
         Accept: 'application/json',
       },
     };
@@ -40,15 +47,22 @@ class ActitoProvider {
 
   async getAllEspEntities() {
     const headerAccess = await this.getHeaderAccess();
-    return await axios.get(`${API3_ACTITO_V4}/entity`, headerAccess);
+    const allEntitesResult = await axios.get(
+      `${API3_ACTITO_V4}/entity`,
+      headerAccess
+    );
+
+    return allEntitesResult?.data;
   }
 
   async getAllEspProfileTableName({ entity }) {
     const headerAccess = await this.getHeaderAccess();
-    return await axios.get(
+
+    const allEspProfileTableResult = await axios.get(
       `${API3_ACTITO_V4}/entity/${entity}/table/ `,
       headerAccess
     );
+    return allEspProfileTableResult?.data;
   }
 
   async getHeaderAccess() {
@@ -59,6 +73,7 @@ class ActitoProvider {
 
       return this.getHeaderAccessToken(this.accessDataFromApi);
     } catch (e) {
+      console.log(e);
       logger.error(e.response.text);
       throw e;
     }

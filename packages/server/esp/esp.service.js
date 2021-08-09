@@ -20,6 +20,7 @@ class EspService {
       apiKey,
     };
 
+    console.log({ apiKeyEspConstructor: apiKey });
     this.providerInstance = this.createEsp(additionalApiData);
     this.validateProviderInstance();
   }

@@ -191,6 +191,7 @@ async function profileListEditor(req, res) {
 async function actitoEntitiesList(req, res) {
   const { apiKey } = req.body;
 
+  console.log({ apiKeyFromActitoEntitiesList: apiKey });
   const actitoEntitiesListResult = await profileService.actitoEntitiesList({
     apiKey,
   });
