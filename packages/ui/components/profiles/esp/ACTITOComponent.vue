@@ -3,7 +3,11 @@ import { validationMixin } from 'vuelidate';
 import { email, required } from 'vuelidate/lib/validators';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
+import { ENCODING_TYPE } from '~/helpers/constants/encoding-type';
 import { getTableTargetList, getEntitiesList } from '~/helpers/api-routes';
+
+import codes from 'iso-language-codes';
+
 export default {
   name: 'ACTITOComponent',
   mixins: [validationMixin],
@@ -23,6 +27,16 @@ export default {
         targetTables: false,
         entities: false,
       },
+      possibleEncodingType: [
+        {
+          text: ENCODING_TYPE.UTF_8,
+          value: ENCODING_TYPE.UTF_8,
+        },
+        {
+          text: ENCODING_TYPE.ISO_8601,
+          value: ENCODING_TYPE.ISO_8601,
+        },
+      ],
       entities: [],
       targetTables: [],
       submitStatus: null,
@@ -33,6 +47,8 @@ export default {
         targetTable: this.profileData.targetTable ?? '',
         apiKey: this.profileData.apiKey ?? '',
         senderMail: this.profileData.senderMail ?? '',
+        encodingType: this.profileData.encodingType ?? ENCODING_TYPE.UTF_8,
+        supportedLanguage: this.profileData.supportedLanguage ?? 'fr',
         contentSendType: CONTENT_ESP_TYPES.MAIL,
         replyTo: this.profileData.replyTo ?? '',
         type: ESP_TYPES.ACTITO,
@@ -51,12 +67,17 @@ export default {
         targetTable: {
           required,
         },
+        supportedLanguage: {
+          required,
+        },
+        encodingType: {
+          required,
+        },
         apiKey: {
           validateApiKey() {
             if (this.errors.entities) {
               return false;
             }
-
             return true;
           },
           required,
@@ -71,6 +92,23 @@ export default {
     };
   },
   computed: {
+    convertCountriesListPerNames() {
+      const convertedCountriesSelectedObject = [];
+
+      const firstElements = ['fr', 'en', 'pt', 'it', 'es', 'de', 'pl', 'ja'];
+      for (const language of codes) {
+        const convertedElement = {
+          text: language.nativeName,
+          value: language.iso639_1,
+        };
+        if (firstElements.includes(language.iso639_1)) {
+          convertedCountriesSelectedObject.unshift(convertedElement);
+        }
+        convertedCountriesSelectedObject.push(convertedElement);
+      }
+
+      return convertedCountriesSelectedObject;
+    },
     nameErrors() {
       const errors = [];
       if (!this.$v.profile.name.$dirty) return errors;
@@ -83,7 +121,22 @@ export default {
       if (!this.$v.profile.apiKey.$dirty) return errors;
       !this.$v.profile.apiKey.required &&
         errors.push(this.$t('global.errors.apiKeyRequired'));
-      !this.$v.profile.apiKey.validateApiKey && errors.push('Api key invalide');
+      !this.$v.profile.apiKey.validateApiKey &&
+        errors.push(this.$t('global.errors.apiKeyInvalid'));
+      return errors;
+    },
+    entityErrors() {
+      const errors = [];
+      if (!this.$v.profile.entity.$dirty) return errors;
+      !this.$v.profile.entity.required &&
+        errors.push(this.$t('global.errors.entityRequired'));
+      return errors;
+    },
+    targetTableErrors() {
+      const errors = [];
+      if (!this.$v.profile.targetTable.$dirty) return errors;
+      !this.$v.profile.targetTable.required &&
+        errors.push(this.$t('global.errors.targetTableRequired'));
       return errors;
     },
     senderNameErrors() {
@@ -105,11 +158,15 @@ export default {
     disableEntityField() {
       return this.loading.entities || this.entities.length === 0;
     },
+    disableTargetTableField() {
+      return this.loading.targetTables || this.targetTables.length === 0;
+    },
   },
   methods: {
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) {
+        console.log({ errors: this.$v });
         return;
       }
       this.$emit('submit', this.profile);
@@ -207,10 +264,19 @@ export default {
       <v-row>
         <v-col cols="11">
           <v-select
+            v-model="profile.supportedLanguage"
+            :items="convertCountriesListPerNames"
+            :label="$t('global.supportedLanguage')"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="11">
+          <v-select
             v-model="profile.entity"
             :items="entities"
-            label="Entity"
-            solo
+            :error-messages="entityErrors"
+            :label="$t('global.entity')"
             :disabled="disableEntityField"
             @change="handleEntityChange"
           />
@@ -228,9 +294,18 @@ export default {
           <v-select
             v-model="profile.targetTable"
             :items="targetTables"
-            label="target Tables"
-            solo
-            :disabled="disableEntityField"
+            :error-messages="targetTableErrors"
+            :label="$t('global.targetTable')"
+            :disabled="disableTargetTableField"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="11">
+          <v-select
+            v-model="profile.encodingType"
+            :items="possibleEncodingType"
+            :label="$t('global.encodingType')"
           />
         </v-col>
       </v-row>
@@ -271,7 +346,7 @@ export default {
         color="primary"
         @click="onSubmit"
       >
-        sauvegarde
+        {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>
   </v-card>

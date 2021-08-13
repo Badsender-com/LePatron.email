@@ -10764,6 +10764,11 @@ isexe@^2.0.0:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
   integrity sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=
 
+iso-language-codes@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/iso-language-codes/-/iso-language-codes-1.1.0.tgz#8ecc01b62e6f605a6d352b051f0367a77c5a295c"
+  integrity sha512-keIujxUvEAFeEd4esZZM0w+Hbek+G+JWsWs8phODkNvSq8NE2w68ZVD8ZpOUurX8/3ElQyPll0952J06wQNKvA==
+
 isobject@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/isobject/-/isobject-2.1.0.tgz#f065561096a3f1da2ef46272f815c840d87e0c89"
