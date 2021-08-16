@@ -29,6 +29,11 @@ module.exports = {
         loader: '@kazupon/vue-i18n-loader',
       });
     },
+    babel: {
+      presets(env, [_, options]) {
+        return [['@babel/preset-env', options]];
+      },
+    },
   },
   router: {
     middleware: ['authentication-check'],
