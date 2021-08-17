@@ -4,6 +4,7 @@ const { Schema } = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
 
 const { normalizeString, trimString } = require('../utils/model');
+const { encrypt, decrypt } = require('../utils/crpyto');
 const Status = require('./status');
 /**
  * @apiDefine group
@@ -126,5 +127,17 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 //     newWireframe: `/groups/${this._id}/new-wireframe`,
 //   }
 // })
+
+GroupSchema.pre('updateOne', function (next) {
+  const getUpdate = this.getUpdate();
+  this.getUpdate().ftpPassword = encrypt(getUpdate.ftpPassword);
+  next();
+});
+
+GroupSchema.post('findOne', function (result) {
+  if (result.ftpPassword?.length > 32) {
+    result.ftpPassword = decrypt(result.ftpPassword);
+  }
+});
 
 module.exports = GroupSchema;
