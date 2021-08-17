@@ -111,14 +111,14 @@ export default {
     },
     nameErrors() {
       const errors = [];
-      if (!this.$v.profile.name.$dirty) return errors;
+      if (!this.$v.profile.name.$dirty) return [];
       !this.$v.profile.name.required &&
         errors.push(this.$t('global.errors.nameRequired'));
       return errors;
     },
     apiKeyErrors() {
       const errors = [];
-      if (!this.$v.profile.apiKey.$dirty) return errors;
+      if (!this.$v.profile.apiKey.$dirty) return [];
       !this.$v.profile.apiKey.required &&
         errors.push(this.$t('global.errors.apiKeyRequired'));
       !this.$v.profile.apiKey.validateApiKey &&
@@ -127,28 +127,28 @@ export default {
     },
     entityErrors() {
       const errors = [];
-      if (!this.$v.profile.entity.$dirty) return errors;
+      if (!this.$v.profile.entity.$dirty) return [];
       !this.$v.profile.entity.required &&
         errors.push(this.$t('global.errors.entityRequired'));
       return errors;
     },
     targetTableErrors() {
       const errors = [];
-      if (!this.$v.profile.targetTable.$dirty) return errors;
+      if (!this.$v.profile.targetTable.$dirty) return [];
       !this.$v.profile.targetTable.required &&
         errors.push(this.$t('global.errors.targetTableRequired'));
       return errors;
     },
     senderNameErrors() {
       const errors = [];
-      if (!this.$v.profile.senderName.$dirty) return errors;
+      if (!this.$v.profile.senderName.$dirty) return [];
       !this.$v.profile.senderName.required &&
         errors.push(this.$t('global.errors.senderNameRequired'));
       return errors;
     },
     senderMailErrors() {
       const errors = [];
-      if (!this.$v.profile.senderMail.$dirty) return errors;
+      if (!this.$v.profile.senderMail.$dirty) return [];
       !this.$v.profile.senderMail.required &&
         errors.push(this.$t('global.errors.senderMailRequired'));
       !this.$v.profile.senderMail.email &&
