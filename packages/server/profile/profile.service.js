@@ -55,7 +55,7 @@ async function actitoTargetTablesList({ apiKey, entity }) {
     type: EspTypes.ACTITO,
   });
 
-  return await espProvider.getAllEspProfileTableName({ entity });
+  return espProvider.getAllEspProfileTableName({ entity });
 }
 
 async function createProfile({
@@ -79,7 +79,7 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
-  return await Profiles.create({
+  return Profiles.create({
     name,
     type,
     apiKey,
@@ -324,7 +324,7 @@ async function getProfile({ profileId }) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
 
-  return await findOne(profileId);
+  return findOne(profileId);
 }
 
 async function getCampaignMail({ campaignId, profileId }) {
