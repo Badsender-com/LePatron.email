@@ -13,6 +13,7 @@ const {
 } = require('http-errors');
 const mailingService = require('../mailing/mailing.service.js');
 const groupService = require('../group/group.service.js');
+const EspTypes = require('../constant/esp-type');
 
 module.exports = {
   createProfile,
@@ -24,6 +25,8 @@ module.exports = {
   profileListEditor,
   getCampaignMail,
   getProfile,
+  actitoEntitiesList,
+  actitoTargetTablesList,
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
   updateEspCampaign,
@@ -36,6 +39,23 @@ async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
       throw new Unauthorized(ERROR_CODES.FORBIDDEN_PROFILE_ACCESS);
     }
   }
+}
+
+async function actitoEntitiesList({ apiKey }) {
+  const espProvider = new EspProvider({
+    apiKey,
+    type: EspTypes.ACTITO,
+  });
+  return await espProvider.getAllEspEntities();
+}
+
+async function actitoTargetTablesList({ apiKey, entity }) {
+  const espProvider = new EspProvider({
+    apiKey,
+    type: EspTypes.ACTITO,
+  });
+
+  return espProvider.getAllEspProfileTableName({ entity });
 }
 
 async function createProfile({
@@ -59,7 +79,7 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
-  return await Profiles.create({
+  return Profiles.create({
     name,
     type,
     apiKey,
@@ -304,11 +324,10 @@ async function getProfile({ profileId }) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
 
-  return await findOne(profileId);
+  return findOne(profileId);
 }
 
 async function getCampaignMail({ campaignId, profileId }) {
-  console.log('retrieving Campaign Mail');
   const profile = await findOne(profileId);
 
   const { apiKey, type, name, _company, additionalApiData } = profile;
