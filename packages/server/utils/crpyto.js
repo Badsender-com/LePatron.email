@@ -9,21 +9,21 @@ const encrypt = (text) => {
 
   const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
 
-  return {
-    iv: iv.toString('hex'),
-    content: encrypted.toString('hex'),
-  };
+  return iv.toString('hex') + encrypted.toString('hex');
 };
 
 const decrypt = (hash) => {
+  const iv = hash.substring(0, 32);
+  const content = hash.substring(32);
+
   const decipher = crypto.createDecipheriv(
     algorithm,
     secretKey,
-    Buffer.from(hash.iv, 'hex')
+    Buffer.from(iv, 'hex')
   );
 
   const decrpyted = Buffer.concat([
-    decipher.update(Buffer.from(hash.content, 'hex')),
+    decipher.update(Buffer.from(content, 'hex')),
     decipher.final(),
   ]);
 

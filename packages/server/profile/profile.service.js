@@ -42,7 +42,6 @@ async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
 }
 
 async function actitoEntitiesList({ apiKey }) {
-  console.log({ apiKeyFromActitoServiceEntitiesList: apiKey });
   const espProvider = new EspProvider({
     apiKey,
     type: EspTypes.ACTITO,
@@ -329,7 +328,6 @@ async function getProfile({ profileId }) {
 }
 
 async function getCampaignMail({ campaignId, profileId }) {
-  console.log('retrieving Campaign Mail');
   const profile = await findOne(profileId);
 
   const { apiKey, type, name, _company, additionalApiData } = profile;

@@ -125,7 +125,6 @@ async function sendCampaignMail(req, res) {
     type,
   };
 
-  console.log({ actionType });
   if (actionType === MODE_TYPE.EDIT) {
     response = await profileService.updateEspCampaign({
       ...communEspApiFields,
@@ -191,7 +190,6 @@ async function profileListEditor(req, res) {
 async function actitoEntitiesList(req, res) {
   const { apiKey } = req.body;
 
-  console.log({ apiKeyFromActitoEntitiesList: apiKey });
   const actitoEntitiesListResult = await profileService.actitoEntitiesList({
     apiKey,
   });
@@ -257,7 +255,6 @@ async function getCampaignMail(req, res) {
  *
  */
 async function readProfile(req, res) {
-  console.log('reading a profile');
   const { user, params } = req;
   const { profileId } = params;
 
