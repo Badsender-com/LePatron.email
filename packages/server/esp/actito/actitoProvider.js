@@ -21,7 +21,7 @@ class ActitoProvider {
   }
 
   async connectApi() {
-    return await axios.get(API_AUTHENTIFICATION, {
+    return axios.get(API_AUTHENTIFICATION, {
       headers: { Authorization: this.apiKey, Accept: 'application/json' },
     });
   }
@@ -208,7 +208,7 @@ class ActitoProvider {
   }) {
     const headerAccess = await this.getHeaderAccess();
 
-    return await this.saveCampaignMail({
+    return this.saveCampaignMail({
       campaignMailData,
       html,
       user,
