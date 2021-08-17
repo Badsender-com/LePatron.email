@@ -43,18 +43,18 @@ class EspService {
 
   async connectApi() {
     this.validateProviderInstance();
-    return await this.providerInstance.connectApi();
+    return this.providerInstance.connectApi();
   }
 
   async createCampaignMail(sendingMailData) {
     this.validateProviderInstance();
-    return await this.providerInstance.createCampaignMail(sendingMailData);
+    return this.providerInstance.createCampaignMail(sendingMailData);
   }
 
   async createTemplate(campaignTemplate) {
     if (this?.settings?.type === EspTypes.SENDINBLUE) {
       this.validateProviderInstance();
-      return await this.providerInstance.createTemplate(campaignTemplate);
+      return this.providerInstance.createTemplate(campaignTemplate);
     }
 
     throw new InternalServerError(
@@ -64,13 +64,13 @@ class EspService {
 
   async getCampaignMail(campaignMail) {
     this.validateProviderInstance();
-    return await this.providerInstance.getCampaignMail(campaignMail);
+    return this.providerInstance.getCampaignMail(campaignMail);
   }
 
   async getTemplate(campaignTemplate) {
     if (this?.settings?.type === EspTypes.SENDINBLUE) {
       this.validateProviderInstance();
-      return await this.providerInstance.getTemplate(campaignTemplate);
+      return this.providerInstance.getTemplate(campaignTemplate);
     }
 
     throw new InternalServerError(
@@ -80,13 +80,13 @@ class EspService {
 
   async updateCampaignMail(campaignMail) {
     this.validateProviderInstance();
-    return await this.providerInstance.updateCampaignMail(campaignMail);
+    return this.providerInstance.updateCampaignMail(campaignMail);
   }
 
   async updateTemplate(campaignTemplate) {
     if (this?.settings?.type === EspTypes.SENDINBLUE) {
       this.validateProviderInstance();
-      return await this.providerInstance.updateTemplate(campaignTemplate);
+      return this.providerInstance.updateTemplate(campaignTemplate);
     }
 
     throw new InternalServerError(
@@ -97,7 +97,7 @@ class EspService {
   async getAllEspEntities() {
     if (this?.settings?.type === EspTypes.ACTITO) {
       this.validateProviderInstance();
-      return await this.providerInstance.getAllEspEntities();
+      return this.providerInstance.getAllEspEntities();
     }
 
     throw new InternalServerError(
@@ -108,7 +108,7 @@ class EspService {
   async getAllEspProfileTableName(getAllEspProfileTableData) {
     if (this?.settings?.type === EspTypes.ACTITO) {
       this.validateProviderInstance();
-      return await this.providerInstance.getAllEspProfileTableName(
+      return this.providerInstance.getAllEspProfileTableName(
         getAllEspProfileTableData
       );
     }

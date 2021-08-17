@@ -8,7 +8,7 @@ const FormData = require('form-data');
 
 const { InternalServerError } = require('http-errors');
 const archiver = require('archiver');
-// const API_ACTITO_V4 = 'api.actito.com/v4';
+
 const API3_ACTITO = 'https://api3.actito.com';
 const API3_ACTITO_V4 = API3_ACTITO + '/v4';
 const API_AUTHENTIFICATION = API3_ACTITO + '/auth/token';
@@ -133,7 +133,7 @@ class ActitoProvider {
       form.append('inputForm', archive);
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return await axios.post(
+      return axios.post(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
         form,
         { headers: { ...headerAccess, ...form.getHeaders() } }
@@ -148,7 +148,7 @@ class ActitoProvider {
     try {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return await axios.get(
+      return axios.get(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
         { headers: headerAccess }
       );
@@ -162,7 +162,7 @@ class ActitoProvider {
     try {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return await axios.post(
+      return axios.post(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
         subject,
         { headers: headerAccess }
@@ -177,7 +177,7 @@ class ActitoProvider {
     try {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return await axios.get(
+      return axios.get(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
         { headers: headerAccess }
       );
@@ -230,7 +230,7 @@ class ActitoProvider {
   }) {
     const headerAccess = await this.getHeaderAccess();
 
-    return await this.saveCampaignMail({
+    return this.saveCampaignMail({
       campaignMailData,
       html,
       user,
