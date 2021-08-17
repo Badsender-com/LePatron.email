@@ -1,13 +1,12 @@
 'use_strict';
-const logger = require('../../utils/logger');
 
+const logger = require('../../utils/logger');
 const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const axios = require('axios');
 const FormData = require('form-data');
-
-const { InternalServerError } = require('http-errors');
 const archiver = require('archiver');
+const { InternalServerError } = require('http-errors');
 
 const API3_ACTITO = 'https://api3.actito.com';
 const API3_ACTITO_V4 = API3_ACTITO + '/v4';
