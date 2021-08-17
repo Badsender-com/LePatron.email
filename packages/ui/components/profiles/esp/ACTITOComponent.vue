@@ -162,6 +162,12 @@ export default {
       return this.loading.targetTables || this.targetTables.length === 0;
     },
   },
+  async mounted() {
+    if (!!this.profile.id && !!this.profile.apiKey && !!this.profile.entity) {
+      await this.fetchEntitiesWithApiKey(this.profile.apiKey);
+      await this.fetchTargetTables(this.profile.entity, this.profile.apiKey);
+    }
+  },
   methods: {
     onSubmit() {
       this.$v.$touch();
@@ -171,29 +177,7 @@ export default {
       }
       this.$emit('submit', this.profile);
     },
-    async handleApiKeyChange(event) {
-      try {
-        const {
-          $axios,
-          $route: { params },
-        } = this;
-        this.groupId = params.groupId;
-        this.loading.entities = true;
-        const entitiesResult = await $axios.$post(getEntitiesList(), {
-          apiKey: event,
-        });
-        this.entities = entitiesResult?.result?.entities?.map((entity) => ({
-          text: entity.name,
-          value: entity.name,
-        }));
-        this.loading.entities = false;
-        this.errors.entities = false;
-      } catch (e) {
-        this.loading.entities = false;
-        this.errors.entities = true;
-      }
-    },
-    async handleEntityChange(event) {
+    async fetchTargetTables(entity, apiKey) {
       try {
         const {
           $axios,
@@ -202,8 +186,8 @@ export default {
         this.groupId = params.groupId;
         this.loading.targetTables = true;
         const profileTablesResult = await $axios.$post(getTableTargetList(), {
-          apiKey: this.profile.apiKey,
-          entity: event,
+          apiKey: apiKey,
+          entity: entity,
         });
         this.targetTables = profileTablesResult?.result?.profileTableNames?.map(
           (profileTable) => ({
@@ -217,6 +201,34 @@ export default {
         this.errors.entities = true;
         this.loading.targetTables = true;
       }
+    },
+    async fetchEntitiesWithApiKey(apiKey) {
+      try {
+        const {
+          $axios,
+          $route: { params },
+        } = this;
+        this.groupId = params.groupId;
+        this.loading.entities = true;
+        const entitiesResult = await $axios.$post(getEntitiesList(), {
+          apiKey: apiKey,
+        });
+        this.entities = entitiesResult?.result?.entities?.map((entity) => ({
+          text: entity.name,
+          value: entity.name,
+        }));
+        this.loading.entities = false;
+        this.errors.entities = false;
+      } catch (e) {
+        this.loading.entities = false;
+        this.errors.entities = true;
+      }
+    },
+    async handleApiKeyChange(event) {
+      await this.fetchEntitiesWithApiKey(event);
+    },
+    async handleEntityChange(event) {
+      await this.fetchTargetTables(event, this.profile.apiKey);
     },
   },
 };
