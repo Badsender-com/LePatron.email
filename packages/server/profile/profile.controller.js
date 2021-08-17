@@ -180,7 +180,7 @@ async function profileListEditor(req, res) {
 
 /**
  * @api {post} /profiles/actito-entities-list list entities from Actito email service provider
- * @apiPermission user
+ * @apiPermission admin
  * @apiName actitoEntitiesList
  * @apiGroup Profiles
  *
@@ -189,6 +189,10 @@ async function profileListEditor(req, res) {
  */
 async function actitoEntitiesList(req, res) {
   const { apiKey } = req.body;
+
+  if (!apiKey || typeof apiKey === 'undefined') {
+    throw new NotFound();
+  }
 
   const actitoEntitiesListResult = await profileService.actitoEntitiesList({
     apiKey,
@@ -210,6 +214,15 @@ async function actitoEntitiesList(req, res) {
 async function actitoTargetTablesList(req, res) {
   const { apiKey, entity } = req.body;
 
+  if (
+    !apiKey ||
+    !entity ||
+    typeof apiKey === 'undefined' ||
+    typeof entity === 'undefined'
+  ) {
+    throw new NotFound();
+  }
+
   const actitoTargetTablesListResult = await profileService.actitoTargetTablesList(
     {
       apiKey,
@@ -222,7 +235,7 @@ async function actitoTargetTablesList(req, res) {
 
 /**
  * @api {get} /profiles/:profileId/campaign-mail/:mailCampaignId Campaign mail report from provider
- * @apiPermission user
+ * @apiPermission admin
  * @apiName ProfileCampaign
  * @apiGroup Profiles
  *
