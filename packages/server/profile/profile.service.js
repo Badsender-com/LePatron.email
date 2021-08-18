@@ -226,7 +226,6 @@ async function sendEspCampaign({
   };
 
   const { contentSendType } = additionalApiData;
-
   const espCampaignId =
     contentSendType === ESP_CONTENT_TYPE.MAIL
       ? await espProvider.createCampaignMail({

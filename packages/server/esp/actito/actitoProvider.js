@@ -6,6 +6,8 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const axios = require('axios');
 const FormData = require('form-data');
 const archiver = require('archiver');
+const fs = require('fs-extra');
+
 const { InternalServerError } = require('http-errors');
 
 const API3_ACTITO = 'https://api3.actito.com';
@@ -35,10 +37,8 @@ class ActitoProvider {
     }
 
     return {
-      headers: {
-        Authorization: `Bearer ${connectApiData.data.accessToken}`,
-        Accept: 'application/json',
-      },
+      Authorization: `Bearer ${connectApiData.data.accessToken}`,
+      Accept: 'application/json',
     };
   }
 
@@ -52,7 +52,7 @@ class ActitoProvider {
 
       return allEntitesResult?.data;
     } catch (e) {
-      logger.error(e.response.statusText);
+      logger.error(e.response);
       throw e;
     }
   }
@@ -121,7 +121,8 @@ class ActitoProvider {
         },
       };
     } catch (e) {
-      logger.error(e.response.statusText);
+      logger.error(e.response);
+
       throw e;
     }
   }
@@ -129,16 +130,33 @@ class ActitoProvider {
   async setCampaignHtmlMail({ archive, campaignId, entity }) {
     try {
       const form = new FormData();
-      form.append('inputForm', archive);
+      const readableStream = fs.createReadStream(
+        '/home/amine/Downloads/template (3).zip'
+      );
+      const readableStreamFromArchive = fs.createReadStream(archive);
+      console.log({ readableStreamFromArchive });
+      console.log({ readableStream });
+      form.append('inputFile');
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return axios.post(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
+      const headers = {
+        Authorization: headerAccess.Authorization,
+        'Content-Type': 'multipart/form-data',
+        ...form.getHeaders(),
+      };
+      console.log({
+        headers,
         form,
-        { headers: { ...headerAccess, ...form.getHeaders() } }
+        archive,
+      });
+      return axios.post(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
+        form,
+        { headers }
       );
     } catch (e) {
-      logger.error(e.response.text);
+      console.log(' catching error inside setCampaignHtmlMail ');
+      logger.error(e.response);
       throw e;
     }
   }
@@ -152,7 +170,7 @@ class ActitoProvider {
         { headers: headerAccess }
       );
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response);
       throw e;
     }
   }
@@ -198,15 +216,10 @@ class ActitoProvider {
     }
   }
 
-  async createCampaignMail({
-    campaignMailData,
-    html,
-    user,
-    mailingId,
-    entity,
-  }) {
+  async createCampaignMail({ campaignMailData, html, user, mailingId }) {
     const headerAccess = await this.getHeaderAccess();
 
+    const { entity } = campaignMailData;
     return this.saveCampaignMail({
       campaignMailData,
       html,
@@ -265,6 +278,7 @@ class ActitoProvider {
         encoding,
         processedArchive,
         subject,
+        contentType,
       } = await this.formatActitoData({
         campaignMailData,
         html,
@@ -280,30 +294,37 @@ class ActitoProvider {
         replyTo,
         targetTable,
         encoding,
+        contentType,
       });
 
-      if (!createdCampaignMailResult?.campaignId) {
+      if (!createdCampaignMailResult?.data?.campaignId) {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
       }
 
+      const campaignId = createdCampaignMailResult?.data?.campaignId;
+
       const campaignHtmlMailResult = await this.setCampaignHtmlMail({
         archive: processedArchive,
-        campaignId: createdCampaignMailResult?.campaignId,
+        campaignId: campaignId,
         entity,
       });
 
-      this.checkIfCampaignIdIsDefined(campaignHtmlMailResult);
+      console.log({ campaignHtmlMailResult });
+
+      if (campaignHtmlMailResult?.data !== '') {
+        throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
+      }
 
       const campaignSubjectMailResult = await this.setCampaignMailSubjectLine({
         subject,
-        campaignId: createdCampaignMailResult?.campaignId,
+        campaignId,
         entity,
       });
 
       this.checkIfCampaignIdIsDefined(campaignSubjectMailResult);
 
       return {
-        id: createdCampaignMailResult?.campaignId,
+        id: campaignId,
         from,
         entityOfTarget,
         supportedLanguages,
@@ -314,7 +335,7 @@ class ActitoProvider {
         subject,
       };
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error(e.response);
       throw e;
     }
   }
@@ -332,13 +353,13 @@ class ActitoProvider {
       });
 
       const {
-        from,
-        entityOfTarget,
-        supportedLanguages,
+        senderMail: from,
+        entity: entityOfTarget,
+        supportedLanguage,
         name,
         replyTo,
         targetTable,
-        encoding,
+        encodingType: encoding,
         subject,
       } = campaignMailData;
 
@@ -348,22 +369,25 @@ class ActitoProvider {
         );
       });
 
-      processedArchive.on('end', () => {
+      processedArchive.on('end', (endData) => {
+        console.log({ endData });
+        console.log({ pointers: archive.pointer() });
         console.log(`Archive wrote ${archive.pointer()} bytes`);
       });
-
       await processedArchive.finalize();
 
+      console.log('Returning processedArchive');
       return {
         from,
         entityOfTarget,
-        supportedLanguages,
+        supportedLanguages: [supportedLanguage],
         name,
         replyTo,
         targetTable,
         encoding,
         subject,
-        processedArchive,
+        processedArchive: processedArchive,
+        contentType: 'HTML',
       };
     } catch (e) {
       throw new InternalServerError(
@@ -373,7 +397,7 @@ class ActitoProvider {
   }
 
   checkIfCampaignIdIsDefined(campaignData) {
-    if (!campaignData?.campaignId) {
+    if (!campaignData?.data?.campaignId) {
       throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
     }
   }
