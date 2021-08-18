@@ -122,7 +122,7 @@ const EspComponent = Vue.component('esp-form', {
             subject,
             id
           };
-          console.log({ fetchedProfile : this.fetchedProfile });
+
           M.updateTextFields();
         }).catch((error) => {
         // handle error

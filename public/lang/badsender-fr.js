@@ -72,4 +72,10 @@ module.exports = {
   'error-server-402': 'Échec de l\'exportation, l\'ESP exige un paiement',
   'error-server-500':
     'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
+  'mail-name-invalid':
+    'Nom invalide, ne doit avoir que des caractères alphanumériques',
+  'supported-language': 'Langue',
+  'target-table': 'Table cible',
+  'encoding-type': 'Type d\'encodage',
+  entity: 'Entité',
 };

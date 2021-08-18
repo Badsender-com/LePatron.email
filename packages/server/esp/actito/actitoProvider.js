@@ -7,6 +7,8 @@ const axios = require('axios');
 const FormData = require('form-data');
 const archiver = require('archiver');
 const fs = require('fs-extra');
+const os = require('os');
+const path = require('path');
 
 const { InternalServerError } = require('http-errors');
 
@@ -100,7 +102,7 @@ class ActitoProvider {
       const headerAccess = await this.getHeaderAccess();
       const apiEmailCampaignResult = await axios.get(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
-        headerAccess
+        { headers: headerAccess }
       );
 
       const mailSubjectResult = await this.getCampaignMailSubjectLine({
@@ -108,17 +110,27 @@ class ActitoProvider {
         entity,
       });
 
+      const {
+        name,
+        from,
+        replyTo,
+        entityOfTarget,
+        supportedLanguages,
+        targetTable,
+        encoding,
+      } = apiEmailCampaignResult?.data;
+
       return {
-        name: apiEmailCampaignResult?.name,
+        name: name,
         additionalApiData: {
-          from: apiEmailCampaignResult?.from,
-          replyTo: apiEmailCampaignResult?.replyTo,
-          subject: mailSubjectResult?.subject,
-          entityOfTarget: apiEmailCampaignResult?.entityOfTarget,
-          supportedLanguages: apiEmailCampaignResult?.supportedLanguages,
-          targetTable: apiEmailCampaignResult?.targetTable,
-          encoding: apiEmailCampaignResult?.encoding,
+          senderMail: from,
+          replyTo: replyTo,
+          entity: entityOfTarget,
+          supportedLanguage: supportedLanguages,
+          targetTable: targetTable,
+          encodingType: encoding,
         },
+        subject: mailSubjectResult?.data?.subject,
       };
     } catch (e) {
       logger.error(e.response);
@@ -127,37 +139,44 @@ class ActitoProvider {
     }
   }
 
-  async setCampaignHtmlMail({ archive, campaignId, entity }) {
+  async setCampaignHtmlMail({ archive, campaignId, entity, archiveName }) {
+    let tmpDir;
     try {
       const form = new FormData();
-      const readableStream = fs.createReadStream(
-        '/home/amine/Downloads/template (3).zip'
-      );
-      const readableStreamFromArchive = fs.createReadStream(archive);
-      console.log({ readableStreamFromArchive });
-      console.log({ readableStream });
-      form.append('inputFile');
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), archiveName));
+      const tmpZipFile = tmpDir + '/' + archiveName + '.zip';
+
       const headerAccess = await this.getHeaderAccess();
       const headers = {
         Authorization: headerAccess.Authorization,
-        'Content-Type': 'multipart/form-data',
+        contentType: 'multipart/form-data',
         ...form.getHeaders(),
       };
-      console.log({
-        headers,
-        form,
-        archive,
-      });
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+
+      archive.pipe(fs.createWriteStream(tmpZipFile));
+      archive.finalize();
+
+      form.append('inputFile', fs.createReadStream(tmpZipFile));
+
       return axios.post(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
         form,
         { headers }
       );
     } catch (e) {
-      console.log(' catching error inside setCampaignHtmlMail ');
       logger.error(e.response);
       throw e;
+    } finally {
+      try {
+        if (tmpDir) {
+          fs.rmSync(tmpDir, { recursive: true });
+        }
+      } catch (e) {
+        logger.error(
+          `An error has occurred while removing the temp folder at ${tmpDir}. Please remove it manually. Error: ${e}`
+        );
+      }
     }
   }
 
@@ -179,7 +198,7 @@ class ActitoProvider {
     try {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
-      return axios.post(
+      return axios.put(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
         subject,
         { headers: headerAccess }
@@ -220,7 +239,7 @@ class ActitoProvider {
     const headerAccess = await this.getHeaderAccess();
 
     const { entity } = campaignMailData;
-    return this.saveCampaignMail({
+    const createCampaignMailResult = await this.saveCampaignMail({
       campaignMailData,
       html,
       user,
@@ -231,6 +250,8 @@ class ActitoProvider {
           headers: headerAccess,
         }),
     });
+
+    return createCampaignMailResult?.id;
   }
 
   async updateCampaignMail({
@@ -239,6 +260,7 @@ class ActitoProvider {
     user,
     mailingId,
     entity,
+    campaignId,
   }) {
     const headerAccess = await this.getHeaderAccess();
 
@@ -249,9 +271,13 @@ class ActitoProvider {
       mailingId,
       entity,
       mailCampaignApi: async (data) =>
-        axios.put(`${API3_ACTITO_V4}/entity/${entity}/mail/`, data, {
-          headers: headerAccess,
-        }),
+        axios.put(
+          `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+          data,
+          {
+            headers: headerAccess,
+          }
+        ),
     });
   }
 
@@ -279,6 +305,7 @@ class ActitoProvider {
         processedArchive,
         subject,
         contentType,
+        archiveName,
       } = await this.formatActitoData({
         campaignMailData,
         html,
@@ -306,12 +333,13 @@ class ActitoProvider {
       const campaignHtmlMailResult = await this.setCampaignHtmlMail({
         archive: processedArchive,
         campaignId: campaignId,
+        archiveName,
         entity,
       });
 
       console.log({ campaignHtmlMailResult });
 
-      if (campaignHtmlMailResult?.data !== '') {
+      if (!campaignHtmlMailResult?.data?.campaignId) {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
       }
 
@@ -343,8 +371,14 @@ class ActitoProvider {
   async formatActitoData({ campaignMailData, user, html, mailingId }) {
     try {
       const archive = archiver('zip');
-      const downloadOptions = { forCdn: false, forFtp: true };
-      const { archive: processedArchive } = await mailingService.downloadZip({
+      const downloadOptions = {
+        downLoadForCdn: 'false',
+        downLoadForFtp: 'true',
+      };
+      const {
+        archive: processedArchive,
+        name: archiveName,
+      } = await mailingService.downloadZip({
         user,
         html,
         archive,
@@ -369,14 +403,6 @@ class ActitoProvider {
         );
       });
 
-      processedArchive.on('end', (endData) => {
-        console.log({ endData });
-        console.log({ pointers: archive.pointer() });
-        console.log(`Archive wrote ${archive.pointer()} bytes`);
-      });
-      await processedArchive.finalize();
-
-      console.log('Returning processedArchive');
       return {
         from,
         entityOfTarget,
@@ -386,6 +412,7 @@ class ActitoProvider {
         targetTable,
         encoding,
         subject,
+        archiveName,
         processedArchive: processedArchive,
         contentType: 'HTML',
       };

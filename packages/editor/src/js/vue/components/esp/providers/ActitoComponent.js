@@ -49,14 +49,14 @@ const ActitoComponent = Vue.component('ActitoComponent', {
               v-model="profile.campaignMailName"
               type="text"
               name="campaignMailName"
-              :placeholder="vm.t('mail-name')"
+              :placeholder="vm.t('mailName')"
               @input.prevent="$v.profile.campaignMailName.$touch()"
               @blur.prevent="$v.profile.campaignMailName.$touch()"
               :class="campaignNameClasses"
               class="validate"
             >
-            <label for="campaignMailName">{{ vm.t('mail-name') }}</label>
-            <span v-if="!$v.profile.campaignMailName.alphaNum" class="helper-text" :data-error="vm.t('mail-name-invalide')"></span>
+            <label for="campaignMailName">{{ vm.t('mailName') }}</label>
+            <span v-if="!$v.profile.campaignMailName.alphaNum" class="helper-text" :data-error="vm.t('mail-name-invalid')"></span>
 
           </div>
         </div>
@@ -66,7 +66,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
               id="subject"
               type="text"
               v-model="profile.subject"
-              :placeholder="vm.t('mail-subject')"
+              :placeholder="vm.t('mailSubject')"
               name="subject"
               required
               :class="[
@@ -75,7 +75,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
                 ]"
               class="validate"
             >
-            <label for="subject" class="active">{{ vm.t('mail-subject') }}</label>
+            <label for="subject" class="active">{{ vm.t('mailSubject') }}</label>
             <span class="helper-text" :data-error="vm.t('mail-subject-required')"></span>
 
           </div>
@@ -122,14 +122,14 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         <div class="row" :style="style.mb0">
           <div class="input-field col s12" :style="style.mb0">
             <input
-              id="encoding-table"
+              id="encoding-type"
               type="text"
               v-model="profile.encodingType"
               disabled
-              :placeholder="vm.t('encoding-table')"
+              :placeholder="vm.t('encoding-type')"
               name="encodingType"
             >
-            <label for="encoding-table" class="active">{{ vm.t('encoding-table') }}</label>
+            <label for="encoding-table" class="active">{{ vm.t('encoding-type') }}</label>
           </div>
         </div>
         <div class="row" :style="style.mb0">
