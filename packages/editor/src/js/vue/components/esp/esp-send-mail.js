@@ -1,14 +1,18 @@
 var Vue = require('vue/dist/vue.common');
-var { SENDINBLUEComponent } = require('./providers/SendinBlueComponent');
+var { SendinBlueComponent } = require('./providers/SendinBlueComponent');
+var { ActitoComponent } = require('./providers/ActitoComponent');
 var { ProfileListComponent } = require('../esp/profile-list');
 var { getEspIds } = require('../../utils/apis');
 var { SEND_MODE } = require('../../constant/send-mode');
+var { ESP_TYPE } = require('../../constant/esp-type');
+
 var { getCampaignDetail, getProfileDetail } = require('../../../vue/utils/apis');
 var axios = require('axios');
 
 const EspComponent = Vue.component('esp-form', {
   components: {
-    SENDINBLUEComponent,
+    SendinBlueComponent,
+    ActitoComponent,
     ProfileListComponent
   },
   props: {
@@ -36,9 +40,9 @@ const EspComponent = Vue.component('esp-form', {
               :key="selectedProfile.id"
               :vm="vm"
               :type="type"
-              :fetched-profile="profile"
+              :fetched-profile="fetchedProfile"
               :is="espComponent"
-              v-else-if="!!selectedProfile && !!profile.id"
+              v-else-if="!!selectedProfile && !!fetchedProfile.id"
               :selectedProfile="selectedProfile"
               :campaignId="campaignId"
               :closeModal="closeModal"
@@ -51,7 +55,6 @@ const EspComponent = Vue.component('esp-form', {
 
       `,
   data: () => ({
-    espComponent: 'SendinBlueComponent',
     mailingId: null,
     loading: false,
     loadingExport: false,
@@ -61,7 +64,7 @@ const EspComponent = Vue.component('esp-form', {
     type: SEND_MODE.CREATION,
     campaignId: null,
     espIds: [],
-    profile: {}
+    fetchedProfile: {},
   }),
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
@@ -107,21 +110,14 @@ const EspComponent = Vue.component('esp-form', {
           const {
             type,
             id,
-            additionalApiData: {
-              senderName,
-              senderMail,
-              replyTo,
-              contentSendType
-            },
+            additionalApiData,
             subject
           } = profileResult;
 
-          this.profile = {
+          this.fetchedProfile = {
             campaignMailName: this.type === SEND_MODE.CREATION ? this.vm.creationName() : profileResult.name,
-            contentSendType: contentSendType,
-            senderName,
-            senderMail,
-            replyTo,
+            contentSendType: additionalApiData?.contentSendType,
+            additionalApiData,
             type,
             subject,
             id
@@ -177,9 +173,9 @@ const EspComponent = Vue.component('esp-form', {
       axios.post(this.vm.metadata.url.sendCampaignMail, {
         html: unprocessedHtml,
         actionType: this.type,
-        profileId: this.profile?.id,
-        type: this.profile.type,
-        contentSentType: this.profile.contentSentType,
+        profileId: this.fetchedProfile?.id,
+        type: this.fetchedProfile.type,
+        contentSentType: this.fetchedProfile.contentSentType,
         campaignId: this.campaignId,
         espSendingMailData: {
           campaignMailName: data.campaignMailName,
@@ -188,7 +184,7 @@ const EspComponent = Vue.component('esp-form', {
       })
         .then((response)=> {
           // handle success
-          const successText = this.profile?.contentSendType?.toString().toLowerCase()+'-success-esp-send'
+          const successText = this.fetchedProfile?.contentSendType?.toString().toLowerCase()+'-success-esp-send'
           this.vm.notifier.success(this.vm.t(successText));
           this.closeModal();
         }).catch((error) => {
@@ -203,6 +199,18 @@ const EspComponent = Vue.component('esp-form', {
       });
     }
   },
+  computed: {
+    espComponent() {
+      switch (this.selectedProfile?.type) {
+        case ESP_TYPE.ACTITO:
+          return 'ActitoComponent';
+        case ESP_TYPE.SENDINBLUE:
+          return 'SendinBlueComponent';
+        default:
+          return 'SendinBlueComponent';
+      }
+    }
+  }
 });
 
 module.exports = {

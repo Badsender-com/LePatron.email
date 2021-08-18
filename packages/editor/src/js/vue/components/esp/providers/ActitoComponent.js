@@ -1,11 +1,12 @@
-import {required} from "vuelidate/lib/validators";
+import { required } from "vuelidate/lib/validators";
 
 var Vue = require('vue/dist/vue.common');
 var { SEND_MODE } = require('../../../constant/send-mode');
 var { ESP_TYPE } = require('../../../constant/esp-type');
 var  { validationMixin } = require('vuelidate');
 
-const SendinBlueComponent = Vue.component('SendinBlueComponent', {
+
+const ActitoComponent = Vue.component('ActitoComponent', {
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
@@ -44,21 +45,18 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
         <div class="row" :style="style.mb0">
           <div class="input-field col s12" :style="style.mb0">
             <input
-              id="name"
+              id="campaignMailName"
               v-model="profile.campaignMailName"
               type="text"
-              name="name"
-              required
-              :placeholder="vm.t(nameLabelText)"
-              @input="$v.profile.campaignMailName.$touch()"
-              @blur="$v.profile.campaignMailName.$touch()"
-              :class="[
-                    'validate',
-                    $v.profile.campaignMailName.required ? 'valid' : 'invalid',
-                ]"
+              name="campaignMailName"
+              :placeholder="vm.t('mailName')"
+              @input.prevent="$v.profile.campaignMailName.$touch()"
+              @blur.prevent="$v.profile.campaignMailName.$touch()"
+              :class="campaignNameClasses"
+              class="validate"
             >
-            <label for="name">{{ vm.t(nameLabelText) }}</label>
-            <span v-if="!$v.profile.campaignMailName.required" class="helper-text" :data-error="vm.t(nameRequiredText)"></span>
+            <label for="campaignMailName">{{ vm.t('mailName') }}</label>
+            <span v-if="!$v.profile.campaignMailName.alphaNum" class="helper-text" :data-error="vm.t('mail-name-invalid')"></span>
 
           </div>
         </div>
@@ -68,7 +66,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
               id="subject"
               type="text"
               v-model="profile.subject"
-              :placeholder="vm.t(subjectLabelText)"
+              :placeholder="vm.t('mailSubject')"
               name="subject"
               required
               :class="[
@@ -77,22 +75,61 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
                 ]"
               class="validate"
             >
-            <label for="subject" class="active">{{ vm.t(subjectLabelText) }}</label>
-            <span class="helper-text" :data-error="vm.t(subjectRequiredText)"></span>
+            <label for="subject" class="active">{{ vm.t('mailSubject') }}</label>
+            <span class="helper-text" :data-error="vm.t('mail-subject-required')"></span>
 
           </div>
         </div>
         <div class="row" :style="style.mb0">
           <div class="input-field col s12" :style="style.mb0">
             <input
-              id="sender-name"
+              id="entity"
               type="text"
-              v-model="profile.senderName"
+              v-model="profile.entity"
               disabled
-              :placeholder="vm.t('sender-name')"
-              name="senderName"
+              :placeholder="vm.t('entity')"
+              name="entity"
             >
-            <label for="sender-name" class="active">{{ vm.t('sender-name') }}</label>
+            <label for="entity" class="active">{{ vm.t('entity') }}</label>
+          </div>
+        </div>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="target-table"
+              type="text"
+              v-model="profile.targetTable"
+              disabled
+              :placeholder="vm.t('target-table')"
+              name="targetTable"
+            >
+            <label for="target-table" class="active">{{ vm.t('target-table') }}</label>
+          </div>
+        </div>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="supported-language"
+              type="text"
+              v-model="profile.supportedLanguage"
+              disabled
+              :placeholder="vm.t('supported-language')"
+              name="supportedLanguage"
+            >
+            <label for="supported-language" class="active">{{ vm.t('supported-language') }}</label>
+          </div>
+        </div>
+        <div class="row" :style="style.mb0">
+          <div class="input-field col s12" :style="style.mb0">
+            <input
+              id="encoding-type"
+              type="text"
+              v-model="profile.encodingType"
+              disabled
+              :placeholder="vm.t('encoding-type')"
+              name="encodingType"
+            >
+            <label for="encoding-table" class="active">{{ vm.t('encoding-type') }}</label>
           </div>
         </div>
         <div class="row" :style="style.mb0">
@@ -144,10 +181,14 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
 </div>
       `,
   data() {
+
     return {
       profile: {
         campaignMailName: '',
-        senderName: '',
+        entity: '',
+        encodingType: '',
+        supportedLanguage: '',
+        targetTable: '',
         senderMail: '',
         replyTo: '',
         subject: '',
@@ -176,7 +217,16 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
     return {
       profile: {
         campaignMailName: {
-          required,
+          alphaNum(value) {
+            const onlyNumberTextAndUnderscoreRegex = /^[0-9a-zA-Z\_]+$/;
+
+            const targetRegex = !onlyNumberTextAndUnderscoreRegex.test(value);
+
+            if(!value) {
+              return false
+            }
+            return onlyNumberTextAndUnderscoreRegex.test(value);
+          }
         },
         subject: {
           required,
@@ -186,39 +236,50 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
   },
   mounted() {
 
-    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, replyTo } } = this.fetchedProfile;
+    const {
+      subject,
+      campaignMailName,
+      id,
+      additionalApiData: {
+        entity,
+        targetTable,
+        senderMail,
+        encodingType,
+        supportedLanguage,
+        replyTo
+      }
+    } = this.fetchedProfile;
 
     this.profile = {
+      id: id ?? '',
       campaignMailName: campaignMailName ?? '',
-      senderName: senderName ?? '',
+      entity: entity ?? '',
+      encodingType: encodingType ?? '',
+      supportedLanguage: supportedLanguage ?? '',
+      targetTable: targetTable ?? '',
       senderMail: senderMail ?? '',
       replyTo: replyTo ?? '',
       subject: subject ?? '',
-      id: id ?? '',
-    };
+    }
+
     M.updateTextFields();
   },
   computed: {
     isEditMode() {
       return this.type === SEND_MODE.EDIT
     },
-    nameLabelText() {
-      return this.contentSendTypeLowerCase() + 'Name'
-    },
-    subjectLabelText() {
-      return this.contentSendTypeLowerCase() + 'Subject'
-    },
-    nameRequiredText() {
-      return this.contentSendTypeLowerCase() + '-name-required'
-    },
-    subjectRequiredText() {
-      return this.contentSendTypeLowerCase() + '-subject-required'
+    campaignNameClasses() {
+
+      return [
+        this.$v.profile.campaignMailName.alphaNum  ? 'valid' : 'invalid'
+      ]
     }
   },
   methods: {
     onSubmit() {
       M.updateTextFields();
       this.$v.$touch();
+
       if (this.$v.$invalid) {
         return;
       }
@@ -232,5 +293,5 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
 })
 
 module.exports = {
-  SendinBlueComponent
+  ActitoComponent
 }

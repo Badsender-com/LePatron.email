@@ -171,6 +171,7 @@ async function updateEspCampaign({
           mailingId,
           campaignMailData,
           campaignId,
+          ...additionalApiData,
         })
       : await espProvider.updateTemplate({
           user,
@@ -226,7 +227,6 @@ async function sendEspCampaign({
   };
 
   const { contentSendType } = additionalApiData;
-
   const espCampaignId =
     contentSendType === ESP_CONTENT_TYPE.MAIL
       ? await espProvider.createCampaignMail({
@@ -343,10 +343,10 @@ async function getCampaignMail({ campaignId, profileId }) {
   });
 
   let campaignMailResponse = null;
-
   if (contentSendType === ESP_CONTENT_TYPE.MAIL) {
     campaignMailResponse = await espProvider.getCampaignMail({
       campaignId,
+      ...additionalApiData,
     });
   } else {
     campaignMailResponse = await espProvider.getTemplate({
