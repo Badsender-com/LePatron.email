@@ -362,7 +362,7 @@ class ActitoProvider {
         subject,
       };
     } catch (e) {
-      logger.error(e.response);
+      logger.error(e.response.data);
       throw e;
     }
   }
