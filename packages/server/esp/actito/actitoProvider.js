@@ -47,10 +47,9 @@ class ActitoProvider {
   async getAllEspEntities() {
     try {
       const headerAccess = await this.getHeaderAccess();
-      const allEntitesResult = await axios.get(
-        `${API3_ACTITO_V4}/entity`,
-        headerAccess
-      );
+      const allEntitesResult = await axios.get(`${API3_ACTITO_V4}/entity`, {
+        headers: headerAccess,
+      });
 
       return allEntitesResult?.data;
     } catch (e) {
@@ -65,7 +64,7 @@ class ActitoProvider {
 
       const allEspProfileTableResult = await axios.get(
         `${API3_ACTITO_V4}/entity/${entity}/table/ `,
-        headerAccess
+        { headers: headerAccess }
       );
       return allEspProfileTableResult?.data;
     } catch (e) {
