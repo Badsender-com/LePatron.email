@@ -132,7 +132,7 @@ class ActitoProvider {
         subject: mailSubjectResult?.data?.subject,
       };
     } catch (e) {
-      logger.error(e.response);
+      logger.error(e.response.statusText);
 
       throw e;
     }
@@ -155,7 +155,7 @@ class ActitoProvider {
 
       archive.pipe(fs.createWriteStream(tmpZipFile));
       archive.finalize();
-
+      logger.log('file existence', fs.existsSync(tmpDir));
       form.append('inputFile', fs.createReadStream(tmpZipFile));
 
       return axios.post(
@@ -164,7 +164,7 @@ class ActitoProvider {
         { headers }
       );
     } catch (e) {
-      logger.error(e.response);
+      logger.error(e.response.statusText);
       throw e;
     } finally {
       try {
@@ -188,7 +188,7 @@ class ActitoProvider {
         { headers: headerAccess }
       );
     } catch (e) {
-      logger.error(e.response);
+      logger.error(e.response.statusText);
       throw e;
     }
   }
@@ -336,8 +336,6 @@ class ActitoProvider {
         entity,
       });
 
-      console.log({ campaignHtmlMailResult });
-
       if (!campaignHtmlMailResult?.data?.campaignId) {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
       }
@@ -362,7 +360,7 @@ class ActitoProvider {
         subject,
       };
     } catch (e) {
-      logger.error(e.response.data);
+      logger.error(e.response.statusText);
       throw e;
     }
   }
