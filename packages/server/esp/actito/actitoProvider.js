@@ -188,7 +188,7 @@ class ActitoProvider {
         { headers: headerAccess }
       );
     } catch (e) {
-      logger.error(e.response.statusText);
+      logger.error(e.response);
       throw e;
     }
   }
@@ -360,7 +360,7 @@ class ActitoProvider {
         subject,
       };
     } catch (e) {
-      logger.error(e.response.statusText);
+      logger.error(e.response.data);
       throw e;
     }
   }
