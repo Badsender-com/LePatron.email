@@ -10,7 +10,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const path = require('path');
 
-const { InternalServerError } = require('http-errors');
+const { Conflict, InternalServerError } = require('http-errors');
 
 const API3_ACTITO = 'https://api3.actito.com';
 const API3_ACTITO_V4 = API3_ACTITO + '/v4';
@@ -193,6 +193,20 @@ class ActitoProvider {
     }
   }
 
+  async deleteCampaignMail({ campaignId, entity }) {
+    try {
+      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      const headerAccess = await this.getHeaderAccess();
+      return axios.delete(
+        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+        { headers: headerAccess }
+      );
+    } catch (e) {
+      logger.error(e.response);
+      throw e;
+    }
+  }
+
   async setCampaignMailSubjectLine({ subject, campaignId, entity }) {
     try {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
@@ -203,6 +217,7 @@ class ActitoProvider {
         { headers: headerAccess }
       );
     } catch (e) {
+      await this.deleteCampaignMail({ campaignId, entity });
       logger.error(e.response.statusText);
       throw e;
     }
@@ -288,6 +303,8 @@ class ActitoProvider {
     entity,
     mailCampaignApi,
   }) {
+    let campaignId;
+
     try {
       if (typeof mailCampaignApi !== 'function') {
         throw new InternalServerError(ERROR_CODES.API_CALL_IS_NOT_A_FUNCTION);
@@ -327,7 +344,7 @@ class ActitoProvider {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
       }
 
-      const campaignId = createdCampaignMailResult?.data?.campaignId;
+      campaignId = createdCampaignMailResult?.data?.campaignId;
 
       const campaignHtmlMailResult = await this.setCampaignHtmlMail({
         archive: processedArchive,
@@ -361,6 +378,14 @@ class ActitoProvider {
       };
     } catch (e) {
       logger.error(e.response.data);
+      if (campaignId) {
+        await this.deleteCampaignMail({ campaignId, entity });
+      }
+
+      if (e.response.status === 409) {
+        throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
+      }
+
       throw e;
     }
   }

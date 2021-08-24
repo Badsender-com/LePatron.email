@@ -190,7 +190,7 @@ const EspComponent = Vue.component('esp-form', {
         }).catch((error) => {
         // handle error
         const errorCode = error.response.status;
-        const handledErrorCodes = [400, 500, 402 ];
+        const handledErrorCodes = [400, 500, 402, 409 ];
         const errorMessageCode = handledErrorCodes.includes(errorCode) ?  `error-server-${errorCode}` : 'error-server';
         this.vm.notifier.error(this.vm.t(errorMessageCode));
 
