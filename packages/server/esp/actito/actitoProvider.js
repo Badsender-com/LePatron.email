@@ -144,7 +144,6 @@ class ActitoProvider {
       const form = new FormData();
       tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), archiveName));
       const tmpZipFile = tmpDir + '/' + archiveName + '.zip';
-
       const headerAccess = await this.getHeaderAccess();
       const headers = {
         Authorization: headerAccess.Authorization,
@@ -155,9 +154,9 @@ class ActitoProvider {
 
       archive.pipe(fs.createWriteStream(tmpZipFile));
       archive.finalize();
-      logger.log('file existence', fs.existsSync(tmpDir));
-      logger.log('file path', tmpDir);
-      form.append('inputFile', archive);
+      logger.log('file existence', fs.existsSync(tmpZipFile));
+      logger.log('file path', tmpZipFile);
+      form.append('inputFile', fs.createReadStream(tmpZipFile));
 
       return axios.post(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
