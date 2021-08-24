@@ -156,7 +156,8 @@ class ActitoProvider {
       archive.pipe(fs.createWriteStream(tmpZipFile));
       archive.finalize();
       logger.log('file existence', fs.existsSync(tmpDir));
-      form.append('inputFile', fs.createReadStream(tmpZipFile));
+      logger.log('file path', tmpDir);
+      form.append('inputFile', archive);
 
       return axios.post(
         `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
