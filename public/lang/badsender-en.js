@@ -68,8 +68,8 @@ module.exports = {
   'error-server-400':
     'Esp parameters invalids, check if sender mail matches  API key.',
   'error-server-402': 'Export fail, provider require payment',
+  'error-server-409': 'Mail name already used',
   'error-server-500': 'An error has occured while calling server api',
-  'mail-name-invalid': 'Invalid name, should have only alphanumeric caracteres',
   'supported-language': 'Supported language',
   'target-table': 'Target table',
   'encoding-type': 'Encoding type',

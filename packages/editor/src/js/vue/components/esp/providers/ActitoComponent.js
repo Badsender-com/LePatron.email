@@ -50,13 +50,14 @@ const ActitoComponent = Vue.component('ActitoComponent', {
               type="text"
               name="campaignMailName"
               :placeholder="vm.t('mailName')"
-              @input.prevent="$v.profile.campaignMailName.$touch()"
-              @blur.prevent="$v.profile.campaignMailName.$touch()"
-              :class="campaignNameClasses"
+              :class="['validate',
+                    $v.profile.campaignMailName.required ? 'valid' : 'invalid',
+                ]"
+              required
               class="validate"
             >
             <label for="campaignMailName">{{ vm.t('mailName') }}</label>
-            <span v-if="!$v.profile.campaignMailName.alphaNum" class="helper-text" :data-error="vm.t('mail-name-invalid')"></span>
+            <span class="helper-text" :data-error="vm.t('mail-name-required')"></span>
 
           </div>
         </div>
@@ -217,16 +218,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
     return {
       profile: {
         campaignMailName: {
-          alphaNum(value) {
-            const onlyNumberTextAndUnderscoreRegex = /^[0-9a-zA-Z\_]+$/;
-
-            const targetRegex = !onlyNumberTextAndUnderscoreRegex.test(value);
-
-            if(!value) {
-              return false
-            }
-            return onlyNumberTextAndUnderscoreRegex.test(value);
-          }
+          required
         },
         subject: {
           required,
@@ -267,12 +259,6 @@ const ActitoComponent = Vue.component('ActitoComponent', {
   computed: {
     isEditMode() {
       return this.type === SEND_MODE.EDIT
-    },
-    campaignNameClasses() {
-
-      return [
-        this.$v.profile.campaignMailName.alphaNum  ? 'valid' : 'invalid'
-      ]
     }
   },
   methods: {
@@ -283,6 +269,8 @@ const ActitoComponent = Vue.component('ActitoComponent', {
       if (this.$v.$invalid) {
         return;
       }
+
+      this.profile.campaignMailName = this.profile.campaignMailName?.replace(/[^A-Z0-9]+/ig, "_");
 
       this.$emit('submit', this.profile);
     },

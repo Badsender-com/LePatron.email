@@ -70,10 +70,9 @@ module.exports = {
   'error-server-400':
     'Paramètres Esp invalides, vérifiez si le courrier de l\'expéditeur correspond à la clé API',
   'error-server-402': 'Échec de l\'exportation, l\'ESP exige un paiement',
+  'error-server-409': 'Nom de mail déjà utilisé',
   'error-server-500':
     'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
-  'mail-name-invalid':
-    'Nom invalide, ne doit avoir que des caractères alphanumériques',
   'supported-language': 'Langue',
   'target-table': 'Table cible',
   'encoding-type': 'Type d\'encodage',
