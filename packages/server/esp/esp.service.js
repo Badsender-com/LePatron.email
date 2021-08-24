@@ -1,8 +1,8 @@
 const ERROR_CODES = require('../constant/error-codes');
 const { InternalServerError } = require('http-errors');
 const EspTypes = require('../constant/esp-type');
-const SendinBlueProvider = require('../esp/sendinBlueProvider');
-const ActitoProvider = require('../esp/actitoProvider');
+const SendinBlueProvider = require('../esp/sendinblue/sendinBlueProvider');
+const ActitoProvider = require('../esp/actito/actitoProvider');
 
 class EspService {
   constructor({
@@ -43,37 +43,78 @@ class EspService {
 
   async connectApi() {
     this.validateProviderInstance();
-    return await this.providerInstance.connectApi();
+    return this.providerInstance.connectApi();
   }
 
   async createCampaignMail(sendingMailData) {
     this.validateProviderInstance();
-    return await this.providerInstance.createCampaignMail(sendingMailData);
+    return this.providerInstance.createCampaignMail(sendingMailData);
   }
 
   async createTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.createTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return this.providerInstance.createTemplate(campaignTemplate);
+    }
+
+    throw new InternalServerError(
+      ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+    );
   }
 
   async getCampaignMail(campaignMail) {
     this.validateProviderInstance();
-    return await this.providerInstance.getCampaignMail(campaignMail);
+    return this.providerInstance.getCampaignMail(campaignMail);
   }
 
   async getTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.getTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return this.providerInstance.getTemplate(campaignTemplate);
+    }
+
+    throw new InternalServerError(
+      ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+    );
   }
 
   async updateCampaignMail(campaignMail) {
     this.validateProviderInstance();
-    return await this.providerInstance.updateCampaignMail(campaignMail);
+    return this.providerInstance.updateCampaignMail(campaignMail);
   }
 
   async updateTemplate(campaignTemplate) {
-    this.validateProviderInstance();
-    return await this.providerInstance.updateTemplate(campaignTemplate);
+    if (this?.settings?.type === EspTypes.SENDINBLUE) {
+      this.validateProviderInstance();
+      return this.providerInstance.updateTemplate(campaignTemplate);
+    }
+
+    throw new InternalServerError(
+      ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_SENDINBLUE_PROVIDER
+    );
+  }
+
+  async getAllEspEntities() {
+    if (this?.settings?.type === EspTypes.ACTITO) {
+      this.validateProviderInstance();
+      return this.providerInstance.getAllEspEntities();
+    }
+
+    throw new InternalServerError(
+      ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_ACTITO_PROVIDER
+    );
+  }
+
+  async getAllEspProfileTableName(getAllEspProfileTableData) {
+    if (this?.settings?.type === EspTypes.ACTITO) {
+      this.validateProviderInstance();
+      return this.providerInstance.getAllEspProfileTableName(
+        getAllEspProfileTableData
+      );
+    }
+    throw new InternalServerError(
+      ERROR_CODES.UNAUTHORIZED_METHOD_CALL_ON_ACTITO_PROVIDER
+    );
   }
 
   validateProviderInstance() {

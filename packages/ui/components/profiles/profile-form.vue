@@ -24,6 +24,10 @@ export default {
           text: 'SendinBlue',
           value: ESP_TYPES.SENDINBLUE,
         },
+        {
+          text: 'Actito',
+          value: ESP_TYPES.ACTITO,
+        },
       ],
       selectedEsp: ESP_TYPES.SENDINBLUE,
       loading: false,
@@ -48,8 +52,7 @@ export default {
       const { $axios, $route } = this;
       const { params } = $route;
       try {
-        const groupResponse = await $axios.$get(groupsItem(params));
-        this.group = groupResponse;
+        this.group = await $axios.$get(groupsItem(params));
       } catch (error) {
         console.log(error);
       }

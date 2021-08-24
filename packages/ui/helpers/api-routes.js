@@ -206,10 +206,19 @@ export function getFolderContentStatus(folderID) {
 export function getProfiles() {
   return '/profiles';
 }
+
 export function getProfileId(getProfileId) {
   return `/profiles/${getProfileId}`;
 }
 
 export function getProfileForAdmin(getProfileId) {
   return `/profiles/${getProfileId}/admin`;
+}
+
+export function getTableTargetList() {
+  return '/profiles/actito-target-tables-list';
+}
+
+export function getEntitiesList() {
+  return '/profiles/actito-entities-list';
 }

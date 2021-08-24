@@ -13,6 +13,8 @@ module.exports = {
   deleteProfile: asyncHandler(deleteProfile),
   profileListEditor: asyncHandler(profileListEditor),
   getCampaignMail: asyncHandler(getCampaignMail),
+  actitoEntitiesList: asyncHandler(actitoEntitiesList),
+  actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
 };
@@ -123,7 +125,6 @@ async function sendCampaignMail(req, res) {
     type,
   };
 
-  console.log({ actionType });
   if (actionType === MODE_TYPE.EDIT) {
     response = await profileService.updateEspCampaign({
       ...communEspApiFields,
@@ -178,8 +179,63 @@ async function profileListEditor(req, res) {
 }
 
 /**
- * @api {get} /profiles/:profileId/campaign-mail/:mailCampaignId Campaign mail report from provider
+ * @api {post} /profiles/actito-entities-list list entities from Actito email service provider
+ * @apiPermission admin
+ * @apiName actitoEntitiesList
+ * @apiGroup Profiles
+ *
+ * @apiParam (Body) {String} apiKey Actito api key
+ *
+ */
+async function actitoEntitiesList(req, res) {
+  const { apiKey } = req.body;
+
+  if (!apiKey || typeof apiKey === 'undefined') {
+    throw new NotFound();
+  }
+
+  const actitoEntitiesListResult = await profileService.actitoEntitiesList({
+    apiKey,
+  });
+
+  res.send({ result: actitoEntitiesListResult });
+}
+
+/**
+ * @api {post} /profiles/actito-target-tables-list Target tables list from Actito email service provider
  * @apiPermission user
+ * @apiName actitoTargetTablesList
+ * @apiGroup Profiles
+ *
+ * @apiParam (Body) {String} apiKey Actito api key
+ * @apiParam (Body) {String} entity Actito entity
+ *
+ */
+async function actitoTargetTablesList(req, res) {
+  const { apiKey, entity } = req.body;
+
+  if (
+    !apiKey ||
+    !entity ||
+    typeof apiKey === 'undefined' ||
+    typeof entity === 'undefined'
+  ) {
+    throw new NotFound();
+  }
+
+  const actitoTargetTablesListResult = await profileService.actitoTargetTablesList(
+    {
+      apiKey,
+      entity,
+    }
+  );
+
+  res.send({ result: actitoTargetTablesListResult });
+}
+
+/**
+ * @api {get} /profiles/:profileId/campaign-mail/:mailCampaignId Campaign mail report from provider
+ * @apiPermission admin
  * @apiName ProfileCampaign
  * @apiGroup Profiles
  *
@@ -212,7 +268,6 @@ async function getCampaignMail(req, res) {
  *
  */
 async function readProfile(req, res) {
-  console.log('reading a profile');
   const { user, params } = req;
   const { profileId } = params;
 
