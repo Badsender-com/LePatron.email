@@ -6,6 +6,7 @@ export const ACTIONS = {
   ADD_TAGS: 'ADD_TAGS',
   MOVE_MAIL: 'MOVE_MAIL',
   PREVIEW: 'PREVIEW',
+  DOWNLOAD: 'DOWNLOAD',
 };
 
 export const ACTIONS_DETAILS = {
@@ -37,5 +38,9 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.PREVIEW]: {
     text: 'global.preview',
     icon: 'visibility',
+  },
+  [ACTIONS.DOWNLOAD]: {
+    text: 'global.download',
+    icon: 'download',
   },
 };

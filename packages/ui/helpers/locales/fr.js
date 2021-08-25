@@ -234,6 +234,7 @@ export default {
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
+    downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
@@ -241,6 +242,7 @@ export default {
     copyMailSuccessful: 'Email copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
+    downloadManySuccessful: 'Téléchargement des emails terminé',
     moveManySuccessful: 'Emails déplacés',
     editTagsSuccessful: 'Labels mis à jour',
   },

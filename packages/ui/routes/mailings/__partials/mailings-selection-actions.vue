@@ -6,6 +6,9 @@ import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
+export const handleFakeDownload = () =>
+  setTimeout(() => console.log('download finished...'), 1000);
+
 export default {
   name: 'MailingsSelectionActions',
   components: { ModalMoveMail, BsModalConfirm, MailingsTagsMenu },
@@ -76,9 +79,9 @@ export default {
           ...destinationParam,
         });
 
-        const queryParam = destinationParam?.parentFolderId ?
-          { fid: destinationParam.parentFolderId } :
-          { wid: destinationParam.workspaceId };
+        const queryParam = destinationParam?.parentFolderId
+          ? { fid: destinationParam.parentFolderId }
+          : { wid: destinationParam.workspaceId };
 
         this.$router.push({
           query: queryParam,
@@ -96,6 +99,20 @@ export default {
       }
       this.closeMoveManyMailsDialog();
     },
+    async handleDownloadSelectionMails() {
+      try {
+        await handleFakeDownload();
+        this.showSnackbar({
+          text: this.$t('mailings.moveManySuccessful'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+    },
   },
 };
 </script>
@@ -111,6 +128,23 @@ export default {
         }}</span>
 
         <div class="bs-mailing-selection-actions__actions">
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="handleDownloadSelectionMails"
+              >
+                <v-icon>download</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.downloadCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
           <mailings-tags-menu
             :tags="tags"
             :mailings-selection="mailingsSelection"

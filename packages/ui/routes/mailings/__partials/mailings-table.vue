@@ -17,6 +17,7 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
+import { handleFakeDownload } from './mailings-selection-actions.vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -36,6 +37,7 @@ const TABLE_ACTIONS = [
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
   ACTIONS.PREVIEW,
+  ACTIONS.DOWNLOAD,
   'actionMoveMail',
 ];
 
@@ -339,6 +341,20 @@ export default {
         tags,
       });
     },
+    async handleDownloadEmail(mailing) {
+      try {
+        await handleFakeDownload(mailing);
+        this.showSnackbar({
+          text: this.$t('mailings.moveMailSuccessful'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+    },
   },
 };
 </script>
@@ -428,6 +444,13 @@ export default {
             :on-click="() => displayDeleteModal(item)"
           >
             {{ $t(actionsDetails[actions.DELETE].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.DOWNLOAD)"
+            :icon="actionsDetails[actions.DOWNLOAD].icon"
+            :on-click="() => handleDownloadEmail(item)"
+          >
+            {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
           </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>

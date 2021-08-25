@@ -235,6 +235,7 @@ export default {
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
+    downloadCount: 'Download {count} email | Download {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
@@ -242,6 +243,7 @@ export default {
     moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
+    downloadManySuccessful: 'Emails download complete',
     editTagsSuccessful: 'Tags updated',
   },
   template: {
