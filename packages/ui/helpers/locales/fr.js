@@ -243,6 +243,7 @@ export default {
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
     downloadManySuccessful: 'Téléchargement des emails terminé',
+    downloadMailSuccessful: 'Téléchargement d\'emails terminé',
     moveManySuccessful: 'Emails déplacés',
     editTagsSuccessful: 'Labels mis à jour',
   },

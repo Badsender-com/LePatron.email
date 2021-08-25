@@ -244,6 +244,7 @@ export default {
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
     downloadManySuccessful: 'Emails download complete',
+    downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
   },
   template: {

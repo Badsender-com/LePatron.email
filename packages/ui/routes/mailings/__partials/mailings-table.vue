@@ -345,7 +345,7 @@ export default {
       try {
         await handleFakeDownload(mailing);
         this.showSnackbar({
-          text: this.$t('mailings.moveMailSuccessful'),
+          text: this.$t('mailings.downloadMailSuccessful'),
           color: 'success',
         });
       } catch (err) {
