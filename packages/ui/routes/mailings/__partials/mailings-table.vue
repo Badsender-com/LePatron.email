@@ -341,7 +341,7 @@ export default {
         tags,
       });
     },
-    async handleDownloadEmail(mailing) {
+    async handleDownloadMail(mailing) {
       try {
         await handleFakeDownload(mailing);
         this.showSnackbar({
@@ -448,7 +448,7 @@ export default {
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
-            :on-click="() => handleDownloadEmail(item)"
+            :on-click="() => handleDownloadMail(item)"
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
           </bs-mailings-actions-dropdown-item>
