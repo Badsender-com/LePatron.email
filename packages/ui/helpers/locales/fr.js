@@ -57,6 +57,7 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
+    newGroupEmails: 'Ajouter un groupe des emails',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
     editProfile: 'Éditer le profil ESP {name}',

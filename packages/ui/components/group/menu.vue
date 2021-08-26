@@ -97,6 +97,18 @@ export default {
             <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item nuxt link :to="newProfileHref">
+          <v-list-item-avatar>
+            <v-icon>email-plus-outline</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{
+                $t('global.newGroupEmails')
+              }}
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-col>
   </v-row>

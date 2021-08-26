@@ -60,6 +60,7 @@ export default {
     profile: 'ESP',
     user: 'User | Users',
     newUser: 'Add a user',
+    newGroupEmails: 'Add a new group of emails',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
