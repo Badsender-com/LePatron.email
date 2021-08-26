@@ -115,7 +115,6 @@ MailingSchema.post('find', function () {
 
 MailingSchema.plugin(mongooseHidden, {
   hidden: {
-    _id: true,
     __v: true,
     _company: true,
     _wireframe: true,

@@ -34,7 +34,6 @@ const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.j
 const Ftp = require('./ftp-client.service.js');
 
 const request = require('request');
-const createError = require('http-errors');
 
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
@@ -63,9 +62,12 @@ module.exports = {
   listMailingForWorkspaceOrFolder,
   previewMail,
   downloadZip,
+  downloadMultipleZip,
   validateMailExist,
   processHtmlWithFTPOption,
   updateMailEspIds,
+  getMailByMailingIdAndUser,
+  getGroupByCompanyId,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -254,10 +256,12 @@ async function createMailing(mailing) {
 
 // Process html to the final result state based on ftp
 async function processHtmlWithFTPOption({ mailingId, html, user }) {
+  const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
+
   const {
+    prefix,
     cdnDownload,
     regularDownload,
-    prefix,
     ftpEndPointProtocol,
     ftpEndPoint,
     ftpHost,
@@ -270,8 +274,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     cdnEndPoint,
     name,
   } = await extractFTPparams({
-    mailingId,
-    user,
+    mailing,
     downloadOptions: {
       downLoadForCdn: false,
       downLoadForFtp: true,
@@ -330,6 +333,8 @@ async function downloadZip({
     throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
   }
 
+  const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
+
   const {
     cdnDownload,
     regularDownload,
@@ -346,8 +351,7 @@ async function downloadZip({
     cdnEndPoint,
     name,
   } = await extractFTPparams({
-    mailingId,
-    user,
+    mailing,
     downloadOptions,
   });
 
@@ -429,21 +433,194 @@ async function downloadZip({
   return { archive: processedImageArchive, name };
 }
 
-// Extract information related to ftp and download state based on mailing id, user and download options
-async function extractFTPparams({ mailingId, user, downloadOptions }) {
+// This function will be used to find out recurrent names inside a array of type Array<{mailing, name}>[]
+function findTheRecurrentNameInsideMailingsList({ index, name, accumulator }) {
+  // Safe exist for the recurrent function, 30 was choosen because it is not possible for the user download more than 25 zip file at the same time
+  let mailNameToSearch = name;
+  if (index > 25) {
+    throw new InternalServerError(ERROR_CODES.TOO_MUCH_RECURRENT_LOOP);
+  }
+
+  if (index > 0) {
+    mailNameToSearch += ` (${index})`;
+  }
+  const foundMailsWithSameName = accumulator.filter(
+    (mailWithFinalName) => mailWithFinalName.name === mailNameToSearch
+  );
+
+  if (foundMailsWithSameName.length === 0) {
+    return mailNameToSearch;
+  }
+
+  return findTheRecurrentNameInsideMailingsList({
+    index: index + 1,
+    name,
+    accumulator,
+  });
+}
+
+// This will handle downloading email as a ZIP file
+async function downloadMultipleZip({
+  mailingIds,
+  archive,
+  downloadOptions,
+  user,
+}) {
+  if (!Array.isArray(mailingIds) || mailingIds.length === 0) {
+    throw new InternalServerError(ERROR_CODES.MAILING_MISSING_SOURCE);
+  }
+
+  if (mailingIds.length === 1) {
+    const firstMailing = await this.findOne(mailingIds[0]);
+
+    return this.downloadZip({
+      mailingId: firstMailing._id,
+      html: firstMailing.previewHtml,
+      archive,
+      user,
+      downloadOptions,
+    });
+  }
+
+  const mailingsWithNamePromises = mailingIds.map(async (mailingId) => {
+    const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
+    return {
+      mailing: mailing,
+      name: mailing.name,
+    };
+  });
+
+  const mailingsWithNames = await Promise.all(mailingsWithNamePromises);
+  const mailingsWithUniqueNames = mailingsWithNames.reduce(
+    (accumulator, currentValue) => {
+      const index = 0;
+      const uniqueMailName = findTheRecurrentNameInsideMailingsList({
+        index,
+        name: currentValue.name,
+        accumulator,
+      });
+      accumulator.push({
+        name: uniqueMailName,
+        mailing: currentValue.mailing,
+      });
+      return accumulator;
+    },
+    []
+  );
+
+  if (!archive) {
+    throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
+  }
+
+  if (
+    !Array.isArray(mailingsWithUniqueNames) ||
+    mailingsWithUniqueNames.length === 0
+  ) {
+    return;
+  }
+
+  for (const mailWithUniqueName of mailingsWithUniqueNames) {
+    const { mailing, name: uniqueName } = mailWithUniqueName;
+    const {
+      cdnDownload,
+      regularDownload,
+      prefix,
+      ftpEndPointProtocol,
+      ftpEndPoint,
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+      ftpPathOnServer,
+      cdnProtocol,
+      cdnEndPoint,
+      name,
+    } = await extractFTPparams({
+      mailing,
+      parentContainer: 'lepatron',
+      overrideMailName: uniqueName,
+      user,
+      downloadOptions,
+    });
+
+    const {
+      relativesImagesNames,
+      html: relativeImagesHtml,
+    } = await handleRelativeOrFtpImages({
+      cdnDownload,
+      regularDownload,
+      html: mailing.previewHtml,
+      archive,
+      prefix,
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+      ftpPathOnServer,
+      name,
+    });
+
+    const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
+
+    const {
+      htmlProcessedWithFtp,
+    } = await replaceImageWithFTPEndpointBaseInProcessedHtml({
+      cdnDownload,
+      cdnProtocol,
+      cdnEndPoint,
+      ftpEndPointProtocol,
+      ftpEndPoint,
+      processedHtml,
+      relativesImagesNames,
+      name,
+    });
+    // archive
+
+    archive.append(htmlProcessedWithFtp, {
+      prefix,
+      name: `${name}.html`,
+    });
+  }
+
+  return { archive, name: 'lepatron' };
+}
+
+async function getMailByMailingIdAndUser({ mailingId, user }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   // mailing can come without group if created by the admin
   // • in order to retrieve the group, look at the wireframe
   const mailing = await Mailings.findOne(query)
-    .select({ _wireframe: 1, name: 1 })
+    .select({ data: 0 })
     .populate('_wireframe');
-  if (!mailing) throw new createError.NotFound();
+  if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
+  return mailing;
+}
+
+async function getGroupByCompanyId({ companyId }) {
+  const group = await Groups.findById(companyId).lean();
+  if (!group) throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  return group;
+}
+// Extract information related to ftp and download state based on mailing id, user and download options
+async function extractFTPparams({
+  mailing,
+  downloadOptions,
+  parentContainer = null,
+  overrideMailName = null,
+}) {
+  if (!mailing || !mailing?._wireframe?._company || !mailing.name)
+    throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
 
   // if (!isFromCompany(user, mailing._company)) throw new createError.Unauthorized()
 
   // group is needed to check zip format & DL configuration
-  const group = await Groups.findById(mailing._wireframe._company).lean();
-  if (!group) throw new createError.NotFound();
+
+  const group = await getGroupByCompanyId({
+    companyId: mailing?._wireframe?._company,
+  });
+  if (!group) throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
 
   const {
     downloadMailingWithoutEnclosingFolder,
@@ -478,11 +655,13 @@ async function extractFTPparams({ mailingId, user, downloadOptions }) {
     throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
   }
 
-  const name = getName(mailing.name);
+  const name = getName(overrideMailName ?? mailing.name);
   // prefix is `zip-stream` file prefix => our enclosing folder ^_^
   // !WARNING default mac unzip will always put it in an folder if more than 1 file
   // => test with The Unarchiver
-  const prefix = downloadMailingWithoutEnclosingFolder ? '' : `${name}/`;
+  const prefix = downloadMailingWithoutEnclosingFolder
+    ? ''
+    : `${!parentContainer ? '' : `${parentContainer}/`}${name}/`;
 
   // const $ = cheerio.load(html)
 
@@ -808,6 +987,7 @@ async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
 
   return deleteResponse;
 }
+
 async function moveMailing(user, mailing, workspaceId, parentFolderId) {
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   let sourceWorkspace;

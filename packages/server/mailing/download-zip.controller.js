@@ -5,7 +5,10 @@ const asyncHandler = require('express-async-handler');
 const mailingService = require('./mailing.service.js');
 const archiver = require('archiver');
 
-module.exports = asyncHandler(downloadZip);
+module.exports = {
+  downloadZip: asyncHandler(downloadZip),
+  downloadMultipleZip: asyncHandler(downloadMultipleZip),
+};
 
 // eslint-disable-next-line no-unused-vars
 function isHttpUrl(uri) {
@@ -56,5 +59,36 @@ async function downloadZip(req, res, next) {
 
   // this is the streaming magic
   // set the archive name
+  processedArchive.finalize();
+}
+
+async function downloadMultipleZip(req, res, next) {
+  const { user, body } = req;
+  const { mailingIds } = body;
+  const archive = archiver('zip');
+  archive.on('error', next);
+
+  const {
+    archive: processedArchive,
+    name,
+  } = await mailingService.downloadAllZip({
+    user,
+    archive,
+    mailingIds,
+    downloadOptions: {
+      downLoadForCdn: 'false',
+      downLoadForFtp: 'true',
+    },
+  });
+
+  archive.on('end', () => {
+    console.log(`Archive wrote ${archive.pointer()} bytes`);
+    res.end();
+  });
+
+  res.attachment(`${name}.zip`);
+
+  archive.pipe(res);
+
   processedArchive.finalize();
 }
