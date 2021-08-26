@@ -253,6 +253,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingId = mailing._id;
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
+  console.log({ mailing });
+  const redirectUrl = mailing?._parentFolder
+    ? `/?fid=${mailing._parentFolder}`
+    : `/?wid=${mailing._workspace}`;
   return {
     metadata: {
       id: mailingId,
@@ -287,7 +291,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         placeholder: '/api/images/placeholder/',
       },
       assets: mailing._wireframe.assets,
-      editorIcon: { ...config.brandOptions.editorIcon },
+      editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata
