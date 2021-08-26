@@ -69,7 +69,10 @@ module.exports = {
     prefix: config.nuxt.API_PREFIX,
     browserBaseURL: config.nuxt.API_PREFIX,
   },
-  css: ['~/assets/global-styles/index.scss'],
+  css: [
+    '~/assets/global-styles/index.scss',
+    '@mdi/font/css/materialdesignicons.css',
+  ],
   styleResources: {
     // scss: [`~assets/global-styles/scss-mixins.scss`],
   },
