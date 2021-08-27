@@ -448,7 +448,7 @@ export default {
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
-            :@click="handleDownloadMail(item)"
+            @click="handleDownloadMail(item)"
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
           </bs-mailings-actions-dropdown-item>
