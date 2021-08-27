@@ -276,15 +276,6 @@ export default {
       <v-row>
         <v-col cols="11">
           <v-select
-            v-model="profile.supportedLanguage"
-            :items="convertCountriesListPerNames"
-            :label="$t('global.supportedLanguage')"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="11">
-          <v-select
             v-model="profile.entity"
             :items="entities"
             :error-messages="entityErrors"
@@ -318,6 +309,15 @@ export default {
             v-model="profile.encodingType"
             :items="possibleEncodingType"
             :label="$t('global.encodingType')"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="11">
+          <v-select
+            v-model="profile.supportedLanguage"
+            :items="convertCountriesListPerNames"
+            :label="$t('global.supportedLanguage')"
           />
         </v-col>
       </v-row>
