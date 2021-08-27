@@ -24,6 +24,9 @@ export default {
     newProfileHref() {
       return `/groups/${this.groupId}/new-profile`;
     },
+    newEmailsGroup() {
+      return `/groups/${this.groupId}/new-emails-group`;
+    },
   },
 };
 </script>
@@ -97,15 +100,13 @@ export default {
             <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item nuxt link :to="newProfileHref">
+        <v-list-item nuxt link :to="newEmailsGroup">
           <v-list-item-avatar>
-            <v-icon>email-plus-outline</v-icon>
+            <v-icon>mdi-email-plus</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $t('global.newGroupEmails')
-              }}
+              {{ $t('global.newEmailsGroup') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
