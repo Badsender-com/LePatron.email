@@ -17,7 +17,7 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { handleFakeDownload } from './mailings-selection-actions.vue';
+import { handleDownloadEmail } from './mailings-selection-actions.vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -343,7 +343,7 @@ export default {
     },
     async handleDownloadMail(mailing) {
       try {
-        await handleFakeDownload(mailing);
+        await handleDownloadEmail(mailing);
         this.showSnackbar({
           text: this.$t('mailings.downloadMailSuccessful'),
           color: 'success',
@@ -448,7 +448,7 @@ export default {
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
-            :on-click="() => handleDownloadMail(item)"
+            :@click="handleDownloadMail(item)"
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
           </bs-mailings-actions-dropdown-item>

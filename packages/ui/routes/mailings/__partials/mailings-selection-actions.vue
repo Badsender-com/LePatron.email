@@ -6,8 +6,13 @@ import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
-export const handleFakeDownload = () =>
-  setTimeout(() => console.log('download finished...'), 1000);
+export const handleDownloadEmail = () =>
+  new Promise((resolve) =>
+    setTimeout(() => {
+      console.log('download finished...');
+      resolve();
+    }, 1000)
+  );
 
 export default {
   name: 'MailingsSelectionActions',
@@ -101,7 +106,7 @@ export default {
     },
     async handleDownloadSelectionMails() {
       try {
-        await handleFakeDownload();
+        await handleDownloadEmail();
         this.showSnackbar({
           text: this.$t('mailings.moveManySuccessful'),
           color: 'success',
