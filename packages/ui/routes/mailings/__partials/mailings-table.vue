@@ -38,6 +38,7 @@ const TABLE_ACTIONS = [
   ACTIONS.MOVE_MAIL,
   ACTIONS.PREVIEW,
   ACTIONS.DOWNLOAD,
+  ACTIONS.DOWNLOAD_FTP,
   'actionMoveMail',
 ];
 
@@ -59,6 +60,7 @@ export default {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
+    hasFtpAccess: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -448,9 +450,18 @@ export default {
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
-            :on-click="handleDownloadMail(item)"
+            :on-click="() => handleDownloadMail(item)"
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="
+              filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
+            "
+            :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
+            :on-click="() => handleDownloadMail(item)"
+          >
+            {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
           </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>

@@ -9,6 +9,7 @@ import {
   getWorkspace,
   getWorkspaceAccess,
   mailings,
+  groupsItem,
 } from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
@@ -36,8 +37,14 @@ export default {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, query }) {
+  async asyncData({ $axios, query, store }) {
     try {
+      let group = null;
+      if (store?.state?.user?.info?.group?.id) {
+        group = await $axios.$get(
+          groupsItem({ groupId: store.state.user.info.group.id })
+        );
+      }
       if (!!query?.wid || !!query?.fid) {
         let folder;
         let workspace;
@@ -79,6 +86,7 @@ export default {
           folder,
           workspace,
           hasAccess,
+          hasFtpAccess: !!group?.downloadMailingWithFtpImages,
         };
       }
     } catch (error) {
@@ -252,6 +260,7 @@ export default {
         <mailings-selection-actions
           :mailings-selection="mailingsSelection"
           :tags="tags"
+          :has-ftp-access="hasFtpAccess"
           @createTag="onTagCreate"
           @updateTags="onTagsUpdate"
           @on-refetch="fetchMailListingData()"
@@ -260,6 +269,7 @@ export default {
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
+          :has-ftp-access="hasFtpAccess"
           :tags="tags"
           @on-refetch="fetchMailListingData()"
           @update-tags="handleUpdateTags"

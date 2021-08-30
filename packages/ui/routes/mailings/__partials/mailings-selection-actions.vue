@@ -1,5 +1,6 @@
 <script>
 import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
+import MailingsDownloadModal from '~/routes/mailings/__partials/mailings-download-modal';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsTagsMenu from '~/components/mailings/tags-menu.vue';
 import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
@@ -16,15 +17,22 @@ export const handleDownloadEmail = () =>
 
 export default {
   name: 'MailingsSelectionActions',
-  components: { ModalMoveMail, BsModalConfirm, MailingsTagsMenu },
+  components: {
+    ModalMoveMail,
+    BsModalConfirm,
+    MailingsTagsMenu,
+    MailingsDownloadModal,
+  },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    hasFtpAccess: { type: Boolean, default: false },
   },
   data() {
     return {
       deleteDialog: false,
+      downloadDialog: false,
     };
   },
   computed: {
@@ -104,11 +112,24 @@ export default {
       }
       this.closeMoveManyMailsDialog();
     },
-    async handleDownloadSelectionMails() {
+    handleInitDownload(isDownloadFtp) {
+      const allHavePreview = false;
+      if (allHavePreview) {
+        this.handleDownloadSelectionMails(isDownloadFtp);
+        return;
+      }
+      this.$refs.downloadMailsDialog.open(isDownloadFtp);
+    },
+    async handleDownloadSelectionMails(isDownloadFtp) {
       try {
-        await handleDownloadEmail();
+        if (isDownloadFtp) {
+          console.log('downloadFtp started');
+          await handleDownloadEmail('ftp'); // TODO change with real api
+        } else {
+          await handleDownloadEmail(); // TODO change with real api
+        }
         this.showSnackbar({
-          text: this.$t('mailings.moveManySuccessful'),
+          text: this.$t('mailings.downloadManySuccessful'),
           color: 'success',
         });
       } catch (err) {
@@ -134,12 +155,29 @@ export default {
 
         <div class="bs-mailing-selection-actions__actions">
           <v-tooltip bottom>
+            <template v-if="hasFtpAccess" #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="handleInitDownload(true)"
+              >
+                <v-icon>mdi-cloud-download</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.downloadFtpCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
             <template #activator="{ on }">
               <v-btn
                 icon
                 color="info"
                 v-on="on"
-                @click="handleDownloadSelectionMails"
+                @click="handleInitDownload(false)"
               >
                 <v-icon>download</v-icon>
               </v-btn>
@@ -222,6 +260,12 @@ export default {
         v-html="$t('mailings.moveMailConfirmationMessage')"
       />
     </modal-move-mail>
+    <mailings-download-modal
+      ref="downloadMailsDialog"
+      :selection-length="selectionLength"
+      :mailings-selection="mailingsSelection"
+      @confirm="handleDownloadSelectionMails"
+    />
   </div>
 </template>
 

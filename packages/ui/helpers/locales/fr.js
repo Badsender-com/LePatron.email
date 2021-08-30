@@ -104,6 +104,8 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
+    continue: 'Continue',
+    downloadFtp: 'Télécharger ftp',
   },
   layout: {
     logout: 'Déconnexion',
@@ -227,6 +229,8 @@ export default {
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
+    downloadManyMailsWithoutPreview:
+      'Cette liste de mails ne contient pas de prévisualisation',
     errorPreview: 'Pas d’aperçu disponible pour ce mail.',
     subErrorPreview:
       'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',
@@ -235,6 +239,8 @@ export default {
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
     downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
+    downloadFtpCount:
+      'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:

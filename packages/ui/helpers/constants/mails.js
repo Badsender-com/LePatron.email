@@ -7,6 +7,7 @@ export const ACTIONS = {
   MOVE_MAIL: 'MOVE_MAIL',
   PREVIEW: 'PREVIEW',
   DOWNLOAD: 'DOWNLOAD',
+  DOWNLOAD_FTP: 'DOWNLOAD_FTP',
 };
 
 export const ACTIONS_DETAILS = {
@@ -42,5 +43,9 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.DOWNLOAD]: {
     text: 'global.download',
     icon: 'download',
+  },
+  [ACTIONS.DOWNLOAD_FTP]: {
+    text: 'global.downloadFtp',
+    icon: 'mdi-cloud-download',
   },
 };
