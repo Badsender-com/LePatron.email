@@ -46,6 +46,7 @@ const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
 
+const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
 module.exports = {
   createMailing,
   findMailings,
@@ -256,20 +257,14 @@ async function createMailing(mailing) {
 
 // Process html to the final result state based on ftp
 async function processHtmlWithFTPOption({ mailingId, html, user }) {
+  logger.log('Calling processHtmlWithFTPOption');
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
 
   const {
     prefix,
     cdnDownload,
     regularDownload,
-    ftpEndPointProtocol,
-    ftpEndPoint,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
+    ftpServerParams,
     cdnProtocol,
     cdnEndPoint,
     name,
@@ -295,12 +290,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     cdnDownload,
     regularDownload,
     prefix,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
+    ftpServerParams,
   });
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -311,8 +301,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     cdnDownload,
     cdnProtocol,
     cdnEndPoint,
-    ftpEndPointProtocol,
-    ftpEndPoint,
+    ftpServerParams,
     processedHtml,
     relativesImagesNames,
     name,
@@ -339,14 +328,7 @@ async function downloadZip({
     cdnDownload,
     regularDownload,
     prefix,
-    ftpEndPointProtocol,
-    ftpEndPoint,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
+    ftpServerParams,
     cdnProtocol,
     cdnEndPoint,
     name,
@@ -367,12 +349,7 @@ async function downloadZip({
     regularDownload,
     archive,
     prefix,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
+    ftpServerParams,
     name,
   });
 
@@ -394,8 +371,7 @@ async function downloadZip({
       cdnDownload,
       cdnProtocol,
       cdnEndPoint,
-      ftpEndPointProtocol,
-      ftpEndPoint,
+      ftpServerParams,
       processedHtml,
       relativesImagesNames,
       name,
@@ -434,7 +410,8 @@ async function downloadZip({
 }
 
 // This function will be used to find out recurrent names inside a array of type Array<{mailing, name}>[]
-function findTheRecurrentNameInsideMailingsList({ index, name, accumulator }) {
+function generateUniqueNameFromMailingList({ index, name, accumulator }) {
+  logger.log('Calling generateUniqueNameFromMailingList');
   // Safe exist for the recurrent function, 30 was choosen because it is not possible for the user download more than 25 zip file at the same time
   let mailNameToSearch = name;
   if (index > 25) {
@@ -452,7 +429,7 @@ function findTheRecurrentNameInsideMailingsList({ index, name, accumulator }) {
     return mailNameToSearch;
   }
 
-  return findTheRecurrentNameInsideMailingsList({
+  return generateUniqueNameFromMailingList({
     index: index + 1,
     name,
     accumulator,
@@ -466,6 +443,7 @@ async function downloadMultipleZip({
   downloadOptions,
   user,
 }) {
+  logger.log('Calling downloadMultipleZip');
   if (!Array.isArray(mailingIds) || mailingIds.length === 0) {
     throw new InternalServerError(ERROR_CODES.MAILING_MISSING_SOURCE);
   }
@@ -494,7 +472,7 @@ async function downloadMultipleZip({
   const mailingsWithUniqueNames = mailingsWithNames.reduce(
     (accumulator, currentValue) => {
       const index = 0;
-      const uniqueMailName = findTheRecurrentNameInsideMailingsList({
+      const uniqueMailName = generateUniqueNameFromMailingList({
         index,
         name: currentValue.name,
         accumulator,
@@ -525,20 +503,13 @@ async function downloadMultipleZip({
       cdnDownload,
       regularDownload,
       prefix,
-      ftpEndPointProtocol,
-      ftpEndPoint,
-      ftpHost,
-      ftpPort,
-      ftpUsername,
-      ftpPassword,
-      ftpProtocol,
-      ftpPathOnServer,
+      ftpServerParams,
       cdnProtocol,
       cdnEndPoint,
       name,
     } = await extractFTPparams({
       mailing,
-      parentContainer: 'lepatron',
+      parentContainer: MULTIPLE_DOWNLOAD_ZIP_NAME,
       overrideMailName: uniqueName,
       user,
       downloadOptions,
@@ -553,12 +524,7 @@ async function downloadMultipleZip({
       html: mailing.previewHtml,
       archive,
       prefix,
-      ftpHost,
-      ftpPort,
-      ftpUsername,
-      ftpPassword,
-      ftpProtocol,
-      ftpPathOnServer,
+      ftpServerParams,
       name,
     });
 
@@ -570,8 +536,7 @@ async function downloadMultipleZip({
       cdnDownload,
       cdnProtocol,
       cdnEndPoint,
-      ftpEndPointProtocol,
-      ftpEndPoint,
+      ftpServerParams,
       processedHtml,
       relativesImagesNames,
       name,
@@ -584,7 +549,7 @@ async function downloadMultipleZip({
     });
   }
 
-  return { archive, name: 'lepatron' };
+  return { archive, name: MULTIPLE_DOWNLOAD_ZIP_NAME };
 }
 
 async function getMailByMailingIdAndUser({ mailingId, user }) {
@@ -610,6 +575,8 @@ async function extractFTPparams({
   parentContainer = null,
   overrideMailName = null,
 }) {
+  console.log('Calling extract ftp params');
+
   if (!mailing || !mailing?._wireframe?._company || !mailing.name)
     throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
 
@@ -676,14 +643,16 @@ async function extractFTPparams({
     cdnDownload,
     regularDownload,
     prefix,
-    ftpEndPointProtocol,
-    ftpEndPoint,
-    ftpHost,
-    ftpPort,
-    ftpUsername,
-    ftpPassword,
-    ftpProtocol,
-    ftpPathOnServer,
+    ftpServerParams: {
+      ftpEndPointProtocol,
+      ftpEndPoint,
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+      ftpPathOnServer,
+    },
     cdnProtocol,
     cdnEndPoint,
     name,
@@ -694,12 +663,12 @@ async function replaceImageWithFTPEndpointBaseInProcessedHtml({
   cdnDownload,
   cdnProtocol,
   cdnEndPoint,
-  ftpEndPointProtocol,
-  ftpEndPoint,
+  ftpServerParams,
   processedHtml,
   relativesImagesNames,
   name,
 }) {
+  const { ftpEndPointProtocol, ftpEndPoint } = ftpServerParams;
   const endpointBase = cdnDownload
     ? `${cdnProtocol}${cdnEndPoint}`
     : `${ftpEndPointProtocol}${ftpEndPoint}`;
@@ -727,14 +696,17 @@ async function handleRelativeOrFtpImages({
   regularDownload,
   archive,
   prefix,
-  ftpHost,
-  ftpPort,
-  ftpUsername,
-  ftpPassword,
-  ftpProtocol,
-  ftpPathOnServer,
+  ftpServerParams,
   name,
 }) {
+  const {
+    ftpHost,
+    ftpPort,
+    ftpUsername,
+    ftpPassword,
+    ftpProtocol,
+    ftpPathOnServer,
+  } = ftpServerParams;
   if (!html) {
     throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);
   }
@@ -989,6 +961,8 @@ async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
 }
 
 async function moveMailing(user, mailing, workspaceId, parentFolderId) {
+  console.log('Calling moveMailing');
+
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   let sourceWorkspace;
   let destinationWorkspace;

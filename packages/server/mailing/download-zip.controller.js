@@ -3,6 +3,7 @@
 // const cheerio = require('cheerio')
 const asyncHandler = require('express-async-handler');
 const mailingService = require('./mailing.service.js');
+const logger = require('../utils/logger.js');
 const archiver = require('archiver');
 
 module.exports = {
@@ -33,6 +34,8 @@ function isHttpUrl(uri) {
 // https://github.com/archiverjs/node-archiver/blob/master/examples/express.js
 // we need to keep the `next` callback to handle zip events
 async function downloadZip(req, res, next) {
+  logger.log('Calling downloadZip');
+
   const { user, body } = req;
   const { mailingId } = req.params;
   const { html, ...downloadOptions } = body;
@@ -63,6 +66,7 @@ async function downloadZip(req, res, next) {
 }
 
 async function downloadMultipleZip(req, res, next) {
+  logger.log('Calling downloadMultipleZip');
   const { user, body } = req;
   const { mailingIds } = body;
   const archive = archiver('zip');
@@ -71,7 +75,7 @@ async function downloadMultipleZip(req, res, next) {
   const {
     archive: processedArchive,
     name,
-  } = await mailingService.downloadAllZip({
+  } = await mailingService.downloadMultipleZip({
     user,
     archive,
     mailingIds,
