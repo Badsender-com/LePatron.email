@@ -142,8 +142,7 @@ async function updateMailEspIds(mailingId, espId) {
 
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
-
-  return Mailings.find(mailingQuery, { previewHtml: 0, data: 0 });
+  return Mailings.findWithHasPreview(mailingQuery);
 }
 
 async function findTags(query) {
@@ -953,12 +952,12 @@ function applyFilters(query) {
   if (query.workspaceId) {
     return {
       ...mailingQueryStrictGroup,
-      _workspace: query.workspaceId,
+      _workspace: mongoose.Types.ObjectId(query.workspaceId),
     };
   } else {
     return {
       ...mailingQueryStrictGroup,
-      _parentFolder: query.parentFolderId,
+      _parentFolder: mongoose.Types.ObjectId(query.parentFolderId),
     };
   }
 }
