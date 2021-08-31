@@ -24,7 +24,7 @@ export default {
   components: { BsGroupMenu, FormEmailsGroup },
   mixins: [mixinPageTitle],
   meta: {
-    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
+    acl: [acls.ACL_GROUP_ADMIN],
   },
   data() {
     return {

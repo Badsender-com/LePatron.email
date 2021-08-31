@@ -100,7 +100,7 @@ export default {
             <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item nuxt link :to="newEmailsGroup">
+        <v-list-item v-if="isGroupAdmin" nuxt link :to="newEmailsGroup">
           <v-list-item-avatar>
             <v-icon>mdi-email-plus</v-icon>
           </v-list-item-avatar>
