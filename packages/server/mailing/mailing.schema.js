@@ -156,6 +156,50 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
 };
 
+// Use aggregate so we excluse previewHtml and define another boolean variable hasPreviewHtml based on the existence of previewHtml
+MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
+  query = {}
+) {
+  return this.aggregate([
+    {
+      $match: {
+        ...query,
+      },
+    },
+    {
+      $addFields: {
+        hasHtmlPreview: {
+          $not: [
+            {
+              $not: [
+                {
+                  $ifNull: ['$previewHtml', true],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        id: '$_id',
+        name: 1,
+        group: '$_company',
+        templateName: '$wireframe',
+        templateId: '$_wireframe',
+        userName: '$author',
+        userId: '$_user',
+        _workspace: 1,
+        tags: 1,
+        espIds: 1,
+        updatedAt: 1,
+        createdAt: 1,
+      },
+    },
+  ]);
+};
+
 // Extract used tags from creations
 // http://stackoverflow.com/questions/14617379/mongoose-mongodb-count-elements-in-array
 MailingSchema.statics.findTags = async function findTags(query = {}) {
