@@ -5,6 +5,8 @@ const asyncHandler = require('express-async-handler');
 const mailingService = require('./mailing.service.js');
 const logger = require('../utils/logger.js');
 const archiver = require('archiver');
+const { InternalServerError } = require('http-errors');
+const { ERROR_CODES } = require('../constant/error-codes.js');
 
 module.exports = {
   downloadZip: asyncHandler(downloadZip),
@@ -68,9 +70,13 @@ async function downloadZip(req, res, next) {
 async function downloadMultipleZip(req, res, next) {
   logger.log('Calling downloadMultipleZip');
   const { user, body } = req;
-  const { mailingIds } = body;
+  const { mailingIds, downloadOptions } = body;
   const archive = archiver('zip');
   archive.on('error', next);
+
+  if (!downloadOptions) {
+    throw new InternalServerError(ERROR_CODES.MISSING_DOWNLOAD_OPTIONS);
+  }
 
   const {
     archive: processedArchive,
@@ -79,10 +85,7 @@ async function downloadMultipleZip(req, res, next) {
     user,
     archive,
     mailingIds,
-    downloadOptions: {
-      downLoadForCdn: 'false',
-      downLoadForFtp: 'true',
-    },
+    downloadOptions,
   });
 
   archive.on('end', () => {

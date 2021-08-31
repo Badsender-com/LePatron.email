@@ -530,23 +530,30 @@ async function downloadMultipleZip({
 
     const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
 
-    const {
-      htmlProcessedWithFtp,
-    } = await replaceImageWithFTPEndpointBaseInProcessedHtml({
-      cdnDownload,
-      cdnProtocol,
-      cdnEndPoint,
-      ftpServerParams,
-      processedHtml,
-      relativesImagesNames,
-      name,
-    });
-    // archive
+    if (regularDownload) {
+      archive.append(processedHtml, {
+        prefix,
+        name: `${name}.html`,
+      });
+    } else {
+      const {
+        htmlProcessedWithFtp,
+      } = await replaceImageWithFTPEndpointBaseInProcessedHtml({
+        cdnDownload,
+        cdnProtocol,
+        cdnEndPoint,
+        ftpServerParams,
+        processedHtml,
+        relativesImagesNames,
+        name,
+      });
+      // archive
 
-    archive.append(htmlProcessedWithFtp, {
-      prefix,
-      name: `${name}.html`,
-    });
+      archive.append(htmlProcessedWithFtp, {
+        prefix,
+        name: `${name}.html`,
+      });
+    }
   }
 
   return { archive, name: MULTIPLE_DOWNLOAD_ZIP_NAME };
