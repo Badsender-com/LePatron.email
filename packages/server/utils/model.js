@@ -1,5 +1,7 @@
 'use strict';
 
+const mongoose = require('mongoose');
+
 const SPACE_TYPE = require('../constant/space-type');
 
 module.exports = {
@@ -43,7 +45,7 @@ function addGroupFilter(user, filter) {
 // Admin can't get content with a group
 function addStrictGroupFilter(user, filter) {
   const group = user.isAdmin ? { $exists: false } : user.group.id;
-  filter._company = group;
+  filter._company = mongoose.Types.ObjectId(group);
   return filter;
 }
 
