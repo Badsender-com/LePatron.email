@@ -115,7 +115,6 @@ MailingSchema.post('find', function () {
 
 MailingSchema.plugin(mongooseHidden, {
   hidden: {
-    _id: true,
     __v: true,
     _company: true,
     _wireframe: true,
@@ -154,6 +153,50 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
+};
+
+// Use aggregate so we excluse previewHtml and define another boolean variable hasPreviewHtml based on the existence of previewHtml
+MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
+  query = {}
+) {
+  return this.aggregate([
+    {
+      $match: {
+        ...query,
+      },
+    },
+    {
+      $addFields: {
+        hasHtmlPreview: {
+          $not: [
+            {
+              $not: [
+                {
+                  $ifNull: ['$previewHtml', true],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        id: '$_id',
+        name: 1,
+        group: '$_company',
+        templateName: '$wireframe',
+        templateId: '$_wireframe',
+        userName: '$author',
+        userId: '$_user',
+        _workspace: 1,
+        tags: 1,
+        espIds: 1,
+        updatedAt: 1,
+        createdAt: 1,
+      },
+    },
+  ]);
 };
 
 // Extract used tags from creations
@@ -253,6 +296,10 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingId = mailing._id;
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
+  console.log({ mailing });
+  const redirectUrl = mailing?._parentFolder
+    ? `/?fid=${mailing._parentFolder}`
+    : `/?wid=${mailing._workspace}`;
   return {
     metadata: {
       id: mailingId,
@@ -287,7 +334,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         placeholder: '/api/images/placeholder/',
       },
       assets: mailing._wireframe.assets,
-      editorIcon: { ...config.brandOptions.editorIcon },
+      editorIcon: { ...config.brandOptions.editorIcon, logoUrl: redirectUrl },
     },
     titleToken: 'BADSENDER Responsive Email Designer',
     // TODO: should be in metadata

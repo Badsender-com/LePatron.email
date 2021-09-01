@@ -3,9 +3,15 @@
 // const cheerio = require('cheerio')
 const asyncHandler = require('express-async-handler');
 const mailingService = require('./mailing.service.js');
+const logger = require('../utils/logger.js');
 const archiver = require('archiver');
+const { InternalServerError } = require('http-errors');
+const { ERROR_CODES } = require('../constant/error-codes.js');
 
-module.exports = asyncHandler(downloadZip);
+module.exports = {
+  downloadZip: asyncHandler(downloadZip),
+  downloadMultipleZip: asyncHandler(downloadMultipleZip),
+};
 
 // eslint-disable-next-line no-unused-vars
 function isHttpUrl(uri) {
@@ -30,6 +36,8 @@ function isHttpUrl(uri) {
 // https://github.com/archiverjs/node-archiver/blob/master/examples/express.js
 // we need to keep the `next` callback to handle zip events
 async function downloadZip(req, res, next) {
+  logger.log('Calling downloadZip');
+
   const { user, body } = req;
   const { mailingId } = req.params;
   const { html, ...downloadOptions } = body;
@@ -56,5 +64,38 @@ async function downloadZip(req, res, next) {
 
   // this is the streaming magic
   // set the archive name
+  processedArchive.finalize();
+}
+
+async function downloadMultipleZip(req, res, next) {
+  logger.log('Calling downloadMultipleZip');
+  const { user, body } = req;
+  const { mailingIds, downloadOptions } = body;
+  const archive = archiver('zip');
+  archive.on('error', next);
+
+  if (!downloadOptions) {
+    throw new InternalServerError(ERROR_CODES.MISSING_DOWNLOAD_OPTIONS);
+  }
+
+  const {
+    archive: processedArchive,
+    name,
+  } = await mailingService.downloadMultipleZip({
+    user,
+    archive,
+    mailingIds,
+    downloadOptions,
+  });
+
+  archive.on('end', () => {
+    console.log(`Archive wrote ${archive.pointer()} bytes`);
+    res.end();
+  });
+
+  res.attachment(`${name}.zip`);
+
+  archive.pipe(res);
+
   processedArchive.finalize();
 }

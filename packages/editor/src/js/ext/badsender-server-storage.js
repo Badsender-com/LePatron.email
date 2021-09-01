@@ -51,6 +51,7 @@ function loader(opts) {
       function onPostSuccess(data, textStatus, jqXHR) {
         console.log('save success');
         viewModel.notifier.success(viewModel.t('save-message-success'));
+        window.open(viewModel?.metadata?.editorIcon?.logoUrl || '/', "_self");
       }
 
       function onPostError(jqXHR, textStatus, errorThrown) {

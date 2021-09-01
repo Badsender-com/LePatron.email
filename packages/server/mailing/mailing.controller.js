@@ -14,7 +14,10 @@ const simpleI18n = require('../helpers/server-simple-i18n.js');
 const logger = require('../utils/logger.js');
 const { Mailings, Galleries, Users } = require('../common/models.common.js');
 const sendTestMail = require('./send-test-mail.controller.js');
-const downloadZip = require('./download-zip.controller.js');
+const {
+  downloadZip,
+  downloadMultipleZip,
+} = require('./download-zip.controller.js');
 const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
@@ -36,6 +39,7 @@ module.exports = {
   duplicate: asyncHandler(duplicate),
   updateMosaico: asyncHandler(updateMosaico),
   bulkUpdate: asyncHandler(bulkUpdate),
+  downloadMultipleZip: asyncHandler(downloadMultipleZip),
   bulkDestroy: asyncHandler(bulkDestroy),
   delete: asyncHandler(deleteMailing),
   transferToUser: asyncHandler(transferToUser),
