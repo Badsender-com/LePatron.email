@@ -13,7 +13,17 @@ export default {
   data: () => ({
     isDownloadFtp: false,
   }),
-
+  computed: {
+    modalTitle() {
+      return this.isDownloadFtp
+        ? this.$tc('mailings.downloadFtpCount', this.selectionLength, {
+            count: this.selectionLength,
+          })
+        : this.$tc('mailings.downloadCount', this.selectionLength, {
+            count: this.selectionLength,
+          });
+    },
+  },
   methods: {
     open(isDownloadFtp) {
       this.isDownloadFtp = isDownloadFtp;
@@ -33,15 +43,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="downloadSelectionDialog"
-    :title="
-      isDownloadFtp
-        ? $tc('mailings.downloadFtpCount', selectionLength, {
-          count: selectionLength,
-        })
-        : $tc('mailings.downloadCount', selectionLength, {
-          count: selectionLength,
-        })
-    "
+    :title="modalTitle"
     :action-label="$t('global.continue')"
     action-button-color="success"
     @confirm="submit"
