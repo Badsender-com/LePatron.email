@@ -48,12 +48,21 @@ export default {
     action-button-color="success"
     @confirm="submit"
   >
-    <v-alert dense border="left" type="warning" icon="mdi-alert-outline">
-      {{ $t('mailings.downloadManyMailsWithoutPreview') }}
-      <!-- TODO add condition to display only mails which have preview -->
-      <li v-for="mail in mailingsSelection" :key="mail.id">
-        {{ mail.name }}
-      </li>
-    </v-alert>
+    <v-card class="d-flex flex-row align-center mb-3" flat>
+      <v-icon color="#f57c00">
+        warning_amber
+      </v-icon>
+      <p class="mb-0 ml-3">
+        {{ $t('mailings.downloadManyMailsWithoutPreview') }}
+      </p>
+    </v-card>
+    <!-- TODO add condition to display only mails which have preview -->
+    <v-card class="mb-3 pl-6" flat>
+      <ul>
+        <li v-for="mail in mailingsSelection" :key="mail.id">
+          {{ mail.name }}
+        </li>
+      </ul>
+    </v-card>
   </bs-modal-confirm>
 </template>

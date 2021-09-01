@@ -228,7 +228,7 @@ export default {
     deleteConfirmationMessage:
       'Voici la liste des mail qui contient pas de preview ',
     downloadManyMailsWithoutPreview:
-      'This list of mails does not contain preview',
+      'This mailing list does not contain previews so they will not be downloaded, do you want to continue anyway?',
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',

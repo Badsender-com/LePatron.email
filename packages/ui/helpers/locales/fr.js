@@ -230,7 +230,7 @@ export default {
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
     downloadManyMailsWithoutPreview:
-      'Cette liste de mails ne contient pas de prévisualisation',
+      'Cette liste de mails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
     errorPreview: 'Pas d’aperçu disponible pour ce mail.',
     subErrorPreview:
       'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',

@@ -172,7 +172,7 @@ MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
             {
               $not: [
                 {
-                  $ifNull: ['$previewHtml', true],
+                  $ifNull: ['$previewHtml', 0],
                 },
               ],
             },
@@ -192,6 +192,7 @@ MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
         _workspace: 1,
         tags: 1,
         espIds: 1,
+        hasHtmlPreview: 1,
         updatedAt: 1,
         createdAt: 1,
       },

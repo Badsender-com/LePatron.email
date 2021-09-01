@@ -38,6 +38,11 @@ export default {
     hasSelection() {
       return this.selectionLength > 0;
     },
+    mailsWithoutPreviewSelection() {
+      return this.mailingsSelection.filter(
+        (mail) => mail.hasHtmlPreview === false
+      );
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -55,10 +60,28 @@ export default {
         downLoadForFtp: withFtp,
       };
 
-      return await this.$axios.$post(downloadMultipleMails(), {
-        mailingsIds: this.mailingsSelection?.map((mail) => mail?.id),
-        downloadOptions,
-      });
+      return this.$axios
+        .$post(
+          downloadMultipleMails(),
+          {
+            mailingIds: this.mailingsSelection
+              .filter((el) => !this.mailsWithoutPreviewSelection.includes(el))
+              ?.map((mail) => mail?.id),
+            downloadOptions,
+          },
+          {
+            responseType: 'blob',
+          }
+        )
+        .then((response) => {
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'file.zip');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        });
     },
 
     openDeleteSelectionModal() {
@@ -122,16 +145,8 @@ export default {
       this.closeMoveManyMailsDialog();
     },
     handleInitDownload(isDownloadFtp) {
-      console.log({ mailingsSelection: this.mailingsSelection });
+      const allHavePreview = !(this.mailsWithoutPreviewSelection?.length > 0);
 
-      const allHavePreview = !(
-        this.mailingsSelection.filter((mail) => mail.hasPreviewHtml === false)
-          ?.length > 0
-      );
-
-      console.log({
-        mailIds: this.mailingsSelection.map((mail) => mail.id),
-      });
       if (allHavePreview) {
         this.handleDownloadMailSelections(isDownloadFtp);
         return;
@@ -144,7 +159,7 @@ export default {
           console.log('downloadFtp started');
           await this.handleDownloadEmail({ withFtp: true }); // TODO change with real api
         } else {
-          await this.handleDownloadEmail({ withFtp: true }); // TODO change with real api
+          await this.handleDownloadEmail({ withFtp: false }); // TODO change with real api
         }
         this.showSnackbar({
           text: this.$t('mailings.downloadManySuccessful'),
@@ -281,7 +296,7 @@ export default {
     <mailings-download-modal
       ref="downloadMailsDialog"
       :selection-length="selectionLength"
-      :mailings-selection="mailingsSelection"
+      :mailings-selection="mailsWithoutPreviewSelection"
       @confirm="handleDownloadMailSelections"
     />
   </div>

@@ -468,6 +468,7 @@ async function downloadMultipleZip({
   });
 
   const mailingsWithNames = await Promise.all(mailingsWithNamePromises);
+
   const mailingsWithUniqueNames = mailingsWithNames.reduce(
     (accumulator, currentValue) => {
       const index = 0;
@@ -822,7 +823,7 @@ async function handleRelativeOrFtpImages({
       (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
       `${name}/`;
 
-    await ftpClient.upload(allImages, folderPath);
+    ftpClient.upload(allImages, folderPath);
   }
 
   return { relativesImagesNames, archive, html };
