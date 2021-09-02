@@ -107,6 +107,9 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
+    emailsGroups: 'Email groups',
+    emailsGroupsEmpty: 'No available emails group',
+    editEmailsGroup: 'Edit emails group',
   },
   layout: {
     logout: 'Logout',
@@ -181,6 +184,9 @@ export default {
           emailsValid: 'There are invalid emails',
         },
       },
+      deleteNotice:
+        'You are about to delete the emails group. This action can\'t be undone.',
+      deleteSuccess: 'Emails group deleted',
     },
     workspace: {
       checkBoxError:

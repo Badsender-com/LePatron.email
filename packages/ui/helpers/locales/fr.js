@@ -107,6 +107,9 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
+    emailsGroups: 'Groupes d\'emails',
+    emailsGroupsEmpty: 'Aucun group d\'emails disponible',
+    editEmailsGroup: 'Modifier le groupe d\'emails',
   },
   layout: {
     logout: 'Déconnexion',
@@ -179,6 +182,9 @@ export default {
           emailsValid: 'Il y a des emails non valides',
         },
       },
+      deleteNotice:
+        'Vous êtes sur le point de supprimer cet groupe d\'emails. Cette action ne peut pas être annulée.',
+      deleteSuccess: 'group d\'emails supprimés',
     },
     workspace: {
       checkBoxError:
