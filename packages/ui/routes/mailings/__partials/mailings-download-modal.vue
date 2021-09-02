@@ -6,35 +6,58 @@ export default {
   components: {
     BsModalConfirm,
   },
-  props: {
-    selectionLength: { type: Number, default: 0 },
-    mailingsSelection: { type: Array, default: () => [] },
-  },
   data: () => ({
     isDownloadFtp: false,
+    mailingsSelection: [],
+    mailsWithoutPreviewSelection: [],
   }),
   computed: {
+    selectionLength() {
+      return this.mailingsSelection?.length;
+    },
     modalTitle() {
-      return this.isDownloadFtp
-        ? this.$tc('mailings.downloadFtpCount', this.selectionLength, {
-            count: this.selectionLength,
-          })
-        : this.$tc('mailings.downloadCount', this.selectionLength, {
-            count: this.selectionLength,
-          });
+      if (this.isSingleMail) {
+        return this.$tc('global.download');
+      } else {
+        return this.isDownloadFtp
+          ? this.$tc('mailings.downloadFtpCount', this.selectionLength, {
+              count: this.selectionLength,
+            })
+          : this.$tc('mailings.downloadCount', this.selectionLength, {
+              count: this.selectionLength,
+            });
+      }
+    },
+    isSingleMail() {
+      return (
+        this.mailingsSelection.length +
+          (this.mailsWithoutPreviewSelection
+            ? this.mailsWithoutPreviewSelection.length
+            : 0) ===
+        1
+      );
     },
   },
   methods: {
-    open(isDownloadFtp) {
-      this.isDownloadFtp = isDownloadFtp;
+    open({ withFtp, mailingIds, mailsWithoutPreviewSelection }) {
+      this.mailingsSelection = mailingIds;
+      this.isDownloadFtp = withFtp;
+
+      if (mailsWithoutPreviewSelection) {
+        this.mailsWithoutPreviewSelection = mailsWithoutPreviewSelection;
+      }
+
       this.$refs.downloadSelectionDialog.open();
-      console.log({ mailingsSelection: this.mailingsSelection });
     },
     close() {
-      this.$refs.downloadSelectionDialog.close();
+      this.mailsWithoutPreviewSelection = 0;
     },
     submit() {
-      this.$emit('confirm', this.isDownloadFtp);
+      this.mailsWithoutPreviewSelection = 0;
+      this.$emit('confirm', {
+        withFtp: this.isDownloadFtp,
+        mailingIds: this.mailingsSelection,
+      });
     },
   },
 };
@@ -46,6 +69,9 @@ export default {
     :title="modalTitle"
     :action-label="$t('global.continue')"
     action-button-color="success"
+    :display-submit-button="!isSingleMail"
+    @close="close"
+    @click-outside="close"
     @confirm="submit"
   >
     <v-card class="d-flex flex-row align-center mb-3" flat>
@@ -53,13 +79,17 @@ export default {
         warning_amber
       </v-icon>
       <p class="mb-0 ml-3">
-        {{ $t('mailings.downloadManyMailsWithoutPreview') }}
+        {{
+          isSingleMail
+            ? $t('mailings.downloadSingleMailWithoutPreview')
+            : $t('mailings.downloadManyMailsWithoutPreview')
+        }}
       </p>
     </v-card>
     <!-- TODO add condition to display only mails which have preview -->
-    <v-card class="mb-3 pl-6" flat>
+    <v-card v-if="!isSingleMail" class="mb-3 pl-6" flat>
       <ul>
-        <li v-for="mail in mailingsSelection" :key="mail.id">
+        <li v-for="mail in mailsWithoutPreviewSelection" :key="mail.id">
           {{ mail.name }}
         </li>
       </ul>

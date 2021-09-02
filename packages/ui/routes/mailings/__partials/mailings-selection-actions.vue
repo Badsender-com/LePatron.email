@@ -54,7 +54,7 @@ export default {
       });
     },
 
-    async handleDownloadEmail({ withFtp }) {
+    async handleDownloadEmail({ withFtp, mailingIds }) {
       const downloadOptions = {
         downLoadForCdn: false,
         downLoadForFtp: withFtp,
@@ -64,9 +64,7 @@ export default {
         .$post(
           downloadMultipleMails(),
           {
-            mailingIds: this.mailingsSelection
-              .filter((el) => !this.mailsWithoutPreviewSelection.includes(el))
-              ?.map((mail) => mail?.id),
+            mailingIds,
             downloadOptions,
           },
           {
@@ -74,10 +72,11 @@ export default {
           }
         )
         .then((response) => {
-          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const blob = new Blob([response]);
+          const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.setAttribute('download', 'file.zip');
+          link.setAttribute('download', 'lepatron.zip');
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -144,23 +143,45 @@ export default {
       }
       this.closeMoveManyMailsDialog();
     },
-    handleInitDownload(isDownloadFtp) {
-      const allHavePreview = !(this.mailsWithoutPreviewSelection?.length > 0);
-
-      if (allHavePreview) {
-        this.handleDownloadMailSelections(isDownloadFtp);
+    handleInitDownload({
+      withFtp,
+      mailingIds,
+      havePreview,
+      mailsWithoutPreviewSelection,
+    }) {
+      if (havePreview) {
+        this.handleDownloadMailSelections({ withFtp, mailingIds });
         return;
       }
-      this.$refs.downloadMailsDialog.open(isDownloadFtp);
+      this.$refs.downloadMailsDialog.open({
+        withFtp,
+        mailingIds,
+        mailsWithoutPreviewSelection,
+      });
     },
-    async handleDownloadMailSelections(isDownloadFtp) {
+    handleInitSingleDownload({ withFtp, mailing }) {
+      const mailingIds = [mailing.id];
+      const havePreview = mailing.hasHtmlPreview;
+      this.handleInitDownload({ withFtp, mailingIds, havePreview });
+    },
+    handleInitMultipleDownload({ withFtp }) {
+      const filteredMailingsIds = this.mailingsSelection
+        .filter((el) => !this.mailsWithoutPreviewSelection.includes(el))
+        ?.map((mail) => mail?.id);
+      const allHavePreview = !(this.mailsWithoutPreviewSelection?.length > 0);
+      this.handleInitDownload({
+        withFtp,
+        mailingIds: filteredMailingsIds,
+        havePreview: allHavePreview,
+        mailsWithoutPreviewSelection: this.mailsWithoutPreviewSelection,
+      });
+    },
+    async handleDownloadMailSelections({ withFtp, mailingIds }) {
       try {
-        if (isDownloadFtp) {
-          console.log('downloadFtp started');
-          await this.handleDownloadEmail({ withFtp: true }); // TODO change with real api
-        } else {
-          await this.handleDownloadEmail({ withFtp: false }); // TODO change with real api
-        }
+        await this.handleDownloadEmail({
+          withFtp: withFtp,
+          mailingIds: mailingIds,
+        });
         this.showSnackbar({
           text: this.$t('mailings.downloadManySuccessful'),
           color: 'success',
@@ -193,7 +214,7 @@ export default {
                 icon
                 color="info"
                 v-on="on"
-                @click="handleInitDownload(true)"
+                @click="handleInitMultipleDownload({ withFtp: true })"
               >
                 <v-icon>mdi-cloud-download</v-icon>
               </v-btn>
@@ -210,7 +231,7 @@ export default {
                 icon
                 color="info"
                 v-on="on"
-                @click="handleInitDownload(false)"
+                @click="handleInitMultipleDownload({ withFtp: false })"
               >
                 <v-icon>download</v-icon>
               </v-btn>
@@ -295,8 +316,6 @@ export default {
     </modal-move-mail>
     <mailings-download-modal
       ref="downloadMailsDialog"
-      :selection-length="selectionLength"
-      :mailings-selection="mailsWithoutPreviewSelection"
       @confirm="handleDownloadMailSelections"
     />
   </div>

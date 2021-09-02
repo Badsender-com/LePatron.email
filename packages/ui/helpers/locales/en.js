@@ -229,6 +229,7 @@ export default {
       'Voici la liste des mail qui contient pas de preview ',
     downloadManyMailsWithoutPreview:
       'This mailing list does not contain previews so they will not be downloaded, do you want to continue anyway?',
+    downloadSingleMailWithoutPreview: 'Cannot download a mail without a preview, please open the mail alteast one time to generate one.',  
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',

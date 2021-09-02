@@ -231,6 +231,7 @@ export default {
     name: 'Nom de l\'email',
     downloadManyMailsWithoutPreview:
       'Cette liste de mails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
+    downloadSingleMailWithoutPreview: 'Impossible de télécharger un e-mail sans aperçu, veuillez ouvrir le mail au moins une fois pour en générer un.',
     errorPreview: 'Pas d’aperçu disponible pour ce mail.',
     subErrorPreview:
       'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',

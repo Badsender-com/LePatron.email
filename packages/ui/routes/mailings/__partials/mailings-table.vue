@@ -17,7 +17,6 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { handleDownloadEmail } from './mailings-selection-actions.vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -343,19 +342,11 @@ export default {
         tags,
       });
     },
-    async handleDownloadMail(mailing) {
-      try {
-        await handleDownloadEmail(mailing);
-        this.showSnackbar({
-          text: this.$t('mailings.downloadMailSuccessful'),
-          color: 'success',
-        });
-      } catch (err) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-      }
+    async handleDownloadMail({ mailing, withFtp }) {
+      this.$emit('on-single-mail-download', {
+        mailing,
+        withFtp,
+      });
     },
   },
 };
@@ -450,7 +441,9 @@ export default {
           <bs-mailings-actions-dropdown-item
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
-            :on-click="() => handleDownloadMail(item)"
+            :on-click="
+              () => handleDownloadMail({ mailing: item, withFtp: false })
+            "
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
           </bs-mailings-actions-dropdown-item>
@@ -459,7 +452,9 @@ export default {
               filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
             "
             :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
-            :on-click="() => handleDownloadMail(item)"
+            :on-click="
+              () => handleDownloadMail({ mailing: item, withFtp: true })
+            "
           >
             {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
           </bs-mailings-actions-dropdown-item>

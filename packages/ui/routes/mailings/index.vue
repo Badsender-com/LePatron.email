@@ -214,6 +214,12 @@ export default {
         this.loading = false;
       }
     },
+    async handleDownloadSingleMail({ mailing, withFtp }) {
+      this.$refs.mailingSelectionActions.handleInitSingleDownload({
+        mailing,
+        withFtp,
+      });
+    },
     async refreshLeftMenuData() {
       await this.$refs.workspaceTree.fetchData();
     },
@@ -258,6 +264,7 @@ export default {
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-selection-actions
+          ref="mailingSelectionActions"
           :mailings-selection="mailingsSelection"
           :tags="tags"
           :has-ftp-access="hasFtpAccess"
@@ -271,6 +278,7 @@ export default {
           :mailings="filteredMailings"
           :has-ftp-access="hasFtpAccess"
           :tags="tags"
+          @on-single-mail-download="handleDownloadSingleMail"
           @on-refetch="fetchMailListingData()"
           @update-tags="handleUpdateTags"
         />
