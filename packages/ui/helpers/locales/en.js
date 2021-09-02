@@ -240,7 +240,7 @@ export default {
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
-    downloadCount: 'Download {count} email | Download {count} emails',
+    downloadCount: 'Download {count} mail | Download {count} mails',
     downloadFtpCount:
       'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',

@@ -86,7 +86,6 @@ export default {
         }}
       </p>
     </v-card>
-    <!-- TODO add condition to display only mails which have preview -->
     <v-card v-if="!isSingleMail" class="mb-3 pl-6" flat>
       <ul>
         <li v-for="mail in mailsWithoutPreviewSelection" :key="mail.id">

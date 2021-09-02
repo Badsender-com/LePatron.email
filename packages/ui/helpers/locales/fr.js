@@ -239,7 +239,7 @@ export default {
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
-    downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
+    downloadCount: 'Télécharger {count} mail | Télécharger {count} mails',
     downloadFtpCount:
       'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',

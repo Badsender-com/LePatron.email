@@ -168,7 +168,7 @@ export default {
       const filteredMailingsIds = this.mailingsSelection
         .filter((el) => !this.mailsWithoutPreviewSelection.includes(el))
         ?.map((mail) => mail?.id);
-      const allHavePreview = !(this.mailsWithoutPreviewSelection?.length > 0);
+      const allHavePreview = this.mailsWithoutPreviewSelection?.length <= 0;
       this.handleInitDownload({
         withFtp,
         mailingIds: filteredMailingsIds,
