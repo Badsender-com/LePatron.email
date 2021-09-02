@@ -22,6 +22,7 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
       FORBIDDEN_WORKSPACE_CREATION:
         'Vous n\'avez pas les droits pour créer ce workspace',
+      emailsGroupExist: 'Le nom du groupe Emails existe déjà',
       password: {
         error: {
           nouser: 'Utilisateur introuvable',
@@ -57,6 +58,8 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
+    emails: 'Liste des emails',
+    newEmailsGroup: 'Ajouter un groupe des emails',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
     editProfile: 'Éditer le profil ESP {name}',
@@ -163,6 +166,17 @@ export default {
         email: {
           required: 'Un email est requis',
           valid: 'Un email valide est requis',
+        },
+      },
+    },
+    emailsGroup: {
+      errors: {
+        name: {
+          required: 'Le nom du groupe est requis',
+        },
+        emails: {
+          required: 'Vous devez remplir au moins un email',
+          emailsValid: 'Il y a des emails non valides',
         },
       },
     },

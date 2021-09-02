@@ -1,0 +1,84 @@
+<script>
+import { mapMutations } from 'vuex';
+
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import * as acls from '~/helpers/pages-acls.js';
+import BsGroupMenu from '~/components/group/menu.vue';
+import FormEmailsGroup from '~/components/group/form-emails-group';
+
+const errors = {
+  409: 'global.errors.emailsGroupExist',
+};
+
+const handleFakeCreateEmailsGroup = (params) =>
+  new Promise((resolve) =>
+    setTimeout(() => {
+      console.log('Emails group created...', params);
+      resolve();
+    }, 1000)
+  );
+
+export default {
+  name: 'BsPageNewEmailsGroup',
+  components: { BsGroupMenu, FormEmailsGroup },
+  mixins: [mixinPageTitle],
+  meta: {
+    acl: [acls.ACL_GROUP_ADMIN],
+  },
+  data() {
+    return {
+      loading: false,
+      emailsGroup: {
+        emails: '',
+        name: '',
+      },
+    };
+  },
+  computed: {
+    groupId() {
+      return this.$route.params.groupId;
+    },
+  },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async createUser() {
+      try {
+        this.loading = true;
+        await handleFakeCreateEmailsGroup({
+          groupId: this.groupId,
+          ...this.emailsGroup,
+        });
+        this.showSnackbar({
+          text: this.$t('snackbars.created'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t(
+            errors[error.statusCode] || 'global.errors.errorOccured'
+          ),
+          color: 'error',
+        });
+        console.log(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+};
+</script>
+
+<template>
+  <bs-layout-left-menu>
+    <template #menu>
+      <bs-group-menu />
+    </template>
+    <form-emails-group
+      v-model="emailsGroup"
+      :title="$t('global.newEmailsGroup')"
+      :loading="loading"
+      @submit="createUser"
+    />
+  </bs-layout-left-menu>
+</template>

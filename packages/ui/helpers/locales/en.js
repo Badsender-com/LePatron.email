@@ -22,6 +22,7 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
       FORBIDDEN_WORKSPACE_CREATION:
         'You don\'t have the rights to create this workspace',
+      emailsGroupExist: 'The name of emails group already exist',
       password: {
         error: {
           nouser: 'User not found',
@@ -60,6 +61,8 @@ export default {
     profile: 'ESP',
     user: 'User | Users',
     newUser: 'Add a user',
+    newEmailsGroup: 'Add a new group of emails',
+    emails: 'List of emails',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
@@ -166,6 +169,17 @@ export default {
       },
       tooltip: {
         noPassword: 'Disabled cause of SAML Authentication',
+      },
+    },
+    emailsGroup: {
+      errors: {
+        name: {
+          required: 'The name of group is required',
+        },
+        emails: {
+          required: 'You have to fill at least one email',
+          emailsValid: 'There are invalid emails',
+        },
       },
     },
     workspace: {
