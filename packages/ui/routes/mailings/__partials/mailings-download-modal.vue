@@ -37,11 +37,16 @@ export default {
         1
       );
     },
+    modalText() {
+      return this.isSingleMail
+        ? this.$t('mailings.downloadSingleMailWithoutPreview')
+        : this.$t('mailings.downloadManyMailsWithoutPreview');
+    },
   },
   methods: {
-    open({ withFtp, mailingIds, mailsWithoutPreviewSelection }) {
+    open({ isWithFtp, mailingIds, mailsWithoutPreviewSelection }) {
       this.mailingsSelection = mailingIds;
-      this.isDownloadFtp = withFtp;
+      this.isDownloadFtp = isWithFtp;
 
       if (mailsWithoutPreviewSelection) {
         this.mailsWithoutPreviewSelection = mailsWithoutPreviewSelection;
@@ -55,7 +60,7 @@ export default {
     submit() {
       this.mailsWithoutPreviewSelection = 0;
       this.$emit('confirm', {
-        withFtp: this.isDownloadFtp,
+        isWithFtp: this.isDownloadFtp,
         mailingIds: this.mailingsSelection,
       });
     },
@@ -75,15 +80,11 @@ export default {
     @confirm="submit"
   >
     <v-card class="d-flex flex-row align-center mb-3" flat>
-      <v-icon color="#f57c00">
+      <v-icon color="orange darken-2">
         warning_amber
       </v-icon>
       <p class="mb-0 ml-3">
-        {{
-          isSingleMail
-            ? $t('mailings.downloadSingleMailWithoutPreview')
-            : $t('mailings.downloadManyMailsWithoutPreview')
-        }}
+        {{ modalText }}
       </p>
     </v-card>
     <v-card v-if="!isSingleMail" class="mb-3 pl-6" flat>

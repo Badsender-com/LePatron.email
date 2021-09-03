@@ -54,10 +54,10 @@ export default {
       });
     },
 
-    async handleDownloadEmail({ withFtp, mailingIds }) {
+    async handleDownloadEmail({ isWithFtp, mailingIds }) {
       const downloadOptions = {
         downLoadForCdn: false,
-        downLoadForFtp: withFtp,
+        downLoadForFtp: isWithFtp,
       };
 
       return this.$axios
@@ -144,42 +144,42 @@ export default {
       this.closeMoveManyMailsDialog();
     },
     handleInitDownload({
-      withFtp,
+      isWithFtp,
       mailingIds,
       havePreview,
       mailsWithoutPreviewSelection,
     }) {
       if (havePreview) {
-        this.handleDownloadMailSelections({ withFtp, mailingIds });
+        this.handleDownloadMailSelections({ isWithFtp, mailingIds });
         return;
       }
       this.$refs.downloadMailsDialog.open({
-        withFtp,
+        isWithFtp,
         mailingIds,
         mailsWithoutPreviewSelection,
       });
     },
-    handleInitSingleDownload({ withFtp, mailing }) {
+    handleInitSingleDownload({ isWithFtp, mailing }) {
       const mailingIds = [mailing.id];
       const havePreview = mailing.hasHtmlPreview;
-      this.handleInitDownload({ withFtp, mailingIds, havePreview });
+      this.handleInitDownload({ isWithFtp, mailingIds, havePreview });
     },
-    handleInitMultipleDownload({ withFtp }) {
+    handleInitMultipleDownload({ isWithFtp }) {
       const filteredMailingsIds = this.mailingsSelection
-        .filter((el) => !this.mailsWithoutPreviewSelection.includes(el))
+        .filter((mail) => !this.mailsWithoutPreviewSelection.includes(mail))
         ?.map((mail) => mail?.id);
       const allHavePreview = this.mailsWithoutPreviewSelection?.length <= 0;
       this.handleInitDownload({
-        withFtp,
+        isWithFtp,
         mailingIds: filteredMailingsIds,
         havePreview: allHavePreview,
         mailsWithoutPreviewSelection: this.mailsWithoutPreviewSelection,
       });
     },
-    async handleDownloadMailSelections({ withFtp, mailingIds }) {
+    async handleDownloadMailSelections({ isWithFtp, mailingIds }) {
       try {
         await this.handleDownloadEmail({
-          withFtp: withFtp,
+          isWithFtp: isWithFtp,
           mailingIds: mailingIds,
         });
         this.showSnackbar({
@@ -214,7 +214,7 @@ export default {
                 icon
                 color="info"
                 v-on="on"
-                @click="handleInitMultipleDownload({ withFtp: true })"
+                @click="handleInitMultipleDownload({ isWithFtp: true })"
               >
                 <v-icon>mdi-cloud-download</v-icon>
               </v-btn>
@@ -231,7 +231,7 @@ export default {
                 icon
                 color="info"
                 v-on="on"
-                @click="handleInitMultipleDownload({ withFtp: false })"
+                @click="handleInitMultipleDownload({ isWithFtp: false })"
               >
                 <v-icon>download</v-icon>
               </v-btn>
