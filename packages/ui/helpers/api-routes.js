@@ -132,6 +132,10 @@ export function moveManyMails() {
 export function preview(mailingId) {
   return `/mailings/${mailingId}/preview`;
 }
+
+export function downloadMultipleMails() {
+  return '/mailings/download-multiple-zip';
+}
 /// ///
 // IMAGES
 /// ///

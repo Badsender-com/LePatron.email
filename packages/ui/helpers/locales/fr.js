@@ -107,6 +107,8 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
+    continue: 'Continue',
+    downloadFtp: 'Télécharger ftp',
   },
   layout: {
     logout: 'Déconnexion',
@@ -241,6 +243,9 @@ export default {
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
+    downloadManyMailsWithoutPreview:
+      'Cette liste de mails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
+    downloadSingleMailWithoutPreview: 'Impossible de télécharger un e-mail sans aperçu, veuillez ouvrir le mail au moins une fois pour en générer un.',
     errorPreview: 'Pas d’aperçu disponible pour ce mail.',
     subErrorPreview:
       'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',
@@ -248,6 +253,9 @@ export default {
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
+    downloadCount: 'Télécharger {count} mail | Télécharger {count} mails',
+    downloadFtpCount:
+      'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
@@ -255,6 +263,8 @@ export default {
     copyMailSuccessful: 'Email copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
+    downloadManySuccessful: 'Téléchargement des emails terminés',
+    downloadMailSuccessful: 'Téléchargement d\'email terminé',
     moveManySuccessful: 'Emails déplacés',
     editTagsSuccessful: 'Labels mis à jour',
   },

@@ -36,6 +36,8 @@ const TABLE_ACTIONS = [
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
   ACTIONS.PREVIEW,
+  ACTIONS.DOWNLOAD,
+  ACTIONS.DOWNLOAD_FTP,
   'actionMoveMail',
 ];
 
@@ -57,6 +59,7 @@ export default {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
+    hasFtpAccess: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -339,6 +342,12 @@ export default {
         tags,
       });
     },
+    async handleDownloadMail({ mailing, withFtp }) {
+      this.$emit('on-single-mail-download', {
+        mailing,
+        withFtp,
+      });
+    },
   },
 };
 </script>
@@ -428,6 +437,26 @@ export default {
             :on-click="() => displayDeleteModal(item)"
           >
             {{ $t(actionsDetails[actions.DELETE].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="filteredActions.includes(actions.DOWNLOAD)"
+            :icon="actionsDetails[actions.DOWNLOAD].icon"
+            :on-click="
+              () => handleDownloadMail({ mailing: item, withFtp: false })
+            "
+          >
+            {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
+          </bs-mailings-actions-dropdown-item>
+          <bs-mailings-actions-dropdown-item
+            v-if="
+              filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
+            "
+            :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
+            :on-click="
+              () => handleDownloadMail({ mailing: item, withFtp: true })
+            "
+          >
+            {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
           </bs-mailings-actions-dropdown-item>
         </bs-mailings-actions-dropdown>
       </template>

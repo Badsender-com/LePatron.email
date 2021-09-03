@@ -9,3 +9,4 @@ packages/editor/
 
 packages/documentation/.vuepress/dist/
 packages/documentation/api/
+packages/ui/helpers/locales

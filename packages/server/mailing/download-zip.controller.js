@@ -87,14 +87,13 @@ async function downloadMultipleZip(req, res, next) {
     mailingIds,
     downloadOptions,
   });
+  res.header('Content-Type', 'application/zip');
+  res.header('Content-Disposition', `attachment; filename="${name}.zip"`);
 
   archive.on('end', () => {
     console.log(`Archive wrote ${archive.pointer()} bytes`);
     res.end();
   });
-
-  res.attachment(`${name}.zip`);
-
   archive.pipe(res);
 
   processedArchive.finalize();
