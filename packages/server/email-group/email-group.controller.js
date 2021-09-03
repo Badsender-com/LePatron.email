@@ -41,7 +41,16 @@ async function listEmailGroups(req, res) {
  * @apiSuccess {emailGroup} created Email group
  */
 async function createEmailGroup(req, res) {
-  const emailGroup = await emailGroupService.createEmailGroup({});
+  const {
+    user,
+    body: { name, emails },
+  } = req;
+
+  const emailGroup = await emailGroupService.createEmailGroup({
+    name,
+    emails,
+    user,
+  });
 
   res.json({
     emailGroup,
@@ -54,7 +63,7 @@ async function createEmailGroup(req, res) {
  * @apiName getEmailGroup
  * @apiGroup EmailGroup
  *
- * @apiUse EmailGroup
+ * @apiUse emailGroup
  * @apiSuccess {EmailGroup} get Email group from id
  */
 async function getEmailGroup(req, res) {

@@ -29,7 +29,10 @@ const Templates = mongoose.model(modelNames.TemplateModel, TemplateSchema);
 const Mailings = mongoose.model(modelNames.MailingModel, MailingSchema);
 const Groups = mongoose.model(modelNames.GroupModel, GroupSchema);
 const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
-const EmailGroup = mongoose.model(modelNames.EmailGroup, EmailGroupSchema);
+const EmailGroups = mongoose.model(
+  modelNames.EmailGroupModal,
+  EmailGroupSchema
+);
 const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
 const Profiles = mongoose.model(modelNames.ProfileModel, ProfileSchema);
 const CacheImages = mongoose.model(
@@ -49,7 +52,7 @@ module.exports = {
   // Compiled schema
   Users,
   Folders,
-  EmailGroup,
+  EmailGroups,
   Workspaces,
   Templates,
   Mailings,

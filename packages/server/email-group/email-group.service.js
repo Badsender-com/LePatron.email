@@ -3,7 +3,13 @@
 const { Types } = require('mongoose');
 
 const { EmailGroups } = require('../common/models.common.js');
-const { NotFound, InternalServerError, Conflict } = require('http-errors');
+const {
+  NotFound,
+  InternalServerError,
+  Conflict,
+  BadRequest,
+  Unauthorized,
+} = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
@@ -21,11 +27,19 @@ async function listEmailGroups(user) {
   }).sort({ name: 1 });
 }
 
-async function createEmailGroup(name, emails, user) {
+async function createEmailGroup({ name, emails, user }) {
+  console.log('createEmailGroup');
+  checkNameAndEmailsExists({ name, emails });
+
+  if (!user) {
+    throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
+  }
+
   if (await EmailGroups.exists({ name, _company: user.group.id })) {
     throw new Conflict(ERROR_CODES.EMAIL_GROUP_NAME_ALREADY_EXIST);
   }
 
+  console.log('creating Email Group...');
   return EmailGroups.create({
     name,
     emails,
@@ -46,6 +60,12 @@ async function getEmailGroup({ emailGroupId, user }) {
 }
 
 async function editEmailGroup({ emailGroupId, user, name, emails }) {
+  checkNameAndEmailsExists({ name, emails });
+
+  if (!user) {
+    throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
+  }
+
   await checkIfEmailGroupExist(emailGroupId);
 
   const emailGroup = await EmailGroups.findById(emailGroupId);
@@ -87,5 +107,15 @@ async function findOne(emailGroupId) {
 async function checkIfEmailGroupExist(emailGroupId) {
   if (!(await EmailGroups.exists({ _id: Types.ObjectId(emailGroupId) }))) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
+  }
+}
+
+async function checkNameAndEmailsExists({ name, emails }) {
+  if (!name) {
+    throw new BadRequest(ERROR_CODES.MISSING_EMAIL_GROUP_NAME_PARAM);
+  }
+
+  if (!emails) {
+    throw new BadRequest(ERROR_CODES.MISSING_EMAIL_GROUP_EMAILS_PARAM);
   }
 }
