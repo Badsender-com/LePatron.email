@@ -168,11 +168,11 @@ export default {
       const filteredMailingsIds = this.mailingsSelection
         .filter((mail) => !this.mailsWithoutPreviewSelection.includes(mail))
         ?.map((mail) => mail?.id);
-      const allHavePreview = this.mailsWithoutPreviewSelection?.length <= 0;
+      const doesAllHavePreview = this.mailsWithoutPreviewSelection?.length <= 0;
       this.handleInitDownload({
         isWithFtp,
         mailingIds: filteredMailingsIds,
-        havePreview: allHavePreview,
+        havePreview: doesAllHavePreview,
         mailsWithoutPreviewSelection: this.mailsWithoutPreviewSelection,
       });
     },
