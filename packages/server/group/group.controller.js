@@ -160,7 +160,7 @@ async function readTemplates(req, res) {
  *
  * @apiParam {string} groupId
  *
- * @apiUse emailGroups
+ * @apiUse emailGroup
  * @apiSuccess {emailGroup[]} items list of email groups
  */
 
