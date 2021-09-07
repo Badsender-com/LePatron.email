@@ -1,6 +1,7 @@
 'use-strict';
 
 const asyncHandler = require('express-async-handler');
+const logger = require('../utils/logger');
 
 const emailGroupService = require('./email-group.service');
 
@@ -22,6 +23,7 @@ module.exports = {
  * @apiSuccess {emailGroup[]} items list of email groups
  */
 async function listEmailGroups(req, res) {
+  logger.log('emailGroupController:listEmailGroups');
   const { user } = req;
   const emailGroups = await emailGroupService.listEmailGroups(user?.group?.id);
   res.json({
@@ -42,6 +44,7 @@ async function listEmailGroups(req, res) {
  * @apiSuccess {emailGroup} created Email group
  */
 async function createEmailGroup(req, res) {
+  logger.log('emailGroupController:createEmailGroup');
   const {
     user,
     body: { name, emails },
@@ -68,6 +71,7 @@ async function createEmailGroup(req, res) {
  * @apiSuccess {EmailGroup} get Email group from id
  */
 async function getEmailGroup(req, res) {
+  logger.log('emailGroupController:getEmailGroup');
   const {
     user,
     params: { emailGroupId },
@@ -92,6 +96,7 @@ async function getEmailGroup(req, res) {
  */
 
 async function deleteEmailGroup(req, res) {
+  logger.log('emailGroupController:deleteEmailGroup');
   const {
     user,
     params: { emailGroupId },
@@ -118,6 +123,7 @@ async function deleteEmailGroup(req, res) {
  */
 
 async function editEmailGroup(req, res) {
+  logger.log('emailGroupController:editEmailGroup');
   const {
     user,
     params: { emailGroupId },

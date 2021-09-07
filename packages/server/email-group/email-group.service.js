@@ -11,6 +11,7 @@ const {
   Unauthorized,
 } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
 
 module.exports = {
   listEmailGroups,
@@ -22,6 +23,7 @@ module.exports = {
 
 // TODO complete listEmailGroups
 async function listEmailGroups(groupId) {
+  logger.log('emailGroupService:ListEmailGroups');
   if (!groupId) {
     throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
   }
@@ -32,7 +34,7 @@ async function listEmailGroups(groupId) {
 }
 
 async function createEmailGroup({ name, emails, user }) {
-  console.log('createEmailGroup');
+  logger.log('emailGroupService:createEmailGroup');
   checkNameAndEmailsExists({ name, emails });
 
   if (!user) {
@@ -43,7 +45,6 @@ async function createEmailGroup({ name, emails, user }) {
     throw new Conflict(ERROR_CODES.EMAIL_GROUP_NAME_ALREADY_EXIST);
   }
 
-  console.log('creating Email Group...');
   return EmailGroups.create({
     name,
     emails,
@@ -52,6 +53,7 @@ async function createEmailGroup({ name, emails, user }) {
 }
 
 async function getEmailGroup({ emailGroupId, user }) {
+  logger.log('emailGroupService:getEmailGroup');
   checkIfEmailGroupExist(emailGroupId);
 
   const emailGroup = await EmailGroups.findById(emailGroupId);
@@ -64,6 +66,7 @@ async function getEmailGroup({ emailGroupId, user }) {
 }
 
 async function editEmailGroup({ emailGroupId, name, emails, user }) {
+  logger.log('emailGroupService:editEmailGroup');
   checkNameAndEmailsExists({ name, emails });
 
   if (!user) {
@@ -88,6 +91,7 @@ async function editEmailGroup({ emailGroupId, name, emails, user }) {
 }
 
 async function deleteEmailGroup({ emailGroupId, user }) {
+  logger.log('emailGroupService:deleteEmailGroup');
   const emailGroup = await findOne(emailGroupId);
 
   const deleteEmailGroupResponse = await deleteOne(emailGroup.id);
