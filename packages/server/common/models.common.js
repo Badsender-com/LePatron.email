@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 
 mongoose.Promise = global.Promise; // Use native promises
 
+const modelNames = require('../constant/model.names.js');
+
 const UserSchema = require('../user/user.schema.js');
 const TemplateSchema = require('../template/template.schema.js');
 const MailingSchema = require('../mailing/mailing.schema.js');
@@ -14,8 +16,7 @@ const GallerySchema = require('../image/gallery.schema.js');
 const OAuthClientsSchema = require('../account/oauth-clients.schema.js');
 const OAuthTokensSchema = require('../account/oauth-tokens.schema.js');
 const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
-
-const modelNames = require('../constant/model.names.js');
+const EmailGroupSchema = require('../email-group/email-group.schema');
 const FolderSchema = require('../folder/folder.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 
@@ -28,6 +29,10 @@ const Templates = mongoose.model(modelNames.TemplateModel, TemplateSchema);
 const Mailings = mongoose.model(modelNames.MailingModel, MailingSchema);
 const Groups = mongoose.model(modelNames.GroupModel, GroupSchema);
 const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
+const EmailGroups = mongoose.model(
+  modelNames.EmailGroupModal,
+  EmailGroupSchema
+);
 const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
 const Profiles = mongoose.model(modelNames.ProfileModel, ProfileSchema);
 const CacheImages = mongoose.model(
@@ -47,6 +52,7 @@ module.exports = {
   // Compiled schema
   Users,
   Folders,
+  EmailGroups,
   Workspaces,
   Templates,
   Mailings,

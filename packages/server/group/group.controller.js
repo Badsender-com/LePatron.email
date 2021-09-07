@@ -1,7 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const createError = require('http-errors');
+const { NotFound } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -10,6 +10,7 @@ const {
 
 const groupService = require('../group/group.service.js');
 const profileService = require('../profile/profile.service.js');
+const emailGroupService = require('../email-group/email-group.service.js');
 
 const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
@@ -23,6 +24,7 @@ module.exports = {
   readMailings: asyncHandler(readMailings),
   readProfiles: asyncHandler(readProfiles),
   readWorkspaces: asyncHandler(readWorkspaces),
+  readEmailGroups: asyncHandler(readEmailGroups),
   update: asyncHandler(update),
 };
 
@@ -103,7 +105,7 @@ async function seedGroups(req, res) {
 async function read(req, res) {
   const { groupId } = req.params;
   const group = await Groups.findById(groupId);
-  if (!group) throw new createError.NotFound();
+  if (!group) throw new NotFound();
   res.json(group);
 }
 
@@ -146,8 +148,27 @@ async function readTemplates(req, res) {
     Groups.findById(groupId).select('_id'),
     Templates.findForApi({ _company: groupId }),
   ]);
-  if (!group) throw new createError.NotFound();
+  if (!group) throw new NotFound();
   res.json({ items: templates });
+}
+
+/**
+ * @api {get} /groups/:groupId/email-groups group emails
+ * @apiPermission group_admin
+ * @apiName GetEmailGroups
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse emailGroup
+ * @apiSuccess {emailGroup[]} items list of email groups
+ */
+
+async function readEmailGroups(req, res) {
+  const { groupId } = req.params;
+  const emailGroups = await emailGroupService.listEmailGroups(groupId);
+  if (!emailGroups) throw new NotFound();
+  res.json({ items: emailGroups });
 }
 
 /**
@@ -186,7 +207,7 @@ async function readMailings(req, res) {
     Groups.findById(groupId).select('_id'),
     Mailings.findForApi({ _company: groupId }),
   ]);
-  if (!group) throw new createError.NotFound();
+  if (!group) throw new NotFound();
   res.json({ items: mailings });
 }
 
@@ -204,7 +225,7 @@ async function readMailings(req, res) {
 
 async function readWorkspaces(req, res, next) {
   const { groupId } = req.params;
-  if (!groupId) next(new createError.NotFound());
+  if (!groupId) next(new NotFound());
   const workspaces = await findWorkspaces({ groupId });
   return res.json({ items: workspaces });
 }
