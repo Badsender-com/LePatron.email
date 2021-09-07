@@ -22,7 +22,8 @@ module.exports = {
  * @apiSuccess {emailGroup[]} items list of email groups
  */
 async function listEmailGroups(req, res) {
-  const emailGroups = await emailGroupService.listFolders();
+  const { user } = req;
+  const emailGroups = await emailGroupService.listEmailGroups(user?.group?.id);
   res.json({
     items: emailGroups,
   });
@@ -72,7 +73,10 @@ async function getEmailGroup(req, res) {
     params: { emailGroupId },
   } = req;
 
-  const emailGroup = await emailGroupService.getEmailGroup(emailGroupId, user);
+  const emailGroup = await emailGroupService.getEmailGroup({
+    emailGroupId,
+    user,
+  });
 
   res.send(emailGroup);
 }
@@ -93,7 +97,7 @@ async function deleteEmailGroup(req, res) {
     params: { emailGroupId },
   } = req;
 
-  await emailGroupService.deleteEmailGroup(user, emailGroupId);
+  await emailGroupService.deleteEmailGroup({ user, emailGroupId });
 
   res.status(204).send();
 }
@@ -117,10 +121,10 @@ async function editEmailGroup(req, res) {
   const {
     user,
     params: { emailGroupId },
-    body: { name, mails },
+    body: { name, emails },
   } = req;
 
-  await emailGroupService.editEmailGroup({ emailGroupId, name, mails }, user);
+  await emailGroupService.editEmailGroup({ emailGroupId, name, emails, user });
 
   res.status(204).send();
 }

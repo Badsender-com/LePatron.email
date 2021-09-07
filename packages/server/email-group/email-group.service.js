@@ -21,9 +21,13 @@ module.exports = {
 };
 
 // TODO complete listEmailGroups
-async function listEmailGroups(user) {
+async function listEmailGroups(groupId) {
+  if (!groupId) {
+    throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
+  }
+
   return EmailGroups.find({
-    _company: user.group.id,
+    _company: groupId,
   }).sort({ name: 1 });
 }
 
@@ -48,18 +52,18 @@ async function createEmailGroup({ name, emails, user }) {
 }
 
 async function getEmailGroup({ emailGroupId, user }) {
-  await checkIfEmailGroupExist(emailGroupId);
+  checkIfEmailGroupExist(emailGroupId);
 
   const emailGroup = await EmailGroups.findById(emailGroupId);
 
-  if (emailGroup.group !== user.group.id) {
+  if (emailGroup.group?.toString() !== user.group.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
   return emailGroup;
 }
 
-async function editEmailGroup({ emailGroupId, user, name, emails }) {
+async function editEmailGroup({ emailGroupId, name, emails, user }) {
   checkNameAndEmailsExists({ name, emails });
 
   if (!user) {
@@ -70,7 +74,7 @@ async function editEmailGroup({ emailGroupId, user, name, emails }) {
 
   const emailGroup = await EmailGroups.findById(emailGroupId);
 
-  if (emailGroup.group !== user.group.id) {
+  if (emailGroup.group?.toString() !== user.group.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -83,10 +87,14 @@ async function editEmailGroup({ emailGroupId, user, name, emails }) {
   );
 }
 
-async function deleteEmailGroup(emailGroupId) {
+async function deleteEmailGroup({ emailGroupId, user }) {
   const emailGroup = await findOne(emailGroupId);
 
   const deleteEmailGroupResponse = await deleteOne(emailGroup.id);
+
+  if (emailGroup.group?.toString() !== user.group.id) {
+    throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
+  }
 
   if (deleteEmailGroupResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_EMAIL_GROUP_DELETE);
@@ -110,12 +118,12 @@ async function checkIfEmailGroupExist(emailGroupId) {
   }
 }
 
-async function checkNameAndEmailsExists({ name, emails }) {
+function checkNameAndEmailsExists({ name, emails }) {
   if (!name) {
     throw new BadRequest(ERROR_CODES.MISSING_EMAIL_GROUP_NAME_PARAM);
   }
 
   if (!emails) {
-    throw new BadRequest(ERROR_CODES.MISSING_EMAIL_GROUP_EMAILS_PARAM);
+    throw new BadRequest(ERROR_CODES.MISSING_EMAIL_GROUP_NAME_PARAM);
   }
 }
