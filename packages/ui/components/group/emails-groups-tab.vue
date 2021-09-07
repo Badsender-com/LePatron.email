@@ -74,7 +74,6 @@ export default {
     async deleteEmailsGroup() {
       const { $axios } = this;
       try {
-        console.log({ selectedEmailsGroupId: this.selectedEmailsGroup?.id });
         const emailGroupResponse = await $axios.delete(
           getEmailsGroup(this.selectedEmailsGroup.id)
         );
