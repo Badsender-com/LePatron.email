@@ -82,8 +82,10 @@ export default {
           <v-textarea
             id="emails"
             v-model="localModel.emails"
-            :label="$t('global.emails')"
+            :label="$t('forms.emailsGroup.emails')"
             name="emails"
+            :placeholder="$t('forms.emailsGroup.emailsPlaceholder')"
+            :persistent-placeholder="true"
             required
             outlined
             :error-messages="emailsErrors"

@@ -58,7 +58,6 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
-    emails: 'Liste des emails',
     newEmailsGroup: 'Ajouter un groupe des emails',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
@@ -107,6 +106,9 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
+    emailsGroups: 'Groupes d\'emails',
+    emailsGroupsEmpty: 'Aucun group d\'emails disponible',
+    editEmailsGroup: 'Modifier le groupe d\'emails',
     continue: 'Continue',
     downloadFtp: 'Télécharger ftp',
   },
@@ -172,6 +174,8 @@ export default {
       },
     },
     emailsGroup: {
+      emails: 'Liste des emails',
+      emailsPlaceholder: 'Exemple: test@mail.com;test2@mail.com;',
       errors: {
         name: {
           required: 'Le nom du groupe est requis',
@@ -181,6 +185,9 @@ export default {
           emailsValid: 'Il y a des emails non valides',
         },
       },
+      deleteNotice:
+        'Vous êtes sur le point de supprimer cet groupe d\'emails. Cette action ne peut pas être annulée.',
+      deleteSuccess: 'group d\'emails supprimés',
     },
     workspace: {
       checkBoxError:
