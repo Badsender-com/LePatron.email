@@ -3,35 +3,8 @@ import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
 import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { getEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
-
-export const LIST_EMAILS_GROUPS = [
-  {
-    id: '1',
-    name: 'bearStudio',
-    createdAt: new Date(),
-    emails: 'testBS1@bearstudio.fr;test2@bearstudio.fr',
-  },
-  {
-    id: '2',
-    name: 'camelStudio',
-    createdAt: new Date(),
-    emails: 'testCS1@bearstudio.fr;testCS2@bearstudio.fr',
-  },
-  {
-    id: '3',
-    name: 'studio',
-    createdAt: new Date(),
-    emails: 'testStudio1@bearstudio.fr;testStudio2@bearstudio.fr',
-  },
-];
-
-const getEmailsGroups = () =>
-  new Promise((resolve) =>
-    setTimeout(() => {
-      resolve(LIST_EMAILS_GROUPS);
-    }, 1000)
-  );
 
 export default {
   name: 'BsEmailGroupTab',
@@ -73,9 +46,14 @@ export default {
         $axios,
         $route: { params },
       } = this; */
+      const { $axios } = this;
+
       try {
         this.loading = true;
-        const emailsGroups = await getEmailsGroups();
+        const {
+          data: { items: emailsGroups },
+        } = await $axios.get(getEmailsGroups());
+
         this.emailsGroups = emailsGroups.map(({ createdAt, ...rest }) => ({
           ...rest,
           createdAt: moment(createdAt).format(DATE_FORMAT),
@@ -94,12 +72,17 @@ export default {
       this.$refs.deleteDialog.open({ name: item.name, id: item.id });
     },
     async deleteEmailsGroup() {
+      const { $axios } = this;
       try {
-        console.log({ selectedEmailsGroup: this.selectedEmailsGroup });
-        this.emailsGroups = this.emailsGroups.filter(
-          (emailsGroup) => emailsGroup.id !== this.selectedEmailsGroup.id
+        console.log({ selectedEmailsGroupId: this.selectedEmailsGroup?.id });
+        const emailGroupResponse = await $axios.delete(
+          getEmailsGroup(this.selectedEmailsGroup.id)
         );
-        // await this.fetchData(); TODO call it after the connection of the delete endpoint
+        if (emailGroupResponse.status !== 204) {
+          throw new Error();
+        }
+        await this.fetchData();
+
         this.showSnackbar({
           text: this.$t('forms.emailsGroup.deleteSuccess'),
           color: 'success',

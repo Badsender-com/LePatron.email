@@ -14,7 +14,6 @@ import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
-import { PAGE_NAMES } from '~/helpers/constants/page-names.js';
 
 export default {
   name: 'BsPageGroup',
@@ -32,16 +31,6 @@ export default {
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
-  beforeRouteEnter(to, from, next) {
-    next((page) => {
-      if (
-        from.name === PAGE_NAMES.WORKSPACE_CREATE ||
-        from.name === PAGE_NAMES.WORKSPACE_UPDATE
-      ) {
-        page.fromCreateOrUpdate = true;
-      }
-    });
-  },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
@@ -55,7 +44,6 @@ export default {
     return {
       group: {},
       loading: false,
-      fromCreateOrUpdate: false,
     };
   },
   head() {
@@ -68,9 +56,9 @@ export default {
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
     tab() {
-      return this.fromCreateOrUpdate
-        ? 'group-workspaces'
-        : 'group-informations';
+      return this.$route.query.redirectTab
+        ? this.$route.query.redirectTab
+        : 'informations';
     },
     title() {
       return `${this.$tc('global.group', 1)} – ${this.group.name}`;
@@ -113,7 +101,7 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs :value="tab" centered>
+    <v-tabs :value="`group-${tab}`" centered>
       <v-tabs-slider color="accent" />
       <v-tab href="#group-informations">
         {{ $t('groups.tabs.informations') }}
@@ -133,7 +121,7 @@ export default {
       <v-tab v-if="isAdmin" href="#group-profile">
         {{ $tc('global.profile', 2) }}
       </v-tab>
-      <v-tab v-if="isGroupAdmin" href="#emails-groups">
+      <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
         {{ $tc('global.emailsGroups', 2) }}
       </v-tab>
       <v-tab-item value="group-informations" eager>
@@ -159,7 +147,7 @@ export default {
       <v-tab-item v-if="isAdmin" value="group-profile">
         <bs-group-profiles-tab />
       </v-tab-item>
-      <v-tab-item v-if="isGroupAdmin" value="emails-groups">
+      <v-tab-item v-if="isGroupAdmin" value="group-emails-groups">
         <bs-emails-groups-tab />
       </v-tab-item>
     </v-tabs>

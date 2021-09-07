@@ -37,7 +37,6 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createUser(data) {
       const { $axios } = this;
-      console.log({ data });
       try {
         this.loading = true;
         await $axios.$post(getEmailsGroups(), {
@@ -46,6 +45,10 @@ export default {
         this.showSnackbar({
           text: this.$t('snackbars.created'),
           color: 'success',
+        });
+        this.$router.push({
+          path: `/groups/${this.groupId}`,
+          query: { redirectTab: 'emails-groups' },
         });
       } catch (error) {
         this.showSnackbar({

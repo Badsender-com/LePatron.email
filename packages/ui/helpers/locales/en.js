@@ -62,7 +62,6 @@ export default {
     user: 'User | Users',
     newUser: 'Add a user',
     newEmailsGroup: 'Add a new group of emails',
-    emails: 'List of emails',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
@@ -177,6 +176,8 @@ export default {
       },
     },
     emailsGroup: {
+      emails: 'List of emails',
+      emailsPlaceholder: 'Example: test@mail.com;test2@mail.com;',
       errors: {
         name: {
           required: 'The name of group is required',
