@@ -5,22 +5,22 @@ const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 
 /**
- * @apiDefine emailGroup
+ * @apiDefine emailsGroup
  * @apiSuccess {String} id
  * @apiSuccess {String} name
  * @apiSuccess {String} emails
  * @apiSuccess {String} _company
  */
 
-const EmailGroupSchema = Schema(
+const EmailsGroupSchema = Schema(
   {
     name: {
       type: String,
-      required: [true, 'Email group name is required'],
+      required: [true, 'Emails group name is required'],
     },
     emails: {
       type: String,
-      required: [true, 'Email group emails list is required'],
+      required: [true, 'Emails group emails list is required'],
     },
     _company: {
       type: ObjectId,
@@ -35,4 +35,4 @@ const EmailGroupSchema = Schema(
   }
 );
 
-module.exports = EmailGroupSchema;
+module.exports = EmailsGroupSchema;
