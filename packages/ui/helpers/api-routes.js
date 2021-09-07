@@ -226,3 +226,15 @@ export function getTableTargetList() {
 export function getEntitiesList() {
   return '/profiles/actito-entities-list';
 }
+
+/// ///
+// Email groups
+/// ///
+
+export function getEmailsGroups() {
+  return '/emails-groups';
+}
+
+export function getEmailsGroup(emailsGroupId) {
+  return `/emails-groups/${emailsGroupId}`;
+}

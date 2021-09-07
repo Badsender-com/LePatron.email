@@ -30,7 +30,7 @@ const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
-const EmailGroupRouter = require('./email-group/email-group.routes');
+const EmailGroupRouter = require('./emails-group/emails-group.routes');
 
 const workers =
   process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
@@ -253,7 +253,7 @@ if (cluster.isMaster) {
   app.use('/api/templates', templateRouter);
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
-  app.use('/api/email-groups', EmailGroupRouter);
+  app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
 

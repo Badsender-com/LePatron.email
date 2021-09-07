@@ -10,7 +10,7 @@ const {
 
 const groupService = require('../group/group.service.js');
 const profileService = require('../profile/profile.service.js');
-const emailGroupService = require('../email-group/email-group.service.js');
+const emailsGroupService = require('../emails-group/emails-group.service.js');
 
 const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
@@ -160,13 +160,13 @@ async function readTemplates(req, res) {
  *
  * @apiParam {string} groupId
  *
- * @apiUse emailGroup
+ * @apiUse emailsGroup
  * @apiSuccess {emailGroup[]} items list of email groups
  */
 
 async function readEmailGroups(req, res) {
   const { groupId } = req.params;
-  const emailGroups = await emailGroupService.listEmailGroups(groupId);
+  const emailGroups = await emailsGroupService.listEmailsGroups(groupId);
   if (!emailGroups) throw new NotFound();
   res.json({ items: emailGroups });
 }
