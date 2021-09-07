@@ -4,20 +4,13 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
+import { getEmailsGroups } from '~/helpers/api-routes.js';
 import BsGroupMenu from '~/components/group/menu.vue';
 import FormEmailsGroup from '~/components/group/form-emails-group';
 
 const errors = {
   409: 'global.errors.emailsGroupExist',
 };
-
-const handleFakeCreateEmailsGroup = (params) =>
-  new Promise((resolve) =>
-    setTimeout(() => {
-      console.log('Emails group created...', params);
-      resolve();
-    }, 1000)
-  );
 
 export default {
   name: 'BsPageNewEmailsGroup',
@@ -42,12 +35,13 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async createUser() {
+    async createUser(data) {
+      const { $axios } = this;
+      console.log({ data });
       try {
         this.loading = true;
-        await handleFakeCreateEmailsGroup({
-          groupId: this.groupId,
-          ...this.emailsGroup,
+        await $axios.$post(getEmailsGroups(), {
+          ...data,
         });
         this.showSnackbar({
           text: this.$t('snackbars.created'),
