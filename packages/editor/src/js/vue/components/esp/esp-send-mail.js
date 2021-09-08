@@ -1,15 +1,15 @@
-var Vue = require('vue/dist/vue.common');
-var { SendinBlueComponent } = require('./providers/SendinBlueComponent');
-var { ActitoComponent } = require('./providers/ActitoComponent');
-var { ProfileListComponent } = require('../esp/profile-list');
-var { getEspIds } = require('../../utils/apis');
-var { SEND_MODE } = require('../../constant/send-mode');
-var { ESP_TYPE } = require('../../constant/esp-type');
+const Vue = require('vue/dist/vue.common');
+const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
+const { ActitoComponent } = require('./providers/ActitoComponent');
+const { ProfileListComponent } = require('../esp/profile-list');
+const { getEspIds } = require('../../utils/apis');
+const { SEND_MODE } = require('../../constant/send-mode');
+const { ESP_TYPE } = require('../../constant/esp-type');
 
-var { getCampaignDetail, getProfileDetail } = require('../../../vue/utils/apis');
-var axios = require('axios');
+const { getCampaignDetail, getProfileDetail } = require('../../../vue/utils/apis');
+const axios = require('axios');
 
-const EspComponent = Vue.component('esp-form', {
+const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
@@ -18,42 +18,6 @@ const EspComponent = Vue.component('esp-form', {
   props: {
     vm: { type: Object, default: () => ({}) },
   },
-  template: `
-    <div>
-      <div class="material-css">
-        <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
-          <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="loading">
-            <div class="preloader-wrapper small active">
-                <div class="spinner-layer spinner-green-only">
-                  <div class="circle-clipper left">
-                    <div class="circle"></div>
-                  </div><div class="gap-patch">
-                  <div class="circle"></div>
-                </div><div class="circle-clipper right">
-                  <div class="circle"></div>
-                </div>
-                </div>
-              </div>
-          </div>
-            <component
-              :loading="loadingExport"
-              :key="selectedProfile.id"
-              :vm="vm"
-              :type="type"
-              :fetched-profile="fetchedProfile"
-              :is="espComponent"
-              v-else-if="!!selectedProfile && !!fetchedProfile.id"
-              :selectedProfile="selectedProfile"
-              :campaignId="campaignId"
-              :closeModal="closeModal"
-              @submit="submitEsp"
-            >
-            </component>
-        </div>
-      </div>
-    </div>
-
-      `,
   data: () => ({
     mailingId: null,
     loading: false,
@@ -66,6 +30,18 @@ const EspComponent = Vue.component('esp-form', {
     espIds: [],
     fetchedProfile: {},
   }),
+  computed: {
+    espComponent() {
+      switch (this.selectedProfile?.type) {
+        case ESP_TYPE.ACTITO:
+          return 'ActitoComponent';
+        case ESP_TYPE.SENDINBLUE:
+          return 'SendinBlueComponent';
+        default:
+          return 'SendinBlueComponent';
+      }
+    }
+  },
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
     const modalRef = this.$refs.modalRef;
@@ -90,6 +66,7 @@ const EspComponent = Vue.component('esp-form', {
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
+            console.log(error);
             this.vm.notifier.error(this.vm.t('error-server'));
         }).finally(()=> {
           this.loading = true;
@@ -97,7 +74,7 @@ const EspComponent = Vue.component('esp-form', {
     },
     fetchProfileData(message) {
       this.loading = true;
-      let getProfileApi = this.type === SEND_MODE.CREATION ?
+      const getProfileApi = this.type === SEND_MODE.CREATION ?
         getProfileDetail({ profileId: this.selectedProfile?.id })
         : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });
 
@@ -126,6 +103,7 @@ const EspComponent = Vue.component('esp-form', {
           M.updateTextFields();
         }).catch((error) => {
         // handle error
+        console.log(error);
         this.vm.notifier.error(this.vm.t('error-server'));
       }).finally(() => {
         this.loading = false;
@@ -199,18 +177,42 @@ const EspComponent = Vue.component('esp-form', {
       });
     }
   },
-  computed: {
-    espComponent() {
-      switch (this.selectedProfile?.type) {
-        case ESP_TYPE.ACTITO:
-          return 'ActitoComponent';
-        case ESP_TYPE.SENDINBLUE:
-          return 'SendinBlueComponent';
-        default:
-          return 'SendinBlueComponent';
-      }
-    }
-  }
+  template: `
+    <div>
+      <div class="material-css">
+        <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
+          <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="loading">
+            <div class="preloader-wrapper small active">
+                <div class="spinner-layer spinner-green-only">
+                  <div class="circle-clipper left">
+                    <div class="circle"></div>
+                  </div><div class="gap-patch">
+                  <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                  <div class="circle"></div>
+                </div>
+                </div>
+              </div>
+          </div>
+            <component
+              :loading="loadingExport"
+              :key="selectedProfile.id"
+              :vm="vm"
+              :type="type"
+              :fetched-profile="fetchedProfile"
+              :is="espComponent"
+              v-else-if="!!selectedProfile && !!fetchedProfile.id"
+              :selectedProfile="selectedProfile"
+              :campaignId="campaignId"
+              :closeModal="closeModal"
+              @submit="submitEsp"
+            >
+            </component>
+        </div>
+      </div>
+    </div>
+
+      `
 });
 
 module.exports = {

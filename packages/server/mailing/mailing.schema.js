@@ -297,7 +297,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const mailingId = mailing._id;
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
-  console.log({ mailing });
+
   const redirectUrl = mailing?._parentFolder
     ? `/?fid=${mailing._parentFolder}`
     : `/?wid=${mailing._workspace}`;

@@ -1,11 +1,12 @@
-import {required} from "vuelidate/lib/validators";
+import {required} from 'vuelidate/lib/validators';
 
-var Vue = require('vue/dist/vue.common');
-var { SEND_MODE } = require('../../../constant/send-mode');
-var { ESP_TYPE } = require('../../../constant/esp-type');
-var  { validationMixin } = require('vuelidate');
+const Vue = require('vue/dist/vue.common');
+const { SEND_MODE } = require('../../../constant/send-mode');
+const { ESP_TYPE } = require('../../../constant/esp-type');
+const  { validationMixin } = require('vuelidate');
 
 const SendinBlueComponent = Vue.component('SendinBlueComponent', {
+  mixins: [validationMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
@@ -17,7 +18,80 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
     campaignId: { type: String, default: null },
     type: { type: Number, default: SEND_MODE.CREATION  },
   },
-  mixins: [validationMixin],
+  data() {
+    return {
+      profile: {
+        campaignMailName: '',
+        senderName: '',
+        senderMail: '',
+        replyTo: '',
+        subject: '',
+        type: ESP_TYPE.SENDINBLUE,
+      },
+      style: {
+        mb0:{
+          marginBottom: 0,
+        },
+        mt0:{
+          marginTop: 0,
+        },
+        pl4:{
+          paddingLeft: '40px',
+        },
+        floatLeft: {
+          float: 'left'
+        },
+        colorOrange:{
+          color: '#f57c00'
+        }
+      }
+    }
+  },
+  computed: {
+    isEditMode() {
+      return this.type === SEND_MODE.EDIT
+    },
+    nameLabelText() {
+      return this.contentSendTypeLowerCase() + 'Name'
+    },
+    subjectLabelText() {
+      return this.contentSendTypeLowerCase() + 'Subject'
+    },
+    nameRequiredText() {
+      return this.contentSendTypeLowerCase() + '-name-required'
+    },
+    subjectRequiredText() {
+      return this.contentSendTypeLowerCase() + '-subject-required'
+    }
+  },
+  mounted() {
+
+    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, replyTo } } = this.fetchedProfile;
+
+    this.profile = {
+      campaignMailName: campaignMailName ?? '',
+      senderName: senderName ?? '',
+      senderMail: senderMail ?? '',
+      replyTo: replyTo ?? '',
+      subject: subject ?? '',
+      id: id ?? '',
+    };
+    M.updateTextFields();
+  },
+  methods: {
+    onSubmit() {
+      M.updateTextFields();
+      this.$v.$touch();
+      if (this.$v.$invalid) {
+        return;
+      }
+
+      this.$emit('submit', this.profile);
+    },
+    contentSendTypeLowerCase() {
+      return this.fetchedProfile?.contentSendType?.toString()?.toLowerCase() ?? 'mail';
+    },
+  },
   template: `
 <div>
   <div class="modal-content">
@@ -143,35 +217,6 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
   </div>
 </div>
       `,
-  data() {
-    return {
-      profile: {
-        campaignMailName: '',
-        senderName: '',
-        senderMail: '',
-        replyTo: '',
-        subject: '',
-        type: ESP_TYPE.SENDINBLUE,
-      },
-      style: {
-        mb0:{
-          marginBottom: 0,
-        },
-        mt0:{
-          marginTop: 0,
-        },
-        pl4:{
-          paddingLeft: '40px',
-        },
-        floatLeft: {
-          float: 'left'
-        },
-        colorOrange:{
-          color: '#f57c00'
-        }
-      }
-    }
-  },
   validations() {
     return {
       profile: {
@@ -183,51 +228,6 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
         },
       }
     }
-  },
-  mounted() {
-
-    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, replyTo } } = this.fetchedProfile;
-
-    this.profile = {
-      campaignMailName: campaignMailName ?? '',
-      senderName: senderName ?? '',
-      senderMail: senderMail ?? '',
-      replyTo: replyTo ?? '',
-      subject: subject ?? '',
-      id: id ?? '',
-    };
-    M.updateTextFields();
-  },
-  computed: {
-    isEditMode() {
-      return this.type === SEND_MODE.EDIT
-    },
-    nameLabelText() {
-      return this.contentSendTypeLowerCase() + 'Name'
-    },
-    subjectLabelText() {
-      return this.contentSendTypeLowerCase() + 'Subject'
-    },
-    nameRequiredText() {
-      return this.contentSendTypeLowerCase() + '-name-required'
-    },
-    subjectRequiredText() {
-      return this.contentSendTypeLowerCase() + '-subject-required'
-    }
-  },
-  methods: {
-    onSubmit() {
-      M.updateTextFields();
-      this.$v.$touch();
-      if (this.$v.$invalid) {
-        return;
-      }
-
-      this.$emit('submit', this.profile);
-    },
-    contentSendTypeLowerCase() {
-      return this.fetchedProfile?.contentSendType?.toString()?.toLowerCase() ?? 'mail';
-    },
   },
 })
 
