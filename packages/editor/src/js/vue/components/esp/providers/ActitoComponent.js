@@ -11,7 +11,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
-    loading: { type: Boolean, default: false},
+    isLoading: { type: Boolean, default: false},
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
     selectedProfile: { type: Object, default: () => ({}) },
@@ -255,12 +255,12 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         </button>
         <button
           @click.prevent="onSubmit"
-          :disabled="loading"
+          :disabled="isLoading"
           :style="[style.mb0, style.mt0]"
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          <span v-if="loading">{{ vm.t('exporting') }}</span>
+          <span v-if="isLoading">{{ vm.t('exporting') }}</span>
           <span v-else>{{ vm.t('export') }} <i class="fa fa-paper-plane" aria-hidden="true"></i></span>
         </button>
   </div>

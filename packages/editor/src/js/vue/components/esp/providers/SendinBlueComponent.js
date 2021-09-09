@@ -10,7 +10,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
-    loading: { type: Boolean, default: false},
+    isLoading: { type: Boolean, default: false},
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
     selectedProfile: { type: Object, default: () => ({}) },
@@ -206,7 +206,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
         </button>
         <button
           @click.prevent="onSubmit"
-          :disabled="loading"
+          :disabled="isLoading"
           :style="[style.mb0, style.mt0]"
           class="btn waves-effect waves-light"
           type="submit"
