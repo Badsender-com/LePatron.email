@@ -7,6 +7,7 @@ import BsGroupMenu from '~/components/group/menu.vue';
 import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { ESP_TYPES } from '~/helpers/constants/esp-type';
 
 export default {
   name: 'PageEditProfile',
@@ -17,20 +18,24 @@ export default {
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
+    let profileData = {};
     try {
       const profileResponse = await $axios.$get(
         getProfileForAdmin(params.profileId)
       );
 
-      const {
-        id,
-        name,
-        apiKey,
-        additionalApiData: { senderName, senderMail, replyTo, contentSendType },
-        type,
-      } = profileResponse.result;
-      return {
-        profile: {
+      const { type, id, name, apiKey } = profileResponse.result;
+
+      if (type === ESP_TYPES.SENDINBLUE) {
+        const {
+          additionalApiData: {
+            senderName,
+            senderMail,
+            replyTo,
+            contentSendType,
+          },
+        } = profileResponse.result;
+        profileData = {
           id,
           name,
           apiKey,
@@ -39,7 +44,40 @@ export default {
           contentSendType,
           senderMail,
           type,
-        },
+        };
+      }
+
+      if (type === ESP_TYPES.ACTITO) {
+        const {
+          additionalApiData: {
+            senderMail,
+            encodingType,
+            entity,
+            contentSendType,
+            targetTable,
+            replyTo,
+            supportedLanguage,
+          },
+        } = profileResponse.result;
+        profileData = {
+          id,
+          name,
+          apiKey,
+          replyTo,
+          encodingType,
+          entity,
+          targetTable,
+          supportedLanguage,
+          contentSendType,
+          senderMail,
+          type,
+        };
+      }
+
+      console.log({ profileForAdmin: profileData });
+
+      return {
+        profile: profileData,
       };
     } catch (error) {
       console.log(error);

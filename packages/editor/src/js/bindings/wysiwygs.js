@@ -67,9 +67,11 @@ ko.bindingHandlers.wysiwygHref = {
       var isNotWysiwygMode =
         typeof bindingContext.templateMode == 'undefined' ||
         bindingContext.templateMode != 'wysiwyg';
-      // console.log("XXX", bindingContext.templateMode, isNotWysiwygMode, element.getAttribute("href"));
       if (isNotWysiwygMode) {
-        element.setAttribute('target', '_new');
+        // Check if there is a target attribute
+        if (element.getAttribute('target') !== '_blank') {
+          element.setAttribute('target', '_new');
+        }
       } else {
         /*jshint scripturl:true*/
         // 20150226: removed href to work around FF issues with <a href=""><div contenteditable="true">..</div></a>

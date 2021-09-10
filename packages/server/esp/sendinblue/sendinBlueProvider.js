@@ -1,10 +1,10 @@
 'use_strict';
-const logger = require('../utils/logger.js');
+const logger = require('../../utils/logger.js');
 
 const SibApiV3Sdk = require('sib-api-v3-sdk');
-const mailingService = require('../mailing/mailing.service.js');
-const ERROR_CODES = require('../constant/error-codes.js');
-const ESP_CONTENT_TYPE = require('../constant/content-esp-type.js');
+const mailingService = require('../../mailing/mailing.service.js');
+const ERROR_CODES = require('../../constant/error-codes.js');
+const ESP_CONTENT_TYPE = require('../../constant/content-esp-type.js');
 
 const { InternalServerError } = require('http-errors');
 
