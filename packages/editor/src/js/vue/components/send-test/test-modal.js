@@ -2,10 +2,12 @@ const Vue = require('vue/dist/vue.common');
 const isEmail = require('validator/lib/isEmail');
 const { validationMixin } = require('vuelidate');
 const { ModalComponent } = require('../modal/modalComponent');
+const { SelectComponent } = require('../select/selectComponent');
 
 const TestModalComponent = Vue.component('TestModal', {
   components: {
     ModalComponent,
+    SelectComponent
   },
   mixins: [validationMixin],
   props: {
@@ -49,6 +51,7 @@ const TestModalComponent = Vue.component('TestModal', {
         id: '6137969116c4b07f4fc5ce56',
       },
     ],
+    options: [{label: 'Canada', code: 'Ca'}, {label: 'france', code: 'Fr'}]
   }),
   mounted() {
     console.log('======= Component mounted =========');
@@ -94,13 +97,13 @@ const TestModalComponent = Vue.component('TestModal', {
             <div class="input-field col s12" :style="style.mb0">
            
                 <input
-                id="testMails"
-                v-model="inputEmailsTest"
-                type="text"
-                name="emailsTest"
-                :placeholder="vm.t('Insert here the recipient email address')"
-                required
-                class="validate"
+                  id="testMails"
+                  v-model="inputEmailsTest"
+                  type="text"
+                  name="emailsTest"
+                  :placeholder="vm.t('Insert here the recipient email address')"
+                  required
+                  class="validate"
                 >
                 <label for="testMails">{{ vm.t('emailsTest') }}</label>
                 <span class="helper-text" :data-error="vm.t('mail-name-required')"></span>
@@ -108,12 +111,7 @@ const TestModalComponent = Vue.component('TestModal', {
             </div>
             <div class="row" :style="style.mb0">
             <div class="input-field col s12 m6">
-                <select>
-                    <option value="null"  selected>Choose your option</option>
-                    <option value="amine" class="left">amine</option>
-                    <option value="ziraoui" class="left">ziraoui</option>
-                </select>
-                <label>Group emails:</label>
+                <select-component :options="options"></select-component>
             </div>
             </div>
         </form>
