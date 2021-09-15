@@ -214,10 +214,10 @@ export default {
         this.loading = false;
       }
     },
-    async handleDownloadSingleMail({ mailing, withFtp }) {
+    async handleDownloadSingleMail({ mailing, isWithFtp }) {
       this.$refs.mailingSelectionActions.handleInitSingleDownload({
         mailing,
-        withFtp,
+        isWithFtp,
       });
     },
     async refreshLeftMenuData() {
