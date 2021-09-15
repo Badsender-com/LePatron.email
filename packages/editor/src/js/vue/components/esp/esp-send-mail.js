@@ -1,7 +1,7 @@
 const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
-const { ProfileListComponent } = require('../esp/profile-list');
+const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
 const { ESP_TYPE } = require('../../constant/esp-type');
@@ -13,18 +13,16 @@ const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
-    ProfileListComponent
+    ModalComponent
   },
   props: {
     vm: { type: Object, default: () => ({}) },
   },
   data: () => ({
     mailingId: null,
-    loading: false,
-    loadingExport: false,
+    isLoading: false,
+    isLoadingExport: false,
     selectedProfile: null,
-    dialog: false,
-    modalInstance: null,
     type: SEND_MODE.CREATION,
     campaignId: null,
     espIds: [],
@@ -44,11 +42,6 @@ const EspComponent = Vue.component('EspForm', {
   },
   mounted() {
     this.mailingId = this.vm?.metadata?.id;
-    const modalRef = this.$refs.modalRef;
-    const options = {
-      dismissible: false
-    };
-    this.modalInstance = M.Modal.init(modalRef, options);
     this.fetchData();
     this.subscriptions = [
       this.vm.selectedProfile.subscribe(this.handleProfileSelect)
@@ -59,21 +52,20 @@ const EspComponent = Vue.component('EspForm', {
   },
   methods: {
     fetchData() {
-      this.loading = false;
+      this.isLoading = true;
       return axios.get(getEspIds({mailingId: this.mailingId }))
           .then((response) => {
-            this.loading = false;
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
             console.log(error);
             this.vm.notifier.error(this.vm.t('error-server'));
         }).finally(()=> {
-          this.loading = true;
+          this.isLoading = false;
         });
     },
     fetchProfileData(message) {
-      this.loading = true;
+      this.isLoading = true;
       const getProfileApi = this.type === SEND_MODE.CREATION ?
         getProfileDetail({ profileId: this.selectedProfile?.id })
         : getCampaignDetail({ profileId: this.selectedProfile?.id, campaignId: this.campaignId });
@@ -106,7 +98,7 @@ const EspComponent = Vue.component('EspForm', {
         console.log(error);
         this.vm.notifier.error(this.vm.t('error-server'));
       }).finally(() => {
-        this.loading = false;
+        this.isLoading = false;
       });
     },
     handleProfileSelect(profile) {
@@ -134,10 +126,10 @@ const EspComponent = Vue.component('EspForm', {
       }
     },
     openModal() {
-      this.modalInstance?.open();
+      this.$refs.modalRef?.openModal();
     },
     closeModal() {
-      this.modalInstance?.close();
+      this.$refs.modalRef?.closeModal();
     },
     submitEsp(data) {
 
@@ -145,7 +137,7 @@ const EspComponent = Vue.component('EspForm', {
         return;
       }
 
-      this.loadingExport = true;
+      this.isLoadingExport = true;
       const unprocessedHtml = this.vm.exportHTML();
 
       axios.post(this.vm.metadata.url.sendCampaignMail, {
@@ -173,45 +165,30 @@ const EspComponent = Vue.component('EspForm', {
         this.vm.notifier.error(this.vm.t(errorMessageCode));
 
       }).finally(()=> {
-        this.loadingExport = false;
+        this.isLoadingExport = false;
       });
     }
   },
   template: `
-    <div>
-      <div class="material-css">
-        <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
-          <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="loading">
-            <div class="preloader-wrapper small active">
-                <div class="spinner-layer spinner-green-only">
-                  <div class="circle-clipper left">
-                    <div class="circle"></div>
-                  </div><div class="gap-patch">
-                  <div class="circle"></div>
-                </div><div class="circle-clipper right">
-                  <div class="circle"></div>
-                </div>
-                </div>
-              </div>
-          </div>
-            <component
-              :loading="loadingExport"
-              :key="selectedProfile.id"
-              :vm="vm"
-              :type="type"
-              :fetched-profile="fetchedProfile"
-              :is="espComponent"
-              v-else-if="!!selectedProfile && !!fetchedProfile.id"
-              :selectedProfile="selectedProfile"
-              :campaignId="campaignId"
-              :closeModal="closeModal"
-              @submit="submitEsp"
-            >
-            </component>
-        </div>
-      </div>
-    </div>
-
+    <modal-component 
+        ref="modalRef"
+        :isLoading="isLoading"
+        v-if="selectedProfile && fetchedProfile"
+        >
+      <component
+        :isLoading="isLoadingExport"
+        :key="selectedProfile.id"
+        :vm="vm"
+        :type="type"
+        :fetched-profile="fetchedProfile"
+        :is="espComponent"
+        :selectedProfile="selectedProfile"
+        :campaignId="campaignId"
+        :closeModal="closeModal"
+        @submit="submitEsp"
+      >
+      </component>
+    </modal-component>
       `
 });
 

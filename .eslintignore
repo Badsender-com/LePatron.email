@@ -6,7 +6,7 @@ dist/
 
 # Per packages overrides
 packages/editor/*
-
+public/lang/*
 packages/documentation/.vuepress/dist/
 packages/documentation/api/
 

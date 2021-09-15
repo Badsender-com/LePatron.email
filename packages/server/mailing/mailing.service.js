@@ -69,6 +69,7 @@ module.exports = {
   updateMailEspIds,
   getMailByMailingIdAndUser,
   getGroupByCompanyId,
+  getMailNameAndCompanyByMailingIdAndUser,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -566,6 +567,15 @@ async function getMailByMailingIdAndUser({ mailingId, user }) {
   const mailing = await Mailings.findOne(query)
     .select({ data: 0 })
     .populate('_wireframe');
+  if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
+  return mailing;
+}
+
+async function getMailNameAndCompanyByMailingIdAndUser({ mailingId, user }) {
+  const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
+  const mailing = await Mailings.findOne(query)
+    .select({ name: 1, _company: 1 })
+    .lean();
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
 }
