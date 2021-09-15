@@ -304,6 +304,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   return {
     metadata: {
       id: mailingId,
+      groupId: groupId,
       templateId,
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,

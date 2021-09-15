@@ -3,30 +3,30 @@
 module.exports = {
   // edit title
   'edit-title-double-click': 'Double-cliquer pour éditer',
-  'edit-title-cancel': 'Annuler l\'édition',
+  'edit-title-cancel': "Annuler l'édition",
   'edit-title-save': 'Enregistrer le nouveau nom',
   'edit-title-ajax-pending': 'Changement du nom…',
   'edit-title-ajax-success': 'Mise à jour du nom effectuée',
-  'edit-title-ajax-fail': 'Impossible d\'enregistrer le nouveau nom',
+  'edit-title-ajax-fail': "Impossible d'enregistrer le nouveau nom",
   // empty title fallback
   'title-empty': 'sans titre',
   //
-  'save-message-success': 'L\'email a été sauvé',
-  'save-message-error': 'Une erreur est survenue lors de l\'enregistrement',
+  'save-message-success': "L'email a été sauvé",
+  'save-message-error': "Une erreur est survenue lors de l'enregistrement",
   //
   'gallery-title': 'Galeries :',
-  'gallery-mailing': 'SPÉCIFIQUE À L\'EMAIL',
-  'gallery-mailing-loading': 'Chargement de la galerie de l\'email…',
-  'gallery-mailing-empty': 'La galerie de l\'email est vide',
+  'gallery-mailing': "SPÉCIFIQUE À L'EMAIL",
+  'gallery-mailing-loading': "Chargement de la galerie de l'email…",
+  'gallery-mailing-empty': "La galerie de l'email est vide",
   'gallery-template': 'COMMUN AU TEMPLATE',
   'gallery-template-loading': 'Chargement de la galerie du template…',
   'gallery-template-empty': 'La galerie du template est vide',
-  'gallery-remove-image-success': 'L\'image a bien été enlevée de la galerie',
+  'gallery-remove-image-success': "L'image a bien été enlevée de la galerie",
   'gallery-remove-image-fail':
-    'Une erreur est survenue lors de la suppression de l\'image',
+    "Une erreur est survenue lors de la suppression de l'image",
   // bgimage widget
   'widget-bgimage-button': 'choisissez une image',
-  'widget-bgimage-reset': 'enlever l\'image',
+  'widget-bgimage-reset': "enlever l'image",
   // prevent i18n console.warn
   'Fake image editor': '',
   '<p>Fake image editor</p>': '',
@@ -39,13 +39,13 @@ module.exports = {
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
   'error-server':
-    'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
+    "Une erreur s'est produite lors de l'appel de l'API du serveur",
   cancel: 'ANNULER',
   upload: 'UPLOADER',
 
   // Profile form esp
-  'sender-name': 'Nom de l\'expéditeur',
-  'sender-mail': 'Adresse email de l\'expéditeur',
+  'sender-name': "Nom de l'expéditeur",
+  'sender-mail': "Adresse email de l'expéditeur",
   replyto: 'Adresse email de réponse',
   mailSubject: 'Objet du mail',
   templateSubject: 'Objet du template',
@@ -63,18 +63,28 @@ module.exports = {
   // profile form validation
   'mail-name-required': 'Le nom du mail est requis',
   'template-name-required': 'Le nom du template est requis',
-  'mail-subject-required': 'L\'Objet du mail est requis',
-  'template-subject-required': 'L\'Objet du template est requis',
+  'mail-subject-required': "L'Objet du mail est requis",
+  'template-subject-required': "L'Objet du template est requis",
   'mail-success-esp-send': 'Mail exporté avec succès',
   'template-success-esp-send': 'Template exporté avec succès',
   'error-server-400':
-    'Paramètres Esp invalides, vérifiez si le courrier de l\'expéditeur correspond à la clé API',
-  'error-server-402': 'Échec de l\'exportation, l\'ESP exige un paiement',
+    "Paramètres Esp invalides, vérifiez si le courrier de l'expéditeur correspond à la clé API",
+  'error-server-402': "Échec de l'exportation, l'ESP exige un paiement",
   'error-server-409': 'Nom de mail déjà utilisé',
   'error-server-500':
-    'Une erreur s\'est produite lors de l\'appel de l\'API du serveur',
+    "Une erreur s'est produite lors de l'appel de l'API du serveur",
   'supported-language': 'Langue',
   'target-table': 'Table cible',
-  'encoding-type': 'Type d\'encodage',
+  'encoding-type': "Type d'encodage",
   entity: 'Entité',
+  'title-send-test-mails': "Tester l'envoi du mail aux e-mails",
+  'send-test-success': 'Mail envoyé avec succès',
+  'send-test-error': "Error lors de l'envoie du mail",
+  'placeholder-input-emails-test': '',
+  'emails-test': 'E-mails de test',
+  'emails-invalid':
+    'Les emails sont invalides, veuillez saisir des emails valides séparer par ;',
+  'placeholder-emails-groups': 'Sélectionnez le groupe E-mails',
+  'sending-test-mails': "Envoi d'un mail de test...",
+  'send-test-mails': 'Envoyer un mail de test',
 };

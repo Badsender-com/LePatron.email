@@ -4,7 +4,7 @@ const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
 const  { validationMixin } = require('vuelidate');
-
+const styleHelper = require('../../../utils/style/styleHelper');
 
 const ActitoComponent = Vue.component('ActitoComponent', {
   mixins: [validationMixin],
@@ -33,23 +33,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         subject: '',
         type: ESP_TYPE.SENDINBLUE,
       },
-      style: {
-        mb0:{
-          marginBottom: 0,
-        },
-        mt0:{
-          marginTop: 0,
-        },
-        pl4:{
-          paddingLeft: '40px',
-        },
-        floatLeft: {
-          float: 'left'
-        },
-        colorOrange:{
-          color: '#f57c00'
-        }
-      }
+      style: styleHelper
     }
   },
   computed: {
@@ -58,7 +42,11 @@ const ActitoComponent = Vue.component('ActitoComponent', {
     }
   },
   mounted() {
-
+    // prevent error inside the console, checking data before destructing it
+    if(!this.fetchedProfile || !this.fetchedProfile.additionalApiData) {
+      return;
+    }
+    
     const {
       subject,
       campaignMailName,

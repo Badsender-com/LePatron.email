@@ -4,12 +4,13 @@ const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
 const  { validationMixin } = require('vuelidate');
+const styleHelper = require('../../../utils/style/styleHelper');
 
 const SendinBlueComponent = Vue.component('SendinBlueComponent', {
   mixins: [validationMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
-    campaignMailName: { type: String, default: null},
+    campaignMailName: { type: String, default: null },
     isLoading: { type: Boolean, default: false},
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
@@ -28,23 +29,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
         subject: '',
         type: ESP_TYPE.SENDINBLUE,
       },
-      style: {
-        mb0:{
-          marginBottom: 0,
-        },
-        mt0:{
-          marginTop: 0,
-        },
-        pl4:{
-          paddingLeft: '40px',
-        },
-        floatLeft: {
-          float: 'left'
-        },
-        colorOrange:{
-          color: '#f57c00'
-        }
-      }
+      style: styleHelper
     }
   },
   computed: {
@@ -211,7 +196,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          <span v-if="loading">{{ vm.t('exporting') }}</span>
+          <span v-if="isLoading">{{ vm.t('exporting') }}</span>
           <span v-else>{{ vm.t('export') }} <i class="fa fa-paper-plane" aria-hidden="true"></i></span>
         </button>
   </div>

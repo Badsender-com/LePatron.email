@@ -15,7 +15,6 @@ const ModalComponent = Vue.component('ModalComponent', {
     modalInstance: null,
   }),
   mounted() {
-    console.log('calling mounted inside modal component');
     const modalRef = this.$refs.modalRef;
     const options = {
       dismissible: false,
@@ -28,7 +27,6 @@ const ModalComponent = Vue.component('ModalComponent', {
     },
     closeModal() {
       this.modalInstance?.close();
-      console.log({ onClose: this.onClose });
       if (typeof this.onClose === 'function') {
         this.onClose();
       }

@@ -52,17 +52,16 @@ const EspComponent = Vue.component('EspForm', {
   },
   methods: {
     fetchData() {
-      this.isLoading = false;
+      this.isLoading = true;
       return axios.get(getEspIds({mailingId: this.mailingId }))
           .then((response) => {
-            this.isLoading = false;
             this.espIds = (response?.data.result || []);
         }).catch((error) => {
             // handle error
             console.log(error);
             this.vm.notifier.error(this.vm.t('error-server'));
         }).finally(()=> {
-          this.isLoading = true;
+          this.isLoading = false;
         });
     },
     fetchProfileData(message) {
@@ -173,7 +172,9 @@ const EspComponent = Vue.component('EspForm', {
   template: `
     <modal-component 
         ref="modalRef"
-        :isLoading="isLoading">
+        :isLoading="isLoading"
+        v-if="selectedProfile && fetchedProfile"
+        >
       <component
         :isLoading="isLoadingExport"
         :key="selectedProfile.id"
