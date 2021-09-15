@@ -291,6 +291,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     regularDownload,
     prefix,
     ftpServerParams,
+    doesWaitForFtp: true,
   });
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -351,6 +352,7 @@ async function downloadZip({
     prefix,
     ftpServerParams,
     name,
+    doesWaitForFtp: false,
   });
 
   // ----- HTML
@@ -527,6 +529,7 @@ async function downloadMultipleZip({
       prefix,
       ftpServerParams,
       name,
+      doesWaitForFtp: false,
     });
 
     const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -715,6 +718,7 @@ async function handleRelativeOrFtpImages({
   prefix,
   ftpServerParams,
   name,
+  doesWaitForFtp,
 }) {
   const {
     ftpHost,
@@ -832,8 +836,11 @@ async function handleRelativeOrFtpImages({
       ftpPathOnServer +
       (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
       `${name}/`;
-
-    ftpClient.upload(allImages, folderPath);
+    if (doesWaitForFtp) {
+      await ftpClient.upload(allImages, folderPath);
+    } else {
+      ftpClient.upload(allImages, folderPath);
+    }
   }
 
   return { relativesImagesNames, archive, html };

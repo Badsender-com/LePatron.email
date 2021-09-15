@@ -342,10 +342,10 @@ export default {
         tags,
       });
     },
-    async handleDownloadMail({ mailing, withFtp }) {
+    async handleDownloadMail({ mailing, isWithFtp }) {
       this.$emit('on-single-mail-download', {
         mailing,
-        withFtp,
+        isWithFtp,
       });
     },
   },
@@ -442,7 +442,7 @@ export default {
             v-if="filteredActions.includes(actions.DOWNLOAD)"
             :icon="actionsDetails[actions.DOWNLOAD].icon"
             :on-click="
-              () => handleDownloadMail({ mailing: item, withFtp: false })
+              () => handleDownloadMail({ mailing: item, isWithFtp: false })
             "
           >
             {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
@@ -453,7 +453,7 @@ export default {
             "
             :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
             :on-click="
-              () => handleDownloadMail({ mailing: item, withFtp: true })
+              () => handleDownloadMail({ mailing: item, isWithFtp: true })
             "
           >
             {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}

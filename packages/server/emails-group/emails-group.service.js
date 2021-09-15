@@ -58,7 +58,6 @@ async function getEmailsGroup({ emailsGroupId, userGroupId }) {
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  console.log({ userGroupId, emailGroupGroup: emailsGroup.group?.toString() });
   if (emailsGroup.group?.toString() !== userGroupId) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
