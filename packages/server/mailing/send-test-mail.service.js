@@ -48,13 +48,13 @@ async function sendTestMail({
     }
   }
 
+  adresses = adresses.filter(onlyUnique).filter((email) => !!email);
+
   for (const mail of adresses) {
     if (!isEmail(mail)) {
       throw new BadRequest(ERROR_CODES.EMAIL_NOT_VALID);
     }
   }
-
-  adresses = adresses.filter(onlyUnique);
 
   for (const address of adresses) {
     try {
