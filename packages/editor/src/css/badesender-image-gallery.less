@@ -176,7 +176,9 @@
   padding: @dialog-margin;
   display: flex;
   justify-content: center;
-
+  .ui-tabs-nav {
+    background: var(--v-secondary-base) !important;
+  }
   .tabs_horizontal {
     background: white;
     width: 100%;
@@ -185,6 +187,7 @@
   }
   .close {
     visibility: hidden;
+    color: #fff;
     cursor: pointer;
     width: 24px;
     display: block;
