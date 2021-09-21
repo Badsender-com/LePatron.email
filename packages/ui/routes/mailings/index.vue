@@ -103,6 +103,7 @@ export default {
     tags: [],
     filterValues: null,
     hasAccess: false,
+    hasFtpAccess: false,
   }),
   computed: {
     filteredMailings() {
