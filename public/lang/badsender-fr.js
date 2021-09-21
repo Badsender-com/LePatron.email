@@ -80,7 +80,8 @@ module.exports = {
   'title-send-test-mails': "Tester l'envoi du mail aux e-mails",
   'send-test-success': 'Mail envoyé avec succès',
   'send-test-error': "Error lors de l'envoie du mail",
-  'placeholder-input-emails-test': '',
+  'placeholder-input-emails-test':
+    'Example: premieremail@test.com;secondemail@test.com',
   'emails-test': 'E-mails de test',
   'emails-invalid':
     'Les emails sont invalides, veuillez saisir des emails valides séparer par ;',

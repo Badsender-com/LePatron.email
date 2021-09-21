@@ -77,7 +77,8 @@ module.exports = {
   'title-send-test-mails': 'Test send mail to emails',
   'send-test-success': 'Mail sent successfuly',
   'send-test-error': 'An error has occured while sending test mail',
-  'placeholder-input-emails-test': 'Example: test@test.com;test+2@test.com',
+  'placeholder-input-emails-test':
+    'Example: firstemail@test.com;secondemail@test.com',
   'emails-test': 'Emails test',
   'emails-invalid':
     'Emails are invalid, please enter valid emails separated by ;',
