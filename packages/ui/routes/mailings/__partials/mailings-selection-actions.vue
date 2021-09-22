@@ -1,22 +1,34 @@
 <script>
 import ModalMoveMail from '~/routes/mailings/__partials/mailings-move-modal';
+import MailingsDownloadModal from '~/routes/mailings/__partials/mailings-download-modal';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsTagsMenu from '~/components/mailings/tags-menu.vue';
-import { moveManyMails, mailingsItem } from '~/helpers/api-routes';
+import {
+  moveManyMails,
+  mailingsItem,
+  downloadMultipleMails,
+} from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   name: 'MailingsSelectionActions',
-  components: { ModalMoveMail, BsModalConfirm, MailingsTagsMenu },
+  components: {
+    ModalMoveMail,
+    BsModalConfirm,
+    MailingsTagsMenu,
+    MailingsDownloadModal,
+  },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    hasFtpAccess: { type: Boolean, default: false },
   },
   data() {
     return {
       deleteDialog: false,
+      downloadDialog: false,
     };
   },
   computed: {
@@ -25,6 +37,11 @@ export default {
     },
     hasSelection() {
       return this.selectionLength > 0;
+    },
+    mailsWithoutPreviewSelection() {
+      return this.mailingsSelection.filter(
+        (mail) => mail.hasHtmlPreview === false
+      );
     },
   },
   methods: {
@@ -36,6 +53,36 @@ export default {
         },
       });
     },
+
+    async handleDownloadEmail({ isWithFtp, mailingIds }) {
+      const downloadOptions = {
+        downLoadForCdn: false,
+        downLoadForFtp: isWithFtp,
+      };
+
+      return this.$axios
+        .$post(
+          downloadMultipleMails(),
+          {
+            mailingIds,
+            downloadOptions,
+          },
+          {
+            responseType: 'blob',
+          }
+        )
+        .then((response) => {
+          const blob = new Blob([response]);
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'lepatron.zip');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        });
+    },
+
     openDeleteSelectionModal() {
       this.$refs.deleteSelectionDialog.open();
     },
@@ -76,9 +123,9 @@ export default {
           ...destinationParam,
         });
 
-        const queryParam = destinationParam?.parentFolderId ?
-          { fid: destinationParam.parentFolderId } :
-          { wid: destinationParam.workspaceId };
+        const queryParam = destinationParam?.parentFolderId
+          ? { fid: destinationParam.parentFolderId }
+          : { wid: destinationParam.workspaceId };
 
         this.$router.push({
           query: queryParam,
@@ -96,6 +143,56 @@ export default {
       }
       this.closeMoveManyMailsDialog();
     },
+    handleInitDownload({
+      isWithFtp,
+      mailingIds,
+      havePreview,
+      mailsWithoutPreviewSelection,
+    }) {
+      if (havePreview) {
+        this.handleDownloadMailSelections({ isWithFtp, mailingIds });
+        return;
+      }
+      this.$refs.downloadMailsDialog.open({
+        isWithFtp,
+        mailingIds,
+        mailsWithoutPreviewSelection,
+      });
+    },
+    handleInitSingleDownload({ isWithFtp, mailing }) {
+      const mailingIds = [mailing.id];
+      const havePreview = mailing.hasHtmlPreview;
+      this.handleInitDownload({ isWithFtp, mailingIds, havePreview });
+    },
+    handleInitMultipleDownload({ isWithFtp }) {
+      const filteredMailingsIds = this.mailingsSelection
+        .filter((mail) => !this.mailsWithoutPreviewSelection.includes(mail))
+        ?.map((mail) => mail?.id);
+      const doesAllHavePreview = this.mailsWithoutPreviewSelection?.length <= 0;
+      this.handleInitDownload({
+        isWithFtp,
+        mailingIds: filteredMailingsIds,
+        havePreview: doesAllHavePreview,
+        mailsWithoutPreviewSelection: this.mailsWithoutPreviewSelection,
+      });
+    },
+    async handleDownloadMailSelections({ isWithFtp, mailingIds }) {
+      try {
+        await this.handleDownloadEmail({
+          isWithFtp: isWithFtp,
+          mailingIds: mailingIds,
+        });
+        this.showSnackbar({
+          text: this.$t('mailings.downloadManySuccessful'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
+    },
   },
 };
 </script>
@@ -111,6 +208,40 @@ export default {
         }}</span>
 
         <div class="bs-mailing-selection-actions__actions">
+          <v-tooltip bottom>
+            <template v-if="hasFtpAccess" #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="handleInitMultipleDownload({ isWithFtp: true })"
+              >
+                <v-icon>mdi-cloud-download</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.downloadFtpCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn
+                icon
+                color="info"
+                v-on="on"
+                @click="handleInitMultipleDownload({ isWithFtp: false })"
+              >
+                <v-icon>download</v-icon>
+              </v-btn>
+            </template>
+            <span>{{
+              $tc('mailings.downloadCount', selectionLength, {
+                count: selectionLength,
+              })
+            }}</span>
+          </v-tooltip>
           <mailings-tags-menu
             :tags="tags"
             :mailings-selection="mailingsSelection"
@@ -183,6 +314,10 @@ export default {
         v-html="$t('mailings.moveMailConfirmationMessage')"
       />
     </modal-move-mail>
+    <mailings-download-modal
+      ref="downloadMailsDialog"
+      @confirm="handleDownloadMailSelections"
+    />
   </div>
 </template>
 

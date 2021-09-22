@@ -8,6 +8,7 @@ export default {
     },
     title: { type: String, default: '' },
     modalWidth: { type: String, default: '500' },
+    displaySubmitButton: { type: Boolean, default: true },
     actionLabel: { type: String, default: '' },
     actionButtonColor: { type: String, default: 'primary' },
   },
@@ -20,6 +21,7 @@ export default {
     },
     close() {
       this.show = false;
+      this.$emit('close');
     },
     action() {
       this.close();
@@ -54,7 +56,11 @@ export default {
           <v-btn color="primary" text @click="close">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn :color="actionButtonColor" @click="action">
+          <v-btn
+            v-if="displaySubmitButton"
+            :color="actionButtonColor"
+            @click="action"
+          >
             {{ actionLabel }}
           </v-btn>
         </v-card-actions>

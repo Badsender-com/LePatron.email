@@ -22,6 +22,7 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
       FORBIDDEN_WORKSPACE_CREATION:
         'Vous n\'avez pas les droits pour créer ce workspace',
+      emailsGroupExist: 'Le nom du groupe Emails existe déjà',
       password: {
         error: {
           nouser: 'Utilisateur introuvable',
@@ -57,6 +58,7 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
+    newEmailsGroup: 'Ajouter un groupe des emails',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
     editProfile: 'Éditer le profil ESP {name}',
@@ -104,6 +106,11 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
+    emailsGroups: 'Groupes d\'emails',
+    emailsGroupsEmpty: 'Aucun group d\'emails disponible',
+    editEmailsGroup: 'Modifier le groupe d\'emails',
+    continue: 'Continue',
+    downloadFtp: 'Télécharger ftp',
   },
   layout: {
     logout: 'Déconnexion',
@@ -166,6 +173,22 @@ export default {
         },
       },
     },
+    emailsGroup: {
+      emails: 'Liste des emails',
+      emailsPlaceholder: 'Exemple: test@mail.com;test2@mail.com;',
+      errors: {
+        name: {
+          required: 'Le nom du groupe est requis',
+        },
+        emails: {
+          required: 'Vous devez remplir au moins un email',
+          emailsValid: 'Il y a des emails non valides',
+        },
+      },
+      deleteNotice:
+        'Vous êtes sur le point de supprimer cet groupe d\'emails. Cette action ne peut pas être annulée.',
+      deleteSuccess: 'group d\'emails supprimés',
+    },
     workspace: {
       checkBoxError:
         'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
@@ -227,6 +250,9 @@ export default {
     duplicateNotice:
       'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
+    downloadManyMailsWithoutPreview:
+      'Cette liste de mails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
+    downloadSingleMailWithoutPreview: 'Impossible de télécharger un e-mail sans aperçu, veuillez ouvrir le mail au moins une fois pour en générer un.',
     errorPreview: 'Pas d’aperçu disponible pour ce mail.',
     subErrorPreview:
       'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',
@@ -234,6 +260,9 @@ export default {
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
+    downloadCount: 'Télécharger {count} mail | Télécharger {count} mails',
+    downloadFtpCount:
+      'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
     copyMailConfirmationMessage:
@@ -241,6 +270,8 @@ export default {
     copyMailSuccessful: 'Email copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
+    downloadManySuccessful: 'Téléchargement des emails terminés',
+    downloadMailSuccessful: 'Téléchargement d\'email terminé',
     moveManySuccessful: 'Emails déplacés',
     editTagsSuccessful: 'Labels mis à jour',
   },

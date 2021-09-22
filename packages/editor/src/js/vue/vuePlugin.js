@@ -1,24 +1,26 @@
-var Vue = require('vue/dist/vue.common');
-var EspComponent = require('./components/esp/esp-send-mail');
-
+const Vue = require('vue/dist/vue.common');
+const EspComponent = require('./components/esp/esp-send-mail');
+const { TestModalComponent } = require('./components/send-test/test-modal');
 module.exports = {
-  viewModel(vm, ko) {
-  },
+  viewModel(vm, ko) {},
   init(vm) {
     // Init VueJS component
-    Vue.component('app-vue', {
+    Vue.component('AppVue', {
       components: {
-        EspComponent
+        EspComponent,
+        TestModalComponent,
       },
-      template: `
-          <esp-form :vm="viewModel"></esp-form>
-      `,
       data: () => ({
         viewModel: vm,
       }),
-      mounted() {
-      },
-    })
+      mounted() {},
+      template: `
+        <div>
+          <esp-form :vm="viewModel"></esp-form>
+          <test-modal-component :vm="viewModel"></test-modal-component>
+        </div>
+      `,
+    });
 
     new Vue({ el: '#espModal' });
   },

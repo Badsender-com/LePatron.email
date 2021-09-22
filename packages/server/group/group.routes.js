@@ -9,6 +9,7 @@ const {
   GUARD_ADMIN,
   GUARD_GROUP_ADMIN,
   guard,
+  GUARD_USER,
 } = require('../account/auth.guard.js');
 const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
@@ -48,6 +49,12 @@ router.get(
   GUARD_GROUP_ADMIN, // guard() will check if the user is logged
   GUARD_CAN_ACCESS_GROUP,
   groups.readWorkspaces
+);
+
+router.get(
+  '/:groupId/email-groups',
+  GUARD_USER, // guard() will check if the user is logged
+  groups.readEmailGroups
 );
 
 router.get(

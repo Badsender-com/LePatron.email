@@ -22,6 +22,7 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
       FORBIDDEN_WORKSPACE_CREATION:
         'You don\'t have the rights to create this workspace',
+      emailsGroupExist: 'The name of emails group already exist',
       password: {
         error: {
           nouser: 'User not found',
@@ -60,6 +61,7 @@ export default {
     profile: 'ESP',
     user: 'User | Users',
     newUser: 'Add a user',
+    newEmailsGroup: 'Add a new group of emails',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
     backToMails: 'Back to mails',
@@ -104,6 +106,11 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
+    emailsGroups: 'Email groups',
+    emailsGroupsEmpty: 'No available emails group',
+    editEmailsGroup: 'Edit emails group',
+    continue: 'Continue',
+    downloadFtp: 'Download ftp',
   },
   layout: {
     logout: 'Logout',
@@ -168,6 +175,22 @@ export default {
         noPassword: 'Disabled cause of SAML Authentication',
       },
     },
+    emailsGroup: {
+      emails: 'List of emails',
+      emailsPlaceholder: 'Example: test@mail.com;test2@mail.com;',
+      errors: {
+        name: {
+          required: 'The name of group is required',
+        },
+        emails: {
+          required: 'You have to fill at least one email',
+          emailsValid: 'There are invalid emails',
+        },
+      },
+      deleteNotice:
+        'You are about to delete the emails group. This action can\'t be undone.',
+      deleteSuccess: 'Emails group deleted',
+    },
     workspace: {
       checkBoxError:
         'I understand that workspace\'s emails and folders will be removed too',
@@ -224,7 +247,10 @@ export default {
     },
     deleteManySuccessful: 'Mailings deleted',
     deleteConfirmationMessage:
-      'You are about to delete the selected mailings. This action can\'t be undone.',
+      'Voici la liste des mail qui contient pas de preview ',
+    downloadManyMailsWithoutPreview:
+      'This mailing list does not contain previews so they will not be downloaded, do you want to continue anyway?',
+    downloadSingleMailWithoutPreview: 'Cannot download a mail without a preview, please open the mail alteast one time to generate one.',  
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',
@@ -235,6 +261,9 @@ export default {
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
+    downloadCount: 'Download {count} mail | Download {count} mails',
+    downloadFtpCount:
+      'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
@@ -242,6 +271,8 @@ export default {
     moveMailConfirmationMessage: 'Please choose the destination',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
+    downloadManySuccessful: 'Emails download complete',
+    downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
   },
   template: {

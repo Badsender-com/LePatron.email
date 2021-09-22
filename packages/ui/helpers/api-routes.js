@@ -132,6 +132,10 @@ export function moveManyMails() {
 export function preview(mailingId) {
   return `/mailings/${mailingId}/preview`;
 }
+
+export function downloadMultipleMails() {
+  return '/mailings/download-multiple-zip';
+}
 /// ///
 // IMAGES
 /// ///
@@ -221,4 +225,16 @@ export function getTableTargetList() {
 
 export function getEntitiesList() {
   return '/profiles/actito-entities-list';
+}
+
+/// ///
+// Email groups
+/// ///
+
+export function getEmailsGroups() {
+  return '/emails-groups';
+}
+
+export function getEmailsGroup(emailsGroupId) {
+  return `/emails-groups/${emailsGroupId}`;
 }
