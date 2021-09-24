@@ -1,6 +1,7 @@
 'use strict';
 
-var debounce = require('lodash.debounce');
+const debounce = require('lodash.debounce');
+const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
 require('./link-with-color');
 
@@ -226,6 +227,53 @@ function specialcharacters(editor) {
     };
   });
 }
+const materialColorScheme = [
+  'F44336',
+  'E91E63',
+  '9C27B0',
+  '673AB7',
+  '3F51B5',
+  '2196F3',
+  '03A9F4',
+  '00BCD4',
+  '009688',
+  '4CAF50',
+  '8BC34A',
+  'CDDC39',
+  'FFEB3B',
+  'FFC107',
+  'FF9800',
+  'FF5722',
+  '795548',
+  '9E9E9E',
+  '607D8B'
+];
+
+const mousePosition = {
+  x: 0,
+  y: 0
+};
+document.addEventListener('mousemove', (event) => {
+  mousePosition.x = event.clientX;
+  mousePosition.y = event.clientY;
+});
+
+let colorpicker = {};
+window.addEventListener('DOMContentLoaded', () => {
+  colorpicker = new ColorPicker({
+    color: 'blue', // init color code
+    outputFormat : 'hex',
+    colorSets: [
+      {
+        name: 'Material',
+        colors: materialColorScheme.map(color => `#${color}`),
+      },
+    ],
+    onChange (color) {
+      console.log('when color is changed', color);
+    },
+  });
+})
 
 //////
 // CONFIGURATION
@@ -239,6 +287,20 @@ var tinymceConfigFull = {
   plugins: [
     'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters',
   ],
+  textcolor_cols: '7',
+  textcolor_rows: '3',
+  textcolor_map: materialColorScheme.reduce((acc, color) => [...acc, color, `#${color}`], []),
+  color_picker_callback: function(callback, currentColor) {
+    console.log('color picker value', currentColor);
+    colorpicker.show({
+      top: mousePosition.y,
+      left: mousePosition.x,
+      hideDelay: 2000, // default value is 2000. color picker don't hide automatically when hideDelay is zero
+    }, currentColor, function (newColor) {
+      console.log(newColor);
+      callback(newColor);
+    })
+  },
   link_text_decoration_list: [
     {text: 'Underline', value: ''},
     {text: 'Normal', value: 'none'}
