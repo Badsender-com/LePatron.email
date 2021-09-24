@@ -8,15 +8,15 @@ const ColorPickerUI = require('@easylogic/colorpicker');
 const { eventsHub, WINDOW_CLICK } = require('../badsender-events-hub.js');
 
 // Original mosaico use evol-colorpicker
-// • http://evoluteur.github.io/colorpicker/
+// • http://evoluteur.github.io/colorpicker/
 // It's in design too far from the tinyMCE color-picker
 // • https://github.com/Badsender/mosaico/issues/29
 // → try to use another one
 
-// Color-picker binding is defined in “bindings/colorpicker.js”
-// • then registered in ”ko-bindings.js”
-// • then it is called in the “converter/editor.js”
-// • it will translate any “color” property to a call to “colorpicker”
+// Color-picker binding is defined in "bindings/colorpicker.js"
+// • then registered in "ko-bindings.js"
+// • then it is called in the "converter/editor.js"
+// • it will translate any "color" property to a call to "colorpicker"
 //   https://github.com/Badsender/mosaico/blob/master/src/js/converter/editor.js#L70
 
 // to understand `deprecatedVM` see
@@ -39,8 +39,8 @@ const colorpicker = {
     const va = valueAccessor();
     const initialColor = va.color();
 
-    // // In order to have a correct dependency tracking in "ifSubs" we have to ensure we use a single "computed" for each editable
-    // // property. Given this binding needs 2 of them, we create a new wrapping computed so to "proxy" the dependencies.
+    // In order to have a correct dependency tracking in "ifSubs" we have to ensure we use a single "computed" for each editable
+    // property. Given this binding needs 2 of them, we create a new wrapping computed so to "proxy" the dependencies.
     // var newDO = ko.computed({
     //   read: value,
     //   write: value,
