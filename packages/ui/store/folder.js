@@ -1,0 +1,128 @@
+import {
+  mailings,
+  getWorkspace,
+  getFolder,
+  getFolderAccess,
+  getWorkspaceAccess,
+} from '~/helpers/api-routes';
+
+export const FOLDERS = 'folders';
+
+export const SET_FOLDER = 'SET_FOLDER';
+export const SET_WORKSPACE = 'SET_WORKSPACE';
+export const SET_HAS_ACCESS = 'SET_HAS_ACCESS';
+export const SET_MAILINGS = 'SET_MAILINGS';
+export const SET_TAGS = 'SET_TAGS';
+export const SET_LOADING_MAILINGS = 'SET_LOADING_MAILINGS';
+
+export const state = () => ({
+  workspace: {},
+  folder: {},
+  hasAccess: false,
+  mailings: [],
+  tags: [],
+  mailingsIsLoading: false,
+});
+
+export const getters = {};
+
+// https://medium.com/vuetify/creating-reusable-snackbars-with-vuetify-and-vuex-a8c3fef7b206
+export const mutations = {
+  [SET_FOLDER](store, folder) {
+    store.folder = folder;
+  },
+  [SET_WORKSPACE](store, workspace) {
+    store.workspace = workspace;
+  },
+  [SET_MAILINGS](store, mailings) {
+    store.mailings = mailings;
+  },
+  [SET_TAGS](store, tags) {
+    store.tags = tags;
+  },
+  [SET_LOADING_MAILINGS](store, mailingsIsLoading) {
+    store.mailingsIsLoading = mailingsIsLoading;
+  },
+  [SET_HAS_ACCESS](store, hasAccess) {
+    store.hasAccess = hasAccess;
+  },
+};
+
+export const actions = {
+  async fetchFolderOrWorkspace({ commit, dispatch }, { query, $t }) {
+    console.log('checking query data');
+    console.log({ $t });
+    try {
+      if (!this.$axios || !query) {
+        return;
+      }
+
+      if (query?.wid || query?.fid) {
+        if (query?.fid) {
+          const [folder, hasAccessData] = await Promise.all([
+            this.$axios.$get(getFolder(query?.fid)),
+            this.$axios.$get(getFolderAccess(query?.fid)),
+          ]);
+          commit(SET_FOLDER, folder);
+          commit(SET_WORKSPACE, null);
+          commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
+        } else if (query?.wid) {
+          const [workspace, hasAccessData] = await Promise.all([
+            this.$axios.$get(getWorkspace(query?.wid)),
+            this.$axios.$get(getWorkspaceAccess(query?.wid)),
+          ]);
+          commit(SET_FOLDER, null);
+          commit(SET_WORKSPACE, workspace);
+          commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
+        }
+
+        await dispatch('fetchMailings', {
+          query,
+          $t,
+        });
+      }
+    } catch {
+      if ($t) {
+        commit(
+          'page/SHOW_SNACKBAR',
+          {
+            text: $t('global.errors.errorOccured'),
+            color: 'error',
+          },
+          { root: true }
+        );
+      }
+    }
+  },
+  async fetchMailings({ commit, rootState }, { query, $t }) {
+    console.log({ query, $t });
+    commit(SET_LOADING_MAILINGS, true);
+    if (!!query?.wid || !!query?.fid) {
+      const queryMailing = rootState.folder.folder?.id
+        ? { parentFolderId: query?.fid }
+        : { workspaceId: query?.wid };
+
+      try {
+        const mailingsResponse = await this.$axios.$get(mailings(), {
+          params: queryMailing,
+        });
+
+        commit(SET_MAILINGS, mailingsResponse?.items);
+        commit(SET_TAGS, mailingsResponse?.tags);
+      } catch (e) {
+        if ($t) {
+          commit(
+            'page/SHOW_SNACKBAR',
+            {
+              text: $t('global.errors.errorOccured'),
+              color: 'error',
+            },
+            { root: true }
+          );
+        }
+      } finally {
+        commit(SET_LOADING_MAILINGS, false);
+      }
+    }
+  },
+};

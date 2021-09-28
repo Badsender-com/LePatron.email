@@ -1,16 +1,9 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
-import {
-  getFolder,
-  getFolderAccess,
-  getWorkspace,
-  getWorkspaceAccess,
-  mailings,
-  groupsItem,
-} from '~/helpers/api-routes.js';
+import { mailings } from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
@@ -19,7 +12,7 @@ import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER, HAS_FTP_ACCESS } from '~/store/user';
 export default {
   name: 'PageMailings',
   components: {
@@ -37,73 +30,15 @@ export default {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, query, store }) {
-    try {
-      let group = null;
-      if (store?.state?.user?.info?.group?.id) {
-        group = await $axios.$get(
-          groupsItem({ groupId: store.state.user.info.group.id })
-        );
-      }
-      if (!!query?.wid || !!query?.fid) {
-        let folder;
-        let workspace;
-        let hasAccess;
-
-        if (query?.wid || query?.fid) {
-          if (query?.fid) {
-            const [folderData, hasAccessData] = await Promise.all([
-              $axios.$get(getFolder(query?.fid)),
-              $axios.$get(getFolderAccess(query?.fid)),
-            ]);
-            folder = folderData;
-            hasAccess = hasAccessData?.hasAccess;
-            workspace = null;
-          } else if (query?.wid) {
-            const [workspaceData, hasAccessData] = await Promise.all([
-              $axios.$get(getWorkspace(query?.wid)),
-              $axios.$get(getWorkspaceAccess(query?.wid)),
-            ]);
-            workspace = workspaceData;
-            hasAccess = hasAccessData?.hasAccess;
-            folder = null;
-          }
-        }
-
-        const queryMailing = folder
-          ? { parentFolderId: query?.fid }
-          : { workspaceId: query?.wid };
-
-        const mailingsResponse = await $axios.$get(mailings(), {
-          params: queryMailing,
-        });
-
-        return {
-          mailings: mailingsResponse?.items,
-          tags: mailingsResponse.meta?.tags,
-          loading: false,
-          mailingsIsLoading: false,
-          folder,
-          workspace,
-          hasAccess,
-          hasFtpAccess: !!group?.downloadMailingWithFtpImages,
-        };
-      }
-    } catch (error) {
-      return { mailingsIsLoading: false, mailingsIsError: true };
-    }
+  async asyncData({ query, store }) {
+    await store.dispatch('folder/fetchMailings', {
+      query,
+    });
   },
   data: () => ({
-    mailingsIsLoading: false,
-    mailingsIsError: false,
     loading: false,
-    mailings: [],
     mailingsSelection: [],
-    workspace: {},
-    tags: [],
     filterValues: null,
-    hasAccess: false,
-    hasFtpAccess: false,
   }),
   computed: {
     filteredMailings() {
@@ -113,15 +48,16 @@ export default {
     title() {
       return 'Emails';
     },
+    ...mapState('folder', ['mailings', 'tags', 'mailingsIsLoading']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
+      hasFtpAccess: HAS_FTP_ACCESS,
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
   },
-  watchQuery: ['wid', 'fid'],
   methods: {
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
@@ -140,10 +76,7 @@ export default {
       this.loading = false;
     },
     async fetchData() {
-      await Promise.all([
-        this.getFolderAndWorkspaceData(this.$axios, this.$route?.query),
-        this.fetchMailListingData(),
-      ]);
+      await this.fetchMailListingData();
     },
     async fetchMailListingData() {
       try {
@@ -159,7 +92,6 @@ export default {
         }
       } catch (error) {
         this.mailingsIsLoading = false;
-        this.mailingsIsError = true;
       } finally {
         this.mailingsSelection = [];
       }

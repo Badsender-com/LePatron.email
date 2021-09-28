@@ -33,6 +33,9 @@ export default {
       return { id: this.currentLocation };
     },
   },
+  watch: {
+    $route: ['getFolderAndWorkspaceData'],
+  },
   async mounted() {
     await this.fetchData();
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
@@ -42,11 +45,17 @@ export default {
     }
   },
   methods: {
+    async getFolderAndWorkspaceData() {
+      const { dispatch } = this.$store;
+      await dispatch('folder/fetchFolderOrWorkspace', {
+        query: this.$route.query,
+        $t: this.$t,
+      });
+    },
     async fetchData() {
-      const { $axios, $route } = this;
+      const { $axios } = this;
       try {
         this.workspacesIsLoading = true;
-        await this.getFolderAndWorkspaceData($axios, $route.query);
         const { items } = await $axios.$get(workspacesByGroup());
         this.workspaces = items;
       } catch (error) {
@@ -54,6 +63,9 @@ export default {
       } finally {
         this.workspacesIsLoading = false;
       }
+    },
+    testMethode() {
+      console.log('calling console.log');
     },
     checkIfAuthorizedMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
