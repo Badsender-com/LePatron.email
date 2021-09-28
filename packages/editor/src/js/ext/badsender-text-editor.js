@@ -1,5 +1,3 @@
-'use strict';
-
 const debounce = require('lodash.debounce');
 const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
@@ -227,59 +225,87 @@ function specialcharacters(editor) {
     };
   });
 }
-const materialColorScheme = [
-  'F44336',
-  'E91E63',
-  '9C27B0',
-  '673AB7',
-  '3F51B5',
-  '2196F3',
-  '03A9F4',
-  '00BCD4',
-  '009688',
-  '4CAF50',
-  '8BC34A',
-  'CDDC39',
-  'FFEB3B',
-  'FFC107',
-  'FF9800',
-  'FF5722',
-  '795548',
-  '9E9E9E',
-  '607D8B'
-];
 
-const mousePosition = {
-  x: 0,
-  y: 0
-};
-document.addEventListener('mousemove', (event) => {
-  mousePosition.x = event.clientX;
-  mousePosition.y = event.clientY;
-});
+/**
+ * Setup color picker in order to use it with tinyMce
+ * text-color and colorpicker plugins
+ */
+const setupTextColorExtension = () => {
+  const materialColorScheme = [
+    'F44336',
+    'E91E63',
+    '9C27B0',
+    '673AB7',
+    '3F51B5',
+    '2196F3',
+    '03A9F4',
+    '00BCD4',
+    '009688',
+    '4CAF50',
+    '8BC34A',
+    'CDDC39',
+    'FFEB3B',
+    'FFC107',
+    'FF9800',
+    'FF5722',
+    '795548',
+    '9E9E9E',
+    '607D8B'
+  ];
 
-let colorpicker = {};
-window.addEventListener('DOMContentLoaded', () => {
-  colorpicker = new ColorPicker({
-    color: 'blue', // init color code
-    outputFormat : 'hex',
-    colorSets: [
-      {
-        name: 'Material',
-        colors: materialColorScheme.map(color => `#${color}`),
-      },
-    ],
-    onChange (color) {
-      console.log('when color is changed', color);
-    },
+  // Needed to know where to display the colorpicker
+  const mousePosition = {
+    x: 0,
+    y: 0
+  };
+
+  const updateMousePosition = (event) => {
+    mousePosition.x = event.clientX;
+    mousePosition.y = event.clientY;
+  }
+  document.addEventListener('mousemove', updateMousePosition);
+
+  let colorpicker = {};
+  window.addEventListener('DOMContentLoaded', () => {
+    colorpicker = new ColorPicker({
+      outputFormat: 'hex',
+      colorSets: [
+        {
+          name: 'Material',
+          colors: materialColorScheme.map(color => `#${color}`),
+        },
+      ],
+    });
   });
-})
+
+  const tinyMceTextColorConfig = {
+    textcolor_cols: '7',
+    textcolor_rows: '3',
+    textcolor_map: materialColorScheme.reduce((acc, color) => [...acc, color, `#${color}`], []),
+  }
+
+  const tinyMceColorPickerConfig = {
+    color_picker_callback: function(callback, currentColor) {
+      colorpicker.show({
+        top: mousePosition.y,
+        left: mousePosition.x,
+        hideDelay: 2000, // default value is 2000. color picker don't hide automatically when hideDelay is zero
+      }, currentColor, function (newColor) {
+        callback(newColor);
+      })
+    },
+  }
+
+  return {
+    ...tinyMceTextColorConfig,
+    ...tinyMceColorPickerConfig,
+  }
+}
 
 //////
-// CONFIGURATION
+// TINY MCE CONFIGURATION
 //////
-
-var tinymceConfigFull = {
+const tinymceConfigFull = {
   toolbar1:
     'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters | linkcolorbutton unlinkcolorbutton | pastetext code',
   //- add colorpicker & custom plugins
@@ -287,20 +313,7 @@ var tinymceConfigFull = {
   plugins: [
     'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters',
   ],
-  textcolor_cols: '7',
-  textcolor_rows: '3',
-  textcolor_map: materialColorScheme.reduce((acc, color) => [...acc, color, `#${color}`], []),
-  color_picker_callback: function(callback, currentColor) {
-    console.log('color picker value', currentColor);
-    colorpicker.show({
-      top: mousePosition.y,
-      left: mousePosition.x,
-      hideDelay: 2000, // default value is 2000. color picker don't hide automatically when hideDelay is zero
-    }, currentColor, function (newColor) {
-      console.log(newColor);
-      callback(newColor);
-    })
-  },
+  ...setupTextColorExtension(),
   link_text_decoration_list: [
     {text: 'Underline', value: ''},
     {text: 'Normal', value: 'none'}
