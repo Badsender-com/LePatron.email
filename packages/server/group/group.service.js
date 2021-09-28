@@ -23,6 +23,7 @@ module.exports = {
     checkIfUserIsAuthorizedToAccessGroup
   ),
   seedGroups,
+  findColorScheme: asyncHandler(findColorScheme),
 };
 
 async function checkIfUserIsAuthorizedToAccessGroup({ user, groupId }) {
@@ -112,6 +113,7 @@ async function findUserByGroupId(groupId) {
   if (!group) throw new NotFound();
   return users;
 }
+
 async function createGroup(group) {
   return Groups.create(group);
 }
@@ -123,4 +125,11 @@ async function updateGroup(group) {
     { _id: mongoose.Types.ObjectId(id) },
     { ...otherProperties }
   );
+}
+
+async function findColorScheme(groupId) {
+  const group = await Groups.findById(groupId).select('_id');
+  console.log('group', group);
+  if (!group) throw new NotFound();
+  return null;
 }

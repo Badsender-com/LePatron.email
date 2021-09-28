@@ -269,6 +269,7 @@ const setupTextColorExtension = () => {
   window.addEventListener('DOMContentLoaded', () => {
     colorpicker = new ColorPicker({
       outputFormat: 'hex',
+      type: 'palette',
       colorSets: [
         {
           name: 'Material',

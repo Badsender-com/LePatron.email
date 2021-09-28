@@ -61,7 +61,7 @@ export default {
         : 'informations';
     },
     title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
+      return `${this.$tc('global.group', 1)} - ${this.group.name}`;
     },
   },
   methods: {
