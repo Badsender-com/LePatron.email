@@ -36,6 +36,7 @@ async function render(req, res) {
 
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
+    user,
     query,
     user.lang
   );
