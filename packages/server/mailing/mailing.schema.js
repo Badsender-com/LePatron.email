@@ -272,8 +272,11 @@ const translations = {
 
 MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   query = {},
+  user,
   lang = 'fr'
 ) {
+  console.log({ user });
+  console.log('calling findOneForMosaico');
   const mailing = await this.findOne(query)
     .populate({
       path: '_company',
@@ -298,9 +301,16 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
 
-  const redirectUrl = mailing?._parentFolder
-    ? `/?fid=${mailing._parentFolder}`
-    : `/?wid=${mailing._workspace}`;
+  let redirectUrl = null;
+
+  if (user?.isAdmin) {
+    redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
+  } else {
+    redirectUrl = mailing?._parentFolder
+      ? `/?fid=${mailing._parentFolder}`
+      : `/?wid=${mailing._workspace}`;
+  }
+
   return {
     metadata: {
       id: mailingId,

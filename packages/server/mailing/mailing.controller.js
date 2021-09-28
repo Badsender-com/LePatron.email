@@ -156,9 +156,11 @@ async function read(req, res) {
 
 async function readMosaico(req, res) {
   const { mailingId } = req.params;
+  const { user } = req;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
+    user,
     req.user.lang
   );
   if (!mailingForMosaico) throw new NotFound();
@@ -395,10 +397,12 @@ async function updateMosaico(req, res) {
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
   mailing.previewHtml = requestHtml;
-  await mailing.save();
 
+  await mailing.save();
+  console.log('Mailing saved');
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
+    user,
     req.user.lang
   );
 
