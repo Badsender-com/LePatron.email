@@ -271,8 +271,8 @@ const translations = {
  */
 
 MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
-  query = {},
   user,
+  query = {},
   lang = 'fr'
 ) {
   const mailing = await this.findOne(query)

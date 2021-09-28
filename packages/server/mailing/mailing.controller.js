@@ -159,8 +159,8 @@ async function readMosaico(req, res) {
   const { user } = req;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
     user,
+    query,
     req.user.lang
   );
   if (!mailingForMosaico) throw new NotFound();
@@ -401,8 +401,8 @@ async function updateMosaico(req, res) {
   await mailing.save();
 
   const mailingForMosaico = await Mailings.findOneForMosaico(
-    query,
     user,
+    query,
     req.user.lang
   );
 
