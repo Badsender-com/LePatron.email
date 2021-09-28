@@ -399,7 +399,7 @@ async function updateMosaico(req, res) {
   mailing.previewHtml = requestHtml;
 
   await mailing.save();
-  console.log('Mailing saved');
+
   const mailingForMosaico = await Mailings.findOneForMosaico(
     query,
     user,

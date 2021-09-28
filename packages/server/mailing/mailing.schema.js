@@ -275,8 +275,6 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   user,
   lang = 'fr'
 ) {
-  console.log({ user });
-  console.log('calling findOneForMosaico');
   const mailing = await this.findOne(query)
     .populate({
       path: '_company',
