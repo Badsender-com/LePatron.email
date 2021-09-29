@@ -199,7 +199,7 @@ export default {
             </v-col>
             <v-col v-if="true || isAdmin" cols="4">
               Color scheme
-              <bs-color-scheme :color-scheme="colorScheme" />
+              <bs-color-scheme v-model="colorScheme" />
             </v-col>
             <v-col v-if="true || isAdmin" cols="4">
               <v-select
