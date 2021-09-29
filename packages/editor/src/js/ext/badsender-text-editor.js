@@ -1,4 +1,5 @@
 const debounce = require('lodash.debounce');
+var ko = require('knockout');
 const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
 require('./link-with-color');
@@ -267,11 +268,17 @@ const setupTextColorExtension = () => {
 
   let colorpicker = {};
   window.addEventListener('DOMContentLoaded', () => {
+    // TODO: find a better way to load colorScheme
+    const colors = _viewModel?.metadata?.colorScheme;
+    console.log('colors', colors);
     colorpicker = new ColorPicker({
       outputFormat: 'hex',
       type: 'palette',
       colorSets: [
-        {
+        colors?.length ? {
+          name: 'Group Scheme',
+          colors,
+        } : {
           name: 'Material',
           colors: materialColorScheme.map(color => `#${color}`),
         },

@@ -252,6 +252,15 @@ if (process.env.MOSAICO) {
       error: onError,
     });
 
+    $.ajax({
+      url: `/api/groups/${metadata.groupId}`,
+      method: 'GET',
+      success: ({ colorScheme }) => {
+        // TODO: maybe do it differently to be sure that ko bindings will be up to date
+        metadata.colorScheme = colorScheme
+      },
+    });
+
     function onSuccess(templatecode, textStatus, jqXHR) {
       var res = templateCompiler(
         performanceAwareCaller,
