@@ -110,7 +110,7 @@ class ActitoProvider {
       });
 
       const {
-        name,
+        displayName,
         from,
         replyTo,
         entityOfTarget,
@@ -120,7 +120,7 @@ class ActitoProvider {
       } = apiEmailCampaignResult?.data;
 
       return {
-        name: name,
+        name: displayName,
         additionalApiData: {
           senderMail: from,
           replyTo: replyTo,
@@ -292,6 +292,7 @@ class ActitoProvider {
             headers: headerAccess,
           }
         ),
+      isEdit: true,
     });
   }
 
@@ -302,6 +303,7 @@ class ActitoProvider {
     mailingId,
     entity,
     mailCampaignApi,
+    isEdit = false,
   }) {
     let campaignId;
 
@@ -314,7 +316,7 @@ class ActitoProvider {
         from,
         entityOfTarget,
         supportedLanguages,
-        name,
+        displayName,
         replyTo,
         targetTable,
         encoding,
@@ -329,16 +331,27 @@ class ActitoProvider {
         mailingId,
       });
 
-      const createdCampaignMailResult = await mailCampaignApi({
+      let mailCampaignApiData = {
         from,
         entityOfTarget,
         supportedLanguages,
-        name,
+        displayName,
         replyTo,
         targetTable,
         encoding,
         contentType,
-      });
+      };
+
+      if (!isEdit) {
+        mailCampaignApiData = {
+          ...mailCampaignApiData,
+          name: displayName?.replace(/[^A-Z0-9]+/gi, '_'),
+        };
+      }
+
+      const createdCampaignMailResult = await mailCampaignApi(
+        mailCampaignApiData
+      );
 
       if (!createdCampaignMailResult?.data?.campaignId) {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_ESP_RESPONSE);
@@ -370,19 +383,19 @@ class ActitoProvider {
         from,
         entityOfTarget,
         supportedLanguages,
-        name,
+        displayName,
         replyTo,
         targetTable,
         encoding,
         subject,
       };
     } catch (e) {
-      logger.error(e.response.data);
+      logger.error(e?.response?.data);
       if (campaignId) {
         await this.deleteCampaignMail({ campaignId, entity });
       }
 
-      if (e.response.status === 409) {
+      if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
       }
 
@@ -412,7 +425,7 @@ class ActitoProvider {
         senderMail: from,
         entity: entityOfTarget,
         supportedLanguage,
-        name,
+        name: displayName,
         replyTo,
         targetTable,
         encodingType: encoding,
@@ -429,7 +442,7 @@ class ActitoProvider {
         from,
         entityOfTarget,
         supportedLanguages: [supportedLanguage],
-        name,
+        displayName,
         replyTo,
         targetTable,
         encoding,
