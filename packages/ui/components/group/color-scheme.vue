@@ -19,7 +19,7 @@
     <button
       v-if="canAddColor"
       type="button"
-      class="a-color"
+      class="a-color__picker"
       @click="handleAddColor()"
     >
       +
@@ -43,11 +43,6 @@ export default {
       type: Array,
       default: () => [],
     },
-  },
-  data() {
-    return {
-      nbColors: [...new Array(21).keys()].fill('#ff0000'),
-    };
   },
   computed: {
     canAddColor() {

@@ -2,7 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters } from 'vuex';
-import { IS_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { Status } from '~/helpers/constants/status';
 import BsColorScheme from '~/components/group/color-scheme';
 
@@ -50,6 +50,7 @@ export default {
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
     }),
     localModel: {
       get() {
@@ -184,7 +185,7 @@ export default {
                 @blur="$v.group.defaultWorkspaceName.$touch()"
               />
             </v-col>
-            <v-col v-if="true || isAdmin" cols="4">
+            <v-col v-if="isAdmin" cols="4">
               <v-select
                 id="groupStatus"
                 v-model="localModel.status"
@@ -197,11 +198,11 @@ export default {
                 @blur="$v.group.status.$touch()"
               />
             </v-col>
-            <v-col v-if="true || isAdmin" cols="4">
+            <v-col v-if="isGroupAdmin" cols="4">
               Color scheme
-              <bs-color-scheme v-model="colorScheme" />
+              <bs-color-scheme v-model="localModel.colorScheme" />
             </v-col>
-            <v-col v-if="true || isAdmin" cols="4">
+            <v-col v-if="isAdmin" cols="4">
               <v-select
                 id="downloadMailingWithoutEnclosingFolder"
                 v-model="localModel.downloadMailingWithoutEnclosingFolder"
@@ -212,7 +213,7 @@ export default {
               />
             </v-col>
           </v-row>
-          <v-row v-if="true || isAdmin">
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 {{ $t('forms.group.exportFtp') }}
@@ -351,7 +352,7 @@ export default {
               </v-row>
             </v-col>
           </v-row>
-          <v-row v-if="true || isAdmin">
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 {{ $t('forms.group.exportCdn') }}
@@ -401,7 +402,7 @@ export default {
             </v-col>
           </v-row>
 
-          <v-row v-if="true || isAdmin">
+          <v-row v-if="isAdmin">
             <v-col cols="12">
               <p class="caption ma-0">
                 Activer l'authentification SAML
