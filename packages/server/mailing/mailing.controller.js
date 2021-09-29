@@ -368,10 +368,6 @@ async function updateMosaico(req, res) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
 
-  if (!requestHtml) {
-    throw new NotFound(ERROR_CODES.MAILING_HTML_MISSING);
-  }
-
   if (!user.isAdmin) {
     const { _workspace, _parentFolder } = mailing;
 
@@ -396,7 +392,10 @@ async function updateMosaico(req, res) {
     simpleI18n('default-mailing-name', user.lang);
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
-  mailing.previewHtml = requestHtml;
+
+  if (requestHtml) {
+    mailing.previewHtml = requestHtml;
+  }
 
   await mailing.save();
 
