@@ -76,7 +76,6 @@ export default {
         const payload = this.isGroupAdmin
           ? { name: this.group.name, colorScheme: this.group.colorScheme }
           : this.group;
-        console.log('payload', payload);
         await $axios.$put(apiRoutes.groupsItem(params), payload);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
