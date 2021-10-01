@@ -107,8 +107,8 @@ export default {
     edit: 'Modifier',
     move: 'Déplacer',
     emailsGroups: 'Groupes d\'emails',
-    emailsGroupsEmpty: 'Aucun group d\'emails disponible',
-    editEmailsGroup: 'Modifier le groupe d\'emails',
+    emailsGroupsEmpty: 'Aucune liste d\'emails disponible',
+    editEmailsGroup: 'Modifier la liste d\'emails',
     continue: 'Continue',
     downloadFtp: 'Télécharger ftp',
   },
@@ -178,7 +178,7 @@ export default {
       emailsPlaceholder: 'Exemple: test@mail.com;test2@mail.com;',
       errors: {
         name: {
-          required: 'Le nom du groupe est requis',
+          required: 'Le nom de la liste est requis',
         },
         emails: {
           required: 'Vous devez remplir au moins un email',
@@ -186,8 +186,8 @@ export default {
         },
       },
       deleteNotice:
-        'Vous êtes sur le point de supprimer cet groupe d\'emails. Cette action ne peut pas être annulée.',
-      deleteSuccess: 'group d\'emails supprimés',
+        'Vous êtes sur le point de supprimer cette liste d\'emails. Cette action ne peut pas être annulée.',
+      deleteSuccess: 'liste d\'emails supprimées',
     },
     workspace: {
       checkBoxError:
