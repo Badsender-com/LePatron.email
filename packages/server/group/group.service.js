@@ -127,9 +127,10 @@ async function updateGroup(group) {
   );
 }
 
-async function findColorScheme(groupId) {
-  const group = await Groups.findById(groupId).select('_id');
+async function findColorScheme({ groupId }) {
+  console.log({ groupId });
+  const group = await Groups.findById(groupId).select('colorScheme').lean();
   console.log('group', group);
   if (!group) throw new NotFound();
-  return null;
+  return group.colorScheme;
 }

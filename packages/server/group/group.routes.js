@@ -58,6 +58,12 @@ router.get(
 );
 
 router.get(
+  '/:groupId/color-scheme',
+  GUARD_USER, // guard() will check if the user is logged
+  groups.readColorScheme
+);
+
+router.get(
   '/:groupId/mailings',
   guard(), // guard() will check if the user is logged
   GUARD_CAN_ACCESS_GROUP,

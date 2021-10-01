@@ -252,15 +252,6 @@ if (process.env.MOSAICO) {
       error: onError,
     });
 
-    $.ajax({
-      url: `/api/groups/${metadata.groupId}`,
-      method: 'GET',
-      success: ({ colorScheme }) => {
-        // TODO: maybe do it differently to be sure that ko bindings will be up to date
-        metadata.colorScheme = colorScheme
-      },
-    });
-
     function onSuccess(templatecode, textStatus, jqXHR) {
       var res = templateCompiler(
         performanceAwareCaller,
@@ -544,12 +535,15 @@ var templateCompiler = function (
   return {
     model: viewModel,
     init: function () {
-      pluginsCall(plugins, 'init',  [viewModel], true);
+      pluginsCall(plugins, 'init', [viewModel], true);
       // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
-      if(!metadata.hasHtmlPreview && viewModel.save && viewModel.save.execute) {
+      if (
+        !metadata.hasHtmlPreview &&
+        viewModel.save &&
+        viewModel.save.execute
+      ) {
         viewModel.save.execute();
       }
-
     },
     dispose: function () {
       pluginsCall(plugins, 'dispose', undefined, true);

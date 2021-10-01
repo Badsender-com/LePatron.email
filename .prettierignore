@@ -5,7 +5,7 @@ dist/
 *.min.*
 
 # Per packages overrides
-packages/editor/
+# packages/editor/
 
 packages/documentation/.vuepress/dist/
 packages/documentation/api/

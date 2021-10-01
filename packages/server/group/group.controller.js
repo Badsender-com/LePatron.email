@@ -233,7 +233,7 @@ async function readWorkspaces(req, res, next) {
 
 /**
  * @api {get} /groups/:groupId/color-scheme get group color scheme
- * @apiPermission admin
+ * @apiPermission user
  * @apiName GetGroupColorScheme
  * @apiGroup Groups
  *
@@ -242,9 +242,17 @@ async function readWorkspaces(req, res, next) {
  * @apiUse workspace
  * @apiSuccess {colorScheme} group color scheme
  */
-async function readColorScheme(req, res, next) {
-  const { groupId } = req.params;
-  if (!groupId) next(new NotFound());
+async function readColorScheme(req, res) {
+  const {
+    params: { groupId },
+    user,
+  } = req;
+  if (!groupId) throw new NotFound();
+
+  if (!user.isAdmin && user.group.id?.toString() !== groupId) {
+    throw new NotFound();
+  }
+
   const colorScheme = await groupService.findColorScheme({ groupId });
   return res.json({ items: colorScheme });
 }

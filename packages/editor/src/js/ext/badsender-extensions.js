@@ -11,11 +11,15 @@ var slugFilename = require('../../../../server/helpers/slug-filename.js');
 //////
 
 const badsenderEventsHub = require('../badsender-events-hub.js');
-var serverStorage = require('./badsender-server-storage');
-var editTitle = require('./badsender-edit-title');
-var gallery = require('./badsender-gallery');
-var removeImage = require('./badsender-remove-gallery-image');
-var espProfiles = require('./badsender-esp-profiles');
+const serverStorage = require('./badsender-server-storage');
+const editTitle = require('./badsender-edit-title');
+const gallery = require('./badsender-gallery');
+const removeImage = require('./badsender-remove-gallery-image');
+const espProfiles = require('./badsender-esp-profiles');
+const extendTinyMce = require('./badsender-extend-tinymce');
+const extendTextEditor = require('./badsender-extend-text-editor');
+const colorPicker = require('./badsender-color-picker');
+const extendLinkColor = require('./link-with-color');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
 
@@ -46,8 +50,12 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(editorIcon(opts));
   customExtensions.push(editTitle);
   customExtensions.push(gallery(opts));
+  customExtensions.push(colorPicker(opts));
+  customExtensions.push(extendLinkColor);
+  customExtensions.push(extendTextEditor(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
+  customExtensions.push(extendTinyMce);
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
   // widget should be differentiating of VM extensions by
@@ -106,16 +114,12 @@ function templateUrlConverter(opts) {
 // knockout is a global object.
 // So we can extend it easily
 
-const textEditorOptions = require('./badsender-text-editor');
-
 // this equivalent to the original app.js#applyBindingOptions
 function extendKnockout(opts) {
   //----- TINYMCE
 
   // Change tinyMCE full editor options
   if (opts.lang === 'fr') {
-    textEditorOptions.language_url = '/tinymce-langs/fr_FR.js';
-    textEditorOptions.language = 'fr_FR';
     tinymce.util.I18n.add('fr_FR', {
       Cancel: 'Annuler',
       'in pixel': 'en pixel',
@@ -127,21 +131,6 @@ function extendKnockout(opts) {
       'no decimals': 'pas de décimales',
     });
   }
-  //- https://www.tinymce.com/docs/configure/url-handling/#convert_urls
-  const textEditorFullOptions = $.extend(
-    { convert_urls: false },
-    textEditorOptions,
-    opts.tinymce
-  );
-  ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
-
-  // mirror options to the small version of tinymce
-  ko.bindingHandlers.wysiwyg.standardOptions = $.extend(
-    true,
-    {},
-    textEditorFullOptions
-  );
-
   //----- URLS HANDLING
 
   // This is not used by knockout per se.
