@@ -58,7 +58,7 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
-    newEmailsGroup: 'Ajouter un groupe des emails',
+    newEmailsGroup: ' Ajouter une liste de test',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
     editProfile: 'Éditer le profil ESP {name}',
@@ -174,7 +174,7 @@ export default {
       },
     },
     emailsGroup: {
-      emails: 'Liste des emails',
+      emails: 'Emails',
       emailsPlaceholder: 'Exemple: test@mail.com;test2@mail.com;',
       errors: {
         name: {

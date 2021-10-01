@@ -77,15 +77,15 @@ module.exports = {
   'target-table': 'Table cible',
   'encoding-type': "Type d'encodage",
   entity: 'Entité',
-  'title-send-test-mails': "Tester l'envoi du mail aux e-mails",
+  'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Mail envoyé avec succès',
   'send-test-error': "Error lors de l'envoie du mail",
   'placeholder-input-emails-test':
     'Example: premieremail@test.com;secondemail@test.com',
-  'emails-test': 'E-mails de test',
+  'emails-test': 'Saisir un ou plusieurs emails',
   'emails-invalid':
     'Les emails sont invalides, veuillez saisir des emails valides séparer par ;',
-  'placeholder-emails-groups': 'Sélectionnez le groupe E-mails',
-  'sending-test-mails': "Envoi d'un mail de test...",
-  'send-test-mails': 'Envoyer un mail de test',
+  'placeholder-emails-groups': 'Sélectionnez une liste',
+  'sending-test-mails': "Envoi de l'email de test...",
+  'send-test-mails': " Envoyer l'email de test",
 };
