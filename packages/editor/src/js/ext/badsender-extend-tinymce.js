@@ -4,8 +4,11 @@ const {
   specialcharacters,
 } = require('./tinymce/tinymce-extend-functions');
 
+require('./link-with-color');
+
 function extendTinyMce() {
   console.log('calling extendTinyMce');
+  console.log({ tinymce });
   //////
   // DEFINE TINYMCE CUSTOM PLUGINS
   //////

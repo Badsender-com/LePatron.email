@@ -40,8 +40,8 @@ module.exports = (opts) => {
     };
 
     if (opts.lang === 'fr') {
-      textEditorOptions.language_url = '/tinymce-langs/fr_FR.js';
-      textEditorOptions.language = 'fr_FR';
+      tinymceConfigFull.language_url = '/tinymce-langs/fr_FR.js';
+      tinymceConfigFull.language = 'fr_FR';
     }
     //- https://www.tinymce.com/docs/configure/url-handling/#convert_urls
     const textEditorFullOptions = $.extend(
@@ -53,6 +53,7 @@ module.exports = (opts) => {
       },
       opts.tinymce
     );
+    console.log({ ko });
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 
     // mirror options to the small version of tinymce

@@ -19,7 +19,6 @@ const espProfiles = require('./badsender-esp-profiles');
 const extendTinyMce = require('./badsender-extend-tinymce');
 const extendTextEditor = require('./badsender-extend-text-editor');
 const colorPicker = require('./badsender-color-picker');
-const extendLinkColor = require('./link-with-color');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
 
@@ -51,7 +50,6 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(editTitle);
   customExtensions.push(gallery(opts));
   customExtensions.push(colorPicker(opts));
-  customExtensions.push(extendLinkColor);
   customExtensions.push(extendTextEditor(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
