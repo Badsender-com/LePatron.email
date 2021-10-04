@@ -46,7 +46,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(editorIcon(opts));
   customExtensions.push(editTitle);
   customExtensions.push(gallery(opts));
-  customExtensons.push(espProfiles(opts));
+  customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
