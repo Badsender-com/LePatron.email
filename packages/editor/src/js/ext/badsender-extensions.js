@@ -49,8 +49,8 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(editorIcon(opts));
   customExtensions.push(editTitle);
   customExtensions.push(gallery(opts));
-  customExtensions.push(colorPicker(opts));
   customExtensions.push(extendTextEditor(opts));
+  customExtensions.push(colorPicker(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
   customExtensions.push(extendTinyMce);
