@@ -289,6 +289,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     cdnDownload,
     regularDownload,
     prefix,
+    name,
     ftpServerParams,
     doesWaitForFtp: true,
   });

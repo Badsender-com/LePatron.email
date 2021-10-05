@@ -22,7 +22,7 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
       FORBIDDEN_WORKSPACE_CREATION:
         'You don\'t have the rights to create this workspace',
-      emailsGroupExist: 'The name of emails group already exist',
+      emailsGroupExist: 'The name of emails list already exist',
       password: {
         error: {
           nouser: 'User not found',
@@ -106,9 +106,9 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
-    emailsGroups: 'Email groups',
-    emailsGroupsEmpty: 'No available emails group',
-    editEmailsGroup: 'Edit emails group',
+    emailsGroups: 'Emails lists',
+    emailsGroupsEmpty: 'No available emails list',
+    editEmailsGroup: 'Edit emails list',
     continue: 'Continue',
     downloadFtp: 'Download ftp',
   },
@@ -180,7 +180,7 @@ export default {
       emailsPlaceholder: 'Example: test@mail.com;test2@mail.com;',
       errors: {
         name: {
-          required: 'The name of group is required',
+          required: 'The name of list is required',
         },
         emails: {
           required: 'You have to fill at least one email',
@@ -188,8 +188,8 @@ export default {
         },
       },
       deleteNotice:
-        'You are about to delete the emails group. This action can\'t be undone.',
-      deleteSuccess: 'Emails group deleted',
+        'You are about to delete the emails list. This action can\'t be undone.',
+      deleteSuccess: 'Emails list deleted',
     },
     workspace: {
       checkBoxError:
