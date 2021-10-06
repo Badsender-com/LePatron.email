@@ -20,8 +20,7 @@ export default {
       senderNameRequired: 'Nom de l\'expéditeur est requis',
       senderMailRequired: 'Mail de l\'expéditeur est requis',
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec ce nom existe déjà',
-      FORBIDDEN_WORKSPACE_CREATION:
-        'Vous n\'avez pas les droits pour créer ce workspace',
+      FORBIDDEN_WORKSPACE_CREATION: 'Vous n\'avez pas les droits pour créer ce workspace',
       emailsGroupExist: 'Le nom du groupe Emails existe déjà',
       password: {
         error: {
@@ -40,7 +39,7 @@ export default {
     entity: 'Entité',
     encodingType: 'Type d\'encodage',
     targetTable: 'Table cible',
-    supportedLanguage: 'La langue',
+    supportedLanguage: 'Langue',
     profileName: 'Nom du profil ESP',
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
@@ -58,7 +57,7 @@ export default {
     newMailing: 'Ajouter un email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
-    newEmailsGroup: ' Ajouter une liste de test',
+    newEmailsGroup: 'Ajouter une liste de test',
     newTeam: 'Ajouter un workspace',
     newProfile: 'Ajouter un profil ESP',
     editProfile: 'Éditer le profil ESP {name}',
@@ -107,8 +106,8 @@ export default {
     edit: 'Modifier',
     move: 'Déplacer',
     emailsGroups: 'Groupes d\'emails',
-    emailsGroupsEmpty: 'Aucune liste d\'emails disponible',
-    editEmailsGroup: 'Modifier la liste d\'emails',
+    emailsGroupsEmpty: 'Aucun group d\'emails disponible',
+    editEmailsGroup: 'Modifier le groupe d\'emails',
     continue: 'Continue',
     downloadFtp: 'Télécharger ftp',
   },
@@ -128,8 +127,8 @@ export default {
       status: {
         label: 'Statut',
         demo: 'Demo',
-        inactive: 'Inactive',
-        active: 'Active',
+        inactive: 'Inactif',
+        active: 'Actif',
         requiredValidationMessage: 'Le statut est requis',
       },
       exportFtp: 'Exporter les images sur un FTP',
@@ -145,8 +144,7 @@ export default {
       editorLabel: 'Libellé du bouton',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
-      userHasAccessToAllWorkspaces:
-        'Les utilisateurs réguliers ont accès à tous les workspaces.',
+      userHasAccessToAllWorkspaces: 'Les utilisateurs standards ont accès à tous les workspaces.',
     },
     template: {
       meta: 'Meta',
@@ -172,28 +170,30 @@ export default {
           valid: 'Un email valide est requis',
         },
       },
+      tooltip: {
+        noPassword: 'Désactivé à cause de l\'authenfication SAML',
+      },
     },
     emailsGroup: {
-      emails: 'Emails',
+      emails: 'Liste des emails',
       emailsPlaceholder: 'Exemple: test@mail.com;test2@mail.com;',
       errors: {
         name: {
-          required: 'Le nom de la liste est requis',
+          required: 'Le nom du groupe est requis',
         },
         emails: {
-          required: 'Vous devez remplir au moins un email',
+          required: 'Vous devez saisir au moins un email',
           emailsValid: 'Il y a des emails non valides',
         },
       },
-      deleteNotice:
-        'Vous êtes sur le point de supprimer cette liste d\'emails. Cette action ne peut pas être annulée.',
-      deleteSuccess: 'liste d\'emails supprimées',
+      deleteNotice: 'Vous êtes sur le point de supprimer cet groupe d\'emails. Cette action ne peut pas être annulée.',
+      deleteSuccess: 'group d\'emails supprimés',
     },
     workspace: {
-      checkBoxError:
-        'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
+      checkBoxError: 'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
       inputError: 'Le nom est requis',
       inputMaxLength: 'Le nom ne doit pas dépasser 70 caractères',
+      moveFolderConfirmationMessage: 'Veuillez choisir la destination',
     },
     profile: {
       errors: {
@@ -212,21 +212,16 @@ export default {
     },
     mailingTab: {
       confirmationField: 'Tapez le nom de l\'email pour confirmer',
-      deleteWarningMessage:
-        'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteWarningMessage: 'Vous êtes sur le point de supprimer l\'email "<strong>{name}</strong>". Cette action est irréversible.',
       deleteSuccessful: 'Email supprimé',
-      deleteFolderWarning:
-        'Vous êtes sur le point de supprimer le dossier "<strong>{name}</strong>". Cette action est irréversible.',
-      deleteFolderNotice:
-        'Les emails et les dossiers que contient le dossier seront supprimés aussi',
+      deleteFolderWarning: 'Vous êtes sur le point de supprimer le dossier "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteFolderNotice: 'Les emails et les dossiers que contient le dossier seront supprimés aussi',
       deleteFolderSuccessful: 'Dossier supprimé',
     },
     workspaceTab: {
       confirmationField: 'Tapez le nom du workspace pour confirmer',
-      deleteWarningMessage:
-        'Vous êtes sur le point de supprimer le workspace "<strong>{name}</strong>". Cette action est irréversible.',
-      deleteNotice:
-        'Les emails et les dossiers que contient le workspace seront supprimés aussi',
+      deleteWarningMessage: 'Vous êtes sur le point de supprimer le workspace "<strong>{name}</strong>". Cette action est irréversible.',
+      deleteNotice: 'Les emails et les dossiers que contient le workspace seront supprimés aussi',
       deleteSuccessful: 'Workspace supprimé',
     },
   },
@@ -235,8 +230,7 @@ export default {
       label: 'Transférer l\'email',
       success: 'Email transféré',
     },
-    creationNotice:
-      'Cliquez sur l\'un des templates ci-dessous pour créer un nouvel email',
+    creationNotice: 'Cliquez sur l\'un des templates ci-dessous pour créer un nouvel email',
     list: 'Liste des emails',
     filters: {
       createdBetween: 'Crée entre le',
@@ -244,29 +238,23 @@ export default {
       and: 'Et le',
     },
     deleteManySuccessful: 'Emails supprimés',
-    deleteConfirmationMessage:
-      'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
+    deleteConfirmationMessage: 'Vous êtes sur le point de supprimer les emails sélectionnés. Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
-    duplicateNotice:
-      'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
+    duplicateNotice: 'Êtes-vous sûr de vouloir dupliquer <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
-    downloadManyMailsWithoutPreview:
-      'Cette liste de mails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
-    downloadSingleMailWithoutPreview: 'Impossible de télécharger un e-mail sans aperçu, veuillez ouvrir le mail au moins une fois pour en générer un.',
-    errorPreview: 'Pas d’aperçu disponible pour ce mail.',
-    subErrorPreview:
-      'Un aperçu sera généré lors de l\'ouverture de l\'éditeur du mail.',
+    downloadManyMailsWithoutPreview: 'Cette liste d\'emails ne contient pas de prévisualisation donc ils ne seront pas téléchargés, voulez vous continuer quand même ? ',
+    downloadSingleMailWithoutPreview: 'Impossible de télécharger un email sans aperçu, veuillez ouvrir l\'email au moins une fois pour en générer un.',
+    errorPreview: 'Pas d’aperçu disponible pour cet email.',
+    subErrorPreview: 'Un aperçu sera généré lors de l\'ouverture dans l\'éditeur.',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
-    downloadCount: 'Télécharger {count} mail | Télécharger {count} mails',
-    downloadFtpCount:
-      'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
+    downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
+    downloadFtpCount: 'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement:',
-    copyMailConfirmationMessage:
-      'Veuillez choisir l\'emplacement de la nouvelle copie',
+    copyMailConfirmationMessage: 'Veuillez choisir l\'emplacement de la nouvelle copie',
     copyMailSuccessful: 'Email copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination',
     moveMailSuccessful: 'Email déplacé',
@@ -283,8 +271,7 @@ export default {
     preview: 'Prévisualiser le template',
     removeImages: 'Supprimer toute les images',
     imagesRemoved: 'Images supprimées',
-    deleteNotice:
-      'Supprimer un template supprimera aussi tout les emails utilisant celui-ci',
+    deleteNotice: 'Supprimer un template supprimera aussi tout les emails utilisant celui-ci',
   },
   tags: {
     list: 'Liste des labels',
@@ -313,9 +300,6 @@ export default {
     lang: 'Langue',
     details: 'Informations',
     role: 'Rôle',
-    tooltip: {
-      noPassword: 'Désactivé à cause de l\'authenfication SAML',
-    },
   },
   workspaces: {
     name: 'Nom',
@@ -335,16 +319,13 @@ export default {
     delete: 'Supprimer',
     contentSendType: 'Le type du contenu',
     emptyState: 'Aucun profil disponible',
-    warningNoFTP:
-      'Vous ne pouvez pas ajouter de profil sans avoir configuré le serveur FTP',
-    deleteWarningMessage:
-      'Vous êtes sur le point de supprimer le profil "<strong>{name}</strong>".Cette action ne peut pas être annulée.',
+    warningNoFTP: 'Vous ne pouvez pas ajouter de profil sans avoir configuré le serveur FTP',
+    deleteWarningMessage: 'Vous êtes sur le point de supprimer le profil "<strong>{name}</strong>".Cette action ne peut pas être annulée.',
   },
   folders: {
     name: 'Nom du dossier',
     nameUpdated: 'Dossier renommé',
-    renameTitle:
-      'Renommer le dossier <strong class="black--text">{name}</strong> ',
+    renameTitle: 'Renommer le dossier <strong class="black--text">{name}</strong> ',
     rename: 'Renommer',
     created: 'Dossier créé',
     conflict: 'Le dossier existe déjà',

@@ -18,11 +18,10 @@ export default {
       supportedLanguageIsRequired: 'Language is required',
       apiKeyRequired: 'Api Key is Required',
       senderNameRequired: 'Sender name is Required',
-      senderMailRequired: 'Sender mail is Required',
+      senderMailRequired: 'Sender email is Required',
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
-      FORBIDDEN_WORKSPACE_CREATION:
-        'You don\'t have the rights to create this workspace',
-      emailsGroupExist: 'The name of emails list already exist',
+      FORBIDDEN_WORKSPACE_CREATION: 'You don\'t have the rights to create this workspace',
+      emailsGroupExist: 'The name of emails group already exist',
       password: {
         error: {
           nouser: 'User not found',
@@ -35,13 +34,13 @@ export default {
         },
       },
     },
+    add: 'Add',
     apiKey: 'Api key',
     entity: 'Entity',
     encodingType: 'Encoding type',
     targetTable: 'Target table',
     supportedLanguage: 'Language',
     profileName: 'ESP profile name',
-    add: 'Add',
     teams: 'Workspaces',
     addTags: 'Add tags',
     copyMail: 'Copy',
@@ -64,14 +63,14 @@ export default {
     newEmailsGroup: 'Add a new group of emails',
     newTeam: 'Add a workspace',
     newTag: 'Add a tag',
-    backToMails: 'Back to mails',
+    backToMails: 'Back to emails',
     backToGroups: 'Back to groups',
     group: 'Group | Groups',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
-    newMail: 'New mail',
+    newMail: 'New email',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
@@ -106,9 +105,9 @@ export default {
     updatedAt: 'Updated at',
     edit: 'Edit',
     move: 'Move',
-    emailsGroups: 'Emails lists',
-    emailsGroupsEmpty: 'No available emails list',
-    editEmailsGroup: 'Edit emails list',
+    emailsGroups: 'Email groups',
+    emailsGroupsEmpty: 'No available emails group',
+    editEmailsGroup: 'Edit emails group',
     continue: 'Continue',
     downloadFtp: 'Download ftp',
   },
@@ -125,9 +124,6 @@ export default {
       defaultWorkspace: {
         label: 'Default workspace\'s name',
       },
-      exportFtp: 'Export images on an FTP',
-      exportCdn: 'Export images on a CDN',
-      enable: 'Enable',
       status: {
         label: 'Status',
         demo: 'Demo',
@@ -135,17 +131,20 @@ export default {
         active: 'Active',
         requiredValidationMessage: 'A status is required',
       },
+      exportFtp: 'Export images on an FTP',
+      exportCdn: 'Export images on a CDN',
+      enable: 'Enable',
       ftpProtocol: 'FTP protocol',
       host: 'Host',
       username: 'Username',
       port: 'Port',
       path: 'Folder\'s path',
+      httpProtocol: 'Protocole HTTP',
       endpoint: 'Images root\'url',
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
-      userHasAccessToAllWorkspaces:
-        'Regular users have access to all workspaces',
+      userHasAccessToAllWorkspaces: 'Regular users have access to all workspaces',
     },
     template: {
       meta: 'Meta',
@@ -180,20 +179,18 @@ export default {
       emailsPlaceholder: 'Example: test@mail.com;test2@mail.com;',
       errors: {
         name: {
-          required: 'The name of list is required',
+          required: 'The name of group is required',
         },
         emails: {
           required: 'You have to fill at least one email',
           emailsValid: 'There are invalid emails',
         },
       },
-      deleteNotice:
-        'You are about to delete the emails list. This action can\'t be undone.',
-      deleteSuccess: 'Emails list deleted',
+      deleteNotice: 'You are about to delete the emails group. This action can\'t be undone.',
+      deleteSuccess: 'Emails group deleted',
     },
     workspace: {
-      checkBoxError:
-        'I understand that workspace\'s emails and folders will be removed too',
+      checkBoxError: 'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
       inputMaxLength: 'Name must not exceed 70 characters',
       moveFolderConfirmationMessage: 'Please choose the destination',
@@ -214,26 +211,21 @@ export default {
       informations: 'Information',
     },
     mailingTab: {
-      confirmationField: 'Type the mailing name to confirm',
-      deleteWarningMessage:
-        'You are about to delete the "<strong>{name}</strong>" mailing. This action can\'t be undone.',
-      deleteSuccessful: 'Mailing deleted',
-      deleteFolderWarning:
-        'You are about to delete the "<strong>{name}</strong>" folder. This action can\'t be undone.',
-      deleteFolderNotice:
-        'Emails and folders contained in the folder will also be deleted',
+      confirmationField: 'Type the email name to confirm',
+      deleteWarningMessage: 'You are about to delete the "<strong>{name}</strong>" email. This action can\'t be undone.',
+      deleteSuccessful: 'Email deleted',
+      deleteFolderWarning: 'You are about to delete the "<strong>{name}</strong>" folder. This action can\'t be undone.',
+      deleteFolderNotice: 'Emails and folders contained in the folder will also be deleted',
       deleteFolderSuccessful: 'Folder deleted',
     },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
-      deleteNotice:
-        'Emails and folders contained in the workspace will also be deleted',
-      deleteWarningMessage:
-        'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
+      deleteNotice: 'Emails and folders contained in the workspace will also be deleted',
+      deleteWarningMessage: 'You are about to delete the "<strong>{name}</strong>" workspace. This action can\'t be undone.',
       deleteSuccessful: 'Workspace deleted',
     },
   },
-  mailings: {
+  emails: {
     transfer: {
       label: 'Transfer email',
       success: 'Email transferred',
@@ -245,25 +237,21 @@ export default {
       updatedBetween: 'Updated between',
       and: 'And',
     },
-    deleteManySuccessful: 'Mailings deleted',
-    deleteConfirmationMessage:
-      'Voici la liste des mail qui contient pas de preview ',
-    downloadManyMailsWithoutPreview:
-      'This mailing list does not contain previews so they will not be downloaded, do you want to continue anyway?',
-    downloadSingleMailWithoutPreview: 'Cannot download a mail without a preview, please open the mail alteast one time to generate one.',  
+    deleteManySuccessful: 'Emails deleted',
+    deleteConfirmationMessage: 'Voici la liste des emails qui contient pas de preview ',
+    downloadManyMailsWithoutPreview: 'This email list does not contain previews so they will not be downloaded, do you want to continue anyway?',
+    downloadSingleMailWithoutPreview: 'Cannot download an email without a preview, please open the email alteast one time to generate one.',  
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate <strong>{name}</strong> ?',
     name: 'Email name',
     errorPreview: 'No preview available for this email.',
-    subErrorPreview:
-      'A preview will be generated when opening the mail editor.',
+    subErrorPreview: 'A preview will be generated when opening the email editor.',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
-    downloadCount: 'Download {count} mail | Download {count} mails',
-    downloadFtpCount:
-      'Download ftp {count} email | Download ftp {count} emails',
+    downloadCount: 'Download {count} email | Download {count} emails',
+    downloadFtpCount: 'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the new copy',
@@ -283,8 +271,7 @@ export default {
     preview: 'Download template',
     removeImages: 'Delete all images',
     imagesRemoved: 'Images deleted',
-    deleteNotice:
-      'Deleting a template will also remove every mailings using this one',
+    deleteNotice: 'Deleting a template will also remove every emails using this one',
   },
   tags: {
     list: 'Tags\' list',
@@ -306,13 +293,19 @@ export default {
     disableNotice: 'Are you sure you want to disable',
     passwordNotice: {
       reset: 'Are you sure you want to reset the password of',
-      send: 'Are you sure you want to send the password mail to',
-      resend: 'Are you sure you want to resend the password mail to',
+      send: 'Are you sure you want to send the password email to',
+      resend: 'Are you sure you want to resend the password email to',
     },
     email: 'Email',
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+  },
+  workspaces: {
+    name: 'Name',
+    description: 'Descritpion',
+    members: 'Members',
+    userIsGroupAdmin: 'The user is a group admin',
   },
   profiles: {
     name: 'Name',
@@ -325,22 +318,14 @@ export default {
     edit: 'Edit',
     delete: 'Delete',
     contentSendType: 'The content type',
-    warningNoFTP:
-      'You cannot add profile without having configured FTP server.',
+    warningNoFTP: 'You cannot add profile without having configured FTP server.',
     emptyState: 'No profile available',
-    deleteWarningMessage:
-      'You are about to delete the "<strong>{name}</strong>" profile. This action can\'t be undone.',
-  },
-  workspaces: {
-    name: 'Name',
-    description: 'Descritpion',
-    members: 'Members',
-    userIsGroupAdmin: 'The user is a group admin',
+    deleteWarningMessage: 'You are about to delete the "<strong>{name}</strong>" profile. This action can\'t be undone.',
   },
   folders: {
     name: 'Folder name',
     nameUpdated: 'Folder renamed',
-    renameTitle: 'Rename folder <strong  class="black--text">{name}</strong> ',
+    renameTitle: 'Rename folder <strong class="black--text">{name}</strong> ',
     rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
@@ -355,7 +340,7 @@ export default {
       status: 'Status',
     },
     users: {
-      passwordMail: 'Password\' mail',
+      passwordMail: 'Password\' email',
     },
     templates: {
       markup: 'Markup?',
