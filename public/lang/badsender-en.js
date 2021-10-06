@@ -54,7 +54,7 @@ module.exports = {
   exporting: 'Exporting ...',
   loading: 'Loading',
   submit: 'Submit',
-  export: 'Export',
+  export: 'Export changed word',
   close: 'Close',
   // profile form validation
   'warning-esp-message':
