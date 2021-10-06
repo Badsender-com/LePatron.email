@@ -1,7 +1,10 @@
 const axios = require('axios');
 const materialColorScheme = require('./utils/material-color-schema');
 
+const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
+
 module.exports = (opts) => {
+  console.log({ optsInsideColorPickerExtension: opts });
   var groupId = opts.metadata.groupId;
   function init(viewModel) {
     axios

@@ -15,6 +15,7 @@ ko.bindingHandlers.wysiwygOrHtml = {
     viewModel,
     bindingContext
   ) {
+    console.log('Init bindingHandlers wysiwygOrHtml ');
     var isNotWysiwygMode =
       typeof bindingContext.templateMode == 'undefined' ||
       bindingContext.templateMode != 'wysiwyg';
@@ -597,6 +598,7 @@ ko.bindingHandlers.wysiwyg = {
           selectorId,
           'is being inizialized ...'
         );
+      console.log({ optionsTinyMce: options });
       var res = tinymce.init(options);
       if (doDebug)
         console.debug(

@@ -2,8 +2,6 @@ var ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
 const materialColorScheme = require('./utils/material-color-schema');
 
-const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
-
 /**
  * Setup color picker in order to use it with tinyMce
  * text-color and colorpicker plugins
@@ -53,7 +51,6 @@ module.exports = (opts) => {
       },
       opts.tinymce
     );
-    console.log({ ko });
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 
     // mirror options to the small version of tinymce
@@ -65,7 +62,7 @@ module.exports = (opts) => {
   }
 
   function viewModel(viewModel) {
-    viewModel.tinyMceColorConfig = ko.observable(null);
+    viewModel.tinyMceConfiguration = ko.observable(null);
   }
 
   return {
