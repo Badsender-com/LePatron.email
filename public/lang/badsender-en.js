@@ -7,14 +7,14 @@ module.exports = {
   'edit-title-save': 'Save the new name',
   'edit-title-ajax-pending': 'Changing name…',
   'edit-title-ajax-success': 'Name changed',
-  'edit-title-ajax-fail': 'Unable to save the new name',
+  'edit-title-ajax-fail': 'Unable to save the new name :(',
 
   // empty title fallback
   'title-empty': 'no name',
 
   // save
   'save-message-success': 'The email has been saved',
-  'save-message-error': 'Error in saving',
+  'save-message-error': 'Error in saving :(',
 
   // gallery
   'gallery-title': 'Galleries:',
@@ -26,7 +26,8 @@ module.exports = {
   'gallery-template-empty': 'Email gallery is empty',
   'gallery-remove-image-success':
     'This image has been removed from the gallery',
-  'gallery-remove-image-fail': 'An error has occured while removing the image',
+  'gallery-remove-image-fail':
+    'An error has occured while removing the image :(',
 
   // bgimage widget
   'widget-bgimage-button': 'Pick an image',
@@ -45,7 +46,7 @@ module.exports = {
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
-  'error-server': 'An error has occured while calling server api',
+  'error-server': 'An error has occured while calling server API :(',
   cancel: 'CANCEL',
   upload: 'UPLOAD',
 
@@ -69,15 +70,15 @@ module.exports = {
   // profile form validation
   'mail-name-required': 'Email name is required',
   'template-name-required': 'Template name is required',
-  'mail-subject-required': 'Subject is required',
-  'template-subject-required': 'Subject is required',
+  'mail-subject-required': 'Email subject is required',
+  'template-subject-required': 'Template subject is required',
   'mail-success-esp-send': 'Email exported successfully',
   'template-success-esp-send': 'Template exported successfully',
   'error-server-400':
-    'ESP parameters invalids. Check if sender email matches API key.',
-  'error-server-402': 'Export fail, provider require payment',
+    'ESP parameters invalids. Check if sender email matches API key',
+  'error-server-402': 'Export fail, provider require payment.',
   'error-server-409': 'Email name already used',
-  'error-server-500': 'An error has occured while calling server API',
+  'error-server-500': 'An error has occured while calling server API :(',
   'supported-language': 'Supported language',
   'target-table': 'Target table',
   'encoding-type': 'Encoding type',
@@ -86,13 +87,13 @@ module.exports = {
   // test list
   'title-send-test-mails': 'Send a test email',
   'send-test-success': 'Email sent successfully',
-  'send-test-error': 'An error has occured while sending the mail',
+  'send-test-error': 'An error has occured while sending the emai :(l',
   'placeholder-input-emails-test':
     'Example: firstemail@test.com;secondemail@test.com',
   'emails-test': 'Enter one or more emails',
   'emails-invalid':
-    'Emails are invalid, please enter valid emails separated by ;',
+    'The email addresses entered are invalid. Please separate email addresses with ";"',
   'placeholder-emails-groups': 'Select a list',
   'sending-test-mails': 'Sending test mail…',
-  'send-test-mails': 'Send test mail ',
+  'send-test-mails': 'Send',
 };
