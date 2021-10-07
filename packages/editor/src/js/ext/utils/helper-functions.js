@@ -39,7 +39,12 @@ function each(o, cb, s) {
   return 1;
 }
 
+function formattedColorSchema(colors) {
+  return colors.reduce((acc, color) => [...acc, color, `#${color}`], []);
+}
+
 module.exports = {
   defaultFibonacciSpacing,
   each,
+  formattedColorSchema,
 };

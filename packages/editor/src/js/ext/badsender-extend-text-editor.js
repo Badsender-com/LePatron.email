@@ -1,5 +1,6 @@
 var ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
+const { formattedColorSchema } = require('./utils/helper-functions');
 const materialColorScheme = require('./utils/material-color-schema');
 
 /**
@@ -8,21 +9,33 @@ const materialColorScheme = require('./utils/material-color-schema');
  */
 
 module.exports = (opts) => {
-  function init(viewModel) {
+  function init(viewModel) {}
+
+  function viewModel(viewModel) {
+    viewModel.tinyMceConfiguration = ko.observable(null);
+
+    const mousePosition = {
+      x: 0,
+      y: 0,
+    };
+
+    const updateMousePosition = (event) => {
+      mousePosition.x = event.clientX;
+      mousePosition.y = event.clientY;
+    };
+
+    document.addEventListener('mousemove', updateMousePosition);
+
     const tinyMceTextColorConfig = {
       textcolor_cols: '7',
       textcolor_rows: '3',
-      textcolor_map: materialColorScheme.reduce(
-        (acc, color) => [...acc, color, `#${color}`],
-        []
-      ),
+      textcolor_map: formattedColorSchema(materialColorScheme),
     };
 
     const tinyMceColorPickerConfig = {
       color_picker_callback: function (callback, currentColor) {
-        if (viewModel.colorpicker) {
-          console.log({ colorpicker: viewModel.colorpicker });
-          viewModel.colorpicker.show(
+        if (viewModel.colorPicker) {
+          viewModel.colorPicker.show(
             {
               top: mousePosition.y,
               left: mousePosition.x,
@@ -41,16 +54,20 @@ module.exports = (opts) => {
       tinymceConfigFull.language_url = '/tinymce-langs/fr_FR.js';
       tinymceConfigFull.language = 'fr_FR';
     }
+
+    const textEditorOptions = {
+      ...tinymceConfigFull,
+      ...tinyMceTextColorConfig,
+      ...tinyMceColorPickerConfig,
+    };
+
     //- https://www.tinymce.com/docs/configure/url-handling/#convert_urls
     const textEditorFullOptions = $.extend(
       { convert_urls: false },
-      {
-        ...tinymceConfigFull,
-        ...tinyMceTextColorConfig,
-        ...tinyMceColorPickerConfig,
-      },
+      textEditorOptions,
       opts.tinymce
     );
+
     ko.bindingHandlers.wysiwyg.fullOptions = textEditorFullOptions;
 
     // mirror options to the small version of tinymce
@@ -59,10 +76,6 @@ module.exports = (opts) => {
       {},
       textEditorFullOptions
     );
-  }
-
-  function viewModel(viewModel) {
-    viewModel.tinyMceConfiguration = ko.observable(null);
   }
 
   return {
