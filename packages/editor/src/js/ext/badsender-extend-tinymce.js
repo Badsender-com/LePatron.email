@@ -7,8 +7,6 @@ const {
 require('./link-with-color');
 
 function extendTinyMce() {
-  console.log('calling extendTinyMce');
-  console.log({ tinymce });
   //////
   // DEFINE TINYMCE CUSTOM PLUGINS
   //////
