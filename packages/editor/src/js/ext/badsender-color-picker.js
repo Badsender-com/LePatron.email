@@ -1,5 +1,5 @@
 const axios = require('axios');
-const materialColorScheme = require('./utils/material-color-schema');
+const { getColorsSet } = require('./utils/helper-functions');
 
 const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
@@ -18,21 +18,11 @@ module.exports = (opts) => {
       .get(`/api/groups/${groupId}/color-scheme`)
       .then((response) => {
         const colors = response.data?.items;
-        console.log('colors', colors);
+        viewModel.colors = colors;
         const colorpicker = new ColorPicker({
           outputFormat: 'hex',
-          type: 'palette',
-          colorSets: [
-            colors?.length
-              ? {
-                  name: 'Group Scheme',
-                  colors,
-                }
-              : {
-                  name: 'Material',
-                  colors: materialColorScheme.map((color) => `#${color}`),
-                },
-          ],
+          type: 'sketch',
+          colorSets: getColorsSet(colors),
         });
 
         viewModel.colorPicker = colorpicker;

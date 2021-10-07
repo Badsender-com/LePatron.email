@@ -1,4 +1,6 @@
 // convert a fibonacci suite to em
+const materialColorScheme = require('./material-color-schema');
+
 var defaultFibonacciSpacing = [0, 1, 2, 3, 5, 8, 13]
   .map(function (e) {
     return Math.round(e * 0.1 * 100) / 100;
@@ -39,6 +41,20 @@ function each(o, cb, s) {
   return 1;
 }
 
+function getColorsSet(colors) {
+  return [
+    colors?.length
+      ? {
+          name: 'Group Scheme',
+          colors,
+        }
+      : {
+          name: 'Material',
+          colors: materialColorScheme.map((color) => `#${color}`),
+        },
+  ];
+}
+
 function formattedColorSchema(colors) {
   return colors.reduce((acc, color) => [...acc, color, `#${color}`], []);
 }
@@ -47,4 +63,5 @@ module.exports = {
   defaultFibonacciSpacing,
   each,
   formattedColorSchema,
+  getColorsSet,
 };

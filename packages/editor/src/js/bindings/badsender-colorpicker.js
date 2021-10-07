@@ -2,7 +2,7 @@
 
 const ko = require('knockout');
 const ColorPickerUI = require('@easylogic/colorpicker');
-
+const { getColorsSet } = require('../ext/utils/helper-functions');
 const { eventsHub, WINDOW_CLICK } = require('../badsender-events-hub.js');
 
 console.log(`ColorPickerUI`);
@@ -25,6 +25,8 @@ const colorpicker = {
     //   write: value,
     //   disposeWhenNodeIsRemoved: element
     // });
+
+    const colors = bindingContext.$root?.colors;
     const $container = document.createElement(`div`);
     $container.classList.add(`badsender-colorpicker`);
 
@@ -51,11 +53,14 @@ const colorpicker = {
     // onChange seems to trigger `click` event on input
     // • prevent this
     let isPicking = false;
+    const colorSet = getColorsSet(colors);
+
     const picker = ColorPickerUI.create({
       container: $picker,
       position: `inline`,
       autoHide: false,
       type: `sketch`,
+      colorSets: colorSet,
       onChange: (color) => {
         $bucket.style.backgroundColor = color;
         va.color(color);
