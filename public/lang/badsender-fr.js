@@ -2,19 +2,19 @@
 
 module.exports = {
   // edit title
-  'edit-title-double-click': 'Double-cliquer pour éditer',
-  'edit-title-cancel': "Annuler l'édition",
+  'edit-title-double-click': 'Double-cliquer pour modifier',
+  'edit-title-cancel': 'Annuler la modification',
   'edit-title-save': 'Enregistrer le nouveau nom',
   'edit-title-ajax-pending': 'Changement du nom…',
   'edit-title-ajax-success': 'Mise à jour du nom effectuée',
-  'edit-title-ajax-fail': "Impossible d'enregistrer le nouveau nom",
+  'edit-title-ajax-fail': "Impossible d'enregistrer le nouveau nom :(",
 
   // empty title fallback
   'title-empty': 'sans titre',
 
   // save
   'save-message-success': "L'email a été sauvegardé",
-  'save-message-error': "Une erreur est survenue lors de l'enregistrement",
+  'save-message-error': "Une erreur est survenue lors de l'enregistrement :(",
 
   // gallery
   'gallery-title': 'Galeries :',
@@ -26,7 +26,7 @@ module.exports = {
   'gallery-template-empty': 'La galerie du template est vide',
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
-    "Une erreur est survenue lors de la suppression de l'image",
+    "Une erreur est survenue lors de la suppression de l'image :(",
 
   // bgimage widget
   'widget-bgimage-button': 'Choisissez une image',
@@ -41,8 +41,8 @@ module.exports = {
   'dl-btn-cdn': 'images ICOU',
 
   // Crop interface
-  'rotate-left': 'Incliner à gauche',
-  'rotate-right': 'Incliner à droite',
+  'rotate-left': 'Tourner vers la gauche',
+  'rotate-right': 'Tourner vers la droite',
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
   'error-server':
@@ -54,7 +54,7 @@ module.exports = {
   'sender-name': "Nom de l'expéditeur",
   'sender-mail': "Adresse email de l'expéditeur",
   replyto: 'Adresse email de réponse',
-  mailSubject: "Objet de l'mail",
+  mailSubject: "Objet de l'email",
   templateSubject: 'Objet du template',
   name: 'Nom',
   mailName: "Nom de l'email",
@@ -63,24 +63,24 @@ module.exports = {
   exporting: 'Exportation…',
   loading: 'Chargement',
   submit: 'Enregistrer',
-  close: 'FERMER',
+  close: 'ANNULER',
   export: 'EXPORTER',
   'warning-esp-message':
     "Toute mise à jour remplacera l'email dans votre routeur",
 
   // profile form validation
-  'mail-name-required': "Le nom de l'email est requis",
-  'template-name-required': 'Le nom du template est requis',
-  'mail-subject-required': "L'objet de l'email est requis",
-  'template-subject-required': "L'objet du template est requis",
+  'mail-name-required': "Veuillez saisir un nom pour l'email",
+  'template-name-required': 'Veuillez saisir un nom pour le template',
+  'mail-subject-required': "Veuillez saisir l'objet de l'email",
+  'template-subject-required': "euillez saisir l'objet du template",
   'mail-success-esp-send': 'Email exporté avec succès',
   'template-success-esp-send': 'Template exporté avec succès',
   'error-server-400':
     "Paramètres ESP invalides. Vérifiez si l'adresse email de l'expéditeur correspond à la clé API",
-  'error-server-402': "Échec de l'exportation, l'ESP exige un paiement",
+  'error-server-402': "Échec de l'exportation. L'ESP exige un paiement.",
   'error-server-409': "Nom d'email déjà utilisé",
   'error-server-500':
-    "Une erreur s'est produite lors de l'appel de l'API du serveur",
+    "Une erreur s'est produite lors de l'appel de l'API du serveur :(",
   'supported-language': 'Langue',
   'target-table': 'Table cible',
   'encoding-type': "Type d'encodage",
@@ -89,13 +89,13 @@ module.exports = {
   // test list
   'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',
-  'send-test-error': "Erreur lors de l'envoi de l'email",
+  'send-test-error': "Erreur lors de l'envoi de l'email :(",
   'placeholder-input-emails-test':
     'Exemple : premieremail@test.com;secondemail@test.com',
   'emails-test': 'Saisir un ou plusieurs emails',
   'emails-invalid':
-    'Les emails sont invalides, veuillez saisir des emails valides séparer par ;',
+    'Les adresses emails saisis sont invalides. Veuillez séparer les adresses emails par ";"',
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
-  'send-test-mails': "Envoyer l'email de test",
+  'send-test-mails': 'Envoyer',
 };
