@@ -70,7 +70,7 @@ export default {
     newGroup: 'Add a group',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
-    newMail: 'Create an email',
+    newMail: 'New email',
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
@@ -275,7 +275,7 @@ export default {
   },
   tags: {
     list: 'Tags\' list',
-    new: 'New tags',
+    new: 'New tag',
     handle: 'Handle tags',
   },
   users: {

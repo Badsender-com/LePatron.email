@@ -1,7 +1,7 @@
 export default {
   snackbars: {
     updated: 'Mis à jour',
-    created: 'Crée',
+    created: 'Créé',
     deleted: 'Supprimé',
     usersFetchError: 'Impossible d\'accéder à la liste des utilisateurs :(',
     emailSent: 'L\'email a bien été envoyé',
@@ -233,7 +233,7 @@ export default {
     creationNotice: 'Veuillez choisir un template afin de créer un nouvel email',
     list: '🔎 Rechercher dans la liste d\'emails',
     filters: {
-      createdBetween: 'Crée entre le',
+      createdBetween: 'Créé entre le',
       updatedBetween: 'Mis à jour entre le',
       and: 'et le',
     },
