@@ -25,6 +25,7 @@ module.exports = {
   readProfiles: asyncHandler(readProfiles),
   readWorkspaces: asyncHandler(readWorkspaces),
   readEmailGroups: asyncHandler(readEmailGroups),
+  readColorScheme: asyncHandler(readColorScheme),
   update: asyncHandler(update),
 };
 
@@ -231,6 +232,32 @@ async function readWorkspaces(req, res, next) {
 }
 
 /**
+ * @api {get} /groups/:groupId/color-scheme get group color scheme
+ * @apiPermission user
+ * @apiName GetGroupColorScheme
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse workspace
+ * @apiSuccess {colorScheme} group color scheme
+ */
+async function readColorScheme(req, res) {
+  const {
+    params: { groupId },
+    user,
+  } = req;
+  if (!groupId) throw new NotFound();
+
+  if (!user.isAdmin && user.group.id?.toString() !== groupId) {
+    throw new NotFound();
+  }
+
+  const colorScheme = await groupService.findColorScheme({ groupId });
+  return res.json({ items: colorScheme });
+}
+
+/**
  * @api {put} /groups/:groupId group update
  * @apiPermission admin
  * @apiName UpdateGroup
@@ -265,7 +292,7 @@ async function update(req, res) {
   };
 
   if (user.isGroupAdmin) {
-    groupToUpdate = pick(groupToUpdate, ['name', 'id']);
+    groupToUpdate = pick(groupToUpdate, ['name', 'id', 'colorScheme']);
   }
 
   await groupService.updateGroup(groupToUpdate);
