@@ -5,11 +5,8 @@ const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
 module.exports = (opts) => {
   var groupId = opts.metadata.groupId;
-  function init(viewModel) {}
 
   function viewModel(viewModel) {
-    // TODO: find a better way to load colorScheme
-
     viewModel.colorPicker = ko.observable(null);
     viewModel.colors = ko.observableArray([]);
 

@@ -1,4 +1,4 @@
-var ko = require('knockout');
+const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
 const { formattedColorSchema } = require('./utils/helper-functions');
 const materialColorScheme = require('./utils/material-color-schema');
@@ -9,8 +9,6 @@ const materialColorScheme = require('./utils/material-color-schema');
  */
 
 module.exports = (opts) => {
-  function init(viewModel) {}
-
   function viewModel(viewModel) {
     viewModel.tinyMceConfiguration = ko.observable(null);
 

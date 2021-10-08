@@ -535,7 +535,6 @@ var templateCompiler = function (
   return {
     model: viewModel,
     init: function () {
-      console.log('Init call plugins');
       pluginsCall(plugins, 'init', [viewModel], true);
       // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
       if (
