@@ -4,7 +4,7 @@ const { getColorsSet } = require('./utils/helper-functions');
 const ColorPicker = require('@easylogic/colorpicker').ColorPicker;
 
 module.exports = (opts) => {
-  var groupId = opts.metadata.groupId;
+  const groupId = opts.metadata.groupId;
 
   function viewModel(viewModel) {
     viewModel.colorPicker = ko.observable(null);
