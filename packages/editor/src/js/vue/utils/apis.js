@@ -14,8 +14,18 @@ function getCampaignDetail({ profileId, campaignId }) {
 }
 
 
+function getEmailGroups({groupId}) {
+  return `${prefixApi}/groups/${groupId}/email-groups`
+}
+
+function sendTestEmails({ mailingId }) {
+  return `${prefixApi}/mailings/${mailingId}/mosaico/send-test-mail`;
+}
+
 module.exports = {
   getEspIds,
   getProfileDetail,
-  getCampaignDetail
+  getCampaignDetail,
+  getEmailGroups,
+  sendTestEmails
 }

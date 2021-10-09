@@ -9,6 +9,7 @@ module.exports = Object.freeze({
   GroupModel: 'Company',
   CacheImageModel: 'Cacheimage',
   FolderModel: 'Folder',
+  EmailsGroupModal: 'EmailsGroup',
   WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
   // OAuth

@@ -152,7 +152,7 @@ UserSchema.methods.resetPassword = async function resetPassword(type, lang) {
   const resetUrl = `http://${config.host}/account/${updatedUser.email}/password/${user.token}`;
   await mail.send({
     to: updatedUser.email,
-    subject: `${config.emailOptions.passwordSubjectPrefix} – password reset`,
+    subject: `${config.emailOptions.passwordSubjectPrefix} – Password reset`,
     text: `here is the link to enter your new password ${resetUrl}`,
     html: tmpReset(
       getTemplateData('reset-password', lang, {
@@ -216,15 +216,32 @@ function getTemplateData(templateName, lang, additionalDatas) {
   const i18n = {
     common: {
       fr: {
-        contact: 'Contacter Badsender : ',
-        or: 'ou',
-        // social: `Badsender sur les réseaux sociaux :`,
-        social: 'Badsender sur les r&eacute;seaux sociaux :',
+        baseline: 'L\'EMAILING SUR MESURE',
+        footerBaseline1: 'Pour des emails sur mesure',
+        footerBaseline2: 'et modulables',
+        rgpd1:
+          'Conformément au règlement européen pour la protection des données personnelles (RGPD) et, en France, à la loi "informatique et libertés", vous bénéficiez notamment d\'un droit d\'accès, de rectification et de suppression des données personnelles vous concernant. Pour en savoir davantage sur tous vos droits et les conditions dans lesquelles Badsender traite vos données personnelles, nous vous invitons à prendre connaissance de',
+        rgpd2:
+          'Pour exercer vos droits ou pour toute question, nous vous remercions de nous contacter à l\'adresse suivante&nbsp;:',
+        rgpdUrl: 'notre Politique de confidentialité',
+        zeroCarbon:
+          'N\'oubliez pas de détruire ce message une fois que vous l\'aurez consulté. Toutes nos bonnes pratiques pour un emailing + vert sont à disposition ',
+        zeroCarbonLink: 'en suivant ce lien',
+        legals: 'Badsender SASU - SIRET 81310812300015',
       },
       en: {
-        contact: 'contact Badsender: ',
-        or: 'or',
-        social: 'Badsender on social networks:',
+        baseline: 'TAILOR-MADE EMAILING',
+        footerBaseline1: 'For tailor-made emails',
+        footerBaseline2: 'and scalable',
+        rgpd1:
+          'In accordance with the European regulation for the protection of personal data (GDPR) and, in France, with the law "informatique et liberté", you have the right to access, rectify and delete your personal data. To learn more about all your rights and the conditions under which Badsender processes your personal data, we invite you to read',
+        rgpd2:
+          'To exercise your rights or if you have any questions, please contact us at the following address:',
+        rgpdUrl: 'our Privacy Policy',
+        zeroCarbon:
+          'Don\'t forget to delete this message once you\'ve viewed it. All our best practices for a green emailing are available ',
+        zeroCarbonLink: 'by following this link',
+        legals: 'Badsender SASU - SIRET 81310812300015',
       },
     },
     'reset-password': {

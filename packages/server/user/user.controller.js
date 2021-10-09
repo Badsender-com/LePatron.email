@@ -46,7 +46,6 @@ async function list(req, res) {
 
 async function getUsersByGroupId(req, res) {
   const { user: connectedUser } = req;
-  console.log({ connectedUser });
   const users = await userService.findByGroupId(connectedUser?.group?.id);
   res.json(users);
 }

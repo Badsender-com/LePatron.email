@@ -1,16 +1,17 @@
-import { required } from "vuelidate/lib/validators";
+import { required } from 'vuelidate/lib/validators';
 
-var Vue = require('vue/dist/vue.common');
-var { SEND_MODE } = require('../../../constant/send-mode');
-var { ESP_TYPE } = require('../../../constant/esp-type');
-var  { validationMixin } = require('vuelidate');
-
+const Vue = require('vue/dist/vue.common');
+const { SEND_MODE } = require('../../../constant/send-mode');
+const { ESP_TYPE } = require('../../../constant/esp-type');
+const  { validationMixin } = require('vuelidate');
+const styleHelper = require('../../../utils/style/styleHelper');
 
 const ActitoComponent = Vue.component('ActitoComponent', {
+  mixins: [validationMixin],
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null},
-    loading: { type: Boolean, default: false},
+    isLoading: { type: Boolean, default: false},
     closeModal: { type: Function, default: () => {}},
     espId: { type: String, default: null  },
     selectedProfile: { type: Object, default: () => ({}) },
@@ -18,7 +19,77 @@ const ActitoComponent = Vue.component('ActitoComponent', {
     campaignId: { type: String, default: null },
     type: { type: Number, default: SEND_MODE.CREATION  },
   },
-  mixins: [validationMixin],
+  data() {
+
+    return {
+      profile: {
+        campaignMailName: '',
+        entity: '',
+        encodingType: '',
+        supportedLanguage: '',
+        targetTable: '',
+        senderMail: '',
+        replyTo: '',
+        subject: '',
+        type: ESP_TYPE.SENDINBLUE,
+      },
+      style: styleHelper
+    }
+  },
+  computed: {
+    isEditMode() {
+      return this.type === SEND_MODE.EDIT
+    }
+  },
+  mounted() {
+    // prevent error inside the console, checking data before destructing it
+    if(!this.fetchedProfile || !this.fetchedProfile.additionalApiData) {
+      return;
+    }
+    
+    const {
+      subject,
+      campaignMailName,
+      id,
+      additionalApiData: {
+        entity,
+        targetTable,
+        senderMail,
+        encodingType,
+        supportedLanguage,
+        replyTo
+      }
+    } = this.fetchedProfile;
+
+    this.profile = {
+      id: id ?? '',
+      campaignMailName: campaignMailName ?? '',
+      entity: entity ?? '',
+      encodingType: encodingType ?? '',
+      supportedLanguage: supportedLanguage ?? '',
+      targetTable: targetTable ?? '',
+      senderMail: senderMail ?? '',
+      replyTo: replyTo ?? '',
+      subject: subject ?? '',
+    }
+
+    M.updateTextFields();
+  },
+  methods: {
+    onSubmit() {
+      M.updateTextFields();
+      this.$v.$touch();
+
+      if (this.$v.$invalid) {
+        return;
+      }
+
+      this.$emit('submit', this.profile);
+    },
+    contentSendTypeLowerCase() {
+      return this.fetchedProfile?.contentSendType?.toString()?.toLowerCase() ?? 'mail';
+    },
+  },
   template: `
 <div>
   <div class="modal-content">
@@ -170,50 +241,17 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         </button>
         <button
           @click.prevent="onSubmit"
-          :disabled="loading"
+          :disabled="isLoading"
           :style="[style.mb0, style.mt0]"
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          <span v-if="loading">{{ vm.t('exporting') }}</span>
+          <span v-if="isLoading">{{ vm.t('exporting') }}</span>
           <span v-else>{{ vm.t('export') }} <i class="fa fa-paper-plane" aria-hidden="true"></i></span>
         </button>
   </div>
 </div>
       `,
-  data() {
-
-    return {
-      profile: {
-        campaignMailName: '',
-        entity: '',
-        encodingType: '',
-        supportedLanguage: '',
-        targetTable: '',
-        senderMail: '',
-        replyTo: '',
-        subject: '',
-        type: ESP_TYPE.SENDINBLUE,
-      },
-      style: {
-        mb0:{
-          marginBottom: 0,
-        },
-        mt0:{
-          marginTop: 0,
-        },
-        pl4:{
-          paddingLeft: '40px',
-        },
-        floatLeft: {
-          float: 'left'
-        },
-        colorOrange:{
-          color: '#f57c00'
-        }
-      }
-    }
-  },
   validations() {
     return {
       profile: {
@@ -225,58 +263,6 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         },
       }
     }
-  },
-  mounted() {
-
-    const {
-      subject,
-      campaignMailName,
-      id,
-      additionalApiData: {
-        entity,
-        targetTable,
-        senderMail,
-        encodingType,
-        supportedLanguage,
-        replyTo
-      }
-    } = this.fetchedProfile;
-
-    this.profile = {
-      id: id ?? '',
-      campaignMailName: campaignMailName ?? '',
-      entity: entity ?? '',
-      encodingType: encodingType ?? '',
-      supportedLanguage: supportedLanguage ?? '',
-      targetTable: targetTable ?? '',
-      senderMail: senderMail ?? '',
-      replyTo: replyTo ?? '',
-      subject: subject ?? '',
-    }
-
-    M.updateTextFields();
-  },
-  computed: {
-    isEditMode() {
-      return this.type === SEND_MODE.EDIT
-    }
-  },
-  methods: {
-    onSubmit() {
-      M.updateTextFields();
-      this.$v.$touch();
-
-      if (this.$v.$invalid) {
-        return;
-      }
-
-      this.profile.campaignMailName = this.profile.campaignMailName?.replace(/[^A-Z0-9]+/ig, "_");
-
-      this.$emit('submit', this.profile);
-    },
-    contentSendTypeLowerCase() {
-      return this.fetchedProfile?.contentSendType?.toString()?.toLowerCase() ?? 'mail';
-    },
   },
 })
 

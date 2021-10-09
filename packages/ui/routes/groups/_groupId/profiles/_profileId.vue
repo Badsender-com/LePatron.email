@@ -74,8 +74,6 @@ export default {
         };
       }
 
-      console.log({ profileForAdmin: profileData });
-
       return {
         profile: profileData,
       };
