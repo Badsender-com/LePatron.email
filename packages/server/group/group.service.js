@@ -27,6 +27,7 @@ module.exports = {
     checkIfUserIsAuthorizedToAccessGroup
   ),
   seedGroups,
+  findColorScheme: asyncHandler(findColorScheme),
 };
 
 async function checkIfUserIsAuthorizedToAccessGroup({ user, groupId }) {
@@ -160,4 +161,10 @@ async function updateGroup(group) {
     { _id: mongoose.Types.ObjectId(id) },
     { ...otherProperties }
   );
+}
+
+async function findColorScheme({ groupId }) {
+  const group = await Groups.findById(groupId).select('colorScheme').lean();
+  if (!group) throw new NotFound();
+  return group.colorScheme;
 }

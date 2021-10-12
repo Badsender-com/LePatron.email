@@ -3,15 +3,17 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
 import { groupsItem } from '~/helpers/api-routes.js';
-import { IS_ADMIN, USER } from '~/store/user';
+import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsColorScheme from '~/components/group/color-scheme';
 
 export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
+    BsColorScheme,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -26,11 +28,33 @@ export default {
     return {
       useSamlAuthentication: null,
       isReadOnlyActive: true,
+      colorScheme: [
+        '#F44336',
+        '#E91E63',
+        '#9C27B0',
+        '#673AB7',
+        '#3F51B5',
+        '#2196F3',
+        '#03A9F4',
+        '#00BCD4',
+        '#009688',
+        '#4CAF50',
+        '#8BC34A',
+        '#CDDC39',
+        '#FFEB3B',
+        '#FFC107',
+        '#FF9800',
+        '#FF5722',
+        '#795548',
+        '#9E9E9E',
+        '#607D8B',
+      ],
     };
   },
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
     }),
     localModel: {
       get() {
@@ -178,7 +202,6 @@ export default {
                   @input="$v.group.name.$touch()"
                   @blur="$v.group.name.$touch()"
                 />
-
                 <v-text-field
                   v-if="isGroupCreationPage"
                   id="name"
@@ -203,6 +226,10 @@ export default {
                   @input="$v.group.status.$touch()"
                   @blur="$v.group.status.$touch()"
                 />
+              </v-col>
+              <v-col v-if="isGroupAdmin" cols="4">
+                Color scheme
+                <bs-color-scheme v-model="localModel.colorScheme" />
               </v-col>
               <v-col v-if="isAdmin" cols="4">
                 <v-select
