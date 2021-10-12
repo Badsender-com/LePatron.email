@@ -464,9 +464,6 @@ export default {
         </v-btn>
       </v-card-actions>
     </v-card>
-
-    <!-- :confirmation-input-label="$t('groups.workspaceTab.confirmationField')"  -->
-    <!-- :confirm-check-box-message="$t('groups.workspaceTab.deleteNotice')" -->
     <bs-modal-confirm-form
       ref="deleteDialog"
       :title="`${$t('global.delete')} ?`"

@@ -9,6 +9,7 @@ const {
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { Conflict, NotFound, Forbidden } = require('http-errors');
+const logger = require('../utils/logger');
 
 module.exports = {
   createWorkspace,
@@ -100,7 +101,7 @@ async function getWorkspaceWithAccessRight(id, user) {
 
 async function deleteWorkspace(workspaceId) {
   return Workspaces.deleteOne({ _id: workspaceId }, async () => {
-    console.log('deleting workspace');
+    logger.log('deleting workspace:', workspaceId);
     await Mailings.deleteMany({ _workspace: workspaceId });
     const foldersToDelete = await Folders.find({ _workspace: workspaceId });
     if (foldersToDelete && foldersToDelete.length > 0) {
@@ -111,6 +112,7 @@ async function deleteWorkspace(workspaceId) {
 }
 
 async function deleteFolderContent(folderId) {
+  logger.log('deleting folder:', folderId);
   const folderContent = await Folders.find({ _parentFolder: folderId });
   if (folderContent && folderContent.length > 0) {
     folderContent.forEach((folder) => {
