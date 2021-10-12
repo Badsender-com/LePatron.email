@@ -77,7 +77,6 @@ module.exports = (opts) => {
   }
 
   return {
-    init,
     viewModel,
   };
 };

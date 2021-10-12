@@ -168,9 +168,10 @@ export default {
       try {
         await this.$axios.delete(groupsItem({ groupId: this.group?.id }));
         this.showSnackbar({
-          text: this.$t('groups.deleteSuccessful'),
+          text: this.$t('groups.delete.successful'),
           color: 'success',
         });
+        this.$router.push('/groups/');
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
