@@ -50,8 +50,6 @@ export const mutations = {
 
 export const actions = {
   async fetchFolderOrWorkspace({ commit, dispatch }, { query, $t }) {
-    console.log('checking query data');
-    console.log({ $t });
     try {
       if (!this.$axios || !query) {
         return;
@@ -95,7 +93,6 @@ export const actions = {
     }
   },
   async fetchMailings({ commit, rootState }, { query, $t }) {
-    console.log({ query, $t });
     commit(SET_LOADING_MAILINGS, true);
     if (!!query?.wid || !!query?.fid) {
       const queryMailing = rootState.folder.folder?.id

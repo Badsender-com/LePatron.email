@@ -69,9 +69,6 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
-    testMethode() {
-      console.log('calling console.log');
-    },
     checkIfAuthorizedMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
     },

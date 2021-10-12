@@ -76,7 +76,6 @@ export default {
       this.loading = false;
     },
     async fetchMailListingData() {
-      console.log('fetchMailListingData fetching mails');
       const { dispatch } = this.$store;
       await dispatch('folder/fetchMailings', {
         query: this.$route.query,
