@@ -224,6 +224,12 @@ export default {
       deleteWarningMessage: 'You are about to delete the workspace: "<strong>{name}</strong>. This action can\'t be undone.',
       deleteSuccessful: 'Workspace deleted',
     },
+    delete: {
+      'deleteWarningMessage': 'You are about to delete the group "<strong> {name} </strong>". This action cannot be undone.',
+      'confirmationField': 'Type the group name to confirm',
+      'deleteNotice': 'Administrators, users, templates, workspaces, folders, emails and emails test groups will also be deleted',
+      'successful': 'Group deleted',
+    }
   },
   mailings: {
     transfer: {

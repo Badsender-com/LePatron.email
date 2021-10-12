@@ -17,7 +17,7 @@ const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
 
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
-
+router.delete('/:groupId', GUARD_ADMIN, groups.deleteGroup);
 router.post('/seed-groups', GUARD_ADMIN, groups.seedGroups);
 
 // guard() will check if the user is logged
