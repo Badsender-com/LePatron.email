@@ -75,61 +75,36 @@ export default {
       );
       this.loading = false;
     },
-    async fetchData() {
-      await this.fetchMailListingData();
-    },
     async fetchMailListingData() {
-      try {
-        if (this.$route.query?.wid || this.$route.query?.fid) {
-          this.mailingsIsLoading = true;
-          const mailingsResponse = await this.$axios.$get(mailings(), {
-            params: this.currentLocationParam,
-          });
-
-          this.mailings = mailingsResponse.items;
-          this.tags = mailingsResponse.meta.tags;
-          this.mailingsIsLoading = false;
-        }
-      } catch (error) {
-        this.mailingsIsLoading = false;
-      } finally {
-        this.mailingsSelection = [];
-      }
+      console.log('fetchMailListingData fetching mails');
+      const { dispatch } = this.$store;
+      await dispatch('folder/fetchMailings', {
+        query: this.$route.query,
+        $t: this.$t,
+      });
     },
     onTagCreate(newTag) {
       this.tags = [...new Set([newTag, ...this.tags])];
     },
-    async onTagsUpdate(tagsUpdates) {
-      const { $axios } = this;
-      this.loading = true;
-      try {
-        const mailingsResponse = await $axios.$put(mailings(), {
-          items: this.mailingsSelection.map((mailing) => mailing.id),
-          tags: tagsUpdates,
-        });
-        this.tags = mailingsResponse.meta.tags;
-        this.showSnackbar({
-          text: this.$t('mailings.editTagsSuccessful'),
-          color: 'success',
-        });
-        await this.fetchData();
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
-      }
+    async onMailSelectionTagsUpdate(tagsUpdates) {
+      await this.handleTagsUpdate({
+        items: this.mailingsSelection.map((mailing) => mailing.id),
+        tags: tagsUpdates,
+      });
     },
-    async handleUpdateTags(tagsInformations) {
+    async onMailTableTagsUpdate(tagsInformations) {
+      const { tags, selectedMailing } = tagsInformations;
+      await this.handleTagsUpdate({
+        items: [selectedMailing.id],
+        tags,
+      });
+    },
+    async handleTagsUpdate({ items, tags }) {
       const { $axios } = this;
       this.loading = true;
-      const { tags, selectedMailing } = tagsInformations;
       try {
         await $axios.$put(mailings(), {
-          items: [selectedMailing.id],
+          items,
           tags,
         });
         await this.fetchMailListingData();
@@ -202,7 +177,7 @@ export default {
           :tags="tags"
           :has-ftp-access="hasFtpAccess"
           @createTag="onTagCreate"
-          @updateTags="onTagsUpdate"
+          @updateTags="onMailSelectionTagsUpdate"
           @on-refetch="fetchMailListingData()"
         />
         <mailings-filters :tags="tags" @change="handleFilterChange" />
@@ -213,7 +188,7 @@ export default {
           :tags="tags"
           @on-single-mail-download="handleDownloadSingleMail"
           @on-refetch="fetchMailListingData()"
-          @update-tags="handleUpdateTags"
+          @update-tags="onMailTableTagsUpdate"
         />
       </v-skeleton-loader>
     </v-card>

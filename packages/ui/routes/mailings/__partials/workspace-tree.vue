@@ -37,7 +37,12 @@ export default {
     $route: ['getFolderAndWorkspaceData'],
   },
   async mounted() {
+    const { dispatch } = this.$store;
     await this.fetchData();
+    await dispatch('folder/fetchFolderOrWorkspace', {
+      query: this.$route.query,
+      $t: this.$t,
+    });
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
       await this.$router.push({
         query: { wid: this.workspaces[0]?.id },
