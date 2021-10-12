@@ -368,7 +368,7 @@ ${templates.join('\n')}
         '!packages/editor/src/tmpl/toolbox.tmpl.html',
       ])
       .pipe(through.obj(passThrough, flush))
-      // templates has to be build on “build” folder
+      // templates has to be build on "build" folder
       // they will be require by editor app application
       .pipe(gulp.dest('packages/editor/build'))
   );

@@ -22,15 +22,14 @@ function loader(opts) {
     // SAVE
     //////
 
-    var data = getData(viewModel);
-    var hasHtmlPreview = data.hasHtmlPreview;
-
     var saveCmd = {
       name: 'Save', // l10n happens in the template
       enabled: ko.observable(true),
     };
+    
     saveCmd.execute = function () {
       saveCmd.enabled(false);
+      var data = getData(viewModel);
 
       data = {
         ...data,
@@ -52,11 +51,6 @@ function loader(opts) {
       // => Deprecation notice for .success(), .error(), and .complete()
       function onPostSuccess(data, textStatus, jqXHR) {
         viewModel.notifier.success(viewModel.t('save-message-success'));
-        if(hasHtmlPreview) {
-          window.open(viewModel?.metadata?.editorIcon?.logoUrl || '/', "_self");
-        } else {
-          hasHtmlPreview =  data.metadata?.hasHtmlPreview;
-        }
       }
 
       function onPostError(jqXHR, textStatus, errorThrown) {

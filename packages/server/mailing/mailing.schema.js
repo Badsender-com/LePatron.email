@@ -38,7 +38,6 @@ const MailingSchema = Schema(
   {
     name: {
       type: String,
-      set: normalizeString,
       required: true,
     },
     previewHtml: {
@@ -271,6 +270,7 @@ const translations = {
  */
 
 MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
+  user,
   query = {},
   lang = 'fr'
 ) {
@@ -298,9 +298,16 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
 
-  const redirectUrl = mailing?._parentFolder
-    ? `/?fid=${mailing._parentFolder}`
-    : `/?wid=${mailing._workspace}`;
+  let redirectUrl = null;
+
+  if (user?.isAdmin) {
+    redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
+  } else {
+    redirectUrl = mailing?._parentFolder
+      ? `/?fid=${mailing._parentFolder}`
+      : `/?wid=${mailing._workspace}`;
+  }
+
   return {
     metadata: {
       id: mailingId,

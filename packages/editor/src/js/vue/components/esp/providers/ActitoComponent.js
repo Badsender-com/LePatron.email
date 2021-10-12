@@ -84,8 +84,6 @@ const ActitoComponent = Vue.component('ActitoComponent', {
         return;
       }
 
-      this.profile.campaignMailName = this.profile.campaignMailName?.replace(/[^A-Z0-9]+/ig, '_');
-
       this.$emit('submit', this.profile);
     },
     contentSendTypeLowerCase() {

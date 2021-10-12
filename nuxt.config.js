@@ -59,7 +59,7 @@ module.exports = {
   ],
   modules: ['@nuxtjs/style-resources', '@nuxtjs/axios'],
   // mirror port in nuxt config
-  // • We don't launch a “bare” nuxt server so this might sound not useful
+  // • We don't launch a "bare" nuxt server so this might sound not useful
   //   → Server listening is handled by expressJs
   // • BUT this will be used by nuxt-axios
   server: {
@@ -69,7 +69,10 @@ module.exports = {
     prefix: config.nuxt.API_PREFIX,
     browserBaseURL: config.nuxt.API_PREFIX,
   },
-  css: ['~/assets/global-styles/index.scss'],
+  css: [
+    '~/assets/global-styles/index.scss',
+    '@easylogic/colorpicker/dist/colorpicker.css',
+  ],
   styleResources: {
     // scss: [`~assets/global-styles/scss-mixins.scss`],
   },
@@ -78,11 +81,11 @@ module.exports = {
     ADMIN_USERNAME: config.admin.username,
     API_PREFIX: config.nuxt.API_PREFIX,
     // API_BASE_URL: config.apiBaseURL,
-    // // used for dev to call the “stateless” prevision API: /ext/v1
+    // // used for dev to call the "stateless" prevision API: /ext/v1
     // EXT_TOKEN: config.extToken,
   },
   head: {
-    titleTemplate: 'LePatron.email – %s',
+    titleTemplate: 'LePatron.email - %s',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },

@@ -151,7 +151,6 @@ async function findMailings(query) {
 
 async function findTags(query) {
   const mailingQuery = applyFilters(query);
-
   return Mailings.findTags(mailingQuery);
 }
 
@@ -290,6 +289,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     cdnDownload,
     regularDownload,
     prefix,
+    name,
     ftpServerParams,
     doesWaitForFtp: true,
   });
@@ -1133,10 +1133,12 @@ function applyFilters(query) {
       ...mailingQueryStrictGroup,
       _workspace: mongoose.Types.ObjectId(query.workspaceId),
     };
-  } else {
+  } else if (query.parentFolderId) {
     return {
       ...mailingQueryStrictGroup,
       _parentFolder: mongoose.Types.ObjectId(query.parentFolderId),
     };
+  } else {
+    return mailingQueryStrictGroup;
   }
 }

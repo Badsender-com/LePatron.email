@@ -156,8 +156,10 @@ async function read(req, res) {
 
 async function readMosaico(req, res) {
   const { mailingId } = req.params;
+  const { user } = req;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
   const mailingForMosaico = await Mailings.findOneForMosaico(
+    user,
     query,
     req.user.lang
   );
@@ -366,10 +368,6 @@ async function updateMosaico(req, res) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   }
 
-  if (!requestHtml) {
-    throw new NotFound(ERROR_CODES.MAILING_HTML_MISSING);
-  }
-
   if (!user.isAdmin) {
     const { _workspace, _parentFolder } = mailing;
 
@@ -390,14 +388,19 @@ async function updateMosaico(req, res) {
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
-    modelsUtils.normalizeString(req.body.name) ||
+    modelsUtils.trimString(req.body.name) ||
     simpleI18n('default-mailing-name', user.lang);
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
-  mailing.previewHtml = requestHtml;
+
+  if (requestHtml) {
+    mailing.previewHtml = requestHtml;
+  }
+
   await mailing.save();
 
   const mailingForMosaico = await Mailings.findOneForMosaico(
+    user,
     query,
     req.user.lang
   );
