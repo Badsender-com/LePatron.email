@@ -6,8 +6,11 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const {
   Groups,
   Users,
-  Workspaces,
   Mailings,
+  Workspaces,
+  Profiles,
+  Templates,
+  EmailsGroups,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
@@ -18,6 +21,7 @@ module.exports = {
   findById: asyncHandler(findById),
   createGroup: asyncHandler(createGroup),
   updateGroup: asyncHandler(updateGroup),
+  deleteGroup: asyncHandler(deleteGroup),
   findUserByGroupId: asyncHandler(findUserByGroupId),
   checkIfUserIsAuthorizedToAccessGroup: asyncHandler(
     checkIfUserIsAuthorizedToAccessGroup
@@ -112,8 +116,41 @@ async function findUserByGroupId(groupId) {
   if (!group) throw new NotFound();
   return users;
 }
+
 async function createGroup(group) {
   return Groups.create(group);
+}
+
+async function deleteGroup(groupId) {
+  findById(groupId);
+
+  const groupWorkspaces = await workspaceService.findWorkspaces({ groupId });
+
+  const deleteGroupWorkspacesPromises = groupWorkspaces.map((workspace) => {
+    return workspaceService.deleteWorkspace(workspace.id);
+  });
+
+  return Promise.all([
+    Users.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    deleteGroupWorkspacesPromises,
+    Mailings.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    Profiles.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    Templates.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    EmailsGroups.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    Groups.deleteOne({
+      _id: mongoose.Types.ObjectId(groupId),
+    }),
+  ]);
 }
 
 async function updateGroup(group) {

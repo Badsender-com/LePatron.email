@@ -26,6 +26,7 @@ module.exports = {
   readWorkspaces: asyncHandler(readWorkspaces),
   readEmailGroups: asyncHandler(readEmailGroups),
   update: asyncHandler(update),
+  deleteGroup: asyncHandler(deleteGroup),
 };
 
 /**
@@ -106,6 +107,33 @@ async function read(req, res) {
   const { groupId } = req.params;
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
+  res.json(group);
+}
+
+/**
+ * @api {get} /groups/:groupId detele group
+ * @apiPermission admin
+ * @apiName GetGroup
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiUse group
+ */
+
+async function deleteGroup(req, res) {
+  const {
+    params: { groupId },
+    user,
+  } = req;
+  const group = await Groups.findById(groupId);
+  if (!group) throw new NotFound();
+
+  if (!user.isAdmin) {
+    throw new NotFound();
+  }
+  await groupService.deleteGroup(groupId);
+
   res.json(group);
 }
 

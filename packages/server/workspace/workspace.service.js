@@ -100,6 +100,7 @@ async function getWorkspaceWithAccessRight(id, user) {
 
 async function deleteWorkspace(workspaceId) {
   return Workspaces.deleteOne({ _id: workspaceId }, async () => {
+    console.log('deleting workspace');
     await Mailings.deleteMany({ _workspace: workspaceId });
     const foldersToDelete = await Folders.find({ _workspace: workspaceId });
     if (foldersToDelete && foldersToDelete.length > 0) {

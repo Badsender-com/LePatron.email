@@ -229,6 +229,11 @@ export default {
         'Les emails et les dossiers que contient le workspace seront supprimés aussi',
       deleteSuccessful: 'Workspace supprimé',
     },
+    delete: {
+      'deleteWarningMessage': 'Vous êtes sur le point de supprimer le groupe "<strong>{name}</strong>".Cette action est irréversible.',
+      'confirmationField': 'Tapez le nom du groupe pour confirmer',
+      'deleteNotice': 'Les administrateurs, utilisteurs, templates, workspaces, répertoires, emails et groupes de testes seront supprimés aussi'
+    }
   },
   mailings: {
     transfer: {
