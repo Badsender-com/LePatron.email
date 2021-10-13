@@ -1,4 +1,5 @@
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 
 export default {
   computed: {
@@ -14,5 +15,8 @@ export default {
         return { workspaceId: this.workspace?.id };
       }
     },
+  },
+  methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
   },
 };

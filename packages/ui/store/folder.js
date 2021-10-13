@@ -105,7 +105,7 @@ export const actions = {
         });
 
         commit(SET_MAILINGS, mailingsResponse?.items);
-        commit(SET_TAGS, mailingsResponse?.tags);
+        commit(SET_TAGS, mailingsResponse.meta?.tags);
       } catch (e) {
         if ($t) {
           commit(
