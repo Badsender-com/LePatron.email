@@ -105,7 +105,7 @@ export default {
     updatedAt: 'Mis à jour le',
     edit: 'Modifier',
     move: 'Déplacer',
-    emailsGroups: 'Liste de test',
+    emailsGroups: 'Listes de test',
     emailsGroupsEmpty: 'Aucune liste de test disponible',
     editEmailsGroup: 'Modifier la liste de test',
     continue: 'Continuer',
