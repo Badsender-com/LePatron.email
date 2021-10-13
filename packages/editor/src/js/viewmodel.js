@@ -479,7 +479,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // BADSENDER: ESP tags gestion
 
     // Decode content between ESP tags and restore ESP tags
-    content = content.replace(/&lt;%.*%&gt;/g, function(match) {
+    content = content.replace(/&lt;%.*%&gt;/g, function (match) {
       var elem = document.createElement('textarea');
       elem.innerHTML = match;
       var decoded = elem.value;
@@ -504,18 +504,17 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     // Close with slash unclosed autoclose tags
     var unclosedAutoTagsRegex = /(<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)("[^"]*"|[^\/">])*)>/gm;
-    content = content.replace(unclosedAutoTagsRegex,"$1/>");
+    content = content.replace(unclosedAutoTagsRegex, '$1/>');
 
     // Remove successful blink lines
     var blackLinesRegex = /^\s*[\r\n]/gm;
-    content = content.replace(blackLinesRegex,"");
+    content = content.replace(blackLinesRegex, '');
 
     // Remove successif empty indentation and empty spaces if content exceeds 102k
-    if(content.length > MAX_SIZE) {
+    if (content.length > MAX_SIZE) {
       content = content.replace(/\n|\t/g, ' ');
       content = content.replace(/\s\s+/g, ' ');
     }
-
 
     return content;
   };

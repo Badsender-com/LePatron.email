@@ -1,30 +1,9 @@
 'use strict';
 
 const ko = require('knockout');
-// https://colorpicker.easylogic.studio/
-// https://www.npmjs.com/package/@easylogic/colorpicker
 const ColorPickerUI = require('@easylogic/colorpicker');
-
+const { getColorsSet } = require('../ext/utils/helper-functions');
 const { eventsHub, WINDOW_CLICK } = require('../badsender-events-hub.js');
-
-// Original mosaico use evol-colorpicker
-// • http://evoluteur.github.io/colorpicker/
-// It's in design too far from the tinyMCE color-picker
-// • https://github.com/Badsender/mosaico/issues/29
-// → try to use another one
-
-// Color-picker binding is defined in “bindings/colorpicker.js”
-// • then registered in ”ko-bindings.js”
-// • then it is called in the “converter/editor.js”
-// • it will translate any “color” property to a call to “colorpicker”
-//   https://github.com/Badsender/mosaico/blob/master/src/js/converter/editor.js#L70
-
-// to understand `deprecatedVM` see
-// https://knockoutjs.com/documentation/custom-bindings.html#the-update-callback
-
-// event.target !== el && !el.contains(event.target)
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Element/closest
 
 console.log(`ColorPickerUI`);
 
@@ -39,13 +18,15 @@ const colorpicker = {
     const va = valueAccessor();
     const initialColor = va.color();
 
-    // // In order to have a correct dependency tracking in "ifSubs" we have to ensure we use a single "computed" for each editable
-    // // property. Given this binding needs 2 of them, we create a new wrapping computed so to "proxy" the dependencies.
+    // In order to have a correct dependency tracking in "ifSubs" we have to ensure we use a single "computed" for each editable
+    // property. Given this binding needs 2 of them, we create a new wrapping computed so to "proxy" the dependencies.
     // var newDO = ko.computed({
     //   read: value,
     //   write: value,
     //   disposeWhenNodeIsRemoved: element
     // });
+
+    const colors = bindingContext.$root?.colors;
     const $container = document.createElement(`div`);
     $container.classList.add(`badsender-colorpicker`);
 
@@ -72,11 +53,14 @@ const colorpicker = {
     // onChange seems to trigger `click` event on input
     // • prevent this
     let isPicking = false;
+    const colorSet = getColorsSet(colors);
+
     const picker = ColorPickerUI.create({
       container: $picker,
       position: `inline`,
       autoHide: false,
       type: `sketch`,
+      colorSets: colorSet,
       onChange: (color) => {
         $bucket.style.backgroundColor = color;
         va.color(color);

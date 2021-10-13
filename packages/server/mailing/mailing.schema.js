@@ -38,7 +38,6 @@ const MailingSchema = Schema(
   {
     name: {
       type: String,
-      set: normalizeString,
       required: true,
     },
     previewHtml: {

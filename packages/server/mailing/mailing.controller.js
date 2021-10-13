@@ -388,7 +388,7 @@ async function updateMosaico(req, res) {
 
   mailing.data = req.body.data || mailing.data;
   mailing.name =
-    modelsUtils.normalizeString(req.body.name) ||
+    modelsUtils.trimString(req.body.name) ||
     simpleI18n('default-mailing-name', user.lang);
   // http://mongoosejs.com/docs/schematypes.html#mixed
   mailing.markModified('data');
