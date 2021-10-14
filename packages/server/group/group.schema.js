@@ -134,8 +134,10 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 // })
 
 GroupSchema.pre('updateOne', function (next) {
-  const getUpdate = this.getUpdate();
-  this.getUpdate().ftpPassword = encrypt(getUpdate.ftpPassword);
+  const ftpPassword = this.getUpdate()?.ftpPassword;
+  if (ftpPassword) {
+    this.getUpdate().ftpPassword = encrypt(ftpPassword);
+  }
   next();
 });
 
