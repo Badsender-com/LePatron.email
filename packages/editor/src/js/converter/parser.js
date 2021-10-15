@@ -264,7 +264,7 @@ var processBlock = function (
     $('[data-ko-display]', element).each(function (index, element) {
       wrapElementWithCondition('data-ko-display', element, bindingProvider);
     });
-    console.log('looping througt data-ko-editable');
+
     $('[data-ko-editable]', element).each(function (index, element) {
       var newBinding, defaultValue, model, currentBindings, dataBind;
 
@@ -436,9 +436,9 @@ var processBlock = function (
 
         const elementStyle = domutils.getAttribute(element, 'style');
         const styleToJavascriptFormat =  domutils.getStyleObjectFromString(elementStyle);
-        var  bindingStyleValues = domutils.concatObjectProperties(styleToJavascriptFormat);
+        let  bindingStyleValues = domutils.concatObjectProperties(styleToJavascriptFormat);
 
-        var containerBind = '{';
+        let containerBind = '{';
 
 
         if (align == 'left') containerBind += " float: 'left'";
@@ -462,8 +462,8 @@ var processBlock = function (
 
         containerBind += '}';
 
-        var cssBindling = '{ selecteditem: $root.isSelectedItem('+itemBindValue+')';
-        var elementClass = domutils.getAttribute(element, 'class');
+        let cssBindling = '{ selecteditem: $root.isSelectedItem('+itemBindValue+')';
+        let elementClass = domutils.getAttribute(element, 'class');
 
         if(!!elementClass &&  !!elementClass.trim()) {
           cssBindling += `, '${elementClass}': true`;
