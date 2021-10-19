@@ -1,30 +1,10 @@
-'use strict';
+const debounce = require('lodash.debounce');
+const { defaultFibonacciSpacing, each } = require('../utils/helper-functions');
 
-var debounce = require('lodash.debounce');
-
-require('./link-with-color');
-
-//////
-// DEFINE TINYMCE CUSTOM PLUGINS
-//////
-
-//----- LETTER SPACING
-
-// convert a fibonacci suite to em
-var defaults = [0, 1, 2, 3, 5, 8, 13]
-  .map(function (e) {
-    return Math.round(e * 0.1 * 100) / 100;
-  })
-  .map(function (i) {
-    return i + '=' + i + 'em';
-  })
-  .join(' ');
-
-tinymce.PluginManager.add('spacing', addLetterSpacing);
-
+// Will be add to TinyMce PluginManager spacing
 function addLetterSpacing(editor, url) {
   editor.addButton('letterspacingselect', function () {
-    var formats = editor.settings.spacing_formats || defaults;
+    var formats = editor.settings.spacing_formats || defaultFibonacciSpacing;
     var items = formats.split(' ').map(function (item) {
       var text = item;
       var value = item;
@@ -57,42 +37,7 @@ function addLetterSpacing(editor, url) {
   });
 }
 
-//----- FREE FONT SIZE
-
-// Util function copied from Tiny MCE
-function each(o, cb, s) {
-  var n, l;
-
-  if (!o) {
-    return 0;
-  }
-
-  s = s || o;
-
-  if (o.length !== undefined) {
-    // Indexed arrays, needed for Safari
-    for (n = 0, l = o.length; n < l; n++) {
-      if (cb.call(s, o[n], n, o) === false) {
-        return 0;
-      }
-    }
-  } else {
-    // Hashtables
-    for (n in o) {
-      if (o.hasOwnProperty(n)) {
-        if (cb.call(s, o[n], n, o) === false) {
-          return 0;
-        }
-      }
-    }
-  }
-
-  return 1;
-}
-
-// inspired by tinymce.js#44265
-tinymce.PluginManager.add('fontsizedialog', fontsizedialog);
-
+// Will be add to TinyMce PluginManager fontsizedialog
 function fontsizedialog(editor, url) {
   var fontSizeMin = 8;
   var fontSizeMax = 666;
@@ -199,22 +144,21 @@ function fontsizedialog(editor, url) {
   }
 }
 
-tinymce.PluginManager.add('specialcharacters', specialcharacters);
-
+// Will be add to TinyMce PluginManager specialcharacters
 function specialcharacters(editor) {
   editor.addButton('specialcharacters', function () {
     const items = [
       {
         text: 'Unbreakable space',
-        onclick: function() {
+        onclick: function () {
           editor.insertContent('&nbsp;');
-        }
+        },
       },
       {
         text: 'Unbreakable hyphen',
-        onclick: function() {
+        onclick: function () {
           editor.insertContent('&#8209;');
-        }
+        },
       },
     ];
 
@@ -227,56 +171,8 @@ function specialcharacters(editor) {
   });
 }
 
-//////
-// CONFIGURATION
-//////
-
-var tinymceConfigFull = {
-  toolbar1:
-    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters | linkcolorbutton unlinkcolorbutton | pastetext code',
-  //- add colorpicker & custom plugins
-  //- https://www.tinymce.com/docs/plugins/colorpicker/
-  plugins: [
-    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters',
-  ],
-  link_text_decoration_list: [
-    {text: 'Underline', value: ''},
-    {text: 'Normal', value: 'none'}
-  ],
-  //- https://www.tinymce.com/docs/configure/content-formatting/#style_formats
-  style_formats: [
-    {
-      title: 'Inline',
-      items: [
-        { title: 'Bold', icon: 'bold', inline: 'strong' },
-        { title: 'Italic', icon: 'italic', inline: 'em' },
-        {
-          title: 'Underline',
-          icon: 'underline',
-          inline: 'span',
-          styles: { 'text-decoration': 'underline' },
-        },
-        {
-          title: 'Strikethrough',
-          icon: 'strikethrough',
-          inline: 'span',
-          styles: { 'text-decoration': 'line-through' },
-        },
-        { title: 'Superscript', icon: 'superscript', inline: 'sup' },
-        { title: 'Subscript', icon: 'subscript', inline: 'sub' },
-        { title: 'Code', icon: 'code', inline: 'code' },
-      ],
-    },
-    {
-      title: 'Alignment',
-      items: [
-        { title: 'Align left', icon: 'alignleft', block: 'p', styles: { 'text-align': 'left' } },
-        { title: 'Align center', icon: 'aligncenter', block: 'p', styles: { 'text-align': 'center' } },
-        { title: 'Align right', icon: 'alignright', block: 'p', styles: { 'text-align': 'right' } },
-        { title: 'Justify', icon: 'alignjustify', block: 'p', styles: { 'text-align': 'justify' } },
-      ],
-    },
-  ],
+module.exports = {
+  addLetterSpacing,
+  fontsizedialog,
+  specialcharacters,
 };
-
-module.exports = tinymceConfigFull;
