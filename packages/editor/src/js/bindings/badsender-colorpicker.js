@@ -26,7 +26,6 @@ const colorpicker = {
     //   disposeWhenNodeIsRemoved: element
     // });
 
-    const colors = bindingContext.$root?.colors;
     const $container = document.createElement(`div`);
     $container.classList.add(`badsender-colorpicker`);
 
@@ -53,14 +52,11 @@ const colorpicker = {
     // onChange seems to trigger `click` event on input
     // • prevent this
     let isPicking = false;
-    const colorSet = getColorsSet(colors);
-
-    const picker = ColorPickerUI.create({
+    let picker = ColorPickerUI.create({
       container: $picker,
       position: `inline`,
       autoHide: false,
       type: `sketch`,
-      colorSets: colorSet,
       onChange: (color) => {
         $bucket.style.backgroundColor = color;
         va.color(color);
@@ -71,15 +67,16 @@ const colorpicker = {
       },
     });
 
+
     function clearColor(event) {
       va.color(``);
       $colorInput.value = ``;
       $bucket.style.backgroundColor = ``;
     }
 
-    function showColorPicker(event) {
+    function showColorPicker(event) {  
       // console.log(`SHOW_COLOR_PICKER`, isPicking, event)
-      if (isPicking) return (isPicking = false);
+     if (isPicking) return (isPicking = false);
       event.preventDefault();
       const openedPickers = document.querySelectorAll(NOT_HIDDEN_PICKER_QUERY);
       // close any other picker
@@ -88,6 +85,13 @@ const colorpicker = {
         .forEach(($pickerWrapper) =>
           $pickerWrapper.classList.add(PICKER_CLASS_HIDDEN)
         );
+            
+      const colors = bindingContext.$root?.colors;
+      const colorSet = getColorsSet(colors);
+      if(colorSet[0]?.colors) {
+        picker.setUserPalette(colorSet);
+        picker.setColorsInPalette(colorSet[0]?.colors) 
+      }
       $picker.classList.toggle(PICKER_CLASS_HIDDEN);
     }
     function closePickerOnGlobalClick(event) {
