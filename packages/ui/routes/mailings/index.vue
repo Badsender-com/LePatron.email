@@ -13,6 +13,8 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, HAS_FTP_ACCESS } from '~/store/user';
+import { FOLDER, FETCH_MAILINGS } from '~/store/folder';
+
 export default {
   name: 'PageMailings',
   components: {
@@ -31,7 +33,7 @@ export default {
     }
   },
   async asyncData({ query, store }) {
-    await store.dispatch('folder/fetchMailings', {
+    await store.dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
       query,
     });
   },
@@ -48,7 +50,7 @@ export default {
     title() {
       return 'Emails';
     },
-    ...mapState('folder', ['mailings', 'tags', 'mailingsIsLoading']),
+    ...mapState(FOLDER, ['mailings', 'tags', 'mailingsIsLoading']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
@@ -77,7 +79,7 @@ export default {
     },
     async fetchMailListingData() {
       const { dispatch } = this.$store;
-      await dispatch('folder/fetchMailings', {
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
         query: this.$route.query,
         $t: this.$t,
       });

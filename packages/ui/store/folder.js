@@ -5,8 +5,8 @@ import {
   getFolderAccess,
   getWorkspaceAccess,
 } from '~/helpers/api-routes';
-
-export const FOLDERS = 'folders';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+export const FOLDER = 'folder';
 
 export const SET_FOLDER = 'SET_FOLDER';
 export const SET_WORKSPACE = 'SET_WORKSPACE';
@@ -14,6 +14,9 @@ export const SET_HAS_ACCESS = 'SET_HAS_ACCESS';
 export const SET_MAILINGS = 'SET_MAILINGS';
 export const SET_TAGS = 'SET_TAGS';
 export const SET_LOADING_MAILINGS = 'SET_LOADING_MAILINGS';
+
+export const FETCH_MAILINGS = 'fetchMailings';
+export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
 
 export const state = () => ({
   workspace: {},
@@ -49,7 +52,7 @@ export const mutations = {
 };
 
 export const actions = {
-  async fetchFolderOrWorkspace({ commit, dispatch }, { query, $t }) {
+  async [FETCH_FOLDER_OR_WORKSPACE]({ commit, dispatch }, { query, $t }) {
     try {
       if (!this.$axios || !query) {
         return;
@@ -74,7 +77,7 @@ export const actions = {
           commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
         }
 
-        await dispatch('fetchMailings', {
+        await dispatch(FETCH_MAILINGS, {
           query,
           $t,
         });
@@ -82,7 +85,7 @@ export const actions = {
     } catch {
       if ($t) {
         commit(
-          'page/SHOW_SNACKBAR',
+          `${PAGE}/${SHOW_SNACKBAR}`,
           {
             text: $t('global.errors.errorOccured'),
             color: 'error',
@@ -92,7 +95,7 @@ export const actions = {
       }
     }
   },
-  async fetchMailings({ commit, rootState }, { query, $t }) {
+  async [FETCH_MAILINGS]({ commit, rootState }, { query, $t }) {
     commit(SET_LOADING_MAILINGS, true);
     if (!!query?.wid || !!query?.fid) {
       const queryMailing = rootState.folder.folder?.id
@@ -109,7 +112,7 @@ export const actions = {
       } catch (e) {
         if ($t) {
           commit(
-            'page/SHOW_SNACKBAR',
+            `${PAGE}/${SHOW_SNACKBAR}`,
             {
               text: $t('global.errors.errorOccured'),
               color: 'error',

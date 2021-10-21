@@ -13,6 +13,7 @@ import FolderMoveModal from './folder-move-modal';
 import FolderDeleteModal from './folder-delete-modal';
 
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { FOLDER, FETCH_FOLDER_OR_WORKSPACE } from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
@@ -39,7 +40,7 @@ export default {
   async mounted() {
     const { dispatch } = this.$store;
     await this.fetchData();
-    await dispatch('folder/fetchFolderOrWorkspace', {
+    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
       query: this.$route.query,
       $t: this.$t,
     });
@@ -52,7 +53,7 @@ export default {
   methods: {
     async getFolderAndWorkspaceData() {
       const { dispatch } = this.$store;
-      await dispatch('folder/fetchFolderOrWorkspace', {
+      await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
         query: this.$route.query,
         $t: this.$t,
       });
