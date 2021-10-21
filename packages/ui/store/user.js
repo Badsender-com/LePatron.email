@@ -2,6 +2,7 @@ export const USER = 'user';
 
 export const state = () => ({
   info: null,
+  hasFtpAccess: false,
 });
 
 export const LOCALE = 'LOCALE';
@@ -9,6 +10,8 @@ export const IS_CONNECTED = 'IS_CONNECTED';
 export const IS_ADMIN = 'IS_ADMIN';
 export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
 export const SESSION_ACL = 'SESSION_ACL';
+export const USER_SET_HAS_FTP_ACCESS = 'USER_SET_HAS_FTP_ACCESS';
+export const HAS_FTP_ACCESS = 'HAS_FTP_ACCESS';
 
 export const getters = {
   [IS_CONNECTED](state) {
@@ -22,6 +25,9 @@ export const getters = {
   },
   [LOCALE](state) {
     return state.info != null && state.info.lang;
+  },
+  [HAS_FTP_ACCESS]() {
+    return state.hasFtpAccess;
   },
   [SESSION_ACL](state) {
     const hasSession = state.info != null;
@@ -45,6 +51,9 @@ export const mutations = {
       ...state.info,
       ...user,
     };
+  },
+  [USER_SET_HAS_FTP_ACCESS](state, hasFtpAccess) {
+    state.hasFtpAccess = hasFtpAccess;
   },
 };
 

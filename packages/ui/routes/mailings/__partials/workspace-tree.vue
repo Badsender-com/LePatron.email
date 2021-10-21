@@ -13,6 +13,7 @@ import FolderMoveModal from './folder-move-modal';
 import FolderDeleteModal from './folder-delete-modal';
 
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { FOLDER, FETCH_FOLDER_OR_WORKSPACE } from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
@@ -33,8 +34,16 @@ export default {
       return { id: this.currentLocation };
     },
   },
+  watch: {
+    $route: ['getFolderAndWorkspaceData'],
+  },
   async mounted() {
+    const { dispatch } = this.$store;
     await this.fetchData();
+    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+      query: this.$route.query,
+      $t: this.$t,
+    });
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
       await this.$router.push({
         query: { wid: this.workspaces[0]?.id },
@@ -42,11 +51,17 @@ export default {
     }
   },
   methods: {
+    async getFolderAndWorkspaceData() {
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+        query: this.$route.query,
+        $t: this.$t,
+      });
+    },
     async fetchData() {
-      const { $axios, $route } = this;
+      const { $axios } = this;
       try {
         this.workspacesIsLoading = true;
-        await this.getFolderAndWorkspaceData($axios, $route.query);
         const { items } = await $axios.$get(workspacesByGroup());
         this.workspaces = items;
       } catch (error) {
