@@ -5,6 +5,8 @@ var tinymce = require('tinymce');
 var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
+const { formattedColorSchema, formattedGroupColorSchema } = require('../ext/utils/helper-functions');
+const materialColorScheme = require('../ext/utils/material-color-schema');
 require('./eventable.js');
 
 ko.bindingHandlers.wysiwygOrHtml = {
@@ -419,7 +421,7 @@ ko.bindingHandlers.wysiwyg = {
     var isSubscriberChange = false;
     var thisEditor;
     var isEditorChange = false;
-
+    
     var options = {
       inline: true,
       // maybe not needed, but won't hurt.
@@ -435,7 +437,8 @@ ko.bindingHandlers.wysiwyg = {
       extended_valid_elements: 'strong/b,em/i,*[*]',
       menubar: false,
       skin: 'gray-flat',
-      // 2018-03-07: the force_*_newlines are not effective. force_root_block is the property dealing with newlines, now.
+        
+     // 2018-03-07: the force_*_newlines are not effective. force_root_block is the property dealing with newlines, now.
       // force_br_newlines: !fullEditor, // we force BR as newline when NOT in full editor
       // force_p_newlines: fullEditor,
       forced_root_block: fullEditor ? 'p' : '',
@@ -599,6 +602,11 @@ ko.bindingHandlers.wysiwyg = {
           selectorId,
           'is being inizialized ...'
         );
+        const colors = bindingContext.$root?.colors;
+        options = {
+          ...options,
+          textcolor_map: colors?.length ? formattedGroupColorSchema(colors , false) : formattedColorSchema(materialColorScheme)
+        }
       var res = tinymce.init(options);
       if (doDebug)
         console.debug(
