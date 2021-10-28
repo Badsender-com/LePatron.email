@@ -38,6 +38,9 @@ function secureHtml(html) {
 //   due to date format %d%m%Y
 // • (FORMATDATETIME(GETDATE(),%20%27%d%m%Y%27))
 const selligentTagRegexp = /~([^~]+)~/g;
+// const np6TagRegexp = /{{([^~]+)}}/g;
+// const actitoTagRegexp = /\${(.+?)\}/g;
+// const adobeTagRegexp = /<%(.+?)%>/g;
 
 const decodeTag = (match, tag) => {
   let decodedTag = htmlEntities.decode(tag);
@@ -50,13 +53,33 @@ const decodeTag = (match, tag) => {
 };
 
 function decodeSelligentTags(html) {
-  html = html.replace(
+  return html.replace(
     selligentTagRegexp,
     (match, tag) => `~${decodeTag(match, tag)}~`
   );
-  return html;
 }
 
+// function decodeNp6Tags(html) {
+//   return html.replace(
+//     np6TagRegexp,
+//     (match, tag) => `{{${decodeTag(match, tag)}}}`
+//   );
+// }
+
+// function decodeActitoTags(html) {
+//   html = html.replace(
+//     actitoTagRegexp,
+//     (match, tag) => `\${${decodeTag(match, tag)}}`
+//   );
+//   return html;
+// }
+
+// function decodeAdobeTags(html) {
+//   return html.replace(
+//     adobeTagRegexp,
+//     (match, tag) => `<%${decodeTag(match, tag)}%>`
+//   );
+// }
 const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
