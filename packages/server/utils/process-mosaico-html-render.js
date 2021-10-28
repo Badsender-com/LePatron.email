@@ -38,17 +38,22 @@ function secureHtml(html) {
 //   due to date format %d%m%Y
 // • (FORMATDATETIME(GETDATE(),%20%27%d%m%Y%27))
 const selligentTagRegexp = /~([^~]+)~/g;
-const decodeSelligentTag = (match, tag) => {
+
+const decodeTag = (match, tag) => {
   let decodedTag = htmlEntities.decode(tag);
   try {
     decodedTag = decodeUriComponent(decodedTag);
   } catch (err) {
     console.log('unable to decode URI', tag);
   }
-  return `~${decodedTag}~`;
+  return decodedTag;
 };
+
 function decodeSelligentTags(html) {
-  html = html.replace(selligentTagRegexp, decodeSelligentTag);
+  html = html.replace(
+    selligentTagRegexp,
+    (match, tag) => `~${decodeTag(match, tag)}~`
+  );
   return html;
 }
 
