@@ -1,7 +1,6 @@
 const ko = require('knockout');
 const tinymceConfigFull = require('./utils/tinymce-config');
-const { formattedColorSchema } = require('./utils/helper-functions');
-const materialColorScheme = require('./utils/material-color-schema');
+
 
 /**
  * Setup color picker in order to use it with tinyMce
@@ -24,11 +23,10 @@ module.exports = (opts) => {
 
     document.addEventListener('mousemove', updateMousePosition);
 
+   
     const tinyMceTextColorConfig = {
       textcolor_cols: '7',
-      textcolor_rows: '3',
-      textcolor_map: formattedColorSchema(materialColorScheme),
-    };
+      textcolor_rows: '3' };
 
     const tinyMceColorPickerConfig = {
       color_picker_callback: function (callback, currentColor) {

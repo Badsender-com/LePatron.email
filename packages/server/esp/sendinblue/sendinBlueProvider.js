@@ -21,6 +21,10 @@ class SendinBlueProvider {
     return await apiAccountInstance.getAccount();
   }
 
+  static async build(initialData) {
+    return new SendinBlueProvider(initialData);
+  }
+
   async getCampaignMail({ campaignId }) {
     const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
 

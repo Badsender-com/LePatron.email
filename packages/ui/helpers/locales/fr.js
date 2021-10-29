@@ -121,6 +121,9 @@ export default {
         wrapped: 'Englober dans un dossier parent',
         unwrapped: 'Laisser les fichiers à la racine',
       },
+      color: {
+        label: 'Couleurs personnalisées',
+       },
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
       },

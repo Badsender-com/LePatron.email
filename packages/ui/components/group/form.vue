@@ -19,6 +19,7 @@ export default {
   model: { prop: 'group', event: 'update' },
   props: {
     group: { type: Object, default: () => ({}) },
+    isEdit: { type: Boolean, default: false },
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
   },
@@ -229,7 +230,7 @@ export default {
                 />
               </v-col>
               <v-col v-if="isGroupAdmin" cols="4">
-                Color scheme
+                {{ $t('forms.group.color.label') }}
                 <bs-color-scheme v-model="localModel.colorScheme" />
               </v-col>
               <v-col v-if="isAdmin" cols="4">
@@ -482,7 +483,7 @@ export default {
           {{ $t('global.save') }}
         </v-btn>
         <v-btn
-          v-if="isAdmin"
+          v-if="isAdmin && isEdit"
           depressed
           large
           color="error"

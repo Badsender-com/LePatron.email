@@ -42,7 +42,7 @@ async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
 }
 
 async function actitoEntitiesList({ apiKey }) {
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type: EspTypes.ACTITO,
   });
@@ -50,7 +50,7 @@ async function actitoEntitiesList({ apiKey }) {
 }
 
 async function actitoTargetTablesList({ apiKey, entity }) {
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type: EspTypes.ACTITO,
   });
@@ -65,7 +65,7 @@ async function createProfile({
   _company,
   additionalApiData,
 }) {
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type,
     name,
@@ -98,7 +98,7 @@ async function updateProfile({
 }) {
   await findOne(id);
 
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type,
     name,
@@ -149,7 +149,7 @@ async function updateEspCampaign({
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
 
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type,
     name,
@@ -212,7 +212,7 @@ async function sendEspCampaign({
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
 
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type,
     name,
@@ -334,7 +334,7 @@ async function getCampaignMail({ campaignId, profileId }) {
 
   const { contentSendType } = additionalApiData;
 
-  const espProvider = new EspProvider({
+  const espProvider = await EspProvider.build({
     apiKey,
     type,
     name,

@@ -66,6 +66,7 @@ export default {
       <v-col cols="8" offset="2">
         <bs-group-form
           v-model="newGroup"
+          :is-edit="false"
           :disabled="loading"
           @submit="createGroup"
         />
