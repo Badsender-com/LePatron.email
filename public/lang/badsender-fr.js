@@ -72,7 +72,7 @@ module.exports = {
   'mail-name-required': "Veuillez saisir un nom pour l'email",
   'template-name-required': 'Veuillez saisir un nom pour le template',
   'mail-subject-required': "Veuillez saisir l'objet de l'email",
-  'template-subject-required': "euillez saisir l'objet du template",
+  'template-subject-required': "Veuillez saisir l'objet du template",
   'mail-success-esp-send': 'Email exporté avec succès',
   'template-success-esp-send': 'Template exporté avec succès',
   'error-server-400':
