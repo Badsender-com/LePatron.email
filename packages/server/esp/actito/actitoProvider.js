@@ -12,19 +12,75 @@ const path = require('path');
 
 const { Conflict, InternalServerError } = require('http-errors');
 
-const API3_ACTITO = 'https://api3.actito.com';
-const API3_ACTITO_V4 = API3_ACTITO + '/v4';
-const API_AUTHENTIFICATION = API3_ACTITO + '/auth/token';
+const possibleApiDomaineToCall = ['api', 'api1', 'api3'];
 
 class ActitoProvider {
-  constructor({ apiKey, ...data }) {
+  constructor({ apiKey, validBaseApi, ...data }) {
     this.apiKey = apiKey;
     this.data = data;
     this.accessDataFromApi = null;
+
+    this.validBaseApi = validBaseApi;
+  }
+
+  static async build({ apiKey, ...initialData }) {
+    let i = 0;
+    let validBaseApi = null;
+
+    do {
+      const currentIndex = i;
+      i++;
+      try {
+        const apiUrl = ActitoProvider.getActitoApiUrl(
+          possibleApiDomaineToCall[currentIndex]
+        );
+        logger.log('attempt connect api ', apiUrl);
+
+        const connection = await this.connectApiWithoutsApiBase(apiUrl, apiKey);
+
+        if (connection) {
+          logger.log('Valid base api, Yes!', validBaseApi);
+          validBaseApi = possibleApiDomaineToCall[currentIndex];
+        }
+      } catch (error) {
+        logger.error(error);
+      }
+    } while (!validBaseApi && i < possibleApiDomaineToCall.length);
+
+    if (!validBaseApi) {
+      throw new InternalServerError(ERROR_CODES.UNDEFINED_ACTITO_BASE_API_URL);
+    }
+
+    return new ActitoProvider({ apiKey, validBaseApi, ...initialData });
+  }
+
+  static getActitoApiUrl(baseApi) {
+    return `https://${baseApi}.actito.com`;
+  }
+
+  static async connectApiWithoutsApiBase(url, apiKey) {
+    return axios.get(`${url}/auth/token`, {
+      headers: { Authorization: apiKey, Accept: 'application/json' },
+    });
+  }
+
+  getActitoUrl() {
+    if (
+      !this.validBaseApi ||
+      !possibleApiDomaineToCall.includes(this.validBaseApi)
+    ) {
+      throw new InternalServerError(ERROR_CODES.UNDEFINED_ACTITO_BASE_API_URL);
+    }
+
+    return `${ActitoProvider.getActitoApiUrl(this.validBaseApi)}`;
+  }
+
+  getV4ActitoUrl() {
+    return `${this.getActitoUrl()}/v4`;
   }
 
   async connectApi() {
-    return axios.get(API_AUTHENTIFICATION, {
+    return axios.get(`${this.getActitoUrl()}/auth/token`, {
       headers: { Authorization: this.apiKey, Accept: 'application/json' },
     });
   }
@@ -47,9 +103,12 @@ class ActitoProvider {
   async getAllEspEntities() {
     try {
       const headerAccess = await this.getHeaderAccess();
-      const allEntitesResult = await axios.get(`${API3_ACTITO_V4}/entity`, {
-        headers: headerAccess,
-      });
+      const allEntitesResult = await axios.get(
+        `${this.getV4ActitoUrl()}/entity`,
+        {
+          headers: headerAccess,
+        }
+      );
 
       return allEntitesResult?.data;
     } catch (e) {
@@ -63,7 +122,7 @@ class ActitoProvider {
       const headerAccess = await this.getHeaderAccess();
 
       const allEspProfileTableResult = await axios.get(
-        `${API3_ACTITO_V4}/entity/${entity}/table/ `,
+        `${this.getV4ActitoUrl()}/entity/${entity}/table/ `,
         { headers: headerAccess }
       );
       return allEspProfileTableResult?.data;
@@ -100,7 +159,7 @@ class ActitoProvider {
 
       const headerAccess = await this.getHeaderAccess();
       const apiEmailCampaignResult = await axios.get(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}`,
         { headers: headerAccess }
       );
 
@@ -159,7 +218,7 @@ class ActitoProvider {
       form.append('inputFile', fs.createReadStream(tmpZipFile));
 
       return axios.post(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
         form,
         { headers }
       );
@@ -184,7 +243,7 @@ class ActitoProvider {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/body`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/body`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -198,7 +257,7 @@ class ActitoProvider {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
       return axios.delete(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -212,7 +271,7 @@ class ActitoProvider {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
       return axios.put(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/subject`,
         subject,
         { headers: headerAccess }
       );
@@ -228,7 +287,7 @@ class ActitoProvider {
       this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
-        `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}/content/subject`,
+        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/subject`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -260,7 +319,7 @@ class ActitoProvider {
       mailingId,
       entity,
       mailCampaignApi: async (data) =>
-        axios.post(`${API3_ACTITO_V4}/entity/${entity}/mail/`, data, {
+        axios.post(`${this.getV4ActitoUrl()}/entity/${entity}/mail/`, data, {
           headers: headerAccess,
         }),
     });
@@ -286,7 +345,7 @@ class ActitoProvider {
       entity,
       mailCampaignApi: async (data) =>
         axios.put(
-          `${API3_ACTITO_V4}/entity/${entity}/mail/${campaignId}`,
+          `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}`,
           data,
           {
             headers: headerAccess,
