@@ -1,3 +1,5 @@
+import { groupsItem } from '~/helpers/api-routes.js';
+
 export const USER = 'user';
 
 export const state = () => ({
@@ -63,6 +65,14 @@ export const actions = {
   async [USER_SET](vuexCtx, user) {
     const { commit } = vuexCtx;
     commit(M_USER_SET, user);
+
+    let group;
+    try {
+      group = await this.$axios.$get(groupsItem({ groupId: user?.group?.id }));
+    } catch {
+      console.error('Error while fetching group');
+    }
+    commit(USER_SET_HAS_FTP_ACCESS, !!group?.downloadMailingWithFtpImages);
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

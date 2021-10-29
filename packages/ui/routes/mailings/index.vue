@@ -12,7 +12,7 @@ import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER, HAS_FTP_ACCESS } from '~/store/user';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import { FOLDER, FETCH_MAILINGS } from '~/store/folder';
 
 export default {
@@ -51,10 +51,10 @@ export default {
       return 'Emails';
     },
     ...mapState(FOLDER, ['mailings', 'tags', 'mailingsIsLoading']),
+    ...mapState(USER, ['hasFtpAccess']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
-      hasFtpAccess: HAS_FTP_ACCESS,
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
