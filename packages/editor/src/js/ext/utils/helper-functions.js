@@ -59,9 +59,14 @@ function formattedColorSchema(colors) {
   return colors.reduce((acc, color) => [...acc, color, `#${color}`], []);
 }
 
+function formattedGroupColorSchema(colors) {
+  return colors.reduce((acc, color) => [...acc, color.substring(1), color], []);
+}
+
 module.exports = {
   defaultFibonacciSpacing,
   each,
   formattedColorSchema,
+  formattedGroupColorSchema,
   getColorsSet,
 };

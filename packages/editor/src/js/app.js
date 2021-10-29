@@ -99,7 +99,7 @@ if (process.env.MOSAICO) {
     };
 
     // pushes custom tinymce configurations from options to the binding
-    if (options && options.tinymceConfig)
+    if (options && options.tinymceConfig) 
       ko.bindingHandlers.wysiwyg.standardOptions = options.tinymceConfig;
     if (options && options.tinymceConfigFull)
       ko.bindingHandlers.wysiwyg.fullOptions = options.tinymceConfigFull;

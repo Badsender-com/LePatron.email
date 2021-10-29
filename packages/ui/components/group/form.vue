@@ -229,7 +229,7 @@ export default {
                 />
               </v-col>
               <v-col v-if="isGroupAdmin" cols="4">
-                Color scheme
+                {{ $t('forms.group.color.label') }}
                 <bs-color-scheme v-model="localModel.colorScheme" />
               </v-col>
               <v-col v-if="isAdmin" cols="4">

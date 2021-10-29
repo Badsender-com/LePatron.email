@@ -121,6 +121,9 @@ export default {
         wrapped: 'Wrap in a parent folder',
         unwrapped: 'Leave files in root folder',
       },
+      color: {
+        label: 'Custom color',
+       },
       defaultWorkspace: {
         label: 'Default workspace\'s name',
       },
