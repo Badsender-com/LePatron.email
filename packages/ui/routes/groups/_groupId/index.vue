@@ -127,6 +127,7 @@ export default {
       <v-tab-item value="group-informations" eager>
         <bs-group-form
           v-model="group"
+          :is-edit="true"
           flat
           :disabled="loading"
           @submit="updateGroup"

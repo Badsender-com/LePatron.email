@@ -19,6 +19,7 @@ export default {
   model: { prop: 'group', event: 'update' },
   props: {
     group: { type: Object, default: () => ({}) },
+    isEdit: { type: Boolean, default: false },
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
   },
@@ -482,7 +483,7 @@ export default {
           {{ $t('global.save') }}
         </v-btn>
         <v-btn
-          v-if="isAdmin"
+          v-if="isAdmin && isEdit"
           depressed
           large
           color="error"
