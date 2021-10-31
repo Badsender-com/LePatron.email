@@ -17,6 +17,7 @@ const Status = require('./status');
  * @apiSuccess {String} cdnProtocol the protocol of the CDN
  * @apiSuccess {String} cdnEndPoint the CDN endpoint
  * @apiSuccess {String} cdnButtonLabel what will be the label of the `download CDN` button on the interface
+ * @apiSuccess {Array[String]} colorScheme array of colors in hexadecimal used to define a custom color scheme
  */
 
 const GroupSchema = Schema(
@@ -111,6 +112,10 @@ const GroupSchema = Schema(
       type: String,
       default: '',
     },
+    colorScheme: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
@@ -129,8 +134,10 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 // })
 
 GroupSchema.pre('updateOne', function (next) {
-  const getUpdate = this.getUpdate();
-  this.getUpdate().ftpPassword = encrypt(getUpdate.ftpPassword);
+  const ftpPassword = this.getUpdate()?.ftpPassword;
+  if (ftpPassword) {
+    this.getUpdate().ftpPassword = encrypt(ftpPassword);
+  }
   next();
 });
 

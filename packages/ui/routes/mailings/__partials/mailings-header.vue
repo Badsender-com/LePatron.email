@@ -24,9 +24,6 @@ export default {
       return !this.hasAccess || !!this.folder?._parentFolder;
     },
   },
-  async mounted() {
-    await this.getFolderAndWorkspaceData(this.$axios, this.$route?.query);
-  },
   methods: {
     openNewFolderModal() {
       this.conflictError = false;

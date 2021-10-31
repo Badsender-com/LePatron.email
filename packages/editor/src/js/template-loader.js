@@ -535,12 +535,15 @@ var templateCompiler = function (
   return {
     model: viewModel,
     init: function () {
-      pluginsCall(plugins, 'init',  [viewModel], true);
+      pluginsCall(plugins, 'init', [viewModel], true);
       // If the mail doesn't have preview contain then execute the request for the first time the save mail and generate preview
-      if(!metadata.hasHtmlPreview && viewModel.save && viewModel.save.execute) {
+      if (
+        !metadata.hasHtmlPreview &&
+        viewModel.save &&
+        viewModel.save.execute
+      ) {
         viewModel.save.execute();
       }
-
     },
     dispose: function () {
       pluginsCall(plugins, 'dispose', undefined, true);

@@ -138,9 +138,6 @@ export default {
       val || this.closeRename();
     },
   },
-  async mounted() {
-    await this.getFolderAndWorkspaceData(this.$axios, this.$route);
-  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     openRenameModal(mailing) {

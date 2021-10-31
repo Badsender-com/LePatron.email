@@ -61,7 +61,7 @@ export default {
         : 'informations';
     },
     title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name}`;
+      return `${this.$tc('global.group', 1)} - ${this.group.name}`;
     },
   },
   methods: {
@@ -74,7 +74,7 @@ export default {
       try {
         this.loading = true;
         const payload = this.isGroupAdmin
-          ? { name: this.group.name }
+          ? { name: this.group.name, colorScheme: this.group.colorScheme }
           : this.group;
         await $axios.$put(apiRoutes.groupsItem(params), payload);
         this.showSnackbar({
@@ -127,6 +127,7 @@ export default {
       <v-tab-item value="group-informations" eager>
         <bs-group-form
           v-model="group"
+          :is-edit="true"
           flat
           :disabled="loading"
           @submit="updateGroup"
