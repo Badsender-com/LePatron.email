@@ -1,7 +1,7 @@
 const debounce = require('lodash.debounce');
 const { defaultFibonacciSpacing, each } = require('../utils/helper-functions');
 
-// Will be add to TinyMce PluginManager spacing
+ // Will be add to TinyMce PluginManager spacing
 function addLetterSpacing(editor, url) {
   editor.addButton('letterspacingselect', function () {
     var formats = editor.settings.spacing_formats || defaultFibonacciSpacing;
@@ -146,7 +146,7 @@ function fontsizedialog(editor, url) {
 
 // Will be add to TinyMce PluginManager specialcharacters
 function specialcharacters(editor) {
-  editor.addButton('specialcharacters', function () {
+   editor.addButton('specialcharacters', function () {
     const items = [
       {
         text: 'Unbreakable space',

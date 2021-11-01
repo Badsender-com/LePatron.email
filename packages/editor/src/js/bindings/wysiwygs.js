@@ -602,11 +602,6 @@ ko.bindingHandlers.wysiwyg = {
           selectorId,
           'is being inizialized ...'
         );
-        const colors = bindingContext.$root?.colors;
-        options = {
-          ...options,
-          textcolor_map: colors?.length ? formattedGroupColorSchema(colors , false) : formattedColorSchema(materialColorScheme)
-        }
       var res = tinymce.init(options);
       if (doDebug)
         console.debug(

@@ -140,7 +140,11 @@ export default {
   <bs-layout-left-menu>
     <template #menu>
       <v-list>
-        <v-list-item v-if="isGroupAdmin" nuxt :href="groupAdminUrl">
+        <v-list-item
+          v-if="isGroupAdmin"
+          nuxt
+          :href="`${groupAdminUrl}?redirectTab=informations`"
+        >
           <v-list-item-avatar>
             <v-icon>settings</v-icon>
           </v-list-item-avatar>
