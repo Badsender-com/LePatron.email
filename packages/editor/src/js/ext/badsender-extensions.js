@@ -17,6 +17,7 @@ const gallery = require('./badsender-gallery');
 const removeImage = require('./badsender-remove-gallery-image');
 const espProfiles = require('./badsender-esp-profiles');
 const extendTinyMce = require('./badsender-extend-tinymce');
+const extendTinyMceColors = require('./badsender-extend-tinymce-colors');
 const extendTextEditor = require('./badsender-extend-text-editor');
 const colorPicker = require('./badsender-color-picker');
 const selectItem = require('./badsender-select-item.js');
@@ -54,6 +55,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
   customExtensions.push(extendTinyMce);
+  customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
   // widget should be differentiating of VM extensions by
