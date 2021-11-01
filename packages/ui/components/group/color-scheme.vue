@@ -68,7 +68,7 @@ export default {
         {
           top: mousePosition.y,
           left: mousePosition.x,
-          hideDelay: 0,
+          hideDelay: 100,
         },
         currentColor,
         (newColor) => {
