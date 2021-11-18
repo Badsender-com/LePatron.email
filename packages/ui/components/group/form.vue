@@ -199,7 +199,7 @@ export default {
                   :label="$t('global.name')"
                   name="name"
                   required
-                  :disabled="disabled"
+                  :disabled="disabled || isGroupAdmin"
                   :error-messages="requiredErrors(`name`)"
                   @input="$v.group.name.$touch()"
                   @blur="$v.group.name.$touch()"
