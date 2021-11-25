@@ -66,9 +66,8 @@ export default {
       <v-spacer />
       <div class="pa-2">
         <v-btn
-          class="my-4 new-mail-button pl-10 pr-10"
           color="primary"
-          tile
+          outlined
           :disabled="hasRightToCreateFolder"
           @click="openNewFolderModal"
         >

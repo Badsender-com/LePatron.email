@@ -68,7 +68,7 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">
+        <v-btn color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn type="submit" color="error">

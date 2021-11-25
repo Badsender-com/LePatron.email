@@ -156,9 +156,10 @@ export default {
         </v-list-item>
         <v-list-item class="justify-center">
           <v-btn
-            class="my-4 new-mail-button"
+            x-large
             color="primary"
-            tile
+            elevation="0"
+            style="margin: 20px auto"
             :disabled="!hasAccess"
             @click="openNewMailModal"
           >
@@ -169,9 +170,7 @@ export default {
           </v-btn>
         </v-list-item>
       </v-list>
-      <div class="list-container">
-        <workspace-tree ref="workspaceTree" />
-      </div>
+      <workspace-tree ref="workspaceTree" />
     </template>
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
@@ -204,13 +203,3 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
-<style>
-.new-mail-button {
-  width: 90%;
-  float: right;
-}
-.list-container {
-  overflow-y: auto;
-  max-height: calc(100vh - 13rem);
-}
-</style>

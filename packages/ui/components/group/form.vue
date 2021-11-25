@@ -473,19 +473,13 @@ export default {
       </v-card-text>
       <v-divider />
       <v-card-actions>
-        <v-btn
-          text
-          large
-          color="primary"
-          :disabled="disabled"
-          @click="onSubmit"
-        >
+        <v-btn color="primary" :disabled="disabled" @click="onSubmit">
           {{ $t('global.save') }}
         </v-btn>
         <v-btn
           v-if="isAdmin && isEdit"
           depressed
-          large
+          outlined
           color="error"
           @click="openDeleteGroup"
         >

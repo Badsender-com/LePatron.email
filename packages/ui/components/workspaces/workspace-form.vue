@@ -66,7 +66,7 @@ export default {
   <v-card tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <v-row>
-        <v-col cols="5">
+        <v-col cols="3">
           <v-text-field
             id="name"
             v-model="workspaceForm.name"
@@ -78,7 +78,7 @@ export default {
             @blur="$v.workspaceForm.name.$touch()"
           />
         </v-col>
-        <v-col cols="6" class="ml-auto">
+        <v-col cols="" class="ml-auto">
           <v-row>
             <v-col>
               <h3>{{ $t('workspaces.members') }}</h3>
@@ -112,7 +112,7 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large :loading="isLoading" color="primary" @click="onSubmit">
+      <v-btn :loading="isLoading" color="primary" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>
