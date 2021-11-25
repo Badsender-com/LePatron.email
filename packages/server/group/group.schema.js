@@ -29,7 +29,7 @@ const GroupSchema = Schema(
       // from mongoose doc:
       // violating the constraint returns an E11000 error from MongoDB when saving, not a Mongoose validation error.
       unique: true,
-      set: normalizeString,
+      set: trimString,
     },
     status: {
       type: String,
