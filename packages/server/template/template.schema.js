@@ -5,7 +5,7 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const mongooseHidden = require('mongoose-hidden')();
 
-const { normalizeString } = require('../utils/model');
+const { trimString } = require('../utils/model');
 const { GroupModel } = require('../constant/model.names');
 
 /**
@@ -43,7 +43,7 @@ const TemplateSchema = Schema(
       type: String,
       unique: true,
       required: [true, 'name is required'],
-      set: normalizeString,
+      set: trimString,
     },
     description: {
       type: String,
