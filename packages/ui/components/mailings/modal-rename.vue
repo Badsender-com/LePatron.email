@@ -37,10 +37,10 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">
+        <v-btn text color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn color="primary" @click="action">
+        <v-btn flat color="primary" @click="action">
           {{ $t('global.update') }}
         </v-btn>
       </v-card-actions>

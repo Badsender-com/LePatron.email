@@ -22,7 +22,7 @@ export default {
 
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark flat>
+    <v-app-bar app color="secondary" dark flat>
       <span style="display: inline-box; margin-right: 10px">
         <svg
           width="auto"

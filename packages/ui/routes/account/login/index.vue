@@ -113,17 +113,10 @@ export default {
 </script>
 
 <template>
-  <div
-    style="
-      display: block;
-      margin: 0 auto;
-      text-align: center;
-      padding-top: 20px;
-    "
-  >
+  <div style="display: block; margin: 0 auto; text-align: center">
     <svg
-      width="147"
-      height="32"
+      width="190"
+      height="auto"
       viewBox="0 0 147 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -225,7 +218,7 @@ export default {
         fill="#FFB400"
       />
     </svg>
-    <p style="color: white">
+    <p style="color:white;cd docm">
       Email Builder by Badsender
     </p>
     <v-card class="elevation-24">
@@ -259,6 +252,7 @@ export default {
             :loading="isLoading"
             elevation="0"
             color="primary"
+            dark
             form="check-email-form"
             type="submit"
           >

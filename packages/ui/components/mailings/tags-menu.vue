@@ -182,7 +182,7 @@ export default {
         <v-btn color="primary" text @click="openNewTagDialog">
           {{ $t('tags.new') }}
         </v-btn>
-        <v-btn color="primary" @click="updateMailingsTags">
+        <v-btn flat color="primary" @click="updateMailingsTags">
           {{ $t('global.apply') }}
         </v-btn>
       </v-card-actions>
@@ -207,7 +207,7 @@ export default {
           <v-btn text @click="closeNewTagDialog">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn color="primary" @click="onCreateNewTag">
+          <v-btn flat color="primary" @click="onCreateNewTag">
             {{ $t('global.createTag') }}
           </v-btn>
         </v-card-actions>

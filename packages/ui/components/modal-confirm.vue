@@ -53,11 +53,12 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" text @click="close">
+          <v-btn text color="primary" @click="close">
             {{ $t('global.cancel') }}
           </v-btn>
           <v-btn
             v-if="displaySubmitButton"
+            flat
             :color="actionButtonColor"
             @click="action"
           >
