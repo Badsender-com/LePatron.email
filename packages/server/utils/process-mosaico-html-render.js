@@ -40,7 +40,6 @@ function secureHtml(html) {
 const selligentTagRegexp = /~([^~]+)~/g;
 const np6TagRegexp = /{{([^~]+)}}/g;
 const actitoTagRegexp = /\${(.+?)\}/g;
-const adobeTagRegexp = /<%(.+?)%>/g;
 
 const decodeTag = (match, tag) => {
   let decodedTag = htmlEntities.decode(tag);
@@ -74,20 +73,13 @@ function decodeActitoTags(html) {
   return html;
 }
 
-function decodeAdobeTags(html) {
-  return html.replace(
-    adobeTagRegexp,
-    (match, tag) => `<%${decodeTag(match, tag)}%>`
-  );
-}
 const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
   secureHtml,
   decodeSelligentTags,
   decodeNp6Tags,
-  decodeActitoTags,
-  decodeAdobeTags
+  decodeActitoTags
 );
 
 module.exports = basicHtmlProcessing;
