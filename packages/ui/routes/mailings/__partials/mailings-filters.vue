@@ -65,9 +65,12 @@ export default {
 </script>
 
 <template>
-  <v-expansion-panels focusable cols="10" class="pl-4 pr-4 mb-5">
+  <v-expansion-panels accordion focusable flat tile>
     <v-expansion-panel>
-      <v-expansion-panel-header expand-icon="filter_list">
+      <v-expansion-panel-header
+        expand-icon="filter_list"
+        color="grey lighten-3"
+      >
         {{ $t(`mailings.list`) }}
       </v-expansion-panel-header>
       <v-expansion-panel-content>
@@ -173,7 +176,7 @@ export default {
             multiple
           />
           <div class="bs-mailings-filters__actions">
-            <v-btn color="secondary" small elevation="0" @click="reset">
+            <v-btn color="grey darken-2" dark elevation="0" @click="reset">
               {{ $t(`global.reset`) }}
             </v-btn>
           </div>

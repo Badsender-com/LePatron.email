@@ -1,20 +1,19 @@
 #toolbar {
   padding: 0 0 0 5px;
   display: flex;
-  background: var(--v-secondary-base);
+  background: var(--v-primary-base);
 
   .rightButtons {
     display: flex;
   }
 
   .ui-button {
-    padding-top: 7px;
-    padding-bottom: 7px;
-    line-height: 22px;
+    line-height: 36px;
     color: white;
-    background-color: var(--v-secondary-base);
+    background-color: var(--v-primary-base);
     border-radius: 0;
-    border: 0;
+    border-bottom: 3px solid var(--v-primary-base);
+    padding: 0 .5em;
 
     .ui-icon,
     .ui-button-text {
@@ -23,7 +22,8 @@
 
     &:hover,
     &.pressed {
-      background-color: var(--v-secondary-lighten1);
+      background-color: var(--v-accent-base);
+      border-bottom: 3px solid var(--v-accent-base);
     }
     &.selected,
     &.ui-state-active {
@@ -35,8 +35,8 @@
       opacity: 0.5;
     }
     &.ui-state-active {
-      background-color: var(--v-secondary-darken1);
-      box-shadow: inset 0 -3px 0 0 var(--v-accent-base);
+      background-color: var(--v-primary-base);
+      border-bottom: 3px solid var(--v-accent-base);
     }
   }
 }
@@ -44,8 +44,7 @@
 .creation-name {
   flex: 1 1 auto;
   display: flex;
-  border: solid var(--v-secondary-lighten2);
-  border-width: 0 1px;
+  border-width: 0;
 
   .ui-button {
     margin-right: 0;
@@ -54,7 +53,7 @@
 
   input {
     font: inherit;
-    color: white;
+    color: var(--v-accent-base);
     background: none;
     padding-left: 7px;
     border: 0;
@@ -117,9 +116,6 @@
     .ui-button[for='showGallery'] {
       .ui-icon {
         margin-right: 0;
-      }
-      .ui-button-text {
-        // display: block;
       }
     }
   }

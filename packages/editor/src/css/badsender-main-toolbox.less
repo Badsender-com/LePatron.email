@@ -34,8 +34,7 @@
 
   #tooltabs.ui-tabs {
     .ui-tabs-nav {
-      background: var(--v-secondary-base);
-      box-shadow: 0 0 10px @shadow-color;
+      background: var(--v-primary-base);
       // position: absolute;
       // left: 0;
       // right: 0;
@@ -49,10 +48,10 @@
       }
       .tooltabs__item:hover {
         color: white;
-        background: var(--v-secondary-lighten1);
+        background: var(--v-accent-base);
       }
       .tooltabs__item.ui-state-active {
-        background: var(--v-secondary-darken1);
+        background: var(--v-primary-base);
         color: var(--v-accent-base);
         // border-bottom-color: var(--v-accent-base);
       }
@@ -68,8 +67,9 @@
   }
   .tooltabs__top-logo {
     height: @topbar-height;
-    padding: 4px;
     object-fit: contain;
+    color: var(--v-primary-base);
+    padding: 4px;
     // a {
     // }
 

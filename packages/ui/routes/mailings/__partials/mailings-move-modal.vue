@@ -120,10 +120,10 @@ export default {
         @update:active="handleSelectItemFromTreeView"
       >
         <template #prepend="{ item, open }">
-          <v-icon v-if="!item.icon" color="primary">
+          <v-icon v-if="!item.icon" color="accent">
             {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
           </v-icon>
-          <v-icon v-else color="primary">
+          <v-icon v-else color="accent">
             {{ item.icon }}
           </v-icon>
         </template>
@@ -137,10 +137,15 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <v-btn color="primary" text @click="close">
+      <v-btn color="accent" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!isValidToBeMoved" color="primary" @click="submit">
+      <v-btn
+        :disabled="!isValidToBeMoved"
+        elevation="0"
+        color="accent"
+        @click="submit"
+      >
         {{ moveLabelButton }}
       </v-btn>
     </v-card-actions>

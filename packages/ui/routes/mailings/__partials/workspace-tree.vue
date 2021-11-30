@@ -218,10 +218,10 @@ export default {
       @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'primary' : 'base'">
+        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">
           {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
         </v-icon>
-        <v-icon v-else :color="item.hasAccess ? 'primary' : 'base'">
+        <v-icon v-else :color="item.hasAccess ? 'primary' : 'grey'">
           {{ item.icon }}
         </v-icon>
       </template>
@@ -233,14 +233,14 @@ export default {
       <template #append="{ item }">
         <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
           <template #activator="{ on }">
-            <v-btn color="primary" dark icon v-on="on">
+            <v-btn color="accent" dark icon v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
           <v-list activable>
             <v-list-item nuxt @click="openRenameFolderModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>edit</v-icon>
                 </v-btn>
               </v-list-item-avatar>
@@ -248,7 +248,7 @@ export default {
             </v-list-item>
             <v-list-item nuxt @click="displayMoveModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>drive_file_move</v-icon>
                 </v-btn>
               </v-list-item-avatar>
@@ -258,7 +258,7 @@ export default {
             </v-list-item>
             <v-list-item nuxt @click="displayDeleteModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>delete</v-icon>
                 </v-btn>
               </v-list-item-avatar>

@@ -65,7 +65,7 @@ export default {
         <v-data-table
           :headers="tableHeaders"
           :items="groups"
-          class="elevation-1"
+          class="elevation-2"
         >
           <template #item.name="{ item }">
             <nuxt-link :to="`/groups/${item.id}`">
@@ -75,18 +75,21 @@ export default {
           <template #item.createdAt="{ item }">
             <span>{{ item.createdAt | preciseDateTime }}</span>
           </template>
-          <template #item.downloadMailingWithoutEnclosingFolder="{ item }">
+          <template
+            #item.downloadMailingWithoutEnclosingFolder="{ item }"
+            color="accent"
+          >
             <v-icon v-if="item.downloadMailingWithoutEnclosingFolder">
               check
             </v-icon>
           </template>
           <template #item.downloadMailingWithCdnImages="{ item }">
-            <v-icon v-if="item.downloadMailingWithCdnImages">
+            <v-icon v-if="item.downloadMailingWithCdnImages" color="accent">
               check
             </v-icon>
           </template>
           <template #item.downloadMailingWithFtpImages="{ item }">
-            <v-icon v-if="item.downloadMailingWithFtpImages">
+            <v-icon v-if="item.downloadMailingWithFtpImages" color="accent">
               check
             </v-icon>
           </template>
@@ -94,9 +97,7 @@ export default {
       </v-col>
     </v-row>
     <v-btn color="accent" fixed bottom right fab link nuxt to="/groups/new">
-      <v-icon color="secondary">
-        group_add
-      </v-icon>
+      <v-icon> group_add </v-icon>
     </v-btn>
   </v-container>
 </template>

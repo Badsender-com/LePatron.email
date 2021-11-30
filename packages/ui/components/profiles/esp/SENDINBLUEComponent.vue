@@ -190,11 +190,10 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-btn
-        text
-        large
+        elevation="0"
         :loading="isLoading"
         :disabled="disabled"
-        color="primary"
+        color="accent"
         @click="onSubmit"
       >
         {{ $t('global.save') }}

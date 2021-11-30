@@ -71,7 +71,7 @@ export default {
         <v-btn text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn flat color="primary" @click="submit">
+        <v-btn elevation="0" at color="accent" @click="submit">
           {{ $t('global.createTag') }}
         </v-btn>
       </v-card-actions>

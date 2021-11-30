@@ -199,7 +199,7 @@ export default {
 
 <template>
   <div>
-    <v-alert v-if="hasSelection" text dense color="info">
+    <v-alert v-if="hasSelection" dense tile color="grey lighten-2">
       <div class="bs-mailing-selection-actions">
         <span class="bs-mailing-selection-actions__count">{{
           $tc('mailings.selectedCount', selectionLength, {
@@ -212,7 +212,6 @@ export default {
             <template v-if="hasFtpAccess" #activator="{ on }">
               <v-btn
                 icon
-                color="info"
                 v-on="on"
                 @click="handleInitMultipleDownload({ isWithFtp: true })"
               >
@@ -229,7 +228,6 @@ export default {
             <template #activator="{ on }">
               <v-btn
                 icon
-                color="info"
                 v-on="on"
                 @click="handleInitMultipleDownload({ isWithFtp: false })"
               >
@@ -250,12 +248,7 @@ export default {
           />
           <v-tooltip bottom>
             <template #activator="{ on }">
-              <v-btn
-                icon
-                color="info"
-                v-on="on"
-                @click="openMoveManyMailsDialog"
-              >
+              <v-btn icon v-on="on" @click="openMoveManyMailsDialog">
                 <v-icon>drive_file_move</v-icon>
               </v-btn>
             </template>
@@ -267,12 +260,7 @@ export default {
           </v-tooltip>
           <v-tooltip bottom>
             <template #activator="{ on }">
-              <v-btn
-                icon
-                color="info"
-                v-on="on"
-                @click="openDeleteSelectionModal"
-              >
+              <v-btn icon v-on="on" @click="openDeleteSelectionModal">
                 <v-icon>delete</v-icon>
               </v-btn>
             </template>

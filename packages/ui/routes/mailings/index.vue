@@ -157,7 +157,7 @@ export default {
         <v-list-item class="justify-center">
           <v-btn
             x-large
-            color="primary"
+            color="accent"
             elevation="0"
             style="margin: 20px auto"
             :disabled="!hasAccess"
@@ -175,6 +175,7 @@ export default {
     <v-card>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-header @on-refresh="refreshLeftMenuData" />
+        <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-selection-actions
           ref="mailingSelectionActions"
           :mailings-selection="mailingsSelection"
@@ -184,7 +185,6 @@ export default {
           @updateTags="onMailSelectionTagsUpdate"
           @on-refetch="fetchMailListingData()"
         />
-        <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"

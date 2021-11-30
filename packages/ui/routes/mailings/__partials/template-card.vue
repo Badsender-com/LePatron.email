@@ -60,11 +60,11 @@ export default {
 }
 
 .card-hover:hover {
-  box-shadow: 0 0 0 5px #a9d6d5 !important;
+  box-shadow: 0 0 0 5px var(--v-accent-lighten2);
 }
 
 .bs-template-card_selected {
-  box-shadow: 0 0 0 5px var(--v-primary-base) !important;
+  box-shadow: 0 0 0 5px var(--v-accent-base) !important;
 }
 
 .bs-template-card__title {

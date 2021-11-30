@@ -223,7 +223,12 @@ export default {
     </p>
     <v-card class="elevation-24">
       <v-toolbar flat>
-        <v-btn v-if="userIsFound && isBasicAuthentication" icon @click="back">
+        <v-btn
+          v-if="userIsFound && isBasicAuthentication"
+          color="accent"
+          icon
+          @click="back"
+        >
           <v-icon>{{ 'arrow_back' }}</v-icon>
         </v-btn>
         <v-toolbar-title class="pl-0">
@@ -251,7 +256,7 @@ export default {
           <v-btn
             :loading="isLoading"
             elevation="0"
-            color="primary"
+            color="accent"
             dark
             form="check-email-form"
             type="submit"
@@ -287,7 +292,7 @@ export default {
           <v-btn
             :loading="isLoading"
             elevation="0"
-            color="primary"
+            color="accent"
             form="login-form"
             type="submit"
           >

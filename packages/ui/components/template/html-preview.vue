@@ -29,17 +29,10 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn link :href="downloadHref" text large color="primary">
+      <v-btn link :href="downloadHref" elevation="0" color="accent">
         {{ $t('template.download') }}
       </v-btn>
-      <v-btn
-        link
-        :href="previewHref"
-        target="_blank"
-        text
-        large
-        color="primary"
-      >
+      <v-btn link :href="previewHref" target="_blank" outlined color="primary">
         {{ $t('template.preview') }}
       </v-btn>
     </v-card-actions>

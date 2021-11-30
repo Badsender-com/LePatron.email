@@ -52,7 +52,7 @@ export default {
 </script>
 
 <template>
-  <v-data-table :headers="tableHeaders" :items="templates" class="elevation-1">
+  <v-data-table :headers="tableHeaders" :items="templates" class="elevation-2">
     <template #item.name="{ item }">
       <nuxt-link :to="`/templates/${item.id}`">
         {{ item.name }}
@@ -64,12 +64,12 @@ export default {
       </nuxt-link>
     </template>
     <template #item.hasMarkup="{ item }">
-      <v-icon v-if="item.hasMarkup">
+      <v-icon v-if="item.hasMarkup" color="accent">
         check
       </v-icon>
     </template>
     <template #item.actionDelete="{ item }">
-      <v-btn disabled icon color="primary" @click="deleteItem(item)">
+      <v-btn disabled icon color="accent" @click="deleteItem(item)">
         <v-icon>delete</v-icon>
       </v-btn>
     </template>

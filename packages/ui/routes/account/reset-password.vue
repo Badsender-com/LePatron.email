@@ -102,7 +102,8 @@ export default {
     <v-card-actions>
       <v-spacer />
       <v-btn
-        color="primary"
+        color="accent"
+        elevation="0"
         form="reset-password-form"
         type="submit"
         :disabled="loading"

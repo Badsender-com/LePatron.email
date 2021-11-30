@@ -17,16 +17,8 @@ export default {
     </v-toolbar>
     <v-divider />
     <v-card-text>
-      <v-form
-        id="login-form"
-        action="/account/login/admin"
-        method="post"
-      >
-        <input
-          type="hidden"
-          name="username"
-          :value="$options.ADMIN_USERNAME"
-        >
+      <v-form id="login-form" action="/account/login/admin" method="post">
+        <input type="hidden" name="username" :value="$options.ADMIN_USERNAME">
         <v-text-field
           id="password"
           :label="$t('global.password')"
@@ -39,11 +31,7 @@ export default {
     </v-card-text>
     <v-card-actions>
       <v-spacer />
-      <v-btn
-        color="primary"
-        form="login-form"
-        type="submit"
-      >
+      <v-btn color="accent" elevation="0" form="login-form" type="submit">
         {{ $t('forms.user.login') }}
       </v-btn>
     </v-card-actions>

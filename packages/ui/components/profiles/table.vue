@@ -79,12 +79,14 @@ export default {
     <v-data-table
       :headers="tableHeaders"
       :items="profiles"
-      class="elevation-1"
+      class="elevation-2"
       :loading="loading"
       :no-data-text="$t('profiles.emptyState')"
     >
       <template #item.name="{ item }">
-        <span> {{ item.name }} </span>
+        <nuxt-link :to="`/groups/${groupId}/profiles/${item.id}`">
+          {{ item.name }}
+        </nuxt-link>
       </template>
       <template #item.type="{ item }">
         <span> {{ item.type }} </span>

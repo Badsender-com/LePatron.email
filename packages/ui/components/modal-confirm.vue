@@ -10,7 +10,7 @@ export default {
     modalWidth: { type: String, default: '500' },
     displaySubmitButton: { type: Boolean, default: true },
     actionLabel: { type: String, default: '' },
-    actionButtonColor: { type: String, default: 'primary' },
+    actionButtonColor: { type: String, default: 'accent' },
   },
   data() {
     return { show: false };
@@ -58,7 +58,7 @@ export default {
           </v-btn>
           <v-btn
             v-if="displaySubmitButton"
-            flat
+            elevation="0"
             :color="actionButtonColor"
             @click="action"
           >

@@ -7,7 +7,7 @@ export default {
 <template>
   <v-menu offset-y>
     <template #activator="{ on }">
-      <v-btn color="primary" dark icon v-on="on">
+      <v-btn color="accent" dark icon v-on="on">
         <v-icon>more_horiz</v-icon>
       </v-btn>
     </template>

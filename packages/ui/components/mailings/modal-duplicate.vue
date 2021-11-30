@@ -52,7 +52,7 @@ export default {
         <v-btn text color="primary" @click="closeDialog">
           {{ $t(`global.cancel`) }}
         </v-btn>
-        <v-btn flat color="primary" @click="duplicateMailing">
+        <v-btn elevation="0" color="accent" @click="duplicateMailing">
           {{ $t(`global.duplicate`) }}
         </v-btn>
       </v-card-actions>

@@ -15,6 +15,26 @@ export default {
   meta: {
     acl: acls.ACL_ADMIN,
   },
+  data() {
+    return {
+      group: {},
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+
+  computed: {
+    title() {
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.newProfile')}`;
+    },
+    groupId() {
+      return this.$route.params.groupId;
+    },
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createProfile(data) {

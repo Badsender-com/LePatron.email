@@ -70,20 +70,16 @@ export default {
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-row>
+      <v-row v-if="!group.downloadMailingWithFtpImages">
         <v-col cols="12">
-          <v-card
-            v-if="!group.downloadMailingWithFtpImages"
+          <v-alert
+            dense
+            border="left"
+            type="warning"
             class="d-flex flex-row p-3"
-            elevation="0"
           >
-            <v-icon color="warning" class="mr-3">
-              error_outline
-            </v-icon>
-            <div color="grey lighten-2" class="mr-3">
-              {{ $t('profiles.warningNoFTP') }}
-            </div>
-          </v-card>
+            {{ $t('profiles.warningNoFTP') }}
+          </v-alert>
         </v-col>
       </v-row>
       <v-row>

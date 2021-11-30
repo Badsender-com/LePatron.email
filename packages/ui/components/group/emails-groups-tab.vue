@@ -130,6 +130,7 @@ export default {
       :title="`${$t('global.delete')} ${selectedEmailsGroup.name}?`"
       :action-label="$t('global.delete')"
       action-button-color="error"
+      action-button-elevation="0"
       @confirm="deleteEmailsGroup"
     >
       {{ $t('forms.emailsGroup.deleteNotice') }}

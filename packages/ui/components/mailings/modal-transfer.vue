@@ -111,9 +111,7 @@ export default {
   >
     <v-card>
       <v-card-title class="headline">
-        {{
-          $t('mailings.transfer.label')
-        }}
+        {{ $t('mailings.transfer.label') }}
       </v-card-title>
       <v-card-text>
         <v-progress-linear
@@ -139,14 +137,12 @@ export default {
       <v-card-actions>
         <v-spacer />
         <v-btn color="primary" text @click="closeDialog">
-          {{
-            $t(`global.cancel`)
-          }}
+          {{ $t(`global.cancel`) }}
         </v-btn>
         <v-btn
           :disabled="loadingUsersList"
-          color="primary"
-          flat
+          color="accent"
+          elevation="0"
           @click="transferMailing"
         >
           {{ $t(`global.update`) }}

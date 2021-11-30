@@ -2,7 +2,7 @@
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
-  name: `bs-template-images-list`,
+  name: 'BsTemplateImagesList',
   props: {
     assets: { type: Object, default: () => ({}) },
     templateId: { type: String, default: '' },
@@ -18,7 +18,7 @@ export default {
   },
   methods: {
     deleteImages() {
-      this.$emit(`delete`);
+      this.$emit('delete');
     },
   },
 };
@@ -26,17 +26,19 @@ export default {
 
 <template>
   <v-card>
-    <v-card-title>{{
-      `${$tc('global.image', imagesList.length)} (${imagesList.length})`
-    }}</v-card-title>
+    <v-card-title>
+      {{
+        `${$tc('global.image', imagesList.length)} (${imagesList.length})`
+      }}
+    </v-card-title>
     <v-card-text>
       <details>
         <summary>{{ $t('global.show') }}</summary>
         <ul class="template-images">
           <li
-            class="template-images__item"
             v-for="image in imagesList"
             :key="image.originalName"
+            class="template-images__item"
           >
             <a :href="image.href">{{ image.originalName }}</a>
           </li>
@@ -46,13 +48,13 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-btn
-        @click="deleteImages"
         :disabled="disabled"
-        text
-        large
-        color="primary"
-        >{{ $t('template.removeImages') }}</v-btn
+        outlined
+        color="error"
+        @click="deleteImages"
       >
+        {{ $t('template.removeImages') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

@@ -89,7 +89,12 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
+        <v-btn
+          :disabled="!isValidToCreate"
+          elevation="0"
+          type="submit"
+          color="accent"
+        >
           {{ $t('global.newFolder') }}
         </v-btn>
       </v-card-actions>

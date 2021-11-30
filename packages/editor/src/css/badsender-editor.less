@@ -33,7 +33,7 @@
 }
 
 body {
-  background: var(--v-secondary-base);
+  background: var(--v-primary-base);
 }
 
 // http://lea.verou.me/2012/04/background-attachment-local/
@@ -150,10 +150,10 @@ body {
 
 .button-style() {
   text-transform: uppercase;
-  background: var(--v-primary-base);
+  background: var(--v-accent-base);
 
   &:hover {
-    background: var(--v-primary-darken1);
+    background: var(--v-accent-darken1);
   }
 }
 
@@ -162,10 +162,10 @@ body {
     border-color: @mosaico-outline-color;
   }
   40% {
-    border-color: var(--v-primary-base);
+    border-color: var(--v-accent-base);
   }
   60% {
-    border-color: var(--v-primary-base);
+    border-color: var(--v-accent-base);
   }
   100% {
     border-color: @mosaico-outline-color;
@@ -173,18 +173,16 @@ body {
 }
 
 #main-edit-area {
-  .isdragging .sortable-blocks-edit.empty:after {
-  }
   // BUTTONS
   .tool {
     border-radius: 100%;
     padding: 4px;
     padding-bottom: 2px;
     box-shadow: 1px 1px 3px @shadow-color;
-    background-color: var(--v-primary-base);
+    background-color: var(--v-accent-base);
 
     &:hover {
-      background-color: var(--v-primary-darken1);
+      background-color: var(--v-accent-darken1);
     }
   }
 }
@@ -234,7 +232,7 @@ body {
     }
     &:hover,
     &.pressed {
-      background-color: lighten(@mosaico-ui-background-color, 10%);
+      background-color: var(--v-primary-base);
     }
   }
 
@@ -378,7 +376,7 @@ body {
     background-color: transparent;
     &:hover,
     &:focus {
-      border-color: @link-color;
+      border-color: var(--v-accent-lighten2);
     }
   }
 

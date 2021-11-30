@@ -22,7 +22,7 @@ export default {
 
 <template>
   <v-app>
-    <v-app-bar app color="secondary" dark flat>
+    <v-app-bar app color="primary" dark flat>
       <span style="display: inline-box; margin-right: 10px">
         <svg
           width="auto"
@@ -129,7 +129,9 @@ export default {
           />
         </svg>
       </span>
-      <v-toolbar-title>{{ title }}</v-toolbar-title>
+      <v-toolbar-title class="subtitle-1">
+        {{ title }}
+      </v-toolbar-title>
       <v-spacer />
       <v-tooltip bottom>
         <template #activator="{ on }">

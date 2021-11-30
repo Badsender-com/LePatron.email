@@ -97,7 +97,7 @@ export default {
     <v-data-table
       :headers="tableHeaders"
       :items="users"
-      class="elevation-1"
+      class="elevation-2"
       :loading="loading"
     >
       <template #item.email="{ item }">
@@ -109,7 +109,8 @@ export default {
         <v-badge
           v-if="item.role === roles.GROUP_ADMIN"
           inline
-          content="Group admin"
+          color="accent"
+          content="Admin"
         />
       </template>
       <template #item.group="{ item }">
@@ -118,7 +119,9 @@ export default {
         </nuxt-link>
       </template>
       <template #item.status="{ item }">
-        <v-icon>{{ getStatusIcon(item) }}</v-icon>
+        <v-icon color="accent">
+          {{ getStatusIcon(item) }}
+        </v-icon>
       </template>
       <template #item.statusText="{ item }">
         <span>{{ item | userStatus }}</span>

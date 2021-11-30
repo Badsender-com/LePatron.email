@@ -142,7 +142,7 @@ export default {
     <template #activator="{ on: onMenu }">
       <v-tooltip bottom :disabled="vShowTagMenu">
         <template #activator="{ on: onTooltip }">
-          <v-btn icon color="info" v-on="{ ...onMenu, ...onTooltip }">
+          <v-btn icon v-on="{ ...onMenu, ...onTooltip }">
             <v-icon>label</v-icon>
           </v-btn>
         </template>
@@ -182,7 +182,7 @@ export default {
         <v-btn color="primary" text @click="openNewTagDialog">
           {{ $t('tags.new') }}
         </v-btn>
-        <v-btn flat color="primary" @click="updateMailingsTags">
+        <v-btn elevation="0" color="accent" @click="updateMailingsTags">
           {{ $t('global.apply') }}
         </v-btn>
       </v-card-actions>
@@ -207,7 +207,7 @@ export default {
           <v-btn text @click="closeNewTagDialog">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn flat color="primary" @click="onCreateNewTag">
+          <v-btn elevation="0" color="accent" @click="onCreateNewTag">
             {{ $t('global.createTag') }}
           </v-btn>
         </v-card-actions>

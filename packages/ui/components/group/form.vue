@@ -473,7 +473,12 @@ export default {
       </v-card-text>
       <v-divider />
       <v-card-actions>
-        <v-btn flat color="primary" :disabled="disabled" @click="onSubmit">
+        <v-btn
+          elevation="0"
+          color="accent"
+          :disabled="disabled"
+          @click="onSubmit"
+        >
           {{ $t('global.save') }}
         </v-btn>
         <v-btn
