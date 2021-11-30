@@ -377,7 +377,7 @@ export default {
         <span v-else>{{ item.templateName }}</span>
       </template>
       <template #item.tags="{ item }">
-        <span><em>{{ item.tags.join(', ') }}</em></span>
+        <span v-for="tag in item.tags" :key="tag" class="tags">{{ tag }}</span>
       </template>
       <template #item.createdAt="{ item }">
         <span>{{ item.createdAt | preciseDateTime }}</span>

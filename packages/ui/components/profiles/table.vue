@@ -79,7 +79,6 @@ export default {
     <v-data-table
       :headers="tableHeaders"
       :items="profiles"
-      class="elevation-2"
       :loading="loading"
       :no-data-text="$t('profiles.emptyState')"
     >

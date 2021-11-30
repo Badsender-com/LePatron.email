@@ -111,7 +111,7 @@ export default {
 <template>
   <v-card flat tile>
     <v-card-text>
-      <v-card elevation="2">
+      <v-card elevation="0">
         <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
         <bs-modal-confirm-form
           ref="deleteDialog"

@@ -94,12 +94,7 @@ export default {
 <template>
   <!-- eslint-disable vue/valid-v-slot  -->
   <div class="bs-users-table">
-    <v-data-table
-      :headers="tableHeaders"
-      :items="users"
-      class="elevation-2"
-      :loading="loading"
-    >
+    <v-data-table :headers="tableHeaders" :items="users" :loading="loading">
       <template #item.email="{ item }">
         <nuxt-link :to="`/users/${item.id}`">
           {{ item.email }}
