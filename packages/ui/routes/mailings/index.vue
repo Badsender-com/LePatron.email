@@ -140,31 +140,17 @@ export default {
   <bs-layout-left-menu>
     <template #menu>
       <v-list>
-        <v-list-item
-          v-if="isGroupAdmin"
-          nuxt
-          :href="`${groupAdminUrl}?redirectTab=informations`"
-        >
-          <v-list-item-avatar>
-            <v-icon>settings</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $t('global.settings') }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
         <v-list-item class="justify-center">
           <v-btn
-            x-large
+            large
             color="accent"
             elevation="0"
-            style="margin: 20px auto"
+            style="margin: 1em 0"
             :disabled="!hasAccess"
             @click="openNewMailModal"
           >
             <v-icon left>
-              mdi-plus
+              add_box
             </v-icon>
             {{ $t('global.newMail') }}
           </v-btn>
@@ -172,7 +158,7 @@ export default {
       </v-list>
       <workspace-tree ref="workspaceTree" />
     </template>
-    <v-card>
+    <v-card elevation="0">
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-filters :tags="tags" @change="handleFilterChange" />

@@ -114,6 +114,7 @@ export default {
   },
   layout: {
     logout: 'Logout',
+    help: 'Need some help?',
   },
   forms: {
     group: {
@@ -240,7 +241,7 @@ export default {
       label: 'Transfer email',
       success: 'Email transferred',
     },
-    list: '🔎 Search in the email list',
+    list: 'Search in the email list',
     creationNotice: 'Click on any of above templates to create email',
     filters: {
       createdBetween: 'Created between',

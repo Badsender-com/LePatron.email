@@ -4,12 +4,13 @@ import {
   workspacesByGroup,
   deleteFolder,
   moveFolder,
-} from '~/helpers/api-routes.js';
+ folders } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from './folder-rename-modal';
 import FolderMoveModal from './folder-move-modal';
+import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
@@ -17,7 +18,12 @@ import { FOLDER, FETCH_FOLDER_OR_WORKSPACE } from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
-  components: { FolderRenameModal, FolderDeleteModal, FolderMoveModal },
+  components: {
+    FolderRenameModal,
+    FolderDeleteModal,
+    FolderMoveModal,
+    FolderNewModal,
+  },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
@@ -32,6 +38,9 @@ export default {
     },
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    hasRightToCreateFolder() {
+      return !this.hasAccess || !!this.folder?._parentFolder;
     },
   },
   watch: {
@@ -51,6 +60,35 @@ export default {
     }
   },
   methods: {
+    openNewFolderModal() {
+      this.conflictError = false;
+      this.$refs.folderNewModalRef.open();
+    },
+    async createNewFolder({ folderName }) {
+      try {
+        const folder = await this.$axios.$post(folders(), {
+          name: folderName,
+          ...this.currentLocationParam,
+        });
+        this.$emit('on-refresh');
+        await this.$router.push({
+          query: { fid: folder?._id },
+        });
+        this.conflictError = false;
+        this.showSnackbar({
+          text: this.$t('folders.created'),
+          color: 'success',
+        });
+
+        this.$refs.folderNewModalRef.close();
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          this.conflictError = true;
+          return;
+        }
+        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
+      }
+    },
     async getFolderAndWorkspaceData() {
       const { dispatch } = this.$store;
       await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
@@ -228,6 +266,15 @@ export default {
       <template #label="{ item, active }">
         <div @click="active ? $event.stopPropagation() : null">
           {{ item.name }}
+          <v-btn
+            v-if="checkIfAuthorizedMenu(item)"
+            :disabled="hasRightToCreateFolder"
+            icon
+            @click="openNewFolderModal"
+            v-on="on"
+          >
+            <v-icon>add</v-icon>
+          </v-btn>
         </div>
       </template>
       <template #append="{ item }">
@@ -286,6 +333,13 @@ export default {
         v-html="$t('folders.moveFolderConfirmationMessage')"
       />
     </folder-move-modal>
+
+    <folder-new-modal
+      ref="folderNewModalRef"
+      :loading-parent="loadingParent"
+      :conflict-error="conflictError"
+      @create-new-folder="createNewFolder"
+    />
   </v-skeleton-loader>
 </template>
 

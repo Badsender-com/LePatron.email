@@ -71,7 +71,10 @@ export default {
         expand-icon="filter_list"
         color="grey lighten-3"
       >
-        {{ $t(`mailings.list`) }}
+        <div>
+          <v-icon>manage_search</v-icon>
+          {{ $t(`mailings.list`) }}
+        </div>
       </v-expansion-panel-header>
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
@@ -86,6 +89,12 @@ export default {
             :items="templates"
             item-text="name"
             item-value="id"
+            multiple
+          />
+          <v-select
+            v-model="localFilters.tags"
+            :label="$t(`global.tags`)"
+            :items="tags"
             multiple
           />
           <div class="bs-mailings-filters__date-picker">
@@ -169,12 +178,6 @@ export default {
               <v-date-picker v-model="localFilters.updatedAtEnd" no-title />
             </v-menu>
           </div>
-          <v-select
-            v-model="localFilters.tags"
-            :label="$t(`global.tags`)"
-            :items="tags"
-            multiple
-          />
           <div class="bs-mailings-filters__actions">
             <v-btn color="grey darken-2" dark elevation="0" @click="reset">
               {{ $t(`global.reset`) }}
@@ -193,8 +196,8 @@ export default {
   grid-gap: 0 3rem;
 }
 .bs-mailings-filters__actions {
-  grid-column: span 3;
   text-align: right;
+  align-self: center;
 }
 .bs-mailings-filters__date-picker {
   display: grid;

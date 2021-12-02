@@ -114,6 +114,7 @@ export default {
   },
   layout: {
     logout: 'Déconnexion',
+    help: 'Besoin d\'aide ?',
   },
   forms: {
     group: {
@@ -241,7 +242,7 @@ export default {
       success: 'L\'email a bien été transféré',
     },
     creationNotice: 'Veuillez choisir un template afin de créer un nouvel email',
-    list: '🔎 Rechercher dans la liste d\'emails',
+    list: 'Rechercher dans la liste d\'emails',
     filters: {
       createdBetween: 'Créé entre le',
       updatedBetween: 'Mis à jour entre le',

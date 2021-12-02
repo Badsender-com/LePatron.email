@@ -1,6 +1,5 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
-
 import { PAGE } from '~/store/page.js';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
@@ -16,6 +15,9 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    groupAdminUrl() {
+      return `/groups/${this.$store.state.user?.info?.group?.id}`;
+    },
   },
 };
 </script>
@@ -133,6 +135,36 @@ export default {
         {{ title }}
       </v-toolbar-title>
       <v-spacer />
+
+      <v-tooltip bottom>
+        <template #activator="{ on }">
+          <v-btn
+            icon
+            color="primary lighten-4"
+            href="https://www.lepatron.email/faq/"
+            target="_blank"
+            v-on="on"
+          >
+            <v-icon>help</v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('layout.help') }}</span>
+      </v-tooltip>
+
+      <v-tooltip v-if="isGroupAdmin" bottom nuxt>
+        <template #activator="{ on }">
+          <v-btn
+            icon
+            color="primary lighten-4"
+            href="`${groupAdminUrl}?redirectTab=informations`"
+            v-on="on"
+          >
+            <v-icon>settings</v-icon>
+          </v-btn>
+        </template>
+        <span>{{ $t('global.settings') }}</span>
+      </v-tooltip>
+
       <v-tooltip bottom>
         <template #activator="{ on }">
           <v-btn icon color="white" href="/account/logout" v-on="on">
