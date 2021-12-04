@@ -65,7 +65,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
+  <v-card flat tile tag="form">
     <v-card-title v-if="title">
       {{ title }}
     </v-card-title>
@@ -83,17 +83,17 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="4">
+        <v-col cols="12">
           <v-select
             v-model="selectedEsp"
             :items="authorizedEsps"
             label="Esp"
             solo
+            outlined
+            flat
             :disabled="!group.downloadMailingWithFtpImages"
             @change="handleEspChange($event)"
           />
-        </v-col>
-        <v-col cols="8">
           <client-only>
             <component
               :is="selectedEspName"

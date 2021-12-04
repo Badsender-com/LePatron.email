@@ -37,6 +37,8 @@ export default {
 
 <template>
   <v-card
+    flat
+    tile
     :class="`mr-2 mb-4 bs-template-card ${selectedClass} ${hoverClass}`"
     @click="onClick"
   >

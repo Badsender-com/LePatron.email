@@ -19,7 +19,7 @@ export default {
 </script>
 
 <template>
-  <v-card>
+  <v-card flat tile>
     <v-card-title>{{ $t('template.markup') }}</v-card-title>
     <v-card-text>
       <details>

@@ -149,7 +149,7 @@ export default {
         <span>{{ $t('tags.handle') }}</span>
       </v-tooltip>
     </template>
-    <v-card>
+    <v-card flat tile>
       <v-list>
         <v-list-item>
           <v-list-item-content>
@@ -188,7 +188,7 @@ export default {
       </v-card-actions>
     </v-card>
     <v-dialog v-model="newTagDialog" width="500">
-      <v-card>
+      <v-card flat tile>
         <v-card-title class="headline">
           {{ $t('tags.new') }}
         </v-card-title>

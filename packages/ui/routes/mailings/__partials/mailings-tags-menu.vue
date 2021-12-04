@@ -97,7 +97,7 @@ export default {
       :close-on-content-click="false"
       :width="300"
     >
-      <v-card>
+      <v-card flat tile>
         <v-list>
           <v-list-item>
             <v-list-item-content>

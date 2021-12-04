@@ -158,7 +158,7 @@ export default {
       </v-list>
       <workspace-tree ref="workspaceTree" />
     </template>
-    <v-card elevation="0">
+    <v-card flat tile>
       <v-skeleton-loader :loading="mailingsIsLoading" type="table">
         <mailings-header @on-refresh="refreshLeftMenuData" />
         <mailings-filters :tags="tags" @change="handleFilterChange" />

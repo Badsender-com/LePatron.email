@@ -25,11 +25,9 @@ export default {
 </script>
 
 <template>
-  <v-card>
+  <v-card flat tile>
     <v-card-title>
-      {{
-        `${$tc('global.image', imagesList.length)} (${imagesList.length})`
-      }}
+      {{ `${$tc('global.image', imagesList.length)} (${imagesList.length})` }}
     </v-card-title>
     <v-card-text>
       <details>
@@ -47,12 +45,7 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn
-        :disabled="disabled"
-        outlined
-        color="error"
-        @click="deleteImages"
-      >
+      <v-btn :disabled="disabled" outlined color="error" @click="deleteImages">
         {{ $t('template.removeImages') }}
       </v-btn>
     </v-card-actions>

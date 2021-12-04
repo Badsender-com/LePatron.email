@@ -101,7 +101,7 @@ export default {
 <template>
   <v-card flat tile>
     <v-card-text>
-      <v-card elevation="0">
+      <v-card flat tile>
         <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
         <v-data-table
           v-show="!loading"

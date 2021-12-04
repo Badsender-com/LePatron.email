@@ -62,11 +62,7 @@ export default {
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <v-data-table
-          :headers="tableHeaders"
-          :items="groups"
-          class="elevation-2"
-        >
+        <v-data-table :headers="tableHeaders" :items="groups">
           <template #item.name="{ item }">
             <nuxt-link :to="`/groups/${item.id}`">
               {{ item.name }}

@@ -110,9 +110,9 @@ export default {
           {{ $t('mailings.creationNotice') }}
         </p>
         <v-card
-          class="d-flex flex-row justify-space-around flex-wrap-reverse"
           flat
           tile
+          class="d-flex flex-row justify-space-around flex-wrap-reverse"
         >
           <template-card
             v-for="template in templates"

@@ -82,7 +82,7 @@ export default {
 </script>
 
 <template>
-  <v-card class="elevation-12">
+  <v-card class="elevation-24">
     <v-toolbar flat>
       <v-toolbar-title>{{ $t('forms.user.passwordReset') }}</v-toolbar-title>
     </v-toolbar>

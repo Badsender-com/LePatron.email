@@ -71,7 +71,7 @@ export default {
 <template>
   <form class="template-edit-form" @submit.prevent="onSubmit">
     <v-col cols="6">
-      <v-card>
+      <v-card flat tile>
         <v-card-title>{{ $t('forms.template.meta') }}</v-card-title>
         <v-card-text>
           <v-text-field
@@ -98,7 +98,7 @@ export default {
       </v-card>
     </v-col>
     <v-col cols="6">
-      <v-card>
+      <v-card flat tile>
         <v-card-title>{{ $t('forms.template.files') }}</v-card-title>
         <v-card-text>
           <v-file-input

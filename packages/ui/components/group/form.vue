@@ -187,7 +187,7 @@ export default {
 
 <template>
   <div>
-    <v-card :flat="flat" :tile="flat" tag="form" elevation="0">
+    <v-card flat tile tag="form">
       <v-card-text>
         <v-row>
           <v-col cols="12">

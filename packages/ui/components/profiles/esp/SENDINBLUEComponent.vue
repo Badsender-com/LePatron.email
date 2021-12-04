@@ -106,7 +106,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form" :loading="isLoading" :disabled="isLoading">
+  <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <v-row>
         <v-col cols="12">

@@ -66,7 +66,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
+  <v-card flat tile tag="form">
     <v-card-title v-if="title">
       {{ title }}
     </v-card-title>

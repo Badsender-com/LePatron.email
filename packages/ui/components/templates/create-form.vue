@@ -45,7 +45,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
+  <v-card flat tile tag="form">
     <v-card-title>{{ $t('global.newTemplate') }}</v-card-title>
     <v-card-text>
       <v-text-field
