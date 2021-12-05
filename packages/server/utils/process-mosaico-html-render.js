@@ -42,10 +42,10 @@ const np6TagRegexp = /{{([^~]+)}}/g;
 const actitoTagRegexp = /\${(.+?)\}/g;
 const adobeTagRegexp = /<%(.+?)%>/g;
 
-const decodeTag = (match, tag) => {
+const decodeTag = (match, tag, fun = (value) => value) => {
   let decodedTag = htmlEntities.decode(tag);
   try {
-    decodedTag = decodeUriComponent(decodedTag);
+    decodedTag = decodeUriComponent(fun(decodedTag));
   } catch (err) {
     console.log('unable to decode URI', tag);
   }
@@ -77,9 +77,13 @@ function decodeActitoTags(html) {
 function decodeAdobeTags(html) {
   return html.replace(
     adobeTagRegexp,
-    (match, tag) => `<%${decodeTag(match, tag)}%>`
+    (match, tag) =>
+      `<%${decodeTag(match, tag, (tagSelection) =>
+        tagSelection.replace(/\+/g, '%2B')
+      )}%>`
   );
 }
+
 const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
