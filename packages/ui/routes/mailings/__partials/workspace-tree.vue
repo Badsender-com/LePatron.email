@@ -4,7 +4,8 @@ import {
   workspacesByGroup,
   deleteFolder,
   moveFolder,
- folders } from '~/helpers/api-routes.js';
+  folders,
+} from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -60,7 +61,8 @@ export default {
     }
   },
   methods: {
-    openNewFolderModal() {
+    openNewFolderModal(event) {
+      event.stopPropagation();
       this.conflictError = false;
       this.$refs.folderNewModalRef.open();
     },
@@ -108,8 +110,11 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
-    checkIfAuthorizedMenu(item) {
+    checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+    },
+    checkIfAuthorizedWorkspaceMenu(item) {
+      return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
     },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
@@ -266,19 +271,18 @@ export default {
       <template #label="{ item, active }">
         <div @click="active ? $event.stopPropagation() : null">
           {{ item.name }}
-          <v-btn
-            v-if="checkIfAuthorizedMenu(item)"
-            :disabled="hasRightToCreateFolder"
-            icon
-            @click="openNewFolderModal"
-            v-on="on"
-          >
-            <v-icon>add</v-icon>
-          </v-btn>
         </div>
       </template>
       <template #append="{ item }">
-        <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
+        <v-btn
+          v-if="checkIfAuthorizedWorkspaceMenu(item)"
+          :disabled="hasRightToCreateFolder"
+          icon
+          @click="openNewFolderModal"
+        >
+          <v-icon>add</v-icon>
+        </v-btn>
+        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y>
           <template #activator="{ on }">
             <v-btn color="accent" dark icon v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
@@ -336,7 +340,6 @@ export default {
 
     <folder-new-modal
       ref="folderNewModalRef"
-      :loading-parent="loadingParent"
       :conflict-error="conflictError"
       @create-new-folder="createNewFolder"
     />

@@ -156,7 +156,7 @@ export default {
           <v-btn
             icon
             color="primary lighten-4"
-            href="`${groupAdminUrl}?redirectTab=informations`"
+            :href="`${groupAdminUrl}?redirectTab=informations`"
             v-on="on"
           >
             <v-icon>settings</v-icon>
