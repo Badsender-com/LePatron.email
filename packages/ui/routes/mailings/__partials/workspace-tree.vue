@@ -72,6 +72,7 @@ export default {
           name: folderName,
           ...this.currentLocationParam,
         });
+        await this.fetchData();
         this.$emit('on-refresh');
         await this.$router.push({
           query: { fid: folder?._id },
