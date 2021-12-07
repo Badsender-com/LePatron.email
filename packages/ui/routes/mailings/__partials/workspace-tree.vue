@@ -258,7 +258,6 @@ export default {
       hoverable
       open-all
       return-object
-      class="pb-8"
       @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">

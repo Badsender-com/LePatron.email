@@ -15,6 +15,20 @@
     border-bottom: 3px solid var(--v-primary-base);
     padding: 0 .5em;
 
+    &.primaryButton {
+      padding: 0 1em;
+      color: white;
+      background-color: var(--v-primary-base);
+      border-bottom: 3px solid var(--v-accent-base);
+
+      &:hover,
+      &.pressed {
+        color: white;
+        background-color: var(--v-accent-base);
+        border-bottom: 3px solid var(--v-accent-base);
+      }
+    }
+
     .ui-icon,
     .ui-button-text {
       color: currentColor;
@@ -35,6 +49,7 @@
       opacity: 0.5;
     }
     &.ui-state-active {
+      color: var(--v-accent-base);
       background-color: var(--v-primary-base);
       border-bottom: 3px solid var(--v-accent-base);
     }
@@ -49,6 +64,8 @@
   .ui-button {
     margin-right: 0;
     text-align: left;
+    text-transform: none;
+    font-weight: normal;
   }
 
   input {
