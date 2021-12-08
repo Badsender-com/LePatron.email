@@ -20,6 +20,7 @@
         <div class="block" data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock" style="position: relative;">
           <div title="Click or drag to add this block to the template" class="handle" data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}"></div>
           <img data-bind="attr: { alt: $root.t('Block __name__', { name: ko.utils.unwrapObservable(type) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }" alt="Block __name__" />
+          <span class="block-name" data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(type) })">__name__</span>
         </div>
         <a href="javascript:void(0)" class="addblockbutton" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
       </div>
