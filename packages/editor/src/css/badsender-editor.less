@@ -178,7 +178,7 @@ body {
     border-radius: 100%;
     padding: 4px;
     padding-bottom: 2px;
-    box-shadow: 1px 1px 3px @shadow-color;
+    box-shadow: none;
     background-color: var(--v-accent-base);
 
     &:hover {
@@ -195,7 +195,7 @@ body {
 }
 
 .addblockbutton {
-  box-shadow: 1px 1px 3px @shadow-color;
+  box-shadow: none;
 }
 
 .mo {
@@ -314,7 +314,7 @@ body {
 }
 
 .mo .objEdit.level1 {
-  border-top: 2px solid @accent-color;
+  border-top: 2px solid rgba(0, 0, 0, 0.12);
 }
 
 #main-toolbox .objLabel.level1 {
@@ -337,16 +337,14 @@ body {
 & when(true) {
   .mo .objEdit.level1 {
     background-color: white;
-    box-shadow: 1px 1px 3px #888;
-    border-top: 0;
-    padding: 6px;
+    padding: 1em;
     padding-top: 0.5em;
   }
 
   .mo #toolstyles,
   .mo #tooltheme {
     .objEdit.level1 {
-      border-top-left-radius: 30px;
+      border-top-left-radius: 0;
       .objLabel.level1 {
         padding-bottom: 0;
         padding-top: 1em;
@@ -499,4 +497,15 @@ body {
 
 .mce-text-decoration-none {
   text-decoration: none;
+}
+
+.material-css .btn {
+  color: @button-text-color;
+  background-color: var(--v-accent-base);
+  box-shadow: none;
+
+  &:hover {
+    background-color: var(--v-accent-darken1);
+    box-shadow: none;
+  }
 }
