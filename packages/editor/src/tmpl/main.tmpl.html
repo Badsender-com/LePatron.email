@@ -7,22 +7,8 @@
 
   <div id="toolbar" class="mo" data-bind="tooltips: {}">
 
-    <span>
-    <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery,
-    icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: true, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
-    </span>
 
     <!-- ko template: {name: 'edit-name' } --># creation name #<!-- /ko -->
-
-    <!-- ko if: typeof $root.undo != 'undefined' -->
-    <span data-bind="buttonset: { }" class="leftButtons">
-      <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'fa fa-reply' }, label: $root.undo.name, text: true }">UNDO</a>
-      <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'fa fa-share' }, label: $root.redo.name, text: true }">REDO</a>
-    </span>
-    <!-- ko if: $root.debug -->
-    <a href="javascript:void(0)" data-bind="click: $root.undoReset, clickBubble: false, button: { disabled: !$root.undo.enabled() && !$root.redo.enabled(), label: 'reset', text: true }">RESET</a>
-    <!-- /ko -->
-    <!-- /ko -->
 
     <input id="previewBoth" type="radio" name="previewMode" value="both" data-bind="checked: $root.previewMode, button: { text: false, label: 'both', icons: { primary: 'fa fa-fw fa-window-restore' } }">
       <label for="previewBoth" title="Both screen" data-bind="attr: { title: $root.t('Mobile and desktop') }">Mobile and desktop</label>
@@ -34,6 +20,18 @@
       <label for="previewMobile" title="Smartphone" data-bind="attr: { title: $root.t('Smartphone') }">Smartphone</label>
     </input>
 
+    <span>
+      <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: true, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
+    </span>
+    <!-- ko if: typeof $root.undo != 'undefined' -->
+    <span data-bind="buttonset: { }" class="leftButtons">
+      <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'fa fa-reply' }, label: $root.undo.name, text: true }">UNDO</a>
+      <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'fa fa-share' }, label: $root.redo.name, text: true }">REDO</a>
+    </span>
+    <!-- ko if: $root.debug -->
+    <a href="javascript:void(0)" data-bind="click: $root.undoReset, clickBubble: false, button: { disabled: !$root.undo.enabled() && !$root.redo.enabled(), label: 'reset', text: true }">RESET</a>
+    <!-- /ko -->
+    <!-- /ko -->
 
     <!-- ko if: $root.debug -->cd docu  
     <a href="javascript:void(0)" data-bind="click: $root.export, clickBubble: false, button: { label: 'export', text: true }">EXPORT</a>
