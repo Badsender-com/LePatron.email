@@ -118,6 +118,7 @@ export default {
   },
   forms: {
     group: {
+      name: 'Nom de l\'entreprise',
       downloadWithoutEnclosingFolder: {
         label: 'Format du fichier zip',
         wrapped: 'Englober dans un dossier parent',

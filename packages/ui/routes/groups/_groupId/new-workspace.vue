@@ -50,7 +50,7 @@ export default {
       return `${this.$tc('global.settings', 1)} : ${this.$tc(
         'global.group',
         1
-      )} ${this.group.name} - ${this.$t('global.newTeam')}`;
+      )} ${this.group.name} - ${this.$t('global.newWorkspace')}`;
     },
     groupId() {
       return this.$route.params.groupId;
@@ -95,6 +95,7 @@ export default {
       <bs-group-menu />
     </template>
     <workspace-form
+      :title="$t('global.newWorkspace')"
       :group-users="groupUsers"
       :is-loading="isLoading"
       @submit="createWorkspace"

@@ -118,6 +118,7 @@ export default {
   },
   forms: {
     group: {
+      name: 'Compagny name',
       downloadWithoutEnclosingFolder: {
         label: 'Zip file format',
         wrapped: 'Wrap in a parent folder',
