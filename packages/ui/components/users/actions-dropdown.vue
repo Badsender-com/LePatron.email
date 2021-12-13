@@ -35,7 +35,7 @@ export default {
   },
   data() {
     return {
-      actionsIcon: 'more_horiz',
+      actionsIcon: 'mdi-dots-vertical',
     };
   },
   computed: {
