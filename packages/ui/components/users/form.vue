@@ -117,7 +117,7 @@ export default {
       </v-row>
     </v-card-text>
     <v-divider />
-    <v-card-actions>
+    <v-card-actions class="float-right">
       <v-btn
         color="accent"
         elevation="0"

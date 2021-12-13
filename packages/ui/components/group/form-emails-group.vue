@@ -67,7 +67,7 @@ export default {
     </v-card-title>
     <v-card-text>
       <v-row>
-        <v-col cols="6">
+        <v-col cols="12">
           <v-text-field
             id="name"
             v-model="localModel.name"
@@ -78,7 +78,7 @@ export default {
             @blur="$v.emailsGroup.name.$touch()"
           />
         </v-col>
-        <v-col cols="10">
+        <v-col cols="12">
           <v-textarea
             id="emails"
             v-model="localModel.emails"
@@ -96,7 +96,7 @@ export default {
       </v-row>
     </v-card-text>
     <v-divider />
-    <v-card-actions>
+    <v-card-actions class="float-right">
       <v-btn elevation="0" color="accent" :disabled="loading" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>

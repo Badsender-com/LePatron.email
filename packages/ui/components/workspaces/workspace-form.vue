@@ -66,7 +66,7 @@ export default {
   <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <v-row>
-        <v-col cols="3">
+        <v-col cols="12">
           <v-text-field
             id="name"
             v-model="workspaceForm.name"
@@ -78,12 +78,11 @@ export default {
             @blur="$v.workspaceForm.name.$touch()"
           />
         </v-col>
-        <v-col cols="" class="ml-auto">
-          <v-row>
-            <v-col>
-              <h3>{{ $t('workspaces.members') }}</h3>
-            </v-col>
-          </v-row>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <h3>{{ $t('workspaces.members') }}</h3>
+
           <v-data-table
             v-model="workspaceForm.selectedUsers"
             :headers="headers"
@@ -111,7 +110,7 @@ export default {
       </v-row>
     </v-card-text>
     <v-divider />
-    <v-card-actions>
+    <v-card-actions class="float-right">
       <v-btn
         :loading="isLoading"
         color="accent"
