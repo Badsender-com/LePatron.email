@@ -64,12 +64,12 @@ export default {
     @click:outside="close"
   >
     <v-form ref="form" @submit.prevent="submit">
-      <div class="d-flex flex-column mb-2">
+      <div class="d-flex align-center mb-2">
         <div class="font-weight-bold">
           {{ destinationLabel }}
         </div>
-        <div>
-          <mailings-breadcrumbs :large="false" />
+        <div class="pa-2">
+          <mailings-breadcrumbs />
         </div>
       </div>
       <p v-if="conflictError" class="red--text">

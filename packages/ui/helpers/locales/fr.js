@@ -51,7 +51,7 @@ export default {
     teams: 'Workspaces',
     newTemplate: 'Ajouter un template',
     newFolder: 'Ajouter un dossier',
-    parentLocation: 'Emplacement du dossier parent',
+    parentLocation: 'Destination',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Ajouter un email',

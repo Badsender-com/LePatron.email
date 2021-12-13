@@ -51,7 +51,7 @@ export default {
     moveManyMail: 'Move',
     newTemplate: 'Add a template',
     newFolder: 'Add a folder',
-    parentLocation: 'Parent folder location',
+    parentLocation: 'Location',
     template: 'Template | Templates',
     mailing: 'Email | Emails',
     newMailing: 'Add an email',
