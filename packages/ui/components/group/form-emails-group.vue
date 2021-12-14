@@ -96,7 +96,8 @@ export default {
       </v-row>
     </v-card-text>
     <v-divider />
-    <v-card-actions class="float-right">
+    <v-card-actions>
+      <v-spacer />
       <v-btn elevation="0" color="accent" :disabled="loading" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>

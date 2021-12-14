@@ -103,34 +103,26 @@ export default {
         @resendPassword="reSendPassword"
       />
     </template>
-    <v-row>
-      <v-col cols="12">
-        <bs-user-form
-          v-model="user"
-          :title="$t('users.details')"
-          :loading="loading"
-          @submit="updateUser"
+    <bs-user-form
+      v-model="user"
+      :title="$t('users.details')"
+      :loading="loading"
+      @submit="updateUser"
+    />
+    <v-card flat tile>
+      <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
+      <v-card-text>
+        <bs-mailings-admin-table
+          :mailings="mailings"
+          :hidden-cols="[`userName`]"
         />
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-card flat tile class="mt-3">
-          <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
-          <v-card-text>
-            <bs-mailings-admin-table
-              :mailings="mailings"
-              :hidden-cols="[`userName`]"
-            />
-          </v-card-text>
-        </v-card>
-        <bs-user-actions
-          ref="userActions"
-          v-model="loading"
-          :user="user"
-          @update="updateUserFromActions"
-        />
-      </v-col>
-    </v-row>
+      </v-card-text>
+    </v-card>
+    <bs-user-actions
+      ref="userActions"
+      v-model="loading"
+      :user="user"
+      @update="updateUserFromActions"
+    />
   </bs-layout-left-menu>
 </template>

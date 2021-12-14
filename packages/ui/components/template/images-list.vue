@@ -44,7 +44,8 @@ export default {
       </details>
     </v-card-text>
     <v-divider />
-    <v-card-actions class="float-right">
+    <v-card-actions>
+      <v-spacer />
       <v-btn :disabled="disabled" outlined color="error" @click="deleteImages">
         {{ $t('template.removeImages') }}
       </v-btn>

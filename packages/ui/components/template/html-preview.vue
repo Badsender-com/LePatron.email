@@ -28,7 +28,8 @@ export default {
       </details>
     </v-card-text>
     <v-divider />
-    <v-card-actions class="float-right">
+    <v-card-actions>
+      <v-spacer />
       <v-btn link :href="downloadHref" elevation="0" color="accent">
         {{ $t('template.download') }}
       </v-btn>
