@@ -189,7 +189,7 @@ export default {
     </v-card>
     <v-dialog v-model="newTagDialog" width="500">
       <v-card flat tile>
-        <v-card-title class="headline">
+        <v-card-title>
           {{ $t('tags.new') }}
         </v-card-title>
         <v-card-text>

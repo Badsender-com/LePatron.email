@@ -110,7 +110,7 @@ export default {
     width="500"
   >
     <v-card flat tile>
-      <v-card-title class="headline">
+      <v-card-title>
         {{ $t('mailings.transfer.label') }}
       </v-card-title>
       <v-card-text>

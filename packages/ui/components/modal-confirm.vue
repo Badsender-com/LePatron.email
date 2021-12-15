@@ -43,8 +43,8 @@ export default {
     @click:outside="onClickOutside"
   >
     <v-card flat tile>
-      <v-card-title class="headline">
-        <p class="grey--text text--darken-3" v-html="title" />
+      <v-card-title>
+        <p v-html="title" />
       </v-card-title>
       <v-card-text>
         <slot />
