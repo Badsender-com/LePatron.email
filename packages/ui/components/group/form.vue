@@ -196,7 +196,7 @@ export default {
                 <v-text-field
                   id="name"
                   v-model="localModel.name"
-                  :label="$t('global.name')"
+                  :label="$t('forms.group.name')"
                   name="name"
                   required
                   :disabled="disabled || isGroupAdmin"
