@@ -20,3 +20,9 @@ export default {
     </v-list-item-title>
   </v-list-item>
 </template>
+
+<style scoped>
+.v-list-item__title {
+  font-size: 0.875rem;
+}
+</style>

@@ -82,8 +82,11 @@ export default {
   </v-menu>
 </template>
 
-<style lang="scss" scoped></style>
-
+<style scoped>
+.v-list-item__title {
+  font-size: 0.875rem;
+}
+</style>
 <i18n>
 {
 "en": {},
