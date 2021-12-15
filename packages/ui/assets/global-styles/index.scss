@@ -24,3 +24,9 @@
   margin-top: 2px;
   margin-left: 2px;
 }
+
+$font-family: 'Montserrat';
+
+.v-application {
+  font-family: $font-family, sans-serif !important;
+}

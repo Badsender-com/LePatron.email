@@ -131,7 +131,7 @@ export default {
           />
         </svg>
       </span>
-      <v-toolbar-title class="subtitle-1">
+      <v-toolbar-title>
         {{ title }}
       </v-toolbar-title>
       <v-spacer />
@@ -181,3 +181,9 @@ export default {
     <bs-snack-bar />
   </v-app>
 </template>
+
+<style scoped>
+.v-toolbar__title {
+  font-size: 1rem;
+}
+</style>
