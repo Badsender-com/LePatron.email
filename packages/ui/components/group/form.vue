@@ -196,7 +196,7 @@ export default {
                 <v-text-field
                   id="name"
                   v-model="localModel.name"
-                  :label="$t('global.name')"
+                  :label="$t('forms.group.name')"
                   name="name"
                   required
                   :disabled="disabled || isGroupAdmin"
@@ -437,9 +437,7 @@ export default {
 
             <v-row v-if="isAdmin">
               <v-col cols="12">
-                <p class="caption ma-0">
-                  Activer l'authentification SAML
-                </p>
+                <p class="caption ma-0">Activer l'authentification SAML</p>
                 <v-switch
                   v-model="useSamlAuthentication"
                   :label="$t('global.enable')"

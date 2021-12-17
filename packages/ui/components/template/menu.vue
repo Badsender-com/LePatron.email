@@ -47,7 +47,7 @@ export default {
 <template>
   <v-row>
     <v-col cols="12">
-      <v-list dense>
+      <v-list>
         <v-list-item
           v-if="isGroupAdmin || isAdmin"
           nuxt
@@ -143,5 +143,8 @@ export default {
 .bs-template-cover-image {
   outline: 1px solid var(--v-primary-base);
   margin: 0 16px;
+}
+.v-list-item__title {
+  font-size: 0.875rem;
 }
 </style>

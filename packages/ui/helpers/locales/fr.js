@@ -158,6 +158,7 @@ export default {
       markup: 'Markup',
     },
     user: {
+      name: 'Nom de l\'utilisateur',
       passwordConfirm: 'Confirmation du mot de passe',
       passwordReset: 'Réinitialisation du mot de passe',
       login: 'Connexion',

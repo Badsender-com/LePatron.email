@@ -354,10 +354,14 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
+  font-size: 0.875rem;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+.v-list-item__title {
+  font-size: 0.875rem;
 }
 </style>
