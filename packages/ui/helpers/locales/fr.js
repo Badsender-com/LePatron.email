@@ -362,4 +362,5 @@ export default {
       transfer: 'Transférer',
     },
   },
+
 };

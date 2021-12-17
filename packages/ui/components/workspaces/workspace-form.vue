@@ -13,6 +13,7 @@ export default {
     workspace: { type: Object, default: () => ({}) },
     groupUsers: { type: Array, default: () => [] },
     isLoading: { type: Boolean, default: false },
+    title: { type: String, default: '' },
   },
   data() {
     return {
@@ -64,6 +65,9 @@ export default {
 
 <template>
   <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
+    <v-card-title v-if="title">
+      {{ title }}
+    </v-card-title>
     <v-card-text>
       <v-row>
         <v-col cols="12">
