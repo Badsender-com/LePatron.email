@@ -1,8 +1,9 @@
 <script>
-import { mapMutations, mapGetters } from 'vuex';
+import { mapMutations, mapGetters, mapState } from 'vuex';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { USER, IS_ADMIN } from '~/store/user.js';
+import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
 import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-modal';
@@ -69,10 +70,13 @@ export default {
       tableActions: TABLE_ACTIONS,
       actions: ACTIONS,
       actionsDetails: ACTIONS_DETAILS,
+      currentPage: 1,
+      search: '',
     };
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    ...mapState(FOLDER, ['pagination']),
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
@@ -118,11 +122,8 @@ export default {
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    tableOptions() {
-      return {
-        sortBy: ['updatedAt'],
-        sortDesc: [true],
-      };
+    totalPages() {
+      return this.pagination?.pageCount || 1;
     },
     filteredActions() {
       return this.tableActions.filter(
@@ -327,6 +328,29 @@ export default {
       }
       this.closeMoveMailDialog();
     },
+    handleItemsPerPageChange(itemsPerPage) {
+      this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
+        page: 1,
+        itemsPerPage: itemsPerPage,
+      });
+      this.$emit('on-refetch');
+    },
+    handleSortByChange(sortBy) {
+      if (sortBy !== this.pagination?.sortBy) {
+        this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
+          sortBy: sortBy,
+        });
+        this.$emit('on-refetch');
+      }
+    },
+    handleSortDescChange(sortDesc) {
+      if (sortDesc !== this.pagination?.sortDesc) {
+        this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
+          sortDesc: sortDesc,
+        });
+        this.$emit('on-refetch');
+      }
+    },
     transferMailing(mailing) {
       this.$emit('transfer', mailing);
     },
@@ -354,9 +378,20 @@ export default {
     <v-data-table
       v-model="selectedRows"
       :headers="tablesHeaders"
-      :options="tableOptions"
+      :options="pagination || {}"
       :items="mailings"
+      must-sort
       :show-select="hasAccess"
+      :footer-props="{
+        pagination: pagination,
+        disablePagination: true,
+        prevIcon: 'none',
+        nextIcon: 'none',
+        itemsPerPageOptions: [5, 10, 15],
+      }"
+      @update:items-per-page="handleItemsPerPageChange"
+      @update:sort-by="handleSortByChange"
+      @update:sort-desc="handleSortDescChange"
     >
       <template #item.name="{ item }">
         <a v-if="hasAccess" :href="`/editor/${item.id}`">{{ item.name }}</a>
@@ -458,6 +493,7 @@ export default {
         </bs-mailings-actions-dropdown>
       </template>
     </v-data-table>
+
     <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
     <mailings-tags-menu
       ref="addTagsMenu"
@@ -502,5 +538,9 @@ export default {
 <style scoped>
 .v-list {
   cursor: pointer;
+}
+
+.mw18 {
+  max-width: 18rem;
 }
 </style>
