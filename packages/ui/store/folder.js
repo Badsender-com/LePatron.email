@@ -138,27 +138,6 @@ export const actions = {
         ? { parentFolderId: query?.fid }
         : { workspaceId: query?.wid };
 
-      // docs
-      // totalDocs: 1608,
-      // offset: 0,
-      // limit: 10,
-      // totalPages: 161,
-      // page: 1,
-      // pagingCounter: 1,
-      // hasPrevPage: false,
-      // hasNextPage: true,
-      // prevPage: null,
-      // nextPage: 2
-
-      // Example pagination vuetify
-
-      // page: 1,
-      // itemsPerPage: 10,
-      // pageStart: 0,
-      // pageStop: 10,
-      // pageCount: 161,
-      // itemsLength: 1608
-
       try {
         const mailingsResponse = await this.$axios.$get(mailings(), {
           params: {

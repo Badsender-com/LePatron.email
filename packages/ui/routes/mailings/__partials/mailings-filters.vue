@@ -200,12 +200,6 @@ export default {
               />
             </v-menu>
           </div>
-          <v-select
-            v-model="localFilters.tags"
-            :label="$t(`global.tags`)"
-            :items="tags"
-            multiple
-          />
           <div class="bs-mailings-filters__actions">
             <v-btn color="primary" text @click="reset">
               {{ $t(`global.reset`) }}

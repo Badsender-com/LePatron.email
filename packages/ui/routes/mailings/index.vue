@@ -72,6 +72,9 @@ export default {
     totalPages() {
       return this.pagination?.pageCount || 1;
     },
+    itemsLength() {
+      return this.pagination?.itemsLength;
+    },
     currentPage: {
       get() {
         return this.pagination.page;
@@ -208,7 +211,6 @@ export default {
           @updateTags="onMailSelectionTagsUpdate"
           @on-refetch="fetchMailListingData"
         />
-        <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
@@ -224,6 +226,7 @@ export default {
           max-width="22rem"
         >
           <v-pagination
+            v-if="parseInt(itemsLength) > 0"
             v-model="currentPage"
             class="my-4"
             :length="totalPages"

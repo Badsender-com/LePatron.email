@@ -16,6 +16,7 @@ import {
   FOLDER,
   SET_PAGINATION,
   FETCH_FOLDER_OR_WORKSPACE,
+  SET_LOADING_MAILINGS,
 } from '~/store/folder';
 
 export default {
@@ -63,7 +64,10 @@ export default {
           query: this.$route.query,
           $t: this.$t,
         }),
-        commit(`${FOLDER}/${SET_PAGINATION}`),
+        commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: 1,
+        }),
+        commit(`${FOLDER}/${SET_LOADING_MAILINGS}`, true),
       ]);
     },
     async fetchData() {
