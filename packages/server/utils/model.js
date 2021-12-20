@@ -1,8 +1,9 @@
 'use strict';
 
 const mongoose = require('mongoose');
-
+const { BadRequest } = require('http-errors');
 const SPACE_TYPE = require('../constant/space-type');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   trimString,
@@ -11,6 +12,8 @@ module.exports = {
   addGroupFilter,
   addStrictGroupFilter,
   addMailQueryParamFilter,
+  validatePaginationJSON,
+  validateFiltersJSON,
 };
 
 // normalize string to have a better ordering
@@ -58,4 +61,34 @@ function addMailQueryParamFilter(query) {
     params._workspace = query.id;
   }
   return params;
+}
+
+// Validate pagination JSON
+function validatePaginationJSON(pagination) {
+  if (pagination) {
+    if (
+      (pagination?.page && Number.isNaN(pagination.page)) ||
+      (pagination?.itemsPerPage && Number.isNaN(pagination.itemsPerPage)) ||
+      (pagination?.pageStart && Number.isNaN(pagination.pageStart)) ||
+      (pagination?.pageStop && Number.isNaN(pagination.pageStop)) ||
+      (pagination?.pageCount && Number.isNaN(pagination.pageCount)) ||
+      (pagination?.itemsLength && Number.isNaN(pagination.itemsLength))
+    ) {
+      throw new BadRequest(ERROR_CODES.BAD_FORMAT_PAGINATION);
+    }
+  }
+  return pagination;
+}
+
+// Validate pagination JSON
+function validateFiltersJSON(filters) {
+  if (filters) {
+    if (
+      (filters?.templates && !Array.isArray(filters.templates)) ||
+      (filters?.tags && !Array.isArray(filters.tags))
+    ) {
+      throw new BadRequest(ERROR_CODES.BAD_FORMAT_FILTERS);
+    }
+  }
+  return filters;
 }

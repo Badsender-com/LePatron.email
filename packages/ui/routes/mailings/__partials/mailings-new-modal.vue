@@ -1,9 +1,10 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
 import TemplateCard from '~/routes/mailings/__partials/template-card';
 import BsModalConfirm from '~/components/modal-confirm';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
+import { TEMPLATE } from '~/store/template';
+import { mapState } from 'vuex';
 
 export default {
   name: 'MailingsModalNew',
@@ -18,17 +19,17 @@ export default {
   },
   data() {
     return {
-      templates: [],
       defaultMailName: '',
       selectedTemplate: {},
-      templatesIsLoading: true,
-      templatesIsError: false,
       nameRule: [(v) => !!v || this.$t('forms.workspace.inputError')],
     };
   },
   computed: {
     destinationLabel() {
       return `${this.$t('global.location')} :`;
+    },
+    templatesHasMarkup() {
+      return this.templates?.filter((template) => template.hasMarkup);
     },
     isValidToCreate() {
       return (
@@ -37,18 +38,7 @@ export default {
         !this.loadingParent
       );
     },
-  },
-  async mounted() {
-    this.templatesIsLoading = false;
-    const { $axios } = this;
-    try {
-      const { items } = await $axios.$get(apiRoutes.templates());
-      this.templates = items.filter((template) => template.hasMarkup);
-    } catch (error) {
-      this.templatesIsError = true;
-    } finally {
-      this.templatesIsLoading = false;
-    }
+    ...mapState(TEMPLATE, ['templates', 'templateLoading']),
   },
   methods: {
     open() {
@@ -115,7 +105,7 @@ export default {
           class="d-flex flex-row justify-space-around flex-wrap-reverse"
         >
           <template-card
-            v-for="template in templates"
+            v-for="template in templatesHasMarkup"
             :key="template.id"
             :is-selected="checkIsSelectedTemplate(template)"
             :template="template"

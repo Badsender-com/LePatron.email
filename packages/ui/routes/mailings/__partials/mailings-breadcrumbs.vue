@@ -19,6 +19,9 @@ export default {
       workspacesIsLoading: false,
     };
   },
+  async fetch() {
+    this.fetchData();
+  },
   computed: {
     selectedLocation() {
       return findNestedLocation(
@@ -33,9 +36,6 @@ export default {
   },
   watch: {
     $route: 'fetchData',
-  },
-  async mounted() {
-    await this.fetchData();
   },
   methods: {
     async fetchData() {
@@ -57,6 +57,9 @@ export default {
         return { fid: item.id };
       }
     },
+    log(item) {
+      console.log({ query: this.queryParamsBasedOnItemType(item) });
+    },
   },
 };
 </script>
@@ -66,6 +69,7 @@ export default {
       <v-icon>mdi-chevron-right</v-icon>
     </template>
     <template #item="{ item }">
+      {{ log(item) }}
       <v-breadcrumbs-item
         :to="{ path: '/', query: queryParamsBasedOnItemType(item) }"
         :disabled="item.disabled"

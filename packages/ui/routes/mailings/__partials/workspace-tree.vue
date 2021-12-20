@@ -13,9 +13,12 @@ import FolderRenameModal from './folder-rename-modal';
 import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
-
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import { FOLDER, FETCH_FOLDER_OR_WORKSPACE } from '~/store/folder';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  FETCH_FOLDER_OR_WORKSPACE,
+} from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
@@ -33,6 +36,14 @@ export default {
     workspaces: [],
     conflictError: false,
   }),
+  async fetch() {
+    const { dispatch } = this.$store;
+    await this.fetchData();
+    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+      query: this.$route.query,
+      $t: this.$t,
+    });
+  },
   computed: {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
@@ -48,15 +59,9 @@ export default {
     $route: ['getFolderAndWorkspaceData'],
   },
   async mounted() {
-    const { dispatch } = this.$store;
-    await this.fetchData();
-    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
-      query: this.$route.query,
-      $t: this.$t,
-    });
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
       await this.$router.push({
-        query: { wid: this.workspaces[0]?.id },
+        query: { wid: this.workspaces[0]?._id },
       });
     }
   },
@@ -92,11 +97,14 @@ export default {
       }
     },
     async getFolderAndWorkspaceData() {
-      const { dispatch } = this.$store;
-      await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
-        query: this.$route.query,
-        $t: this.$t,
-      });
+      const { dispatch, commit } = this.$store;
+      await Promise.all([
+        dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+          query: this.$route.query,
+          $t: this.$t,
+        }),
+        commit(`${FOLDER}/${SET_PAGINATION}`),
+      ]);
     },
     async fetchData() {
       const { $axios } = this;

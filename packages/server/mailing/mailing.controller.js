@@ -83,10 +83,14 @@ async function readMailingEpsIds(req, res) {
 
 async function list(req, res) {
   const { user, query } = req;
-  const { workspaceId, parentFolderId } = query;
+  const { workspaceId, parentFolderId, pagination, filters } = query;
+  const paginationJSON = modelsUtils.validatePaginationJSON(
+    JSON.parse(pagination)
+  );
+  const filtersJSON = modelsUtils.validateFiltersJSON(JSON.parse(filters));
 
   const responseMailingList = await mailingService.listMailingForWorkspaceOrFolder(
-    { workspaceId, parentFolderId, user }
+    { workspaceId, parentFolderId, user, paginationJSON, filtersJSON }
   );
   res.json(responseMailingList);
 }
