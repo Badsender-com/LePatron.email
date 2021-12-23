@@ -24,6 +24,11 @@
 @local-delayed-color: #b39601;
 @local-todo-color: #c2b798;
 
+@bs-primary-color: #093040;
+@bs-secondary-color: #265090;
+@bs-accent-color: #00acdc;
+@bs-white-color: #ffffff;
+
 @zindex-dialog: 1005;
 @zindex-dialog-modal: 1004;
 @zindex-popup: 1003;
@@ -44,13 +49,13 @@
   @background-color,
   60%
 );
-@button-text-color: @background-color;
-@button-text-color-disabled: lighten(@button-background-color, 20%);
-@button-background-color: @text-color;
-@button-hover-background-color: darken(@button-background-color, 10%);
-@button-border-color: @button-background-color;
+@button-text-color: @bs-white-color;
+@button-text-color-disabled: lighten(@bs-white-color, 20%);
+@button-background-color: @bs-accent-color;
+@button-hover-background-color: darken(@bs-accent-color, 10%);
+@button-border-color: @bs-accent-color;
 @button-border-color-split: contrast(
-  difference(@button-border-color, @button-background-color),
+  difference(@button-border-color, @bs-accent-color),
   @button-border-color,
   @background-color,
   5%
@@ -63,7 +68,7 @@
 );
 @button-primary-border-color: @button-primary-background-color;
 @input-border-color: @button-border-color;
-@input-focus-border-color: #66afe9; // TODO
+@input-focus-border-color: @bs-accent-color;
 @input-border-size: 0;
 @popup-background-color: lighten(@background-color, 8%);
 
@@ -227,7 +232,8 @@
 @object-selectable-box-shadow: none;
 @object-selected-box-shadow: none; //0px 0px 0px 2px @sidebar-background-color;
 
-@dialog-title-background-color: @accent-color;
+@dialog-title-background-color: @bs-primary-color;
+@dialog-title-color: @bs-white-color;
 @helpwin-background-color: @popup-background-color;
 @helpwin-text-color: @text-color;
 //@helpwin-title-background-color: @dialog-title-background-color;
