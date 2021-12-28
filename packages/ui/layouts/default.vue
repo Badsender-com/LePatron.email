@@ -28,7 +28,7 @@ export default {
       <v-toolbar-title>
         <span style="display: inline-box; margin-right: 10px">
           <svg
-            width="auto"
+            width="92"
             height="20"
             viewBox="0 0 147 32"
             fill="none"

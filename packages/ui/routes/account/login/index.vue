@@ -116,7 +116,7 @@ export default {
   <div style="display: block; margin: 0 auto; text-align: center">
     <svg
       width="190"
-      height="auto"
+      height="42"
       viewBox="0 0 147 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
