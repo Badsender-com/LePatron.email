@@ -23,7 +23,7 @@ export default {
   },
   computed: {
     confirmModalHeaderTitle() {
-      return `${this.$t('global.delete')} ${this.data?.name}`;
+      return `${this.$t('global.delete')}`;
     },
   },
   methods: {

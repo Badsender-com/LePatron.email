@@ -97,7 +97,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="moveMailDialog"
-    :title="`${confirmationTitleLabel} ${mailName}`"
+    :title="`${this.$t('global.moveMail')} : <strong>${mailName}</strong>`"
     :is-form="true"
     class="modal-confirm-move-mail"
     @click-outside="close"

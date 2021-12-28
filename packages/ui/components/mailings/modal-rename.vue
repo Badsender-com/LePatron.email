@@ -41,7 +41,7 @@ export default {
           {{ $t('global.cancel') }}
         </v-btn>
         <v-btn elevation="0" color="accent" @click="action">
-          {{ $t('global.update') }}
+          {{ $t('global.apply') }}
         </v-btn>
       </v-card-actions>
     </v-card>
