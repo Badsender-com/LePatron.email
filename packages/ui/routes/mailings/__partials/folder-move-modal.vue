@@ -89,7 +89,9 @@ export default {
 <template>
   <bs-modal-confirm
     ref="moveFolderDialog"
-    :title="`${this.$t('global.moveFolderAction')}  ${folderName}`"
+    :title="`${this.$t(
+      'global.moveFolderAction'
+    )} <strong>${folderName}</strong>`"
     :is-form="true"
     class="modal-confirm-move-mail"
     @click-outside="close"
@@ -138,7 +140,7 @@ export default {
         color="accent"
         @click="submit"
       >
-        {{ $t('global.moveFolderAction') }}
+        {{ $t('global.move') }}
       </v-btn>
     </v-card-actions>
   </bs-modal-confirm>

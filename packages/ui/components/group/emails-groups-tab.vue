@@ -127,7 +127,7 @@ export default {
     </v-card-text>
     <bs-modal-confirm
       ref="deleteDialog"
-      :title="`${$t('global.delete')} ${selectedEmailsGroup.name}?`"
+      :title="`${$t('global.delete')}`"
       :action-label="$t('global.delete')"
       action-button-color="error"
       action-button-elevation="0"

@@ -74,7 +74,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMail')} : <strong>${mailName}</strong>`"
+    :title="`${this.$t('global.copyMail')} <strong>${mailName}</strong>`"
     :is-form="true"
     class="modal-confirm-copy-mail"
     @click-outside="close"
