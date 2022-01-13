@@ -14,38 +14,32 @@ class DscProvider {
 
   getOptionsInformation() {
     try {
-      let options = {};
+      let options = {
+        headers: { apiKey: this.apiKey, contentType: 'application/json' },
+      };
+      let proxyOptions = {};
+
       if (config.proxyUrl) {
         const proxy = new url.URL(config.proxyUrl);
         const target = new url.URL(config.dscUrl);
         if (typeof proxy !== 'undefined' && typeof target !== 'undefined') {
-          options = {
-            hostname: proxy.hostname,
-            port: proxy.port || 80,
-            path: target.href,
-            headers: {
-              Host: target.hostname,
-            },
+          proxyOptions = {
+            host: config.proxyUrl,
+            port: proxy.port,
             auth: {
               username: proxy.username,
               password: proxy.password,
             },
           };
         }
+
+        options = {
+          ...options,
+          proxy: { ...proxyOptions },
+        };
       }
 
-      if (options.headers?.Host) {
-        options = {
-          apiKey: this.apiKey,
-          contentType: 'application/json',
-          ...options,
-        };
-      } else {
-        options = {
-          headers: { apiKey: this.apiKey, contentType: 'application/json' },
-        };
-      }
-      return { proxy: options };
+      return options;
     } catch (e) {
       logger.error(e);
       throw new InternalServerError(
@@ -132,7 +126,7 @@ class DscProvider {
         subject: object,
       };
     } catch (e) {
-      logger.error(e.response);
+      logger.error({ error: e });
 
       throw e;
     }
