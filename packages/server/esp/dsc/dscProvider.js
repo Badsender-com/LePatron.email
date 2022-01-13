@@ -28,17 +28,17 @@ class DscProvider {
       }
 
       if (e?.response?.status === 500) {
-        logger.error(e?.response?.message);
-        throw new InternalServerError(
-          ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
-        );
+        logger.error({ error: e?.response?.data?.message });
+        throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
 
       if (e?.response?.status === 503) {
-        throw new InternalServerError(ERROR_CODES.IP_ADDRESS_IS_NOT_ALLOWED);
+        throw new InternalServerError(
+          ERROR_CODES.IP_ADDRESS_IS_NOT_ALLOWED_OR_WRONG_KEY
+        );
       }
 
-      logger.error(e?.response?.message);
+      logger.error({ Error: e?.response?.data?.message });
       throw e;
     }
   }
