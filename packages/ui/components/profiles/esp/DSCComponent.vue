@@ -41,40 +41,28 @@ export default {
           required,
           email,
         },
-        replyTo: {},
+        replyTo: {
+          required,
+          email,
+        },
       },
     };
   },
   computed: {
     nameErrors() {
-      const errors = [];
-      if (!this.$v.profile.name.$dirty) return errors;
-      !this.$v.profile.name.required &&
-        errors.push(this.$t('global.errors.nameRequired'));
-      return errors;
+      return this.requiredValidationFunc('name');
     },
     apiKeyErrors() {
-      const errors = [];
-      if (!this.$v.profile.apiKey.$dirty) return errors;
-      !this.$v.profile.apiKey.required &&
-        errors.push(this.$t('global.errors.apiKeyRequired'));
-      return errors;
+      return this.requiredValidationFunc('apiKey');
     },
     senderNameErrors() {
-      const errors = [];
-      if (!this.$v.profile.senderName.$dirty) return errors;
-      !this.$v.profile.senderName.required &&
-        errors.push(this.$t('global.errors.senderNameRequired'));
-      return errors;
+      return this.requiredValidationFunc('senderName');
     },
     senderMailErrors() {
-      const errors = [];
-      if (!this.$v.profile.senderMail.$dirty) return errors;
-      !this.$v.profile.senderMail.required &&
-        errors.push(this.$t('global.errors.senderMailRequired'));
-      !this.$v.profile.senderMail.email &&
-        errors.push(this.$t('forms.user.errors.email.valid'));
-      return errors;
+      return this.emailValidationFunc('senderMail');
+    },
+    replyToErrors() {
+      return this.emailValidationFunc('replyTo');
     },
   },
   methods: {
@@ -83,8 +71,26 @@ export default {
       if (this.$v.$invalid) {
         return;
       }
-
       this.$emit('submit', this.profile);
+    },
+    requiredValidationFunc(valueKey) {
+      const errors = [];
+      const dirty = this.$v?.profile[valueKey]?.$dirty;
+      dirty &&
+        !this.$v.profile[valueKey]?.required &&
+        errors.push(this.$t(`global.errors.${valueKey}Required`));
+      return errors;
+    },
+    emailValidationFunc(valueKey) {
+      const errors = [];
+      const dirty = this.$v?.profile[valueKey]?.$dirty;
+      dirty &&
+        !this.$v.profile[valueKey].required &&
+        errors.push(this.$t(`global.errors.${valueKey}Required`));
+      dirty &&
+        !this.$v.profile[valueKey].email &&
+        errors.push(this.$t('forms.user.errors.email.valid'));
+      return errors;
     },
   },
 };
@@ -92,7 +98,7 @@ export default {
 
 <template>
   <v-card tag="form" :loading="isLoading" :disabled="isLoading">
-    <v-card-text>
+    <v-card-text class="pb-5">
       <v-row>
         <v-col cols="12">
           <v-text-field
@@ -156,6 +162,8 @@ export default {
             v-model="profile.replyTo"
             :label="$t('profiles.replyTo')"
             name="replyTo"
+            required
+            :error-messages="replyToErrors"
             @input="$v.profile.replyTo.$touch()"
             @blur="$v.profile.replyTo.$touch()"
           />

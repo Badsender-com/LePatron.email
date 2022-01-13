@@ -74,6 +74,21 @@ export default {
         };
       }
 
+      if (type === ESP_TYPES.DSC) {
+        const {
+          additionalApiData: { senderName, senderMail, replyTo },
+        } = profileResponse.result;
+        profileData = {
+          id,
+          name,
+          apiKey,
+          replyTo,
+          senderName,
+          senderMail,
+          type,
+        };
+      }
+
       return {
         profile: profileData,
       };
