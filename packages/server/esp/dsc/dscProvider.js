@@ -61,26 +61,28 @@ class DscProvider {
   }
 
   async connectApi() {
+    logger.log({ urlDSC: config.dscUrl });
     try {
       const emailCampaignConnectionResult = await this.connectApiCall();
       return emailCampaignConnectionResult;
     } catch (e) {
+      logger.error({ errorResponse: e?.response });
       if (e?.response?.status === 405) {
         return true;
       }
 
       if (e?.response?.status === 500) {
-        logger.error(e?.response?.message);
-        throw new InternalServerError(
-          ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
-        );
+        logger.error({ errorMessage: e?.response?.data?.message });
+        throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
 
       if (e?.response?.status === 503) {
-        throw new InternalServerError(ERROR_CODES.IP_ADDRESS_IS_NOT_ALLOWED);
+        throw new InternalServerError(
+          ERROR_CODES.IP_ADDRESS_IS_NOT_ALLOWED_OR_WRONG_KEY
+        );
       }
 
-      logger.error(e?.response?.message);
+      logger.error({ Error: e?.response?.data?.message });
       throw e;
     }
   }
@@ -96,8 +98,12 @@ class DscProvider {
     return axios.post(`${config.dscUrl}/`, data, this.getOptionsInformation());
   }
 
-  async updateCampaignMailApi(data) {
-    return axios.post(`${config.dscUrl}/`, data, this.getOptionsInformation());
+  async updateCampaignMailApi(data, campaignMailId) {
+    return axios.post(
+      `${config.dscUrl}/${campaignMailId}`,
+      data,
+      this.getOptionsInformation()
+    );
   }
 
   async getCampaignMail({ campaignId }) {
@@ -147,11 +153,11 @@ class DscProvider {
         emailCampaignsData
       );
 
-      if (!createCampaignApiResult?.id) {
+      if (!createCampaignApiResult?.data?.id) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return createCampaignApiResult?.id;
+      return createCampaignApiResult?.data?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
@@ -170,11 +176,20 @@ class DscProvider {
         mailingId,
       });
 
+      console.log({
+        id: emailCampaignsData.id,
+        object: emailCampaignsData.subject,
+        replyToMail: emailCampaignsData.replyTo,
+        senderName: emailCampaignsData.senderName,
+        senderMail: emailCampaignsData.senderMail,
+      });
+
       const updateCampaignApiResult = await this.updateCampaignMailApi(
-        emailCampaignsData
+        emailCampaignsData,
+        emailCampaignsData.id
       );
 
-      if (!updateCampaignApiResult?.id) {
+      if (!updateCampaignApiResult?.data?.id) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
@@ -206,11 +221,11 @@ class DscProvider {
         senderMail,
         subject,
         replyTo,
-        mailDscId,
+        name,
       } = campaignMailData;
 
       return {
-        id: mailDscId,
+        id: name,
         object: subject,
         replyToMail: replyTo,
         senderName,

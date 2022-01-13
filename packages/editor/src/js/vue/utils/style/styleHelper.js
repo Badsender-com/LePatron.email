@@ -11,6 +11,10 @@ export const styleHelper = {
     floatLeft: {
       float: 'left'
     },
+    flexContainer: {
+      display: 'flex',
+      flexDirection: 'row'
+    },
     colorOrange:{
       color: '#f57c00'
     }
