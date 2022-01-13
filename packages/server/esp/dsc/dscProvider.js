@@ -19,16 +19,18 @@ class DscProvider {
   }
 
   async connectApi() {
+    logger.log({ urlDSC: config.dscUrl });
     try {
       const emailCampaignConnectionResult = await this.connectApiCall();
       return emailCampaignConnectionResult;
     } catch (e) {
+      logger.error({ errorResponse: e?.response });
       if (e?.response?.status === 405) {
         return true;
       }
 
       if (e?.response?.status === 500) {
-        logger.error({ error: e?.response?.data?.message });
+        logger.error({ errorMessage: e?.response?.data?.message });
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
 
