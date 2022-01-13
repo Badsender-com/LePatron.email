@@ -55,8 +55,8 @@ class DscProvider {
     });
   }
 
-  async updateCampaignMailApi(data) {
-    return axios.post(`${config.dscUrl}/`, data, {
+  async updateCampaignMailApi(data, campaignMailId) {
+    return axios.put(`${config.dscUrl}/${campaignMailId}`, data, {
       headers: { apiKey: this.apiKey, contentType: 'application/json' },
     });
   }
@@ -108,11 +108,11 @@ class DscProvider {
         emailCampaignsData
       );
 
-      if (!createCampaignApiResult?.id) {
+      if (!createCampaignApiResult?.data?.id) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return createCampaignApiResult?.id;
+      return createCampaignApiResult?.data?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
@@ -131,11 +131,20 @@ class DscProvider {
         mailingId,
       });
 
+      console.log({
+        id: emailCampaignsData.id,
+        object: emailCampaignsData.subject,
+        replyToMail: emailCampaignsData.replyTo,
+        senderName: emailCampaignsData.senderName,
+        senderMail: emailCampaignsData.senderMail,
+      });
+
       const updateCampaignApiResult = await this.updateCampaignMailApi(
-        emailCampaignsData
+        emailCampaignsData,
+        emailCampaignsData.id
       );
 
-      if (!updateCampaignApiResult?.id) {
+      if (!updateCampaignApiResult?.data?.id) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
@@ -167,11 +176,11 @@ class DscProvider {
         senderMail,
         subject,
         replyTo,
-        mailDscId,
+        name,
       } = campaignMailData;
 
       return {
-        id: mailDscId,
+        id: name,
         object: subject,
         replyToMail: replyTo,
         senderName,
