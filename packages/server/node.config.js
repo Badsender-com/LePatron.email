@@ -60,6 +60,7 @@ const config = rc('lepatron', {
     password: 'admin',
   },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
+  dscUrl: process.env.DSC_ESP_URL,
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';
