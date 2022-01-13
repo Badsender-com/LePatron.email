@@ -11,8 +11,7 @@ const url = require('url');
 let agent = null;
 if (config.proxyUrl) {
   const proxy = new url.URL(config.proxyUrl);
-  const target = new url.URL(config.dscUrl);
-  if (typeof proxy !== 'undefined' && typeof target !== 'undefined') {
+  if (typeof proxy !== 'undefined') {
     agent = new HttpsProxyAgent(config.proxyUrl);
   }
 }
@@ -42,7 +41,7 @@ class DscProvider {
       const emailCampaignConnectionResult = await this.connectApiCall();
       return emailCampaignConnectionResult;
     } catch (e) {
-      logger.error({ errorResponse: e?.response });
+      logger.error({ errorResponseData: e?.response?.data });
       if (e?.response?.status === 405) {
         return true;
       }
