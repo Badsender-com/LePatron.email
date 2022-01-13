@@ -75,7 +75,7 @@ class DscProvider {
   }
 
   async updateCampaignMailApi(data, campaignMailId) {
-    return axios.post(`${config.dscUrl}/${campaignMailId}`, data, {
+    return axios.put(`${config.dscUrl}/${campaignMailId}`, data, {
       headers: { apiKey: this.apiKey, contentType: 'application/json' },
     });
   }
@@ -150,14 +150,6 @@ class DscProvider {
         mailingId,
       });
 
-      console.log({
-        id: emailCampaignsData.id,
-        object: emailCampaignsData.subject,
-        replyToMail: emailCampaignsData.replyTo,
-        senderName: emailCampaignsData.senderName,
-        senderMail: emailCampaignsData.senderMail,
-      });
-
       const updateCampaignApiResult = await this.updateCampaignMailApi(
         emailCampaignsData,
         emailCampaignsData.id
@@ -173,7 +165,7 @@ class DscProvider {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
       }
 
-      logger.error(e?.response?.message);
+      logger.error(e?.response?.data?.message);
       throw e;
     }
   }
