@@ -5,17 +5,57 @@ const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('axios');
 const { InternalServerError, Conflict } = require('http-errors');
-
+const url = require('url');
 class DscProvider {
   constructor({ apiKey, ...data }) {
     this.apiKey = apiKey;
     this.data = data;
   }
 
+  getOptionsInformation() {
+    try {
+      let options = {};
+      if (config.proxyUrl) {
+        const proxy = new url.URL(config.proxyUrl);
+        const target = new url.URL(config.dscUrl);
+        if (typeof proxy !== 'undefined' && typeof target !== 'undefined') {
+          options = {
+            hostname: proxy.hostname,
+            port: proxy.port || 80,
+            path: target.href,
+            headers: {
+              Host: target.hostname,
+            },
+            auth: {
+              username: proxy.username,
+              password: proxy.password,
+            },
+          };
+        }
+      }
+
+      if (options.headers?.Host) {
+        options = {
+          apiKey: this.apiKey,
+          contentType: 'application/json',
+          ...options,
+        };
+      } else {
+        options = {
+          headers: { apiKey: this.apiKey, contentType: 'application/json' },
+        };
+      }
+      return { proxy: options };
+    } catch (e) {
+      logger.error(e);
+      throw new InternalServerError(
+        ERROR_CODES.UNEXPECTED_ERROR_WHILE_PROCESSING_PROXY
+      );
+    }
+  }
+
   async connectApiCall() {
-    return axios.get(`${config.dscUrl}/`, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+    return axios.get(`${config.dscUrl}/`, this.getOptionsInformation());
   }
 
   async connectApi() {
@@ -46,21 +86,22 @@ class DscProvider {
   }
 
   async getCampaignMailApi({ campaignId }) {
-    return axios.get(`${config.dscUrl}/${campaignId}`, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+    return axios.get(
+      `${config.dscUrl}/${campaignId}`,
+      this.getOptionsInformation()
+    );
   }
 
   async createCampaignMailApi(data) {
-    return axios.post(`${config.dscUrl}/`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+    return axios.post(`${config.dscUrl}/`, data, this.getOptionsInformation());
   }
 
   async updateCampaignMailApi(data, campaignMailId) {
-    return axios.put(`${config.dscUrl}/${campaignMailId}`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+    return axios.post(
+      `${config.dscUrl}/${campaignMailId}`,
+      data,
+      this.getOptionsInformation()
+    );
   }
 
   async getCampaignMail({ campaignId }) {
@@ -91,7 +132,7 @@ class DscProvider {
         subject: object,
       };
     } catch (e) {
-      logger.error(e.response.message);
+      logger.error(e.response);
 
       throw e;
     }
