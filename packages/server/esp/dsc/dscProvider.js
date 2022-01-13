@@ -30,42 +30,6 @@ class DscProvider {
     this.data = data;
   }
 
-  // getOptionsInformation() {
-  //   try {
-  //     let options = {
-  //       headers: { apiKey: this.apiKey, contentType: 'application/json' },
-  //     };
-  //     let proxyOptions = {};
-
-  //     if (config.proxyUrl) {
-  //       const proxy = new url.URL(config.proxyUrl);
-  //       const target = new url.URL(config.dscUrl);
-  //       if (typeof proxy !== 'undefined' && typeof target !== 'undefined') {
-  //         proxyOptions = {
-  //           host: proxy.host,
-  //           port: proxy.port,
-  //           auth: {
-  //             username: proxy.username,
-  //             password: proxy.password,
-  //           },
-  //         };
-  //       }
-
-  //       options = {
-  //         ...options,
-  //         proxy: { ...proxyOptions },
-  //       };
-  //     }
-
-  //     return options;
-  //   } catch (e) {
-  //     logger.error(e);
-  //     throw new InternalServerError(
-  //       ERROR_CODES.UNEXPECTED_ERROR_WHILE_PROCESSING_PROXY
-  //     );
-  //   }
-  // }
-
   async connectApiCall() {
     return axios.get(`${config.dscUrl}/`, {
       headers: { apiKey: this.apiKey, contentType: 'application/json' },
