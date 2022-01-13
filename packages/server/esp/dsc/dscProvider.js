@@ -14,26 +14,24 @@ class DscProvider {
 
   getOptionsInformation() {
     try {
-      console.log({
-        config: config,
-        proxyUrl: config.proxyUrl,
-        dscUrl: config.dscUrl,
-      });
       let options = {};
       if (config.proxyUrl) {
-        const proxy = url.URL(config.proxyUrl);
-        const target = url.URL(config.dscUrl);
-
-        options = {
-          hostname: proxy.hostname,
-          port: proxy.port || 80,
-          path: target.href,
-          headers: {
-            'Proxy-Authorization':
-              'Basic ' + Buffer.from(proxy.auth).toString('base64'),
-            Host: target.hostname,
-          },
-        };
+        const proxy = new url.URL(config.proxyUrl);
+        const target = new url.URL(config.dscUrl);
+        if (typeof proxy !== 'undefined' && typeof target !== 'undefined') {
+          options = {
+            hostname: proxy.hostname,
+            port: proxy.port || 80,
+            path: target.href,
+            headers: {
+              Host: target.hostname,
+            },
+            auth: {
+              username: proxy.username,
+              password: proxy.password,
+            },
+          };
+        }
       }
 
       if (options.headers?.Host) {
@@ -47,9 +45,9 @@ class DscProvider {
           headers: { apiKey: this.apiKey, contentType: 'application/json' },
         };
       }
-      return options;
+      return { proxy: options };
     } catch (e) {
-      logger.error(e?.response?.message);
+      logger.error(e);
       throw new InternalServerError(
         ERROR_CODES.UNEXPECTED_ERROR_WHILE_PROCESSING_PROXY
       );
