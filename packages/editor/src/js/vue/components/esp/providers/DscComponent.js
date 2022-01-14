@@ -3,11 +3,16 @@ import {required} from 'vuelidate/lib/validators';
 const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
+const { TimeInput } = require('../../time-input/timeInput');
 const  { validationMixin } = require('vuelidate');
 const styleHelper = require('../../../utils/style/styleHelper');
 
 const DscComponent = Vue.component('DscComponent', {
+
   mixins: [validationMixin],
+  components:{ 
+    TimeInput
+  },
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null },
@@ -26,6 +31,7 @@ const DscComponent = Vue.component('DscComponent', {
         senderName: '',
         senderMail: '',
         replyTo: '',
+        planification:'',
         subject: '',
         campaignMailName: '',
         type: ESP_TYPE.DSC,
@@ -39,13 +45,13 @@ const DscComponent = Vue.component('DscComponent', {
     }
   },
   mounted() {
-
-    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, replyTo } } = this.fetchedProfile;
+    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, planification, replyTo } } = this.fetchedProfile;
 
     this.profile = {
       campaignMailName: campaignMailName ?? '',
       senderName: senderName ?? '',
       senderMail: senderMail ?? '',
+      planification: planification ?? '',
       replyTo: replyTo ?? '',
       subject: subject ?? '',
       id: id ?? '',
@@ -98,7 +104,8 @@ const DscComponent = Vue.component('DscComponent', {
                   type="text"
                   name="campaignMailName"
                   required
-                  :placeholder="vm.t('mail-id')"
+                  :disabled="isEditMode"
+                  :placeholder="vm.t('mailName')"
                   @input="$v.profile.campaignMailName.$touch()"
                   @blur="$v.profile.campaignMailName.$touch()"
                   :class="[
@@ -106,12 +113,18 @@ const DscComponent = Vue.component('DscComponent', {
                     $v.profile.campaignMailName.required ? 'valid' : 'invalid',
                   ]"
                 />
-                <label for="dscIdMail">{{ vm.t('mail-id') }}</label>
+                <label for="dscIdMail">{{ vm.t('mailName') }}</label>
                 <span
                   v-if="!$v.profile.campaignMailName.required"
                   class="helper-text"
-                  :data-error="vm.t('mail-id-required')"
+                  :data-error="vm.t('mail-name-required')"
                 ></span>
+              </div>
+            </div>
+            <div class="row" :style="style.mb0">
+              <div class="col s12" :style="style.mb0">
+                <label for="planification">{{ vm.t('planification') }}</label><br/>
+                <time-input id="planification"  name="planification" v-model="profile.planification"></time-input>
               </div>
             </div>
             <div class="row" :style="style.mb0">

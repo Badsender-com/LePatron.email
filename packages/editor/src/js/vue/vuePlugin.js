@@ -1,10 +1,13 @@
 const Vue = require('vue/dist/vue.common');
 const EspComponent = require('./components/esp/esp-send-mail');
 const { TestModalComponent } = require('./components/send-test/test-modal');
+
+
 module.exports = {
   viewModel(vm, ko) {},
   init(vm) {
     // Init VueJS component
+
     Vue.component('AppVue', {
       components: {
         EspComponent,
@@ -13,7 +16,9 @@ module.exports = {
       data: () => ({
         viewModel: vm,
       }),
-      mounted() {},
+      mounted() {
+      
+      },
       template: `
         <div>
           <esp-form :vm="viewModel"></esp-form>

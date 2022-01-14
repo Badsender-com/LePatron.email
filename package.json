@@ -112,6 +112,7 @@
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
     "vue-select": "3.13.0",
+    "vue2-timepicker": "1.1.6",
     "vuelidate": "0.7.4",
     "xml2json": "0.12.0"
   },

@@ -95,15 +95,17 @@ class DscProvider {
         senderMail,
         senderName,
         replyToMail,
+        planification,
       } = emailCampaignResult?.data;
 
       return {
         name: id,
         additionalApiData: {
-          senderName: senderName,
-          senderMail: senderMail,
+          senderName,
+          senderMail,
           id: id,
           replyTo: replyToMail,
+          planification,
         },
         subject: object,
       };
@@ -188,6 +190,7 @@ class DscProvider {
         subject,
         replyTo,
         name,
+        planification,
       } = campaignMailData;
 
       return {
@@ -195,6 +198,7 @@ class DscProvider {
         object: subject,
         replyToMail: replyTo,
         senderName,
+        planification,
         senderMail,
         template: processedHtml,
       };
