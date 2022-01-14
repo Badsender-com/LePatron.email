@@ -135,7 +135,7 @@ async function updateEspCampaign({
   campaignId,
   type,
 }) {
-  const { subject, campaignMailName } = espSendingMailData;
+  const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
 
   const {
@@ -163,6 +163,7 @@ async function updateEspCampaign({
   const campaignMailData = {
     ...additionalApiData,
     subject,
+    planification,
     name: campaignMailName,
   };
 
@@ -198,7 +199,7 @@ async function sendEspCampaign({
   mailingId,
   type,
 }) {
-  const { subject, campaignMailName } = espSendingMailData;
+  const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
 
   await checkIfMailAlreadySentToProfile({ profileId, mailingId });
@@ -226,6 +227,7 @@ async function sendEspCampaign({
   const campaignMailData = {
     ...additionalApiData,
     subject,
+    planification,
     name: campaignMailName,
   };
 

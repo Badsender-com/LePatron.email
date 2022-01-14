@@ -52,6 +52,7 @@ module.exports = {
 
   // Profile form esp
   'sender-name': 'Sender name',
+  planification: 'Planification',
   'sender-mail': 'Sender email address',
   replyto: 'Reply email address',
   mailSubject: 'Subject',
