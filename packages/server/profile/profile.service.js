@@ -72,13 +72,16 @@ async function createProfile({
     _company,
     additionalApiData,
   });
+
   if (await Profiles.exists({ name, _company })) {
     throw new Conflict(ERROR_CODES.PROFILE_NAME_ALREADY_EXIST);
   }
+
   const espConnectionResult = await espProvider.connectApi();
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
+
   return Profiles.create({
     name,
     type,
@@ -132,7 +135,7 @@ async function updateEspCampaign({
   campaignId,
   type,
 }) {
-  const { subject, campaignMailName } = espSendingMailData;
+  const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
 
   const {
@@ -160,6 +163,7 @@ async function updateEspCampaign({
   const campaignMailData = {
     ...additionalApiData,
     subject,
+    planification,
     name: campaignMailName,
   };
 
@@ -195,7 +199,7 @@ async function sendEspCampaign({
   mailingId,
   type,
 }) {
-  const { subject, campaignMailName } = espSendingMailData;
+  const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
 
   await checkIfMailAlreadySentToProfile({ profileId, mailingId });
@@ -223,6 +227,7 @@ async function sendEspCampaign({
   const campaignMailData = {
     ...additionalApiData,
     subject,
+    planification,
     name: campaignMailName,
   };
 
@@ -277,7 +282,7 @@ async function checkIfMailAlreadySentToProfile({ profileId, mailingId }) {
     return true;
   }
 
-  mailing.espIds.forEach((espId) => {
+  mailing.espIds?.forEach((espId) => {
     if (espId?.profileId?.toString() === profileId?.toString()) {
       throw new Conflict(ERROR_CODES.MAIL_ALREADY_SENT_TO_PROFILE);
     }

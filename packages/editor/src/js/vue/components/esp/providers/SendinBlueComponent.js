@@ -107,6 +107,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
               v-model="profile.campaignMailName"
               type="text"
               name="name"
+              :disabled="isEditMode"
               required
               :placeholder="vm.t(nameLabelText)"
               @input="$v.profile.campaignMailName.$touch()"
