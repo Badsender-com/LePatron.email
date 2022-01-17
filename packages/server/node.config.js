@@ -4,12 +4,14 @@ const os = require('os');
 const path = require('path');
 const rc = require('rc');
 const _ = require('lodash');
+require('dotenv').config();
 const { mkdirp } = require('fs-extra');
 
 const localEmail = Object.freeze({
   host: '0.0.0.0',
   port: 1025,
 });
+
 // default config is made for an easy use on local dev
 const config = rc('lepatron', {
   forcessl: false,
@@ -60,6 +62,7 @@ const config = rc('lepatron', {
     password: 'admin',
   },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
+  dscUrl: process.env.DSC_ESP_URL,
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';

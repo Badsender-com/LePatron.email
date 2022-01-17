@@ -59,6 +59,7 @@
     "cookie-parser": "1.4.4",
     "decode-uri-component": "0.2.0",
     "denodeify": "1.2.1",
+    "dotenv": "11.0.0",
     "express": "4.17.1",
     "express-async-handler": "1.1.4",
     "express-favicon": "2.0.1",
@@ -72,6 +73,7 @@
     "he": "1.2.0",
     "helmet": "3.21.1",
     "http-errors": "1.7.3",
+    "https-proxy-agent": "5.0.0",
     "i18n": "0.8.3",
     "iso-language-codes": "1.1.0",
     "lodash": "4.17.15",
@@ -110,6 +112,7 @@
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",
     "vue-select": "3.13.0",
+    "vue2-timepicker": "1.1.6",
     "vuelidate": "0.7.4",
     "xml2json": "0.12.0"
   },

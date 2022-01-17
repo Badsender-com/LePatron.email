@@ -8,8 +8,17 @@
 @import (less) '../../../../node_modules/toastr/toastr.less';
 
 @import (less) '../../../../node_modules/vue-select/dist/vue-select.css';
+@import (less) '../../../../node_modules/vue2-timepicker/dist/VueTimepicker.css';
 @import (less) 'custom-select-style.less';
 
+.vue__time-picker-dropdown, .vue__time-picker .dropdown {
+  min-width: 0;
+  width: 9em;
+}
+.vue__time-picker-dropdown .select-list, .vue__time-picker .dropdown .select-list {
+  width: 7em;
+  height: 9em;
+}
 // Override variables
 
 @tab-text-color: #555;

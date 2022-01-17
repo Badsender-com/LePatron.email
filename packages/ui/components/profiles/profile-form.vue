@@ -2,6 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import SENDINBLUEComponent from '../../components/profiles/esp/SENDINBLUEComponent';
 import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
+import DSCComponent from '../../components/profiles/esp/DSCComponent';
 import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 
@@ -10,6 +11,7 @@ export default {
   components: {
     SENDINBLUEComponent,
     ACTITOComponent,
+    DSCComponent,
   },
   mixins: [validationMixin],
   props: {
@@ -27,6 +29,10 @@ export default {
         {
           text: 'Actito',
           value: ESP_TYPES.ACTITO,
+        },
+        {
+          text: 'DSC',
+          value: ESP_TYPES.DSC,
         },
       ],
       selectedEsp: ESP_TYPES.SENDINBLUE,

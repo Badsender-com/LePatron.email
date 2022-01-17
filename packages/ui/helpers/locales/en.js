@@ -12,6 +12,7 @@ export default {
       required: 'This field is required',
       userRequired: 'A user is required',
       entityRequired: 'An entity is required',
+      replyToRequired: 'A reply email is required',
       targetTableRequired: 'A target table is required',
       nameRequired: 'A name is required',
       apiKeyInvalid: 'API key invalid',
