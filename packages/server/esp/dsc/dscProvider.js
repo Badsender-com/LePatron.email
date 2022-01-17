@@ -138,7 +138,8 @@ class DscProvider {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
       }
-      logger.error(e?.response?.message);
+      logger.error(e?.response?.data?.message);
+      logger.error(`Error: ${e?.response?.message?.data?.message}`);
       throw e;
     }
   }
@@ -193,15 +194,22 @@ class DscProvider {
         planification,
       } = campaignMailData;
 
-      return {
+      let formattedData = {
         id: name,
         object: subject,
         replyToMail: replyTo,
         senderName,
-        planification,
         senderMail,
         template: processedHtml,
       };
+
+      if (planification) {
+        formattedData = {
+          ...formattedData,
+          planification,
+        };
+      }
+      return formattedData;
     } catch (e) {
       throw new InternalServerError(
         ERROR_CODES.UNEXPECTED_ERROR_WHILE_PROCESSING_HTML
