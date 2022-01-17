@@ -82,6 +82,7 @@ class DscProvider {
 
   async getCampaignMail({ campaignId }) {
     try {
+      logger.log('Fetching campaign mail for DSC: ', campaignId);
       if (!campaignId) {
         throw new InternalServerError(
           ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
@@ -118,6 +119,7 @@ class DscProvider {
 
   async createCampaignMail({ campaignMailData, user, html, mailingId }) {
     try {
+      logger.log('Creating campaign mail for DSC: ', campaignMailData?.name);
       const emailCampaignsData = await this.formatDscData({
         campaignMailData,
         user,
@@ -146,6 +148,8 @@ class DscProvider {
 
   async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
     try {
+      logger.log('Updating campaign mail for DSC: ', campaignMailData?.name);
+
       const emailCampaignsData = await this.formatDscData({
         campaignMailData,
         user,
