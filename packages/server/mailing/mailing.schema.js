@@ -130,6 +130,7 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
   this._id = newId;
   this.name = `${this.name.trim()} copy`;
   this.isNew = true;
+  this.espIds = [];
   this.createdAt = new Date();
   this.updatedAt = new Date();
   // set new user
