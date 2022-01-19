@@ -12,6 +12,7 @@ export default {
       required: 'Ce champ est obligatoire',
       userRequired: 'Veuillez saisir un utilisateur',
       nameRequired: 'Veuillez saisir un nom',
+      replyToRequired: 'Veuillez saisir un email de réponse',
       entityRequired: 'Veuillez choisir une entité',
       targetTableRequired: 'Veuillez choisir une table cible',
       supportedLanguageIsRequired: 'Veuillez définir La langue',
