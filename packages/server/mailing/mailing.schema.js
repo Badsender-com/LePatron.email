@@ -164,6 +164,12 @@ MailingSchema.index({ tags: 1 });
 MailingSchema.index({ tags: -1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
+  return this.find(query, { previewHtml: 0, data: 0 });
+};
+
+MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
+  query = {}
+) {
   const { paginationJSON, filtersJSON, ...restQuery } = query;
   const additionalQueryParams = {};
 

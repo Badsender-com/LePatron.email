@@ -158,7 +158,7 @@ async function updateMailEspIds(mailingId, espId) {
 
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
-  return Mailings.findForApi(mailingQuery);
+  return Mailings.findForApiWithPagination(mailingQuery);
 }
 
 async function findTags(query) {
