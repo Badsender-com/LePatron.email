@@ -1139,19 +1139,19 @@ function applyFilters(query) {
   const { user, workspaceId, parentFolderId, ...restQuery } = query;
 
   const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
-  let workspaceOrFolterFilter = { ...mailingQueryStrictGroup, ...restQuery };
+  let workspaceOrFolderFilter = { ...mailingQueryStrictGroup, ...restQuery };
 
   if (workspaceId) {
-    workspaceOrFolterFilter = {
-      ...workspaceOrFolterFilter,
+    workspaceOrFolderFilter = {
+      ...workspaceOrFolderFilter,
       _workspace: mongoose.Types.ObjectId(workspaceId),
     };
   } else if (parentFolderId) {
-    workspaceOrFolterFilter = {
-      ...workspaceOrFolterFilter,
+    workspaceOrFolderFilter = {
+      ...workspaceOrFolderFilter,
       _parentFolder: mongoose.Types.ObjectId(parentFolderId),
     };
   }
 
-  return workspaceOrFolterFilter;
+  return workspaceOrFolderFilter;
 }
