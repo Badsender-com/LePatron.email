@@ -882,6 +882,7 @@ async function copyMailing(mailingId, destination, user) {
     'updatedAt',
     '_user',
     'author',
+    'espIds',
     '_workspace',
     'workspace',
     '_parentFolder',

@@ -1,5 +1,5 @@
 
-const EspType = { 'SENDINBLUE':'SENDINBLUE', 'ACTITO':'ACTITO' }
+const EspType = { 'SENDINBLUE':'SENDINBLUE', 'ACTITO':'ACTITO', 'DSC': 'DSC' }
 Object.freeze(EspType);
 
 module.exports = {
