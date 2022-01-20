@@ -37,6 +37,7 @@ export default {
         updatedAtEnd: '',
         tags: [],
       });
+      this.$emit('on-refresh', { pagination: { page: 1 } });
     },
     handleNameChange: _.debounce(function (value) {
       this.commitFilterChangeToStore({ name: value });
@@ -63,7 +64,7 @@ export default {
       this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
         ...changeObject,
       });
-      this.$emit('on-refresh');
+      this.$emit('on-refresh', { pagination: { page: 1 } });
     },
   },
 };

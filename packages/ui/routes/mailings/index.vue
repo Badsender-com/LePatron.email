@@ -15,6 +15,7 @@ import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-sele
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import {
   FOLDER,
+  SET_PAGINATION,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
 } from '~/store/folder';
@@ -83,7 +84,11 @@ export default {
       get() {
         return this.pagination.page;
       },
-      set(val) {
+      async set(val) {
+        const { commit } = this.$store;
+        await commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: val,
+        });
         this.fetchMailListingForFilterUpdate({ pagination: { page: val } });
       },
     },

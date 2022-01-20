@@ -152,7 +152,6 @@ export const actions = {
       const queryMailing = rootState.folder.folder?.id
         ? { parentFolderId: query?.fid }
         : { workspaceId: query?.wid };
-
       try {
         const mailingsResponse = await this.$axios.$get(mailings(), {
           params: {

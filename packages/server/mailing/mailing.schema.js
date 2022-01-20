@@ -173,9 +173,9 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   }
 
   if (
-    paginationJSON.sortBy &&
+    paginationJSON?.sortBy &&
     Array.isArray(paginationJSON.sortBy) &&
-    paginationJSON.sortDesc &&
+    paginationJSON?.sortDesc &&
     Array.isArray(paginationJSON.sortDesc)
   ) {
     let sortByKey;
