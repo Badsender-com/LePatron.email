@@ -13,7 +13,12 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
-import { FOLDER, FETCH_MAILINGS } from '~/store/folder';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
+  FETCH_MAILINGS_FOR_FILTER_UPDATE,
+} from '~/store/folder';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 
 export default {
@@ -35,7 +40,7 @@ export default {
   },
   async asyncData({ query, store }) {
     await Promise.all([
-      store.dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
+      store.dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
         query,
       }),
       store.dispatch(`${TEMPLATE}/${FETCH_TEMPLATES}`),
@@ -57,7 +62,7 @@ export default {
     ...mapState(FOLDER, [
       'mailings',
       'tags',
-      'mailingsIsLoading',
+      'mailingsIsLoadingForWorkspaceUpdate',
       'pagination',
       'filters',
     ]),
@@ -79,8 +84,12 @@ export default {
       get() {
         return this.pagination.page;
       },
-      set(val) {
-        this.fetchMailListingData({ pagination: { page: val } });
+      async set(val) {
+        const { commit } = this.$store;
+        await commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: val,
+        });
+        this.fetchMailListingForFilterUpdate({ pagination: { page: val } });
       },
     },
   },
@@ -101,9 +110,17 @@ export default {
       );
       this.loading = false;
     },
-    async fetchMailListingData(additionalParams = {}) {
+    async fetchMailListingForFilterUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
-      await dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_FILTER_UPDATE}`, {
+        query: this.$route.query,
+        $t: this.$t,
+        ...additionalParams,
+      });
+    },
+    async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
         query: this.$route.query,
         $t: this.$t,
         ...additionalParams,
@@ -133,7 +150,7 @@ export default {
           items,
           tags,
         });
-        await this.fetchMailListingData();
+        await this.fetchMailListingForFilterUpdate();
         this.showSnackbar({
           text: this.$t('mailings.editTagsSuccessful'),
           color: 'success',
@@ -199,9 +216,15 @@ export default {
       </div>
     </template>
     <v-card>
-      <v-skeleton-loader :loading="mailingsIsLoading" type="table">
+      <v-skeleton-loader
+        :loading="mailingsIsLoadingForWorkspaceUpdate"
+        type="table"
+      >
         <mailings-header @on-refresh="refreshLeftMenuData" />
-        <mailings-filters :tags="tags" @on-refresh="fetchMailListingData" />
+        <mailings-filters
+          :tags="tags"
+          @on-refresh="fetchMailListingForFilterUpdate"
+        />
         <mailings-selection-actions
           ref="mailingSelectionActions"
           :mailings-selection="mailingsSelection"
@@ -209,7 +232,7 @@ export default {
           :has-ftp-access="hasFtpAccess"
           @createTag="onTagCreate"
           @updateTags="onMailSelectionTagsUpdate"
-          @on-refetch="fetchMailListingData"
+          @on-refetch="fetchMailListingForFilterUpdate"
         />
         <mailings-table
           v-model="mailingsSelection"
@@ -217,7 +240,7 @@ export default {
           :has-ftp-access="hasFtpAccess"
           :tags="tags"
           @on-single-mail-download="handleDownloadSingleMail"
-          @on-refetch="fetchMailListingData"
+          @on-refetch="fetchMailListingForFilterUpdate"
           @update-tags="onMailTableTagsUpdate"
         />
         <v-card

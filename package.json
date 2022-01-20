@@ -82,7 +82,7 @@
     "moment": "2.24.0",
     "mongoose": "5.12.0",
     "mongoose-hidden": "1.8.1",
-    "mongoose-paginate-v2": "1.4.2",
+    "mongoose-paginate-v2": "1.5.0",
     "morgan": "1.9.1",
     "nodemailer": "6.4.16",
     "nodemailer-sendgrid": "1.0.3",

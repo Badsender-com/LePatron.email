@@ -18,9 +18,15 @@ export const SET_TAGS = 'SET_TAGS';
 export const SET_PAGINATION = 'SET_PAGINATION';
 export const SET_FILTERS = 'SET_FILTERS';
 export const SET_SORTBY = 'SET_SORTBY';
-export const SET_LOADING_MAILINGS = 'SET_LOADING_MAILINGS';
+export const SET_LOADING_MAILINGS_FOR_FILTER_UPDATE =
+  'SET_LOADING_MAILINGS_FOR_FILTER_UPDATE';
+export const SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE =
+  'SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE';
 
 export const FETCH_MAILINGS = 'fetchMailings';
+export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
+export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
+  'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
 
 export const state = () => ({
@@ -48,7 +54,8 @@ export const state = () => ({
   },
   mailings: [],
   tags: [],
-  mailingsIsLoading: false,
+  mailingsIsLoadingForFilterUpdate: false,
+  mailingsIsLoadingForWorkspaceUpdate: false,
 });
 
 export const getters = {};
@@ -79,8 +86,17 @@ export const mutations = {
       ...filters,
     };
   },
-  [SET_LOADING_MAILINGS](store, mailingsIsLoading) {
-    store.mailingsIsLoading = mailingsIsLoading;
+  [SET_LOADING_MAILINGS_FOR_FILTER_UPDATE](
+    store,
+    mailingsIsLoadingForFilterUpdate
+  ) {
+    store.mailingsIsLoadingForFilterUpdate = mailingsIsLoadingForFilterUpdate;
+  },
+  [SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE](
+    store,
+    mailingsIsLoadingForWorkspaceUpdate
+  ) {
+    store.mailingsIsLoadingForWorkspaceUpdate = mailingsIsLoadingForWorkspaceUpdate;
   },
   [SET_HAS_ACCESS](store, hasAccess) {
     store.hasAccess = hasAccess;
@@ -113,7 +129,7 @@ export const actions = {
           commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
         }
 
-        await dispatch(FETCH_MAILINGS, {
+        await dispatch(FETCH_MAILINGS_FOR_WORKSPACE_UPDATE, {
           query,
           $t,
         });
@@ -132,12 +148,10 @@ export const actions = {
     }
   },
   async [FETCH_MAILINGS]({ commit, rootState }, { query, $t, pagination }) {
-    commit(SET_LOADING_MAILINGS, true);
     if (!!query?.wid || !!query?.fid) {
       const queryMailing = rootState.folder.folder?.id
         ? { parentFolderId: query?.fid }
         : { workspaceId: query?.wid };
-
       try {
         const mailingsResponse = await this.$axios.$get(mailings(), {
           params: {
@@ -180,9 +194,23 @@ export const actions = {
             { root: true }
           );
         }
-      } finally {
-        commit(SET_LOADING_MAILINGS, false);
       }
     }
+  },
+  async [FETCH_MAILINGS_FOR_FILTER_UPDATE](
+    { commit, dispatch },
+    { query, $t, pagination }
+  ) {
+    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, true);
+    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
+  },
+  async [FETCH_MAILINGS_FOR_WORKSPACE_UPDATE](
+    { commit, dispatch },
+    { query, $t, pagination }
+  ) {
+    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
+    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
   },
 };

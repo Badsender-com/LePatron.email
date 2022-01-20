@@ -164,6 +164,12 @@ MailingSchema.index({ tags: 1 });
 MailingSchema.index({ tags: -1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
+  return this.find(query, { previewHtml: 0, data: 0 });
+};
+
+MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
+  query = {}
+) {
   const { paginationJSON, filtersJSON, ...restQuery } = query;
   const additionalQueryParams = {};
 
@@ -231,7 +237,7 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
     }
   }
 
-  return this.paginate(restQuery, {
+  const result = await this.paginate(restQuery, {
     projection: {
       id: '$_id',
       name: 1,
@@ -241,17 +247,7 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
       userName: '$author',
       userId: '$_user',
       tags: 1,
-      hasHtmlPreview: {
-        $not: [
-          {
-            $not: [
-              {
-                $ifNull: ['$previewHtml', 0],
-              },
-            ],
-          },
-        ],
-      },
+      previewHtml: '$previewHtml',
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
@@ -260,6 +256,15 @@ MailingSchema.statics.findForApi = async function findForApi(query = {}) {
     lean: true,
     ...additionalQueryParams,
   });
+
+  const { docs, ...restPaginationProperties } = result;
+
+  const convertedResultMailingDocs = docs?.map(({ previewHtml, ...doc }) => ({
+    hasHtmlPreview: !!previewHtml,
+    ...doc,
+  }));
+
+  return { docs: convertedResultMailingDocs, ...restPaginationProperties };
 };
 
 // Use aggregate so we excluse previewHtml and define another boolean variable hasPreviewHtml based on the existence of previewHtml
@@ -275,14 +280,12 @@ MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
     {
       $addFields: {
         hasHtmlPreview: {
-          $not: [
+          $cond: [
             {
-              $not: [
-                {
-                  $ifNull: ['$previewHtml', 0],
-                },
-              ],
+              $ifNull: ['$previewHtml', false],
             },
+            '$previewHtml',
+            1,
           ],
         },
       },

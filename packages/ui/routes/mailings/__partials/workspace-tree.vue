@@ -16,7 +16,7 @@ import {
   FOLDER,
   SET_PAGINATION,
   FETCH_FOLDER_OR_WORKSPACE,
-  SET_LOADING_MAILINGS,
+  SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE,
 } from '~/store/folder';
 
 export default {
@@ -67,7 +67,7 @@ export default {
         commit(`${FOLDER}/${SET_PAGINATION}`, {
           page: 1,
         }),
-        commit(`${FOLDER}/${SET_LOADING_MAILINGS}`, true),
+        commit(`${FOLDER}/${SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE}`, true),
       ]);
     },
     async fetchData() {

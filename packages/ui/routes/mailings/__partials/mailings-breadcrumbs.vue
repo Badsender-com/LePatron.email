@@ -57,9 +57,6 @@ export default {
         return { fid: item.id };
       }
     },
-    log(item) {
-      console.log({ query: this.queryParamsBasedOnItemType(item) });
-    },
   },
 };
 </script>
@@ -69,7 +66,6 @@ export default {
       <v-icon>mdi-chevron-right</v-icon>
     </template>
     <template #item="{ item }">
-      {{ log(item) }}
       <v-breadcrumbs-item
         :to="{ path: '/', query: queryParamsBasedOnItemType(item) }"
         :disabled="item.disabled"
