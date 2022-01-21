@@ -16,6 +16,7 @@ import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import {
   FOLDER,
   SET_PAGINATION,
+  SET_TAGS,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
 } from '~/store/folder';
@@ -117,6 +118,7 @@ export default {
         $t: this.$t,
         ...additionalParams,
       });
+      this.mailingsSelection = [];
     },
     async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
@@ -127,13 +129,17 @@ export default {
       });
     },
     onTagCreate(newTag) {
-      this.tags = [...new Set([newTag, ...this.tags])];
+      this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
+        ...new Set([newTag, ...this.tags]),
+      ]);
+      this.mailingsSelection = [];
     },
     async onMailSelectionTagsUpdate(tagsUpdates) {
       await this.handleTagsUpdate({
         items: this.mailingsSelection.map((mailing) => mailing.id),
         tags: tagsUpdates,
       });
+      this.mailingsSelection = [];
     },
     async onMailTableTagsUpdate(tagsInformations) {
       const { tags, selectedMailing } = tagsInformations;
