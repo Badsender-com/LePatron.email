@@ -132,7 +132,6 @@ export default {
       this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
         ...new Set([newTag, ...this.tags]),
       ]);
-      this.mailingsSelection = [];
     },
     async onMailSelectionTagsUpdate(tagsUpdates) {
       await this.handleTagsUpdate({
