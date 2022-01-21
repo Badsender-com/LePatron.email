@@ -174,8 +174,12 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const additionalQueryParams = {};
 
   if (paginationJSON && paginationJSON.page && paginationJSON.itemsPerPage) {
-    additionalQueryParams.page = paginationJSON.page;
-    additionalQueryParams.limit = parseInt(paginationJSON.itemsPerPage);
+    if (paginationJSON.itemsPerPage !== -1) {
+      additionalQueryParams.page = paginationJSON.page;
+      additionalQueryParams.limit = parseInt(paginationJSON.itemsPerPage);
+    } else {
+      additionalQueryParams.pagination = false;
+    }
   }
 
   if (
@@ -265,49 +269,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   }));
 
   return { docs: convertedResultMailingDocs, ...restPaginationProperties };
-};
-
-// Use aggregate so we excluse previewHtml and define another boolean variable hasPreviewHtml based on the existence of previewHtml
-MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
-  query = {}
-) {
-  return this.aggregate([
-    {
-      $match: {
-        ...query,
-      },
-    },
-    {
-      $addFields: {
-        hasHtmlPreview: {
-          $cond: [
-            {
-              $ifNull: ['$previewHtml', false],
-            },
-            '$previewHtml',
-            1,
-          ],
-        },
-      },
-    },
-    {
-      $project: {
-        id: '$_id',
-        name: 1,
-        group: '$_company',
-        templateName: '$wireframe',
-        templateId: '$_wireframe',
-        userName: '$author',
-        userId: '$_user',
-        _workspace: 1,
-        tags: 1,
-        espIds: 1,
-        hasHtmlPreview: 1,
-        updatedAt: 1,
-        createdAt: 1,
-      },
-    },
-  ]);
 };
 
 // Extract used tags from creations

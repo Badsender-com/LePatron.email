@@ -388,7 +388,7 @@ export default {
           disablePagination: true,
           prevIcon: 'none',
           nextIcon: 'none',
-          itemsPerPageOptions: [5, 10, 15],
+          itemsPerPageOptions: [5, 10, 15, -1],
         }"
         @update:items-per-page="handleItemsPerPageChange"
         @update:sort-by="handleSortByChange"
