@@ -19,6 +19,9 @@ export default {
       workspacesIsLoading: false,
     };
   },
+  async fetch() {
+    this.fetchData();
+  },
   computed: {
     selectedLocation() {
       return findNestedLocation(
@@ -33,9 +36,6 @@ export default {
   },
   watch: {
     $route: 'fetchData',
-  },
-  async mounted() {
-    await this.fetchData();
   },
   methods: {
     async fetchData() {

@@ -5,26 +5,57 @@ import {
   getFolderAccess,
   getWorkspaceAccess,
 } from '~/helpers/api-routes';
-import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-export const FOLDER = 'folder';
 
+import { parsePaginationData } from '~/utils/parsePagination';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+
+export const FOLDER = 'folder';
 export const SET_FOLDER = 'SET_FOLDER';
 export const SET_WORKSPACE = 'SET_WORKSPACE';
 export const SET_HAS_ACCESS = 'SET_HAS_ACCESS';
 export const SET_MAILINGS = 'SET_MAILINGS';
 export const SET_TAGS = 'SET_TAGS';
-export const SET_LOADING_MAILINGS = 'SET_LOADING_MAILINGS';
+export const SET_PAGINATION = 'SET_PAGINATION';
+export const SET_FILTERS = 'SET_FILTERS';
+export const SET_SORTBY = 'SET_SORTBY';
+export const SET_LOADING_MAILINGS_FOR_FILTER_UPDATE =
+  'SET_LOADING_MAILINGS_FOR_FILTER_UPDATE';
+export const SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE =
+  'SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE';
 
 export const FETCH_MAILINGS = 'fetchMailings';
+export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
+export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
+  'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
 
 export const state = () => ({
   workspace: {},
   folder: {},
   hasAccess: false,
+  pagination: {
+    sortBy: ['updatedAt'],
+    sortDesc: [true],
+    page: 1,
+    itemsPerPage: 10,
+    pageStart: 0,
+    pageStop: 10,
+    pageCount: 1,
+    itemsLength: 10,
+  },
+  filters: {
+    name: '',
+    templates: [],
+    createdAtStart: '',
+    createdAtEnd: '',
+    updatedAtStart: '',
+    updatedAtEnd: '',
+    tags: [],
+  },
   mailings: [],
   tags: [],
-  mailingsIsLoading: false,
+  mailingsIsLoadingForFilterUpdate: false,
+  mailingsIsLoadingForWorkspaceUpdate: false,
 });
 
 export const getters = {};
@@ -43,8 +74,29 @@ export const mutations = {
   [SET_TAGS](store, tags) {
     store.tags = tags;
   },
-  [SET_LOADING_MAILINGS](store, mailingsIsLoading) {
-    store.mailingsIsLoading = mailingsIsLoading;
+  [SET_PAGINATION](store, paginationData) {
+    store.pagination = {
+      ...store.pagination,
+      ...paginationData,
+    };
+  },
+  [SET_FILTERS](store, filters) {
+    store.filters = {
+      ...store.filters,
+      ...filters,
+    };
+  },
+  [SET_LOADING_MAILINGS_FOR_FILTER_UPDATE](
+    store,
+    mailingsIsLoadingForFilterUpdate
+  ) {
+    store.mailingsIsLoadingForFilterUpdate = mailingsIsLoadingForFilterUpdate;
+  },
+  [SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE](
+    store,
+    mailingsIsLoadingForWorkspaceUpdate
+  ) {
+    store.mailingsIsLoadingForWorkspaceUpdate = mailingsIsLoadingForWorkspaceUpdate;
   },
   [SET_HAS_ACCESS](store, hasAccess) {
     store.hasAccess = hasAccess;
@@ -77,7 +129,7 @@ export const actions = {
           commit(SET_HAS_ACCESS, hasAccessData?.hasAccess);
         }
 
-        await dispatch(FETCH_MAILINGS, {
+        await dispatch(FETCH_MAILINGS_FOR_WORKSPACE_UPDATE, {
           query,
           $t,
         });
@@ -95,20 +147,42 @@ export const actions = {
       }
     }
   },
-  async [FETCH_MAILINGS]({ commit, rootState }, { query, $t }) {
-    commit(SET_LOADING_MAILINGS, true);
+  async [FETCH_MAILINGS]({ commit, rootState }, { query, $t, pagination }) {
     if (!!query?.wid || !!query?.fid) {
       const queryMailing = rootState.folder.folder?.id
         ? { parentFolderId: query?.fid }
         : { workspaceId: query?.wid };
-
       try {
         const mailingsResponse = await this.$axios.$get(mailings(), {
-          params: queryMailing,
+          params: {
+            ...queryMailing,
+            pagination: {
+              ...rootState.folder?.pagination,
+              ...(pagination || {}),
+            },
+            filters: rootState.folder?.filters,
+          },
         });
+        const { docs, ...paginationsData } = mailingsResponse?.items;
 
-        commit(SET_MAILINGS, mailingsResponse?.items);
+        commit(SET_MAILINGS, docs);
         commit(SET_TAGS, mailingsResponse.meta?.tags);
+        const {
+          page,
+          itemsPerPage,
+          pageStart,
+          pageStop,
+          pageCount,
+          itemsLength,
+        } = parsePaginationData(paginationsData);
+        commit(SET_PAGINATION, {
+          page,
+          itemsPerPage,
+          pageStart,
+          pageStop,
+          pageCount,
+          itemsLength,
+        });
       } catch (e) {
         if ($t) {
           commit(
@@ -120,9 +194,23 @@ export const actions = {
             { root: true }
           );
         }
-      } finally {
-        commit(SET_LOADING_MAILINGS, false);
       }
     }
+  },
+  async [FETCH_MAILINGS_FOR_FILTER_UPDATE](
+    { commit, dispatch },
+    { query, $t, pagination }
+  ) {
+    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, true);
+    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
+  },
+  async [FETCH_MAILINGS_FOR_WORKSPACE_UPDATE](
+    { commit, dispatch },
+    { query, $t, pagination }
+  ) {
+    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
+    await dispatch(FETCH_MAILINGS, { query, $t, pagination });
+    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
   },
 };
