@@ -56,10 +56,16 @@ export default {
 </script>
 
 <template>
-  <v-expansion-panels flat focusable>
+  <v-expansion-panels accordion focusable flat tile>
     <v-expansion-panel>
-      <v-expansion-panel-header expand-icon="filter_list" disable-icon-rotate>
-        {{ $t(`mailings.list`) }}
+      <v-expansion-panel-header
+        expand-icon="filter_list"
+        color="grey lighten-3"
+      >
+        <div>
+          <v-icon>manage_search</v-icon>
+          {{ $t(`mailings.list`) }}
+        </div>
       </v-expansion-panel-header>
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
@@ -191,7 +197,7 @@ export default {
             </v-menu>
           </div>
           <div class="bs-mailings-filters__actions">
-            <v-btn color="primary" text @click="reset">
+            <v-btn color="grey darken-2" dark elevation="0" @click="reset">
               {{ $t(`global.reset`) }}
             </v-btn>
           </div>
@@ -208,8 +214,8 @@ export default {
   grid-gap: 0 3rem;
 }
 .bs-mailings-filters__actions {
-  grid-column: span 3;
   text-align: right;
+  align-self: center;
 }
 .bs-mailings-filters__date-picker {
   display: grid;

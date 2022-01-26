@@ -100,9 +100,9 @@ export default {
           {{ $t('mailings.creationNotice') }}
         </p>
         <v-card
-          class="d-flex flex-row justify-space-around flex-wrap-reverse"
           flat
           tile
+          class="d-flex flex-row justify-space-around flex-wrap-reverse"
         >
           <template-card
             v-for="template in templatesHasMarkup"
@@ -119,7 +119,12 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
+        <v-btn
+          :disabled="!isValidToCreate"
+          elevation="0"
+          type="submit"
+          color="accent"
+        >
           {{ $t('global.add') }}
         </v-btn>
       </v-card-actions>

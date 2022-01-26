@@ -29,10 +29,7 @@ export default {
 </script>
 
 <template>
-  <v-card
-    flat
-    tile
-  >
+  <v-card flat tile>
     <v-card-text>
       <bs-templates-table
         :templates="templates"

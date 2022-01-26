@@ -97,7 +97,7 @@ export default {
       :close-on-content-click="false"
       :width="300"
     >
-      <v-card>
+      <v-card flat tile>
         <v-list>
           <v-list-item>
             <v-list-item-content>
@@ -130,7 +130,7 @@ export default {
           <v-btn color="primary" text @click="openNewTagDialog">
             {{ $t('tags.new') }}
           </v-btn>
-          <v-btn color="primary" @click="updateMailingsTags">
+          <v-btn color="accent" elevation="0" @click="updateMailingsTags">
             {{ $t(`global.apply`) }}
           </v-btn>
         </v-card-actions>

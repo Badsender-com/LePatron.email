@@ -5,6 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { mapMutations } from 'vuex';
 
 import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
 import BsGroupMenu from '~/components/group/menu.vue';
 
@@ -22,10 +23,11 @@ export default {
       const { items: users } = await $axios.$get(
         `/groups/${params?.groupId}/users`
       );
-
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
       return {
         groupUsers: users,
         isLoading: false,
+        group: groupResponse,
       };
     } catch (error) {
       return { isLoading: false, isError: true };
@@ -33,10 +35,26 @@ export default {
   },
   data() {
     return {
+      group: {},
       isLoading: true,
       isError: false,
       groupUsers: [],
     };
+  },
+  head() {
+    return { title: this.title };
+  },
+
+  computed: {
+    title() {
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.newWorkspace')}`;
+    },
+    groupId() {
+      return this.$route.params.groupId;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -77,6 +95,7 @@ export default {
       <bs-group-menu />
     </template>
     <workspace-form
+      :title="$t('global.newWorkspace')"
       :group-users="groupUsers"
       :is-loading="isLoading"
       @submit="createWorkspace"

@@ -61,7 +61,10 @@ export default {
         : 'informations';
     },
     title() {
-      return `${this.$tc('global.group', 1)} - ${this.group.name}`;
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name}`;
     },
   },
   methods: {
@@ -128,7 +131,7 @@ export default {
         <bs-group-form
           v-model="group"
           :is-edit="true"
-          flat
+          elevation="0"
           :disabled="loading"
           @submit="updateGroup"
         />

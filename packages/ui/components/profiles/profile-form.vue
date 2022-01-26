@@ -71,39 +71,35 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
+  <v-card flat tile tag="form">
     <v-card-title v-if="title">
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-row>
+      <v-row v-if="!group.downloadMailingWithFtpImages">
         <v-col cols="12">
-          <v-card
-            v-if="!group.downloadMailingWithFtpImages"
+          <v-alert
+            dense
+            border="left"
+            type="warning"
             class="d-flex flex-row p-3"
-            elevation="0"
           >
-            <v-icon color="warning" class="mr-3">
-              error_outline
-            </v-icon>
-            <div color="grey lighten-2" class="mr-3">
-              {{ $t('profiles.warningNoFTP') }}
-            </div>
-          </v-card>
+            {{ $t('profiles.warningNoFTP') }}
+          </v-alert>
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="4">
+        <v-col cols="12">
           <v-select
             v-model="selectedEsp"
             :items="authorizedEsps"
             label="Esp"
             solo
+            outlined
+            flat
             :disabled="!group.downloadMailingWithFtpImages"
             @change="handleEspChange($event)"
           />
-        </v-col>
-        <v-col cols="8">
           <client-only>
             <component
               :is="selectedEspName"

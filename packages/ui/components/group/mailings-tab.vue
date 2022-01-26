@@ -29,15 +29,9 @@ export default {
 </script>
 
 <template>
-  <v-card
-    flat
-    tile
-  >
+  <v-card flat tile>
     <v-card-text>
-      <bs-mailings-admin-table
-        :mailings="mailings"
-        :loading="loading"
-      />
+      <bs-mailings-admin-table :mailings="mailings" :loading="loading" />
     </v-card-text>
   </v-card>
 </template>

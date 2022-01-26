@@ -76,7 +76,11 @@ export default {
   },
   computed: {
     ...mapGetters(USER, { isAdmin: IS_ADMIN }),
-    ...mapState(FOLDER, ['pagination', 'mailingsIsLoadingForFilterUpdate']),
+    ...mapState(FOLDER, [
+      'pagination',
+      'tags',
+      'mailingsIsLoadingForFilterUpdate',
+    ]),
     hiddenCols() {
       const excludedRules = this.isAdmin
         ? TABLE_HIDDEN_COLUMNS_ADMIN
@@ -413,7 +417,9 @@ export default {
           <span v-else>{{ item.templateName }}</span>
         </template>
         <template #item.tags="{ item }">
-          <span>{{ item.tags.join(', ') }}</span>
+          <span v-for="tag in item.tags" :key="tag" class="tags">{{
+            tag
+          }}</span>
         </template>
         <template #item.createdAt="{ item }">
           <span>{{ item.createdAt | preciseDateTime }}</span>

@@ -109,7 +109,7 @@ export default {
       :loading="loading"
       @submit="updateUser"
     />
-    <v-card class="mt-3">
+    <v-card flat tile>
       <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
       <v-card-text>
         <bs-mailings-admin-table

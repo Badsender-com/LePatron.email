@@ -66,7 +66,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form">
+  <v-card flat tile tag="form">
     <v-card-title v-if="title">
       {{ title }}
     </v-card-title>
@@ -89,7 +89,7 @@ export default {
           <v-text-field
             id="name"
             v-model="localModel.name"
-            :label="$t('global.name')"
+            :label="$t('forms.user.name')"
             name="name"
             :error-messages="nameErrors"
             @input="$v.user.name.$touch()"
@@ -118,10 +118,10 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
+      <v-spacer />
       <v-btn
-        text
-        large
-        color="primary"
+        color="accent"
+        elevation="0"
         :disabled="disabled"
         @click="onSubmit"
       >

@@ -34,11 +34,16 @@ export default {
   head() {
     return { title: this.title };
   },
+
   computed: {
     title() {
-      return `${this.$tc('global.group', 1)} – ${this.group.name} - ${this.$t(
-        'global.newTemplate'
-      )}`;
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.newTemplate')}`;
+    },
+    groupId() {
+      return this.$route.params.groupId;
     },
   },
   methods: {

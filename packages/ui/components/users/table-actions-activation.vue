@@ -34,7 +34,7 @@ export default {
 <template>
   <v-list-item link @click="toggleUser">
     <v-list-item-avatar>
-      <v-btn :disabled="loading" icon color="primary">
+      <v-btn :disabled="loading" icon color="accent">
         <v-icon>{{ actionIcon }}</v-icon>
       </v-btn>
     </v-list-item-avatar>

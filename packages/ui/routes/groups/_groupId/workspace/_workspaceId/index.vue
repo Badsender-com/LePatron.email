@@ -32,11 +32,27 @@ export default {
   },
   data() {
     return {
+      group: {},
       isLoading: true,
       isError: false,
       groupUsers: [],
       workspace: {},
     };
+  },
+  head() {
+    return { title: this.title };
+  },
+
+  computed: {
+    title() {
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.editTeam')}`;
+    },
+    groupId() {
+      return this.$route.params.groupId;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),

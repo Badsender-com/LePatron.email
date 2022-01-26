@@ -35,7 +35,7 @@ export default {
   },
   data() {
     return {
-      actionsIcon: 'more_horiz',
+      actionsIcon: 'mdi-dots-vertical',
     };
   },
   computed: {
@@ -49,7 +49,7 @@ export default {
 <template>
   <v-menu offset-y>
     <template #activator="{ on }">
-      <v-btn color="primary" dark icon v-on="on">
+      <v-btn color="accent" dark icon v-on="on">
         <v-icon>{{ actionsIcon }}</v-icon>
       </v-btn>
     </template>
@@ -70,7 +70,7 @@ export default {
       />
       <v-list-item nuxt link :to="`/users/${user.id}`">
         <v-list-item-avatar>
-          <v-btn color="primary" icon>
+          <v-btn color="accent" icon>
             <v-icon>edit</v-icon>
           </v-btn>
         </v-list-item-avatar>
@@ -82,8 +82,11 @@ export default {
   </v-menu>
 </template>
 
-<style lang="scss" scoped></style>
-
+<style scoped>
+.v-list-item__title {
+  font-size: 0.875rem;
+}
+</style>
 <i18n>
 {
 "en": {},

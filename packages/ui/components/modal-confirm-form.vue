@@ -23,7 +23,7 @@ export default {
   },
   computed: {
     confirmModalHeaderTitle() {
-      return `${this.$t('global.delete')} ${this.data?.name}`;
+      return `${this.$t('global.delete')}`;
     },
   },
   methods: {
@@ -68,10 +68,10 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">
+        <v-btn text color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn type="submit" color="error">
+        <v-btn type="submit" color="error" elevation="0">
           {{ $t('global.delete') }}
         </v-btn>
       </v-card-actions>

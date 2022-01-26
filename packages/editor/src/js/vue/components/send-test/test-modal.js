@@ -122,7 +122,7 @@ const TestModalComponent = Vue.component('TestModal', {
         <div class="modal-content">
             <div class="row">
             <div class="col s12">
-                <h2>{{vm.t('title-send-test-mails')}}</h2>
+                <h5>{{vm.t('title-send-test-mails')}}</h5>
             </div>
             <form class="col s12">
                 <div class="row" :style="style.mb0">
