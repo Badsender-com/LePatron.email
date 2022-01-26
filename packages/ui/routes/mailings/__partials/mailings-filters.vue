@@ -1,5 +1,8 @@
 <script>
-import * as apiRoutes from '~/helpers/api-routes.js';
+import { FOLDER, SET_FILTERS } from '~/store/folder';
+import { TEMPLATE } from '~/store/template';
+import { mapState } from 'vuex';
+import debounce from 'lodash/debounce';
 
 export default {
   name: 'MailingsFilters',
@@ -8,49 +11,24 @@ export default {
   },
   data() {
     return {
-      templates: [],
       templatesIsLoading: true,
-      templateIsError: false,
       pickerCreatedStart: false,
       pickerCreatedEnd: false,
       pickerUpdatedStart: false,
       pickerUpdatedEnd: false,
-      localFilters: {
-        name: '',
-        templates: [],
-        createdAtStart: '',
-        createdAtEnd: '',
-        updatedAtStart: '',
-        updatedAtEnd: '',
-        tags: [],
-      },
     };
   },
-
+  computed: {
+    ...mapState(FOLDER, ['filters']),
+    ...mapState(TEMPLATE, ['templates']),
+  },
   watch: {
     $route: 'reset',
-    localFilters: {
-      handler: function (updatedFilters) {
-        this.$emit('change', updatedFilters);
-      },
-      deep: true,
-    },
-  },
-
-  async mounted() {
-    const { $axios } = this;
-    try {
-      const { items } = await $axios.$get(apiRoutes.templates());
-      this.templates = items;
-    } catch (error) {
-      this.templateIsError = true;
-    }
-    this.templatesIsLoading = false;
   },
 
   methods: {
     reset() {
-      this.localFilters = {
+      this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
         name: '',
         templates: [],
         createdAtStart: '',
@@ -58,7 +36,20 @@ export default {
         updatedAtStart: '',
         updatedAtEnd: '',
         tags: [],
-      };
+      });
+      this.$emit('on-refresh', { pagination: { page: 1 } });
+    },
+    handleNameChange: debounce(function (value) {
+      this.commitFilterChangeToStore({ name: value });
+    }, 300),
+    handleFilterChange(filterKey, filterValue) {
+      this.commitFilterChangeToStore({ [filterKey]: filterValue });
+    },
+    commitFilterChangeToStore(changeObject) {
+      this.$store.commit(`${FOLDER}/${SET_FILTERS}`, {
+        ...changeObject,
+      });
+      this.$emit('on-refresh', { pagination: { page: 1 } });
     },
   },
 };
@@ -73,17 +64,26 @@ export default {
       <v-expansion-panel-content>
         <div class="bs-mailings-filters__form">
           <v-text-field
-            v-model="localFilters.name"
+            :value="filters.name"
             :label="$t(`global.name`)"
             clearable
+            @input="handleNameChange"
           />
           <v-select
-            v-model="localFilters.templates"
+            :value="filters.templates"
             :label="$tc(`global.template`, 2)"
             :items="templates"
             item-text="name"
             item-value="id"
             multiple
+            @input="(value) => handleFilterChange('templates', value)"
+          />
+          <v-select
+            :value="filters.tags"
+            :label="$t(`global.tags`)"
+            :items="tags"
+            multiple
+            @input="(value) => handleFilterChange('tags', value)"
           />
           <div class="bs-mailings-filters__date-picker">
             <v-menu
@@ -96,14 +96,21 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="localFilters.createdAtStart"
+                  :value="filters.createdAtStart"
                   :label="$t(`mailings.filters.createdBetween`)"
                   prepend-icon="event"
                   clearable
+                  @input="
+                    (value) => handleFilterChange('createdAtStart', value)
+                  "
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="localFilters.createdAtStart" no-title />
+              <v-date-picker
+                :value="filters.createdAtStart"
+                no-title
+                @input="(value) => handleFilterChange('createdAtStart', value)"
+              />
             </v-menu>
             <v-menu
               v-model="pickerCreatedEnd"
@@ -115,14 +122,19 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="localFilters.createdAtEnd"
+                  :value="filters.createdAtEnd"
                   :label="$t(`mailings.filters.and`)"
                   prepend-icon="event"
                   clearable
+                  @input="(value) => handleFilterChange('createdAtEnd', value)"
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="localFilters.createdAtEnd" no-title />
+              <v-date-picker
+                :value="filters.createdAtEnd"
+                no-title
+                @input="(value) => handleFilterChange('createdAtEnd', value)"
+              />
             </v-menu>
           </div>
           <div class="bs-mailings-filters__date-picker">
@@ -136,14 +148,21 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="localFilters.updatedAtStart"
+                  :value="filters.updatedAtStart"
                   :label="$t(`mailings.filters.updatedBetween`)"
                   prepend-icon="event"
                   clearable
+                  @input="
+                    (value) => handleFilterChange('updatedAtStart', value)
+                  "
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="localFilters.updatedAtStart" no-title />
+              <v-date-picker
+                :value="filters.updatedAtStart"
+                no-title
+                @input="(value) => handleFilterChange('updatedAtStart', value)"
+              />
             </v-menu>
 
             <v-menu
@@ -156,22 +175,21 @@ export default {
             >
               <template #activator="{ on }">
                 <v-text-field
-                  v-model="localFilters.updatedAtEnd"
+                  :value="filters.updatedAtEnd"
                   :label="$t(`mailings.filters.and`)"
                   prepend-icon="event"
                   clearable
+                  @input="(value) => handleFilterChange('updatedAtEnd', value)"
                   v-on="on"
                 />
               </template>
-              <v-date-picker v-model="localFilters.updatedAtEnd" no-title />
+              <v-date-picker
+                :value="filters.updatedAtEnd"
+                no-title
+                @input="(value) => handleFilterChange('updatedAtEnd', value)"
+              />
             </v-menu>
           </div>
-          <v-select
-            v-model="localFilters.tags"
-            :label="$t(`global.tags`)"
-            :items="tags"
-            multiple
-          />
           <div class="bs-mailings-filters__actions">
             <v-btn color="primary" text @click="reset">
               {{ $t(`global.reset`) }}

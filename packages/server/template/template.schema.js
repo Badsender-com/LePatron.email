@@ -99,6 +99,7 @@ TemplateSchema.plugin(mongooseHidden, {
 TemplateSchema.virtual('hasMarkup').get(function () {
   return this.markup != null;
 });
+TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   const templates = await this.find(query)

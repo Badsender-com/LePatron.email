@@ -13,7 +13,14 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
-import { FOLDER, FETCH_MAILINGS } from '~/store/folder';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  SET_TAGS,
+  FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
+  FETCH_MAILINGS_FOR_FILTER_UPDATE,
+} from '~/store/folder';
+import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 
 export default {
   name: 'PageMailings',
@@ -33,9 +40,12 @@ export default {
     }
   },
   async asyncData({ query, store }) {
-    await store.dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
-      query,
-    });
+    await Promise.all([
+      store.dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
+        query,
+      }),
+      store.dispatch(`${TEMPLATE}/${FETCH_TEMPLATES}`),
+    ]);
   },
   data: () => ({
     loading: false,
@@ -50,7 +60,13 @@ export default {
     title() {
       return 'Emails';
     },
-    ...mapState(FOLDER, ['mailings', 'tags', 'mailingsIsLoading']),
+    ...mapState(FOLDER, [
+      'mailings',
+      'tags',
+      'mailingsIsLoadingForWorkspaceUpdate',
+      'pagination',
+      'filters',
+    ]),
     ...mapState(USER, ['hasFtpAccess']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -58,6 +74,24 @@ export default {
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
+    },
+    totalPages() {
+      return this.pagination?.pageCount || 1;
+    },
+    itemsLength() {
+      return this.pagination?.itemsLength;
+    },
+    currentPage: {
+      get() {
+        return this.pagination.page;
+      },
+      async set(val) {
+        const { commit } = this.$store;
+        await commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: val,
+        });
+        this.fetchMailListingForFilterUpdate({ pagination: { page: val } });
+      },
     },
   },
   methods: {
@@ -77,21 +111,34 @@ export default {
       );
       this.loading = false;
     },
-    async fetchMailListingData() {
+    async fetchMailListingForFilterUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
-      await dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_FILTER_UPDATE}`, {
         query: this.$route.query,
         $t: this.$t,
+        ...additionalParams,
+      });
+      this.mailingsSelection = [];
+    },
+    async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
+        query: this.$route.query,
+        $t: this.$t,
+        ...additionalParams,
       });
     },
     onTagCreate(newTag) {
-      this.tags = [...new Set([newTag, ...this.tags])];
+      this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
+        ...new Set([newTag, ...this.tags]),
+      ]);
     },
     async onMailSelectionTagsUpdate(tagsUpdates) {
       await this.handleTagsUpdate({
         items: this.mailingsSelection.map((mailing) => mailing.id),
         tags: tagsUpdates,
       });
+      this.mailingsSelection = [];
     },
     async onMailTableTagsUpdate(tagsInformations) {
       const { tags, selectedMailing } = tagsInformations;
@@ -108,7 +155,7 @@ export default {
           items,
           tags,
         });
-        await this.fetchMailListingData();
+        await this.fetchMailListingForFilterUpdate();
         this.showSnackbar({
           text: this.$t('mailings.editTagsSuccessful'),
           color: 'success',
@@ -174,8 +221,15 @@ export default {
       </div>
     </template>
     <v-card>
-      <v-skeleton-loader :loading="mailingsIsLoading" type="table">
+      <v-skeleton-loader
+        :loading="mailingsIsLoadingForWorkspaceUpdate"
+        type="table"
+      >
         <mailings-header @on-refresh="refreshLeftMenuData" />
+        <mailings-filters
+          :tags="tags"
+          @on-refresh="fetchMailListingForFilterUpdate"
+        />
         <mailings-selection-actions
           ref="mailingSelectionActions"
           :mailings-selection="mailingsSelection"
@@ -183,18 +237,29 @@ export default {
           :has-ftp-access="hasFtpAccess"
           @createTag="onTagCreate"
           @updateTags="onMailSelectionTagsUpdate"
-          @on-refetch="fetchMailListingData()"
+          @on-refetch="fetchMailListingForFilterUpdate"
         />
-        <mailings-filters :tags="tags" @change="handleFilterChange" />
         <mailings-table
           v-model="mailingsSelection"
           :mailings="filteredMailings"
           :has-ftp-access="hasFtpAccess"
           :tags="tags"
           @on-single-mail-download="handleDownloadSingleMail"
-          @on-refetch="fetchMailListingData()"
+          @on-refetch="fetchMailListingForFilterUpdate"
           @update-tags="onMailTableTagsUpdate"
         />
+        <v-card
+          flat
+          class="d-flex align-center justify-center mx-auto"
+          max-width="22rem"
+        >
+          <v-pagination
+            v-if="parseInt(itemsLength) > 0"
+            v-model="currentPage"
+            class="my-4"
+            :length="totalPages"
+          />
+        </v-card>
       </v-skeleton-loader>
     </v-card>
     <bs-mailings-modal-new
