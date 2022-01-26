@@ -23,7 +23,7 @@
 
 @tab-text-color: #555;
 
-@font-family: 'PT Sans', sans-serif;
+@font-family: 'Montserrat', sans-serif;
 @standard-border-radius: 2px;
 @info-border-radius: @standard-border-radius;
 @button-border-radius: @standard-border-radius;
@@ -42,7 +42,7 @@
 }
 
 body {
-  background: var(--v-secondary-base);
+  background: var(--v-primary-base);
 }
 
 // http://lea.verou.me/2012/04/background-attachment-local/
@@ -159,10 +159,10 @@ body {
 
 .button-style() {
   text-transform: uppercase;
-  background: var(--v-primary-base);
+  background: var(--v-accent-base);
 
   &:hover {
-    background: var(--v-primary-darken1);
+    background: var(--v-accent-darken1);
   }
 }
 
@@ -171,10 +171,10 @@ body {
     border-color: @mosaico-outline-color;
   }
   40% {
-    border-color: var(--v-primary-base);
+    border-color: var(--v-accent-base);
   }
   60% {
-    border-color: var(--v-primary-base);
+    border-color: var(--v-accent-base);
   }
   100% {
     border-color: @mosaico-outline-color;
@@ -182,18 +182,16 @@ body {
 }
 
 #main-edit-area {
-  .isdragging .sortable-blocks-edit.empty:after {
-  }
   // BUTTONS
   .tool {
     border-radius: 100%;
     padding: 4px;
     padding-bottom: 2px;
-    box-shadow: 1px 1px 3px @shadow-color;
-    background-color: var(--v-primary-base);
+    box-shadow: none;
+    background-color: var(--v-accent-base);
 
     &:hover {
-      background-color: var(--v-primary-darken1);
+      background-color: var(--v-accent-darken1);
     }
   }
 }
@@ -206,7 +204,17 @@ body {
 }
 
 .addblockbutton {
-  box-shadow: 1px 1px 3px @shadow-color;
+  box-shadow: none;
+}
+
+.block-name {
+  display: inline-block;
+  padding: .25em 1em;
+  color: white;
+  background-color: var(--v-primary-base);
+  position: absolute;
+  top: 3px;
+  left: 0;
 }
 
 .mo {
@@ -243,7 +251,7 @@ body {
     }
     &:hover,
     &.pressed {
-      background-color: lighten(@mosaico-ui-background-color, 10%);
+      background-color: var(--v-primary-base);
     }
   }
 
@@ -252,8 +260,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    text-transform: uppercase;
-    font-weight: bold;
+    text-transform: none;
+    font-weight: 500;
     outline: 0;
   }
   .fa {
@@ -325,7 +333,7 @@ body {
 }
 
 .mo .objEdit.level1 {
-  border-top: 2px solid @accent-color;
+  border-top: 2px solid rgba(0, 0, 0, 0.12);
 }
 
 #main-toolbox .objLabel.level1 {
@@ -348,16 +356,14 @@ body {
 & when(true) {
   .mo .objEdit.level1 {
     background-color: white;
-    box-shadow: 1px 1px 3px #888;
-    border-top: 0;
-    padding: 6px;
+    padding: 1em;
     padding-top: 0.5em;
   }
 
   .mo #toolstyles,
   .mo #tooltheme {
     .objEdit.level1 {
-      border-top-left-radius: 30px;
+      border-top-left-radius: 0;
       .objLabel.level1 {
         padding-bottom: 0;
         padding-top: 1em;
@@ -387,7 +393,7 @@ body {
     background-color: transparent;
     &:hover,
     &:focus {
-      border-color: @link-color;
+      border-color: var(--v-accent-lighten2);
     }
   }
 
@@ -510,4 +516,15 @@ body {
 
 .mce-text-decoration-none {
   text-decoration: none;
+}
+
+.material-css .btn {
+  color: @button-text-color;
+  background-color: var(--v-accent-base);
+  box-shadow: none;
+
+  &:hover {
+    background-color: var(--v-accent-darken1);
+    box-shadow: none;
+  }
 }

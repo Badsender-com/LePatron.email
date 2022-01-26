@@ -4,20 +4,31 @@ import {
   workspacesByGroup,
   deleteFolder,
   moveFolder,
+  folders,
 } from '~/helpers/api-routes.js';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from './folder-rename-modal';
 import FolderMoveModal from './folder-move-modal';
+import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
-
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import { FOLDER, FETCH_FOLDER_OR_WORKSPACE } from '~/store/folder';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  FETCH_FOLDER_OR_WORKSPACE,
+  SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE,
+} from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
-  components: { FolderRenameModal, FolderDeleteModal, FolderMoveModal },
+  components: {
+    FolderRenameModal,
+    FolderDeleteModal,
+    FolderMoveModal,
+    FolderNewModal,
+  },
   mixins: [mixinCurrentLocation],
   data: () => ({
     workspacesIsLoading: true,
@@ -26,6 +37,14 @@ export default {
     workspaces: [],
     conflictError: false,
   }),
+  async fetch() {
+    const { dispatch } = this.$store;
+    await this.fetchData();
+    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+      query: this.$route.query,
+      $t: this.$t,
+    });
+  },
   computed: {
     treeviewLocationItems() {
       return getTreeviewWorkspaces(this.workspaces);
@@ -33,30 +52,64 @@ export default {
     selectedItem() {
       return { id: this.currentLocation };
     },
+    hasRightToCreateFolder() {
+      return !this.hasAccess || !!this.folder?._parentFolder;
+    },
   },
   watch: {
     $route: ['getFolderAndWorkspaceData'],
   },
   async mounted() {
-    const { dispatch } = this.$store;
-    await this.fetchData();
-    await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
-      query: this.$route.query,
-      $t: this.$t,
-    });
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
       await this.$router.push({
-        query: { wid: this.workspaces[0]?.id },
+        query: { wid: this.workspaces[0]?._id },
       });
     }
   },
   methods: {
+    openNewFolderModal(event) {
+      event.stopPropagation();
+      this.conflictError = false;
+      this.$refs.folderNewModalRef.open();
+    },
+    async createNewFolder({ folderName }) {
+      try {
+        const folder = await this.$axios.$post(folders(), {
+          name: folderName,
+          ...this.currentLocationParam,
+        });
+        await this.fetchData();
+        this.$emit('on-refresh');
+        await this.$router.push({
+          query: { fid: folder?._id },
+        });
+        this.conflictError = false;
+        this.showSnackbar({
+          text: this.$t('folders.created'),
+          color: 'success',
+        });
+
+        this.$refs.folderNewModalRef.close();
+      } catch (error) {
+        if (error?.response?.status === 409) {
+          this.conflictError = true;
+          return;
+        }
+        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
+      }
+    },
     async getFolderAndWorkspaceData() {
-      const { dispatch } = this.$store;
-      await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
-        query: this.$route.query,
-        $t: this.$t,
-      });
+      const { dispatch, commit } = this.$store;
+      await Promise.all([
+        dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
+          query: this.$route.query,
+          $t: this.$t,
+        }),
+        commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: 1,
+        }),
+        commit(`${FOLDER}/${SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE}`, true),
+      ]);
     },
     async fetchData() {
       const { $axios } = this;
@@ -70,8 +123,11 @@ export default {
         this.workspacesIsLoading = false;
       }
     },
-    checkIfAuthorizedMenu(item) {
+    checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
+    },
+    checkIfAuthorizedWorkspaceMenu(item) {
+      return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
     },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
@@ -214,14 +270,13 @@ export default {
       hoverable
       open-all
       return-object
-      class="pb-8"
       @update:active="handleSelectItemFromTreeView"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'primary' : 'base'">
+        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">
           {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
         </v-icon>
-        <v-icon v-else :color="item.hasAccess ? 'primary' : 'base'">
+        <v-icon v-else :color="item.hasAccess ? 'primary' : 'grey'">
           {{ item.icon }}
         </v-icon>
       </template>
@@ -231,16 +286,24 @@ export default {
         </div>
       </template>
       <template #append="{ item }">
-        <v-menu v-if="checkIfAuthorizedMenu(item)" offset-y>
+        <v-btn
+          v-if="checkIfAuthorizedWorkspaceMenu(item)"
+          :disabled="hasRightToCreateFolder"
+          icon
+          @click="openNewFolderModal"
+        >
+          <v-icon>add</v-icon>
+        </v-btn>
+        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y>
           <template #activator="{ on }">
-            <v-btn color="primary" dark icon v-on="on">
+            <v-btn color="accent" dark icon v-on="on">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
           <v-list activable>
             <v-list-item nuxt @click="openRenameFolderModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>edit</v-icon>
                 </v-btn>
               </v-list-item-avatar>
@@ -248,7 +311,7 @@ export default {
             </v-list-item>
             <v-list-item nuxt @click="displayMoveModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>drive_file_move</v-icon>
                 </v-btn>
               </v-list-item-avatar>
@@ -258,7 +321,7 @@ export default {
             </v-list-item>
             <v-list-item nuxt @click="displayDeleteModal(item)">
               <v-list-item-avatar>
-                <v-btn color="primary" icon>
+                <v-btn color="accent" icon>
                   <v-icon>delete</v-icon>
                 </v-btn>
               </v-list-item-avatar>
@@ -286,6 +349,12 @@ export default {
         v-html="$t('folders.moveFolderConfirmationMessage')"
       />
     </folder-move-modal>
+
+    <folder-new-modal
+      ref="folderNewModalRef"
+      :conflict-error="conflictError"
+      @create-new-folder="createNewFolder"
+    />
   </v-skeleton-loader>
 </template>
 
@@ -297,10 +366,14 @@ export default {
 
 .v-treeview {
   overflow-y: auto;
+  font-size: 0.875rem;
 }
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+.v-list-item__title {
+  font-size: 0.875rem;
 }
 </style>

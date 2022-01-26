@@ -13,6 +13,7 @@ export default {
     workspace: { type: Object, default: () => ({}) },
     groupUsers: { type: Array, default: () => [] },
     isLoading: { type: Boolean, default: false },
+    title: { type: String, default: '' },
   },
   data() {
     return {
@@ -63,10 +64,13 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form" :loading="isLoading" :disabled="isLoading">
+  <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
+    <v-card-title v-if="title">
+      {{ title }}
+    </v-card-title>
     <v-card-text>
       <v-row>
-        <v-col cols="5">
+        <v-col cols="12">
           <v-text-field
             id="name"
             v-model="workspaceForm.name"
@@ -78,12 +82,11 @@ export default {
             @blur="$v.workspaceForm.name.$touch()"
           />
         </v-col>
-        <v-col cols="6" class="ml-auto">
-          <v-row>
-            <v-col>
-              <h3>{{ $t('workspaces.members') }}</h3>
-            </v-col>
-          </v-row>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <h3>{{ $t('workspaces.members') }}</h3>
+
           <v-data-table
             v-model="workspaceForm.selectedUsers"
             :headers="headers"
@@ -112,7 +115,13 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
-      <v-btn text large :loading="isLoading" color="primary" @click="onSubmit">
+      <v-spacer />
+      <v-btn
+        :loading="isLoading"
+        color="accent"
+        elevation="0"
+        @click="onSubmit"
+      >
         {{ $t('global.save') }}
       </v-btn>
     </v-card-actions>

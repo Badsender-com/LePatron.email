@@ -11,7 +11,7 @@ export default {
 <template>
   <v-list-item nuxt @click="onClick()">
     <v-list-item-avatar>
-      <v-btn color="primary" icon>
+      <v-btn color="accent" icon>
         <v-icon>{{ icon }}</v-icon>
       </v-btn>
     </v-list-item-avatar>
@@ -20,3 +20,9 @@ export default {
     </v-list-item-title>
   </v-list-item>
 </template>
+
+<style scoped>
+.v-list-item__title {
+  font-size: 0.875rem;
+}
+</style>

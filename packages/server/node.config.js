@@ -27,9 +27,9 @@ const config = rc('lepatron', {
   },
   brandOptions: {
     colors: {
-      primary: '#62a7a5', // sky blue darkened (better for contrast)
-      secondary: '#18223e', // deep blue
-      accent: '#87cbc9', // sky blue
+      primary: '#093040', // sky blue darkened (better for contrast)
+      secondary: '#265090', // deep blue
+      accent: '#00ACDC', // sky blue
       // keep the same as default Vuetify
       error: '#ff5252',
       info: '#2196f3',

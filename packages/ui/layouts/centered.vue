@@ -2,7 +2,7 @@
 import BsSnackBar from '~/components/snackbar.vue';
 
 export default {
-  name: `bs-layout-authentication`,
+  name: 'BsLayoutAuthentication',
   components: { BsSnackBar },
 };
 </script>
@@ -12,7 +12,7 @@ export default {
     <v-main>
       <v-container class="fill-height secondary" fluid>
         <v-row align="center" justify="center">
-          <v-col cols="12" sm="8" md="4">
+          <v-col cols="12" sm="8" md="5">
             <nuxt />
           </v-col>
         </v-row>

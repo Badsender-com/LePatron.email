@@ -74,7 +74,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMail')}  ${mailName}`"
+    :title="`${this.$t('global.copyMail')} <strong>${mailName}</strong>`"
     :is-form="true"
     class="modal-confirm-copy-mail"
     @click-outside="close"
@@ -97,10 +97,10 @@ export default {
         @update:active="handleSelectItemFromTreeView"
       >
         <template #prepend="{ item, open }">
-          <v-icon v-if="!item.icon" color="primary">
+          <v-icon v-if="!item.icon" color="accent">
             {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
           </v-icon>
-          <v-icon v-else color="primary">
+          <v-icon v-else color="accent">
             {{ item.icon }}
           </v-icon>
         </template>
@@ -117,7 +117,12 @@ export default {
       <v-btn color="primary" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!isValidToBeCopied" color="primary" @click="submit">
+      <v-btn
+        :disabled="!isValidToBeCopied"
+        elevation="0"
+        color="accent"
+        @click="submit"
+      >
         {{ $t('global.copyMailAction') }}
       </v-btn>
     </v-card-actions>

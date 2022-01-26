@@ -83,7 +83,12 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn :disabled="!isValidToRename" type="submit" color="primary">
+        <v-btn
+          :disabled="!isValidToRename"
+          elevation="0"
+          type="submit"
+          color="accent"
+        >
           {{ $t('folders.rename') }}
         </v-btn>
       </v-card-actions>

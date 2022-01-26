@@ -79,7 +79,7 @@ export default {
     @click-outside="close"
     @confirm="submit"
   >
-    <v-card class="d-flex flex-row align-center mb-3" flat>
+    <v-card class="d-flex flex-row align-center mb-3" flat tile>
       <v-icon color="orange darken-2">
         warning_amber
       </v-icon>
@@ -87,7 +87,7 @@ export default {
         {{ modalText }}
       </p>
     </v-card>
-    <v-card v-if="!isSingleMail" class="mb-3 pl-6" flat>
+    <v-card v-if="!isSingleMail" class="mb-3 pl-6" flat tile>
       <ul>
         <li v-for="mail in mailsWithoutPreviewSelection" :key="mail.id">
           {{ mail.name }}

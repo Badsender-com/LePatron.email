@@ -64,12 +64,12 @@ export default {
     @click:outside="close"
   >
     <v-form ref="form" @submit.prevent="submit">
-      <div class="d-flex flex-column mb-2">
+      <div class="d-flex align-center mb-2">
         <div class="font-weight-bold">
           {{ destinationLabel }}
         </div>
-        <div>
-          <mailings-breadcrumbs :large="false" />
+        <div class="pa-2">
+          <mailings-breadcrumbs />
         </div>
       </div>
       <p v-if="conflictError" class="red--text">
@@ -89,7 +89,12 @@ export default {
         <v-btn color="primary" text @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn :disabled="!isValidToCreate" type="submit" color="primary">
+        <v-btn
+          :disabled="!isValidToCreate"
+          elevation="0"
+          type="submit"
+          color="accent"
+        >
           {{ $t('global.newFolder') }}
         </v-btn>
       </v-card-actions>

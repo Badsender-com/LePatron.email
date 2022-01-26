@@ -37,50 +37,31 @@ export default {
 
 <template>
   <v-card
+    flat
+    tile
     :class="`mr-2 mb-4 bs-template-card ${selectedClass} ${hoverClass}`"
     @click="onClick"
   >
     <bs-template-cover-image :src="coverSrc" :fit-cover="!hasCover" />
-    <v-card-title>
-      <h2 class="bs-template-card__title headline">
-        {{ template.name }}
-      </h2>
-    </v-card-title>
-    <v-card-subtitle class="bs-template-card__subtitle text-center pb-0">
-      {{ template.description }}
-    </v-card-subtitle>
+    <v-card-title>{{ template.name }}</v-card-title>
+    <v-card-subtitle>{{ template.description }}</v-card-subtitle>
   </v-card>
 </template>
 
 <style lang="scss" scoped>
 .bs-template-card {
-  --cover-min-height: 250px;
-  --cover-max-height: 250px;
+  --cover-min-height: 200px;
+  --cover-max-height: 200px;
   max-width: 30%;
+  box-shadow: 0 0 0 1px var(--v-primary-base) !important;
 }
 
-.card-hover:hover {
-  box-shadow: 0 0 0 5px #a9d6d5 !important;
+.bs-template-card {
+  &:hover {
+    box-shadow: 0 0 0 5px var(--v-accent-lighten1) !important;
+  }
 }
-
 .bs-template-card_selected {
-  box-shadow: 0 0 0 5px var(--v-primary-base) !important;
-}
-
-.bs-template-card__title {
-  text-align: center;
-  flex-grow: 1;
-  margin: 0;
-}
-.bs-template-card__subtitle {
-  &:empty {
-    display: none;
-  }
-  &::before {
-    content: '– ';
-  }
-  &::after {
-    content: ' –';
-  }
+  box-shadow: 0 0 0 5px var(--v-accent-base) !important;
 }
 </style>
