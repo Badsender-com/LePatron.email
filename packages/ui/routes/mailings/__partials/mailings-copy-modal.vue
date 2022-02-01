@@ -1,7 +1,8 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
-import { workspacesByGroup } from '~/helpers/api-routes';
-import { getTreeviewWorkspaces } from '~/utils/workspaces';
+
+import { mapState } from 'vuex';
+import { FOLDER } from '~/store/folder';
 
 export default {
   name: 'MailingsCopyModal',
@@ -14,16 +15,15 @@ export default {
   data() {
     return {
       mail: null,
-      workspaces: [],
-      workspaceIsError: false,
-      workspacesIsLoading: false,
       selectedLocation: {},
     };
   },
   computed: {
-    treeviewLocationItems() {
-      return getTreeviewWorkspaces(this.workspaces);
-    },
+    ...mapState(FOLDER, [
+      'workspaces',
+      'workspacesAreLoading',
+      'treeviewWorkspacesHasRight',
+    ]),
     isValidToBeCopied() {
       return !!this.selectedLocation?.id;
     },
@@ -42,25 +42,12 @@ export default {
         this.close();
       }
     },
-    async fetchWorkspaces() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
-    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]) {
         this.selectedLocation = selectedItems[0];
       }
     },
     open(selectedMail) {
-      this.fetchWorkspaces();
       this.mail = selectedMail;
       this.$refs.copyMailDialog.open();
     },
@@ -82,13 +69,13 @@ export default {
     <slot />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
-      :loading="workspacesIsLoading"
+      :loading="workspacesAreLoading"
     >
       <v-treeview
         ref="tree"
         item-key="id"
         activatable
-        :items="treeviewLocationItems"
+        :items="treeviewWorkspacesHasRight"
         hoverable
         open-all
         :dense="true"

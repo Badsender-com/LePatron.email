@@ -1,25 +1,25 @@
 <script>
 import {
   getFolder,
-  workspacesByGroup,
   deleteFolder,
   moveFolder,
   folders,
 } from '~/helpers/api-routes.js';
-import { getTreeviewWorkspaces } from '~/utils/workspaces';
-
+import { mapState } from 'vuex';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  FETCH_WORKSPACES,
+  FETCH_FOLDER_OR_WORKSPACE,
+  SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE,
+} from '~/store/folder';
+import { canCreateFolder } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from './folder-rename-modal';
 import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import {
-  FOLDER,
-  SET_PAGINATION,
-  FETCH_FOLDER_OR_WORKSPACE,
-  SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE,
-} from '~/store/folder';
 
 export default {
   name: 'WorkspaceTree',
@@ -31,33 +31,28 @@ export default {
   },
   mixins: [mixinCurrentLocation],
   data: () => ({
-    workspacesIsLoading: true,
-    workspaceIsError: false,
     selectedItemToDelete: {},
-    workspaces: [],
     conflictError: false,
   }),
   async fetch() {
     const { dispatch } = this.$store;
-    await this.fetchData();
     await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
       query: this.$route.query,
       $t: this.$t,
     });
   },
   computed: {
-    treeviewLocationItems() {
-      return getTreeviewWorkspaces(this.workspaces);
-    },
+    ...mapState(FOLDER, [
+      'workspaces',
+      'workspacesAreLoading',
+      'treeviewWorkspaces',
+    ]),
     selectedItem() {
       return { id: this.currentLocation };
     },
-    hasRightToCreateFolder() {
-      return !this.hasAccess || !!this.folder?._parentFolder;
-    },
   },
   watch: {
-    $route: ['getFolderAndWorkspaceData'],
+    $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
   },
   async mounted() {
     if (!this.selectedItem?.id && this.workspaces?.length > 0) {
@@ -67,18 +62,28 @@ export default {
     }
   },
   methods: {
-    openNewFolderModal(event) {
+    async checkIfNotData() {
+      if (!this.selectedItem?.id && this.workspaces?.length > 0) {
+        await this.$router.push({
+          query: { wid: this.workspaces[0]?._id },
+        });
+      }
+    },
+    hasRightToCreateFolder(item) {
+      return item.hasAccess && canCreateFolder(item?.id, item);
+    },
+    openNewFolderModal(event, item) {
       event.stopPropagation();
       this.conflictError = false;
-      this.$refs.folderNewModalRef.open();
+      this.$refs.folderNewModalRef.open(item);
     },
-    async createNewFolder({ folderName }) {
+    async createNewFolder({ folderName, workspaceOrFolderParam }) {
       try {
         const folder = await this.$axios.$post(folders(), {
           name: folderName,
-          ...this.currentLocationParam,
+          ...workspaceOrFolderParam,
         });
-        await this.fetchData();
+        await this.fetchWorkspacesData();
         this.$emit('on-refresh');
         await this.$router.push({
           query: { fid: folder?._id },
@@ -89,8 +94,9 @@ export default {
           color: 'success',
         });
 
-        this.$refs.folderNewModalRef.close();
+        this.$refs?.folderNewModalRef?.close();
       } catch (error) {
+        console.error(error);
         if (error?.response?.status === 409) {
           this.conflictError = true;
           return;
@@ -111,17 +117,8 @@ export default {
         commit(`${FOLDER}/${SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE}`, true),
       ]);
     },
-    async fetchData() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspaces = items;
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
+    async fetchWorkspacesData() {
+      await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
     },
     checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
@@ -184,7 +181,7 @@ export default {
             query: { wid: this.workspaces[0]?.id },
           });
         }
-        await this.fetchData();
+        await this.fetchWorkspacesData();
       }
     },
     openRenameFolderModal(folder) {
@@ -196,14 +193,14 @@ export default {
         await this.$axios.$patch(getFolder(folderId), {
           folderName: folderName,
         });
-        await this.fetchData();
+        await this.fetchWorkspacesData();
         this.conflictError = false;
         this.showSnackbar({
           text: this.$t('folders.nameUpdated'),
           color: 'success',
         });
 
-        this.$refs.modalRenameFolderDialog.close();
+        this.$refs?.modalRenameFolderDialog?.close();
       } catch (error) {
         if (error?.response?.status === 409) {
           this.conflictError = true;
@@ -232,14 +229,14 @@ export default {
           routerRedirectionParam = { wid: destinationParam?.workspaceId };
         }
 
-        await this.$router.push({
+        await this.$router.replace({
           query: routerRedirectionParam,
         });
         this.showSnackbar({
           text: this.$t('folders.moveFolderSuccessful'),
           color: 'success',
         });
-        await this.fetchData();
+        await this.fetchWorkspacesData();
       } catch (error) {
         let errorKey = 'global.errors.errorOccured';
         if (error.response.status === 409) {
@@ -250,7 +247,7 @@ export default {
           color: 'error',
         });
       }
-      this.$refs.moveModal.close();
+      this.$refs?.moveModal?.close();
     },
   },
 };
@@ -259,14 +256,14 @@ export default {
 <template>
   <v-skeleton-loader
     type="list-item, list-item, list-item"
-    :loading="workspacesIsLoading"
+    :loading="workspacesAreLoading"
   >
     <v-treeview
       ref="tree"
       item-key="id"
       activatable
       :active="[selectedItem]"
-      :items="treeviewLocationItems"
+      :items="treeviewWorkspaces"
       hoverable
       open-all
       return-object
@@ -288,9 +285,9 @@ export default {
       <template #append="{ item }">
         <v-btn
           v-if="checkIfAuthorizedWorkspaceMenu(item)"
-          :disabled="hasRightToCreateFolder"
+          :disabled="!hasRightToCreateFolder(item)"
           icon
-          @click="openNewFolderModal"
+          @click="(event) => openNewFolderModal(event, item)"
         >
           <v-icon>add</v-icon>
         </v-btn>
@@ -308,6 +305,20 @@ export default {
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="hasRightToCreateFolder(item)"
+              nuxt
+              @click="(event) => openNewFolderModal(event, item)"
+            >
+              <v-list-item-avatar>
+                <v-btn color="accent" icon>
+                  <v-icon>folder</v-icon>
+                </v-btn>
+              </v-list-item-avatar>
+              <v-list-item-title>
+                {{ $t('global.newFolder') }}
+              </v-list-item-title>
             </v-list-item>
             <v-list-item nuxt @click="displayMoveModal(item)">
               <v-list-item-avatar>
@@ -340,7 +351,7 @@ export default {
     <folder-rename-modal
       ref="modalRenameFolderDialog"
       :conflict-error="conflictError"
-      :loading-parent="workspacesIsLoading"
+      :loading-parent="workspacesAreLoading"
       @rename-folder="handleRenameFolder"
     />
     <folder-move-modal ref="moveModal" @confirm="onMoveFolder">

@@ -4,10 +4,11 @@ import {
   getFolder,
   getFolderAccess,
   getWorkspaceAccess,
+  workspacesByGroup,
 } from '~/helpers/api-routes';
-
 import { parsePaginationData } from '~/utils/parsePagination';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { getTreeviewWorkspaces } from '~/utils/workspaces';
 
 export const FOLDER = 'folder';
 export const SET_FOLDER = 'SET_FOLDER';
@@ -23,6 +24,14 @@ export const SET_LOADING_MAILINGS_FOR_FILTER_UPDATE =
 export const SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE =
   'SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE';
 
+export const SET_WORKSPACES = 'SET_WORKSPACES';
+export const SET_WORKSPACES_HAS_RIGHT = 'SET_WORKSPACES_HAS_RIGHT';
+export const SET_TREEVIEW_WORKSPACES = 'SET_TREEVIEW_WORKSPACES';
+export const SET_TREEVIEW_WORKSPACES_HASRIGHT =
+  'SET_TREEVIEW_WORKSPACES_HASRIGHT';
+export const SET_WORKSPACES_ARE_LOADING = 'SET_WORKSPACES_ARE_LOADING';
+
+export const FETCH_WORKSPACES = 'FETCH_WORKSPACES';
 export const FETCH_MAILINGS = 'fetchMailings';
 export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
 export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
@@ -56,6 +65,11 @@ export const state = () => ({
   tags: [],
   mailingsIsLoadingForFilterUpdate: false,
   mailingsIsLoadingForWorkspaceUpdate: false,
+  workspacesAreLoading: [],
+  workspaces: [],
+  workspacesHasRight: [],
+  treeviewWorkspaces: [],
+  treeviewWorkspacesHasRight: [],
 });
 
 export const getters = {};
@@ -64,6 +78,21 @@ export const getters = {};
 export const mutations = {
   [SET_FOLDER](store, folder) {
     store.folder = folder;
+  },
+  [SET_WORKSPACES](store, workspaces) {
+    store.workspaces = workspaces;
+  },
+  [SET_WORKSPACES_HAS_RIGHT](store, workspacesHasRight) {
+    store.workspacesHasRight = workspacesHasRight;
+  },
+  [SET_TREEVIEW_WORKSPACES](store, treeviewWorkspaces) {
+    store.treeviewWorkspaces = treeviewWorkspaces;
+  },
+  [SET_TREEVIEW_WORKSPACES_HASRIGHT](store, treeviewWorkspacesHasRight) {
+    store.treeviewWorkspacesHasRight = treeviewWorkspacesHasRight;
+  },
+  [SET_WORKSPACES_ARE_LOADING](store, workspacesAreLoading) {
+    store.workspacesAreLoading = workspacesAreLoading;
   },
   [SET_WORKSPACE](store, workspace) {
     store.workspace = workspace;
@@ -212,5 +241,26 @@ export const actions = {
     commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
     commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+  },
+  async [FETCH_WORKSPACES]({ commit }) {
+    const { $axios } = this;
+    try {
+      commit(SET_WORKSPACES_ARE_LOADING, true);
+      const { items: workspaces } = await $axios.$get(workspacesByGroup());
+      const workspacesHasRight = workspaces?.filter(
+        (workspace) => workspace?.hasRights
+      );
+      commit(SET_WORKSPACES, workspaces);
+      commit(SET_WORKSPACES_HAS_RIGHT, workspacesHasRight);
+      commit(SET_TREEVIEW_WORKSPACES, getTreeviewWorkspaces(workspaces));
+      commit(
+        SET_TREEVIEW_WORKSPACES_HASRIGHT,
+        getTreeviewWorkspaces(workspacesHasRight)
+      );
+    } catch (error) {
+      console.error('error while fetching workspaces');
+    } finally {
+      commit(SET_WORKSPACES_ARE_LOADING, false);
+    }
   },
 };

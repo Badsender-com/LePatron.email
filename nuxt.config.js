@@ -74,7 +74,10 @@ module.exports = {
     prefix: config.nuxt.API_PREFIX,
     browserBaseURL: config.nuxt.API_PREFIX,
   },
-  css: ['~/assets/global-styles/index.scss'],
+  css: [
+    '~/assets/global-styles/index.scss',
+    '@easylogic/colorpicker/dist/colorpicker.css',
+  ],
 
   treeShake: true,
   env: {

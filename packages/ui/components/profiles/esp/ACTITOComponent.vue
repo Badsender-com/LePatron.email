@@ -238,7 +238,7 @@ export default {
   <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-text-field
             id="name"
             v-model="profile.name"
@@ -252,7 +252,7 @@ export default {
         </v-col>
       </v-row>
       <v-row align="center" justify="center">
-        <v-col cols="11">
+        <v-col cols="12">
           <v-text-field
             id="apiKey"
             v-model="profile.apiKey"
@@ -274,7 +274,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-select
             v-model="profile.entity"
             :items="entities"
@@ -293,7 +293,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-select
             v-model="profile.targetTable"
             :items="targetTables"
@@ -304,7 +304,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-select
             v-model="profile.encodingType"
             :items="possibleEncodingType"
@@ -313,7 +313,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-select
             v-model="profile.supportedLanguage"
             :items="convertCountriesListPerNames"
@@ -322,7 +322,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-text-field
             id="senderMail"
             v-model="profile.senderMail"
@@ -336,7 +336,7 @@ export default {
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="11">
+        <v-col cols="12">
           <v-text-field
             id="replyTo"
             v-model="profile.replyTo"

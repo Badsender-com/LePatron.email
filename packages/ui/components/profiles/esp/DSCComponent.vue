@@ -97,7 +97,7 @@ export default {
 </script>
 
 <template>
-  <v-card tag="form" :loading="isLoading" :disabled="isLoading">
+  <v-card flat tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text class="pb-5">
       <v-row>
         <v-col cols="12">
@@ -172,12 +172,12 @@ export default {
     </v-card-text>
     <v-divider />
     <v-card-actions>
+      <v-spacer />
       <v-btn
-        text
-        large
+        elevation="0"
         :loading="isLoading"
         :disabled="disabled"
-        color="primary"
+        color="accent"
         @click="onSubmit"
       >
         {{ $t('global.save') }}

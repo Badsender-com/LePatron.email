@@ -12,6 +12,32 @@ export function getTreeviewWorkspacesWithoutSubfolders(workspaces) {
   return getTreeview(workspaces, getFoldersMapWithoutSubFolder);
 }
 
+export function canCreateFolder(
+  workspaceOrFolderId,
+  treeviewItemPath,
+  level = 0
+) {
+  // we exist recursive function if level is more than one
+  if (level > 1) {
+    return false;
+  }
+
+  // level one workspace can create folder
+  if (treeviewItemPath?.path?.id === workspaceOrFolderId) {
+    return true;
+  }
+
+  if (treeviewItemPath?.pathChild?.id === workspaceOrFolderId && level <= 1) {
+    return true;
+  }
+
+  return canCreateFolder(
+    workspaceOrFolderId,
+    treeviewItemPath?.path || treeviewItemPath?.pathChild,
+    level + 1
+  );
+}
+
 export function getTreeview(workspaces, callback) {
   return workspaces.map((workspace) => {
     const path = {

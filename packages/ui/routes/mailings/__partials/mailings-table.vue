@@ -59,7 +59,6 @@ export default {
   props: {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
-    tags: { type: Array, default: () => [] },
     hasFtpAccess: { type: Boolean, default: false },
   },
   data() {
