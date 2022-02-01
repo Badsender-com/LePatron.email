@@ -19,6 +19,7 @@ import {
   SET_TAGS,
   FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
   FETCH_MAILINGS_FOR_FILTER_UPDATE,
+  FETCH_WORKSPACES,
 } from '~/store/folder';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 
@@ -44,6 +45,7 @@ export default {
       store.dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
         query,
       }),
+      store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`),
       store.dispatch(`${TEMPLATE}/${FETCH_TEMPLATES}`),
     ]);
   },

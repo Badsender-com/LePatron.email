@@ -30,7 +30,7 @@ export default ({ app, store }) => {
   store.watch(
     () => store.getters[`${USER}/${LOCALE}`],
     (userLocale) => {
-      if (userLocale) {
+      if (userLocale && app.i18n) {
         app.i18n.locale = userLocale;
         if (app.context?.$vuetify?.lang && app.i18n.locale) {
           app.context.$vuetify.lang.current = app.i18n.locale;
