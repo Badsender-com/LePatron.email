@@ -2,7 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const isEmail = require('validator/lib/isEmail');
 const { validationMixin } = require('vuelidate');
 const { ModalComponent } = require('../modal/modalComponent');
-const { Select } = require('../select/selectComponent');
+const { SelectComponent } = require('../select/selectComponent');
 const { getEmailGroups, sendTestEmails } = require('../../utils/apis');
 const styleHelper = require('../../utils/style/styleHelper');
 
@@ -11,7 +11,7 @@ const axios = require('axios');
 const TestModalComponent = Vue.component('TestModal', {
   components: {
     ModalComponent,
-    Select
+    SelectComponent
   },
   mixins: [validationMixin],
   props: {
@@ -33,10 +33,13 @@ const TestModalComponent = Vue.component('TestModal', {
               ( (!this.selectedEmailGroup || !this.selectedEmailGroup.code) && !this.inputEmailsTest)
     },
     displayEmailsGroupsSelect() {
+      console.log({ isLoadingEmailGroups: !this.isLoadingEmailGroups, isArrayEmailGroups: Array.isArray(this.emailsGroups), emailsGroupLength: this.emailsGroups.length > 0 })
       return !this.isLoadingEmailGroups && Array.isArray(this.emailsGroups) && this.emailsGroups.length > 0 ;
     }
   },
   mounted() {
+    console.log('calling mounted');
+
     this.subscriptions = [
       this.vm.openTestModal.subscribe(this.handleOpenTestModalChange),
     ];
@@ -64,10 +67,13 @@ const TestModalComponent = Vue.component('TestModal', {
       this.vm.openTestModal(false);
     },
     fetchEmailsGroups() {
+      console.log('calling fetchEmailsGroups');
       this.isLoadingEmailGroups = true;
       return axios.get(getEmailGroups({groupId: this.vm?.metadata?.groupId }))
           .then((response) => {
             const { items: emailsGroups } = response.data;
+
+            console.log({ emailsGroups });
             this.emailsGroups = emailsGroups.map(emailsGroup => ({
               label: emailsGroup.name,
               code: emailsGroup.id
@@ -113,7 +119,7 @@ const TestModalComponent = Vue.component('TestModal', {
     },
     handleSelectedEmailGroup(selectedEmailGroup) {
       this.selectedEmailGroup = selectedEmailGroup;
-    }
+    },
   },
   template: `
     <modal-component 
@@ -144,14 +150,12 @@ const TestModalComponent = Vue.component('TestModal', {
                 </div>
                 </div>
                 <div class="row" :style="style.mb0">
-                <div class="col s12 m6" v-if="displayEmailsGroupsSelect">
-                    <select
-                      v-model="selectedEmailGroup"
-                      :placeholder="vm.t('placeholder-emails-groups')"
-                      :options="emailsGroups">
-                      <!--Select email group-->
-                    </select>
-                </div>
+                  <div class="col s12 m6" v-if="displayEmailsGroupsSelect">
+                      <SelectComponent
+                        v-model="selectedEmailGroup"
+                        :placeholder="vm.t('placeholder-emails-groups')"
+                        :options="emailsGroups"/>
+                  </div>
                 </div>
             </form>
             </div>
