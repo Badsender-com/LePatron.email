@@ -33,13 +33,10 @@ const TestModalComponent = Vue.component('TestModal', {
               ( (!this.selectedEmailGroup || !this.selectedEmailGroup.code) && !this.inputEmailsTest)
     },
     displayEmailsGroupsSelect() {
-      console.log({ isLoadingEmailGroups: !this.isLoadingEmailGroups, isArrayEmailGroups: Array.isArray(this.emailsGroups), emailsGroupLength: this.emailsGroups.length > 0 })
       return !this.isLoadingEmailGroups && Array.isArray(this.emailsGroups) && this.emailsGroups.length > 0 ;
     }
   },
   mounted() {
-    console.log('calling mounted');
-
     this.subscriptions = [
       this.vm.openTestModal.subscribe(this.handleOpenTestModalChange),
     ];
@@ -67,13 +64,10 @@ const TestModalComponent = Vue.component('TestModal', {
       this.vm.openTestModal(false);
     },
     fetchEmailsGroups() {
-      console.log('calling fetchEmailsGroups');
       this.isLoadingEmailGroups = true;
       return axios.get(getEmailGroups({groupId: this.vm?.metadata?.groupId }))
           .then((response) => {
             const { items: emailsGroups } = response.data;
-
-            console.log({ emailsGroups });
             this.emailsGroups = emailsGroups.map(emailsGroup => ({
               label: emailsGroup.name,
               code: emailsGroup.id
