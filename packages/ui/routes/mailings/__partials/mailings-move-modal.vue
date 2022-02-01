@@ -1,8 +1,9 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
-import { workspacesByGroup } from '~/helpers/api-routes';
-import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+
+import { mapState } from 'vuex';
+import { FOLDER } from '~/store/folder';
 
 export default {
   name: 'MailingsMoveModal',
@@ -18,16 +19,15 @@ export default {
     return {
       mail: null,
       currentLocation: null,
-      workspaces: [],
-      workspaceIsError: false,
-      workspacesIsLoading: false,
       selectedLocation: {},
     };
   },
   computed: {
-    treeviewLocationItems() {
-      return getTreeviewWorkspaces(this.workspaces);
-    },
+    ...mapState(FOLDER, [
+      'workspaces',
+      'workspacesAreLoading',
+      'treeviewWorkspacesHasRight',
+    ]),
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
@@ -44,18 +44,6 @@ export default {
     },
   },
   methods: {
-    async fetchWorkspaces() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
-    },
     submit() {
       if (this.isValidToBeMoved) {
         const location = this.selectedLocation;
@@ -82,7 +70,6 @@ export default {
       }
     },
     open(selectedMail) {
-      this.fetchWorkspaces();
       this.mail = selectedMail.mail;
       this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
@@ -105,13 +92,13 @@ export default {
     <slot />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
-      :loading="workspacesIsLoading"
+      :loading="workspacesAreLoading"
     >
       <v-treeview
         ref="tree"
         item-key="id"
         activatable
-        :items="treeviewLocationItems"
+        :items="treeviewWorkspacesHasRight"
         hoverable
         open-all
         :dense="true"
