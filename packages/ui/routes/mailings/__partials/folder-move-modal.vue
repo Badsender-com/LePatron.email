@@ -1,8 +1,9 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
-import { workspacesByGroup } from '~/helpers/api-routes';
 import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { mapState } from 'vuex';
+import { FOLDER } from '~/store/folder';
 
 export default {
   name: 'FolderMoveModal',
@@ -15,13 +16,12 @@ export default {
   data() {
     return {
       folder: null,
-      workspaces: [],
       workspaceIsError: false,
-      workspacesIsLoading: false,
       selectedLocation: {},
     };
   },
   computed: {
+    ...mapState(FOLDER, ['workspaces', 'workspacesAreLoading']),
     treeviewLocationItems() {
       return getTreeviewWorkspacesWithoutSubfolders(this.workspaces);
     },
@@ -57,25 +57,12 @@ export default {
         });
       }
     },
-    async fetchWorkspaces() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
-    },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]) {
         this.selectedLocation = selectedItems[0];
       }
     },
     open(selectedFolder) {
-      this.fetchWorkspaces();
       this.folder = selectedFolder;
       this.$refs.moveFolderDialog.open();
     },
@@ -99,7 +86,7 @@ export default {
     <slot />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
-      :loading="workspacesIsLoading"
+      :loading="workspacesAreLoading"
     >
       <v-treeview
         ref="tree"
