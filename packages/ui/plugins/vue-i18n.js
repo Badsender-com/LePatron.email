@@ -32,8 +32,8 @@ export default ({ app, store }) => {
     (userLocale) => {
       if (userLocale && app.i18n) {
         app.i18n.locale = userLocale;
-        if (app.context?.$vuetify?.current.locale) {
-          app.context.$vuetify.current.locale = app.i18n.locale;
+        if (app.context?.$vuetify?.lang && app.i18n.locale) {
+          app.context.$vuetify.lang.current = app.i18n.locale;
         }
       }
     }
@@ -42,12 +42,10 @@ export default ({ app, store }) => {
   store.watch(
     () => store.getters[`${PAGE}/${DEFAULT_LOCALE}`],
     (appLocale) => {
-      if (app.i18n) {
-        app.i18n.locale = store.getters[`${USER}/${LOCALE}`] || appLocale;
+      app.i18n.locale = store.getters[`${USER}/${LOCALE}`] || appLocale;
 
-        if (app.context?.$vuetify?.current?.locale) {
-          app.context.$vuetify.current.locale = app.i18n.locale;
-        }
+      if (app.context?.$vuetify?.lang && app.i18n.locale) {
+        app.context.$vuetify.lang.current = app.i18n.locale;
       }
     }
   );
