@@ -310,7 +310,7 @@ export default {
       send: 'Êtes-vous sûr de vouloir envoyer l\'email de mot de passe à',
       resend: 'Êtes-vous sûr de vouloir renvoyer l\'email de mot de passe à',
     },
-    email: 'Adressse email',
+    email: 'Adresse email',
     lang: 'Langue',
     details: 'Informations',
     role: 'Rôle',

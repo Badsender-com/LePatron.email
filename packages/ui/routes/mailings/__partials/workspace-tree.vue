@@ -11,7 +11,6 @@ import {
   SET_PAGINATION,
   FETCH_WORKSPACES,
   FETCH_FOLDER_OR_WORKSPACE,
-  SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE,
 } from '~/store/folder';
 import { canCreateFolder } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
@@ -44,7 +43,7 @@ export default {
   computed: {
     ...mapState(FOLDER, [
       'workspaces',
-      'workspacesAreLoading',
+      'areLoadingWorkspaces',
       'treeviewWorkspaces',
     ]),
     selectedItem() {
@@ -114,7 +113,6 @@ export default {
         commit(`${FOLDER}/${SET_PAGINATION}`, {
           page: 1,
         }),
-        commit(`${FOLDER}/${SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE}`, true),
       ]);
     },
     async fetchWorkspacesData() {
@@ -256,7 +254,7 @@ export default {
 <template>
   <v-skeleton-loader
     type="list-item, list-item, list-item"
-    :loading="workspacesAreLoading"
+    :loading="areLoadingWorkspaces"
   >
     <v-treeview
       ref="tree"
@@ -351,7 +349,7 @@ export default {
     <folder-rename-modal
       ref="modalRenameFolderDialog"
       :conflict-error="conflictError"
-      :loading-parent="workspacesAreLoading"
+      :loading-parent="areLoadingWorkspaces"
       @rename-folder="handleRenameFolder"
     />
     <folder-move-modal ref="moveModal" @confirm="onMoveFolder">

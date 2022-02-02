@@ -78,7 +78,7 @@ export default {
     ...mapState(FOLDER, [
       'pagination',
       'tags',
-      'mailingsIsLoadingForFilterUpdate',
+      'isLoadingMailingsForFilterUpdate',
     ]),
     hiddenCols() {
       const excludedRules = this.isAdmin
@@ -378,7 +378,7 @@ export default {
 
 <template>
   <div>
-    <v-skeleton-loader :loading="mailingsIsLoadingForFilterUpdate" type="table">
+    <v-skeleton-loader :loading="isLoadingMailingsForFilterUpdate" type="table">
       <v-data-table
         v-model="selectedRows"
         :headers="tablesHeaders"

@@ -65,7 +65,8 @@ export default {
     ...mapState(FOLDER, [
       'mailings',
       'tags',
-      'mailingsIsLoadingForWorkspaceUpdate',
+      'isLoadingWorkspaceOrFolder',
+      'isLoadingMailingsForWorkspaceUpdate',
       'pagination',
       'filters',
     ]),
@@ -96,7 +97,13 @@ export default {
       },
     },
   },
+  watch: {
+    $route: ['resetMailingsSelection'],
+  },
   methods: {
+    resetMailingsSelection() {
+      this.mailingsSelection = [];
+    },
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
     },
@@ -120,7 +127,7 @@ export default {
         $t: this.$t,
         ...additionalParams,
       });
-      this.mailingsSelection = [];
+      this.resetMailingsSelection();
     },
     async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
@@ -140,7 +147,7 @@ export default {
         items: this.mailingsSelection.map((mailing) => mailing.id),
         tags: tagsUpdates,
       });
-      this.mailingsSelection = [];
+      this.resetMailingsSelection();
     },
     async onMailTableTagsUpdate(tagsInformations) {
       const { tags, selectedMailing } = tagsInformations;
@@ -209,7 +216,9 @@ export default {
     </template>
     <v-card flat tile>
       <v-skeleton-loader
-        :loading="mailingsIsLoadingForWorkspaceUpdate"
+        :loading="
+          isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+        "
         type="table"
       >
         <mailings-header @on-refresh="refreshLeftMenuData" />
@@ -243,7 +252,8 @@ export default {
           <v-pagination
             v-if="parseInt(itemsLength) > 0"
             v-model="currentPage"
-            class="my-4"
+            :circle="true"
+            class="my-4 pagination-custom-style"
             :length="totalPages"
           />
         </v-card>
@@ -256,3 +266,15 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
+
+<style>
+.pagination-custom-style > ul > li > .v-pagination__item,
+.pagination-custom-style > ul > li > .v-pagination__navigation {
+  box-shadow: none;
+  border: 1px solid #000;
+}
+
+.pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
+  border: 1px solid #bbb2ad;
+}
+</style>
