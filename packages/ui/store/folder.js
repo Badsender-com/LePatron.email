@@ -19,17 +19,20 @@ export const SET_TAGS = 'SET_TAGS';
 export const SET_PAGINATION = 'SET_PAGINATION';
 export const SET_FILTERS = 'SET_FILTERS';
 export const SET_SORTBY = 'SET_SORTBY';
-export const SET_LOADING_MAILINGS_FOR_FILTER_UPDATE =
-  'SET_LOADING_MAILINGS_FOR_FILTER_UPDATE';
-export const SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE =
-  'SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE';
+export const SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE =
+  'SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE';
+
+export const SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE =
+  'SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE';
 
 export const SET_WORKSPACES = 'SET_WORKSPACES';
 export const SET_WORKSPACES_HAS_RIGHT = 'SET_WORKSPACES_HAS_RIGHT';
 export const SET_TREEVIEW_WORKSPACES = 'SET_TREEVIEW_WORKSPACES';
 export const SET_TREEVIEW_WORKSPACES_HASRIGHT =
   'SET_TREEVIEW_WORKSPACES_HASRIGHT';
-export const SET_WORKSPACES_ARE_LOADING = 'SET_WORKSPACES_ARE_LOADING';
+export const SET_ARE_LOADING_WORKSPACES = 'SET_ARE_LOADING_WORKSPACES';
+
+export const IS_LOADING_WORKSPACE_OR_FOLDER = 'IS_LOADING_WORKSPACE_OR_FOLDER';
 
 export const FETCH_WORKSPACES = 'FETCH_WORKSPACES';
 export const FETCH_MAILINGS = 'fetchMailings';
@@ -63,9 +66,10 @@ export const state = () => ({
   },
   mailings: [],
   tags: [],
-  mailingsIsLoadingForFilterUpdate: false,
-  mailingsIsLoadingForWorkspaceUpdate: false,
-  workspacesAreLoading: [],
+  isLoadingMailingsForFilterUpdate: false,
+  isLoadingMailingsForWorkspaceUpdate: false,
+  isLoadingWorkspaceOrFolder: false,
+  areLoadingWorkspaces: [],
   workspaces: [],
   workspacesHasRight: [],
   treeviewWorkspaces: [],
@@ -91,8 +95,11 @@ export const mutations = {
   [SET_TREEVIEW_WORKSPACES_HASRIGHT](store, treeviewWorkspacesHasRight) {
     store.treeviewWorkspacesHasRight = treeviewWorkspacesHasRight;
   },
-  [SET_WORKSPACES_ARE_LOADING](store, workspacesAreLoading) {
-    store.workspacesAreLoading = workspacesAreLoading;
+  [IS_LOADING_WORKSPACE_OR_FOLDER](store, isLoadingWorkspaceOrFolder) {
+    store.isLoadingWorkspaceOrFolder = isLoadingWorkspaceOrFolder;
+  },
+  [SET_ARE_LOADING_WORKSPACES](store, areLoadingWorkspaces) {
+    store.areLoadingWorkspaces = areLoadingWorkspaces;
   },
   [SET_WORKSPACE](store, workspace) {
     store.workspace = workspace;
@@ -115,17 +122,17 @@ export const mutations = {
       ...filters,
     };
   },
-  [SET_LOADING_MAILINGS_FOR_FILTER_UPDATE](
+  [SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE](
     store,
-    mailingsIsLoadingForFilterUpdate
+    isLoadingMailingsForFilterUpdate
   ) {
-    store.mailingsIsLoadingForFilterUpdate = mailingsIsLoadingForFilterUpdate;
+    store.isLoadingMailingsForFilterUpdate = isLoadingMailingsForFilterUpdate;
   },
-  [SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE](
+  [SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE](
     store,
-    mailingsIsLoadingForWorkspaceUpdate
+    isLoadingMailingsForWorkspaceUpdate
   ) {
-    store.mailingsIsLoadingForWorkspaceUpdate = mailingsIsLoadingForWorkspaceUpdate;
+    store.isLoadingMailingsForWorkspaceUpdate = isLoadingMailingsForWorkspaceUpdate;
   },
   [SET_HAS_ACCESS](store, hasAccess) {
     store.hasAccess = hasAccess;
@@ -134,6 +141,7 @@ export const mutations = {
 
 export const actions = {
   async [FETCH_FOLDER_OR_WORKSPACE]({ commit, dispatch }, { query, $t }) {
+    commit(IS_LOADING_WORKSPACE_OR_FOLDER, true);
     try {
       if (!this.$axios || !query) {
         return;
@@ -174,6 +182,8 @@ export const actions = {
           { root: true }
         );
       }
+    } finally {
+      commit(IS_LOADING_WORKSPACE_OR_FOLDER, false);
     }
   },
   async [FETCH_MAILINGS]({ commit, rootState }, { query, $t, pagination }) {
@@ -230,22 +240,23 @@ export const actions = {
     { commit, dispatch },
     { query, $t, pagination }
   ) {
-    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, true);
+    commit(SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
-    commit(SET_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
+    commit(SET_IS_LOADING_MAILINGS_FOR_FILTER_UPDATE, false);
   },
   async [FETCH_MAILINGS_FOR_WORKSPACE_UPDATE](
     { commit, dispatch },
     { query, $t, pagination }
   ) {
-    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
+    console.log('fetching mails');
+    commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
-    commit(SET_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+    commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
   },
   async [FETCH_WORKSPACES]({ commit }) {
     const { $axios } = this;
     try {
-      commit(SET_WORKSPACES_ARE_LOADING, true);
+      commit(SET_ARE_LOADING_WORKSPACES, true);
       const { items: workspaces } = await $axios.$get(workspacesByGroup());
       const workspacesHasRight = workspaces?.filter(
         (workspace) => workspace?.hasRights
@@ -260,7 +271,7 @@ export const actions = {
     } catch (error) {
       console.error('error while fetching workspaces');
     } finally {
-      commit(SET_WORKSPACES_ARE_LOADING, false);
+      commit(SET_ARE_LOADING_WORKSPACES, false);
     }
   },
 };

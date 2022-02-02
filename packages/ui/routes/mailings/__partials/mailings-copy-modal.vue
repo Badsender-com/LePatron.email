@@ -21,7 +21,7 @@ export default {
   computed: {
     ...mapState(FOLDER, [
       'workspaces',
-      'workspacesAreLoading',
+      'areLoadingWorkspaces',
       'treeviewWorkspacesHasRight',
     ]),
     isValidToBeCopied() {
@@ -69,7 +69,7 @@ export default {
     <slot />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
-      :loading="workspacesAreLoading"
+      :loading="areLoadingWorkspaces"
     >
       <v-treeview
         ref="tree"
