@@ -104,7 +104,6 @@ export default {
       }
     },
     async getFolderAndWorkspaceData() {
-      console.log('calling getFolderAndWorkspaceData');
       const { dispatch, commit } = this.$store;
       await Promise.all([
         dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {

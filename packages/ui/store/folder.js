@@ -248,7 +248,6 @@ export const actions = {
     { commit, dispatch },
     { query, $t, pagination }
   ) {
-    console.log('fetching mails');
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
