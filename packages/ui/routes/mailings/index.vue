@@ -96,7 +96,13 @@ export default {
       },
     },
   },
+  watch: {
+    $route: ['resetMailingsSelection'],
+  },
   methods: {
+    resetMailingsSelection() {
+      this.mailingsSelection = [];
+    },
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
     },
@@ -120,7 +126,7 @@ export default {
         $t: this.$t,
         ...additionalParams,
       });
-      this.mailingsSelection = [];
+      this.resetMailingsSelection();
     },
     async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
@@ -140,7 +146,7 @@ export default {
         items: this.mailingsSelection.map((mailing) => mailing.id),
         tags: tagsUpdates,
       });
-      this.mailingsSelection = [];
+      this.resetMailingsSelection();
     },
     async onMailTableTagsUpdate(tagsInformations) {
       const { tags, selectedMailing } = tagsInformations;
