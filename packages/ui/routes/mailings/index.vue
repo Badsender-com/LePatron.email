@@ -252,7 +252,8 @@ export default {
           <v-pagination
             v-if="parseInt(itemsLength) > 0"
             v-model="currentPage"
-            class="my-4"
+            :circle="true"
+            class="my-4 pagination-custom-style"
             :length="totalPages"
           />
         </v-card>
@@ -265,3 +266,15 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
+
+<style>
+.pagination-custom-style > ul > li > .v-pagination__item,
+.pagination-custom-style > ul > li > .v-pagination__navigation {
+  box-shadow: none;
+  border: 1px solid #000;
+}
+
+.pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
+  border: 1px solid #bbb2ad;
+}
+</style>
