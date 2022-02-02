@@ -16,7 +16,7 @@ export default {
   computed: {
     ...mapState(FOLDER, [
       'workspaces',
-      'workspacesAreLoading',
+      'areLoadingWorkspaces',
       'treeviewWorkspaces',
     ]),
     selectedLocation() {

@@ -65,7 +65,8 @@ export default {
     ...mapState(FOLDER, [
       'mailings',
       'tags',
-      'mailingsIsLoadingForWorkspaceUpdate',
+      'isLoadingWorkspaceOrFolder',
+      'isLoadingMailingsForWorkspaceUpdate',
       'pagination',
       'filters',
     ]),
@@ -215,7 +216,9 @@ export default {
     </template>
     <v-card flat tile>
       <v-skeleton-loader
-        :loading="mailingsIsLoadingForWorkspaceUpdate"
+        :loading="
+          isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+        "
         type="table"
       >
         <mailings-header @on-refresh="refreshLeftMenuData" />
