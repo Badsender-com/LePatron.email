@@ -105,7 +105,9 @@ export default {
       <bs-group-menu />
     </template>
     <v-tabs :value="`group-${tab}`" centered>
-      <v-tabs-slider color="accent" />
+      <client-only>
+        <v-tabs-slider color="accent" />
+      </client-only>
       <v-tab href="#group-informations">
         {{ $t('groups.tabs.informations') }}
       </v-tab>
