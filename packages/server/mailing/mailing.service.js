@@ -905,6 +905,8 @@ async function copyMailing(mailingId, destination, user) {
     copy.author = user.name;
   }
 
+  copy.name = `copy ${copy.name}`;
+
   const copiedMailing = await Mailings.create(copy);
   const gallery = await Galleries.findOne({
     creationOrWireframeId: mailing._id,
