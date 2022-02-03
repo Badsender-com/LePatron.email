@@ -108,9 +108,11 @@ export default {
       <client-only>
         <v-tabs-slider color="accent" />
       </client-only>
-      <v-tab href="#group-informations">
-        {{ $t('groups.tabs.informations') }}
-      </v-tab>
+      <client-only>
+        <v-tab href="#group-informations">
+          {{ $t('groups.tabs.informations') }}
+        </v-tab>
+      </client-only>
       <v-tab v-if="isAdmin" href="#group-templates">
         {{ $tc('global.template', 2) }}
       </v-tab>
