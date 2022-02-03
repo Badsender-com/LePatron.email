@@ -271,10 +271,11 @@ export default {
 .pagination-custom-style > ul > li > .v-pagination__item,
 .pagination-custom-style > ul > li > .v-pagination__navigation {
   box-shadow: none;
-  border: 1px solid #000;
+  border: none;
 }
 
 .pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
   border: 1px solid #bbb2ad;
+  border: none;
 }
 </style>
