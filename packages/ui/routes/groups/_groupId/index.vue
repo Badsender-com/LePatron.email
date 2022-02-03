@@ -50,7 +50,6 @@ export default {
   head() {
     return { title: this.title };
   },
-  mount() {},
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -68,7 +67,9 @@ export default {
       )} ${this.group.name}`;
     },
   },
-
+  mounted() {
+    this.observeVisibility();
+  },
   beforeDestroy: function () {
     this.unObserveVisibility();
   },
