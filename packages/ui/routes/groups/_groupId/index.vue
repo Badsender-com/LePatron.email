@@ -134,14 +134,10 @@ export default {
       <bs-group-menu />
     </template>
     <v-tabs ref="tabs" :value="`group-${tab}`" centered>
-      <client-only>
-        <v-tabs-slider color="accent" />
-      </client-only>
-      <client-only>
-        <v-tab href="#group-informations">
-          {{ $t('groups.tabs.informations') }}
-        </v-tab>
-      </client-only>
+      <v-tabs-slider color="accent" />
+      <v-tab href="#group-informations">
+        {{ $t('groups.tabs.informations') }}
+      </v-tab>
       <v-tab v-if="isAdmin" href="#group-templates">
         {{ $tc('global.template', 2) }}
       </v-tab>
