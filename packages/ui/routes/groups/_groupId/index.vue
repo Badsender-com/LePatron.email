@@ -44,12 +44,13 @@ export default {
     return {
       group: {},
       loading: false,
+      intersectionObserver: null,
     };
   },
   head() {
     return { title: this.title };
   },
-
+  mount() {},
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -67,8 +68,35 @@ export default {
       )} ${this.group.name}`;
     },
   },
+
+  beforeDestroy: function () {
+    this.unObserveVisibility();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    observeVisibility() {
+      const element = this.$refs.tabs.$el;
+      if (window.IntersectionObserver) {
+        this.intersectionObserver = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].intersectionRatio) {
+              // There is an intersection, the content is visible
+              // Manually calling VTabs onResize method to properly show the slider
+              this.$refs.tabs.onResize();
+            }
+          },
+          {
+            root: document.body,
+          }
+        );
+        this.intersectionObserver?.observe(element);
+      }
+    },
+    unObserveVisibility() {
+      if (this.intersectionObserver) {
+        this.intersectionObserver.disconnect();
+      }
+    },
     async updateGroup() {
       const {
         $axios,
@@ -104,7 +132,7 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs :value="`group-${tab}`" centered>
+    <v-tabs ref="tabs" :value="`group-${tab}`" centered>
       <client-only>
         <v-tabs-slider color="accent" />
       </client-only>
