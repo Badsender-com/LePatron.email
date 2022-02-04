@@ -89,7 +89,7 @@ module.exports = {
     // EXT_TOKEN: config.extToken,
   },
   head: {
-    titleTemplate: 'LePatron.email - %s',
+    titleTemplate: 'LePatron Email Builder by Badsender - %s',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },

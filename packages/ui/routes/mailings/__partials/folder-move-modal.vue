@@ -21,9 +21,9 @@ export default {
     };
   },
   computed: {
-    ...mapState(FOLDER, ['workspaces', 'areLoadingWorkspaces']),
+    ...mapState(FOLDER, ['workspacesHasRight', 'areLoadingWorkspaces']),
     treeviewLocationItems() {
-      return getTreeviewWorkspacesWithoutSubfolders(this.workspaces);
+      return getTreeviewWorkspacesWithoutSubfolders(this.workspacesHasRight);
     },
     isValidToBeMoved() {
       return (
