@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 'use strict';
 
 const _ = require('lodash');
@@ -6,10 +7,9 @@ const DEFAULT_LOCALE = 'fr';
 const translations = {
   fr: {
     'default-mailing-name': 'sans titre',
-    'editor-title':
-      'Éditeur de templates email responsive par “glissé/déposé” - Une solution Badsender.com',
+    'editor-title': 'LePatron Email Builder by Badsender',
     'editor-description':
-      'Badsender Email Builder est une solution de conception d\'emailing responsive permettant de construire un email graphiquement par glissé/déposé.',
+      "Barrener Email Builder est une solution de conception d'emailing responsive permettant de construe un email graphiquement par glissé/déposé.",
   },
   en: {
     'default-mailing-name': 'untitled',

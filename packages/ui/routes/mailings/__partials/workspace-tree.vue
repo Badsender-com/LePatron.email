@@ -227,7 +227,7 @@ export default {
           routerRedirectionParam = { wid: destinationParam?.workspaceId };
         }
 
-        await this.$router.replace({
+        await this.$router.push({
           query: routerRedirectionParam,
         });
         this.showSnackbar({
@@ -236,8 +236,9 @@ export default {
         });
         await this.fetchWorkspacesData();
       } catch (error) {
+        console.log(error);
         let errorKey = 'global.errors.errorOccured';
-        if (error.response.status === 409) {
+        if (error.response?.status === 409) {
           errorKey = 'folders.conflict';
         }
         this.showSnackbar({
