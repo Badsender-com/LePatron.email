@@ -1,32 +1,34 @@
 <template>
-  <div>
-    <div class="m-color-scheme">
-      <div v-for="(color, i) of value" :key="i" class="a-color">
+  <v-row>
+    <v-col cols="12">
+      <div class="m-color-scheme">
+        <div v-for="(color, i) of value" :key="i" class="a-color">
+          <button
+            class="a-color__remove"
+            type="button"
+            @click="handleRemoveColor(i)"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            class="a-color__picker"
+            :style="{ backgroundColor: color }"
+            @click="handleColorChange(i)"
+          />
+        </div>
+
         <button
-          class="a-color__remove"
-          type="button"
-          @click="handleRemoveColor(i)"
-        >
-          -
-        </button>
-        <button
+          v-if="canAddColor"
           type="button"
           class="a-color__picker"
-          :style="{ backgroundColor: color }"
-          @click="handleColorChange(i)"
-        />
+          @click="handleAddColor()"
+        >
+          +
+        </button>
       </div>
-
-      <button
-        v-if="canAddColor"
-        type="button"
-        class="a-color__picker"
-        @click="handleAddColor()"
-      >
-        +
-      </button>
-    </div>
-  </div>
+    </v-col>
+  </v-row>
 </template>
 
 <script>

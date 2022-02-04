@@ -13,6 +13,8 @@ import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
+import BsGroupLoading from '~/components/loadingBar';
+
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
@@ -24,6 +26,7 @@ export default {
     BsGroupTemplatesTab,
     BsGroupMailingsTab,
     BsGroupWorkspacesTab,
+    BsGroupLoading,
     BsGroupProfilesTab,
     BsEmailsGroupsTab,
   },
@@ -44,12 +47,12 @@ export default {
     return {
       group: {},
       loading: false,
+      intersectionObserver: null,
     };
   },
   head() {
     return { title: this.title };
   },
-
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -67,8 +70,37 @@ export default {
       )} ${this.group.name}`;
     },
   },
+  mounted() {
+    this.observeVisibility();
+  },
+  beforeDestroy: function () {
+    this.unObserveVisibility();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    observeVisibility() {
+      const element = this.$refs.tabs?.$el;
+      if (window.IntersectionObserver && element) {
+        this.intersectionObserver = new IntersectionObserver(
+          (entries) => {
+            if (entries[0].intersectionRatio) {
+              // There is an intersection, the content is visible
+              // Manually calling VTabs onResize method to properly show the slider
+              this.$refs.tabs.onResize();
+            }
+          },
+          {
+            root: document.body,
+          }
+        );
+        this.intersectionObserver?.observe(element);
+      }
+    },
+    unObserveVisibility() {
+      if (this.intersectionObserver) {
+        this.intersectionObserver.disconnect();
+      }
+    },
     async updateGroup() {
       const {
         $axios,
@@ -104,56 +136,59 @@ export default {
     <template #menu>
       <bs-group-menu />
     </template>
-    <v-tabs :value="`group-${tab}`" centered>
-      <v-tabs-slider color="accent" />
-      <v-tab href="#group-informations">
-        {{ $t('groups.tabs.informations') }}
-      </v-tab>
-      <v-tab v-if="isAdmin" href="#group-templates">
-        {{ $tc('global.template', 2) }}
-      </v-tab>
-      <v-tab v-if="isGroupAdmin" href="#group-workspaces">
-        {{ $tc('global.teams', 2) }}
-      </v-tab>
-      <v-tab href="#group-users">
-        {{ $tc('global.user', 2) }}
-      </v-tab>
-      <v-tab v-if="isAdmin" href="#group-mailings">
-        {{ $tc('global.mailing', 2) }}
-      </v-tab>
-      <v-tab v-if="isAdmin" href="#group-profile">
-        {{ $tc('global.profile', 2) }}
-      </v-tab>
-      <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
-        {{ $tc('global.emailsGroups', 2) }}
-      </v-tab>
-      <v-tab-item value="group-informations" eager>
-        <bs-group-form
-          v-model="group"
-          :is-edit="true"
-          elevation="0"
-          :disabled="loading"
-          @submit="updateGroup"
-        />
-      </v-tab-item>
-      <v-tab-item v-if="isAdmin" value="group-templates">
-        <bs-group-templates-tab />
-      </v-tab-item>
-      <v-tab-item v-if="isAdmin" value="group-mailings">
-        <bs-group-mailings-tab />
-      </v-tab-item>
-      <v-tab-item v-if="isGroupAdmin" value="group-workspaces">
-        <bs-group-workspaces-tab />
-      </v-tab-item>
-      <v-tab-item value="group-users">
-        <bs-group-users-tab />
-      </v-tab-item>
-      <v-tab-item v-if="isAdmin" value="group-profile">
-        <bs-group-profiles-tab />
-      </v-tab-item>
-      <v-tab-item v-if="isGroupAdmin" value="group-emails-groups">
-        <bs-emails-groups-tab />
-      </v-tab-item>
-    </v-tabs>
+    <client-only>
+      <v-tabs ref="tabs" :value="`group-${tab}`" centered>
+        <v-tabs-slider color="accent" />
+        <v-tab href="#group-informations">
+          {{ $t('groups.tabs.informations') }}
+        </v-tab>
+        <v-tab v-if="isAdmin" href="#group-templates">
+          {{ $tc('global.template', 2) }}
+        </v-tab>
+        <v-tab v-if="isGroupAdmin" href="#group-workspaces">
+          {{ $tc('global.teams', 2) }}
+        </v-tab>
+        <v-tab href="#group-users">
+          {{ $tc('global.user', 2) }}
+        </v-tab>
+        <v-tab v-if="isAdmin" href="#group-mailings">
+          {{ $tc('global.mailing', 2) }}
+        </v-tab>
+        <v-tab v-if="isAdmin" href="#group-profile">
+          {{ $tc('global.profile', 2) }}
+        </v-tab>
+        <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
+          {{ $tc('global.emailsGroups', 2) }}
+        </v-tab>
+        <v-tab-item value="group-informations">
+          <bs-group-form
+            v-model="group"
+            :is-edit="true"
+            elevation="0"
+            :disabled="loading"
+            @submit="updateGroup"
+          />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-templates">
+          <bs-group-templates-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-mailings">
+          <bs-group-mailings-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin" value="group-workspaces">
+          <bs-group-workspaces-tab />
+        </v-tab-item>
+        <v-tab-item value="group-users">
+          <bs-group-users-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-profile">
+          <bs-group-profiles-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin" value="group-emails-groups">
+          <bs-emails-groups-tab />
+        </v-tab-item>
+      </v-tabs>
+      <bs-group-loading slot="placeholder" />
+    </client-only>
   </bs-layout-left-menu>
 </template>
