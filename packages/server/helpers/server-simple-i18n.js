@@ -7,7 +7,7 @@ const DEFAULT_LOCALE = 'fr';
 const translations = {
   fr: {
     'default-mailing-name': 'sans titre',
-    'editor-title': 'LePatron Email Builder by Badsender',
+    'editor-title': 'LePatron Email Builder',
     'editor-description':
       "Barrener Email Builder est une solution de conception d'emailing responsive permettant de construe un email graphiquement par glissé/déposé.",
   },
