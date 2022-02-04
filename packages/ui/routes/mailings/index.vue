@@ -22,6 +22,7 @@ import {
   FETCH_WORKSPACES,
 } from '~/store/folder';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
+import BsGroupLoading from '~/components/loadingBar';
 
 export default {
   name: 'PageMailings',
@@ -32,6 +33,7 @@ export default {
     MailingsSelectionActions,
     BsMailingsModalNew,
     MailingsHeader,
+    BsGroupLoading,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
@@ -215,49 +217,52 @@ export default {
       <workspace-tree ref="workspaceTree" />
     </template>
     <v-card flat tile>
-      <v-skeleton-loader
-        :loading="
-          isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
-        "
-        type="table"
-      >
-        <mailings-header @on-refresh="refreshLeftMenuData" />
-        <mailings-filters
-          :tags="tags"
-          @on-refresh="fetchMailListingForFilterUpdate"
-        />
-        <mailings-selection-actions
-          ref="mailingSelectionActions"
-          :mailings-selection="mailingsSelection"
-          :tags="tags"
-          :has-ftp-access="hasFtpAccess"
-          @createTag="onTagCreate"
-          @updateTags="onMailSelectionTagsUpdate"
-          @on-refetch="fetchMailListingForFilterUpdate"
-        />
-        <mailings-table
-          v-model="mailingsSelection"
-          :mailings="filteredMailings"
-          :has-ftp-access="hasFtpAccess"
-          :tags="tags"
-          @on-single-mail-download="handleDownloadSingleMail"
-          @on-refetch="fetchMailListingForFilterUpdate"
-          @update-tags="onMailTableTagsUpdate"
-        />
-        <v-card
-          flat
-          class="d-flex align-center justify-center mx-auto"
-          max-width="22rem"
+      <client-only>
+        <v-skeleton-loader
+          :loading="
+            isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+          "
+          type="table"
         >
-          <v-pagination
-            v-if="parseInt(itemsLength) > 0"
-            v-model="currentPage"
-            :circle="true"
-            class="my-4 pagination-custom-style"
-            :length="totalPages"
+          <mailings-header @on-refresh="refreshLeftMenuData" />
+          <mailings-filters
+            :tags="tags"
+            @on-refresh="fetchMailListingForFilterUpdate"
           />
-        </v-card>
-      </v-skeleton-loader>
+          <mailings-selection-actions
+            ref="mailingSelectionActions"
+            :mailings-selection="mailingsSelection"
+            :tags="tags"
+            :has-ftp-access="hasFtpAccess"
+            @createTag="onTagCreate"
+            @updateTags="onMailSelectionTagsUpdate"
+            @on-refetch="fetchMailListingForFilterUpdate"
+          />
+          <mailings-table
+            v-model="mailingsSelection"
+            :mailings="filteredMailings"
+            :has-ftp-access="hasFtpAccess"
+            :tags="tags"
+            @on-single-mail-download="handleDownloadSingleMail"
+            @on-refetch="fetchMailListingForFilterUpdate"
+            @update-tags="onMailTableTagsUpdate"
+          />
+          <v-card
+            flat
+            class="d-flex align-center justify-center mx-auto"
+            max-width="22rem"
+          >
+            <v-pagination
+              v-if="parseInt(itemsLength) > 0"
+              v-model="currentPage"
+              :circle="true"
+              class="my-4 pagination-custom-style"
+              :length="totalPages"
+            />
+          </v-card>
+        </v-skeleton-loader>
+        <bs-group-loading slot="placeholder" />
+      </client-only>
     </v-card>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
