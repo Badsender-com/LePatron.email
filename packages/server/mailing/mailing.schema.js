@@ -162,7 +162,9 @@ MailingSchema.index({ wireframe: 1 });
 MailingSchema.index({ wireframe: -1 });
 MailingSchema.index({ tags: 1 });
 MailingSchema.index({ tags: -1 });
-
+MailingSchema.index({ _company: 1, tags: 1 });
+MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
+MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
 };
@@ -246,9 +248,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       id: '$_id',
       name: 1,
       group: '$_company',
-      templateName: '$wireframe',
+      wireframe: 1,
       templateId: '$_wireframe',
-      userName: '$author',
+      author: 1,
       userId: '$_user',
       tags: 1,
       previewHtml: '$previewHtml',
@@ -263,10 +265,14 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
 
   const { docs, ...restPaginationProperties } = result;
 
-  const convertedResultMailingDocs = docs?.map(({ previewHtml, ...doc }) => ({
-    hasHtmlPreview: !!previewHtml,
-    ...doc,
-  }));
+  const convertedResultMailingDocs = docs?.map(
+    ({ previewHtml, wireframe, author, ...doc }) => ({
+      hasHtmlPreview: !!previewHtml,
+      templateName: wireframe,
+      userName: author,
+      ...doc,
+    })
+  );
 
   return { docs: convertedResultMailingDocs, ...restPaginationProperties };
 };
