@@ -41,10 +41,7 @@ export default {
 </script>
 
 <template>
-  <v-card
-    flat
-    tile
-  >
+  <v-card flat tile>
     <v-card-text>
       <bs-users-table
         :users="users"

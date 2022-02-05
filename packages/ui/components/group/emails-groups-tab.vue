@@ -101,7 +101,7 @@ export default {
 <template>
   <v-card flat tile>
     <v-card-text>
-      <v-card elevation="2">
+      <v-card flat tile>
         <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
         <v-data-table
           v-show="!loading"
@@ -127,9 +127,10 @@ export default {
     </v-card-text>
     <bs-modal-confirm
       ref="deleteDialog"
-      :title="`${$t('global.delete')} ${selectedEmailsGroup.name}?`"
+      :title="`${$t('global.delete')}`"
       :action-label="$t('global.delete')"
       action-button-color="error"
+      action-button-elevation="0"
       @confirm="deleteEmailsGroup"
     >
       {{ $t('forms.emailsGroup.deleteNotice') }}

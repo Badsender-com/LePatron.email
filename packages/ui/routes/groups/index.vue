@@ -2,9 +2,13 @@
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import BsGroupLoading from '~/components/loadingBar';
 
 export default {
   name: 'PageGroups',
+  components: {
+    BsGroupLoading,
+  },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -60,43 +64,43 @@ export default {
 
 <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <v-data-table
-          :headers="tableHeaders"
-          :items="groups"
-          class="elevation-1"
-        >
-          <template #item.name="{ item }">
-            <nuxt-link :to="`/groups/${item.id}`">
-              {{ item.name }}
-            </nuxt-link>
-          </template>
-          <template #item.createdAt="{ item }">
-            <span>{{ item.createdAt | preciseDateTime }}</span>
-          </template>
-          <template #item.downloadMailingWithoutEnclosingFolder="{ item }">
-            <v-icon v-if="item.downloadMailingWithoutEnclosingFolder">
-              check
-            </v-icon>
-          </template>
-          <template #item.downloadMailingWithCdnImages="{ item }">
-            <v-icon v-if="item.downloadMailingWithCdnImages">
-              check
-            </v-icon>
-          </template>
-          <template #item.downloadMailingWithFtpImages="{ item }">
-            <v-icon v-if="item.downloadMailingWithFtpImages">
-              check
-            </v-icon>
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
-    <v-btn color="accent" fixed bottom right fab link nuxt to="/groups/new">
-      <v-icon color="secondary">
-        group_add
-      </v-icon>
-    </v-btn>
+    <client-only>
+      <v-row>
+        <v-col cols="12">
+          <v-data-table :headers="tableHeaders" :items="groups">
+            <template #item.name="{ item }">
+              <nuxt-link :to="`/groups/${item.id}`">
+                {{ item.name }}
+              </nuxt-link>
+            </template>
+            <template #item.createdAt="{ item }">
+              <span>{{ item.createdAt | preciseDateTime }}</span>
+            </template>
+            <template
+              #item.downloadMailingWithoutEnclosingFolder="{ item }"
+              color="accent"
+            >
+              <v-icon v-if="item.downloadMailingWithoutEnclosingFolder">
+                check
+              </v-icon>
+            </template>
+            <template #item.downloadMailingWithCdnImages="{ item }">
+              <v-icon v-if="item.downloadMailingWithCdnImages" color="accent">
+                check
+              </v-icon>
+            </template>
+            <template #item.downloadMailingWithFtpImages="{ item }">
+              <v-icon v-if="item.downloadMailingWithFtpImages" color="accent">
+                check
+              </v-icon>
+            </template>
+          </v-data-table>
+        </v-col>
+      </v-row>
+      <v-btn color="accent" fixed bottom right fab link nuxt to="/groups/new">
+        <v-icon> group_add </v-icon>
+      </v-btn>
+      <bs-group-loading slot="placeholder" />
+    </client-only>
   </v-container>
 </template>

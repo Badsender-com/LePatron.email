@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const mongooseHidden = require('mongoose-hidden')();
 
+const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
 const { normalizeString } = require('../utils/model');
 const {
@@ -111,17 +111,17 @@ MailingSchema.post('find', function () {
   }
   this._startTime = null;
 });
-
-MailingSchema.plugin(mongooseHidden, {
-  hidden: {
-    __v: true,
-    _company: true,
-    _wireframe: true,
-    wireframe: true,
-    _user: true,
-    author: true,
-  },
-});
+MailingSchema.plugin(mongoosePaginate);
+// MailingSchema.plugin(mongooseHidden, {
+//   hidden: {
+//     __v: true,
+//     _company: true,
+//     _wireframe: true,
+//     wireframe: true,
+//     _user: true,
+//     author: true,
+//   },
+// });
 
 // http://stackoverflow.com/questions/18324843/easiest-way-to-copy-clone-a-mongoose-document-instance#answer-25845569
 MailingSchema.methods.duplicate = function duplicate(_user) {
@@ -150,54 +150,125 @@ MailingSchema.methods.duplicate = function duplicate(_user) {
 
   return this;
 };
+MailingSchema.index({ createdAt: 1 });
+MailingSchema.index({ createdAt: -1 });
+MailingSchema.index({ updatedAt: 1 });
+MailingSchema.index({ updatedAt: -1 });
+MailingSchema.index({ name: 1 });
+MailingSchema.index({ name: -1 });
+MailingSchema.index({ author: 1 });
+MailingSchema.index({ author: -1 });
+MailingSchema.index({ wireframe: 1 });
+MailingSchema.index({ wireframe: -1 });
+MailingSchema.index({ tags: 1 });
+MailingSchema.index({ tags: -1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
 };
 
-// Use aggregate so we excluse previewHtml and define another boolean variable hasPreviewHtml based on the existence of previewHtml
-MailingSchema.statics.findWithHasPreview = async function findWithHasPreview(
+MailingSchema.statics.findForApiWithPagination = async function findForApiWithPagination(
   query = {}
 ) {
-  return this.aggregate([
-    {
-      $match: {
-        ...query,
-      },
+  const { paginationJSON, filtersJSON, ...restQuery } = query;
+  const additionalQueryParams = {};
+
+  if (paginationJSON && paginationJSON.page && paginationJSON.itemsPerPage) {
+    if (paginationJSON.itemsPerPage !== -1) {
+      additionalQueryParams.page = paginationJSON.page;
+      additionalQueryParams.limit = parseInt(paginationJSON.itemsPerPage);
+    } else {
+      additionalQueryParams.pagination = false;
+    }
+  }
+
+  if (
+    Array.isArray(paginationJSON?.sortBy) &&
+    Array.isArray(paginationJSON?.sortDesc)
+  ) {
+    let sortByKey;
+    switch (paginationJSON.sortBy[0]) {
+      case 'templateName':
+        sortByKey = 'wireframe';
+        break;
+      case 'userName':
+        sortByKey = 'author';
+        break;
+      default:
+        sortByKey = paginationJSON.sortBy;
+    }
+
+    additionalQueryParams.sort = {
+      [sortByKey]: paginationJSON.sortDesc[0] ? -1 : 1,
+    };
+  }
+  if (filtersJSON) {
+    if (filtersJSON.name) {
+      restQuery.name = { $regex: filtersJSON.name, $options: 'i' };
+    }
+
+    if (
+      Array.isArray(filtersJSON.templates) &&
+      filtersJSON.templates?.length > 0
+    ) {
+      restQuery._wireframe = { $in: filtersJSON.templates };
+    }
+
+    if (Array.isArray(filtersJSON.tags) && filtersJSON.tags?.length > 0) {
+      restQuery.tags = { $in: filtersJSON.tags };
+    }
+
+    if (filtersJSON.createdAtStart) {
+      restQuery.createdAt = { $gte: new Date(filtersJSON.createdAtStart) };
+    }
+
+    if (filtersJSON.createdAtEnd) {
+      restQuery.createdAt = {
+        ...(restQuery.createdAt || {}),
+        $lt: new Date(filtersJSON.createdAtEnd),
+      };
+    }
+
+    if (filtersJSON.updatedAtStart) {
+      restQuery.updatedAt = { $gte: new Date(filtersJSON.updatedAtStart) };
+    }
+
+    if (filtersJSON.updatedAtEnd) {
+      restQuery.updatedAt = {
+        ...(restQuery.updatedAt || {}),
+        $lt: new Date(filtersJSON.updatedAtEnd),
+      };
+    }
+  }
+
+  const result = await this.paginate(restQuery, {
+    projection: {
+      id: '$_id',
+      name: 1,
+      group: '$_company',
+      templateName: '$wireframe',
+      templateId: '$_wireframe',
+      userName: '$author',
+      userId: '$_user',
+      tags: 1,
+      previewHtml: '$previewHtml',
+      _workspace: 1,
+      espIds: 1,
+      updatedAt: 1,
+      createdAt: 1,
     },
-    {
-      $addFields: {
-        hasHtmlPreview: {
-          $not: [
-            {
-              $not: [
-                {
-                  $ifNull: ['$previewHtml', 0],
-                },
-              ],
-            },
-          ],
-        },
-      },
-    },
-    {
-      $project: {
-        id: '$_id',
-        name: 1,
-        group: '$_company',
-        templateName: '$wireframe',
-        templateId: '$_wireframe',
-        userName: '$author',
-        userId: '$_user',
-        _workspace: 1,
-        tags: 1,
-        espIds: 1,
-        hasHtmlPreview: 1,
-        updatedAt: 1,
-        createdAt: 1,
-      },
-    },
-  ]);
+    lean: true,
+    ...additionalQueryParams,
+  });
+
+  const { docs, ...restPaginationProperties } = result;
+
+  const convertedResultMailingDocs = docs?.map(({ previewHtml, ...doc }) => ({
+    hasHtmlPreview: !!previewHtml,
+    ...doc,
+  }));
+
+  return { docs: convertedResultMailingDocs, ...restPaginationProperties };
 };
 
 // Extract used tags from creations
@@ -215,16 +286,12 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
   //   // { $sort: { _id: 1 } },
   // ])
 
-  const mailings = await this.find(query, {
-    _workspace: 0,
-    _parentFolder: 0,
-    previewHtml: 0,
-    data: 0,
-  }).populate({
-    path: '_company',
-    select: { tags: 1 },
-  });
-  // .sort({tags: -1})
+  const mailings = await this.find({
+    ...query,
+    tags: { $exists: true, $ne: [] },
+  })
+    .select({ tags: 1 })
+    .lean();
 
   let tags = [];
   mailings.forEach(

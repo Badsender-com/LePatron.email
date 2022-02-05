@@ -7,9 +7,9 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
-  name: `bs-mailings-modal-transfer`,
+  name: 'BsMailingsModalTransfer',
   mixins: [validationMixin],
-  model: { prop: `dialogInfo`, event: `update` },
+  model: { prop: 'dialogInfo', event: 'update' },
   props: {
     dialogInfo: {
       type: Object,
@@ -18,7 +18,7 @@ export default {
   },
   data() {
     return {
-      userId: ``,
+      userId: '',
       loadingUsersList: false,
       group: {},
       users: [],
@@ -43,7 +43,7 @@ export default {
         return this.dialogInfo;
       },
       set(updatedValue) {
-        this.$emit(`update`, updatedValue);
+        this.$emit('update', updatedValue);
       },
     },
     // make a computed so we can watch in a clean manner the nested prop change
@@ -61,16 +61,16 @@ export default {
 
   methods: {
     closeDialog() {
-      this.userId = ``;
+      this.userId = '';
       this.group = {};
       this.users = [];
       this.$v.$reset();
-      this.$emit(`close`);
+      this.$emit('close');
     },
     transferMailing() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
-      this.$emit(`transfer`, {
+      this.$emit('transfer', {
         mailingId: this.dialogInfo.mailingId,
         userId: this.userId,
       });
@@ -92,7 +92,7 @@ export default {
       } catch (error) {
         this.showSnackbar({
           text: this.$t('snackbars.userFetchError'),
-          color: `error`,
+          color: 'error',
         });
         this.closeDialog();
       } finally {
@@ -105,14 +105,14 @@ export default {
 
 <template>
   <v-dialog
-    class="bs-mailings-modal-rename"
     v-model="localModel.show"
+    class="bs-mailings-modal-rename"
     width="500"
   >
-    <v-card>
-      <v-card-title class="headline">{{
-        $t('mailings.transfer.label')
-      }}</v-card-title>
+    <v-card flat tile>
+      <v-card-title>
+        {{ $t('mailings.transfer.label') }}
+      </v-card-title>
       <v-card-text>
         <v-progress-linear
           :active="loadingUsersList"
@@ -120,31 +120,33 @@ export default {
           color="light-blue"
         />
         <v-select
-          v-model="userId"
           id="transferUserId"
+          v-model="userId"
           :label="$tc('global.user', 1)"
           name="transferUserId"
           :disabled="loadingUsersList"
           :items="users"
           :error-messages="userIdErrors"
-          @change="$v.userId.$touch()"
-          @blur="$v.userId.$touch()"
           item-value="id"
           item-text="email"
+          @change="$v.userId.$touch()"
+          @blur="$v.userId.$touch()"
         />
       </v-card-text>
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="closeDialog">{{
-          $t(`global.cancel`)
-        }}</v-btn>
+        <v-btn color="primary" text @click="closeDialog">
+          {{ $t(`global.cancel`) }}
+        </v-btn>
         <v-btn
           :disabled="loadingUsersList"
-          color="primary"
+          color="accent"
+          elevation="0"
           @click="transferMailing"
-          >{{ $t(`global.update`) }}</v-btn
         >
+          {{ $t(`global.update`) }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

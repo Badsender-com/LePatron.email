@@ -7,6 +7,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import { getEmailsGroups } from '~/helpers/api-routes.js';
 import BsGroupMenu from '~/components/group/menu.vue';
 import FormEmailsGroup from '~/components/group/form-emails-group';
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 const errors = {
   409: 'global.errors.emailsGroupExist',
@@ -19,8 +20,22 @@ export default {
   meta: {
     acl: [acls.ACL_GROUP_ADMIN],
   },
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+
+    try {
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+      return {
+        isLoading: false,
+        group: groupResponse,
+      };
+    } catch (error) {
+      return { isLoading: false, isError: true };
+    }
+  },
   data() {
     return {
+      group: {},
       loading: false,
       emailsGroup: {
         emails: '',
@@ -28,7 +43,17 @@ export default {
       },
     };
   },
+  head() {
+    return { title: this.title };
+  },
+
   computed: {
+    title() {
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.newEmailsGroup')}`;
+    },
     groupId() {
       return this.$route.params.groupId;
     },

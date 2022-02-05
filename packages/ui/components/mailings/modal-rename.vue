@@ -22,8 +22,8 @@ export default {
 
 <template>
   <v-dialog v-model="show" class="bs-mailings-modal-rename" width="500">
-    <v-card>
-      <v-card-title class="headline">
+    <v-card flat tile>
+      <v-card-title>
         {{ $t(`mailings.rename`) }}
       </v-card-title>
       <v-card-text>
@@ -37,11 +37,11 @@ export default {
       <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" text @click="close">
+        <v-btn text color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn color="primary" @click="action">
-          {{ $t('global.update') }}
+        <v-btn elevation="0" color="accent" @click="action">
+          {{ $t('global.apply') }}
         </v-btn>
       </v-card-actions>
     </v-card>

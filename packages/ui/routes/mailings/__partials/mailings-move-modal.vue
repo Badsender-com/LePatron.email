@@ -1,8 +1,9 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
-import { workspacesByGroup } from '~/helpers/api-routes';
-import { getTreeviewWorkspaces } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+
+import { mapState } from 'vuex';
+import { FOLDER } from '~/store/folder';
 
 export default {
   name: 'MailingsMoveModal',
@@ -18,16 +19,15 @@ export default {
     return {
       mail: null,
       currentLocation: null,
-      workspaces: [],
-      workspaceIsError: false,
-      workspacesIsLoading: false,
       selectedLocation: {},
     };
   },
   computed: {
-    treeviewLocationItems() {
-      return getTreeviewWorkspaces(this.workspaces);
-    },
+    ...mapState(FOLDER, [
+      'workspaces',
+      'areLoadingWorkspaces',
+      'treeviewWorkspacesHasRight',
+    ]),
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
@@ -44,18 +44,6 @@ export default {
     },
   },
   methods: {
-    async fetchWorkspaces() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspaces = items?.filter((workspace) => workspace?.hasRights);
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
-    },
     submit() {
       if (this.isValidToBeMoved) {
         const location = this.selectedLocation;
@@ -82,7 +70,6 @@ export default {
       }
     },
     open(selectedMail) {
-      this.fetchWorkspaces();
       this.mail = selectedMail.mail;
       this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
@@ -97,7 +84,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="moveMailDialog"
-    :title="`${confirmationTitleLabel} ${mailName}`"
+    :title="`${this.$t('global.moveMail')} <strong>${mailName}</strong>`"
     :is-form="true"
     class="modal-confirm-move-mail"
     @click-outside="close"
@@ -105,13 +92,13 @@ export default {
     <slot />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
-      :loading="workspacesIsLoading"
+      :loading="areLoadingWorkspaces"
     >
       <v-treeview
         ref="tree"
         item-key="id"
         activatable
-        :items="treeviewLocationItems"
+        :items="treeviewWorkspacesHasRight"
         hoverable
         open-all
         :dense="true"
@@ -120,10 +107,10 @@ export default {
         @update:active="handleSelectItemFromTreeView"
       >
         <template #prepend="{ item, open }">
-          <v-icon v-if="!item.icon" color="primary">
+          <v-icon v-if="!item.icon" color="accent">
             {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
           </v-icon>
-          <v-icon v-else color="primary">
+          <v-icon v-else color="accent">
             {{ item.icon }}
           </v-icon>
         </template>
@@ -137,10 +124,15 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <v-btn color="primary" text @click="close">
+      <v-btn color="accent" text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn :disabled="!isValidToBeMoved" color="primary" @click="submit">
+      <v-btn
+        :disabled="!isValidToBeMoved"
+        elevation="0"
+        color="accent"
+        @click="submit"
+      >
         {{ moveLabelButton }}
       </v-btn>
     </v-card-actions>

@@ -187,7 +187,7 @@ export default {
 
 <template>
   <div>
-    <v-card :flat="flat" :tile="flat" tag="form">
+    <v-card flat tile tag="form">
       <v-card-text>
         <v-row>
           <v-col cols="12">
@@ -196,7 +196,7 @@ export default {
                 <v-text-field
                   id="name"
                   v-model="localModel.name"
-                  :label="$t('global.name')"
+                  :label="$t('forms.group.name')"
                   name="name"
                   required
                   :disabled="disabled || isGroupAdmin"
@@ -437,9 +437,7 @@ export default {
 
             <v-row v-if="isAdmin">
               <v-col cols="12">
-                <p class="caption ma-0">
-                  Activer l'authentification SAML
-                </p>
+                <p class="caption ma-0">Activer l'authentification SAML</p>
                 <v-switch
                   v-model="useSamlAuthentication"
                   :label="$t('global.enable')"
@@ -473,10 +471,10 @@ export default {
       </v-card-text>
       <v-divider />
       <v-card-actions>
+        <v-spacer />
         <v-btn
-          text
-          large
-          color="primary"
+          elevation="0"
+          color="accent"
           :disabled="disabled"
           @click="onSubmit"
         >
@@ -485,7 +483,7 @@ export default {
         <v-btn
           v-if="isAdmin && isEdit"
           depressed
-          large
+          outlined
           color="error"
           @click="openDeleteGroup"
         >

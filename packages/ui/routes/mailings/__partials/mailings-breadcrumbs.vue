@@ -1,55 +1,38 @@
 <script>
 import {
   getPathToBreadcrumbsDataType,
-  getTreeviewWorkspaces,
   findNestedLocation,
 } from '~/utils/workspaces';
-import { workspacesByGroup } from '~/helpers/api-routes';
+import { mapState } from 'vuex';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { FOLDER } from '~/store/folder';
 
 export default {
   name: 'MailingsBreadcrumbs',
   props: {
     large: { type: Boolean, default: false },
-  },
-  data() {
-    return {
-      workspacesWithPath: [],
-      workspaceIsError: false,
-      workspacesIsLoading: false,
-    };
+    workspaceOrFolderItem: { type: Object, default: null },
   },
   computed: {
+    ...mapState(FOLDER, [
+      'workspaces',
+      'areLoadingWorkspaces',
+      'treeviewWorkspaces',
+    ]),
     selectedLocation() {
       return findNestedLocation(
-        this.workspacesWithPath,
+        this.treeviewWorkspaces,
         'id',
         this.$route.query?.wid || this.$route.query?.fid
       );
     },
     breadcrumbsData() {
-      return getPathToBreadcrumbsDataType(this.selectedLocation);
+      return getPathToBreadcrumbsDataType(
+        this.workspaceOrFolderItem ?? this.selectedLocation
+      );
     },
-  },
-  watch: {
-    $route: 'fetchData',
-  },
-  async mounted() {
-    await this.fetchData();
   },
   methods: {
-    async fetchData() {
-      const { $axios } = this;
-      try {
-        this.workspacesIsLoading = true;
-        const { items } = await $axios.$get(workspacesByGroup());
-        this.workspacesWithPath = getTreeviewWorkspaces(items);
-      } catch (error) {
-        this.workspaceIsError = true;
-      } finally {
-        this.workspacesIsLoading = false;
-      }
-    },
     queryParamsBasedOnItemType(item) {
       if (item?.type === SPACE_TYPE.WORKSPACE) {
         return { wid: item.id };

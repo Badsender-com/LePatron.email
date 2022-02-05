@@ -1,10 +1,11 @@
 'use strict';
 
 const path = require('path');
-
 // Don't use ESM
 // • this will be also required in express app
 const pkg = require('./package.json');
+const fr = require('./locales/fr').default;
+const en = require('./locales/en').default;
 const config = require('./packages/server/node.config.js');
 
 module.exports = {
@@ -41,22 +42,26 @@ module.exports = {
   ],
   // https://vuetifyjs.com/en/getting-started/quick-start#nuxt-install
   // https://nuxtjs.org/guide/modules#build-only-modules
-  buildModules: [
-    [
-      '@nuxtjs/vuetify',
-      {
-        icons: { iconfont: 'md' },
-        theme: {
-          options: { customProperties: true },
-          themes: {
-            light: {
-              ...config.brandOptions.colors,
-            },
-          },
+  buildModules: ['@nuxtjs/vuetify'],
+  vuetify: {
+    optionsPath: './vuetify.options.js',
+    icons: { iconfont: 'md' },
+    theme: {
+      options: {
+        customProperties: true,
+      },
+      themes: {
+        light: {
+          ...config.brandOptions.colors,
         },
       },
-    ],
-  ],
+    },
+    lang: {
+      locales: { fr, en },
+      current: 'fr',
+    },
+    // treeShake: true,
+  },
   modules: ['@nuxtjs/style-resources', '@nuxtjs/axios'],
   // mirror port in nuxt config
   // • We don't launch a "bare" nuxt server so this might sound not useful
@@ -73,9 +78,8 @@ module.exports = {
     '~/assets/global-styles/index.scss',
     '@easylogic/colorpicker/dist/colorpicker.css',
   ],
-  styleResources: {
-    // scss: [`~assets/global-styles/scss-mixins.scss`],
-  },
+
+  treeShake: true,
   env: {
     APP_VERSION: pkg.version,
     ADMIN_USERNAME: config.admin.username,
@@ -85,7 +89,7 @@ module.exports = {
     // EXT_TOKEN: config.extToken,
   },
   head: {
-    titleTemplate: 'LePatron.email - %s',
+    titleTemplate: 'LePatron Email Builder - %s',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -97,7 +101,7 @@ module.exports = {
       {
         rel: 'stylesheet',
         href:
-          'https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900',
+          'https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap,',
       },
       {
         rel: 'stylesheet',

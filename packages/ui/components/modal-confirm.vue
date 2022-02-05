@@ -10,7 +10,7 @@ export default {
     modalWidth: { type: String, default: '500' },
     displaySubmitButton: { type: Boolean, default: true },
     actionLabel: { type: String, default: '' },
-    actionButtonColor: { type: String, default: 'primary' },
+    actionButtonColor: { type: String, default: 'error' },
   },
   data() {
     return { show: false };
@@ -42,9 +42,9 @@ export default {
     class="bs-modal-confirm"
     @click:outside="onClickOutside"
   >
-    <v-card>
-      <v-card-title class="headline">
-        <p class="grey--text text--darken-3" v-html="title" />
+    <v-card flat tile>
+      <v-card-title>
+        <p v-html="title" />
       </v-card-title>
       <v-card-text>
         <slot />
@@ -53,11 +53,12 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn color="primary" text @click="close">
+          <v-btn text color="primary" @click="close">
             {{ $t('global.cancel') }}
           </v-btn>
           <v-btn
             v-if="displaySubmitButton"
+            elevation="0"
             :color="actionButtonColor"
             @click="action"
           >

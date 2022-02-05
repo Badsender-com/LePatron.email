@@ -76,6 +76,8 @@ async function listMailingForWorkspaceOrFolder({
   workspaceId,
   parentFolderId,
   user,
+  paginationJSON,
+  filtersJSON,
 }) {
   checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
   let workspace;
@@ -103,9 +105,19 @@ async function listMailingForWorkspaceOrFolder({
   }
 
   if (parentFolderId) {
-    mailings = await findMailings({ parentFolderId, user });
+    mailings = await findMailings({
+      parentFolderId,
+      user,
+      paginationJSON,
+      filtersJSON,
+    });
   } else {
-    mailings = await findMailings({ workspaceId, user });
+    mailings = await findMailings({
+      workspaceId,
+      user,
+      paginationJSON,
+      filtersJSON,
+    });
   }
 
   const tags = await findTags({ user });
@@ -146,7 +158,7 @@ async function updateMailEspIds(mailingId, espId) {
 
 async function findMailings(query) {
   const mailingQuery = applyFilters(query);
-  return Mailings.findWithHasPreview(mailingQuery);
+  return Mailings.findForApiWithPagination(mailingQuery);
 }
 
 async function findTags(query) {
@@ -893,6 +905,8 @@ async function copyMailing(mailingId, destination, user) {
     copy.author = user.name;
   }
 
+  copy.name = `copy ${copy.name}`;
+
   const copiedMailing = await Mailings.create(copy);
   const gallery = await Galleries.findOne({
     creationOrWireframeId: mailing._id,
@@ -1124,22 +1138,22 @@ async function validateMailExist(mailingId) {
 }
 
 function applyFilters(query) {
-  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(
-    query.user,
-    {}
-  );
+  const { user, workspaceId, parentFolderId, ...restQuery } = query;
 
-  if (query.workspaceId) {
-    return {
-      ...mailingQueryStrictGroup,
-      _workspace: mongoose.Types.ObjectId(query.workspaceId),
+  const mailingQueryStrictGroup = modelsUtils.addStrictGroupFilter(user, {});
+  let workspaceOrFolderFilter = { ...mailingQueryStrictGroup, ...restQuery };
+
+  if (workspaceId) {
+    workspaceOrFolderFilter = {
+      ...workspaceOrFolderFilter,
+      _workspace: mongoose.Types.ObjectId(workspaceId),
     };
-  } else if (query.parentFolderId) {
-    return {
-      ...mailingQueryStrictGroup,
-      _parentFolder: mongoose.Types.ObjectId(query.parentFolderId),
+  } else if (parentFolderId) {
+    workspaceOrFolderFilter = {
+      ...workspaceOrFolderFilter,
+      _parentFolder: mongoose.Types.ObjectId(parentFolderId),
     };
-  } else {
-    return mailingQueryStrictGroup;
   }
+
+  return workspaceOrFolderFilter;
 }

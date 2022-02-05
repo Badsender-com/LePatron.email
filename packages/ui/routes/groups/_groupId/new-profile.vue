@@ -7,6 +7,7 @@ import BsGroupMenu from '~/components/group/menu.vue';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getProfiles } from '~/helpers/api-routes';
+import * as apiRoutes from '~/helpers/api-routes.js';
 
 export default {
   name: 'PageNewProfile',
@@ -14,6 +15,39 @@ export default {
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+  },
+  async asyncData(nuxtContext) {
+    const { $axios, params } = nuxtContext;
+
+    try {
+      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+      return {
+        isLoading: false,
+        group: groupResponse,
+      };
+    } catch (error) {
+      return { isLoading: false, isError: true };
+    }
+  },
+  data() {
+    return {
+      group: {},
+    };
+  },
+  head() {
+    return { title: this.title };
+  },
+
+  computed: {
+    title() {
+      return `${this.$tc('global.settings', 1)} : ${this.$tc(
+        'global.group',
+        1
+      )} ${this.group.name} - ${this.$t('global.newProfile')}`;
+    },
+    groupId() {
+      return this.$route.params.groupId;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),

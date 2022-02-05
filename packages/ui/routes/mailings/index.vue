@@ -13,7 +13,16 @@ import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
-import { FOLDER, FETCH_MAILINGS } from '~/store/folder';
+import {
+  FOLDER,
+  SET_PAGINATION,
+  SET_TAGS,
+  FETCH_MAILINGS_FOR_WORKSPACE_UPDATE,
+  FETCH_MAILINGS_FOR_FILTER_UPDATE,
+  FETCH_WORKSPACES,
+} from '~/store/folder';
+import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
+import BsGroupLoading from '~/components/loadingBar';
 
 export default {
   name: 'PageMailings',
@@ -24,6 +33,7 @@ export default {
     MailingsSelectionActions,
     BsMailingsModalNew,
     MailingsHeader,
+    BsGroupLoading,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
@@ -33,9 +43,13 @@ export default {
     }
   },
   async asyncData({ query, store }) {
-    await store.dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
-      query,
-    });
+    await Promise.all([
+      store.dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
+        query,
+      }),
+      store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`),
+      store.dispatch(`${TEMPLATE}/${FETCH_TEMPLATES}`),
+    ]);
   },
   data: () => ({
     loading: false,
@@ -50,7 +64,14 @@ export default {
     title() {
       return 'Emails';
     },
-    ...mapState(FOLDER, ['mailings', 'tags', 'mailingsIsLoading']),
+    ...mapState(FOLDER, [
+      'mailings',
+      'tags',
+      'isLoadingWorkspaceOrFolder',
+      'isLoadingMailingsForWorkspaceUpdate',
+      'pagination',
+      'filters',
+    ]),
     ...mapState(USER, ['hasFtpAccess']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -59,8 +80,32 @@ export default {
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
     },
+    totalPages() {
+      return this.pagination?.pageCount || 1;
+    },
+    itemsLength() {
+      return this.pagination?.itemsLength;
+    },
+    currentPage: {
+      get() {
+        return this.pagination.page;
+      },
+      async set(val) {
+        const { commit } = this.$store;
+        await commit(`${FOLDER}/${SET_PAGINATION}`, {
+          page: val,
+        });
+        this.fetchMailListingForFilterUpdate({ pagination: { page: val } });
+      },
+    },
+  },
+  watch: {
+    $route: ['resetMailingsSelection'],
   },
   methods: {
+    resetMailingsSelection() {
+      this.mailingsSelection = [];
+    },
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
     },
@@ -77,21 +122,34 @@ export default {
       );
       this.loading = false;
     },
-    async fetchMailListingData() {
+    async fetchMailListingForFilterUpdate(additionalParams = {}) {
       const { dispatch } = this.$store;
-      await dispatch(`${FOLDER}/${FETCH_MAILINGS}`, {
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_FILTER_UPDATE}`, {
         query: this.$route.query,
         $t: this.$t,
+        ...additionalParams,
+      });
+      this.resetMailingsSelection();
+    },
+    async fetchMailListingForWorkspaceUpdate(additionalParams = {}) {
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
+        query: this.$route.query,
+        $t: this.$t,
+        ...additionalParams,
       });
     },
     onTagCreate(newTag) {
-      this.tags = [...new Set([newTag, ...this.tags])];
+      this.$store.commit(`${FOLDER}/${SET_TAGS}`, [
+        ...new Set([newTag, ...this.tags]),
+      ]);
     },
     async onMailSelectionTagsUpdate(tagsUpdates) {
       await this.handleTagsUpdate({
         items: this.mailingsSelection.map((mailing) => mailing.id),
         tags: tagsUpdates,
       });
+      this.resetMailingsSelection();
     },
     async onMailTableTagsUpdate(tagsInformations) {
       const { tags, selectedMailing } = tagsInformations;
@@ -108,7 +166,7 @@ export default {
           items,
           tags,
         });
-        await this.fetchMailListingData();
+        await this.fetchMailListingForFilterUpdate();
         this.showSnackbar({
           text: this.$t('mailings.editTagsSuccessful'),
           color: 'success',
@@ -140,62 +198,71 @@ export default {
   <bs-layout-left-menu>
     <template #menu>
       <v-list>
-        <v-list-item
-          v-if="isGroupAdmin"
-          nuxt
-          :href="`${groupAdminUrl}?redirectTab=informations`"
-        >
-          <v-list-item-avatar>
-            <v-icon>settings</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $t('global.settings') }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
         <v-list-item class="justify-center">
           <v-btn
-            class="my-4 new-mail-button"
-            color="primary"
-            tile
+            large
+            color="accent"
+            elevation="0"
+            style="margin: 1em 0"
             :disabled="!hasAccess"
             @click="openNewMailModal"
           >
             <v-icon left>
-              mdi-plus
+              add_box
             </v-icon>
             {{ $t('global.newMail') }}
           </v-btn>
         </v-list-item>
       </v-list>
-      <div class="list-container">
-        <workspace-tree ref="workspaceTree" />
-      </div>
+      <workspace-tree ref="workspaceTree" />
     </template>
-    <v-card>
-      <v-skeleton-loader :loading="mailingsIsLoading" type="table">
-        <mailings-header @on-refresh="refreshLeftMenuData" />
-        <mailings-selection-actions
-          ref="mailingSelectionActions"
-          :mailings-selection="mailingsSelection"
-          :tags="tags"
-          :has-ftp-access="hasFtpAccess"
-          @createTag="onTagCreate"
-          @updateTags="onMailSelectionTagsUpdate"
-          @on-refetch="fetchMailListingData()"
-        />
-        <mailings-filters :tags="tags" @change="handleFilterChange" />
-        <mailings-table
-          v-model="mailingsSelection"
-          :mailings="filteredMailings"
-          :has-ftp-access="hasFtpAccess"
-          :tags="tags"
-          @on-single-mail-download="handleDownloadSingleMail"
-          @on-refetch="fetchMailListingData()"
-          @update-tags="onMailTableTagsUpdate"
-        />
-      </v-skeleton-loader>
+    <v-card flat tile>
+      <client-only>
+        <v-skeleton-loader
+          :loading="
+            isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+          "
+          type="table"
+        >
+          <mailings-header @on-refresh="refreshLeftMenuData" />
+          <mailings-filters
+            :tags="tags"
+            @on-refresh="fetchMailListingForFilterUpdate"
+          />
+          <mailings-selection-actions
+            ref="mailingSelectionActions"
+            :mailings-selection="mailingsSelection"
+            :tags="tags"
+            :has-ftp-access="hasFtpAccess"
+            @createTag="onTagCreate"
+            @updateTags="onMailSelectionTagsUpdate"
+            @on-refetch="fetchMailListingForFilterUpdate"
+          />
+          <mailings-table
+            v-model="mailingsSelection"
+            :mailings="filteredMailings"
+            :has-ftp-access="hasFtpAccess"
+            :tags="tags"
+            @on-single-mail-download="handleDownloadSingleMail"
+            @on-refetch="fetchMailListingForFilterUpdate"
+            @update-tags="onMailTableTagsUpdate"
+          />
+          <v-card
+            flat
+            class="d-flex align-center justify-center mx-auto"
+            max-width="22rem"
+          >
+            <v-pagination
+              v-if="parseInt(itemsLength) > 0"
+              v-model="currentPage"
+              :circle="true"
+              class="my-4 pagination-custom-style"
+              :length="totalPages"
+            />
+          </v-card>
+        </v-skeleton-loader>
+        <bs-group-loading slot="placeholder" />
+      </client-only>
     </v-card>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
@@ -204,13 +271,16 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
+
 <style>
-.new-mail-button {
-  width: 90%;
-  float: right;
+.pagination-custom-style > ul > li > .v-pagination__item,
+.pagination-custom-style > ul > li > .v-pagination__navigation {
+  box-shadow: none;
+  border: none;
 }
-.list-container {
-  overflow-y: auto;
-  max-height: calc(100vh - 13rem);
+
+.pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
+  border: 1px solid #bbb2ad;
+  border: none;
 }
 </style>

@@ -2,7 +2,7 @@
 const Vue = require('vue/dist/vue.common');
 const vSelect = require('vue-select');
 
-const Select= Vue.component('Select', {
+const SelectComponent= Vue.component('SelectComponent', {
     components: {
         VueSelect: vSelect.VueSelect
     },
@@ -29,6 +29,6 @@ const Select= Vue.component('Select', {
 });
 
 module.exports = {
-    Select,
+    SelectComponent,
 };
   

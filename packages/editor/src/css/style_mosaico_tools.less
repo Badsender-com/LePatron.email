@@ -270,7 +270,6 @@
   }
 
   .objLabel {
-    text-transform: uppercase;
     // text-align: center;
     border-bottom: 3px solid @accent-color;
     color: @mosaico-text-color;
@@ -628,14 +627,6 @@
       }
     }
   }
-
-  .leftButtons {
-    float: left;
-  }
-
-  .rightButtons {
-    float: right;
-  }
   #downloadForm {
     display: inline-block;
   }
@@ -671,7 +662,7 @@
 
         a {
           width: 100%;
-          padding: 0 0.5em;
+          padding: 0 .75em;
         }
         /*
         a {
@@ -973,14 +964,15 @@
   animation: slideright 0.2s ease-out 0s 1;
   border-radius: 0;
   background-color: @mosaico-background-color;
-  box-shadow: 1px 0px 3px @mosaico-shadow-color;
 
   .close {
-    float: right;
     visibility: hidden;
     cursor: pointer;
     width: 24px;
     display: block;
+    position: absolute;
+    right: 0;
+    top: 5px;
 
     &:before {
       visibility: visible;
@@ -992,6 +984,7 @@
       right: 0px;
       width: 24px;
       height: 24px;
+      color: var(--v-accent-base);
     }
   }
 
@@ -1002,7 +995,7 @@
     padding: 5px;
   }
   .pane-title {
-    padding: 5px;
+    padding: 10px;
     display: block;
   }
 }
@@ -1020,6 +1013,7 @@
   }
   li.ui-state-active a {
     background: none repeat scroll 0% 0% #fff;
+    color: var(--v-primary-base);
   }
   .ui-tabs-panel {
     display: block;

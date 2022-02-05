@@ -55,7 +55,7 @@ export default {
   <bs-modal-confirm
     ref="previewMailModal"
     modal-width="700"
-    :title="$t('global.preview')"
+    :title="$t('global.previewMailAlt')"
     :is-form="true"
     @click-outside="clickOutside"
   >

@@ -58,7 +58,7 @@ export default {
         :disabled="loading"
         text
         small
-        color="primary"
+        color="accent"
       >
         <v-icon>send</v-icon>
       </v-btn>
