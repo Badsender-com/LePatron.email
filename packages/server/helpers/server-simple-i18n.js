@@ -13,8 +13,7 @@ const translations = {
   },
   en: {
     'default-mailing-name': 'untitled',
-    'editor-title':
-      'Email template editor by “drag & drop” - A Badsender.com solution',
+    'editor-title': 'LePatron Email Builder',
     'editor-description':
       'Badsender Email Builder is an emailing responsive design solution for building an email graphically by drag & drop.',
   },
