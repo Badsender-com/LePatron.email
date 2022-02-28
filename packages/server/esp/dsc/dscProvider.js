@@ -3,25 +3,8 @@ const logger = require('../../utils/logger.js');
 const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
-const Axios = require('axios');
+const axios = require('../../config/axios');
 const { InternalServerError, Conflict } = require('http-errors');
-const HttpsProxyAgent = require('https-proxy-agent');
-const url = require('url');
-
-let agent = null;
-if (config.proxyUrl) {
-  const proxy = new url.URL(config.proxyUrl);
-  if (typeof proxy !== 'undefined') {
-    agent = new HttpsProxyAgent(config.proxyUrl);
-  }
-}
-
-const axios = agent
-  ? Axios.create({
-      proxy: false,
-      httpsAgent: agent,
-    })
-  : Axios.create();
 
 class DscProvider {
   constructor({ apiKey, ...data }) {
@@ -31,12 +14,11 @@ class DscProvider {
 
   async connectApiCall() {
     return axios.get(`${config.dscUrl}/`, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
+      headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
     });
   }
 
   async connectApi() {
-    logger.log({ urlDSC: config.dscUrl });
     try {
       const emailCampaignConnectionResult = await this.connectApiCall();
       return emailCampaignConnectionResult;
@@ -64,7 +46,10 @@ class DscProvider {
 
   async getCampaignMailApi({ campaignId }) {
     return axios.get(`${config.dscUrl}/${campaignId}`, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
+      headers: {
+        apiKey: this.apiKey,
+        'Content-Type': 'application/json',
+      },
     });
   }
 
@@ -88,6 +73,7 @@ class DscProvider {
           ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
         );
       }
+
       const emailCampaignResult = await this.getCampaignMailApi({ campaignId });
 
       const {
