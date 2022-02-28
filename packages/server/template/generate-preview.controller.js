@@ -248,7 +248,12 @@ async function createPreviews({ templateId, cookies }) {
     const blocksName = blocksInformations.map(({ name }) => name);
     const imagesBuffer = await Promise.all(
       // calling puppeteer.screenshot without file path render a buffer
-      blocksInformations.map(({ clip }) => page.screenshot({ clip }))
+      blocksInformations.map(({ clip }) => {
+        if (!clip?.width || !clip?.height) {
+          return null;
+        }
+        return page.screenshot({ clip });
+      })
     );
 
     // ----- SAVE SCREENSHOTS TO TMP
@@ -264,6 +269,7 @@ async function createPreviews({ templateId, cookies }) {
     const files = [];
     await Promise.all(
       imagesBuffer.map((imageBuffer, index) => {
+        if (!imageBuffer) return '';
         const imageLogName = `saving ${blocksName[index]}`;
         // Don't emit events for every images
         // badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
