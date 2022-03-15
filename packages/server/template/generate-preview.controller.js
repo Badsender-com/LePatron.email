@@ -146,6 +146,7 @@ function previewEvents(req, res) {
 async function createPreviews({ templateId, cookies }) {
   const start = Date.now();
   let logMessage = 'starting generating previews';
+  logger.log(logMessage);
   badsenderEvents.emit(eventsNames.PREVIEW_START, {
     type: eventsNames.EVENT_START,
     originalEventName: eventsNames.PREVIEW_START,
