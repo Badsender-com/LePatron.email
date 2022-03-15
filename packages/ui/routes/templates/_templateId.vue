@@ -79,13 +79,25 @@ export default {
           // update snackbar & data on end
           if (sseStatus.isCreate || sseStatus.isUpdate) {
             this.loading = true;
-            this.showSnackbar({ text: payload.message, color: 'info' });
+            this.showSnackbar({
+              text: payload.message,
+              color: 'info',
+              timeout: -1,
+            });
           } else if (sseStatus.isError) {
             this.loading = false;
-            this.showSnackbar({ text: payload.message, color: 'error' });
+            this.showSnackbar({
+              text: payload.message,
+              color: 'error',
+              timeout: -1,
+            });
           } else if (sseStatus.isEnd) {
             this.loading = false;
-            this.showSnackbar({ text: payload.message, color: 'success' });
+            this.showSnackbar({
+              text: payload.message,
+              color: 'success',
+              timeout: -1,
+            });
             if (payload.template !== null) {
               this.template = payload.template;
             }

@@ -1,7 +1,9 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { mapGetters } from 'vuex';
 import BsTemplateCoverImage from '~/components/template/cover-image.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsTemplateMenu',
@@ -12,6 +14,10 @@ export default {
     template: { type: Object, default: () => ({ group: {}, assets: {} }) },
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
     hasCover() {
       if (this.template.assets == null) return false;
       return this.template.assets['_full.png'] != null;
