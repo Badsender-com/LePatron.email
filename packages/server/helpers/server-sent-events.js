@@ -43,7 +43,6 @@ async function writeSSEResponse(res, data, isConnectionClosed = isRequired()) {
   // we're never too sure
   if (!formatedData) return;
   res.write(formatedData);
-  res.write('\n\n');
   // Flush to enable compression on SSE
   // https://github.com/expressjs/compression#server-sent-events
   // https://www.npmjs.com/package/compression#server-sent-events
