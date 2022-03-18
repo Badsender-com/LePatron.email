@@ -104,7 +104,7 @@ function previewEvents(req, res) {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
   });
-
+  res.write('\n');
   const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(
     async (data) => {
       if (data.payload.templateId !== templateId) return;
