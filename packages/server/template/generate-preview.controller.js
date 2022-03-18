@@ -100,9 +100,9 @@ function previewEvents(req, res) {
   const isConnectionClosed = sseHelpers.createConnectionStatusPromise();
 
   res.writeHead(200, {
-    Connection: 'keep-alive',
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
   });
   res.write('\n');
   const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(
