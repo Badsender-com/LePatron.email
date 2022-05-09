@@ -100,11 +100,11 @@ function previewEvents(req, res) {
   const isConnectionClosed = sseHelpers.createConnectionStatusPromise();
 
   res.writeHead(200, {
+    Connection: 'keep-alive',
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
   });
-  res.write('\n');
+
   const sendTemplatePreviewEvent = sseHelpers.safeEventsHandler(
     async (data) => {
       if (data.payload.templateId !== templateId) return;
@@ -146,7 +146,6 @@ function previewEvents(req, res) {
 async function createPreviews({ templateId, cookies }) {
   const start = Date.now();
   let logMessage = 'starting generating previews';
-  logger.log(logMessage);
   badsenderEvents.emit(eventsNames.PREVIEW_START, {
     type: eventsNames.EVENT_START,
     originalEventName: eventsNames.PREVIEW_START,
@@ -249,12 +248,7 @@ async function createPreviews({ templateId, cookies }) {
     const blocksName = blocksInformations.map(({ name }) => name);
     const imagesBuffer = await Promise.all(
       // calling puppeteer.screenshot without file path render a buffer
-      blocksInformations.map(({ clip }) => {
-        if (!clip?.width || !clip?.height) {
-          return null;
-        }
-        return page.screenshot({ clip });
-      })
+      blocksInformations.map(({ clip }) => page.screenshot({ clip }))
     );
 
     // ----- SAVE SCREENSHOTS TO TMP
@@ -270,7 +264,6 @@ async function createPreviews({ templateId, cookies }) {
     const files = [];
     await Promise.all(
       imagesBuffer.map((imageBuffer, index) => {
-        if (!imageBuffer) return '';
         const imageLogName = `saving ${blocksName[index]}`;
         // Don't emit events for every images
         // badsenderEvents.emit(eventsNames.PREVIEW_PROGRESS, {
