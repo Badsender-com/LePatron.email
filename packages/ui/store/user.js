@@ -68,11 +68,7 @@ export const actions = {
 
     let group;
     try {
-      if (user?.group?.id) {
-        group = await this.$axios.$get(
-          groupsItem({ groupId: user?.group?.id })
-        );
-      }
+      group = await this.$axios.$get(groupsItem({ groupId: user?.group?.id }));
     } catch {
       console.error('Error while fetching group');
     }
