@@ -190,6 +190,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        doesWaitForFtp: false,
       });
 
       const {
