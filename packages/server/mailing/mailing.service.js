@@ -267,7 +267,12 @@ async function createMailing(mailing) {
 }
 
 // Process html to the final result state based on ftp
-async function processHtmlWithFTPOption({ mailingId, html, user }) {
+async function processHtmlWithFTPOption({
+  mailingId,
+  html,
+  user,
+  doesWaitForFtp,
+}) {
   logger.log('Calling processHtmlWithFTPOption');
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
 
@@ -303,7 +308,7 @@ async function processHtmlWithFTPOption({ mailingId, html, user }) {
     prefix,
     name,
     ftpServerParams,
-    doesWaitForFtp: true,
+    doesWaitForFtp,
   });
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
