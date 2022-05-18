@@ -173,6 +173,7 @@ class DscProvider {
         user,
         html,
         mailingId,
+        doesWaitForFtp: false,
       });
 
       const {
