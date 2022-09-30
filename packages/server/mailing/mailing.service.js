@@ -791,16 +791,29 @@ async function handleRelativeOrFtpImages({
   //     }
   //   })
 
-  const urlsRegex = 'https?:\\S+\\.(jpg|jpeg|png|gif){1}';
+  const urlsRegex = /<img.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif){1})/g;
 
-  const remainingUrlsRegex = new RegExp(urlsRegex, 'g');
-  const allImages = html.match(remainingUrlsRegex) || [];
+  // const remainingUrlsRegex = new RegExp(urlsRegex, 'g');
+  const splittedHtml = html.split('\n');
+  const allImages = [];
 
+  splittedHtml.forEach((line) => {
+    const result = urlsRegex.exec(line);
+    if (result && result.length > 0) {
+      console.log({ result: result[1] });
+      allImages.push(result[1]);
+    }
+  });
+
+  // const allImages = html.match(urlsRegex) || [];
+
+  // console.log({ allImages })
   // The marker "data-raw" is used to mark urls who don't needs local download
-  const rawUrlsRegex = /<img.*data-raw.*/g;
-  console.log(html);
-  const rawImages = html.match(rawUrlsRegex);
-  console.log(`found ${rawImages?.length} matching raw pictures schema`);
+  // const rawUrlsRegex = /<img.*data-raw.*/g;
+  // console.log(html.split('\n').filter(item => item.includes('\n')));
+  // const rawImages = html.match(rawUrlsRegex);
+  // console.log(`found ${rawImages?.length} matching raw pictures schema`);
+  // console.log({splittedHtml});
 
   // rawImages.forEach((imgUrl) => {
   //   console.log('RAW ==========');
@@ -828,11 +841,12 @@ async function handleRelativeOrFtpImages({
     const imageName = getImageName(imgUrl);
     const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
     relativesImagesNames.push(imageName);
-    console.log(imgUrl, relativeUrl);
+    console.log({ imgUrl }, { relativeUrl });
     const search = new RegExp(`.*${escImgUrl}.*`, 'g');
-    console.log('search', search);
+    // console.log('search', search);
     html = html.replace(search, relativeUrl);
   });
+  // console.log({ html })
 
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
