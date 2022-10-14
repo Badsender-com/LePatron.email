@@ -793,7 +793,6 @@ async function handleRelativeOrFtpImages({
 
   const urlsRegex = /<img.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif){1})/g;
 
-  // const remainingUrlsRegex = new RegExp(urlsRegex, 'g');
   const splittedHtml = html.split('\n');
   const allImages = [];
 
@@ -817,7 +816,6 @@ async function handleRelativeOrFtpImages({
     const imageName = getImageName(imgUrl);
     const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
     relativesImagesNames.push(imageName);
-    console.log({ imgUrl }, { relativeUrl });
     const search = new RegExp(`.*${escImgUrl}.*`, 'g');
     html = html.replace(search, relativeUrl);
   });
