@@ -797,37 +797,13 @@ async function handleRelativeOrFtpImages({
   const splittedHtml = html.split('\n');
   const allImages = [];
 
+  // We will retrieve only URLs from each matched lines
   splittedHtml.forEach((line) => {
     const result = urlsRegex.exec(line);
     if (result && result.length > 0) {
-      console.log({ result: result[1] });
       allImages.push(result[1]);
     }
   });
-
-  // const allImages = html.match(urlsRegex) || [];
-
-  // console.log({ allImages })
-  // The marker "data-raw" is used to mark urls who don't needs local download
-  // const rawUrlsRegex = /<img.*data-raw.*/g;
-  // console.log(html.split('\n').filter(item => item.includes('\n')));
-  // const rawImages = html.match(rawUrlsRegex);
-  // console.log(`found ${rawImages?.length} matching raw pictures schema`);
-  // console.log({splittedHtml});
-
-  // rawImages.forEach((imgUrl) => {
-  //   console.log('RAW ==========');
-  //   console.log('picture', imgUrl);
-  //   const search = new RegExp(imgUrl, 'g');
-  //   console.log('regexp', search);
-  //   const cleanedUrl = imgUrl.src.replace('local:', '');
-  //   console.log('cleanedUrl', cleanedUrl);
-  //   html = html.replace(search, cleanedUrl);
-  //   console.log('END RAW ======');
-  // });
-
-  // const allImages = _.uniq([...imgUrls, ...bgUrls, ...styleUrls])
-  // console.log(remainingUrls, allImages)
 
   // keep a dictionary of all downloaded images
   // • this will help us for CDN images
@@ -843,11 +819,8 @@ async function handleRelativeOrFtpImages({
     relativesImagesNames.push(imageName);
     console.log({ imgUrl }, { relativeUrl });
     const search = new RegExp(`.*${escImgUrl}.*`, 'g');
-    // console.log('search', search);
     html = html.replace(search, relativeUrl);
   });
-  // console.log({ html })
-
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
     const imagesRequest = allImages.map((imageUrl) => {
