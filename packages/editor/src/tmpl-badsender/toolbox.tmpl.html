@@ -1,7 +1,7 @@
 <div id="tooltabs" class="tabs_horizontal button_color" data-bind="tabs: { active: $root.selectedTool }">
   <!-- VueJs for the esp component-->
   <div id="espModal">
-    <app-vue />
+    <esp-plugin />
   </div>
   <div class="tooltabs__top-bar">
     <a class="tooltabs__top-logo" href="/" data-bind="attr: { href: $root.logoUrl }">
@@ -28,13 +28,16 @@
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">
+    <div id="tracking-params">
+      <TrackingParamsPlugin />
+    </div>
     <!-- ko if: $root.selectedBlock() !== null -->
     <div data-bind="block: $root.selectedBlock"></div>
     <!-- /ko -->
     <!-- ko if: $root.selectedBlock() == null -->
     <div class="noSelectedBlock" data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
-    <!-- ko block: content --><!-- /ko -->
+    <!-- ko block: content -->content<!-- /ko -->
   </div>
 
   <div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
