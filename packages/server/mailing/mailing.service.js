@@ -791,7 +791,7 @@ async function handleRelativeOrFtpImages({
   //     }
   //   })
 
-  const urlsRegex = /<img.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif){1})/g;
+  const urlsRegex = /<img.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif))/g;
 
   const splittedHtml = html.split('\n');
   const allImages = [];
