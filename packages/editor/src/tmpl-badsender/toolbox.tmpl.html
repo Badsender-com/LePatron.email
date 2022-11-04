@@ -28,9 +28,6 @@
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">
-    <div id="tracking-params">
-      <TrackingParamsPlugin />
-    </div>
     <!-- ko if: $root.selectedBlock() !== null -->
     <div data-bind="block: $root.selectedBlock"></div>
     <!-- /ko -->
@@ -38,6 +35,9 @@
     <div class="noSelectedBlock" data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
+    <div id="tracking-params">
+      <tracking-params-plugin />
+    </div>
   </div>
 
   <div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
