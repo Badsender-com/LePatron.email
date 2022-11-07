@@ -811,7 +811,10 @@ async function handleRelativeOrFtpImages({
   // Don't use Cheerio because:
   // • when exporting it's messing with ESP tags
   // • Cheerio won't handle IE comments
-  allImages.forEach((imgUrl) => {
+  let distinctImages = new Set(allImages);
+  distinctImages = Array.from(distinctImages);
+
+  distinctImages.forEach((imgUrl) => {
     const escImgUrl = _.escapeRegExp(imgUrl);
     const imageName = getImageName(imgUrl);
     const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
@@ -821,7 +824,7 @@ async function handleRelativeOrFtpImages({
   });
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
-    const imagesRequest = allImages.map((imageUrl) => {
+    const imagesRequest = distinctImages.map((imageUrl) => {
       const imageName = getImageName(imageUrl);
       const defer = createPromise();
       const imgRequest = request(imageUrl);
