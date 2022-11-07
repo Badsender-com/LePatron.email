@@ -11,11 +11,14 @@ function getName(name) {
 
 function getImageName(imageUrl) {
   // eslint-disable-next-line node/no-deprecated-api
-  return url
+  const formattedUrlName = url
     .parse(imageUrl)
     .pathname.replace(/\//g, ' ')
     .trim()
     .replace(/\s/g, '-');
+
+  const splittedUrlName = formattedUrlName.split('-');
+  return splittedUrlName[splittedUrlName.length - 1];
 }
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
