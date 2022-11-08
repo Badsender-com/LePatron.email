@@ -819,9 +819,10 @@ async function handleRelativeOrFtpImages({
     const imageName = getImageName(imgUrl);
     const relativeUrl = `${IMAGES_FOLDER}/${imageName}`;
     relativesImagesNames.push(imageName);
-    const search = new RegExp(`.*${escImgUrl}.*`, 'g');
+    const search = new RegExp(escImgUrl, 'g');
     html = html.replace(search, relativeUrl);
   });
+
   // Pipe all images BUT don't add errored images
   if (cdnDownload || regularDownload) {
     const imagesRequest = distinctImages.map((imageUrl) => {
