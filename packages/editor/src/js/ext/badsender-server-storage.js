@@ -11,6 +11,7 @@ function getData(viewModel) {
   // remove keys that aren't necessary to update
   var datas = _omit(ko.toJS(viewModel.metadata), ['urlConverter', 'template']);
   datas.data = viewModel.exportJS();
+  console.log({ datas })
   return datas;
 }
 
@@ -26,9 +27,10 @@ function loader(opts) {
       name: 'Save', // l10n happens in the template
       enabled: ko.observable(true),
     };
-    
+
     saveCmd.execute = function () {
       saveCmd.enabled(false);
+      console.log({ viewModel })
       var data = getData(viewModel);
 
       data = {
