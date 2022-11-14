@@ -18,7 +18,29 @@ function getImageName(imageUrl) {
     .replace(/\s/g, '-');
 
   const splittedUrlName = formattedUrlName.split('-');
-  return splittedUrlName[splittedUrlName.length - 1];
+  let fileName = '';
+
+  const coverPart = splittedUrlName[2] || '';
+
+  // Test if old file name contains a cover value
+  if (coverPart.includes('cover')) {
+    fileName = fileName.concat(coverPart);
+  }
+
+  const sizePart = splittedUrlName[3] || '';
+
+  // Test if old file name contains a size value
+  if (sizePart.match(/[0-9]{1,}x/g)) {
+    fileName = fileName.concat('-', sizePart);
+  }
+
+  // Add the hash of image
+  fileName = fileName.concat(
+    fileName.length > 0 ? '-' : '',
+    splittedUrlName[splittedUrlName.length - 1]
+  );
+
+  return fileName;
 }
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
