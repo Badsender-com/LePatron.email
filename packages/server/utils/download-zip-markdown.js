@@ -30,7 +30,9 @@ function getImageName(imageUrl) {
   const sizePart = splittedUrlName[3] || '';
 
   // Test if old file name contains a size value
-  if (sizePart.match(/[0-9]{1,}x/g)) {
+  const isSizePart = sizePart.match(/\d{1,5}x/g);
+
+  if (isSizePart && isSizePart[0] !== undefined) {
     fileName = fileName.concat('-', sizePart);
   }
 
