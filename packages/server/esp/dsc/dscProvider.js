@@ -192,6 +192,7 @@ class DscProvider {
         senderName,
         senderMail,
         template: processedHtml,
+        controlMail: senderMail,
       };
 
       if (planification) {
