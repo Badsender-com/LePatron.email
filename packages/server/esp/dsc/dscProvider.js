@@ -192,7 +192,7 @@ class DscProvider {
         senderName,
         senderMail,
         template: processedHtml,
-        controlMail: senderMail,
+        controlMail: user?.email || '',
       };
 
       if (planification) {
