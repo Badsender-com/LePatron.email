@@ -85,42 +85,6 @@ class FTPClient {
     return client;
   }
 
-  fileName(fileUrl) {
-    // eslint-disable-next-line node/no-deprecated-api
-    const formattedUrlName = url
-      .parse(fileUrl)
-      .pathname.replace(/\//g, ' ')
-      .trim()
-      .replace(/\s/g, '-');
-
-    const splittedUrlName = formattedUrlName.split('-');
-    let fileName = '';
-
-    const coverPart = splittedUrlName[2] || '';
-
-    // Test if old file name contains a cover value
-    if (coverPart.includes('cover')) {
-      fileName = fileName.concat(coverPart);
-    }
-
-    const sizePart = splittedUrlName[3] || '';
-
-    // Test if old file name contains a size value
-    const isSizePart = sizePart.match(/\d{1,5}x/g);
-
-    if (isSizePart && isSizePart[0] !== undefined) {
-      fileName = fileName.concat('-', sizePart);
-    }
-
-    // Add the hash of image
-    fileName = fileName.concat(
-      fileName.length > 0 ? '-' : '',
-      splittedUrlName[splittedUrlName.length - 1]
-    );
-
-    return fileName;
-  }
-
   getProxy() {
     const self = this;
     const proxy = new url.URL(config.proxyUrl);
