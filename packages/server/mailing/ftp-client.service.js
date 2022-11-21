@@ -7,6 +7,7 @@ const url = require('url');
 const fs = require('fs-extra');
 const crypto = require('crypto');
 const config = require('../node.config.js');
+const { getImageName } = require('../utils/download-zip-markdown.js');
 
 class FTPClient {
   constructor(
@@ -46,7 +47,7 @@ class FTPClient {
       await client.mkdir(folderPath, true);
 
       const uploads = sourceArray.map((fileUrl) => {
-        const fileName = self.fileName(fileUrl);
+        const fileName = getImageName(fileUrl);
         const requestedFile = request.get(fileUrl);
         const file = fs.createWriteStream(`${tmpDir}/${fileName}`);
 
