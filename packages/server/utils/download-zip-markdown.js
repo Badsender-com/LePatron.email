@@ -20,26 +20,42 @@ function getImageName(imageUrl) {
   const splittedUrlName = formattedUrlName.split('-');
   let fileName = '';
 
-  const coverPart = splittedUrlName[2] || '';
+  splittedUrlName.splice(0, 2);
+
+  const coverPart = splittedUrlName[0] || '';
+  const hasCoverPart = coverPart.includes('cover');
 
   // Test if old file name contains a cover value
-  if (coverPart.includes('cover')) {
+  if (hasCoverPart) {
     fileName = fileName.concat(coverPart);
+    splittedUrlName.splice(0, 1);
   }
 
-  const sizePart = splittedUrlName[3] || '';
+  const sizePart =
+    (hasCoverPart ? splittedUrlName[1] : splittedUrlName[0]) || '';
 
   // Test if old file name contains a size value
   const isSizePart = sizePart.match(/\d{1,5}x/g);
 
   if (isSizePart && isSizePart[0] !== undefined) {
     fileName = fileName.concat('-', sizePart);
+    splittedUrlName.splice(0, 1);
+  }
+
+  const templateHashPart =
+    (coverPart && hasCoverPart ? splittedUrlName[2] : splittedUrlName[0]) || '';
+
+  // Test if old file name contains the hash of template to remove
+  const containsTemplateHash = templateHashPart && templateHashPart.length > 10;
+
+  if (containsTemplateHash) {
+    splittedUrlName.splice(coverPart && hasCoverPart ? 1 : 2, 1);
   }
 
   // Add the hash of image
   fileName = fileName.concat(
     fileName.length > 0 ? '-' : '',
-    splittedUrlName[splittedUrlName.length - 1]
+    splittedUrlName.join('-')
   );
 
   return fileName;
