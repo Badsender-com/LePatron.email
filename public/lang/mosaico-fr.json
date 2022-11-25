@@ -88,5 +88,6 @@
   "Unexpected upload error": "Erreur d'upload inattendue",
   "Unexpected error listing files": "Impossible de lister les fichiers",
   "__current__ of __total__": "__current__ sur __total__",
-  "Select from gallery": "Sélectionnez dans la galerie"
+  "Select from gallery": "Sélectionnez dans la galerie",
+  "Error message": "Erreurs détectées :"
 }

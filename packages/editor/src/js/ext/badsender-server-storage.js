@@ -14,6 +14,10 @@ function getData(viewModel) {
   return datas;
 }
 
+function getErrorsForControlQuality(html) {
+  return $(html).find('a[href="#toreplace"]');
+}
+
 function loader(opts) {
   var updateRoute = opts.metadata.url.update;
   return function (viewModel) {
@@ -26,7 +30,7 @@ function loader(opts) {
       name: 'Save', // l10n happens in the template
       enabled: ko.observable(true),
     };
-    
+
     saveCmd.execute = function () {
       saveCmd.enabled(false);
       var data = getData(viewModel);
@@ -87,17 +91,39 @@ function loader(opts) {
     // Download markup can be found in:
     // • tmpl-badsender/download-buttons.tmpl.html
 
+    // Download local/FTP button
     const downloadCmd = {
       name: `Download`, // l10n happens in the template
       enabled: ko.observable(true),
     };
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
-      console.info('DOWNLOAD', downloadOptions);
+      console.info('DOWNLOAD ????', downloadOptions);
+      const htmlToExport = viewModel.exportHTML();
+      console.log({ htmlToExport });
+
+      const splittedHtml = htmlToExport.split('\n');
+      console.log({ splittedHtml });
+
+      const $errorMessageDiv = $('<div class="error-message"></div>');
+      $errorMessageDiv.insertBefore('replacedbody');
+
+      const $errorMessageTitle = $(`<h3>${viewModel.t(`Error message`)}</h3>`);
+      $errorMessageDiv.append($errorMessageTitle);
+
+      const $errorsDiv = $('<ul><li>First</li><li>Second</li></ul>');
+      const parsedHtml = $.parseHTML(htmlToExport);
+      console.log({ parsedHtml });
+      console.log({ $errorMessageDiv});
+      const errors = getErrorsForControlQuality(parsedHtml);
+      console.log({errors});
+      $errorMessageDiv.append($errorsDiv);
+
       const $inputHiddenCdnStatus = $(`input[name="downLoadForCdn"]`),
         $inputHiddenFtpStatus = $(`input[name="downLoadForFtp"]`);
 
       downloadCmd.enabled(false);
+
       viewModel.notifier.info(viewModel.t(`Downloading...`));
       viewModel.exportHTMLtoTextarea(`#downloadHtmlTextarea`);
       $(`#downloadHtmlFilename`).val(viewModel.metadata.name());
