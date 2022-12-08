@@ -10,7 +10,7 @@ const styleHelper = require('../../../utils/style/styleHelper');
 const DscComponent = Vue.component('DscComponent', {
 
   mixins: [validationMixin],
-  components:{ 
+  components:{
     TimeInput
   },
   props: {
@@ -75,7 +75,7 @@ const DscComponent = Vue.component('DscComponent', {
       <div class="modal-content">
         <div class="row">
           <div class="col s12">
-            <h2>{{ vm.t('export-to') }} {{ selectedProfile.name }}</h2>
+            <h5>{{ vm.t('export-to') }} {{ selectedProfile.name }}</h5>
           </div>
           <form class="col s12">
             <div class="row" v-if="isEditMode">
