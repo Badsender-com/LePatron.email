@@ -791,18 +791,10 @@ async function handleRelativeOrFtpImages({
   //     }
   //   })
 
-  const urlsRegex = /<img.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif))/g;
-
-  const splittedHtml = html.split('\n');
-  const allImages = [];
-
-  // We will retrieve only URLs from each matched lines
-  splittedHtml.forEach((line) => {
-    const result = urlsRegex.exec(line);
-    if (result && result.length > 0) {
-      allImages.push(result[1]);
-    }
-  });
+  const remainingUrlsRegex = /https?:\S+\.(jpg|jpeg|png|gif){1}/g;
+  const allImages = html.match(remainingUrlsRegex) || [];
+  // const allImages = _.uniq([...imgUrls, ...bgUrls, ...styleUrls])
+  // console.log(remainingUrls, allImages)
 
   // keep a dictionary of all downloaded images
   // • this will help us for CDN images
