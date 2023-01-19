@@ -793,7 +793,10 @@ async function handleRelativeOrFtpImages({
 
   const urlsRegex = /(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif))/g;
 
-  const splittedHtml = html.split('\n');
+  let splittedHtml = html.split('\n');
+  if (!html.includes('\n')) {
+    splittedHtml = html.split(' ');
+  }
   const allImages = [];
 
   // We will retrieve only URLs from each matched lines
