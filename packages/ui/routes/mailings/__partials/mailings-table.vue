@@ -393,9 +393,9 @@ export default {
           nextIcon: 'none',
           itemsPerPageOptions: [5, 10, 15, -1],
         }"
+        @sort-by="handleSortByChange"
+        @sort-desc="handleSortDescChange"
         @update:items-per-page="handleItemsPerPageChange"
-        @update:sort-by="handleSortByChange"
-        @update:sort-desc="handleSortDescChange"
       >
         <template #item.name="{ item }">
           <a v-if="hasAccess" :href="`/editor/${item.id}`">{{ item.name }}</a>

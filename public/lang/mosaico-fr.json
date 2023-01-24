@@ -72,7 +72,7 @@
   "Drop here": "Déposer ici",
   "Unknown error": "Erreur inconue",
   "Uploaded bytes exceed file size": "Le nombre de bytes chargés excède la taille du fichier",
-  "File type not allowed": "Type de fichier non-autorisé",
+  "File type not allowed": "Le type de fichier n'est pas autorisé",
   "File is too large": "Fichier trop lourd",
   "The uploaded file exceeds the post_max_size directive in php.ini": "The uploaded file exceeds the post_max_size directive in php.ini",
   "File is too big": "Le fichier est trop lourd",

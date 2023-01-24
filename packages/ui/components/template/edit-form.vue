@@ -5,7 +5,7 @@ import { required } from 'vuelidate/lib/validators';
 export default {
   name: 'BsTemplateEditForm',
   mixins: [validationMixin],
-  SUPPORTED_IMAGES_FORMAT: '.png,.gif,.jpg',
+  SUPPORTED_IMAGES_FORMAT: '.png,.gif,.jpg,.webp',
   model: { prop: 'template', event: 'update' },
   props: {
     template: { type: Object, default: () => ({}) },
