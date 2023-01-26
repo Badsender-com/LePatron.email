@@ -88,5 +88,6 @@
   "__current__ of __total__": "__current__ ile ilgili __total__",
   "Select from gallery": "Galeriden seç",
   "Error message": "Tespit edilen hatalar:",
-  "Missing link label:": "Eksik Bağlantı Etiketi:"
+  "Missing link label:": "Eksik Bağlantı Etiketi:",
+  "Picture with no link": "Bağlantısız resim"
 }

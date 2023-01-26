@@ -90,5 +90,6 @@
   "__current__ of __total__": "__current__ sur __total__",
   "Select from gallery": "Sélectionnez dans la galerie",
   "Error message": "Erreurs détectées :",
-  "Missing link label: ": "Label du lien manquant: "
+  "Missing link label:": "Label du lien manquant: ",
+  "Picture with no link": "Image sans lien"
 }

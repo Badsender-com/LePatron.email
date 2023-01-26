@@ -88,5 +88,6 @@
   "__current__ of __total__": "__current__ van __total__",
   "Select from gallery": "Selecteer uit galerij",
   "Error message": "Gedetecteerde fouten:",
-  "Missing link label:": "Ontbrekend linklabel:"
+  "Missing link label:": "Ontbrekend linklabel:",
+  "Picture with no link": "Afbeelding zonder verbinding"
 }

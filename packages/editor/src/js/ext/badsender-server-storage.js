@@ -20,7 +20,7 @@ function getErrorsForControlQuality(viewModel) {
   return $(parsedHtml)
     .find('a[href="#toreplace"]')
     .toArray()
-    .map(e => `${e.textContent?.trim() ? `Label du lien manquant: ${e.textContent?.trim()}` :  'Image sans lien'}`);
+    .map(e => `${e.textContent?.trim() ? `${viewModel.t('Missing link label:')} ${e.textContent?.trim()}` : viewModel.t('Picture with no link')}`);
 }
 
 function displayErrors (errors, viewModel) {
