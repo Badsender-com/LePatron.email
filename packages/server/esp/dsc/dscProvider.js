@@ -192,10 +192,8 @@ class DscProvider {
         senderName,
         senderMail,
         template: processedHtml,
-        controlMail: 'amelie.poulet@ouest-france.fr',
+        controlMail: user?.email || '',
       };
-
-      console.log({ formattedData });
 
       if (planification) {
         formattedData = {
