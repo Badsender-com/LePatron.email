@@ -87,5 +87,6 @@
   "Unexpected error listing files": "Onverwachte fout bij tonen van de plaatjes",
   "__current__ of __total__": "__current__ van __total__",
   "Select from gallery": "Selecteer uit galerij",
-  "Error message": "Erreurs détectées :"
+  "Error message": "Gedetecteerde fouten:",
+  "Missing link label:": "Ontbrekend linklabel:"
 }

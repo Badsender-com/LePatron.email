@@ -89,5 +89,6 @@
   "Unexpected error listing files": "Unexpected error listing files",
   "__current__ of __total__": "__current__ of __total__",
   "Select from gallery": "Select from gallery",
-  "Error message": "Detected errors:"
+  "Error message": "Detected errors:",
+  "Missing link label:": "Missing link label:"
 }

@@ -86,5 +86,7 @@
   "Unexpected upload error": "Neočekivana greška pri postavljanju",
   "Unexpected error listing files": "Neočekivana greška pri listingu fajlova",
   "__current__ of __total__": "__current__ од __total__",
-  "Select from gallery": "Изаберите из галерије"
+  "Select from gallery": "Изаберите из галерије",
+  "Error message": "Откривене грешке:",
+  "Missing link label:": "Етикета која недостаје веза:"
 }

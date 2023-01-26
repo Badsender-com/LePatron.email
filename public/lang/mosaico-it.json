@@ -87,5 +87,6 @@
   "Unexpected error listing files": "Errore inaspettato caricando la lista dei file",
   "__current__ of __total__": "__current__ di __total__",
   "Select from gallery": "Seleziona dalla galleria",
-  "Error message": "Errori rilevati:"
+  "Error message": "Errori rilevati:",
+  "Missing link label:": "Etichetta di collegamento mancante:"
 }
