@@ -88,5 +88,6 @@
   "__current__ of __total__": "__current__ av __total__",
   "Select from gallery": "Välj från galleri",
   "Error message": "Upptäckta fel:",
-  "Missing link label:": "Fút brist på glas spetsar:"
+  "Missing link label:": "Saknad länk på:",
+  "Picture with no link": "Oinformerad bild"
 }
