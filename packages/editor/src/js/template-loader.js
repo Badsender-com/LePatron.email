@@ -283,6 +283,7 @@ var templateCompiler = function (
   extensions,
   galleryUrl
 ) {
+  const trackingUrl = jsorjson.trackingUrl;
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
   var res = templatecode.match(
@@ -478,6 +479,14 @@ var templateCompiler = function (
       galleryUrl
     )
   );
+
+  const trackingUrlObs = ko.observable(null);
+
+  viewModel.content({ ...viewModel.content(), trackingUrl: trackingUrlObs });
+
+  if (trackingUrl) {
+    viewModel.content().trackingUrl(trackingUrl);
+  }
 
   viewModel.metadata = metadata;
   // let's run some version check on template and editor used to build the model being loaded.
