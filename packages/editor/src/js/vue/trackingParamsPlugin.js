@@ -2,9 +2,9 @@ const Vue = require('vue/dist/vue.common');
 
 module.exports = {
   viewModel(vm, ko) {
-    // const trackingUrl = ko.observable(null);
-    // vm.content({ ...vm.content(), trackingUrl: trackingUrl })
-
+    // console.log({ tracking: vm.content().tracking() });
+    // const urlObs = ko.observable(null);
+    // vm.content().tracking({ ...vm.content().tracking(), url: urlObs })
   },
   init(vm) {
     // Init VueJS component
@@ -13,7 +13,7 @@ module.exports = {
       },
       data: () => ({
         // subscriptionTrackingUrl: null,
-        trackingUrl: vm.content().trackingUrl(),
+        trackingUrl: vm.content().tracking().url(),
       }),
       mounted() {
         // this.subscriptionTrackingUrl = vm.content().trackingUrl().subscribe(this.updateTrackingUrl)
@@ -23,7 +23,8 @@ module.exports = {
       // },
       watch: {
         trackingUrl(newTrackingUrl) {
-          vm.content().trackingUrl(newTrackingUrl);
+          // console.log({ tracking: vm.content().tracking() });
+          vm.content().tracking().url(newTrackingUrl);
         }
       },
       methods: {
