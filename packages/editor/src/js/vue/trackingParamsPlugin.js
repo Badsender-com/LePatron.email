@@ -2,9 +2,9 @@ const Vue = require('vue/dist/vue.common');
 
 module.exports = {
   viewModel(vm, ko) {
-    const trackingUrl = ko.observable(null);
-    console.log({ content: vm.content() });
-    vm.content({ ...vm.content(), trackingUrl: trackingUrl })
+    // const trackingUrl = ko.observable(null);
+    // vm.content({ ...vm.content(), trackingUrl: trackingUrl })
+
   },
   init(vm) {
     // Init VueJS component
