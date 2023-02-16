@@ -283,7 +283,8 @@ var templateCompiler = function (
   extensions,
   galleryUrl
 ) {
-  const trackingUrl = jsorjson.trackingUrl;
+  const tracking = jsorjson.tracking;
+
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
   var res = templatecode.match(
@@ -480,13 +481,18 @@ var templateCompiler = function (
     )
   );
 
-  const trackingUrlObs = ko.observable(null);
+  const trackingObs = ko.observable({});
+  const urlObs = ko.observable(null);
 
-  viewModel.content({ ...viewModel.content(), trackingUrl: trackingUrlObs });
+  viewModel.content({ ...viewModel.content(), tracking: trackingObs });
+  viewModel.content().tracking({ ...viewModel.content().tracking(), url: urlObs });
 
-  if (trackingUrl) {
-    viewModel.content().trackingUrl(trackingUrl);
+  if (tracking && tracking.url) {
+    viewModel.content().tracking().url(tracking.url);
   }
+
+  // console.log({ content: viewModel.content() });
+  // console.log({ tracking: viewModel.content().tracking() });
 
   viewModel.metadata = metadata;
   // let's run some version check on template and editor used to build the model being loaded.
