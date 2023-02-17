@@ -25,6 +25,7 @@ const {
   getImageName,
   createCdnMarkdownNotice,
   createHtmlNotice,
+  addTracking,
 } = require('../utils/download-zip-markdown');
 
 const IMAGES_FOLDER = 'images';
@@ -309,6 +310,7 @@ async function processHtmlWithFTPOption({
     name,
     ftpServerParams,
     doesWaitForFtp,
+    mailing,
   });
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -370,6 +372,7 @@ async function downloadZip({
     ftpServerParams,
     name,
     doesWaitForFtp: false,
+    mailing,
   });
 
   // ----- HTML
@@ -547,6 +550,7 @@ async function downloadMultipleZip({
       ftpServerParams,
       name,
       doesWaitForFtp: false,
+      mailing,
     });
 
     const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -584,9 +588,7 @@ async function getMailByMailingIdAndUser({ mailingId, user }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   // mailing can come without group if created by the admin
   // • in order to retrieve the group, look at the wireframe
-  const mailing = await Mailings.findOne(query)
-    .select({ data: 0 })
-    .populate('_wireframe');
+  const mailing = await Mailings.findOne(query).populate('_wireframe');
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
 }
@@ -736,6 +738,7 @@ async function handleRelativeOrFtpImages({
   ftpServerParams,
   name,
   doesWaitForFtp,
+  mailing,
 }) {
   const {
     ftpHost,
@@ -806,6 +809,10 @@ async function handleRelativeOrFtpImages({
       allImages.push(result[1]);
     }
   });
+
+  allImages.map((img) => addTracking(img, mailing?._doc?.data?.tracking));
+
+  console.log({ allImages });
 
   // keep a dictionary of all downloaded images
   // • this will help us for CDN images

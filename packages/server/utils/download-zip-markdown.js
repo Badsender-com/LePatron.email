@@ -61,6 +61,28 @@ function getImageName(imageUrl) {
   return fileName;
 }
 
+const addTracking = (img, tracking) => {
+  if (!tracking) {
+    return img;
+  }
+
+  const keys = Object.keys(tracking);
+
+  if (keys.some((key) => img.includes(key))) {
+    return img;
+  }
+
+  return (
+    img +
+    '?' +
+    keys.reduce(
+      (acc, curr, index) =>
+        acc + tracking[curr] + (index === keys.length - 1 && '&'),
+      ''
+    )
+  );
+};
+
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
   return `# mailing – ${name}
 
@@ -117,6 +139,7 @@ ${relativesImagesNames
 module.exports = {
   getName,
   getImageName,
+  addTracking,
   createCdnMarkdownNotice,
   createHtmlNotice,
 };
