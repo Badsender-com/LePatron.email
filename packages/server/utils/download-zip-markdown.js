@@ -62,25 +62,17 @@ function getImageName(imageUrl) {
 }
 
 const addTracking = (img, tracking) => {
-  if (!tracking) {
+  if (!tracking || !tracking.urlKey || !tracking.urlValue) {
     return img;
   }
 
   const keys = Object.keys(tracking);
 
-  if (keys.some((key) => img.includes(key))) {
+  if (keys.includes(tracking.urlKey)) {
     return img;
   }
 
-  return (
-    img +
-    '?' +
-    keys.reduce(
-      (acc, curr, index) =>
-        acc + tracking[curr] + (index === keys.length - 1 && '&'),
-      ''
-    )
-  );
+  return `${img}?${tracking.urlKey}=${tracking.urlValue}`;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {

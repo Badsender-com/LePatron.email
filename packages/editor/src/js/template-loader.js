@@ -482,17 +482,53 @@ var templateCompiler = function (
   );
 
   const trackingObs = ko.observable({});
-  const urlObs = ko.observable(null);
+  const urlKeyObs = ko.observable(null);
+  const hasGoogleAnalyticsUtmObs = ko.observable(null);
+  const urlValueObs = ko.observable(null);
+  const utmSourceKeyObs = ko.observable("utm_source");
+  const utmSourceValueObs = ko.observable(null);
+  const utmMediumKeyObs = ko.observable("utm_medium");
+  const utmMediumValueObs = ko.observable("email");
+  const utmCampaignKeyObs = ko.observable("utm_campaign");
+  const utmCampaignValueObs = ko.observable("email name");
 
   viewModel.content({ ...viewModel.content(), tracking: trackingObs });
-  viewModel.content().tracking({ ...viewModel.content().tracking(), url: urlObs });
+  viewModel.content().tracking({
+    ...viewModel.content().tracking(),
+    hasGoogleAnalyticsUtm: hasGoogleAnalyticsUtmObs,
+    urlKey: urlKeyObs,
+    urlValue: urlValueObs,
+    utmSourceKey: utmSourceKeyObs,
+    utmSourceValue: utmSourceValueObs,
+    utmMediumKey: utmMediumKeyObs,
+    utmMediumValue: utmMediumValueObs,
+    utmCampaignKey: utmCampaignKeyObs,
+    utmCampaignValue: utmCampaignValueObs,
+  });
 
-  if (tracking && tracking.url) {
-    viewModel.content().tracking().url(tracking.url);
+  if (tracking && tracking.hasGoogleAnalyticsUtm) {
+    viewModel.content().tracking().hasGoogleAnalyticsUtm(tracking.hasGoogleAnalyticsUtm);
   }
 
-  // console.log({ content: viewModel.content() });
-  // console.log({ tracking: viewModel.content().tracking() });
+  if (tracking && tracking.urlKey && tracking.urlValue) {
+    viewModel.content().tracking().urlKey(tracking.urlKey);
+    viewModel.content().tracking().urlValue(tracking.urlValue);
+  }
+
+  if (tracking && tracking.utmSourceKey && tracking.utmSourceValue) {
+    viewModel.content().tracking().utmSourceKey(tracking.utmSourceKey);
+    viewModel.content().tracking().utmSourceValue(tracking.utmSourceValue);
+  }
+
+  if (tracking && tracking.utmMediumKey && tracking.utmMediumValue) {
+    viewModel.content().tracking().utmMediumKey(tracking.utmMediumKey);
+    viewModel.content().tracking().utmMediumValue(tracking.utmMediumValue);
+  }
+
+  if (tracking && tracking.utmCampaignKey && tracking.utmCampaignValue) {
+    viewModel.content().tracking().utmCampaignKey(tracking.utmCampaignKey);
+    viewModel.content().tracking().utmCampaignValue(tracking.utmCampaignValue);
+  }
 
   viewModel.metadata = metadata;
   // let's run some version check on template and editor used to build the model being loaded.
