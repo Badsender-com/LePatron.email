@@ -800,7 +800,7 @@ async function handleRelativeOrFtpImages({
   if (!html.includes('\n')) {
     splittedHtml = html.split(' ');
   }
-  const allImages = [];
+  let allImages = [];
 
   // We will retrieve only URLs from each matched lines
   splittedHtml.forEach((line) => {
@@ -810,7 +810,9 @@ async function handleRelativeOrFtpImages({
     }
   });
 
-  allImages.map((img) => addTracking(img, mailing?._doc?.data?.tracking));
+  allImages = allImages.map((img) =>
+    addTracking(img, mailing?._doc?.data?.tracking)
+  );
 
   console.log({ allImages });
 

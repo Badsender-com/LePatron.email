@@ -62,17 +62,56 @@ function getImageName(imageUrl) {
 }
 
 const addTracking = (img, tracking) => {
-  if (!tracking || !tracking.urlKey || !tracking.urlValue) {
+  if (!tracking) {
     return img;
   }
 
-  const keys = Object.keys(tracking);
-
-  if (keys.includes(tracking.urlKey)) {
+  if (
+    tracking.hasGoogleAnalyticsUtm &&
+    (!tracking.urlKey || !tracking.urlValue)
+  ) {
     return img;
   }
 
-  return `${img}?${tracking.urlKey}=${tracking.urlValue}`;
+  if (
+    (img.includes(tracking.urlKey) && tracking?.urlKey?.length > 0) ||
+    (img.includes(tracking.urlValue) && tracking?.urlValue?.length > 0)
+  ) {
+    return img;
+  }
+
+  if (
+    tracking.hasGoogleAnalyticsUtm &&
+    ((img.includes(tracking.utmSourceKey) &&
+      tracking?.utmSourceKey?.length > 0) ||
+      (img.includes(tracking.utmSourceValue) &&
+        tracking?.utmSourceValue?.length > 0) ||
+      (img.includes(tracking.utmMediumKey) &&
+        tracking?.utmMediumKey?.length > 0) ||
+      (img.includes(tracking.utmMediumValue) &&
+        tracking?.utmMediumValue?.length > 0) ||
+      (img.includes(tracking.utmCampaignKey) &&
+        tracking?.utmCampaignKey?.length > 0) ||
+      (img.includes(tracking.utmCampaignValue) &&
+        tracking?.utmCampaignValue?.length > 0))
+  ) {
+    return !tracking.urlKey || !tracking.urlValue
+      ? img
+      : encodeURI(`${img}?${tracking.urlKey}=${tracking.urlValue}`);
+  }
+
+  if (!tracking.hasGoogleAnalyticsUtm) {
+    return !tracking.urlKey || !tracking.urlValue
+      ? img
+      : encodeURI(`${img}?${tracking.urlKey}=${tracking.urlValue}`);
+  }
+
+  return encodeURI(
+    `${img}?${tracking.urlKey}=${tracking.urlValue}` +
+      `&${tracking.utmSourceKey}=${tracking.utmSourceValue}` +
+      `&${tracking.utmMediumKey}=${tracking.utmMediumValue}` +
+      `&${tracking.utmCampaignKey}=${tracking.utmCampaignValue}`
+  );
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
