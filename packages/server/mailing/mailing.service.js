@@ -791,7 +791,8 @@ async function handleRelativeOrFtpImages({
   //     }
   //   })
 
-  const urlsRegex = /.(?!data-raw).*(https?:\S+\.(jpg|jpeg|png|gif))/g;
+  const urlsRegexDataRaw = /data-raw/g;
+  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif)/g;
 
   let splittedHtml = html.split('\n');
   if (!html.includes('\n')) {
@@ -801,9 +802,17 @@ async function handleRelativeOrFtpImages({
 
   // We will retrieve only URLs from each matched lines
   splittedHtml.forEach((line) => {
-    const result = urlsRegex.exec(line);
+    const containsDataRaw = urlsRegexDataRaw.test(line);
+    const containsUrl = urlsRegexUrl.test(line);
+    if (containsDataRaw || (containsDataRaw && !containsUrl)) {
+      return;
+    }
+    urlsRegexDataRaw.lastIndex = 0;
+    urlsRegexUrl.lastIndex = 0;
+
+    const result = urlsRegexUrl.exec(line);
     if (result && result.length > 0) {
-      allImages.push(result[1]);
+      allImages.push(result[0]);
     }
   });
 
