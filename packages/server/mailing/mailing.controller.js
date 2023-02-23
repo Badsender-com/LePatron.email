@@ -159,7 +159,6 @@ async function read(req, res) {
  */
 
 async function readMosaico(req, res) {
-  console.log('Enter in readMosaico');
   const { mailingId } = req.params;
   const { user } = req;
   const query = modelsUtils.addGroupFilter(req.user, { _id: mailingId });
