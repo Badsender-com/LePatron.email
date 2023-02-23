@@ -25,7 +25,7 @@ const {
   getImageName,
   createCdnMarkdownNotice,
   createHtmlNotice,
-  addTracking,
+  getUrlWithTrackingParams,
 } = require('../utils/download-zip-markdown');
 
 const IMAGES_FOLDER = 'images';
@@ -299,18 +299,22 @@ async function processHtmlWithFTPOption({
     );
   }
 
+  const { html: htmlWithTracking } = handleTrackingData({
+    html,
+    tracking: mailing?._doc?.data?.tracking,
+  });
+
   const {
     relativesImagesNames,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
-    html,
+    html: htmlWithTracking,
     cdnDownload,
     regularDownload,
     prefix,
     name,
     ftpServerParams,
     doesWaitForFtp,
-    mailing,
   });
   // Add html with relatives url
   const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -359,12 +363,17 @@ async function downloadZip({
 
   console.log('download zip', name);
 
+  const { html: htmlWithTracking } = handleTrackingData({
+    html,
+    tracking: mailing?._doc?.data?.tracking,
+  });
+
   const {
     relativesImagesNames,
     archive: processedImageArchive,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
-    html,
+    html: htmlWithTracking,
     cdnDownload,
     regularDownload,
     archive,
@@ -372,7 +381,6 @@ async function downloadZip({
     ftpServerParams,
     name,
     doesWaitForFtp: false,
-    mailing,
   });
 
   // ----- HTML
@@ -538,19 +546,23 @@ async function downloadMultipleZip({
       downloadOptions,
     });
 
+    const { html: htmlWithTracking } = handleTrackingData({
+      html: mailing.previewHtml,
+      tracking: mailing?._doc?.data?.tracking,
+    });
+
     const {
       relativesImagesNames,
       html: relativeImagesHtml,
     } = await handleRelativeOrFtpImages({
       cdnDownload,
       regularDownload,
-      html: mailing.previewHtml,
+      html: htmlWithTracking,
       archive,
       prefix,
       ftpServerParams,
       name,
       doesWaitForFtp: false,
-      mailing,
     });
 
     const processedHtml = processMosaicoHtmlRender(relativeImagesHtml);
@@ -738,7 +750,6 @@ async function handleRelativeOrFtpImages({
   ftpServerParams,
   name,
   doesWaitForFtp,
-  mailing,
 }) {
   const {
     ftpHost,
@@ -800,7 +811,7 @@ async function handleRelativeOrFtpImages({
   if (!html.includes('\n')) {
     splittedHtml = html.split(' ');
   }
-  let allImages = [];
+  const allImages = [];
 
   // We will retrieve only URLs from each matched lines
   splittedHtml.forEach((line) => {
@@ -809,12 +820,6 @@ async function handleRelativeOrFtpImages({
       allImages.push(result[1]);
     }
   });
-
-  allImages = allImages.map((img) =>
-    addTracking(img, mailing?._doc?.data?.tracking)
-  );
-
-  console.log({ allImages });
 
   // keep a dictionary of all downloaded images
   // • this will help us for CDN images
@@ -883,6 +888,18 @@ async function handleRelativeOrFtpImages({
   }
 
   return { relativesImagesNames, archive, html };
+}
+
+// This will add tracking information in links
+function handleTrackingData({ html, tracking }) {
+  const linksRegex = /(.*<a.*)(https?:\S+)(".*)/g;
+
+  const htmlWithTracking = html.replace(linksRegex, (match, p1, p2, p3) => {
+    const urlWithTrackingParams = getUrlWithTrackingParams(p2, tracking);
+    return `${p1}${urlWithTrackingParams}${p3}`;
+  });
+
+  return { html: htmlWithTracking };
 }
 
 async function copyMailing(mailingId, destination, user) {

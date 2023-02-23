@@ -60,58 +60,44 @@ function getImageName(imageUrl) {
 
   return fileName;
 }
+const hasUrlAlreadyParams = (url) => {
+  return url.includes('?');
+};
 
-const addTracking = (img, tracking) => {
+const getUrlWithTrackingParams = (link, tracking) => {
   if (!tracking) {
-    return img;
+    return link;
   }
 
-  if (
-    tracking.hasGoogleAnalyticsUtm &&
-    (!tracking.urlKey || !tracking.urlValue)
-  ) {
-    return img;
+  let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
+
+  if (tracking.hasGoogleAnalyticsUtm) {
+    if (
+      !link.includes(tracking.utmSourceKey) &&
+      tracking?.utmSourceKey?.length > 0 &&
+      tracking?.utmSourceValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmSourceKey}=${tracking.utmSourceValue}&`;
+    }
+
+    if (
+      !link.includes(tracking.utmMediumKey) &&
+      tracking?.utmMediumKey?.length > 0 &&
+      tracking?.utmMediumValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmMediumKey}=${tracking.utmMediumValue}&`;
+    }
+
+    if (
+      !link.includes(tracking.utmCampaignKey) &&
+      tracking?.utmCampaignKey?.length > 0 &&
+      tracking?.utmCampaignValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmCampaignKey}=${tracking.utmCampaignValue}&`;
+    }
   }
 
-  if (
-    (img.includes(tracking.urlKey) && tracking?.urlKey?.length > 0) ||
-    (img.includes(tracking.urlValue) && tracking?.urlValue?.length > 0)
-  ) {
-    return img;
-  }
-
-  if (
-    tracking.hasGoogleAnalyticsUtm &&
-    ((img.includes(tracking.utmSourceKey) &&
-      tracking?.utmSourceKey?.length > 0) ||
-      (img.includes(tracking.utmSourceValue) &&
-        tracking?.utmSourceValue?.length > 0) ||
-      (img.includes(tracking.utmMediumKey) &&
-        tracking?.utmMediumKey?.length > 0) ||
-      (img.includes(tracking.utmMediumValue) &&
-        tracking?.utmMediumValue?.length > 0) ||
-      (img.includes(tracking.utmCampaignKey) &&
-        tracking?.utmCampaignKey?.length > 0) ||
-      (img.includes(tracking.utmCampaignValue) &&
-        tracking?.utmCampaignValue?.length > 0))
-  ) {
-    return !tracking.urlKey || !tracking.urlValue
-      ? img
-      : encodeURI(`${img}?${tracking.urlKey}=${tracking.urlValue}`);
-  }
-
-  if (!tracking.hasGoogleAnalyticsUtm) {
-    return !tracking.urlKey || !tracking.urlValue
-      ? img
-      : encodeURI(`${img}?${tracking.urlKey}=${tracking.urlValue}`);
-  }
-
-  return encodeURI(
-    `${img}?${tracking.urlKey}=${tracking.urlValue}` +
-      `&${tracking.utmSourceKey}=${tracking.utmSourceValue}` +
-      `&${tracking.utmMediumKey}=${tracking.utmMediumValue}` +
-      `&${tracking.utmCampaignKey}=${tracking.utmCampaignValue}`
-  );
+  return encodeURI(`${link}${paramsToAdd.slice(0, -1)}`);
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
@@ -170,7 +156,7 @@ ${relativesImagesNames
 module.exports = {
   getName,
   getImageName,
-  addTracking,
+  getUrlWithTrackingParams,
   createCdnMarkdownNotice,
   createHtmlNotice,
 };
