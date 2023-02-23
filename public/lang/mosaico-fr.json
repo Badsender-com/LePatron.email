@@ -88,5 +88,9 @@
   "Unexpected upload error": "Erreur d'upload inattendue",
   "Unexpected error listing files": "Impossible de lister les fichiers",
   "__current__ of __total__": "__current__ sur __total__",
-  "Select from gallery": "Sélectionnez dans la galerie"
+  "Select from gallery": "Sélectionnez dans la galerie",
+  "Your email was successfully exported": "Votre email a bien été exporté",
+  "We noticed some missing details while executing quality controls:": "Nous avons détecté quelques oublis lors du contrôle qualité",
+  "Missing link label:": "Lien manquant sur:",
+  "Picture with no link": "Image sans lien"
 }

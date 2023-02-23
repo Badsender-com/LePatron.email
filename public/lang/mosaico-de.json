@@ -86,5 +86,8 @@
   "Unexpected upload error": "Unerwarteter Fehler beim Hochladen",
   "Unexpected error listing files": "Unerwarteter Fehler beim auflisten der Dateien",
   "__current__ of __total__": "__current__ von __total__",
-  "Select from gallery": "Wählen Sie aus der Galerie"
+  "Select from gallery": "Wählen Sie aus der Galerie",
+  "Error message": "Gedetecteerde fouten:",
+  "Missing link label:": "Ontbrekende link op:",
+  "Picture with no link": "Foto zonder link"
 }
