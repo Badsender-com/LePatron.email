@@ -488,9 +488,9 @@ var templateCompiler = function (
   const utmSourceKeyObs = ko.observable("utm_source");
   const utmSourceValueObs = ko.observable(null);
   const utmMediumKeyObs = ko.observable("utm_medium");
-  const utmMediumValueObs = ko.observable("email");
+  const utmMediumValueObs = ko.observable(null);
   const utmCampaignKeyObs = ko.observable("utm_campaign");
-  const utmCampaignValueObs = ko.observable("email name");
+  const utmCampaignValueObs = ko.observable(null);
 
   viewModel.content({ ...viewModel.content(), tracking: trackingObs });
   viewModel.content().tracking({
