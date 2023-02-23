@@ -22,6 +22,10 @@ function getImageName(imageUrl) {
 
   splittedUrlName.splice(0, 2);
 
+  if (splittedUrlName && splittedUrlName.length === 2) {
+    return splittedUrlName[1];
+  }
+
   const coverPart = splittedUrlName[0] || '';
   const hasCoverPart = coverPart.includes('cover');
 
