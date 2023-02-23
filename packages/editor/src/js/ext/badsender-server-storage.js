@@ -26,14 +26,14 @@ function getErrorsForControlQuality(viewModel) {
 function displayErrors (errors, viewModel) {
   $('.error-message').remove();
 
-  const $errorMessageTitle = $(`<h3>${viewModel.t('Error message')}</h3>`);
+  const $errorMessageTitle = $(`<h3>${viewModel.t('Your email was successfully exported')}</h3>`);
+  const $errorMessageDescription = $(`<p>${viewModel.t('We noticed some missing details while executing quality controls:')}</p>`);
   const $errorLines = errors.map(error => $(`<li>${error}</li>`));
   const $errorsDiv = $('<ul></ul>').append($errorLines);
 
   const $errorMessageDiv = $('<div class="error-message"></div>');
   $errorMessageDiv.insertBefore('replacedbody');
-  $errorMessageDiv.append($errorMessageTitle);
-  $errorMessageDiv.append($errorsDiv);
+  $errorMessageDiv.append($errorMessageTitle, $errorMessageDescription, $errorsDiv);
 }
 
 function loader(opts) {
@@ -116,6 +116,7 @@ function loader(opts) {
       const errors = getErrorsForControlQuality(viewModel);
       if (errors) {
         displayErrors(errors, viewModel);
+        // Scroll to top so the user can see warnings if there is any
         document.getElementById('main-wysiwyg-area').scrollTo({
           behavior: 'smooth',
           top: 0,
