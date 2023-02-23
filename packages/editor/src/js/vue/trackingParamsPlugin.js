@@ -8,9 +8,9 @@ module.exports = {
       components: {},
       data: () => ({
         hasGoogleAnalyticsUtmSubscription: null,
+        trackingUrlsSubscription: null,
         hasGoogleAnalyticsUtm: vm.content().tracking().hasGoogleAnalyticsUtm(),
-        trackingUrlKey: vm.content().tracking().urlKey(),
-        trackingUrlValue: vm.content().tracking().urlValue(),
+        trackingUrls: vm.content().tracking().trackingUrls(),
         utmSourceKey: vm.content().tracking().utmSourceKey(),
         utmSourceValue: vm.content().tracking().utmSourceValue(),
         utmMediumKey: vm.content().tracking().utmMediumKey(),
@@ -21,14 +21,34 @@ module.exports = {
           mh1: {
             marginLeft: '10px',
             marginRight: '10px'
+          },
+          mv1: {
+            marginTop: '10px',
+            marginBottom: '10px'
+          },
+          removeIconButton: {
+            background: 'none',
+            border: 0,
+            marginLeft: '0.5rem',
+            fontSize: '1rem',
+          },
+          plusIconButton: {
+            background: 'none',
+            border: 0,
+            fontSize: '1rem',
+          },
+          plusIcon: {
+            color: 'black',
           }
         }
       }),
       mounted() {
         this.hasGoogleAnalyticsUtmSubscription = vm.content().tracking().hasGoogleAnalyticsUtm.subscribe(this.updateHasGoogleAnalyticsUtm);
+        this.trackingUrlsSubscription = vm.content().tracking().trackingUrls.subscribe(this.updateTrackingUrls);
       },
       beforeDestroy() {
         this.hasGoogleAnalyticsUtmSubscription.dispose();
+        this.trackingUrlsSubscription.dispose();
       },
       methods: {
         handleGoogleAnalytics() {
@@ -41,13 +61,23 @@ module.exports = {
         updateHasGoogleAnalyticsUtm(newHasGoogleAnalyticsUtm) {
           this.hasGoogleAnalyticsUtm = newHasGoogleAnalyticsUtm;
         },
+        updateTrackingUrls(newTrackingUrls) {
+          this.trackingUrls = newTrackingUrls;
+        },
+        addTrackingUrl() {
+          const oldValue = vm.content().tracking().trackingUrls();
+          vm.content().tracking().trackingUrls([...oldValue, { key: '', value: '' }]);
+        },
+        removeTrackingUrl(indexToDelete) {
+          const oldTrackingUrls = vm.content().tracking().trackingUrls();
+          const newTrackingUrls = [...oldTrackingUrls]
+          newTrackingUrls.splice(indexToDelete, 1);
+          vm.content().tracking().trackingUrls(newTrackingUrls);
+        }
       },
       watch: {
-        trackingUrlKey(newTrackingUrlKey) {
-          vm.content().tracking().urlKey(newTrackingUrlKey);
-        },
-        trackingUrlValue(newTrackingUrlValue) {
-          vm.content().tracking().urlValue(newTrackingUrlValue);
+        trackingUrls(newTrackingUrls) {
+          vm.content().tracking().trackingUrls(newTrackingUrls);
         },
         utmSourceKey(utmSourceKey) {
           vm.content().tracking().utmSourceKey(utmSourceKey);
@@ -73,39 +103,56 @@ module.exports = {
           <span class="objLabel level1">
             <span data-bind="text: $root.ut('template', 'Tracking')">Tracking</span>
           </span>
-          <div class="propEditor">
-            <div class="propInput">
-              <label>
-                <input
-                  type="text"
-                  placeholder="key"
-                  v-model="trackingUrlKey"
-                />
-              </label>
+          <div v-for="(trackingUrl, index) in trackingUrls">
+            <div class="propEditor" :style="style.mv1">
+              <div class="propInput">
+                <label>
+                  <input
+                    type="text"
+                    placeholder="key"
+                    v-model="trackingUrl.key"
+                  />
+                </label>
+              </div>
+              <span :style="style.mh1">
+                =
+              </span>
+              <div class="propInput">
+                <label>
+                  <input
+                    type="text"
+                    placeholder="value"
+                    v-model="trackingUrl.value"
+                  />
+                </label>
+              </div>
+              <button
+                v-if="trackingUrls.length > 1"
+                @click.prevent="() => removeTrackingUrl(index)"
+                :style="[style.mh1, style.removeIconButton]"
+              >
+                <i class="fa fa-times"></i>
+              </button>
             </div>
-            <span :style="style.mh1">
-              =
-            </span>
-            <div class="propInput">
-              <label>
-                <input
-                  type="text"
-                  placeholder="value"
-                  v-model="trackingUrlValue"
-                />
-              </label>
-            </div>
+          </div>
+          <div>
+            <button
+              @click.prevent="addTrackingUrl"
+              :style="[style.plusIconButton]"
+            >
+              <i :style="style.plusIcon" class="fa fa-plus" aria-hidden="true"></i>
+            </button>
           </div>
           <button
             @click.prevent="handleGoogleAnalytics"
             class="ui-button"
           >
-          <span>
-            {{getGoogleAnalyticsButtonText()}}
-          </span>
+            <span>
+              {{getGoogleAnalyticsButtonText()}}
+            </span>
           </button>
           <div v-if="hasGoogleAnalyticsUtm">
-            <div class="propEditor">
+            <div class="propEditor" :style="style.mv1">
               <div class="propInput">
                 <label>
                   <input
@@ -128,7 +175,7 @@ module.exports = {
                 </label>
               </div>
             </div>
-            <div class="propEditor">
+            <div class="propEditor" :style="style.mv1">
               <div class="propInput">
                 <label>
                   <input
@@ -151,7 +198,7 @@ module.exports = {
                 </label>
               </div>
             </div>
-            <div class="propEditor">
+            <div class="propEditor" :style="style.mv1">
               <div class="propInput">
                 <label>
                   <input

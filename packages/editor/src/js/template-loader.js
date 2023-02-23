@@ -482,9 +482,8 @@ var templateCompiler = function (
   );
 
   const trackingObs = ko.observable({});
-  const urlKeyObs = ko.observable(null);
+  const trackingUrlsObs = ko.observable([{ key: '', value: '' }]);
   const hasGoogleAnalyticsUtmObs = ko.observable(null);
-  const urlValueObs = ko.observable(null);
   const utmSourceKeyObs = ko.observable("utm_source");
   const utmSourceValueObs = ko.observable(null);
   const utmMediumKeyObs = ko.observable("utm_medium");
@@ -496,8 +495,7 @@ var templateCompiler = function (
   viewModel.content().tracking({
     ...viewModel.content().tracking(),
     hasGoogleAnalyticsUtm: hasGoogleAnalyticsUtmObs,
-    urlKey: urlKeyObs,
-    urlValue: urlValueObs,
+    trackingUrls: trackingUrlsObs,
     utmSourceKey: utmSourceKeyObs,
     utmSourceValue: utmSourceValueObs,
     utmMediumKey: utmMediumKeyObs,
@@ -510,9 +508,8 @@ var templateCompiler = function (
     viewModel.content().tracking().hasGoogleAnalyticsUtm(tracking.hasGoogleAnalyticsUtm);
   }
 
-  if (tracking && tracking.urlKey && tracking.urlValue) {
-    viewModel.content().tracking().urlKey(tracking.urlKey);
-    viewModel.content().tracking().urlValue(tracking.urlValue);
+  if (tracking && tracking.trackingUrls) {
+    viewModel.content().tracking().trackingUrls(tracking.trackingUrls);
   }
 
   if (tracking && tracking.utmSourceKey && tracking.utmSourceValue) {
