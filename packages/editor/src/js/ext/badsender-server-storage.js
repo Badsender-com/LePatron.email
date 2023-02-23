@@ -116,7 +116,10 @@ function loader(opts) {
       const errors = getErrorsForControlQuality(viewModel);
       if (errors) {
         displayErrors(errors, viewModel);
-        return
+        document.getElementById('main-wysiwyg-area').scrollTo({
+          behavior: 'smooth',
+          top: 0,
+        })
       }
 
       const $inputHiddenCdnStatus = $('input[name="downLoadForCdn"]');
