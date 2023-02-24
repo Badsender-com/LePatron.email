@@ -114,13 +114,15 @@ function loader(opts) {
       // ====================================
       // Check for missing input values
       const errors = getErrorsForControlQuality(viewModel);
-      if (errors) {
+      if (errors && errors.length > 0) {
         displayErrors(errors, viewModel);
         // Scroll to top so the user can see warnings if there is any
         document.getElementById('main-wysiwyg-area').scrollTo({
           behavior: 'smooth',
           top: 0,
         })
+      } else {
+        $('.error-message').remove();
       }
 
       const $inputHiddenCdnStatus = $('input[name="downLoadForCdn"]');
