@@ -64,6 +64,56 @@ function getImageName(imageUrl) {
 
   return fileName;
 }
+const hasUrlAlreadyParams = (url) => {
+  return url.includes('?');
+};
+
+const getUrlWithTrackingParams = (link, tracking) => {
+  if (!tracking) {
+    return link;
+  }
+
+  let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
+
+  if (tracking?.trackingUrls) {
+    for (const trackingUrl of tracking?.trackingUrls) {
+      const { key, value } = trackingUrl;
+      if (key?.length > 0 && value?.length > 0) {
+        if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
+          paramsToAdd += `${key}=${value}&`;
+        }
+      }
+    }
+  }
+
+  if (tracking.hasGoogleAnalyticsUtm) {
+    if (
+      !link.includes(tracking.utmSourceKey) &&
+      tracking?.utmSourceKey?.length > 0 &&
+      tracking?.utmSourceValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmSourceKey}=${tracking.utmSourceValue}&`;
+    }
+
+    if (
+      !link.includes(tracking.utmMediumKey) &&
+      tracking?.utmMediumKey?.length > 0 &&
+      tracking?.utmMediumValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmMediumKey}=${tracking.utmMediumValue}&`;
+    }
+
+    if (
+      !link.includes(tracking.utmCampaignKey) &&
+      tracking?.utmCampaignKey?.length > 0 &&
+      tracking?.utmCampaignValue?.length > 0
+    ) {
+      paramsToAdd += `${tracking.utmCampaignKey}=${tracking.utmCampaignValue}&`;
+    }
+  }
+
+  return encodeURI(`${link}${paramsToAdd.slice(0, -1)}`);
+};
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
   return `# mailing – ${name}
@@ -121,6 +171,7 @@ ${relativesImagesNames
 module.exports = {
   getName,
   getImageName,
+  getUrlWithTrackingParams,
   createCdnMarkdownNotice,
   createHtmlNotice,
 };

@@ -18,7 +18,8 @@ var utilPlugin = require('./ext/util.js');
 var inlinerPlugin = require('./ext/inliner.js');
 
 var localStorageLoader = require('./ext/localstorage.js');
-const vuePlugin = require("./vue/vuePlugin");
+const espPlugin = require("./vue/espPlugin");
+const trackingParamsPlugin = require("./vue/trackingParamsPlugin");
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
 if (typeof $ == 'undefined') throw 'Cannot find jquery library!';
@@ -99,7 +100,7 @@ if (process.env.MOSAICO) {
     };
 
     // pushes custom tinymce configurations from options to the binding
-    if (options && options.tinymceConfig) 
+    if (options && options.tinymceConfig)
       ko.bindingHandlers.wysiwyg.standardOptions = options.tinymceConfig;
     if (options && options.tinymceConfigFull)
       ko.bindingHandlers.wysiwyg.fullOptions = options.tinymceConfigFull;
@@ -181,7 +182,8 @@ var start = function (
     colorPlugin,
     utilPlugin,
     inlinerPlugin,
-    vuePlugin,
+    espPlugin,
+    trackingParamsPlugin,
   ];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++)
