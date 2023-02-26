@@ -92,5 +92,6 @@
   "Your email was successfully exported": "Votre email a bien été exporté",
   "We noticed some missing details while executing quality controls:": "Nous avons détecté quelques oublis lors du contrôle qualité",
   "Missing link label:": "Lien manquant sur:",
+  "Missing background image": "Image de fond manquant",
   "Picture with no link": "Image sans lien"
 }

@@ -1,4 +1,5 @@
 'use strict';
+import _ from 'lodash';
 
 const console = require('console');
 const $ = require('jquery');
@@ -13,14 +14,24 @@ function getData(viewModel) {
   return datas;
 }
 
+function formatBlockName(blockName) {
+  return _.startCase(blockName.replace('Block', ''))
+}
+
 // return missing required errors if needed
 function getErrorsForControlQuality(viewModel) {
   const htmlToExport = viewModel.exportHTML()
   const parsedHtml = $.parseHTML(htmlToExport);
-  return $(parsedHtml)
+  const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
+    .filter(block => block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==')
+    .map(block => `Block ${formatBlockName(block().type())} - ${viewModel.t('Missing background image')}`);
+
+  const itemsForLinks = $(parsedHtml)
     .find('a[href="#toreplace"]')
     .toArray()
     .map(e => `${e.textContent?.trim() ? `${viewModel.t('Missing link label:')} ${e.textContent?.trim()}` : viewModel.t('Picture with no link')}`);
+
+  return itemsForBackgroundImage.concat(itemsForLinks);
 }
 
 function displayErrors (errors, viewModel) {
