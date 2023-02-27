@@ -23,7 +23,13 @@ function getErrorsForControlQuality(viewModel) {
   const htmlToExport = viewModel.exportHTML()
   const parsedHtml = $.parseHTML(htmlToExport);
   const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
-    .filter(block => block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==')
+    .filter(block => {
+      if (block()?.bgOptions && block()?.bgOptions()?.bgimage) {
+        return block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+      }
+
+      return false;
+    })
     .map(block => `Block ${formatBlockName(block().type())} - ${viewModel.t('Missing background image')}`);
 
   const itemsForLinks = $(parsedHtml)
