@@ -22,6 +22,10 @@ function getImageName(imageUrl) {
 
   splittedUrlName.splice(0, 2);
 
+  if (splittedUrlName && splittedUrlName.length === 2) {
+    return splittedUrlName[1];
+  }
+
   const coverPart = splittedUrlName[0] || '';
   const hasCoverPart = coverPart.includes('cover');
 
@@ -46,7 +50,7 @@ function getImageName(imageUrl) {
     (coverPart && hasCoverPart ? splittedUrlName[2] : splittedUrlName[0]) || '';
 
   // Test if old file name contains the hash of template to remove
-  const containsTemplateHash = templateHashPart && templateHashPart.length > 10;
+  const containsTemplateHash = templateHashPart && templateHashPart.length > 14;
 
   if (containsTemplateHash) {
     splittedUrlName.splice(coverPart && hasCoverPart ? 1 : 2, 1);
