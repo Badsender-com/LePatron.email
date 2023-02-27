@@ -22,9 +22,9 @@ const isValidSize = (size) => /(\d+)x(\d+)/.test(size.trim());
 
 function html(propAccessor, onfocusbinding, parameters) {
   return `
-    <input size="7" type="hidden" value="nothing" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
-    <button data-bind="text: $root.t('widget-bgimage-button'), click: $root.openDialogGallery.bind($element, '${propAccessor}', '${parameters}');">pick an image</button>
-    <button data-bind="click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}'), button: {icons: {primary: 'fa fa-eraser'}, text: false, label: $root.t('widget-bgimage-reset') }"></button>
+    <input size="7" value="nothing" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
+    <button data-bind=" button: { css: { disabledButton: $root.isPickButtonDisabled($($element).prev('input')) }, disabled: $root.isPickButtonDisabled($($element).prev('input')) }, text: $root.t('widget-bgimage-button'), click: function(element, evt) { $root.openDialogGallery('${propAccessor}', '${parameters}', element); }">pick an image</button>
+    <button data-bind="button: { css: { disabledButton: $root.isResetButtonDisabled($($element).prevAll('input')) }, disabled: $root.isResetButtonDisabled($($element).prevAll('input')), icons: {primary: 'fa fa-eraser'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
   `;
 }
 
@@ -52,6 +52,14 @@ module.exports = (opts) => {
     vm.resetBgimage = (propAccessor, parameters, blockProperties, event) => {
       blockProperties[propAccessor](transparentGif);
     };
+    vm.isResetButtonDisabled = (inputElement) => {
+      const inputValue = inputElement.val();
+      return inputValue === 'none' || inputValue === transparentGif;
+    };
+    vm.isPickButtonDisabled = (inputElement) => {
+      const inputValue = inputElement.val();
+      return inputValue !== 'none' && inputValue !== transparentGif;
+    };
     vm.openDialogGallery = (
       propAccessor,
       parameters,
@@ -76,6 +84,7 @@ module.exports = (opts) => {
   }
 
   return {
+    transparentGif,
     widget,
     viewModel,
   };
