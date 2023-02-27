@@ -72,10 +72,11 @@ module.exports = (opts) => {
     };
 
     vm.selectedBlock?.subscribe((currentBlock) => {
-      const newBgImage = currentBlock?.bgOptions()?.bgimage();
-      const hasImage = newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
-
-      vm.hasImage(hasImage);
+      if (currentBlock?.bgOptions && currentBlock?.bgOptions()?.bgimage) {
+        const newBgImage = currentBlock?.bgOptions()?.bgimage();
+        const hasImage = newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
+        vm.hasImage(hasImage);
+      }
     });
 
     const dialogGalleryOpen = vm.showDialogGallery.subscribe((newValue) => {
