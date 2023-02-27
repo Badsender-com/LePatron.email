@@ -86,5 +86,8 @@
   "Unexpected upload error": "Errore inaspettato durante il caricamento",
   "Unexpected error listing files": "Errore inaspettato caricando la lista dei file",
   "__current__ of __total__": "__current__ di __total__",
-  "Select from gallery": "Seleziona dalla galleria"
+  "Select from gallery": "Seleziona dalla galleria",
+  "Error message": "Errori rilevati:",
+  "Missing link label:": "Link mancante su:",
+  "Picture with no link": "Immagine senza collegamento"
 }

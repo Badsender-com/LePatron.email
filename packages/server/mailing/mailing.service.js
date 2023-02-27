@@ -25,6 +25,7 @@ const {
   getImageName,
   createCdnMarkdownNotice,
   createHtmlNotice,
+  getUrlWithTrackingParams,
 } = require('../utils/download-zip-markdown');
 
 const IMAGES_FOLDER = 'images';
@@ -298,11 +299,16 @@ async function processHtmlWithFTPOption({
     );
   }
 
+  const { html: htmlWithTracking } = handleTrackingData({
+    html,
+    tracking: mailing?._doc?.data?.tracking,
+  });
+
   const {
     relativesImagesNames,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
-    html,
+    html: htmlWithTracking,
     cdnDownload,
     regularDownload,
     prefix,
@@ -357,12 +363,17 @@ async function downloadZip({
 
   console.log('download zip', name);
 
+  const { html: htmlWithTracking } = handleTrackingData({
+    html,
+    tracking: mailing?._doc?.data?.tracking,
+  });
+
   const {
     relativesImagesNames,
     archive: processedImageArchive,
     html: relativeImagesHtml,
   } = await handleRelativeOrFtpImages({
-    html,
+    html: htmlWithTracking,
     cdnDownload,
     regularDownload,
     archive,
@@ -535,13 +546,18 @@ async function downloadMultipleZip({
       downloadOptions,
     });
 
+    const { html: htmlWithTracking } = handleTrackingData({
+      html: mailing.previewHtml,
+      tracking: mailing?._doc?.data?.tracking,
+    });
+
     const {
       relativesImagesNames,
       html: relativeImagesHtml,
     } = await handleRelativeOrFtpImages({
       cdnDownload,
       regularDownload,
-      html: mailing.previewHtml,
+      html: htmlWithTracking,
       archive,
       prefix,
       ftpServerParams,
@@ -584,9 +600,7 @@ async function getMailByMailingIdAndUser({ mailingId, user }) {
   const query = modelsUtils.addGroupFilter(user, { _id: mailingId });
   // mailing can come without group if created by the admin
   // • in order to retrieve the group, look at the wireframe
-  const mailing = await Mailings.findOne(query)
-    .select({ data: 0 })
-    .populate('_wireframe');
+  const mailing = await Mailings.findOne(query).populate('_wireframe');
   if (!mailing) throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
   return mailing;
 }
@@ -883,6 +897,18 @@ async function handleRelativeOrFtpImages({
   }
 
   return { relativesImagesNames, archive, html };
+}
+
+// This will add tracking information in links
+function handleTrackingData({ html, tracking }) {
+  const linksRegex = /(.*<a.*)(https?:\S+)(".*)/g;
+
+  const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
+    const urlWithTrackingParams = getUrlWithTrackingParams(p2, tracking);
+    return `${p1}${urlWithTrackingParams}${p3}`;
+  });
+
+  return { html: htmlWithTracking };
 }
 
 async function copyMailing(mailingId, destination, user) {

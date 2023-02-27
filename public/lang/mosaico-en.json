@@ -88,5 +88,10 @@
   "Unexpected upload error": "Unexpected upload error",
   "Unexpected error listing files": "Unexpected error listing files",
   "__current__ of __total__": "__current__ of __total__",
-  "Select from gallery": "Select from gallery"
+  "Select from gallery": "Select from gallery",
+  "Your email was successfully exported": "Your email was successfully exported",
+  "We noticed some missing details while executing quality controls:": "We noticed some missing details while executing quality controls:",
+  "Missing link label:": "Missing link on:",
+  "Missing background image": "Missing background image",
+  "Picture with no link": "Picture with no link"
 }
