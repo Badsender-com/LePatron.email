@@ -44,6 +44,14 @@ module.exports = (opts) => {
     vm.currentBgimage = ko.observable(false);
     vm.hasImage = ko.observable(false);
 
+    const currentBlock = vm.selectedBlock();
+
+    if (currentBlock?.bgOptions && currentBlock?.bgOptions()?.bgimage) {
+      const newBgImage = currentBlock?.bgOptions()?.bgimage();
+      const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
+      vm.hasImage(hasImage);
+    }
+
     vm.setBgImage = (imageName, img, event) => {
       // images have to be on an absolute path
       // => Testing by email needs it that way
@@ -74,7 +82,7 @@ module.exports = (opts) => {
     vm.selectedBlock?.subscribe((currentBlock) => {
       if (currentBlock?.bgOptions && currentBlock?.bgOptions()?.bgimage) {
         const newBgImage = currentBlock?.bgOptions()?.bgimage();
-        const hasImage = newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
+        const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
         vm.hasImage(hasImage);
       }
     });
