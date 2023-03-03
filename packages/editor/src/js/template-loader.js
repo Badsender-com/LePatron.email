@@ -285,6 +285,8 @@ var templateCompiler = function (
 ) {
   const tracking = jsorjson.tracking;
 
+  delete jsorjson.tracking;
+
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
   var res = templatecode.match(
