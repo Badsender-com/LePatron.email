@@ -29,19 +29,32 @@ function getErrorsForControlQuality(viewModel) {
   const extraItems = [];
   const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
     .filter(block => {
-      if (block()?.bgOptions) {
+      if (block()?.bgOptions &&
+          block()?.bgOptions()?.outlookBgImageVisible &&
+          block()?.bgOptions()?.outlookBgImage
+        ) {
         if (block()?.bgOptions()?.outlookBgImageVisible()) {
           const hasAlert = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasAlert) {
             return true;
           }
         }
+      }
+      if (block()?.bgOptions &&
+          block()?.bgOptions()?.mobileBgImageChoice &&
+          block()?.bgOptions()?.mobileBgimage
+        ) {
         if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
           const hasAlert = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasAlert) {
             return true;
           }
         }
+      }
+      if (block()?.bgOptions &&
+          block()?.bgOptions()?.bgImageChoice &&
+          block()?.bgOptions()?.bgimage
+        ) {
         if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
           const hasAlert = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasAlert) {
@@ -54,19 +67,19 @@ function getErrorsForControlQuality(viewModel) {
     })
     .map(block => {
       if (block()?.bgOptions) {
-        if (block()?.bgOptions()?.outlookBgImageVisible()) {
+        if (block()?.bgOptions()?.outlookBgImageVisible && block()?.bgOptions()?.outlookBgImageVisible()) {
           const hasToAddNewItem = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), 'Outlook', viewModel.t('Missing background image')));
           }
         }
-        if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
+        if (block()?.bgOptions()?.mobileBgImageChoice && block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
           const hasToAddNewItem = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
           }
         }
-        if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
+        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom') {
           const hasToAddNewItem = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
