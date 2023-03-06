@@ -18,26 +18,72 @@ function formatBlockName(blockName) {
   return _.startCase(blockName.replace('Block', ''))
 }
 
+function getAlertText(blockName, type, missingText) {
+  return `Block ${blockName} ${type} - ${missingText}`
+}
+
 // return missing required errors if needed
 function getErrorsForControlQuality(viewModel) {
   const htmlToExport = viewModel.exportHTML()
   const parsedHtml = $.parseHTML(htmlToExport);
+  const extraItems = [];
   const itemsForBackgroundImage = viewModel?.content()?.mainBlocks()?.blocks()
     .filter(block => {
-      if (block()?.bgOptions && block()?.bgOptions()?.bgimage) {
-        return block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+      if (block()?.bgOptions) {
+        if (block()?.bgOptions()?.outlookBgImageVisible()) {
+          const hasAlert = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasAlert) {
+            return true;
+          }
+        }
+        if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
+          const hasAlert = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasAlert) {
+            return true;
+          }
+        }
+        if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
+          const hasAlert = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasAlert) {
+            return true;
+          }
+        }
       }
 
       return false;
     })
-    .map(block => `Block ${formatBlockName(block().type())} - ${viewModel.t('Missing background image')}`);
+    .map(block => {
+      if (block()?.bgOptions) {
+        if (block()?.bgOptions()?.outlookBgImageVisible()) {
+          const hasToAddNewItem = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasToAddNewItem) {
+            extraItems.push(getAlertText(formatBlockName(block().type()), 'Outlook', viewModel.t('Missing background image')));
+          }
+        }
+        if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
+          const hasToAddNewItem = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasToAddNewItem) {
+            extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
+          }
+        }
+        if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
+          const hasToAddNewItem = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          if (hasToAddNewItem) {
+            extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
+          }
+        }
+        return null;
+      }
+      return newItem;
+    })
+    .filter(block => block && block !== null);
 
   const itemsForLinks = $(parsedHtml)
     .find('a[href="#toreplace"]')
     .toArray()
     .map(e => `${e.textContent?.trim() ? `${viewModel.t('Missing link label:')} ${e.textContent?.trim()}` : viewModel.t('Picture with no link')}`);
 
-  return itemsForBackgroundImage.concat(itemsForLinks);
+  return itemsForBackgroundImage.concat(itemsForLinks).concat(extraItems);
 }
 
 function displayErrors (errors, viewModel) {

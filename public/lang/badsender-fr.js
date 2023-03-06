@@ -29,7 +29,7 @@ module.exports = {
     "Une erreur est survenue lors de la suppression de l'image :(",
 
   // bgimage widget
-  'widget-bgimage-button': 'Choisissez une image',
+  'widget-bgimage-button': 'Ajouter une image',
   'widget-bgimage-reset': "Enlever l'image",
 
   // prevent i18n console.warn
