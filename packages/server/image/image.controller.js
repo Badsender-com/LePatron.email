@@ -318,8 +318,8 @@ function cover(req, res, next) {
   return handleGifStream(req, res, next, gifProcessor);
 }
 
-const bgColor = '#666666';
-const textColor = '#FFFFFF';
+const bgColor = '#D3D3D3';
+const textColor = '#000000';
 function generatePlaceholderSVG(width, height) {
   // centering text in SVG
   // http://stackoverflow.com/questions/5546346/how-to-place-and-center-text-in-an-svg-rectangle#answer-31522006
