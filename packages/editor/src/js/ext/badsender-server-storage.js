@@ -22,6 +22,12 @@ function getAlertText(blockName, type, missingText) {
   return `Block ${blockName} ${type} - ${missingText}`
 }
 
+function isElementEmpty(element) {
+  const imageEmpty = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+  const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
+  return element === null || element === '' || element === 'none' || element === imageEmpty || element === pngEmpty;
+}
+
 // return missing required errors if needed
 function getErrorsForControlQuality(viewModel) {
   const htmlToExport = viewModel.exportHTML()
@@ -34,7 +40,7 @@ function getErrorsForControlQuality(viewModel) {
           block()?.bgOptions()?.outlookBgImage
         ) {
         if (block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasAlert = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasAlert = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
           if (hasAlert) {
             return true;
           }
@@ -45,7 +51,7 @@ function getErrorsForControlQuality(viewModel) {
           block()?.bgOptions()?.mobileBgimage
         ) {
         if (block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasAlert = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasAlert = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
           if (hasAlert) {
             return true;
           }
@@ -56,7 +62,7 @@ function getErrorsForControlQuality(viewModel) {
           block()?.bgOptions()?.bgimage
         ) {
         if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
-          const hasAlert = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasAlert = isElementEmpty(block()?.bgOptions()?.bgimage());
           if (hasAlert) {
             return true;
           }
@@ -68,19 +74,19 @@ function getErrorsForControlQuality(viewModel) {
     .map(block => {
       if (block()?.bgOptions) {
         if (block()?.bgOptions()?.outlookBgImageVisible && block()?.bgOptions()?.outlookBgImageVisible()) {
-          const hasToAddNewItem = block()?.bgOptions()?.outlookBgImage() === null || block()?.bgOptions()?.outlookBgImage() === '' || block()?.bgOptions()?.outlookBgImage() === 'none' || block()?.bgOptions()?.outlookBgImage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.outlookBgImage());
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), 'Outlook', viewModel.t('Missing background image')));
           }
         }
         if (block()?.bgOptions()?.mobileBgImageChoice && block()?.bgOptions()?.mobileBgImageChoice() === 'mobile') {
-          const hasToAddNewItem = block()?.bgOptions()?.mobileBgimage() === null || block()?.bgOptions()?.mobileBgimage() === '' || block()?.bgOptions()?.mobileBgimage() === 'none' || block()?.bgOptions()?.mobileBgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.mobileBgimage());
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
           }
         }
         if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom') {
-          const hasToAddNewItem = block()?.bgOptions()?.bgimage() === null || block()?.bgOptions()?.bgimage() === '' || block()?.bgOptions()?.bgimage() === 'none' || block()?.bgOptions()?.bgimage() === 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+          const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.bgimage());
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
           }

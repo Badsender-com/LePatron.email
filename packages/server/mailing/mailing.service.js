@@ -901,7 +901,7 @@ async function handleRelativeOrFtpImages({
 
 // This will add tracking information in links
 function handleTrackingData({ html, tracking }) {
-  const linksRegex = /(<a .*?) *(https?:\S+)(".*)/g;
+  const linksRegex = /(<a .*?) *(https?:\S+)(")/g;
 
   const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
     const urlWithTrackingParams = getUrlWithTrackingParams(p2, tracking);
