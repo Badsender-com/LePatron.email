@@ -17,6 +17,7 @@ const defaultParameters = Object.freeze({
   // size: `100x100`,
 });
 const transparentGif = `data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==`;
+const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
 
 const isValidSize = (size) => /(\d+)x(\d+)/.test(size.trim());
 
@@ -58,7 +59,7 @@ module.exports = (opts) => {
         }
 
         const newBgImage = currentBlock?.bgOptions()[prop]();
-        const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif;
+        const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif && newBgImage !== pngEmpty;
         return hasImage;
       }
     };
