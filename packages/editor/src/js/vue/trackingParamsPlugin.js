@@ -35,10 +35,20 @@ module.exports = {
           plusIconButton: {
             background: 'none',
             border: 0,
-            fontSize: '1rem',
           },
           plusIcon: {
             color: 'black',
+          },
+          needHelpText: {
+            fontStyle: 'italic',
+            fontWeight: 'normal',
+            fontSize: '.9em',
+            marginLeft: '5px',
+            textDecoration: 'underline',
+            color: 'black',
+          },
+          addParamText: {
+            marginLeft: '10px',
           }
         }
       }),
@@ -56,7 +66,13 @@ module.exports = {
           vm.content().tracking().hasGoogleAnalyticsUtm(!oldValue);
         },
         getGoogleAnalyticsButtonText() {
-          return `${this.hasGoogleAnalyticsUtm ? vm.t('remove') : vm.t('add')} Google Analytics UTM`;
+          return `${this.hasGoogleAnalyticsUtm ? vm.t('remove') : vm.t('Add')} Google Analytics UTM`;
+        },
+        getNeedHelpText() {
+          return vm.t('needHelpText');
+        },
+        getAddParamText() {
+          return vm.t('addParamText');
         },
         updateHasGoogleAnalyticsUtm(newHasGoogleAnalyticsUtm) {
           this.hasGoogleAnalyticsUtm = newHasGoogleAnalyticsUtm;
@@ -102,6 +118,7 @@ module.exports = {
         <div class="objEdit level1">
           <span class="objLabel level1">
             <span data-bind="text: $root.ut('template', 'Tracking')">Tracking</span>
+            <a href="https://www.lepatron.email/faq" target="_blank" :style="style.needHelpText">{{getNeedHelpText()}}</a>
           </span>
           <div v-for="(trackingUrl, index) in trackingUrls">
             <div class="propEditor" :style="style.mv1">
@@ -141,6 +158,7 @@ module.exports = {
               :style="[style.plusIconButton]"
             >
               <i :style="style.plusIcon" class="fa fa-plus" aria-hidden="true"></i>
+              <span :style="style.addParamText">{{getAddParamText()}}</span>
             </button>
           </div>
           <button
