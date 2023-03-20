@@ -93,5 +93,8 @@
   "We noticed some missing details while executing quality controls:": "Nous avons détecté quelques oublis lors du contrôle qualité",
   "Missing link label:": "Lien manquant sur:",
   "Missing background image": "Image de fond manquant",
-  "Picture with no link": "Image sans lien"
+  "Picture with no link": "Image sans lien",
+  "remove": "Supprimer",
+  "addParamText": "Ajouter un paramètre",
+  "needHelpText": "Besoin d'aide ?"
 }
