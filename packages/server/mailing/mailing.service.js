@@ -806,7 +806,7 @@ async function handleRelativeOrFtpImages({
   //   })
 
   const urlsRegexDataRaw = /data-raw/g;
-  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif)/g;
+  const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
 
   let splittedHtml = html.split('\n');
   if (!html.includes('\n')) {
