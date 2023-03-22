@@ -48,13 +48,13 @@ module.exports = (opts) => {
     vm.hasImageByProp = (prop) => {
       const currentBlock = vm.selectedBlock();
       if (currentBlock?.bgOptions && currentBlock?.bgOptions()?.bgimage) {
-        if (prop === 'outlookBgImage' && !currentBlock?.bgOptions()?.outlookBgImageVisible()) {
+        if (prop === 'outlookBgImage' && currentBlock?.bgOptions()?.outlookBgImageVisible && !currentBlock?.bgOptions()?.outlookBgImageVisible()) {
           return false;
         }
-        if (prop === 'mobileBgimage' && currentBlock?.bgOptions()?.mobileBgImageChoice() !== 'mobile') {
+        if (prop === 'mobileBgimage' && currentBlock?.bgOptions()?.mobileBgImageChoice && currentBlock?.bgOptions()?.mobileBgImageChoice() !== 'mobile') {
           return false;
         }
-        if (prop === 'bgimage' && currentBlock?.bgOptions()?.bgImageChoice() !== 'custom') {
+        if (prop === 'bgimage' && currentBlock?.bgOptions()?.bgImageChoice && currentBlock?.bgOptions()?.bgImageChoice() !== 'custom') {
           return false;
         }
 
