@@ -318,14 +318,24 @@ function cover(req, res, next) {
   return handleGifStream(req, res, next, gifProcessor);
 }
 
-const bgColor = '#D3D3D3';
-const textColor = '#000000';
+const stripeSize = 55;
+const lightStripe = '#808080';
+const darkStripe = '#707070';
+const textColor = '#B0B0B0';
 function generatePlaceholderSVG(width, height) {
   // centering text in SVG
   // http://stackoverflow.com/questions/5546346/how-to-place-and-center-text-in-an-svg-rectangle#answer-31522006
   return `<svg width="${width}" height="${height}">
-  <rect x="0" y="0" width="${width}" height="${height}" fill="${bgColor}" />
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="${textColor}" font-family="monospace" font-size="20">${width} x ${height}</text>
+    <defs>
+    <pattern id="pattern" width="${stripeSize}" height="1" patternUnits="userSpaceOnUse" patternTransform="rotate(-45 0 0)">
+      <line stroke="${lightStripe}" stroke-width="${stripeSize}px" y2="10"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${darkStripe}" />
+  <rect x="0" y="0" width="${width}" height="${height}" fill="url(#pattern)" />
+  <text x="50%" y="50%" alignment-baseline="middle" text-anchor="middle" fill="${textColor}" font-family="Verdana" font-size="20">
+    ${width} x ${height}
+  </text>
 </svg>`;
 }
 
