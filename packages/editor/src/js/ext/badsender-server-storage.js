@@ -58,10 +58,12 @@ function getErrorsForControlQuality(viewModel) {
         }
       }
       if (block()?.bgOptions &&
-          block()?.bgOptions()?.bgImageChoice &&
+          (block()?.bgOptions()?.bgImageChoice || block()?.bgOptions()?.bgImageVisible) &&
           block()?.bgOptions()?.bgimage
         ) {
-        if (block()?.bgOptions()?.bgImageChoice() === 'custom') {
+        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
+          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
+        ) {
           const hasAlert = isElementEmpty(block()?.bgOptions()?.bgimage());
           if (hasAlert) {
             return true;
@@ -85,7 +87,9 @@ function getErrorsForControlQuality(viewModel) {
             extraItems.push(getAlertText(formatBlockName(block().type()), 'Mobile', viewModel.t('Missing background image')));
           }
         }
-        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom') {
+        if (block()?.bgOptions()?.bgImageChoice && block()?.bgOptions()?.bgImageChoice() === 'custom' ||
+          block()?.bgOptions()?.bgImageVisible && block()?.bgOptions()?.bgImageVisible()
+        ) {
           const hasToAddNewItem = isElementEmpty(block()?.bgOptions()?.bgimage());
           if (hasToAddNewItem) {
             extraItems.push(getAlertText(formatBlockName(block().type()), '', viewModel.t('Missing background image')));
