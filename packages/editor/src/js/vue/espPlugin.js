@@ -8,7 +8,7 @@ module.exports = {
   init(vm) {
     // Init VueJS component
 
-    Vue.component('AppVue', {
+    Vue.component('EspPlugin', {
       components: {
         EspComponent,
         TestModalComponent,
@@ -17,7 +17,7 @@ module.exports = {
         viewModel: vm,
       }),
       mounted() {
-      
+
       },
       template: `
         <div>

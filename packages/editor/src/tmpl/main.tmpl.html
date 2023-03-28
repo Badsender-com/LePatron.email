@@ -1,4 +1,5 @@
 <div id="page" style="display: none;" data-bind="visible: true, css: { withToolbox: $root.showToolbox, 'is-both-preview': isBothPreview, 'is-desktop-preview': isDesktopPreview, 'is-mobile-preview': isMobilePreview }">
+
   <div id="main-edit-area" data-bind="click: function(obj, evt) { $root.selectBlock(null); $root.bsEventsHub.windowClick(evt); return true; }, clickBubble: false">
     <!-- ko withProperties: { templateMode: 'wysiwyg', templateModeFallback: 'show' } -->
     <div id="main-wysiwyg-area" data-bind="wysiwygScrollfix: true, scrollable: true, fudroppable: { active: draggingImage }, css: { isdragging: dragging, isdraggingimg: draggingImage }, block: content"></div>
@@ -33,7 +34,7 @@
     <!-- /ko -->
     <!-- /ko -->
 
-    <!-- ko if: $root.debug -->cd docu  
+    <!-- ko if: $root.debug -->
     <a href="javascript:void(0)" data-bind="click: $root.export, clickBubble: false, button: { label: 'export', text: true }">EXPORT</a>
     <input type="checkbox" data-bind="checked: $root.debug" /> debug
     <a href="javascript:void(0)" data-bind="click: $root.loadDefaultBlocks, clickBubble: false, button: { icons: { primary: 'fa fa-fw fa-upload' }, label: 'Default', text: true }">LOAD BLOCKS</a>

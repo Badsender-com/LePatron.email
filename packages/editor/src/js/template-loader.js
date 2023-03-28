@@ -283,6 +283,10 @@ var templateCompiler = function (
   extensions,
   galleryUrl
 ) {
+  const tracking = jsorjson.tracking;
+
+  delete jsorjson.tracking;
+
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
   var res = templatecode.match(
@@ -478,6 +482,52 @@ var templateCompiler = function (
       galleryUrl
     )
   );
+
+  const trackingObs = ko.observable({});
+  const trackingUrlsObs = ko.observable([{ key: '', value: '' }]);
+  const hasGoogleAnalyticsUtmObs = ko.observable(null);
+  const utmSourceKeyObs = ko.observable("utm_source");
+  const utmSourceValueObs = ko.observable(null);
+  const utmMediumKeyObs = ko.observable("utm_medium");
+  const utmMediumValueObs = ko.observable(null);
+  const utmCampaignKeyObs = ko.observable("utm_campaign");
+  const utmCampaignValueObs = ko.observable(null);
+
+  viewModel.content({ ...viewModel.content(), tracking: trackingObs });
+  viewModel.content().tracking({
+    ...viewModel.content().tracking(),
+    hasGoogleAnalyticsUtm: hasGoogleAnalyticsUtmObs,
+    trackingUrls: trackingUrlsObs,
+    utmSourceKey: utmSourceKeyObs,
+    utmSourceValue: utmSourceValueObs,
+    utmMediumKey: utmMediumKeyObs,
+    utmMediumValue: utmMediumValueObs,
+    utmCampaignKey: utmCampaignKeyObs,
+    utmCampaignValue: utmCampaignValueObs,
+  });
+
+  if (tracking && tracking.hasGoogleAnalyticsUtm) {
+    viewModel.content().tracking().hasGoogleAnalyticsUtm(tracking.hasGoogleAnalyticsUtm);
+  }
+
+  if (tracking && tracking.trackingUrls) {
+    viewModel.content().tracking().trackingUrls(tracking.trackingUrls);
+  }
+
+  if (tracking && tracking.utmSourceKey && tracking.utmSourceValue) {
+    viewModel.content().tracking().utmSourceKey(tracking.utmSourceKey);
+    viewModel.content().tracking().utmSourceValue(tracking.utmSourceValue);
+  }
+
+  if (tracking && tracking.utmMediumKey && tracking.utmMediumValue) {
+    viewModel.content().tracking().utmMediumKey(tracking.utmMediumKey);
+    viewModel.content().tracking().utmMediumValue(tracking.utmMediumValue);
+  }
+
+  if (tracking && tracking.utmCampaignKey && tracking.utmCampaignValue) {
+    viewModel.content().tracking().utmCampaignKey(tracking.utmCampaignKey);
+    viewModel.content().tracking().utmCampaignValue(tracking.utmCampaignValue);
+  }
 
   viewModel.metadata = metadata;
   // let's run some version check on template and editor used to build the model being loaded.

@@ -17,14 +17,15 @@ const defaultParameters = Object.freeze({
   // size: `100x100`,
 });
 const transparentGif = `data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==`;
+const pngEmpty = 'https://live.lepatron.email/clarins/mastertemplate/bg.png';
 
 const isValidSize = (size) => /(\d+)x(\d+)/.test(size.trim());
 
 function html(propAccessor, onfocusbinding, parameters) {
   return `
-    <input size="7" type="hidden" value="nothing" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
-    <button data-bind="text: $root.t('widget-bgimage-button'), click: $root.openDialogGallery.bind($element, '${propAccessor}', '${parameters}');">pick an image</button>
-    <button data-bind="click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}'), button: {icons: {primary: 'fa fa-eraser'}, text: false, label: $root.t('widget-bgimage-reset') }"></button>
+    <input size="7" value="nothing" type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
+    <button data-bind=" button: { css: { disabledButton: $root.hasImageByProp('${propAccessor}') }, disabled: $root.hasImageByProp('${propAccessor}') }, text: $root.t('widget-bgimage-button'), click: function(element, evt) { $root.openDialogGallery('${propAccessor}', '${parameters}', element); }">pick an image</button>
+    <button data-bind="button: { css: { disabledButton: !$root.hasImageByProp('${propAccessor}') }, disabled: !$root.hasImageByProp('${propAccessor}'), icons: {primary: 'fa fa-eraser'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
   `;
 }
 
@@ -42,6 +43,26 @@ module.exports = (opts) => {
   function viewModel(vm) {
     vm.showDialogGallery = ko.observable(false);
     vm.currentBgimage = ko.observable(false);
+
+
+    vm.hasImageByProp = (prop) => {
+      const currentBlock = vm.selectedBlock();
+      if (currentBlock?.bgOptions && currentBlock?.bgOptions()?.bgimage) {
+        if (prop === 'outlookBgImage' && currentBlock?.bgOptions()?.outlookBgImageVisible && !currentBlock?.bgOptions()?.outlookBgImageVisible()) {
+          return false;
+        }
+        if (prop === 'mobileBgimage' && currentBlock?.bgOptions()?.mobileBgImageChoice && currentBlock?.bgOptions()?.mobileBgImageChoice() !== 'mobile') {
+          return false;
+        }
+        if (prop === 'bgimage' && currentBlock?.bgOptions()?.bgImageChoice && currentBlock?.bgOptions()?.bgImageChoice() !== 'custom') {
+          return false;
+        }
+
+        const newBgImage = currentBlock?.bgOptions()[prop]();
+        const hasImage = newBgImage !== null && newBgImage !== '' && newBgImage !== 'none' && newBgImage !== transparentGif && newBgImage !== pngEmpty;
+        return hasImage;
+      }
+    };
     vm.setBgImage = (imageName, img, event) => {
       // images have to be on an absolute path
       // => Testing by email needs it that way
@@ -76,6 +97,7 @@ module.exports = (opts) => {
   }
 
   return {
+    transparentGif,
     widget,
     viewModel,
   };
