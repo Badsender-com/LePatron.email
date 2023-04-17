@@ -76,7 +76,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
   let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
 
   if (tracking?.trackingUrls) {
-    for (const trackingUrl of tracking?.trackingUrls) {
+    for (const trackingUrl of tracking.trackingUrls) {
       const { key, value } = trackingUrl;
       if (key?.length > 0 && value?.length > 0) {
         if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
