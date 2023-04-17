@@ -112,7 +112,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
     }
   }
 
-  return encodeURI(`${link}${paramsToAdd.slice(0, -1)}`);
+  return `${link}${paramsToAdd.slice(0, -1)}`;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
