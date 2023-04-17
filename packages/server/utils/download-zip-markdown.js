@@ -33,6 +33,21 @@ function getImageName(imageUrl) {
   if (hasCoverPart) {
     fileName = fileName.concat(coverPart);
     splittedUrlName.splice(0, 1);
+  } else {
+    // eslint-disable-next-line node/no-deprecated-api
+    const splittedUrl = url
+      .parse(imageUrl)
+      .pathname.trim()
+      .split('/')
+      .filter((item) => !!item);
+
+    if (splittedUrl.length > 3) {
+      return `${splittedUrl[0]}-${splittedUrl[1]}-${splittedUrl[2]}-${
+        splittedUrl[splittedUrl.length - 1]
+      }`;
+    } else {
+      return `${splittedUrl[0]}-${splittedUrl[1]}-${splittedUrl[2]}`;
+    }
   }
 
   const sizePart =
