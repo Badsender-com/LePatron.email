@@ -488,6 +488,15 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       return decoded;
     });
 
+    content = content.replace(/&lt;#list.*&lt;\/#list&gt;/g, function (match) {
+      var elem = document.createElement('textarea');
+      elem.innerHTML = match;
+      var decoded = elem.value;
+      elem.remove();
+
+      return decoded;
+    });
+
     // We already replace style and http-equiv and we don't need this.
     // content = content.replace(/ replaced([^= ]*=)/gm, ' $1');
     // Restore conditional comments
