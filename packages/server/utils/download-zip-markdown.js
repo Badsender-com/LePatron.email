@@ -91,7 +91,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
   let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
 
   if (tracking?.trackingUrls) {
-    for (const trackingUrl of tracking?.trackingUrls) {
+    for (const trackingUrl of tracking.trackingUrls) {
       const { key, value } = trackingUrl;
       if (key?.length > 0 && value?.length > 0) {
         if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
@@ -127,7 +127,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
     }
   }
 
-  return encodeURI(`${link}${paramsToAdd.slice(0, -1)}`);
+  return `${link}${paramsToAdd.slice(0, -1)}`;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
