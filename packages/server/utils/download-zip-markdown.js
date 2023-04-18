@@ -33,6 +33,21 @@ function getImageName(imageUrl) {
   if (hasCoverPart) {
     fileName = fileName.concat(coverPart);
     splittedUrlName.splice(0, 1);
+  } else {
+    // eslint-disable-next-line node/no-deprecated-api
+    const splittedUrl = url
+      .parse(imageUrl)
+      .pathname.trim()
+      .split('/')
+      .filter((item) => !!item);
+
+    if (splittedUrl.length > 3) {
+      return `${splittedUrl[0]}-${splittedUrl[1]}-${splittedUrl[2]}-${
+        splittedUrl[splittedUrl.length - 1]
+      }`;
+    } else {
+      return `${splittedUrl[0]}-${splittedUrl[1]}-${splittedUrl[2]}`;
+    }
   }
 
   const sizePart =
@@ -76,7 +91,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
   let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
 
   if (tracking?.trackingUrls) {
-    for (const trackingUrl of tracking?.trackingUrls) {
+    for (const trackingUrl of tracking.trackingUrls) {
       const { key, value } = trackingUrl;
       if (key?.length > 0 && value?.length > 0) {
         if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
@@ -112,7 +127,7 @@ const getUrlWithTrackingParams = (link, tracking) => {
     }
   }
 
-  return encodeURI(`${link}${paramsToAdd.slice(0, -1)}`);
+  return `${link}${paramsToAdd.slice(0, -1)}`;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {

@@ -41,6 +41,7 @@ const selligentTagRegexp = /~([^~]+)~/g;
 const np6TagRegexp = /{{([^~]+)}}/g;
 const actitoTagRegexp = /\${(.+?)\}/g;
 const adobeTagRegexp = /<%(.+?)%>/g;
+const dscTagRegexp = /<#list(.+?)<\/#list>/g;
 
 const decodeTag = (match, tag, fun = (value) => value) => {
   let decodedTag = htmlEntities.decode(tag);
@@ -84,6 +85,13 @@ function decodeAdobeTags(html) {
   );
 }
 
+function decodeDscTags(html) {
+  return html.replace(
+    dscTagRegexp,
+    (match, tag) => `<#list${decodeTag(match, tag)}</#list>`
+  );
+}
+
 const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
@@ -91,7 +99,8 @@ const basicHtmlProcessing = _.flow(
   decodeSelligentTags,
   decodeNp6Tags,
   decodeActitoTags,
-  decodeAdobeTags
+  decodeAdobeTags,
+  decodeDscTags
 );
 
 module.exports = basicHtmlProcessing;
