@@ -20,47 +20,59 @@ function getImageName(imageUrl) {
   const splittedUrlName = formattedUrlName.split('-');
   let fileName = '';
 
-  splittedUrlName.splice(0, 2);
+  // Condition to check if image was upload by the user or if it's an image from template
+  if (splittedUrlName[0] === 'api') {
+    splittedUrlName.splice(0, 2);
 
-  if (splittedUrlName && splittedUrlName.length === 2) {
-    return splittedUrlName[1];
+    if (splittedUrlName && splittedUrlName.length === 2) {
+      return splittedUrlName[1];
+    }
+
+    const coverPart = splittedUrlName[0] || '';
+    const hasCoverPart = coverPart.includes('cover');
+
+    // Test if old file name contains a cover value
+    if (hasCoverPart) {
+      fileName = fileName.concat(coverPart);
+      splittedUrlName.splice(0, 1);
+    }
+
+    const sizePart =
+      (hasCoverPart ? splittedUrlName[1] : splittedUrlName[0]) || '';
+
+    // Test if old file name contains a size value
+    const isSizePart = sizePart.match(/\d{1,5}x/g);
+
+    if (isSizePart && isSizePart[0] !== undefined) {
+      fileName = fileName.concat('-', sizePart);
+      splittedUrlName.splice(0, 1);
+    }
+
+    const templateHashPart =
+      (coverPart && hasCoverPart ? splittedUrlName[2] : splittedUrlName[0]) ||
+      '';
+
+    // Test if old file name contains the hash of template to remove
+    const containsTemplateHash =
+      templateHashPart && templateHashPart.length > 14;
+
+    if (containsTemplateHash) {
+      splittedUrlName.splice(coverPart && hasCoverPart ? 1 : 2, 1);
+    }
+
+    // Add the hash of image
+    fileName = fileName.concat(
+      fileName.length > 0 ? '-' : '',
+      splittedUrlName.join('-')
+    );
+  } else {
+    fileName =
+      splittedUrlName.length > 1
+        ? splittedUrlName[splittedUrlName.length - 2] +
+          '-' +
+          splittedUrlName[splittedUrlName.length - 1]
+        : splittedUrlName[splittedUrlName.length - 1];
   }
-
-  const coverPart = splittedUrlName[0] || '';
-  const hasCoverPart = coverPart.includes('cover');
-
-  // Test if old file name contains a cover value
-  if (hasCoverPart) {
-    fileName = fileName.concat(coverPart);
-    splittedUrlName.splice(0, 1);
-  }
-
-  const sizePart =
-    (hasCoverPart ? splittedUrlName[1] : splittedUrlName[0]) || '';
-
-  // Test if old file name contains a size value
-  const isSizePart = sizePart.match(/\d{1,5}x/g);
-
-  if (isSizePart && isSizePart[0] !== undefined) {
-    fileName = fileName.concat('-', sizePart);
-    splittedUrlName.splice(0, 1);
-  }
-
-  const templateHashPart =
-    (coverPart && hasCoverPart ? splittedUrlName[2] : splittedUrlName[0]) || '';
-
-  // Test if old file name contains the hash of template to remove
-  const containsTemplateHash = templateHashPart && templateHashPart.length > 14;
-
-  if (containsTemplateHash) {
-    splittedUrlName.splice(coverPart && hasCoverPart ? 1 : 2, 1);
-  }
-
-  // Add the hash of image
-  fileName = fileName.concat(
-    fileName.length > 0 ? '-' : '',
-    splittedUrlName.join('-')
-  );
 
   return fileName;
 }
