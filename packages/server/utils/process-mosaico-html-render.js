@@ -38,7 +38,7 @@ function secureHtml(html) {
 //   due to date format %d%m%Y
 // • (FORMATDATETIME(GETDATE(),%20%27%d%m%Y%27))
 const selligentTagRegexp = /~([^~]+)~/g;
-const np6TagRegexp = /{{([^~]+)}}/g;
+const np6TagRegexp = /{{(.+?)}}/g;
 const actitoTagRegexp = /\${(.+?)\}/g;
 const adobeTagRegexp = /<%(.+?)%>/g;
 const dscTagRegexp = /<#list(.+?)<\/#list>/g;
