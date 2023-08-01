@@ -16,14 +16,19 @@ async function existsById(id) {
   return PersonalizedVariables.exists({ _id: mongoose.Types.ObjectId(id) });
 }
 
-async function deletePersonalizedVariable(id) {
-  const deleted = await PersonalizedVariables.deleteOne({ _id: id });
+async function deletePersonalizedVariable(variableId, groupId) {
+  const deleted = await PersonalizedVariables.deleteOne({ _id: variableId });
 
   if (deleted.deletedCount === 0) {
     throw new NotFound(ERROR_CODES.PERSONALIZED_VARIABLE_NOT_FOUND);
   }
 
-  logger.log('Deleted personalized variable:', id);
+  logger.log(
+    'Deleted personalized variable:',
+    variableId,
+    'from the group',
+    groupId
+  );
 }
 
 async function createOrUpdatePersonalizedVariables(variables, groupId) {
