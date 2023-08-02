@@ -12,10 +12,6 @@ module.exports = {
   getGroupPersonalizedVariables,
 };
 
-async function existsById(id) {
-  return PersonalizedVariables.exists({ _id: mongoose.Types.ObjectId(id) });
-}
-
 async function deletePersonalizedVariable(variableId, groupId) {
   const deleted = await PersonalizedVariables.deleteOne({ _id: variableId });
 
@@ -34,40 +30,39 @@ async function deletePersonalizedVariable(variableId, groupId) {
 async function createOrUpdatePersonalizedVariables(variables, groupId) {
   await Promise.all(
     variables.map(async (variable) => {
-      console.log({ variable });
-      if (await existsById(variable._id)) {
-        const { _id, ...otherProperties } = variable;
-        const updated = await PersonalizedVariables.updateOne(
-          { _id: mongoose.Types.ObjectId(_id) },
-          {
-            ...otherProperties,
-            _group: {
-              _id: groupId,
-            },
-          }
+      const { _id, ...otherProperties } = variable;
+
+      const options = {
+        new: true, // Returns the document after the update
+        upsert: true, // Creates the document if it doesn't exist
+        returnOriginal: false, // Equivalent to 'new: true', returns the document after the update
+      };
+
+      const replacement = {
+        ...otherProperties,
+        _group: {
+          _id: groupId,
+        },
+      };
+
+      const updatedOrCreated = await PersonalizedVariables.findOneAndReplace(
+        { _id: mongoose.Types.ObjectId(_id) },
+        replacement,
+        options
+      );
+
+      if (!updatedOrCreated) {
+        throw new BadRequest(
+          ERROR_CODES.PERSONALIZED_VARIABLE_UPDATE_OR_CREATION_FAILED
         );
-
-        if (updated.nModified === 0) {
-          throw new BadRequest(ERROR_CODES.PERSONALIZED_VARIABLE_UPDATE_FAILED);
-        }
-
-        logger.log('Updated personalized variable:', _id);
-      } else {
-        const createdVariable = await PersonalizedVariables.create({
-          ...variable,
-          _group: {
-            _id: groupId,
-          },
-        });
-
-        if (!createdVariable) {
-          throw new BadRequest(
-            ERROR_CODES.PERSONALIZED_VARIABLE_CREATION_FAILED
-          );
-        }
-
-        logger.log('Creating personalized variable:', variable);
       }
+
+      logger.log(
+        updatedOrCreated.updatedExisting
+          ? 'Updated personalized variable:'
+          : 'Created personalized variable:',
+        _id
+      );
     })
   );
 }
