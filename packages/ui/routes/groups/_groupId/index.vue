@@ -160,6 +160,9 @@ export default {
         <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
           {{ $tc('global.emailsGroups', 2) }}
         </v-tab>
+        <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
+          custom variable
+        </v-tab>
         <v-tab-item value="group-informations">
           <bs-group-form
             v-model="group"
