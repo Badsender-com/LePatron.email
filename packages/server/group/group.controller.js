@@ -336,7 +336,7 @@ async function update(req, res) {
 
 /**
  * @api {get} /groups/:groupId/personalized-variables get personalized variables for a group
- * @apiPermission admin or group user
+ * @apiPermission group-admin or group-user
  * @apiName GetPersonalizedVariables
  * @apiGroup Groups
  *

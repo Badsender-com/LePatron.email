@@ -51,7 +51,7 @@ async function createOrUpdatePersonalizedVariables(variables, groupId) {
           throw new BadRequest(ERROR_CODES.PERSONALIZED_VARIABLE_UPDATE_FAILED);
         }
 
-        logger.log('Updating personalized variable:', _id);
+        logger.log('Updated personalized variable:', _id);
       } else {
         const createdVariable = await PersonalizedVariables.create({
           ...variable,
