@@ -17,6 +17,7 @@ const OAuthClientsSchema = require('../account/oauth-clients.schema.js');
 const OAuthTokensSchema = require('../account/oauth-tokens.schema.js');
 const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
 const EmailsGroupSchema = require('../emails-group/emails-group.schema');
+const PersonalizedVariableSchema = require('../personalized-variables/personalized-variables.schema.js');
 const FolderSchema = require('../folder/folder.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 
@@ -32,6 +33,10 @@ const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
 const EmailsGroups = mongoose.model(
   modelNames.EmailsGroupModal,
   EmailsGroupSchema
+);
+const PersonalizedVariables = mongoose.model(
+  modelNames.PersonalizedVariablesModel,
+  PersonalizedVariableSchema
 );
 const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
 const Profiles = mongoose.model(modelNames.ProfileModel, ProfileSchema);
@@ -53,6 +58,7 @@ module.exports = {
   Users,
   Folders,
   EmailsGroups,
+  PersonalizedVariables,
   Workspaces,
   Templates,
   Mailings,
