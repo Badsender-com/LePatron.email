@@ -13,6 +13,7 @@ import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
+import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import BsGroupLoading from '~/components/loadingBar';
 
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -29,6 +30,7 @@ export default {
     BsGroupLoading,
     BsGroupProfilesTab,
     BsEmailsGroupsTab,
+    GroupPersonalizedVariableTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -160,7 +162,7 @@ export default {
         <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
           {{ $tc('global.emailsGroups', 2) }}
         </v-tab>
-        <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
+        <v-tab v-if="isGroupAdmin" href="#group-personalized-variables">
           custom variable
         </v-tab>
         <v-tab-item value="group-informations">
@@ -189,6 +191,9 @@ export default {
         </v-tab-item>
         <v-tab-item v-if="isGroupAdmin" value="group-emails-groups">
           <bs-emails-groups-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin" value="group-personalized-variables">
+          <group-personalized-variable-tab />
         </v-tab-item>
       </v-tabs>
       <bs-group-loading slot="placeholder" />
