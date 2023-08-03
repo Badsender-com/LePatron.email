@@ -50,27 +50,38 @@ export default {
       group: {},
       loading: false,
       intersectionObserver: null,
+      activeTab: 'informations',
     };
   },
   head() {
     return { title: this.title };
   },
+
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
-    tab() {
-      return this.$route.query.redirectTab
-        ? this.$route.query.redirectTab
-        : 'informations';
-    },
     title() {
       return `${this.$tc('global.settings', 1)} : ${this.$tc(
         'global.group',
         1
       )} ${this.group.name}`;
     },
+  },
+
+  watch: {
+    activeTab(newTab) {
+      // Replace the URL without causing a navigation or reload
+      this.$router.replace({
+        query: { ...this.$route.query, redirectTab: newTab },
+      });
+    },
+  },
+  created() {
+    if (this.$route.query.redirectTab) {
+      this.activeTab = this.$route.query.redirectTab;
+    }
   },
   mounted() {
     this.observeVisibility();
@@ -139,31 +150,58 @@ export default {
       <bs-group-menu />
     </template>
     <client-only>
-      <v-tabs ref="tabs" :value="`group-${tab}`" centered>
+      <v-tabs ref="tabs" :value="activeTab" centered>
         <v-tabs-slider color="accent" />
-        <v-tab href="#group-informations">
+        <v-tab
+          href="#group-informations"
+          @click="activeTab = 'group-informations'"
+        >
           {{ $t('groups.tabs.informations') }}
         </v-tab>
-        <v-tab v-if="isAdmin" href="#group-templates">
+        <v-tab
+          v-if="isAdmin"
+          href="#group-templates"
+          @click="activeTab = 'group-templates'"
+        >
           {{ $tc('global.template', 2) }}
         </v-tab>
-        <v-tab v-if="isGroupAdmin" href="#group-workspaces">
+        <v-tab
+          v-if="isGroupAdmin"
+          href="#group-workspaces"
+          @click="activeTab = 'group-workspaces'"
+        >
           {{ $tc('global.teams', 2) }}
         </v-tab>
-        <v-tab href="#group-users">
+        <v-tab href="#group-users" @click="activeTab = 'group-users'">
           {{ $tc('global.user', 2) }}
         </v-tab>
-        <v-tab v-if="isAdmin" href="#group-mailings">
+        <v-tab
+          v-if="isAdmin"
+          href="#group-mailings"
+          @click="activeTab = 'group-mailings'"
+        >
           {{ $tc('global.mailing', 2) }}
         </v-tab>
-        <v-tab v-if="isAdmin" href="#group-profile">
+        <v-tab
+          v-if="isAdmin"
+          href="#group-profile"
+          @click="activeTab = 'group-profile'"
+        >
           {{ $tc('global.profile', 2) }}
         </v-tab>
-        <v-tab v-if="isGroupAdmin" href="#group-emails-groups">
+        <v-tab
+          v-if="isGroupAdmin"
+          href="#group-emails-groups"
+          @click="activeTab = 'group-emails-groups'"
+        >
           {{ $tc('global.emailsGroups', 2) }}
         </v-tab>
-        <v-tab v-if="isGroupAdmin" href="#group-personalized-variables">
-          custom variable
+        <v-tab
+          v-if="isGroupAdmin"
+          href="#group-personalized-variables"
+          @click="activeTab = 'group-personalized-variables'"
+        >
+          {{ $t('global.personalizedVariables') }}
         </v-tab>
         <v-tab-item value="group-informations">
           <bs-group-form
