@@ -72,10 +72,12 @@ export default {
 
   watch: {
     activeTab(newTab) {
-      // Replace the URL without causing a navigation or reload
-      this.$router.replace({
-        query: { ...this.$route.query, redirectTab: newTab },
-      });
+      if (newTab !== this.$route.query.redirectTab) {
+        // Replace the URL without causing a navigation or reload
+        this.$router.replace({
+          query: { ...this.$route.query, redirectTab: newTab },
+        });
+      }
     },
   },
   created() {

@@ -151,11 +151,7 @@ export default {
           await this.$axios.post(postPersonalizedVariables(this.groupId), {
             personalizedVariables: variablesToSubmit,
           });
-          this.variables = this.variables.map((item) => ({
-            ...item,
-            status: 'saved',
-            deleting: false,
-          }));
+          this.getVariables();
           this.error = null;
           this.showSnackbar({
             text: this.$t('personalizedVariables.snackbars.updated'),
@@ -177,7 +173,7 @@ export default {
       if (this.variables[index].status === 'saved') {
         this.variables[index].status = 'modified';
       }
-      this.$v.variables.$each[index].$touch();
+      this.$v.variables.$each[index][key].$touch();
     },
     validationErrors(index, key) {
       const errors = [];
