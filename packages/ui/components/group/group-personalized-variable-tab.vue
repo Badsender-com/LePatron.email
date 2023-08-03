@@ -74,7 +74,7 @@ export default {
         label: '',
         variable: '',
         status: 'new',
-        _id: '',
+        _id: undefined,
         deleting: false,
       });
     },
@@ -140,20 +140,23 @@ export default {
 
 <template>
   <div class="bs-group-personalized-variable-tab">
-    {{ console().log($v.variables.$each) }}
+    {{ console().log(variables) }}
     <v-data-table
       :headers="tableHeaders"
       :items="variables"
       :loading="loading"
       :hide-default-footer="true"
+      class="custom_table_class"
     >
       <template #item.status="{ item }">
-        <v-icon v-if="item.status === 'new'" small>
-          mdi-alert-outline
-        </v-icon>
-        <v-icon v-else-if="item.status === 'modified'" small>
-          mdi-pencil-outline
-        </v-icon>
+        <div>
+          <v-icon v-if="item.status === 'new'" small>
+            mdi-alert-outline
+          </v-icon>
+          <v-icon v-else-if="item.status === 'modified'" small>
+            mdi-pencil-outline
+          </v-icon>
+        </div>
       </template>
       <template #item.label="{ item, index }">
         <v-text-field
@@ -197,3 +200,15 @@ export default {
     </v-alert>
   </div>
 </template>
+
+<style>
+.custom_table_class tbody tr td {
+  border: none !important;
+}
+.custom_table_class thead th:first-child {
+  border-radius: 6px 0 0 0;
+}
+.custom_table_class thead th:lsat-child {
+  border-radius: 0 6px 0 0;
+}
+</style>
