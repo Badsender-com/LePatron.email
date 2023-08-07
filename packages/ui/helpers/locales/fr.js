@@ -21,7 +21,8 @@ export default {
       senderNameRequired: 'Veuillez saisir un nom d\'expéditeur',
       senderMailRequired: 'Veuillez saisir l\'adresse email de l\'expéditeur',
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec le même nom existe déjà',
-      FORBIDDEN_WORKSPACE_CREATION: 'Vous n\'avez pas les droits pour créer ce workspace',
+      FORBIDDEN_WORKSPACE_CREATION:
+        'Vous n\'avez pas les droits pour créer ce workspace',
       emailsGroupExist: 'Ce nom de liste de test est déjà utilisé',
       password: {
         error: {
@@ -109,6 +110,7 @@ export default {
     edit: 'Modifier',
     move: 'Déplacer',
     emailsGroups: 'Listes de test',
+    personalizedVariables: 'Variables personnalisées',
     emailsGroupsEmpty: 'Aucune liste de test disponible',
     continue: 'Continuer',
     downloadFtp: 'Télécharger FTP',
@@ -127,7 +129,7 @@ export default {
       },
       color: {
         label: 'Couleurs personnalisées',
-       },
+      },
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
       },
@@ -151,7 +153,8 @@ export default {
       editorLabel: 'Libellé du bouton',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
-      userHasAccessToAllWorkspaces: 'Donner accès à tous les workspaces aux utilisateurs standards',
+      userHasAccessToAllWorkspaces:
+        'Donner accès à tous les workspaces aux utilisateurs standards',
     },
     template: {
       meta: 'Meta',
@@ -191,14 +194,17 @@ export default {
         },
         emails: {
           required: 'Veuillez saisir au moins une adresse email',
-          emailsValid: 'Il semblerait qu\'il y ait des adresses emails non valides',
+          emailsValid:
+            'Il semblerait qu\'il y ait des adresses emails non valides',
         },
       },
-      deleteNotice: 'Vous êtes sur le point de supprimer cette liste de test. Cette action est irréversible.',
+      deleteNotice:
+        'Vous êtes sur le point de supprimer cette liste de test. Cette action est irréversible.',
       deleteSuccess: 'La liste de test a bien été supprimé',
     },
     workspace: {
-      checkBoxError: 'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
+      checkBoxError:
+        'Je comprends que les emails et les dossiers contenus dans le workspace seront aussi supprimés',
       inputError: 'Veuillez saisir un nom',
       inputMaxLength: 'Le nom ne doit pas dépasser 70 caractères',
       moveFolderConfirmationMessage: 'Veuillez choisir la destination',
@@ -220,23 +226,30 @@ export default {
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',
-      deleteWarningMessage: 'Vous êtes sur le point de supprimer l\'email : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer l\'email : <strong>{name}</strong>.<br/>Cette action est irréversible.',
       deleteSuccessful: 'L\'email a bien été supprimé',
-      deleteFolderWarning: 'Vous êtes sur le point de supprimer le dossier : <strong>{name}</strong>.<br/>Cette action est irréversible.',
-      deleteFolderNotice: 'Les emails et dossiers contenus dans ce dossier seront également supprimés.',
+      deleteFolderWarning:
+        'Vous êtes sur le point de supprimer le dossier : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+      deleteFolderNotice:
+        'Les emails et dossiers contenus dans ce dossier seront également supprimés.',
       deleteFolderSuccessful: 'Le dossier a bien été supprimé',
     },
     workspaceTab: {
       confirmationField: 'Veuillez saisir le nom du workspace pour confirmer',
-      deleteWarningMessage: 'Vous êtes sur le point de supprimer le workspace : <strong>{name}</strong>.<br/>Cette action est irréversible.',
-      deleteNotice: 'Les emails et dossiers contenus dans ce workspace seront également supprimés.',
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer le workspace : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+      deleteNotice:
+        'Les emails et dossiers contenus dans ce workspace seront également supprimés.',
       deleteSuccessful: 'Le workspace a bien été supprimé',
     },
     delete: {
-      'deleteWarningMessage': 'Vous êtes sur le point de supprimer le groupe : <strong>{name}</strong>.<br/>Cette action est irréversible.',
-      'confirmationField': 'Tapez le nom du groupe pour confirmer',
-      'deleteNotice': 'Les administrateurs, utilisteurs, templates, workspaces, répertoires, emails et groupes de testes seront supprimés aussi',
-      'successful': 'Le groupe a bien été supprimé'
+      deleteWarningMessage:
+        'Vous êtes sur le point de supprimer le groupe : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+      confirmationField: 'Tapez le nom du groupe pour confirmer',
+      deleteNotice:
+        'Les administrateurs, utilisteurs, templates, workspaces, répertoires, emails et groupes de testes seront supprimés aussi',
+      successful: 'Le groupe a bien été supprimé',
     },
   },
   mailings: {
@@ -244,7 +257,8 @@ export default {
       label: 'Transférer l\'email',
       success: 'L\'email a bien été transféré',
     },
-    creationNotice: 'Veuillez choisir un template afin de créer un nouvel email',
+    creationNotice:
+      'Veuillez choisir un template afin de créer un nouvel email',
     list: 'Rechercher dans la liste d\'emails',
     filters: {
       createdBetween: 'Créé entre le',
@@ -252,12 +266,16 @@ export default {
       and: 'et le',
     },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
-    deleteConfirmationMessage: 'Vous êtes sur le point de supprimer l\'ensemble des emails sélectionnés.<br/>Cette action est irréversible.',
+    deleteConfirmationMessage:
+      'Vous êtes sur le point de supprimer l\'ensemble des emails sélectionnés.<br/>Cette action est irréversible.',
     duplicate: 'Dupliquer l\'email',
-    duplicateNotice: 'Êtes-vous sûr de vouloir dupliquer l\'email : <strong>{name}</strong> ?',
+    duplicateNotice:
+      'Êtes-vous sûr de vouloir dupliquer l\'email : <strong>{name}</strong> ?',
     name: 'Nom de l\'email',
-    downloadManyMailsWithoutPreview: 'Cette liste d\'emails ne contient pas de prévisualisation, ils ne pourront pas tous être téléchargés. Voulez vous continuer quand même ?',
-    downloadSingleMailWithoutPreview: 'Impossible de télécharger un email sans aperçu. Veuillez ouvrir l\'email dans l\'éditeur pour en générer un.',
+    downloadManyMailsWithoutPreview:
+      'Cette liste d\'emails ne contient pas de prévisualisation, ils ne pourront pas tous être téléchargés. Voulez vous continuer quand même ?',
+    downloadSingleMailWithoutPreview:
+      'Impossible de télécharger un email sans aperçu. Veuillez ouvrir l\'email dans l\'éditeur pour en générer un.',
     errorPreview: 'Pas d’aperçu disponible pour cet email',
     subErrorPreview: 'L\'aperçu sera généré lors de l\'ouverture dans l\'éditeur',
     rename: 'Renommer l\'email',
@@ -265,7 +283,8 @@ export default {
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
     downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
-    downloadFtpCount: 'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
+    downloadFtpCount:
+      'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement :',
     copyMailConfirmationMessage: 'Veuillez choisir l\'emplacement de la copie :',
@@ -285,7 +304,8 @@ export default {
     preview: 'Prévisualiser le template',
     removeImages: 'Supprimer toutes les images',
     imagesRemoved: 'Les images ont bien été supprimées',
-    deleteNotice: 'Supprimer un template supprimera aussi tout les emails utilisant ce template',
+    deleteNotice:
+      'Supprimer un template supprimera aussi tout les emails utilisant ce template',
   },
   tags: {
     list: 'Liste des labels',
@@ -333,8 +353,10 @@ export default {
     delete: 'Supprimer',
     contentSendType: 'Le type du contenu',
     emptyState: 'Aucun profil disponible',
-    warningNoFTP: 'Vous ne pouvez pas ajouter de profil sans avoir configuré un serveur FTP au préalable.',
-    deleteWarningMessage: 'Vous êtes sur le point de supprimer le profil : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+    warningNoFTP:
+      'Vous ne pouvez pas ajouter de profil sans avoir configuré un serveur FTP au préalable.',
+    deleteWarningMessage:
+      'Vous êtes sur le point de supprimer le profil : <strong>{name}</strong>.<br/>Cette action est irréversible.',
   },
   folders: {
     name: 'Nom du dossier',
@@ -364,5 +386,22 @@ export default {
       transfer: 'Transférer',
     },
   },
-
+  personalizedVariables: {
+    status: 'Statut',
+    label: 'Libellé',
+    variable: 'Variable',
+    actions: 'Actions',
+    addRow: 'Ajouter une ligne',
+    save: 'Enregistrer',
+    delete: 'Supprimer',
+    deleteNotice: 'Êtes-vous sûr de vouloir supprimer cette variable?',
+    validation: {
+      required: 'Ce champ est requis.',
+    },
+    snackbars: {
+      deleted: 'Variable personnalisée supprimée avec succès.',
+      updated: 'Variables personnalisées mises à jour avec succès.',
+      error: 'Une erreur s\'est produite. Veuillez réessayer.',
+    },
+  },
 };

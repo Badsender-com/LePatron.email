@@ -238,3 +238,19 @@ export function getEmailsGroups() {
 export function getEmailsGroup(emailsGroupId) {
   return `/emails-groups/${emailsGroupId}`;
 }
+
+/// ///
+// Personalized Variables
+/// ///
+
+export function getPersonalizedVariables(groupId) {
+  return `/groups/${groupId}/personalized-variables`;
+}
+
+export function deletePersonalizedVariable(groupId, variableId) {
+  return `/groups/${groupId}/personalized-variables/${variableId}`;
+}
+
+export function postPersonalizedVariables(groupId) {
+  return `/groups/${groupId}/personalized-variables`;
+}
