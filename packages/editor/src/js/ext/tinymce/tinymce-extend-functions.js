@@ -174,18 +174,20 @@ function specialcharacters(editor) {
 
 function personalizedVariables(editor, viewModel) {
   const variables = viewModel.personalizedVariables || [];
-  const menuItems = variables.map(({ variable }) => ({
-    value: variable,
-    text: variable,
-    onclick: function () {
-      editor.insertContent(variable);
-    },
-  }));
-  editor.addButton('variables', {
-    type: 'menubutton',
-    text: 'Variables',
-    menu: menuItems,
-  });
+  if (variables.length) {
+    const menuItems = variables.map(({ variable }) => ({
+      value: variable,
+      text: variable,
+      onclick: function () {
+        editor.insertContent(variable);
+      },
+    }));
+    editor.addButton('variables', {
+      type: 'menubutton',
+      text: 'Variables',
+      menu: menuItems,
+    });
+  }
 }
 
 module.exports = {
