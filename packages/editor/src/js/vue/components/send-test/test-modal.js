@@ -50,6 +50,7 @@ const TestModalComponent = Vue.component('TestModal', {
     openModal() {
       this.$refs.modalRef?.openModal();
     },
+    
     closeModal() {
       this.inputEmailsTest = '';
       this.selectedEmailGroup = null;
