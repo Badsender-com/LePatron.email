@@ -21,7 +21,8 @@ export default {
       senderNameRequired: 'A Sender name is Required',
       senderMailRequired: 'A Sender email is Required',
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
-      FORBIDDEN_WORKSPACE_CREATION: 'You don\'t have the rights to create this workspace',
+      FORBIDDEN_WORKSPACE_CREATION:
+        'You don\'t have the rights to create this workspace',
       emailsGroupExist: 'The name of this test list already exist',
       password: {
         error: {
@@ -109,6 +110,7 @@ export default {
     edit: 'Edit',
     move: 'Move',
     emailsGroups: 'Test lists',
+    personalizedVariables: 'Personalized variables',
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
     downloadFtp: 'Download FTP',
@@ -127,7 +129,7 @@ export default {
       },
       color: {
         label: 'Custom color',
-       },
+      },
       defaultWorkspace: {
         label: 'Default workspace\'s name',
       },
@@ -151,7 +153,8 @@ export default {
       editorLabel: 'Button label',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
-      userHasAccessToAllWorkspaces: 'Give access to all workspaces to regular users',
+      userHasAccessToAllWorkspaces:
+        'Give access to all workspaces to regular users',
     },
     template: {
       meta: 'Meta',
@@ -194,11 +197,13 @@ export default {
           emailsValid: 'There are invalid email addresses',
         },
       },
-      deleteNotice: 'You are about to delete the test list. This action can\'t be undone.',
+      deleteNotice:
+        'You are about to delete the test list. This action can\'t be undone.',
       deleteSuccess: 'Test list deleted',
     },
     workspace: {
-      checkBoxError: 'I understand that workspace\'s emails and folders will be removed too',
+      checkBoxError:
+        'I understand that workspace\'s emails and folders will be removed too',
       inputError: 'The name is required',
       inputMaxLength: 'Name must not exceed 70 characters',
       moveFolderConfirmationMessage: 'Please choose the destination',
@@ -220,24 +225,31 @@ export default {
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',
-      deleteWarningMessage: 'You are about to delete the email: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+      deleteWarningMessage:
+        'You are about to delete the email: <strong>{name}</strong>.<br/>This action can\'t be undone.',
       deleteSuccessful: 'Email deleted',
-      deleteFolderWarning: 'You are about to delete the folder: <strong>{name}</strong> folder.<br/>This action can\'t be undone.',
-      deleteFolderNotice: 'Emails and folders contained in this folder will also be deleted',
+      deleteFolderWarning:
+        'You are about to delete the folder: <strong>{name}</strong> folder.<br/>This action can\'t be undone.',
+      deleteFolderNotice:
+        'Emails and folders contained in this folder will also be deleted',
       deleteFolderSuccessful: 'Folder deleted',
     },
     workspaceTab: {
       confirmationField: 'Type the workspace name to confirm',
-      deleteNotice: 'Emails and folders contained in the workspace will also be deleted',
-      deleteWarningMessage: 'You are about to delete the workspace: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+      deleteNotice:
+        'Emails and folders contained in the workspace will also be deleted',
+      deleteWarningMessage:
+        'You are about to delete the workspace: <strong>{name}</strong>.<br/>This action can\'t be undone.',
       deleteSuccessful: 'Workspace deleted',
     },
     delete: {
-      'deleteWarningMessage': 'You are about to delete the group: <strong>{name}</strong>.<br/>This action can\'t be undone.',
-      'confirmationField': 'Type the group name to confirm',
-      'deleteNotice': 'Administrators, users, templates, workspaces, folders, emails and emails test groups will also be deleted',
-      'successful': 'Group deleted',
-    }
+      deleteWarningMessage:
+        'You are about to delete the group: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+      confirmationField: 'Type the group name to confirm',
+      deleteNotice:
+        'Administrators, users, templates, workspaces, folders, emails and emails test groups will also be deleted',
+      successful: 'Group deleted',
+    },
   },
   mailings: {
     transfer: {
@@ -252,20 +264,25 @@ export default {
       and: 'and',
     },
     deleteManySuccessful: 'Emails deleted',
-    deleteConfirmationMessage: 'You are about to delete all the selected emails.<br/>This action can\'t be undone.',
-    downloadManyMailsWithoutPreview: 'This email list does not contain previews so they will not be downloaded. Do you want to continue anyway?',
-    downloadSingleMailWithoutPreview: 'Cannot download an email without a preview. Please open the email at least once to generate one.',  
+    deleteConfirmationMessage:
+      'You are about to delete all the selected emails.<br/>This action can\'t be undone.',
+    downloadManyMailsWithoutPreview:
+      'This email list does not contain previews so they will not be downloaded. Do you want to continue anyway?',
+    downloadSingleMailWithoutPreview:
+      'Cannot download an email without a preview. Please open the email at least once to generate one.',
     duplicate: 'Duplicate email',
     duplicateNotice: 'Are you sure to duplicate: <strong>{name}</strong> ?',
     name: 'Email name',
     errorPreview: 'No preview available for this email',
-    subErrorPreview: 'A preview will be generated when opening the email editor',
+    subErrorPreview:
+      'A preview will be generated when opening the email editor',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
     downloadCount: 'Download {count} email | Download {count} emails',
-    downloadFtpCount: 'Download ftp {count} email | Download ftp {count} emails',
+    downloadFtpCount:
+      'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the copy:',
@@ -285,7 +302,8 @@ export default {
     preview: 'Download template',
     removeImages: 'Delete all images',
     imagesRemoved: 'Images deleted',
-    deleteNotice: 'Deleting a template will also remove every emails using this one',
+    deleteNotice:
+      'Deleting a template will also remove every emails using this one',
   },
   tags: {
     list: 'Tags\' list',
@@ -332,9 +350,11 @@ export default {
     edit: 'Edit',
     delete: 'Delete',
     contentSendType: 'The content type',
-    warningNoFTP: 'You cannot add profile without having configured FTP server.',
+    warningNoFTP:
+      'You cannot add profile without having configured FTP server.',
     emptyState: 'No profile available',
-    deleteWarningMessage: 'You are about to delete the profile: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+    deleteWarningMessage:
+      'You are about to delete the profile: <strong>{name}</strong>.<br/>This action can\'t be undone.',
   },
   folders: {
     name: 'Folder name',
@@ -364,5 +384,22 @@ export default {
       transfer: 'Transfer',
     },
   },
-
+  personalizedVariables: {
+    status: 'Status',
+    label: 'Label',
+    variable: 'Variable',
+    actions: 'Actions',
+    addRow: 'Add Row',
+    save: 'Save',
+    delete: 'Delete',
+    deleteNotice: 'Are you sure you want to delete this variable?',
+    validation: {
+      required: 'This field is required.',
+    },
+    snackbars: {
+      deleted: 'Personalized variable deleted successfully.',
+      updated: 'Personalized variables updated successfully.',
+      error: 'An error occurred. Please try again.',
+    },
+  },
 };

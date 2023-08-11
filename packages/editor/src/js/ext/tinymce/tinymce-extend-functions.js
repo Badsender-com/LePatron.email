@@ -1,7 +1,8 @@
 const debounce = require('lodash.debounce');
+const axios = require('axios');
 const { defaultFibonacciSpacing, each } = require('../utils/helper-functions');
 
- // Will be add to TinyMce PluginManager spacing
+// Will be add to TinyMce PluginManager spacing
 function addLetterSpacing(editor, url) {
   editor.addButton('letterspacingselect', function () {
     var formats = editor.settings.spacing_formats || defaultFibonacciSpacing;
@@ -146,7 +147,7 @@ function fontsizedialog(editor, url) {
 
 // Will be add to TinyMce PluginManager specialcharacters
 function specialcharacters(editor) {
-   editor.addButton('specialcharacters', function () {
+  editor.addButton('specialcharacters', function () {
     const items = [
       {
         text: 'Unbreakable space',
@@ -171,8 +172,27 @@ function specialcharacters(editor) {
   });
 }
 
+function personalizedVariables(editor, viewModel) {
+  const variables = viewModel.personalizedVariables || [];
+  if (variables.length) {
+    const menuItems = variables.map(({ variable }) => ({
+      value: variable,
+      text: variable,
+      onclick: function () {
+        editor.insertContent(variable);
+      },
+    }));
+    editor.addButton('variables', {
+      type: 'menubutton',
+      text: 'Variables',
+      menu: menuItems,
+    });
+  }
+}
+
 module.exports = {
   addLetterSpacing,
   fontsizedialog,
   specialcharacters,
+  personalizedVariables,
 };
