@@ -20,6 +20,7 @@ const extendTinyMce = require('./badsender-extend-tinymce');
 const extendTinyMceColors = require('./badsender-extend-tinymce-colors');
 const extendTextEditor = require('./badsender-extend-text-editor');
 const colorPicker = require('./badsender-color-picker');
+const personalizedVariables = require('./badsender-personalized-variables.js');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
 
@@ -33,6 +34,12 @@ function editorIcon(opts) {
     viewModel.logoPath = editorIcon.logoPath;
     viewModel.logoUrl = editorIcon.logoUrl;
     viewModel.logoAlt = editorIcon.logoAlt;
+  };
+}
+
+function configExtendTinyMce(opts) {
+  return function setConfigExtendTinyMce(editorViewModel) {
+    extendTinyMce(opts, editorViewModel);
   };
 }
 
@@ -52,9 +59,10 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(gallery(opts));
   customExtensions.push(extendTextEditor(opts));
   customExtensions.push(colorPicker(opts));
+  customExtensions.push(personalizedVariables(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
-  customExtensions.push(extendTinyMce);
+  customExtensions.push(configExtendTinyMce(opts));
   customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
