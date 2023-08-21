@@ -102,6 +102,6 @@ module.exports = {
   'title-save-block': 'Save Block',
   'block-name': 'Block Name',
   'block-category': 'Block Category',
-  close: 'Close',
+  'block-modal-close': 'Close',
   'save-block': 'Save Block',
 };

@@ -92,7 +92,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
                 @click.prevent="closeModal"
                 class="btn-flat waves-effect waves-light"
                 name="closeAction">
-                {{ vm.t('close') }}
+                {{ vm.t('block-modal-close') }}
             </button>
             <button
                 @click.prevent="handleOnSubmit"

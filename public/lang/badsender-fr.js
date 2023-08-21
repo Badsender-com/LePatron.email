@@ -103,6 +103,6 @@ module.exports = {
   'title-save-block': 'Enregistrer le Bloc',
   'block-name': 'Nom du Bloc',
   'block-category': 'Catégorie du Bloc',
-  close: 'Fermer',
+  'block-modal-close': 'Fermer',
   'save-block': 'Enregistrer le Bloc',
 };
