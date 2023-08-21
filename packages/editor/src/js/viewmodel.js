@@ -175,8 +175,9 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // block-wysiwyg.tmpl.html
-  viewModel.saveBlock = function (data) {
-    viewModel.toggleSaveBlockModal(true, data);
+  viewModel.saveBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleSaveBlockModal(true, actualData);
   };
 
   // block-wysiwyg.tmpl.html
