@@ -98,4 +98,11 @@ module.exports = {
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
   'send-test-mails': 'Envoyer',
+
+  // SaveBlockModal translations
+  'title-save-block': 'Enregistrer le Bloc',
+  'block-name': 'Nom du Bloc',
+  'block-category': 'Catégorie du Bloc',
+  close: 'Fermer',
+  'save-block': 'Enregistrer le Bloc',
 };

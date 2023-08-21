@@ -1,6 +1,7 @@
 const Vue = require('vue/dist/vue.common');
 const EspComponent = require('./components/esp/esp-send-mail');
 const { TestModalComponent } = require('./components/send-test/test-modal');
+const { SaveBlockModalComponent } = require('./components/save-block-modal/save-modal');
 
 
 module.exports = {
@@ -12,6 +13,7 @@ module.exports = {
       components: {
         EspComponent,
         TestModalComponent,
+        SaveBlockModalComponent
       },
       data: () => ({
         viewModel: vm,
@@ -23,7 +25,8 @@ module.exports = {
         <div>
           <esp-form :vm="viewModel"></esp-form>
           <test-modal-component :vm="viewModel"></test-modal-component>
-        </div>
+          <save-block-modal :vm="viewModel"></save-block-modal>
+          </div>
       `,
     });
 

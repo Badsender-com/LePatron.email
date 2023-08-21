@@ -4,6 +4,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
+const Vue = require('vue/dist/vue.common');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
 const MAX_SIZE = 102000;
@@ -47,7 +48,33 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     logoPath: 'rs/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico',
+    toggleSaveBlockModal: ko.observable(null),
   };
+
+  function recursivelyUnwrapObservable(obj) {
+    // If 'obj' is an observable, we need to unwrap it to get its actual value.
+    // Since this value might also be an observable, we use a recursive call.
+    if (ko.isObservable(obj)) {
+      return recursivelyUnwrapObservable(obj());
+    }
+
+    // If 'obj' is an object (but not null), we want to explore its properties.
+    else if (typeof obj === 'object' && obj !== null) {
+      const newObj = {};
+
+      // For each property of 'obj', we check if it contains observables and attempt to unwrap them.
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          newObj[key] = recursivelyUnwrapObservable(obj[key]);
+        }
+      }
+
+      return newObj;
+    }
+
+    // If 'obj' is neither an observable nor an object, it's already a primitive or non-observable value.
+    return obj;
+  }
 
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
@@ -145,6 +172,11 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     if (typeof unwrapped.id !== 'undefined') unwrapped.id = '';
     // insert the cloned block
     parent.blocks.splice(idx + 1, 0, unwrapped);
+  };
+
+  // block-wysiwyg.tmpl.html
+  viewModel.saveBlock = function (data) {
+    viewModel.toggleSaveBlockModal(true, data);
   };
 
   // block-wysiwyg.tmpl.html
