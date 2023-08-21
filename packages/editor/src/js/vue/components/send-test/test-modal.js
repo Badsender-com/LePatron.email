@@ -11,7 +11,7 @@ const axios = require('axios');
 const TestModalComponent = Vue.component('TestModal', {
   components: {
     ModalComponent,
-    SelectComponent
+    SelectComponent,
   },
   mixins: [validationMixin],
   props: {
@@ -24,17 +24,24 @@ const TestModalComponent = Vue.component('TestModal', {
     isLoadingEmailGroups: false,
     subscriptions: [],
     style: styleHelper,
-    emailsGroups: []
+    emailsGroups: [],
   }),
   computed: {
-    disableSendTestSubmitButton () {
-      return  this.isLoading || 
-              this.$v.$invalid ||
-              ( (!this.selectedEmailGroup || !this.selectedEmailGroup.code) && !this.inputEmailsTest)
+    disableSendTestSubmitButton() {
+      return (
+        this.isLoading ||
+        this.$v.$invalid ||
+        ((!this.selectedEmailGroup || !this.selectedEmailGroup.code) &&
+          !this.inputEmailsTest)
+      );
     },
     displayEmailsGroupsSelect() {
-      return !this.isLoadingEmailGroups && Array.isArray(this.emailsGroups) && this.emailsGroups.length > 0 ;
-    }
+      return (
+        !this.isLoadingEmailGroups &&
+        Array.isArray(this.emailsGroups) &&
+        this.emailsGroups.length > 0
+      );
+    },
   },
   mounted() {
     this.subscriptions = [
@@ -50,7 +57,6 @@ const TestModalComponent = Vue.component('TestModal', {
     openModal() {
       this.$refs.modalRef?.openModal();
     },
-    
     closeModal() {
       this.inputEmailsTest = '';
       this.selectedEmailGroup = null;
@@ -66,48 +72,59 @@ const TestModalComponent = Vue.component('TestModal', {
     },
     fetchEmailsGroups() {
       this.isLoadingEmailGroups = true;
-      return axios.get(getEmailGroups({groupId: this.vm?.metadata?.groupId }))
-          .then((response) => {
-            const { items: emailsGroups } = response.data;
-            this.emailsGroups = emailsGroups.map(emailsGroup => ({
-              label: emailsGroup.name,
-              code: emailsGroup.id
-            }));
-            M.updateTextFields();
-        }).catch((error) => {
-            console.error(error);
-        }).finally(()=> {
+      return axios
+        .get(getEmailGroups({ groupId: this.vm?.metadata?.groupId }))
+        .then((response) => {
+          const { items: emailsGroups } = response.data;
+          this.emailsGroups = emailsGroups.map((emailsGroup) => ({
+            label: emailsGroup.name,
+            code: emailsGroup.id,
+          }));
+          M.updateTextFields();
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => {
           this.isLoadingEmailGroups = false;
         });
     },
     handleOnSubmit() {
       this.$v.$touch();
-      
+
       if (!this.$v.$invalid) {
-        this.sendTestData({ inputEmailsTest: this.$v.inputEmailsTest.$model});
+        this.sendTestData({ inputEmailsTest: this.$v.inputEmailsTest.$model });
       }
     },
     sendTestData({ inputEmailsTest }) {
       this.isLoading = true;
-      let sendTestEmailsData = { 
+      let sendTestEmailsData = {
         rcpt: inputEmailsTest,
-        html: this.vm.exportHTML()
+        html: this.vm.exportHTML(),
       };
-      
-      if(this.selectedEmailGroup && this.selectedEmailGroup?.code) {
-        sendTestEmailsData = { ...sendTestEmailsData, emailsGroupId: this.selectedEmailGroup?.code }
+
+      if (this.selectedEmailGroup && this.selectedEmailGroup?.code) {
+        sendTestEmailsData = {
+          ...sendTestEmailsData,
+          emailsGroupId: this.selectedEmailGroup?.code,
+        };
       }
-      
-      return axios.post(sendTestEmails({ mailingId: this.vm?.metadata?.id }), sendTestEmailsData)
-      .then( () => {
-        this.vm.notifier.success(this.vm.t('send-test-success'));
-      }).catch(() => {
-        this.vm.notifier.error(this.vm.t('send-test-error'));
-      })
-      .finally(() => {
-        this.isLoading = false;
-        this.closeModal();
-      });
+
+      return axios
+        .post(
+          sendTestEmails({ mailingId: this.vm?.metadata?.id }),
+          sendTestEmailsData
+        )
+        .then(() => {
+          this.vm.notifier.success(this.vm.t('send-test-success'));
+        })
+        .catch(() => {
+          this.vm.notifier.error(this.vm.t('send-test-error'));
+        })
+        .finally(() => {
+          this.isLoading = false;
+          this.closeModal();
+        });
     },
     handleOnInput() {
       this.$v.inputEmailsTest.$touch();
@@ -179,7 +196,7 @@ const TestModalComponent = Vue.component('TestModal', {
     return {
       inputEmailsTest: {
         allMustBeEmails(value) {
-          if(!value) {
+          if (!value) {
             return true;
           }
 

@@ -44,14 +44,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
       }
     },
     handleOnSubmit() {
-      // Logic to handle the submission of the block details
-      // This can be expanded upon based on your requirements
-      console.log(
-        'Block details submitted:',
-        this.blockName,
-        this.blockCategory,
-        this.blockInformation
-      );
+      // TODO: Add Logic to handle the submission of the block details
       this.closeModal();
     },
   },
@@ -71,8 +64,8 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
                               v-model="blockName"
                               type="text"
                               name="blockName"
-                              placeholder="Enter block name">
-                            <label for="blockName">{{ vm.t('block-name') }}</label>
+                              :placeholder="vm.t('placeholder-block-name')">
+                              <label for="blockName">{{ vm.t('block-name') }}</label>
                         </div>
                         <div class="input-field col s12">
                             <input
@@ -80,8 +73,8 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
                               v-model="blockCategory"
                               type="text"
                               name="blockCategory"
-                              placeholder="Enter block category (optional)">
-                            <label for="blockCategory">{{ vm.t('block-category') }}</label>
+                              :placeholder="vm.t('placeholder-block-category')">
+                              <label for="blockCategory">{{ vm.t('block-category') }}</label>
                         </div>
                     </div>
                 </form>

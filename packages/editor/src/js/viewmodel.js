@@ -4,7 +4,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var console = require('console');
-const Vue = require('vue/dist/vue.common');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
 const MAX_SIZE = 102000;
@@ -51,6 +50,17 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     toggleSaveBlockModal: ko.observable(null),
   };
 
+  /**
+   * In Knockout.js, observables are special JavaScript objects that can notify subscribers about changes,
+   * and can automatically detect dependencies. They are primarily used for two-way data binding,
+   * allowing the UI to automatically update when the underlying data changes, and vice versa.
+   * For more information you can visit the doc : https://knockoutjs.com/documentation/observables.html
+   * 
+   * However, sometimes it's necessary to obtain the raw values from observables, especially when
+   * working with complex data structures that may contain nested observables. The function
+   * `recursivelyUnwrapObservable` is designed to traverse an object and extract the raw values
+   * from any observables it encounters, producing a 'plain' object without any observables.
+   */
   function recursivelyUnwrapObservable(obj) {
     // If 'obj' is an observable, we need to unwrap it to get its actual value.
     // Since this value might also be an observable, we use a recursive call.

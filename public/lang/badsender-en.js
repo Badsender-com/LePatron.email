@@ -104,4 +104,6 @@ module.exports = {
   'block-category': 'Block Category',
   'block-modal-close': 'Close',
   'save-block': 'Save Block',
+  'placeholder-block-name': 'Enter block name',
+  'placeholder-block-category': 'Enter block category (optional)',
 };

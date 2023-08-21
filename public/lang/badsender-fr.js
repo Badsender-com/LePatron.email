@@ -105,4 +105,6 @@ module.exports = {
   'block-category': 'Catégorie du Bloc',
   'block-modal-close': 'Fermer',
   'save-block': 'Enregistrer le Bloc',
+  'placeholder-block-name': 'Entrez le nom du bloc',
+  'placeholder-block-category': 'Entrez la catégorie du bloc (optionnel)',
 };
