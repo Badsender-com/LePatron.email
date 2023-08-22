@@ -97,4 +97,13 @@ module.exports = {
   'placeholder-emails-groups': 'Select a list',
   'sending-test-mails': 'Sending test mail…',
   'send-test-mails': 'Send',
+
+  // SaveBlockModal translations
+  'title-save-block': 'Save Block',
+  'block-name': 'Block Name',
+  'block-category': 'Block Category',
+  'block-modal-close': 'Close',
+  'save-block': 'Save Block',
+  'placeholder-block-name': 'Enter block name',
+  'placeholder-block-category': 'Enter block category (optional)',
 };
