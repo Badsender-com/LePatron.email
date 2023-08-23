@@ -175,9 +175,9 @@ function specialcharacters(editor) {
 function personalizedVariables(editor, viewModel) {
   const variables = viewModel.personalizedVariables || [];
   if (variables.length) {
-    const menuItems = variables.map(({ variable }) => ({
+    const menuItems = variables.map(({ variable, label }) => ({
       value: variable,
-      text: variable,
+      text: label,
       onclick: function () {
         editor.insertContent(variable);
       },

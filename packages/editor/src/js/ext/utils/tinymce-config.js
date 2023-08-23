@@ -3,7 +3,7 @@
 //////
 const tinymceConfigFull = {
   toolbar1:
-    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters extendColors | linkcolorbutton unlinkcolorbutton | pastetext code variables',
+    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters variables extendColors | linkcolorbutton unlinkcolorbutton | pastetext code',
   //- add colorpicker & custom plugins
   //- https://www.tinymce.com/docs/plugins/colorpicker/
   plugins: [
