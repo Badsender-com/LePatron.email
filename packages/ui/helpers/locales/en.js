@@ -110,7 +110,7 @@ export default {
     edit: 'Edit',
     move: 'Move',
     emailsGroups: 'Test lists',
-    personalizedVariables: 'Personalized variables',
+    variables: 'Variables',
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
     downloadFtp: 'Download FTP',
