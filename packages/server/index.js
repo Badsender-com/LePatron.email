@@ -23,6 +23,7 @@ const logger = require('./utils/logger.js');
 const versionRouter = require('./version/version.routes');
 const groupRouter = require('./group/group.routes');
 const workspaceRouter = require('./workspace/workspace.routes');
+const personalizedBlockRouter = require('./personalized-blocks/personalized-block-routes.js');
 const folderRouter = require('./folder/folder.routes');
 const profileRouter = require('./profile/profile.routes');
 const mailingRouter = require('./mailing/mailing.routes');
@@ -248,6 +249,7 @@ if (cluster.isMaster) {
   app.use('/api/folders', folderRouter);
   app.use('/api/profiles', profileRouter);
   app.use('/api/workspaces', workspaceRouter);
+  app.use('/api/personalized-blocks', personalizedBlockRouter);
   app.use('/api/groups', groupRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
