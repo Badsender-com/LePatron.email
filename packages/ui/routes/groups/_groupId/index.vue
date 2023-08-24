@@ -203,7 +203,7 @@ export default {
           href="#group-personalized-variables"
           @click="activeTab = 'group-personalized-variables'"
         >
-          {{ $t('global.personalizedVariables') }}
+          {{ $t('global.variables') }}
         </v-tab>
         <v-tab-item value="group-informations">
           <bs-group-form
