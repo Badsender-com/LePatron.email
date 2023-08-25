@@ -3,7 +3,6 @@ const createError = require('http-errors');
 const guardCanAccessGroup = () => {
   return (req, res, next) => {
     const { user } = req;
-
     if (!user) {
       return next(new createError.Unauthorized());
     }
