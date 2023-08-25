@@ -82,11 +82,15 @@ async function createPersonalizedBlock(req, res, next) {
  */
 async function updatePersonalizedBlock(req, res) {
   const { id } = req.params;
-  const updatedBlock = req.body;
+  const { groupId, ...updatedBlock } = req.body;
 
   try {
-    await personalizedBlockService.updatePersonalizedBlock(id, updatedBlock);
-    res.send();
+    const updatedBlockResult = await personalizedBlockService.updatePersonalizedBlock(
+      id,
+      groupId,
+      updatedBlock
+    );
+    res.json(updatedBlockResult);
   } catch (error) {
     if (error.status) {
       return res.status(error.status).send(error.message);

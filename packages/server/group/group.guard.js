@@ -3,7 +3,6 @@ const createError = require('http-errors');
 const guardCanAccessGroup = () => {
   return (req, res, next) => {
     const { user } = req;
-    console.log('here', user);
 
     if (!user) {
       return next(new createError.Unauthorized());
@@ -15,7 +14,6 @@ const guardCanAccessGroup = () => {
     }
     const { groupId } = req.params;
     const { group } = user;
-    console.log('here', group);
     if (group.id === groupId) {
       return next();
     }
@@ -26,7 +24,6 @@ const guardCanAccessGroup = () => {
 const guardCanAccessGroupFromBody = () => {
   return (req, res, next) => {
     const { user } = req;
-
     if (!user) {
       return next(new createError.Unauthorized());
     }

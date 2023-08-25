@@ -72,6 +72,8 @@ if (cluster.isMaster) {
   mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    // Setting useFindAndModify to false ensures that Mongoose uses the native findOneAndUpdate function instead of the deprecated findAndModify function. This helps to avoid deprecation warnings and ensures that you are using the most up-to-date underlying method for these operations.
+    useFindAndModify: false,
   });
 
   const db = mongoose.connection;

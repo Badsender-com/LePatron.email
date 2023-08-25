@@ -23,7 +23,6 @@ const PersonalizedBlockSchema = Schema(
     },
     category: {
       type: String,
-      required: [true, 'Block category is required'],
     },
     content: {
       type: Mixed,
