@@ -1,5 +1,7 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
+const { createPersonalizedBlock } = require('../../utils/apis');
+const axios = require('axios');
 const styleHelper = require('../../utils/style/styleHelper');
 
 const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
@@ -12,16 +14,17 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
   data: () => ({
     blockName: '',
     blockCategory: '',
-    blockInformation: null,
+    blockContent: null,
+    isLoading: false,
     style: styleHelper,
-    subscriptions: [],
   }),
   mounted() {
     this.vm.toggleSaveBlockModal = this.handleToggleSaveBlockModalChange;
   },
   computed: {
     disableSaveButton() {
-      return !this.blockName; // Disable the button if blockName is empty
+      // Disable the button if blockName is empty or if the request is still loading
+      return this.isLoading || !this.blockName;
     },
   },
   methods: {
@@ -31,21 +34,38 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
     closeModal() {
       this.blockName = '';
       this.blockCategory = '';
-      this.blockInformation = null;
+      this.blockContent = null;
       this.$refs.modalRef?.closeModal();
     },
     handleToggleSaveBlockModalChange(value, data) {
       if (value === true) {
         this.openModal();
-        this.blockInformation = data;
+        this.blockContent = data;
       } else {
         this.closeModal();
-        this.blockInformation = null;
+        this.blockContent = null;
       }
     },
     handleOnSubmit() {
-      // TODO: Add Logic to handle the submission of the block details
-      this.closeModal();
+      this.isLoading = true;
+      const payload = {
+        name: this.blockName,
+        category: this.blockCategory,
+        groupId: this.vm?.metadata?.groupId, // Retrieve groupId here
+        content: this.blockContent,
+      };
+
+      axios
+        .post(createPersonalizedBlock(), payload)
+        .then(() => {
+          this.vm.notifier.success(this.vm.t('save-block-success'));
+          this.isLoading = false;
+          this.closeModal();
+        })
+        .catch(() => {
+          this.vm.notifier.error(this.vm.t('save-block-error'));
+          this.isLoading = false;
+        });
     },
   },
   template: `
@@ -93,7 +113,8 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
                 class="btn waves-effect waves-light"
                 type="submit"
                 name="submitAction">
-                {{ vm.t('save-block') }}
+                <span v-if="isLoading">{{ vm.t('saving-block') }}</span>
+                <span v-else>{{ vm.t('save-block') }}</span>
             </button>
         </div>
     </modal-component>

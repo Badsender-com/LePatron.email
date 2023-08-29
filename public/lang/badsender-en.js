@@ -99,11 +99,14 @@ module.exports = {
   'send-test-mails': 'Send',
 
   // SaveBlockModal translations
-  'title-save-block': 'Save Block',
-  'block-name': 'Block Name',
-  'block-category': 'Block Category',
+  'title-save-block': 'Save block',
+  'block-name': 'Block name',
+  'block-category': 'Block category',
   'block-modal-close': 'Close',
-  'save-block': 'Save Block',
+  'save-block': 'Save block',
   'placeholder-block-name': 'Enter block name',
   'placeholder-block-category': 'Enter block category (optional)',
+  'saving-block': 'Saving block',
+  'save-block-success': 'Block saved successfully',
+  'save-block-error': 'Error saving block',
 };

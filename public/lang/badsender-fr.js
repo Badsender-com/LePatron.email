@@ -100,11 +100,14 @@ module.exports = {
   'send-test-mails': 'Envoyer',
 
   // SaveBlockModal translations
-  'title-save-block': 'Enregistrer le Bloc',
-  'block-name': 'Nom du Bloc',
-  'block-category': 'Catégorie du Bloc',
+  'title-save-block': 'Enregistrer le bloc',
+  'block-name': 'Nom du bloc',
+  'block-category': 'Catégorie du bloc',
   'block-modal-close': 'Fermer',
-  'save-block': 'Enregistrer le Bloc',
+  'save-block': 'Enregistrer le bloc',
   'placeholder-block-name': 'Entrez le nom du bloc',
   'placeholder-block-category': 'Entrez la catégorie du bloc (optionnel)',
+  'saving-block': 'Enregistrement en cours',
+  'save-block-success': 'Bloc enregistré avec succès',
+  'save-block-error': "Erreur lors de l'enregistrement du bloc",
 };
