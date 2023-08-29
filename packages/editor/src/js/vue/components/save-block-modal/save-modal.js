@@ -44,6 +44,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
       }
     },
     handleOnSubmit() {
+      console.log('submit')
       // TODO: Add Logic to handle the submission of the block details
       this.closeModal();
     },
