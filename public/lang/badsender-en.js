@@ -106,4 +106,7 @@ module.exports = {
   'save-block': 'Save Block',
   'placeholder-block-name': 'Enter block name',
   'placeholder-block-category': 'Enter block category (optional)',
+  'saving-block': 'Saving Block',
+  'save-block-success': 'Block Saved Successfully',
+  'save-block-error': 'Error Saving Block',
 };

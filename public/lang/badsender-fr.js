@@ -107,4 +107,7 @@ module.exports = {
   'save-block': 'Enregistrer le Bloc',
   'placeholder-block-name': 'Entrez le nom du bloc',
   'placeholder-block-category': 'Entrez la catégorie du bloc (optionnel)',
+  'saving-block': 'Enregistrement en cours',
+  'save-block-success': 'Bloc enregistré avec succès',
+  'save-block-error': "Erreur lors de l'enregistrement du bloc",
 };
