@@ -11,6 +11,7 @@ module.exports = Object.freeze({
   FolderModel: 'Folder',
   EmailsGroupModal: 'EmailsGroup',
   PersonalizedVariablesModel: 'PersonalizedVariables',
+  PersonalizedBlocksModel: 'PersonalizedBlocks',
   WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
   // OAuth
