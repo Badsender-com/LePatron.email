@@ -1,6 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
-const { createPersonalizedBlock } = require('../../utils/apis'); // Import your API method here
+const { createPersonalizedBlock } = require('../../utils/apis');
 const axios = require('axios');
 const styleHelper = require('../../utils/style/styleHelper');
 
