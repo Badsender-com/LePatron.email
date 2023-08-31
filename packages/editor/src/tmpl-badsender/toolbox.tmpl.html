@@ -25,25 +25,16 @@
   </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
-    <div id="blockTabs" class="tabs_horizontal button_color blocks-tabs"
-      data-bind="tabs: { active: $root.blocksActiveTab() }">
-      <ul>
-        <!-- Tab for Default Blocks -->
-        <li data-bind="tooltips: {}">
-          <a href="javascript:void(0)" data-bind="click: function() { $root.blocksActiveTab('DEFAULT_BLOCKS'); }">
-            <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
-          </a>
-        </li>
-
-        <!-- Tab for Personalized Blocks -->
-        <li data-bind="tooltips: {}">
-          <a href="javascript:void(0)" data-bind="click: function() { $root.blocksActiveTab('PERSONALIZED_BLOCKS'); }">
-            <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
-          </a>
-        </li>
-      </ul>
+    <div id="blockTabs" class="custom-tabs-horizontal button_color blocks-tabs" data-bind="tabs: { active: $root.blocksActiveTab() }">
+      <div class="custom-tab-item" data-bind="click: function() { $root.blocksActiveTab('DEFAULT_BLOCKS'); }, css: { 'custom-tab-active': $root.blocksActiveTab() === 'DEFAULT_BLOCKS' }">
+        <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
+      </div>
+      <div class="custom-tab-item" data-bind="click: function() { $root.blocksActiveTab('PERSONALIZED_BLOCKS'); }, css: { 'custom-tab-active': $root.blocksActiveTab() === 'PERSONALIZED_BLOCKS' }">
+        <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
+      </div>
     </div>
-    <div id="template-blocks" data-bind="if: $root.blocksActiveTab() === 'DEFAULT_BLOCKS'">
+    
+    <div id="DEFAULT_BLOCKS" data-bind="if: $root.blocksActiveTab() === 'DEFAULT_BLOCKS'">
       <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
         <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
           <div class="block"
@@ -63,7 +54,7 @@
         </div>
       </div>
     </div>
-    <div id="-blocks" data-bind="if: $root.blocksActiveTab() === 'DEFAULT_BLOCKS'">
+    <div id="PERSONALIZED_BLOCKS" data-bind="if: $root.blocksActiveTab() === 'PERSONALIZED_BLOCKS'">
       EMPTY LIST
     </div>
   </div>

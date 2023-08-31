@@ -150,9 +150,19 @@
         padding-left: 1em;
         padding-right: 1em;
       }
+
+      button {
+        padding-left: 1em;
+        padding-right: 1em;
+        background: inherit;
+        border: none;
+        color: inherit;
+      }
+
       &:not(.ui-state-active) {
         color: rgba(255, 255, 255, 0.75);
       }
+
       &.ui-state-active a {
         background: white;
       }
@@ -161,6 +171,36 @@
   .ui-tabs-panel {
     border: 0;
   }
+}
+
+.custom-tabs-horizontal {
+  background: var(--v-primary-base);
+  height: 2.6rem;
+  display: flex;
+}
+
+.custom-tabs-horizontal .custom-tab-item,
+.custom-tabs-horizontal .custom-tab-active {
+  margin: 0;
+  padding-left: 1em;
+  padding-right: 1em;
+  cursor: pointer;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: 1.1em;
+}
+
+.custom-tabs-horizontal .custom-tab-item {
+  color: rgba(255, 255, 255, 0.75);
+  background: var(--v-primary-base);
+}
+
+.custom-tabs-horizontal .custom-tab-active {
+  background: white;
+  color: var(--v-primary-base);
 }
 
 //----- IMAGE GALLERY DIALOG
