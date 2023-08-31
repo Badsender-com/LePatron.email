@@ -662,7 +662,7 @@
 
         a {
           width: 100%;
-          padding: 0 .75em;
+          padding: 0 0.75em;
         }
         /*
         a {
@@ -686,14 +686,12 @@
       }
     }
     .ui-tabs-panel {
-      
       margin: 0;
       padding: 0.7em;
       position: absolute;
       bottom: @ui-tabs-panel-padding;
       left: @ui-tabs-panel-padding;
       right: @ui-tabs-panel-padding;
-      z-index: 100;
       background-color: @mosaico-background-color;
     }
   }
@@ -708,6 +706,14 @@
     border: 2px solid black;
     z-index: 100;
     display: inline-block;
+  }
+
+  .blocks-tabs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    font-size: 1em;
   }
 
   .draggable-item .block {
@@ -765,6 +771,10 @@
     display: none;
   }
   .block-list {
+    position: absolute;
+    inset: 0;
+    top: 3rem;
+    padding: 0.7em;
     // suppongo che le immagini siano create per i 340px
     max-width: 346px;
   }
