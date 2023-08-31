@@ -26,15 +26,15 @@
 
   <div id="toolblocks" data-bind="scrollable: true">
     <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs" data-bind="tabs: { active: $root.blocksActiveTab() }">
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('DEFAULT_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'DEFAULT_BLOCKS' }">
+      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
         <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
       </div>
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('PERSONALIZED_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'PERSONALIZED_BLOCKS' }">
+      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
         <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
       </div>
     </div>
     
-    <div data-bind="visible: $root.blocksActiveTab() === 'DEFAULT_BLOCKS'">
+    <div data-bind="visible: $root.blocksActiveTab() === 'TEMPLATE_BLOCKS'">
       <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
         <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
           <div class="block"
@@ -54,7 +54,7 @@
         </div>
       </div>
     </div>
-    <div class="coming-soon" data-bind="visible: $root.blocksActiveTab() === 'PERSONALIZED_BLOCKS'">
+    <div class="coming-soon" data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
       Coming Soon
     </div>
   </div>
