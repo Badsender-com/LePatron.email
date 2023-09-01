@@ -54,11 +54,13 @@
         </div>
       </div>
     </div>
-    <div class="coming-soon" data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
-      Coming Soon
+    <div data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
+      <!-- Add the Vue.js component here -->
+      <div id="personalizedBlocksPlugin">
+        <personalized-blocks-plugin />
+      </div>
     </div>
   </div>
-
 
   <div id="toolcontents" data-bind="scrollable: true">
     <!-- ko if: $root.selectedBlock() !== null -->

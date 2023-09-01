@@ -25,11 +25,14 @@
   </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
-    <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs" data-bind="tabs: { active: $root.blocksActiveTab() }">
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
+    <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs"
+      data-bind="tabs: { active: $root.blocksActiveTab() }">
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
         <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
       </div>
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
         <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
       </div>
     </div>
@@ -54,43 +57,47 @@
         </div>
       </div>
     </div>
-    <div class="coming-soon" data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
-      Coming Soon
+    <div data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
+      <!-- Add the Vue.js component here -->
+      <div id="personalizedBlocksPlugin">
+        <personalized-blocks-plugin />
+      </div>
     </div>
   </div>
+</div>
 
-  <div id="toolcontents" data-bind="scrollable: true">
-    <!-- ko if: $root.selectedBlock() !== null -->
-    <div data-bind="block: $root.selectedBlock"></div>
-    <!-- /ko -->
-    <!-- ko if: $root.selectedBlock() == null -->
-    <div class="noSelectedBlock"
-      data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">
-      By clicking on message parts you will select a block and content options, if any, will show here</div>
-    <!-- /ko -->
-    <!-- ko block: content -->content<!-- /ko -->
-    <div id="tracking-params">
-      <tracking-params-plugin />
-    </div>
+<div id="toolcontents" data-bind="scrollable: true">
+  <!-- ko if: $root.selectedBlock() !== null -->
+  <div data-bind="block: $root.selectedBlock"></div>
+  <!-- /ko -->
+  <!-- ko if: $root.selectedBlock() == null -->
+  <div class="noSelectedBlock"
+    data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">
+    By clicking on message parts you will select a block and content options, if any, will show here</div>
+  <!-- /ko -->
+  <!-- ko block: content -->content<!-- /ko -->
+  <div id="tracking-params">
+    <tracking-params-plugin />
   </div>
+</div>
 
-  <div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
-    <!-- ko if: typeof $root.content().theme === 'undefined' || typeof $root.content().theme().scheme === 'undefined' || $root.content().theme().scheme() === 'custom' -->
-    <!-- ko if: $root.selectedBlock() !== null -->
-    <div
-      data-bind="block: $root.selectedBlock, css: { workLocal: $root.selectedBlock().customStyle, workGlobal: typeof $root.selectedBlock().customStyle === 'undefined' || !$root.selectedBlock().customStyle() }">
-    </div>
-    <!-- /ko -->
-    <!-- ko if: $root.selectedBlock() == null -->
-    <div class="noSelectedBlock"
-      data-bind="text: $root.t('By clicking on message parts you will select a block and style options, if available, will show here')">
-      By clicking on message parts you will select a block and style options, if available, will show here</div>
-    <!-- /ko -->
-    <div class="workGlobalContent">
-      <!-- ko block: content --><!-- /ko -->
-    </div>
-    <!-- /ko -->
+<div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
+  <!-- ko if: typeof $root.content().theme === 'undefined' || typeof $root.content().theme().scheme === 'undefined' || $root.content().theme().scheme() === 'custom' -->
+  <!-- ko if: $root.selectedBlock() !== null -->
+  <div
+    data-bind="block: $root.selectedBlock, css: { workLocal: $root.selectedBlock().customStyle, workGlobal: typeof $root.selectedBlock().customStyle === 'undefined' || !$root.selectedBlock().customStyle() }">
   </div>
+  <!-- /ko -->
+  <!-- ko if: $root.selectedBlock() == null -->
+  <div class="noSelectedBlock"
+    data-bind="text: $root.t('By clicking on message parts you will select a block and style options, if available, will show here')">
+    By clicking on message parts you will select a block and style options, if available, will show here</div>
+  <!-- /ko -->
+  <div class="workGlobalContent">
+    <!-- ko block: content --><!-- /ko -->
+  </div>
+  <!-- /ko -->
+</div>
 </div>
 
 <div id="toolimages" class="slidebar" data-bind="scrollable: true, css: { hidden: $root.showGallery() === false }">

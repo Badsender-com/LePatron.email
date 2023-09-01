@@ -2,7 +2,10 @@
 
 const express = require('express');
 const { guard } = require('../account/auth.guard.js');
-const { GUARD_CAN_ACCESS_GROUP_FROM_BODY } = require('../group/group.guard.js');
+const {
+  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
+} = require('../group/group.guard.js');
 const createError = require('http-errors');
 
 const router = express.Router();
@@ -13,7 +16,7 @@ const personalizedBlocksController = require('./personalized-block-controller.js
 router.get(
   '/',
   guard(),
-  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
   personalizedBlocksController.listPersonalizedBlocks
 );
 
