@@ -37,35 +37,6 @@ const tinymceConfigFull = {
         { title: 'Code', icon: 'code', inline: 'code' },
       ],
     },
-    {
-      title: 'Alignment',
-      items: [
-        {
-          title: 'Align left',
-          icon: 'alignleft',
-          block: 'p',
-          styles: { 'text-align': 'left' },
-        },
-        {
-          title: 'Align center',
-          icon: 'aligncenter',
-          block: 'p',
-          styles: { 'text-align': 'center' },
-        },
-        {
-          title: 'Align right',
-          icon: 'alignright',
-          block: 'p',
-          styles: { 'text-align': 'right' },
-        },
-        {
-          title: 'Justify',
-          icon: 'alignjustify',
-          block: 'p',
-          styles: { 'text-align': 'justify' },
-        },
-      ],
-    },
   ],
 };
 
