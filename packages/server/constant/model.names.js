@@ -10,6 +10,7 @@ module.exports = Object.freeze({
   CacheImageModel: 'Cacheimage',
   FolderModel: 'Folder',
   EmailsGroupModal: 'EmailsGroup',
+  PersonalizedVariablesModel: 'PersonalizedVariables',
   WorkspaceModel: 'Workspace',
   GalleryModel: 'Gallery',
   // OAuth

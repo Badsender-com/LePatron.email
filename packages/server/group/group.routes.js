@@ -77,6 +77,26 @@ router.get(
   groups.readProfiles
 );
 
+// New personalized variable routes
+router.get(
+  '/:groupId/personalized-variables',
+  guard(),
+  GUARD_CAN_ACCESS_GROUP,
+  groups.readPersonalizedVariables
+);
+router.post(
+  '/:groupId/personalized-variables',
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP,
+  groups.createOrUpdatePersonalizedVariables
+);
+router.delete(
+  '/:groupId/personalized-variables/:variableId',
+  GUARD_GROUP_ADMIN,
+  GUARD_CAN_ACCESS_GROUP,
+  groups.deletePersonalizedVariable
+);
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());

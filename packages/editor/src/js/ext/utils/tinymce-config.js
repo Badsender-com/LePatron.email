@@ -3,11 +3,11 @@
 //////
 const tinymceConfigFull = {
   toolbar1:
-    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters extendColors | linkcolorbutton unlinkcolorbutton | pastetext code',
+    'bold italic forecolor backcolor | fontsizedialogbutton styleselect letterspacingselect removeformat specialcharacters variables extendColors | linkcolorbutton unlinkcolorbutton | pastetext code',
   //- add colorpicker & custom plugins
   //- https://www.tinymce.com/docs/plugins/colorpicker/
   plugins: [
-    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog specialcharacters extendColors',
+    'linkcolor hr paste lists textcolor colorpicker code spacing fontsizedialog variables fontsizedialog specialcharacters extendColors',
   ],
   link_text_decoration_list: [
     { text: 'Underline', value: '' },
