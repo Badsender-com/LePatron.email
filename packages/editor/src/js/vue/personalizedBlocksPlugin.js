@@ -6,8 +6,6 @@ const {
 module.exports = {
   viewModel(vm, ko) {},
   init(vm) {
-    // Init VueJS component
-
     Vue.component('PersonalizedBlocksPlugin', {
       components: {
         PersonalizedBlocksListComponent,

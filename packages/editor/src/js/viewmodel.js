@@ -50,6 +50,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     toggleSaveBlockModal: ko.observable(null),
     // Adding observables to manage "Default Blocks" and "Personalized Blocks" tabs
     blocksActiveTab: ko.observable('TEMPLATE_BLOCKS'), // The name of the active tab ("TEMPLATE_BLOCKS" or "CUSTOM_BLOCKS")
+    personalizedBlocks: ko.observable([])
   };
 
   /**

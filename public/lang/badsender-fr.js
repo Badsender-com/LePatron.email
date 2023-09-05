@@ -110,4 +110,10 @@ module.exports = {
   'saving-block': 'Enregistrement en cours',
   'save-block-success': 'Bloc enregistré avec succès',
   'save-block-error': "Erreur lors de l'enregistrement du bloc",
+
+  // PersonalizedBlocksListComponent translations
+  'personalized-blocks-fetch-error':
+    "Une erreur s'est produite lors de la récupération des Blocs perso.",
+  'personalized-blocks-loading': 'Chargement des blocs perso...',
+  'personalized-blocks-empty': 'Aucun bloc perso disponible.',
 };

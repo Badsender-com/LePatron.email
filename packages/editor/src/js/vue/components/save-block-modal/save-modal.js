@@ -61,6 +61,9 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
           this.vm.notifier.success(this.vm.t('save-block-success'));
           this.isLoading = false;
           this.closeModal();
+          // Dispatch a custom event to signal that a new personalized block has been added, triggering a refresh in the list component.
+          const event = new Event('personalizedBlockAdded');
+          window.dispatchEvent(event);
         })
         .catch(() => {
           this.vm.notifier.error(this.vm.t('save-block-error'));

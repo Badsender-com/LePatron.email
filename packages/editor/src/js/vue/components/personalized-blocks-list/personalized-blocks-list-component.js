@@ -9,11 +9,16 @@ const PersonalizedBlocksListComponent = Vue.component(
       vm: { type: Object, default: () => ({}) },
     },
     data: () => ({
-      personalizedBlocks: [],
       isLoading: false,
     }),
     mounted() {
       this.fetchPersonalizedBlocks();
+      // Add a global event listener to refresh the list of personalized blocks when a new block is added.
+      window.addEventListener('personalizedBlockAdded', this.fetchPersonalizedBlocks);
+    },
+    beforeDestroy() {
+      // Make sure to remove the listener when the component is destroyed
+      window.removeEventListener('personalizedBlockAdded', this.fetchPersonalizedBlocks);
     },
     methods: {
       fetchPersonalizedBlocks() {
@@ -23,39 +28,33 @@ const PersonalizedBlocksListComponent = Vue.component(
         axios
           .get(getPersonalizedBlocks(), { params: { groupId } })
           .then((response) => {
-            this.personalizedBlocks = response.data?.items;
+            this.vm.personalizedBlocks(
+              response.data?.items.map(({ content, ...blockInformation }) => ({
+                ...content,
+                blockInformation,
+              }))
+            );
             this.isLoading = false;
           })
           .catch((error) => {
-            this.vm.notifier.error(this.vm.t('fetch-blocks-error'));
+            this.vm.notifier.error(
+              this.vm.t('personalized-blocks-fetch-error')
+            );
             this.isLoading = false;
           });
       },
     },
-    computed: {
-      imagePath() {
-        return type => {
-          return this.vm.templatePath('edres/' + type + '.png');
-        };
-      },
-    },
     template: `
-      <div class="block-list" style="text-align: center">
+    <div id="personalized-blocks-list">
+      <div v-if="isLoading" class="loading-state">
         <!-- Loading Spinner -->
-        <div v-if="isLoading">
-          <span>Loading...</span>
-        </div>
-        <!-- List of Personalized Blocks -->
-        <div v-else v-for="block in personalizedBlocks" :key="block.id" class="draggable-item">
-          <div class="block" style="position: relative;">
-            <div title="Click or drag to add this block to the template" class="handle"></div>
-            <!-- Add an image for each block, customize the src attribute based on your API data -->
-            <img :alt="block.content.type" :src="imagePath(block.content.type)" />
-            <span class="block-name">{{ block.name }}</span>
-          </div>
-          <div class="addblockbutton">Add</div>
-        </div>
+        <span>{{ vm.t('personalized-blocks-loading') }}</span>
       </div>
+      <div v-else-if="vm.personalizedBlocks().length === 0" class="empty-state">
+        <!-- Empty State -->
+        <span>{{ vm.t('personalized-blocks-empty') }}</span>
+      </div>
+    </div>
     `,
   }
 );
