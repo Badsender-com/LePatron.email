@@ -48,11 +48,13 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
     },
     handleOnSubmit() {
       this.isLoading = true;
+      // remove blockInformation from blockContent to do not save it twice
+      const { blockInformation, ...blockContent } = this.blockContent;
       const payload = {
         name: this.blockName,
         category: this.blockCategory,
         groupId: this.vm?.metadata?.groupId, // Retrieve groupId here
-        content: this.blockContent,
+        content: blockContent,
       };
 
       axios

@@ -14,11 +14,17 @@ const PersonalizedBlocksListComponent = Vue.component(
     mounted() {
       this.fetchPersonalizedBlocks();
       // Add a global event listener to refresh the list of personalized blocks when a new block is added.
-      window.addEventListener('personalizedBlockAdded', this.fetchPersonalizedBlocks);
+      window.addEventListener(
+        'personalizedBlockAdded',
+        this.fetchPersonalizedBlocks
+      );
     },
     beforeDestroy() {
       // Make sure to remove the listener when the component is destroyed
-      window.removeEventListener('personalizedBlockAdded', this.fetchPersonalizedBlocks);
+      window.removeEventListener(
+        'personalizedBlockAdded',
+        this.fetchPersonalizedBlocks
+      );
     },
     methods: {
       fetchPersonalizedBlocks() {
@@ -32,6 +38,7 @@ const PersonalizedBlocksListComponent = Vue.component(
               response.data?.items.map(({ content, ...blockInformation }) => ({
                 ...content,
                 blockInformation,
+                id: "" // this is so important because it will be override when the block is added to the mail content
               }))
             );
             this.isLoading = false;
