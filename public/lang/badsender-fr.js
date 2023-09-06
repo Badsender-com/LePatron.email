@@ -113,7 +113,7 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    "Une erreur s'est produite lors de la récupération des Blocs perso.",
+    "Une erreur s'est produite lors de la récupération des blocs perso.",
   'personalized-blocks-loading': 'Chargement des blocs perso...',
   'personalized-blocks-empty': 'Aucun bloc perso disponible.',
 };

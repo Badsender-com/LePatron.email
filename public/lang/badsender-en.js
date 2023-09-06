@@ -112,7 +112,7 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    'An error occurred while fetching Custom blocks.',
+    'An error occurred while fetching custom blocks.',
   'personalized-blocks-loading': 'Loading custom blocks...',
   'personalized-blocks-empty': 'No custom blocks available.',
 };
