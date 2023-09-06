@@ -38,7 +38,7 @@ const PersonalizedBlocksListComponent = Vue.component(
               response.data?.items.map(({ content, ...blockInformation }) => ({
                 ...content,
                 blockInformation,
-                id: "" // this is so important because it will be override when the block is added to the mail content
+                id: "" // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
               }))
             );
             this.isLoading = false;
