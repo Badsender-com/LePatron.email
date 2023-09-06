@@ -48,11 +48,13 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
     },
     handleOnSubmit() {
       this.isLoading = true;
+      // remove blockInformation from blockContent to do not save it twice
+      const { blockInformation, ...blockContent } = this.blockContent;
       const payload = {
         name: this.blockName,
         category: this.blockCategory,
         groupId: this.vm?.metadata?.groupId, // Retrieve groupId here
-        content: this.blockContent,
+        content: blockContent,
       };
 
       axios
@@ -61,6 +63,9 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
           this.vm.notifier.success(this.vm.t('save-block-success'));
           this.isLoading = false;
           this.closeModal();
+          // Dispatch a custom event to signal that a new personalized block has been added, triggering a refresh in the list component.
+          const event = new Event('personalizedBlockAdded');
+          window.dispatchEvent(event);
         })
         .catch(() => {
           this.vm.notifier.error(this.vm.t('save-block-error'));

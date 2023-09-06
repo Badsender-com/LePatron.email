@@ -109,4 +109,10 @@ module.exports = {
   'saving-block': 'Saving block',
   'save-block-success': 'Block saved successfully',
   'save-block-error': 'Error saving block',
+
+  // PersonalizedBlocksListComponent translations
+  'personalized-blocks-fetch-error':
+    'An error occurred while fetching custom blocks.',
+  'personalized-blocks-loading': 'Loading custom blocks...',
+  'personalized-blocks-empty': 'No custom blocks available.',
 };

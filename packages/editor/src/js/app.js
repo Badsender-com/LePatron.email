@@ -20,6 +20,7 @@ var inlinerPlugin = require('./ext/inliner.js');
 var localStorageLoader = require('./ext/localstorage.js');
 const espPlugin = require('./vue/espPlugin');
 const customizedBlockPlugin = require('./vue/customizedBlockPlugin');
+const personalizedBlocksPlugin = require('./vue/personalizedBlocksPlugin.js');
 const trackingParamsPlugin = require('./vue/trackingParamsPlugin');
 
 if (typeof ko == 'undefined') throw 'Cannot find knockout.js library!';
@@ -185,6 +186,7 @@ var start = function (
     inlinerPlugin,
     espPlugin,
     customizedBlockPlugin,
+    personalizedBlocksPlugin,
     trackingParamsPlugin,
   ];
   if (typeof customExtensions !== 'undefined')

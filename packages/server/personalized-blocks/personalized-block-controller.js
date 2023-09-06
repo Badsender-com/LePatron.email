@@ -22,7 +22,7 @@ module.exports = {
  * @apiSuccess {personalizedBlock[]} items list of personalized blocks
  */
 async function listPersonalizedBlocks(req, res, next) {
-  const { groupId } = req.body;
+  const { groupId } = req.query;
   if (!groupId) {
     return next(new createHttpError.BadRequest(ERROR_CODES.GROUP_ID_REQUIRED));
   }
