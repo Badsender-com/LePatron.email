@@ -1,6 +1,6 @@
 const Vue = require('vue/dist/vue.common');
 const { ModalComponent } = require('../modal/modalComponent');
-const { deletePersonalizedBlock } = require('../../utils/apis'); // Import the delete API
+const { deletePersonalizedBlock } = require('../../utils/apis');
 const axios = require('axios');
 const styleHelper = require('../../utils/style/styleHelper');
 
