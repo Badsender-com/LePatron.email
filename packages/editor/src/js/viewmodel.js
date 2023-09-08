@@ -245,6 +245,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   // toolbox.tmpl.html
   viewModel.addBlock = function (obj, event) {
+    // Personalized blocks need to have block informations to know the name, the category, etc...
+    // but once we add the block to the mail, we keep this informations in the block
+    // so the builder considers there is an update of the template because the block structure
+    // is not the same as the default block in the template.
+    // To fix this issue, we need to remove blockInformation when we are adding a block
+    // in a mail.
     delete obj.blockInformation;
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
