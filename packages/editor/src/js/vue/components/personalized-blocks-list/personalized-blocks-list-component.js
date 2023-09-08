@@ -15,14 +15,14 @@ const PersonalizedBlocksListComponent = Vue.component(
       this.fetchPersonalizedBlocks();
       // Add a global event listener to refresh the list of personalized blocks when a new block is added.
       window.addEventListener(
-        'personalizedBlockAdded',
+        'personalizedBlockApiActionApplied',
         this.fetchPersonalizedBlocks
       );
     },
     beforeDestroy() {
       // Make sure to remove the listener when the component is destroyed
       window.removeEventListener(
-        'personalizedBlockAdded',
+        'personalizedBlockApiActionApplied',
         this.fetchPersonalizedBlocks
       );
     },

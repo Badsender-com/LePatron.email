@@ -101,10 +101,12 @@ module.exports = {
 
   // SaveBlockModal translations
   'title-save-block': 'Enregistrer le bloc',
+  'title-edit-block': 'Modifier le bloc',
   'block-name': 'Nom du bloc',
   'block-category': 'Catégorie du bloc',
   'block-modal-close': 'Fermer',
   'save-block': 'Enregistrer le bloc',
+  'edit-block': 'Modifier le bloc',
   'placeholder-block-name': 'Entrez le nom du bloc',
   'placeholder-block-category': 'Entrez la catégorie du bloc (optionnel)',
   'saving-block': 'Enregistrement en cours',
@@ -113,7 +115,16 @@ module.exports = {
 
   // PersonalizedBlocksListComponent translations
   'personalized-blocks-fetch-error':
-    "Une erreur s'est produite lors de la récupération des blocs perso.",
-  'personalized-blocks-loading': 'Chargement des blocs perso...',
-  'personalized-blocks-empty': 'Aucun bloc perso disponible.',
+    "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
+  'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
+  'personalized-blocks-empty': 'Aucun bloc personnalisé disponible.',
+
+  // DeleteBlockModal translations
+  'title-delete-block': 'Supprimer le bloc',
+  'confirm-delete-block':
+    'Êtes-vous sûr de vouloir supprimer le bloc personnalisé :',
+  'deleting-block': 'Suppression du bloc en cours...',
+  'delete-block': 'Supprimer',
+  'delete-block-success': 'Bloc supprimé avec succès',
+  'delete-block-error': 'Erreur lors de la suppression du bloc',
 };

@@ -10,6 +10,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
+const { ERROR_CODES } = require('../constant/error-codes.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -25,7 +26,33 @@ module.exports = {
   setPassword: asyncHandler(setPassword),
   getPublicProfile: asyncHandler(getPublicProfile),
   login: asyncHandler(login),
+  getCurrentUser: asyncHandler(getCurrentUser),
 };
+
+/**
+ * @api {get} /users/current-user Current user
+ * @apiPermission all users
+ * @apiName GetCurrentUser
+ * @apiGroup Users
+ *
+ * @apiUse users
+ */
+async function getCurrentUser(req, res, next) {
+  try {
+    const currentUser = req.user;
+
+    if (!currentUser) {
+      return next(new createError.NotFound(ERROR_CODES.USER_NOT_FOUND));
+    }
+
+    return res.status(200).json(currentUser);
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).send(error.message);
+    }
+    return res.status(500).send();
+  }
+}
 
 /**
  * @api {get} /users list of users
