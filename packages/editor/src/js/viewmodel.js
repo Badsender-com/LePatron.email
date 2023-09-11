@@ -59,7 +59,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
    * and can automatically detect dependencies. They are primarily used for two-way data binding,
    * allowing the UI to automatically update when the underlying data changes, and vice versa.
    * For more information you can visit the doc : https://knockoutjs.com/documentation/observables.html
-   * 
+   *
    * However, sometimes it's necessary to obtain the raw values from observables, especially when
    * working with complex data structures that may contain nested observables. The function
    * `recursivelyUnwrapObservable` is designed to traverse an object and extract the raw values
@@ -258,6 +258,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   // toolbox.tmpl.html
   viewModel.addBlock = function (obj, event) {
+    // Personalized blocks need to have block informations to know the name, the category, etc...
+    // but once we add the block to the mail, we keep this informations in the block
+    // so the builder considers there is an update of the template because the block structure
+    // is not the same as the default block in the template.
+    // To fix this issue, we need to remove blockInformation when we are adding a block
+    // in a mail.
+    delete obj.blockInformation;
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
     // search the selected block position.
