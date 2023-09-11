@@ -63,7 +63,7 @@ const DeleteBlockModalComponent = Vue.component('DeleteBlockModal', {
     },
   },
   template: `
-  <modal-component ref="modalRef" :class="{ 'small-modal': true, 'error-modal': true }">
+  <modal-component ref="modalRef" class="small-modal error-modal">
       <div class="modal-content" :onClose="closeModal">
         <div class="row">
           <div class="col s12">
