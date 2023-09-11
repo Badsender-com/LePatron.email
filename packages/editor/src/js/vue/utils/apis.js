@@ -28,6 +28,14 @@ function getPersonalizedBlocks() {
   return `${prefixApi}/personalized-blocks`;
 }
 
+function editPersonalizedBlock(id) {
+  return `${prefixApi}/personalized-blocks/${id}`;
+}
+
+function deletePersonalizedBlock(blockId) {
+  return `${prefixApi}/personalized-blocks/${blockId}`;
+}
+
 module.exports = {
   getEspIds,
   getProfileDetail,
@@ -36,4 +44,6 @@ module.exports = {
   sendTestEmails,
   createPersonalizedBlock,
   getPersonalizedBlocks,
+  editPersonalizedBlock,
+  deletePersonalizedBlock,
 };

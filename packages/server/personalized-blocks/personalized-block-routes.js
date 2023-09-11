@@ -11,6 +11,7 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const personalizedBlocksController = require('./personalized-block-controller.js');
+const Roles = require('../account/roles.js');
 
 // Get list of personalized blocks
 router.get(
@@ -31,7 +32,7 @@ router.post(
 // Update a personalized block by ID
 router.put(
   '/:id',
-  guard(),
+  guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
   GUARD_CAN_ACCESS_GROUP_FROM_BODY,
   personalizedBlocksController.updatePersonalizedBlock
 );
@@ -39,8 +40,8 @@ router.put(
 // Delete a personalized block by ID
 router.delete(
   '/:id',
-  guard(),
-  GUARD_CAN_ACCESS_GROUP_FROM_BODY,
+  guard([Roles.GROUP_ADMIN, Roles.SUPER_ADMIN]),
+  GUARD_CAN_ACCESS_GROUP_FROM_QUERY,
   personalizedBlocksController.deletePersonalizedBlock
 );
 

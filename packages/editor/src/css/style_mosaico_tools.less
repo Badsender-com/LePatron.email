@@ -740,6 +740,12 @@
     }
   }
 
+  .buttons-container {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+  }
+
   .draggable-item:hover {
     transform: scale(1.05, 1.05);
     z-index: 10;
@@ -758,6 +764,20 @@
         box-shadow: 0 0 15px @mosaico-shadow-color;
       }
     }
+  }
+
+  .small-modal .modal {
+    max-height: 260px;
+  }
+  .error-button {
+    background-color: @error-color;
+  }
+
+  .modal-text-content {
+    font-size: 1.2em;
+  }
+  .bold-text {
+    font-weight: bold;
   }
 
   .blocks-tabs {

@@ -25,15 +25,18 @@
   </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
-    <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs" data-bind="tabs: { active: $root.blocksActiveTab() }">
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
+    <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs"
+      data-bind="tabs: { active: $root.blocksActiveTab() }">
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
         <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
       </div>
-      <div class="blocks-tab-item" data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
         <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
       </div>
     </div>
-    
+
     <div data-bind="visible: $root.blocksActiveTab() === 'TEMPLATE_BLOCKS'">
       <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
         <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
@@ -52,6 +55,7 @@
           <a href="javascript:void(0)" class="addblockbutton"
             data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
         </div>
+
       </div>
     </div>
     <div class="block-list" data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
@@ -59,7 +63,8 @@
       <div id="personalizedBlocksPlugin">
         <personalized-blocks-plugin />
       </div>
-      <div data-bind="visible: personalizedBlocks().length > 0, foreach: personalizedBlocks()" style="text-align: center">
+      <div data-bind="visible: personalizedBlocks().length > 0, foreach: personalizedBlocks()"
+        style="text-align: center">
         <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
           <div class="block"
             data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock"
@@ -67,18 +72,31 @@
             <div title="Click or drag to add this block to the template" class="handle"
               data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
             </div>
-            <img 
+            <img
               data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }"
               alt="__name__" />
             <span class="block-name"
               data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) })">__name__</span>
           </div>
-          <a href="javascript:void(0)" class="addblockbutton"
-            data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+          <div class="addblockbutton">
+            <div class="buttons-container">
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
+                  <i class="fa fa-trash"></i> <!-- Delete Icon -->
+                </a>
+              </div>
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
+                  <i class="fa fa-pencil"></i> <!-- Edit Icon -->
+                </a>
+              </div>
+              <a href="javascript:void(0)" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    
+
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">

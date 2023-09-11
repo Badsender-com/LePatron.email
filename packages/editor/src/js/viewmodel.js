@@ -48,9 +48,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     logoUrl: '.',
     logoAlt: 'mosaico',
     toggleSaveBlockModal: ko.observable(null),
+    toggleDeleteBlockModal: ko.observable(null),
     // Adding observables to manage "Default Blocks" and "Personalized Blocks" tabs
     blocksActiveTab: ko.observable('TEMPLATE_BLOCKS'), // The name of the active tab ("TEMPLATE_BLOCKS" or "CUSTOM_BLOCKS")
-    personalizedBlocks: ko.observable([])
+    personalizedBlocks: ko.observable([]),
   };
 
   /**
@@ -188,9 +189,21 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // block-wysiwyg.tmpl.html
+  viewModel.deleteBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleDeleteBlockModal(true, actualData);
+  };
+
+  // block-wysiwyg.tmpl.html
+  viewModel.editBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
+  };
+
+  // block-wysiwyg.tmpl.html
   viewModel.saveBlock = function (data, parent) {
     const actualData = recursivelyUnwrapObservable(data);
-    viewModel.toggleSaveBlockModal(true, actualData);
+    viewModel.toggleSaveBlockModal(true, actualData, 'CREATE');
   };
 
   // block-wysiwyg.tmpl.html

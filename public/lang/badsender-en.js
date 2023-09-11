@@ -100,10 +100,12 @@ module.exports = {
 
   // SaveBlockModal translations
   'title-save-block': 'Save block',
+  'title-edit-block': 'Edit block',
   'block-name': 'Block name',
   'block-category': 'Block category',
   'block-modal-close': 'Close',
   'save-block': 'Save block',
+  'edit-block': 'Edit block',
   'placeholder-block-name': 'Enter block name',
   'placeholder-block-category': 'Enter block category (optional)',
   'saving-block': 'Saving block',
@@ -115,4 +117,12 @@ module.exports = {
     'An error occurred while fetching custom blocks.',
   'personalized-blocks-loading': 'Loading custom blocks...',
   'personalized-blocks-empty': 'No custom blocks available.',
+
+  // DeleteBlockModal translations
+  'title-delete-block': 'Delete block',
+  'confirm-delete-block': 'Are you sure you want to delete the custom block:',
+  'deleting-block': 'Deleting block...',
+  'delete-block': 'Delete',
+  'delete-block-success': 'Block deleted successfully',
+  'delete-block-error': 'Error deleting block',
 };
