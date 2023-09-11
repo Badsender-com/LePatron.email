@@ -69,7 +69,7 @@ const DeleteBlockModalComponent = Vue.component('DeleteBlockModal', {
           <div class="col s12">
             <h5>{{vm.t('title-delete-block')}}</h5>
           </div>
-          <div class="col s12 small-text">
+          <div class="col s12 modal-text-content">
             <p>{{ vm.t('confirm-delete-block') }} <span class="bold-text">{{ blockName }}</span>?</p>
           </div>
         </div>
