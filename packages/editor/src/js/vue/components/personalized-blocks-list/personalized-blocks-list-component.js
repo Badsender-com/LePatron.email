@@ -2,7 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const axios = require('axios');
 const { getPersonalizedBlocks } = require('../../utils/apis');
 const debounce = require('lodash.debounce');
-const DEBOUNCE_DELAY_MS = 400;
+const { INPUT_DEBOUNCE_DELAY_MS } = require('../../constant/blocks');
 
 const PersonalizedBlocksListComponent = Vue.component(
   'PersonalizedBlocksListComponent',
@@ -19,7 +19,7 @@ const PersonalizedBlocksListComponent = Vue.component(
       // Initialize debounced function
       this.debouncedFetch = debounce(
         this.fetchPersonalizedBlocks,
-        DEBOUNCE_DELAY_MS
+        INPUT_DEBOUNCE_DELAY_MS
       );
       // Add a global event listener to refresh the list of personalized blocks when a new block is added.
       window.addEventListener(
@@ -49,7 +49,7 @@ const PersonalizedBlocksListComponent = Vue.component(
               response.data?.items.map(({ content, ...blockInformation }) => ({
                 ...content,
                 blockInformation,
-                id: '',
+                id: '', // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
               }))
             );
             this.isLoading = false;
