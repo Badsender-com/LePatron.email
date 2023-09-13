@@ -118,6 +118,9 @@ module.exports = {
     "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
   'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
   'personalized-blocks-empty': 'Aucun bloc personnalisé disponible.',
+  'personalized-blocks-empty-search':
+    'Aucun résultat trouvé pour votre recherche.',
+  'personalized-blocks-search-placeholder': 'Rechercher...',
 
   // DeleteBlockModal translations
   'title-delete-block': 'Supprimer le bloc',

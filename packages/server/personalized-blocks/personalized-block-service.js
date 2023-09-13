@@ -1,6 +1,6 @@
 'use strict';
 
-const { PersonalizedBlocks } = require('../common/models.common.js');
+const { PersonalizedBlocks, Users } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound } = require('http-errors');
@@ -13,11 +13,48 @@ module.exports = {
   deletePersonalizedBlock,
 };
 
-async function getPersonalizedBlocks(groupId) {
+async function getPersonalizedBlocks(groupId, searchTerm = '') {
   try {
-    return await PersonalizedBlocks.find({
-      _group: mongoose.Types.ObjectId(groupId),
-    }).sort({ createdAt: 1 }); // Sorting by creation date in ascending order
+    // Initialize MongoDB aggregation query
+    const query = PersonalizedBlocks.aggregate([
+      // Step 1: Filter personalized blocks by group
+      {
+        $match: { _group: mongoose.Types.ObjectId(groupId) },
+      },
+
+      // Step 2: Join the "Users" collection to get details of the user who created each block
+      {
+        $lookup: {
+          from: Users.collection.name, // Use the collection name from the Users model
+          localField: '_user', // Local field for the join
+          foreignField: '_id', // Foreign field for the join
+          as: 'userDetails', // Store the user details in the field "userDetails"
+        },
+      },
+
+      // Step 3: Unwind the "userDetails" arrays to directly access user fields
+      {
+        $unwind: '$userDetails',
+      },
+
+      // Step 4: Filter results based on the search term
+      {
+        // Search in the "name" field of users
+        // Search in the "name" field of blocks
+        // Search in the "category" field of blocks
+        // The 'i' option makes the search case-insensitive "block" will match "Block", "BLOCK", and "bLoCk".
+        $match: {
+          $or: [
+            { name: { $regex: searchTerm, $options: 'i' } },
+            { category: { $regex: searchTerm, $options: 'i' } },
+            { 'userDetails.name': { $regex: searchTerm, $options: 'i' } },
+          ],
+        },
+      },
+    ]);
+
+    // Sorting by creation date in ascending order
+    return await query.sort({ createdAt: 1 });
   } catch (error) {
     logger.error('Error in getting personalized blocks:', error);
     throw error;

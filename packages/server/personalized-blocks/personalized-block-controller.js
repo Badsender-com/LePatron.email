@@ -22,14 +22,14 @@ module.exports = {
  * @apiSuccess {personalizedBlock[]} items list of personalized blocks
  */
 async function listPersonalizedBlocks(req, res, next) {
-  const { groupId } = req.query;
+  const { groupId, searchTerm } = req.query;
   if (!groupId) {
     return next(new createHttpError.BadRequest(ERROR_CODES.GROUP_ID_REQUIRED));
   }
 
-  // Fetching personalized blocks sorted by creation date (newest last)
   const personalizedBlocks = await personalizedBlockService.getPersonalizedBlocks(
-    groupId
+    groupId,
+    searchTerm
   );
   return res.json({ items: personalizedBlocks });
 }
