@@ -22,13 +22,18 @@ module.exports = {
  * @apiSuccess {personalizedBlock[]} items list of personalized blocks
  */
 async function listPersonalizedBlocks(req, res, next) {
-  const { groupId, searchTerm } = req.query;
-  if (!groupId) {
-    return next(new createHttpError.BadRequest(ERROR_CODES.GROUP_ID_REQUIRED));
+  const { groupId, templateId, searchTerm } = req.query;
+  if (!groupId || !templateId) {
+    return next(
+      new createHttpError.BadRequest(
+        ERROR_CODES.GROUP_ID_AND_TEMPLATE_ID_REQUIRED
+      )
+    );
   }
 
   const personalizedBlocks = await personalizedBlockService.getPersonalizedBlocks(
     groupId,
+    templateId,
     searchTerm
   );
   return res.json({ items: personalizedBlocks });
@@ -41,6 +46,7 @@ async function listPersonalizedBlocks(req, res, next) {
  * @apiGroup PersonalizedBlocks
  *
  * @apiParam (Body) {String} groupId the group of the personalized block
+ * @apiParam (Body) {String} templateId the template of the personalized block
  * @apiParam (Body) {String} name name of the block
  * @apiParam (Body) {String} category category of the block
  * @apiParam (Body) {Mixed} content content of the block
@@ -49,10 +55,10 @@ async function listPersonalizedBlocks(req, res, next) {
  * @apiSuccess {personalizedBlock} personalizedBlock created
  */
 async function createPersonalizedBlock(req, res, next) {
-  const { groupId, name, category, content } = req.body;
+  const { groupId, templateId, name, category, content } = req.body;
   const { user } = req;
 
-  if (!groupId || !name || !content) {
+  if (!groupId || !templateId || !name || !content) {
     return next(
       new createHttpError.BadRequest(
         ERROR_CODES.MISSING_PARAMETERS_PERSONALIZED_BLOCK
@@ -63,6 +69,7 @@ async function createPersonalizedBlock(req, res, next) {
   const newPersonalizedBlock = await personalizedBlockService.addPersonalizedBlock(
     { name, category, content },
     groupId,
+    templateId,
     user.id
   );
 

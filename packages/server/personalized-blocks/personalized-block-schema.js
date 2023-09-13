@@ -1,7 +1,11 @@
 'use strict';
 
 const { Schema } = require('mongoose');
-const { GroupModel, UserModel } = require('../constant/model.names.js');
+const {
+  GroupModel,
+  UserModel,
+  TemplateModel,
+} = require('../constant/model.names.js');
 const { ObjectId, Mixed } = Schema.Types;
 
 /**
@@ -37,6 +41,11 @@ const PersonalizedBlockSchema = Schema(
       type: ObjectId,
       ref: UserModel,
       required: [true, 'User is required'],
+    },
+    _template: {
+      type: ObjectId,
+      ref: TemplateModel,
+      required: [true, 'Template is required'],
     },
     createdAt: {
       type: Date,

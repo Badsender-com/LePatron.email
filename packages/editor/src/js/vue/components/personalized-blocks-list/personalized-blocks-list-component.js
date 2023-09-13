@@ -11,16 +11,18 @@ const PersonalizedBlocksListComponent = Vue.component(
       vm: { type: Object, default: () => ({}) },
     },
     data: () => ({
-      isLoading: false,
+      isLoading: true,
       searchTerm: '',
     }),
     mounted() {
-      this.fetchPersonalizedBlocks();
-      // Initialize debounced function
-      this.debouncedFetch = debounce(
-        this.fetchPersonalizedBlocks,
-        INPUT_DEBOUNCE_DELAY_MS
+      this.currentMailingSubscription = this.vm.currentMailing.subscribe(
+        (newMailing) => {
+          if (newMailing) {
+            this.fetchPersonalizedBlocks();
+          }
+        }
       );
+
       // Add a global event listener to refresh the list of personalized blocks when a new block is added.
       window.addEventListener(
         'personalizedBlockApiActionApplied',
@@ -33,16 +35,23 @@ const PersonalizedBlocksListComponent = Vue.component(
         'personalizedBlockApiActionApplied',
         this.fetchPersonalizedBlocks
       );
+
+      if (this.currentMailingSubscription) {
+        this.currentMailingSubscription.unsubscribe();
+      }
     },
     methods: {
+      debouncedFetch() {
+        debounce(this.fetchPersonalizedBlocks, INPUT_DEBOUNCE_DELAY_MS);
+      },
       fetchPersonalizedBlocks() {
         this.isLoading = true;
         this.vm.personalizedBlocks([]);
         const groupId = this.vm?.metadata?.groupId;
-
+        const templateId = this.vm?.currentMailing()?.templateId; // Retrieve templateId from currentMailing
         axios
           .get(getPersonalizedBlocks(), {
-            params: { groupId, searchTerm: this.searchTerm },
+            params: { groupId, searchTerm: this.searchTerm, templateId },
           })
           .then((response) => {
             this.vm.personalizedBlocks(
