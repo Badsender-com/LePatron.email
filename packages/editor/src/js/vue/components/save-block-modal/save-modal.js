@@ -61,7 +61,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
       let payload = {};
       let blockId = null;
 
-      const templateId = this.vm?.currentMailing?.templateId; // Retrieve templateId from currentMailing
+      const templateId = this.vm?.currentMailing()?.templateId; // Retrieve templateId from currentMailing
 
       // Construct the payload based on the mode
       if (this.mode === 'CREATE') {
@@ -75,7 +75,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
         };
       } else if (this.mode === 'EDIT') {
         const { blockInformation } = this.blockContent;
-        blockId = blockInformation.id; // Use the ID for editing
+        blockId = blockInformation._id; // Use the ID for editing
         payload = {
           name: this.blockName,
           category: this.blockCategory,

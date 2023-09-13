@@ -73,6 +73,7 @@
               data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
             </div>
             <img
+              class="block-image"
               data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }"
               alt="__name__" />
             <span class="block-name"
