@@ -34,7 +34,7 @@ const DeleteBlockModalComponent = Vue.component('DeleteBlockModal', {
       this.$refs.modalRef?.closeModal();
     },
     handleToggleDeleteBlockModalChange(value, blockContent) {
-      const blockId = blockContent?.blockInformation?.id;
+      const blockId = blockContent?.blockInformation?._id;
       this.blockName = blockContent?.blockInformation?.name;
       if (value === true) {
         this.openModal();
