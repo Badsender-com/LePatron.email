@@ -16,32 +16,37 @@ module.exports = {
 async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
   try {
     // Initialize MongoDB aggregation query
-    const query = PersonalizedBlocks.aggregate([
-      // Step 1: Filter personalized blocks by group and by template
-      {
-        $match: {
-          _group: mongoose.Types.ObjectId(groupId),
-          _template: mongoose.Types.ObjectId(templateId),
-        },
-      },
+    const query = [];
 
-      // Step 2: Join the "Users" collection to get details of the user who created each block
-      {
-        $lookup: {
-          from: Users.collection.name, // Use the collection name from the Users model
-          localField: '_user', // Local field for the join
-          foreignField: '_id', // Foreign field for the join
-          as: 'userDetails', // Store the user details in the field "userDetails"
-        },
+    // Step 1: Filter personalized blocks by group and by template
+    query.push({
+      $match: {
+        _group: mongoose.Types.ObjectId(groupId),
+        _template: mongoose.Types.ObjectId(templateId),
       },
+    });
 
-      // Step 3: Unwind the "userDetails" arrays to directly access user fields
-      {
-        $unwind: '$userDetails',
+    // Step 2: Join the "Users" collection to get details of the user who created each block
+    query.push({
+      $lookup: {
+        from: Users.collection.name, // Use the collection name from the Users model
+        localField: '_user', // Local field for the join
+        foreignField: '_id', // Foreign field for the join
+        as: 'userDetails', // Store the user details in the field "userDetails"
       },
+    });
 
-      // Step 4: Filter results based on the search term
-      {
+    // Step 3: Unwind the "userDetails" arrays to directly access user fields
+    query.push({
+      $unwind: {
+        path: '$userDetails',
+        preserveNullAndEmptyArrays: true, // This will keep the documents in the pipeline even if "userDetails" is empty or null
+      },
+    });
+
+    // Step 4: Conditionally filter results based on the search term
+    if (searchTerm) {
+      query.push({
         // Search in the "name" field of users
         // Search in the "name" field of blocks
         // Search in the "category" field of blocks
@@ -53,11 +58,14 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
             { 'userDetails.name': { $regex: searchTerm, $options: 'i' } },
           ],
         },
-      },
-    ]);
+      });
+    }
 
-    // Sorting by creation date in ascending order
-    return await query.sort({ createdAt: 1 });
+    // Sorting: Sort the blocks by creation date in ascending order
+    query.push({ $sort: { createdAt: 1 } });
+
+    // Execute the query
+    return await PersonalizedBlocks.aggregate(query);
   } catch (error) {
     logger.error('Error in getting personalized blocks:', error);
     throw error;
