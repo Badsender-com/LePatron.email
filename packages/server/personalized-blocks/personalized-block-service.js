@@ -47,11 +47,15 @@ async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
     // Step 4: Conditionally filter results based on the search term
     if (searchTerm) {
       query.push({
+        // Search in the "name" field of users
+        // Search in the "name" field of blocks
+        // Search in the "category" field of blocks
+        // The 'i' option makes the search case-insensitive "block" will match "Block", "BLOCK", and "bLoCk".
         $match: {
           $or: [
-            { name: { $regex: searchTerm, $options: 'i' } }, // Search in the "name" field of blocks
-            { category: { $regex: searchTerm, $options: 'i' } }, // Search in the "category" field of blocks
-            { 'userDetails.name': { $regex: searchTerm, $options: 'i' } }, // Search in the "name" field of users
+            { name: { $regex: searchTerm, $options: 'i' } },
+            { category: { $regex: searchTerm, $options: 'i' } },
+            { 'userDetails.name': { $regex: searchTerm, $options: 'i' } },
           ],
         },
       });
