@@ -15,6 +15,10 @@ const PersonalizedBlocksListComponent = Vue.component(
       searchTerm: '',
     }),
     mounted() {
+      this.debouncedFetch = debounce(
+        this.fetchPersonalizedBlocks,
+        INPUT_DEBOUNCE_DELAY_MS
+      );
       this.currentMailingSubscription = this.vm.currentMailing.subscribe(
         (newMailing) => {
           if (newMailing) {
@@ -41,8 +45,8 @@ const PersonalizedBlocksListComponent = Vue.component(
       }
     },
     methods: {
-      debouncedFetch() {
-        debounce(this.fetchPersonalizedBlocks, INPUT_DEBOUNCE_DELAY_MS);
+      handleSearch() {
+        this.debouncedFetch()
       },
       fetchPersonalizedBlocks() {
         this.isLoading = true;
@@ -77,7 +81,7 @@ const PersonalizedBlocksListComponent = Vue.component(
       <div class="input-field search-container">
         <input type="text" 
          v-model="searchTerm" 
-         @input="debouncedFetch" 
+         @input="handleSearch" 
          :placeholder="vm.t('personalized-blocks-search-placeholder')" 
          class="search-input"
          id="searchBlock"/>
