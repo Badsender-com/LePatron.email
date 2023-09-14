@@ -13,13 +13,16 @@ module.exports = {
   deletePersonalizedBlock,
 };
 
-async function getPersonalizedBlocks(groupId, searchTerm = '') {
+async function getPersonalizedBlocks(groupId, templateId, searchTerm = '') {
   try {
     // Initialize MongoDB aggregation query
     const query = PersonalizedBlocks.aggregate([
-      // Step 1: Filter personalized blocks by group
+      // Step 1: Filter personalized blocks by group and by template
       {
-        $match: { _group: mongoose.Types.ObjectId(groupId) },
+        $match: {
+          _group: mongoose.Types.ObjectId(groupId),
+          _template: mongoose.Types.ObjectId(templateId),
+        },
       },
 
       // Step 2: Join the "Users" collection to get details of the user who created each block
@@ -61,11 +64,12 @@ async function getPersonalizedBlocks(groupId, searchTerm = '') {
   }
 }
 
-async function addPersonalizedBlock(block, groupId, userId) {
+async function addPersonalizedBlock(block, groupId, templateId, userId) {
   const newBlock = await PersonalizedBlocks.create({
     ...block,
     _group: mongoose.Types.ObjectId(groupId),
     _user: mongoose.Types.ObjectId(userId),
+    _template: mongoose.Types.ObjectId(templateId),
     createdAt: new Date(),
   });
 

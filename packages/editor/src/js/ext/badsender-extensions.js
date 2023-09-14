@@ -22,6 +22,7 @@ const extendTextEditor = require('./badsender-extend-text-editor');
 const colorPicker = require('./badsender-color-picker');
 const personalizedVariables = require('./badsender-personalized-variables.js');
 const currentUser = require('./badsender-current-user.js');
+const currentMailing = require('./badsender-current-mailing.js');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
 
@@ -62,6 +63,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(colorPicker(opts));
   customExtensions.push(personalizedVariables(opts));
   customExtensions.push(currentUser(opts));
+  customExtensions.push(currentMailing(opts));
   customExtensions.push(espProfiles(opts));
   customExtensions.push(removeImage);
   customExtensions.push(configExtendTinyMce(opts));

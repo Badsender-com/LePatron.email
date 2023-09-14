@@ -116,7 +116,7 @@ module.exports = {
   'personalized-blocks-fetch-error':
     'An error occurred while fetching custom blocks.',
   'personalized-blocks-loading': 'Loading custom blocks...',
-  'personalized-blocks-empty': 'No custom blocks available.',
+  'personalized-blocks-empty': 'No custom blocks available for this template.',
   'personalized-blocks-empty-search': 'No results found for your search.',
   'personalized-blocks-search-placeholder': 'Search...',
 
