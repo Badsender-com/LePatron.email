@@ -17,6 +17,26 @@
     width: ~'calc(100% + 40px)';
   }
 
+  .block-image {
+    min-height: 6rem;
+    min-width: 100%;
+    box-shadow: 0 0 1px #808080;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    line-height: 6rem; /* same value as min-height */
+    background: #ffffffde;
+  }
+
+  .block-image::before {
+    content: "\f1c5"; // Unicode for icon "fa-file-image" */
+    margin-right: 0.3rem;
+    margin-top: -0.1rem;
+    font-family: FontAwesome;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
   .draggable-item {
     margin-left: @gallery-gutter;
     margin-right: @gallery-gutter;

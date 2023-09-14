@@ -11,6 +11,8 @@
     <!-- /ko -->
     <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><i class="fa fa-fw fa-trash-o"></i></div>
     <div title="Duplicate block" class="tool clone" data-bind="attr: { title: $root.t('Duplicate block') }, click: $root.duplicateBlock.bind($element, $index, $parent)"><i class="fa fa-fw fa-files-o"></i></div>
+    <!-- New Save Block Button -->
+    <div title="Save block" class="tool save" data-bind="attr: { title: $root.t('Save block') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><i class="fa fa-fw fa-download"></i></div>
     <!-- /ko -->
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><i class="fa fa-fw fa-magic"></i></div><!-- /ko -->
   </div>

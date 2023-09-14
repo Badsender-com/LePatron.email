@@ -47,7 +47,48 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     logoPath: 'rs/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico',
+    toggleSaveBlockModal: ko.observable(null),
+    toggleDeleteBlockModal: ko.observable(null),
+    // Adding observables to manage "Default Blocks" and "Personalized Blocks" tabs
+    blocksActiveTab: ko.observable('TEMPLATE_BLOCKS'), // The name of the active tab ("TEMPLATE_BLOCKS" or "CUSTOM_BLOCKS")
+    personalizedBlocks: ko.observable([]),
   };
+
+  /**
+   * In Knockout.js, observables are special JavaScript objects that can notify subscribers about changes,
+   * and can automatically detect dependencies. They are primarily used for two-way data binding,
+   * allowing the UI to automatically update when the underlying data changes, and vice versa.
+   * For more information you can visit the doc : https://knockoutjs.com/documentation/observables.html
+   *
+   * However, sometimes it's necessary to obtain the raw values from observables, especially when
+   * working with complex data structures that may contain nested observables. The function
+   * `recursivelyUnwrapObservable` is designed to traverse an object and extract the raw values
+   * from any observables it encounters, producing a 'plain' object without any observables.
+   */
+  function recursivelyUnwrapObservable(obj) {
+    // If 'obj' is an observable, we need to unwrap it to get its actual value.
+    // Since this value might also be an observable, we use a recursive call.
+    if (ko.isObservable(obj)) {
+      return recursivelyUnwrapObservable(obj());
+    }
+
+    // If 'obj' is an object (but not null), we want to explore its properties.
+    else if (typeof obj === 'object' && obj !== null) {
+      const newObj = {};
+
+      // For each property of 'obj', we check if it contains observables and attempt to unwrap them.
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          newObj[key] = recursivelyUnwrapObservable(obj[key]);
+        }
+      }
+
+      return newObj;
+    }
+
+    // If 'obj' is neither an observable nor an object, it's already a primitive or non-observable value.
+    return obj;
+  }
 
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
@@ -148,6 +189,24 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // block-wysiwyg.tmpl.html
+  viewModel.deleteBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleDeleteBlockModal(true, actualData);
+  };
+
+  // block-wysiwyg.tmpl.html
+  viewModel.editBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
+  };
+
+  // block-wysiwyg.tmpl.html
+  viewModel.saveBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleSaveBlockModal(true, actualData, 'CREATE');
+  };
+
+  // block-wysiwyg.tmpl.html
   viewModel.moveBlock = function (index, parent, up) {
     var idx = ko.utils.unwrapObservable(index);
     var parentBlocks = ko.utils.unwrapObservable(parent.blocks);
@@ -199,6 +258,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   // toolbox.tmpl.html
   viewModel.addBlock = function (obj, event) {
+    // Personalized blocks need to have block informations to know the name, the category, etc...
+    // but once we add the block to the mail, we keep this informations in the block
+    // so the builder considers there is an update of the template because the block structure
+    // is not the same as the default block in the template.
+    // To fix this issue, we need to remove blockInformation when we are adding a block
+    // in a mail.
+    delete obj.blockInformation;
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
     // search the selected block position.

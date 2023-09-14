@@ -98,4 +98,37 @@ module.exports = {
   'placeholder-emails-groups': 'Sélectionnez une liste',
   'sending-test-mails': "Envoi de l'email de test…",
   'send-test-mails': 'Envoyer',
+
+  // SaveBlockModal translations
+  'title-save-block': 'Enregistrer le bloc',
+  'title-edit-block': 'Modifier le bloc',
+  'block-name': 'Nom du bloc',
+  'block-category': 'Catégorie du bloc',
+  'block-modal-close': 'Fermer',
+  'save-block': 'Enregistrer le bloc',
+  'edit-block': 'Modifier le bloc',
+  'placeholder-block-name': 'Entrez le nom du bloc',
+  'placeholder-block-category': 'Entrez la catégorie du bloc (optionnel)',
+  'saving-block': 'Enregistrement en cours',
+  'save-block-success': 'Bloc enregistré avec succès',
+  'save-block-error': "Erreur lors de l'enregistrement du bloc",
+
+  // PersonalizedBlocksListComponent translations
+  'personalized-blocks-fetch-error':
+    "Une erreur s'est produite lors de la récupération des blocs personnalisés.",
+  'personalized-blocks-loading': 'Chargement des blocs personnalisés...',
+  'personalized-blocks-empty':
+    'Aucun bloc personnalisé disponible pour ce template.',
+  'personalized-blocks-empty-search':
+    'Aucun résultat trouvé pour votre recherche.',
+  'personalized-blocks-search-placeholder': 'Rechercher...',
+
+  // DeleteBlockModal translations
+  'title-delete-block': 'Supprimer le bloc',
+  'confirm-delete-block':
+    'Êtes-vous sûr de vouloir supprimer le bloc personnalisé :',
+  'deleting-block': 'Suppression du bloc en cours...',
+  'delete-block': 'Supprimer',
+  'delete-block-success': 'Bloc supprimé avec succès',
+  'delete-block-error': 'Erreur lors de la suppression du bloc',
 };
