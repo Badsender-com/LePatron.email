@@ -46,7 +46,7 @@ const PersonalizedBlocksListComponent = Vue.component(
     },
     methods: {
       handleSearch() {
-        this.debouncedFetch()
+        this.debouncedFetch();
       },
       fetchPersonalizedBlocks() {
         this.isLoading = true;
@@ -63,6 +63,7 @@ const PersonalizedBlocksListComponent = Vue.component(
                 ...content,
                 blockInformation,
                 id: '', // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
+                customStyle: true, // We want all custom blocks to be considered as unlinked blocks
               }))
             );
             this.isLoading = false;

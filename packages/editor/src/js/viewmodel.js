@@ -200,10 +200,30 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
   };
 
+  // Helper function to merge blockData and templateData
+  function mergeBlockStylesWithTemplate(blockStyles, templateStyles) {
+    return Object.keys(blockStyles).reduce((mergedStyles, styleKey) => {
+      if (templateStyles.hasOwnProperty(styleKey) && styleKey !== 'type') {
+        mergedStyles[styleKey] = templateStyles[styleKey];
+      } else {
+        mergedStyles[styleKey] = blockStyles[styleKey];
+      }
+      return mergedStyles;
+    }, {});
+  }
+
   // block-wysiwyg.tmpl.html
-  viewModel.saveBlock = function (data, parent) {
-    const actualData = recursivelyUnwrapObservable(data);
-    viewModel.toggleSaveBlockModal(true, actualData, 'CREATE');
+  viewModel.saveBlock = function (blockData) {
+    const allTemplateData = viewModel.exportJS();
+    const templateContentTheme = recursivelyUnwrapObservable(allTemplateData)
+      ?.data?.theme?.contentTheme;
+    const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
+
+    const finalizedBlockData = blockData.customStyle
+      ? unwrappedBlockData
+      : mergeBlockStylesWithTemplate(unwrappedBlockData, templateContentTheme);
+
+    viewModel.toggleSaveBlockModal(true, finalizedBlockData, 'CREATE');
   };
 
   // block-wysiwyg.tmpl.html
