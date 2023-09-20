@@ -46,7 +46,7 @@ const PersonalizedBlocksListComponent = Vue.component(
     },
     methods: {
       handleSearch() {
-        this.debouncedFetch()
+        this.debouncedFetch();
       },
       fetchPersonalizedBlocks() {
         this.isLoading = true;

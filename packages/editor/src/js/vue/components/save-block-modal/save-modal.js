@@ -65,12 +65,19 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
 
       // Construct the payload based on the mode
       if (this.mode === 'CREATE') {
-        const { blockInformation, ...blockContent } = this.blockContent;
+        const {
+          blockInformation,
+          customStyle,
+          ...blockContent
+        } = this.blockContent;
         payload = {
           name: this.blockName,
           category: this.blockCategory,
           groupId: this.vm?.metadata?.groupId,
-          content: blockContent,
+          content: {
+            ...blockContent,
+            customStyle: true, // Set customStyle to true to save this block as an unlinked block, so that it remains unlinked in future usages.
+          },
           templateId, // Include templateId in payload only for CREATE mode
         };
       } else if (this.mode === 'EDIT') {
