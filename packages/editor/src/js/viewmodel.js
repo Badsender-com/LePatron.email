@@ -3,6 +3,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+const _omit = require('lodash.omit');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
@@ -212,14 +213,25 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     }, {});
   }
 
+  function getTemplateData() {
+    // gather meta
+    // remove keys that aren't necessary to update
+    const datas = _omit(ko.toJS(viewModel.metadata), [
+      'urlConverter',
+      'template',
+    ]);
+    datas.data = viewModel.exportJS();
+    return datas;
+  }
+
   // block-wysiwyg.tmpl.html
   viewModel.saveBlock = function (blockData) {
-    const allTemplateData = viewModel.exportJS();
+    const allTemplateData = getTemplateData();
     const templateContentTheme = recursivelyUnwrapObservable(allTemplateData)
       ?.data?.theme?.contentTheme;
     const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
 
-    const finalizedBlockData = blockData.customStyle
+    const finalizedBlockData = unwrappedBlockData?.customStyle
       ? unwrappedBlockData
       : mergeBlockStylesWithTemplate(unwrappedBlockData, templateContentTheme);
 
