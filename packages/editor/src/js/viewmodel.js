@@ -25,6 +25,22 @@ toastr.options = {
   showMethod: 'fadeIn',
   hideMethod: 'fadeOut',
 };
+/* Sets custom styling for all blocks (mainBlocks, blockDefs) in the ViewModel.*/
+function unlinkAllBlocks(viewModel) {
+  const mainBlocks = viewModel.content().mainBlocks().blocks();
+  const blockDefinitions = viewModel.blockDefs;
+
+  // Loop through each block in mainBlocks and set customStyle to true
+  mainBlocks.forEach((blockObservable) => {
+    const block = blockObservable();
+    block.customStyle(true);
+  });
+
+  // Loop through each block definition and set customStyle to true
+  blockDefinitions.forEach((block) => {
+    block.customStyle = true;
+  });
+}
 
 function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   var viewModel = {
@@ -724,6 +740,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       'change'
     );
   }
+
+  unlinkAllBlocks(viewModel);
 
   return viewModel;
 }
