@@ -25,6 +25,22 @@ toastr.options = {
   showMethod: 'fadeIn',
   hideMethod: 'fadeOut',
 };
+/* Sets custom styling for all blocks (mainBlocks, blockDefs) in the ViewModel.*/
+function unlinkAllBlocks(viewModel) {
+  const mainBlocks = viewModel.content().mainBlocks().blocks();
+  const blockDefinitions = viewModel.blockDefs;
+
+  // Loop through each block in mainBlocks and set customStyle to true
+  mainBlocks.forEach((blockObservable) => {
+    const block = blockObservable();
+    block.customStyle(true);
+  });
+
+  // Loop through each block definition and set customStyle to true
+  blockDefinitions.forEach((block) => {
+    block.customStyle = true;
+  });
+}
 
 function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   var viewModel = {
@@ -228,7 +244,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.saveBlock = function (blockData) {
     const allTemplateData = getTemplateData();
     const templateContentTheme = recursivelyUnwrapObservable(allTemplateData)
-      ?.data?.theme?.contentTheme;
+      ?.data?.theme?.contentTheme ?? {};
     const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
 
     const finalizedBlockData = unwrappedBlockData?.customStyle
@@ -296,7 +312,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // is not the same as the default block in the template.
     // To fix this issue, we need to remove blockInformation when we are adding a block
     // in a mail.
-    delete obj.blockInformation;
+    const { blockInformation, ...newBlock } = obj;
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
     // search the selected block position.
@@ -317,14 +333,14 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var pos;
     if (typeof found !== 'undefined') {
       pos = found + 1;
-      viewModel.content().mainBlocks().blocks.splice(pos, 0, obj);
+      viewModel.content().mainBlocks().blocks.splice(pos, 0, newBlock);
       viewModel.notifier.info(
         viewModel.t('New block added after the selected one (__pos__)', {
           pos: pos,
         })
       );
     } else {
-      viewModel.content().mainBlocks().blocks.push(obj);
+      viewModel.content().mainBlocks().blocks.push(newBlock);
       pos = viewModel.content().mainBlocks().blocks().length - 1;
       viewModel.notifier.info(
         viewModel.t('New block added at the model bottom (__pos__)', {
@@ -724,6 +740,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       'change'
     );
   }
+
+  unlinkAllBlocks(viewModel);
 
   return viewModel;
 }
