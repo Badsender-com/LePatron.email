@@ -217,14 +217,26 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
   };
 
+  function isObject(value) {
+    return value && typeof value === 'object' && !Array.isArray(value);
+  }
+
   // Helper function to merge blockData and templateData
-  function mergeBlockStylesWithTemplate(blockStyles, templateStyles) {
-    return Object.keys(blockStyles).reduce((mergedStyles, styleKey) => {
-      if (templateStyles.hasOwnProperty(styleKey) && styleKey !== 'type') {
-        mergedStyles[styleKey] = templateStyles[styleKey];
+  function mergeBlockStylesWithTemplate(blockStyles = {}, templateStyles = {}) {
+    const allKeys = new Set([...Object.keys(blockStyles), ...Object.keys(templateStyles)]);
+  
+    return Array.from(allKeys).reduce((mergedStyles, key) => {
+      const blockValue = blockStyles[key];
+      const templateValue = templateStyles[key];
+  
+      // Si les deux valeurs sont des objets, fusionnez-les récursivement
+      if (isObject(blockValue) && isObject(templateValue)) {
+        mergedStyles[key] = mergeBlockStylesWithTemplate(blockValue, templateValue);
       } else {
-        mergedStyles[styleKey] = blockStyles[styleKey];
+        // Utilisez la valeur du modèle uniquement si la valeur du bloc est undefined
+        mergedStyles[key] = blockValue === undefined ? templateValue : blockValue;
       }
+  
       return mergedStyles;
     }, {});
   }
@@ -243,13 +255,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // block-wysiwyg.tmpl.html
   viewModel.saveBlock = function (blockData) {
     const allTemplateData = getTemplateData();
-    const templateContentTheme = recursivelyUnwrapObservable(allTemplateData)
-      ?.data?.theme?.contentTheme ?? {};
+    const templateContentTheme =
+      recursivelyUnwrapObservable(allTemplateData)?.data?.theme ?? {};
+
+    console.log({ templateContentTheme });
     const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
 
-    const finalizedBlockData = unwrappedBlockData?.customStyle
-      ? unwrappedBlockData
-      : mergeBlockStylesWithTemplate(unwrappedBlockData, templateContentTheme);
+    const finalizedBlockData = mergeBlockStylesWithTemplate(unwrappedBlockData, templateContentTheme);
 
     viewModel.toggleSaveBlockModal(true, finalizedBlockData, 'CREATE');
   };

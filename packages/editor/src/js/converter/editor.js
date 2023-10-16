@@ -416,7 +416,19 @@ var _propEditor = function (
         model._blockDescription +
         '</div>';
     }
-
+    
+    /* CUSTOM STYLE */
+    if (hasCustomStyle) {
+      html +=
+        '<label class="data-boolean blockCheck" data-bind="tooltips: { }">';
+      html +=
+        '<input type="checkbox" value="nothing" data-bind="focusable: true, checked: customStyle" />';
+      html +=
+        '<span title="Switch between global and block level styles editing" data-bind="attr: { title: $root.t(\'Switch between global and block level styles editing\') }" class="checkbox-replacer checkbox-replacer-onoff"></span>'; //  data-bind="tooltip: { content: \'personalizza tutti\' }"
+      html += '</label>';
+      html +=
+        "<!-- ko template: { name: 'customstyle', if: customStyle } --><!-- /ko -->";
+    }
 
     if (typeof prop != 'undefined') {
       html += '<!-- ko with: ' + prop + ' -->';
