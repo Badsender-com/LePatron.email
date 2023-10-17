@@ -301,7 +301,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     const templateContentTheme =
       recursivelyUnwrapObservable(allTemplateData)?.data?.theme ?? {};
 
-    console.log({ templateContentTheme });
     const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
 
     const finalizedBlockData = deepMergeStylesWithTemplates(unwrappedBlockData, templateContentTheme);
