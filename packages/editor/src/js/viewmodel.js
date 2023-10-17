@@ -221,25 +221,41 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     return value && typeof value === 'object' && !Array.isArray(value);
   }
 
-  // Helper function to merge blockData and templateData
-  function mergeBlockStylesWithTemplate(blockStyles = {}, templateStyles = {}) {
-    const allKeys = new Set([...Object.keys(blockStyles), ...Object.keys(templateStyles)]);
-  
-    return Array.from(allKeys).reduce((mergedStyles, key) => {
+  function mergeBlockStylesWithTemplate(blockStyles, templateStyles) {
+    return Object.keys(blockStyles).reduce((mergedStyles, key) => {
       const blockValue = blockStyles[key];
-      const templateValue = templateStyles[key];
-  
-      // Si les deux valeurs sont des objets, fusionnez-les récursivement
+      const templateValue = templateStyles ? templateStyles[key] : undefined;
+
       if (isObject(blockValue) && isObject(templateValue)) {
         mergedStyles[key] = mergeBlockStylesWithTemplate(blockValue, templateValue);
       } else {
-        // Utilisez la valeur du modèle uniquement si la valeur du bloc est undefined
-        mergedStyles[key] = blockValue === undefined ? templateValue : blockValue;
+        mergedStyles[key] = blockValue === undefined || blockValue === null ? templateValue : blockValue;
       }
-  
+
       return mergedStyles;
     }, {});
   }
+
+  // Fonction d'aide pour fusionner les styles avec les templates en pénétrant profondément dans les objets
+  function deepMergeStylesWithTemplates(blockData, templateData) {
+    return Object.keys(blockData).reduce((result, key) => {
+      if (isObject(blockData[key])) {
+        let mergedSubObject = blockData[key];
+        for (let templateKey in templateData) {
+          if (isObject(templateData[templateKey]) && templateData[templateKey][key]) {
+            mergedSubObject = mergeBlockStylesWithTemplate(blockData[key], templateData[templateKey][key]);
+            break;
+          }
+        }
+        result[key] = mergedSubObject;
+      } else {
+        result[key] = blockData[key];
+      }
+
+      return result;
+    }, {});
+  }
+
 
   function getTemplateData() {
     // gather meta
@@ -261,7 +277,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     console.log({ templateContentTheme });
     const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
 
-    const finalizedBlockData = mergeBlockStylesWithTemplate(unwrappedBlockData, templateContentTheme);
+    const finalizedBlockData = deepMergeStylesWithTemplates(unwrappedBlockData, templateContentTheme);
 
     viewModel.toggleSaveBlockModal(true, finalizedBlockData, 'CREATE');
   };
