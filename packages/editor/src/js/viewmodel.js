@@ -217,18 +217,36 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
   };
 
+  /**
+   * Checks if the provided value is an object (excluding arrays).
+   *
+   * @param {any} value - The value to be checked.
+   * @returns {boolean} - Returns true if the value is an object and not an array.
+   */
   function isObject(value) {
     return value && typeof value === 'object' && !Array.isArray(value);
   }
 
+  /**
+   * Merges block styles with template styles. If an attribute in block styles
+   * is undefined or null, it takes the value from the template styles. If an attribute
+   * doesn't exist in the template styles, the original value from block styles is retained.
+   *
+   * @param {object} blockStyles - The styles from the block.
+   * @param {object} templateStyles - The styles from the template.
+   * @returns {object} - Returns the merged styles.
+   */
   function mergeBlockStylesWithTemplate(blockStyles, templateStyles) {
     return Object.keys(blockStyles).reduce((mergedStyles, key) => {
       const blockValue = blockStyles[key];
+      // Use the template style only if it exists, otherwise set to undefined.
       const templateValue = templateStyles ? templateStyles[key] : undefined;
 
+      // If both blockValue and templateValue are objects, merge them recursively.
       if (isObject(blockValue) && isObject(templateValue)) {
         mergedStyles[key] = mergeBlockStylesWithTemplate(blockValue, templateValue);
       } else {
+        // If blockValue is undefined or null, use the templateValue, else keep the blockValue.
         mergedStyles[key] = blockValue === undefined || blockValue === null ? templateValue : blockValue;
       }
 
@@ -236,9 +254,18 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     }, {});
   }
 
-  // Fonction d'aide pour fusionner les styles avec les templates en pénétrant profondément dans les objets
+  /**
+   * Merges block data styles with template styles deeply. For each attribute in block data,
+   * if it's an object, it looks through the template data to find a matching template style and merges them.
+   * If the attribute is not an object or doesn't have a corresponding template style, it retains its original value.
+   *
+   * @param {object} blockData - The main block data containing styles.
+   * @param {object} templateData - The main template data containing styles.
+   * @returns {object} - Returns the deeply merged block styles.
+   */
   function deepMergeStylesWithTemplates(blockData, templateData) {
     return Object.keys(blockData).reduce((result, key) => {
+      // If the block data attribute is an object, look for a matching template style.
       if (isObject(blockData[key])) {
         let mergedSubObject = blockData[key];
         for (let templateKey in templateData) {
@@ -249,13 +276,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         }
         result[key] = mergedSubObject;
       } else {
+        // If the block data attribute is not an object, retain its original value.
         result[key] = blockData[key];
       }
 
       return result;
     }, {});
   }
-
 
   function getTemplateData() {
     // gather meta
