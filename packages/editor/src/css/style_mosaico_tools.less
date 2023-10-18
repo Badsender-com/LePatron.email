@@ -643,6 +643,29 @@
     overflow: hidden;
   }
 
+
+  .block {
+    position: relative;
+  }
+
+  .block-custom {
+    min-height: 80px;
+    margin-bottom: 5px;
+    background-color: #F3F3F3;
+    padding-top: 35px;
+  }
+
+  .block-content-custom {
+    margin-left: 10px;
+
+    .block-content-custom-text {
+      margin-top: 25px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
   #tooltabs.ui-tabs {
     overflow: hidden;
     .ui-tabs-panel {
@@ -731,6 +754,16 @@
       bottom: 10px;
       right: 5px;
       display: none;
+
+      &.custom {
+        right: 10px;
+      }
+
+      .buttons-container {
+        .ui-button {
+          margin: 0px;
+        }
+      }
     }
 
     .image,
