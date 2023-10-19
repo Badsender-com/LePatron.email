@@ -608,6 +608,8 @@ var _propEditor = function (
     ) {
       var bindings = [];
 
+      if (typeof globalStyleProp != 'undefined')
+        bindings.push('css: { notnull: ' + prop + '() !== null }');
       title =
         model !== null && typeof model._help !== 'undefined'
           ? ' title="' +
@@ -623,6 +625,7 @@ var _propEditor = function (
           : '';
       html +=
         '<div class="propEditor ' +
+        (checkboxes ? 'checkboxes' : '') +
         '"' +
         bind +
         '>';
@@ -658,7 +661,7 @@ var _propEditor = function (
 
         if (checkboxes) {
           html +=
-            '<div class="propCheck"><label data-bind="tooltips: {}"><input type="checkbox" data-bind="focusable: true, click: function(evt, obj) { $root.localGlobalSwitch(' +
+            '<div class="propCheck"><label data-bind="tooltips: {},visible: !$root.isCurrentCustomBlock()"><input type="checkbox" data-bind="focusable: true, click: function(evt, obj) { $root.localGlobalSwitch(' +
             prop +
             ', ' +
             globalStyleProp +

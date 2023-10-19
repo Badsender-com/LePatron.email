@@ -287,6 +287,8 @@ var templateCompiler = function (
 
   delete jsorjson.tracking;
 
+  const storedMainBlocks = jsorjson.mainBlocks?.blocks?.filter(block => block.blockInformation);
+
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
   var res = templatecode.match(
@@ -505,6 +507,8 @@ var templateCompiler = function (
     utmCampaignKey: utmCampaignKeyObs,
     utmCampaignValue: utmCampaignValueObs,
   });
+
+  viewModel.storedMainBlocks(storedMainBlocks);
 
   if (tracking && tracking.hasGoogleAnalyticsUtm) {
     viewModel.content().tracking().hasGoogleAnalyticsUtm(tracking.hasGoogleAnalyticsUtm);

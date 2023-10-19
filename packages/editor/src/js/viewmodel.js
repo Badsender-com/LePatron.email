@@ -47,6 +47,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     galleryRecent: ko.observableArray([]),
     galleryRemote: ko.observableArray([]),
     selectedBlock: ko.observable(null),
+    storedMainBlocks: ko.observable([]),
+    isCurrentCustomBlock: ko.observable(null),
     selectedItem: ko.observable(null),
     selectedTool: ko.observable(0),
     selectedImageTab: ko.observable(0),
@@ -366,7 +368,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // is not the same as the default block in the template.
     // To fix this issue, we need to remove blockInformation when we are adding a block
     // in a mail.
-    const { blockInformation, ...newBlock } = obj;
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
     // search the selected block position.
@@ -387,14 +388,14 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var pos;
     if (typeof found !== 'undefined') {
       pos = found + 1;
-      viewModel.content().mainBlocks().blocks.splice(pos, 0, newBlock);
+      viewModel.content().mainBlocks().blocks.splice(pos, 0, obj);
       viewModel.notifier.info(
         viewModel.t('New block added after the selected one (__pos__)', {
           pos: pos,
         })
       );
     } else {
-      viewModel.content().mainBlocks().blocks.push(newBlock);
+      viewModel.content().mainBlocks().blocks.push(obj );
       pos = viewModel.content().mainBlocks().blocks().length - 1;
       viewModel.notifier.info(
         viewModel.t('New block added at the model bottom (__pos__)', {
@@ -405,6 +406,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // find the newly added block and select it!
     var added = viewModel.content().mainBlocks().blocks()[pos]();
     viewModel.selectBlock(added, true);
+
+    if (added.blockInformation()) {
+      const blockToAdd = recursivelyUnwrapObservable(added);
+      viewModel.storedMainBlocks([...viewModel.storedMainBlocks(), blockToAdd]);
+    }
+
     // prevent click propagation (losing url hash - see #43)
     return false;
   };
@@ -516,6 +523,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         viewModel.selectedTool(1);
     }
   }.bind(viewModel, viewModel.selectedBlock);
+
+  viewModel.isCurrentCustomBlock = function() {
+    return viewModel.storedMainBlocks().find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
+  };
 
   // DEBUG
   viewModel.countSubscriptions = function (model, debug) {
