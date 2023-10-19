@@ -609,7 +609,7 @@ var _propEditor = function (
       var bindings = [];
 
       if (typeof globalStyleProp != 'undefined')
-        bindings.push('css: { notnull: ' + prop + '() !== null }');
+        bindings.push('css: { notnull: ' + prop + '() !== null && !$root.isCurrentCustomBlock() }');
       title =
         model !== null && typeof model._help !== 'undefined'
           ? ' title="' +
