@@ -47,7 +47,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     galleryRecent: ko.observableArray([]),
     galleryRemote: ko.observableArray([]),
     selectedBlock: ko.observable(null),
-    storedMainBlocks: ko.observable([]),
+    mainPersonalizedBlocks: ko.observable([]),
     isCurrentCustomBlock: ko.observable(null),
     selectedItem: ko.observable(null),
     selectedTool: ko.observable(0),
@@ -395,7 +395,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         })
       );
     } else {
-      viewModel.content().mainBlocks().blocks.push(obj );
+      viewModel.content().mainBlocks().blocks.push(obj);
       pos = viewModel.content().mainBlocks().blocks().length - 1;
       viewModel.notifier.info(
         viewModel.t('New block added at the model bottom (__pos__)', {
@@ -409,7 +409,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
     if (added.blockInformation()) {
       const blockToAdd = recursivelyUnwrapObservable(added);
-      viewModel.storedMainBlocks([...viewModel.storedMainBlocks(), blockToAdd]);
+      viewModel.mainPersonalizedBlocks([...viewModel.mainPersonalizedBlocks(), blockToAdd]);
     }
 
     // prevent click propagation (losing url hash - see #43)
@@ -525,7 +525,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   }.bind(viewModel, viewModel.selectedBlock);
 
   viewModel.isCurrentCustomBlock = function() {
-    return viewModel.storedMainBlocks().find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
+    return viewModel.mainPersonalizedBlocks().find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
   };
 
   // DEBUG
