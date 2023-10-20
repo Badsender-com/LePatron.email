@@ -61,7 +61,12 @@ const PersonalizedBlocksListComponent = Vue.component(
             this.vm.personalizedBlocks(
               response.data?.items.map(({ content, ...blockInformation }) => ({
                 ...content,
-                blockInformation,
+                blockInformation: {
+                  userDetails: {
+                    name: 'admin'
+                  },
+                  ...blockInformation,
+                },
                 id: '', // This line is crucial. The `viewModel.loadDefaultBlocks` function will override this `id` when the block is added to the email content. Without this placeholder, there could be issues when adding personalized blocks in emails.
               }))
             );
@@ -79,10 +84,10 @@ const PersonalizedBlocksListComponent = Vue.component(
     <div id="personalized-blocks-list">
       <!-- Input field with style and search icon -->
       <div class="input-field search-container">
-        <input type="text" 
-         v-model="searchTerm" 
-         @input="handleSearch" 
-         :placeholder="vm.t('personalized-blocks-search-placeholder')" 
+        <input type="text"
+         v-model="searchTerm"
+         @input="handleSearch"
+         :placeholder="vm.t('personalized-blocks-search-placeholder')"
          class="search-input"
          id="searchBlock"/>
         <label for="searchBlock"><i class="fa fa-search search-icon"></i></label> <!-- Search Icon -->
