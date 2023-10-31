@@ -287,7 +287,7 @@ var templateCompiler = function (
 
   delete jsorjson.tracking;
 
-  const mainPersonalizedBlocks = jsorjson.mainBlocks?.blocks?.filter(block => block.blockInformation);
+  const mainPersonalizedBlocks = jsorjson?.mainBlocks?.blocks?.filter(block => block.blockInformation);
 
   // we strip content before <html> tag and after </html> because jquery doesn't parse it.
   // we'll keep it "raw" and use it in the preview/output methods.
@@ -429,8 +429,8 @@ var templateCompiler = function (
         {
           ...unwrapped,
           mainBlocks: {
-            ...unwrapped.mainBlocks,
-            blocks: unwrapped.mainBlocks.blocks.map(item => {
+            ...unwrapped?.mainBlocks,
+            blocks: unwrapped?.mainBlocks?.blocks?.map(item => {
               // We ignore blockInformation prop from blocks and don't display modal
               // if there is only this change between definition and current blocks
               // Note: if you need to ignore an other prop inside blocks, you can add the prop in the line below
