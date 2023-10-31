@@ -525,7 +525,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   }.bind(viewModel, viewModel.selectedBlock);
 
   viewModel.isCurrentCustomBlock = function() {
-    return viewModel.mainPersonalizedBlocks().find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
+    return viewModel.mainPersonalizedBlocks()?.find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
   };
 
   // DEBUG

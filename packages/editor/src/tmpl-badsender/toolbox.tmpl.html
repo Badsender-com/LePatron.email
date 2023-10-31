@@ -80,20 +80,20 @@
               <span class="block-content-custom-text"
                 data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.userDetails.name) })">__name__</span>
             </div>
-            <div class="addblockbutton custom">
-              <div class="buttons-container">
-                <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
-                  <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
-                    <i class="fa fa-trash"></i> <!-- Delete Icon -->
-                  </a>
-                </div>
-                <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
-                  <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
-                    <i class="fa fa-pencil"></i> <!-- Edit Icon -->
-                  </a>
-                </div>
-                <a href="javascript:void(0)" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+          </div>
+          <div class="addblockbutton custom">
+            <div class="buttons-container">
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
+                  <i class="fa fa-trash"></i> <!-- Delete Icon -->
+                </a>
               </div>
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
+                  <i class="fa fa-pencil"></i> <!-- Edit Icon -->
+                </a>
+              </div>
+              <a href="javascript:void(0)" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
             </div>
           </div>
         </div>
