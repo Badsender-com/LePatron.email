@@ -426,7 +426,8 @@ var templateCompiler = function (
         undefined,
         content._unwrap(),
         blockDefs,
-        {
+        unwrapped && unwrapped.mainBlocks && unwrapped.mainBlocks.blocks ? (
+          {
           ...unwrapped,
           mainBlocks: {
             ...unwrapped?.mainBlocks,
@@ -440,7 +441,9 @@ var templateCompiler = function (
               return restBlock;
             })
           }
-        }
+        }) : (
+          unwrapped
+        )
       )
     );
     // if checkModelRes is 1 then the model is not fully compatible but we fixed it
