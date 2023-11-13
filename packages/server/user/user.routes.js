@@ -13,6 +13,10 @@ const users = require('./user.controller.js');
 /// ///
 
 router.all('*', guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]));
+
+// Add endpoint for getting the current user's details
+router.get('/current-user', guard(), users.getCurrentUser);
+
 router.get('', GUARD_ADMIN, users.list);
 router.get('/:userId', users.read);
 router.post('', users.create);

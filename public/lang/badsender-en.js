@@ -97,4 +97,34 @@ module.exports = {
   'placeholder-emails-groups': 'Select a list',
   'sending-test-mails': 'Sending test mail…',
   'send-test-mails': 'Send',
+
+  // SaveBlockModal translations
+  'title-save-block': 'Save block',
+  'title-edit-block': 'Edit block',
+  'block-name': 'Block name',
+  'block-category': 'Block description',
+  'block-modal-close': 'Close',
+  'save-block': 'Save block',
+  'edit-block': 'Edit block',
+  'placeholder-block-name': 'Enter block name',
+  'placeholder-block-category': 'Enter block description (optional)',
+  'saving-block': 'Saving block',
+  'save-block-success': 'Block saved successfully',
+  'save-block-error': 'Error saving block',
+
+  // PersonalizedBlocksListComponent translations
+  'personalized-blocks-fetch-error':
+    'An error occurred while fetching custom blocks.',
+  'personalized-blocks-loading': 'Loading custom blocks...',
+  'personalized-blocks-empty': 'No custom blocks available for this template.',
+  'personalized-blocks-empty-search': 'No results found for your search.',
+  'personalized-blocks-search-placeholder': 'Search...',
+
+  // DeleteBlockModal translations
+  'title-delete-block': 'Delete block',
+  'confirm-delete-block': 'Are you sure you want to delete the custom block:',
+  'deleting-block': 'Deleting block...',
+  'delete-block': 'Delete',
+  'delete-block-success': 'Block deleted successfully',
+  'delete-block-error': 'Error deleting block',
 };

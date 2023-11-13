@@ -3,6 +3,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+const _omit = require('lodash.omit');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 
@@ -24,12 +25,30 @@ toastr.options = {
   showMethod: 'fadeIn',
   hideMethod: 'fadeOut',
 };
+/* Sets custom styling for all blocks (mainBlocks, blockDefs) in the ViewModel.*/
+function unlinkAllBlocks(viewModel) {
+  const mainBlocks = viewModel.content().mainBlocks().blocks();
+  const blockDefinitions = viewModel.blockDefs;
+
+  // Loop through each block in mainBlocks and set customStyle to true
+  mainBlocks.forEach((blockObservable) => {
+    const block = blockObservable();
+    block.customStyle(true);
+  });
+
+  // Loop through each block definition and set customStyle to true
+  blockDefinitions.forEach((block) => {
+    block.customStyle = true;
+  });
+}
 
 function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   var viewModel = {
     galleryRecent: ko.observableArray([]),
     galleryRemote: ko.observableArray([]),
     selectedBlock: ko.observable(null),
+    mainPersonalizedBlocks: ko.observable([]),
+    isCurrentCustomBlock: ko.observable(null),
     selectedItem: ko.observable(null),
     selectedTool: ko.observable(0),
     selectedImageTab: ko.observable(0),
@@ -47,7 +66,48 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     logoPath: 'rs/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico',
+    toggleSaveBlockModal: ko.observable(null),
+    toggleDeleteBlockModal: ko.observable(null),
+    // Adding observables to manage "Default Blocks" and "Personalized Blocks" tabs
+    blocksActiveTab: ko.observable('TEMPLATE_BLOCKS'), // The name of the active tab ("TEMPLATE_BLOCKS" or "CUSTOM_BLOCKS")
+    personalizedBlocks: ko.observable([]),
   };
+
+  /**
+   * In Knockout.js, observables are special JavaScript objects that can notify subscribers about changes,
+   * and can automatically detect dependencies. They are primarily used for two-way data binding,
+   * allowing the UI to automatically update when the underlying data changes, and vice versa.
+   * For more information you can visit the doc : https://knockoutjs.com/documentation/observables.html
+   *
+   * However, sometimes it's necessary to obtain the raw values from observables, especially when
+   * working with complex data structures that may contain nested observables. The function
+   * `recursivelyUnwrapObservable` is designed to traverse an object and extract the raw values
+   * from any observables it encounters, producing a 'plain' object without any observables.
+   */
+  function recursivelyUnwrapObservable(obj) {
+    // If 'obj' is an observable, we need to unwrap it to get its actual value.
+    // Since this value might also be an observable, we use a recursive call.
+    if (ko.isObservable(obj)) {
+      return recursivelyUnwrapObservable(obj());
+    }
+
+    // If 'obj' is an object (but not null), we want to explore its properties.
+    else if (typeof obj === 'object' && obj !== null) {
+      const newObj = {};
+
+      // For each property of 'obj', we check if it contains observables and attempt to unwrap them.
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          newObj[key] = recursivelyUnwrapObservable(obj[key]);
+        }
+      }
+
+      return newObj;
+    }
+
+    // If 'obj' is neither an observable nor an object, it's already a primitive or non-observable value.
+    return obj;
+  }
 
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
@@ -148,6 +208,109 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // block-wysiwyg.tmpl.html
+  viewModel.deleteBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleDeleteBlockModal(true, actualData);
+  };
+
+  // block-wysiwyg.tmpl.html
+  viewModel.editBlock = function (data, parent) {
+    const actualData = recursivelyUnwrapObservable(data);
+    viewModel.toggleSaveBlockModal(true, actualData, 'EDIT');
+  };
+
+  /**
+   * Checks if the provided value is an object (excluding arrays).
+   *
+   * @param {any} value - The value to be checked.
+   * @returns {boolean} - Returns true if the value is an object and not an array.
+   */
+  function isObject(value) {
+    return value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  /**
+   * Merges block styles with template styles. If an attribute in block styles
+   * is undefined or null, it takes the value from the template styles. If an attribute
+   * doesn't exist in the template styles, the original value from block styles is retained.
+   *
+   * @param {object} blockStyles - The styles from the block.
+   * @param {object} templateStyles - The styles from the template.
+   * @returns {object} - Returns the merged styles.
+   */
+  function mergeBlockStylesWithTemplate(blockStyles, templateStyles) {
+    return Object.keys(blockStyles).reduce((mergedStyles, key) => {
+      const blockValue = blockStyles[key];
+      // Use the template style only if it exists, otherwise set to undefined.
+      const templateValue = templateStyles ? templateStyles[key] : undefined;
+
+      // If both blockValue and templateValue are objects, merge them recursively.
+      if (isObject(blockValue) && isObject(templateValue)) {
+        mergedStyles[key] = mergeBlockStylesWithTemplate(blockValue, templateValue);
+      } else {
+        // If blockValue is undefined or null, use the templateValue, else keep the blockValue.
+        mergedStyles[key] = blockValue === undefined || blockValue === null ? templateValue : blockValue;
+      }
+
+      return mergedStyles;
+    }, {});
+  }
+
+  /**
+   * Merges block data styles with template styles deeply. For each attribute in block data,
+   * if it's an object, it looks through the template data to find a matching template style and merges them.
+   * If the attribute is not an object or doesn't have a corresponding template style, it retains its original value.
+   *
+   * @param {object} blockData - The main block data containing styles.
+   * @param {object} templateData - The main template data containing styles.
+   * @returns {object} - Returns the deeply merged block styles.
+   */
+  function deepMergeStylesWithTemplates(blockData, templateData) {
+    return Object.keys(blockData).reduce((result, key) => {
+      // If the block data attribute is an object, look for a matching template style.
+      if (isObject(blockData[key])) {
+        let mergedSubObject = blockData[key];
+        for (let templateKey in templateData) {
+          if (isObject(templateData[templateKey]) && templateData[templateKey][key]) {
+            mergedSubObject = mergeBlockStylesWithTemplate(blockData[key], templateData[templateKey][key]);
+            break;
+          }
+        }
+        result[key] = mergedSubObject;
+      } else {
+        // If the block data attribute is not an object, retain its original value.
+        result[key] = blockData[key];
+      }
+
+      return result;
+    }, {});
+  }
+
+  function getTemplateData() {
+    // gather meta
+    // remove keys that aren't necessary to update
+    const datas = _omit(ko.toJS(viewModel.metadata), [
+      'urlConverter',
+      'template',
+    ]);
+    datas.data = viewModel.exportJS();
+    return datas;
+  }
+
+  // block-wysiwyg.tmpl.html
+  viewModel.saveBlock = function (blockData) {
+    const allTemplateData = getTemplateData();
+    const templateContentTheme =
+      recursivelyUnwrapObservable(allTemplateData)?.data?.theme ?? {};
+
+    const unwrappedBlockData = recursivelyUnwrapObservable(blockData);
+
+    const finalizedBlockData = deepMergeStylesWithTemplates(unwrappedBlockData, templateContentTheme);
+
+    viewModel.toggleSaveBlockModal(true, finalizedBlockData, 'CREATE');
+  };
+
+  // block-wysiwyg.tmpl.html
   viewModel.moveBlock = function (index, parent, up) {
     var idx = ko.utils.unwrapObservable(index);
     var parentBlocks = ko.utils.unwrapObservable(parent.blocks);
@@ -199,6 +362,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   // toolbox.tmpl.html
   viewModel.addBlock = function (obj, event) {
+    // Personalized blocks need to have block informations to know the name, the category, etc...
+    // but once we add the block to the mail, we keep this informations in the block
+    // so the builder considers there is an update of the template because the block structure
+    // is not the same as the default block in the template.
+    // To fix this issue, we need to remove blockInformation when we are adding a block
+    // in a mail.
     // if there is a selected block we try to add the block just after the selected one.
     var selected = viewModel.selectedBlock();
     // search the selected block position.
@@ -237,6 +406,12 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // find the newly added block and select it!
     var added = viewModel.content().mainBlocks().blocks()[pos]();
     viewModel.selectBlock(added, true);
+
+    if (added.blockInformation()) {
+      const blockToAdd = recursivelyUnwrapObservable(added);
+      viewModel.mainPersonalizedBlocks([...viewModel.mainPersonalizedBlocks(), blockToAdd]);
+    }
+
     // prevent click propagation (losing url hash - see #43)
     return false;
   };
@@ -348,6 +523,10 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
         viewModel.selectedTool(1);
     }
   }.bind(viewModel, viewModel.selectedBlock);
+
+  viewModel.isCurrentCustomBlock = function() {
+    return viewModel.mainPersonalizedBlocks()?.find(block => block.id == viewModel.selectedBlock()?.id()) != undefined;
+  };
 
   // DEBUG
   viewModel.countSubscriptions = function (model, debug) {
@@ -626,6 +805,8 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       'change'
     );
   }
+
+  unlinkAllBlocks(viewModel);
 
   return viewModel;
 }

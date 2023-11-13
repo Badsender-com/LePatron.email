@@ -416,20 +416,6 @@ var _propEditor = function (
         model._blockDescription +
         '</div>';
     }
-
-    /* CUSTOM STYLE */
-    if (hasCustomStyle) {
-      html +=
-        '<label class="data-boolean blockCheck" data-bind="tooltips: { }">';
-      html +=
-        '<input type="checkbox" value="nothing" data-bind="focusable: true, checked: customStyle" />';
-      html +=
-        '<span title="Switch between global and block level styles editing" data-bind="attr: { title: $root.t(\'Switch between global and block level styles editing\') }" class="checkbox-replacer checkbox-replacer-onoff"></span>'; //  data-bind="tooltip: { content: \'personalizza tutti\' }"
-      html += '</label>';
-      html +=
-        "<!-- ko template: { name: 'customstyle', if: customStyle } --><!-- /ko -->";
-    }
-
     if (typeof prop != 'undefined') {
       html += '<!-- ko with: ' + prop + ' -->';
 
@@ -623,7 +609,7 @@ var _propEditor = function (
       var bindings = [];
 
       if (typeof globalStyleProp != 'undefined')
-        bindings.push('css: { notnull: ' + prop + '() !== null }');
+        bindings.push('css: { notnull: ' + prop + '() !== null && !$root.isCurrentCustomBlock() }');
       title =
         model !== null && typeof model._help !== 'undefined'
           ? ' title="' +
@@ -675,7 +661,7 @@ var _propEditor = function (
 
         if (checkboxes) {
           html +=
-            '<div class="propCheck"><label data-bind="tooltips: {}"><input type="checkbox" data-bind="focusable: true, click: function(evt, obj) { $root.localGlobalSwitch(' +
+            '<div class="propCheck"><label data-bind="tooltips: {},visible: !$root.isCurrentCustomBlock()"><input type="checkbox" data-bind="focusable: true, click: function(evt, obj) { $root.localGlobalSwitch(' +
             prop +
             ', ' +
             globalStyleProp +

@@ -3,28 +3,103 @@
   <div id="espModal">
     <esp-plugin />
   </div>
+  <div id="customizedBlockModal">
+    <customized-block-plugin />
+  </div>
   <div class="tooltabs__top-bar">
     <a class="tooltabs__top-logo" href="/" data-bind="attr: { href: $root.logoUrl }">
-      <img data-bind="attr: { src: $root.logoPath, alt: $root.logoAlt }" alt="mosaico"  />
+      <img data-bind="attr: { src: $root.logoPath, alt: $root.logoAlt }" alt="mosaico" />
     </a>
     <ul class="tooltabs__list">
-      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Blocks ready to be added to the template" data-local="true" href="#toolblocks" data-bind="attr: { title: $root.t('Blocks ready to be added to the template') }"><i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Blocks')">Blocks</span></a></li>
-      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit content options" href="#toolcontents" data-local="true" data-bind="attr: { title: $root.t('Edit content options') }"><i class="fa fa-fw fa-pencil"></i> <span data-bind="html: $root.t('Content')">Content</span></a></li>
-      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit style options" href="#toolstyles" data-local="true" data-bind="attr: { title: $root.t('Edit style options') }"><i class="fa fa-fw fa-paint-brush"></i> <span data-bind="html: $root.t('Style')">Style</span></a></li>
-   </ul>
+      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Blocks ready to be added to the template"
+          data-local="true" href="#toolblocks"
+          data-bind="attr: { title: $root.t('Blocks ready to be added to the template') }"><i
+            class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Blocks')">Blocks</span></a></li>
+      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit content options" href="#toolcontents"
+          data-local="true" data-bind="attr: { title: $root.t('Edit content options') }"><i
+            class="fa fa-fw fa-pencil"></i> <span data-bind="html: $root.t('Content')">Content</span></a></li>
+      <li class="tooltabs__item" data-bind="tooltips: {}"><a title="Edit style options" href="#toolstyles"
+          data-local="true" data-bind="attr: { title: $root.t('Edit style options') }"><i
+            class="fa fa-fw fa-paint-brush"></i> <span data-bind="html: $root.t('Style')">Style</span></a></li>
+    </ul>
   </div>
 
   <div id="toolblocks" data-bind="scrollable: true">
-    <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
-      <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
-        <div class="block" data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock" style="position: relative;">
-          <div title="Click or drag to add this block to the template" class="handle" data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}"></div>
-          <img data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(type) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }" alt="__name__" />
-          <span class="block-name" data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(type) })">__name__</span>
-        </div>
-        <a href="javascript:void(0)" class="addblockbutton" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+    <div id="blockTabs" class="blocks-tabs-horizontal button_color blocks-tabs"
+      data-bind="tabs: { active: $root.blocksActiveTab() }">
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('TEMPLATE_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'TEMPLATE_BLOCKS' }">
+        <i class="fa fa-fw fa-cubes"></i> <span data-bind="html: $root.t('Template Blocks')">Template Blocks</span>
+      </div>
+      <div class="blocks-tab-item"
+        data-bind="click: function() { $root.blocksActiveTab('CUSTOM_BLOCKS'); }, css: { 'blocks-tab-active': $root.blocksActiveTab() === 'CUSTOM_BLOCKS' }">
+        <i class="fa fa-fw fa-user"></i> <span data-bind="html: $root.t('Custom Blocks')">Custom Blocks</span>
       </div>
     </div>
+
+    <div data-bind="visible: $root.blocksActiveTab() === 'TEMPLATE_BLOCKS'">
+      <div class="block-list" data-bind="foreach: blockDefs" style="text-align: center">
+        <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
+          <div class="block"
+            data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock"
+            style="position: relative;">
+            <div title="Click or drag to add this block to the template" class="handle"
+              data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
+            </div>
+            <img
+              data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(type) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }"
+              alt="__name__" />
+            <span class="block-name"
+              data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(type) })">__name__</span>
+          </div>
+          <a href="javascript:void(0)" class="addblockbutton"
+            data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+        </div>
+
+      </div>
+    </div>
+    <div class="block-list" data-bind="visible: $root.blocksActiveTab() === 'CUSTOM_BLOCKS'">
+      <!-- Add the Vue.js component here -->
+      <div id="personalizedBlocksPlugin">
+        <personalized-blocks-plugin />
+      </div>
+      <div data-bind="visible: personalizedBlocks().length > 0, foreach: personalizedBlocks()">
+        <div class="draggable-item" data-bind="withProperties: { templateMode: 'show' }">
+          <div class="block block-custom"
+            data-bind="extdraggable: { connectClass: 'sortable-blocks-edit', data: $data, dropContainer: '#main-wysiwyg-area', dragging: $root.dragging, 'options': { handle: '.handle', distance: 10, 'appendTo': '#page' } }, click: $root.addBlock">
+            <div title="Click or drag to add this block to the template" class="handle"
+              data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
+            </div>
+            <span class="block-name"
+              data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.name) })">__name__</span>
+            <div class="block-content-custom">
+              <span class="block-content-custom-text"
+                data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.category) })">__name__</span>
+            </div>
+            <div class="block-content-custom">
+              <span class="block-content-custom-text"
+                data-bind="html: $root.t('__name__', { name: ko.utils.unwrapObservable(blockInformation.userDetails.name) })">__name__</span>
+            </div>
+          </div>
+          <div class="addblockbutton custom">
+            <div class="buttons-container">
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.deleteBlock">
+                  <i class="fa fa-trash"></i> <!-- Delete Icon -->
+                </a>
+              </div>
+              <div data-bind="if: $root.currentUser()?.isAdminOfCurrentGroup">
+                <a href="javascript:void(0)" class="ui-button" data-bind="click: $root.editBlock">
+                  <i class="fa fa-pencil"></i> <!-- Edit Icon -->
+                </a>
+              </div>
+              <a href="javascript:void(0)" data-bind="click: $root.addBlock, button: { label: $root.t('Add') }">Add</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">
@@ -32,7 +107,9 @@
     <div data-bind="block: $root.selectedBlock"></div>
     <!-- /ko -->
     <!-- ko if: $root.selectedBlock() == null -->
-    <div class="noSelectedBlock" data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">By clicking on message parts you will select a block and content options, if any, will show here</div>
+    <div class="noSelectedBlock"
+      data-bind="text: $root.t('By clicking on message parts you will select a block and content options, if any, will show here')">
+      By clicking on message parts you will select a block and content options, if any, will show here</div>
     <!-- /ko -->
     <!-- ko block: content -->content<!-- /ko -->
     <div id="tracking-params">
@@ -42,18 +119,22 @@
 
   <div id="toolstyles" data-bind="scrollable: true, withProperties: { templateMode: 'styler' }">
     <!-- ko if: typeof $root.content().theme === 'undefined' || typeof $root.content().theme().scheme === 'undefined' || $root.content().theme().scheme() === 'custom' -->
-      <!-- ko if: $root.selectedBlock() !== null -->
-      <div data-bind="block: $root.selectedBlock, css: { workLocal: $root.selectedBlock().customStyle, workGlobal: typeof $root.selectedBlock().customStyle === 'undefined' || !$root.selectedBlock().customStyle() }"></div>
-      <!-- /ko -->
-      <!-- ko if: $root.selectedBlock() == null -->
-      <div class="noSelectedBlock" data-bind="text: $root.t('By clicking on message parts you will select a block and style options, if available, will show here')">By clicking on message parts you will select a block and style options, if available, will show here</div>
-      <!-- /ko -->
-      <div class="workGlobalContent">
+    <!-- ko if: $root.selectedBlock() !== null -->
+    <div
+      data-bind="block: $root.selectedBlock, css: { workLocal: $root.selectedBlock().customStyle, workGlobal: typeof $root.selectedBlock().customStyle === 'undefined' || !$root.selectedBlock().customStyle() }">
+    </div>
+    <!-- /ko -->
+    <!-- ko if: $root.selectedBlock() == null -->
+    <div class="noSelectedBlock"
+      data-bind="text: $root.t('By clicking on message parts you will select a block and style options, if available, will show here')">
+      By clicking on message parts you will select a block and style options, if available, will show here</div>
+    <!-- /ko -->
+    <div class="workGlobalContent">
       <!-- ko block: content --><!-- /ko -->
-      </div>
+    </div>
     <!-- /ko -->
   </div>
-<//div>div>
+</div>
 
 <div id="toolimages" class="slidebar" data-bind="scrollable: true, css: { hidden: $root.showGallery() === false }">
   <div class="close" data-bind="click: $root.showGallery.bind($element, false);">X</div>
@@ -62,29 +143,51 @@
   <!-- ko if: $root.showGallery() -->
   <div id="toolimagestab" class="tabs_horizontal" data-bind="tabs: { active: $root.selectedImageTab }">
     <ul>
-      <li data-bind="tooltips: {}"><a title="gallery-mailing" data-local="true" href="#toolimagesgallery" data-bind="attr: { title: $root.t('gallery-mailing') }, text: $root.t('gallery-mailing')">gallery-mailing</a></li>
-      <li data-bind="tooltips: {}"><a title="gallery-template" data-local="true" href="#toolimagesgallerytemplate" data-bind="attr: { title: $root.t('gallery-template') }, text: $root.t('gallery-template')">gallery-template</a></li>
+      <li data-bind="tooltips: {}"><a title="gallery-mailing" data-local="true" href="#toolimagesgallery"
+          data-bind="attr: { title: $root.t('gallery-mailing') }, text: $root.t('gallery-mailing')">gallery-mailing</a>
+      </li>
+      <li data-bind="tooltips: {}"><a title="gallery-template" data-local="true" href="#toolimagesgallerytemplate"
+          data-bind="attr: { title: $root.t('gallery-template') }, text: $root.t('gallery-template')">gallery-template</a>
+      </li>
     </ul>
 
     <div id="toolimagesgallery" class="gallery-panel">
-      <!-- ko template: {name: 'gallery-upload', data: { type: 'mailing' } } --># mailing gallery fileupload #<!-- /ko -->
-    <!-- ko if: $root.mailingGalleryStatus() === false --><a class="loadbutton" title="Show images from the gallery" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show images from the gallery') }, click: $root.loadMailingGallery, button: { disabled: $root.mailingGalleryStatus, icons: { primary: 'fa fa-fw fa-picture-o' }, label: $root.mailingGalleryStatus() == 'loading' ? $root.t('Loading...') : $root.t('Load gallery'), text: true }"># load gallery #</a><!-- /ko -->
+      <!-- ko template: {name: 'gallery-upload', data: { type: 'mailing' } } --># mailing gallery fileupload
+      #<!-- /ko -->
+      <!-- ko if: $root.mailingGalleryStatus() === false --><a class="loadbutton" title="Show images from the gallery"
+        href="javascript:void(0)"
+        data-bind="attr: { title: $root.t('Show images from the gallery') }, click: $root.loadMailingGallery, button: { disabled: $root.mailingGalleryStatus, icons: { primary: 'fa fa-fw fa-picture-o' }, label: $root.mailingGalleryStatus() == 'loading' ? $root.t('Loading...') : $root.t('Load gallery'), text: true }">#
+        load gallery #</a><!-- /ko -->
 
 
-    <!-- ko if: $root.mailingGalleryStatus() === 'loading' --><div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading mailing gallery…</div><!-- /ko -->
-    <!-- ko if: $root.mailingGalleryStatus() === 0 --><div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The mailing gallery is empty</div><!-- /ko -->
-    <!-- ko template: {name: 'gallery-images', data: { items: mailingGallery, type: 'mailing' } } --># mailing gallery #<!-- /ko -->
+      <!-- ko if: $root.mailingGalleryStatus() === 'loading' -->
+      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading mailing gallery…</div>
+      <!-- /ko -->
+      <!-- ko if: $root.mailingGalleryStatus() === 0 -->
+      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The mailing gallery is empty</div>
+      <!-- /ko -->
+      <!-- ko template: {name: 'gallery-images', data: { items: mailingGallery, type: 'mailing' } } --># mailing gallery
+      #<!-- /ko -->
     </div>
 
     <div id="toolimagesgallerytemplate" class="gallery-panel">
-      <!-- ko template: {name: 'gallery-upload', data: { type: 'template' } } --># mailing template fileupload #<!-- /ko -->
+      <!-- ko template: {name: 'gallery-upload', data: { type: 'template' } } --># mailing template fileupload
+      #<!-- /ko -->
 
-      <!-- ko if: $root.templateGalleryStatus() === false --><a class="loadbutton" title="Show images from the gallery" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show images from the gallery') }, click: $root.loadTemplateGallery, button: { disabled: $root.templateGalleryStatus, icons: { primary: 'fa fa-fw fa-picture-o' }, label: $root.templateGalleryStatus() == 'loading' ? $root.t('Loading...') : $root.t('Load gallery'), text: true }"># load gallery #</a><!-- /ko -->
+      <!-- ko if: $root.templateGalleryStatus() === false --><a class="loadbutton" title="Show images from the gallery"
+        href="javascript:void(0)"
+        data-bind="attr: { title: $root.t('Show images from the gallery') }, click: $root.loadTemplateGallery, button: { disabled: $root.templateGalleryStatus, icons: { primary: 'fa fa-fw fa-picture-o' }, label: $root.templateGalleryStatus() == 'loading' ? $root.t('Loading...') : $root.t('Load gallery'), text: true }">#
+        load gallery #</a><!-- /ko -->
 
 
-      <!-- ko if: $root.templateGalleryStatus() === 'loading' --><div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading template gallery...</div><!-- /ko -->
-      <!-- ko if: $root.templateGalleryStatus() === 0 --><div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The template gallery is empty</div><!-- /ko -->
-      <!-- ko template: {name: 'gallery-images', data: { items: templateGallery, type: 'template' } } --># template gallery #<!-- /ko -->
+      <!-- ko if: $root.templateGalleryStatus() === 'loading' -->
+      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-loading')">Loading template gallery...</div>
+      <!-- /ko -->
+      <!-- ko if: $root.templateGalleryStatus() === 0 -->
+      <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The template gallery is empty</div>
+      <!-- /ko -->
+      <!-- ko template: {name: 'gallery-images', data: { items: templateGallery, type: 'template' } } --># template
+      gallery #<!-- /ko -->
     </div>
   </div>
   <!-- /ko -->
@@ -100,9 +203,12 @@
   BlockDefs:
   <pre data-bind='text: ko.toJSON(blockDefs, null, 2)' style="overflow: auto; height: 20%"></pre>
   <!-- /ko -->
-  <a href="javascript:void(0)" data-bind="click: $root.exportHTMLtoTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Generate' }">Output</a>
-  <a href="javascript:void(0)" data-bind="click: $root.exportJSONtoTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Export' }">Export</a>
-  <a href="javascript:void(0)" data-bind="click: $root.importJSONfromTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Import' }">Import</a>
+  <a href="javascript:void(0)"
+    data-bind="click: $root.exportHTMLtoTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Generate' }">Output</a>
+  <a href="javascript:void(0)"
+    data-bind="click: $root.exportJSONtoTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Export' }">Export</a>
+  <a href="javascript:void(0)"
+    data-bind="click: $root.importJSONfromTextarea.bind($element, '#outputhtml'); clickBubble: false, button: { text: true, label:'Import' }">Import</a>
 
   <textarea id="outputhtml" rows="10" style="width: 100%;"></textarea>
 </div>
@@ -111,8 +217,8 @@
   <div class="close" data-bind="click: $root.showTheme.bind($element, false);">X</div>
 
   <!-- ko withProperties: { templateMode: 'styler' } -->
-    <!-- ko if: $root.showTheme -->
-      <!-- ko block: $root.content().theme --><!-- /ko -->
-    <!-- /ko -->
+  <!-- ko if: $root.showTheme -->
+  <!-- ko block: $root.content().theme --><!-- /ko -->
+  <!-- /ko -->
   <!-- /ko -->
 </div>

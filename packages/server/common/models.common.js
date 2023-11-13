@@ -20,6 +20,7 @@ const EmailsGroupSchema = require('../emails-group/emails-group.schema');
 const PersonalizedVariableSchema = require('../personalized-variables/personalized-variables.schema.js');
 const FolderSchema = require('../folder/folder.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
+const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 
 /// ///
 // EXPORTS
@@ -37,6 +38,10 @@ const EmailsGroups = mongoose.model(
 const PersonalizedVariables = mongoose.model(
   modelNames.PersonalizedVariablesModel,
   PersonalizedVariableSchema
+);
+const PersonalizedBlocks = mongoose.model(
+  modelNames.PersonalizedBlocksModel,
+  PersonalizedBlockSchema
 );
 const Workspaces = mongoose.model(modelNames.WorkspaceModel, WorkspaceSchema);
 const Profiles = mongoose.model(modelNames.ProfileModel, ProfileSchema);
@@ -59,6 +64,7 @@ module.exports = {
   Folders,
   EmailsGroups,
   PersonalizedVariables,
+  PersonalizedBlocks,
   Workspaces,
   Templates,
   Mailings,
