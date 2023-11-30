@@ -419,6 +419,24 @@ var templateCompiler = function (
       unwrapped = jsorjson;
     }
 
+    if (unwrapped && unwrapped?.mainBlocks && unwrapped?.mainBlocks.blocks ) {
+      unwrapped = {
+        ...unwrapped,
+        mainBlocks: {
+          ...unwrapped?.mainBlocks,
+          blocks: unwrapped?.mainBlocks?.blocks?.map(item => {
+            // We ignore blockInformation prop from blocks and don't display modal
+            // if there is only this change between definition and current blocks
+            // Note: if you need to ignore an other prop inside blocks, you can add the prop in the line below
+            // For example:
+            // const { blockInformation, myOtherPropThatIWantIgnore, anOtherPropIgnored, ...restBlock } = item;
+            const { blockInformation, ...restBlock } = item;
+            return restBlock;
+          })
+        }
+      }
+    }
+
     // we run a basic compatibility check between the content-model we expect and the initialization model
     var checkModelRes = performanceAwareCaller(
       'checkModel',
@@ -426,24 +444,7 @@ var templateCompiler = function (
         undefined,
         content._unwrap(),
         blockDefs,
-        unwrapped && unwrapped.mainBlocks && unwrapped.mainBlocks.blocks ? (
-          {
-          ...unwrapped,
-          mainBlocks: {
-            ...unwrapped?.mainBlocks,
-            blocks: unwrapped?.mainBlocks?.blocks?.map(item => {
-              // We ignore blockInformation prop from blocks and don't display modal
-              // if there is only this change between definition and current blocks
-              // Note: if you need to ignore an other prop inside blocks, you can add the prop in the line below
-              // For example:
-              // const { blockInformation, myOtherPropThatIWantIgnore, anOtherPropIgnored, ...restBlock } = item;
-              const { blockInformation, ...restBlock } = item;
-              return restBlock;
-            })
-          }
-        }) : (
-          unwrapped
-        )
+        unwrapped
       )
     );
     // if checkModelRes is 1 then the model is not fully compatible but we fixed it
