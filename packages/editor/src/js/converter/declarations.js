@@ -115,7 +115,7 @@ var elaborateDeclarations = function (
         );
       } else {
         var decl = declarations[i].name.match(
-          /^-ko-(bind-|attr-)?([a-z0-9-]*?)(-if|-ifnot)?$/
+          /^-ko-(bind-|attr-)?([a-z0-9-_]*?)(-if|-ifnot)?$/
         );
         if (decl !== null) {
           // rimozione dello stile -ko- dall'attributo style.
