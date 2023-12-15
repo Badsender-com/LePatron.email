@@ -31,17 +31,9 @@ function secureHtml(html) {
   });
 }
 
-// selligent tags between “href” or “src” are encoded at the export
-// • we need to reverse the operation to keep them OK
-// use another decodeUriComponent instead of native
-// • native had problems de-encoding selligent tags
-//   due to date format %d%m%Y
-// • (FORMATDATETIME(GETDATE(),%20%27%d%m%Y%27))
-const selligentTagRegexp = /~(.+?)~/g;
-const np6TagRegexp = /{{(.+?)}}/g;
-const actitoTagRegexp = /\${(.+?)\}/g;
-const adobeTagRegexp = /<%(.+?)%>/g;
-const dscTagRegexp = /<#list(.+?)<\/#list>/g;
+// We don't want to manage any special format inside href now. We let the reponsability to users to decode
+// themselves links in href (but only for href values) that's why we use this regex below
+const globalRegexp = /href="(.+?)"/g;
 
 const decodeTag = (match, tag, fun = (value) => value) => {
   let decodedTag = htmlEntities.decode(tag);
@@ -53,42 +45,10 @@ const decodeTag = (match, tag, fun = (value) => value) => {
   return decodedTag;
 };
 
-function decodeSelligentTags(html) {
+function decodeGlobalTags(html) {
   return html.replace(
-    selligentTagRegexp,
-    (match, tag) => `~${decodeTag(match, tag)}~`
-  );
-}
-
-function decodeNp6Tags(html) {
-  return html.replace(
-    np6TagRegexp,
-    (match, tag) => `{{${decodeTag(match, tag)}}}`
-  );
-}
-
-function decodeActitoTags(html) {
-  html = html.replace(
-    actitoTagRegexp,
-    (match, tag) => `\${${decodeTag(match, tag)}}`
-  );
-  return html;
-}
-
-function decodeAdobeTags(html) {
-  return html.replace(
-    adobeTagRegexp,
-    (match, tag) =>
-      `<%${decodeTag(match, tag, (tagSelection) =>
-        tagSelection.replace(/\+/g, '%2B')
-      )}%>`
-  );
-}
-
-function decodeDscTags(html) {
-  return html.replace(
-    dscTagRegexp,
-    (match, tag) => `<#list${decodeTag(match, tag)}</#list>`
+    globalRegexp,
+    (match, tag) => `href="${decodeTag(match, tag)}"`
   );
 }
 
@@ -96,11 +56,7 @@ const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
   secureHtml,
-  decodeSelligentTags,
-  decodeNp6Tags,
-  decodeActitoTags,
-  decodeAdobeTags,
-  decodeDscTags
+  decodeGlobalTags
 );
 
 module.exports = basicHtmlProcessing;
