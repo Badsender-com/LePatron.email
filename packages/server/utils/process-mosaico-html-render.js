@@ -31,10 +31,6 @@ function secureHtml(html) {
   });
 }
 
-// We don't want to manage any special format inside href now. We let the reponsability to users to decode
-// themselves links in href (but only for href values) that's why we use this regex below
-const hrefRegexp = /href="(.+?)"/g;
-
 const srcRegexp = /src="(.+?)"/g;
 
 const decodeTag = (match, tag, fun = (value) => value) => {
@@ -47,13 +43,6 @@ const decodeTag = (match, tag, fun = (value) => value) => {
   return decodedTag;
 };
 
-function decodeHrefTags(html) {
-  return html.replace(
-    hrefRegexp,
-    (match, tag) => `href="${decodeTag(match, tag)}"`
-  );
-}
-
 function decodeSrcTags(html) {
   return html.replace(
     srcRegexp,
@@ -65,7 +54,6 @@ const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
   secureHtml,
-  decodeHrefTags,
   decodeSrcTags
 );
 
