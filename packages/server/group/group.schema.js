@@ -3,7 +3,7 @@
 const { Schema } = require('mongoose');
 const mongooseHidden = require('mongoose-hidden')();
 
-const { normalizeString, trimString } = require('../utils/model');
+const { trimString } = require('../utils/model');
 const { encrypt, decrypt } = require('../utils/crpyto');
 const Status = require('./status');
 /**
@@ -55,7 +55,6 @@ const GroupSchema = Schema(
     },
     cdnEndPoint: {
       type: String,
-      set: normalizeString,
     },
     cdnButtonLabel: {
       type: String,
