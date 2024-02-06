@@ -63,6 +63,7 @@ const config = rc('lepatron', {
   },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
   dscUrl: process.env.DSC_ESP_URL,
+  NODE_ENV: process.env.NODE_ENV,
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';
@@ -77,7 +78,17 @@ const isLocalEmailTransport =
   config.emailTransport.port === localEmail.port &&
   config.emailTransport.host === localEmail.host;
 
-if (config.isDev && isLocalEmailTransport) {
+if (!config.isDev) {
+  config.emailTransport = {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT, 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  };
+} else if (config.isDev && isLocalEmailTransport) {
   config.emailTransport = _.merge(
     // on dev mode don't secure connection
     // • prevent NodeMailer `Error: self signed certificate` while using maildev
