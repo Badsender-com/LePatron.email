@@ -5,7 +5,6 @@ const createError = require('http-errors');
 const { extend, pick } = require('lodash');
 const chalk = require('chalk');
 const nodemailer = require('nodemailer');
-const nodemailerSendgrid = require('nodemailer-sendgrid');
 const wellknown = require('nodemailer-wellknown');
 
 const config = require('../node.config.js');
@@ -15,13 +14,7 @@ if (mailConfig.service) {
   mailConfig = extend({}, mailConfig, wellknown(mailConfig.service));
   delete mailConfig.service;
 }
-const transporter = nodemailer.createTransport(
-  config.isDev
-    ? config.emailTransport
-    : nodemailerSendgrid({
-        apiKey: config.emailTransport.apiKey,
-      })
-);
+const transporter = nodemailer.createTransport(config.emailTransport);
 
 const mailReady = transporter.verify();
 

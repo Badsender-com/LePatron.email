@@ -63,12 +63,6 @@ async function sendTestMail({
         replyTo: user?.email,
         subject: config.emailOptions.testSubjectPrefix + mailing.name,
         html,
-        trackingSettings: {
-          clickTracking: {
-            enable: false,
-            enableText: false,
-          },
-        },
       });
 
       logger.log('Message sent: ', mailInfo.response);
