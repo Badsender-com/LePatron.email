@@ -40,10 +40,6 @@ A `QUOTAGUARDSTATIC_URL` should be automatically added on your heroku env.
 
 [QuotaGuard static IP's addon details](https://elements.heroku.com/addons/quotaguardstatic)
 
-### sendgrid
-
-[sendgrid addon's detail](https://devcenter.heroku.com/articles/sendgrid)
-
 ### logentries
 
 [logentries addon's detail](https://devcenter.heroku.com/articles/logentries)
@@ -71,19 +67,24 @@ below are the common environments variables you should want to set:
 
 ### mail sending
 
-```
-lepatron_emailTransport__service         Mailjet
-lepatron_emailTransport__auth__user      your Username (or API key)
-lepatron_emailTransport__auth__pass      your password (or Secret Key)
-```
+For email sending, use Nodemailer with an SMTP server. The environment variables for SMTP configuration are as follows:
 
-lepatron_emailTransport\_\_service is for [nodemailer-wellknown](https://www.npmjs.com/package/nodemailer-wellknown) configuration
+```
+SMTP_HOST=s*****o.com
+SMTP_PORT=465
+SMTP_USER=yesre****sender.com
+SMTP_PASSWORD=xsmt****XET
+SMTP_SECURE=true
+```
 
 ### Mail providers supported by Nodemailer
+
+For any other email sending service below, configure nodemailer and add the necessary environment variables
 
 Service names are case insensitive
 
 ```
+
 "126"
 "163"
 "1und1"
@@ -125,12 +126,7 @@ Service names are case insensitive
 "Yandex"
 "Zoho"
 "qiye.aliyun"
-```
 
-### from email address
-
-```
-lepatron_emailOptions__from              Badsender Builder <emailbuilder@badsender.com>
 ```
 
 ### MongoDB database

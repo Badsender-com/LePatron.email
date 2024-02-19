@@ -1,6 +1,5 @@
 'use strict';
 
-const config = require('../node.config.js');
 const isEmail = require('validator/lib/isEmail');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -61,7 +60,7 @@ async function sendTestMail({
       const mailInfo = await mail.send({
         to: address,
         replyTo: user?.email,
-        subject: config.emailOptions.testSubjectPrefix + mailing.name,
+        subject: mailing.name,
         html,
       });
 
