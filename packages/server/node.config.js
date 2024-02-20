@@ -45,8 +45,6 @@ const config = rc('lepatron', {
   emailOptions: {
     from: 'LePatron.email local test <info@lepatron-local-test.name>',
     passwordSubjectPrefix: 'Email builder LePatron',
-    // last space is needed
-    testSubjectPrefix: '[LePatron.email] ',
   },
   storage: {
     type: 'local',
