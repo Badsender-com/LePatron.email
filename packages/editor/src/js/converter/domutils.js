@@ -80,10 +80,59 @@ var removeElements = function ($elements, tryDetach) {
   $elements.remove();
 };
 
+// https://dev.to/qausim/convert-html-inline-styles-to-a-style-object-for-react-components-2cbi
+var formatStringToCamelCase = function(str) {
+  const splitted = str.split("-");
+  if (splitted.length === 1) return splitted[0];
+  return (
+    splitted[0] +
+    splitted
+      .slice(1)
+      .map(word => word[0].toUpperCase() + word.slice(1))
+      .join("")
+  );
+};
+
+var getStyleObjectFromString = function(str) {
+  const style = {};
+  console.log({ str });
+  str.split(";").forEach(el => {
+    const [property, value] = el.split(":");
+
+    const includedProperties = ["margin"];
+
+    if (
+      !property ||
+      !property.trim() ||
+      typeof property === "undefined" ||
+      !value ||
+      !value.trim ||
+      typeof value === "undefined"||
+      !includedProperties.includes(property)
+    ) return;
+    const formattedProperty = formatStringToCamelCase(property.trim());
+    style[formattedProperty] = value.trim();
+  });
+
+  return style;
+};
+
+
+
+var concatObjectProperties = function(str) {
+  const resultValue = Object.entries(str).reduce((accumulator, value ) => {
+    const valueBasedOnType  = isNaN(value[1]) ?  `'${value[1]}'`: value[1];
+    return `${accumulator }, ${value[0]} : ${valueBasedOnType}`
+  }, "");
+  return resultValue;
+}
+
 module.exports = {
   getAttribute: getAttribute,
   setAttribute: setAttribute,
+  concatObjectProperties,
   removeAttribute: removeAttribute,
+  getStyleObjectFromString: getStyleObjectFromString,
   getInnerText: getInnerText,
   getInnerHtml: getInnerHtml,
   getLowerTagName: getLowerTagName,

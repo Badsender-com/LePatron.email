@@ -290,6 +290,7 @@ var processBlock = function (
         ')';
 
       if (domutils.getLowerTagName(element) != 'img') {
+
         defaultValue = domutils.getInnerHtml(element);
         var modelBindValue = bindingProvider(
           dataEditable,
@@ -329,6 +330,7 @@ var processBlock = function (
         }
         domutils.removeAttribute(element, 'data-ko-editable');
       } else {
+
         var width = domutils.getAttribute(element, 'width');
         if (width === '') width = null;
         if (width === null) {
@@ -432,20 +434,43 @@ var processBlock = function (
 
         var tmplName = templateCreator(element);
 
-        var containerBind = '{';
-        if (align == 'left') containerBind += ", float: 'left'";
-        else if (align == 'right') containerBind += ", float: 'right'";
+        const elementStyle = domutils.getAttribute(element, 'style');
+        const styleToJavascriptFormat =  domutils.getStyleObjectFromString(elementStyle);
+        let  bindingStyleValues = domutils.concatObjectProperties(styleToJavascriptFormat);
+
+        let containerBind = '{';
+
+
+        if (align == 'left') containerBind += " float: 'left'";
+        else if (align == 'right') containerBind += " float: 'right'";
         else if (align == 'center')
           if (typeof console.debug == 'function')
             console.debug(
               "Ignoring align=center on an img tag: we don't know how to emulate this alignment in the editor!"
             );
-          else if (align == 'top') containerBind += ", verticalAlign: 'top'";
+          else if (align == 'top') containerBind += "verticalAlign: 'top'";
           else if (align == 'middle')
-            containerBind += ", verticalAlign: 'middle'";
+            containerBind += " verticalAlign: 'middle'";
           else if (align == 'bottom')
-            containerBind += ", verticalAlign: 'bottom'";
+            containerBind += "verticalAlign: 'bottom'";
+
+        if(styleToJavascriptFormat && typeof styleToJavascriptFormat != "undefined") {
+          if(containerBind === '{' && bindingStyleValues.charAt(0) === ',')
+            bindingStyleValues = bindingStyleValues.substring(1);
+          containerBind += bindingStyleValues;
+        }
+
         containerBind += '}';
+
+        let cssBindling = '{ selecteditem: $root.isSelectedItem('+itemBindValue+')';
+        let elementClass = domutils.getAttribute(element, 'class');
+
+        if(!!elementClass &&  !!elementClass.trim()) {
+          cssBindling += `, '${elementClass}': true`;
+        }
+
+        cssBindling += '}';
+
         $(element).before(
           '<!-- ko wysiwygImg: { _data: $data, _item: ' +
             itemBindValue +
@@ -463,6 +488,8 @@ var processBlock = function (
             size +
             ', _method: ' +
             method +
+            ', _css: ' +
+            cssBindling +
             ', _placeholdersrc: ' +
             placeholdersrc +
             ', _stylebind: ' +
