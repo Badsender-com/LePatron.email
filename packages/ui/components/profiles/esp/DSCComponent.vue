@@ -1,8 +1,11 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { email, required } from 'vuelidate/lib/validators';
+import { required } from 'vuelidate/lib/validators';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
-import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
+import {
+  CONTENT_ESP_TYPES,
+  TYPE_COMPAGNE,
+} from '~/helpers/constants/content-esp-type';
 export default {
   name: 'DSCComponent',
   mixins: [validationMixin],
@@ -17,10 +20,8 @@ export default {
         id: this.profileData.id ?? '',
         name: this.profileData.name ?? '',
         apiKey: this.profileData.apiKey ?? '',
-        senderName: this.profileData.senderName ?? '',
-        senderMail: this.profileData.senderMail ?? '',
         contentSendType: CONTENT_ESP_TYPES.MAIL,
-        replyTo: this.profileData.replyTo ?? '',
+        typeCampagne: TYPE_COMPAGNE,
         type: ESP_TYPES.DSC,
       },
     };
@@ -34,17 +35,6 @@ export default {
         apiKey: {
           required,
         },
-        senderName: {
-          required,
-        },
-        senderMail: {
-          required,
-          email,
-        },
-        replyTo: {
-          required,
-          email,
-        },
       },
     };
   },
@@ -54,15 +44,6 @@ export default {
     },
     apiKeyErrors() {
       return this.requiredValidationFunc('apiKey');
-    },
-    senderNameErrors() {
-      return this.requiredValidationFunc('senderName');
-    },
-    senderMailErrors() {
-      return this.emailValidationFunc('senderMail');
-    },
-    replyToErrors() {
-      return this.emailValidationFunc('replyTo');
     },
   },
   methods: {
@@ -124,48 +105,6 @@ export default {
             :error-messages="apiKeyErrors"
             @input="$v.profile.apiKey.$touch()"
             @blur="$v.profile.apiKey.$touch()"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="senderName"
-            v-model="profile.senderName"
-            :label="$t('profiles.senderName')"
-            name="senderName"
-            required
-            :error-messages="senderNameErrors"
-            @input="$v.profile.senderName.$touch()"
-            @blur="$v.profile.senderName.$touch()"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="senderMail"
-            v-model="profile.senderMail"
-            :label="$t('profiles.senderMail')"
-            name="senderMail"
-            required
-            :error-messages="senderMailErrors"
-            @input="$v.profile.senderMail.$touch()"
-            @blur="$v.profile.senderMail.$touch()"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="replyTo"
-            v-model="profile.replyTo"
-            :label="$t('profiles.replyTo')"
-            name="replyTo"
-            required
-            :error-messages="replyToErrors"
-            @input="$v.profile.replyTo.$touch()"
-            @blur="$v.profile.replyTo.$touch()"
           />
         </v-col>
       </v-row>
