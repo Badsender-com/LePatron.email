@@ -53,16 +53,51 @@ class DscProvider {
     });
   }
 
-  async createCampaignMailApi(data) {
-    return axios.post(`${config.dscUrl}/`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+  async createCampaignMailApi({ typeCampagne, ...restData }) {
+    const url = `${config.dscUrl}/badSender/configuration/withTypeCampagne`;
+    try {
+      return await axios.post(url, restData, {
+        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        params: { typeCampagne },
+      });
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updateCampaignMailApi(data, campaignMailId) {
-    return axios.put(`${config.dscUrl}/${campaignMailId}`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+  async updateCampaignMailApi({ typeCampagne, ...restData }, campaignMailId) {
+    const url = `${config.dscUrl}/badSender/configuration/withTypeCampagne/${campaignMailId}`;
+    try {
+      return await axios.put(url, restData, {
+        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        params: { typeCampagne },
+      });
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  handleError(error) {
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message;
+    const responseBody = error?.response?.data;
+
+    if (status === 400) {
+      if (message.includes('BADSENDER_ID_FORMAT_ERROR')) {
+        // Include the actual ID in the error message
+        const detailedMessage = `BADSENDER_ID_FORMAT_ERROR: The campaign '${responseBody?.id}' does not have the expected format.`;
+        throw new Error(detailedMessage);
+      }
+      if (message.includes('La combinaison code campagne')) {
+        // Include the actual ID and typeCampagne in the error message
+        const detailedMessage = `The combination of campaign code '${responseBody?.id}' and type of campaign '${responseBody?.typeCampagne}' is invalid. Please correct it or contact your administrator.`;
+        throw new Error(detailedMessage);
+      }
+    }
+
+    // Log the error and throw a generic error if it doesn't match specific cases
+    logger.error('Error in API call:', error);
+    throw new Error('An error occurred while communicating with the API.');
   }
 
   async getCampaignMail({ campaignId }) {
