@@ -2,10 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
-import {
-  CONTENT_ESP_TYPES,
-  TYPE_COMPAGNE,
-} from '~/helpers/constants/content-esp-type';
+import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 export default {
   name: 'DSCComponent',
   mixins: [validationMixin],
@@ -21,7 +18,7 @@ export default {
         name: this.profileData.name ?? '',
         apiKey: this.profileData.apiKey ?? '',
         contentSendType: CONTENT_ESP_TYPES.MAIL,
-        typeCampagne: TYPE_COMPAGNE,
+        typeCampagne: '',
         type: ESP_TYPES.DSC,
       },
     };
@@ -35,6 +32,9 @@ export default {
         apiKey: {
           required,
         },
+        typeCampagne: {
+          required,
+        },
       },
     };
   },
@@ -44,6 +44,9 @@ export default {
     },
     apiKeyErrors() {
       return this.requiredValidationFunc('apiKey');
+    },
+    typeCampagneErrors() {
+      return this.requiredValidationFunc('typeCampagne');
     },
   },
   methods: {
@@ -94,6 +97,20 @@ export default {
           />
         </v-col>
       </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-text-field
+            id="typeCampagne"
+            v-model="profile.typeCampagne"
+            :label="$t('global.typeCampagne')"
+            name="typeCampagne"
+            :error-messages="typeCampagneErrors"
+            @input="$v.profile.typeCampagne.$touch()"
+            @blur="$v.profile.typeCampagne.$touch()"
+          />
+        </v-col>
+      </v-row>
+
       <v-row>
         <v-col cols="12">
           <v-text-field

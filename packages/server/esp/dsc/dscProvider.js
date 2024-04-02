@@ -13,7 +13,7 @@ class DscProvider {
   }
 
   async connectApiCall() {
-    return axios.get(`${config.dscUrl}/`, {
+    return axios.get(`${config.dscUrl}/withTypeCampagne`, {
       headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
     });
   }
@@ -45,7 +45,7 @@ class DscProvider {
   }
 
   async getCampaignMailApi({ campaignId }) {
-    return axios.get(`${config.dscUrl}/${campaignId}`, {
+    return axios.get(`${config.dscUrl}/withTypeCampagne/${campaignId}`, {
       headers: {
         apiKey: this.apiKey,
         'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ class DscProvider {
   }
 
   async createCampaignMailApi({ typeCampagne, ...restData }) {
-    const url = `${config.dscUrl}/badSender/configuration/withTypeCampagne`;
+    const url = `${config.dscUrl}/withTypeCampagne`;
     try {
       return await axios.post(url, restData, {
         headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
@@ -66,7 +66,7 @@ class DscProvider {
   }
 
   async updateCampaignMailApi({ typeCampagne, ...restData }, campaignMailId) {
-    const url = `${config.dscUrl}/badSender/configuration/withTypeCampagne/${campaignMailId}`;
+    const url = `${config.dscUrl}/withTypeCampagne/${campaignMailId}`;
     try {
       return await axios.put(url, restData, {
         headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },

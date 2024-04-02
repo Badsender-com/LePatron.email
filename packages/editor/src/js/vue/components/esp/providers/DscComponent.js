@@ -29,7 +29,7 @@ const DscComponent = Vue.component('DscComponent', {
         campaignMailName: '',
         planification: '',
         subject: '',
-        campaignMailName: '',
+        controlMail: '',
         type: ESP_TYPE.DSC,
       },
       style: styleHelper,
@@ -47,14 +47,14 @@ const DscComponent = Vue.component('DscComponent', {
       id,
       additionalApiData: { planification, typeCampagne },
     } = this.fetchedProfile;
-
+    const controlMail = this.vm.currentUser().email;
     this.profile = {
       campaignMailName: campaignMailName ?? '',
       planification: planification ?? '',
       subject: subject ?? '',
-      controlMail: vm.currentUser().email,
+      controlMail,
       typeCampagne: typeCampagne ?? '',
-      id: this.campaignMailName,
+      id: id ?? '',
     };
     M.updateTextFields();
   },
