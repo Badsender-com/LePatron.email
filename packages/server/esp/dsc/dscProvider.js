@@ -4,7 +4,7 @@ const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('../../config/axios');
-const { InternalServerError, Conflict } = require('http-errors');
+const { InternalServerError, Conflict, BadRequest } = require('http-errors');
 
 class DscProvider {
   constructor({ apiKey, ...data }) {
@@ -13,7 +13,7 @@ class DscProvider {
   }
 
   async connectApiCall() {
-    return axios.get(`${config.dscUrl}/withTypeCampagne`, {
+    return axios.get(`${config.dscUrl}`, {
       headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
     });
   }
@@ -80,18 +80,13 @@ class DscProvider {
   handleError(error) {
     const status = error?.response?.status;
     const message = error?.response?.data?.message;
-    const responseBody = error?.response?.data;
 
     if (status === 400) {
       if (message.includes('BADSENDER_ID_FORMAT_ERROR')) {
-        // Include the actual ID in the error message
-        const detailedMessage = `BADSENDER_ID_FORMAT_ERROR: The campaign '${responseBody?.id}' does not have the expected format.`;
-        throw new Error(detailedMessage);
+        throw new BadRequest(message);
       }
       if (message.includes('La combinaison code campagne')) {
-        // Include the actual ID and typeCampagne in the error message
-        const detailedMessage = `The combination of campaign code '${responseBody?.id}' and type of campaign '${responseBody?.typeCampagne}' is invalid. Please correct it or contact your administrator.`;
-        throw new Error(detailedMessage);
+        throw new BadRequest(message);
       }
     }
 
@@ -211,23 +206,14 @@ class DscProvider {
         doesWaitForFtp: false,
       });
 
-      const {
-        senderName,
-        senderMail,
-        subject,
-        replyTo,
-        name,
-        planification,
-      } = campaignMailData;
+      const { subject, name, planification, typeCampagne } = campaignMailData;
 
       let formattedData = {
         id: name,
         object: subject,
-        replyToMail: replyTo,
-        senderName,
-        senderMail,
         template: processedHtml,
         controlMail: user?.email || '',
+        typeCampagne,
       };
 
       if (planification) {

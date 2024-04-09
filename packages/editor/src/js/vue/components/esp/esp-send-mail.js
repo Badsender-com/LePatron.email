@@ -206,10 +206,10 @@ const EspComponent = Vue.component('EspForm', {
 
       // Custom error handling logic based on the error response
       if (errorCode === 400) {
-        if (errorData.message.includes('BADSENDER_ID_FORMAT_ERROR')) {
+        if (errorData.includes('BADSENDER_ID_FORMAT_ERROR')) {
           return 'error-bad-sender-id-format';
         }
-        if (errorData.message.includes('La combinaison code campagne')) {
+        if (errorData.includes('La combinaison code campagne')) {
           return 'error-invalid-campaign-combination';
         }
       }
