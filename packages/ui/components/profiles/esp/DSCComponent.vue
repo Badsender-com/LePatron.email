@@ -18,7 +18,7 @@ export default {
         name: this.profileData.name ?? '',
         apiKey: this.profileData.apiKey ?? '',
         contentSendType: CONTENT_ESP_TYPES.MAIL,
-        typeCampagne: '',
+        typeCampagne: this.profileData.typeCampagne ?? '',
         type: ESP_TYPES.DSC,
       },
     };
