@@ -147,11 +147,11 @@ class DscProvider {
         emailCampaignsData
       );
 
-      if (!createCampaignApiResult?.data?.id) {
+      if (createCampaignApiResult.status !== 200) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return createCampaignApiResult?.data?.id;
+      return emailCampaignsData?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
