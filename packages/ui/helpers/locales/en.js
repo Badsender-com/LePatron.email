@@ -8,6 +8,7 @@ export default {
   },
   global: {
     errors: {
+      typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
       required: 'This field is required',
       userRequired: 'A user is required',
@@ -43,6 +44,7 @@ export default {
     targetTable: 'Target table',
     supportedLanguage: 'Language',
     profileName: 'ESP profile name',
+    typeCampagne: 'Campaign Type',
     teams: 'Workspaces',
     addTags: 'Add tags',
     copyMail: 'Copy',
