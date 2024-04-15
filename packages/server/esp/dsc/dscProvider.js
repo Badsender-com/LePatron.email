@@ -82,12 +82,7 @@ class DscProvider {
     const message = error?.response?.data?.message;
 
     if (status === 400) {
-      if (message.includes('BADSENDER_ID_FORMAT_ERROR')) {
-        throw new BadRequest(message);
-      }
-      if (message.includes('La combinaison code campagne')) {
-        throw new BadRequest(message);
-      }
+      throw new BadRequest(message);
     }
 
     // Log the error and throw a generic error if it doesn't match specific cases

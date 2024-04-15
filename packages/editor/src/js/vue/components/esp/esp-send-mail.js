@@ -174,11 +174,11 @@ const EspComponent = Vue.component('EspForm', {
           contentSentType: this.fetchedProfile.contentSentType,
           campaignId: this.campaignId,
           espSendingMailData: {
-            campaignMailName: data.campaignMailName,
-            subject: data.subject,
+            campaignMailName: data?.campaignMailName,
+            subject: data?.subject,
             planification: data?.planification,
-            controlMail: data.controlMail,
-            typeCampagne: data.typeCampagne,
+            controlMail: data?.controlMail,
+            typeCampagne: data?.typeCampagne,
           },
         })
         .then((response) => {
@@ -190,10 +190,17 @@ const EspComponent = Vue.component('EspForm', {
           this.closeModal();
         })
         .catch((error) => {
-          // handle error
-          const errorCode = error.response.status;
-          const errorMessageKey = this.getErrorMessageKeyFromError(error);
-          this.vm.notifier.error(this.vm.t(errorMessageKey));
+          con
+          const errorCode = error?.response?.status;
+          const errorMessage = error?.response?.data?.message;
+          if (errorCode === 400 && errorMessage) {
+            // Directly display the message from the backend without translation
+            this.vm.notifier.error(errorMessage);
+          } else {
+            // Fallback to previous error handling
+            const errorMessageKey = this.getErrorMessageKeyFromError(error);
+            this.vm.notifier.error(this.vm.t(errorMessageKey));
+          }
         })
         .finally(() => {
           this.isLoadingExport = false;
@@ -202,17 +209,6 @@ const EspComponent = Vue.component('EspForm', {
     getErrorMessageKeyFromError(error) {
       const errorCode = error.response.status;
       const defaultErrorMessageKey = 'error-server'; // Fallback error message key
-      const errorData = error.response.data;
-
-      // Custom error handling logic based on the error response
-      if (errorCode === 400) {
-        if (errorData.includes('BADSENDER_ID_FORMAT_ERROR')) {
-          return 'error-bad-sender-id-format';
-        }
-        if (errorData.includes('La combinaison code campagne')) {
-          return 'error-invalid-campaign-combination';
-        }
-      }
 
       // Standard error message keys for known status codes
       const handledErrorCodes = {
