@@ -85,6 +85,9 @@ module.exports = {
   'encoding-type': 'Encoding type',
   entity: 'Entity',
 
+  // Additional error messages from the handleError function
+  'error-api-error': 'An error occurred while communicating with the API.',
+
   // test list
   'title-send-test-mails': 'Send a test email',
   'send-test-success': 'Email sent successfully',

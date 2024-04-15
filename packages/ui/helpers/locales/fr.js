@@ -8,6 +8,7 @@ export default {
   },
   global: {
     errors: {
+      typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
       required: 'Ce champ est obligatoire',
       userRequired: 'Veuillez saisir un utilisateur',
@@ -43,6 +44,7 @@ export default {
     targetTable: 'Table cible',
     supportedLanguage: 'Langue',
     profileName: 'Nom du profil ESP',
+    typeCampagne: 'Type de Campagne',
     addTags: 'Ajouter des labels',
     copyMail: 'Copier',
     copyMailAction: 'Créer une copie',
