@@ -86,6 +86,9 @@ module.exports = {
   entity: 'Entity',
 
   // Additional error messages from the handleError function
+  'error-bad-sender-id-format': 'The campaign ID format is invalid.',
+  'error-invalid-campaign-combination':
+    'The combination of campaign code and campaign type is invalid.',
   'error-api-error': 'An error occurred while communicating with the API.',
 
   // test list
