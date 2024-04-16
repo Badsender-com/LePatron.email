@@ -1,6 +1,6 @@
 'use strict';
 
-const { Folders, Mailings, Groups } = require('../common/models.common.js');
+const { Folders, Groups } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 
 const {
@@ -22,7 +22,6 @@ module.exports = {
   create,
   rename,
   getFolder,
-  hasContent,
   getWorkspaceForFolder,
   deleteFolder,
   move,
@@ -51,18 +50,6 @@ async function hasAccess(folderId, user) {
     workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
     workspaceService.isUserWorkspaceMember(user, workspace)
   );
-}
-
-async function hasContent(folderId) {
-  const mail = await Mailings.findOne(
-    { _parentFolder: mongoose.Types.ObjectId(folderId) },
-    { previewHtml: 0, data: 0 }
-  );
-  const folder = await findFirst({
-    _parentFolder: mongoose.Types.ObjectId(folderId),
-  });
-
-  return !!mail || !!folder;
 }
 
 async function getWorkspaceForFolder(folderId) {
@@ -320,8 +307,4 @@ async function rename({ folderName, folderId }, user) {
   if (updateResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_MAILING_RENAME);
   }
-}
-
-function findFirst(query) {
-  return Folders.findOne(query);
 }
