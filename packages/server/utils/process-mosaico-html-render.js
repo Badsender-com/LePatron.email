@@ -31,6 +31,7 @@ function secureHtml(html) {
 }
 
 const srcRegexp = /src="(.+?)"/g;
+const hrefRegexp = /href="(.+?)"/g;
 
 const decodeTag = (match, tag) => {
   return htmlEntities.decode(tag);
@@ -43,11 +44,19 @@ function decodeSrcTags(html) {
   );
 }
 
+function decodeHrefTags(html) {
+  return html.replace(
+    hrefRegexp,
+    (match, tag) => `href="${decodeTag(match, tag)}"`
+  );
+}
+
 const basicHtmlProcessing = _.flow(
   removeTinyMceExtraBrTag,
   replaceTabs,
   secureHtml,
-  decodeSrcTags
+  decodeSrcTags,
+  decodeHrefTags
 );
 
 module.exports = basicHtmlProcessing;
