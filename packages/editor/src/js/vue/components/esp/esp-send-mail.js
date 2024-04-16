@@ -190,7 +190,6 @@ const EspComponent = Vue.component('EspForm', {
           this.closeModal();
         })
         .catch((error) => {
-          con
           const errorCode = error?.response?.status;
           const errorMessage = error?.response?.data?.message;
           if (errorCode === 400 && errorMessage) {
