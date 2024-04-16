@@ -45,7 +45,7 @@ class DscProvider {
   }
 
   async getCampaignMailApi({ campaignId }) {
-    return axios.get(`${config.dscUrl}/withTypeCampagne/${campaignId}`, {
+    return axios.get(`${config.dscUrl}/${campaignId}`, {
       headers: {
         apiKey: this.apiKey,
         'Content-Type': 'application/json',
@@ -173,11 +173,11 @@ class DscProvider {
         emailCampaignsData.id
       );
 
-      if (!updateCampaignApiResult?.data?.id) {
+      if (updateCampaignApiResult.status !== 200) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return updateCampaignApiResult?.id;
+      return emailCampaignsData?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
