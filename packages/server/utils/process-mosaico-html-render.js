@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const htmlEntities = require('he');
-const decodeUriComponent = require('decode-uri-component');
 
 // Tiny MCE can add some not wanted <BR> tags
 // • this can break up a layout on email clients
@@ -33,14 +32,8 @@ function secureHtml(html) {
 
 const srcRegexp = /src="(.+?)"/g;
 
-const decodeTag = (match, tag, fun = (value) => value) => {
-  let decodedTag = htmlEntities.decode(tag);
-  try {
-    decodedTag = decodeUriComponent(fun(decodedTag));
-  } catch (err) {
-    console.log('unable to decode URI', tag);
-  }
-  return decodedTag;
+const decodeTag = (match, tag) => {
+  return htmlEntities.decode(tag);
 };
 
 function decodeSrcTags(html) {
