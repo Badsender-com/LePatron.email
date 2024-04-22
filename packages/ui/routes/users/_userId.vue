@@ -20,11 +20,8 @@ export default {
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const [userResponse, mailingsResponse] = await Promise.all([
-        $axios.$get(apiRoutes.usersItem(params)),
-        $axios.$get(apiRoutes.usersItemMailings(params)),
-      ]);
-      return { user: userResponse, mailings: mailingsResponse.items };
+      const userResponse = await $axios.$get(apiRoutes.usersItem(params));
+      return { user: userResponse };
     } catch (error) {
       console.log(error);
     }
@@ -34,6 +31,7 @@ export default {
       user: {},
       mailings: [],
       loading: false,
+      isLoadingMailings: false,
     };
   },
   head() {
@@ -44,13 +42,34 @@ export default {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
   },
+  mounted() {
+    this.loadMailings();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async updateUser() {
-      const { $axios, $route } = this;
-      const { params } = $route;
+    async loadMailings() {
+      this.isLoadingMailings = true;
       try {
-        this.loading = true;
+        const {
+          $axios,
+          $route: { params },
+        } = this;
+
+        const mailingsResponse = await $axios.$get(
+          apiRoutes.usersItemMailings(params)
+        );
+        this.mailings = mailingsResponse.items;
+      } catch (error) {
+        console.log(error);
+      } finally {
+        this.isLoadingMailings = false;
+      }
+    },
+    async updateUser() {
+      this.loading = true;
+      try {
+        const { $axios, $route } = this;
+        const { params } = $route;
         await $axios.$put(apiRoutes.usersItem(params), this.user);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
@@ -115,6 +134,7 @@ export default {
         <bs-mailings-admin-table
           :mailings="mailings"
           :hidden-cols="[`userName`]"
+          :loading="isLoadingMailings"
         />
       </v-card-text>
     </v-card>
