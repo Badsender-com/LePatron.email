@@ -20,7 +20,6 @@ jobs:
       - run: yarn build
   unit-tests:
     runs-on: ubuntu-latest
-        needs: [build]
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
