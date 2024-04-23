@@ -37,7 +37,7 @@ export default {
   <bs-modal-confirm-form
     ref="deleteDialog"
     :with-input-confirmation="false"
-    :confirm-check-box="true"
+    :confirm-check-box="false"
     :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
     @confirm="submit"
   >
