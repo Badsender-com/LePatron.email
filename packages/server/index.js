@@ -15,7 +15,6 @@ const moment = require('moment');
 const { Nuxt, Builder } = require('nuxt');
 
 const terminate = require('./utils/terminate.js');
-// const cluster = require('cluster');
 
 const config = require('./node.config.js');
 const nuxtConfig = require('../../nuxt.config.js');
@@ -33,25 +32,6 @@ const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
 
-// const workers =
-//   process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
-
-// if (cluster.isMaster) {
-//   logger.log(chalk.cyan('start cluster with %s workers'), workers);
-
-//   for (let i = 0; i < workers; ++i) {
-//     const worker = cluster.fork().process;
-//     logger.log(chalk.green('worker %s started.'), worker.pid);
-//   }
-
-//   cluster.on('exit', function (worker) {
-//     logger.log(
-//       chalk.bgYellow('worker %s died. restart...'),
-//       worker.process.pid
-//     );
-//     cluster.fork();
-//   });
-// } else {
 const app = express();
 
 const store = new MongoDBStore({
@@ -321,4 +301,3 @@ process.stdout.on('error', function (err) {
     exitHandler(1, 'EPIPE Exception');
   }
 });
-// }
