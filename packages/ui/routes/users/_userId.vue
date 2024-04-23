@@ -60,7 +60,7 @@ export default {
         );
         this.mailings = mailingsResponse.items;
       } catch (error) {
-        console.log(error);
+        console.error(error);
       } finally {
         this.isLoadingMailings = false;
       }
