@@ -30,7 +30,6 @@ jobs:
       - run: yarn install
       - run: yarn test-ci
   deployment:
- name: Deploy to develop environment
     runs-on: ubuntu-latest
     if: "github.event_name == 'push' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
     timeout-minutes: 40
