@@ -25,7 +25,7 @@ export default {
 </script>
 
 <template>
-  <v-data-table :headers="tablesHeaders" :items="mailings">
+  <v-data-table :headers="tablesHeaders" :items="mailings" :loading="loading">
     <template #item.name="{ item }">
       <!-- mailings live outside the nuxt application -->
       <a :href="`/editor/${item.id}`">{{ item.name }}</a>
