@@ -1,6 +1,5 @@
 <script>
 import BsModalConfirmForm from '~/components/modal-confirm-form';
-import { getFolderContentStatus } from '~/helpers/api-routes';
 
 export default {
   name: 'FolderDeleteModal',
@@ -13,16 +12,10 @@ export default {
   data() {
     return {
       selectedFolder: {},
-      hasContent: true,
     };
   },
   methods: {
-    async fetchContent() {
-      const contentResponse = await this.$axios.get(
-        getFolderContentStatus(this.selectedFolder?.id)
-      );
-      this.hasContent = contentResponse?.data?.hasContent;
-    },
+    async fetchContent() {},
     async open(folder) {
       this.selectedFolder = folder;
       await this.fetchContent();
@@ -44,7 +37,7 @@ export default {
   <bs-modal-confirm-form
     ref="deleteDialog"
     :with-input-confirmation="false"
-    :confirm-check-box="hasContent"
+    :confirm-check-box="false"
     :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
     @confirm="submit"
   >
