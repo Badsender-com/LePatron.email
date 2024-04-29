@@ -9,7 +9,6 @@ const { ESP_TYPE } = require('../../constant/esp-type');
 const {
   getErrorsForControlQuality,
   displayErrors,
-  checkAndDisplaySizeWarning,
 } = require('../../../ext/badsender-control-quality');
 
 const {
@@ -158,9 +157,6 @@ const EspComponent = Vue.component('EspForm', {
 
       this.isLoadingExport = true;
       const unprocessedHtml = this.vm.exportHTML();
-
-      // Check for HTML size warning
-      checkAndDisplaySizeWarning(this.vm);
 
       axios
         .post(this.vm.metadata.url.sendCampaignMail, {

@@ -16,6 +16,7 @@ function isElementEmpty(element) {
 }
 
 function getErrorsForControlQuality(viewModel) {
+  checkAndDisplaySizeWarning(viewModel)
   const htmlToExport = viewModel.exportHTML()
   const parsedHtml = $.parseHTML(htmlToExport);
   const extraItems = [];
@@ -149,5 +150,4 @@ function displaySizeWarning(viewModel) {
 module.exports = {
   getErrorsForControlQuality,
   displayErrors,
-  checkAndDisplaySizeWarning,
 }
