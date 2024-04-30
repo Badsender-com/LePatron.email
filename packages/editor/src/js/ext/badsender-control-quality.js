@@ -16,6 +16,7 @@ function isElementEmpty(element) {
 }
 
 function getErrorsForControlQuality(viewModel) {
+  checkAndDisplaySizeWarning(viewModel)
   const htmlToExport = viewModel.exportHTML()
   const parsedHtml = $.parseHTML(htmlToExport);
   const extraItems = [];
@@ -108,7 +109,45 @@ function displayErrors (errors, viewModel) {
   $errorMessageDiv.append($errorMessageTitle, $errorMessageDescription, $errorsDiv);
 }
 
+function checkAndDisplaySizeWarning(viewModel) {
+
+  const sizeThreshold = 102 * 1024;   // 102KB in octets
+  const htmlToExport = viewModel.exportHTML();
+  const exportedHtmlSize = new Blob([htmlToExport]).size; // to calculate the size of the exported HTML in octets
+
+  if (exportedHtmlSize > sizeThreshold) {
+    displaySizeWarning(viewModel);
+  } else {
+    // Remove any existing size warning message
+    $('.size-warning-message').remove();
+  }
+}
+
+function displaySizeWarning(viewModel) {
+  // Remove any existing size warning message
+  $('.size-warning-message').remove();
+
+  // Define the default English messages with keys for translation
+  const warningTitleKey = 'Excessive Size';
+  const warningDescriptionKey = 'The exported HTML exceeds 102KB, which may result in clipping email on Gmail.';
+
+  // Construct the warning message elements with translation keys
+  const $warningMessageTitle = $(`<h3>${viewModel.t(warningTitleKey)}</h3>`);
+  const $warningMessageDescription = $(`<p>${viewModel.t(warningDescriptionKey)}</p>`);
+
+  // Create the warning message container with styling
+  const $warningMessageDiv = $('<div class="size-warning-message"></div>');
+
+  // Insert the warning message before the specified body location
+  $warningMessageDiv.insertBefore('replacedbody');
+  // Append the title and description to the container
+  $warningMessageDiv.append($warningMessageTitle, $warningMessageDescription);
+}
+
+
+
+
 module.exports = {
   getErrorsForControlQuality,
-  displayErrors
+  displayErrors,
 }
