@@ -698,12 +698,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var blackLinesRegex = /^\s*[\r\n]/gm;
     content = content.replace(blackLinesRegex, '');
 
-    // Remove successif empty indentation and empty spaces if content exceeds 102k
-    if (content.length > MAX_SIZE) {
-      content = content.replace(/\n|\t/g, ' ');
-      content = content.replace(/\s\s+/g, ' ');
-    }
-
     return content;
   };
 
