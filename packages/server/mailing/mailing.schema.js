@@ -253,7 +253,9 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       author: 1,
       userId: '$_user',
       tags: 1,
-      previewHtml: '$previewHtml',
+      hasHtmlPreview: {
+        $cond: { if: { $gt: ['$previewHtml', null] }, then: true, else: false },
+      },
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
@@ -266,8 +268,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const { docs, ...restPaginationProperties } = result;
 
   const convertedResultMailingDocs = docs?.map(
-    ({ previewHtml, wireframe, author, ...doc }) => ({
-      hasHtmlPreview: !!previewHtml,
+    ({ wireframe, author, ...doc }) => ({
       templateName: wireframe,
       userName: author,
       ...doc,

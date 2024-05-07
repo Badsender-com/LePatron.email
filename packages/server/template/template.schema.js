@@ -102,28 +102,53 @@ TemplateSchema.virtual('hasMarkup').get(function () {
 TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
-  const templates = await this.find(query)
-    // we need to keep markup in order for the virtual `hasMarkup` to have the right result
-    // we also need all assets
-    .populate({ path: '_company', select: 'id name' })
-    .sort({ name: 1 });
-  // change some fields
-  // • we don't want the markup to be send => remove
-  // • we don't want all assets => remove
-  // • BUT we still want the cover image => add
+  const templates = await this.aggregate([
+    { $match: query },
+    {
+      $project: {
+        name: 1,
+        description: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        group: '$_company',
+        coverImage: '$assets._full.png',
+        hasMarkup: {
+          $cond: { if: '$markup', then: true, else: false },
+        },
+        _company: 1, // Include if needed for the populate
+      },
+    },
+    { $sort: { name: 1 } },
+    {
+      $lookup: {
+        from: 'companies', // Adjust the collection name as needed
+        localField: '_company',
+        foreignField: '_id',
+        as: '_company',
+      },
+    },
+    { $unwind: '$_company' },
+    {
+      $project: {
+        name: 1,
+        description: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        group: {
+          id: '$_company._id',
+          name: '$_company.name',
+        },
+        coverImage: 1,
+        hasMarkup: 1,
+      },
+    },
+  ]);
+
+  // Convert ObjectId to string and other cleanup as needed
   return templates.map((template) => {
-    // pick is more performant than omit
-    const templateRes = _.pick(template.toJSON(), [
-      'id',
-      'name',
-      'description',
-      'createdAt',
-      'updatedAt',
-      'hasMarkup',
-      'group',
-    ]);
-    templateRes.coverImage = template.assets['_full.png'];
-    return templateRes;
+    template.id = template._id.toString();
+    delete template._id;
+    return template;
   });
 };
 

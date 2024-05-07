@@ -52,7 +52,7 @@ export default {
 </script>
 
 <template>
-  <v-data-table :headers="tableHeaders" :items="templates">
+  <v-data-table :headers="tableHeaders" :items="templates" :loading="loading">
     <template #item.name="{ item }">
       <nuxt-link :to="`/templates/${item.id}`">
         {{ item.name }}
