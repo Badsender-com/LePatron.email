@@ -115,6 +115,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     },
   })
     .populate({ path: '_company', select: 'id name' })
+    .sort({ name: 1 })
     .lean();
 
   const finalTemplates = templates.map(({ assets, ...template }) => ({
