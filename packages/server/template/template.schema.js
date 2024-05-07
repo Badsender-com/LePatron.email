@@ -97,83 +97,31 @@ TemplateSchema.plugin(mongooseHidden, {
 // })
 
 TemplateSchema.virtual('hasMarkup').get(function () {
-  return this.markup != null;
+  return Boolean(this.markup);
 });
 TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
-  const templates = await this.aggregate([
-    { $match: query },
-    {
-      $project: {
-        name: 1,
-        description: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        group: '$_company',
-        coverImage: '$assets._full.png',
-        hasMarkup: {
-          $cond: { if: '$markup', then: true, else: false },
-        },
-        _company: 1, // Include if needed for the populate
-      },
+  const templates = await this.find(query, {
+    _id: 1,
+    name: 1,
+    description: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    _company: 1,
+    assets: 1,
+    hasMarkup: {
+      $cond: { if: { $gt: ['$markup', null] }, then: true, else: false },
     },
-    { $sort: { name: 1 } },
-    {
-      $lookup: {
-        from: 'companies', // Adjust the collection name as needed
-        localField: '_company',
-        foreignField: '_id',
-        as: '_company',
-      },
-    },
-    { $unwind: '$_company' },
-    {
-      $project: {
-        name: 1,
-        description: 1,
-        createdAt: 1,
-        updatedAt: 1,
-        group: {
-          id: '$_company._id',
-          name: '$_company.name',
-        },
-        coverImage: 1,
-        hasMarkup: 1,
-      },
-    },
-  ]);
+  })
+    .populate({ path: '_company', select: 'id name' })
+    .lean();
 
-  // Convert ObjectId to string and other cleanup as needed
-  return templates.map((template) => {
-    template.id = template._id.toString();
-    delete template._id;
-    return template;
-  });
+  const finalTemplates = templates.map(({ assets, ...template }) => ({
+    ...template,
+    coverImage: JSON.parse(assets)?.['_full.png'] || null,
+  }));
+  return finalTemplates;
 };
-
-// TemplateSchema.virtual('url').get(function() {
-//   let userId = this._user && this._user._id ? this._user._id : this._user
-//   let userUrl = this._user ? `/users/${userId}` : '/users'
-//   let companyId =
-//     this._company && this._company._id ? this._company._id : this._company
-//   let companyUrl = this._company ? `/companies/${companyId}` : '/companies'
-//   // read should be `/companies/${this._company}/wireframes/${this._id}`
-//   return {
-//     read: `/users/${this._user}/wireframe/${this._id}`,
-//     show: `/wireframes/${this._id}`,
-//     backTo: this._company ? companyUrl : userUrl,
-//     user: userUrl,
-//     company: companyUrl,
-//     delete: `/wireframes/${this._id}/delete`,
-//     removeImages: `/wireframes/${this._id}/remove-images`,
-//     markup: `/wireframes/${this._id}/markup`,
-//     preview: `/wireframes/${this._id}/preview`,
-//     generatePreviews: `/wireframes/${this._id}/generate-previews`,
-//     imgCover: this.assets['_full.png']
-//       ? `/img/${this.assets['_full.png']}`
-//       : false,
-//   }
-// })
 
 module.exports = TemplateSchema;
