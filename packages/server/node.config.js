@@ -20,8 +20,7 @@ const config = rc('lepatron', {
     preventBuild: false,
     API_PREFIX: '/api',
   },
-  database:
-    'mongodb+srv://heroku_jmcdk83s:Zx9LzIVFAcHmjz1Y@badsender-development.mtrg3.mongodb.net/badsender-development?retryWrites=true&w=majority',
+  database: 'mongodb://localhost:27017/lepatron',
   sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
   emailTransport: {
     ...localEmail,
