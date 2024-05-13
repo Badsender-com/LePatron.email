@@ -32,6 +32,14 @@ export default {
       mailings: [],
       loading: false,
       isLoadingMailings: false,
+      pagination: {
+        page: 1,
+        itemsPerPage: 10,
+        itemsLength: 0,
+        pageCount: 0,
+        pageStart: 0,
+        pageStop: 0,
+      },
     };
   },
   head() {
@@ -41,6 +49,10 @@ export default {
     title() {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
+  },
+  watch: {
+    'pagination.page': 'loadMailings',
+    'pagination.itemsPerPage': 'loadMailings',
   },
   mounted() {
     this.loadMailings();
@@ -54,16 +66,31 @@ export default {
           $axios,
           $route: { params },
         } = this;
-
-        const mailingsResponse = await $axios.$get(
-          apiRoutes.usersItemMailings(params)
+        const response = await $axios.$get(
+          apiRoutes.usersItemMailings(params),
+          {
+            params: {
+              page: this.pagination.page,
+              limit: this.pagination.itemsPerPage,
+            },
+          }
         );
-        this.mailings = mailingsResponse.items;
+        this.mailings = response.items;
+        this.pagination.itemsLength = response.totalItems;
+        this.pagination.pageCount = response.totalPages;
+        this.pagination.pageStart =
+          (this.pagination.page - 1) * this.pagination.itemsPerPage;
+        this.pagination.pageStop =
+          this.pagination.pageStart + this.mailings.length;
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching mailings for user:', error);
       } finally {
         this.isLoadingMailings = false;
       }
+    },
+    handleItemsPerPageChange(itemsPerPage) {
+      this.pagination.page = 1;
+      this.pagination.itemsPerPage = itemsPerPage;
     },
     async updateUser() {
       this.loading = true;
@@ -133,9 +160,31 @@ export default {
       <v-card-text>
         <bs-mailings-admin-table
           :mailings="mailings"
-          :hidden-cols="[`userName`]"
           :loading="isLoadingMailings"
+          :options="pagination || {}"
+          :hidden-cols="[`userName`]"
+          :footer-props="{
+            pagination,
+            disablePagination: true,
+            prevIcon: 'none',
+            nextIcon: 'none',
+            itemsPerPageOptions: [5, 10, 15, -1],
+          }"
+          @update:items-per-page="handleItemsPerPageChange"
         />
+        <v-card
+          flat
+          class="d-flex align-center justify-center mx-auto"
+          max-width="22rem"
+        >
+          <v-pagination
+            v-if="pagination && pagination.itemsLength > 0"
+            v-model="pagination.page"
+            :circle="true"
+            class="my-4 pagination-custom-style"
+            :length="pagination.pageCount"
+          />
+        </v-card>
       </v-card-text>
     </v-card>
     <bs-user-actions

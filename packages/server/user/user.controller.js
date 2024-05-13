@@ -149,7 +149,9 @@ async function read(req, res) {
 async function readMailings(req, res) {
   const { userId } = req.params;
   const { page = 1, limit = 10 } = req.query;
-  const offset = (page - 1) * limit;
+  const parsedPage = parseInt(page, 10);
+  const parsedLimit = parseInt(limit, 10);
+  const offset = (parsedPage - 1) * parsedLimit;
 
   const user = await Users.findById(userId).select('_id');
   if (!user) {
@@ -158,15 +160,18 @@ async function readMailings(req, res) {
 
   // Retrieve mailings and their total count
   const [mailings, totalItems] = await Promise.all([
-    Mailings.find({ _user: userId }).skip(offset).limit(limit),
+    Mailings.find({ _user: userId })
+      .select('-previewHtml -data')
+      .skip(offset)
+      .limit(parsedLimit),
     Mailings.countDocuments({ _user: userId }), // Count all mailings for this user
   ]);
 
   res.json({
     items: mailings,
     totalItems,
-    currentPage: page,
-    totalPages: Math.ceil(totalItems / limit), // Calculate the total number of pages
+    currentPage: parsedPage,
+    totalPages: Math.ceil(totalItems / parsedLimit), // Calculate the total number of pages
   });
 }
 
