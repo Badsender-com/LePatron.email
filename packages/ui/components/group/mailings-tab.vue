@@ -35,7 +35,6 @@ export default {
       } = this;
       this.loading = true;
       try {
-        console.log('fetchMailings', pagination);
         const response = await $axios.$get(
           apiRoutes.groupsItemMailings(params),
           {
@@ -57,7 +56,6 @@ export default {
       }
     },
     handleItemsPerPageChange(itemsPerPage) {
-      console.log('handleItemsPerPageChange', itemsPerPage);
       this.pagination.page = 1;
       this.pagination.itemsPerPage = itemsPerPage;
     },
