@@ -103,7 +103,7 @@ TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
   const templates = await this.find(query, {
-    _id: 1,
+    id: '$_id',
     name: 1,
     description: 1,
     createdAt: 1,
