@@ -165,6 +165,8 @@ MailingSchema.index({ tags: -1 });
 MailingSchema.index({ _company: 1, tags: 1 });
 MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
+MailingSchema.index({ _user: 1 });
+
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
 };
