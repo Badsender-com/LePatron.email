@@ -14,7 +14,11 @@ class DscProvider {
 
   async connectApiCall() {
     return axios.get(`${config.dscUrl}`, {
-      headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+      headers: {
+        apiKey: this.apiKey,
+        'Content-Type': 'application/json',
+        'User-Agent': config.dscUserAgent,
+      },
     });
   }
 
@@ -49,6 +53,7 @@ class DscProvider {
       headers: {
         apiKey: this.apiKey,
         'Content-Type': 'application/json',
+        'User-Agent': config.dscUserAgent,
       },
     });
   }
@@ -57,7 +62,11 @@ class DscProvider {
     const url = `${config.dscUrl}/withTypeCampagne`;
     try {
       return await axios.post(url, restData, {
-        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        headers: {
+          apiKey: this.apiKey,
+          'Content-Type': 'application/json',
+          'User-Agent': config.dscUserAgent,
+        },
         params: { typeCampagne },
       });
     } catch (error) {
@@ -69,7 +78,11 @@ class DscProvider {
     const url = `${config.dscUrl}/withTypeCampagne/${campaignMailId}`;
     try {
       return await axios.put(url, restData, {
-        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        headers: {
+          apiKey: this.apiKey,
+          'Content-Type': 'application/json',
+          'User-Agent': config.dscUserAgent,
+        },
         params: { typeCampagne },
       });
     } catch (error) {
