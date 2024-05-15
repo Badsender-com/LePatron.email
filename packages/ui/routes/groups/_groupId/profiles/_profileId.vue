@@ -76,7 +76,7 @@ export default {
 
       if (type === ESP_TYPES.DSC) {
         const {
-          additionalApiData: { senderName, senderMail, replyTo },
+          additionalApiData: { senderName, senderMail, replyTo, typeCampagne },
         } = profileResponse.result;
         profileData = {
           id,
@@ -86,6 +86,7 @@ export default {
           senderName,
           senderMail,
           type,
+          typeCampagne,
         };
       }
 

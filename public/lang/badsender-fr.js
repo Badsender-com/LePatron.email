@@ -86,6 +86,14 @@ module.exports = {
   'encoding-type': "Type d'encodage",
   entity: 'Entité',
 
+  // Additional error messages from the handleError function
+  'error-bad-sender-id-format':
+    "Le format de l'identifiant de la campagne est invalide.",
+  'error-invalid-campaign-combination':
+    'La combinaison du code de campagne et du type de campagne est invalide.',
+  'error-api-error':
+    "Une erreur s'est produite lors de la communication avec l'API.",
+
   // test list
   'title-send-test-mails': 'Envoyer un email de test',
   'send-test-success': 'Email envoyé avec succès',

@@ -238,12 +238,36 @@ async function readProfiles(req, res) {
 
 async function readMailings(req, res) {
   const { groupId } = req.params;
-  const [group, mailings] = await Promise.all([
-    Groups.findById(groupId).select('_id'),
-    Mailings.findForApi({ _company: groupId }),
+  const { page: pageParam = 1, limit: limitParam = 10 } = req.query;
+  const page = parseInt(pageParam);
+  let limit = parseInt(limitParam);
+
+  let skip = (page - 1) * limit; // Calculate the number of items to skip
+  if (limit === -1) {
+    limit = 0;
+    skip = 0;
+  }
+  const group = await Groups.findById(groupId).select('_id');
+  if (!group) {
+    throw new NotFound();
+  }
+
+  // Retrieve mailings excluding the 'previewHtml' and 'data' fields and their total count
+  const [mailings, totalItems] = await Promise.all([
+    Mailings.find({ _company: groupId })
+      .select('-previewHtml -data') // Exclude the 'previewHtml' and data field
+      // in case limit = -1, we want to retrieve all mailings
+      .skip(skip)
+      .limit(limit),
+    Mailings.countDocuments({ _company: groupId }), // Count all mailings for this group
   ]);
-  if (!group) throw new NotFound();
-  res.json({ items: mailings });
+
+  res.json({
+    items: mailings,
+    totalItems,
+    currentPage: page,
+    totalPages: Math.ceil(totalItems / limit), // Calculate the total number of pages
+  });
 }
 
 /**

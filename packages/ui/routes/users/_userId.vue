@@ -20,11 +20,8 @@ export default {
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const [userResponse, mailingsResponse] = await Promise.all([
-        $axios.$get(apiRoutes.usersItem(params)),
-        $axios.$get(apiRoutes.usersItemMailings(params)),
-      ]);
-      return { user: userResponse, mailings: mailingsResponse.items };
+      const userResponse = await $axios.$get(apiRoutes.usersItem(params));
+      return { user: userResponse };
     } catch (error) {
       console.log(error);
     }
@@ -34,6 +31,15 @@ export default {
       user: {},
       mailings: [],
       loading: false,
+      isLoadingMailings: false,
+      pagination: {
+        page: 1,
+        itemsPerPage: 10,
+        itemsLength: 0,
+        pageCount: 0,
+        pageStart: 0,
+        pageStop: 0,
+      },
     };
   },
   head() {
@@ -44,13 +50,53 @@ export default {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
   },
+  watch: {
+    'pagination.page': 'loadMailings',
+    'pagination.itemsPerPage': 'loadMailings',
+  },
+  mounted() {
+    this.loadMailings();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
-    async updateUser() {
-      const { $axios, $route } = this;
-      const { params } = $route;
+    async loadMailings() {
+      this.isLoadingMailings = true;
       try {
-        this.loading = true;
+        const {
+          $axios,
+          $route: { params },
+        } = this;
+        const response = await $axios.$get(
+          apiRoutes.usersItemMailings(params),
+          {
+            params: {
+              page: this.pagination.page,
+              limit: this.pagination.itemsPerPage,
+            },
+          }
+        );
+        this.mailings = response.items;
+        this.pagination.itemsLength = response.totalItems;
+        this.pagination.pageCount = response.totalPages;
+        this.pagination.pageStart =
+          (this.pagination.page - 1) * this.pagination.itemsPerPage;
+        this.pagination.pageStop =
+          this.pagination.pageStart + this.mailings.length;
+      } catch (error) {
+        console.error('Error fetching mailings for user:', error);
+      } finally {
+        this.isLoadingMailings = false;
+      }
+    },
+    handleItemsPerPageChange(itemsPerPage) {
+      this.pagination.page = 1;
+      this.pagination.itemsPerPage = itemsPerPage;
+    },
+    async updateUser() {
+      this.loading = true;
+      try {
+        const { $axios, $route } = this;
+        const { params } = $route;
         await $axios.$put(apiRoutes.usersItem(params), this.user);
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
@@ -114,8 +160,31 @@ export default {
       <v-card-text>
         <bs-mailings-admin-table
           :mailings="mailings"
+          :loading="isLoadingMailings"
+          :options="pagination || {}"
           :hidden-cols="[`userName`]"
+          :footer-props="{
+            pagination,
+            disablePagination: true,
+            prevIcon: 'none',
+            nextIcon: 'none',
+            itemsPerPageOptions: [5, 10, 15, -1],
+          }"
+          @update:items-per-page="handleItemsPerPageChange"
         />
+        <v-card
+          flat
+          class="d-flex align-center justify-center mx-auto"
+          max-width="22rem"
+        >
+          <v-pagination
+            v-if="pagination && pagination.itemsLength > 0"
+            v-model="pagination.page"
+            :circle="true"
+            class="my-4 pagination-custom-style"
+            :length="pagination.pageCount"
+          />
+        </v-card>
       </v-card-text>
     </v-card>
     <bs-user-actions

@@ -1,59 +1,59 @@
-import {required} from 'vuelidate/lib/validators';
+import { required } from 'vuelidate/lib/validators';
 
 const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
 const { TimeInput } = require('../../time-input/timeInput');
-const  { validationMixin } = require('vuelidate');
+const { validationMixin } = require('vuelidate');
 const styleHelper = require('../../../utils/style/styleHelper');
 
 const DscComponent = Vue.component('DscComponent', {
-
   mixins: [validationMixin],
-  components:{
-    TimeInput
+  components: {
+    TimeInput,
   },
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null },
-    isLoading: { type: Boolean, default: false},
-    closeModal: { type: Function, default: () => {}},
-    espId: { type: String, default: null  },
+    isLoading: { type: Boolean, default: false },
+    closeModal: { type: Function, default: () => {} },
+    espId: { type: String, default: null },
     selectedProfile: { type: Object, default: () => ({}) },
-    fetchedProfile: {type: Object, default: () => ({})},
+    fetchedProfile: { type: Object, default: () => ({}) },
     campaignId: { type: String, default: null },
-    type: { type: Number, default: SEND_MODE.CREATION  },
+    type: { type: Number, default: SEND_MODE.CREATION },
   },
   data() {
     return {
       profile: {
         campaignMailName: '',
-        senderName: '',
-        senderMail: '',
-        replyTo: '',
-        planification:'',
+        planification: '',
         subject: '',
-        campaignMailName: '',
+        controlMail: '',
         type: ESP_TYPE.DSC,
       },
-      style: styleHelper
-    }
+      style: styleHelper,
+    };
   },
   computed: {
     isEditMode() {
-      return this.type === SEND_MODE.EDIT
-    }
+      return this.type === SEND_MODE.EDIT;
+    },
   },
   mounted() {
-    const { campaignMailName, subject, id, additionalApiData: { senderName, senderMail, planification, replyTo } } = this.fetchedProfile;
-
+    const {
+      campaignMailName,
+      subject,
+      id,
+      additionalApiData: { planification, typeCampagne } = {},
+    } = this.fetchedProfile;
+    const controlMail = this.vm.currentUser().email;
     this.profile = {
       campaignMailName: campaignMailName ?? '',
-      senderName: senderName ?? '',
-      senderMail: senderMail ?? '',
       planification: planification ?? '',
-      replyTo: replyTo ?? '',
       subject: subject ?? '',
+      controlMail,
+      typeCampagne: typeCampagne ?? '',
       id: id ?? '',
     };
     M.updateTextFields();
@@ -151,49 +151,6 @@ const DscComponent = Vue.component('DscComponent', {
                 ></span>
               </div>
             </div>
-            <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
-                <input
-                  id="sender-name"
-                  type="text"
-                  v-model="profile.senderName"
-                  disabled
-                  :placeholder="vm.t('sender-name')"
-                  name="senderName"
-                />
-                <label for="sender-name" class="active">{{
-                  vm.t('sender-name')
-                }}</label>
-              </div>
-            </div>
-            <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
-                <input
-                  id="sender-mail"
-                  type="text"
-                  v-model="profile.senderMail"
-                  disabled
-                  :placeholder="vm.t('sender-mail')"
-                  name="senderMail"
-                />
-                <label for="sender-mail" class="active">{{
-                  vm.t('sender-mail')
-                }}</label>
-              </div>
-            </div>
-            <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
-                <input
-                  id="replyto"
-                  type="text"
-                  :placeholder="vm.t('replyto')"
-                  v-model="profile.replyTo"
-                  name="replyto"
-                  disabled
-                />
-                <label for="replyto" class="active">{{ vm.t('replyto') }}</label>
-              </div>
-            </div>
           </form>
         </div>
       </div>
@@ -233,11 +190,11 @@ const DscComponent = Vue.component('DscComponent', {
         subject: {
           required,
         },
-      }
-    }
+      },
+    };
   },
-})
+});
 
 module.exports = {
-  DscComponent
-}
+  DscComponent,
+};

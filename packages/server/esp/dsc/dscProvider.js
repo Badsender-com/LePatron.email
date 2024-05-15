@@ -4,7 +4,7 @@ const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('../../config/axios');
-const { InternalServerError, Conflict } = require('http-errors');
+const { InternalServerError, Conflict, BadRequest } = require('http-errors');
 
 class DscProvider {
   constructor({ apiKey, ...data }) {
@@ -13,7 +13,7 @@ class DscProvider {
   }
 
   async connectApiCall() {
-    return axios.get(`${config.dscUrl}/`, {
+    return axios.get(`${config.dscUrl}`, {
       headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
     });
   }
@@ -53,16 +53,41 @@ class DscProvider {
     });
   }
 
-  async createCampaignMailApi(data) {
-    return axios.post(`${config.dscUrl}/`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+  async createCampaignMailApi({ typeCampagne, ...restData }) {
+    const url = `${config.dscUrl}/withTypeCampagne`;
+    try {
+      return await axios.post(url, restData, {
+        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        params: { typeCampagne },
+      });
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updateCampaignMailApi(data, campaignMailId) {
-    return axios.put(`${config.dscUrl}/${campaignMailId}`, data, {
-      headers: { apiKey: this.apiKey, contentType: 'application/json' },
-    });
+  async updateCampaignMailApi({ typeCampagne, ...restData }, campaignMailId) {
+    const url = `${config.dscUrl}/withTypeCampagne/${campaignMailId}`;
+    try {
+      return await axios.put(url, restData, {
+        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        params: { typeCampagne },
+      });
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  handleError(error) {
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message;
+
+    if (status === 400) {
+      throw new BadRequest(message);
+    }
+
+    // Log the error and throw a generic error if it doesn't match specific cases
+    logger.error('Error in API call:', error);
+    throw new Error('An error occurred while communicating with the API.');
   }
 
   async getCampaignMail({ campaignId }) {
@@ -117,11 +142,11 @@ class DscProvider {
         emailCampaignsData
       );
 
-      if (!createCampaignApiResult?.data?.id) {
+      if (createCampaignApiResult.status !== 200) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return createCampaignApiResult?.data?.id;
+      return emailCampaignsData?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
@@ -148,11 +173,11 @@ class DscProvider {
         emailCampaignsData.id
       );
 
-      if (!updateCampaignApiResult?.data?.id) {
+      if (updateCampaignApiResult.status !== 200) {
         throw new InternalServerError(ERROR_CODES.MALFORMAT_ESP_RESPONSE);
       }
 
-      return updateCampaignApiResult?.id;
+      return emailCampaignsData?.id;
     } catch (e) {
       if (e?.response?.status === 409) {
         throw new Conflict(ERROR_CODES.ALREADY_USED_MAIL_NAME);
@@ -176,23 +201,14 @@ class DscProvider {
         doesWaitForFtp: false,
       });
 
-      const {
-        senderName,
-        senderMail,
-        subject,
-        replyTo,
-        name,
-        planification,
-      } = campaignMailData;
+      const { subject, name, planification, typeCampagne } = campaignMailData;
 
       let formattedData = {
         id: name,
         object: subject,
-        replyToMail: replyTo,
-        senderName,
-        senderMail,
         template: processedHtml,
         controlMail: user?.email || '',
+        typeCampagne,
       };
 
       if (planification) {
