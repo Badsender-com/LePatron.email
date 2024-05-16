@@ -97,58 +97,32 @@ TemplateSchema.plugin(mongooseHidden, {
 // })
 
 TemplateSchema.virtual('hasMarkup').get(function () {
-  return this.markup != null;
+  return Boolean(this.markup);
 });
 TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
-  const templates = await this.find(query)
-    // we need to keep markup in order for the virtual `hasMarkup` to have the right result
-    // we also need all assets
+  const templates = await this.find(query, {
+    id: '$_id',
+    name: 1,
+    description: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    _company: 1,
+    assets: 1,
+    hasMarkup: {
+      $cond: { if: { $gt: ['$markup', null] }, then: true, else: false },
+    },
+  })
     .populate({ path: '_company', select: 'id name' })
-    .sort({ name: 1 });
-  // change some fields
-  // • we don't want the markup to be send => remove
-  // • we don't want all assets => remove
-  // • BUT we still want the cover image => add
-  return templates.map((template) => {
-    // pick is more performant than omit
-    const templateRes = _.pick(template.toJSON(), [
-      'id',
-      'name',
-      'description',
-      'createdAt',
-      'updatedAt',
-      'hasMarkup',
-      'group',
-    ]);
-    templateRes.coverImage = template.assets['_full.png'];
-    return templateRes;
-  });
-};
+    .sort({ name: 1 })
+    .lean();
 
-// TemplateSchema.virtual('url').get(function() {
-//   let userId = this._user && this._user._id ? this._user._id : this._user
-//   let userUrl = this._user ? `/users/${userId}` : '/users'
-//   let companyId =
-//     this._company && this._company._id ? this._company._id : this._company
-//   let companyUrl = this._company ? `/companies/${companyId}` : '/companies'
-//   // read should be `/companies/${this._company}/wireframes/${this._id}`
-//   return {
-//     read: `/users/${this._user}/wireframe/${this._id}`,
-//     show: `/wireframes/${this._id}`,
-//     backTo: this._company ? companyUrl : userUrl,
-//     user: userUrl,
-//     company: companyUrl,
-//     delete: `/wireframes/${this._id}/delete`,
-//     removeImages: `/wireframes/${this._id}/remove-images`,
-//     markup: `/wireframes/${this._id}/markup`,
-//     preview: `/wireframes/${this._id}/preview`,
-//     generatePreviews: `/wireframes/${this._id}/generate-previews`,
-//     imgCover: this.assets['_full.png']
-//       ? `/img/${this.assets['_full.png']}`
-//       : false,
-//   }
-// })
+  const finalTemplates = templates.map(({ assets, ...template }) => ({
+    ...template,
+    coverImage: JSON.parse(assets)?.['_full.png'] || null,
+  }));
+  return finalTemplates;
+};
 
 module.exports = TemplateSchema;
