@@ -110,9 +110,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     updatedAt: 1,
     _company: 1,
     assets: 1,
-    hasMarkup: {
-      $cond: { if: { $gt: ['$markup', null] }, then: true, else: false },
-    },
+    hasMarkup: { $ne: ['$markup', null] },
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })

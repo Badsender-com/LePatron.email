@@ -256,9 +256,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       author: 1,
       userId: '$_user',
       tags: 1,
-      hasHtmlPreview: {
-        $cond: { if: { $gt: ['$previewHtml', null] }, then: true, else: false },
-      },
+      hasHtmlPreview: { $ne: ['$previewHtml', null] },
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
