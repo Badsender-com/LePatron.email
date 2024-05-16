@@ -110,16 +110,18 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     updatedAt: 1,
     _company: 1,
     assets: 1,
-    hasMarkup: { $ne: ['$markup', null] },
+    markup: 1,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })
     .lean();
 
-  const finalTemplates = templates.map(({ assets, ...template }) => ({
+  const finalTemplates = templates.map(({ assets, markup, ...template }) => ({
     ...template,
+    hasMarkup: markup !== null,
     coverImage: JSON.parse(assets)?.['_full.png'] || null,
   }));
+
   return finalTemplates;
 };
 
