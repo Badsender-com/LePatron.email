@@ -85,6 +85,10 @@ class DscProvider {
       throw new BadRequest(message);
     }
 
+    if (status === 409) {
+      throw new Conflict(message);
+    }
+
     // Log the error and throw a generic error if it doesn't match specific cases
     logger.error('Error in API call:', error);
     throw new Error('An error occurred while communicating with the API.');
