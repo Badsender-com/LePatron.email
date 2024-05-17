@@ -114,6 +114,18 @@ const EspComponent = Vue.component('EspForm', {
         .catch((error) => {
           // handle error
           console.log(error);
+
+          /*
+            If the campaign for this profile should exist but was not found on DSC,
+            Then it was probably deleted on DSC's side.
+            So we allow the user to create a new one
+          */
+          if(error.response.status === 404) {
+            this.type = SEND_MODE.CREATION;
+            this.fetchProfileData(message);
+            return;
+          }
+
           this.vm.notifier.error(this.vm.t('error-server'));
         })
         .finally(() => {
