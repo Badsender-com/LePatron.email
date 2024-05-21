@@ -202,7 +202,13 @@ async function sendEspCampaign({
   const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
 
-  await checkIfMailAlreadySentToProfile({ profileId, mailingId });
+  /*
+    For DSC, creating a new campaign from the same profile is allowed 
+    if the campaign was deleted on DSC's side
+  */
+  if (type !== 'DSC') {
+    await checkIfMailAlreadySentToProfile({ profileId, mailingId });
+  }
 
   const {
     apiKey,
