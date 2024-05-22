@@ -29,7 +29,6 @@ const DscComponent = Vue.component('DscComponent', {
         campaignMailName: '',
         planification: '',
         subject: '',
-        controlMail: '',
         type: ESP_TYPE.DSC,
       },
       style: styleHelper,
@@ -47,12 +46,10 @@ const DscComponent = Vue.component('DscComponent', {
       id,
       additionalApiData: { planification, typeCampagne } = {},
     } = this.fetchedProfile;
-    const controlMail = this.vm.currentUser().email;
     this.profile = {
       campaignMailName: campaignMailName ?? '',
       planification: planification ?? '',
       subject: subject ?? '',
-      controlMail,
       typeCampagne: typeCampagne ?? '',
       id: id ?? '',
     };

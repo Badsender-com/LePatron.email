@@ -182,7 +182,6 @@ const EspComponent = Vue.component('EspForm', {
             campaignMailName: data?.campaignMailName,
             subject: data?.subject,
             planification: data?.planification,
-            controlMail: data?.controlMail,
             typeCampagne: data?.typeCampagne,
           },
         })
