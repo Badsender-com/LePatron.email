@@ -4,7 +4,12 @@ const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('../../config/axios');
-const { InternalServerError, Conflict, BadRequest } = require('http-errors');
+const {
+  InternalServerError,
+  Conflict,
+  BadRequest,
+  NotFound,
+} = require('http-errors');
 
 class DscProvider {
   constructor({ apiKey, ...data }) {
@@ -98,6 +103,10 @@ class DscProvider {
       throw new BadRequest(message);
     }
 
+    if (status === 409) {
+      throw new Conflict(message);
+    }
+
     // Log the error and throw a generic error if it doesn't match specific cases
     logger.error('Error in API call:', error);
     throw new Error('An error occurred while communicating with the API.');
@@ -136,6 +145,10 @@ class DscProvider {
       };
     } catch (e) {
       logger.error({ error: e });
+
+      if (e?.status === 404) {
+        throw new NotFound('Campaign not found on DSC');
+      }
 
       throw e;
     }
