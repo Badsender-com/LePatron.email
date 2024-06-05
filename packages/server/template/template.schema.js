@@ -97,58 +97,40 @@ TemplateSchema.plugin(mongooseHidden, {
 // })
 
 TemplateSchema.virtual('hasMarkup').get(function () {
-  return this.markup != null;
+  return Boolean(this.markup);
 });
 TemplateSchema.index({ name: 1 });
 
 TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
-  const templates = await this.find(query)
-    // we need to keep markup in order for the virtual `hasMarkup` to have the right result
-    // we also need all assets
+  const templates = await this.find(query, {
+    id: '$_id',
+    name: 1,
+    description: 1,
+    createdAt: 1,
+    updatedAt: 1,
+    _company: 1,
+    assets: 1,
+  })
     .populate({ path: '_company', select: 'id name' })
-    .sort({ name: 1 });
-  // change some fields
-  // • we don't want the markup to be send => remove
-  // • we don't want all assets => remove
-  // • BUT we still want the cover image => add
-  return templates.map((template) => {
-    // pick is more performant than omit
-    const templateRes = _.pick(template.toJSON(), [
-      'id',
-      'name',
-      'description',
-      'createdAt',
-      'updatedAt',
-      'hasMarkup',
-      'group',
-    ]);
-    templateRes.coverImage = template.assets['_full.png'];
-    return templateRes;
-  });
+    .sort({ name: 1 })
+    .lean();
+  // Second query to check existence of 'markup' for each template
+  const ids = templates.map((template) => template._id);
+  // find markup exist or not without charging the markup
+  const templatesWithMarkup = await this.find(
+    { _id: { $in: ids }, markup: { $exists: true } },
+    { _id: 1 }
+  ).lean();
+
+  const templatesWithMarkupSet = new Set(
+    templatesWithMarkup.map((t) => t._id.toString())
+  );
+
+  const finalTemplates = templates.map(({ assets, ...template }) => ({
+    ...template,
+    hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
+    coverImage: JSON.parse(assets)?.['_full.png'] || null,
+  }));
+  return finalTemplates;
 };
-
-// TemplateSchema.virtual('url').get(function() {
-//   let userId = this._user && this._user._id ? this._user._id : this._user
-//   let userUrl = this._user ? `/users/${userId}` : '/users'
-//   let companyId =
-//     this._company && this._company._id ? this._company._id : this._company
-//   let companyUrl = this._company ? `/companies/${companyId}` : '/companies'
-//   // read should be `/companies/${this._company}/wireframes/${this._id}`
-//   return {
-//     read: `/users/${this._user}/wireframe/${this._id}`,
-//     show: `/wireframes/${this._id}`,
-//     backTo: this._company ? companyUrl : userUrl,
-//     user: userUrl,
-//     company: companyUrl,
-//     delete: `/wireframes/${this._id}/delete`,
-//     removeImages: `/wireframes/${this._id}/remove-images`,
-//     markup: `/wireframes/${this._id}/markup`,
-//     preview: `/wireframes/${this._id}/preview`,
-//     generatePreviews: `/wireframes/${this._id}/generate-previews`,
-//     imgCover: this.assets['_full.png']
-//       ? `/img/${this.assets['_full.png']}`
-//       : false,
-//   }
-// })
-
 module.exports = TemplateSchema;

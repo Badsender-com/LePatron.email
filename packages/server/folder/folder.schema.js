@@ -47,4 +47,6 @@ FolderSchema.virtual('childFolders', {
   justOne: false,
 });
 
+FolderSchema.index({ _parentFolder: 1 });
+
 module.exports = FolderSchema;

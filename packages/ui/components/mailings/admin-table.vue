@@ -5,6 +5,7 @@ export default {
     mailings: { type: Array, default: () => [] },
     hiddenCols: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
+    pagination: { type: Object, default: () => ({}) },
   },
   computed: {
     tablesHeaders() {
@@ -21,11 +22,22 @@ export default {
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
   },
+  methods: {
+    handleItemsPerPageChange(itemsPerPage) {
+      this.$emit('update:items-per-page', itemsPerPage);
+    },
+  },
 };
 </script>
 
 <template>
-  <v-data-table :headers="tablesHeaders" :items="mailings" :loading="loading">
+  <v-data-table
+    :headers="tablesHeaders"
+    :items="mailings"
+    :loading="loading"
+    v-bind="$attrs"
+    @update:items-per-page="handleItemsPerPageChange"
+  >
     <template #item.name="{ item }">
       <!-- mailings live outside the nuxt application -->
       <a :href="`/editor/${item.id}`">{{ item.name }}</a>

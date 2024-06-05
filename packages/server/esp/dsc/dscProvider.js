@@ -4,7 +4,12 @@ const mailingService = require('../../mailing/mailing.service.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('../../config/axios');
-const { InternalServerError, Conflict, BadRequest } = require('http-errors');
+const {
+  InternalServerError,
+  Conflict,
+  BadRequest,
+  NotFound,
+} = require('http-errors');
 
 class DscProvider {
   constructor({ apiKey, ...data }) {
@@ -14,7 +19,11 @@ class DscProvider {
 
   async connectApiCall() {
     return axios.get(`${config.dscUrl}`, {
-      headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+      headers: {
+        apiKey: this.apiKey,
+        'Content-Type': 'application/json',
+        'User-Agent': config.dscUserAgent,
+      },
     });
   }
 
@@ -49,6 +58,7 @@ class DscProvider {
       headers: {
         apiKey: this.apiKey,
         'Content-Type': 'application/json',
+        'User-Agent': config.dscUserAgent,
       },
     });
   }
@@ -57,7 +67,11 @@ class DscProvider {
     const url = `${config.dscUrl}/withTypeCampagne`;
     try {
       return await axios.post(url, restData, {
-        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        headers: {
+          apiKey: this.apiKey,
+          'Content-Type': 'application/json',
+          'User-Agent': config.dscUserAgent,
+        },
         params: { typeCampagne },
       });
     } catch (error) {
@@ -69,7 +83,11 @@ class DscProvider {
     const url = `${config.dscUrl}/withTypeCampagne/${campaignMailId}`;
     try {
       return await axios.put(url, restData, {
-        headers: { apiKey: this.apiKey, 'Content-Type': 'application/json' },
+        headers: {
+          apiKey: this.apiKey,
+          'Content-Type': 'application/json',
+          'User-Agent': config.dscUserAgent,
+        },
         params: { typeCampagne },
       });
     } catch (error) {
@@ -83,6 +101,10 @@ class DscProvider {
 
     if (status === 400) {
       throw new BadRequest(message);
+    }
+
+    if (status === 409) {
+      throw new Conflict(message);
     }
 
     // Log the error and throw a generic error if it doesn't match specific cases
@@ -123,6 +145,10 @@ class DscProvider {
       };
     } catch (e) {
       logger.error({ error: e });
+
+      if (e?.status === 404) {
+        throw new NotFound('Campaign not found on DSC');
+      }
 
       throw e;
     }

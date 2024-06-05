@@ -140,20 +140,39 @@ async function read(req, res) {
  * @apiGroup Users
  *
  * @apiParam {string} userId
+ * @apiParam {number} [page=1]
+ * @apiParam {number} [limit=10]
  *
  * @apiUse mailings
  * @apiSuccess {mailings[]} items
  */
-
 async function readMailings(req, res) {
   const { userId } = req.params;
-  const [user, mailings] = await Promise.all([
-    Users.findById(userId).select({ _id: 1 }),
-    Mailings.findForApi({ _user: userId }),
-  ]);
-  if (!user) throw new createError.NotFound();
+  const { page = 1, limit = 10 } = req.query;
+  const parsedPage = parseInt(page, 10);
+  const parsedLimit = parseInt(limit, 10);
+  const offset = (parsedPage - 1) * parsedLimit;
 
-  res.json({ items: mailings });
+  const user = await Users.findById(userId).select('_id');
+  if (!user) {
+    throw new createError.NotFound(); // Ensure this error is properly handled by your error middleware
+  }
+
+  // Retrieve mailings and their total count
+  const [mailings, totalItems] = await Promise.all([
+    Mailings.find({ _user: userId })
+      .select('-previewHtml -data')
+      .skip(offset)
+      .limit(parsedLimit),
+    Mailings.countDocuments({ _user: userId }), // Count all mailings for this user
+  ]);
+
+  res.json({
+    items: mailings,
+    totalItems,
+    currentPage: parsedPage,
+    totalPages: Math.ceil(totalItems / parsedLimit), // Calculate the total number of pages
+  });
 }
 
 /**

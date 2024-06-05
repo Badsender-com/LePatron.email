@@ -165,6 +165,9 @@ MailingSchema.index({ tags: -1 });
 MailingSchema.index({ _company: 1, tags: 1 });
 MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
+MailingSchema.index({ _user: 1 });
+MailingSchema.index({ _parentFolder: 1 });
+
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });
 };
@@ -253,7 +256,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       author: 1,
       userId: '$_user',
       tags: 1,
-      previewHtml: '$previewHtml',
       _workspace: 1,
       espIds: 1,
       updatedAt: 1,
@@ -265,9 +267,21 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
 
   const { docs, ...restPaginationProperties } = result;
 
-  const convertedResultMailingDocs = docs?.map(
-    ({ previewHtml, wireframe, author, ...doc }) => ({
-      hasHtmlPreview: !!previewHtml,
+  const ids = docs.map((doc) => doc._id);
+  const mailingsWithHtmlPreview = await this.find(
+    { _id: { $in: ids }, previewHtml: { $exists: true } },
+    { _id: 1 }
+  ).lean();
+  const mailingsWithHtmlPreviewSet = new Set(
+    mailingsWithHtmlPreview.map((mailing) => mailing._id.toString())
+  );
+  const finalDocs = docs.map((doc) => ({
+    ...doc,
+    hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
+  }));
+
+  const convertedResultMailingDocs = finalDocs.map(
+    ({ wireframe, author, ...doc }) => ({
       templateName: wireframe,
       userName: author,
       ...doc,
