@@ -459,12 +459,10 @@ async function bulkUpdate(req, res) {
     return mailing.save();
   });
   await Promise.all(updateQueries);
-  const [mailings, tags] = await Promise.all([
-    Mailings.findForApi(mailingQuery),
-    Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {})),
-  ]);
+  const mailings = await Mailings.findForApi(mailingQuery);
+
   res.json({
-    meta: { tags },
+    meta: { tags: [] },
     items: mailings,
   });
 }
