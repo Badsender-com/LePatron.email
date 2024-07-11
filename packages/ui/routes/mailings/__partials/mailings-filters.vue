@@ -89,6 +89,7 @@ export default {
             :label="$t(`global.tags`)"
             :items="tags"
             multiple
+            :disabled="true"
             @input="(value) => handleFilterChange('tags', value)"
           />
           <div class="bs-mailings-filters__date-picker">
