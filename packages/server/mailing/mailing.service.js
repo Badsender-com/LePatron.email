@@ -121,10 +121,8 @@ async function listMailingForWorkspaceOrFolder({
     });
   }
 
-  const tags = await findTags({ user });
-
   return {
-    meta: { tags },
+    meta: { tags: [] },
     items: mailings,
   };
 }

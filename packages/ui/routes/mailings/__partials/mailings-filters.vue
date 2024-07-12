@@ -84,13 +84,13 @@ export default {
             multiple
             @input="(value) => handleFilterChange('templates', value)"
           />
-          <v-select
+          <!-- <v-select
             :value="filters.tags"
             :label="$t(`global.tags`)"
             :items="tags"
             multiple
             @input="(value) => handleFilterChange('tags', value)"
-          />
+          /> -->
           <div class="bs-mailings-filters__date-picker">
             <v-menu
               v-model="pickerCreatedStart"
