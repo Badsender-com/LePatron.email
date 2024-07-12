@@ -61,9 +61,11 @@ export default {
       }
     },
     selectTemplate(template) {
+      console.log('Template selected:', template);
       this.selectedTemplate = template;
     },
     checkIsSelectedTemplate(template) {
+      console.log('Checking template:', template);
       return this.selectedTemplate?.id === template?.id;
     },
   },
