@@ -128,6 +128,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
 
   const finalTemplates = templates.map(({ assets, ...template }) => ({
     ...template,
+    id: template._id,
     hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
     coverImage: JSON.parse(assets)?.['_full.png'] || null,
   }));
