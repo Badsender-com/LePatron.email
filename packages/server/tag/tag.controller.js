@@ -2,7 +2,6 @@
 
 const { NotFound, UnprocessableEntity } = require('http-errors');
 const asyncHandler = require('express-async-handler');
-const modelsUtils = require('../utils/model.js');
 const tagService = require('./tag.service.js');
 const { Tags } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -27,9 +26,9 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const { user } = req;
+  const { companyId } = req.body;
 
-  const tags = await tagService.listTags(user);
+  const tags = await tagService.listTags(companyId);
   res.json(tags);
 }
 
@@ -47,6 +46,7 @@ async function list(req, res) {
 
 async function create(req, res) {
   const { label, companyId } = req.body;
+
   if (!label || !companyId) {
     throw new UnprocessableEntity(ERROR_CODES.INVALID_TAG_DATA);
   }
@@ -68,7 +68,7 @@ async function create(req, res) {
 
 async function read(req, res) {
   const { tagId } = req.params;
-  const query = modelsUtils.addGroupFilter(req.user, { _id: tagId });
+  const query = { _id: tagId };
   const tag = await Tags.findOne(query);
   if (!tag) throw new NotFound(ERROR_CODES.TAG_NOT_FOUND);
   res.json(tag);

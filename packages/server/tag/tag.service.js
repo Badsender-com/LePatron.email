@@ -13,8 +13,8 @@ module.exports = {
   bulkUpdateTags: asyncHandler(bulkUpdateTags),
 };
 
-async function listTags(user) {
-  const query = { companyId: user.companyId };
+async function listTags(companyId) {
+  const query = { companyId };
   const tags = await Tags.find(query).lean();
   if (!tags.length) {
     throw new NotFound(ERROR_CODES.TAGS_NOT_FOUND);
