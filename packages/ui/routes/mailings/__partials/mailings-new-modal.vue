@@ -134,7 +134,7 @@ export default {
 
 <style>
 .bs-templates_container {
-  max-height: 500px;
+  max-height: 50vh;
   overflow: auto;
 }
 </style>
