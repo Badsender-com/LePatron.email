@@ -16,6 +16,10 @@ const TagSchema = new Schema(
       ref: GroupModel,
       required: true,
     },
+    usageCount: {
+      type: Number,
+      default: 0,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

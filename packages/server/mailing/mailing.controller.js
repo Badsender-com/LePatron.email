@@ -18,7 +18,6 @@ const {
   downloadZip,
   downloadMultipleZip,
 } = require('./download-zip.controller.js');
-const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
@@ -442,23 +441,41 @@ async function bulkUpdate(req, res) {
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
     _id: { $in: items.map(Types.ObjectId) },
   });
+
   // ensure the mailings are from the same group
   const userMailings = await Mailings.find(mailingQuery).select({
     _id: 1,
     tags: 1,
   });
-  const updateQueries = userMailings.map((mailing) => {
-    const { tags: orignalTags } = mailing;
+
+  const updateQueries = userMailings.map(async (mailing) => {
+    const originalTags = mailing.tags.map((tag) => tag.toString());
     const uniqueUpdatedTags = [
-      ...new Set([...tagsChanges.added, ...orignalTags]),
+      ...new Set([...tagsChanges.added, ...originalTags]),
     ];
     const updatedTags = uniqueUpdatedTags.filter(
       (tag) => !tagsChanges.removed.includes(tag)
     );
-    mailing.tags = updatedTags.map(cleanTagName).sort();
+
+    const tagsToAdd = updatedTags.filter((tag) => !originalTags.includes(tag));
+    const tagsToRemove = originalTags.filter(
+      (tag) => !updatedTags.includes(tag)
+    );
+
+    // Use schema methods to add and remove multiple tags
+    if (tagsToAdd.length > 0) {
+      await Mailings.addTagsToEmail(mailing._id, tagsToAdd);
+    }
+
+    if (tagsToRemove.length > 0) {
+      await Mailings.removeTagsFromEmail(mailing._id, tagsToRemove);
+    }
+
     return mailing.save();
   });
+
   await Promise.all(updateQueries);
+
   const [mailings, tags] = await Promise.all([
     Mailings.findForApi(mailingQuery),
     Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {})),

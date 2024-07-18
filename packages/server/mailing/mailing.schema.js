@@ -12,6 +12,7 @@ const {
   GroupModel,
   WorkspaceModel,
   FolderModel,
+  TagModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 
@@ -89,9 +90,12 @@ const MailingSchema = Schema(
       // • so just make an alias
       alias: 'group',
     },
-    tags: {
-      type: [],
-    },
+    tags: [
+      {
+        type: ObjectId,
+        ref: TagModel,
+      },
+    ],
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -112,18 +116,7 @@ MailingSchema.post('find', function () {
   this._startTime = null;
 });
 MailingSchema.plugin(mongoosePaginate);
-// MailingSchema.plugin(mongooseHidden, {
-//   hidden: {
-//     __v: true,
-//     _company: true,
-//     _wireframe: true,
-//     wireframe: true,
-//     _user: true,
-//     author: true,
-//   },
-// });
 
-// http://stackoverflow.com/questions/18324843/easiest-way-to-copy-clone-a-mongoose-document-instance#answer-25845569
 MailingSchema.methods.duplicate = function duplicate(_user) {
   const oldId = this._id.toString();
   const newId = Types.ObjectId();
@@ -270,10 +263,20 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
 
   const { docs, ...restPaginationProperties } = result;
 
-  const convertedResultMailingDocs = docs?.map(
-    ({ wireframe, author, ...doc }) => ({
+  // Aggregating tag labels
+  const tagIds = docs.flatMap((doc) => doc.tags);
+  const uniqueTagIds = [...new Set(tagIds)];
+
+  const tags = await mongoose.models.Tag.find({
+    _id: { $in: uniqueTagIds },
+  }).lean();
+  const tagMap = _.keyBy(tags, '_id');
+
+  const convertedResultMailingDocs = docs.map(
+    ({ wireframe, author, tags, ...doc }) => ({
       templateName: wireframe,
       userName: author,
+      tags: tags.map((tagId) => tagMap[tagId]),
       ...doc,
     })
   );
@@ -281,34 +284,50 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   return { docs: convertedResultMailingDocs, ...restPaginationProperties };
 };
 
-// Extract used tags from creations
-// http://stackoverflow.com/questions/14617379/mongoose-mongodb-count-elements-in-array
+// addTagsToEmail method to add tags to an email and increment the usage count
+MailingSchema.statics.addTagsToEmail = async function addTagsToEmail(
+  emailId,
+  tagIds
+) {
+  const email = await this.findById(emailId);
+  if (email) {
+    email.tags.push(...tagIds);
+    await email.save();
+    await mongoose.models.Tag.updateMany(
+      { _id: { $in: tagIds } },
+      { $inc: { usageCount: 1 } }
+    );
+  }
+};
+
 MailingSchema.statics.findTags = async function findTags(query = {}) {
-  // const tags = await this.aggregate([
-  //   {
-  //     $match: {
-  //       ...query,
-  //       tags: { $exists: true },
-  //     },
-  //   },
-  //   // { $unwind: `$tags` },
-  //   // { $group: { _id: `$tags` } },
-  //   // { $sort: { _id: 1 } },
-  // ])
-
-  const mailings = await this.find({
-    ...query,
-    tags: { $exists: true, $ne: [] },
-  })
-    .select({ tags: 1 })
-    .lean();
-
-  let tags = [];
-  mailings.forEach(
-    (mailing) => (tags = [...new Set([...tags, ...mailing.tags])])
-  );
-
+  const tags = await mongoose.models.Tag.find(query).lean();
   return tags;
+};
+
+// removeTagsFromEmail method to remove tags from an email and decrement the usage count
+MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
+  emailId,
+  tagIds
+) {
+  const email = await this.findById(emailId);
+  if (email) {
+    email.tags = email.tags.filter((id) => !tagIds.includes(id.toString()));
+    await email.save();
+    const tags = await mongoose.models.Tag.updateMany(
+      { _id: { $in: tagIds } },
+      { $inc: { usageCount: -1 } },
+      { new: true }
+    );
+
+    // Delete tags with a zero use counter
+    const tagsToRemove = tags
+      .filter((tag) => tag.usageCount <= 0)
+      .map((tag) => tag._id);
+    if (tagsToRemove.length > 0) {
+      await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
+    }
+  }
 };
 
 const translations = {
