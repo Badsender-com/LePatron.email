@@ -301,7 +301,10 @@ MailingSchema.statics.addTagsToEmail = async function addTagsToEmail(
 };
 
 MailingSchema.statics.findTags = async function findTags(query = {}) {
-  const tags = await mongoose.models.Tag.find(query).lean();
+  const { _company: companyId } = query;
+  const tags = await mongoose.models.Tag.find({
+    companyId,
+  }).lean();
   return tags;
 };
 
