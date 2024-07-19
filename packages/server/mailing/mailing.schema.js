@@ -276,7 +276,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     ({ wireframe, author, tags, ...doc }) => ({
       templateName: wireframe,
       userName: author,
-      tags: tags.map((tagId) => tagMap[tagId]),
+      tags: (tags || []).map((tagId) => tagMap[tagId]).filter(Boolean),
       ...doc,
     })
   );
@@ -302,9 +302,12 @@ MailingSchema.statics.addTagsToEmail = async function addTagsToEmail(
 
 MailingSchema.statics.findTags = async function findTags(query = {}) {
   const { _company: companyId } = query;
-  const tags = await mongoose.models.Tag.find({
-    companyId,
-  }).lean();
+
+  // Find tags by company ID and sort them alphabetically by label
+  const tags = await mongoose.models.Tag.find({ companyId })
+    .sort({ label: 1 }) // Sort tags by label in ascending order
+    .lean();
+
   return tags;
 };
 
@@ -313,18 +316,26 @@ MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
   emailId,
   tagIds
 ) {
+  // Find the email by ID
   const email = await this.findById(emailId);
   if (email) {
+    // Remove the specified tags from the email
     email.tags = email.tags.filter((id) => !tagIds.includes(id.toString()));
     await email.save();
-    const tags = await mongoose.models.Tag.updateMany(
+
+    // Decrement the usage count for the specified tags
+    await mongoose.models.Tag.updateMany(
       { _id: { $in: tagIds } },
-      { $inc: { usageCount: -1 } },
-      { new: true }
+      { $inc: { usageCount: -1 } }
     );
 
-    // Delete tags with a zero use counter
-    const tagsToRemove = tags
+    // Retrieve the updated tags to check their usage count
+    const updatedTags = await mongoose.models.Tag.find({
+      _id: { $in: tagIds },
+    });
+
+    // Delete tags with a usage count of zero
+    const tagsToRemove = updatedTags
       .filter((tag) => tag.usageCount <= 0)
       .map((tag) => tag._id);
     if (tagsToRemove.length > 0) {

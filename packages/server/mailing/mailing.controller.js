@@ -283,6 +283,17 @@ async function copy(req, res) {
 
   await mailingService.copyMailing(mailingId, { workspaceId, folderId }, user);
 
+  // Increment tag counts for the copied mailing
+  const originalMailing = await Mailings.findById(mailingId);
+  const tagIds = originalMailing.tags.map((tag) => tag.toString());
+
+  if (tagIds.length > 0) {
+    await mongoose.models.Tag.updateMany(
+      { _id: { $in: tagIds } },
+      { $inc: { usageCount: 1 } }
+    );
+  }
+
   res.status(204).send();
 }
 
@@ -571,6 +582,17 @@ async function deleteMailing(req, res) {
   const { user } = req;
   const { workspaceId, parentFolderId } = req.body;
 
+  // Find the email before deleting it
+  const mailing = await Mailings.findById(mailingId);
+  const tagIds = mailing.tags.map((tag) => tag.toString());
+
+  console.log({ tagIds, mailingId });
+  // decriment the tag count if the tag is used
+  if (tagIds.length > 0) {
+    await Mailings.removeTagsFromEmail(mailingId, tagIds);
+  }
+
+  // delete the email
   await mailingService.deleteMailing({
     mailingId,
     workspaceId,
