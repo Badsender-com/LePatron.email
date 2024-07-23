@@ -27,7 +27,6 @@ const personalizedBlockRouter = require('./personalized-blocks/personalized-bloc
 const folderRouter = require('./folder/folder.routes');
 const profileRouter = require('./profile/profile.routes');
 const mailingRouter = require('./mailing/mailing.routes');
-const tagsRouter = require('./tag/tag.routes');
 const templateRouter = require('./template/template.routes');
 const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
@@ -253,7 +252,6 @@ if (cluster.isMaster) {
   app.use('/api/personalized-blocks', personalizedBlockRouter);
   app.use('/api/groups', groupRouter);
   app.use('/api/mailings', mailingRouter);
-  app.use('/api/tags', tagsRouter);
   app.use('/api/templates', templateRouter);
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
