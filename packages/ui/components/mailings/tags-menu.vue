@@ -1,131 +1,148 @@
 <script>
-import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
-
+import BsModalTagsForm from '~/components/mailings/modal-tags-form';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 const CHECKBOX_INDETERMINATE = 'indeterminate_check_box';
 
 export default {
   name: 'BsMailingsTagsMenu',
-  mixins: [validationMixin],
+  components: {
+    BsModalTagsForm,
+  },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
   },
   data() {
     return {
-      showMenu: false,
-      newTagDialog: false,
-      newTagName: '',
+      showTagMenu: false,
       addedTags: [],
+      newTags: [],
       removedTags: [],
     };
   },
-  validations() {
-    return {
-      newTagName: { required },
-    };
-  },
   computed: {
-    vShowTagMenu: {
-      get() {
-        return this.showMenu;
-      },
-      set(newMenuValue) {
-        if (newMenuValue === false) {
+    tagsCheckboxList() {
+      const uniqueTagsMap = new Map();
+
+      [...this.tags, ...this.newTags].forEach((tag) => {
+        if (!uniqueTagsMap.has(tag.label) || tag._id) {
+          uniqueTagsMap.set(tag.label, tag);
+        }
+      });
+
+      return Array.from(uniqueTagsMap.values()).map((tag) => {
+        if (this.addedTags.includes(tag.label)) {
+          return { ...tag, checkIcon: CHECKBOX_CHECKED };
+        }
+        if (this.removedTags.includes(tag.label)) {
+          return { ...tag, checkIcon: CHECKBOX_UNCHECKED };
+        }
+        const mailingsTagCount = this.mailingsSelection.reduce(
+          (count, mailing) =>
+            count +
+            mailing.tags.filter((mailingTag) => mailingTag.label === tag.label)
+              .length,
+          0
+        );
+        if (mailingsTagCount === this.mailingsSelection.length) {
+          return { ...tag, checkIcon: CHECKBOX_CHECKED };
+        }
+        if (mailingsTagCount) {
+          return { ...tag, checkIcon: CHECKBOX_INDETERMINATE };
+        }
+        return { ...tag, checkIcon: CHECKBOX_UNCHECKED };
+      });
+    },
+  },
+
+  watch: {
+    showTagMenu: {
+      handler(val) {
+        if (val) {
+          this.addedTags = this.mailingsSelection
+            .reduce((allTags, mailing) => [...allTags, ...mailing.tags], [])
+            .map((tag) => tag.label);
+          this.removedTags = [];
+        } else {
           this.addedTags = [];
           this.removedTags = [];
         }
-        this.showMenu = newMenuValue;
       },
-    },
-    tagNameErrors() {
-      const errors = [];
-      if (!this.$v.newTagName.$dirty) return errors;
-      !this.$v.newTagName.required &&
-        errors.push(this.$t('global.errors.nameRequired'));
-      return errors;
-    },
-    mailingsTags() {
-      return this.mailingsSelection.reduce(
-        (allTags, mailing) => [...allTags, ...mailing.tags],
-        []
-      );
-    },
-    countByTags() {
-      const countByTags = {};
-      this.tags.forEach((tagName) => {
-        countByTags[tagName] = this.mailingsTags.filter(
-          (mailingTag) => mailingTag === tagName
-        ).length;
-      });
-      return countByTags;
-    },
-    tagsCheckboxList() {
-      const mailingSelectionCount = this.mailingsSelection.length;
-      return this.tags.map((tagName) => {
-        if (this.addedTags.includes(tagName)) {
-          return { name: tagName, checkIcon: CHECKBOX_CHECKED };
-        }
-        if (this.removedTags.includes(tagName)) {
-          return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
-        }
-        const mailingsTagCount = this.countByTags[tagName];
-        if (mailingsTagCount === mailingSelectionCount) {
-          return { name: tagName, checkIcon: CHECKBOX_CHECKED };
-        }
-        if (mailingsTagCount) {
-          return { name: tagName, checkIcon: CHECKBOX_INDETERMINATE };
-        }
-        return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
-      });
+      deep: true,
     },
   },
   methods: {
     closeMenu() {
-      this.vShowTagMenu = false;
+      this.showTagMenu = false;
     },
-    openNewTagDialog() {
-      this.newTagDialog = true;
+    openMenu() {
+      this.showTagMenu = true;
     },
     closeNewTagDialog() {
-      this.newTagName = '';
-      this.$v.$reset();
-      this.newTagDialog = false;
+      this.$refs.createTags.close();
     },
-    onCreateNewTag() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
-      const { newTagName } = this;
-      this.$emit('create', newTagName);
-      this.addedTags.push(newTagName);
-      this.closeNewTagDialog();
+    openNewTagDialog() {
+      this.$refs.createTags.open();
+    },
+    createNewTag(label) {
+      if (!label) return;
+      if (![...this.tags, ...this.newTags].some((tag) => tag.label === label)) {
+        this.newTags.push({ label });
+      }
     },
     toggleTag(tagCheckbox) {
-      const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
-      if (tagStatus === CHECKBOX_INDETERMINATE) {
-        return this.addedTags.push(tagName);
-      }
+      const { checkIcon: tagStatus, label: tagLabel } = tagCheckbox;
       if (tagStatus === CHECKBOX_UNCHECKED) {
-        this.removedTags = this.removedTags.filter((tag) => tag !== tagName);
-        return this.addedTags.push(tagName);
-      }
-      if (tagStatus === CHECKBOX_CHECKED) {
-        this.addedTags = this.addedTags.filter((tag) => tag !== tagName);
-        return this.removedTags.push(tagName);
+        this.removedTags = this.removedTags.filter(
+          (tag) => tag.label !== tagLabel
+        );
+        this.addedTags.push(tagLabel);
+      } else if (
+        tagStatus === CHECKBOX_CHECKED ||
+        tagStatus === CHECKBOX_INDETERMINATE
+      ) {
+        this.addedTags = this.addedTags.filter((tag) => tag !== tagLabel);
+        this.removedTags.push({ label: tagLabel });
       }
     },
     updateMailingsTags() {
-      if (!this.addedTags.length && !this.removedTags.length) {
-        return this.closeMenu();
-      }
-      this.$emit('update', {
-        added: [...this.addedTags],
-        removed: [...this.removedTags],
+      this.showTagMenu = false;
+
+      const uniqueAddedTags = new Set(
+        this.addedTags.map((label) => {
+          const existingTag = this.tags.find((tag) => tag.label === label);
+          return existingTag ? existingTag._id || label : label;
+        })
+      );
+
+      const uniqueRemovedTags = new Set(
+        this.removedTags.map((tag) => {
+          const existingTag = this.tags.find(
+            (existingTag) => existingTag.label === tag.label
+          );
+          return existingTag ? existingTag._id || tag.label : tag.label;
+        })
+      );
+
+      const addedTags = Array.from(uniqueAddedTags).map((idOrLabel) => {
+        const existingTag = this.tags.find(
+          (tag) => tag._id === idOrLabel || tag.label === idOrLabel
+        );
+        return existingTag || { label: idOrLabel };
       });
-      // closing will reinitialize tags selection
-      this.closeMenu();
+
+      const removedTags = Array.from(uniqueRemovedTags).map((idOrLabel) => {
+        const existingTag = this.tags.find(
+          (tag) => tag._id === idOrLabel || tag.label === idOrLabel
+        );
+        return existingTag ? { _id: existingTag._id } : { label: idOrLabel };
+      });
+
+      this.$emit('update', {
+        added: addedTags,
+        removed: removedTags,
+      });
     },
   },
 };
@@ -135,12 +152,12 @@ export default {
   <!-- pile up menu & tooltip -->
   <!-- https://stackoverflow.com/a/58077496 -->
   <v-menu
-    v-model="vShowTagMenu"
+    v-model="showTagMenu"
     :close-on-content-click="false"
     :nudge-width="300"
   >
     <template #activator="{ on: onMenu }">
-      <v-tooltip bottom :disabled="vShowTagMenu">
+      <v-tooltip bottom :disabled="showTagMenu">
         <template #activator="{ on: onTooltip }">
           <v-btn icon v-on="{ ...onMenu, ...onTooltip }">
             <v-icon>label</v-icon>
@@ -168,13 +185,13 @@ export default {
       <v-list>
         <v-list-item
           v-for="tagCheckbox in tagsCheckboxList"
-          :key="tagCheckbox.name"
+          :key="tagCheckbox.label"
           @click="toggleTag(tagCheckbox)"
         >
           <v-list-item-action>
             <v-icon>{{ tagCheckbox.checkIcon }}</v-icon>
           </v-list-item-action>
-          <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
+          <v-list-item-title>{{ tagCheckbox.label }}</v-list-item-title>
         </v-list-item>
       </v-list>
       <v-card-actions>
@@ -187,32 +204,13 @@ export default {
         </v-btn>
       </v-card-actions>
     </v-card>
-    <v-dialog v-model="newTagDialog" width="500">
-      <v-card flat tile>
-        <v-card-title>
-          {{ $t('tags.new') }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="newTagName"
-            :label="$t('global.name')"
-            :error-messages="tagNameErrors"
-            @input="$v.newTagName.$touch()"
-            @blur="$v.newTagName.$touch()"
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text @click="closeNewTagDialog">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn elevation="0" color="accent" @click="onCreateNewTag">
-            {{ $t('global.createTag') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <bs-modal-tags-form
+      ref="createTags"
+      width="500"
+      :close-on-content-click="false"
+      :input-label="$t('global.name')"
+      @confirm="createNewTag"
+    />
   </v-menu>
 </template>
 
