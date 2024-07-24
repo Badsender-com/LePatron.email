@@ -36,6 +36,7 @@ print(`Script started at: ${startTime}`);
 
       // Iterate over each email and each tag in the email to populate the dictionary
       emails.forEach((email) => {
+        if (!Array.isArray(email.tags)) return;
         email.tags.forEach((tag) => {
           // Skip tags that are already ObjectIds
           if (ObjectId.isValid(tag)) return;
@@ -85,6 +86,7 @@ print(`Script started at: ${startTime}`);
 
       // Step 5: Update emails with the new tag references
       for (const email of emails) {
+        if (!Array.isArray(email.tags)) continue;
         const updatedTags = email.tags.map((tag) => {
           // If the tag is already an ObjectId, keep it as is
           if (ObjectId.isValid(tag)) return tag;
