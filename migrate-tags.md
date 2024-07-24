@@ -3,21 +3,28 @@ use badsender-development;
 
 async function transformTags() {
 try {
-// Step 1: Check if the tags collection exists
-const collections = await db.getCollectionNames();
-if (!collections.includes('tags')) {
-await db.createCollection('tags');
-print('Created tags collection.');
-} else {
-print('Tags collection already exists.');
-}
+const startTime = new Date();
+print(`Script started at: ${startTime}`);
+
+    // Step 1: Check if the tags collection exists
+    const collections = await db.getCollectionNames();
+    if (!collections.includes('tags')) {
+      await db.createCollection('tags');
+      print('Created tags collection.');
+    } else {
+      print('Tags collection already exists.');
+    }
 
     // Step 2: Process emails in batches
-    const batchSize = 1000;
+    const batchSize = 20;
     let skip = 0;
     let emails;
 
     while (true) {
+      const batchStartTime = new Date();
+      print(`Starting batch at: ${batchStartTime}`);
+      print(`Attempting to retrieve batch starting from ${skip}`);
+
       // Retrieve a batch of emails
       emails = await db.creations.find().skip(skip).limit(batchSize).toArray();
       if (emails.length === 0) break;
@@ -94,11 +101,15 @@ print('Tags collection already exists.');
         }
       }
 
-      print(`Tag transformation completed for ${skip} to ${skip + batchSize} emails`);
+      const batchEndTime = new Date();
+      const batchDuration = (batchEndTime - batchStartTime) / 1000;
+      print(`Tag transformation completed for ${skip} to ${skip + batchSize} emails in ${batchDuration} seconds`);
       skip += batchSize;
     }
 
-    print('Tag transformation completed successfully');
+    const endTime = new Date();
+    const totalDuration = (endTime - startTime) / 1000;
+    print(`Tag transformation completed successfully in ${totalDuration} seconds`);
 
 } catch (error) {
 print('Error during tag transformation:', error);
