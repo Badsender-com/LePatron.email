@@ -586,7 +586,6 @@ async function deleteMailing(req, res) {
   const mailing = await Mailings.findById(mailingId);
   const tagIds = mailing.tags.map((tag) => tag.toString());
 
-  console.log({ tagIds, mailingId });
   // decriment the tag count if the tag is used
   if (tagIds.length > 0) {
     await Mailings.removeTagsFromEmail(mailingId, tagIds);
