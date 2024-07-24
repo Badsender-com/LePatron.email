@@ -18,4 +18,6 @@ module.exports = Object.freeze({
   OAuthTokens: 'OAuthTokens',
   OAuthClients: 'OAuthClients',
   OAuthCodes: 'OAuthCodes',
+  // Tags
+  TagModel: 'Tag',
 });
