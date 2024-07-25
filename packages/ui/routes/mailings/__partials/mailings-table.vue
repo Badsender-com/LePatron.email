@@ -416,8 +416,8 @@ export default {
           <span v-else>{{ item.templateName }}</span>
         </template>
         <template #item.tags="{ item }">
-          <span v-for="tag in item.tags" :key="tag.label" class="tags">{{
-            tag.label
+          <span v-for="tag in item.tags" :key="tag" class="tags">{{
+            tag
           }}</span>
         </template>
         <template #item.createdAt="{ item }">

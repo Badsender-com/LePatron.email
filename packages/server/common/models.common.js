@@ -21,7 +21,7 @@ const PersonalizedVariableSchema = require('../personalized-variables/personaliz
 const FolderSchema = require('../folder/folder.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
-const TagSchema = require('../tag/tag.schema.js');
+
 /// ///
 // EXPORTS
 /// ///
@@ -57,8 +57,6 @@ const OAuthClients = mongoose.model(
 );
 const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
-const Tags = mongoose.model(modelNames.TagModel, TagSchema);
-
 module.exports = {
   mongoose,
   // Compiled schema
@@ -77,5 +75,4 @@ module.exports = {
   OAuthTokens,
   OAuthClients,
   OAuthCodes,
-  Tags,
 };
