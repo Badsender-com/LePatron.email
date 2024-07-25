@@ -16,7 +16,7 @@ print(`Script started at: ${startTime}`);
     }
 
     // Step 2: Process emails in batches
-    const batchSize = 20;
+    const batchSize = 100;
     let skip = 0;
     let emails;
 
@@ -38,8 +38,6 @@ print(`Script started at: ${startTime}`);
       emails.forEach((email) => {
         if (!Array.isArray(email.tags)) return;
         email.tags.forEach((tag) => {
-          // Skip tags that are already ObjectIds
-          if (ObjectId.isValid(tag)) return;
           const key = `${tag}-${email._company}`;
           if (!tagDict[key]) {
             tagDict[key] = {
@@ -72,10 +70,8 @@ print(`Script started at: ${startTime}`);
                 }
               }
             );
-            tagDict[key]._id = existingTag._id;
           } else {
-            const newTag = await db.tags.insertOne(tagData);
-            tagDict[key]._id = newTag.insertedId;
+            await db.tags.insertOne(tagData);
           }
         } catch (err) {
           print(`Error processing tag ${key}: ${err}`);
@@ -83,25 +79,6 @@ print(`Script started at: ${startTime}`);
       }
 
       print('Tag insertion and update completed');
-
-      // Step 5: Update emails with the new tag references
-      for (const email of emails) {
-        if (!Array.isArray(email.tags)) continue;
-        const updatedTags = email.tags.map((tag) => {
-          // If the tag is already an ObjectId, keep it as is
-          if (ObjectId.isValid(tag)) return tag;
-          const key = `${tag}-${email._company}`;
-          return tagDict[key]._id;
-        });
-        try {
-          await db.creations.updateOne(
-            { _id: email._id },
-            { $set: { tags: updatedTags } }
-          );
-        } catch (err) {
-          print(`Error updating email ${email._id}: ${err}`);
-        }
-      }
 
       const batchEndTime = new Date();
       const batchDuration = (batchEndTime - batchStartTime) / 1000;

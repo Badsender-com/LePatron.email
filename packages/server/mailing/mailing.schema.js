@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const mongoose = require('mongoose');
-
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
 const { normalizeString } = require('../utils/model');
@@ -12,7 +11,6 @@ const {
   GroupModel,
   WorkspaceModel,
   FolderModel,
-  TagModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 
@@ -92,8 +90,7 @@ const MailingSchema = Schema(
     },
     tags: [
       {
-        type: ObjectId,
-        ref: TagModel,
+        type: String,
       },
     ],
     // http://mongoosejs.com/docs/schematypes.html#mixed
@@ -263,20 +260,10 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
 
   const { docs, ...restPaginationProperties } = result;
 
-  // Aggregating tag labels
-  const tagIds = docs.flatMap((doc) => doc.tags);
-  const uniqueTagIds = [...new Set(tagIds)];
-
-  const tags = await mongoose.models.Tag.find({
-    _id: { $in: uniqueTagIds },
-  }).lean();
-  const tagMap = _.keyBy(tags, '_id');
-
-  const convertedResultMailingDocs = docs.map(
-    ({ wireframe, author, tags, ...doc }) => ({
+  const convertedResultMailingDocs = docs?.map(
+    ({ wireframe, author, ...doc }) => ({
       templateName: wireframe,
       userName: author,
-      tags: (tags || []).map((tagId) => tagMap[tagId]).filter(Boolean),
       ...doc,
     })
   );
@@ -287,14 +274,14 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
 // addTagsToEmail method to add tags to an email and increment the usage count
 MailingSchema.statics.addTagsToEmail = async function addTagsToEmail(
   emailId,
-  tagIds
+  tagLabels
 ) {
   const email = await this.findById(emailId);
   if (email) {
-    email.tags.push(...tagIds);
+    email.tags.push(...tagLabels);
     await email.save();
     await mongoose.models.Tag.updateMany(
-      { _id: { $in: tagIds } },
+      { label: { $in: tagLabels }, companyId: email._company },
       { $inc: { usageCount: 1 } }
     );
   }
@@ -308,30 +295,31 @@ MailingSchema.statics.findTags = async function findTags(query = {}) {
     .sort({ label: 1 }) // Sort tags by label in ascending order
     .lean();
 
-  return tags;
+  return tags.map(({ label }) => label);
 };
 
 // removeTagsFromEmail method to remove tags from an email and decrement the usage count
 MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
   emailId,
-  tagIds
+  tagLabels
 ) {
   // Find the email by ID
   const email = await this.findById(emailId);
   if (email) {
     // Remove the specified tags from the email
-    email.tags = email.tags.filter((id) => !tagIds.includes(id.toString()));
+    email.tags = email.tags.filter((label) => !tagLabels.includes(label));
     await email.save();
 
     // Decrement the usage count for the specified tags
     await mongoose.models.Tag.updateMany(
-      { _id: { $in: tagIds } },
+      { label: { $in: tagLabels }, companyId: email._company },
       { $inc: { usageCount: -1 } }
     );
 
     // Retrieve the updated tags to check their usage count
     const updatedTags = await mongoose.models.Tag.find({
-      _id: { $in: tagIds },
+      label: { $in: tagLabels },
+      companyId: email._company,
     });
 
     // Delete tags with a usage count of zero

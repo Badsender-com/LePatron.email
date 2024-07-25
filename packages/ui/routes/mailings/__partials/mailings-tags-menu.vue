@@ -2,7 +2,6 @@
 import BsModalTagsForm from '~/components/mailings/modal-tags-form';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
-
 export default {
   name: 'BsMailingsTagsMenu',
   components: {
@@ -23,28 +22,22 @@ export default {
   },
   computed: {
     tagsCheckboxList() {
-      return [...this.tags, ...this.newTags].map((tag) => {
-        if (this.addedTags.includes(tag.label)) {
-          return { ...tag, checkIcon: CHECKBOX_CHECKED };
+      return [...this.tags, ...this.newTags].map((tagName) => {
+        if (this.addedTags.includes(tagName)) {
+          return { name: tagName, checkIcon: CHECKBOX_CHECKED };
         }
-        if (this.removedTags.includes(tag.label)) {
-          return { ...tag, checkIcon: CHECKBOX_UNCHECKED };
+        if (this.removedTags.includes(tagName)) {
+          return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
         }
-        const isSelected = this.selectedMailTags.some(
-          (t) => t.label === tag.label
-        );
-        return {
-          ...tag,
-          checkIcon: isSelected ? CHECKBOX_CHECKED : CHECKBOX_UNCHECKED,
-        };
+        return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
       });
     },
   },
   watch: {
     showTagMenu: {
-      handler(val) {
+      handler: function (val) {
         if (val) {
-          this.addedTags = this.selectedMailTags.map((tag) => tag.label);
+          this.addedTags = [...this.selectedMailTags];
           this.removedTags = [];
           return;
         }
@@ -68,41 +61,29 @@ export default {
     openNewTagDialog() {
       this.$refs.createTags.open();
     },
-    createNewTag(label) {
-      if (!label) return;
-      if (![...this.tags, ...this.newTags].some((tag) => tag.label === label)) {
-        this.newTags.push({ label });
+    createNewTag(text) {
+      if (!text) return;
+      if (![...this.tags, ...this.newTags].includes(text)) {
+        this.newTags.push(text);
       }
     },
     toggleTag(tagCheckbox) {
-      const { checkIcon: tagStatus, label: tagLabel } = tagCheckbox;
+      const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
       if (tagStatus === CHECKBOX_UNCHECKED) {
-        this.removedTags = this.removedTags.filter(
-          (tag) => tag.label !== tagLabel
-        );
-        this.addedTags.push(tagLabel);
+        this.removedTags = this.removedTags.filter((tag) => tag !== tagName);
+        this.addedTags.push(tagName);
         return;
       }
       if (tagStatus === CHECKBOX_CHECKED) {
-        this.addedTags = this.addedTags.filter((tag) => tag !== tagLabel);
-        this.removedTags.push({ label: tagLabel });
+        this.addedTags = this.addedTags.filter((tag) => tag !== tagName);
+        this.removedTags.push(tagName);
       }
     },
     updateMailingsTags() {
       this.showTagMenu = false;
-      const addedTags = this.addedTags.map((label) => {
-        const existingTag = this.tags.find((tag) => tag.label === label);
-        return existingTag || { label };
-      });
-      const removedTags = this.removedTags.map((tag) => {
-        const existingTag = this.tags.find(
-          (existingTag) => existingTag.label === tag.label
-        );
-        return existingTag ? { _id: existingTag._id } : { label: tag.label };
-      });
       this.$emit('update-tags', {
-        added: addedTags,
-        removed: removedTags,
+        added: [...this.addedTags],
+        removed: [...this.removedTags],
       });
     },
   },
@@ -111,13 +92,17 @@ export default {
 
 <template>
   <div>
-    <v-dialog v-model="showTagMenu" :close-on-content-click="false" width="300">
+    <v-dialog
+      v-model="showTagMenu"
+      :close-on-content-click="false"
+      :width="300"
+    >
       <v-card flat tile>
         <v-list>
           <v-list-item>
             <v-list-item-content>
               <v-list-item-title class="title">
-                {{ $t('tags.list') }}
+                {{ $t(`tags.list`) }}
               </v-list-item-title>
             </v-list-item-content>
             <v-list-item-action>
@@ -131,13 +116,13 @@ export default {
         <v-list>
           <v-list-item
             v-for="tagCheckbox in tagsCheckboxList"
-            :key="tagCheckbox.label"
+            :key="tagCheckbox.name"
             @click="toggleTag(tagCheckbox)"
           >
             <v-list-item-action>
               <v-icon>{{ tagCheckbox.checkIcon }}</v-icon>
             </v-list-item-action>
-            <v-list-item-title>{{ tagCheckbox.label }}</v-list-item-title>
+            <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
           </v-list-item>
         </v-list>
         <v-card-actions>
@@ -146,7 +131,7 @@ export default {
             {{ $t('tags.new') }}
           </v-btn>
           <v-btn color="accent" elevation="0" @click="updateMailingsTags">
-            {{ $t('global.apply') }}
+            {{ $t(`global.apply`) }}
           </v-btn>
         </v-card-actions>
       </v-card>

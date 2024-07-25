@@ -271,7 +271,7 @@ async function rename(req, res) {
  * @apiParam (Body) {String} mailingId
  * @apiParam (Body) {String} workspaceId
  * @apiParam (Body) {String} folderId
-
+ *
  * @apiUse mailings
  */
 
@@ -285,11 +285,11 @@ async function copy(req, res) {
 
   // Increment tag counts for the copied mailing
   const originalMailing = await Mailings.findById(mailingId);
-  const tagIds = originalMailing.tags.map((tag) => tag.toString());
+  const tagLabels = originalMailing.tags;
 
-  if (tagIds.length > 0) {
+  if (tagLabels.length > 0) {
     await mongoose.models.Tag.updateMany(
-      { _id: { $in: tagIds } },
+      { label: { $in: tagLabels }, companyId: originalMailing._company },
       { $inc: { usageCount: 1 } }
     );
   }
@@ -452,25 +452,28 @@ async function bulkUpdate(req, res) {
     throw new UnprocessableEntity();
   }
 
-  // Separate new tags (those without IDs)
-  const newTags = tagsChanges.added.filter((tag) => !tag._id);
-  const existingTagIds = tagsChanges.added
-    .filter((tag) => tag._id)
-    .map((tag) => tag._id);
+  // Find existing tags in the database
+  const existingTags = await mongoose.models.Tag.find({
+    label: { $in: tagsChanges.added },
+    companyId,
+  }).lean();
 
-  // Create new tags in the database
-  const createdTags = await mongoose.models.Tag.insertMany(
-    newTags.map((tag) => ({
-      label: tag.label,
-      companyId,
-    }))
+  const existingTagLabels = existingTags.map((tag) => tag.label);
+
+  // Separate new tags from existing ones
+  const newTags = tagsChanges.added.filter(
+    (tag) => !existingTagLabels.includes(tag)
   );
 
-  // Gather IDs of newly created tags
-  const newTagIds = createdTags.map((tag) => tag._id.toString());
-
-  // Combine IDs of existing and new tags
-  const combinedTagIdsToAdd = [...existingTagIds, ...newTagIds];
+  // Create new tags in the database
+  if (newTags.length > 0) {
+    await mongoose.models.Tag.insertMany(
+      newTags.map((tag) => ({
+        label: tag,
+        companyId,
+      }))
+    );
+  }
 
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
     _id: { $in: items.map(mongoose.Types.ObjectId) },
@@ -483,12 +486,12 @@ async function bulkUpdate(req, res) {
   });
 
   const updateQueries = userMailings.map(async (mailing) => {
-    const originalTags = mailing.tags.map((tag) => tag.toString());
+    const originalTags = mailing.tags;
     const uniqueUpdatedTags = [
-      ...new Set([...combinedTagIdsToAdd, ...originalTags]),
+      ...new Set([...tagsChanges.added, ...originalTags]),
     ];
     const updatedTags = uniqueUpdatedTags.filter(
-      (tag) => !tagsChanges.removed.some((removedTag) => removedTag._id === tag)
+      (tag) => !tagsChanges.removed.includes(tag)
     );
 
     const tagsToAdd = updatedTags.filter((tag) => !originalTags.includes(tag));
@@ -584,14 +587,14 @@ async function deleteMailing(req, res) {
 
   // Find the email before deleting it
   const mailing = await Mailings.findById(mailingId);
-  const tagIds = mailing.tags.map((tag) => tag.toString());
+  const tagLabels = mailing.tags;
 
-  // decriment the tag count if the tag is used
-  if (tagIds.length > 0) {
-    await Mailings.removeTagsFromEmail(mailingId, tagIds);
+  // Decrement the tag count if the tag is used
+  if (tagLabels.length > 0) {
+    await Mailings.removeTagsFromEmail(mailingId, tagLabels);
   }
 
-  // delete the email
+  // Delete the email
   await mailingService.deleteMailing({
     mailingId,
     workspaceId,
