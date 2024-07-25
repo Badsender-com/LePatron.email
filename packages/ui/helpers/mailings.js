@@ -9,9 +9,7 @@ function arrayIntersection(first, second) {
 }
 
 function haveSameTags(first, second) {
-  const firstIds = first.map((tag) => tag.id);
-  const secondIds = second.map((tag) => tag.id);
-  return arrayIntersection(firstIds, secondIds).length === firstIds.length;
+  return arrayIntersection(first, second).length === first.length;
 }
 
 export function createFilters(filters) {
@@ -49,7 +47,6 @@ export function createFilters(filters) {
     filters.tags.length === 0
       ? passThroughFilter
       : (mailing) => haveSameTags(filters.tags, mailing.tags);
-
   return (mailing) => {
     return (
       nameTest(mailing) &&

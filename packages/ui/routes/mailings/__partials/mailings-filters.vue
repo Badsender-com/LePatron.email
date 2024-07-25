@@ -88,8 +88,6 @@ export default {
             :value="filters.tags"
             :label="$t(`global.tags`)"
             :items="tags"
-            item-text="label"
-            item-value="_id"
             multiple
             @input="(value) => handleFilterChange('tags', value)"
           />

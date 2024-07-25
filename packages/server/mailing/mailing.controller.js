@@ -7,8 +7,7 @@ const {
   Forbidden,
 } = require('http-errors');
 const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
-
+const { Types } = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
@@ -19,6 +18,7 @@ const {
   downloadZip,
   downloadMultipleZip,
 } = require('./download-zip.controller.js');
+const cleanTagName = require('../helpers/clean-tag-name.js');
 const fileManager = require('../common/file-manage.service.js');
 const modelsUtils = require('../utils/model.js');
 
@@ -283,17 +283,6 @@ async function copy(req, res) {
 
   await mailingService.copyMailing(mailingId, { workspaceId, folderId }, user);
 
-  // Increment tag counts for the copied mailing
-  const originalMailing = await Mailings.findById(mailingId);
-  const tagIds = originalMailing.tags.map((tag) => tag.toString());
-
-  if (tagIds.length > 0) {
-    await mongoose.models.Tag.updateMany(
-      { _id: { $in: tagIds } },
-      { $inc: { usageCount: 1 } }
-    );
-  }
-
   res.status(204).send();
 }
 
@@ -443,78 +432,37 @@ async function updateMosaico(req, res) {
 
 async function bulkUpdate(req, res) {
   const { items, tags: tagsChanges = {} } = req.body;
-  const { id: companyId } = req.user._company;
   const hadId = Array.isArray(items) && items.length;
   const hasTagsChanges =
     Array.isArray(tagsChanges.added) && Array.isArray(tagsChanges.removed);
-
   if (!hadId || !hasTagsChanges) {
     throw new UnprocessableEntity();
   }
 
-  // Separate new tags (those without IDs)
-  const newTags = tagsChanges.added.filter((tag) => !tag._id);
-  const existingTagIds = tagsChanges.added
-    .filter((tag) => tag._id)
-    .map((tag) => tag._id);
-
-  // Create new tags in the database
-  const createdTags = await mongoose.models.Tag.insertMany(
-    newTags.map((tag) => ({
-      label: tag.label,
-      companyId,
-    }))
-  );
-
-  // Gather IDs of newly created tags
-  const newTagIds = createdTags.map((tag) => tag._id.toString());
-
-  // Combine IDs of existing and new tags
-  const combinedTagIdsToAdd = [...existingTagIds, ...newTagIds];
-
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
-    _id: { $in: items.map(mongoose.Types.ObjectId) },
+    _id: { $in: items.map(Types.ObjectId) },
   });
-
-  // Ensure mailings belong to the same group
+  // ensure the mailings are from the same group
   const userMailings = await Mailings.find(mailingQuery).select({
     _id: 1,
     tags: 1,
   });
-
-  const updateQueries = userMailings.map(async (mailing) => {
-    const originalTags = mailing.tags.map((tag) => tag.toString());
+  const updateQueries = userMailings.map((mailing) => {
+    const { tags: orignalTags } = mailing;
     const uniqueUpdatedTags = [
-      ...new Set([...combinedTagIdsToAdd, ...originalTags]),
+      ...new Set([...tagsChanges.added, ...orignalTags]),
     ];
     const updatedTags = uniqueUpdatedTags.filter(
-      (tag) => !tagsChanges.removed.some((removedTag) => removedTag._id === tag)
+      (tag) => !tagsChanges.removed.includes(tag)
     );
-
-    const tagsToAdd = updatedTags.filter((tag) => !originalTags.includes(tag));
-    const tagsToRemove = originalTags.filter(
-      (tag) => !updatedTags.includes(tag)
-    );
-
-    // Use schema methods to add and remove multiple tags
-    if (tagsToAdd.length > 0) {
-      await Mailings.addTagsToEmail(mailing._id, tagsToAdd);
-    }
-
-    if (tagsToRemove.length > 0) {
-      await Mailings.removeTagsFromEmail(mailing._id, tagsToRemove);
-    }
-
+    mailing.tags = updatedTags.map(cleanTagName).sort();
     return mailing.save();
   });
-
   await Promise.all(updateQueries);
-
   const [mailings, tags] = await Promise.all([
     Mailings.findForApi(mailingQuery),
     Mailings.findTags(modelsUtils.addStrictGroupFilter(req.user, {})),
   ]);
-
   res.json({
     meta: { tags },
     items: mailings,
@@ -539,14 +487,14 @@ async function bulkDestroy(req, res) {
   if (!Array.isArray(items) || !items.length) throw new UnprocessableEntity();
 
   const mailingQuery = modelsUtils.addStrictGroupFilter(req.user, {
-    _id: { $in: items.map(mongoose.Types.ObjectId) },
+    _id: { $in: items.map(Types.ObjectId) },
   });
   // ensure the mailings are from the same group
   const userMailings = await Mailings.find(mailingQuery)
     .select({ _id: 1 })
     .lean();
   const safeMailingsIdList = userMailings.map((mailing) =>
-    mongoose.Types.ObjectId(mailing._id)
+    Types.ObjectId(mailing._id)
   );
   // Mongo responseFormat
   // { n: 1, ok: 1, deletedCount: 1 }
@@ -582,16 +530,6 @@ async function deleteMailing(req, res) {
   const { user } = req;
   const { workspaceId, parentFolderId } = req.body;
 
-  // Find the email before deleting it
-  const mailing = await Mailings.findById(mailingId);
-  const tagIds = mailing.tags.map((tag) => tag.toString());
-
-  // decriment the tag count if the tag is used
-  if (tagIds.length > 0) {
-    await Mailings.removeTagsFromEmail(mailingId, tagIds);
-  }
-
-  // delete the email
   await mailingService.deleteMailing({
     mailingId,
     workspaceId,
