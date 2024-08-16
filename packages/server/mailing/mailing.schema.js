@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const mongoose = require('mongoose');
-
 const mongoosePaginate = require('mongoose-paginate-v2');
 const config = require('../node.config.js');
 const { normalizeString } = require('../utils/model');
@@ -89,9 +88,11 @@ const MailingSchema = Schema(
       // • so just make an alias
       alias: 'group',
     },
-    tags: {
-      type: [],
-    },
+    tags: [
+      {
+        type: String,
+      },
+    ],
     // http://mongoosejs.com/docs/schematypes.html#mixed
     data: {},
     espIds: {
@@ -112,18 +113,7 @@ MailingSchema.post('find', function () {
   this._startTime = null;
 });
 MailingSchema.plugin(mongoosePaginate);
-// MailingSchema.plugin(mongooseHidden, {
-//   hidden: {
-//     __v: true,
-//     _company: true,
-//     _wireframe: true,
-//     wireframe: true,
-//     _user: true,
-//     author: true,
-//   },
-// });
 
-// http://stackoverflow.com/questions/18324843/easiest-way-to-copy-clone-a-mongoose-document-instance#answer-25845569
 MailingSchema.methods.duplicate = function duplicate(_user) {
   const oldId = this._id.toString();
   const newId = Types.ObjectId();
@@ -291,34 +281,65 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   return { docs: convertedResultMailingDocs, ...restPaginationProperties };
 };
 
-// Extract used tags from creations
-// http://stackoverflow.com/questions/14617379/mongoose-mongodb-count-elements-in-array
-MailingSchema.statics.findTags = async function findTags(query = {}) {
-  // const tags = await this.aggregate([
-  //   {
-  //     $match: {
-  //       ...query,
-  //       tags: { $exists: true },
-  //     },
-  //   },
-  //   // { $unwind: `$tags` },
-  //   // { $group: { _id: `$tags` } },
-  //   // { $sort: { _id: 1 } },
-  // ])
+// addTagsToEmail method to add tags to an email and increment the usage count
+MailingSchema.statics.addTagsToEmail = async function addTagsToEmail(
+  emailId,
+  tagLabels
+) {
+  const email = await this.findById(emailId);
+  if (email) {
+    email.tags.push(...tagLabels);
+    await email.save();
+    await mongoose.models.Tag.updateMany(
+      { label: { $in: tagLabels }, companyId: email._company },
+      { $inc: { usageCount: 1 } }
+    );
+  }
+};
 
-  const mailings = await this.find({
-    ...query,
-    tags: { $exists: true, $ne: [] },
-  })
-    .select({ tags: 1 })
+MailingSchema.statics.findTags = async function findTags(query = {}) {
+  const { _company: companyId } = query;
+
+  // Find tags by company ID and sort them alphabetically by label
+  const tags = await mongoose.models.Tag.find({ companyId })
+    .sort({ label: 1 }) // Sort tags by label in ascending order
     .lean();
 
-  let tags = [];
-  mailings.forEach(
-    (mailing) => (tags = [...new Set([...tags, ...mailing.tags])])
-  );
+  return tags.map(({ label }) => label);
+};
 
-  return tags;
+// removeTagsFromEmail method to remove tags from an email and decrement the usage count
+MailingSchema.statics.removeTagsFromEmail = async function removeTagsFromEmail(
+  emailId,
+  tagLabels
+) {
+  // Find the email by ID
+  const email = await this.findById(emailId);
+  if (email) {
+    // Remove the specified tags from the email
+    email.tags = email.tags.filter((label) => !tagLabels.includes(label));
+    await email.save();
+
+    // Decrement the usage count for the specified tags
+    await mongoose.models.Tag.updateMany(
+      { label: { $in: tagLabels }, companyId: email._company },
+      { $inc: { usageCount: -1 } }
+    );
+
+    // Retrieve the updated tags to check their usage count
+    const updatedTags = await mongoose.models.Tag.find({
+      label: { $in: tagLabels },
+      companyId: email._company,
+    });
+
+    // Delete tags with a usage count of zero
+    const tagsToRemove = updatedTags
+      .filter((tag) => tag.usageCount <= 0)
+      .map((tag) => tag._id);
+    if (tagsToRemove.length > 0) {
+      await mongoose.models.Tag.deleteMany({ _id: { $in: tagsToRemove } });
+    }
+  }
 };
 
 const translations = {
