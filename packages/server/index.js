@@ -268,6 +268,9 @@ if (cluster.isMaster) {
     mosaicoEditor.render
   );
 
+  const maintenanceEditor = require('./maintenance/maintenance.controller.js');
+  app.get('/maintenance', maintenanceEditor.render);
+
   const nuxt = new Nuxt(nuxtConfig);
   const isNuxtReady =
     config.isDev && !config.nuxt.preventBuild
