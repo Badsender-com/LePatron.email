@@ -110,19 +110,28 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     updatedAt: 1,
     _company: 1,
     assets: 1,
-    hasMarkup: {
-      $cond: { if: { $gt: ['$markup', null] }, then: true, else: false },
-    },
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })
     .lean();
+  // Second query to check existence of 'markup' for each template
+  const ids = templates.map((template) => template._id);
+  // find markup exist or not without charging the markup
+  const templatesWithMarkup = await this.find(
+    { _id: { $in: ids }, markup: { $exists: true } },
+    { _id: 1 }
+  ).lean();
+
+  const templatesWithMarkupSet = new Set(
+    templatesWithMarkup.map((t) => t._id.toString())
+  );
 
   const finalTemplates = templates.map(({ assets, ...template }) => ({
     ...template,
+    id: template._id,
+    hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
     coverImage: JSON.parse(assets)?.['_full.png'] || null,
   }));
   return finalTemplates;
 };
-
 module.exports = TemplateSchema;

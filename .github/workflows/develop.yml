@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches: [develop-clever]
+  pull_request:
+    branches: [develop-clever]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          cache: 'yarn'
+      - run: yarn install
+      - run: yarn build
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.16.0'
+          cache: 'yarn'
+      - run: yarn install
+      - run: yarn test-ci
+  deployment:
+    runs-on: ubuntu-latest
+    needs: [build, unit-tests]
+    if: "github.event_name == 'push' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
+    timeout-minutes: 40
+    env:
+      NODE_VERSION: 16.17.1
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: 47ng/actions-clever-cloud@v1.2.0
+        with:
+          appID: ${{ secrets.CLEVER_APP_DEVELOP }}
+          force: true
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}

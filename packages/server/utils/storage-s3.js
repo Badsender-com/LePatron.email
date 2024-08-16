@@ -13,7 +13,8 @@ if (!config.isAws) {
   module.exports = {};
 } else {
   AWS.config.update(config.storage.aws);
-  const s3 = new AWS.S3();
+  const endpoint = new AWS.Endpoint(config.storage.aws.endpoint);
+  const s3 = new AWS.S3({ endpoint });
 
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-examples.html#Amazon_Simple_Storage_Service__Amazon_S3_
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getObject-property
