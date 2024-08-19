@@ -32,7 +32,7 @@ module.exports = {
     },
   },
   router: {
-    middleware: ['authentication-check'],
+    middleware: ['maintenance-check', 'authentication-check'],
   },
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },
