@@ -246,6 +246,13 @@ app.get(
   mosaicoEditor.render
 );
 
+const maintenanceEditor = require('./maintenance/maintenance.controller.js');
+app.get(
+  '/maintenance',
+  // maintenanceEditor.exposeHelpersToPug,
+  maintenanceEditor.render
+);
+
 const nuxt = new Nuxt(nuxtConfig);
 const isNuxtReady =
   config.isDev && !config.nuxt.preventBuild
