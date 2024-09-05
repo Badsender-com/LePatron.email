@@ -44,27 +44,36 @@ async function downloadZip(req, res, next) {
   const archive = archiver('zip');
   archive.on('error', next);
 
-  const { archive: processedArchive, name } = await mailingService.downloadZip({
-    user,
-    html,
-    archive,
-    downloadOptions,
-    mailingId,
-  });
+  try {
+    const {
+      archive: processedArchive,
+      name,
+    } = await mailingService.downloadZip({
+      user,
+      html,
+      archive,
+      downloadOptions,
+      mailingId,
+    });
 
-  archive.on('end', () => {
-    console.log(`Archive wrote ${archive.pointer()} bytes`);
-    res.end();
-  });
+    archive.on('end', () => {
+      console.log(`Archive wrote ${archive.pointer()} bytes`);
+      res.end();
+    });
 
-  res.attachment(`${name}.zip`);
+    res.attachment(`${name}.zip`);
 
-  // on stream closed we can end the request
-  archive.pipe(res);
+    // on stream closed we can end the request
+    archive.pipe(res);
 
-  // this is the streaming magic
-  // set the archive name
-  processedArchive.finalize();
+    // this is the streaming magic
+    // set the archive name
+    processedArchive.finalize();
+  } catch (error) {
+    console.error('Error while downloading zip', { error });
+    const backUrl = req.header('Referer') || '/';
+    res.redirect(backUrl);
+  }
 }
 
 async function downloadMultipleZip(req, res, next) {
