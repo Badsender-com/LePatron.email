@@ -892,7 +892,11 @@ async function handleRelativeOrFtpImages({
     if (doesWaitForFtp) {
       await ftpClient.upload(allImages, folderPath);
     } else {
-      ftpClient.upload(allImages, folderPath);
+      ftpClient.upload(allImages, folderPath).catch((reason) => {
+        console.error('Error while uploading in upload without await', {
+          reason,
+        });
+      });
     }
   }
 
