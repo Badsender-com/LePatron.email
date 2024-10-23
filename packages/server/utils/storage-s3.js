@@ -99,13 +99,15 @@ if (!config.isAws) {
 
   const writeStreamFromStream = (source, name) => {
     const deferred = defer();
+    const source1 = source.clone();
+    const source2 = source.clone();
 
     const upload1 = s3
       .upload(
         {
           Bucket: config.storage.aws.bucketName,
           Key: name,
-          Body: source,
+          Body: source1,
         },
         (err, data) => {
           logger.error(err, data);
@@ -127,7 +129,7 @@ if (!config.isAws) {
         {
           Bucket: config.storage.newAws.bucketName,
           Key: name,
-          Body: source,
+          Body: source2,
         },
         (err, data) => {
           logger.error(err, data);
@@ -153,6 +155,8 @@ if (!config.isAws) {
 
   const writeStreamFromStreamWithPrefix = (source, name, prefix) => {
     const deferred = defer();
+    const source1 = source.clone();
+    const source2 = source.clone();
 
     const upload1 = s3
       .upload(
@@ -160,7 +164,7 @@ if (!config.isAws) {
           Bucket: config.storage.aws.bucketName,
           Prefix: prefix,
           Key: name,
-          Body: source,
+          Body: source1,
         },
         (err, data) => {
           logger.error(err, data);
@@ -181,7 +185,7 @@ if (!config.isAws) {
           Bucket: config.storage.newAws.bucketName,
           Prefix: prefix,
           Key: name,
-          Body: source,
+          Body: source2,
         },
         (err, data) => {
           logger.error(err, data);
