@@ -61,7 +61,10 @@ class FTPClient {
               resolve(
                 client.fastPut(
                   `${tmpDir}/${fileName}`,
-                  `${folderPath}${fileName}`
+                  `${folderPath}${fileName}`,
+                  {
+                    chunkSize: 16384,
+                  }
                 )
               );
             });
