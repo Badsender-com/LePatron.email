@@ -176,3 +176,5 @@ Distributed under the GPL-3.0 License. See `LICENSE` for more information.
 ## Contact
 
 Project Link: [https://lepatron.email/](https://lepatron.email/)
+
+DECZCS
