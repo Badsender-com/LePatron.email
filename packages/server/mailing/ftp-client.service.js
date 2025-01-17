@@ -59,7 +59,7 @@ class FTPClient {
             .on('end', () => {
               file.end();
               resolve(
-                client.fastPut(
+                client.put(
                   `${tmpDir}/${fileName}`,
                   `${folderPath}${fileName}`,
                   {
