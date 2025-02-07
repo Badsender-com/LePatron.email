@@ -889,10 +889,15 @@ async function handleRelativeOrFtpImages({
       ftpPathOnServer +
       (ftpPathOnServer.substr(ftpPathOnServer.length - 1) === '/' ? '' : '/') +
       `${name}/`;
-    if (doesWaitForFtp) {
-      await ftpClient.upload(allImages, folderPath);
-    } else {
-      ftpClient.upload(allImages, folderPath);
+
+    try {
+      if (doesWaitForFtp) {
+        await ftpClient.upload(allImages, folderPath);
+      } else {
+        ftpClient.upload(allImages, folderPath);
+      }
+    } catch (error) {
+      console.log(`ERROR OCCURED IN SFTPCLIENT ${error}`);
     }
   }
 
