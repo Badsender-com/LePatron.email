@@ -321,9 +321,15 @@ if (cluster.isMaster) {
   process.on('SIGTERM', exitHandler(0, 'SIGTERM'));
   process.on('SIGINT', exitHandler(0, 'SIGINT'));
 
-  process.on('uncaughtException', exitHandler(1, 'Uncaught exception'));
+  process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+    exitHandler(1, 'Uncaught exception');
+  });
 
-  process.on('unhandledRejection', exitHandler(1, 'Unhandled promise'));
+  process.on('unhandledRejection', (reason) => {
+    console.error('UNHANDLED PROMISE REJECTION:', reason);
+    exitHandler(1, 'Unhandled promise');
+  });
 
   process.stdout.on('error', function (err) {
     if (err.code === 'EPIPE') {

@@ -22,6 +22,8 @@ class FTPClient {
       port: port,
       username: username,
       password: password,
+      keepaliveInterval: 2000,
+      keepaliveCountMax: 50,
     };
   }
 
@@ -38,42 +40,51 @@ class FTPClient {
     fs.mkdirSync(tmpDir);
 
     try {
-      // const { socket } = await this.getProxy();
-
       await client.connect({
-        // sock: socket,
         ...self.settings,
       });
-      await client.mkdir(folderPath, true);
 
-      const uploads = sourceArray.map((fileUrl) => {
+      const exists = await client.exists(folderPath);
+      if (!exists) {
+        await client.mkdir(folderPath, true);
+      }
+
+      const uploads = sourceArray.map(async (fileUrl) => {
         const fileName = getImageName(fileUrl);
-        const requestedFile = request.get(fileUrl);
-        const file = fs.createWriteStream(`${tmpDir}/${fileName}`);
+        const localPath = `${tmpDir}/${fileName}`;
+        const remotePath = `${folderPath}${fileName}`;
 
-        return new Promise((resolve) => {
-          requestedFile
-            .on('data', (data) => {
-              file.write(data);
-            })
-            .on('end', () => {
-              file.end();
-              resolve(
-                client.put(
-                  `${tmpDir}/${fileName}`,
-                  `${folderPath}${fileName}`,
-                  {
-                    chunkSize: 16384,
-                  }
-                )
-              );
-            });
+        await new Promise((resolve, reject) => {
+          const requestedFile = request.get(fileUrl);
+          const fileStream = fs.createWriteStream(localPath);
+
+          requestedFile.pipe(fileStream);
+          fileStream.on('finish', resolve);
+          fileStream.on('error', reject);
         });
+
+        try {
+          client.on('debug', (msg) => console.log('DEBUG SFTP:', msg));
+          await client
+            .put(localPath, remotePath, { chunkSize: 16384 })
+            .then(() => {
+              console.log(`Upload réussi pour ${fileName}`);
+            })
+            .catch((err) => {
+              console.error(`Upload échoué pour ${fileName}:`, err);
+              throw err;
+            });
+        } catch (error) {
+          console.log(`ERROR OCCURED WHILE PUT SENT : ${error}`);
+        }
+
+        return fileName;
       });
 
-      await Promise.all(uploads);
+      const results = await Promise.allSettled(uploads);
+      console.log('Résultats des uploads :', results);
     } catch (err) {
-      console.log('ERROR', err);
+      console.log('METHOD ERRORED', err);
     } finally {
       console.log('END OF UPLOADING');
       fs.removeSync(`${tmpDir}`);
@@ -81,7 +92,7 @@ class FTPClient {
       try {
         await client.end();
       } catch (err) {
-        console.log('ERROR', err);
+        console.log('ERROR WHEN ENDING CLIENT', err);
       }
     }
 
