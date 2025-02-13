@@ -161,6 +161,54 @@ function specialcharacters(editor) {
           editor.insertContent('&#8209;');
         },
       },
+      {
+        text: 'Ellipsis',
+        onclick: function () {
+          editor.insertContent('&#8230;');
+        },
+      },
+      {
+        text: 'Small bullet point',
+        onclick: function () {
+          editor.insertContent('&#8226;');
+        },
+      },
+      {
+        text: 'Big bullet point',
+        onclick: function () {
+          editor.insertContent('&#9679;');
+        },
+      },
+      {
+        text: 'Middle dot',
+        onclick: function () {
+          editor.insertContent('&middot;');
+        },
+      },
+      {
+        text: 'Check',
+        onclick: function () {
+          editor.insertContent('&#10004;');
+        },
+      },
+      {
+        text: 'Cross',
+        onclick: function () {
+          editor.insertContent('&#10006;');
+        },
+      },
+      {
+        text: 'Star',
+        onclick: function () {
+          editor.insertContent('&#9733;');
+        },
+      },
+      {
+        text: 'Arrow',
+        onclick: function () {
+          editor.insertContent('&rarr;');
+        },
+      },
     ];
 
     return {
