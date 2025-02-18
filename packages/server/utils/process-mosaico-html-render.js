@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const htmlEntities = require('he');
 
 // Tiny MCE can add some not wanted <BR> tags
 // • this can break up a layout on email clients
@@ -19,6 +20,43 @@ function replaceTabs(html) {
   return html.replace(/\t/g, ' ');
 }
 
-const basicHtmlProcessing = _.flow(removeTinyMceExtraBrTag, replaceTabs);
+// encode what we can to HTML entities
+// → better for mailing
+function secureHtml(html) {
+  return htmlEntities.encode(html, {
+    useNamedReferences: false,
+    decimal: true,
+    allowUnsafeSymbols: true,
+  });
+}
+
+const srcRegexp = /src="(.+?)"/g;
+const hrefRegexp = /href="(.+?)"/g;
+
+const decodeTag = (match, tag) => {
+  return htmlEntities.decode(tag);
+};
+
+function decodeSrcTags(html) {
+  return html.replace(
+    srcRegexp,
+    (match, tag) => `src="${decodeTag(match, tag)}"`
+  );
+}
+
+function decodeHrefTags(html) {
+  return html.replace(
+    hrefRegexp,
+    (match, tag) => `href="${decodeTag(match, tag)}"`
+  );
+}
+
+const basicHtmlProcessing = _.flow(
+  removeTinyMceExtraBrTag,
+  replaceTabs,
+  secureHtml,
+  decodeSrcTags,
+  decodeHrefTags
+);
 
 module.exports = basicHtmlProcessing;
