@@ -1,7 +1,7 @@
 'use strict';
+import Konva from 'Konva';
 
 const $ = require('jquery');
-const Cropper = require('cropperjs');
 
 const raf = window.requestAnimationFrame;
 const ACTIVE_CLASS = `bs-img-cropper--active`;
@@ -40,59 +40,75 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
         const fileResult = reader.result;
         const image = new Image();
         image.src = fileResult;
-        image.onload = () => onImageSize(image);
+        image.onload = () => openEditor(image);
       }
 
-      // initialize cropping
-      function onImageSize(image) {
-        $(`.js-crop-wrapper`).remove();
-        const {
-          $wrapper,
-          cropZone,
-          $cancel,
-          $rotateLeft,
-          $rotateRight,
-          $mirrorVertical,
-          $mirrorHorizontal,
-          $submit,
-          $width,
-          $height,
-        } = createResizePopup(dropZone, messages);
+      function openEditor(image) {
 
-        // cropper needs an image to begin with
-        $(image).appendTo(cropZone);
-        // viewMode: 1 restrict dragging
-        // • https://github.com/fengyuanchen/cropperjs#viewmode
-        imgCropper = new Cropper(image, { viewMode: 1 });
+        // Injects modal as html content
+        dropZone.after(modal(messages));
 
-        // bind events
-        $(document).on(`keyup.bs-cropper`, (domEvent) => {
-          if (domEvent.keyCode === 27) clean(abort);
+        // Initializes the stage with the parent div of our canvas.
+        // A canvas is created when we add a layer to the stage and call draw() on it.
+        const canvaEditor = document.getElementById('konva-editor');
+
+        console.log({ canvaEditor });
+
+        const stage = new Konva.Stage({
+          container: canvaEditor,
+          width: canvaEditor.clientWidth,
+          height: canvaEditor.clientHeight,
         });
-        image.addEventListener(`crop`, (cropperEvent) => {
-          updateSizeFields({ imgCropper, $width, $height });
+
+        const mainLayer = new Konva.Layer();
+
+        // A transformer allows us to move and rotate objects within the canvas.
+        const transformer = new Konva.Transformer();
+
+        const uploadedImage = new Image();
+        uploadedImage.src = image.src;
+
+        const konvaImage = new Konva.Image({
+          image: image,
+          draggable: true,
         });
-        $cancel.on(`click`, (domEvent) => clean(abort));
-        $rotateLeft.on(`click`, (domEvent) => imgCropper.rotate(-90));
-        $rotateRight.on(`click`, (domEvent) => imgCropper.rotate(90));
-        let scaleX = 1;
-        let scaleY = 1;
-        $mirrorHorizontal.on(`click`, (domEvent) => {
-          scaleX = scaleX * -1;
-          imgCropper.scaleX(scaleX);
+
+        uploadedImage.onload = function() { 
+          mainLayer.add(konvaImage)
+        };
+
+        mainLayer.add(transformer);
+
+        transformer.nodes([konvaImage]);
+        stage.add(mainLayer);
+        mainLayer.draw();
+
+        const $wrapper = $(`.js-crop-wrapper`);
+        const $cancel = $wrapper.find(`.js-crop-cancel`);
+        const $width = $wrapper.find(`#cropper-width`);
+        const $height = $wrapper.find(`#cropper-height`);
+        const $xMirror = $wrapper.find(`.js-crop-mirror-vertical`);
+        const $yMirror = $wrapper.find(`.js-crop-mirror-horizontal`);
+
+        $width.val(konvaImage.width());
+        $height.val(konvaImage.height());
+
+        $cancel.on('click', () => clean(abort));
+        $width.on('input', setSize(konvaImage, $width.val(), $height.val()));
+        $height.on('input', setSize(konvaImage, $width.val(), $height.val()));
+        $xMirror.on('click', () => konvaImage.setAttrs({ scaleX: konvaImage.scaleX() * -1 }));
+        $yMirror.on('click', () => konvaImage.setAttrs({ scaleY: konvaImage.scaleY() * -1 }));
+
+        // setSize(konvaImage, $width.val(), $height.val());
+        raf(() => $wrapper.addClass(ACTIVE_CLASS));
+      }
+
+      function save(stage) {
+        const url = stage.toDataURL({
+          pixelRatio: 1,
         });
-        $mirrorVertical.on(`click`, (domEvent) => {
-          scaleY = scaleY * -1;
-          imgCropper.scaleY(scaleY);
-        });
-        const setSizeFromInput = () => setSize({ imgCropper, $width, $height });
-        $width.on(`input`, setSizeFromInput);
-        $height.on(`input`, setSizeFromInput);
-        $submit.on(`click`, (domEvent) => crop());
-        raf(() => {
-          $wrapper.addClass(ACTIVE_CLASS);
-          updateSizeFields({ imgCropper, $width, $height });
-        });
+
+        clean();
       }
 
       // we just need to replace the original File
@@ -127,41 +143,6 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
 });
 
 function createResizePopup(dropZone, messages) {
-  const markup = `<aside class="bs-img-cropper js-crop-wrapper">
-  <div class="bs-img-cropper__in js-crop-content">
-    <span class="js-crop-cancel fa fa-fw fa-times"></span>
-    <div class="bs-img-cropper__croppie js-crop"></div>
-    <div class="bs-img-cropper__actions">
-      <div class="bs-img-cropper__sizes">
-        <label for="cropper-width" class="bs-img-cropper__size">
-          <span class="bs-img-cropper__size-label">width</span>
-          <input class="bs-img-cropper__size-input" id="cropper-width" name="cropper-width" type="number" min="0" />
-        </label>
-        <label for="cropper-height" class="bs-img-cropper__size">
-          <span class="bs-img-cropper__size-label">height</span>
-          <input class="bs-img-cropper__size-input" id="cropper-height" name="cropper-height" type="number" min="0" />
-        </label>
-      </div>
-      <button class="js-crop-mirror-vertical bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.vertical_mirror}">
-        <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
-      </button>
-      <button class="js-crop-mirror-horizontal bs-img-cropper__button" type="button" title="${messages.horizontal_mirror}">
-        <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
-      </button>
-      <button class="js-crop-rotate-left bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.rotate_left}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
-      </button>
-      <button class="js-crop-rotate-right bs-img-cropper__button" type="button" title="${messages.rotate_right}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
-      </button>
-      <button class="js-crop-cancel bs-img-cropper__button bs-img-cropper__button--secondary" type="button">${messages.cancel}</button>
-      <button class="js-crop-submit bs-img-cropper__button" type="button">${messages.upload}</button>
-    </div>
-  </div>
-</aside>`;
-
-  dropZone.after(markup);
-
   const $wrapper = $(`.js-crop-wrapper`);
   const $cropZone = $wrapper.find(`.js-crop`);
   const cropZone = $cropZone[0];
@@ -188,6 +169,8 @@ function createResizePopup(dropZone, messages) {
 }
 
 function stringToNumber(value) {
+  if (value === undefined) return 1;
+
   const parsed = parseInt(value, 10);
   return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed;
 }
@@ -198,10 +181,46 @@ function updateSizeFields({ imgCropper, $width, $height }) {
   $height.val(cropperData.height);
 }
 
-function setSize({ imgCropper, $width, $height }) {
-  const [width, height] = [$width, $height].map(($el) => {
-    return stringToNumber($el.val());
+function setSize(image, width, height) {
+  const _width = stringToNumber(width);
+  const _height = stringToNumber(height);
+
+  image.setAttrs({
+    width: _width,
+    height: _height,
   });
-  const cropperData = imgCropper.getData(true);
-  imgCropper.setData(Object.assign({}, cropperData, { width, height }));
 }
+
+const modal = (messages) => 
+  `<aside class="bs-img-cropper js-crop-wrapper">
+    <div class="bs-img-cropper__in js-crop-content">
+      <span class="js-crop-cancel fa fa-fw fa-times"></span>
+      <div id="konva-editor" class="bs-img-cropper__croppie js-crop"></div>
+      <div class="bs-img-cropper__actions">
+        <div class="bs-img-cropper__sizes">
+          <label for="cropper-width" class="bs-img-cropper__size">
+            <span class="bs-img-cropper__size-label">width</span>
+            <input class="bs-img-cropper__size-input" id="cropper-width" name="cropper-width" type="number" min="0" />
+          </label>
+          <label for="cropper-height" class="bs-img-cropper__size">
+            <span class="bs-img-cropper__size-label">height</span>
+            <input class="bs-img-cropper__size-input" id="cropper-height" name="cropper-height" type="number" min="0" />
+          </label>
+        </div>
+        <button class="js-crop-mirror-vertical bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.vertical_mirror}">
+          <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
+        </button>
+        <button class="js-crop-mirror-horizontal bs-img-cropper__button" type="button" title="${messages.horizontal_mirror}">
+          <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
+        </button>
+        <button class="js-crop-rotate-left bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.rotate_left}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
+        </button>
+        <button class="js-crop-rotate-right bs-img-cropper__button" type="button" title="${messages.rotate_right}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
+        </button>
+        <button class="js-crop-cancel bs-img-cropper__button bs-img-cropper__button--secondary" type="button">${messages.cancel}</button>
+        <button class="js-crop-submit bs-img-cropper__button" type="button">${messages.upload}</button>
+      </div>
+    </div>
+  </aside>`;

@@ -18,10 +18,13 @@
         data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadTemplateImage, uploadToTemplate: true, cropImage: true }">
     <!-- /ko -->
     <span data-bind="text: $root.t('Click or drag files here')">Click or drag files here</span>
-      <div class="workzone">
-        <div class="progress">
-          <div class="progress-bar progress-bar-success"></div>
-        </div>
+    <div class="workzone">
+      <div class="progress">
+        <div class="progress-bar progress-bar-success"></div>
       </div>
+    </div>
+    <div id="imageEditorModalPlugin">
+      <image-editor-plugin />
+    </div>
   </div>
 </div>
