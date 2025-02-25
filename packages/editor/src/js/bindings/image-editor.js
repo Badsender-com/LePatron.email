@@ -12,7 +12,11 @@ const Editor = {
     layer: null,
     transformer: null,
     children: null,
-    baseImage: null,
+    baseImage: {
+        width: null,
+        height: null,
+        rotation: null,
+    },
     image: null,
 
     // actions
@@ -86,7 +90,11 @@ function initEditor(messages, parent, imageFile) {
     Editor.layer = mainLayer;
     Editor.transformer = transformer;
     Editor.children = [];
-    Editor.baseImage = mainImage;
+    Editor.baseImage = {
+        width: mainImage.width(),
+        height: mainImage.height(),
+        rotation: mainImage.rotation(),
+    };
     Editor.image = mainImage;
 
     // actions
@@ -114,7 +122,7 @@ function initEditor(messages, parent, imageFile) {
 
 function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
-    Editor.reset.on('click', () => reset(Editor.stage, Editor.image));
+    Editor.reset.on('click', () => reset());
     Editor.inputWidth.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.flipX.on('click', () => flipX(Editor.image));
@@ -143,20 +151,31 @@ function rotate(element, degrees) {
     element.rotate(degrees);
 }
 
-function reset(stage, image) {
-    // TODO: Export this code to a new file and add a global object for the editor containing its children and the main components (stage, layers, transformer, base image, ...)
+function reset() {
+    Editor.inputWidth.val(Editor.baseImage.width);
+    Editor.inputHeight.val(Editor.baseImage.height);
+    Editor.image.x(Editor.stage.width() / 2);
+    Editor.image.y(Editor.stage.height() / 2);
+    Editor.image.width(Editor.baseImage.width);
+    Editor.image.height(Editor.baseImage.height);
+    Editor.image.scaleX(1);
+    Editor.image.scaleY(1);
+    Editor.image.rotation(Editor.baseImage.rotation);
+    Editor.image.offsetX(Editor.baseImage.width/ 2);
+    Editor.image.offsetY(Editor.baseImage.height / 2);
+    // TODO: Remove children for future features ...
 }
 
-function clean() {
+function clean(deferredCallback = Editor.deferredCallback) {
     $(document).off(`keyup.bs-cropper`);
     if (!Editor.wrapper.length) {
-        return Editor.deferredCallback();
+        return deferredCallback();
     }
     Editor.wrapper.css(`pointer-events`, `none`);
     raf(() => Editor.wrapper.removeClass(ACTIVE_CLASS));
     Editor.wrapper.on(`transitionend`, () => {
         Editor.wrapper.remove();
-        Editor.deferredCallback();
+        deferredCallback();
     });
 }
 
@@ -177,6 +196,7 @@ const modal = (messages) =>
           <button class="js-actions-reset bs-img-cropper__button" style="margin-right: 1rem!important;" type="button" title="${messages.reset_editor}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
+          <div style="flex-grow: 1;"></div>
           <div class="bs-img-cropper__sizes">
             <label for="cropper-width" class="bs-img-cropper__size">
               <span class="bs-img-cropper__size-label">width</span>
