@@ -40,7 +40,9 @@ module.exports = {
   'dl-btn-regular': 'Téléchargement local',
   'dl-btn-cdn': 'images ICOU',
 
-  // Crop interface
+  // Editor interface
+  'reset-editor': 'Réinitialiser',
+  'crop-editor': 'Rogner',
   'rotate-left': 'Tourner vers la gauche',
   'rotate-right': 'Tourner vers la droite',
   'vertical-mirror': 'Miroir vertical',

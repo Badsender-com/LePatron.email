@@ -41,7 +41,9 @@ module.exports = {
   'dl-btn-regular': 'Standard download',
   'dl-btn-cdn': 'zip with CDN',
 
-  // Crop interface
+  // Editor interface
+  'reset-editor': 'Reset',
+  'crop-editor': 'Crop',
   'rotate-left': 'Rotate left',
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
