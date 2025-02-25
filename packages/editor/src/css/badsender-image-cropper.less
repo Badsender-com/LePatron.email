@@ -59,10 +59,12 @@
 }
 .bs-img-cropper__actions {
   position: absolute;
-  right: var(--bs-ic-gutter);
   bottom: calc(var(--bs-ic-gutter) / 2);
   z-index: 2;
+  width: 100%;
   display: flex;
+  gap: 1rem;
+  padding: 0 2rem;
 }
 .bs-img-cropper__button {
   background: var(--v-accent-base);
@@ -71,7 +73,6 @@
   transition: background 0.3s;
   padding: 0.5em 0.75em;
   color: white;
-  margin-left: 1rem;
   border-radius: 2px;
 
   svg {

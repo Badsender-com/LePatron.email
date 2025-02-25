@@ -1,5 +1,6 @@
 'use strict';
 import Konva from 'Konva';
+import { EditorCropper } from './image-editor-cropper';
 
 const $ = require('jquery');
 const raf = window.requestAnimationFrame;
@@ -18,6 +19,8 @@ const Editor = {
         rotation: null,
     },
     image: null,
+    cropper: null,
+    cropping: false,
 
     // actions
     wrapper: null,
@@ -30,6 +33,7 @@ const Editor = {
     flipY: null,
     rotateRight: null,
     rotateLeft: null,
+    crop: null,
 
     // misc
     deferredCallback: null,
@@ -38,10 +42,12 @@ const Editor = {
 
 export function OpenEditor(next, abort, messages, parent, image) {
     initEditor(messages, parent, image);
-    bindHandlers();
     Editor.deferredCallback = next;
     Editor.abort = abort;
+    Editor.cropper = EditorCropper(Editor);
 
+    bindHandlers();
+    console.log({crop: Editor.cropper});
 }
 
 function initEditor(messages, parent, imageFile) {
@@ -108,6 +114,7 @@ function initEditor(messages, parent, imageFile) {
     Editor.flipY = $wrapper.find(`.js-actions-mirror-horizontal`);
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
     Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
+    Editor.crop = $wrapper.find('.js-actions-crop');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -129,6 +136,7 @@ function bindHandlers() {
     Editor.flipY.on('click', () => flipY(Editor.image));
     Editor.rotateRight.on('click', () => rotate(Editor.image, 90));
     Editor.rotateLeft.on('click', () => rotate(Editor.image, -90));
+    Editor.crop.on('click', () => crop());
 }
 
 // Handlers
@@ -137,6 +145,7 @@ function setSize(image, width, height) {
     image.height(stringToNumber(height));
     image.offsetX(width / 2);
     image.offsetX(height / 2);
+    Editor.image = image;
 }
 
 function flipX(element) {
@@ -151,6 +160,17 @@ function rotate(element, degrees) {
     element.rotate(degrees);
 }
 
+function crop() {
+    if (Editor.cropping) {
+        Editor.cropper.stop();
+        Editor.cropping = false;
+    }
+    else {
+        Editor.cropper.start();
+        Editor.cropping = true;
+    }
+}
+
 function reset() {
     Editor.inputWidth.val(Editor.baseImage.width);
     Editor.inputHeight.val(Editor.baseImage.height);
@@ -161,8 +181,14 @@ function reset() {
     Editor.image.scaleX(1);
     Editor.image.scaleY(1);
     Editor.image.rotation(Editor.baseImage.rotation);
-    Editor.image.offsetX(Editor.baseImage.width/ 2);
+    Editor.image.offsetX(Editor.baseImage.width / 2);
     Editor.image.offsetY(Editor.baseImage.height / 2);
+    Editor.image.crop({
+        x: 0,
+        y: 0,
+        width: Editor.baseImage.width,
+        height: Editor.baseImage.height,
+    })
     // TODO: Remove children for future features ...
 }
 
@@ -193,7 +219,7 @@ const modal = (messages) =>
         <span class="js-actions-cancel fa fa-fw fa-times"></span>
         <div id="konva-editor" class="bs-img-cropper__croppie"></div>
         <div class="bs-img-cropper__actions">
-          <button class="js-actions-reset bs-img-cropper__button" style="margin-right: 1rem!important;" type="button" title="${messages.reset_editor}">
+          <button class="js-actions-reset bs-img-cropper__button" type="button" title="${messages.reset_editor}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
           <div style="flex-grow: 1;"></div>
