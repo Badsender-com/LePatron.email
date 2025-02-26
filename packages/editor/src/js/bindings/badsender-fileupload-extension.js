@@ -40,7 +40,7 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
         image.src = fileResult;
         image.onload = () => {
           try {
-            OpenEditor(next, abort, messages, dropZone, image);
+            OpenEditor(next, abort, data, { index: index, name: name, type: type }, messages, dropZone, image);
           } catch (error) {
             console.log({error});
           }

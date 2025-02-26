@@ -34,25 +34,28 @@ const Editor = {
     rotateRight: null,
     rotateLeft: null,
     crop: null,
-    lastCrop: null,
     cropCancel: null,
     cropSubmit: null,
+    lastCrop: null,
     cropToolbar: null,
     toolbar: null,
 
     // misc
     deferredCallback: null,
     abort: null,
+    data: null,
+    file: null,
 }
 
-export function OpenEditor(next, abort, messages, parent, image) {
+export function OpenEditor(next, abort, data, file, messages, parent, image) {
     initEditor(messages, parent, image);
     Editor.deferredCallback = next;
     Editor.abort = abort;
+    Editor.data = data;
+    Editor.file = file;
     Editor.cropper = EditorCropper(Editor);
 
     bindHandlers();
-    console.log({crop: Editor.cropper});
 }
 
 function initEditor(messages, parent, imageFile) {
@@ -138,6 +141,7 @@ function initEditor(messages, parent, imageFile) {
 
 function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
+    Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
     Editor.inputWidth.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
@@ -199,6 +203,23 @@ function reset() {
     Editor.image.offsetY(Editor.baseImage.height / 2);
     Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
     Editor.lastCrop = null;
+}
+
+function save() {
+  Editor.transformer.nodes([]);
+  const rect = Editor.image.getClientRect();
+  
+  Editor.stage.toBlob({
+    callback: (blob) => {
+      const file = new File([blob], Editor.file.name, { type: Editor.file.type });
+      Editor.data.files[Editor.file.index] = file;
+      clean();
+    },
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+  });
 }
 
 function clean(deferredCallback = Editor.deferredCallback) {
