@@ -1,5 +1,9 @@
 @import (less) '../../../../node_modules/cropperjs/dist/cropper.css';
 
+
+@editor-accent-color: rgb(0, 144, 192);
+
+
 .bs-img-cropper {
   --bs-ic-gutter: 2rem;
   --bs-ic-actions: 200px;
@@ -13,9 +17,11 @@
   opacity: 0;
   transition: opacity 0.3s;
 }
+
 .bs-img-cropper--active {
   opacity: 1;
 }
+
 .bs-img-cropper__in {
   position: absolute;
   top: var(--bs-ic-gutter);
@@ -38,6 +44,7 @@
     }
   }
 }
+
 .bs-img-cropper__croppie {
   --bc-ic-zoom-slider: 25px;
   --bc-ic-zoom-slider: 50px;
@@ -57,6 +64,7 @@
     linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
   background-size: 16px 16px;
 }
+
 .bs-img-cropper__actions {
   position: absolute;
   bottom: calc(var(--bs-ic-gutter) / 2);
@@ -66,6 +74,7 @@
   gap: 1rem;
   padding: 0 2rem;
 }
+
 .bs-img-cropper__button {
   background: var(--v-accent-base);
   border: 0;
@@ -110,11 +119,13 @@
     border-bottom-left-radius: 0;
   }
 }
+
 .bs-img-cropper__sizes {
   border: 1px solid var(--v-accent-base);
   border-radius: 2px;
   display: flex;
 }
+
 .bs-img-cropper__size {
   width: 5rem;
   display: flex;
@@ -124,6 +135,7 @@
     border-left: 1px solid var(--v-accent-base);
   }
 }
+
 .bs-img-cropper__size-label {
   display: block;
   font-size: 0.6rem;
@@ -131,12 +143,25 @@
   background: var(--v-accent-base);
   color: white;
 }
+
 .bs-img-cropper__size-input {
   width: 100%;
   border: solid var(--v-accent-base);
   border-width: 1px 0 0;
   flex: 1 1 auto;
   text-align: right;
+}
+
+.ratio-selector-box {
+  border: solid var(--v-accent-base);
+  border-width: 1px 0 0;
+  flex: 1 1 auto;
+  margin: auto;
+  
+  input {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .bs-img-cropper--hidden {
@@ -146,4 +171,17 @@
 .bg-img-cropper--flex-center {
   justify-content: center;
   align-items: center;
+}
+
+.editor-ratio-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  svg {
+    fill: @editor-accent-color;
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
 }
