@@ -34,6 +34,11 @@ const Editor = {
     rotateRight: null,
     rotateLeft: null,
     crop: null,
+    lastCrop: null,
+    cropCancel: null,
+    cropSubmit: null,
+    cropToolbar: null,
+    toolbar: null,
 
     // misc
     deferredCallback: null,
@@ -115,6 +120,10 @@ function initEditor(messages, parent, imageFile) {
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
     Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
     Editor.crop = $wrapper.find('.js-actions-crop');
+    Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
+    Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
+    Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
+    Editor.toolbar = $wrapper.find('.js-toolbar');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -136,7 +145,9 @@ function bindHandlers() {
     Editor.flipY.on('click', () => flipY(Editor.image));
     Editor.rotateRight.on('click', () => rotate(Editor.image, 90));
     Editor.rotateLeft.on('click', () => rotate(Editor.image, -90));
-    Editor.crop.on('click', () => crop());
+    Editor.crop.on('click', () => startCropping());
+    Editor.cropCancel.on('click', () => stopCropping(false));
+    Editor.cropSubmit.on('click', () => stopCropping(true));
 }
 
 // Handlers
@@ -160,15 +171,18 @@ function rotate(element, degrees) {
     element.rotate(degrees);
 }
 
-function crop() {
-    if (Editor.cropping) {
-        Editor.cropper.stop();
-        Editor.cropping = false;
-    }
-    else {
-        Editor.cropper.start();
-        Editor.cropping = true;
-    }
+function startCropping() {
+  Editor.cropper.start();
+  Editor.cropping = true;
+  Editor.toolbar.addClass('bs-img-cropper--hidden');
+  Editor.cropToolbar.removeClass('bs-img-cropper--hidden');
+}
+
+function stopCropping(doCrop) {
+  Editor.cropper.stop(doCrop);
+  Editor.cropping = false;
+  Editor.toolbar.removeClass('bs-img-cropper--hidden');
+  Editor.cropToolbar.addClass('bs-img-cropper--hidden');
 }
 
 function reset() {
@@ -183,16 +197,12 @@ function reset() {
     Editor.image.rotation(Editor.baseImage.rotation);
     Editor.image.offsetX(Editor.baseImage.width / 2);
     Editor.image.offsetY(Editor.baseImage.height / 2);
-    Editor.image.crop({
-        x: 0,
-        y: 0,
-        width: Editor.baseImage.width,
-        height: Editor.baseImage.height,
-    })
-    // TODO: Remove children for future features ...
+    Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
+    Editor.lastCrop = null;
 }
 
 function clean(deferredCallback = Editor.deferredCallback) {
+    reset();
     $(document).off(`keyup.bs-cropper`);
     if (!Editor.wrapper.length) {
         return deferredCallback();
@@ -218,7 +228,17 @@ const modal = (messages) =>
       <div class="bs-img-cropper__in">
         <span class="js-actions-cancel fa fa-fw fa-times"></span>
         <div id="konva-editor" class="bs-img-cropper__croppie"></div>
-        <div class="bs-img-cropper__actions">
+
+        <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">
+          <button class="js-actions-crop-cancel bs-img-cropper__button" type="button" title="${messages.crop_editor_cancel}">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+          </button>
+          <button class="js-actions-crop-submit bs-img-cropper__button" type="button" title="${messages.crop_editor_submit}">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M400-304 240-464l56-56 104 104 264-264 56 56-320 320Z"/></svg>
+          </button>
+        </div>
+
+        <div class="bs-img-cropper__actions js-toolbar">
           <button class="js-actions-reset bs-img-cropper__button" type="button" title="${messages.reset_editor}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
@@ -236,6 +256,7 @@ const modal = (messages) =>
           <button class="js-actions-crop bs-img-cropper__button" type="button" title="${messages.crop_editor}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
           </button>
+
           <button class="js-actions-mirror-vertical bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.vertical_mirror}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
           </button>

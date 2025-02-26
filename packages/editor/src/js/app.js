@@ -147,6 +147,8 @@ var start = function (
         horizontal_mirror: vm.t('horizontal-mirror'),
         reset_editor: vm.t('reset-editor'),
         crop_editor: vm.t('crop-editor'),
+        crop_editor_cancel: vm.t('crop-editor-cancel'),
+        crop_editor_submit: vm.t('crop-editor-submit'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
       },
