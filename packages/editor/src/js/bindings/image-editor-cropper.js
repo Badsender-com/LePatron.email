@@ -3,22 +3,76 @@ import Konva from 'Konva';
 
 export const EditorCropper = (editor) => {
 
+    const allAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
+    const ratioAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
     let cropLayer = null;
     let selector = null;
     let transformer = null;
-
+    let ratioSelector = null;
     let baseImage = null;
 
+    // Ratio
+    function toRatio(value) {
+        if (value === "0") return 0;
+
+        var ratioParts = value.split('-');
+        var widthRatio = parseInt(ratioParts[0], 10);
+        var heightRatio = parseInt(ratioParts[1], 10);
+
+        return (widthRatio ?? 1) / (heightRatio ?? 1);
+    }
+
+    function setSelectorToRatio(ratio) {
+        resetSelector();
+
+        if (ratio === 0) {   
+            transformer.enabledAnchors(allAnchors);         
+            return;
+        }
+
+        transformer.enabledAnchors(ratioAnchors);
+
+        if (ratio > 1) {
+            selector.height(selector.height() / ratio);
+        }
+
+        if (ratio < 1) {
+            selector.width(selector.width() * ratio);
+        } 
+
+        if (ratio === 1) {
+            const min = Math.min(selector.width(), selector.height());
+            selector.width(min * ratio);
+            selector.width(min * ratio);
+        }
+    }
+
+    function resetSelector() {
+        selector.setAttrs({
+            x: editor.image.x(),
+            y: editor.image.y(),
+            width: editor.image.width(),
+            height: editor.image.height(),
+            scaleX: baseImage.scaleX,
+            scaleY: baseImage.scaleY,
+        })
+    }
+
+    // Crop lifecycle
     function init() {
+        ratioSelector = editor.wrapper.find("#ratio-selector");
+        ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
+
         cropLayer = new Konva.Layer();
 
         selector = new Konva.Rect({
             x: editor.lastCrop?.selectorX ?? editor.stage.width() / 2,
             y: editor.lastCrop?.selectorY ?? editor.stage.height() / 2,
-            width: editor.lastCrop?.width ?? editor.image.width(),
-            height: editor.lastCrop?.height ?? editor.image.height(),
-            offsetX: editor.lastCrop?.width ?? editor.image.width() / 2,
-            offsetY: editor.lastCrop?.height ?? editor.image.height() / 2,
+            width: editor.lastCrop?.selectorWidth ?? editor.image.width(),
+            height: editor.lastCrop?.selectorHeight ?? editor.image.height(),
+            offsetX: editor.lastCrop?.selectorOffsetX ?? editor.image.width() / 2,
+            offsetY: editor.lastCrop?.selectorOffsetY ?? editor.image.height() / 2,
             scaleX: editor.lastCrop?.scaleX ?? editor.image.scaleX(),
             scaleY: editor.lastCrop?.scaleY ?? editor.image.scaleY(),
             fill: 'rgba(0, 144, 192, 0.5)',
@@ -29,6 +83,7 @@ export const EditorCropper = (editor) => {
 
         transformer = new Konva.Transformer({
             flipEnabled: false,
+            enabledAnchors: ratioSelector.val() === "0" ? allAnchors : ratioAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
         });
@@ -43,6 +98,12 @@ export const EditorCropper = (editor) => {
             offsetX: editor.image.offsetX(),
             offsetY: editor.image.offsetY(),
             rotation: editor.image.rotation(),
+            crop: {
+                x: editor.image.cropX(),
+                y: editor.image.cropY(),
+                width: editor.image.cropWidth(),
+                height: editor.image.cropHeight(),
+            }
         }
     }
 
@@ -52,9 +113,11 @@ export const EditorCropper = (editor) => {
         editor.image.setAttrs({
             width: editor.baseImage.width,
             height: editor.baseImage.height,
-            rotation: editor.baseImage.rotation,
             x: editor.stage.width() / 2,
             y: editor.stage.height() / 2,
+            offsetX: editor.baseImage.width / 2,
+            offsetY: editor.baseImage.height / 2,
+            rotation: -0,
             scaleX: 1,
             scaleY: 1,
             crop: {
@@ -81,44 +144,38 @@ export const EditorCropper = (editor) => {
         if (doCrop) {
             applyCrop();
         }
-        else if (editor.lastCrop) {
-            editor.image.crop({
-                x: editor.lastCrop.x,
-                y: editor.lastCrop.y,
-                width: editor.lastCrop.width,
-                height: editor.lastCrop.height,
+        else {
+            editor.image.setAttrs({
+                x: baseImage.x,
+                y: baseImage.y,
+                width: baseImage.width,
+                height: baseImage.height,
+                scaleX: baseImage.scaleX,
+                scaleY: baseImage.scaleY,
+                offsetX: baseImage.offsetX,
+                offsetY: baseImage.offsetY,
+                crop: {
+                    x: baseImage.crop.x,
+                    y: baseImage.crop.y,
+                    width: baseImage.crop.width,
+                    height: baseImage.crop.height,
+                }
             });
         }
 
-        editor.image.setAttrs({
-            x: baseImage.x,
-            y: baseImage.y,
-            width: baseImage.width,
-            height: baseImage.height,
-            scaleX: baseImage.scaleX,
-            scaleY: baseImage.scaleY,
-            rotation: baseImage.rotation,
-        });
+        editor.image.rotation(baseImage.rotation);
 
         editor.image.draggable(true);
         editor.transformer.nodes([editor.image]);
         editor.stage.batchDraw();
 
-        if (doCrop) {
-            editor.lastCrop = {
-                x: editor.image.cropX(),
-                y: editor.image.cropY(),
-                width: editor.image.cropWidth(),
-                height: editor.image.cropHeight(),
-                selectorX: selector.x(),
-                selectorY: selector.y(),
-            };
-        }
-        
         transformer = null;
         selector = null;
         cropLayer = null;
         baseImage = null;
+
+        ratioSelector.off('change');
+        ratioSelector = null;
     }
 
     function applyCrop() {
@@ -128,8 +185,8 @@ export const EditorCropper = (editor) => {
         const scaleX = editor.image.scaleX();
         const scaleY = editor.image.scaleY();
 
-        const cropX = Math.abs(rect.x - baseRect.x) / scaleX ;
-        const cropY = Math.abs(rect.y - baseRect.y) / scaleY;
+        const cropX = (rect.x - baseRect.x) / scaleX ;
+        const cropY = (rect.y - baseRect.y) / scaleY;
         const cropWidth = rect.width / scaleX;
         const cropHeight = rect.height / scaleY;
 
@@ -142,9 +199,28 @@ export const EditorCropper = (editor) => {
             },
             width: cropWidth,
             height: cropHeight,
-            x: editor.image.x() + cropX * scaleX,
-            y: editor.image.y() + cropY * scaleY,
+            x: selector.x(),
+            y: selector.y(),
+            offsetX: cropWidth / 2,
+            offsetY: cropHeight / 2,
+            scaleX: baseImage.scaleX,
+            scaleY: baseImage.scaleY,
         });
+
+        editor.lastCrop = {
+            x: cropX,
+            x: cropY,
+            width: cropWidth,
+            height: cropHeight,
+            scaleX: selector.scaleX(),
+            scaleY: selector.scaleY(),
+            selectorWidth: selector.width(),
+            selectorHeight: selector.height(),
+            selectorX: selector.x(),
+            selectorY: selector.y(),
+            selectorOffsetX: selector.offsetX(),
+            selectorOffsetY: selector.offsetY(),
+        };
     }
 
     return { start, stop };

@@ -20,6 +20,7 @@ const Editor = {
     },
     image: null,
     cropper: null,
+    ratio: null,
     cropping: false,
 
     // actions
@@ -45,21 +46,25 @@ const Editor = {
     abort: null,
     data: null,
     file: null,
+    messages: null,
 }
 
 export function OpenEditor(next, abort, data, file, messages, parent, image) {
-    initEditor(messages, parent, image);
     Editor.deferredCallback = next;
+    Editor.messages = messages;
     Editor.abort = abort;
     Editor.data = data;
     Editor.file = file;
+    initEditor(parent, image);
+
+    // Advanced features have to be initialized after the stage is drawn at least one time
     Editor.cropper = EditorCropper(Editor);
 
     bindHandlers();
 }
 
-function initEditor(messages, parent, imageFile) {
-    parent.after(modal(messages));
+function initEditor(parent, imageFile) {
+    parent.after(modal(Editor.messages));
 
     const container = document.getElementById('konva-editor');
     const stage = new Konva.Stage({
@@ -72,7 +77,8 @@ function initEditor(messages, parent, imageFile) {
     const mainLayer = new Konva.Layer();
 
     // A transformer allows us to move and rotate objects within the canvas.
-    const transformer = new Konva.Transformer();
+    // We want to keep the ratio and only do free resize with middle edge anchors.
+    const transformer = new Konva.Transformer({ keepRatio: true });
 
     const uploadedImage = new Image();
     uploadedImage.src = imageFile.src;
@@ -116,8 +122,8 @@ function initEditor(messages, parent, imageFile) {
     Editor.cancel = $wrapper.find(`.js-actions-cancel`);
     Editor.submit = $wrapper.find(`.js-actions-submit`);
     Editor.reset = $wrapper.find(`.js-actions-reset`);
-    Editor.inputWidth = $wrapper.find(`#cropper-width`);
-    Editor.inputHeight = $wrapper.find(`#cropper-height`);
+    Editor.inputWidth = $wrapper.find(`#resize-width`);
+    Editor.inputHeight = $wrapper.find(`#resize-height`);
     Editor.flipX = $wrapper.find(`.js-actions-mirror-vertical`);
     Editor.flipY = $wrapper.find(`.js-actions-mirror-horizontal`);
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
@@ -126,12 +132,13 @@ function initEditor(messages, parent, imageFile) {
     Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
     Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
     Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
+    Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
     Editor.toolbar = $wrapper.find('.js-toolbar');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
 
-    Editor.transformer.on('transformend', function () {
+    Editor.transformer.on('transform', function () {
         Editor.inputWidth.val(Math.round(Editor.transformer.width()));
         Editor.inputHeight.val(Math.round(Editor.transformer.height()));
     });
@@ -203,6 +210,7 @@ function reset() {
     Editor.image.offsetY(Editor.baseImage.height / 2);
     Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
     Editor.lastCrop = null;
+    Editor.ratio = "0";
 }
 
 function save() {
@@ -251,6 +259,22 @@ const modal = (messages) =>
         <div id="konva-editor" class="bs-img-cropper__croppie"></div>
 
         <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">
+          <div class="crop-ratio-selector js-ratio-actions">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
+            <select name="ratio-selector" id="ratio-selector" style="border-radius: 2px;">
+                <option value="0">Forme libre</option>
+                <option value="4-3">Standard (4:3)</option>
+                <option value="16-9">Paysage (téléphone) (16:9)</option>
+                <option value="9-16">Portrait (téléphone) (9:16)</option>
+                <option value="1-1">Carré (1:1)</option>
+                <option value="3-2">Photo (3:2)</option>
+                <option value="5-3">Cinéma large (5:3)</option>
+                <option value="5-4">Quasi carré (5:4)</option>
+                <option value="6-4">Photo (6:4)</option>
+                <option value="7-5">Intermédiaire (7:5)</option>
+                <option value="10-8">Appareil photo (10:8)</option>
+            </select>
+          </div>  
           <button class="js-actions-crop-cancel bs-img-cropper__button" type="button" title="${messages.crop_editor_cancel}">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
           </button>
@@ -264,14 +288,15 @@ const modal = (messages) =>
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
           <div style="flex-grow: 1;"></div>
+
           <div class="bs-img-cropper__sizes">
-            <label for="cropper-width" class="bs-img-cropper__size">
+            <label for="resize-width" class="bs-img-cropper__size">
               <span class="bs-img-cropper__size-label">width</span>
-              <input class="bs-img-cropper__size-input" id="cropper-width" name="cropper-width" type="number" min="0" />
+              <input class="bs-img-cropper__size-input" id="resize-width" name="resize-width" type="number" min="0" />
             </label>
-            <label for="cropper-height" class="bs-img-cropper__size">
+            <label for="resize-height" class="bs-img-cropper__size">
               <span class="bs-img-cropper__size-label">height</span>
-              <input class="bs-img-cropper__size-input" id="cropper-height" name="cropper-height" type="number" min="0" />
+              <input class="bs-img-cropper__size-input" id="resize-height" name="resize-height" type="number" min="0" />
             </label>
           </div>
           <button class="js-actions-crop bs-img-cropper__button" type="button" title="${messages.crop_editor}">
