@@ -43,7 +43,10 @@ module.exports = {
 
   // Editor interface
   'reset-editor': 'Reset',
+  'text-editor': 'Text',
   'crop-editor': 'Crop',
+  'crop-editor-cancel': 'Cancel',
+  'crop-editor-submit': 'Save',
   'rotate-left': 'Rotate left',
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',

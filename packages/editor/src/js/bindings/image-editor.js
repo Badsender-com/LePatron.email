@@ -1,6 +1,7 @@
 'use strict';
 import Konva from 'Konva';
 import { EditorCropper } from './image-editor-cropper';
+import { EditorText } from './image-editor-text';
 
 const $ = require('jquery');
 const raf = window.requestAnimationFrame;
@@ -20,6 +21,7 @@ const Editor = {
     },
     image: null,
     cropper: null,
+    textHandler: null,
     ratio: null,
     cropping: false,
 
@@ -28,6 +30,7 @@ const Editor = {
     cancel: null,
     submit: null,
     reset: null,
+    text: null,
     inputWidth: null,
     inputHeight: null,
     flipX: null,
@@ -59,6 +62,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
 
     // Advanced features have to be initialized after the stage is drawn at least one time
     Editor.cropper = EditorCropper(Editor);
+    Editor.textHandler = EditorText(Editor);
 
     bindHandlers();
 }
@@ -122,6 +126,7 @@ function initEditor(parent, imageFile) {
     Editor.cancel = $wrapper.find(`.js-actions-cancel`);
     Editor.submit = $wrapper.find(`.js-actions-submit`);
     Editor.reset = $wrapper.find(`.js-actions-reset`);
+    Editor.text = $wrapper.find(`.js-actions-text`);
     Editor.inputWidth = $wrapper.find(`#resize-width`);
     Editor.inputHeight = $wrapper.find(`#resize-height`);
     Editor.flipX = $wrapper.find(`.js-actions-mirror-vertical`);
@@ -150,6 +155,7 @@ function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
+    Editor.text.on('click', () => Editor.textHandler.addText());
     Editor.inputWidth.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.flipX.on('click', () => flipX(Editor.image));
@@ -288,6 +294,10 @@ const modal = (messages) =>
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
           <div style="flex-grow: 1;"></div>
+
+          <button class="js-actions-text bs-img-cropper__button" type="button" title="${messages.text_editor}">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
+          </button>
 
           <div class="bs-img-cropper__sizes">
             <label for="resize-width" class="bs-img-cropper__size">
