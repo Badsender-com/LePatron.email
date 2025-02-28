@@ -47,13 +47,16 @@ module.exports = {
   'crop-editor': 'Crop',
   'crop-editor-cancel': 'Cancel',
   'crop-editor-submit': 'Save',
+  'input-corner-radius': 'Round the corners',
+  'input-width': 'Width',
+  'input-height': 'Height',
   'rotate-left': 'Rotate left',
   'rotate-right': 'Rotate right',
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
   'error-server': 'An error has occured while calling server API :(',
-  cancel: 'CANCEL',
-  upload: 'UPLOAD',
+  cancel: 'Cancel',
+  upload: 'Save',
 
   // Profile form esp
   'sender-name': 'Sender name',

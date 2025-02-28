@@ -291,6 +291,7 @@ function reset() {
     Editor.image.offsetX(Editor.baseImage.width / 2);
     Editor.image.offsetY(Editor.baseImage.height / 2);
     Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
+    Editor.image.cornerRadius(0);
     Editor.lastCrop = null;
     Editor.ratio = "0";
     Editor.transformer.nodes([Editor.image]);
@@ -298,6 +299,8 @@ function reset() {
       node.destroy();
     });
     Editor.children = [];
+    Editor.cornerRadius.val(0);
+    disableImageToolbar(false);
 }
 
 function save() {
@@ -344,6 +347,9 @@ const modal = (messages) =>
     `<aside class="bs-img-cropper js-editor-wrapper">
       <div class="bs-img-cropper__in">
         <span class="js-actions-cancel fa fa-fw fa-times"></span>
+        <div id="image-filters">
+
+        </div>
         <div id="konva-editor" class="bs-img-cropper__croppie"></div>
 
         <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">

@@ -46,14 +46,17 @@ module.exports = {
   'crop-editor': 'Rogner',
   'crop-editor-cancel': 'Annuler',
   'crop-editor-submit': 'Valider',
+  'input-corner-radius': 'Arrondir les bords',
+  'input-width': 'Largeur',
+  'input-height': 'Hauteur',
   'rotate-left': 'Tourner vers la gauche',
   'rotate-right': 'Tourner vers la droite',
   'vertical-mirror': 'Miroir vertical',
   'horizontal-mirror': 'Miroir horizontal',
   'error-server':
     "Une erreur s'est produite lors de l'appel de l'API du serveur",
-  cancel: 'ANNULER',
-  upload: 'ENVOYER',
+  cancel: 'Annuler',
+  upload: 'Envoyer',
 
   // Profile form esp
   'sender-name': "Nom de l'expéditeur",
