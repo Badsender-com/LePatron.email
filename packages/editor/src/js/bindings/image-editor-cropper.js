@@ -3,9 +3,6 @@ import Konva from 'Konva';
 
 export const EditorCropper = (editor) => {
 
-    const allAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
-    const ratioAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-
     let cropLayer = null;
     let selector = null;
     let transformer = null;
@@ -27,11 +24,11 @@ export const EditorCropper = (editor) => {
         resetSelector();
 
         if (ratio === 0) {   
-            transformer.enabledAnchors(allAnchors);         
+            transformer.enabledAnchors(editor.baseAnchors);         
             return;
         }
 
-        transformer.enabledAnchors(ratioAnchors);
+        transformer.enabledAnchors(editor.cornerAnchors);
 
         if (ratio > 1) {
             selector.height(selector.height() / ratio);
@@ -83,7 +80,7 @@ export const EditorCropper = (editor) => {
 
         transformer = new Konva.Transformer({
             flipEnabled: false,
-            enabledAnchors: ratioSelector.val() === "0" ? allAnchors : ratioAnchors,
+            enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
         });
@@ -125,13 +122,18 @@ export const EditorCropper = (editor) => {
                 y: 0,
                 width: 0,
                 height: 0,
-            }
+            },
+            draggable: false,
+        });
+
+        editor.children.forEach(node => {
+            node.draggable(false);
+            node.hide();
         });
 
         cropLayer.add(selector);
         cropLayer.add(transformer);
         transformer.nodes([selector]);
-        editor.image.draggable(false);
         editor.transformer.nodes([]);
         editor.stage.add(cropLayer);
     }
@@ -163,8 +165,12 @@ export const EditorCropper = (editor) => {
             });
         }
 
-        editor.image.rotation(baseImage.rotation);
+        editor.children.forEach(node => {
+            node.draggable(true);
+            node.show();
+        });
 
+        editor.image.rotation(baseImage.rotation);
         editor.image.draggable(true);
         editor.transformer.nodes([editor.image]);
         editor.stage.batchDraw();

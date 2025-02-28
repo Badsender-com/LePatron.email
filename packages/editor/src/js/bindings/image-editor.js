@@ -24,6 +24,7 @@ const Editor = {
     textHandler: null,
     ratio: null,
     cropping: false,
+    selection: null,
 
     // actions
     wrapper: null,
@@ -50,6 +51,8 @@ const Editor = {
     data: null,
     file: null,
     messages: null,
+    baseAnchors: [],
+    cornerAnchors: [],
 }
 
 export function OpenEditor(next, abort, data, file, messages, parent, image) {
@@ -58,6 +61,9 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.abort = abort;
     Editor.data = data;
     Editor.file = file;
+    Editor.children = [];
+    Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
+    Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     initEditor(parent, image);
 
     // Advanced features have to be initialized after the stage is drawn at least one time
@@ -148,6 +154,8 @@ function initEditor(parent, imageFile) {
         Editor.inputHeight.val(Math.round(Editor.transformer.height()));
     });
 
+    Editor.selection = Editor.image;
+
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 }
 
@@ -156,36 +164,46 @@ function bindHandlers() {
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
     Editor.text.on('click', () => Editor.textHandler.addText());
-    Editor.inputWidth.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
-    Editor.inputHeight.on('input', () => setSize(Editor.image, Editor.inputWidth.val(), Editor.inputHeight.val()));
-    Editor.flipX.on('click', () => flipX(Editor.image));
-    Editor.flipY.on('click', () => flipY(Editor.image));
-    Editor.rotateRight.on('click', () => rotate(Editor.image, 90));
-    Editor.rotateLeft.on('click', () => rotate(Editor.image, -90));
+    Editor.inputWidth.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
+    Editor.inputHeight.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
+    Editor.flipX.on('click', () => flipX());
+    Editor.flipY.on('click', () => flipY());
+    Editor.rotateRight.on('click', () => rotate(90));
+    Editor.rotateLeft.on('click', () => rotate(-90));
     Editor.crop.on('click', () => startCropping());
     Editor.cropCancel.on('click', () => stopCropping(false));
     Editor.cropSubmit.on('click', () => stopCropping(true));
+    Editor.stage.on("pointerdown", (e) => handleSelection(e));
+    
+    window.addEventListener('keydown', (e) => handleDelete(e));
 }
 
 // Handlers
-function setSize(image, width, height) {
-    image.width(stringToNumber(width));
-    image.height(stringToNumber(height));
-    image.offsetX(width / 2);
-    image.offsetX(height / 2);
-    Editor.image = image;
+function setSize(width, height) {
+  if (Editor.selection !== null) {
+    Editor.selection.width(stringToNumber(width));
+    Editor.selection.height(stringToNumber(height));
+    Editor.selection.offsetX(width / 2);
+    Editor.selection.offsetX(height / 2);
+  } 
 }
 
-function flipX(element) {
-    element.scaleX(element.scaleX() * -1);
+function flipX() {
+    if (Editor.selection !== null) {
+      Editor.selection.scaleX(Editor.selection.scaleX() * -1);
+    }
 }
 
-function flipY(element) {
-    element.scaleY(element.scaleY() * -1);
+function flipY() {
+  if (Editor.selection !== null) {
+    Editor.selection.scaleY(Editor.selection.scaleY() * -1);
+  }
 }
 
-function rotate(element, degrees) {
-    element.rotate(degrees);
+function rotate(degrees) {
+  if (Editor.selection !== null) {
+    Editor.selection.rotate(degrees);
+  }
 }
 
 function startCropping() {
@@ -200,6 +218,38 @@ function stopCropping(doCrop) {
   Editor.cropping = false;
   Editor.toolbar.removeClass('bs-img-cropper--hidden');
   Editor.cropToolbar.addClass('bs-img-cropper--hidden');
+}
+
+function handleSelection(event) {
+  if (event.target === Editor.selection) return;
+  if (event.target.attrs.name?.includes("_anchor")) return; // Transformer anchors
+
+  if (event.target !== Editor.stage) {
+    Editor.selection = event.target;
+    Editor.transformer.nodes([Editor.selection]);
+    Editor.transformer.moveToTop(); // Prevents transformer from being hidden by other elements
+
+    Editor.inputWidth.val(Math.round(Editor.transformer.width()));
+    Editor.inputHeight.val(Math.round(Editor.transformer.height()));
+    return;
+  }
+
+  Editor.transformer.nodes([]);
+  Editor.selection = null;
+  Editor.inputWidth.val(null);
+  Editor.inputHeight.val(null);
+}
+
+function handleDelete(event) {
+  if (Editor.selection === null || Editor.selection === Editor.image) return;
+  if (event.key !== "Delete" && event.key !== "Backspace") return;
+  if (!Editor.selection.visible()) return; // Prevents deletion when editing a text or when cropping
+
+  Editor.transformer.nodes([]);
+  Editor.selection.destroy();
+  Editor.children = Editor.children.filter(_node => _node !== Editor.selection);
+  Editor.stage.batchDraw();
+  Editor.selection = null;
 }
 
 function reset() {
@@ -217,6 +267,11 @@ function reset() {
     Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
     Editor.lastCrop = null;
     Editor.ratio = "0";
+    Editor.transformer.nodes([Editor.image]);
+    Editor.children.forEach(node => {
+      node.destroy();
+    });
+    Editor.children = [];
 }
 
 function save() {
@@ -238,6 +293,7 @@ function save() {
 
 function clean(deferredCallback = Editor.deferredCallback) {
     reset();
+    window.removeEventListener('keydown', handleDelete);
     $(document).off(`keyup.bs-cropper`);
     if (!Editor.wrapper.length) {
         return deferredCallback();
