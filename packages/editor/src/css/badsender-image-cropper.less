@@ -4,7 +4,7 @@
 @editor-accent-color: rgb(0, 144, 192);
 
 
-.bs-img-cropper {
+.bs-img-editor {
   --bs-ic-gutter: 2rem;
   --bs-ic-actions: 200px;
   position: fixed;
@@ -16,63 +16,85 @@
   z-index: 100;
   opacity: 0;
   transition: opacity 0.3s;
+  padding: 4rem;
 }
 
 .bs-img-cropper--active {
   opacity: 1;
 }
 
-.bs-img-cropper__in {
-  position: absolute;
-  top: var(--bs-ic-gutter);
-  bottom: var(--bs-ic-gutter);
-  left: 50%;
-  right: -50%;
-  max-width: 1280px;
-  transform: translateX(-50%);
+.bs-img-editor__layout {
+  height: 100%;
+  max-width: 1920px;
   background: white;
   box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
 
-  .fa-times {
-    position: absolute;
-    right: 0;
-    top: 0;
-    font-size: 2em;
+.bs-img-editor__header {
+  display: flex;
+  flex-direction: row;
+  justify-content: right;
+  align-items: center;
+  padding: .25rem .25rem .25rem 0;
+}
+
+.bs-img-editor-close {
+  display: block;
+  color: black;
+  background: white;
+  border: 0;
+
+  font-weight: bold;;
+
+  svg {
+    display: block;
+    fill: currentColor;
+    height: 36px;
+    width: 36px;
 
     &:hover {
       cursor: pointer;
     }
   }
+
+  &:hover {
+    cursor: pointer;
+  }
 }
 
-.bs-img-cropper__croppie {
-  --bc-ic-zoom-slider: 25px;
-  --bc-ic-zoom-slider: 50px;
-  max-height: calc(
-    100vh - calc(var(--bs-ic-gutter) * 4) - var(--bc-ic-zoom-slider)
-  );
-  max-width: calc(100% - calc(var(--bs-ic-gutter) * 2));
-  position: absolute;
-  top: var(--bs-ic-gutter);
-  right: var(--bs-ic-gutter);
-  bottom: var(--bs-ic-gutter);
-  left: var(--bs-ic-gutter);
+.bg-img-editor__layout__inner {
+  display: flex;
+  flex-direction: row;
+  gap: .5rem;
+  padding: 0 2rem 0 .5rem;
+  flex-grow: 1;
+  max-height: calc(100% - 7rem);
+}
+
+.bs-img-editor__canvas {
   border: 1px solid black;
   background-color: #222;
   background-image:
     linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
   background-size: 16px 16px;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: 0;
+  left: 0;
 }
 
 .bs-img-cropper__actions {
-  position: absolute;
-  bottom: calc(var(--bs-ic-gutter) / 2);
-  z-index: 2;
   width: 100%;
   display: flex;
   gap: 1rem;
-  padding: 0 2rem;
+  padding: .75rem 2rem .75rem calc(1.5rem + 200px);
 }
 
 .bs-img-cropper__button {
@@ -187,4 +209,45 @@
 
 .text-editor-input {
   border: 2px solid @editor-accent-color !important;
+}
+
+.bg-img-editor__filters__layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bg-img-editor__filters__list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  gap: .5rem;
+  padding: 0.25rem;
+  max-height: 100%;
+
+  div {
+    flex-shrink: 0;
+    align-self: center;
+    width: 200px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 4px;
+
+    background: var(--v-accent-base);
+
+    &:hover {
+      background: var(--v-accent-darken1);
+      cursor: pointer;
+    }
+  }
+}
+
+.bg-img-editor__filters__actions {
+  display: flex;
+  flex-direction: row;
+  padding-top: 1rem;
 }

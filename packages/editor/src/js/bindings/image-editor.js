@@ -384,11 +384,36 @@ function stringToNumber(value) {
 }
 
 const modal = (messages) => 
-    `<aside class="bs-img-cropper js-editor-wrapper">
-      <div class="bs-img-cropper__in">
-        <span class="js-actions-cancel fa fa-fw fa-times"></span>
+    `<aside class="bs-img-editor js-editor-wrapper">
+      <div class="bs-img-editor__layout">
 
-        <div id="konva-editor" class="bs-img-cropper__croppie"></div>
+        <div class="bs-img-editor__header">
+          <div style="flex-grow: 1;"></div>
+          <button class="js-actions-cancel bs-img-editor-close">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+          </button>
+        </div>
+
+        <div class="bg-img-editor__layout__inner">
+          <div class="bg-img-editor__filters__layout" id="filters-panel">
+            <h4>Filtres</h4>
+            <div class="bg-img-editor__filters__list">
+              <div>Noir et blanc</div>
+              <div>Flou</div>
+              <div>Pixelisé</div>
+              <div>Contraste</div>
+              <div>Luminosité</div>
+              <div>Inverse</div>
+            </div>
+            <div class="bg-img-editor__filters__actions">
+              <button class="bs-img-cropper__button" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="konva-editor" class="bs-img-editor__canvas"></div>
+        </div>
 
         <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">
           <div class="crop-ratio-selector js-ratio-actions">

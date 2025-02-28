@@ -57,7 +57,7 @@ module.exports = {
   'error-server':
     "Une erreur s'est produite lors de l'appel de l'API du serveur",
   cancel: 'Annuler',
-  upload: 'Envoyer',
+  upload: 'Enregistrer',
 
   // Profile form esp
   'sender-name': "Nom de l'expéditeur",
