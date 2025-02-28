@@ -21,6 +21,7 @@ export const EditorText = (editor) => {
         editor.children.push(textNode);
         editor.layer.add(textNode);
         editor.transformer.nodes([textNode]);
+        editor.transformer.moveToTop();
         editor.selection = textNode;
         editor.inputWidth.val(Math.round(editor.transformer.width()));
         editor.inputHeight.val(Math.round(editor.transformer.height()));

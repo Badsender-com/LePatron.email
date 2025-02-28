@@ -38,6 +38,7 @@ const Editor = {
     flipY: null,
     rotateRight: null,
     rotateLeft: null,
+    cornerRadius: null,
     crop: null,
     cropCancel: null,
     cropSubmit: null,
@@ -139,6 +140,7 @@ function initEditor(parent, imageFile) {
     Editor.flipY = $wrapper.find(`.js-actions-mirror-horizontal`);
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
     Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
+    Editor.cornerRadius = $wrapper.find(`#corner-radius`);
     Editor.crop = $wrapper.find('.js-actions-crop');
     Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
     Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
@@ -163,7 +165,8 @@ function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
-    Editor.text.on('click', () => Editor.textHandler.addText());
+    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageToolbar(true); });
+    Editor.cornerRadius.on('input', () => handleCornerRadius());
     Editor.inputWidth.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.flipX.on('click', () => flipX());
@@ -220,6 +223,12 @@ function stopCropping(doCrop) {
   Editor.cropToolbar.addClass('bs-img-cropper--hidden');
 }
 
+function handleCornerRadius() {
+  if (Editor.selection !== Editor.image) return;
+
+  Editor.image.cornerRadius(stringToNumber(Editor.cornerRadius.val()));
+}
+
 function handleSelection(event) {
   if (event.target === Editor.selection) return;
   if (event.target.attrs.name?.includes("_anchor")) return; // Transformer anchors
@@ -231,6 +240,16 @@ function handleSelection(event) {
 
     Editor.inputWidth.val(Math.round(Editor.transformer.width()));
     Editor.inputHeight.val(Math.round(Editor.transformer.height()));
+
+    if (Editor.selection === Editor.image) {
+      disableImageToolbar(false);
+      Editor.cornerRadius.val(Editor.image.cornerRadius());
+    }
+    else {
+      Editor.cornerRadius.val(0);
+      disableImageToolbar(true);
+    }
+
     return;
   }
 
@@ -238,6 +257,8 @@ function handleSelection(event) {
   Editor.selection = null;
   Editor.inputWidth.val(null);
   Editor.inputHeight.val(null);
+  Editor.cornerRadius.val(0);
+  disableImageToolbar(true);
 }
 
 function handleDelete(event) {
@@ -250,6 +271,11 @@ function handleDelete(event) {
   Editor.children = Editor.children.filter(_node => _node !== Editor.selection);
   Editor.stage.batchDraw();
   Editor.selection = null;
+}
+
+function disableImageToolbar(disabled) {
+  Editor.cornerRadius.prop('disabled', disabled);
+  Editor.crop.prop('disabled', disabled);
 }
 
 function reset() {
@@ -357,14 +383,20 @@ const modal = (messages) =>
 
           <div class="bs-img-cropper__sizes">
             <label for="resize-width" class="bs-img-cropper__size">
-              <span class="bs-img-cropper__size-label">width</span>
+              <span class="bs-img-cropper__size-label">${messages.input_width}</span>
               <input class="bs-img-cropper__size-input" id="resize-width" name="resize-width" type="number" min="0" />
             </label>
             <label for="resize-height" class="bs-img-cropper__size">
-              <span class="bs-img-cropper__size-label">height</span>
+              <span class="bs-img-cropper__size-label">${messages.input_height}</span>
               <input class="bs-img-cropper__size-input" id="resize-height" name="resize-height" type="number" min="0" />
             </label>
           </div>
+
+          <label for="corner-radius" class="bs-img-cropper__size" style="min-width: 150px;">
+            <span class="bs-img-cropper__size-label">${messages.input_corner_radius}</span>
+            <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
+          </label>
+
           <button class="js-actions-crop bs-img-cropper__button" type="button" title="${messages.crop_editor}">
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
           </button>
