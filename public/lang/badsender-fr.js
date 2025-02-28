@@ -46,6 +46,7 @@ module.exports = {
   'crop-editor': 'Rogner',
   'crop-editor-cancel': 'Annuler',
   'crop-editor-submit': 'Valider',
+  'image-upload': 'Ajouter une image',
   'input-corner-radius': 'Arrondir les bords',
   'input-width': 'Largeur',
   'input-height': 'Hauteur',

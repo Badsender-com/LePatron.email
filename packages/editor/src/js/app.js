@@ -150,7 +150,7 @@ var start = function (
         crop_editor: vm.t('crop-editor'),
         crop_editor_cancel: vm.t('crop-editor-cancel'),
         crop_editor_submit: vm.t('crop-editor-submit'),
-        crop_editor_submit: vm.t('crop-editor-submit'),
+        upload_image: vm.t('image-upload'),
         input_corner_radius: vm.t('input-corner-radius'),
         input_width: vm.t('input-width'),
         input_height: vm.t('input-height'),

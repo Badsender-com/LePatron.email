@@ -45,6 +45,8 @@ const Editor = {
     lastCrop: null,
     cropToolbar: null,
     toolbar: null,
+    fileAction: null,
+    fileInput: null,
 
     // misc
     deferredCallback: null,
@@ -147,6 +149,8 @@ function initEditor(parent, imageFile) {
     Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
     Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
     Editor.toolbar = $wrapper.find('.js-toolbar');
+    Editor.fileAction = $wrapper.find('#js-actions-upload');
+    Editor.fileInput = $wrapper.find('#image-upload');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -177,6 +181,9 @@ function bindHandlers() {
     Editor.cropCancel.on('click', () => stopCropping(false));
     Editor.cropSubmit.on('click', () => stopCropping(true));
     Editor.stage.on("pointerdown", (e) => handleSelection(e));
+    Editor.fileAction.on('click', () => Editor.fileInput.trigger('click'));
+    Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recurse calls
+    Editor.fileInput.on('change', (e) => handleFilePicked(e));
     
     window.addEventListener('keydown', (e) => handleDelete(e));
 }
@@ -224,9 +231,9 @@ function stopCropping(doCrop) {
 }
 
 function handleCornerRadius() {
-  if (Editor.selection !== Editor.image) return;
+  if (!Editor.selection instanceof Konva.Image || Editor.selection === null) return;
 
-  Editor.image.cornerRadius(stringToNumber(Editor.cornerRadius.val()));
+  Editor.selection.cornerRadius(stringToNumber(Editor.cornerRadius.val()));
 }
 
 function handleSelection(event) {
@@ -241,9 +248,9 @@ function handleSelection(event) {
     Editor.inputWidth.val(Math.round(Editor.transformer.width()));
     Editor.inputHeight.val(Math.round(Editor.transformer.height()));
 
-    if (Editor.selection === Editor.image) {
+    if (Editor.selection instanceof Konva.Image) {
       disableImageToolbar(false);
-      Editor.cornerRadius.val(Editor.image.cornerRadius());
+      Editor.cornerRadius.val(Editor.selection.cornerRadius());
     }
     else {
       Editor.cornerRadius.val(0);
@@ -271,6 +278,39 @@ function handleDelete(event) {
   Editor.children = Editor.children.filter(_node => _node !== Editor.selection);
   Editor.stage.batchDraw();
   Editor.selection = null;
+}
+
+function handleFilePicked(event) {
+  event.stopPropagation();
+  const files = event.target.files;
+  const fileReader = new FileReader();
+  fileReader.addEventListener("load", () => {
+    const imageUrl = fileReader.result;
+    const newImage = new Image();
+    newImage.src = imageUrl;
+    newImage.onload = () => {
+      const image = new Konva.Image({
+        draggable: true,
+        image: newImage,
+      });
+      image.setAttrs({
+        x: Editor.stage.width() / 2,
+        y: Editor.stage.height() / 2,
+        offsetX: newImage.width / 2,
+        offsetY: newImage.height / 2,
+      });
+      Editor.layer.add(image);
+      Editor.transformer.nodes([image]);
+      Editor.transformer.moveToTop();
+      Editor.children.push(image);
+      Editor.selection = image;
+      Editor.inputWidth.val(Math.round(Editor.transformer.width()));
+      Editor.inputHeight.val(Math.round(Editor.transformer.height()));
+      Editor.cornerRadius.val(image.cornerRadius());
+      disableImageToolbar(false);
+    };
+  });
+  fileReader.readAsDataURL(files[0]);
 }
 
 function disableImageToolbar(disabled) {
@@ -347,9 +387,7 @@ const modal = (messages) =>
     `<aside class="bs-img-cropper js-editor-wrapper">
       <div class="bs-img-cropper__in">
         <span class="js-actions-cancel fa fa-fw fa-times"></span>
-        <div id="image-filters">
 
-        </div>
         <div id="konva-editor" class="bs-img-cropper__croppie"></div>
 
         <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">
@@ -382,6 +420,11 @@ const modal = (messages) =>
             <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
           </button>
           <div style="flex-grow: 1;"></div>
+
+          <button id="js-actions-upload" class="bs-img-cropper__button" type="button" title="${messages.image_upload}">
+            <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+          </button>
 
           <button class="js-actions-text bs-img-cropper__button" type="button" title="${messages.text_editor}">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>

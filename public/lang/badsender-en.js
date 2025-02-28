@@ -47,6 +47,7 @@ module.exports = {
   'crop-editor': 'Crop',
   'crop-editor-cancel': 'Cancel',
   'crop-editor-submit': 'Save',
+  'image-upload': 'Add an image',
   'input-corner-radius': 'Round the corners',
   'input-width': 'Width',
   'input-height': 'Height',
