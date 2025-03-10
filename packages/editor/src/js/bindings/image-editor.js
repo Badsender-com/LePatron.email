@@ -2,6 +2,7 @@
 import Konva from 'Konva';
 import { EditorCropper } from './image-editor-cropper';
 import { EditorText } from './image-editor-text';
+import { EditorFilters } from './image-editor-filters';
 
 const $ = require('jquery');
 const raf = window.requestAnimationFrame;
@@ -18,10 +19,13 @@ const Editor = {
         width: null,
         height: null,
         rotation: null,
+        pixelSize: null,
+        crop: null,
     },
     image: null,
     cropper: null,
     textHandler: null,
+    filtersHandler: null,
     ratio: null,
     cropping: false,
     selection: null,
@@ -47,6 +51,7 @@ const Editor = {
     toolbar: null,
     fileAction: null,
     fileInput: null,
+    filtersPanel: null,
 
     // misc
     deferredCallback: null,
@@ -72,6 +77,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     // Advanced features have to be initialized after the stage is drawn at least one time
     Editor.cropper = EditorCropper(Editor);
     Editor.textHandler = EditorText(Editor);
+    Editor.filtersHandler = EditorFilters(Editor, messages);
 
     bindHandlers();
 }
@@ -127,6 +133,13 @@ function initEditor(parent, imageFile) {
         width: mainImage.width(),
         height: mainImage.height(),
         rotation: mainImage.rotation(),
+        pixelSize: mainImage.pixelSize(),
+        crop: {
+          x: mainImage.cropX(),
+          y: mainImage.cropY(),
+          width: mainImage.cropWidth(),
+          height: mainImage.cropHeight(),
+        }
     };
     Editor.image = mainImage;
 
@@ -151,6 +164,7 @@ function initEditor(parent, imageFile) {
     Editor.toolbar = $wrapper.find('.js-toolbar');
     Editor.fileAction = $wrapper.find('#js-actions-upload');
     Editor.fileInput = $wrapper.find('#image-upload');
+    Editor.filtersPanel = $wrapper.find('#filters-panel');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -161,6 +175,7 @@ function initEditor(parent, imageFile) {
     });
 
     Editor.selection = Editor.image;
+    Editor.image.cache();
 
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 }
@@ -217,10 +232,12 @@ function rotate(degrees) {
 }
 
 function startCropping() {
-  Editor.cropper.start();
-  Editor.cropping = true;
-  Editor.toolbar.addClass('bs-img-cropper--hidden');
-  Editor.cropToolbar.removeClass('bs-img-cropper--hidden');
+  if (Editor.selection === Editor.image) {
+    Editor.cropper.start();
+    Editor.cropping = true;
+    Editor.toolbar.addClass('bs-img-cropper--hidden');
+    Editor.cropToolbar.removeClass('bs-img-cropper--hidden');
+  }
 }
 
 function stopCropping(doCrop) {
@@ -234,6 +251,7 @@ function handleCornerRadius() {
   if (!Editor.selection instanceof Konva.Image || Editor.selection === null) return;
 
   Editor.selection.cornerRadius(stringToNumber(Editor.cornerRadius.val()));
+  Editor.selection.cache();
 }
 
 function handleSelection(event) {
@@ -341,6 +359,8 @@ function reset() {
     Editor.children = [];
     Editor.cornerRadius.val(0);
     disableImageToolbar(false);
+
+    Editor.image.cache();
 }
 
 function save() {
@@ -398,17 +418,20 @@ const modal = (messages) =>
           <div class="bg-img-editor__filters__layout" id="filters-panel">
             <h4>Filtres</h4>
             <div class="bg-img-editor__filters__list">
-              <div>Noir et blanc</div>
-              <div>Flou</div>
-              <div>Pixelisé</div>
+              <div id="filters-grayscale">${messages.filters_grayscale}</div>
+              <div id="filters-blur">${messages.filters_blur}</div>
+              <div id="filters-pixelate">${messages.filters_pixelate}</div>
               <div>Contraste</div>
               <div>Luminosité</div>
               <div>Inverse</div>
             </div>
             <div class="bg-img-editor__filters__actions">
-              <button class="bs-img-cropper__button" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
-              </button>
+              <div id="filters-actions-slider-box"></div>
+              <div>
+                <button class="bs-img-cropper__button" type="button" title="${messages.reset_editor}">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
+                </button>
+              </div>
             </div>
           </div>
 

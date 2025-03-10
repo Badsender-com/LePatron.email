@@ -56,6 +56,9 @@ module.exports = {
   'vertical-mirror': 'Vertical mirror',
   'horizontal-mirror': 'Horizontal mirror',
   'error-server': 'An error has occured while calling server API :(',
+  'filters-blur': 'Blur',
+  'filters-pixelate': 'Pixelate',
+  'filters-grayscale': 'Grayscale',
   cancel: 'Cancel',
   upload: 'Save',
 

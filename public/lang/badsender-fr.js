@@ -56,6 +56,9 @@ module.exports = {
   'horizontal-mirror': 'Miroir horizontal',
   'error-server':
     "Une erreur s'est produite lors de l'appel de l'API du serveur",
+  'filters-blur': 'Flou',
+  'filters-pixelate': 'Pixelisé',
+  'filters-grayscale': 'Noir et blanc',
   cancel: 'Annuler',
   upload: 'Enregistrer',
 

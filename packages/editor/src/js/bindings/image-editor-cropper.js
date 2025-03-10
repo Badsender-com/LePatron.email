@@ -100,7 +100,10 @@ export const EditorCropper = (editor) => {
                 y: editor.image.cropY(),
                 width: editor.image.cropWidth(),
                 height: editor.image.cropHeight(),
-            }
+            },
+            filters: editor.image.filters(),
+            blurRadius: editor.image.blurRadius(),
+            pixelSize: editor.image.pixelSize(),
         }
     }
 
@@ -170,8 +173,12 @@ export const EditorCropper = (editor) => {
             node.show();
         });
 
+        editor.image.filters(baseImage.filters);
+        editor.image.blurRadius(baseImage.blurRadius);
+        editor.image.pixelSize(baseImage.pixelSize);
         editor.image.rotation(baseImage.rotation);
         editor.image.draggable(true);
+        editor.image.cache();
         editor.transformer.nodes([]);
         editor.stage.batchDraw();
 
