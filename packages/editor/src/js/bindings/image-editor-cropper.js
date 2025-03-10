@@ -172,7 +172,7 @@ export const EditorCropper = (editor) => {
 
         editor.image.rotation(baseImage.rotation);
         editor.image.draggable(true);
-        editor.transformer.nodes([editor.image]);
+        editor.transformer.nodes([]);
         editor.stage.batchDraw();
 
         transformer = null;

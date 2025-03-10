@@ -138,8 +138,8 @@ function initEditor(parent, imageFile) {
     Editor.text = $wrapper.find(`.js-actions-text`);
     Editor.inputWidth = $wrapper.find(`#resize-width`);
     Editor.inputHeight = $wrapper.find(`#resize-height`);
-    Editor.flipX = $wrapper.find(`.js-actions-mirror-vertical`);
-    Editor.flipY = $wrapper.find(`.js-actions-mirror-horizontal`);
+    Editor.flipX = $wrapper.find(`.js-actions-mirror-horizontal`);
+    Editor.flipY = $wrapper.find(`.js-actions-mirror-vertical`);
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
     Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
     Editor.cornerRadius = $wrapper.find(`#corner-radius`);
