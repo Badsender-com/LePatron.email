@@ -8,7 +8,7 @@ export const EditorText = (editor) => {
             draggable: true,
             text: 'Placeholder text',
             fontSize: 20,
-            fill: 'whitesmoke',
+            fill: 'black',
         });
 
         textNode.x((editor.stage.width() - textNode.width()) / 2);

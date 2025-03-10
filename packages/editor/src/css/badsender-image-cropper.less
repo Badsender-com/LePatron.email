@@ -1,10 +1,8 @@
 @import (less) '../../../../node_modules/cropperjs/dist/cropper.css';
 
-
 @editor-accent-color: rgb(0, 144, 192);
 
-
-.bs-img-editor {
+.editor-frame {
   --bs-ic-gutter: 2rem;
   --bs-ic-actions: 200px;
   position: fixed;
@@ -16,46 +14,59 @@
   z-index: 100;
   opacity: 0;
   transition: opacity 0.3s;
-  padding: 4rem;
+  padding: 2rem;
 }
 
-.bs-img-cropper--active {
-  opacity: 1;
+.editor-active {
+  opacity: 1 !important;
 }
 
-.bs-img-editor__layout {
+.editor-hidden {
+  display: none !important;
+}
+
+.editor-layout {
   height: 100%;
   max-width: 1920px;
   background: white;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
   box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
 
-.bs-img-editor__header {
+.editor-header {
   display: flex;
   flex-direction: row;
-  justify-content: right;
+  justify-content: space-evenly;
   align-items: center;
-  padding: .25rem .25rem .25rem 0;
+  padding: .25rem .25rem .25rem 1.25rem;
+  background-color: var(--v-primary-base);
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
 
-.bs-img-editor-close {
+.editor-close-icon {
   display: block;
-  color: black;
-  background: white;
+  color: white;
+  background: transparent;
   border: 0;
 
-  font-weight: bold;;
+  font-weight: bold;
 
   svg {
     display: block;
     fill: currentColor;
-    height: 36px;
-    width: 36px;
+    height: 24px;
+    width: 24px;
 
     &:hover {
       cursor: pointer;
+      background: rgba(255, 255, 255, .15);
+      border-radius: 4px;
     }
   }
 
@@ -64,7 +75,7 @@
   }
 }
 
-.bg-img-editor__layout__inner {
+.editor-layout-inner {
   display: flex;
   flex-direction: row;
   gap: .5rem;
@@ -73,13 +84,20 @@
   max-height: calc(100% - 7rem);
 }
 
-.bs-img-editor__canvas {
-  border: 1px solid black;
-  background-color: #222;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
-  background-size: 16px 16px;
+.editor-canvas {
+  // Dark background
+  // border: 1px solid black;
+  // background-color: #222;
+  // background-image:
+  //   linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
+  //   linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+  // background-size: 20px 20px;
+
+  border: 1px solid #ccc;
+  background-image: 
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
 
   width: 100%;
   height: 100%;
@@ -90,14 +108,14 @@
   left: 0;
 }
 
-.bs-img-cropper__actions {
+.editor-actions {
   width: 100%;
   display: flex;
   gap: 1rem;
   padding: .75rem 2rem .75rem calc(1.5rem + 200px);
 }
 
-.bs-img-cropper__button {
+.editor-button {
   background: var(--v-accent-base);
   border: 0;
   font-size: inherit;
@@ -115,8 +133,13 @@
     background: var(--v-accent-darken1);
     cursor: pointer;
   }
+
+  &:disabled {
+    background: #d4d4d4;
+    cursor: not-allowed;
+  }
 }
-.bs-img-cropper__button--secondary {
+.editor-button-secondary {
   background: white;
   box-shadow: inset 0 0 0 1px var(--v-accent-base);
   color: var(--v-accent-base);
@@ -126,12 +149,12 @@
   }
 }
 
-.bs-img-cropper__fa-svg {
+.editor-icon {
   width: 24px;
   height: 24px;
 }
 
-.bs-img-cropper__button--group {
+.editor-button-group {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 
@@ -142,30 +165,30 @@
   }
 }
 
-.bs-img-cropper__sizes {
+.editor-sizes {
   border: 1px solid var(--v-accent-base);
   border-radius: 2px;
   display: flex;
 }
 
-.bs-img-cropper__size {
+.editor-size {
   width: 5rem;
   display: flex;
   flex-direction: column;
 
-  + .bs-img-cropper__size {
+  + .editor-size {
     border-left: 1px solid var(--v-accent-base);
   }
 }
 
-.bs-img-cropper__size-label {
+.editor-size-label {
   display: block;
   font-size: 0.75rem;
   background: var(--v-accent-base);
   color: white;
 }
 
-.bs-img-cropper__size-input {
+.editor-size-input {
   width: 100%;
   border: solid var(--v-accent-base);
   border-width: 1px 0 0;
@@ -185,11 +208,7 @@
   }
 }
 
-.bs-img-cropper--hidden {
-  display: none;
-}
-
-.bg-img-cropper--flex-center {
+.editor-flex-center {
   justify-content: center;
   align-items: center;
 }
@@ -211,13 +230,7 @@
   border: 2px solid @editor-accent-color !important;
 }
 
-.bg-img-editor__filters__layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.bg-img-editor__filters__list {
+.editor-filters-list {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -226,8 +239,9 @@
   padding: 0.25rem;
   max-height: 100%;
 
-  div {
+  button {
     flex-shrink: 0;
+    border: 0;
     align-self: center;
     width: 200px;
     height: 35px;
@@ -236,7 +250,6 @@
     align-items: center;
     color: white;
     border-radius: 4px;
-
     background: var(--v-accent-base);
 
     &:hover {
@@ -246,9 +259,41 @@
   }
 }
 
-.bg-img-editor__filters__actions {
+.editor-filters-actions {
   display: flex;
   flex-direction: column;
   padding-top: 1rem;
   gap: 4px;
+}
+
+.text-white {
+  color: white;
+}
+
+.h-stack {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.v-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.separator {
+  width: 100%;
+  height: 14px;
+  background: repeating-linear-gradient(
+    -45deg,
+    white,
+    white 5px,
+    var(--v-accent-base) 5px,
+    var(--v-accent-base) 10px
+  );
+}
+
+.spacer {
+  flex-grow: 1;
 }

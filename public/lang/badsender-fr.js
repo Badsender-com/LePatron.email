@@ -41,6 +41,8 @@ module.exports = {
   'dl-btn-cdn': 'images ICOU',
 
   // Editor interface
+  'editor-title': "LePatron - Éditeur d'image",
+  'editor-panel-title': 'Élément sélectionné',
   'reset-editor': 'Réinitialiser',
   'text-editor': 'Texte',
   'crop-editor': 'Rogner',

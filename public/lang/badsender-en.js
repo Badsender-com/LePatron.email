@@ -42,6 +42,8 @@ module.exports = {
   'dl-btn-cdn': 'zip with CDN',
 
   // Editor interface
+  'editor-title': 'LePatron - Image editor',
+  'editor-panel-title': 'Selected element',
   'reset-editor': 'Reset',
   'text-editor': 'Text',
   'crop-editor': 'Crop',

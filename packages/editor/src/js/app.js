@@ -157,6 +157,8 @@ var start = function (
         filters_blur: vm.t('filters-blur'),
         filters_pixelate: vm.t('filters-pixelate'),
         filters_grayscale: vm.t('filters-grayscale'),
+        editor_title: vm.t('editor-title'),
+        editor_panel_title: vm.t('editor-panel-title'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
       },

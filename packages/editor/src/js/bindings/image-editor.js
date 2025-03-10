@@ -6,7 +6,7 @@ import { EditorFilters } from './image-editor-filters';
 
 const $ = require('jquery');
 const raf = window.requestAnimationFrame;
-const ACTIVE_CLASS = `bs-img-cropper--active`;
+const ACTIVE_CLASS = `editor-active`;
 
 const Editor = {
     // canva
@@ -51,7 +51,8 @@ const Editor = {
     toolbar: null,
     fileAction: null,
     fileInput: null,
-    filtersPanel: null,
+    elementPane: null,
+    imageActions: null,
 
     // misc
     deferredCallback: null,
@@ -71,7 +72,6 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.file = file;
     Editor.children = [];
     Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
-    Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     initEditor(parent, image);
 
     // Advanced features have to be initialized after the stage is drawn at least one time
@@ -83,7 +83,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
 }
 
 function initEditor(parent, imageFile) {
-    parent.after(modal(Editor.messages));
+    parent.after(modal(Editor.messages)); // Adds the editor as html content
 
     const container = document.getElementById('konva-editor');
     const stage = new Konva.Stage({
@@ -121,7 +121,7 @@ function initEditor(parent, imageFile) {
 
     stage.add(mainLayer);
 
-    const $wrapper = $(`.js-editor-wrapper`);
+    const $wrapper = $('#editor-wrapper');
 
     // canva
     Editor.container = container;
@@ -164,7 +164,7 @@ function initEditor(parent, imageFile) {
     Editor.toolbar = $wrapper.find('.js-toolbar');
     Editor.fileAction = $wrapper.find('#js-actions-upload');
     Editor.fileInput = $wrapper.find('#image-upload');
-    Editor.filtersPanel = $wrapper.find('#filters-panel');
+    Editor.imageActions = $wrapper.find('#selected-image-actions');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -177,6 +177,10 @@ function initEditor(parent, imageFile) {
     Editor.selection = Editor.image;
     Editor.image.cache();
 
+    const text = Editor.wrapper.find('#selected-element-type');
+    console.log({t: text, s: Editor.selection });
+    text.text(Editor.selection.getClassName());
+
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 }
 
@@ -184,7 +188,7 @@ function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
-    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageToolbar(true); });
+    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageActions(true); updateElementActions(false); });
     Editor.cornerRadius.on('input', () => handleCornerRadius());
     Editor.inputWidth.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
@@ -235,16 +239,16 @@ function startCropping() {
   if (Editor.selection === Editor.image) {
     Editor.cropper.start();
     Editor.cropping = true;
-    Editor.toolbar.addClass('bs-img-cropper--hidden');
-    Editor.cropToolbar.removeClass('bs-img-cropper--hidden');
+    Editor.toolbar.addClass('editor-hidden');
+    Editor.cropToolbar.removeClass('editor-hidden');
   }
 }
 
 function stopCropping(doCrop) {
   Editor.cropper.stop(doCrop);
   Editor.cropping = false;
-  Editor.toolbar.removeClass('bs-img-cropper--hidden');
-  Editor.cropToolbar.addClass('bs-img-cropper--hidden');
+  Editor.toolbar.removeClass('editor-hidden');
+  Editor.cropToolbar.addClass('editor-hidden');
 }
 
 function handleCornerRadius() {
@@ -267,14 +271,15 @@ function handleSelection(event) {
     Editor.inputHeight.val(Math.round(Editor.transformer.height()));
 
     if (Editor.selection instanceof Konva.Image) {
-      disableImageToolbar(false);
+      disableImageActions(false);
       Editor.cornerRadius.val(Editor.selection.cornerRadius());
     }
     else {
       Editor.cornerRadius.val(0);
-      disableImageToolbar(true);
+      disableImageActions(true);
     }
 
+    updateElementActions(false);
     return;
   }
 
@@ -283,7 +288,8 @@ function handleSelection(event) {
   Editor.inputWidth.val(null);
   Editor.inputHeight.val(null);
   Editor.cornerRadius.val(0);
-  disableImageToolbar(true);
+  disableImageActions(true);
+  updateElementActions(true);
 }
 
 function handleDelete(event) {
@@ -325,15 +331,11 @@ function handleFilePicked(event) {
       Editor.inputWidth.val(Math.round(Editor.transformer.width()));
       Editor.inputHeight.val(Math.round(Editor.transformer.height()));
       Editor.cornerRadius.val(image.cornerRadius());
-      disableImageToolbar(false);
+      disableImageActions(false);
+      updateElementActions(false);
     };
   });
   fileReader.readAsDataURL(files[0]);
-}
-
-function disableImageToolbar(disabled) {
-  Editor.cornerRadius.prop('disabled', disabled);
-  Editor.crop.prop('disabled', disabled);
 }
 
 function reset() {
@@ -353,12 +355,14 @@ function reset() {
     Editor.lastCrop = null;
     Editor.ratio = "0";
     Editor.transformer.nodes([Editor.image]);
+    Editor.selection = Editor.image;
     Editor.children.forEach(node => {
       node.destroy();
     });
     Editor.children = [];
     Editor.cornerRadius.val(0);
-    disableImageToolbar(false);
+    disableImageActions(false);
+    updateElementActions(false);
 
     Editor.image.cache();
 }
@@ -403,42 +407,131 @@ function stringToNumber(value) {
     return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed;
 }
 
-const modal = (messages) => 
-    `<aside class="bs-img-editor js-editor-wrapper">
-      <div class="bs-img-editor__layout">
+function disableImageActions(disabled) {
+  if (disabled === true) Editor.imageActions.addClass('editor-hidden');
+  else Editor.imageActions.removeClass('editor-hidden');
 
-        <div class="bs-img-editor__header">
-          <div style="flex-grow: 1;"></div>
-          <button class="js-actions-cancel bs-img-editor-close">
+  Editor.cornerRadius.prop('disabled', disabled);
+  Editor.crop.prop('disabled', disabled);
+}
+
+function updateElementActions(disabled) {
+  Editor.inputWidth.prop('disabled', disabled);
+  Editor.inputHeight.prop('disabled', disabled);
+  Editor.flipX.prop('disabled', disabled);
+  Editor.flipY.prop('disabled', disabled);
+  Editor.rotateLeft.prop('disabled', disabled);
+  Editor.rotateRight.prop('disabled', disabled);
+  Editor.wrapper.find('#selected-element-type').text(disabled === true ? '-' : Editor.selection?.getClassName() ?? '-');
+}
+
+const modal = (messages) => 
+    `<aside class="editor-frame" id="editor-wrapper">
+      <div class="editor-layout">
+
+        <div class="editor-header">
+          <h4 class="text-white">${messages.editor_title}</h4>
+          <div class="spacer"></div>
+          <button class="js-actions-cancel editor-close-icon">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
           </button>
         </div>
 
-        <div class="bg-img-editor__layout__inner">
-          <div class="bg-img-editor__filters__layout" id="filters-panel">
-            <h4>Filtres</h4>
-            <div class="bg-img-editor__filters__list">
-              <div id="filters-grayscale">${messages.filters_grayscale}</div>
-              <div id="filters-blur">${messages.filters_blur}</div>
-              <div id="filters-pixelate">${messages.filters_pixelate}</div>
-              <div>Contraste</div>
-              <div>Luminosité</div>
-              <div>Inverse</div>
-            </div>
-            <div class="bg-img-editor__filters__actions">
-              <div id="filters-actions-slider-box"></div>
-              <div>
-                <button class="bs-img-cropper__button" type="button" title="${messages.reset_editor}">
-                  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
-                </button>
+        <div class="editor-layout-inner">
+
+          <div class="v-stack" style="height: 100%; min-width: 208px; padding-top: .25rem; gap: 4px; overflow-y: auto;">
+            <h4 style="text-decoration: underline;">${messages.editor_panel_title}</h4>
+
+            <!-- Selected element panel -->
+            <div class="v-stack" id="selected-element-actions">
+              <div class="h-stack" style="gap: 4px; justify-content: space-between;">
+                <p>Taille</p>
+                <div class="editor-sizes">
+                  <label for="resize-width" class="editor-size">
+                    <span class="editor-size-label">${messages.input_width}</span>
+                    <input class="editor-size-input" id="resize-width" name="resize-width" type="number" min="0" />
+                  </label>
+                  <label for="resize-height" class="editor-size">
+                    <span class="editor-size-label">${messages.input_height}</span>
+                    <input class="editor-size-input" id="resize-height" name="resize-height" type="number" min="0" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>Mirroir</p>
+                <div class="h-stack" style="gap: 4px;">
+                  <button class="js-actions-mirror-vertical editor-button editor-button-group" type="button" title="${messages.vertical_mirror}">
+                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
+                  </button>
+                  <button class="js-actions-mirror-horizontal editor-button" type="button" title="${messages.horizontal_mirror}">
+                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>Rotation</p>
+                <div class="h-stack" style="gap: 4px;">
+                  <button class="js-actions-rotate-left editor-button editor-button-group" type="button" title="${messages.rotate_left}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
+                  </button>
+                  <button class="js-actions-rotate-right editor-button" type="button" title="${messages.rotate_right}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>Type</p>
+                <p id="selected-element-type" style="font-style: italic;"></p>
               </div>
             </div>
+            <!-- Selected element panel -->
+
+            <!-- Selected image panel -->
+            <div class="v-stack" style="height: 100%; justify-content: space-evenly;" id="selected-image-actions">
+              <div class="v-stack" style="gap: 4px;">
+                <h4 style="text-decoration: underline;">Actions</h4>
+
+                <label for="corner-radius" class="editor-size" style="min-width: 150px;">
+                  <span class="editor-size-label">${messages.input_corner_radius}</span>
+                  <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
+                </label>
+
+                <button class="js-actions-crop editor-button" style="margin-bottom: 1rem;" type="button" title="${messages.crop_editor}">
+                  <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
+                </button>
+              </div>
+
+              <div class="v-stack" style="gap: 4px;">
+                <h4 style="text-decoration: underline;">Filtres</h4>
+                <div class="editor-filters-list">
+                  <button type="button" id="filters-grayscale">${messages.filters_grayscale}</button>
+                  <button id="filters-blur">${messages.filters_blur}</button>
+                  <button id="filters-pixelate">${messages.filters_pixelate}</button>
+                  <button disabled="true">Contraste</button>
+                  <button>Luminosité</button>
+                  <button>Inverse</button>
+                </div>
+                <div class="editor-filters-actions">
+                  <div id="filters-actions-slider-box"></div>
+                  <div>
+                    <button class="editor-button" id="image-filters-reset" type="button" title="${messages.reset_editor}">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Selected image panel -->
+
           </div>
 
-          <div id="konva-editor" class="bs-img-editor__canvas"></div>
+          <div id="konva-editor" class="editor-canvas"></div>
         </div>
 
-        <div class="bs-img-cropper__actions bg-img-cropper--flex-center js-crop-toolbar bs-img-cropper--hidden">
+        <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden">
           <div class="crop-ratio-selector js-ratio-actions">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             <select name="ratio-selector" id="ratio-selector" style="border-radius: 2px;">
@@ -455,63 +548,34 @@ const modal = (messages) =>
                 <option value="10-8">Appareil photo (10:8)</option>
             </select>
           </div>  
-          <button class="js-actions-crop-cancel bs-img-cropper__button" type="button" title="${messages.crop_editor_cancel}">
+          <button class="js-actions-crop-cancel editor-button" type="button" title="${messages.crop_editor_cancel}">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
           </button>
-          <button class="js-actions-crop-submit bs-img-cropper__button" type="button" title="${messages.crop_editor_submit}">
+          <button class="js-actions-crop-submit editor-button" type="button" title="${messages.crop_editor_submit}">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M400-304 240-464l56-56 104 104 264-264 56 56-320 320Z"/></svg>
           </button>
         </div>
 
-        <div class="bs-img-cropper__actions js-toolbar">
-          <button class="js-actions-reset bs-img-cropper__button" type="button" title="${messages.reset_editor}">
-            <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
-          </button>
-          <div style="flex-grow: 1;"></div>
+        <div class="editor-actions js-toolbar">
+          <div class="spacer"></div>
 
-          <button id="js-actions-upload" class="bs-img-cropper__button" type="button" title="${messages.image_upload}">
+          <button class="js-actions-reset editor-button" type="button" title="${messages.reset_editor}">
+            <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
+          </button>
+
+          <button id="js-actions-upload" class="editor-button" type="button" title="${messages.image_upload}">
             <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
           </button>
 
-          <button class="js-actions-text bs-img-cropper__button" type="button" title="${messages.text_editor}">
+          <button class="js-actions-text editor-button" type="button" title="${messages.text_editor}">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
           </button>
 
-          <div class="bs-img-cropper__sizes">
-            <label for="resize-width" class="bs-img-cropper__size">
-              <span class="bs-img-cropper__size-label">${messages.input_width}</span>
-              <input class="bs-img-cropper__size-input" id="resize-width" name="resize-width" type="number" min="0" />
-            </label>
-            <label for="resize-height" class="bs-img-cropper__size">
-              <span class="bs-img-cropper__size-label">${messages.input_height}</span>
-              <input class="bs-img-cropper__size-input" id="resize-height" name="resize-height" type="number" min="0" />
-            </label>
-          </div>
+          <div class="spacer"></div>
 
-          <label for="corner-radius" class="bs-img-cropper__size" style="min-width: 150px;">
-            <span class="bs-img-cropper__size-label">${messages.input_corner_radius}</span>
-            <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
-          </label>
-
-          <button class="js-actions-crop bs-img-cropper__button" type="button" title="${messages.crop_editor}">
-            <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
-          </button>
-
-          <button class="js-actions-mirror-vertical bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.vertical_mirror}">
-            <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
-          </button>
-          <button class="js-actions-mirror-horizontal bs-img-cropper__button" type="button" title="${messages.horizontal_mirror}">
-            <svg class="bs-img-cropper__fa-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
-          </button>
-          <button class="js-actions-rotate-left bs-img-cropper__button bs-img-cropper__button--group" type="button" title="${messages.rotate_left}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
-          </button>
-          <button class="js-actions-rotate-right bs-img-cropper__button" type="button" title="${messages.rotate_right}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
-          </button>
-          <button class="js-actions-cancel bs-img-cropper__button bs-img-cropper__button--secondary" type="button">${messages.cancel}</button>
-          <button class="js-actions-submit bs-img-cropper__button" type="button">${messages.upload}</button>
+          <button class="js-actions-cancel editor-button editor-button-secondary" type="button">${messages.cancel}</button>
+          <button class="js-actions-submit editor-button" type="button">${messages.upload}</button>
         </div>
       </div>
     </aside>`;

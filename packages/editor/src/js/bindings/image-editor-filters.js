@@ -29,7 +29,7 @@ const filtersActions = {
 
 export const EditorFilters = (editor, messages) => {
 
-    const resetFilters = editor.wrapper.find('.bs-img-cropper__button');
+    const resetFilters = editor.wrapper.find('#image-filters-reset');
     const sliderBox = editor.wrapper.find('#filters-actions-slider-box');
 
     const blur = editor.wrapper.find('#filters-blur');
