@@ -44,6 +44,8 @@ module.exports = {
   // Editor interface
   'editor-title': 'LePatron - Image editor',
   'editor-panel-title': 'Selected element',
+  'editor-actions-panel-title': 'Actions',
+  'editor-filters-panel-title': 'Filters',
   'reset-editor': 'Reset',
   'text-editor': 'Text',
   'crop-editor': 'Crop',

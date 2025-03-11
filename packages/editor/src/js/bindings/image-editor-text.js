@@ -96,6 +96,8 @@ export const EditorText = (editor) => {
         }
 
         node.text(input.value);
+        node.offsetX(node.width() / 2);
+        node.offsetY(node.height() / 2);
         input.parentNode.removeChild(input);
 
         node.show();

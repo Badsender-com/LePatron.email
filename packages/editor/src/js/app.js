@@ -162,6 +162,8 @@ var start = function (
         filters_invert: vm.t('filters-invert'),
         editor_title: vm.t('editor-title'),
         editor_panel_title: vm.t('editor-panel-title'),
+        editor_actions_panel_title: vm.t('editor-actions-panel-title'),
+        editor_filters_panel_title: vm.t('editor-filters-panel-title'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
       },
