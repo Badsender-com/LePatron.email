@@ -45,10 +45,37 @@ export const EditorFilters = (editor, messages) => {
         if (!editor.selection instanceof Konva.Image) return;
 
         setSlider(filter, defaultValue, title);
+
+        const filters = editor.selection.filters() ?? [];
+    
+        grayscale.removeClass('selected');
+        blur.removeClass('selected');
+        pixelate.removeClass('selected');
+    
+        if (filters.includes(Konva.Filters.Grayscale)) {
+            grayscale.addClass('selected');
+        }
+    
+        if (filters.includes(Konva.Filters.Blur)) {
+            blur.addClass('selected');
+        }
+    
+        if (filters.includes(Konva.Filters.Pixelate)) {
+            pixelate.addClass('selected');
+        }
     }
 
     function setSlider(action, value, title) {
         sliderBox.empty();
+
+        const filters = editor.selection.filters() ?? [];
+
+        if (filters.includes(action.class)) {
+            editor.selection.filters(filters.filter(x => x !== action.class));
+            resetFilter(action.name);
+            return;
+        }
+
         if (action.type === 'slider') {
             const slider = 
                 `<label for="filters-slider" class="bs-img-cropper__size" style="width: 200px;">
@@ -60,7 +87,20 @@ export const EditorFilters = (editor, messages) => {
             input.on('input', () => handleAction(action.name));
         }
 
-        editor.selection.filters([action.class]);
+        filters.push(action.class);
+        editor.selection.filters(filters);
+    }
+
+    function resetFilter(action) {
+        switch(action) {
+            case "blur": {
+                editor.selection.blurRadius(0);
+                break;
+            }
+            case "pixelate": {
+                editor.selection.pixelSize(8); // Default pixelsize is 8
+            }
+        }
     }
 
     function handleAction(action) {
@@ -87,6 +127,10 @@ export const EditorFilters = (editor, messages) => {
             editor.selection.blurRadius(0);
             editor.selection.pixelSize(editor.baseImage.pixelSize);
             sliderBox.empty();
+
+            grayscale.removeClass('selected');
+            blur.removeClass('selected');
+            pixelate.removeClass('selected');
         }
     }
 

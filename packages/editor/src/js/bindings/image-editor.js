@@ -55,6 +55,7 @@ const Editor = {
     fileInput: null,
     imageActions: null,
     textActions: null,
+    colorPicker: null,
 
     // misc
     deferredCallback: null,
@@ -75,18 +76,10 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.children = [];
     Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
     Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    initEditor(parent, image);
-
-    // Advanced features have to be initialized after the stage is drawn at least one time
-    Editor.cropper = EditorCropper(Editor);
-    Editor.textHandler = EditorText(Editor);
-    Editor.filtersHandler = EditorFilters(Editor, messages);
-
-    bindHandlers();
-    Editor.transformer.moveToTop();
+    initEditor(parent, image, messages);
 }
 
-function initEditor(parent, imageFile) {
+function initEditor(parent, imageFile, messages) {
     parent.after(modal(Editor.messages)); // Adds the editor as html content
 
     const container = document.getElementById('konva-editor');
@@ -115,79 +108,89 @@ function initEditor(parent, imageFile) {
     transformer.nodes([mainImage]);
 
     uploadedImage.onload = function() {
-        mainImage.x(stage.width() / 2);
-        mainImage.y(stage.height() / 2);
-        mainImage.offsetX(mainImage.width() / 2);
-        mainImage.offsetY(mainImage.height() / 2);
-        mainLayer.add(mainImage);
-        mainLayer.draw();
+      mainImage.x(stage.width() / 2);
+      mainImage.y(stage.height() / 2);
+      mainImage.offsetX(mainImage.width() / 2);
+      mainImage.offsetY(mainImage.height() / 2);
+      mainLayer.add(mainImage);
+      mainLayer.draw();
+
+      stage.add(mainLayer);
+
+      const $wrapper = $('#editor-wrapper');
+  
+      // canva
+      Editor.container = container;
+      Editor.stage = stage;
+      Editor.layer = mainLayer;
+      Editor.transformer = transformer;
+      Editor.children = [];
+      Editor.baseImage = {
+          width: mainImage.width(),
+          height: mainImage.height(),
+          rotation: mainImage.rotation(),
+          pixelSize: mainImage.pixelSize(),
+          crop: {
+            x: mainImage.cropX(),
+            y: mainImage.cropY(),
+            width: mainImage.cropWidth(),
+            height: mainImage.cropHeight(),
+          }
+      };
+      Editor.image = mainImage;
+  
+      // actions
+      Editor.wrapper = $wrapper;
+      Editor.cancel = $wrapper.find(`.js-actions-cancel`);
+      Editor.submit = $wrapper.find(`.js-actions-submit`);
+      Editor.reset = $wrapper.find(`.js-actions-reset`);
+      Editor.text = $wrapper.find(`.js-actions-text`);
+      Editor.inputWidth = $wrapper.find(`#resize-width`);
+      Editor.inputHeight = $wrapper.find(`#resize-height`);
+      Editor.flipX = $wrapper.find(`.js-actions-mirror-horizontal`);
+      Editor.flipY = $wrapper.find(`.js-actions-mirror-vertical`);
+      Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
+      Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
+      Editor.cornerRadius = $wrapper.find(`#corner-radius`);
+      Editor.textColor = $wrapper.find(`#text-color`);
+      Editor.textStyle = $wrapper.find(`#text-style`);
+      Editor.crop = $wrapper.find('.js-actions-crop');
+      Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
+      Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
+      Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
+      Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
+      Editor.toolbar = $wrapper.find('.js-toolbar');
+      Editor.fileAction = $wrapper.find('#js-actions-upload');
+      Editor.fileInput = $wrapper.find('#image-upload');
+      Editor.imageActions = $wrapper.find('#selected-image-actions');
+      Editor.textActions = $wrapper.find('#selected-text-actions');
+  
+      Editor.inputWidth.val(mainImage.width());
+      Editor.inputHeight.val(mainImage.height());
+  
+      Editor.transformer.on('transform', function () {
+          Editor.inputWidth.val(Math.round(Editor.transformer.width()));
+          Editor.inputHeight.val(Math.round(Editor.transformer.height()));
+      });
+  
+      console.log({b: Editor.baseImage});
+      console.log({w: Editor.image.width(), h: Editor.image.height()});
+      Editor.image.cache();
+      Editor.selection = Editor.image;
+      Editor.transformer.moveToTop();
+  
+      Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
+      disableTextActions(true);
+  
+      raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
+
+      // Advanced features have to be initialized after the stage is drawn at least one time
+      Editor.cropper = EditorCropper(Editor);
+      Editor.textHandler = EditorText(Editor);
+      Editor.filtersHandler = EditorFilters(Editor, messages);
+
+      bindHandlers();
     }
-
-    stage.add(mainLayer);
-
-    const $wrapper = $('#editor-wrapper');
-
-    // canva
-    Editor.container = container;
-    Editor.stage = stage;
-    Editor.layer = mainLayer;
-    Editor.transformer = transformer;
-    Editor.children = [];
-    Editor.baseImage = {
-        width: mainImage.width(),
-        height: mainImage.height(),
-        rotation: mainImage.rotation(),
-        pixelSize: mainImage.pixelSize(),
-        crop: {
-          x: mainImage.cropX(),
-          y: mainImage.cropY(),
-          width: mainImage.cropWidth(),
-          height: mainImage.cropHeight(),
-        }
-    };
-    Editor.image = mainImage;
-
-    // actions
-    Editor.wrapper = $wrapper;
-    Editor.cancel = $wrapper.find(`.js-actions-cancel`);
-    Editor.submit = $wrapper.find(`.js-actions-submit`);
-    Editor.reset = $wrapper.find(`.js-actions-reset`);
-    Editor.text = $wrapper.find(`.js-actions-text`);
-    Editor.inputWidth = $wrapper.find(`#resize-width`);
-    Editor.inputHeight = $wrapper.find(`#resize-height`);
-    Editor.flipX = $wrapper.find(`.js-actions-mirror-horizontal`);
-    Editor.flipY = $wrapper.find(`.js-actions-mirror-vertical`);
-    Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
-    Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
-    Editor.cornerRadius = $wrapper.find(`#corner-radius`);
-    Editor.textColor = $wrapper.find(`#text-color`);
-    Editor.textStyle = $wrapper.find(`#text-style`);
-    Editor.crop = $wrapper.find('.js-actions-crop');
-    Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
-    Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
-    Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
-    Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
-    Editor.toolbar = $wrapper.find('.js-toolbar');
-    Editor.fileAction = $wrapper.find('#js-actions-upload');
-    Editor.fileInput = $wrapper.find('#image-upload');
-    Editor.imageActions = $wrapper.find('#selected-image-actions');
-    Editor.textActions = $wrapper.find('#selected-text-actions');
-
-    Editor.inputWidth.val(mainImage.width());
-    Editor.inputHeight.val(mainImage.height());
-
-    Editor.transformer.on('transform', function () {
-        Editor.inputWidth.val(Math.round(Editor.transformer.width()));
-        Editor.inputHeight.val(Math.round(Editor.transformer.height()));
-    });
-
-    Editor.selection = Editor.image;
-    Editor.image.cache();
-
-    Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
-    disableTextActions(true);
-
-    raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 }
 
 function bindHandlers() {
@@ -426,8 +429,12 @@ function stringToNumber(value) {
 }
 
 function disableImageActions(disabled) {
-  if (disabled === true) Editor.imageActions.addClass('editor-hidden');
-  else Editor.imageActions.removeClass('editor-hidden');
+  if (disabled === true) {
+    Editor.imageActions.addClass('editor-hidden');
+  }
+  else {
+    Editor.imageActions.removeClass('editor-hidden');
+  }
 
   Editor.cornerRadius.prop('disabled', disabled);
   Editor.crop.prop('disabled', disabled);
