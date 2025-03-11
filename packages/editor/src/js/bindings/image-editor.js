@@ -87,6 +87,7 @@ function initEditor(parent, imageFile, messages) {
         container: container,
         width: container.clientWidth,
         height: container.clientHeight,
+        draggable: true,
     });
 
     // The layer for the image
@@ -188,10 +189,13 @@ function initEditor(parent, imageFile, messages) {
       Editor.filtersHandler = EditorFilters(Editor, messages);
 
       bindHandlers();
+
+      var scaleBy = 1.05;
     }
 }
 
 function bindHandlers() {
+    Editor.stage.on('wheel', (e) => handleStageZooming(e));
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
@@ -356,7 +360,38 @@ function handleFilePicked(event) {
   fileReader.readAsDataURL(files[0]);
 }
 
+// From the doc (https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html#sidebar)
+function handleStageZooming(e) {
+  const scaleBy = 1.05;
+  e.evt.preventDefault();
+
+  const oldScale = Editor.stage.scaleX();
+  const pointer = Editor.stage.getPointerPosition();
+
+  const mousePointTo = {
+    x: (pointer.x - Editor.stage.x()) / oldScale,
+    y: (pointer.y - Editor.stage.y()) / oldScale,
+  };
+
+  let direction = e.evt.deltaY > 0 ? -1 : 1;
+
+  if (e.evt.ctrlKey) {
+    direction = -direction;
+  }
+
+  const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+  Editor.stage.scale({ x: newScale, y: newScale });
+
+  const newPos = {
+    x: pointer.x - mousePointTo.x * newScale,
+    y: pointer.y - mousePointTo.y * newScale,
+  };
+  Editor.stage.position(newPos);
+}
+
 function reset() {
+    Editor.stage.setAttrs({ x: 0, y: 0 });
     Editor.inputWidth.val(Editor.baseImage.width);
     Editor.inputHeight.val(Editor.baseImage.height);
     Editor.image.x(Editor.stage.width() / 2);
