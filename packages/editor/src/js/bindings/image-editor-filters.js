@@ -4,6 +4,11 @@ import Konva from 'Konva';
 const $ = require('jquery');
 
 const filtersActions = {
+    grayscale: {
+        name: "grayscale",
+        type: "none",
+        class: Konva.Filters.Grayscale,
+    },
     blur: {
         name: "blur",
         type: "slider",
@@ -20,11 +25,27 @@ const filtersActions = {
         step: 1,
         class: Konva.Filters.Pixelate,
     },
-    grayscale: {
-        name: "grayscale",
+    contrast: {
+        name: "contrast",
+        type: "slider",
+        min: -100,
+        max: 100,
+        step: 1,
+        class: Konva.Filters.Contrast,
+    },
+    brighten: {
+        name: "brighten",
+        type: "slider",
+        min: -1,
+        max: 1,
+        step: 0.05,
+        class: Konva.Filters.Brighten,
+    },
+    invert: {
+        name: "invert",
         type: "none",
-        class: Konva.Filters.Grayscale,
-    }
+        class: Konva.Filters.Invert,
+    },
 }
 
 export const EditorFilters = (editor, messages) => {
@@ -35,34 +56,23 @@ export const EditorFilters = (editor, messages) => {
     const blur = editor.wrapper.find('#filters-blur');
     const pixelate = editor.wrapper.find('#filters-pixelate');
     const grayscale = editor.wrapper.find('#filters-grayscale');
+    const contrast = editor.wrapper.find('#filters-contrast');
+    const brighten = editor.wrapper.find('#filters-brighten');
+    const invert = editor.wrapper.find('#filters-invert');
 
     resetFilters.on('click', () => reset());
-    blur.on('click', () => handleFilter(filtersActions.blur, editor.image.blurRadius(), messages.filters_blur));
-    pixelate.on('click', () => handleFilter(filtersActions.pixelate, editor.image.pixelSize(), messages.filters_pixelate));
+    blur.on('click', () => handleFilter(filtersActions.blur, editor.selection.blurRadius(), messages.filters_blur));
+    pixelate.on('click', () => handleFilter(filtersActions.pixelate, editor.selection.pixelSize(), messages.filters_pixelate));
+    contrast.on('click', () => handleFilter(filtersActions.contrast, editor.selection.contrast(), messages.filters_contrast));
+    brighten.on('click', () => handleFilter(filtersActions.brighten, editor.selection.brightness(), messages.filters_brighten));
     grayscale.on('click', () => handleFilter(filtersActions.grayscale, null, null));
+    invert.on('click', () => handleFilter(filtersActions.invert, null, null));
 
     function handleFilter(filter, defaultValue, title) {
         if (!editor.selection instanceof Konva.Image) return;
 
         setSlider(filter, defaultValue, title);
-
-        const filters = editor.selection.filters() ?? [];
-    
-        grayscale.removeClass('selected');
-        blur.removeClass('selected');
-        pixelate.removeClass('selected');
-    
-        if (filters.includes(Konva.Filters.Grayscale)) {
-            grayscale.addClass('selected');
-        }
-    
-        if (filters.includes(Konva.Filters.Blur)) {
-            blur.addClass('selected');
-        }
-    
-        if (filters.includes(Konva.Filters.Pixelate)) {
-            pixelate.addClass('selected');
-        }
+        updateFiltersSelection(false);
     }
 
     function setSlider(action, value, title) {
@@ -89,6 +99,8 @@ export const EditorFilters = (editor, messages) => {
 
         filters.push(action.class);
         editor.selection.filters(filters);
+
+        console.log({filters, s: editor.selection.filters()});
     }
 
     function resetFilter(action) {
@@ -99,6 +111,14 @@ export const EditorFilters = (editor, messages) => {
             }
             case "pixelate": {
                 editor.selection.pixelSize(8); // Default pixelsize is 8
+            }
+            case "contrast": {
+                editor.selection.contrast(0);
+                break;
+            }
+            case "brighten": {
+                editor.selection.brightness(0);
+                break;
             }
         }
     }
@@ -116,7 +136,15 @@ export const EditorFilters = (editor, messages) => {
             case "pixelate": {
                 editor.selection.pixelSize(value);
                 break;
-            } 
+            }
+            case "contrast": {
+                editor.selection.contrast(value);
+                break;
+            }
+            case "brighten": {
+                editor.selection.brightness(value);
+                break;
+            }
             default: console.warn('Image filters resulted in no action', action);
         }
     }
@@ -126,11 +154,53 @@ export const EditorFilters = (editor, messages) => {
             editor.selection.filters([]);
             editor.selection.blurRadius(0);
             editor.selection.pixelSize(editor.baseImage.pixelSize);
+            editor.selection.contrast(0);
+            editor.selection.brightness(0);
             sliderBox.empty();
 
             grayscale.removeClass('selected');
             blur.removeClass('selected');
             pixelate.removeClass('selected');
+            contrast.removeClass('selected');
+            brighten.removeClass('selected');
+            invert.removeClass('selected');
+        }
+    }
+
+    function updateFiltersSelection(hideSlider) {
+        if (hideSlider === true) sliderBox.empty();
+        
+        const filters = editor.selection.filters() ?? [];
+    
+        grayscale.removeClass('selected');
+        blur.removeClass('selected');
+        pixelate.removeClass('selected');
+        contrast.removeClass('selected');
+        brighten.removeClass('selected');
+        invert.removeClass('selected');
+    
+        if (filters.includes(Konva.Filters.Grayscale)) {
+            grayscale.addClass('selected');
+        }
+    
+        if (filters.includes(Konva.Filters.Blur)) {
+            blur.addClass('selected');
+        }
+    
+        if (filters.includes(Konva.Filters.Pixelate)) {
+            pixelate.addClass('selected');
+        }
+
+        if (filters.includes(Konva.Filters.Contrast)) {
+            contrast.addClass('selected');
+        }
+
+        if (filters.includes(Konva.Filters.Brighten)) {
+            brighten.addClass('selected');
+        }
+
+        if (filters.includes(Konva.Filters.Invert)) {
+            invert.addClass('selected');
         }
     }
 
@@ -141,5 +211,5 @@ export const EditorFilters = (editor, messages) => {
         return Number.isNaN(parsed) ? 1 : parsed;
     }
 
-    return { filtersActions };
+    return { filtersActions, updateFiltersSelection, reset };
 }

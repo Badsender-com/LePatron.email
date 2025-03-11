@@ -61,6 +61,9 @@ module.exports = {
   'filters-blur': 'Blur',
   'filters-pixelate': 'Pixelate',
   'filters-grayscale': 'Grayscale',
+  'filters-contrast': 'Contrast',
+  'filters-brighten': 'Brightness',
+  'filters-invert': 'Invert',
   cancel: 'Cancel',
   upload: 'Save',
 

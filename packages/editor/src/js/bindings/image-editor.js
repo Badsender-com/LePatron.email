@@ -173,8 +173,6 @@ function initEditor(parent, imageFile, messages) {
           Editor.inputHeight.val(Math.round(Editor.transformer.height()));
       });
   
-      console.log({b: Editor.baseImage});
-      console.log({w: Editor.image.width(), h: Editor.image.height()});
       Editor.image.cache();
       Editor.selection = Editor.image;
       Editor.transformer.moveToTop();
@@ -277,9 +275,6 @@ function handleSelection(event) {
     Editor.transformer.nodes([Editor.selection]);
     Editor.transformer.moveToTop(); // Prevents transformer from being hidden by other elements
 
-    Editor.inputWidth.val(Math.round(Editor.transformer.width()));
-    Editor.inputHeight.val(Math.round(Editor.transformer.height()));
-
     if (Editor.selection instanceof Konva.Text) {
       disableTextActions(false);
       disableImageActions(true);
@@ -288,6 +283,9 @@ function handleSelection(event) {
       disableImageActions(false);
       disableTextActions(true);
       Editor.cornerRadius.val(Editor.selection.cornerRadius());
+      Editor.filtersHandler.updateFiltersSelection(true);
+
+      Editor.crop.prop('disabled', Editor.selection !== Editor.image);
     }
     else {
       Editor.cornerRadius.val(0);
@@ -302,12 +300,10 @@ function handleSelection(event) {
 
   Editor.transformer.nodes([]);
   Editor.selection = null;
-  Editor.inputWidth.val(null);
-  Editor.inputHeight.val(null);
   Editor.cornerRadius.val(0);
   disableImageActions(true);
-  updateElementActions(true);
   disableTextActions(true);
+  updateElementActions(true);
 }
 
 function handleDelete(event) {
@@ -341,6 +337,7 @@ function handleFilePicked(event) {
         offsetX: newImage.width / 2,
         offsetY: newImage.height / 2,
       });
+      image.cache();
       Editor.layer.add(image);
       Editor.transformer.nodes([image]);
       Editor.transformer.moveToTop();
@@ -350,7 +347,10 @@ function handleFilePicked(event) {
       Editor.inputHeight.val(Math.round(Editor.transformer.height()));
       Editor.cornerRadius.val(image.cornerRadius());
       disableImageActions(false);
+      disableTextActions(true);
       updateElementActions(false);
+      Editor.filtersHandler.updateFiltersSelection(true);
+      Editor.crop.prop('disabled', Editor.image !== Editor.selection);
     };
   });
   fileReader.readAsDataURL(files[0]);
@@ -373,6 +373,8 @@ function reset() {
     Editor.image.filters([]);
     Editor.image.blurRadius(0);
     Editor.image.pixelSize(Editor.baseImage.pixelSize);
+    Editor.image.contrast(0);
+    Editor.image.brightness(0);
     Editor.lastCrop = null;
     Editor.ratio = "0";
     Editor.transformer.nodes([Editor.image]);
@@ -382,6 +384,7 @@ function reset() {
     });
     Editor.children = [];
     Editor.cornerRadius.val(0);
+    Editor.filtersHandler.reset();
     disableImageActions(false);
     updateElementActions(false);
 
@@ -459,6 +462,8 @@ function updateElementActions(disabled) {
   Editor.flipY.prop('disabled', disabled);
   Editor.rotateLeft.prop('disabled', disabled);
   Editor.rotateRight.prop('disabled', disabled);
+  Editor.inputWidth.val(disabled === true ? null : Math.round(Editor.transformer.width()));
+  Editor.inputHeight.val(disabled === true ? null : Math.round(Editor.transformer.height()));
   Editor.wrapper.find('#selected-element-type').text(disabled === true ? '-' : Editor.selection?.getClassName() ?? '-');
 }
 
@@ -547,9 +552,9 @@ const modal = (messages) =>
                   <button type="button" id="filters-grayscale">${messages.filters_grayscale}</button>
                   <button id="filters-blur">${messages.filters_blur}</button>
                   <button id="filters-pixelate">${messages.filters_pixelate}</button>
-                  <button disabled="true">Contraste</button>
-                  <button>Luminosité</button>
-                  <button>Inverse</button>
+                  <button id="filters-contrast">${messages.filters_contrast}</button>
+                  <button id="filters-brighten">${messages.filters_brighten}</button>
+                  <button id="filters-invert">${messages.filters_invert}</button>
                 </div>
                 <div class="editor-filters-actions">
                   <div id="filters-actions-slider-box"></div>
