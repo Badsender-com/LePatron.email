@@ -516,8 +516,8 @@ const modal = (messages) =>
 
         <div class="editor-layout-inner">
 
-          <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .25rem; gap: 4px; overflow-y: auto;">
-            <h4 style="text-decoration: underline;">${messages.editor_panel_title}</h4>
+          <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .5rem; gap: 4px; overflow-y: auto;">
+            <h4>${messages.editor_panel_title}</h4>
 
             <!-- Selected element panel -->
             <div class="v-stack" id="selected-element-actions">
@@ -568,11 +568,11 @@ const modal = (messages) =>
 
             <!-- Selected image panel -->
             <div class="v-stack" style="height: 100%; margin-top: 2rem;" id="selected-image-actions">
-              <div class="v-stack" style="gap: 4px;">
-                <h4 style="text-decoration: underline;">${messages.editor_actions_panel_title}</h4>
+              <div class="v-stack" style="gap: 8px;">
+                <h4>${messages.editor_actions_panel_title}</h4>
 
-                <label for="corner-radius" class="editor-size" style="min-width: 150px;">
-                  <span class="editor-size-label">${messages.input_corner_radius}</span>
+                <label for="corner-radius" class="v-stack" style="min-width: 150px;">
+                  <span style="font-size: .9em">${messages.input_corner_radius}</span>
                   <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
                 </label>
 
@@ -582,7 +582,7 @@ const modal = (messages) =>
               </div>
 
               <div class="v-stack" style="gap: 4px; margin-top: 2rem;">
-                <h4 style="text-decoration: underline;">${messages.editor_filters_panel_title}</h4>
+                <h4>${messages.editor_filters_panel_title}</h4>
                 <div class="editor-filters-list">
                   <button type="button" id="filters-grayscale">${messages.filters_grayscale}</button>
                   <button id="filters-blur">${messages.filters_blur}</button>
@@ -606,7 +606,7 @@ const modal = (messages) =>
             <!-- Selected text panel -->
             <div class="v-stack" style="height: 100%; width: 100%; margin-top: 2rem;" id="selected-text-actions">
               <div class="v-stack" style="width: 100%; gap: 4px;">
-                <h4 style="text-decoration: underline;">${messages.editor_actions_panel_title}</h4>
+                <h4>${messages.editor_actions_panel_title}</h4>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
                   <p>Couleur</p>
