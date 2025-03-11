@@ -43,6 +43,8 @@ const Editor = {
     rotateRight: null,
     rotateLeft: null,
     cornerRadius: null,
+    textColor: null,
+    textStyle: null,
     crop: null,
     cropCancel: null,
     cropSubmit: null,
@@ -51,8 +53,8 @@ const Editor = {
     toolbar: null,
     fileAction: null,
     fileInput: null,
-    elementPane: null,
     imageActions: null,
+    textActions: null,
 
     // misc
     deferredCallback: null,
@@ -72,6 +74,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.file = file;
     Editor.children = [];
     Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
+    Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     initEditor(parent, image);
 
     // Advanced features have to be initialized after the stage is drawn at least one time
@@ -80,6 +83,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.filtersHandler = EditorFilters(Editor, messages);
 
     bindHandlers();
+    Editor.transformer.moveToTop();
 }
 
 function initEditor(parent, imageFile) {
@@ -156,6 +160,8 @@ function initEditor(parent, imageFile) {
     Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
     Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
     Editor.cornerRadius = $wrapper.find(`#corner-radius`);
+    Editor.textColor = $wrapper.find(`#text-color`);
+    Editor.textStyle = $wrapper.find(`#text-style`);
     Editor.crop = $wrapper.find('.js-actions-crop');
     Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
     Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
@@ -165,6 +171,7 @@ function initEditor(parent, imageFile) {
     Editor.fileAction = $wrapper.find('#js-actions-upload');
     Editor.fileInput = $wrapper.find('#image-upload');
     Editor.imageActions = $wrapper.find('#selected-image-actions');
+    Editor.textActions = $wrapper.find('#selected-text-actions');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -177,9 +184,8 @@ function initEditor(parent, imageFile) {
     Editor.selection = Editor.image;
     Editor.image.cache();
 
-    const text = Editor.wrapper.find('#selected-element-type');
-    console.log({t: text, s: Editor.selection });
-    text.text(Editor.selection.getClassName());
+    Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
+    disableTextActions(true);
 
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 }
@@ -188,7 +194,7 @@ function bindHandlers() {
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
-    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageActions(true); updateElementActions(false); });
+    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageActions(true); disableTextActions(false); updateElementActions(false); updateTextActions(); });
     Editor.cornerRadius.on('input', () => handleCornerRadius());
     Editor.inputWidth.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
@@ -237,16 +243,16 @@ function rotate(degrees) {
 
 function startCropping() {
   if (Editor.selection === Editor.image) {
-    Editor.cropper.start();
     Editor.cropping = true;
+    Editor.cropper.start();
     Editor.toolbar.addClass('editor-hidden');
     Editor.cropToolbar.removeClass('editor-hidden');
   }
 }
 
 function stopCropping(doCrop) {
-  Editor.cropper.stop(doCrop);
   Editor.cropping = false;
+  Editor.cropper.stop(doCrop);
   Editor.toolbar.removeClass('editor-hidden');
   Editor.cropToolbar.addClass('editor-hidden');
 }
@@ -259,6 +265,7 @@ function handleCornerRadius() {
 }
 
 function handleSelection(event) {
+  if (Editor.cropping === true) return;
   if (event.target === Editor.selection) return;
   if (event.target.attrs.name?.includes("_anchor")) return; // Transformer anchors
 
@@ -270,15 +277,22 @@ function handleSelection(event) {
     Editor.inputWidth.val(Math.round(Editor.transformer.width()));
     Editor.inputHeight.val(Math.round(Editor.transformer.height()));
 
-    if (Editor.selection instanceof Konva.Image) {
+    if (Editor.selection instanceof Konva.Text) {
+      disableTextActions(false);
+      disableImageActions(true);
+      updateTextActions();
+    } else if (Editor.selection instanceof Konva.Image) {
       disableImageActions(false);
+      disableTextActions(true);
       Editor.cornerRadius.val(Editor.selection.cornerRadius());
     }
     else {
       Editor.cornerRadius.val(0);
       disableImageActions(true);
+      disableTextActions(true);
     }
 
+    Editor.transformer.moveToTop();
     updateElementActions(false);
     return;
   }
@@ -290,6 +304,7 @@ function handleSelection(event) {
   Editor.cornerRadius.val(0);
   disableImageActions(true);
   updateElementActions(true);
+  disableTextActions(true);
 }
 
 function handleDelete(event) {
@@ -352,6 +367,9 @@ function reset() {
     Editor.image.offsetY(Editor.baseImage.height / 2);
     Editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
     Editor.image.cornerRadius(0);
+    Editor.image.filters([]);
+    Editor.image.blurRadius(0);
+    Editor.image.pixelSize(Editor.baseImage.pixelSize);
     Editor.lastCrop = null;
     Editor.ratio = "0";
     Editor.transformer.nodes([Editor.image]);
@@ -415,6 +433,18 @@ function disableImageActions(disabled) {
   Editor.crop.prop('disabled', disabled);
 }
 
+function disableTextActions(disabled) {
+  if (disabled === true) Editor.textActions.addClass('editor-hidden');
+  else Editor.textActions.removeClass('editor-hidden');
+}
+
+function updateTextActions() {
+  if (Editor.selection instanceof Konva.Text) {
+    Editor.textColor.val(Editor.selection.fill());
+    Editor.textStyle.val(Editor.selection.fontStyle());
+  }
+}
+
 function updateElementActions(disabled) {
   Editor.inputWidth.prop('disabled', disabled);
   Editor.inputHeight.prop('disabled', disabled);
@@ -439,7 +469,7 @@ const modal = (messages) =>
 
         <div class="editor-layout-inner">
 
-          <div class="v-stack" style="height: 100%; min-width: 208px; padding-top: .25rem; gap: 4px; overflow-y: auto;">
+          <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .25rem; gap: 4px; overflow-y: auto;">
             <h4 style="text-decoration: underline;">${messages.editor_panel_title}</h4>
 
             <!-- Selected element panel -->
@@ -525,6 +555,28 @@ const modal = (messages) =>
               </div>
             </div>
             <!-- Selected image panel -->
+
+            <!-- Selected text panel -->
+            <div class="v-stack" style="height: 100%; width: 100%; justify-content: space-evenly;" id="selected-text-actions">
+              <div class="v-stack" style="width: 100%; gap: 4px;">
+                <h4 style="text-decoration: underline;">Actions</h4>
+
+                <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                  <p>Couleur</p>
+                  <input type="color" name="text-color" id="text-color">
+                </div>
+
+                <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                  <p>Style</p>
+                   <select name="text-style" id="text-style" style="width: 120px;">
+                    <option value="normal">Normal</option>
+                    <option value="italic" style="font-style: italic;">Italic</option>
+                    <option value="bold" style="font-style: bold;">Bold</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- Selected text panel -->
 
           </div>
 

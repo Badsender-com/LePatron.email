@@ -3,6 +3,9 @@ import Konva from 'Konva';
 
 export const EditorText = (editor) => {
 
+    editor.textColor.on('input', () => handleColorChanged());
+    editor.textStyle.on('input', () => handleStyleChanged());
+
     function addText() {
         const textNode = new Konva.Text({
             draggable: true,
@@ -46,6 +49,7 @@ export const EditorText = (editor) => {
         input.style.maxWidth =  editor.stage.width() / 2 + 'px';
         input.style.maxHeight = editor.stage.height() / 2 + 'px';
         input.style.fontSize = node.fontSize() * node.scaleY() + 'px';
+        input.style.fontStyle = node.fontStyle();
         input.style.padding = '6px';
         input.style.margin = '0px';
         input.style.overflow = 'hidden';
@@ -102,6 +106,18 @@ export const EditorText = (editor) => {
     function removeText(node) {
         node.destroy();
         node = null;
+    }
+
+    function handleColorChanged() {
+        if (!editor.selection instanceof Konva.Text) return;
+
+        editor.selection.fill(editor.textColor.val());
+    }
+
+    function handleStyleChanged() {
+        if (!editor.selection instanceof Konva.Text) return;
+
+        editor.selection.fontStyle(editor.textStyle.val());
     }
 
     return { addText, removeText };

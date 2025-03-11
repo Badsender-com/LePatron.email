@@ -8,6 +8,7 @@ export const EditorCropper = (editor) => {
     let transformer = null;
     let ratioSelector = null;
     let baseImage = null;
+    let image = null;
 
     // Ratio
     function toRatio(value) {
@@ -24,11 +25,13 @@ export const EditorCropper = (editor) => {
         resetSelector();
 
         if (ratio === 0) {   
-            transformer.enabledAnchors(editor.baseAnchors);         
+            transformer.enabledAnchors(editor.baseAnchors);
+            transformer.moveToTop(); 
             return;
         }
 
         transformer.enabledAnchors(editor.cornerAnchors);
+        transformer.moveToTop();
 
         if (ratio > 1) {
             selector.height(selector.height() / ratio);
@@ -105,6 +108,17 @@ export const EditorCropper = (editor) => {
             blurRadius: editor.image.blurRadius(),
             pixelSize: editor.image.pixelSize(),
         }
+
+        image = new Konva.Image({
+            image: editor.image.image(),
+            draggable: false,
+            x: editor.stage.width() / 2,
+            y: editor.stage.height() / 2,
+            width: editor.baseImage.width,
+            height: editor.baseImage.height,
+            offsetX: editor.baseImage.width / 2,
+            offsetY: editor.baseImage.height / 2,
+        });
     }
 
     function start() {
@@ -129,16 +143,20 @@ export const EditorCropper = (editor) => {
             draggable: false,
         });
 
+        editor.image.hide();
         editor.children.forEach(node => {
             node.draggable(false);
             node.hide();
         });
 
+        cropLayer.add(image);
         cropLayer.add(selector);
         cropLayer.add(transformer);
         transformer.nodes([selector]);
+        transformer.moveToTop();
         editor.transformer.nodes([]);
         editor.stage.add(cropLayer);
+        editor.stage.batchDraw();
     }
 
     function stop(doCrop) {
@@ -178,14 +196,17 @@ export const EditorCropper = (editor) => {
         editor.image.pixelSize(baseImage.pixelSize);
         editor.image.rotation(baseImage.rotation);
         editor.image.draggable(true);
+        editor.image.show();
         editor.image.cache();
-        editor.transformer.nodes([]);
+        editor.transformer.nodes([editor.image]);
+        editor.transformer.moveToTop();
         editor.stage.batchDraw();
 
         transformer = null;
         selector = null;
         cropLayer = null;
         baseImage = null;
+        image = null;
 
         ratioSelector.off('change');
         ratioSelector = null;
