@@ -15,7 +15,7 @@ export const EditorText = (editor) => {
         });
 
         textNode.x((editor.stage.width() - textNode.width()) / 2);
-        textNode.y((editor.stage.height() - textNode.height() - 50));
+        textNode.y((editor.stage.height() - textNode.height()) / 2);
         textNode.offsetX(textNode.width() / 2);
         textNode.offsetY(textNode.height() / 2);
 
