@@ -1,8 +1,6 @@
 'use strict';
 import Konva from 'Konva';
 
-const $ = require('jquery');
-
 const filtersActions = {
     grayscale: {
         name: "grayscale",
@@ -68,14 +66,27 @@ export const EditorFilters = (editor, messages) => {
     grayscale.on('click', () => handleFilter(filtersActions.grayscale, null, null));
     invert.on('click', () => handleFilter(filtersActions.invert, null, null));
 
-    function handleFilter(filter, defaultValue, title) {
+    /**
+     * Handles clicks on filters buttons for the selected image.
+     * Updates the filters buttons UI.
+     * @param {string} filter - The filter name to be applied or removed.
+     * @param {any} defaultValue - Default value, can be either an int or a float.
+     * @param {string} label - The label of the slider to be displayed on the UI.
+     */
+    function handleFilter(filter, defaultValue, label) {
         if (!editor.selection instanceof Konva.Image) return;
 
-        setSlider(filter, defaultValue, title);
+        setSlider(filter, defaultValue, label);
         updateFiltersSelection(false);
     }
 
-    function setSlider(action, value, title) {
+    /**
+     * Displays or removes the slider of the given filter for the selected image.
+     * @param {string} action - The filter name to be applied or removed.
+     * @param {any} defaultValue - Default value, can be either an int or a float.
+     * @param {string} label - The label of the slider to be displayed on the UI.
+     */
+    function setSlider(action, defaultValue, label) {
         sliderBox.empty();
 
         const filters = editor.selection.filters() ?? [];
@@ -89,8 +100,8 @@ export const EditorFilters = (editor, messages) => {
         if (action.type === 'slider') {
             const slider = 
                 `<label for="filters-slider" class="bs-img-cropper__size" style="width: 200px;">
-                    <span class="bs-img-cropper__size-label">${title}</span>
-                    <input type="range" name="filters-slider" id="filters-slider" min="${action.min}" max="${action.max}" step="${action.step}" value="${value}">
+                    <span class="bs-img-cropper__size-label">${label}</span>
+                    <input type="range" name="filters-slider" id="filters-slider" min="${action.min}" max="${action.max}" step="${action.step}" value="${defaultValue}">
                 </label>`;
             sliderBox.append(slider);
             const input = sliderBox.find('#filters-slider');
@@ -103,6 +114,10 @@ export const EditorFilters = (editor, messages) => {
         console.log({filters, s: editor.selection.filters()});
     }
 
+    /**
+     * Resets the effect of the given filter to the selected image.
+     * @param {string} action - The filter name to be applied.
+     */
     function resetFilter(action) {
         switch(action) {
             case "blur": {
@@ -123,6 +138,10 @@ export const EditorFilters = (editor, messages) => {
         }
     }
 
+    /**
+     * Handles the given filter action and apply the corresponding effect to the selected image.
+     * @param {string} action - The filter name to be applied.
+     */
     function handleAction(action) {
         const input = sliderBox.find('#filters-slider');
         if (!input) return;
@@ -149,6 +168,9 @@ export const EditorFilters = (editor, messages) => {
         }
     }
 
+    /**
+     * Resets all filters on the selected image.
+     */
     function reset() {
         if (editor.selection !== null && editor.selection instanceof Konva.Image) {
             editor.selection.filters([]);
@@ -167,6 +189,10 @@ export const EditorFilters = (editor, messages) => {
         }
     }
 
+    /**
+     * Updates the image filters UI.
+     * @param {boolean} hideSlider - If the current filter slider should be hidden.
+     */
     function updateFiltersSelection(hideSlider) {
         if (hideSlider === true) sliderBox.empty();
         
@@ -204,6 +230,11 @@ export const EditorFilters = (editor, messages) => {
         }
     }
 
+    /**
+     * Parses the given value into a floating value. If the value couldn't be parsed returns 1.
+     * @param {string} value - The floating value as a string.
+     * @returns {float} Returns the parsed value as a float.
+     */
     function stringToNumber(value) {
         if (value === undefined) return 1;
     
