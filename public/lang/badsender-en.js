@@ -76,6 +76,12 @@ module.exports = {
   'filters-contrast': 'Contrast',
   'filters-brighten': 'Brightness',
   'filters-invert': 'Invert',
+  'editor-text-color': 'Color',
+  'editor-text-style': 'Style',
+  'editor-text-style-normal': 'Normal',
+  'editor-text-style-italic': 'Italic',
+  'editor-text-style-bold': 'Bold',
+  'editor-text-size': 'Size',
   cancel: 'Cancel',
   upload: 'Save',
 

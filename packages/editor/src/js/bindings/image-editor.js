@@ -625,21 +625,21 @@ const modal = (messages) =>
                 <h4>${messages.editor_actions_panel_title}</h4>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>Couleur</p>
+                  <p>${messages.editor_text_color}</p>
                   <input type="color" name="text-color" id="text-color"/>
                 </div>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>Style</p>
+                  <p>${messages.editor_text_style}</p>
                    <select name="text-style" id="text-style" style="width: 120px;">
-                    <option value="normal">Normal</option>
-                    <option value="italic" style="font-style: italic;">Italic</option>
-                    <option value="bold" style="font-style: bold;">Bold</option>
+                    <option value="normal">${messages.editor_text_style_normal}</option>
+                    <option value="italic" style="font-style: italic;">${messages.editor_text_style_italic}</option>
+                    <option value="bold" style="font-style: bold;">${messages.editor_text_style_bold}</option>
                   </select>
                 </div>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>Taille</p>
+                  <p>${messages.editor_text_size}</p>
                   <input type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px;" />
                 </div>
               </div>
