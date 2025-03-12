@@ -48,6 +48,9 @@ if (process.env.MOSAICO) {
   }
 
   var applyBindingOptions = function (options, ko) {
+    console.clear();
+    console.log({options});
+
     ko.bindingHandlers.wysiwygSrc.convertedUrl = function (
       src,
       method,
@@ -164,6 +167,16 @@ var start = function (
         editor_panel_title: vm.t('editor-panel-title'),
         editor_actions_panel_title: vm.t('editor-actions-panel-title'),
         editor_filters_panel_title: vm.t('editor-filters-panel-title'),
+        editor_ratio_freeform: vm.t('editor-ratio-freeform'),
+        editor_ratio_standard: vm.t('editor-ratio-standard'),
+        editor_ratio_landscape: vm.t('editor-ratio-landscape'),
+        editor_ratio_portrait: vm.t('editor-ratio-portrait'),
+        editor_ratio_square: vm.t('editor-ratio-square'),
+        editor_ratio_photo: vm.t('editor-ratio-photo'),
+        editor_ratio_widescreen_cinema: vm.t('editor-ratio-widescreen-cinema'),
+        editor_ratio_almost_square: vm.t('editor-ratio-almost-square'),
+        editor_ratio_intermediate: vm.t('editor-ratio-intermediate'),
+        editor_ratio_camera: vm.t('editor-ratio-camera'),
         cancel: vm.t('cancel'),
         upload: vm.t('upload'),
       },

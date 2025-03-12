@@ -24,7 +24,6 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
       if (/gif|svg/.test(type)) return next();
 
       // convert file to base64
-      // • this will be consumed by croppie
       const reader = new FileReader();
       reader.readAsDataURL(originalFile);
       reader.addEventListener(`load`, onFileLoad);
