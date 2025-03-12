@@ -3,6 +3,7 @@ import Konva from 'Konva';
 
 export const EditorCropper = (editor) => {
 
+    // The following elements are used solely for cropping and are therefore temporary (i.e. they are destroyed from the stage when the crop is canceled or saved).
     let cropLayer = null;
     let selector = null;
     let transformer = null;
@@ -10,17 +11,25 @@ export const EditorCropper = (editor) => {
     let baseImage = null;
     let image = null;
 
-    // Ratio
+    /**
+     * Parses the given ratio value to a floating value.
+     * @param {string} value - The ratio from the select input.
+     * @returns {float} - The parsed value as a float. Returns 1 if the value couldn't be parsed.
+     */
     function toRatio(value) {
         if (value === "0") return 0;
 
         var ratioParts = value.split('-');
-        var widthRatio = parseInt(ratioParts[0], 10);
-        var heightRatio = parseInt(ratioParts[1], 10);
+        var widthRatio = parseFloat(ratioParts[0]);
+        var heightRatio = parseFloat(ratioParts[1]);
 
         return (widthRatio ?? 1) / (heightRatio ?? 1);
     }
 
+    /**
+     * Resizes the rectangle selector with the given ratio.
+     * @param {float} ratio - The ratio to be used as a floating value.
+     */
     function setSelectorToRatio(ratio) {
         resetSelector();
 
@@ -48,6 +57,9 @@ export const EditorCropper = (editor) => {
         }
     }
 
+    /**
+     * Sets back the rectangle selector to the image's size and position.
+     */
     function resetSelector() {
         selector.setAttrs({
             x: editor.image.x(),
@@ -59,13 +71,17 @@ export const EditorCropper = (editor) => {
         })
     }
 
-    // Crop lifecycle
+    /**
+     * Inits the cropping layer and its elements.
+     * Also saves the image current properties.
+     */
     function init() {
         ratioSelector = editor.wrapper.find("#ratio-selector");
         ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
 
         cropLayer = new Konva.Layer();
 
+        // Creates a rectangle used as a selector for the region of the image that will be cropped.
         selector = new Konva.Rect({
             x: editor.lastCrop?.selectorX ?? editor.stage.width() / 2,
             y: editor.lastCrop?.selectorY ?? editor.stage.height() / 2,
@@ -81,6 +97,8 @@ export const EditorCropper = (editor) => {
             draggable: true,
         });
 
+        // The transformer used for the selector ratios.
+        // KonvaJs doesn't handle rotation when cropping an image so we disable it and restore the image with its rotation at the end of the process. 
         transformer = new Konva.Transformer({
             flipEnabled: false,
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
@@ -88,6 +106,7 @@ export const EditorCropper = (editor) => {
             rotateLineVisible: false,
         });
 
+        // Saves the image current properties.
         baseImage = {
             x: editor.image.x(),
             y: editor.image.y(),
@@ -109,6 +128,7 @@ export const EditorCropper = (editor) => {
             pixelSize: editor.image.pixelSize(),
         }
 
+        // The image is placed at the center of the stage at its base size and is made immovable.
         image = new Konva.Image({
             image: editor.image.image(),
             draggable: false,
@@ -121,6 +141,10 @@ export const EditorCropper = (editor) => {
         });
     }
 
+    /**
+     * Called from the editor itself.
+     * Prepares and adds all elements to the cropping layer.
+     */
     function start() {
         init();
 
@@ -159,6 +183,11 @@ export const EditorCropper = (editor) => {
         editor.stage.batchDraw();
     }
 
+    /**
+     * Restores the image with the saved properties from baseImage let.
+     * Destroys all elements from the cropping layer and applys or not the crop to the image.
+     * @param {boolean} doCrop - Whether to apply the crop or not.
+     */
     function stop(doCrop) {
         transformer.nodes([]);
         cropLayer.destroyChildren();
@@ -212,6 +241,12 @@ export const EditorCropper = (editor) => {
         ratioSelector = null;
     }
 
+    /**
+     * Applys crop to the image with the selector size and position.
+     * The cropping coordinates are relative to the top left corner of the image, that's why we use the getClientRect method
+     * to get the calculated coordinates (after scaleX, scaleY and transforms).
+     * Also saves the current cropping properties in case the users cancels its next editions.
+     */
     function applyCrop() {
         const rect = selector.getClientRect();
         const baseRect = editor.image.getClientRect();
@@ -257,5 +292,6 @@ export const EditorCropper = (editor) => {
         };
     }
 
+    // Only those two functions are needed for the editor to work with the cropping feature.
     return { start, stop };
 };
