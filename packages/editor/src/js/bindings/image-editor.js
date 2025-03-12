@@ -9,7 +9,7 @@ const raf = window.requestAnimationFrame;
 const ACTIVE_CLASS = `editor-active`;
 
 const Editor = {
-    // canva
+    // Canva (KonvaJS elements and stored values)
     container: null,
     stage: null,
     layer: null,
@@ -30,7 +30,7 @@ const Editor = {
     cropping: false,
     selection: null,
 
-    // actions
+    // Actions (HTML elements)
     wrapper: null,
     cancel: null,
     submit: null,
@@ -58,7 +58,7 @@ const Editor = {
     textActions: null,
     colorPicker: null,
 
-    // misc
+    // Misc
     deferredCallback: null,
     abort: null,
     data: null,
@@ -69,141 +69,166 @@ const Editor = {
     middleAnchors: [],
 }
 
+/**
+ * Inits editor properties, draws the canvas stage and bind features handlers.
+ * The editor is injected as html content into the page.
+ * @param {JQuery.Deferred<any, any, any>} next - Deferred callback called when this context ends.
+ * @param {JQuery.Deferred<any, any, any>} abort - Deferred callback called when this context exists.
+ * @param {any} data - Data of the uploaded files as an object.
+ * @param {object} file - Data of the uploaded file as an object containing its index, name and type.
+ * @param {object} messages - Translated messages used in the editor as an object.
+ * @param {any} parent - The html parent of the editor frame.
+ * @param {HTMLImageElement} image - The uploaded image as a html element.
+ */
 export function OpenEditor(next, abort, data, file, messages, parent, image) {
-    Editor.deferredCallback = next;
-    Editor.messages = messages;
-    Editor.abort = abort;
-    Editor.data = data;
-    Editor.file = file;
+  Editor.deferredCallback = next;
+  Editor.messages = messages;
+  Editor.abort = abort;
+  Editor.data = data;
+  Editor.file = file;
+  Editor.children = [];
+  Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
+  Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+  Editor.middleAnchors = ['top-center', 'middle-right', 'middle-left', 'bottom-center'];
+  initEditor(parent, image.src, messages);
+}
+
+/**
+ * Loads the base image, draws the stage one time and creates / initializes every element required by the editor.
+ * @param {any} parent - The html parent of the editor frame.
+ * @param {string} src - The base image source.
+ * @param {object} messages - Translated messages used in the editor as an object.
+ */
+function initEditor(parent, src, messages) {
+  parent.after(modal(Editor.messages)); // Injects the editor as html content
+
+  const container = document.getElementById('konva-editor'); // Canvas area only
+  const stage = new Konva.Stage({
+      container: container,
+      width: container.clientWidth,
+      height: container.clientHeight,
+      draggable: true,
+  });
+
+  // The layer for the image
+  const mainLayer = new Konva.Layer();
+
+  // A transformer allows us to move and rotate objects within the canvas.
+  // We want to keep the ratio and only do free resize with middle edge anchors.
+  const transformer = new Konva.Transformer({ keepRatio: true });
+
+  const uploadedImage = new Image();
+  uploadedImage.src = src;
+
+  const mainImage = new Konva.Image({
+      image: uploadedImage,
+      draggable: true,
+  });
+
+  mainLayer.add(transformer);
+  transformer.nodes([mainImage]);
+
+  // Everything is trully created / initialized after the base image if loaded.
+  uploadedImage.onload = function() {
+    mainImage.x(stage.width() / 2);
+    mainImage.y(stage.height() / 2);
+    mainImage.offsetX(mainImage.width() / 2);
+    mainImage.offsetY(mainImage.height() / 2);
+    mainLayer.add(mainImage);
+    mainLayer.draw();
+
+    // The layer has to be drawn before being added to its stage
+    stage.add(mainLayer);
+
+    const $wrapper = $('#editor-wrapper');
+
+    // Canva
+    Editor.container = container;
+    Editor.stage = stage;
+    Editor.layer = mainLayer;
+    Editor.transformer = transformer;
     Editor.children = [];
-    Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
-    Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    Editor.middleAnchors = ['top-center', 'middle-right', 'middle-left', 'bottom-center'];
-    initEditor(parent, image, messages);
-}
+    Editor.baseImage = {
+        width: mainImage.width(),
+        height: mainImage.height(),
+        rotation: mainImage.rotation(),
+        pixelSize: mainImage.pixelSize(),
+        crop: {
+          x: mainImage.cropX(),
+          y: mainImage.cropY(),
+          width: mainImage.cropWidth(),
+          height: mainImage.cropHeight(),
+        }
+    };
+    Editor.image = mainImage;
 
-function initEditor(parent, imageFile, messages) {
-    parent.after(modal(Editor.messages)); // Adds the editor as html content
+    // Actions
+    Editor.wrapper = $wrapper;
+    Editor.cancel = $wrapper.find(`.js-actions-cancel`);
+    Editor.submit = $wrapper.find(`.js-actions-submit`);
+    Editor.reset = $wrapper.find(`.js-actions-reset`);
+    Editor.text = $wrapper.find(`.js-actions-text`);
+    Editor.inputWidth = $wrapper.find(`#resize-width`);
+    Editor.inputHeight = $wrapper.find(`#resize-height`);
+    Editor.flipX = $wrapper.find(`.js-actions-mirror-horizontal`);
+    Editor.flipY = $wrapper.find(`.js-actions-mirror-vertical`);
+    Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
+    Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
+    Editor.cornerRadius = $wrapper.find(`#corner-radius`);
+    Editor.textColor = $wrapper.find(`#text-color`);
+    Editor.textStyle = $wrapper.find(`#text-style`);
+    Editor.textSize = $wrapper.find(`#text-size`);
+    Editor.crop = $wrapper.find('.js-actions-crop');
+    Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
+    Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
+    Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
+    Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
+    Editor.toolbar = $wrapper.find('.js-toolbar');
+    Editor.fileAction = $wrapper.find('#js-actions-upload');
+    Editor.fileInput = $wrapper.find('#image-upload');
+    Editor.imageActions = $wrapper.find('#selected-image-actions');
+    Editor.textActions = $wrapper.find('#selected-text-actions');
 
-    const container = document.getElementById('konva-editor');
-    const stage = new Konva.Stage({
-        container: container,
-        width: container.clientWidth,
-        height: container.clientHeight,
-        draggable: true,
+    Editor.inputWidth.val(mainImage.width());
+    Editor.inputHeight.val(mainImage.height());
+
+    Editor.transformer.on('transform', function () {
+        Editor.inputWidth.val(Math.round(Editor.transformer.width()));
+        Editor.inputHeight.val(Math.round(Editor.transformer.height()));
     });
 
-    // The layer for the image
-    const mainLayer = new Konva.Layer();
+    Editor.image.cache();
+    Editor.selection = Editor.image;
+    Editor.transformer.moveToTop();
 
-    // A transformer allows us to move and rotate objects within the canvas.
-    // We want to keep the ratio and only do free resize with middle edge anchors.
-    const transformer = new Konva.Transformer({ keepRatio: true });
+    Editor.colorPicker = Editor.wrapper.find('#text-color');
 
-    const uploadedImage = new Image();
-    uploadedImage.src = imageFile.src;
+    Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
+    hideTextActions(true);
 
-    const mainImage = new Konva.Image({
-        image: uploadedImage,
-        draggable: true,
-    });
+    // Requests the browser to render the first frame to make the editor visible
+    raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 
-    mainLayer.add(transformer);
-    transformer.nodes([mainImage]);
+    // Advanced features have to be initialized after the stage is drawn at least one time
+    Editor.cropper = EditorCropper(Editor);
+    Editor.textHandler = EditorText(Editor);
+    Editor.filtersHandler = EditorFilters(Editor, messages);
 
-    uploadedImage.onload = function() {
-      mainImage.x(stage.width() / 2);
-      mainImage.y(stage.height() / 2);
-      mainImage.offsetX(mainImage.width() / 2);
-      mainImage.offsetY(mainImage.height() / 2);
-      mainLayer.add(mainImage);
-      mainLayer.draw();
-
-      stage.add(mainLayer);
-
-      const $wrapper = $('#editor-wrapper');
-  
-      // canva
-      Editor.container = container;
-      Editor.stage = stage;
-      Editor.layer = mainLayer;
-      Editor.transformer = transformer;
-      Editor.children = [];
-      Editor.baseImage = {
-          width: mainImage.width(),
-          height: mainImage.height(),
-          rotation: mainImage.rotation(),
-          pixelSize: mainImage.pixelSize(),
-          crop: {
-            x: mainImage.cropX(),
-            y: mainImage.cropY(),
-            width: mainImage.cropWidth(),
-            height: mainImage.cropHeight(),
-          }
-      };
-      Editor.image = mainImage;
-  
-      // actions
-      Editor.wrapper = $wrapper;
-      Editor.cancel = $wrapper.find(`.js-actions-cancel`);
-      Editor.submit = $wrapper.find(`.js-actions-submit`);
-      Editor.reset = $wrapper.find(`.js-actions-reset`);
-      Editor.text = $wrapper.find(`.js-actions-text`);
-      Editor.inputWidth = $wrapper.find(`#resize-width`);
-      Editor.inputHeight = $wrapper.find(`#resize-height`);
-      Editor.flipX = $wrapper.find(`.js-actions-mirror-horizontal`);
-      Editor.flipY = $wrapper.find(`.js-actions-mirror-vertical`);
-      Editor.rotateRight = $wrapper.find(`.js-actions-rotate-right`);
-      Editor.rotateLeft = $wrapper.find(`.js-actions-rotate-left`);
-      Editor.cornerRadius = $wrapper.find(`#corner-radius`);
-      Editor.textColor = $wrapper.find(`#text-color`);
-      Editor.textStyle = $wrapper.find(`#text-style`);
-      Editor.textSize = $wrapper.find(`#text-size`);
-      Editor.crop = $wrapper.find('.js-actions-crop');
-      Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
-      Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
-      Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
-      Editor.ratioToolbar = $wrapper.find('.js-ratio-toolbar');
-      Editor.toolbar = $wrapper.find('.js-toolbar');
-      Editor.fileAction = $wrapper.find('#js-actions-upload');
-      Editor.fileInput = $wrapper.find('#image-upload');
-      Editor.imageActions = $wrapper.find('#selected-image-actions');
-      Editor.textActions = $wrapper.find('#selected-text-actions');
-  
-      Editor.inputWidth.val(mainImage.width());
-      Editor.inputHeight.val(mainImage.height());
-  
-      Editor.transformer.on('transform', function () {
-          Editor.inputWidth.val(Math.round(Editor.transformer.width()));
-          Editor.inputHeight.val(Math.round(Editor.transformer.height()));
-      });
-  
-      Editor.image.cache();
-      Editor.selection = Editor.image;
-      Editor.transformer.moveToTop();
-
-      Editor.colorPicker = Editor.wrapper.find('#text-color');
-  
-      Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
-      disableTextActions(true);
-  
-      raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
-
-      // Advanced features have to be initialized after the stage is drawn at least one time
-      Editor.cropper = EditorCropper(Editor);
-      Editor.textHandler = EditorText(Editor);
-      Editor.filtersHandler = EditorFilters(Editor, messages);
-
-      bindHandlers();
-    }
+    // Binds buttons and inputs actions via event handlers
+    bindHandlers();
+  }
 }
 
+/**
+ * Binds every button, input or html element that will be updated to its handler.
+ * Also prevents some event propagation to avoid recursive calls and unintended actions.
+ */
 function bindHandlers() {
     Editor.stage.on('wheel', (e) => handleStageZooming(e));
     Editor.cancel.on('click', () => clean(Editor.abort));
     Editor.submit.on('click', () => save());
     Editor.reset.on('click', () => reset());
-    Editor.text.on('click', () => { Editor.textHandler.addText(); disableImageActions(true); disableTextActions(false); updateElementActions(false); updateTextActions(); });
+    Editor.text.on('click', () => { Editor.textHandler.addText(); hideImageActions(true); hideTextActions(false); updateElementActions(false); updateTextActions(); });
     Editor.cornerRadius.on('input', () => handleCornerRadius());
     Editor.inputWidth.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
     Editor.inputHeight.on('input', () => setSize(Editor.inputWidth.val(), Editor.inputHeight.val()));
@@ -216,17 +241,21 @@ function bindHandlers() {
     Editor.cropSubmit.on('click', () => stopCropping(true));
     Editor.stage.on("pointerdown", (e) => handleSelection(e));
     Editor.fileAction.on('click', () => Editor.fileInput.trigger('click'));
-    Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recurse calls
+    Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recursive calls
     Editor.fileInput.on('change', (e) => handleFilePicked(e));
     
-    Editor.inputWidth.on('keydown', (e) => e.stopPropagation());
-    Editor.inputHeight.on('keydown', (e) => e.stopPropagation());
-    Editor.textSize.on('keydown', (e) => e.stopPropagation());
+    Editor.inputWidth.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the width input
+    Editor.inputHeight.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the height input
+    Editor.textSize.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the text size input
     
     window.addEventListener('keydown', (e) => handleDelete(e));
 }
 
-// Handlers
+/**
+ * Sets the size of the selected element and calculates its new offsets.
+ * @param {float} width - The new width as a floating value.
+ * @param {float} height - The new height as a floating value.
+ */
 function setSize(width, height) {
   if (Editor.selection !== null) {
     Editor.selection.width(stringToNumber(width));
@@ -236,24 +265,38 @@ function setSize(width, height) {
   } 
 }
 
+/**
+ * Mirrors the selected element on the X axis by inverting its horizontal scale.
+ */
 function flipX() {
     if (Editor.selection !== null) {
       Editor.selection.scaleX(Editor.selection.scaleX() * -1);
     }
 }
 
+/**
+ * Mirrors the selected element on the Y axis by inverting its vertical scale.
+ */
 function flipY() {
   if (Editor.selection !== null) {
     Editor.selection.scaleY(Editor.selection.scaleY() * -1);
   }
 }
 
+/**
+ * Rotates the selected element by the given degrees values.
+ * KonvaJS works with 180° range (from 180° to -180°).
+ * @param {float} degrees - The degrees as a floating value.
+ */
 function rotate(degrees) {
   if (Editor.selection !== null) {
     Editor.selection.rotate(degrees);
   }
 }
 
+/**
+ * Inits the cropping layer and displays its toolbar.
+ */
 function startCropping() {
   if (Editor.selection === Editor.image) {
     Editor.cropping = true;
@@ -263,6 +306,11 @@ function startCropping() {
   }
 }
 
+/**
+ * Stops the crop and hides its toolbar.
+ * If the given value is false then the image is restored to its old size.
+ * @param {boolean} doCrop - Validates or not the crop.
+ */
 function stopCropping(doCrop) {
   Editor.cropping = false;
   Editor.cropper.stop(doCrop);
@@ -270,6 +318,10 @@ function stopCropping(doCrop) {
   Editor.cropToolbar.addClass('editor-hidden');
 }
 
+/**
+ * Handles selected image corner radius via a range input (= slider).
+ * Caches the selected image after update.
+ */
 function handleCornerRadius() {
   if (!Editor.selection instanceof Konva.Image || Editor.selection === null) return;
 
@@ -277,6 +329,10 @@ function handleCornerRadius() {
   Editor.selection.cache();
 }
 
+/**
+ * Handles element selection and fires UI updates.
+ * @param {any} event - The event fired when clicking on the page window.
+ */
 function handleSelection(event) {
   if (Editor.cropping === true) return;
   if (event.target === Editor.selection) return;
@@ -290,15 +346,15 @@ function handleSelection(event) {
     if (Editor.selection instanceof Konva.Text) {
       Editor.transformer.enabledAnchors(Editor.middleAnchors);
       Editor.transformer.flipEnabled(false);
-      disableTextActions(false);
-      disableImageActions(true);
+      hideTextActions(false);
+      hideImageActions(true);
       updateTextActions();
     } else if (Editor.selection instanceof Konva.Image) {
       Editor.transformer.enabledAnchors(Editor.baseAnchors);
       Editor.transformer.flipEnabled(true);
 
-      disableImageActions(false);
-      disableTextActions(true);
+      hideImageActions(false);
+      hideTextActions(true);
       Editor.cornerRadius.val(Editor.selection.cornerRadius());
       Editor.filtersHandler.updateFiltersSelection(true);
 
@@ -308,8 +364,8 @@ function handleSelection(event) {
       Editor.transformer.enabledAnchors(Editor.baseAnchors);
       Editor.transformer.flipEnabled(true);
       Editor.cornerRadius.val(0);
-      disableImageActions(true);
-      disableTextActions(true);
+      hideImageActions(true);
+      hideTextActions(true);
     }
 
     Editor.transformer.moveToTop();
@@ -321,14 +377,19 @@ function handleSelection(event) {
   Editor.transformer.nodes([]);
   Editor.selection = null;
   Editor.cornerRadius.val(0);
-  disableImageActions(true);
-  disableTextActions(true);
+  hideImageActions(true);
+  hideTextActions(true);
   updateElementActions(true);
 }
 
+/**
+ * Handles element deletion.
+ * Prevents the base image from being deleted.
+ * @param {KeyboardEvent} event - The event fired when the user presses a keybind.
+ */
 function handleDelete(event) {
-  if (Editor.selection === null || Editor.selection === Editor.image) return;
   if (event.key !== "Delete" && event.key !== "Backspace") return;
+  if (Editor.selection === null || Editor.selection === Editor.image) return;
   if (!Editor.selection.visible()) return; // Prevents deletion when editing a text or when cropping
 
   Editor.transformer.nodes([]);
@@ -338,6 +399,10 @@ function handleDelete(event) {
   Editor.selection = null;
 }
 
+/**
+ * Handles image upload (png only) and loads it to the stage.
+ * @param {any} event - The event fired by the file selector containing the uploaded file as a byte array.
+ */
 function handleFilePicked(event) {
   event.stopPropagation();
   const files = event.target.files;
@@ -366,8 +431,8 @@ function handleFilePicked(event) {
       Editor.inputWidth.val(Math.round(Editor.transformer.width()));
       Editor.inputHeight.val(Math.round(Editor.transformer.height()));
       Editor.cornerRadius.val(image.cornerRadius());
-      disableImageActions(false);
-      disableTextActions(true);
+      hideImageActions(false);
+      hideTextActions(true);
       updateElementActions(false);
       Editor.filtersHandler.updateFiltersSelection(true);
       Editor.crop.prop('disabled', Editor.image !== Editor.selection);
@@ -376,7 +441,12 @@ function handleFilePicked(event) {
   fileReader.readAsDataURL(files[0]);
 }
 
-// From the doc (https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html#sidebar)
+/**
+ * Handles stage zoom in and zoom out.
+ * The zoom is relative to the cursor position on the stage.
+ * This method is from the KonvaJS doc (https://konvajs.org/docs/sandbox/Zooming_Relative_To_Pointer.html#sidebar)
+ * @param {any} e - The wheel event which fired the handler.
+ */
 function handleStageZooming(e) {
   const scaleBy = 1.05;
   e.evt.preventDefault();
@@ -406,6 +476,9 @@ function handleStageZooming(e) {
   Editor.stage.position(newPos);
 }
 
+/**
+ * Resets the stage and image to their default properties.
+ */
 function reset() {
     Editor.stage.setAttrs({ x: 0, y: 0 });
     Editor.inputWidth.val(Editor.baseImage.width);
@@ -436,12 +509,15 @@ function reset() {
     Editor.children = [];
     Editor.cornerRadius.val(0);
     Editor.filtersHandler.reset();
-    disableImageActions(false);
+    hideImageActions(false);
     updateElementActions(false);
 
     Editor.image.cache();
 }
 
+/**
+ * Saves the edited image to the gallery.
+ */
 function save() {
   Editor.transformer.nodes([]);
   const rect = Editor.image.getClientRect();
@@ -459,6 +535,10 @@ function save() {
   });
 }
 
+/**
+ * Removes the editor frame handlers and destroys it.
+ * @param {JQuery.Deferred<any, any, any>} deferredCallback - Callback called to continue execution even if the component is destroying (here, used for saving the edited image).
+ */
 function clean(deferredCallback = Editor.deferredCallback) {
     reset();
     window.removeEventListener('keydown', handleDelete);
@@ -474,7 +554,13 @@ function clean(deferredCallback = Editor.deferredCallback) {
     });
 }
 
-// Utils
+/**
+ * Parses the given value into an integer value. 
+ * If the value couldn't be parsed returns 1.
+ * If the value is lower than 1 returns 1.
+ * @param {string} value - The int value as a string.
+ * @returns {int} Returns the parsed value as an int.
+ */
 function stringToNumber(value) {
     if (value === undefined) return 1;
 
@@ -482,30 +568,43 @@ function stringToNumber(value) {
     return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed;
 }
 
-function disableImageActions(disabled) {
-  if (disabled === true) {
+/**
+ * Hides or displays the image actions panel. 
+ * @param {boolean} hide - Whether to hide or not the image actions panel.
+ */
+function hideImageActions(hide) {
+  if (hide === true) {
     Editor.imageActions.addClass('editor-hidden');
   }
   else {
     Editor.imageActions.removeClass('editor-hidden');
   }
-
-  Editor.cornerRadius.prop('disabled', disabled);
-  Editor.crop.prop('disabled', disabled);
 }
 
-function disableTextActions(disabled) {
-  if (disabled === true) Editor.textActions.addClass('editor-hidden');
+/**
+ * Hides or displays the text actions panel. 
+ * @param {boolean} hide - Whether to hide or not the text actions panel.
+ */
+function hideTextActions(hide) {
+  if (hide === true) Editor.textActions.addClass('editor-hidden');
   else Editor.textActions.removeClass('editor-hidden');
 }
 
+/**
+ * Updates the text panel inputs (UI).
+ */
 function updateTextActions() {
   if (Editor.selection instanceof Konva.Text) {
     Editor.textColor.val(Editor.selection.fill());
     Editor.textStyle.val(Editor.selection.fontStyle());
+    Editor.textSize.val(Editor.selection.fontSize());
   }
 }
 
+/**
+ * Updates the selected element panel buttons, inputs and texts (UI).
+ * @param {boolean} disabled - Whether to disable or not the inputs and buttons.
+ */
 function updateElementActions(disabled) {
   Editor.inputWidth.prop('disabled', disabled);
   Editor.inputHeight.prop('disabled', disabled);
@@ -518,6 +617,11 @@ function updateElementActions(disabled) {
   Editor.wrapper.find('#selected-element-type').text(disabled === true ? '-' : Editor.selection?.getClassName() ?? '-');
 }
 
+/**
+ * Inits the editor html frame and returns it.
+ * @param {object} messages - Translated messages used in the editor as an object.
+ * @returns {string} - The editor content as html.
+ */
 const modal = (messages) => 
     `<aside class="editor-frame" id="editor-wrapper">
       <div class="editor-layout">

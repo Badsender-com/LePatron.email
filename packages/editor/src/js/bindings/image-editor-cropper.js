@@ -1,6 +1,10 @@
 'use strict';
 import Konva from 'Konva';
 
+// IMPORTANT NOTE : 
+// Only the main image can be cropped atm. 
+// This is intended and be easily altered by manipulating the editor.selection instead of the editor.image !
+
 export const EditorCropper = (editor) => {
 
     // The following elements are used solely for cropping and are therefore temporary (i.e. they are destroyed from the stage when the crop is canceled or saved).
