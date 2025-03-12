@@ -45,6 +45,7 @@ const Editor = {
     cornerRadius: null,
     textColor: null,
     textStyle: null,
+    textSize: null,
     crop: null,
     cropCancel: null,
     cropSubmit: null,
@@ -65,6 +66,7 @@ const Editor = {
     messages: null,
     baseAnchors: [],
     cornerAnchors: [],
+    middleAnchors: [],
 }
 
 export function OpenEditor(next, abort, data, file, messages, parent, image) {
@@ -76,6 +78,7 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
     Editor.children = [];
     Editor.baseAnchors = ['top-left', 'top-center', 'top-right', 'middle-right', 'middle-left', 'bottom-left', 'bottom-center', 'bottom-right'];
     Editor.cornerAnchors = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    Editor.middleAnchors = ['top-center', 'middle-right', 'middle-left', 'bottom-center'];
     initEditor(parent, image, messages);
 }
 
@@ -155,6 +158,7 @@ function initEditor(parent, imageFile, messages) {
       Editor.cornerRadius = $wrapper.find(`#corner-radius`);
       Editor.textColor = $wrapper.find(`#text-color`);
       Editor.textStyle = $wrapper.find(`#text-style`);
+      Editor.textSize = $wrapper.find(`#text-size`);
       Editor.crop = $wrapper.find('.js-actions-crop');
       Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
       Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
@@ -191,8 +195,6 @@ function initEditor(parent, imageFile, messages) {
       Editor.filtersHandler = EditorFilters(Editor, messages);
 
       bindHandlers();
-
-      var scaleBy = 1.05;
     }
 }
 
@@ -216,6 +218,10 @@ function bindHandlers() {
     Editor.fileAction.on('click', () => Editor.fileInput.trigger('click'));
     Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recurse calls
     Editor.fileInput.on('change', (e) => handleFilePicked(e));
+    
+    Editor.inputWidth.on('keydown', (e) => e.stopPropagation());
+    Editor.inputHeight.on('keydown', (e) => e.stopPropagation());
+    Editor.textSize.on('keydown', (e) => e.stopPropagation());
     
     window.addEventListener('keydown', (e) => handleDelete(e));
 }
@@ -282,10 +288,15 @@ function handleSelection(event) {
     Editor.transformer.moveToTop(); // Prevents transformer from being hidden by other elements
 
     if (Editor.selection instanceof Konva.Text) {
+      Editor.transformer.enabledAnchors(Editor.middleAnchors);
+      Editor.transformer.flipEnabled(false);
       disableTextActions(false);
       disableImageActions(true);
       updateTextActions();
     } else if (Editor.selection instanceof Konva.Image) {
+      Editor.transformer.enabledAnchors(Editor.baseAnchors);
+      Editor.transformer.flipEnabled(true);
+
       disableImageActions(false);
       disableTextActions(true);
       Editor.cornerRadius.val(Editor.selection.cornerRadius());
@@ -294,6 +305,8 @@ function handleSelection(event) {
       Editor.crop.prop('disabled', Editor.selection !== Editor.image);
     }
     else {
+      Editor.transformer.enabledAnchors(Editor.baseAnchors);
+      Editor.transformer.flipEnabled(true);
       Editor.cornerRadius.val(0);
       disableImageActions(true);
       disableTextActions(true);
@@ -304,6 +317,7 @@ function handleSelection(event) {
     return;
   }
 
+  Editor.transformer.enabledAnchors(Editor.baseAnchors);
   Editor.transformer.nodes([]);
   Editor.selection = null;
   Editor.cornerRadius.val(0);
@@ -622,6 +636,11 @@ const modal = (messages) =>
                     <option value="italic" style="font-style: italic;">Italic</option>
                     <option value="bold" style="font-style: bold;">Bold</option>
                   </select>
+                </div>
+
+                <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                  <p>Taille</p>
+                  <input type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px;" />
                 </div>
               </div>
             </div>

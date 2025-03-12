@@ -5,6 +5,9 @@ export const EditorText = (editor) => {
 
     editor.textColor.on('input', () => handleColorChanged());
     editor.textStyle.on('input', () => handleStyleChanged());
+    editor.textSize.on('input', () => handleSizeChanged());
+
+    const minSize = 10;
 
     function addText() {
         const textNode = new Konva.Text({
@@ -19,15 +22,26 @@ export const EditorText = (editor) => {
         textNode.offsetX(textNode.width() / 2);
         textNode.offsetY(textNode.height() / 2);
 
+        textNode.on('transform', () => textNode.setAttrs({
+            width: Math.max(textNode.width() * textNode.scaleX(), textNode.fontSize()),
+            height: Math.max(textNode.height() * textNode.scaleY(), textNode.fontSize() * textNode.lineHeight() + 2),
+            scaleX: 1,
+            scaleY: 1,
+            offsetX: Math.max(textNode.width() * textNode.scaleX(), textNode.fontSize()) / 2,
+            offsetY: Math.max(textNode.height() * textNode.scaleY(), textNode.fontSize()) / 2,
+        }));
         textNode.on('pointerdblclick', () => editText(textNode));
         textNode.padding(6);
         editor.children.push(textNode);
         editor.layer.add(textNode);
         editor.transformer.nodes([textNode]);
+        editor.transformer.enabledAnchors(editor.middleAnchors);
+        editor.transformer.flipEnabled(false);
         editor.transformer.moveToTop();
         editor.selection = textNode;
         editor.inputWidth.val(Math.round(editor.transformer.width()));
         editor.inputHeight.val(Math.round(editor.transformer.height()));
+        editor.textSize.val(textNode.fontSize());
     }
 
     function editText(node) {
@@ -120,6 +134,35 @@ export const EditorText = (editor) => {
         if (!editor.selection instanceof Konva.Text) return;
 
         editor.selection.fontStyle(editor.textStyle.val());
+    }
+
+    function handleSizeChanged() {
+        if (!editor.selection instanceof Konva.Text) return;
+
+        const node = editor.selection;
+        const newFontSize = stringToNumber(editor.textSize.val());
+        node.fontSize(newFontSize);
+
+        const canvas = editor.layer.getCanvas();
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${newFontSize}px ${node.fontFamily()}`;
+        const metrics = ctx.measureText(node.text());
+        const w = metrics.width;
+
+        const newWidth = w + node.padding() + 8;
+
+        node.setAttrs({
+            width: newWidth,
+            scaleX: 1,
+            offsetX: newWidth / 2,
+        });
+    }
+
+    function stringToNumber(value) {
+        if (value === undefined) return minSize;
+    
+        const parsed = parseInt(value, 10);
+        return Number.isNaN(parsed) ? minSize : parsed;
     }
 
     return { addText, removeText };
