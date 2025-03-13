@@ -116,6 +116,8 @@ export const EditorCropper = (editor) => {
             rotateLineVisible: false,
         });
 
+        transformer.on('dragmove', (e) => handleSelectorMovement(e));
+
         // Saves the image current properties.
         baseImage = {
             x: editor.image.x(),
@@ -148,7 +150,12 @@ export const EditorCropper = (editor) => {
             height: editor.baseImage.height,
             offsetX: editor.baseImage.width / 2,
             offsetY: editor.baseImage.height / 2,
+            fill: editor.image.fill(),
         });
+    }
+
+    function handleSelectorMovement(e) {
+        // TODO: limit selector movement to an area
     }
 
     /**

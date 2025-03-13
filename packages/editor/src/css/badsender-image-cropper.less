@@ -58,7 +58,7 @@
   border-top-right-radius: 4px;
 }
 
-.editor-close-icon {
+.editor-icon-button {
   display: block;
   color: white;
   background: transparent;
@@ -137,6 +137,21 @@
   position: absolute;
   pointer-events: none;
   padding-right: .75rem;
+}
+
+.editor-background-menu {
+  border: 1px solid var(--v-accent-base);
+  background-color: whitesmoke;
+  display: inline-flex;
+  position: absolute;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: none;
+
+  button {
+    background-color: var(--v-accent-base);
+    border-radius: 4px;
+  }
 }
 
 .editor-button {
