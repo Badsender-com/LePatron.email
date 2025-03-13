@@ -183,6 +183,7 @@ var start = function (
         editor_text_style_italic: vm.t('editor-text-style-italic'),
         editor_text_style_bold: vm.t('editor-text-style-bold'),
         editor_text_size: vm.t('editor-text-size'),
+        editor_text_font: vm.t('editor-text-font'),
         editor_color: vm.t('editor-color'),
         editor_mirror: vm.t('editor-mirror'),
         editor_rotate: vm.t('editor-rotate'),

@@ -6,6 +6,7 @@ export const EditorText = (editor) => {
   editor.textColor.on('input', () => handleColorChanged());
   editor.textStyle.on('input', () => handleStyleChanged());
   editor.textSize.on('input', () => handleSizeChanged());
+  editor.textFont.on('input', () => handleFontChanged());
 
   const minSize = 10;
 
@@ -192,7 +193,14 @@ export const EditorText = (editor) => {
     if (!editor.selection instanceof Konva.Text) return;
 
     editor.selection.fontStyle(editor.textStyle.val());
-    handleSizeChanged(); // Force updates the size because bold and italic styles take more space than normal style
+    handleSizeChanged(); // Force updates the size because bold and italic styles take more space than normal style 
+  }
+
+  function handleFontChanged() {
+    if (!editor.selection instanceof Konva.Text) return;
+
+    editor.selection.fontFamily(editor.textFont.val());
+    handleSizeChanged();
   }
 
   /**

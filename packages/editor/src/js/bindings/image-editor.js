@@ -46,6 +46,7 @@ const Editor = {
     textColor: null,
     textStyle: null,
     textSize: null,
+    textFont: null,
     crop: null,
     cropCancel: null,
     cropSubmit: null,
@@ -186,6 +187,7 @@ function initEditor(parent, src, messages) {
     Editor.textColor = $wrapper.find(`#text-color`);
     Editor.textStyle = $wrapper.find(`#text-style`);
     Editor.textSize = $wrapper.find(`#text-size`);
+    Editor.textFont = $wrapper.find(`#text-font`);
     Editor.crop = $wrapper.find('.js-actions-crop');
     Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
     Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
@@ -431,6 +433,9 @@ function handleDelete(event) {
   Editor.children = Editor.children.filter(_node => _node !== Editor.selection);
   Editor.stage.batchDraw();
   Editor.selection = null;
+  hideImageActions(true);
+  hideTextActions(true);
+  toggleBackgroundMenu(false);
 }
 
 /**
@@ -743,6 +748,7 @@ function updateTextActions() {
     Editor.textColor.val(Editor.selection.fill());
     Editor.textStyle.val(Editor.selection.fontStyle());
     Editor.textSize.val(Editor.selection.fontSize());
+    Editor.textFont.val(Editor.selection.fontFamily());
   }
 }
 
@@ -910,6 +916,22 @@ const modal = (messages) =>
                     <option value="normal">${messages.editor_text_style_normal}</option>
                     <option value="italic" style="font-style: italic;">${messages.editor_text_style_italic}</option>
                     <option value="bold" style="font-style: bold;">${messages.editor_text_style_bold}</option>
+                  </select>
+                </div>
+
+                <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                  <p>${messages.editor_text_font}</p>
+                   <select class="editor-border-accent" name="text-font" id="text-font" style="width: 160px;">
+                    <option value="Arial" style="font-family: 'Arial', 'sans-serif';">Arial</option>
+                    <option value="Verdana" style="font-family: 'Verdana', 'sans-serif';">Verdana</option>
+                    <option value="Tahoma" style="font-family: 'Tahoma', 'sans-serif';">Tahoma</option>
+                    <option value="Trebuchet MS" style="font-family: 'Trebuchet MS', 'sans-serif';">Trebuchet MS</option>
+                    <option value="Times New Roman" style="font-family: 'Times New Roman', Times, 'sans-serif';">Times New Roman</option>
+                    <option value="Georgia" style="font-family: 'Georgia', serif;">Georgia</option>
+                    <option value="Garamond" style="font-family: 'Garamond', serif;">Garamond</option>
+                    <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
+                    <option value="Brush Script MT" style="font-family: 'Brush Script MT', cursive;">Brush Script MT</option>
+                    <option value="..." style="font-family:'', 'sans-serif';" disabled>...</option>
                   </select>
                 </div>
 

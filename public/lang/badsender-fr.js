@@ -89,6 +89,7 @@ module.exports = {
   'editor-text-style-italic': 'Italique',
   'editor-text-style-bold': 'Gras',
   'editor-text-size': 'Taille',
+  'editor-text-font': 'Police',
   cancel: 'Annuler',
   upload: 'Enregistrer',
 
