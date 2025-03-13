@@ -120,8 +120,23 @@
 .editor-actions {
   width: 100%;
   display: flex;
+  padding: .75rem 2rem .75rem .5rem; // 8px on the left because of the inner layout padding (editor-layout-inner class)
+}
+
+.editor-actions-main {
   gap: 1rem;
-  padding: .75rem 2rem .75rem calc(1.5rem + 200px);
+  padding-left: 8px;
+}
+
+.editor-actions-zoom {
+  min-width: 220px;
+}
+
+.editor-input-adornment {
+  display: inline-flex;
+  position: absolute;
+  pointer-events: none;
+  padding-right: .75rem;
 }
 
 .editor-button {

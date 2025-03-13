@@ -22,8 +22,8 @@ export const EditorText = (editor) => {
             ellipsis: true, // Shows "..." at the end of the truncated text when the node's text is bigger than the node's width / height
         });
 
-        textNode.x((editor.stage.width() - textNode.width()) / 2);
-        textNode.y((editor.stage.height() - textNode.height()) / 2);
+        textNode.x(editor.stage.width() / 2);
+        textNode.y(editor.stage.height() - textNode.height() - 10);
         textNode.offsetX(textNode.width() / 2);
         textNode.offsetY(textNode.height() / 2);
 

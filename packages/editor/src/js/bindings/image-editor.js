@@ -27,7 +27,6 @@ const Editor = {
     textHandler: null,
     filtersHandler: null,
     ratio: null,
-    zoom: 100,
     cropping: false,
     selection: null,
 
@@ -59,6 +58,9 @@ const Editor = {
     imageActions: null,
     textActions: null,
     colorPicker: null,
+    zoomInput: null,
+    zoomIn: null,
+    zoomOut: null,
 
     // Misc
     deferredCallback: null,
@@ -191,6 +193,9 @@ function initEditor(parent, src, messages) {
     Editor.elementActions = $wrapper.find('#selected-element-actions');
     Editor.imageActions = $wrapper.find('#selected-image-actions');
     Editor.textActions = $wrapper.find('#selected-text-actions');
+    Editor.zoomInput = $wrapper.find('#stage-zoom');
+    Editor.zoomIn = $wrapper.find('.js-actions-zoomin');
+    Editor.zoomOut = $wrapper.find('.js-actions-zoomout');
 
     Editor.inputWidth.val(mainImage.width());
     Editor.inputHeight.val(mainImage.height());
@@ -208,6 +213,8 @@ function initEditor(parent, src, messages) {
 
     Editor.wrapper.find('#selected-element-type').text(Editor.selection.getClassName());
     hideTextActions(true);
+
+    Editor.zoomInput.val("100");
 
     // Requests the browser to render the first frame to make the editor visible
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
@@ -251,6 +258,9 @@ function bindHandlers() {
     Editor.inputHeight.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the height input
     Editor.textSize.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the text size input
     
+    Editor.zoomIn.on('click', () => handleManualZoom(true));
+    Editor.zoomOut.on('click', () => handleManualZoom(false));
+
     window.addEventListener('keydown', (e) => handleDelete(e));
 }
 
@@ -458,16 +468,10 @@ function handleFilePicked(event) {
  * @param {any} e - The wheel event which fired the handler.
  */
 function handleStageZooming(e) {
+  if (Editor.cropping === true) return; 
+
   const scaleBy = 1.05;
   e.evt.preventDefault();
-
-  const oldScale = Editor.stage.scaleX();
-  const pointer = Editor.stage.getPointerPosition();
-
-  const mousePointTo = {
-    x: (pointer.x - Editor.stage.x()) / oldScale,
-    y: (pointer.y - Editor.stage.y()) / oldScale,
-  };
 
   let direction = e.evt.deltaY > 0 ? -1 : 1;
 
@@ -476,15 +480,63 @@ function handleStageZooming(e) {
     direction = -direction;
   }
 
-  const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+  const currentZoom = Math.round(Editor.stage.scaleX() * 100);
+  if ((currentZoom === 0 && direction == -1) || (currentZoom >= 500 && direction == 1)) return;
 
-  Editor.stage.scale({ x: newScale, y: newScale });
+  const oldScale = Editor.stage.scaleX();
 
-  const newPos = {
-    x: pointer.x - mousePointTo.x * newScale,
-    y: pointer.y - mousePointTo.y * newScale,
+  zoomStageToScale(direction > 0 ? oldScale * scaleBy : oldScale / scaleBy, false);
+}
+
+/**
+ * Zoom stage to the given scale.
+ * @param {float} scale - The new scale of the sage as a floating value.
+ * @param {boolean} centered - If true, the scale will follow the center of the stage. Otherwise, the scale will follow the user's pointer.
+ */
+function zoomStageToScale(scale, centered) {
+  const oldScale = Editor.stage.scaleX();
+  const pointer = Editor.stage.getPointerPosition();
+
+  const mousePointTo = {
+    x: (pointer.x - Editor.stage.x()) / oldScale,
+    y: (pointer.y - Editor.stage.y()) / oldScale,
   };
+
+  Editor.stage.scale({ x: scale, y: scale });
+
+  let newPos = {
+    x: 0,
+    y: 0,
+  };
+
+  if (centered === true) {
+    const centerX = Editor.stage.width() / 2;
+    const centerY = Editor.stage.height() / 2;
+
+    newPos = {
+      x: Editor.stage.x() + (centerX * oldScale) - (centerX * scale),
+      y: Editor.stage.y() + (centerY * oldScale) - (centerY * scale),
+    };
+  } else {
+    newPos = {
+      x: pointer.x - mousePointTo.x * scale,
+      y: pointer.y - mousePointTo.y * scale,
+    };
+  }
+
   Editor.stage.position(newPos);
+  Editor.zoomInput.val(Math.round(scale * 100));
+}
+
+/**
+ * Handles zoom-in and zoom-out buttons clicks.
+ * @param {boolean} zoomIn - The direction of the zoom.
+ */
+function handleManualZoom(zoomIn) {
+  const scaleBy = zoomIn ? 0.05 : -0.05;
+  const currentZoom = Editor.stage.scaleX();
+  if ((currentZoom === 0 && zoomIn === false) || (currentZoom >= 500 && zoomIn === true)) return;
+  zoomStageToScale(currentZoom + scaleBy, true);
 }
 
 /**
@@ -525,6 +577,7 @@ function reset() {
     updateElementActions(false);
 
     Editor.image.cache();
+    Editor.zoomInput.val("100");
 }
 
 /**
@@ -776,12 +829,21 @@ const modal = (messages) =>
             </div>
             <!-- Selected text panel -->
 
+            <!-- Crop selector panel -->
+            <div class="v-stack" style="height: 100%; width: 100%; margin-top: 2rem;" id="selected-text-actions">
+            
+            </div>
+            <!-- Crop selector panel -->
+
           </div>
 
+           <!-- Canvas area -->
           <div id="konva-editor" class="editor-canvas"></div>
+          <!-- Canvas area -->
         </div>
 
-        <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden">
+        <!-- Cropper toolbar -->
+        <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden" style="gap: 1rem;">
           <div class="crop-ratio-selector js-ratio-actions">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
@@ -805,27 +867,51 @@ const modal = (messages) =>
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M400-304 240-464l56-56 104 104 264-264 56 56-320 320Z"/></svg>
           </button>
         </div>
+        <!-- Cropper toolbar -->
 
-        <div class="editor-actions js-toolbar">
-          <div class="spacer"></div>
+        <!-- Canvas toolbar -->
+        <div class="editor-actions js-toolbar" style="padding-top: 1.25rem;">
 
-          <button class="js-actions-reset editor-button" type="button" title="${messages.reset_editor}">
-            <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
-          </button>
+          <div class="h-stack editor-flex-center editor-actions-zoom" style="gap: .5rem; padding: 0 4px;">
+            <button class="js-actions-zoomout editor-button" type="button" title="${messages.reset_editor}">
+              <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>
+            </button>
 
-          <button id="js-actions-upload" class="editor-button" type="button" title="${messages.image_upload}">
-            <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
-          </button>
+            <div class="editor-sizes">
+              <label for="resize-width" class="editor-size">
+                <span class="editor-size-label">Zoom</span>
+                <div class="h-stack" style="flex-direction: row-reverse;">
+                  <input class="editor-size-input" name="stage-zoom" id="stage-zoom" type="text" readonly style="text-align: center;"/>
+                  <span class="editor-input-adornment">%</span>
+                </div>
+              </label>
+            </div>
 
-          <button class="js-actions-text editor-button" type="button" title="${messages.text_editor}">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
-          </button>
+            <button class="js-actions-zoomin editor-button" type="button" title="${messages.reset_editor}">
+              <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+            </button>
+          </div>
 
-          <div class="spacer"></div>
+          <div class="h-stack editor-flex-center editor-actions-main" style="width: 100%;">
+            <button class="js-actions-reset editor-button" type="button" title="${messages.reset_editor}">
+              <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
+            </button>
 
-          <button class="js-actions-cancel editor-button editor-button-secondary" type="button">${messages.cancel}</button>
-          <button class="js-actions-submit editor-button" type="button">${messages.upload}</button>
+            <button id="js-actions-upload" class="editor-button" type="button" title="${messages.image_upload}">
+              <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
+              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+            </button>
+
+            <button class="js-actions-text editor-button" type="button" title="${messages.text_editor}">
+              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
+            </button>
+
+            <div class="spacer"></div>
+
+            <button class="js-actions-cancel editor-button editor-button-secondary" type="button">${messages.cancel}</button>
+            <button class="js-actions-submit editor-button" type="button">${messages.upload}</button>
+          </div>
         </div>
+        <!-- Canvas toolbar -->
       </div>
     </aside>`;

@@ -14,6 +14,7 @@ export const EditorCropper = (editor) => {
     let ratioSelector = null;
     let baseImage = null;
     let image = null;
+    let stageZoom = null;
 
     /**
      * Parses the given ratio value to a floating value.
@@ -80,6 +81,11 @@ export const EditorCropper = (editor) => {
      * Also saves the image current properties.
      */
     function init() {
+        stageZoom = {
+            scale: editor.stage.scaleX(),
+            pos: editor.stage.position(),
+        };
+
         ratioSelector = editor.wrapper.find("#ratio-selector");
         ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
 
@@ -184,6 +190,8 @@ export const EditorCropper = (editor) => {
         transformer.moveToTop();
         editor.transformer.nodes([]);
         editor.stage.add(cropLayer);
+        editor.stage.scale({ x: 1, y: 1 });
+        editor.stage.position({ x: 0, y: 0 });
         editor.stage.batchDraw();
     }
 
@@ -233,6 +241,14 @@ export const EditorCropper = (editor) => {
         editor.image.cache();
         editor.transformer.nodes([editor.image]);
         editor.transformer.moveToTop();
+        editor.stage.scale({
+            x: stageZoom.scale,
+            y: stageZoom.scale
+        });
+        editor.stage.position({
+            x: stageZoom.pos.x,
+            y: stageZoom.pos.y
+        });
         editor.stage.batchDraw();
 
         transformer = null;
