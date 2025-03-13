@@ -16,8 +16,10 @@ export const EditorText = (editor) => {
         const textNode = new Konva.Text({
             draggable: true,
             text: 'LePatron Email Builder',
-            fontSize: 20,
+            fontSize: 40,
+            padding: 6,
             fill: '#000',
+            ellipsis: true, // Shows "..." at the end of the truncated text when the node's text is bigger than the node's width / height
         });
 
         textNode.x((editor.stage.width() - textNode.width()) / 2);
@@ -34,7 +36,6 @@ export const EditorText = (editor) => {
             offsetY: Math.max(textNode.height() * textNode.scaleY(), textNode.fontSize()) / 2,
         }));
         textNode.on('pointerdblclick', () => editText(textNode));
-        textNode.padding(6);
         editor.children.push(textNode);
         editor.layer.add(textNode);
         editor.transformer.nodes([textNode]);

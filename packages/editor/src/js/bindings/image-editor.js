@@ -27,6 +27,7 @@ const Editor = {
     textHandler: null,
     filtersHandler: null,
     ratio: null,
+    zoom: 100,
     cropping: false,
     selection: null,
 
@@ -54,6 +55,7 @@ const Editor = {
     toolbar: null,
     fileAction: null,
     fileInput: null,
+    elementActions: null,
     imageActions: null,
     textActions: null,
     colorPicker: null,
@@ -186,6 +188,7 @@ function initEditor(parent, src, messages) {
     Editor.toolbar = $wrapper.find('.js-toolbar');
     Editor.fileAction = $wrapper.find('#js-actions-upload');
     Editor.fileInput = $wrapper.find('#image-upload');
+    Editor.elementActions = $wrapper.find('#selected-element-actions');
     Editor.imageActions = $wrapper.find('#selected-image-actions');
     Editor.textActions = $wrapper.find('#selected-text-actions');
 
@@ -258,8 +261,8 @@ function bindHandlers() {
  */
 function setSize(width, height) {
   if (Editor.selection !== null) {
-    Editor.selection.width(stringToNumber(width));
-    Editor.selection.height(stringToNumber(height));
+    Editor.selection.width(stringToNumber(width, 1));
+    Editor.selection.height(stringToNumber(height, 1));
     Editor.selection.offsetX(width / 2);
     Editor.selection.offsetX(height / 2);
   } 
@@ -299,6 +302,9 @@ function rotate(degrees) {
  */
 function startCropping() {
   if (Editor.selection === Editor.image) {
+    updateElementActions(true);
+    hideElementActions(true);
+    hideImageActions(true);
     Editor.cropping = true;
     Editor.cropper.start();
     Editor.toolbar.addClass('editor-hidden');
@@ -316,6 +322,9 @@ function stopCropping(doCrop) {
   Editor.cropper.stop(doCrop);
   Editor.toolbar.removeClass('editor-hidden');
   Editor.cropToolbar.addClass('editor-hidden');
+  updateElementActions(false);
+  hideElementActions(false);
+  hideImageActions(false);
 }
 
 /**
@@ -325,7 +334,7 @@ function stopCropping(doCrop) {
 function handleCornerRadius() {
   if (!Editor.selection instanceof Konva.Image || Editor.selection === null) return;
 
-  Editor.selection.cornerRadius(stringToNumber(Editor.cornerRadius.val()));
+  Editor.selection.cornerRadius(stringToNumber(Editor.cornerRadius.val(), 0));
   Editor.selection.cache();
 }
 
@@ -434,6 +443,7 @@ function handleFilePicked(event) {
       hideImageActions(false);
       hideTextActions(true);
       updateElementActions(false);
+      Editor.transformer.enabledAnchors(Editor.baseAnchors);
       Editor.filtersHandler.updateFiltersSelection(true);
       Editor.crop.prop('disabled', Editor.image !== Editor.selection);
     };
@@ -461,6 +471,7 @@ function handleStageZooming(e) {
 
   let direction = e.evt.deltaY > 0 ? -1 : 1;
 
+  // If the user holds ctrl key the direction is inverted
   if (e.evt.ctrlKey) {
     direction = -direction;
   }
@@ -480,7 +491,7 @@ function handleStageZooming(e) {
  * Resets the stage and image to their default properties.
  */
 function reset() {
-    Editor.stage.setAttrs({ x: 0, y: 0 });
+    Editor.stage.setAttrs({ x: 0, y: 0, scaleX: 1, scaleY: 1 });
     Editor.inputWidth.val(Editor.baseImage.width);
     Editor.inputHeight.val(Editor.baseImage.height);
     Editor.image.x(Editor.stage.width() / 2);
@@ -510,6 +521,7 @@ function reset() {
     Editor.cornerRadius.val(0);
     Editor.filtersHandler.reset();
     hideImageActions(false);
+    hideTextActions(true);
     updateElementActions(false);
 
     Editor.image.cache();
@@ -559,13 +571,27 @@ function clean(deferredCallback = Editor.deferredCallback) {
  * If the value couldn't be parsed returns 1.
  * If the value is lower than 1 returns 1.
  * @param {string} value - The int value as a string.
+ * @param {int} min - The minimum fallback value.
  * @returns {int} Returns the parsed value as an int.
  */
-function stringToNumber(value) {
+function stringToNumber(value, min) {
     if (value === undefined) return 1;
 
     const parsed = parseInt(value, 10);
-    return Number.isNaN(parsed) ? 1 : parsed < 1 ? 1 : parsed;
+    return Number.isNaN(parsed) ? min : parsed < min ? min : parsed;
+}
+
+/**
+ * Hides or displays the element actions panel. 
+ * @param {boolean} hide - Whether to hide or not the element actions panel.
+ */
+function hideElementActions(hide) {
+  if (hide === true) {
+    Editor.elementActions.addClass('editor-hidden');
+  }
+  else {
+    Editor.elementActions.removeClass('editor-hidden');
+  }
 }
 
 /**
@@ -637,11 +663,11 @@ const modal = (messages) =>
         <div class="editor-layout-inner">
 
           <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .5rem; gap: 4px; overflow-y: auto;">
-            <h4>${messages.editor_panel_title}</h4>
 
             <!-- Selected element panel -->
-            <div class="v-stack" id="selected-element-actions">
-              <div class="h-stack" style="gap: 4px; justify-content: space-between;">
+            <div class="v-stack editor-bottom-border" id="selected-element-actions">
+              <h4>${messages.editor_panel_title}</h4>
+              <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
                 <p>Taille</p>
                 <div class="editor-sizes">
                   <label for="resize-width" class="editor-size">
@@ -735,7 +761,7 @@ const modal = (messages) =>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
                   <p>${messages.editor_text_style}</p>
-                   <select name="text-style" id="text-style" style="width: 120px;">
+                   <select class="editor-border-accent" name="text-style" id="text-style" style="width: 120px;">
                     <option value="normal">${messages.editor_text_style_normal}</option>
                     <option value="italic" style="font-style: italic;">${messages.editor_text_style_italic}</option>
                     <option value="bold" style="font-style: bold;">${messages.editor_text_style_bold}</option>
@@ -744,7 +770,7 @@ const modal = (messages) =>
 
                 <div class="h-stack" style="width: 100%; justify-content: space-between;">
                   <p>${messages.editor_text_size}</p>
-                  <input type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px;" />
+                  <input class="editor-border-accent" type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px; text-align: right;" />
                 </div>
               </div>
             </div>
@@ -758,7 +784,7 @@ const modal = (messages) =>
         <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden">
           <div class="crop-ratio-selector js-ratio-actions">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
-            <select name="ratio-selector" id="ratio-selector" style="border-radius: 2px;">
+            <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
                 <option value="0">${messages.editor_ratio_freeform}</option>
                 <option value="4-3">${messages.editor_ratio_standard}</option>
                 <option value="16-9">${messages.editor_ratio_landscape}</option>

@@ -22,7 +22,12 @@
 }
 
 .editor-hidden {
-  display: none !important;
+  visibility: hidden;
+  opacity: 0;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
 }
 
 .editor-layout {
@@ -36,6 +41,10 @@
   box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
+
+  * {
+    transition: all .3s ease-in-out;
+  }
 }
 
 .editor-header {
@@ -301,6 +310,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.editor-bottom-border {
+  border-bottom: 1px solid var(--v-accent-darken1);
+}
+
+.editor-border-accent {
+  border: 1px solid var(--v-accent-base) !important;
 }
 
 .separator {
