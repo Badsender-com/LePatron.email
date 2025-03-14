@@ -47,7 +47,7 @@ module.exports = {
   'editor-crop-panel-title': 'Selector area',
   'editor-actions-panel-title': 'Actions',
   'editor-filters-panel-title': 'Filters',
-  'editor-ratio-freeform': 'Freeform',
+  'editor-ratio-free': 'Freeform',
   'editor-ratio-standard': 'Standard (4:3)',
   'editor-ratio-landscape': 'Landscape (phone) (16:9)',
   'editor-ratio-portrait': 'Portrait (phone) (9:16)',
