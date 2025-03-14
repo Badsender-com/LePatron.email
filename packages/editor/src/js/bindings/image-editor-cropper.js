@@ -285,32 +285,39 @@ export const EditorCropper = (editor) => {
      * Restores the image with the saved properties from baseImage let.
      * Destroys all elements from the cropping layer and applys or not the crop to the image.
      * @param {boolean} doCrop - Whether to apply the crop or not.
+     * @param {boolean} reset - Whether to reset the image crop or not.
      */
-    function stop(doCrop) {
+    function stop(doCrop, reset) {
         transformer.nodes([]);
         cropLayer.destroyChildren();
         cropLayer.destroy();
         
-        if (doCrop) {
-            applyCrop();
+        if (reset === true) {
+            editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
+            editor.lastCrop = null;
         }
         else {
-            editor.image.setAttrs({
-                x: baseImage.x,
-                y: baseImage.y,
-                width: baseImage.width,
-                height: baseImage.height,
-                scaleX: baseImage.scaleX,
-                scaleY: baseImage.scaleY,
-                offsetX: baseImage.offsetX,
-                offsetY: baseImage.offsetY,
-                crop: {
-                    x: baseImage.crop.x,
-                    y: baseImage.crop.y,
-                    width: baseImage.crop.width,
-                    height: baseImage.crop.height,
-                }
-            });
+            if (doCrop) {
+                applyCrop();
+            }
+            else {
+                editor.image.setAttrs({
+                    x: baseImage.x,
+                    y: baseImage.y,
+                    width: baseImage.width,
+                    height: baseImage.height,
+                    scaleX: baseImage.scaleX,
+                    scaleY: baseImage.scaleY,
+                    offsetX: baseImage.offsetX,
+                    offsetY: baseImage.offsetY,
+                    crop: {
+                        x: baseImage.crop.x,
+                        y: baseImage.crop.y,
+                        width: baseImage.crop.width,
+                        height: baseImage.crop.height,
+                    }
+                });
+            }
         }
 
         editor.children.forEach(node => {

@@ -60,6 +60,8 @@ module.exports = {
   'editor-mirror': 'Flip',
   'editor-rotate': 'Rotate',
   'editor-size': 'Size',
+  'editor-zoomin': 'Zoom in',
+  'editor-zoomout': 'Zoom out',
   'editor-background-color': 'Background color',
   'editor-background-cancel': 'Cancel',
   'editor-background-save': 'Apply',

@@ -59,6 +59,8 @@ module.exports = {
   'editor-mirror': 'Mirroir',
   'editor-rotate': 'Rotation',
   'editor-size': 'Taille',
+  'editor-zoomin': 'Zoomer',
+  'editor-zoomout': 'Dézoomer',
   'editor-background-color': 'Couleur de fond',
   'editor-background-cancel': 'Annuler',
   'editor-background-save': 'Appliquer',

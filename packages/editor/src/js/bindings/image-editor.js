@@ -48,6 +48,7 @@ const Editor = {
     textSize: null,
     textFont: null,
     crop: null,
+    cropReset: null,
     cropCancel: null,
     cropSubmit: null,
     lastCrop: null,
@@ -190,6 +191,7 @@ function initEditor(parent, src, messages) {
     Editor.textSize = $wrapper.find(`#text-size`);
     Editor.textFont = $wrapper.find(`#text-font`);
     Editor.crop = $wrapper.find('.js-actions-crop');
+    Editor.cropReset = $wrapper.find('.js-actions-crop-reset');
     Editor.cropCancel = $wrapper.find('.js-actions-crop-cancel');
     Editor.cropSubmit = $wrapper.find('.js-actions-crop-submit');
     Editor.cropToolbar = $wrapper.find('.js-crop-toolbar');
@@ -259,8 +261,9 @@ function bindHandlers() {
     Editor.rotateRight.on('click', () => rotate(90));
     Editor.rotateLeft.on('click', () => rotate(-90));
     Editor.crop.on('click', () => startCropping());
-    Editor.cropCancel.on('click', () => stopCropping(false));
-    Editor.cropSubmit.on('click', () => stopCropping(true));
+    Editor.cropReset.on('click', () => stopCropping(false, true));
+    Editor.cropCancel.on('click', () => stopCropping(false, false));
+    Editor.cropSubmit.on('click', () => stopCropping(true, false));
     Editor.stage.on("pointerdown", (e) => handleSelection(e));
     Editor.fileAction.on('click', () => Editor.fileInput.trigger('click'));
     Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recursive calls
@@ -343,10 +346,11 @@ function startCropping() {
  * Stops the crop and hides its toolbar.
  * If the given value is false then the image is restored to its old size.
  * @param {boolean} doCrop - Validates or not the crop.
+ * @param {boolean} reset - Resets or not the crop.
  */
-function stopCropping(doCrop) {
+function stopCropping(doCrop, reset) {
   Editor.cropping = false;
-  Editor.cropper.stop(doCrop);
+  Editor.cropper.stop(doCrop, reset);
   Editor.toolbar.removeClass('editor-hidden');
   Editor.cropToolbar.addClass('editor-hidden');
   Editor.cropActions.addClass('editor-hidden');
@@ -801,11 +805,11 @@ const modal = (messages) =>
                 <div class="editor-sizes">
                   <label for="resize-width" class="editor-size">
                     <span class="editor-size-label">${messages.input_width}</span>
-                    <input class="editor-size-input" id="selector-width" name="selector-width" readonly />
+                    <input class="editor-size-input editor-input-readonly" id="selector-width" name="selector-width" readonly />
                   </label>
                   <label for="resize-height" class="editor-size">
                     <span class="editor-size-label">${messages.input_height}</span>
-                    <input class="editor-size-input" id="selector-height" name="selector-height" readonly />
+                    <input class="editor-size-input editor-input-readonly" id="selector-height" name="selector-height" readonly />
                   </label>
                 </div>
               </div>
@@ -980,6 +984,9 @@ const modal = (messages) =>
 
         <!-- Cropper toolbar -->
         <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden" style="gap: 1rem;">
+          <button class="js-actions-crop-reset editor-button" type="button" title="${messages.reset_editor}">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-320v-100q0-25 17.5-42.5T540-480h100v60H540v100h-60Zm60 240q-25 0-42.5-17.5T480-140v-100h60v100h100v60H540Zm280-240v-100H720v-60h100q25 0 42.5 17.5T880-420v100h-60ZM720-80v-60h100v-100h60v100q0 25-17.5 42.5T820-80H720Zm111-480h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z"/></svg>
+          </button>
           <div class="crop-ratio-selector js-ratio-actions">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
@@ -1009,7 +1016,7 @@ const modal = (messages) =>
         <div class="editor-actions js-toolbar" style="padding-top: 1.25rem;">
 
           <div class="h-stack editor-flex-center editor-actions-zoom" style="gap: .5rem; padding: 0 4px;">
-            <button class="js-actions-zoomout editor-button" type="button" title="${messages.reset_editor}">
+            <button class="js-actions-zoomout editor-button" type="button" title="${messages.editor_zoomout}">
               <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>
             </button>
 
@@ -1017,32 +1024,32 @@ const modal = (messages) =>
               <label for="resize-width" class="editor-size">
                 <span class="editor-size-label">Zoom</span>
                 <div class="h-stack" style="flex-direction: row-reverse;">
-                  <input class="editor-size-input" name="stage-zoom" id="stage-zoom" type="text" readonly style="text-align: center;"/>
+                  <input class="editor-size-input editor-input-readonly" name="stage-zoom" id="stage-zoom" type="text" readonly style="text-align: center;"/>
                   <span class="editor-input-adornment">%</span>
                 </div>
               </label>
             </div>
 
-            <button class="js-actions-zoomin editor-button" type="button" title="${messages.reset_editor}">
+            <button class="js-actions-zoomin editor-button" type="button" title="${messages.editor_zoomin}">
               <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
             </button>
           </div>
 
-          <div class="h-stack editor-flex-center editor-actions-main" style="width: 100%;">
-            <button class="js-actions-reset editor-button" type="button" title="${messages.reset_editor}">
-              <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
-            </button>
+          <div class="h-stack editor-actions-main" style="width: 100%; align-items: center; justify-content: flex-end;">
+            <div class="h-stack editor-flex-center" style="width: 100%; gap: 1rem;">
+              <button class="js-actions-reset editor-button" type="button" title="${messages.reset_editor}">
+                <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z"/></svg>
+              </button>
 
-            <button id="js-actions-upload" class="editor-button" type="button" title="${messages.image_upload}">
-              <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
-              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
-            </button>
+              <button id="js-actions-upload" class="editor-button" type="button" title="${messages.image_upload}">
+                <input type="file" name="image-upload" id="image-upload" style="display: none" accept="image/*" multiple="false" />
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+              </button>
 
-            <button class="js-actions-text editor-button" type="button" title="${messages.text_editor}">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
-            </button>
-
-            <div class="spacer"></div>
+              <button class="js-actions-text editor-button" type="button" title="${messages.text_editor}">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M420-160v-520H200v-120h560v120H540v520H420Z"/></svg>
+              </button>
+            </div>
 
             <button class="js-actions-cancel editor-button editor-button-secondary" type="button">${messages.cancel}</button>
             <button class="js-actions-submit editor-button" type="button">${messages.upload}</button>

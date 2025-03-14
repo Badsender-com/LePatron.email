@@ -189,6 +189,8 @@ var start = function (
         editor_mirror: vm.t('editor-mirror'),
         editor_rotate: vm.t('editor-rotate'),
         editor_size: vm.t('editor-size'),
+        editor_zoomin: vm.t('editor-zoomin'),
+        editor_zoomout: vm.t('editor-zoomout'),
         editor_background_color: vm.t('editor-background-color'),
         editor_background_cancel: vm.t('editor-background-cancel'),
         editor_background_save: vm.t('editor-background-save'),
