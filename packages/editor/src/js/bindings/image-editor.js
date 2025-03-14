@@ -58,6 +58,7 @@ const Editor = {
     elementActions: null,
     imageActions: null,
     textActions: null,
+    cropActions: null,
     colorPicker: null,
     zoomInput: null,
     zoomIn: null,
@@ -199,6 +200,7 @@ function initEditor(parent, src, messages) {
     Editor.elementActions = $wrapper.find('#selected-element-actions');
     Editor.imageActions = $wrapper.find('#selected-image-actions');
     Editor.textActions = $wrapper.find('#selected-text-actions');
+    Editor.cropActions = $wrapper.find('#crop-actions');
     Editor.zoomInput = $wrapper.find('#stage-zoom');
     Editor.zoomIn = $wrapper.find('.js-actions-zoomin');
     Editor.zoomOut = $wrapper.find('.js-actions-zoomout');
@@ -333,6 +335,7 @@ function startCropping() {
     Editor.cropper.start();
     Editor.toolbar.addClass('editor-hidden');
     Editor.cropToolbar.removeClass('editor-hidden');
+    Editor.cropActions.removeClass('editor-hidden');
   }
 }
 
@@ -346,6 +349,7 @@ function stopCropping(doCrop) {
   Editor.cropper.stop(doCrop);
   Editor.toolbar.removeClass('editor-hidden');
   Editor.cropToolbar.addClass('editor-hidden');
+  Editor.cropActions.addClass('editor-hidden');
   updateElementActions(false);
   hideElementActions(false);
   hideImageActions(false);
@@ -789,6 +793,25 @@ const modal = (messages) =>
 
           <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .5rem; gap: 4px; overflow-y: auto;">
 
+            <!-- Crop selector -->
+            <div class="v-stack editor-hidden" id="crop-actions">
+              <h4>${messages.editor_crop_panel_title}</h4>
+              <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
+                <p>${messages.editor_size}</p>
+                <div class="editor-sizes">
+                  <label for="resize-width" class="editor-size">
+                    <span class="editor-size-label">${messages.input_width}</span>
+                    <input class="editor-size-input" id="selector-width" name="selector-width" readonly />
+                  </label>
+                  <label for="resize-height" class="editor-size">
+                    <span class="editor-size-label">${messages.input_height}</span>
+                    <input class="editor-size-input" id="selector-height" name="selector-height" readonly />
+                  </label>
+                </div>
+              </div>
+            </div>
+            <!-- Crop selector -->
+
             <!-- Selected element panel -->
             <div class="v-stack editor-bottom-border" id="selected-element-actions">
               <h4>${messages.editor_panel_title}</h4>
@@ -931,7 +954,6 @@ const modal = (messages) =>
                     <option value="Garamond" style="font-family: 'Garamond', serif;">Garamond</option>
                     <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
                     <option value="Brush Script MT" style="font-family: 'Brush Script MT', cursive;">Brush Script MT</option>
-                    <option value="..." style="font-family:'', 'sans-serif';" disabled>...</option>
                   </select>
                 </div>
 

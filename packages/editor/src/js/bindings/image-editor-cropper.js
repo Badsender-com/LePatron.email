@@ -17,6 +17,14 @@ export const EditorCropper = (editor) => {
     let stageZoom = null;
 
     /**
+     * Updates the selector size inputs with the transformer new size (UI only).
+     */
+    function updatePanel() {
+        editor.wrapper.find('#selector-width').val(Math.round(transformer.width()));
+        editor.wrapper.find('#selector-height').val(Math.round(transformer.height()));
+    }
+
+    /**
      * Parses the given ratio value to a floating value.
      * @param {string} value - The ratio from the select input.
      * @returns {float} - The parsed value as a float. Returns 1 if the value couldn't be parsed.
@@ -56,10 +64,15 @@ export const EditorCropper = (editor) => {
         } 
 
         if (ratio === 1) {
-            const min = Math.min(selector.width(), selector.height());
-            selector.width(min * ratio);
-            selector.width(min * ratio);
+            const newSize = Math.min(selector.width(), selector.height()) * ratio;
+            selector.width(newSize);
+            selector.height(newSize);
         }
+
+        selector.offsetX(selector.width() / 2);
+        selector.offsetY(selector.height() / 2);
+
+        updatePanel();
     }
 
     /**
@@ -71,6 +84,8 @@ export const EditorCropper = (editor) => {
             y: editor.image.y(),
             width: editor.image.width(),
             height: editor.image.height(),
+            offsetX : editor.image.width() / 2,
+            offsetY: editor.image.height() / 2,
             scaleX: baseImage.scaleX,
             scaleY: baseImage.scaleY,
         })
@@ -114,9 +129,10 @@ export const EditorCropper = (editor) => {
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
+            boundBoxFunc: (oldBox, newBox) => handleSelectorResize(oldBox, newBox),
         });
 
-        transformer.on('dragmove', (e) => handleSelectorMovement(e));
+        selector.on('dragmove', (e) => handleSelectorMovement(e));
 
         // Saves the image current properties.
         baseImage = {
@@ -154,8 +170,67 @@ export const EditorCropper = (editor) => {
         });
     }
 
+    /**
+     * Prevents user from resizing the selector outside and or larger than the image.
+     * @param {any} oldBox - The old boundaries of the transformer as a rectangle.
+     * @param {any} newBox - The new boundaries of the transformer as a rectangle.
+     * @returns - The rectangle that will be used as the new boundaries of the transformer.
+     */
+    function handleSelectorResize(oldBox, newBox) {
+        const imageBox = image.getClientRect();
+        const imageW = image.width() * image.scaleX();
+        const imageH = image.height() * image.scaleY();
+        
+        const minX = newBox.x + 1;
+        const minY = newBox.y + 1;
+        const maxX = minX + newBox.width - 2;
+        const maxY = minY + newBox.height - 2;
+
+        const isOut =
+            minX < imageBox.x ||
+            minY < imageBox.y ||
+            maxX > imageBox.x + imageW ||
+            maxY > imageBox.y + imageH ||
+            newBox.width > imageW ||
+            newBox.height > imageH;
+
+        if (isOut) return oldBox;
+
+        return newBox;
+    }
+
+    /**
+     * Prevents user from moving the selector outside of the image boundaries.
+     * @param {any} e - The event fired by KonvaJS while moving the rectangle selector ('dragmove' event).
+     */
     function handleSelectorMovement(e) {
-        // TODO: limit selector movement to an area
+        const newRect = e.target.getClientRect();
+        const rect = image.getClientRect();
+        const minX = rect.x;
+        const minY = rect.y;
+        const maxX = minX + image.width() * image.scaleX();
+        const maxY = minY + image.height() * image.scaleY();
+
+        const width = selector.width() * selector.scaleX();
+        const height = selector.height() * selector.scaleY();
+
+        const offsetX = Math.round(newRect.width / 2);
+        const offsetY = Math.round(newRect.height / 2);
+
+        const sMinX = newRect.x;
+        const sMinY = newRect.y;
+        const sMaxX = sMinX + width;
+        const sMaxY = sMinY + height;
+
+        let newX = newRect.x + offsetX;
+        let newY = newRect.y + offsetY;
+
+        if (sMinX < minX) newX = minX + offsetX;
+        if (sMaxX > maxX) newX = maxX - offsetX;
+        if (sMinY < minY) newY = minY + offsetY;
+        if (sMaxY > maxY) newY = maxY - offsetY;
+
+        selector.position({ x: newX, y: newY });
     }
 
     /**
@@ -195,11 +270,15 @@ export const EditorCropper = (editor) => {
         cropLayer.add(transformer);
         transformer.nodes([selector]);
         transformer.moveToTop();
+        transformer.on('transform', () => updatePanel());
         editor.transformer.nodes([]);
+        editor.stage.draggable(false);
         editor.stage.add(cropLayer);
         editor.stage.scale({ x: 1, y: 1 });
         editor.stage.position({ x: 0, y: 0 });
         editor.stage.batchDraw();
+
+        updatePanel();
     }
 
     /**
@@ -248,6 +327,7 @@ export const EditorCropper = (editor) => {
         editor.image.cache();
         editor.transformer.nodes([editor.image]);
         editor.transformer.moveToTop();
+        editor.stage.draggable(true);
         editor.stage.scale({
             x: stageZoom.scale,
             y: stageZoom.scale
@@ -281,7 +361,7 @@ export const EditorCropper = (editor) => {
         const scaleX = editor.image.scaleX();
         const scaleY = editor.image.scaleY();
 
-        const cropX = (rect.x - baseRect.x) / scaleX ;
+        const cropX = (rect.x - baseRect.x) / scaleX;
         const cropY = (rect.y - baseRect.y) / scaleY;
         const cropWidth = rect.width / scaleX;
         const cropHeight = rect.height / scaleY;

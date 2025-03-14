@@ -167,6 +167,7 @@ var start = function (
         editor_panel_title: vm.t('editor-panel-title'),
         editor_actions_panel_title: vm.t('editor-actions-panel-title'),
         editor_filters_panel_title: vm.t('editor-filters-panel-title'),
+        editor_crop_panel_title: vm.t('editor-crop-panel-title'),
         editor_ratio_freeform: vm.t('editor-ratio-freeform'),
         editor_ratio_standard: vm.t('editor-ratio-standard'),
         editor_ratio_landscape: vm.t('editor-ratio-landscape'),

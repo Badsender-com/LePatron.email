@@ -43,6 +43,7 @@ module.exports = {
   // Editor interface
   'editor-title': "LePatron - Éditeur d'image",
   'editor-panel-title': 'Élément sélectionné',
+  'editor-crop-panel-title': 'Zone de sélection',
   'editor-actions-panel-title': 'Actions',
   'editor-filters-panel-title': 'Filtres',
   'editor-ratio-freeform': 'Forme libre',
