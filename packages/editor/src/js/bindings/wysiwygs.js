@@ -162,7 +162,7 @@ ko.bindingHandlers.wysiwygSrc = {
       attrValue === undefined ||
       attrValue === ''
     ) {
-      if (typeof placeholderValue == 'object' && placeholderValue !== null)
+      if (typeof placeholderValue == 'object' && placeholderValue !== null) {
         element.setAttribute(
           'src',
           ko.bindingHandlers.wysiwygSrc.placeholderUrl(
@@ -171,6 +171,7 @@ ko.bindingHandlers.wysiwygSrc = {
             placeholderValue.text
           )
         );
+      }
       else element.removeAttribute('src');
     } else {
       var method = ko.utils.unwrapObservable(value.method);

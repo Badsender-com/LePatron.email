@@ -132,5 +132,5 @@ module.exports = {
   copyImages,
   writeStreamFromPath,
   writeStreamFromStream,
-  writeStreamFromStreamWithPrefix
+  writeStreamFromStreamWithPrefix,
 };

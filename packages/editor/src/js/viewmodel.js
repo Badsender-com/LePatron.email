@@ -594,8 +594,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   }
 
   viewModel.exportHTML = function () {
-    console.log('viewModel.exportHTML');
-
     var id = 'exportframe';
     $('body').append(
       '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'

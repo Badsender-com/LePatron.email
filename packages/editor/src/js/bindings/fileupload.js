@@ -172,6 +172,8 @@ ko.bindingHandlers['fileupload'] = {
         rotate_right: 'Rotate right',
         vertical_mirror: 'Vertical mirror',
         horizontal_mirror: 'Horizontal mirror',
+        reset_editor: 'Reset',
+        crop_editor: 'Crop',
         cancel: 'CANCEL',
         upload: 'UPLOAD',
       },

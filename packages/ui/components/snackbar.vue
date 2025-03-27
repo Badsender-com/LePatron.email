@@ -4,7 +4,7 @@ import { mapState, mapMutations } from 'vuex';
 import { PAGE, CLOSE_SNACKBAR } from '~/store/page.js';
 
 export default {
-  name: `bs-snackbar`,
+  name: 'BsSnackbar',
   computed: {
     ...mapState(PAGE, {
       snackbar: (state) => state.snackbar,
@@ -22,12 +22,14 @@ export default {
   <v-snackbar
     bottom
     :value="snackbar.visible"
-    @input="closeSnackbar"
     :color="snackbar.color"
     :timeout="snackbar.timeout"
     :multi-line="snackbar.multiline === true"
+    @input="closeSnackbar"
   >
     {{ snackbar.text }}
-    <v-btn text dark @click="closeSnackbar">{{ $t('global.close') }}</v-btn>
+    <v-btn text dark @click="closeSnackbar">
+      {{ $t('global.close') }}
+    </v-btn>
   </v-snackbar>
 </template>
