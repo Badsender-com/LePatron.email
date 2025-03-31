@@ -57,6 +57,8 @@ function needResize(value, width, height) {
   if (sameWidth && sameHeight) return false;
   if (!width && sameHeight) return false;
   if (!height && sameWidth) return false;
+  if (value.width <= 640) return false;
+
   return true;
 }
 
@@ -144,7 +146,7 @@ const streamImageToResponse = (req, res, next, imageName) => {
   const contentType = mime.lookup(imageName);
   imageStream.on('error', handleFileStreamError(next));
   // We have to end stream manually on res stream error (can happen if user close connection before end)
-  // If not done, we will have a memory leaks
+  // If not done, we will have a memory leak
   // https://groups.google.com/d/msg/nodejs/wtmIzV0lh8o/cz3wqBtDc-MJ
   // https://groups.google.com/forum/#!topic/nodejs/A8wbaaPmmBQ
   imageStream.once('readable', () => {
@@ -199,7 +201,6 @@ function checkImageCache(req, res, next) {
 function checkSizes(req, res, next) {
   const [width, height] = getTargetDimensions(req.params.sizes);
   const { imageName } = req.params;
-  // console.log('[CHECK SIZES]', imageName, { width, height } )
   const imgStream = fileManager.streamImage(imageName);
 
   probe(imgStream)
