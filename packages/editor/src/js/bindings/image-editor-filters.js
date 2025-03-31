@@ -1,5 +1,5 @@
 'use strict';
-import Konva from 'Konva';
+import Konva from 'konva';
 
 const filtersActions = {
     grayscale: {
@@ -98,7 +98,7 @@ export const EditorFilters = (editor, messages) => {
         }
 
         if (action.type === 'slider') {
-            const slider = 
+            const slider =
                 `<label for="filters-slider" class="bs-img-cropper__size" style="width: 200px;">
                     <span class="bs-img-cropper__size-label">${label}</span>
                     <input type="range" name="filters-slider" id="filters-slider" min="${action.min}" max="${action.max}" step="${action.step}" value="${defaultValue}">
@@ -195,24 +195,24 @@ export const EditorFilters = (editor, messages) => {
      */
     function updateFiltersSelection(hideSlider) {
         if (hideSlider === true) sliderBox.empty();
-        
+
         const filters = editor.selection.filters() ?? [];
-    
+
         grayscale.removeClass('selected');
         blur.removeClass('selected');
         pixelate.removeClass('selected');
         contrast.removeClass('selected');
         brighten.removeClass('selected');
         invert.removeClass('selected');
-    
+
         if (filters.includes(Konva.Filters.Grayscale)) {
             grayscale.addClass('selected');
         }
-    
+
         if (filters.includes(Konva.Filters.Blur)) {
             blur.addClass('selected');
         }
-    
+
         if (filters.includes(Konva.Filters.Pixelate)) {
             pixelate.addClass('selected');
         }
@@ -237,7 +237,7 @@ export const EditorFilters = (editor, messages) => {
      */
     function stringToNumber(value) {
         if (value === undefined) return 1;
-    
+
         const parsed = parseFloat(value);
         return Number.isNaN(parsed) ? 1 : parsed;
     }

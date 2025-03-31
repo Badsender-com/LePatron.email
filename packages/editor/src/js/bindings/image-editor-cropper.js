@@ -1,8 +1,8 @@
 'use strict';
-import Konva from 'Konva';
+import Konva from 'konva';
 
-// IMPORTANT NOTE : 
-// Only the main image can be cropped at the moment. 
+// IMPORTANT NOTE :
+// Only the main image can be cropped at the moment.
 // This is intended and can be easily altered by manipulating the editor.selection instead of the editor.image !
 
 export const EditorCropper = (editor) => {
@@ -51,7 +51,7 @@ export const EditorCropper = (editor) => {
     function setSelectorToRatio(ratio) {
         resetSelector();
 
-        if (ratio === 0) {   
+        if (ratio === 0) {
             transformer.enabledAnchors(editor.baseAnchors);
             transformer.moveToTop();
             setCropperLines();
@@ -67,7 +67,7 @@ export const EditorCropper = (editor) => {
 
         if (ratio < 1) {
             selector.width(selector.width() * ratio);
-        } 
+        }
 
         if (ratio === 1) {
             const newSize = Math.min(selector.width(), selector.height()) * ratio;
@@ -144,10 +144,10 @@ export const EditorCropper = (editor) => {
             opacity: 0.75,
             stroke: 'transparent',
             strokeWidth: 0,
-            draggable: false 
+            draggable: false
         });
 
-        // This custom shape is used to display the area that will be cropped (light effect) 
+        // This custom shape is used to display the area that will be cropped (light effect)
         lightShape = new Konva.Shape({
             sceneFunc: function(ctx, shape) {
                 ctx.globalCompositeOperation = 'destination-out';
@@ -161,7 +161,7 @@ export const EditorCropper = (editor) => {
         })
 
         // The transformer used for the selector ratios.
-        // KonvaJs doesn't handle rotation when cropping an image so we disable it and restore the image with its rotation at the end of the process. 
+        // KonvaJs doesn't handle rotation when cropping an image so we disable it and restore the image with its rotation at the end of the process.
         transformer = new Konva.Transformer({
             flipEnabled: false,
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
@@ -223,7 +223,7 @@ export const EditorCropper = (editor) => {
         const imageBox = image.getClientRect();
         const imageW = image.width() * image.scaleX();
         const imageH = image.height() * image.scaleY();
-        
+
         const minX = newBox.x + 1;
         const minY = newBox.y + 1;
         const maxX = minX + newBox.width - 2;
@@ -342,7 +342,7 @@ export const EditorCropper = (editor) => {
         cropLayer.destroy();
         maskLayer.destroyChildren();
         maskLayer.destroy();
-        
+
         if (reset === true) {
             editor.image.crop({ x: 0, y: 0, width: 0, height: 0 });
             editor.lastCrop = null;

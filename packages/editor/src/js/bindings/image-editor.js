@@ -1,5 +1,5 @@
 'use strict';
-import Konva from 'Konva';
+import Konva from 'konva';
 import { EditorCropper } from './image-editor-cropper';
 import { EditorText } from './image-editor-text';
 import { EditorFilters } from './image-editor-filters';
@@ -268,11 +268,11 @@ function bindHandlers() {
     Editor.fileAction.on('click', () => Editor.fileInput.trigger('click'));
     Editor.fileInput.on('click', (e) => e.stopPropagation()); // To avoid recursive calls
     Editor.fileInput.on('change', (e) => handleFilePicked(e));
-    
+
     Editor.inputWidth.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the width input
     Editor.inputHeight.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the height input
     Editor.textSize.on('keydown', (e) => e.stopPropagation()); // Prevents selected element deletion when typing inside the text size input
-    
+
     Editor.zoomIn.on('click', () => handleManualZoom(true));
     Editor.zoomOut.on('click', () => handleManualZoom(false));
     Editor.backgroundImage.on('click', () => toggleBackgroundMenu());
@@ -294,7 +294,7 @@ function setSize(width, height) {
     Editor.selection.height(stringToNumber(height, 1));
     Editor.selection.offsetX(width / 2);
     Editor.selection.offsetX(height / 2);
-  } 
+  }
 }
 
 /**
@@ -497,7 +497,7 @@ function handleFilePicked(event) {
  * @param {any} e - The wheel event which fired the handler.
  */
 function handleStageZooming(e) {
-  if (Editor.cropping === true) return; 
+  if (Editor.cropping === true) return;
 
   const scaleBy = 1.05;
   e.evt.preventDefault();
@@ -678,7 +678,7 @@ function reset() {
 function save() {
   Editor.transformer.nodes([]);
   const rect = Editor.image.getClientRect();
-  
+
   Editor.stage.toBlob({
     callback: (blob) => {
       const file = new File([blob], Editor.file.name, { type: Editor.file.type });
@@ -712,7 +712,7 @@ function clean(deferredCallback = Editor.deferredCallback) {
 }
 
 /**
- * Parses the given value into an integer value. 
+ * Parses the given value into an integer value.
  * If the value couldn't be parsed returns 1.
  * If the value is lower than 1 returns 1.
  * @param {string} value - The int value as a string.
@@ -727,7 +727,7 @@ function stringToNumber(value, min) {
 }
 
 /**
- * Hides or displays the element actions panel. 
+ * Hides or displays the element actions panel.
  * @param {boolean} hide - Whether to hide or not the element actions panel.
  */
 function hideElementActions(hide) {
@@ -740,7 +740,7 @@ function hideElementActions(hide) {
 }
 
 /**
- * Hides or displays the image actions panel. 
+ * Hides or displays the image actions panel.
  * @param {boolean} hide - Whether to hide or not the image actions panel.
  */
 function hideImageActions(hide) {
@@ -753,7 +753,7 @@ function hideImageActions(hide) {
 }
 
 /**
- * Hides or displays the text actions panel. 
+ * Hides or displays the text actions panel.
  * @param {boolean} hide - Whether to hide or not the text actions panel.
  */
 function hideTextActions(hide) {
@@ -794,7 +794,7 @@ function updateElementActions(disabled) {
  * @param {object} messages - Translated messages used in the editor as an object.
  * @returns {string} - The editor content as html.
  */
-const modal = (messages) => 
+const modal = (messages) =>
     `<aside class="editor-frame" id="editor-wrapper">
       <div class="editor-layout">
 

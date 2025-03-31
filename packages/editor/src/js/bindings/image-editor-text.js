@@ -1,5 +1,5 @@
 'use strict';
-import Konva from 'Konva';
+import Konva from 'konva';
 
 export const EditorText = (editor) => {
 
@@ -34,7 +34,7 @@ export const EditorText = (editor) => {
       width: editor.stage.width(),
       height: editor.stage.height(),
     };
-    
+
     const elementBox = textNode.getClientRect();
 
     let newX = editor.stage.x();
@@ -91,7 +91,7 @@ export const EditorText = (editor) => {
   function editText(node) {
     node.hide();
     editor.transformer.nodes([]);
-    
+
     const rect = node.getClientRect();
 
     const input = document.createElement('textarea');
@@ -193,7 +193,7 @@ export const EditorText = (editor) => {
     if (!editor.selection instanceof Konva.Text) return;
 
     editor.selection.fontStyle(editor.textStyle.val());
-    handleSizeChanged(); // Force updates the size because bold and italic styles take more space than normal style 
+    handleSizeChanged(); // Force updates the size because bold and italic styles take more space than normal style
   }
 
   function handleFontChanged() {
