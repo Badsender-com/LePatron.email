@@ -111,7 +111,16 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
  * @param {object} messages - Translated messages used in the editor as an object.
  */
 function initEditor(parent, src, messages) {
-  parent.after(modal(Editor.messages)); // Injects the editor as html content
+  //TODO check why we need that  -> else it injects the modal as a string in the DOM
+  // Create an element that contains the HTML content of the modal
+  const modalContent = modal(Editor.messages);
+
+  // Create a temporary container in which we insert the HTML
+  const tempContainer = document.createElement('div');
+  tempContainer.innerHTML = modalContent;
+
+  // We add the container after the parent element
+  parent.after(tempContainer.firstElementChild);
 
   const container = document.getElementById('konva-editor'); // Canvas area only
   const stage = new Konva.Stage({

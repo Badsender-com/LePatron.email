@@ -1,5 +1,6 @@
 'use strict';
 /* global global: false */
+import { OpenEditor } from '../js/bindings/image-editor';
 
 var $ = require('jquery');
 var ko = require('knockout');
@@ -761,6 +762,103 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // Just implement editImage or linkDialog methods
   // viewModel.editImage = function(src, done) {} : implement this method to enable image editing (src is a wirtableObservable).
   // viewModel.linkDialog = function() {}: implement this method using "this" to find the input element $(this).val is a writableObservable.
+
+  viewModel.editImage = function(src, data, domElement) {
+    const dfd = $.Deferred();
+    const next = () => dfd.resolveWith(this, [data]);
+    const abort = () => dfd.rejectWith(this, [data]);
+
+    const image = new Image();
+    image.src = src
+
+
+  image.onload = () => {
+    try {
+      const data = {
+        dropZone: domElement.closest('.uploadzone')?.querySelector('.mo-uploadzone'),
+        files: [{ name: 'image', type: image.type, src: src }],
+        index: 0,
+        messages: {
+          unknownError: this.t('Unknown error'),
+          uploadedBytes: this.t('Uploaded bytes exceed file size'),
+          maxNumberOfFiles: this.t('Maximum number of files exceeded'),
+          acceptFileTypes: this.t('File type not allowed'),
+          maxFileSize: this.t('File is too large'),
+          minFileSize: this.t('File is too small'),
+          post_max_size: this.t(
+            'The uploaded file exceeds the post_max_size directive in php.ini'
+          ),
+          max_file_size: this.t('File is too big'),
+          min_file_size: this.t('File is too small'),
+          accept_file_types: this.t('Filetype not allowed'),
+          max_number_of_files: this.t('Maximum number of files exceeded'),
+          max_width: this.t('Image exceeds maximum width'),
+          min_width: this.t('Image requires a minimum width'),
+          max_height: this.t('Image exceeds maximum height'),
+          min_height: this.t('Image requires a minimum height'),
+          abort: this.t('File upload aborted'),
+          image_resize: this.t('Failed to resize image'),
+          generic: this.t('Unexpected upload error'),
+          rotate_left: this.t('rotate-left'),
+          rotate_right: this.t('rotate-right'),
+          vertical_mirror: this.t('vertical-mirror'),
+          horizontal_mirror: this.t('horizontal-mirror'),
+          reset_editor: this.t('reset-editor'),
+          text_editor: this.t('text-editor'),
+          crop_editor: this.t('crop-editor'),
+          crop_editor_cancel: this.t('crop-editor-cancel'),
+          crop_editor_submit: this.t('crop-editor-submit'),
+          image_upload: this.t('image-upload'),
+          input_corner_radius: this.t('input-corner-radius'),
+          input_width: this.t('input-width'),
+          input_height: this.t('input-height'),
+          filters_blur: this.t('filters-blur'),
+          filters_pixelate: this.t('filters-pixelate'),
+          filters_grayscale: this.t('filters-grayscale'),
+          filters_contrast: this.t('filters-contrast'),
+          filters_brighten: this.t('filters-brighten'),
+          filters_invert: this.t('filters-invert'),
+          editor_title: this.t('editor-title'),
+          editor_panel_title: this.t('editor-panel-title'),
+          editor_actions_panel_title: this.t('editor-actions-panel-title'),
+          editor_filters_panel_title: this.t('editor-filters-panel-title'),
+          editor_crop_panel_title: this.t('editor-crop-panel-title'),
+          editor_ratio_free: this.t('editor-ratio-free'),
+          editor_ratio_standard: this.t('editor-ratio-standard'),
+          editor_ratio_landscape: this.t('editor-ratio-landscape'),
+          editor_ratio_portrait: this.t('editor-ratio-portrait'),
+          editor_ratio_square: this.t('editor-ratio-square'),
+          editor_ratio_photo: this.t('editor-ratio-photo'),
+          editor_ratio_widescreen_cinema: this.t('editor-ratio-widescreen-cinema'),
+          editor_ratio_almost_square: this.t('editor-ratio-almost-square'),
+          editor_ratio_intermediate: this.t('editor-ratio-intermediate'),
+          editor_ratio_camera: this.t('editor-ratio-camera'),
+          editor_text_color: this.t('editor-text-color'),
+          editor_text_style: this.t('editor-text-style'),
+          editor_text_style_normal: this.t('editor-text-style-normal'),
+          editor_text_style_italic: this.t('editor-text-style-italic'),
+          editor_text_style_bold: this.t('editor-text-style-bold'),
+          editor_text_size: this.t('editor-text-size'),
+          editor_text_font: this.t('editor-text-font'),
+          editor_color: this.t('editor-color'),
+          editor_mirror: this.t('editor-mirror'),
+          editor_rotate: this.t('editor-rotate'),
+          editor_size: this.t('editor-size'),
+          editor_zoomin: this.t('editor-zoomin'),
+          editor_zoomout: this.t('editor-zoomout'),
+          editor_background_color: this.t('editor-background-color'),
+          editor_background_cancel: this.t('editor-background-cancel'),
+          editor_background_save: this.t('editor-background-save'),
+          cancel: this.t('cancel'),
+          upload: this.t('upload'),
+      }}
+      OpenEditor(next, abort, data, { index: 0, name: 'image', type: image.type }, data.messages, data.dropZone, image);
+    } catch (error) {
+      console.log({ error });
+      clean();
+    }
+  }
+  }
 
   viewModel.loadImage = function (img) {
     // push image at top of "recent" gallery
