@@ -66,7 +66,7 @@ class FTPClient {
         try {
           client.on('debug', (msg) => console.log('DEBUG SFTP:', msg));
           await client
-            .put(localPath, remotePath, { chunkSize: 16384 })
+            .fastPut(localPath, remotePath, { chunkSize: 16384 })
             .then(() => {
               console.log(`Upload réussi pour ${fileName}`);
             })
