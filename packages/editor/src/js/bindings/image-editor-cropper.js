@@ -1,4 +1,5 @@
 'use strict';
+import { scale } from 'blueimp-load-image';
 import Konva from 'konva';
 
 // IMPORTANT NOTE :
@@ -91,7 +92,7 @@ export const EditorCropper = (editor) => {
             y: editor.image.y(),
             width: editor.image.width(),
             height: editor.image.height(),
-            offsetX : editor.image.width() / 2,
+            offsetX: editor.image.width() / 2,
             offsetY: editor.image.height() / 2,
             scaleX: baseImage.scaleX,
             scaleY: baseImage.scaleY,
@@ -149,7 +150,7 @@ export const EditorCropper = (editor) => {
 
         // This custom shape is used to display the area that will be cropped (light effect)
         lightShape = new Konva.Shape({
-            sceneFunc: function(ctx, shape) {
+            sceneFunc: function (ctx, shape) {
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.fillStyle = 'white';
                 const selectorW = selector.width() * selector.scaleX();
@@ -223,23 +224,41 @@ export const EditorCropper = (editor) => {
         const imageBox = image.getClientRect();
         const imageW = image.width() * image.scaleX();
         const imageH = image.height() * image.scaleY();
+        
+        const normalizedBox = {
+            ...newBox,
+            x: Math.min(Math.max(imageBox.x, newBox.x), imageBox.width + imageBox.x),
+            y: Math.min(Math.max(imageBox.y, newBox.y), imageBox.width + imageBox.y), 
 
-        const minX = newBox.x + 1;
-        const minY = newBox.y + 1;
-        const maxX = minX + newBox.width - 2;
-        const maxY = minY + newBox.height - 2;
+            width: newBox.x < imageBox.x ? newBox.width + (newBox.x - imageBox.x) : Math.min(newBox.width, imageBox.width - (newBox.x - imageBox.x)),
+            height: newBox.y < imageBox.y ? newBox.height + (newBox.y - imageBox.y) : Math.min(newBox.height, imageBox.height - (newBox.y - imageBox.y)),
+        }
+        
+        console.log('ICI', { imageBox, image, imageW,
+            imageH, newBox, normalizedBox })
+        
 
-        const isOut =
-            minX < imageBox.x ||
-            minY < imageBox.y ||
-            maxX > imageBox.x + imageW ||
-            maxY > imageBox.y + imageH ||
-            newBox.width > imageW ||
-            newBox.height > imageH;
 
-        if (isOut) return oldBox;
+        const minX = newBox.x + 2;
+        const minY = newBox.y + 2;
+        const maxX = newBox.x + newBox.width - 2;
+        const maxY = newBox.y + newBox.height - 2;
 
-        return newBox;
+        // const isOut =
+        //     minX < imageBox.x ||
+        //     minY < imageBox.y ||
+        //     maxX > imageBox.x + imageW ||
+        //     maxY > imageBox.y + imageH ||
+        //     newBox.width > imageW ||
+        //     newBox.height > imageH;
+
+        // if (isOut) return oldBox;
+
+// console.log({newBox})
+// console.log({imageW, imageH, image})
+// console.log({...newBox, x: Math.min(Math.max(imageBox.x, newBox.x), imageBox.x), y: Math.min(Math.max(imageBox.y, newBox.y), imageBox.x), width: Math.min(imageW, newBox.width), height: Math.min(imageH, newBox.height) }
+// )
+        return normalizedBox;
     }
 
     /**
@@ -477,8 +496,8 @@ export const EditorCropper = (editor) => {
         lines = [];
         lines.push(new Konva.Line({
             points: [
-                x + width * 1/3 - offsetX, y - offsetY,
-                x + width * 1/3 - offsetX, y + height - offsetY,
+                x + width * 1 / 3 - offsetX, y - offsetY,
+                x + width * 1 / 3 - offsetX, y + height - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 2,
@@ -487,8 +506,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x + width * 2/3 - offsetX, y - offsetY,
-                x + width * 2/3 - offsetX, y + height - offsetY,
+                x + width * 2 / 3 - offsetX, y - offsetY,
+                x + width * 2 / 3 - offsetX, y + height - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 2,
@@ -497,8 +516,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x - offsetX, y + height * 1/3 - offsetY,
-                x + width - offsetX, y + height * 1/3 - offsetY,
+                x - offsetX, y + height * 1 / 3 - offsetY,
+                x + width - offsetX, y + height * 1 / 3 - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 1,
@@ -507,8 +526,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x - offsetX, y + height * 2/3 - offsetY,
-                x + width - offsetX, y + height * 2/3 - offsetY,
+                x - offsetX, y + height * 2 / 3 - offsetY,
+                x + width - offsetX, y + height * 2 / 3 - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 1,
