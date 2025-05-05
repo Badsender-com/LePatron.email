@@ -248,7 +248,7 @@ function initEditor(parent, src, messages) {
     Editor.filtersHandler = EditorFilters(Editor, messages);
 
     // Binds buttons and inputs actions via event handlers
-    bindHandlers();
+    bindHandlers(); //TODO here ici, c'est lui qu'il faut que je check
   }
 }
 
@@ -642,6 +642,7 @@ function setImageBackground() {
  * Resets the stage and image to their default properties.
  */
 function reset() {
+  console.log("reset")
     Editor.stage.setAttrs({ x: 0, y: 0, scaleX: 1, scaleY: 1 });
     Editor.inputWidth.val(Editor.baseImage.width);
     Editor.inputHeight.val(Editor.baseImage.height);
@@ -691,7 +692,13 @@ function save() {
   Editor.stage.toBlob({
     callback: (blob) => {
       const file = new File([blob], Editor.file.name, { type: Editor.file.type });
+      console.log("THE FILE CREATED")
+      console.dir(file)
       Editor.data.files[Editor.file.index] = file;
+      console.log("THE FILE REGISTERED")
+      console.dir( Editor.data.files[Editor.file.index])
+      console.log("THE FILES REGISTERED IN EDITOR")
+      console.dir( Editor.data.files)
       clean();
     },
     x: rect.x,
@@ -706,6 +713,7 @@ function save() {
  * @param {JQuery.Deferred<any, any, any>} deferredCallback - Callback called to continue execution even if the component is destroying (here, used for saving the edited image).
  */
 function clean(deferredCallback = Editor.deferredCallback) {
+    console.log("clean")
     reset();
     window.removeEventListener('keydown', handleDelete);
     $(document).off(`keyup.bs-cropper`);

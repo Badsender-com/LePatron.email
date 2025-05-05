@@ -14,6 +14,8 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
   processActions: {
     cropImage(data) {
       const dfd = $.Deferred();
+      console.log({data})
+
       const next = () => dfd.resolveWith(this, [data]);
       const abort = () => dfd.rejectWith(this, [data]);
 

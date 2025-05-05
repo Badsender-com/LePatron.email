@@ -39,6 +39,7 @@ function galleryLoader(opts) {
     // fileupload binding will iterate on every uploaded file and call this callback
     // fileupload.js => e.type == 'fileuploaddone' for more details
     function loadImage(type) {
+      console.log("load Image")
       var gallery = viewModel[type + 'Gallery'];
       var status = viewModel[type + 'GalleryStatus'];
       return function (img) {
@@ -48,11 +49,11 @@ function galleryLoader(opts) {
         var isAlreadyUploaded = _find(gallery(), function (file) {
           return file.name === imageName;
         });
-        if (isAlreadyUploaded) return;
+        if (isAlreadyUploaded)  { console.log('is Already uploaded') ; return;}
         // Don't update the gallery until it has been opened once
         // This was leading to preventing the whole gallery to be fetched…
         // …if we had uploaded an image in the editor
-        if (status() === false) return;
+        if (status() === false)  { console.log('status is false') ; return;};
         gallery.unshift(img);
         status(gallery().length);
       };

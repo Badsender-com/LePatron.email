@@ -22,6 +22,7 @@ $(function() {
   if (basePath.lastIndexOf('?') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('?'));
   if (basePath.lastIndexOf('/') > 0) basePath = basePath.substr(0, basePath.lastIndexOf('/'));
   var plugins;
+  //TODO ici, à quoi il sert et quoi en faire ??
   // A basic plugin that expose the "viewModel" object as a global variable.
   // plugins = [function(vm) {window.viewModel = vm;}];
   var ok = Mosaico.init({
@@ -29,7 +30,7 @@ $(function() {
     emailProcessorBackend: basePath+'/dl/',
     titleToken: "MOSAICO Responsive Email Designer",
     fileuploadConfig: {
-      url: basePath+'/upload/',
+      url: basePath+'/upload/', //TODO ici est ce que j'ai pas besoin de l'url pour api/images ???
       // messages??
     }
   }, plugins);
