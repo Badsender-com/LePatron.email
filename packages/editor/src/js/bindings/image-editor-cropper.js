@@ -37,6 +37,7 @@ export const EditorCropper = (editor) => {
      */
     function toRatio(value) {
         if (value === "0") return 0;
+        if (value === "1") return 1;
 
         var ratioParts = value.split('-');
         var widthRatio = parseFloat(ratioParts[0]);
@@ -108,15 +109,15 @@ export const EditorCropper = (editor) => {
             scale: editor.stage.scaleX(),
             pos: editor.stage.position(),
         };
-
+        
         ratioSelector = editor.wrapper.find("#ratio-selector");
         ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
-
+        
         cropLayer = new Konva.Layer();
         maskLayer = new Konva.Layer();
-
+        
         selectorGroup = new Konva.Group();
-
+        
         // Creates a rectangle used as a selector for the region of the image that will be cropped.
         selector = new Konva.Rect({
             x: editor.lastCrop?.selectorX ?? editor.stage.width() / 2,
@@ -422,6 +423,7 @@ export const EditorCropper = (editor) => {
         lines = [];
 
         ratioSelector.off('change');
+        ratioSelector.val("0")
         ratioSelector = null;
     }
 
