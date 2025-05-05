@@ -52,34 +52,28 @@ export const EditorCropper = (editor) => {
      */
     function setSelectorToRatio(ratio) {
         resetSelector();
-
+    
         if (ratio === 0) {
             transformer.enabledAnchors(editor.baseAnchors);
             transformer.moveToTop();
             setCropperLines();
             return;
         }
-
+    
         transformer.enabledAnchors(editor.cornerAnchors);
         transformer.moveToTop();
-
-        if (ratio > 1) {
-            selector.height(selector.height() / ratio);
+        
+        const currentRatio = selector.width() / selector.height();
+        
+        if (currentRatio > ratio) {
+            selector.width(selector.height() * ratio);
+        } else if (currentRatio < ratio) {
+            selector.height(selector.width() / ratio);
         }
-
-        if (ratio < 1) {
-            selector.width(selector.width() * ratio);
-        }
-
-        if (ratio === 1) {
-            const newSize = Math.min(selector.width(), selector.height()) * ratio;
-            selector.width(newSize);
-            selector.height(newSize);
-        }
-
+        
         selector.offsetX(selector.width() / 2);
         selector.offsetY(selector.height() / 2);
-
+        
         updatePanel();
         setCropperLines();
     }
@@ -169,7 +163,7 @@ export const EditorCropper = (editor) => {
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
-            boundBoxFunc: (_, newBox) => handleSelectorResize( newBox),
+            boundBoxFunc: (_, newBox) => handleSelectorResize(newBox, toRatio(ratioSelector.val())),
         });
 
         selector.on('dragmove', (e) => {
@@ -220,41 +214,48 @@ export const EditorCropper = (editor) => {
      * @param {any} newBox - The new boundaries of the transformer as a rectangle.
      * @returns - The rectangle that will be used as the new boundaries of the transformer.
      */
-    function handleSelectorResize(newBox) {
+    function handleSelectorResize(newBox, ratio) {
         const imageBox = image.getClientRect();
 
         const imageLeft = imageBox.x;
-        const imageRight = imageBox.x + imageBox.width;
         const imageTop = imageBox.y;
+        const imageRight = imageBox.x + imageBox.width;
         const imageBottom = imageBox.y + imageBox.height;
-
-        const overflowLeft = imageLeft - newBox.x;
-        const overflowTop = imageTop - newBox.y;
-
-        const availableRightSpace = imageRight - newBox.x;
-        const availableBottomSpace = imageBottom - newBox.y;
-
-        const boxX = _.clamp(newBox.x, imageLeft, imageRight);
-        const boxY = _.clamp(newBox.y, imageTop, imageBottom);
+    
+        let boxX = _.clamp(newBox.x, imageLeft, imageRight);
+        let boxY = _.clamp(newBox.y, imageTop, imageBottom);
         
-
-        const boxWidth = newBox.x < imageLeft
-        ? newBox.width - overflowLeft
-        : Math.min(newBox.width, availableRightSpace);
-
-        const boxHeight = newBox.y < imageTop
-        ? newBox.height - overflowTop
-        : Math.min(newBox.height, availableBottomSpace);
-
-        const normalizedBox = {
-        ...newBox,
-        x: boxX,
-        y: boxY,
-        width: boxWidth,
-        height: boxHeight,
+        const maxWidth = imageRight - boxX;
+        const maxHeight = imageBottom - boxY;
+        
+        let boxWidth = Math.min(newBox.width, maxWidth);
+        let boxHeight = Math.min(newBox.height, maxHeight);
+    
+        if (ratio > 0) {
+            if (boxWidth / boxHeight > ratio) {
+                boxWidth = boxHeight * ratio;
+            } else {
+                boxHeight = boxWidth / ratio;
+            }
+            
+            if (boxWidth > maxWidth) {
+                boxWidth = maxWidth;
+                boxHeight = boxWidth / ratio;
+            }
+            
+            if (boxHeight > maxHeight) {
+                boxHeight = maxHeight;
+                boxWidth = boxHeight * ratio;
+            }
+        }
+    
+        return {
+            ...newBox,
+            x: boxX,
+            y: boxY,
+            width: boxWidth,
+            height: boxHeight
         };
-        
-        return normalizedBox;
     }
 
     /**
