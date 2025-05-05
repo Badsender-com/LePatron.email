@@ -1,6 +1,6 @@
 'use strict';
-import { scale } from 'blueimp-load-image';
 import Konva from 'konva';
+import _ from 'lodash';
 
 // IMPORTANT NOTE :
 // Only the main image can be cropped at the moment.
@@ -168,7 +168,7 @@ export const EditorCropper = (editor) => {
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
-            boundBoxFunc: (oldBox, newBox) => handleSelectorResize(oldBox, newBox),
+            boundBoxFunc: (_, newBox) => handleSelectorResize( newBox),
         });
 
         selector.on('dragmove', (e) => {
@@ -216,48 +216,43 @@ export const EditorCropper = (editor) => {
 
     /**
      * Prevents user from resizing the selector outside and or larger than the image.
-     * @param {any} oldBox - The old boundaries of the transformer as a rectangle.
      * @param {any} newBox - The new boundaries of the transformer as a rectangle.
      * @returns - The rectangle that will be used as the new boundaries of the transformer.
      */
-    function handleSelectorResize(oldBox, newBox) {
+    function handleSelectorResize(newBox) {
         const imageBox = image.getClientRect();
-        const imageW = image.width() * image.scaleX();
-        const imageH = image.height() * image.scaleY();
+
+        const imageLeft = imageBox.x;
+        const imageRight = imageBox.x + imageBox.width;
+        const imageTop = imageBox.y;
+        const imageBottom = imageBox.y + imageBox.height;
+
+        const overflowLeft = imageLeft - newBox.x;
+        const overflowTop = imageTop - newBox.y;
+
+        const availableRightSpace = imageRight - newBox.x;
+        const availableBottomSpace = imageBottom - newBox.y;
+
+        const boxX = _.clamp(newBox.x, imageLeft, imageRight);
+        const boxY = _.clamp(newBox.y, imageTop, imageBottom);
         
+
+        const boxWidth = newBox.x < imageLeft
+        ? newBox.width - overflowLeft
+        : Math.min(newBox.width, availableRightSpace);
+
+        const boxHeight = newBox.y < imageTop
+        ? newBox.height - overflowTop
+        : Math.min(newBox.height, availableBottomSpace);
+
         const normalizedBox = {
-            ...newBox,
-            x: Math.min(Math.max(imageBox.x, newBox.x), imageBox.width + imageBox.x),
-            y: Math.min(Math.max(imageBox.y, newBox.y), imageBox.width + imageBox.y), 
-
-            width: newBox.x < imageBox.x ? newBox.width + (newBox.x - imageBox.x) : Math.min(newBox.width, imageBox.width - (newBox.x - imageBox.x)),
-            height: newBox.y < imageBox.y ? newBox.height + (newBox.y - imageBox.y) : Math.min(newBox.height, imageBox.height - (newBox.y - imageBox.y)),
-        }
+        ...newBox,
+        x: boxX,
+        y: boxY,
+        width: boxWidth,
+        height: boxHeight,
+        };
         
-        console.log('ICI', { imageBox, image, imageW,
-            imageH, newBox, normalizedBox })
-        
-
-
-        const minX = newBox.x + 2;
-        const minY = newBox.y + 2;
-        const maxX = newBox.x + newBox.width - 2;
-        const maxY = newBox.y + newBox.height - 2;
-
-        // const isOut =
-        //     minX < imageBox.x ||
-        //     minY < imageBox.y ||
-        //     maxX > imageBox.x + imageW ||
-        //     maxY > imageBox.y + imageH ||
-        //     newBox.width > imageW ||
-        //     newBox.height > imageH;
-
-        // if (isOut) return oldBox;
-
-// console.log({newBox})
-// console.log({imageW, imageH, image})
-// console.log({...newBox, x: Math.min(Math.max(imageBox.x, newBox.x), imageBox.x), y: Math.min(Math.max(imageBox.y, newBox.y), imageBox.x), width: Math.min(imageW, newBox.width), height: Math.min(imageH, newBox.height) }
-// )
         return normalizedBox;
     }
 
