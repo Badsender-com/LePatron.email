@@ -163,7 +163,7 @@ export const EditorCropper = (editor) => {
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
-            boundBoxFunc: (_, newBox) => handleSelectorResize(newBox, toRatio(ratioSelector.val())),
+            boundBoxFunc: (oldBox, newBox) => handleSelectorResize(oldBox, newBox, toRatio(ratioSelector.val())),
         });
 
         selector.on('dragmove', (e) => {
@@ -211,10 +211,12 @@ export const EditorCropper = (editor) => {
 
     /**
      * Prevents user from resizing the selector outside and or larger than the image.
+     * @param {any} oldBox - The old boundaries of the transformer as a rectangle.
      * @param {any} newBox - The new boundaries of the transformer as a rectangle.
+     * @param {any} ratio - The ratio selected for the crop by the user.
      * @returns - The rectangle that will be used as the new boundaries of the transformer.
      */
-    function handleSelectorResize( newBox, ratio) {
+    function handleSelectorResize(oldBox, newBox, ratio) {
         const imageBox = image.getClientRect();
 
         const imageLeft = imageBox.x;
@@ -227,20 +229,28 @@ export const EditorCropper = (editor) => {
 
         const availableRightSpace = imageRight - newBox.x;
         const availableBottomSpace = imageBottom - newBox.y;
+
+        const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom )
+        const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight )
     
-        let boxX = _.clamp(newBox.x, imageLeft, imageRight);
-        let boxY = _.clamp(newBox.y, imageTop, imageBottom);
+        let boxX = isNewBoxYInsideImage || ratio === 0 
+            ? _.clamp(newBox.x, imageLeft, imageRight) 
+            : oldBox.x;
+
+        let boxY = isNewBoxXInsideImage || ratio === 0  
+            ?  _.clamp(newBox.y, imageTop, imageBottom) 
+            : oldBox.y;
         
         const maxWidth = imageRight - boxX;
         const maxHeight = imageBottom - boxY;
         
         let boxWidth = newBox.x < imageLeft
-        ? newBox.width - overflowLeft 
-        : Math.min(newBox.width, availableRightSpace);
+            ? newBox.width - overflowLeft 
+            : Math.min(newBox.width, availableRightSpace);
 
         let boxHeight = newBox.y < imageTop
-        ? newBox.height - overflowTop
-        : Math.min(newBox.height, availableBottomSpace);
+            ? newBox.height - overflowTop
+            : Math.min(newBox.height, availableBottomSpace);
     
         if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
             if (boxWidth / boxHeight > ratio) {
