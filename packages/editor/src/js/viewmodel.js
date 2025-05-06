@@ -1,14 +1,11 @@
 'use strict';
 /* global global: false */
-import { OpenEditor } from '../js/bindings/image-editor';
 
 var $ = require('jquery');
 var ko = require('knockout');
 const _omit = require('lodash.omit');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
-
-const MAX_SIZE = 102000;
 
 var toastr = require('toastr');
 toastr.options = {
@@ -763,55 +760,50 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // viewModel.editImage = function(src, done) {} : implement this method to enable image editing (src is a wirtableObservable).
   // viewModel.linkDialog = function() {}: implement this method using "this" to find the input element $(this).val is a writableObservable.
 
-viewModel.editImage = function (src, domElement, vm) {
-  // 1. Trouver l'input fileupload correspondant dans le DOM
-  var $uploadInput = $(domElement).closest('.uploadzone').find('input.fileupload');
+  viewModel.editImage = function (src, domElement, vm) {
+    // Locate the corresponding file upload input within the nearest upload zone
+    var $uploadInput = $(domElement).closest('.uploadzone').find('input.fileupload');
 
-  var sourceValue = src();
-  var src = sourceValue.startsWith('http') ? sourceValue : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
+    // Construct the full image URL if it's not already an absolute path
+    var sourceValue = src();
+    var src = sourceValue.startsWith('http')
+      ? sourceValue
+      : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
 
-  // 2. Charger l'image existante dans un File object simulé
-  fetch(src)
-    .then(res => res.blob())
-    .then(blob => {
-      const file = new File([blob], 'edited-image.png', { type: blob.type });
+    // Fetch the image from the URL and convert it to a Blob, then simulate a File object
+    fetch(src)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], 'edited-image.png', { type: blob.type });
 
-      // 3. Créer un objet 'data' compatible avec jquery.fileupload
-      const fileData = {
-        files: [file],
-        submit: function (e, data) {
-          // 4. Lorsque l'événement 'submit' est déclenché, on envoie le fichier
-          console.log('Début de l\'upload');
-          return $uploadInput.fileupload('send', data);
+        // Prepare a file data object compatible with jQuery File Upload
+        const fileData = {
+          files: [file],
+          submit: function (e, data) {
+            console.log('Starting image upload...');
+            return $uploadInput.fileupload('send', data);
+          }
+        };
+
+        // Simulate a file being added to the upload input
+        $uploadInput.fileupload('add', fileData);
+
+        // Optional: Log if the upload fails
+        $uploadInput.on('fileuploadfail', function (e, data) {
+          console.error('Image upload failed:', data.errorThrown || data);
+        });
+      })
+      .catch(err => {
+        console.error('Failed to load image for editing:', err);
+        if (vm && vm.notifier && typeof vm.notifier.error === 'function') {
+          vm.notifier.error('Unable to load image for editing. Please try again.');
         }
-      };
-
-      // 5. Déclencher l’événement comme si un fichier venait d’être ajouté
-      $uploadInput.fileupload('add', fileData);
-
-      // 6. Optionnellement, tu peux écouter l'événement 'fileuploadsend' pour savoir quand l'envoi commence
-      $uploadInput.on('fileuploadsend', function (e, data) {
-        console.log('Envoi du fichier en cours...');
       });
-
-      // 7. Écoute les erreurs avec 'fileuploadfail' si besoin
-      $uploadInput.on('fileuploadfail', function (e, data) {
-        console.error('Échec de l\'upload :', data.errorThrown);
-      });
-
-    })
-    .catch(err => {
-      console.error("Erreur lors du chargement de l'image pour édition :", err);
-      if (vm && vm.notifier && typeof vm.notifier.error === 'function') {
-        vm.notifier.error('Erreur lors du chargement de l’image pour édition');
-      }
-    });
-};
+  };
 
 
 
   viewModel.loadImage = function (img) {
-    console.log("vm load image")
     // push image at top of "recent" gallery
     viewModel.galleryRecent.unshift(img);
     // select recent gallery tab

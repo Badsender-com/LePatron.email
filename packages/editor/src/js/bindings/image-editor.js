@@ -111,7 +111,6 @@ export function OpenEditor(next, abort, data, file, messages, parent, image) {
  * @param {object} messages - Translated messages used in the editor as an object.
  */
 function initEditor(parent, src, messages) {
-  //TODO check why we need that  -> else it injects the modal as a string in the DOM
   // Create an element that contains the HTML content of the modal
   const modalContent = modal(Editor.messages);
 
@@ -120,7 +119,7 @@ function initEditor(parent, src, messages) {
   tempContainer.innerHTML = modalContent;
 
   // We add the container after the parent element
-  parent.after(tempContainer.firstElementChild);
+  parent.after(tempContainer.firstElementChild)
 
   const container = document.getElementById('konva-editor'); // Canvas area only
   const stage = new Konva.Stage({
@@ -248,7 +247,7 @@ function initEditor(parent, src, messages) {
     Editor.filtersHandler = EditorFilters(Editor, messages);
 
     // Binds buttons and inputs actions via event handlers
-    bindHandlers(); //TODO here ici, c'est lui qu'il faut que je check
+    bindHandlers();
   }
 }
 
@@ -642,7 +641,6 @@ function setImageBackground() {
  * Resets the stage and image to their default properties.
  */
 function reset() {
-  console.log("reset")
     Editor.stage.setAttrs({ x: 0, y: 0, scaleX: 1, scaleY: 1 });
     Editor.inputWidth.val(Editor.baseImage.width);
     Editor.inputHeight.val(Editor.baseImage.height);
@@ -692,13 +690,7 @@ function save() {
   Editor.stage.toBlob({
     callback: (blob) => {
       const file = new File([blob], Editor.file.name, { type: Editor.file.type });
-      console.log("THE FILE CREATED")
-      console.dir(file)
       Editor.data.files[Editor.file.index] = file;
-      console.log("THE FILE REGISTERED")
-      console.dir( Editor.data.files[Editor.file.index])
-      console.log("THE FILES REGISTERED IN EDITOR")
-      console.dir( Editor.data.files)
       clean();
     },
     x: rect.x,
@@ -713,7 +705,6 @@ function save() {
  * @param {JQuery.Deferred<any, any, any>} deferredCallback - Callback called to continue execution even if the component is destroying (here, used for saving the edited image).
  */
 function clean(deferredCallback = Editor.deferredCallback) {
-    console.log("clean")
     reset();
     window.removeEventListener('keydown', handleDelete);
     $(document).off(`keyup.bs-cropper`);

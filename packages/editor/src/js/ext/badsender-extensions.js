@@ -169,7 +169,7 @@ function extendKnockout(opts) {
     file.url = url.resolve(fileUrl, url.parse(file.url).pathname);
     return file;
   };
-  //TODO here ici, ajouter un binding sur autre chose que le fileupload afin de pouvoir save l'image de l'éditeur en ouverture image ??
+
   function getSafeSizes(width, height) {
     width = parseInt(width, 10);
     height = parseInt(height, 10);

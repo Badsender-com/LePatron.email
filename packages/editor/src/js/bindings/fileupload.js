@@ -116,7 +116,6 @@ ko.bindingHandlers['fileupload'] = {
   },
 
   update: function (element, valueAccessor) {
-    console.log("Fileupload update")
     var options = valueAccessor() || {};
 
     var $fu = $(element);
@@ -219,18 +218,16 @@ ko.bindingHandlers['fileupload'] = {
     if (options.uploadToTemplate) {
       options.url = ko.bindingHandlers['fileupload'].extendOptions.url.template;
     } else {
-      options.url = ko.bindingHandlers['fileupload'].extendOptions.url.mailing; //TODO on est censé passer par la aussi
-      console.log("Options url")
-      console.log(options.url)
+      options.url = ko.bindingHandlers['fileupload'].extendOptions.url.mailing;
     }
     // resize images with croppie
     if (cropImage) {
-      options.processQueue = [{ action: 'cropImage' }]; //TODO on passe suremenet par la a chaque fois
+      options.processQueue = [{ action: 'cropImage' }];
     }
 
     //-----
 
-    $fu.fileupload(options); //TODO ne passe pas par ça quand c'est de l'image -> besoin d'un event handler aussi ?
+    $fu.fileupload(options);
 
     var events = [
       'fileuploadadd',
@@ -241,7 +238,6 @@ ko.bindingHandlers['fileupload'] = {
     ];
     var eventHandler = function (e, data) {
       if (e.type == 'fileuploadadd') {
-        console.log("file upload add")
         working++;
       }
       if (e.type == 'fileuploadfail') {
@@ -258,17 +254,12 @@ ko.bindingHandlers['fileupload'] = {
         cleanup();
       }
       if (e.type == 'fileuploaddone') {
-        console.log("file upload done")
         if (typeof data.result.files[0].url !== 'undefined') {
-          console.log("l'url n'est pas undefined dans la réponse serveur")
-          console.log(data.result.files[0])
           if (options.onfile) {
-            console.log("options.onfile est défini")
             for (var i = 0; i < data.result.files.length; i++) {
               data.result.files[i] = ko.bindingHandlers[
                 'fileupload'
               ].remoteFilePreprocessor(data.result.files[i]);
-              console.log("utilisation du remote file processor")
               options.onfile(data.result.files[i]);
             }
           }
@@ -302,8 +293,6 @@ ko.bindingHandlers['fileupload'] = {
         }
       }
       if (e.type == 'fileuploadprocessalways') {
-        console.log("process always")
-        //Previsualisation of canvas
         var index = data.index,
           file = data.files[index];
         if (file.preview && index === 0) {

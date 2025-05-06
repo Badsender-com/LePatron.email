@@ -14,14 +14,17 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
   processActions: {
     cropImage(data) {
       const dfd = $.Deferred();
-      console.log({data})
 
       const next = () => dfd.resolveWith(this, [data]);
       const abort = () => dfd.rejectWith(this, [data]);
 
-      const { dropZone, files, index, messages } = data;
+      const {files, index, messages } = data;
       const originalFile = files[index];
       const { name, type } = originalFile;
+      //TODO improve this to be independ of the element name
+      // As this element exists in the Dom only when gallery is open,
+      // the button editImage, is in charge of opening the gallery panel too
+      const dropZone = document.getElementById("toolimagesgallery")
 
       if (/gif|svg/.test(type)) return next();
 
