@@ -214,13 +214,19 @@ export const EditorCropper = (editor) => {
      * @param {any} newBox - The new boundaries of the transformer as a rectangle.
      * @returns - The rectangle that will be used as the new boundaries of the transformer.
      */
-    function handleSelectorResize(newBox, ratio) {
+    function handleSelectorResize( newBox, ratio) {
         const imageBox = image.getClientRect();
 
         const imageLeft = imageBox.x;
         const imageTop = imageBox.y;
         const imageRight = imageBox.x + imageBox.width;
         const imageBottom = imageBox.y + imageBox.height;
+
+        const overflowLeft = imageLeft - newBox.x;
+        const overflowTop = imageTop - newBox.y;
+
+        const availableRightSpace = imageRight - newBox.x;
+        const availableBottomSpace = imageBottom - newBox.y;
     
         let boxX = _.clamp(newBox.x, imageLeft, imageRight);
         let boxY = _.clamp(newBox.y, imageTop, imageBottom);
@@ -228,10 +234,15 @@ export const EditorCropper = (editor) => {
         const maxWidth = imageRight - boxX;
         const maxHeight = imageBottom - boxY;
         
-        let boxWidth = Math.min(newBox.width, maxWidth);
-        let boxHeight = Math.min(newBox.height, maxHeight);
+        let boxWidth = newBox.x < imageLeft
+        ? newBox.width - overflowLeft 
+        : Math.min(newBox.width, availableRightSpace);
+
+        let boxHeight = newBox.y < imageTop
+        ? newBox.height - overflowTop
+        : Math.min(newBox.height, availableBottomSpace);
     
-        if (ratio > 0) {
+        if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
             if (boxWidth / boxHeight > ratio) {
                 boxWidth = boxHeight * ratio;
             } else {
