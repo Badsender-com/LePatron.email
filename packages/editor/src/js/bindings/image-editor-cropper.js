@@ -37,8 +37,7 @@ export const EditorCropper = (editor) => {
      */
     function toRatio(value) {
         if (value === "0") return 0;
-        if (value === "1") return 1;
-
+        
         var ratioParts = value.split('-');
         var widthRatio = parseFloat(ratioParts[0]);
         var heightRatio = parseFloat(ratioParts[1]);
