@@ -1,6 +1,6 @@
 'use strict';
 import Konva from 'konva';
-import _ from 'lodash';
+import {clamp} from 'lodash';
 
 // IMPORTANT NOTE :
 // Only the main image can be cropped at the moment.
@@ -37,7 +37,7 @@ export const EditorCropper = (editor) => {
      */
     function toRatio(value) {
         if (value === "0") return 0;
-        
+
         var ratioParts = value.split('-');
         var widthRatio = parseFloat(ratioParts[0]);
         var heightRatio = parseFloat(ratioParts[1]);
@@ -217,40 +217,54 @@ export const EditorCropper = (editor) => {
      */
     function handleSelectorResize(oldBox, newBox, ratio) {
         const imageBox = image.getClientRect();
-
+    
+        // Calculates the image boundaries
         const imageLeft = imageBox.x;
         const imageTop = imageBox.y;
         const imageRight = imageBox.x + imageBox.width;
         const imageBottom = imageBox.y + imageBox.height;
-
+    
         const overflowLeft = imageLeft - newBox.x;
         const overflowTop = imageTop - newBox.y;
-
+    
         const availableRightSpace = imageRight - newBox.x;
         const availableBottomSpace = imageBottom - newBox.y;
-
-        const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom )
-        const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight )
     
-        let boxX = isNewBoxYInsideImage || ratio === 0 
-            ? _.clamp(newBox.x, imageLeft, imageRight) 
+        // Checks if the new selector is inside the image vertically and horizontally
+        const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom)
+        const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight)
+        
+        // Determines the new X position of the selector
+        // If the selector is inside vertically OR if no ratio is applied,
+        // constrains the X position between the left and right edges of the image
+        // Otherwise, keeps the old X position
+        const boxX = isNewBoxYInsideImage || ratio === 0 
+            ? clamp(newBox.x, imageLeft, imageRight) 
             : oldBox.x;
-
-        let boxY = isNewBoxXInsideImage || ratio === 0  
-            ?  _.clamp(newBox.y, imageTop, imageBottom) 
+    
+        // Determines the new Y position of the selector
+        // If the selector is inside horizontally OR if no ratio is applied,
+        // constrains the Y position between the top and bottom edges of the image
+        // Otherwise, keeps the old Y position
+        const boxY = isNewBoxXInsideImage || ratio === 0  
+            ? clamp(newBox.y, imageTop, imageBottom) 
             : oldBox.y;
         
         const maxWidth = imageRight - boxX;
         const maxHeight = imageBottom - boxY;
         
+        // Determines the width of the selector
+        // If the selector extends beyond the left edge, reduces its width
         let boxWidth = newBox.x < imageLeft
             ? newBox.width - overflowLeft 
             : Math.min(newBox.width, availableRightSpace);
-
+    
+        // Determines the height of the selector
+        // If the selector extends beyond the top edge, reduces its height
         let boxHeight = newBox.y < imageTop
             ? newBox.height - overflowTop
             : Math.min(newBox.height, availableBottomSpace);
-    
+        
         if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
             if (boxWidth / boxHeight > ratio) {
                 boxWidth = boxHeight * ratio;
@@ -268,7 +282,7 @@ export const EditorCropper = (editor) => {
                 boxWidth = boxHeight * ratio;
             }
         }
-    
+        
         return {
             ...newBox,
             x: boxX,
