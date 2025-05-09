@@ -5,9 +5,9 @@
   <div class="img-size" data-bind="text: _size">size</div>
   <div class="midtools" data-bind="tooltips: {}">
     <!-- ko if: _src() != '' -->
-    <div title="Remove image" class="tool delete" data-bind="attr: { title: $root.t('Remove image') }, click: _src.bind(_src, ''), clickBubble: false"><i class="fa fa-fw fa-trash-o"></i></div>
+    <div title="Remove image" class="tool delete" data-bind="attr: { title: $root.t('Open the image editing tool') }, click: _src.bind(_src, ''), clickBubble: false"><i class="fa fa-fw fa-trash-o"></i></div>
     <!-- ko if: typeof $root.editImage !== 'undefined' -->
-    <div title="Open the image editing tool" class="tool edit" data-bind="click: function(data, event) {$root.selectImage($element, _src); $root.editImage(_src, event.currentTarget, $root);}, clickBubble: false"><i class="fa fa-fw fa-pencil"></i></div>
+    <div title="Open the image editing tool" class="tool edit" data-bind="attr: { title: $root.t('Edit image') }, click: function(data, event) {$root.selectImage($element, _src); $root.editImage(_src, event.currentTarget, $root);}, clickBubble: false"><i class="fa fa-fw fa-pencil"></i></div>
     <!-- /ko -->
     <!-- /ko -->
     <!-- ko if: _src() == '' -->
