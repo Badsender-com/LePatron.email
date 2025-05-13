@@ -224,6 +224,7 @@ export const EditorCropper = (editor) => {
         const imageRight = imageBox.x + imageBox.width;
         const imageBottom = imageBox.y + imageBox.height;
     
+        // We can drag the selector outside the image. This calculates by how many pixels we went outside the image
         const overflowLeft = imageLeft - newBox.x;
         const overflowTop = imageTop - newBox.y;
     
@@ -234,49 +235,60 @@ export const EditorCropper = (editor) => {
         const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom)
         const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight)
         
-        // Determines the new X position of the selector
-        // If the selector is inside vertically OR if no ratio is applied,
-        // constrains the X position between the left and right edges of the image
-        // Otherwise, keeps the old X position
+          // Determines the new X position of the selector
+        // If the selector is still within vertical bounds of the image OR if no ratio is applied,
+        // allow updating the X position, clamped between the left and right edges of the image.
+        // Otherwise (when a ratio is enforced and we’ve gone out of vertical bounds),
+        // keep the previous X position to avoid breaking diagonal resizing.
         const boxX = isNewBoxYInsideImage || ratio === 0 
             ? clamp(newBox.x, imageLeft, imageRight) 
             : oldBox.x;
     
         // Determines the new Y position of the selector
-        // If the selector is inside horizontally OR if no ratio is applied,
-        // constrains the Y position between the top and bottom edges of the image
-        // Otherwise, keeps the old Y position
+        // If the selector is still within horizontal bounds of the image OR if no ratio is applied,
+        // allow updating the Y position, clamped between the top and bottom edges of the image.
+        // Otherwise (when a ratio is enforced and we’ve gone out of horizontal bounds),
+        // keep the previous Y position to avoid breaking diagonal resizing.
         const boxY = isNewBoxXInsideImage || ratio === 0  
             ? clamp(newBox.y, imageTop, imageBottom) 
             : oldBox.y;
-        
+
         const maxWidth = imageRight - boxX;
         const maxHeight = imageBottom - boxY;
         
-        // Determines the width of the selector
-        // If the selector extends beyond the left edge, reduces its width
+        // Determines the width of the selector by taking the box width or the image width if we extends beyond the right edge
+        // If the selector extends beyond the left edge, the box width increases with it. 
+        // We don't want to count those pixel, so we reduce the width. 
         let boxWidth = newBox.x < imageLeft
             ? newBox.width - overflowLeft 
             : Math.min(newBox.width, availableRightSpace);
     
-        // Determines the height of the selector
-        // If the selector extends beyond the top edge, reduces its height
+       // Determines the height of the selector by taking the box width or the image width if we extends beyond the bottom edge
+        // If the selector extends beyond the top edge, the box height increases with it. 
+        // We don't want to count those pixel, so we reduce the height. 
         let boxHeight = newBox.y < imageTop
             ? newBox.height - overflowTop
             : Math.min(newBox.height, availableBottomSpace);
         
+        // If a ratio is applied and box dimension are valid we want to adjuste width and height to maintain the ratio
         if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
             if (boxWidth / boxHeight > ratio) {
+                // If the current aspect ratio is too wide : reduce the width to match the ratio.
                 boxWidth = boxHeight * ratio;
             } else {
+                // Otherwise, adjust the height to match the ratio.
                 boxHeight = boxWidth / ratio;
             }
             
+            // If the adjusted width exceeds the available space to the right,
+            // clamp the width and recalculate the height to maintain the ratio.
             if (boxWidth > maxWidth) {
                 boxWidth = maxWidth;
                 boxHeight = boxWidth / ratio;
             }
-            
+
+            // If the adjusted height exceeds the available space at the bottom,
+            // clamp the height and recalculate the width to maintain the ratio.
             if (boxHeight > maxHeight) {
                 boxHeight = maxHeight;
                 boxWidth = boxHeight * ratio;
