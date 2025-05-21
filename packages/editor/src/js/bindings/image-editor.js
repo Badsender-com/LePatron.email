@@ -1005,16 +1005,11 @@ const modal = (messages) =>
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
             <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
                 <option value="0">${messages.editor_ratio_free}</option>
+                <option value="1">${messages.editor_ratio_egal}</option>
                 <option value="4-3">${messages.editor_ratio_standard}</option>
-                <option value="16-9">${messages.editor_ratio_landscape}</option>
-                <option value="9-16">${messages.editor_ratio_portrait}</option>
+                <option value="3-4">${messages.editor_ratio_portrait}</option>
+                <option value="19-9">${messages.editor_ratio_landscape}</option>
                 <option value="1-1">${messages.editor_ratio_square}</option>
-                <option value="3-2">${messages.editor_ratio_photo}</option>
-                <option value="5-3">${messages.editor_ratio_widescreen_cinema}</option>
-                <option value="5-4">${messages.editor_ratio_almost_square}</option>
-                <option value="6-4">${messages.editor_ratio_photo}</option>
-                <option value="7-5">${messages.editor_ratio_intermediate}</option>
-                <option value="10-8">${messages.editor_ratio_camera}</option>
             </select>
           </div>
           <button class="js-actions-crop-cancel editor-button" type="button" title="${messages.crop_editor_cancel}">

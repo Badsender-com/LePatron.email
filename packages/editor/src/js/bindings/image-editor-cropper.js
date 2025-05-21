@@ -1,5 +1,6 @@
 'use strict';
 import Konva from 'konva';
+import {clamp} from 'lodash';
 
 // IMPORTANT NOTE :
 // Only the main image can be cropped at the moment.
@@ -50,34 +51,28 @@ export const EditorCropper = (editor) => {
      */
     function setSelectorToRatio(ratio) {
         resetSelector();
-
+    
         if (ratio === 0) {
             transformer.enabledAnchors(editor.baseAnchors);
             transformer.moveToTop();
             setCropperLines();
             return;
         }
-
+    
         transformer.enabledAnchors(editor.cornerAnchors);
         transformer.moveToTop();
-
-        if (ratio > 1) {
-            selector.height(selector.height() / ratio);
+        
+        const currentRatio = selector.width() / selector.height();
+        
+        if (currentRatio > ratio) {
+            selector.width(selector.height() * ratio);
+        } else if (currentRatio < ratio) {
+            selector.height(selector.width() / ratio);
         }
-
-        if (ratio < 1) {
-            selector.width(selector.width() * ratio);
-        }
-
-        if (ratio === 1) {
-            const newSize = Math.min(selector.width(), selector.height()) * ratio;
-            selector.width(newSize);
-            selector.height(newSize);
-        }
-
+        
         selector.offsetX(selector.width() / 2);
         selector.offsetY(selector.height() / 2);
-
+        
         updatePanel();
         setCropperLines();
     }
@@ -91,7 +86,7 @@ export const EditorCropper = (editor) => {
             y: editor.image.y(),
             width: editor.image.width(),
             height: editor.image.height(),
-            offsetX : editor.image.width() / 2,
+            offsetX: editor.image.width() / 2,
             offsetY: editor.image.height() / 2,
             scaleX: baseImage.scaleX,
             scaleY: baseImage.scaleY,
@@ -107,15 +102,15 @@ export const EditorCropper = (editor) => {
             scale: editor.stage.scaleX(),
             pos: editor.stage.position(),
         };
-
+        
         ratioSelector = editor.wrapper.find("#ratio-selector");
         ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
-
+        
         cropLayer = new Konva.Layer();
         maskLayer = new Konva.Layer();
-
+        
         selectorGroup = new Konva.Group();
-
+        
         // Creates a rectangle used as a selector for the region of the image that will be cropped.
         selector = new Konva.Rect({
             x: editor.lastCrop?.selectorX ?? editor.stage.width() / 2,
@@ -149,7 +144,7 @@ export const EditorCropper = (editor) => {
 
         // This custom shape is used to display the area that will be cropped (light effect)
         lightShape = new Konva.Shape({
-            sceneFunc: function(ctx, shape) {
+            sceneFunc: function (ctx, shape) {
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.fillStyle = 'white';
                 const selectorW = selector.width() * selector.scaleX();
@@ -167,7 +162,7 @@ export const EditorCropper = (editor) => {
             enabledAnchors: ratioSelector.val() === "0" ? editor.baseAnchors : editor.cornerAnchors,
             rotateEnabled: false,
             rotateLineVisible: false,
-            boundBoxFunc: (oldBox, newBox) => handleSelectorResize(oldBox, newBox),
+            boundBoxFunc: (oldBox, newBox) => handleSelectorResize(oldBox, newBox, toRatio(ratioSelector.val())),
         });
 
         selector.on('dragmove', (e) => {
@@ -217,29 +212,96 @@ export const EditorCropper = (editor) => {
      * Prevents user from resizing the selector outside and or larger than the image.
      * @param {any} oldBox - The old boundaries of the transformer as a rectangle.
      * @param {any} newBox - The new boundaries of the transformer as a rectangle.
+     * @param {any} ratio - The ratio selected for the crop by the user.
      * @returns - The rectangle that will be used as the new boundaries of the transformer.
      */
-    function handleSelectorResize(oldBox, newBox) {
+    function handleSelectorResize(oldBox, newBox, ratio) {
         const imageBox = image.getClientRect();
-        const imageW = image.width() * image.scaleX();
-        const imageH = image.height() * image.scaleY();
+    
+        // Calculates the image boundaries
+        const imageLeft = imageBox.x;
+        const imageTop = imageBox.y;
+        const imageRight = imageBox.x + imageBox.width;
+        const imageBottom = imageBox.y + imageBox.height;
+    
+        // We can drag the selector outside the image. This calculates by how many pixels we went outside the image
+        const overflowLeft = imageLeft - newBox.x;
+        const overflowTop = imageTop - newBox.y;
+    
+        const availableRightSpace = imageRight - newBox.x;
+        const availableBottomSpace = imageBottom - newBox.y;
+    
+        // Checks if the new selector is inside the image vertically and horizontally
+        const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom)
+        const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight)
+        
+          // Determines the new X position of the selector
+        // If the selector is still within vertical bounds of the image OR if no ratio is applied,
+        // allow updating the X position, clamped between the left and right edges of the image.
+        // Otherwise (when a ratio is enforced and we’ve gone out of vertical bounds),
+        // keep the previous X position to avoid breaking diagonal resizing.
+        const boxX = isNewBoxYInsideImage || ratio === 0 
+            ? clamp(newBox.x, imageLeft, imageRight) 
+            : oldBox.x;
+    
+        // Determines the new Y position of the selector
+        // If the selector is still within horizontal bounds of the image OR if no ratio is applied,
+        // allow updating the Y position, clamped between the top and bottom edges of the image.
+        // Otherwise (when a ratio is enforced and we’ve gone out of horizontal bounds),
+        // keep the previous Y position to avoid breaking diagonal resizing.
+        const boxY = isNewBoxXInsideImage || ratio === 0  
+            ? clamp(newBox.y, imageTop, imageBottom) 
+            : oldBox.y;
 
-        const minX = newBox.x + 1;
-        const minY = newBox.y + 1;
-        const maxX = minX + newBox.width - 2;
-        const maxY = minY + newBox.height - 2;
+        const maxWidth = imageRight - boxX;
+        const maxHeight = imageBottom - boxY;
+        
+        // Determines the width of the selector by taking the box width or the image width if we extends beyond the right edge
+        // If the selector extends beyond the left edge, the box width increases with it. 
+        // We don't want to count those pixel, so we reduce the width. 
+        let boxWidth = newBox.x < imageLeft
+            ? newBox.width - overflowLeft 
+            : Math.min(newBox.width, availableRightSpace);
+    
+       // Determines the height of the selector by taking the box width or the image width if we extends beyond the bottom edge
+        // If the selector extends beyond the top edge, the box height increases with it. 
+        // We don't want to count those pixel, so we reduce the height. 
+        let boxHeight = newBox.y < imageTop
+            ? newBox.height - overflowTop
+            : Math.min(newBox.height, availableBottomSpace);
+        
+        // If a ratio is applied and box dimension are valid we want to adjuste width and height to maintain the ratio
+        if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
+            if (boxWidth / boxHeight > ratio) {
+                // If the current aspect ratio is too wide : reduce the width to match the ratio.
+                boxWidth = boxHeight * ratio;
+            } else {
+                // Otherwise, adjust the height to match the ratio.
+                boxHeight = boxWidth / ratio;
+            }
+            
+            // If the adjusted width exceeds the available space to the right,
+            // clamp the width and recalculate the height to maintain the ratio.
+            if (boxWidth > maxWidth) {
+                boxWidth = maxWidth;
+                boxHeight = boxWidth / ratio;
+            }
 
-        const isOut =
-            minX < imageBox.x ||
-            minY < imageBox.y ||
-            maxX > imageBox.x + imageW ||
-            maxY > imageBox.y + imageH ||
-            newBox.width > imageW ||
-            newBox.height > imageH;
-
-        if (isOut) return oldBox;
-
-        return newBox;
+            // If the adjusted height exceeds the available space at the bottom,
+            // clamp the height and recalculate the width to maintain the ratio.
+            if (boxHeight > maxHeight) {
+                boxHeight = maxHeight;
+                boxWidth = boxHeight * ratio;
+            }
+        }
+        
+        return {
+            ...newBox,
+            x: boxX,
+            y: boxY,
+            width: boxWidth,
+            height: boxHeight
+        };
     }
 
     /**
@@ -408,6 +470,7 @@ export const EditorCropper = (editor) => {
         lines = [];
 
         ratioSelector.off('change');
+        ratioSelector.val("0")
         ratioSelector = null;
     }
 
@@ -477,8 +540,8 @@ export const EditorCropper = (editor) => {
         lines = [];
         lines.push(new Konva.Line({
             points: [
-                x + width * 1/3 - offsetX, y - offsetY,
-                x + width * 1/3 - offsetX, y + height - offsetY,
+                x + width * 1 / 3 - offsetX, y - offsetY,
+                x + width * 1 / 3 - offsetX, y + height - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 2,
@@ -487,8 +550,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x + width * 2/3 - offsetX, y - offsetY,
-                x + width * 2/3 - offsetX, y + height - offsetY,
+                x + width * 2 / 3 - offsetX, y - offsetY,
+                x + width * 2 / 3 - offsetX, y + height - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 2,
@@ -497,8 +560,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x - offsetX, y + height * 1/3 - offsetY,
-                x + width - offsetX, y + height * 1/3 - offsetY,
+                x - offsetX, y + height * 1 / 3 - offsetY,
+                x + width - offsetX, y + height * 1 / 3 - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 1,
@@ -507,8 +570,8 @@ export const EditorCropper = (editor) => {
 
         lines.push(new Konva.Line({
             points: [
-                x - offsetX, y + height * 2/3 - offsetY,
-                x + width - offsetX, y + height * 2/3 - offsetY,
+                x - offsetX, y + height * 2 / 3 - offsetY,
+                x + width - offsetX, y + height * 2 / 3 - offsetY,
             ],
             stroke: 'skyblue',
             strokeWidth: 1,
