@@ -37,7 +37,11 @@ class FTPClient {
       .update(currentDate + random)
       .digest('hex')}`;
 
-    fs.mkdirSync(tmpDir);
+    try {
+      fs.mkdir(tmpDir);
+    } catch (err) {
+      console.log('Error while creating tmp : ' + err);
+    }
 
     try {
       await client.connect({
@@ -66,7 +70,7 @@ class FTPClient {
         try {
           client.on('debug', (msg) => console.log('DEBUG SFTP:', msg));
           await client
-            .put(localPath, remotePath, { chunkSize: 16384 })
+            .fastPut(localPath, remotePath, { chunkSize: 16384 })
             .then(() => {
               console.log(`Upload réussi pour ${fileName}`);
             })
@@ -87,7 +91,12 @@ class FTPClient {
       console.log('METHOD ERRORED', err);
     } finally {
       console.log('END OF UPLOADING');
-      fs.removeSync(`${tmpDir}`);
+
+      try {
+        fs.remove(`${tmpDir}`);
+      } catch (err) {
+        console.log('Error while removing tmp : ', err);
+      }
 
       try {
         await client.end();

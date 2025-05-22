@@ -144,7 +144,7 @@ ko.bindingHandlers.wysiwygSrc = {
     // placeholdersrc = "'http://placehold.it/'+"+width+"+'x'+"+height+"+'.png/cccccc/333333&text='+"+size;
     // placeholdersrc = "'"+converterUtils.addSlashes(defaultValue)+"'";
   },
-  update: function (
+  update: async function (
     element,
     valueAccessor,
     allBindingsAccessor,
@@ -156,6 +156,18 @@ ko.bindingHandlers.wysiwygSrc = {
     var placeholderValue = ko.utils.unwrapObservable(value.placeholder);
     var width = ko.utils.unwrapObservable(value.width);
     var height = ko.utils.unwrapObservable(value.height);
+
+    var sourceValue = value.src();
+    if (sourceValue) {
+      var src = sourceValue.startsWith('http') ? sourceValue : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
+      const size = await getImageSize(src);
+      if (size.width < 640 && width > size.width) {
+        width = size.width;
+      } else if (size.width > 640 && width > size.width){
+        width = 640;
+      }
+    }
+
     if (
       attrValue === false ||
       attrValue === null ||
@@ -184,14 +196,31 @@ ko.bindingHandlers.wysiwygSrc = {
       );
       element.setAttribute('src', src);
     }
-    if (typeof width !== 'undefined' && width !== null)
+
+    if (typeof width !== 'undefined' && width !== null) {
       element.setAttribute('width', width);
+    }
     else element.removeAttribute('width');
     if (typeof height !== 'undefined' && height !== null)
       element.setAttribute('height', height);
     else element.removeAttribute('height');
   },
 };
+
+function getImageSize(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function () {
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = function (err) {
+      console.log({ err });
+      reject(new Error("Impossible de charger l'image : " + url));
+    };
+    img.src = url;
+  });
+}
+
 
 ko.bindingHandlers.wysiwygId = {
   init: function (
@@ -422,7 +451,7 @@ ko.bindingHandlers.wysiwyg = {
     var isSubscriberChange = false;
     var thisEditor;
     var isEditorChange = false;
-    
+
     var options = {
       inline: true,
       // maybe not needed, but won't hurt.
@@ -438,7 +467,7 @@ ko.bindingHandlers.wysiwyg = {
       extended_valid_elements: 'strong/b,em/i,*[*]',
       menubar: false,
       skin: 'gray-flat',
-        
+
      // 2018-03-07: the force_*_newlines are not effective. force_root_block is the property dealing with newlines, now.
       // force_br_newlines: !fullEditor, // we force BR as newline when NOT in full editor
       // force_p_newlines: fullEditor,
