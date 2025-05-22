@@ -37,7 +37,11 @@ class FTPClient {
       .update(currentDate + random)
       .digest('hex')}`;
 
-    fs.mkdirSync(tmpDir);
+    try {
+      fs.mkdir(tmpDir);
+    } catch (err) {
+      console.log('Error while creating tmp : ' + err);
+    }
 
     try {
       await client.connect({
@@ -87,7 +91,12 @@ class FTPClient {
       console.log('METHOD ERRORED', err);
     } finally {
       console.log('END OF UPLOADING');
-      fs.removeSync(`${tmpDir}`);
+
+      try {
+        fs.remove(`${tmpDir}`);
+      } catch (err) {
+        console.log('Error while removing tmp : ', err);
+      }
 
       try {
         await client.end();
