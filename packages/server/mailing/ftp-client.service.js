@@ -38,7 +38,7 @@ class FTPClient {
       .digest('hex')}`;
 
     try {
-      fs.mkdir(tmpDir);
+      await fs.mkdir(tmpDir);
     } catch (err) {
       console.log('Error while creating tmp : ' + err);
     }
@@ -93,7 +93,7 @@ class FTPClient {
       console.log('END OF UPLOADING');
 
       try {
-        fs.remove(`${tmpDir}`);
+        await fs.remove(`${tmpDir}`);
       } catch (err) {
         console.log('Error while removing tmp : ', err);
       }
