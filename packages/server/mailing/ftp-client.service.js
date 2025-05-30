@@ -32,7 +32,7 @@ class FTPClient {
     const client = this.client;
     const currentDate = new Date().valueOf().toString();
     const random = Math.random().toString();
-    const tmpDir = `/tmp/${crypto
+    const tmpDir = `/tmp/badsender/${crypto
       .createHash('sha1')
       .update(currentDate + random)
       .digest('hex')}`;
