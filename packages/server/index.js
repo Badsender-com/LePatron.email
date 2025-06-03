@@ -35,11 +35,8 @@ const EmailGroupRouter = require('./emails-group/emails-group.routes');
 const sharp = require('sharp');
 
 sharp.cache({
-  files: 2,
-  memory: 300,
-  items: 1000,
+  files: 0,
 });
-process.env.TMPDIR = '/dev/shm';
 
 const workers =
   process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
