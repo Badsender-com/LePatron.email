@@ -33,6 +33,8 @@ const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
 
+process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
+
 const workers =
   process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
 
