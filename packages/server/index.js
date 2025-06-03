@@ -32,6 +32,14 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
+const sharp = require('sharp');
+
+sharp.cache({
+  files: 2,
+  memory: 300,
+  items: 1000,
+});
+process.env.TMPDIR = '/dev/shm';
 
 const workers =
   process.env.WORKERS <= require('os').cpus().length ? process.env.WORKERS : 1;
