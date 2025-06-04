@@ -112,19 +112,6 @@ function parseMultipart(req, options) {
     // wait all TMP files to be moved in the good location (s3 or local)
     Promise.all(uploads)
       .then(() => {
-        // 🧹 NETTOYAGE DES FICHIERS TEMPORAIRES
-        Object.values(files)
-          .flat()
-          .forEach((file) => {
-            if (file && file.path && fs.existsSync(file.path)) {
-              fs.unlink(file.path, (err) => {
-                if (err)
-                  console.warn('Failed to remove tmp file:', file.path, err);
-                else console.log('Removed tmp file:', file.path);
-              });
-            }
-          });
-        // Format final pour resolve
         formatters[options.formatter](fields, files, deferred.resolve);
       })
       .catch(deferred.reject);
