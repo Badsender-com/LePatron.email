@@ -155,16 +155,16 @@ ko.bindingHandlers.wysiwygSrc = {
     var attrValue = ko.utils.unwrapObservable(value.src);
     var placeholderValue = ko.utils.unwrapObservable(value.placeholder);
     var width = ko.utils.unwrapObservable(value.width);
+    var resizedWidth = null ;
     var height = ko.utils.unwrapObservable(value.height);
 
     var sourceValue = value.src();
     if (sourceValue) {
       var src = sourceValue.startsWith('http') ? sourceValue : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
       const size = await getImageSize(src);
-      if (size.width < 640 && width > size.width) {
-        width = size.width;
-      } else if (size.width > 640 && width > size.width){
-        width = 640;
+      if ( width > size.width) {
+        //If image is too small we need to save it larger to gain in quality after (when placed in a smaller bloc)
+        resizedWidth = size.width * 2;
       }
     }
 
@@ -191,7 +191,7 @@ ko.bindingHandlers.wysiwygSrc = {
       var src = ko.bindingHandlers.wysiwygSrc.convertedUrl(
         attrValue.toString(),
         method,
-        width,
+        resizedWidth || width,
         height
       );
       element.setAttribute('src', src);
