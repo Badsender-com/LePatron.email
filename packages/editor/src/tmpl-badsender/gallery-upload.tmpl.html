@@ -6,7 +6,7 @@
         type="file"
         multiple
         name="files[]"
-        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadMailingImage, cropImage: true }"
+        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadMailingImage}"
       >
     <!-- /ko -->
     <!-- ko if: type === 'template' -->
@@ -15,7 +15,7 @@
         type="file"
         multiple
         name="files[]"
-        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadTemplateImage, uploadToTemplate: true, cropImage: true }">
+        data-bind="fileupload: { onerror: $root.notifier.error, onfile: $root.loadTemplateImage, uploadToTemplate: true }">
     <!-- /ko -->
     <span data-bind="text: $root.t('Click or drag files here')">Click or drag files here</span>
     <div class="workzone">
