@@ -59,11 +59,7 @@
       <div class="dialog-gallery-wrapper">
         <ul data-bind="foreach: mailingGallery">
           <!-- ko if: typeof thumbnailUrl != 'undefined' -->
-          <li data-bind="click: $root.setBgImage.bind($element, name);">
-            <img
-              style="display: block;"
-              data-bind="attr: { src: thumbnailUrl }"
-            />
+          <li data-bind="click: $root.setBgImage.bind($element, name), style: { backgroundImage: 'url(' + thumbnailUrl + ')'  }" style="background-size: cover;">
           </li>
           <!-- /ko -->
         </ul>
@@ -100,11 +96,7 @@
       <div class="dialog-gallery-wrapper">
         <ul data-bind="foreach: templateGallery">
           <!-- ko if: typeof thumbnailUrl != 'undefined' -->
-          <li data-bind="click: $root.setBgImage.bind($element, name);">
-            <img
-              style="display: block;"
-              data-bind="attr: { src: thumbnailUrl }"
-            />
+           <li data-bind="click: $root.setBgImage.bind($element, name), style: { backgroundImage: 'url(' + thumbnailUrl + ')'  }" style="background-size: cover;">
           </li>
           <!-- /ko -->
         </ul>
