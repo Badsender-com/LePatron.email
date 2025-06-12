@@ -161,11 +161,15 @@ ko.bindingHandlers.wysiwygSrc = {
     var sourceValue = value.src();
     if (sourceValue) {
       var src = sourceValue.startsWith('http') ? sourceValue : window.location.protocol + '//' + window.location.host + '/api/images/' + sourceValue;
-      const size = await getImageSize(src);
-      if ( width > size.width) {
-        //If image is too small we need to save it larger to gain in quality after (when placed in a smaller bloc)
-        resizedWidth = size.width * 2;
-      }
+      const imageSize = getImageSize(src);
+      imageSize.then((size)=>{
+        if ( width > size.width) {
+          //If image is too small we need to save it larger to gain in quality after (when placed in a smaller bloc)
+          resizedWidth = size.width * 2;
+        }
+      }).catch((err)=>{
+          console.log(err)
+      })
     }
 
     if (
