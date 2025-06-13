@@ -242,7 +242,7 @@ function initEditor(parent, src, messages) {
     raf(() => Editor.wrapper.addClass(ACTIVE_CLASS));
 
     // Advanced features have to be initialized after the stage is drawn at least one time
-    Editor.cropper = EditorCropper(Editor);
+    Editor.cropper = EditorCropper(Editor, { handleStageZooming, zoomStageToScale });
     Editor.textHandler = EditorText(Editor);
     Editor.filtersHandler = EditorFilters(Editor, messages);
 
@@ -301,7 +301,7 @@ function setSize(width, height) {
     Editor.selection.width(stringToNumber(width, 1));
     Editor.selection.height(stringToNumber(height, 1));
     Editor.selection.offsetX(width / 2);
-    Editor.selection.offsetX(height / 2);
+    Editor.selection.offsetY(height / 2);
   }
 }
 
@@ -803,243 +803,265 @@ function updateElementActions(disabled) {
  * @returns {string} - The editor content as html.
  */
 const modal = (messages) =>
-    `<aside class="editor-frame" id="editor-wrapper">
-      <div class="editor-layout">
+  `<aside class="editor-frame" id="editor-wrapper">
+    <div class="editor-layout">
 
-        <div class="editor-header">
-          <h4 class="text-white">${messages.editor_title}</h4>
-          <div class="spacer"></div>
-          <button class="js-actions-cancel editor-icon-button">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-          </button>
-        </div>
+      <div class="editor-header">
+        <h4 class="text-white">${messages.editor_title}</h4>
+        <div class="spacer"></div>
+        <button class="js-actions-cancel editor-icon-button">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+        </button>
+      </div>
 
-        <div class="editor-layout-inner">
+      <div class="editor-layout-inner">
 
-          <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .5rem; gap: 4px; overflow-y: auto;">
+        <div class="v-stack" style="height: 100%; min-width: 220px; padding-top: .5rem; gap: 4px; overflow-y: auto;">
 
-            <!-- Crop selector -->
-            <div class="v-stack editor-hidden" id="crop-actions">
-              <h4>${messages.editor_crop_panel_title}</h4>
-              <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
-                <p>${messages.editor_size}</p>
-                <div class="editor-sizes">
-                  <label for="resize-width" class="editor-size">
-                    <span class="editor-size-label">${messages.input_width}</span>
-                    <input class="editor-size-input editor-input-readonly" id="selector-width" name="selector-width" readonly />
-                  </label>
-                  <label for="resize-height" class="editor-size">
-                    <span class="editor-size-label">${messages.input_height}</span>
-                    <input class="editor-size-input editor-input-readonly" id="selector-height" name="selector-height" readonly />
-                  </label>
-                </div>
-              </div>
-            </div>
-            <!-- Crop selector -->
-
-            <!-- Selected element panel -->
-            <div class="v-stack editor-bottom-border" id="selected-element-actions">
-              <h4>${messages.editor_panel_title}</h4>
-              <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
-                <p>${messages.editor_size}</p>
-                <div class="editor-sizes">
-                  <label for="resize-width" class="editor-size">
-                    <span class="editor-size-label">${messages.input_width}</span>
-                    <input class="editor-size-input" id="resize-width" name="resize-width" type="number" min="0" />
-                  </label>
-                  <label for="resize-height" class="editor-size">
-                    <span class="editor-size-label">${messages.input_height}</span>
-                    <input class="editor-size-input" id="resize-height" name="resize-height" type="number" min="0" />
-                  </label>
-                </div>
-              </div>
-
-              <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                <p>${messages.editor_mirror}</p>
-                <div class="h-stack" style="gap: 4px;">
-                  <button class="js-actions-mirror-vertical editor-button editor-button-group" type="button" title="${messages.vertical_mirror}">
-                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
-                  </button>
-                  <button class="js-actions-mirror-horizontal editor-button" type="button" title="${messages.horizontal_mirror}">
-                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                <p>${messages.editor_rotate}</p>
-                <div class="h-stack" style="gap: 4px;">
-                  <button class="js-actions-rotate-left editor-button editor-button-group" type="button" title="${messages.rotate_left}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
-                  </button>
-                  <button class="js-actions-rotate-right editor-button" type="button" title="${messages.rotate_right}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                <p>Type</p>
-                <p id="selected-element-type" style="font-style: italic;"></p>
-              </div>
-            </div>
-            <!-- Selected element panel -->
-
-            <!-- Selected image panel -->
-            <div class="v-stack" style="height: 100%; margin-top: 2rem;" id="selected-image-actions">
-              <div class="v-stack" style="gap: 8px;">
-                <h4>${messages.editor_actions_panel_title}</h4>
-
-                <label for="corner-radius" class="v-stack" style="min-width: 150px;">
-                  <span style="font-size: .9em">${messages.input_corner_radius}</span>
-                  <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
+          <!-- Crop selector -->
+          <div class="v-stack editor-hidden" id="crop-actions">
+            <h4>${messages.editor_crop_panel_title}</h4>
+            <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
+              <p>${messages.editor_size}</p>
+              <div class="editor-sizes">
+                <label for="resize-width" class="editor-size">
+                  <span class="editor-size-label">${messages.input_width}</span>
+                  <input class="editor-size-input editor-input-readonly" id="selector-width" name="selector-width" readonly />
                 </label>
-
-                <div class="h-stack" style="gap: 1rem; flex-direction: row-reverse;">
-                  <div class="v-stack editor-hidden editor-background-menu" id="image-background-menu">
-                    <h5>${messages.editor_background_color}</h5>
-                    <div class="h-stack editor-flex-center" style="width: 140px; justify-content: space-between;">
-                      <p>${messages.editor_color}</p>
-                      <input type="color" name="image-background-color" id="image-background-color"/>
-                    </div>
-                    <div class="h-stack" style="gap: .25rem; justify-content: flex-end; width: 100%;">
-                      <button class="editor-icon-button" id="image-background-reset" title="${messages.reset_editor}">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-360v-60q0-25 17.5-42.5T540-480h60L480-360Zm0 161v-85l196-196h85L480-199Zm2 75 353-354q16 4 27.5 15.5T878-435L524-82q-16-5-26.5-15.5T482-124Zm117 44 281-281v85L684-80h-85Zm161 0 120-120v60q0 25-17.5 42.5T820-80h-60Zm71-480h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z"/></svg>
-                      </button>
-                      <div class="spacer"></div>
-                      <button class="editor-icon-button" id="image-background-cancel" title="${messages.editor_background_cancel}">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-                      </button>
-                      <button class="editor-icon-button" id="image-background-save" title="${messages.editor_background_save}">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <button class="js-actions-background-image editor-button" style="margin-bottom: 1rem;" type="button" title="${messages.editor_background_color}">
-                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M120-574v-85l181-181h85L120-574Zm0-196v-70h70l-70 70Zm527 67q-10-11-21.5-21.5T602-743l97-97h85L647-703ZM220-361l77-77q7 11 14.5 20t16.5 17q-28 7-56.5 17.5T220-361Zm480-197v-2q0-19-3-37t-9-35l152-152v86L700-558ZM436-776l65-64h85l-64 64q-11-2-21-3t-21-1q-11 0-22 1t-22 3ZM120-375v-85l144-144q-2 11-3 22t-1 22q0 11 1 21t3 20L120-375Zm709 83q-8-12-18.5-23T788-335l52-52v85l-11 10Zm-116-82q-7-3-14-5.5t-14-4.5q-9-3-17.5-6t-17.5-5l190-191v86L713-374Zm-233-26q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480ZM160-120v-71q0-34 17-63t47-44q51-26 115.5-44T480-360q76 0 140.5 18T736-298q30 15 47 44t17 63v71H160Zm81-80h478q-2-9-7-15.5T699-226q-36-18-91.5-36T480-280q-72 0-127.5 18T261-226q-8 4-13 11t-7 15Zm239 0Zm0-360Z"/></svg>
-                  </button>
-
-                  <button class="js-actions-crop editor-button" style="margin-bottom: 1rem;" type="button" title="${messages.crop_editor}">
-                    <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
-                  </button>
-                </div>
+                <label for="resize-height" class="editor-size">
+                  <span class="editor-size-label">${messages.input_height}</span>
+                  <input class="editor-size-input editor-input-readonly" id="selector-height" name="selector-height" readonly />
+                </label>
               </div>
+            </div>
+          </div>
+          <!-- Crop selector -->
 
-              <div class="v-stack" style="gap: 4px; margin-top: 2rem;">
-                <h4>${messages.editor_filters_panel_title}</h4>
-                <div class="editor-filters-list">
-                  <button type="button" id="filters-grayscale">${messages.filters_grayscale}</button>
-                  <button id="filters-blur">${messages.filters_blur}</button>
-                  <button id="filters-pixelate">${messages.filters_pixelate}</button>
-                  <button id="filters-contrast">${messages.filters_contrast}</button>
-                  <button id="filters-brighten">${messages.filters_brighten}</button>
-                  <button id="filters-invert">${messages.filters_invert}</button>
-                </div>
-                <div class="editor-filters-actions">
-                  <div id="filters-actions-slider-box"></div>
-                  <div>
-                    <button class="editor-button" id="image-filters-reset" type="button" title="${messages.reset_editor}">
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
+          <!-- Selected element panel -->
+          <div class="v-stack editor-bottom-border" id="selected-element-actions">
+            <h4>${messages.editor_panel_title}</h4>
+            <div class="h-stack" style="gap: 4px; justify-content: space-between; padding-top: 4px;">
+              <p>${messages.editor_size}</p>
+              <div class="editor-sizes">
+                <label for="resize-width" class="editor-size">
+                  <span class="editor-size-label">${messages.input_width}</span>
+                  <input class="editor-size-input" id="resize-width" name="resize-width" type="number" min="0" />
+                </label>
+                <label for="resize-height" class="editor-size">
+                  <span class="editor-size-label">${messages.input_height}</span>
+                  <input class="editor-size-input" id="resize-height" name="resize-height" type="number" min="0" />
+                </label>
+              </div>
+            </div>
+
+            <div class="h-stack" style="width: 100%; justify-content: space-between;">
+              <p>${messages.editor_mirror}</p>
+              <div class="h-stack" style="gap: 4px;">
+                <button class="js-actions-mirror-vertical editor-button editor-button-group" type="button" title="${messages.vertical_mirror}">
+                  <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 512"><path fill="currentColor" d="M214.059 377.941H168V134.059h46.059c21.382 0 32.09-25.851 16.971-40.971L144.971 7.029c-9.373-9.373-24.568-9.373-33.941 0L24.971 93.088c-15.119 15.119-4.411 40.971 16.971 40.971H88v243.882H41.941c-21.382 0-32.09 25.851-16.971 40.971l86.059 86.059c9.373 9.373 24.568 9.373 33.941 0l86.059-86.059c15.12-15.119 4.412-40.971-16.97-40.971z"></path></svg>
+                </button>
+                <button class="js-actions-mirror-horizontal editor-button" type="button" title="${messages.horizontal_mirror}">
+                  <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M377.941 169.941V216H134.059v-46.059c0-21.382-25.851-32.09-40.971-16.971L7.029 239.029c-9.373 9.373-9.373 24.568 0 33.941l86.059 86.059c15.119 15.119 40.971 4.411 40.971-16.971V296h243.882v46.059c0 21.382 25.851 32.09 40.971 16.971l86.059-86.059c9.373-9.373 9.373-24.568 0-33.941l-86.059-86.059c-15.119-15.12-40.971-4.412-40.971 16.97z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="h-stack" style="width: 100%; justify-content: space-between;">
+              <p>${messages.editor_rotate}</p>
+              <div class="h-stack" style="gap: 4px;">
+                <button class="js-actions-rotate-left editor-button editor-button-group" type="button" title="${messages.rotate_left}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7.11 8.53L5.7 7.11C4.8 8.27 4.24 9.61 4.07 11h2.02c.14-.87.49-1.72 1.02-2.47zM6.09 13H4.07c.17 1.39.72 2.73 1.62 3.89l1.41-1.42c-.52-.75-.87-1.59-1.01-2.47zm1.01 5.32c1.16.9 2.51 1.44 3.9 1.61V17.9c-.87-.15-1.71-.49-2.46-1.03L7.1 18.32zM13 4.07V1L8.45 5.55 13 10V6.09c2.84.48 5 2.94 5 5.91s-2.16 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93s-3.05-7.44-7-7.93z"/></svg>
+                </button>
+                <button class="js-actions-rotate-right editor-button" type="button" title="${messages.rotate_right}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15.55 5.55L11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42l1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="h-stack" style="width: 100%; justify-content: space-between;">
+              <p>Type</p>
+              <p id="selected-element-type" style="font-style: italic;"></p>
+            </div>
+          </div>
+          <!-- Selected element panel -->
+
+          <!-- Selected image panel -->
+          <div class="v-stack" style="height: 100%; margin-top: 2rem;" id="selected-image-actions">
+            <div class="v-stack" style="gap: 8px;">
+              <h4>${messages.editor_actions_panel_title}</h4>
+
+              <label for="corner-radius" class="v-stack" style="min-width: 150px;">
+                <span style="font-size: .9em">${messages.input_corner_radius}</span>
+                <input type="range" name="corner-radius" id="corner-radius" min="0" max="100" value="0">
+              </label>
+
+              <div class="h-stack" style="gap: 1rem; flex-direction: row-reverse;">
+                <div class="v-stack editor-hidden editor-background-menu" id="image-background-menu">
+                  <h5>${messages.editor_background_color}</h5>
+                  <div class="h-stack editor-flex-center" style="width: 140px; justify-content: space-between;">
+                    <p>${messages.editor_color}</p>
+                    <input type="color" name="image-background-color" id="image-background-color"/>
+                  </div>
+                  <div class="h-stack" style="gap: .25rem; justify-content: flex-end; width: 100%;">
+                    <button class="editor-icon-button" id="image-background-reset" title="${messages.reset_editor}">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-360v-60q0-25 17.5-42.5T540-480h60L480-360Zm0 161v-85l196-196h85L480-199Zm2 75 353-354q16 4 27.5 15.5T878-435L524-82q-16-5-26.5-15.5T482-124Zm117 44 281-281v85L684-80h-85Zm161 0 120-120v60q0 25-17.5 42.5T820-80h-60Zm71-480h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z"/></svg>
+                    </button>
+                    <div class="spacer"></div>
+                    <button class="editor-icon-button" id="image-background-cancel" title="${messages.editor_background_cancel}">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" stroke-width="50"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                    </button>
+                    <button class="editor-icon-button" id="image-background-save" title="${messages.editor_background_save}">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/></svg>
                     </button>
                   </div>
                 </div>
+
+                <button class="js-actions-background-image editor-button" style="margin-bottom: 1rem;" type="button" title="${messages.editor_background_color}">
+                  <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M120-574v-85l181-181h85L120-574Zm0-196v-70h70l-70 70Zm527 67q-10-11-21.5-21.5T602-743l97-97h85L647-703ZM220-361l77-77q7 11 14.5 20t16.5 17q-28 7-56.5 17.5T220-361Zm480-197v-2q0-19-3-37t-9-35l152-152v86L700-558ZM436-776l65-64h85l-64 64q-11-2-21-3t-21-1q-11 0-22 1t-22 3ZM120-375v-85l144-144q-2 11-3 22t-1 22q0 11 1 21t3 20L120-375Zm709 83q-8-12-18.5-23T788-335l52-52v85l-11 10Zm-116-82q-7-3-14-5.5t-14-4.5q-9-3-17.5-6t-17.5-5l190-191v86L713-374Zm-233-26q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480ZM160-120v-71q0-34 17-63t47-44q51-26 115.5-44T480-360q76 0 140.5 18T736-298q30 15 47 44t17 63v71H160Zm81-80h478q-2-9-7-15.5T699-226q-36-18-91.5-36T480-280q-72 0-127.5 18T261-226q-8 4-13 11t-7 15Zm239 0Zm0-360Z"/></svg>
+                </button>
+
+                <button class="js-actions-crop editor-button" style="margin-bottom: 1rem;" type="button" title="${messages.crop_editor}">
+                  <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M680-40v-160H280q-33 0-56.5-23.5T200-280v-400H40v-80h160v-160h80v640h640v80H760v160h-80Zm0-320v-320H360v-80h320q33 0 56.5 23.5T760-680v320h-80Z"/></svg>
+                </button>
               </div>
             </div>
-            <!-- Selected image panel -->
 
-            <!-- Selected text panel -->
-            <div class="v-stack" style="height: 100%; width: 100%; margin-top: 2rem;" id="selected-text-actions">
-              <div class="v-stack" style="width: 100%; gap: 4px;">
-                <h4>${messages.editor_actions_panel_title}</h4>
-
-                <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>${messages.editor_text_color}</p>
-                  <input type="color" name="text-color" id="text-color"/>
-                </div>
-
-                <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>${messages.editor_text_style}</p>
-                   <select class="editor-border-accent" name="text-style" id="text-style" style="width: 120px;">
-                    <option value="normal">${messages.editor_text_style_normal}</option>
-                    <option value="italic" style="font-style: italic;">${messages.editor_text_style_italic}</option>
-                    <option value="bold" style="font-style: bold;">${messages.editor_text_style_bold}</option>
-                  </select>
-                </div>
-
-                <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>${messages.editor_text_font}</p>
-                   <select class="editor-border-accent" name="text-font" id="text-font" style="width: 160px;">
-                    <option value="Arial" style="font-family: 'Arial', 'sans-serif';">Arial</option>
-                    <option value="Verdana" style="font-family: 'Verdana', 'sans-serif';">Verdana</option>
-                    <option value="Tahoma" style="font-family: 'Tahoma', 'sans-serif';">Tahoma</option>
-                    <option value="Trebuchet MS" style="font-family: 'Trebuchet MS', 'sans-serif';">Trebuchet MS</option>
-                    <option value="Times New Roman" style="font-family: 'Times New Roman', Times, 'sans-serif';">Times New Roman</option>
-                    <option value="Georgia" style="font-family: 'Georgia', serif;">Georgia</option>
-                    <option value="Garamond" style="font-family: 'Garamond', serif;">Garamond</option>
-                    <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
-                    <option value="Brush Script MT" style="font-family: 'Brush Script MT', cursive;">Brush Script MT</option>
-                  </select>
-                </div>
-
-                <div class="h-stack" style="width: 100%; justify-content: space-between;">
-                  <p>${messages.editor_text_size}</p>
-                  <input class="editor-border-accent" type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px; text-align: right;" />
+            <div class="v-stack" style="gap: 4px; margin-top: 2rem;">
+              <h4>${messages.editor_filters_panel_title}</h4>
+              <div class="editor-filters-list">
+                <button type="button" id="filters-grayscale">${messages.filters_grayscale}</button>
+                <button id="filters-blur">${messages.filters_blur}</button>
+                <button id="filters-pixelate">${messages.filters_pixelate}</button>
+                <button id="filters-contrast">${messages.filters_contrast}</button>
+                <button id="filters-brighten">${messages.filters_brighten}</button>
+                <button id="filters-invert">${messages.filters_invert}</button>
+              </div>
+              <div class="editor-filters-actions">
+                <div id="filters-actions-slider-box"></div>
+                <div>
+                  <button class="editor-button" id="image-filters-reset" type="button" title="${messages.reset_editor}">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M86-560v-259h95v82q54-63 131.23-100 77.23-37 167.77-37 143 0 250.5 89.5T866-560H736q-26-82-95.5-135t-160.49-53Q419-748 366.5-723 314-698 277-655h69v95H86Zm137 332h514L570-460 450-300l-90-120-137 192ZM212-46q-53 0-89.5-36.5T86-172v-296h126v296h536v-296h126v296q0 53-36.5 89.5T748-46H212Z"/></svg>
+                  </button>
                 </div>
               </div>
             </div>
-            <!-- Selected text panel -->
           </div>
+          <!-- Selected image panel -->
 
-           <!-- Canvas area -->
-          <div id="konva-editor" class="editor-canvas"></div>
-          <!-- Canvas area -->
+          <!-- Selected text panel -->
+          <div class="v-stack" style="height: 100%; width: 100%; margin-top: 2rem;" id="selected-text-actions">
+            <div class="v-stack" style="width: 100%; gap: 4px;">
+              <h4>${messages.editor_actions_panel_title}</h4>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>${messages.editor_text_color}</p>
+                <input type="color" name="text-color" id="text-color"/>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>${messages.editor_text_style}</p>
+                 <select class="editor-border-accent" name="text-style" id="text-style" style="width: 120px;">
+                  <option value="normal">${messages.editor_text_style_normal}</option>
+                  <option value="italic" style="font-style: italic;">${messages.editor_text_style_italic}</option>
+                  <option value="bold" style="font-style: bold;">${messages.editor_text_style_bold}</option>
+                </select>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>${messages.editor_text_font}</p>
+                 <select class="editor-border-accent" name="text-font" id="text-font" style="width: 160px;">
+                  <option value="Arial" style="font-family: 'Arial', 'sans-serif';">Arial</option>
+                  <option value="Verdana" style="font-family: 'Verdana', 'sans-serif';">Verdana</option>
+                  <option value="Tahoma" style="font-family: 'Tahoma', 'sans-serif';">Tahoma</option>
+                  <option value="Trebuchet MS" style="font-family: 'Trebuchet MS', 'sans-serif';">Trebuchet MS</option>
+                  <option value="Times New Roman" style="font-family: 'Times New Roman', Times, 'sans-serif';">Times New Roman</option>
+                  <option value="Georgia" style="font-family: 'Georgia', serif;">Georgia</option>
+                  <option value="Garamond" style="font-family: 'Garamond', serif;">Garamond</option>
+                  <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
+                  <option value="Brush Script MT" style="font-family: 'Brush Script MT', cursive;">Brush Script MT</option>
+                </select>
+              </div>
+
+              <div class="h-stack" style="width: 100%; justify-content: space-between;">
+                <p>${messages.editor_text_size}</p>
+                <input class="editor-border-accent" type="number" id="text-size" name="text-size" min="10" max="100" style="max-width: 150px; text-align: right;" />
+              </div>
+            </div>
+          </div>
+          <!-- Selected text panel -->
         </div>
 
-        <!-- Cropper toolbar -->
-        <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden" style="gap: 1rem;">
-          <button class="js-actions-crop-reset editor-button" type="button" title="${messages.reset_editor}">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-320v-100q0-25 17.5-42.5T540-480h100v60H540v100h-60Zm60 240q-25 0-42.5-17.5T480-140v-100h60v100h100v60H540Zm280-240v-100H720v-60h100q25 0 42.5 17.5T880-420v100h-60ZM720-80v-60h100v-100h60v100q0 25-17.5 42.5T820-80H720Zm111-480h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z"/></svg>
+         <!-- Canvas area -->
+        <div id="konva-editor" class="editor-canvas"></div>
+        <!-- Canvas area -->
+      </div>
+
+      <!-- Cropper toolbar -->
+      <div class="editor-actions editor-flex-center js-crop-toolbar editor-hidden" style="gap: 1rem;">
+        
+        <!-- Zoom controller for cropper-->
+        <div class="h-stack editor-flex-center editor-actions-zoom" style="gap: .5rem; padding: 0 4px;">
+          <button class="js-crop-zoomout editor-button" type="button" title="${messages.editor_zoomout}">
+            <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>
           </button>
-          <div class="crop-ratio-selector js-ratio-actions">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
-            <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
-                <option value="0">${messages.editor_ratio_free}</option>
-                <option value="1">${messages.editor_ratio_egal}</option>
-                <option value="4-3">${messages.editor_ratio_standard}</option>
-                <option value="3-4">${messages.editor_ratio_portrait}</option>
-                <option value="19-9">${messages.editor_ratio_landscape}</option>
-                <option value="1-1">${messages.editor_ratio_square}</option>
-            </select>
+
+          <div class="editor-sizes">
+            <label for="crop-stage-zoom" class="editor-size">
+              <span class="editor-size-label">Zoom</span>
+              <div class="h-stack" style="flex-direction: row-reverse;">
+                <input class="editor-size-input editor-input-readonly" name="crop-stage-zoom" id="crop-stage-zoom" type="text" readonly style="text-align: center;"/>
+                <span class="editor-input-adornment">%</span>
+              </div>
+            </label>
           </div>
-          <button class="js-actions-crop-cancel editor-button" type="button" title="${messages.crop_editor_cancel}">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-          </button>
-          <button class="js-actions-crop-submit editor-button" type="button" title="${messages.crop_editor_submit}">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M400-304 240-464l56-56 104 104 264-264 56 56-320 320Z"/></svg>
+
+          <button class="js-crop-zoomin editor-button" type="button" title="${messages.editor_zoomin}">
+            <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
           </button>
         </div>
-        <!-- Cropper toolbar -->
 
-        <!-- Canvas toolbar -->
-        <div class="editor-actions js-toolbar" style="padding-top: 1.25rem;">
+        <button class="js-actions-crop-reset editor-button" type="button" title="${messages.reset_editor}">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-320v-100q0-25 17.5-42.5T540-480h100v60H540v100h-60Zm60 240q-25 0-42.5-17.5T480-140v-100h60v100h100v60H540Zm280-240v-100H720v-60h100q25 0 42.5 17.5T880-420v100h-60ZM720-80v-60h100v-100h60v100q0 25-17.5 42.5T820-80H720Zm111-480h-83q-26-88-99-144t-169-56q-117 0-198.5 81.5T200-480q0 72 32.5 132t87.5 98v-110h80v240H160v-80h94q-62-50-98-122.5T120-480q0-75 28.5-140.5t77-114q48.5-48.5 114-77T480-840q129 0 226.5 79.5T831-560Z"/></svg>
+        </button>
+        <div class="crop-ratio-selector js-ratio-actions">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M560-280h200v-200h-80v120H560v80ZM200-480h80v-120h120v-80H200v200Zm-40 320q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
+          <select name="ratio-selector" id="ratio-selector" class="editor-border-accent">
+              <option value="0">${messages.editor_ratio_free}</option>
+              <option value="1">${messages.editor_ratio_egal}</option>
+              <option value="4-3">${messages.editor_ratio_standard}</option>
+              <option value="3-4">${messages.editor_ratio_portrait}</option>
+              <option value="19-9">${messages.editor_ratio_landscape}</option>
+              <option value="1-1">${messages.editor_ratio_square}</option>
+          </select>
+        </div>
+        <button class="js-actions-crop-cancel editor-button" type="button" title="${messages.crop_editor_cancel}">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+        </button>
+        <button class="js-actions-crop-submit editor-button" type="button" title="${messages.crop_editor_submit}">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M400-304 240-464l56-56 104 104 264-264 56 56-320 320Z"/></svg>
+        </button>
+      </div>
+      <!-- Cropper toolbar -->
 
-          <div class="h-stack editor-flex-center editor-actions-zoom" style="gap: .5rem; padding: 0 4px;">
-            <button class="js-actions-zoomout editor-button" type="button" title="${messages.editor_zoomout}">
-              <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>
-            </button>
+      <!-- Canvas toolbar -->
+      <div class="editor-actions js-toolbar" style="padding-top: 1.25rem;">
 
-            <div class="editor-sizes">
+        <div class="h-stack editor-flex-center editor-actions-zoom" style="gap: .5rem; padding: 0 4px;">
+          <button class="js-actions-zoomout editor-button" type="button" title="${messages.editor_zoomout}">
+            <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z"/></svg>
+          </button>
+
+          <div class="editor-sizes">
               <label for="resize-width" class="editor-size">
-                <span class="editor-size-label">Zoom</span>
-                <div class="h-stack" style="flex-direction: row-reverse;">
-                  <input class="editor-size-input editor-input-readonly" name="stage-zoom" id="stage-zoom" type="text" readonly style="text-align: center;"/>
-                  <span class="editor-input-adornment">%</span>
-                </div>
-              </label>
-            </div>
+              <span class="editor-size-label">Zoom</span>
+              <div class="h-stack" style="flex-direction: row-reverse;">
+                <input class="editor-size-input editor-input-readonly" name="stage-zoom" id="stage-zoom" type="text" readonly style="text-align: center;"/>
+                <span class="editor-input-adornment">%</span>
+              </div>
+            </label>
+          </div>
 
-            <button class="js-actions-zoomin editor-button" type="button" title="${messages.editor_zoomin}">
+          <button class="js-actions-zoomin editor-button" type="button" title="${messages.editor_zoomin}">
               <svg class="editor-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
             </button>
           </div>
