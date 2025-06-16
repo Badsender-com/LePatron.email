@@ -52,28 +52,28 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
      */
     function setSelectorToRatio(ratio) {
         resetSelector();
-    
+
         if (ratio === 0) {
             transformer.enabledAnchors(editor.baseAnchors);
             transformer.moveToTop();
             setCropperLines();
             return;
         }
-    
+
         transformer.enabledAnchors(editor.cornerAnchors);
         transformer.moveToTop();
-        
+
         const currentRatio = selector.width() / selector.height();
-        
-        if (currentRatio > ratio) {
+
+       if (currentRatio > ratio) {
             selector.width(selector.height() * ratio);
         } else if (currentRatio < ratio) {
             selector.height(selector.width() / ratio);
         }
-        
+
         selector.offsetX(selector.width() / 2);
         selector.offsetY(selector.height() / 2);
-        
+
         updatePanel();
         setCropperLines();
     }
@@ -111,7 +111,9 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
         }
 
         const currentZoom = Math.round(editor.stage.scaleX() * 100);
-        if ((currentZoom <= 25 && direction == -1) || (currentZoom >= 500 && direction == 1)) return;
+        // 1 (100%) as minimum zoom to avoid zooming out too much
+        // 500 (500%) as maximum zoom to avoid zooming in too much
+        if ((currentZoom <= 1 && direction == -1) || (currentZoom >= 500 && direction == 1)) return;
 
         const oldScale = editor.stage.scaleX();
         const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
@@ -171,7 +173,9 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
     function handleCropManualZoom(zoomIn) {
         const scaleBy = zoomIn ? 0.05 : -0.05;
         const currentZoom = editor.stage.scaleX();
-        if ((currentZoom <= 0.25 && zoomIn === false) || (currentZoom >= 5 && zoomIn === true)) return;
+        // 0.01 (1%) as minimium zoom to avoid zooming out too much
+        // 5 (500%) as maximum zoom to avoid zooming in too much
+        if ((currentZoom <= 0.01 && zoomIn === false) || (currentZoom >= 5 && zoomIn === true)) return;
         zoomCropStageToScale(currentZoom + scaleBy, true);
     }
 
@@ -184,15 +188,15 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
             scale: editor.stage.scaleX(),
             pos: editor.stage.position(),
         };
-        
+
         ratioSelector = editor.wrapper.find("#ratio-selector");
         ratioSelector.on('change', () => setSelectorToRatio(toRatio(ratioSelector.val())));
-        
+
         cropLayer = new Konva.Layer();
         maskLayer = new Konva.Layer();
-        
+
         selectorGroup = new Konva.Group();
-        
+
         // Creates a rectangle used as a selector for the region of the image that will be cropped.
         selector = new Konva.Rect({
             x: editor.lastCrop?.selectorX ?? editor.stage.width() / 2,
@@ -290,90 +294,29 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
         });
     }
 
-   /**
- * Prevents user from resizing the selector outside and or larger than the image.
- * @param {any} oldBox - The old boundaries of the transformer as a rectangle.
+/**
+ * The user can move the selector outside the image to expand it with transparent pixels.
  * @param {any} newBox - The new boundaries of the transformer as a rectangle.
  * @param {any} ratio - The ratio selected for the crop by the user.
  * @returns - The rectangle that will be used as the new boundaries of the transformer.
  */
-function handleSelectorResize(oldBox, newBox, ratio) {
-    const imageLeft = image.x() - image.width() / 2;
-    const imageTop = image.y() - image.height() / 2;
-    const imageRight = image.x() + image.width() / 2;
-    const imageBottom = image.y() + image.height() / 2;
+  function handleSelectorResize( newBox, ratio) {
+    let boxX = newBox.x;
+    let boxY = newBox.y;
+    let boxWidth = newBox.width;
+    let boxHeight = newBox.height;
 
-    // We can drag the selector outside the image. This calculates by how many pixels we went outside the image
-    const overflowLeft = imageLeft - newBox.x;
-    const overflowTop = imageTop - newBox.y;
+    // If a ratio is applied, adjust the width and height to maintain the ratio
+    if (ratio > 0) {
+        const currentRatio = boxWidth / boxHeight;
 
-    const availableRightSpace = imageRight - newBox.x;
-    const availableBottomSpace = imageBottom - newBox.y;
-
-    // Checks if the new selector is inside the image vertically and horizontally
-    const isNewBoxYInsideImage = (newBox.y > imageTop && newBox.y + newBox.height < imageBottom)
-    const isNewBoxXInsideImage = (newBox.x > imageLeft && newBox.x + newBox.width < imageRight)
-    
-      // Determines the new X position of the selector
-    // If the selector is still within vertical bounds of the image OR if no ratio is applied,
-    // allow updating the X position, clamped between the left and right edges of the image.
-        // Otherwise (when a ratio is enforced and we’ve gone out of vertical bounds),
-    // keep the previous X position to avoid breaking diagonal resizing.
-    const boxX = isNewBoxYInsideImage || ratio === 0 
-        ? clamp(newBox.x, imageLeft, imageRight) 
-        : oldBox.x;
-
-    // Determines the new Y position of the selector
-    // If the selector is still within horizontal bounds of the image OR if no ratio is applied,
-    // allow updating the Y position, clamped between the top and bottom edges of the image.
-        // Otherwise (when a ratio is enforced and we’ve gone out of horizontal bounds),
-    // keep the previous Y position to avoid breaking diagonal resizing.
-    const boxY = isNewBoxXInsideImage || ratio === 0  
-        ? clamp(newBox.y, imageTop, imageBottom) 
-        : oldBox.y;
-
-    const maxWidth = imageRight - boxX;
-    const maxHeight = imageBottom - boxY;
-    
-    // Determines the width of the selector by taking the box width or the image width if we extends beyond the right edge
-    // If the selector extends beyond the left edge, the box width increases with it. 
-    // We don't want to count those pixel, so we reduce the width. 
-    let boxWidth = newBox.x < imageLeft
-        ? newBox.width - overflowLeft 
-        : Math.min(newBox.width, availableRightSpace);
-
-   // Determines the height of the selector by taking the box width or the image width if we extends beyond the bottom edge
-    // If the selector extends beyond the top edge, the box height increases with it. 
-    // We don't want to count those pixel, so we reduce the height. 
-    let boxHeight = newBox.y < imageTop
-        ? newBox.height - overflowTop
-        : Math.min(newBox.height, availableBottomSpace);
-    
-    // If a ratio is applied and box dimension are valid we want to adjuste width and height to maintain the ratio
-    if (ratio > 0 && boxHeight > 0 && boxWidth > 0) {
-        if (boxWidth / boxHeight > ratio) {
-            // If the current aspect ratio is too wide : reduce the width to match the ratio.
+        if (currentRatio > ratio) {
             boxWidth = boxHeight * ratio;
         } else {
-            // Otherwise, adjust the height to match the ratio.
             boxHeight = boxWidth / ratio;
-        }
-        
-        // If the adjusted width exceeds the available space to the right,
-        // clamp the width and recalculate the height to maintain the ratio.
-        if (boxWidth > maxWidth) {
-            boxWidth = maxWidth;
-            boxHeight = boxWidth / ratio;
-        }
-
-        // If the adjusted height exceeds the available space at the bottom,
-        // clamp the height and recalculate the width to maintain the ratio.
-        if (boxHeight > maxHeight) {
-            boxHeight = maxHeight;
-            boxWidth = boxHeight * ratio;
         }
     }
-    
+
     return {
         ...newBox,
         x: boxX,
@@ -383,40 +326,21 @@ function handleSelectorResize(oldBox, newBox, ratio) {
     };
 }
 
-   /**
- * Prevents user from moving the selector outside of the image boundaries.
- * @param {any} e - The event fired by KonvaJS while moving the rectangle selector ('dragmove' event).
- */
-function handleSelectorMovement(e) {
 
-    const imageRect = {
-        x: image.x() - (image.width() / 2),
-        y: image.y() - (image.height() / 2),
-        width: image.width(),
-        height: image.height()
-    };
-    
-    const selectorRect = {
-        width: selector.width() * selector.scaleX(),
-        height: selector.height() * selector.scaleY()
-    };
-    
-    let newX = selector.x();
-    let newY = selector.y();
-    
-    const selectorHalfWidth = selectorRect.width / 2;
-    const selectorHalfHeight = selectorRect.height / 2;
-    
-    const minX = imageRect.x + selectorHalfWidth;
-    const maxX = imageRect.x + imageRect.width - selectorHalfWidth;
-    const minY = imageRect.y + selectorHalfHeight;
-    const maxY = imageRect.y + imageRect.height - selectorHalfHeight;
-    
-    newX = Math.max(minX, Math.min(maxX, newX));
-    newY = Math.max(minY, Math.min(maxY, newY));
-    
-    selector.position({ x: newX, y: newY });
-}
+
+  /**
+   * Allow user to move the selector everywhere even outside the image limits.
+   * @param {any} e - The event fired by KonvaJS while moving the rectangle selector ('dragmove' event).
+   */
+  function handleSelectorMovement(e) {
+      // Allow the selector to be moved freely without restrictions
+      const newX = selector.x();
+      const newY = selector.y();
+
+      selector.position({ x: newX, y: newY });
+      lightShape.draw();
+  }
+
 
     /**
      * Called from the editor itself.
@@ -467,19 +391,19 @@ function handleSelectorMovement(e) {
         editor.stage.add(maskLayer);
         editor.stage.scale({ x: 1, y: 1 });
         editor.stage.position({ x: 0, y: 0 });
-        
-        editor.stage.off('wheel'); 
+
+        editor.stage.off('wheel');
         editor.stage.on('wheel', handleCropStageZooming);
-        
+
         const cropZoomIn = editor.wrapper.find('.js-crop-zoomin');
         const cropZoomOut = editor.wrapper.find('.js-crop-zoomout');
         const cropZoomInput = editor.wrapper.find('#crop-stage-zoom');
-        
+
         cropZoomIn.on('click', () => handleCropManualZoom(true));
         cropZoomOut.on('click', () => handleCropManualZoom(false));
-        
+
         cropZoomInput.val("100");
-        
+
         editor.stage.batchDraw();
 
         updatePanel();
@@ -549,15 +473,15 @@ function handleSelectorMovement(e) {
             x: stageZoom.pos.x,
             y: stageZoom.pos.y
         });
-        
+
         editor.stage.off('wheel');
         editor.stage.on('wheel', (e) => handleStageZooming(e));
-        
+
         const cropZoomIn = editor.wrapper.find('.js-crop-zoomin');
         const cropZoomOut = editor.wrapper.find('.js-crop-zoomout');
         cropZoomIn.off('click');
         cropZoomOut.off('click');
-        
+
         editor.stage.batchDraw();
 
         transformer = null;
@@ -585,12 +509,12 @@ function handleSelectorMovement(e) {
 function applyCrop() {
     const selectorWidth = selector.width() * selector.scaleX();
     const selectorHeight = selector.height() * selector.scaleY();
-    
+
     const imageLeft = image.x() - image.width() / 2;
     const imageTop = image.y() - image.height() / 2;
     const selectorLeft = selector.x() - selectorWidth / 2;
     const selectorTop = selector.y() - selectorHeight / 2;
-    
+
     const cropX = selectorLeft - imageLeft;
     const cropY = selectorTop - imageTop;
     const cropWidth = selectorWidth;
