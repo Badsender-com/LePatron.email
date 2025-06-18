@@ -296,11 +296,12 @@ export const EditorCropper = (editor, zoomFunctions = {}) => {
 
 /**
  * The user can move the selector outside the image to expand it with transparent pixels.
+ * @param {any} oldBox - ⚠️ The old boundaries of the transformer as a rectangle not used here but necessary for boundBoxFunc of the Transformer.
  * @param {any} newBox - The new boundaries of the transformer as a rectangle.
  * @param {any} ratio - The ratio selected for the crop by the user.
  * @returns - The rectangle that will be used as the new boundaries of the transformer.
  */
-  function handleSelectorResize( newBox, ratio) {
+  function handleSelectorResize( oldBox, newBox, ratio) {
     let boxX = newBox.x;
     let boxY = newBox.y;
     let boxWidth = newBox.width;
