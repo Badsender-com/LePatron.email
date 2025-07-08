@@ -57,7 +57,8 @@ function needResize(value, width, height) {
   if (sameWidth && sameHeight) return false;
   if (!width && sameHeight) return false;
   if (!height && sameWidth) return false;
-  if (value.width <= 640) return false;
+  // If 2 times the width of the container is inferior to the image width we want to resize it to 2 times the container width
+  if (value.width <= width * 2) return false;
 
   return true;
 }
@@ -274,7 +275,9 @@ function cover(req, res, next) {
 
   // Sharp can't handle animated gif
   if (imageDatas.type !== 'gif') {
-    const pipeline = sharp().resize(width, height);
+    // if this method is called we want to resize the image to 2 times the container
+    const resizedHeight = height ? height * 2 : null;
+    const pipeline = sharp().resize(width * 2, resizedHeight);
     return handleSharpStream(req, res, next, pipeline);
   }
 
