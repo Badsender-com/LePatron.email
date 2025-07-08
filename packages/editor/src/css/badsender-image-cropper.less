@@ -1,6 +1,8 @@
 @import (less) '../../../../node_modules/cropperjs/dist/cropper.css';
 
-.bs-img-cropper {
+@editor-accent-color: rgb(0, 144, 192);
+
+.editor-frame {
   --bs-ic-gutter: 2rem;
   --bs-ic-actions: 200px;
   position: fixed;
@@ -12,56 +14,160 @@
   z-index: 100;
   opacity: 0;
   transition: opacity 0.3s;
+  padding: 2rem;
 }
-.bs-img-cropper--active {
-  opacity: 1;
-}
-.bs-img-cropper__in {
-  position: absolute;
-  top: var(--bs-ic-gutter);
-  bottom: var(--bs-ic-gutter);
-  left: 50%;
-  right: -50%;
-  max-width: 1280px;
-  transform: translateX(-50%);
-  background: white;
-  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
 
-  .fa-times {
-    position: absolute;
-    right: 0;
-    top: 0;
-    font-size: 2em;
+.editor-input-readonly {
+  cursor: not-allowed;
+  pointer-events: none;
+  user-select: none;
+  outline: none;
+}
+
+.editor-active {
+  opacity: 1 !important;
+}
+
+.editor-hidden {
+  visibility: hidden;
+  opacity: 0;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.editor-layout {
+  height: 100%;
+  max-width: 1920px;
+  background: white;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+
+  * {
+    transition: all .3s ease-in-out;
   }
 }
-.bs-img-cropper__croppie {
-  --bc-ic-zoom-slider: 25px;
-  --bc-ic-zoom-slider: 50px;
-  max-height: calc(
-    100vh - calc(var(--bs-ic-gutter) * 4) - var(--bc-ic-zoom-slider)
-  );
-  max-width: calc(100% - calc(var(--bs-ic-gutter) * 2));
-  position: absolute;
-  top: var(--bs-ic-gutter);
-  right: var(--bs-ic-gutter);
-  bottom: var(--bs-ic-gutter);
-  left: var(--bs-ic-gutter);
-}
-.bs-img-cropper__actions {
-  position: absolute;
-  right: var(--bs-ic-gutter);
-  bottom: calc(var(--bs-ic-gutter) / 2);
-  z-index: 2;
+
+.editor-header {
   display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: .25rem .25rem .25rem 1.25rem;
+  background-color: var(--v-primary-base);
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
-.bs-img-cropper__button {
+
+.editor-icon-button {
+  display: block;
+  color: white;
+  background: transparent;
+  border: 0;
+
+  font-weight: bold;
+
+  svg {
+    display: block;
+    fill: currentColor;
+    height: 24px;
+    width: 24px;
+
+    &:hover {
+      cursor: pointer;
+      background: rgba(255, 255, 255, .15);
+      border-radius: 4px;
+    }
+  }
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.editor-layout-inner {
+  display: flex;
+  flex-direction: row;
+  gap: .5rem;
+  padding: 0 2rem 0 .5rem;
+  flex-grow: 1;
+  max-height: calc(100% - 7rem);
+}
+
+.editor-canvas {
+  // Dark background
+  // border: 1px solid black;
+  // background-color: #222;
+  // background-image:
+  //   linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
+  //   linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+  // background-size: 20px 20px;
+
+  border: 1px solid #ccc;
+  background-image: 
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.editor-actions {
+  width: 100%;
+  display: flex;
+  padding: .75rem 2rem .75rem .5rem; // 8px on the left because of the inner layout padding (editor-layout-inner class)
+}
+
+.editor-actions-main {
+  gap: 1rem;
+  padding-left: 8px;
+}
+
+.editor-actions-zoom {
+  min-width: 220px;
+}
+
+.editor-input-adornment {
+  display: inline-flex;
+  position: absolute;
+  pointer-events: none;
+  padding-right: .75rem;
+}
+
+.editor-background-menu {
+  border: 1px solid var(--v-accent-base);
+  background-color: whitesmoke;
+  display: inline-flex;
+  position: absolute;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: none;
+
+  button {
+    background-color: var(--v-accent-base);
+    border-radius: 4px;
+  }
+}
+
+.editor-button {
   background: var(--v-accent-base);
   border: 0;
   font-size: inherit;
   transition: background 0.3s;
   padding: 0.5em 0.75em;
   color: white;
-  margin-left: 1rem;
   border-radius: 2px;
 
   svg {
@@ -73,8 +179,14 @@
     background: var(--v-accent-darken1);
     cursor: pointer;
   }
+
+  &:disabled {
+    background: #d4d4d4;
+    cursor: not-allowed;
+  }
 }
-.bs-img-cropper__button--secondary {
+
+.editor-button-secondary {
   background: white;
   box-shadow: inset 0 0 0 1px var(--v-accent-base);
   color: var(--v-accent-base);
@@ -84,46 +196,186 @@
   }
 }
 
-.bs-img-cropper__fa-svg {
+.editor-icon {
   width: 24px;
   height: 24px;
 }
 
-.bs-img-cropper__button--group {
+.editor-button-group {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 
-  + .bs-img-cropper__button {
+  + .editor-button {
     margin: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
 }
-.bs-img-cropper__sizes {
+
+.editor-sizes {
   border: 1px solid var(--v-accent-base);
   border-radius: 2px;
   display: flex;
+  flex-direction: row;
+
+  &:has(input:disabled) {
+    border-color: #d4d4d4 !important;
+  }
 }
-.bs-img-cropper__size {
+
+.editor-size {
   width: 5rem;
   display: flex;
   flex-direction: column;
 
-  + .bs-img-cropper__size {
+  + .editor-size {
     border-left: 1px solid var(--v-accent-base);
   }
+
+  &:has(input:disabled) {
+    border-color: #d4d4d4 !important;
+    cursor: not-allowed;
+  }
+
+  &:has(input:disabled) span {
+    background: #d4d4d4 !important;
+    cursor: not-allowed;
+  }
 }
-.bs-img-cropper__size-label {
+
+.editor-size-label {
   display: block;
-  font-size: 0.6rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   background: var(--v-accent-base);
   color: white;
 }
-.bs-img-cropper__size-input {
+
+.editor-size-input {
   width: 100%;
   border: solid var(--v-accent-base);
   border-width: 1px 0 0;
   flex: 1 1 auto;
   text-align: right;
+
+  &:disabled {
+    border-color: #d4d4d4 !important;
+    cursor: not-allowed;
+  }
+}
+
+.ratio-selector-box {
+  border: solid var(--v-accent-base);
+  border-width: 1px 0 0;
+  flex: 1 1 auto;
+  margin: auto;
+  
+  input {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.editor-flex-center {
+  justify-content: center;
+  align-items: center;
+}
+
+.crop-ratio-selector {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  svg {
+    fill: @editor-accent-color;
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.text-editor-input {
+  border: 2px solid @editor-accent-color !important;
+}
+
+.editor-filters-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  gap: .5rem;
+  padding: 0.25rem;
+  max-height: 100%;
+
+  button {
+    flex-shrink: 0;
+    border: 0;
+    align-self: center;
+    width: 200px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 4px;
+    background: var(--v-accent-base);
+
+    &:hover {
+      background: var(--v-accent-darken1);
+      cursor: pointer;
+    }
+  }
+}
+
+.editor-filters-actions {
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  gap: 4px;
+}
+
+.text-white {
+  color: white;
+}
+
+.h-stack {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.v-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.editor-bottom-border {
+  border-bottom: 1px solid var(--v-accent-darken1);
+}
+
+.editor-border-accent {
+  border: 1px solid var(--v-accent-base) !important;
+}
+
+.separator {
+  width: 100%;
+  height: 14px;
+  background: repeating-linear-gradient(
+    -45deg,
+    white,
+    white 5px,
+    var(--v-accent-base) 5px,
+    var(--v-accent-base) 10px
+  );
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.selected {
+  border: 2px solid var(--v-accent-base) !important;
+  color: var(--v-accent-base) !important;
+  background-color: white !important;
+  box-shadow: 0px 3px 5px -1px rgba(0,0,0,0.2),0px 5px 8px 0px rgba(0,0,0,0.14),0px 1px 14px 0px rgba(0,0,0,0.12) !important;
 }

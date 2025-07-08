@@ -161,7 +161,6 @@ function extendKnockout(opts) {
   // send the non-resized image url
   ko.bindingHandlers.fileupload.remoteFilePreprocessor = function (file) {
     console.info('REMOTE FILE PREPROCESSOR');
-    console.log(file);
     var fileUrl = url.format({
       protocol: imgProcessorBackend.protocol,
       host: imgProcessorBackend.host,
@@ -193,7 +192,6 @@ function extendKnockout(opts) {
     const regexResult = PATH_REGEX.exec(imageName);
     if (!regexResult) return;
     const { 1: fileName } = regexResult;
-    console.info('CONVERTED URL', fileName, method, width, height);
     return `${imagesUrl[method]}${getSafeSizes(width, height)}/${fileName}`;
   };
 

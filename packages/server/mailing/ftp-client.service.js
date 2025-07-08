@@ -87,6 +87,7 @@ class FTPClient {
       console.log('METHOD ERRORED', err);
     } finally {
       console.log('END OF UPLOADING');
+
       fs.removeSync(`${tmpDir}`);
 
       try {
