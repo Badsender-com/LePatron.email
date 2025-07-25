@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [develop]
+    branches: [staging]
   pull_request:
-    branches: [develop]
+    branches: [staging]
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
       - uses: 47ng/actions-clever-cloud@v1.2.0
         with:
-          appID: ${{ secrets.CLEVER_APP_DEVELOP }}
+          appID: ${{ secrets.CLEVER_APP_STAGING }}
           force: true
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
