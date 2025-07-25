@@ -45,6 +45,9 @@ export default {
     apiKeyErrors() {
       return this.requiredValidationFunc('apiKey');
     },
+    secretKeyErrors() {
+      return this.requiredValidationFunc('secretKey');
+    },
   },
   methods: {
     onSubmit() {
@@ -60,17 +63,6 @@ export default {
       dirty &&
         !this.$v.profile[valueKey]?.required &&
         errors.push(this.$t(`global.errors.${valueKey}Required`));
-      return errors;
-    },
-    emailValidationFunc(valueKey) {
-      const errors = [];
-      const dirty = this.$v?.profile[valueKey]?.$dirty;
-      dirty &&
-        !this.$v.profile[valueKey].required &&
-        errors.push(this.$t(`global.errors.${valueKey}Required`));
-      dirty &&
-        !this.$v.profile[valueKey].email &&
-        errors.push(this.$t('forms.user.errors.email.valid'));
       return errors;
     },
   },
@@ -118,9 +110,9 @@ export default {
             :label="$t('global.secretKey')"
             name="secretKey"
             required
-            :error-messages="apiKeyErrors"
-            @input="$v.profile.apiKey.$touch()"
-            @blur="$v.profile.apiKey.$touch()"
+            :error-messages="secretKeyErrors"
+            @input="$v.profile.secretKey.$touch()"
+            @blur="$v.profile.secretKey.$touch()"
           />
         </v-col>
       </v-row>

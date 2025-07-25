@@ -63,7 +63,6 @@ const config = rc('lepatron', {
   dscUrl: process.env.DSC_ESP_URL,
   dscUserAgent: process.env.DSC_USER_AGENT,
   adobeUrl: process.env.ADOBE_ESP_URL,
-  adobeUserAgent: process.env.ADOBE_USER_AGENT,
   NODE_ENV: process.env.NODE_ENV,
 });
 

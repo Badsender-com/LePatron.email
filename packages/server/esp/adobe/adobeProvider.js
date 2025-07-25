@@ -3,21 +3,32 @@ const logger = require('../../utils/logger.js');
 const ERROR_CODES = require('../../constant/error-codes.js');
 const config = require('../../node.config.js');
 const axios = require('../../config/axios');
-const { InternalServerError, Conflict, BadRequest } = require('http-errors');
+const { InternalServerError } = require('http-errors');
+const qs = require('qs');
 
-// TODO when more info
 class AdobeProvider {
-  constructor({ apiKey, ...data }) {
+  constructor({ apiKey, secretKey, ...data }) {
     this.apiKey = apiKey;
+    this.secretKey = secretKey;
     this.data = data;
   }
 
+  static async build(initialData) {
+    return new AdobeProvider(initialData);
+  }
+
   async connectApiCall() {
-    return axios.get(`${config.adobeUrl}`, {
+    const data = qs.stringify({
+      client_id: this.apiKey,
+      client_secret: this.secretKey,
+      grant_type: 'client_credentials',
+      scope:
+        'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
+    });
+
+    return axios.post(`${config.adobeUrl}`, data, {
       headers: {
-        apiKey: this.apiKey,
-        'Content-Type': 'application/json',
-        'User-Agent': config.adobeUserAgent,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
   }
@@ -29,41 +40,15 @@ class AdobeProvider {
       return emailCampaignConnectionResult;
     } catch (e) {
       logger.error({ errorResponseData: e?.response?.data });
-      if (e?.response?.status === 405) {
-        return true;
-      }
 
       if (e?.response?.status === 500) {
         logger.error({ errorMessage: e?.response?.data?.message });
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
 
-      if (e?.response?.status === 503) {
-        throw new InternalServerError(
-          ERROR_CODES.IP_ADDRESS_IS_NOT_ALLOWED_OR_WRONG_KEY
-        );
-      }
-
       logger.error({ Error: e?.response?.data?.message });
       throw e;
     }
-  }
-
-  handleError(error) {
-    const status = error?.response?.status;
-    const message = error?.response?.data?.message;
-
-    if (status === 400) {
-      throw new BadRequest(message);
-    }
-
-    if (status === 409) {
-      throw new Conflict(message);
-    }
-
-    // Log the error and throw a generic error if it doesn't match specific cases
-    logger.error('Error in API call:', error);
-    throw new Error('An error occurred while communicating with the API.');
   }
 }
 module.exports = AdobeProvider;

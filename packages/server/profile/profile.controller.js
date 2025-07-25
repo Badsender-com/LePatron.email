@@ -36,12 +36,20 @@ module.exports = {
 
 async function createProfile(req, res) {
   const { user } = req;
-  const { name, type, apiKey, _company, ...additionalApiData } = req.body;
+  const {
+    name,
+    type,
+    apiKey,
+    secretKey,
+    _company,
+    ...additionalApiData
+  } = req.body;
   const response = await profileService.createProfile({
     user,
     name,
     type,
     apiKey,
+    secretKey,
     _company,
     additionalApiData,
   });

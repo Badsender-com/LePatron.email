@@ -20,7 +20,12 @@ const ProfileSchema = Schema(
     },
     type: {
       type: String,
-      enum: [EspTypes.ACTITO, EspTypes.SENDINBLUE, EspTypes.DSC],
+      enum: [
+        EspTypes.ACTITO,
+        EspTypes.SENDINBLUE,
+        EspTypes.DSC,
+        EspTypes.ADOBE,
+      ],
       required: false,
     },
     _company: {
@@ -31,6 +36,14 @@ const ProfileSchema = Schema(
     apiKey: {
       type: String,
       required: true,
+    },
+    secretKey: {
+      type: String,
+      required: false,
+    },
+    accessToken: {
+      type: String,
+      required: false,
     },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     additionalApiData: {},
