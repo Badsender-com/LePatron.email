@@ -53,9 +53,7 @@ class AdobeProvider {
   }
 
   async getUserGroups({ user }) {
-    const username = config.isDev
-      ? 'olivier.fredon.ext@clarins.com'
-      : user.name;
+    const username = config.isDev ? config.adobeDefaultUser : user.name;
 
     // TODO: mocked data, use the real one from db
     const accessToken = '';
@@ -153,7 +151,7 @@ class AdobeProvider {
                 <node expr="@internalName"/>
               </select>
               <where>
-                <condition expr="@name='${folderName}'"/>
+                <condition expr="[folder/@name]='${folderName}'"/>
               </where>
             </queryDef>
           </entity>
