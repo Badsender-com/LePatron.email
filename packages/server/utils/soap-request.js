@@ -1,5 +1,7 @@
 const axios = require('../../server/config/axios');
 const xmlParser = require('xml2json');
+const { InternalServerError } = require('http-errors');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 async function soapRequest({
   url,
@@ -29,6 +31,14 @@ async function soapRequest({
     const formatedResponse = formatResponseFn(jsObjectFromXml);
 
     console.log('Formated SOAP Response:', formatedResponse);
+
+    const errorFromAdobe =
+      formatedResponse['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
+
+    if (errorFromAdobe) {
+      console.error(errorFromAdobe);
+      throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+    }
 
     return formatedResponse;
   } catch (error) {

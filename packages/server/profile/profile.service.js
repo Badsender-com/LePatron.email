@@ -219,6 +219,8 @@ async function sendEspCampaign({
 
   const {
     apiKey,
+    secretKey,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -231,18 +233,30 @@ async function sendEspCampaign({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
+    accessToken,
     type,
     name,
     _company,
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: {
+        ...espSendingMailData.adobe,
+        accessToken,
+      },
+    };
+  }
 
   const { contentSendType } = additionalApiData;
   const espCampaignId =

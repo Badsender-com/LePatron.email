@@ -168,10 +168,25 @@ class AdobeProvider {
     });
   }
 
-  async saveDeliveryTemplate({ deliveryLabel, fullName, contentHtml }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
+  async createCampaignMail({ campaignMailData, html }) {
+    const { name, adobe } = campaignMailData;
 
+    await this.saveDeliveryTemplate({
+      deliveryLabel: name,
+      internalName: adobe.deliveryName,
+      accessToken: adobe.accessToken,
+      fullName: adobe.fullName,
+      contentHtml: html,
+    });
+  }
+
+  async saveDeliveryTemplate({
+    accessToken,
+    deliveryLabel,
+    internalName,
+    fullName,
+    contentHtml,
+  }) {
     return soapRequest({
       url: config.adobeSoapRouterUrl,
       token: accessToken,
@@ -180,7 +195,7 @@ class AdobeProvider {
         <m:Write xmlns:m="urn:xtk:persist|xtk:session">
           <sessiontoken></sessiontoken>
           <domDoc xsi:type='ns:Element'>
-            <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" label="${deliveryLabel}">
+            <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
               <content>
                 <html>
                   <source>

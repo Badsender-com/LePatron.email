@@ -1,8 +1,8 @@
 const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
-const { DscComponent } = require('./providers/DscComponent');
 const { AdobeComponent } = require('./providers/AdobeComponent');
+const { DscComponent } = require('./providers/DscComponent');
 const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
@@ -22,6 +22,7 @@ const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
+    AdobeComponent,
     DscComponent,
     AdobeComponent,
     ModalComponent,
@@ -184,6 +185,10 @@ const EspComponent = Vue.component('EspForm', {
           campaignId: this.campaignId,
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
+            adobe: {
+              folderName: data?.folderName,
+              deliveryName: data?.deliveryName
+            },
             subject: data?.subject,
             planification: data?.planification,
             typeCampagne: data?.typeCampagne,

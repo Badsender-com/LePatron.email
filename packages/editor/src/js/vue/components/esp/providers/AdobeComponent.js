@@ -22,6 +22,9 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   data() {
     return {
       profile: {
+        campaignMailName: 'un email de test 2',
+        folderName: 'CLA_EEC_Local_DeliveryTemplates',
+        deliveryName: 'DM14851',
         type: ESP_TYPE.ADOBE,
         fullName: '',
         delivery : '',
@@ -41,6 +44,15 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     } catch (err) {
       console.error('Error while fetching adobe folders : ', err);
     }
+
+    const {
+      campaignMailName,
+    } = this.fetchedProfile;
+    this.profile = {
+      campaignMailName: campaignMailName ?? '',
+      folderName,
+      deliveryName,
+    };
 
     M.updateTextFields();
   },
