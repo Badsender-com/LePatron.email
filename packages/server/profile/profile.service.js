@@ -62,11 +62,13 @@ async function createProfile({
   name,
   type,
   apiKey,
+  secretKey,
   _company,
   additionalApiData,
 }) {
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
     type,
     name,
     _company,
@@ -81,11 +83,14 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
+  const accessToken = espConnectionResult.data.access_token;
 
   return Profiles.create({
     name,
     type,
     apiKey,
+    secretKey,
+    accessToken,
     _company,
     additionalApiData,
   });
@@ -203,7 +208,7 @@ async function sendEspCampaign({
   const profile = await findOne(profileId);
 
   /*
-    For DSC, creating a new campaign from the same profile is allowed 
+    For DSC, creating a new campaign from the same profile is allowed
     if the campaign was deleted on DSC's side
   */
   if (type !== 'DSC') {

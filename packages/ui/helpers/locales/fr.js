@@ -39,6 +39,7 @@ export default {
     },
     add: 'Ajouter',
     apiKey: 'Clé API',
+    secretKey: 'Clé secrète',
     entity: 'Entité',
     encodingType: 'Type d\'encodage',
     targetTable: 'Table cible',

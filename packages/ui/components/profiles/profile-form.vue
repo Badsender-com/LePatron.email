@@ -5,6 +5,7 @@ import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
 import DSCComponent from '../../components/profiles/esp/DSCComponent';
 import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
+import ADOBEComponent from '../../components/profiles/esp/ADOBEComponent';
 
 export default {
   name: 'ProfileForm',
@@ -12,6 +13,7 @@ export default {
     SENDINBLUEComponent,
     ACTITOComponent,
     DSCComponent,
+    ADOBEComponent,
   },
   mixins: [validationMixin],
   props: {
@@ -33,6 +35,10 @@ export default {
         {
           text: 'DSC',
           value: ESP_TYPES.DSC,
+        },
+        {
+          text: 'Adobe',
+          value: ESP_TYPES.ADOBE,
         },
       ],
       selectedEsp: ESP_TYPES.SENDINBLUE,
