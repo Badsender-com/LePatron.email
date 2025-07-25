@@ -5,6 +5,7 @@ const config = require('../../node.config.js');
 const axios = require('../../config/axios');
 const { InternalServerError } = require('http-errors');
 const qs = require('qs');
+const soapRequest = require('../../../server/utils/soap-request');
 
 class AdobeProvider {
   constructor({ apiKey, secretKey, ...data }) {
@@ -49,6 +50,46 @@ class AdobeProvider {
       logger.error({ Error: e?.response?.data?.message });
       throw e;
     }
+  }
+
+  async getUserGroups({ user }) {
+    const username = config.isDev
+      ? 'olivier.fredon.ext@clarins.com'
+      : user.name;
+
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeUrl,
+      token: accessToken,
+      soapAction: 'xtk:queryDef#ExecuteQuery',
+      xmlBodyRequest: `
+        <ExecuteQuery
+          xmlns="urn:xtk:queryDef">
+          <sessiontoken></sessiontoken>
+          <entity>
+            <queryDef schema="xtk:operatorGroup" operation="select">
+              <select>
+                <node expr="[group/@name]"/>
+              </select>
+              <where>
+                <condition expr="[operator/@name]='${username}'"/>
+              </where>
+            </queryDef>
+          </entity>
+        </ExecuteQuery>
+      `,
+      formatResponseFn: (response) => {
+        const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
+        const operatorGroupCollection =
+          body.ExecuteQueryResponse.pdomOutput['operatorGroup-collection'];
+
+        return operatorGroupCollection.operatorGroup.map(
+          (operatorGroup) => operatorGroup.group.name
+        );
+      },
+    });
   }
 }
 module.exports = AdobeProvider;
