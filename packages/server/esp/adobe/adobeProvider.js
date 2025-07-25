@@ -27,7 +27,7 @@ class AdobeProvider {
         'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
     });
 
-    return axios.post(`${config.adobeImsUrl}`, data, {
+    return axios.post(`${config.adobeImsUrl}/ims/token/v3`, data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
