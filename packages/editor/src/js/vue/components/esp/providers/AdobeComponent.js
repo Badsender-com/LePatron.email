@@ -13,15 +13,14 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     campaignMailName: { type: String, default: null },
     isLoading: { type: Boolean, default: false },
     closeModal: { type: Function, default: () => {} },
-    espId: { type: String, default: null },
     selectedProfile: { type: Object, default: () => ({}) },
     fetchedProfile: { type: Object, default: () => ({}) },
-    campaignId: { type: String, default: null },
     type: { type: Number, default: SEND_MODE.CREATION },
   },
   data() {
     return {
       profile: {
+        // TODO use values from fields
         campaignMailName: 'un email de test 2',
         folderName: 'CLA_EEC_Local_DeliveryTemplates',
         deliveryName: 'DM14851',
