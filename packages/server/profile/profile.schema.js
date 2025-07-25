@@ -20,7 +20,12 @@ const ProfileSchema = Schema(
     },
     type: {
       type: String,
-      enum: [EspTypes.ACTITO, EspTypes.SENDINBLUE, EspTypes.DSC],
+      enum: [
+        EspTypes.ACTITO,
+        EspTypes.SENDINBLUE,
+        EspTypes.DSC,
+        EspTypes.ADOBE,
+      ],
       required: false,
     },
     _company: {
