@@ -106,6 +106,87 @@ class AdobeProvider {
     });
   }
 
+  async getFoldersFromGroupNames({ groupNames = [] }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeUrl,
+      token: accessToken,
+      soapAction: 'xtk:queryDef#ExecuteQuery',
+      xmlBodyRequest: `
+        <ExecuteQuery xmlns="urn:xtk:queryDef">
+          <sessiontoken></sessiontoken>
+          <entity>
+              <queryDef schema="xtk:rights" operation="select">
+                  <select>
+                      <node expr="[folder/@fullName]" />
+                      <node expr="[folder/@name]" />
+                  </select>
+                  <where>
+                      <condition expr="[operator/@name] IN (${groupNames.join(
+                        ','
+                      )})" />
+                      <condition expr="@rights like '%write%'" />
+                      <condition expr="[folder/@model]='nmsDeliveryModel'" />
+                  </where>
+              </queryDef>
+          </entity>
+        </ExecuteQuery>
+      `,
+      formatResponseFn: (response) => {
+        const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
+        const rightsCollection =
+          body.ExecuteQueryResponse.pdomOutput['rights-collection'];
+
+        return rightsCollection.rights.map((right) => ({
+          fullName: right.folder.fullName,
+          name: right.folder.name,
+        }));
+      },
+    });
+  }
+
+  async getDeliveriesFromFolderName({ folderName }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeUrl,
+      token: accessToken,
+      soapAction: 'xtk:queryDef#ExecuteQuery',
+      xmlBodyRequest: `
+        <ExecuteQuery
+          xmlns="urn:xtk:queryDef">
+          <sessiontoken></sessiontoken>
+          <entity>
+            <queryDef schema="nms:delivery" operation="select">
+              <select>
+                <node expr="@id"/>
+                <node expr="@label"/>
+                <node expr="@internalName"/>
+              </select>
+              <where>
+                <condition expr="@name='${folderName}'"/>
+              </where>
+            </queryDef>
+          </entity>
+        </ExecuteQuery>
+      `,
+      formatResponseFn: (response) => {
+        const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
+        const deliveryCollection =
+          body.ExecuteQueryResponse.pdomOutput['delivery-collection'];
+
+        return deliveryCollection.delivery.map((delivery) => ({
+          id: delivery.id,
+          label: delivery.label,
+          externalName: delivery.externalName,
+        }));
+      },
+    });
+  }
+
   static async build(initialData) {
     return new AdobeProvider(initialData);
   }
