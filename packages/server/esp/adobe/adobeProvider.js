@@ -27,7 +27,7 @@ class AdobeProvider {
         'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
     });
 
-    return axios.post(`${config.adobeUrl}`, data, {
+    return axios.post(`${config.adobeImsUrl}`, data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -61,7 +61,7 @@ class AdobeProvider {
     const accessToken = '';
 
     return soapRequest({
-      url: config.adobeUrl,
+      url: config.adobeSoapRouterUrl,
       token: accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
@@ -97,7 +97,7 @@ class AdobeProvider {
     const accessToken = '';
 
     return soapRequest({
-      url: config.adobeUrl,
+      url: config.adobeSoapRouterUrl,
       token: accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
@@ -138,7 +138,7 @@ class AdobeProvider {
     const accessToken = '';
 
     return soapRequest({
-      url: config.adobeUrl,
+      url: config.adobeSoapRouterUrl,
       token: accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
@@ -171,6 +171,145 @@ class AdobeProvider {
         }));
       },
     });
+  }
+
+  async saveDeliveryTemplate({ deliveryLabel, folderName, contentHtml }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeSoapRouterUrl,
+      token: accessToken,
+      soapAction: 'xtk:persist#Write',
+      xmlBodyRequest: `
+        <m:Write xmlns:m="urn:xtk:persist|xtk:session">
+          <sessiontoken></sessiontoken>
+          <domDoc xsi:type='ns:Element'>
+            <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" label="${deliveryLabel}">
+              <content>
+                <html>
+                  <source>
+                    <![CDATA[
+                      ${contentHtml}
+                    ]]>
+                  </source>
+                </html>
+              </content>
+              <folder name="${folderName}" />
+            </delivery>
+          </domDoc>
+        </m:Write>
+      `,
+    });
+  }
+
+  async uploadDeliveryImage({ image }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    const form = new FormData();
+
+    form.append('file_noMd5', image);
+
+    try {
+      const response = await axios.post(config.adobeImgUrl, form, {
+        headers: {
+          ...form.getHeaders(),
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      console.log('Response upload image delivery: ', response.data);
+    } catch (err) {
+      console.error(
+        'Error while uploading delivery image:',
+        err.response?.data || err.message
+      );
+    }
+  }
+
+  async saveDeliveryImage({ imageMd5, imageName }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeSoapRouterUrl,
+      token: accessToken,
+      soapAction: 'xtk:persist#Write',
+      xmlBodyRequest: `
+        <m:Write xmlns:m="urn:xtk:persist|xtk:session">
+         <sessiontoken></sessiontoken>
+          <document>
+            <fileRes-collection xtkschema="xtk:fileRes">
+              <fileRes
+                md5="${imageMd5}"
+                label="${imageName}"
+                fileName="${imageName}"
+                originalName="${imageName}"
+                useMd5AsFilename="1"
+                storageType="5"
+              />
+            </fileRes-collection>
+          </document>
+        </m:Write>
+      `,
+    });
+  }
+
+  async publishDeliveryImage({ imageMd5, imageName }) {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    return soapRequest({
+      url: config.adobeSoapRouterUrl,
+      token: accessToken,
+      soapAction: 'xtk:fileRes#PublishIfNeeded',
+      xmlBodyRequest: `
+        <m:PublishIfNeeded xmlns:m="urn:xtk:fileRes">
+         <sessiontoken></sessiontoken>
+          <document>
+            <fileRes
+              md5="${imageMd5}"
+              label="${imageName}"
+              fileName="${imageName}"
+              originalName="${imageName}"
+              useMd5AsFilename="1"
+              storageType="5"
+            />
+          </document>
+        </m:PublishIfNeeded>
+      `,
+    });
+  }
+
+  async validateToken() {
+    // TODO: mocked data, use the real one from db
+    const accessToken = '';
+
+    const form = new FormData();
+
+    form.append('type', 'access_token');
+    form.append('client_id', 'exc_app');
+    form.append('token', accessToken);
+
+    try {
+      const response = await axios.post(
+        `${config.adobeImsUrl}/ims/validate_token/v1`,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+          },
+        }
+      );
+
+      console.log('Response validate token', response.data);
+    } catch (err) {
+      console.error(
+        'Error while validating token',
+        err.response?.data || err.message
+      );
+    }
   }
 }
 module.exports = AdobeProvider;
