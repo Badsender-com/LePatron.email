@@ -303,7 +303,10 @@ class AdobeProvider {
         }
       );
 
-      console.log('Response validate token', response.data);
+      const data = response.data;
+      console.log('Response validate token', data);
+
+      return data.valid;
     } catch (err) {
       console.error(
         'Error while validating token',
