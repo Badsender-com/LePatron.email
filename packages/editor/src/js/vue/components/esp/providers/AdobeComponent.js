@@ -49,8 +49,8 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     } = this.fetchedProfile;
     this.profile = {
       campaignMailName: campaignMailName ?? '',
-      folderName,
-      deliveryName,
+      folderName: profile.folderName,
+      deliveryName: profile.deliveryName,
     };
 
     M.updateTextFields();

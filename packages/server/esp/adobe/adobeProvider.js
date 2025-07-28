@@ -95,6 +95,7 @@ class AdobeProvider {
 
   async getFoldersFromGroupNames({ groupNames = [] }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
+
     return soapRequest({
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
@@ -131,7 +132,7 @@ class AdobeProvider {
     });
   }
 
-  async getDeliveriesFromFolderFullName({ fullName }) {
+  async getDeliveriesFromFolderFullName({ fullName, internalName }) {
     return soapRequest({
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
@@ -148,7 +149,16 @@ class AdobeProvider {
                 <node expr="@internalName"/>
               </select>
               <where>
-                <condition expr="[folder/@fullName]='${fullName}'"/>
+                ${
+                  fullName
+                    ? `<condition expr="[folder/@fullName]='${fullName}'"/>`
+                    : ''
+                }
+                ${
+                  internalName
+                    ? `<condition expr="@internalName='${internalName}'"/>`
+                    : ''
+                }
               </where>
             </queryDef>
           </entity>
@@ -156,16 +166,33 @@ class AdobeProvider {
       `,
       formatResponseFn: (response) => {
         const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
+
         const deliveryCollection =
           body.ExecuteQueryResponse.pdomOutput['delivery-collection'];
 
-        return deliveryCollection.delivery.map((delivery) => ({
+        const delivery = deliveryCollection?.delivery;
+
+        if (delivery instanceof Array) {
+          return deliveryCollection?.delivery?.map((delivery) => ({
+            id: delivery.id,
+            label: delivery.label,
+            internalName: delivery.internalName,
+          }));
+        }
+
+        return {
           id: delivery.id,
           label: delivery.label,
-          externalName: delivery.externalName,
-        }));
+          internalName: delivery.internalName,
+        };
       },
     });
+  }
+
+  async updateCampaignMail({ campaignMailData, html }) {
+    // The logic to update and create is the same because the SOAP request that we do
+    // for Adobe is an upsert
+    this.createCampaignMail({ campaignMailData, html });
   }
 
   async createCampaignMail({ campaignMailData, html }) {
@@ -178,6 +205,8 @@ class AdobeProvider {
       fullName: adobe.fullName,
       contentHtml: html,
     });
+
+    return name;
   }
 
   async saveDeliveryTemplate({
@@ -214,9 +243,6 @@ class AdobeProvider {
   }
 
   async uploadDeliveryImage({ image }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
     const form = new FormData();
 
     form.append('file_noMd5', image);
@@ -225,7 +251,7 @@ class AdobeProvider {
       const response = await axios.post(config.adobeImgUrl, form, {
         headers: {
           ...form.getHeaders(),
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
         },
       });
 
@@ -239,12 +265,9 @@ class AdobeProvider {
   }
 
   async saveDeliveryImage({ imageMd5, imageName }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
         <m:Write xmlns:m="urn:xtk:persist|xtk:session">
@@ -267,12 +290,9 @@ class AdobeProvider {
   }
 
   async publishDeliveryImage({ imageMd5, imageName }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:fileRes#PublishIfNeeded',
       xmlBodyRequest: `
         <m:PublishIfNeeded xmlns:m="urn:xtk:fileRes">
@@ -293,14 +313,11 @@ class AdobeProvider {
   }
 
   async validateToken() {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
     const form = new FormData();
 
     form.append('type', 'access_token');
     form.append('client_id', 'exc_app');
-    form.append('token', accessToken);
+    form.append('token', this.accessToken);
 
     try {
       const response = await axios.post(
@@ -322,6 +339,31 @@ class AdobeProvider {
         'Error while validating token',
         err.response?.data || err.message
       );
+    }
+  }
+
+  async getCampaignMail({ campaignId, folderName, internalName }) {
+    try {
+      if (!campaignId) {
+        throw new InternalServerError(
+          ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
+        );
+      }
+
+      const apiEmailCampaignResult = await this.getDeliveriesFromFolderNameOrInternalName(
+        { folderName, internalName }
+      );
+
+      const { label } = apiEmailCampaignResult;
+
+      return {
+        name: label,
+        additionalApiData: {},
+      };
+    } catch (e) {
+      logger.error(e);
+
+      throw e;
     }
   }
 }

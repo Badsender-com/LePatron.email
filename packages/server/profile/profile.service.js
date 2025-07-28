@@ -147,6 +147,7 @@ async function updateEspCampaign({
 
   const {
     apiKey,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -167,12 +168,22 @@ async function updateEspCampaign({
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: {
+        ...espSendingMailData.adobe,
+        accessToken,
+      },
+    };
+  }
 
   const espCampaignId =
     contentSendType === ESP_CONTENT_TYPE.MAIL
@@ -362,12 +373,20 @@ async function getProfile({ profileId }) {
 async function getCampaignMail({ campaignId, profileId }) {
   const profile = await findOne(profileId);
 
-  const { apiKey, type, name, _company, additionalApiData } = profile;
+  const {
+    apiKey,
+    accessToken,
+    type,
+    name,
+    _company,
+    additionalApiData,
+  } = profile;
 
-  const { contentSendType } = additionalApiData;
+  const { contentSendType, internalName } = additionalApiData;
 
   const espProvider = await EspProvider.build({
     apiKey,
+    accessToken,
     type,
     name,
     _company,
@@ -379,6 +398,7 @@ async function getCampaignMail({ campaignId, profileId }) {
     campaignMailResponse = await espProvider.getCampaignMail({
       campaignId,
       ...additionalApiData,
+      internalName,
     });
   } else {
     campaignMailResponse = await espProvider.getTemplate({

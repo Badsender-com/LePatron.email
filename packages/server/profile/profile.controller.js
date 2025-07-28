@@ -43,6 +43,7 @@ async function createProfile(req, res) {
     type,
     apiKey,
     secretKey,
+    accessToken,
     _company,
     ...additionalApiData
   } = req.body;
@@ -52,6 +53,7 @@ async function createProfile(req, res) {
     type,
     apiKey,
     secretKey,
+    accessToken,
     _company,
     additionalApiData,
   });

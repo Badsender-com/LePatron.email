@@ -28,19 +28,15 @@ async function soapRequest({
     });
     const jsObjectFromXml = JSON.parse(xmlParser.toJson(response.data));
 
-    const formatedResponse = formatResponseFn(jsObjectFromXml);
-
-    console.log('Formated SOAP Response:', formatedResponse);
-
     const errorFromAdobe =
-      formatedResponse['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
+      jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
     if (errorFromAdobe) {
       console.error(errorFromAdobe);
       throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
     }
 
-    return formatedResponse;
+    return formatResponseFn(jsObjectFromXml);
   } catch (error) {
     console.error('SOAP Error:', error);
   }
