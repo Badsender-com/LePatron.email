@@ -17,6 +17,7 @@ module.exports = {
   actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
+  adobeFoldersTree: asyncHandler(adobeFoldersTree),
 };
 
 /**
@@ -55,6 +56,42 @@ async function createProfile(req, res) {
   });
 
   res.json(response);
+}
+
+/**
+ * @api {get} /profiles/adobe-folders-tree : folders tree entity from Adobe email service provider
+ * @apiName adobeFoldersTree
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ */
+async function adobeFoldersTree(req, res) {
+  const user = req.user;
+  const { profileId } = req.query;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile || !profile.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const { apiKey, secretKey } = profile;
+
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
+  }
+
+  const adobeFoldersTreeResult = await profileService.adobeFoldersTree({
+    user,
+    apiKey,
+    secretKey,
+  });
+
+  res.send({ result: adobeFoldersTreeResult });
 }
 
 /**

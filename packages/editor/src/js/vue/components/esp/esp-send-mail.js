@@ -2,6 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
 const { DscComponent } = require('./providers/DscComponent');
+const { AdobeComponent } = require('./providers/AdobeComponent');
 const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
@@ -22,6 +23,7 @@ const EspComponent = Vue.component('EspForm', {
     SendinBlueComponent,
     ActitoComponent,
     DscComponent,
+    AdobeComponent,
     ModalComponent,
   },
   props: {
@@ -46,6 +48,8 @@ const EspComponent = Vue.component('EspForm', {
           return 'SendinBlueComponent';
         case ESP_TYPE.DSC:
           return 'DscComponent';
+        case ESP_TYPE.ADOBE:
+          return 'AdobeComponent';
         default:
           return 'SendinBlueComponent';
       }
