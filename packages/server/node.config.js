@@ -68,6 +68,7 @@ const config = rc('lepatron', {
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
   adobeImgUrl: process.env.ADOBE_IMG_ESP_URL,
   adobeUserAgent: process.env.ADOBE_USER_AGENT,
+  encryptionKey: process.env.ENCRYPTION_KEY,
   NODE_ENV: process.env.NODE_ENV,
 });
 
