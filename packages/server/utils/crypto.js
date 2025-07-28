@@ -22,7 +22,19 @@ const decrypt = (hash) => {
   return decrypted.toString();
 };
 
+const getMd5FromBlob = async (blob) => {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('md5');
+
+    const stream = blob.stream();
+    stream.on('data', (chunk) => hash.update(chunk));
+    stream.on('end', () => resolve(hash.digest('hex')));
+    stream.on('error', reject);
+  });
+};
+
 module.exports = {
   encrypt,
   decrypt,
+  getMd5FromBlob
 };

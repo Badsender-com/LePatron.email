@@ -180,10 +180,39 @@ ${relativesImagesNames
 `;
 }
 
+async function asyncReplace(text, regex, asyncFn) {
+  const matches = [...text.matchAll(regex)];
+
+  let result = '';
+  let lastIndex = 0;
+
+  // For each match
+  for (const match of matches) {
+    const [fullMatch] = match;
+    const index = match.index;
+
+    // Add all the text between lastIndex and the index of the current match
+    result += text.slice(lastIndex, index);
+
+    // Replacement of the matched text asynchronously
+    const replacement = await asyncFn(...match);
+    result += replacement;
+
+    // Update index by adding all the length we used
+    lastIndex = index + fullMatch.length;
+  }
+
+  // Rest of the text after the last match
+  result += text.slice(lastIndex);
+
+  return result;
+}
+
 module.exports = {
   getName,
   getImageName,
   getUrlWithTrackingParams,
   createCdnMarkdownNotice,
   createHtmlNotice,
+  asyncReplace,
 };
