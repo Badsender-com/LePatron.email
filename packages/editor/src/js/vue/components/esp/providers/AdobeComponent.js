@@ -44,6 +44,36 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   async mounted() {
     const { campaignMailName } = this.fetchedProfile;
+    document.querySelector('smart-tree').dataSource = [
+      {
+        label: 'Campaign Management',
+        items: [
+            {
+                label: 'FGM',
+                items: [
+                  {
+                    label: 'CLA ZAF',
+                    items: [
+                      {
+                        label: 'Resources',
+                        items: [
+                          {
+                            label: 'CLA ZAF Templates',
+                            items: [
+                              {
+                                label: 'CLA ZAF Delivery templates',
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+            },
+        ]
+      },
+    ];
     this.profile = {
       campaignMailName: campaignMailName ?? '',
     };
@@ -88,50 +118,16 @@ const AdobeComponent = Vue.component('AdobeComponent', {
             <h5>{{ vm.t('export-to') }} {{ selectedProfile.name }}</h5>
           </div>
           <form class="col s12">
-            <div class="row" v-if="isEditMode">
-              <div class="col s12">
-                <div class="card-panel blue-grey lighten-5">
-                  <div :style="style.flexContainer">
-                    <div>
-                      <i
-                        class="fa fa-exclamation-circle fa-2x"
-                        aria-hidden="true"
-                        :style="style.colorOrange"
-                      ></i>
-                    </div>
-                    <div :style="style.pl4">
-                      <span>{{ vm.t('warning-esp-message') }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
-                <input
-                  id="campaignMailName"
-                  v-model="profile.campaignMailName"
-                  type="text"
-                  name="campaignMailName"
-                  required
-                  :disabled="isEditMode"
-                  :placeholder="vm.t('mailName')"
-                  @input="$v.profile.campaignMailName.$touch()"
-                  @blur="$v.profile.campaignMailName.$touch()"
-                  :class="[
-                    'validate',
-                    $v.profile.campaignMailName.required ? 'valid' : 'invalid',
-                  ]"
-                />
-                <label for="adobeIdMail">{{ vm.t('mailName') }}</label>
-                <span
-                  v-if="!$v.profile.campaignMailName.required"
-                  class="helper-text"
-                  :data-error="vm.t('mail-name-required')"
-                ></span>
+              <div class="input-field col s12">
+                <label>Folder delivery</label>
               </div>
+              <smart-tree
+                filterable
+                scroll-mode="scrollbar"
+                selectionMode="one"
+              />
             </div>
-
           </form>
         </div>
       </div>
