@@ -3,6 +3,7 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const EspTypes = require('../constant/esp-type');
+const encryptionPlugin = require('../utils/encryption-plugin.js');
 /**
  * @apiDefine profile
  * @apiSuccess {String} id
@@ -54,4 +55,7 @@ const ProfileSchema = Schema(
     toObject: { virtuals: true },
   }
 );
+
+ProfileSchema.plugin(encryptionPlugin, ['secretKey', 'accessToken']);
+
 module.exports = ProfileSchema;
