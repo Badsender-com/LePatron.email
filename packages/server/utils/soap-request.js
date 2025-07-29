@@ -31,9 +31,9 @@ async function soapRequest({
     const errorFromAdobe =
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
-    if (errorFromAdobe) {
+    if (!errorFromAdobe) {
       console.error(errorFromAdobe);
-      throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+      throw new InternalServerError(ERROR_CODES.ADOBE_INTERNAL_ERROR);
     }
 
     return formatResponseFn(jsObjectFromXml);
