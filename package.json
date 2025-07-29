@@ -278,6 +278,6 @@
   },
   "lint-staged": {
     "*.{js,vue,css,scss,md}": "prettier --write",
-    "*.{js,vue}": "eslint --cache --fix"
+    "*.{js,vue}": "eslint --cache --fix --ignore-pattern 'public/source/*'"
   }
 }
