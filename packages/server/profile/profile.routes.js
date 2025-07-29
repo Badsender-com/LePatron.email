@@ -25,7 +25,7 @@ router.post(
 
 router.delete('/:profileId', GUARD_ADMIN, profiles.deleteProfile);
 
-router.get('/adobe-folders-tree', GUARD_USER, profiles.adobeFoldersTree);
+router.get('/get-adobe-folders', GUARD_USER, profiles.getAdobeFolders);
 
 router.get('/:profileId', GUARD_USER, profiles.readProfile);
 router.get('/:profileId/admin', GUARD_ADMIN, profiles.readProfileForAdmin);

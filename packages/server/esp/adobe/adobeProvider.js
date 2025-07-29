@@ -8,9 +8,10 @@ const qs = require('qs');
 const soapRequest = require('../../../server/utils/soap-request');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, ...data }) {
+  constructor({ apiKey, secretKey, accessToken, ...data }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.accessToken = accessToken;
     this.data = data;
   }
 
@@ -52,15 +53,12 @@ class AdobeProvider {
     }
   }
 
-  async getUserGroups({ user, token }) {
+  async getUserGroups({ user }) {
     const username = config.isDev ? config.adobeDefaultUser : user.name;
-
-    // TODO: mocked data, use the real one from db
-    const accessToken = token ?? '';
 
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -95,14 +93,11 @@ class AdobeProvider {
     });
   }
 
-  async getFoldersFromGroupNames({ groupNames = [], token }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = token ?? '';
-
+  async getFoldersFromGroupNames({ groupNames = [] }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery xmlns="urn:xtk:queryDef">

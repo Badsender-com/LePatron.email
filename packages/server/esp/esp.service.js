@@ -7,7 +7,13 @@ const DscProvider = require('./dsc/dscProvider');
 const AdobeProvider = require('./adobe/adobeProvider');
 
 class EspService {
-  static async build({ type, apiKey, secretKey, additionalApiData }) {
+  static async build({
+    type,
+    apiKey,
+    secretKey,
+    accessToken,
+    additionalApiData,
+  }) {
     const authorizedEsps = [
       EspTypes.ACTITO,
       EspTypes.SENDINBLUE,
@@ -38,6 +44,7 @@ class EspService {
         return AdobeProvider.build({
           apiKey: apiKey,
           secretKey: secretKey,
+          accessToken: accessToken,
           data: additionalApiData,
         });
       default:

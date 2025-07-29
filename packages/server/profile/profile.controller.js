@@ -17,7 +17,7 @@ module.exports = {
   actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
-  adobeFoldersTree: asyncHandler(adobeFoldersTree),
+  getAdobeFolders: asyncHandler(getAdobeFolders),
 };
 
 /**
@@ -59,13 +59,13 @@ async function createProfile(req, res) {
 }
 
 /**
- * @api {get} /profiles/adobe-folders-tree : folders tree entity from Adobe email service provider
- * @apiName adobeFoldersTree
+ * @api {get} /profiles/get-adobe-folders : folders tree entity from Adobe email service provider
+ * @apiName getAdobeFolders
  * @apiGroup Profiles
  *
  * @apiParam  {String} profileId Adobe connector profile ID
  */
-async function adobeFoldersTree(req, res) {
+async function getAdobeFolders(req, res) {
   const user = req.user;
   const { profileId } = req.query;
 
@@ -79,19 +79,22 @@ async function adobeFoldersTree(req, res) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
-  const { apiKey, secretKey } = profile;
+  const { apiKey, secretKey, accessToken } = profile;
 
-  if (!apiKey || !secretKey) {
-    throw new Error('Missing apiKey or secretKey in profile data');
+  if (!apiKey || !secretKey || !accessToken) {
+    throw new Error(
+      'Missing apiKey or secretKey or accessToken in profile data'
+    );
   }
 
-  const adobeFoldersTreeResult = await profileService.adobeFoldersTree({
+  const adobeFoldersResult = await profileService.getAdobeFolders({
     user,
     apiKey,
     secretKey,
+    accessToken,
   });
 
-  res.send({ result: adobeFoldersTreeResult });
+  res.send({ result: adobeFoldersResult });
 }
 
 /**

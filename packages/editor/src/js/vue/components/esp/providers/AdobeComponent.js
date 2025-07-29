@@ -1,4 +1,3 @@
-import { required } from 'vuelidate/lib/validators';
 import axios from 'axios';
 
 const Vue = require('vue/dist/vue.common');
@@ -29,7 +28,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   data() {
     return {
       profile: {
-        campaignMailName: '',
         type: ESP_TYPE.ADOBE,
       },
       style: styleHelper,
@@ -43,46 +41,12 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     console: () => console,
   },
   async mounted() {
-    const { campaignMailName } = this.fetchedProfile;
-    document.querySelector('smart-tree').dataSource = [
-      {
-        label: 'Campaign Management',
-        items: [
-            {
-                label: 'FGM',
-                items: [
-                  {
-                    label: 'CLA ZAF',
-                    items: [
-                      {
-                        label: 'Resources',
-                        items: [
-                          {
-                            label: 'CLA ZAF Templates',
-                            items: [
-                              {
-                                label: 'CLA ZAF Delivery templates',
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-            },
-        ]
-      },
-    ];
-    this.profile = {
-      campaignMailName: campaignMailName ?? '',
-    };
-
     try {
-      const { data } = await axios.get('/api/profiles/adobe-folders-tree', { params : {
+      const { data } = await axios.get('/api/profiles/get-adobe-folders', { params : {
           profileId : this.selectedProfile.id
       }});
       this.folders = buildTreeFromFolders(data.result);
+      document.querySelector('smart-tree').dataSource = this.folders;
     } catch (err) {
       console.error('Erreur en récupérant les dossiers Adobe :', err);
     }
@@ -98,17 +62,20 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       }
       this.$emit('submit', this.profile);
     },
-    handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]) {
-        this.profile = {selectedLocation : selectedItems[0]}
-      }
-    },
-    open(selectedFolder) {
-      this.profile = { folder: selectedFolder ?? ''};
-    },
-    close() {
-      this.profile = { selectedLocation: {} };
-    },
+
+    handleChange(e) {
+      if (!this.folders || this.folders.length === 0) return
+      const selectedIndexes = e.detail.selectedIndexes;
+      const indexes = `${selectedIndexes[0]}`.split('.');
+      let fullName = '';
+      let currentFolder = this.folders;
+
+      indexes.forEach((index)=>{
+          fullName = fullName+'/'+currentFolder[index].label
+          currentFolder = currentFolder[index].items
+      })
+      fullName+='/'
+    }
   },
   template: `
     <div>
@@ -119,14 +86,16 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           </div>
           <form class="col s12">
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12">
+              <div class="input-field col s12 adobe-label">
                 <label>Folder delivery</label>
-              </div>
-              <smart-tree
-                filterable
-                scroll-mode="scrollbar"
-                selectionMode="one"
-              />
+                 </div>
+                <smart-tree
+                  filterable
+                  scroll-mode="scrollbar"
+                  selectionMode="one"
+                  @change="handleChange"
+                  selection-target='leaf'
+                />
             </div>
           </form>
         </div>
@@ -155,48 +124,35 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         </button>
       </div>
     </div>
-
-      `,
-  validations() {
-    return {
-      profile: {
-        campaignMailName: {
-          required,
-        },
-
-      },
-    };
-  },
+  `,
 });
 
 function buildTreeFromFolders(folders) {
   const root = {};
 
-  folders.forEach(({ fullName, name }) => {
-    const parts = fullName.split(':'); // e.g., ["nmsDeliveryModel", "France"]
+  folders.forEach(({ fullName }) => {
+    const parts = fullName.split('/');
     let current = root;
-
-    parts.forEach((part, index) => {
-      if (!current[part]) {
-        current[part] = {
-          id: parts.slice(0, index + 1).join(':'), // e.g., "nmsDeliveryModel:France"
-          name: part,
-          children: {},
-        };
+    parts.forEach((part, idx) => {
+      //Skip if it is the first or last /
+      if (!part ) return
+      //If key does not already exist add a node
+      if ( !current[part] ) {
+        current[part] = { label: part, items: {}};
       }
-      current = current[part].children;
+      //If key already exists append children
+      current = current[part].items;
     });
   });
 
-  const convertToArray = (node) => {
-    return Object.values(node).map(({ id, name, children }) => ({
-      id,
-      name,
-      children: convertToArray(children),
+  function toArray(node) {
+    return Object.values(node).map(({ label, items }) => ({
+      label,
+      items: Object.keys(items).length ? toArray(items) : undefined,
     }));
-  };
+  }
 
-  return convertToArray(root);
+  return toArray(root);
 }
 
 module.exports = {

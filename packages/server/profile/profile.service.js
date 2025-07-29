@@ -30,7 +30,7 @@ module.exports = {
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
   updateEspCampaign,
-  adobeFoldersTree,
+  getAdobeFolders,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -387,17 +387,15 @@ async function deleteOne(profileId) {
   return Profiles.deleteOne({ _id: Types.ObjectId(profileId) });
 }
 
-async function adobeFoldersTree({ user, apiKey, secretKey }) {
+async function getAdobeFolders({ user, apiKey, secretKey, accessToken }) {
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    accessToken,
     type: EspTypes.ADOBE,
   });
 
-  const connection = await espProvider.connectApi();
-  const token = connection.data.access_token;
+  const groupNames = await espProvider.getUserGroups({ user });
 
-  const groupNames = await espProvider.getUserGroups({ user, token });
-
-  return await espProvider.getFoldersFromGroupNames({ groupNames, token });
+  return await espProvider.getFoldersFromGroupNames({ groupNames });
 }
