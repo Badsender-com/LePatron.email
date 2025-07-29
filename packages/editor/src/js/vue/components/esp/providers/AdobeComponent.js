@@ -3,17 +3,11 @@ import axios from 'axios';
 const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
-const { TimeInput } = require('../../time-input/timeInput');
-const { validationMixin } = require('vuelidate');
 const styleHelper = require('../../../utils/style/styleHelper');
 
 
 const AdobeComponent = Vue.component('AdobeComponent', {
   name : "AdobeComponent",
-  mixins: [validationMixin],
-  components: {
-    TimeInput,
-  },
   props: {
     vm: { type: Object, default: () => ({}) },
     campaignMailName: { type: String, default: null },
@@ -33,12 +27,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       style: styleHelper,
       folders: [],
     };
-  },
-  computed: {
-    isEditMode() {
-      return this.type === SEND_MODE.EDIT;
-    },
-    console: () => console,
   },
   async mounted() {
     try {
