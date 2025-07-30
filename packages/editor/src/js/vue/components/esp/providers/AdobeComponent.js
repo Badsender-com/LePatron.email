@@ -98,9 +98,10 @@ const AdobeComponent = Vue.component('AdobeComponent', {
               <div style="display: flex; gap: 24px;">
                 <div style="flex: 1;">
                   <div class="input-field col s12 adobe-label">
-                    <label>Select a folder</label>
+                    <label>{{ vm.t('select-folder') }}</label>
                   </div>
                   <smart-tree
+                    style="width:100%"
                     id="folder-tree"
                     filterable
                     scroll-mode="scrollbar"
@@ -128,9 +129,10 @@ const AdobeComponent = Vue.component('AdobeComponent', {
 
                 <div :class="!isDeliveryLoading &&this.profile.fullName ? '' : 'adobe-loader hide'">
                   <div class="input-field col s12 adobe-label">
-                    <label>Select a delivery</label>
+                    <label>{{ vm.t('select-delivery') }}</label>
                   </div>
                   <smart-tree
+                    style="width:100%"
                     id="delivery-tree"
                     filterable
                     scroll-mode="scrollbar"
