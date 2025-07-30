@@ -14,6 +14,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     selectedProfile: { type: Object, default: () => ({}) },
     fetchedProfile: { type: Object, default: () => ({}) },
     type: { type: Number, default: SEND_MODE.CREATION },
+    fetchedFolders: { type: Array, default: [] },
   },
   data() {
     return {
@@ -26,26 +27,19 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       style: styleHelper,
       folders: [],
       deliveries: [],
+      isFolderLoading: false,
       isDeliveryLoading: false,
     };
   },
   async mounted() {
     this.profile.campaignMailName = this.vm.creationName();
+    this.isFolderLoading = false;
+    this.folders = buildTreeFromFolders(this.fetchedFolders);
 
-    try {
-      const { data } = await axios.get(
-        `/api/profiles/${this.selectedProfile.id}/adobe-folders`
-      );
-      this.folders = buildTreeFromFolders(data.result);
-
-      const folderTree = document.getElementById('folder-tree');
-      if (folderTree) {
-        folderTree.dataSource = this.folders;
-      }
-    } catch (err) {
-      console.error('Error while fetching adobe folders : ', err);
+    const folderTree = document.getElementById('folder-tree');
+    if (folderTree) {
+      folderTree.dataSource = this.folders;
     }
-
     M.updateTextFields();
   },
   methods: {
@@ -58,11 +52,23 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       if (this.folders?.length === 0) return;
 
       const selectedIndexes = e.detail.selectedIndexes;
+
+      if (selectedIndexes?.length === 0) {
+        this.deliveries = [];
+
+        this.profile.folderFullName = '';
+
+        const deliveryTree = document.getElementById('delivery-tree');
+        deliveryTree.dataSource = this.deliveries;
+
+        return;
+      }
+
       const indexes = `${selectedIndexes[0]}`.split('.');
       let fullName = '';
       let currentFolders = this.folders;
 
-      indexes.forEach((index) => {
+      indexes?.forEach((index) => {
         fullName = fullName + '/' + currentFolders[index].label;
         currentFolders = currentFolders[index].items;
       });
@@ -94,9 +100,9 @@ const AdobeComponent = Vue.component('AdobeComponent', {
 
     async handleDeliveryChange(e) {
       const selectedIndex = e.detail.selectedIndexes;
-      this.profile.deliveryInternalName = this.deliveries[
+      this.profile.deliveryInternalName = this.deliveries?.[
         selectedIndex
-      ].internalName;
+      ]?.internalName;
     },
   },
   template: `
@@ -140,7 +146,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                     </div>
                 </div>
 
-                <div :class="!isDeliveryLoading &&this.profile.folderFullName ? '' : 'adobe-loader hide'">
+                <div :class="!isDeliveryLoading && this.profile.folderFullName ? '' : 'adobe-loader hide'">
                   <div class="input-field col s12 adobe-label">
                     <label>{{ vm.t('select-delivery') }}</label>
                   </div>
@@ -171,7 +177,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         </button>
         <button
           @click.prevent="onSubmit"
-          :disabled="isLoading"
+          :disabled="isLoading || !profile.folderFullName || !profile.deliveryInternalName"
           :style="[style.mb0, style.mt0]"
           class="btn waves-effect waves-light"
           type="submit"
