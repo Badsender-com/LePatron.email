@@ -59,7 +59,7 @@ async function createProfile(req, res) {
 }
 
 /**
- * @api {get} /profiles/get-adobe-folders : folders tree entity from Adobe email service provider
+ * @api {get} /profiles/:profileID/adobe-folders : folders tree entity from Adobe email service provider
  * @apiName getAdobeFolders
  * @apiGroup Profiles
  *
@@ -67,7 +67,7 @@ async function createProfile(req, res) {
  */
 async function getAdobeFolders(req, res) {
   const user = req.user;
-  const { profileId } = req.query;
+  const { profileId } = req.params;
 
   if (!profileId) {
     throw new NotFound('Missing profileId');

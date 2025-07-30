@@ -30,13 +30,11 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   async mounted() {
     try {
-      const { data } = await axios.get('/api/profiles/get-adobe-folders', { params : {
-          profileId : this.selectedProfile.id
-      }});
+      const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-folders`);
       this.folders = buildTreeFromFolders(data.result);
       document.querySelector('smart-tree').dataSource = this.folders;
     } catch (err) {
-      console.error('Erreur en récupérant les dossiers Adobe :', err);
+      console.error('Error while fetching adobe folders : ', err);
     }
 
     M.updateTextFields();
