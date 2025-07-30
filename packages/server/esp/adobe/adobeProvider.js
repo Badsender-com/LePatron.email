@@ -132,7 +132,10 @@ class AdobeProvider {
     });
   }
 
-  async getDeliveriesFromFolderFullName({ fullName, internalName }) {
+  async getDeliveriesFromFolderFullNameOrInternalName({
+    fullName,
+    internalName,
+  }) {
     return soapRequest({
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
@@ -200,9 +203,9 @@ class AdobeProvider {
 
     await this.saveDeliveryTemplate({
       deliveryLabel: name,
-      internalName: adobe.deliveryName,
-      accessToken: adobe.accessToken,
-      fullName: adobe.fullName,
+      internalName: adobe.deliveryInternalName,
+      accessToken: this.accessToken,
+      folderFullName: adobe.folderFullName,
       contentHtml: html,
     });
 
@@ -210,10 +213,10 @@ class AdobeProvider {
   }
 
   async saveDeliveryTemplate({
-    accessToken,
     deliveryLabel,
     internalName,
-    fullName,
+    accessToken,
+    folderFullName,
     contentHtml,
   }) {
     return soapRequest({
@@ -234,7 +237,7 @@ class AdobeProvider {
                   </source>
                 </html>
               </content>
-              <folder fullName="${fullName}" />
+              <folder fullName="${folderFullName}" />
             </delivery>
           </domDoc>
         </m:Write>
@@ -350,7 +353,7 @@ class AdobeProvider {
         );
       }
 
-      const apiEmailCampaignResult = await this.getDeliveriesFromFolderNameOrInternalName(
+      const apiEmailCampaignResult = await this.getDeliveriesFromFolderFullNameOrInternalName(
         { folderName, internalName }
       );
 

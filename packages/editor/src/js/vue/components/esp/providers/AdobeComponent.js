@@ -5,12 +5,10 @@ const { SEND_MODE } = require('../../../constant/send-mode');
 const { ESP_TYPE } = require('../../../constant/esp-type');
 const styleHelper = require('../../../utils/style/styleHelper');
 
-
 const AdobeComponent = Vue.component('AdobeComponent', {
-  name : "AdobeComponent",
+  name: 'AdobeComponent',
   props: {
     vm: { type: Object, default: () => ({}) },
-    campaignMailName: { type: String, default: null },
     isLoading: { type: Boolean, default: false },
     closeModal: { type: Function, default: () => {} },
     selectedProfile: { type: Object, default: () => ({}) },
@@ -20,13 +18,10 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   data() {
     return {
       profile: {
-        // TODO use values from fields
-        campaignMailName: 'un email de test 2',
-        folderName: 'CLA_EEC_Local_DeliveryTemplates',
-        deliveryName: 'DM14851',
+        campaignMailName: '',
+        folderFullName: '',
+        deliveryInternalName: '',
         type: ESP_TYPE.ADOBE,
-        fullName: '',
-        delivery : '',
       },
       style: styleHelper,
       folders: [],
@@ -35,23 +30,21 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     };
   },
   async mounted() {
+    this.profile.campaignMailName = this.vm.creationName();
+
     try {
-      const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-folders`);
+      const { data } = await axios.get(
+        `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+      );
       this.folders = buildTreeFromFolders(data.result);
-      const tree = document.getElementById('folder-tree');
-      tree.dataSource = this.folders;
+
+      const folderTree = document.getElementById('folder-tree');
+      if (folderTree) {
+        folderTree.dataSource = this.folders;
+      }
     } catch (err) {
       console.error('Error while fetching adobe folders : ', err);
     }
-
-    const {
-      campaignMailName,
-    } = this.fetchedProfile;
-    this.profile = {
-      campaignMailName: campaignMailName ?? '',
-      folderName: profile.folderName,
-      deliveryName: profile.deliveryName,
-    };
 
     M.updateTextFields();
   },
@@ -62,40 +55,49 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     },
 
     async handleFolderChange(e) {
-      if (!this.folders || this.folders.length === 0) return
+      if (this.folders?.length === 0) return;
 
       const selectedIndexes = e.detail.selectedIndexes;
       const indexes = `${selectedIndexes[0]}`.split('.');
       let fullName = '';
-      let currentFolder = this.folders;
+      let currentFolders = this.folders;
 
-      indexes.forEach((index)=>{
-          fullName = fullName+'/'+currentFolder[index].label
-          currentFolder = currentFolder[index].items
-      })
-      fullName+='/'
-      this.profile.fullName = fullName;
+      indexes.forEach((index) => {
+        fullName = fullName + '/' + currentFolders[index].label;
+        currentFolders = currentFolders[index].items;
+      });
+      fullName += '/';
+
+      this.profile.folderFullName = fullName;
 
       this.isDeliveryLoading = true;
+
       try {
-        const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-deliveries`, { params : {
-            fullName : fullName
-        }});
+        const { data } = await axios.get(
+          `/api/profiles/${this.selectedProfile.id}/adobe-deliveries`,
+          {
+            params: {
+              fullName: fullName,
+            },
+          }
+        );
         this.deliveries = data.result;
       } catch (err) {
         console.error('Error while fetching adobe deliveries :', err);
-      }
-      finally{
+      } finally {
         this.isDeliveryLoading = false;
-        document.getElementById('delivery-tree').dataSource = this.deliveries;
+
+        const deliveryTree = document.getElementById('delivery-tree');
+        deliveryTree.dataSource = this.deliveries;
       }
     },
 
     async handleDeliveryChange(e) {
-      if (!this.delivery || this.delivery.length === 0) return
       const selectedIndex = e.detail.selectedIndexes;
-      this.profile.delivery = this.deliveries[selectedIndex].label;
-    }
+      this.profile.deliveryInternalName = this.deliveries[
+        selectedIndex
+      ].internalName;
+    },
   },
   template: `
     <div>
@@ -138,7 +140,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                     </div>
                 </div>
 
-                <div :class="!isDeliveryLoading &&this.profile.fullName ? '' : 'adobe-loader hide'">
+                <div :class="!isDeliveryLoading &&this.profile.folderFullName ? '' : 'adobe-loader hide'">
                   <div class="input-field col s12 adobe-label">
                     <label>{{ vm.t('select-delivery') }}</label>
                   </div>
@@ -194,10 +196,10 @@ function buildTreeFromFolders(folders) {
     let current = root;
     parts.forEach((part, idx) => {
       //Skip if it is the first or last /
-      if (!part ) return
+      if (!part) return;
       //If key does not already exist add a node
-      if ( !current[part] ) {
-        current[part] = { label: part, items: {}};
+      if (!current[part]) {
+        current[part] = { label: part, items: {} };
       }
       //If key already exists append children
       current = current[part].items;

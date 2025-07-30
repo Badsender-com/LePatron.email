@@ -162,6 +162,7 @@ async function updateEspCampaign({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    accessToken,
     type,
     name,
     _company,
@@ -178,10 +179,7 @@ async function updateEspCampaign({
   if (type === EspTypes.ADOBE) {
     campaignMailData = {
       ...campaignMailData,
-      adobe: {
-        ...espSendingMailData.adobe,
-        accessToken,
-      },
+      adobe: espSendingMailData.adobe,
     };
   }
 
@@ -262,10 +260,7 @@ async function sendEspCampaign({
   if (type === EspTypes.ADOBE) {
     campaignMailData = {
       ...campaignMailData,
-      adobe: {
-        ...espSendingMailData.adobe,
-        accessToken,
-      },
+      adobe: espSendingMailData.adobe,
     };
   }
 
@@ -447,5 +442,7 @@ async function getAdobeDeliveries({
     type: EspTypes.ADOBE,
   });
 
-  return await espProvider.getDeliveriesFromFolderFullName({ fullName });
+  return await espProvider.getDeliveriesFromFolderFullNameOrInternalName({
+    fullName,
+  });
 }

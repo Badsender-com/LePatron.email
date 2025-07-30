@@ -24,7 +24,6 @@ const EspComponent = Vue.component('EspForm', {
     ActitoComponent,
     AdobeComponent,
     DscComponent,
-    AdobeComponent,
     ModalComponent,
   },
   props: {
@@ -125,7 +124,7 @@ const EspComponent = Vue.component('EspForm', {
             Then it was probably deleted on DSC's side.
             So we allow the user to create a new one
           */
-          if(error.response.status === 404) {
+          if (error.response.status === 404) {
             this.type = SEND_MODE.CREATION;
             this.fetchProfileData(message);
             return;
@@ -186,8 +185,8 @@ const EspComponent = Vue.component('EspForm', {
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
             adobe: {
-              folderName: data?.folderName,
-              deliveryName: data?.deliveryName
+              folderFullName: data?.folderFullName,
+              deliveryInternalName: data?.deliveryInternalName,
             },
             subject: data?.subject,
             planification: data?.planification,
