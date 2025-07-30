@@ -3,7 +3,15 @@ const { encrypt, decrypt } = require('./crypto');
 function encryptionPlugin(schema, encryptedFields = []) {
   // Encrypt on save or updateOne
   schema.pre(['save', 'updateOne'], function (next) {
-    const data = this instanceof this.constructor ? this : this.getUpdate();
+    let data;
+    if (this.isNew || this.isModified) {
+      // 'save' hook: 'this' is the document
+      data = this;
+    } else {
+      // 'updateOne' hook: 'this' is the query
+      data = this.getUpdate();
+    }
+
     encryptedFields.forEach((field) => {
       if (data[field]) {
         data[field] = encrypt(data[field]);

@@ -24,7 +24,7 @@ export default {
         getProfileForAdmin(params.profileId)
       );
 
-      const { type, id, name, apiKey } = profileResponse.result;
+      const { type, id, name, apiKey, secretKey } = profileResponse.result;
 
       if (type === ESP_TYPES.SENDINBLUE) {
         const {
@@ -87,6 +87,16 @@ export default {
           senderMail,
           type,
           typeCampagne,
+        };
+      }
+
+      if (type === ESP_TYPES.ADOBE) {
+        profileData = {
+          id,
+          name,
+          apiKey,
+          secretKey,
+          type,
         };
       }
 
