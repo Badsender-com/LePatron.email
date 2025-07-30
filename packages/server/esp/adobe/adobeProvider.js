@@ -175,6 +175,10 @@ class AdobeProvider {
 
         const delivery = deliveryCollection?.delivery;
 
+        if (!delivery) {
+          return {};
+        }
+
         if (delivery instanceof Array) {
           return deliveryCollection?.delivery?.map((delivery) => ({
             id: delivery.id,
