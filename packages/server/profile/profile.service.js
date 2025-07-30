@@ -31,6 +31,7 @@ module.exports = {
   checkIfUserIsAuthorizedToAccessProfile,
   updateEspCampaign,
   getAdobeFolders,
+  getAdobeDeliveries,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -398,4 +399,19 @@ async function getAdobeFolders({ user, apiKey, secretKey, accessToken }) {
   const groupNames = await espProvider.getUserGroups({ user });
 
   return await espProvider.getFoldersFromGroupNames({ groupNames });
+}
+async function getAdobeDeliveries({
+  apiKey,
+  secretKey,
+  accessToken,
+  fullName,
+}) {
+  const espProvider = await EspProvider.build({
+    apiKey,
+    secretKey,
+    accessToken,
+    type: EspTypes.ADOBE,
+  });
+
+  return await espProvider.getDeliveriesFromFolderFullName({ fullName });
 }

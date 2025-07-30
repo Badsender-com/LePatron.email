@@ -23,16 +23,19 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     return {
       profile: {
         type: ESP_TYPE.ADOBE,
+        fullName: '',
+        delivery : '',
       },
       style: styleHelper,
       folders: [],
+      deliveries: [],
     };
   },
   async mounted() {
     try {
       const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-folders`);
       this.folders = buildTreeFromFolders(data.result);
-      document.querySelector('smart-tree').dataSource = this.folders;
+      document.getElementById('folder-tree').dataSource = this.folders;
     } catch (err) {
       console.error('Error while fetching adobe folders : ', err);
     }
@@ -42,15 +45,12 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   methods: {
     onSubmit() {
       M.updateTextFields();
-      this.$v.$touch();
-      if (this.$v.$invalid) {
-        return;
-      }
       this.$emit('submit', this.profile);
     },
 
-    handleChange(e) {
+    async handleFolderChange(e) {
       if (!this.folders || this.folders.length === 0) return
+
       const selectedIndexes = e.detail.selectedIndexes;
       const indexes = `${selectedIndexes[0]}`.split('.');
       let fullName = '';
@@ -61,6 +61,23 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           currentFolder = currentFolder[index].items
       })
       fullName+='/'
+      this.profile.fullName = fullName;
+
+      try {
+        const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-deliveries`, { params : {
+            fullName : fullName
+        }});
+        this.deliveries = buildTreeFromDeliveries(data.result);
+        document.getElementById('delivery-tree').dataSource = data.result;
+      } catch (err) {
+        console.error('Error while fetching adobe deliveries :', err);
+      }
+    },
+
+    async handleDeliveryChange(e) {
+      if (!this.delivery || this.delivery.length === 0) return
+      const selectedIndex = e.detail.selectedIndexes;
+      this.profile.delivery = this.deliveries[selectedIndex].label;
     }
   },
   template: `
@@ -72,16 +89,36 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           </div>
           <form class="col s12">
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12 adobe-label">
-                <label>Folder delivery</label>
-                 </div>
-                <smart-tree
-                  filterable
-                  scroll-mode="scrollbar"
-                  selectionMode="one"
-                  @change="handleChange"
-                  selection-target='leaf'
-                />
+              <div style="display: flex; gap: 24px;">
+                <div style="flex: 1;">
+                  <div class="input-field col s12 adobe-label">
+                    <label>Select a folder</label>
+                  </div>
+                  <smart-tree
+                    id="folder-tree"
+                    filterable
+                    scroll-mode="scrollbar"
+                    selectionMode="one"
+                    toggle-mode="click"
+                    @change="handleFolderChange"
+                    selection-target='leaf'
+                  />
+                </div>
+                <div style="flex: 1;" v-if="profile.fullName">
+                  <div class="input-field col s12 adobe-label">
+                    <label>Select a delivery</label>
+                  </div>
+                  <smart-tree
+                    id="delivery-tree"
+                    filterable
+                    scroll-mode="scrollbar"
+                    selectionMode="one"
+                    toggle-mode="click"
+                    @change="handleDeliveryChange"
+                    selection-target='leaf'
+                  />
+                </div>
+              </div>
             </div>
           </form>
         </div>
@@ -139,6 +176,14 @@ function buildTreeFromFolders(folders) {
   }
 
   return toArray(root);
+}
+
+function buildTreeFromDeliveries(deliveries) {
+  return deliveries.map(({ id, label }) => ({
+    label,
+    id,
+    items: undefined, //always a leaf
+  }));
 }
 
 module.exports = {

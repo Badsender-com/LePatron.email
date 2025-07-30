@@ -18,6 +18,7 @@ module.exports = {
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
   getAdobeFolders: asyncHandler(getAdobeFolders),
+  getAdobeDeliveries: asyncHandler(getAdobeDeliveries),
 };
 
 /**
@@ -95,6 +96,46 @@ async function getAdobeFolders(req, res) {
   });
 
   res.send({ result: adobeFoldersResult });
+}
+
+/**
+ * @api {get} /profiles/:profileID/adobe-deliveries : deliveries tree entity from Adobe email service provider
+ * @apiName getAdobeDeliveries
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ * @apiParam  {String} folderName Adobe selected folderName
+ */
+async function getAdobeDeliveries(req, res) {
+  const { profileId } = req.params;
+  const { fullName } = req.query;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile || !profile.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const { apiKey, secretKey, accessToken } = profile;
+
+  if (!apiKey || !secretKey || !accessToken) {
+    throw new Error(
+      'Missing apiKey or secretKey or accessToken in profile data'
+    );
+  }
+
+  const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+    apiKey,
+    secretKey,
+    accessToken,
+    fullName,
+  });
+
+  res.send({ result: adobeDeliveriesResult });
 }
 
 /**
