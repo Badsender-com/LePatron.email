@@ -23,16 +23,21 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     return {
       profile: {
         type: ESP_TYPE.ADOBE,
+        fullName: '',
+        delivery : '',
       },
       style: styleHelper,
       folders: [],
+      deliveries: [],
+      isDeliveryLoading: false,
     };
   },
   async mounted() {
     try {
       const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-folders`);
       this.folders = buildTreeFromFolders(data.result);
-      document.querySelector('smart-tree').dataSource = this.folders;
+      const tree = document.getElementById('folder-tree');
+      tree.dataSource = this.folders;
     } catch (err) {
       console.error('Error while fetching adobe folders : ', err);
     }
@@ -42,15 +47,12 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   methods: {
     onSubmit() {
       M.updateTextFields();
-      this.$v.$touch();
-      if (this.$v.$invalid) {
-        return;
-      }
       this.$emit('submit', this.profile);
     },
 
-    handleChange(e) {
+    async handleFolderChange(e) {
       if (!this.folders || this.folders.length === 0) return
+
       const selectedIndexes = e.detail.selectedIndexes;
       const indexes = `${selectedIndexes[0]}`.split('.');
       let fullName = '';
@@ -61,6 +63,27 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           currentFolder = currentFolder[index].items
       })
       fullName+='/'
+      this.profile.fullName = fullName;
+
+      this.isDeliveryLoading = true;
+      try {
+        const { data } = await axios.get(`/api/profiles/${this.selectedProfile.id}/adobe-deliveries`, { params : {
+            fullName : fullName
+        }});
+        this.deliveries = data.result;
+      } catch (err) {
+        console.error('Error while fetching adobe deliveries :', err);
+      }
+      finally{
+        this.isDeliveryLoading = false;
+        document.getElementById('delivery-tree').dataSource = this.deliveries;
+      }
+    },
+
+    async handleDeliveryChange(e) {
+      if (!this.delivery || this.delivery.length === 0) return
+      const selectedIndex = e.detail.selectedIndexes;
+      this.profile.delivery = this.deliveries[selectedIndex].label;
     }
   },
   template: `
@@ -72,16 +95,55 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           </div>
           <form class="col s12">
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12 adobe-label">
-                <label>Folder delivery</label>
-                 </div>
-                <smart-tree
-                  filterable
-                  scroll-mode="scrollbar"
-                  selectionMode="one"
-                  @change="handleChange"
-                  selection-target='leaf'
-                />
+              <div style="display: flex; gap: 24px;">
+                <div style="flex: 1;">
+                  <div class="input-field col s12 adobe-label">
+                    <label>{{ vm.t('select-folder') }}</label>
+                  </div>
+                  <smart-tree
+                    style="width:100%"
+                    id="folder-tree"
+                    filterable
+                    scroll-mode="scrollbar"
+                    selection-mode="zeroOrOne"
+                    toggle-mode="click"
+                    @change="handleFolderChange"
+                    selection-target='leaf'
+                  />
+                </div>
+
+                <div style="flex: 1;">
+                <div :class="isDeliveryLoading ? 'valign-wrapper' : 'valign-wrapper adobe-loader hide' " :style="{height: '100%', justifyContent: 'center'}" >
+                  <div class="preloader-wrapper small active">
+                      <div class="spinner-layer spinner-green-only">
+                        <div class="circle-clipper left">
+                          <div class="circle"></div>
+                        </div><div class="gap-patch">
+                        <div class="circle"></div>
+                      </div><div class="circle-clipper right">
+                        <div class="circle"></div>
+                      </div>
+                      </div>
+                    </div>
+                </div>
+
+                <div :class="!isDeliveryLoading &&this.profile.fullName ? '' : 'adobe-loader hide'">
+                  <div class="input-field col s12 adobe-label">
+                    <label>{{ vm.t('select-delivery') }}</label>
+                  </div>
+                  <smart-tree
+                    style="width:100%"
+                    id="delivery-tree"
+                    filterable
+                    scroll-mode="scrollbar"
+                    selection-mode="zeroOrOne"
+                    toggle-mode="click"
+                    @change="handleDeliveryChange"
+                    selection-target='leaf'
+                  />
+                  </div>
+                </div>
+              </div>
             </div>
           </form>
         </div>

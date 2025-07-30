@@ -131,13 +131,10 @@ class AdobeProvider {
     });
   }
 
-  async getDeliveriesFromFolderName({ folderName }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
+  async getDeliveriesFromFolderFullName({ fullName }) {
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -151,7 +148,7 @@ class AdobeProvider {
                 <node expr="@internalName"/>
               </select>
               <where>
-                <condition expr="[folder/@name]='${folderName}'"/>
+                <condition expr="[folder/@fullName]='${fullName}'"/>
               </where>
             </queryDef>
           </entity>
@@ -171,7 +168,7 @@ class AdobeProvider {
     });
   }
 
-  async saveDeliveryTemplate({ deliveryLabel, folderName, contentHtml }) {
+  async saveDeliveryTemplate({ deliveryLabel, fullName, contentHtml }) {
     // TODO: mocked data, use the real one from db
     const accessToken = '';
 
@@ -193,7 +190,7 @@ class AdobeProvider {
                   </source>
                 </html>
               </content>
-              <folder name="${folderName}" />
+              <folder fullName="${fullName}" />
             </delivery>
           </domDoc>
         </m:Write>

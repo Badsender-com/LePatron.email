@@ -11,6 +11,11 @@ const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 router.post('/', GUARD_ADMIN, profiles.createProfile);
 
 router.get('/:profileId/adobe-folders', GUARD_USER, profiles.getAdobeFolders);
+router.get(
+  '/:profileId/adobe-deliveries',
+  GUARD_USER,
+  profiles.getAdobeDeliveries
+);
 
 router.post('/actito-entities-list', GUARD_ADMIN, profiles.actitoEntitiesList);
 router.post(
