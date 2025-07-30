@@ -1,8 +1,8 @@
 const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
-const { DscComponent } = require('./providers/DscComponent');
 const { AdobeComponent } = require('./providers/AdobeComponent');
+const { DscComponent } = require('./providers/DscComponent');
 const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
 const { SEND_MODE } = require('../../constant/send-mode');
@@ -22,8 +22,8 @@ const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
-    DscComponent,
     AdobeComponent,
+    DscComponent,
     ModalComponent,
   },
   props: {
@@ -124,7 +124,7 @@ const EspComponent = Vue.component('EspForm', {
             Then it was probably deleted on DSC's side.
             So we allow the user to create a new one
           */
-          if(error.response.status === 404) {
+          if (error.response.status === 404) {
             this.type = SEND_MODE.CREATION;
             this.fetchProfileData(message);
             return;
@@ -184,6 +184,10 @@ const EspComponent = Vue.component('EspForm', {
           campaignId: this.campaignId,
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
+            adobe: {
+              folderFullName: data?.folderFullName,
+              deliveryInternalName: data?.deliveryInternalName,
+            },
             subject: data?.subject,
             planification: data?.planification,
             typeCampagne: data?.typeCampagne,

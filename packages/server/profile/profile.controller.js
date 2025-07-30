@@ -76,7 +76,7 @@ async function getAdobeFolders(req, res) {
 
   const profile = await profileService.findOne(profileId);
 
-  if (!profile || !profile.additionalApiData) {
+  if (!profile?.additionalApiData) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
