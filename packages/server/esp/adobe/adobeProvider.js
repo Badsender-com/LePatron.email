@@ -6,6 +6,12 @@ const axios = require('../../config/axios');
 const { InternalServerError } = require('http-errors');
 const qs = require('qs');
 const soapRequest = require('../../../server/utils/soap-request');
+const { getMd5FromBlob } = require('../../../server/utils/crpyto.js');
+const fetch = require('node-fetch');
+const FormData = require('form-data');
+const {
+  asyncReplace,
+} = require('../../../server/utils/download-zip-markdown.js');
 
 class AdobeProvider {
   constructor({ apiKey, secretKey, accessToken, ...data }) {
@@ -199,21 +205,57 @@ class AdobeProvider {
   async updateCampaignMail({ campaignMailData, html }) {
     // The logic to update and create is the same because the SOAP request that we do
     // for Adobe is an upsert
-    this.createCampaignMail({ campaignMailData, html });
+    await this.createCampaignMail({ campaignMailData, html });
   }
 
   async createCampaignMail({ campaignMailData, html }) {
     const { name, adobe } = campaignMailData;
+
+    const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({ html });
 
     await this.saveDeliveryTemplate({
       deliveryLabel: name,
       internalName: adobe.deliveryInternalName,
       accessToken: this.accessToken,
       folderFullName: adobe.folderFullName,
-      contentHtml: html,
+      contentHtml: htmlWithAdobeUrls,
     });
 
     return name;
+  }
+
+  async sendAndProcessImageIntoAdobe({ html }) {
+    const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
+
+    const replacedHtml = await asyncReplace(
+      html,
+      urlsRegexUrl,
+      async (match, tag) => {
+        const splittedMatch = match.split('/');
+        const imageName = splittedMatch[splittedMatch.length - 1];
+        const response = await fetch(match);
+        const blob = await response.blob();
+
+        const md5 = await getMd5FromBlob(blob);
+
+        await this.uploadDeliveryImage({
+          image: blob.stream(),
+          optionImg: {
+            filename: imageName,
+            contentType: blob.type,
+            knownLength: await blob.size,
+          },
+        });
+        await this.saveDeliveryImage({ imageMd5: md5, imageName });
+        await this.publishDeliveryImage({ imageMd5: md5, imageName });
+
+        const url = await this.getImageUrl({ imageMd5: md5 });
+
+        return `${url}${tag}`;
+      }
+    );
+
+    return replacedHtml;
   }
 
   async saveDeliveryTemplate({
@@ -249,25 +291,20 @@ class AdobeProvider {
     });
   }
 
-  async uploadDeliveryImage({ image }) {
+  async uploadDeliveryImage({ image, optionImg }) {
     const form = new FormData();
 
-    form.append('file_noMd5', image);
+    form.append('file_noMd5', image, optionImg);
 
     try {
-      const response = await axios.post(config.adobeImgUrl, form, {
+      await axios.post(config.adobeUploadFileUrl, form, {
         headers: {
           ...form.getHeaders(),
           Authorization: `Bearer ${this.accessToken}`,
         },
       });
-
-      console.log('Response upload image delivery: ', response.data);
     } catch (err) {
-      console.error(
-        'Error while uploading delivery image:',
-        err.response?.data || err.message
-      );
+      console.error('Error while uploading delivery image:', err);
     }
   }
 
@@ -319,6 +356,25 @@ class AdobeProvider {
     });
   }
 
+  async getImageUrl({ imageMd5 }) {
+    return soapRequest({
+      url: config.adobeSoapRouterUrl,
+      token: this.accessToken,
+      soapAction: 'xtk:fileRes#GetURL',
+      xmlBodyRequest: `
+        <m:GetURL xmlns:m="urn:xtk:fileRes">
+          <sessiontoken xsi:type="xsd:string" />
+          <document xsi:type="">
+            <fileRes md5="${imageMd5}" useMd5AsFilename="1" storageType="5" />
+          </document>
+        </m:GetURL>
+      `,
+      formatResponseFn: (response) =>
+        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl
+          .$t,
+    });
+  }
+
   async validateToken() {
     const form = new FormData();
 
@@ -337,10 +393,7 @@ class AdobeProvider {
         }
       );
 
-      const data = response.data;
-      console.log('Response validate token', data);
-
-      return data.valid;
+      return response.data.valid;
     } catch (err) {
       console.error(
         'Error while validating token',
