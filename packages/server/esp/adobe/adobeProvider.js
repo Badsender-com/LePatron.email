@@ -6,7 +6,7 @@ const axios = require('../../config/axios');
 const { InternalServerError } = require('http-errors');
 const qs = require('qs');
 const soapRequest = require('../../../server/utils/soap-request');
-const { getMd5FromBlob } = require('../../../server/utils/crpyto.js');
+const { getMd5FromBlob } = require('../../../server/utils/crypto.js');
 const fetch = require('node-fetch');
 const FormData = require('form-data');
 const {
