@@ -103,6 +103,7 @@ async function updateProfile({
   name,
   type,
   apiKey,
+  secretKey,
   _company,
   additionalApiData,
 }) {
@@ -110,6 +111,7 @@ async function updateProfile({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
     type,
     name,
     _company,
@@ -127,6 +129,7 @@ async function updateProfile({
       name,
       type,
       apiKey,
+      secretKey,
       _company,
       additionalApiData,
     }
