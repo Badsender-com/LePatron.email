@@ -8,9 +8,10 @@ const qs = require('qs');
 const soapRequest = require('../../../server/utils/soap-request');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, ...data }) {
+  constructor({ apiKey, secretKey, accessToken, ...data }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.accessToken = accessToken;
     this.data = data;
   }
 
@@ -55,12 +56,9 @@ class AdobeProvider {
   async getUserGroups({ user }) {
     const username = config.isDev ? config.adobeDefaultUser : user.name;
 
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -83,20 +81,23 @@ class AdobeProvider {
         const operatorGroupCollection =
           body.ExecuteQueryResponse.pdomOutput['operatorGroup-collection'];
 
-        return operatorGroupCollection.operatorGroup.map(
-          (operatorGroup) => operatorGroup.group.name
-        );
+        const operatorGroup = operatorGroupCollection.operatorGroup;
+        if (operatorGroup instanceof Array) {
+          return operatorGroup?.map(
+            (operatorGroup) => operatorGroup.group.name
+          );
+        }
+
+        return [operatorGroup.group.name];
       },
     });
   }
 
   async getFoldersFromGroupNames({ groupNames = [] }) {
-    // TODO: mocked data, use the real one from db
-    const accessToken = '';
-
+    const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
     return soapRequest({
       url: config.adobeSoapRouterUrl,
-      token: accessToken,
+      token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery xmlns="urn:xtk:queryDef">
@@ -108,7 +109,7 @@ class AdobeProvider {
                       <node expr="[folder/@name]" />
                   </select>
                   <where>
-                      <condition expr="[operator/@name] IN (${groupNames.join(
+                      <condition expr="[operator/@name] IN (${mappedGroupNames.join(
                         ','
                       )})" />
                       <condition expr="@rights like '%write%'" />
@@ -122,7 +123,6 @@ class AdobeProvider {
         const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
         const rightsCollection =
           body.ExecuteQueryResponse.pdomOutput['rights-collection'];
-
         return rightsCollection.rights.map((right) => ({
           fullName: right.folder.fullName,
           name: right.folder.name,

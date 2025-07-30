@@ -10,6 +10,8 @@ const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
 
 router.post('/', GUARD_ADMIN, profiles.createProfile);
 
+router.get('/:profileId/adobe-folders', GUARD_USER, profiles.getAdobeFolders);
+
 router.post('/actito-entities-list', GUARD_ADMIN, profiles.actitoEntitiesList);
 router.post(
   '/actito-target-tables-list',
@@ -24,6 +26,7 @@ router.post(
 );
 
 router.delete('/:profileId', GUARD_ADMIN, profiles.deleteProfile);
+
 router.get('/:profileId', GUARD_USER, profiles.readProfile);
 router.get('/:profileId/admin', GUARD_ADMIN, profiles.readProfileForAdmin);
 
