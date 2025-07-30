@@ -38,6 +38,7 @@ const EspComponent = Vue.component('EspForm', {
     campaignId: null,
     espIds: [],
     fetchedProfile: {},
+    folders: [],
   }),
   computed: {
     espComponent() {
@@ -66,8 +67,20 @@ const EspComponent = Vue.component('EspForm', {
     this.subscriptions.forEach((subscription) => subscription.dispose());
   },
   methods: {
-    fetchData() {
+    async fetchData() {
       this.isLoading = true;
+
+      if (this.selectedProfile?.type === ESP_TYPE.ADOBE) {
+        try {
+          const { data } = await axios.get(
+            `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+          );
+          this.folders = data.result;
+        } catch (err) {
+          console.error('Error while fetching adobe folders : ', err);
+        }
+      }
+
       return axios
         .get(getEspIds({ mailingId: this.mailingId }))
         .then((response) => {
@@ -258,6 +271,7 @@ const EspComponent = Vue.component('EspForm', {
         :selectedProfile="selectedProfile"
         :campaignId="campaignId"
         :closeModal="closeModal"
+        :fetchedFolders="folders"
         @submit="submitEsp"
       >
       </component>
