@@ -1,6 +1,7 @@
 const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
+const { AdobeComponent } = require('./providers/AdobeComponent');
 const { DscComponent } = require('./providers/DscComponent');
 const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
@@ -21,6 +22,7 @@ const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
+    AdobeComponent,
     DscComponent,
     ModalComponent,
   },
@@ -36,6 +38,7 @@ const EspComponent = Vue.component('EspForm', {
     campaignId: null,
     espIds: [],
     fetchedProfile: {},
+    folders: [],
   }),
   computed: {
     espComponent() {
@@ -46,6 +49,8 @@ const EspComponent = Vue.component('EspForm', {
           return 'SendinBlueComponent';
         case ESP_TYPE.DSC:
           return 'DscComponent';
+        case ESP_TYPE.ADOBE:
+          return 'AdobeComponent';
         default:
           return 'SendinBlueComponent';
       }
@@ -62,8 +67,20 @@ const EspComponent = Vue.component('EspForm', {
     this.subscriptions.forEach((subscription) => subscription.dispose());
   },
   methods: {
-    fetchData() {
+    async fetchData() {
       this.isLoading = true;
+
+      if (this.selectedProfile?.type === ESP_TYPE.ADOBE) {
+        try {
+          const { data } = await axios.get(
+            `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+          );
+          this.folders = data.result;
+        } catch (err) {
+          console.error('Error while fetching adobe folders : ', err);
+        }
+      }
+
       return axios
         .get(getEspIds({ mailingId: this.mailingId }))
         .then((response) => {
@@ -120,7 +137,7 @@ const EspComponent = Vue.component('EspForm', {
             Then it was probably deleted on DSC's side.
             So we allow the user to create a new one
           */
-          if(error.response.status === 404) {
+          if (error.response.status === 404) {
             this.type = SEND_MODE.CREATION;
             this.fetchProfileData(message);
             return;
@@ -180,6 +197,10 @@ const EspComponent = Vue.component('EspForm', {
           campaignId: this.campaignId,
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
+            adobe: {
+              folderFullName: data?.folderFullName,
+              deliveryInternalName: data?.deliveryInternalName,
+            },
             subject: data?.subject,
             planification: data?.planification,
             typeCampagne: data?.typeCampagne,
@@ -250,6 +271,7 @@ const EspComponent = Vue.component('EspForm', {
         :selectedProfile="selectedProfile"
         :campaignId="campaignId"
         :closeModal="closeModal"
+        :fetchedFolders="folders"
         @submit="submitEsp"
       >
       </component>

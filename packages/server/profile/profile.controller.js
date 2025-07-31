@@ -17,6 +17,8 @@ module.exports = {
   actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
+  getAdobeFolders: asyncHandler(getAdobeFolders),
+  getAdobeDeliveries: asyncHandler(getAdobeDeliveries),
 };
 
 /**
@@ -36,17 +38,104 @@ module.exports = {
 
 async function createProfile(req, res) {
   const { user } = req;
-  const { name, type, apiKey, _company, ...additionalApiData } = req.body;
+  const {
+    name,
+    type,
+    apiKey,
+    secretKey,
+    _company,
+    ...additionalApiData
+  } = req.body;
   const response = await profileService.createProfile({
     user,
     name,
     type,
     apiKey,
+    secretKey,
     _company,
     additionalApiData,
   });
 
   res.json(response);
+}
+
+/**
+ * @api {get} /profiles/:profileID/adobe-folders : folders tree entity from Adobe email service provider
+ * @apiName getAdobeFolders
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ */
+async function getAdobeFolders(req, res) {
+  const user = req.user;
+  const { profileId } = req.params;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile?.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const { apiKey, secretKey, accessToken } = profile;
+
+  if (!apiKey || !secretKey || !accessToken) {
+    throw new Error(
+      'Missing apiKey or secretKey or accessToken in profile data'
+    );
+  }
+
+  const adobeFoldersResult = await profileService.getAdobeFolders({
+    user,
+    apiKey,
+    secretKey,
+    accessToken,
+  });
+
+  res.send({ result: adobeFoldersResult });
+}
+
+/**
+ * @api {get} /profiles/:profileID/adobe-deliveries : deliveries tree entity from Adobe email service provider
+ * @apiName getAdobeDeliveries
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ * @apiParam  {String} folderName Adobe selected folderName
+ */
+async function getAdobeDeliveries(req, res) {
+  const { profileId } = req.params;
+  const { fullName } = req.query;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile?.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const { apiKey, secretKey, accessToken } = profile;
+
+  if (!apiKey || !secretKey || !accessToken) {
+    throw new Error(
+      'Missing apiKey or secretKey or accessToken in profile data'
+    );
+  }
+
+  const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+    apiKey,
+    secretKey,
+    accessToken,
+    fullName,
+  });
+
+  res.send({ result: adobeDeliveriesResult });
 }
 
 /**
@@ -58,6 +147,7 @@ async function createProfile(req, res) {
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
  * @apiParam (Body) {String} apiKey the provider key
+ * @apiParam (Body) {String} secretKey the provider secret Key
  * @apiParam (Body) {String} _company the ID of the group
  * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
  *
@@ -67,7 +157,15 @@ async function createProfile(req, res) {
 
 async function updateProfile(req, res) {
   const { user } = req;
-  const { name, type, apiKey, _company, id, ...additionalApiData } = req.body;
+  const {
+    name,
+    type,
+    apiKey,
+    secretKey,
+    _company,
+    id,
+    ...additionalApiData
+  } = req.body;
 
   const response = await profileService.updateProfile({
     user,
@@ -75,6 +173,7 @@ async function updateProfile(req, res) {
     name,
     type,
     apiKey,
+    secretKey,
     _company,
     additionalApiData,
   });

@@ -30,6 +30,8 @@ module.exports = {
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
   updateEspCampaign,
+  getAdobeFolders,
+  getAdobeDeliveries,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -62,11 +64,13 @@ async function createProfile({
   name,
   type,
   apiKey,
+  secretKey,
   _company,
   additionalApiData,
 }) {
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
     type,
     name,
     _company,
@@ -81,11 +85,14 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
+  const accessToken = espConnectionResult.data.access_token;
 
   return Profiles.create({
     name,
     type,
     apiKey,
+    secretKey,
+    accessToken,
     _company,
     additionalApiData,
   });
@@ -96,6 +103,7 @@ async function updateProfile({
   name,
   type,
   apiKey,
+  secretKey,
   _company,
   additionalApiData,
 }) {
@@ -103,6 +111,7 @@ async function updateProfile({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
     type,
     name,
     _company,
@@ -120,6 +129,7 @@ async function updateProfile({
       name,
       type,
       apiKey,
+      secretKey,
       _company,
       additionalApiData,
     }
@@ -140,6 +150,7 @@ async function updateEspCampaign({
 
   const {
     apiKey,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -154,18 +165,26 @@ async function updateEspCampaign({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    accessToken,
     type,
     name,
     _company,
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: espSendingMailData.adobe,
+    };
+  }
 
   const espCampaignId =
     contentSendType === ESP_CONTENT_TYPE.MAIL
@@ -203,7 +222,7 @@ async function sendEspCampaign({
   const profile = await findOne(profileId);
 
   /*
-    For DSC, creating a new campaign from the same profile is allowed 
+    For DSC, creating a new campaign from the same profile is allowed
     if the campaign was deleted on DSC's side
   */
   if (type !== 'DSC') {
@@ -212,6 +231,8 @@ async function sendEspCampaign({
 
   const {
     apiKey,
+    secretKey,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -224,18 +245,27 @@ async function sendEspCampaign({
 
   const espProvider = await EspProvider.build({
     apiKey,
+    secretKey,
+    accessToken,
     type,
     name,
     _company,
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: espSendingMailData.adobe,
+    };
+  }
 
   const { contentSendType } = additionalApiData;
   const espCampaignId =
@@ -341,12 +371,20 @@ async function getProfile({ profileId }) {
 async function getCampaignMail({ campaignId, profileId }) {
   const profile = await findOne(profileId);
 
-  const { apiKey, type, name, _company, additionalApiData } = profile;
+  const {
+    apiKey,
+    accessToken,
+    type,
+    name,
+    _company,
+    additionalApiData,
+  } = profile;
 
-  const { contentSendType } = additionalApiData;
+  const { contentSendType, internalName } = additionalApiData;
 
   const espProvider = await EspProvider.build({
     apiKey,
+    accessToken,
     type,
     name,
     _company,
@@ -358,6 +396,7 @@ async function getCampaignMail({ campaignId, profileId }) {
     campaignMailResponse = await espProvider.getCampaignMail({
       campaignId,
       ...additionalApiData,
+      internalName,
     });
   } else {
     campaignMailResponse = await espProvider.getTemplate({
@@ -379,4 +418,34 @@ async function getCampaignMail({ campaignId, profileId }) {
 
 async function deleteOne(profileId) {
   return Profiles.deleteOne({ _id: Types.ObjectId(profileId) });
+}
+
+async function getAdobeFolders({ user, apiKey, secretKey, accessToken }) {
+  const espProvider = await EspProvider.build({
+    apiKey,
+    secretKey,
+    accessToken,
+    type: EspTypes.ADOBE,
+  });
+
+  const groupNames = await espProvider.getUserGroups({ user });
+
+  return await espProvider.getFoldersFromGroupNames({ groupNames });
+}
+async function getAdobeDeliveries({
+  apiKey,
+  secretKey,
+  accessToken,
+  fullName,
+}) {
+  const espProvider = await EspProvider.build({
+    apiKey,
+    secretKey,
+    accessToken,
+    type: EspTypes.ADOBE,
+  });
+
+  return await espProvider.getDeliveriesFromFolderFullNameOrInternalName({
+    fullName,
+  });
 }
