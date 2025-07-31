@@ -74,6 +74,11 @@ async function getAdobeFolders(req, res) {
     throw new NotFound('Missing profileId');
   }
 
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+
   const profile = await profileService.findOne(profileId);
 
   if (!profile?.additionalApiData) {

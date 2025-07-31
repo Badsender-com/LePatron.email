@@ -33,14 +33,12 @@ async function soapRequest({
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
     if (errorFromAdobe) {
-      console.error(errorFromAdobe);
-      throw new InternalServerError(errorFromAdobe);
+      throw new InternalServerError(errorFromAdobe.detail.$t);
     }
 
     return formatResponseFn(jsObjectFromXml);
   } catch (error) {
     const { response } = error;
-    console.error('SOAP Error:', error);
 
     await createLog(
       {
