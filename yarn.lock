@@ -1780,7 +1780,7 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@smarthtmlelements/smart-elements@^6.2.0":
+"@smarthtmlelements/smart-elements@6.2.0":
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/@smarthtmlelements/smart-elements/-/smart-elements-6.2.0.tgz#3b4198ac873d6dd2186bc75f0386d52ee904d1c1"
   integrity sha512-Z+0Y/JkFjggNAeplpDahELJp81uIomHCfiJ37nBZVKZy/v6fBuqai8+/pSxfh6F5yAat+Cb/JYmZSxjPNJeG3Q==

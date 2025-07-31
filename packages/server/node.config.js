@@ -66,7 +66,6 @@ const config = rc('lepatron', {
   adobeSoapRouterUrl: process.env.ADOBE_SOAP_ROUTER_ESP_URL,
   adobeUploadFileUrl: process.env.ADOBE_UPLOAD_FILE_ESP_URL,
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
-  adobeUserAgent: process.env.ADOBE_USER_AGENT,
   encryptionKey: process.env.ENCRYPTION_KEY,
   NODE_ENV: process.env.NODE_ENV,
 });
