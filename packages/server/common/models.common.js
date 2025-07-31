@@ -19,6 +19,7 @@ const OAuthCodesSchema = require('../account/oauth-codes.schema.js');
 const EmailsGroupSchema = require('../emails-group/emails-group.schema');
 const PersonalizedVariableSchema = require('../personalized-variables/personalized-variables.schema.js');
 const FolderSchema = require('../folder/folder.schema');
+const LogSchema = require('../log/log.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 const TagSchema = require('../tag/tag.schema.js');
@@ -31,6 +32,7 @@ const Templates = mongoose.model(modelNames.TemplateModel, TemplateSchema);
 const Mailings = mongoose.model(modelNames.MailingModel, MailingSchema);
 const Groups = mongoose.model(modelNames.GroupModel, GroupSchema);
 const Folders = mongoose.model(modelNames.FolderModel, FolderSchema);
+const Logs = mongoose.model(modelNames.LogModel, LogSchema);
 const EmailsGroups = mongoose.model(
   modelNames.EmailsGroupModal,
   EmailsGroupSchema
@@ -64,6 +66,7 @@ module.exports = {
   // Compiled schema
   Users,
   Folders,
+  Logs,
   EmailsGroups,
   PersonalizedVariables,
   PersonalizedBlocks,

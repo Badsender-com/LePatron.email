@@ -12,12 +12,14 @@ const FormData = require('form-data');
 const {
   asyncReplace,
 } = require('../../../server/utils/download-zip-markdown.js');
+const { createLog } = require('../../../server/log/log.service.js');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, accessToken, ...data }) {
+  constructor({ apiKey, secretKey, accessToken, userId, ...data }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
     this.accessToken = accessToken;
+    this.userId = userId;
     this.data = data;
   }
 
@@ -25,15 +27,7 @@ class AdobeProvider {
     return new AdobeProvider(initialData);
   }
 
-  async connectApiCall() {
-    const data = qs.stringify({
-      client_id: this.apiKey,
-      client_secret: this.secretKey,
-      grant_type: 'client_credentials',
-      scope:
-        'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
-    });
-
+  async connectApiCall(data) {
     return axios.post(`${config.adobeImsUrl}/ims/token/v3`, data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -42,19 +36,31 @@ class AdobeProvider {
   }
 
   async connectApi() {
+    const data = qs.stringify({
+      client_id: this.apiKey,
+      client_secret: this.secretKey,
+      grant_type: 'client_credentials',
+      scope:
+        'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
+    });
     try {
-      console.log('ADOBE CONNECT API');
-      const emailCampaignConnectionResult = await this.connectApiCall();
+      const emailCampaignConnectionResult = await this.connectApiCall(data);
       return emailCampaignConnectionResult;
     } catch (e) {
+      const { config, response } = e;
       logger.error({ errorResponseData: e?.response?.data });
+
+      await createLog({
+        query: JSON.stringify(config),
+        responseStatus: response.status,
+        response: JSON.stringify(response.data),
+      });
 
       if (e?.response?.status === 500) {
         logger.error({ errorMessage: e?.response?.data?.message });
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
 
-      logger.error({ Error: e?.response?.data?.message });
       throw e;
     }
   }
@@ -63,6 +69,7 @@ class AdobeProvider {
     const username = config.isDev ? config.adobeDefaultUser : user.name;
 
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
@@ -103,6 +110,7 @@ class AdobeProvider {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
 
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
@@ -143,6 +151,7 @@ class AdobeProvider {
     internalName,
   }) {
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:queryDef#ExecuteQuery',
@@ -266,6 +275,7 @@ class AdobeProvider {
     contentHtml,
   }) {
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: accessToken,
       soapAction: 'xtk:persist#Write',
@@ -310,6 +320,7 @@ class AdobeProvider {
 
   async saveDeliveryImage({ imageMd5, imageName }) {
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:persist#Write',
@@ -335,6 +346,7 @@ class AdobeProvider {
 
   async publishDeliveryImage({ imageMd5, imageName }) {
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:fileRes#PublishIfNeeded',
@@ -358,6 +370,7 @@ class AdobeProvider {
 
   async getImageUrl({ imageMd5 }) {
     return soapRequest({
+      userId: this.userId,
       url: config.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction: 'xtk:fileRes#GetURL',

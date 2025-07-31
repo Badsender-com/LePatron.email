@@ -351,6 +351,7 @@ async function getCampaignMail(req, res) {
   const getCampaignMailData = await profileService.getCampaignMail({
     campaignId,
     profileId,
+    user,
   });
 
   res.send({ result: getCampaignMailData });

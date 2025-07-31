@@ -12,6 +12,7 @@ class EspService {
     apiKey,
     secretKey,
     accessToken,
+    user,
     additionalApiData,
   }) {
     const authorizedEsps = [
@@ -27,24 +28,25 @@ class EspService {
     switch (type) {
       case EspTypes.SENDINBLUE:
         return SendinBlueProvider.build({
-          apiKey: apiKey,
+          apiKey,
           data: additionalApiData,
         });
       case EspTypes.ACTITO:
         return ActitoProvider.build({
-          apiKey: apiKey,
+          apiKey,
           data: additionalApiData,
         });
       case EspTypes.DSC:
         return DscProvider.build({
-          apiKey: apiKey,
+          apiKey,
           data: additionalApiData,
         });
       case EspTypes.ADOBE:
         return AdobeProvider.build({
-          apiKey: apiKey,
-          secretKey: secretKey,
-          accessToken: accessToken,
+          apiKey,
+          secretKey,
+          accessToken,
+          user,
           data: additionalApiData,
         });
       default:
