@@ -12,6 +12,7 @@ class EspService {
     apiKey,
     secretKey,
     accessToken,
+    userId,
     additionalApiData,
   }) {
     const authorizedEsps = [
@@ -45,6 +46,7 @@ class EspService {
           apiKey: apiKey,
           secretKey: secretKey,
           accessToken: accessToken,
+          userId: userId,
           data: additionalApiData,
         });
       default:

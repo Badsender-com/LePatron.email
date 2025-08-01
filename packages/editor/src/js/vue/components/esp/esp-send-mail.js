@@ -77,6 +77,7 @@ const EspComponent = Vue.component('EspForm', {
           );
           this.folders = data.result;
         } catch (err) {
+          this.folders = [];
           console.error('Error while fetching adobe folders : ', err);
         }
       }

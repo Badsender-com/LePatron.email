@@ -1,9 +1,10 @@
 const axios = require('../../server/config/axios');
 const xmlParser = require('xml2json');
 const { InternalServerError } = require('http-errors');
-const ERROR_CODES = require('../constant/error-codes.js');
+const { createLog } = require('../../server/log/log.service');
 
 async function soapRequest({
+  userId,
   url,
   token,
   soapAction,
@@ -32,13 +33,23 @@ async function soapRequest({
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
     if (errorFromAdobe) {
-      console.error(errorFromAdobe);
-      throw new InternalServerError(ERROR_CODES.ADOBE_INTERNAL_ERROR);
+      throw new InternalServerError(errorFromAdobe.detail.$t);
     }
 
     return formatResponseFn(jsObjectFromXml);
   } catch (error) {
-    console.error('SOAP Error:', error);
+    const { response } = error;
+
+    await createLog(
+      {
+        query: xml,
+        responseStatus: response?.status || 500,
+        response: JSON.stringify(response?.data || error),
+      },
+      userId
+    );
+
+    throw error;
   }
 }
 

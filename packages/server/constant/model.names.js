@@ -9,6 +9,7 @@ module.exports = Object.freeze({
   GroupModel: 'Company',
   CacheImageModel: 'Cacheimage',
   FolderModel: 'Folder',
+  LogModel: 'Log',
   EmailsGroupModal: 'EmailsGroup',
   PersonalizedVariablesModel: 'PersonalizedVariables',
   PersonalizedBlocksModel: 'PersonalizedBlocks',

@@ -74,6 +74,11 @@ async function getAdobeFolders(req, res) {
     throw new NotFound('Missing profileId');
   }
 
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+
   const profile = await profileService.findOne(profileId);
 
   if (!profile?.additionalApiData) {
@@ -351,6 +356,7 @@ async function getCampaignMail(req, res) {
   const getCampaignMailData = await profileService.getCampaignMail({
     campaignId,
     profileId,
+    user,
   });
 
   res.send({ result: getCampaignMailData });
