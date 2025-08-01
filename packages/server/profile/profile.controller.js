@@ -87,10 +87,8 @@ async function getAdobeFolders(req, res) {
 
   const { apiKey, secretKey, accessToken } = profile;
 
-  if (!apiKey || !secretKey || !accessToken) {
-    throw new Error(
-      'Missing apiKey or secretKey or accessToken in profile data'
-    );
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
   }
 
   const adobeFoldersResult = await profileService.getAdobeFolders({
@@ -98,6 +96,7 @@ async function getAdobeFolders(req, res) {
     apiKey,
     secretKey,
     accessToken,
+    profileId,
   });
 
   res.send({ result: adobeFoldersResult });
@@ -127,16 +126,15 @@ async function getAdobeDeliveries(req, res) {
 
   const { apiKey, secretKey, accessToken } = profile;
 
-  if (!apiKey || !secretKey || !accessToken) {
-    throw new Error(
-      'Missing apiKey or secretKey or accessToken in profile data'
-    );
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
   }
 
   const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
     apiKey,
     secretKey,
     accessToken,
+    profileId,
     fullName,
   });
 

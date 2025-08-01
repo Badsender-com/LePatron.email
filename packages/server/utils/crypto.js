@@ -36,5 +36,5 @@ const getMd5FromBlob = async (blob) => {
 module.exports = {
   encrypt,
   decrypt,
-  getMd5FromBlob
+  getMd5FromBlob,
 };
