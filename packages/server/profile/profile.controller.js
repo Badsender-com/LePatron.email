@@ -93,14 +93,23 @@ async function getAdobeFolders(req, res) {
     );
   }
 
-  const adobeFoldersResult = await profileService.getAdobeFolders({
-    user,
-    apiKey,
-    secretKey,
-    accessToken,
-  });
+  try {
+    const adobeFoldersResult = await profileService.getAdobeFolders({
+      user,
+      apiKey,
+      secretKey,
+      accessToken,
+    });
 
-  res.send({ result: adobeFoldersResult });
+    res.send({ result: adobeFoldersResult });
+  } catch (error) {
+    const logId = error?.logId;
+
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -133,14 +142,22 @@ async function getAdobeDeliveries(req, res) {
     );
   }
 
-  const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
-    apiKey,
-    secretKey,
-    accessToken,
-    fullName,
-  });
+  try {
+    const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+      apiKey,
+      secretKey,
+      accessToken,
+      fullName,
+    });
+    res.send({ result: adobeDeliveriesResult });
+  } catch (error) {
+    const logId = error?.logId;
 
-  res.send({ result: adobeDeliveriesResult });
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**

@@ -177,4 +177,10 @@ module.exports = {
   'delete-block': 'Delete',
   'delete-block-success': 'Block deleted successfully',
   'delete-block-error': 'Error deleting block',
+
+  //Adobe connector modal
+  'delivery-error':
+    'An error occurred while loading deliveries. Please contact support with this ID: {logId}.',
+  'folder-error':
+    'An error occurred while loading folders. Please contact support with this ID: {logId}.',
 };

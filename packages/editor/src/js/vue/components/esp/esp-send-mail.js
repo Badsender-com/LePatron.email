@@ -39,6 +39,7 @@ const EspComponent = Vue.component('EspForm', {
     espIds: [],
     fetchedProfile: {},
     folders: [],
+    foldersError : ""
   }),
   computed: {
     espComponent() {
@@ -71,15 +72,19 @@ const EspComponent = Vue.component('EspForm', {
       this.isLoading = true;
 
       if (this.selectedProfile?.type === ESP_TYPE.ADOBE) {
-        try {
-          const { data } = await axios.get(
-            `/api/profiles/${this.selectedProfile.id}/adobe-folders`
-          );
-          this.folders = data.result;
-        } catch (err) {
+        axios.get(
+          `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+        ).then((response) => {
+          this.folders = response?.data?.result;
+        })
+        .catch ((err) => {
           this.folders = [];
-          console.error('Error while fetching adobe folders : ', err);
-        }
+          const logId = err?.response?.data?.logId;
+          let errorMessage = this.vm.t('folder-error');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+          this.vm?.notifier?.error?.(errorMessage);
+          this.foldersError = errorMessage;
+        })
       }
 
       return axios
@@ -273,6 +278,7 @@ const EspComponent = Vue.component('EspForm', {
         :campaignId="campaignId"
         :closeModal="closeModal"
         :fetchedFolders="folders"
+        :fetchedFoldersError="foldersError"
         @submit="submitEsp"
       >
       </component>
