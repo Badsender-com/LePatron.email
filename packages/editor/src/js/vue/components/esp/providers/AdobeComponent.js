@@ -96,8 +96,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         let message = this.vm.t('delivery-error');
         message = errorMessage.replace( '{logId}', logId || 'N/A' );
         this.deliveryErrorMessage = message
-        this.vm?.notifier?.error?.(message);
-
+        this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
       } finally {
         this.isDeliveryLoading = false;
         const deliveryTree = document.getElementById('delivery-tree');

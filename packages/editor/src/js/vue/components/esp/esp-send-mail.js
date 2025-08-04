@@ -82,7 +82,7 @@ const EspComponent = Vue.component('EspForm', {
           const logId = err?.response?.data?.logId;
           let errorMessage = this.vm.t('folder-error');
           errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
-          this.vm?.notifier?.error?.(errorMessage);
+          this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
           this.foldersError = errorMessage;
         })
       }

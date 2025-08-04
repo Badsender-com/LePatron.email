@@ -183,4 +183,5 @@ module.exports = {
     'An error occurred while loading deliveries. Please contact support with this ID: {logId}.',
   'folder-error':
     'An error occurred while loading folders. Please contact support with this ID: {logId}.',
+  'snackbar-error': 'An error occurred. Please try again.',
 };

@@ -189,4 +189,5 @@ module.exports = {
     "Une erreur est survenue lors du chargement des livrables. Contactez le support avec l'identifiant : {logId}.",
   'folder-error':
     "Une erreur est survenue lors du chargement des dossiers. Contactez le support avec l'identifiant : {logId}.",
+  'snackbar-error': "Une erreur s'est produite. Veuillez réessayer.",
 };
