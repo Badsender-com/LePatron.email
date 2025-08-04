@@ -170,6 +170,7 @@ async function updateEspCampaign({
   const espProvider = await EspProvider.build({
     apiKey,
     accessToken,
+    profileId,
     userId: user.id,
     type,
     name,
@@ -252,6 +253,7 @@ async function sendEspCampaign({
     apiKey,
     secretKey,
     accessToken,
+    profileId,
     userId: user.id,
     type,
     name,
@@ -391,6 +393,7 @@ async function getCampaignMail({ campaignId, profileId, user }) {
   const espProvider = await EspProvider.build({
     apiKey,
     accessToken,
+    profileId,
     userId: user.id,
     type,
     name,
@@ -427,11 +430,18 @@ async function deleteOne(profileId) {
   return Profiles.deleteOne({ _id: Types.ObjectId(profileId) });
 }
 
-async function getAdobeFolders({ user, apiKey, secretKey, accessToken }) {
+async function getAdobeFolders({
+  user,
+  apiKey,
+  secretKey,
+  accessToken,
+  profileId,
+}) {
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
     accessToken,
+    profileId,
     userId: user.id,
     type: EspTypes.ADOBE,
   });
@@ -444,6 +454,7 @@ async function getAdobeDeliveries({
   apiKey,
   secretKey,
   accessToken,
+  profileId,
   userId,
   fullName,
 }) {
@@ -451,6 +462,7 @@ async function getAdobeDeliveries({
     apiKey,
     secretKey,
     accessToken,
+    profileId,
     userId,
     type: EspTypes.ADOBE,
   });

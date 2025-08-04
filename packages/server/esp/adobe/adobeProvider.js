@@ -13,18 +13,27 @@ const {
   asyncReplace,
 } = require('../../../server/utils/download-zip-markdown.js');
 const { createLog } = require('../../../server/log/log.service.js');
+const { Profiles } = require('../../../server/common/models.common.js');
+const { Types } = require('mongoose');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, accessToken, userId, ...data }) {
+  constructor({ apiKey, secretKey, accessToken, profileId, userId, ...data }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.profileId = profileId;
     this.accessToken = accessToken;
     this.userId = userId;
     this.data = data;
   }
 
   static async build(initialData) {
-    return new AdobeProvider(initialData);
+    const provider = new AdobeProvider(initialData);
+
+    if (!initialData.accessToken) {
+      provider.accessToken = await provider.refreshToken();
+    }
+
+    return provider;
   }
 
   async connectApiCall(data) {
@@ -65,13 +74,30 @@ class AdobeProvider {
     }
   }
 
+  async refreshToken() {
+    try {
+      const espConnectionResult = await this.connectApi();
+      if (!espConnectionResult) {
+        throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+      }
+      const accessToken = espConnectionResult.data.access_token;
+
+      await Profiles.updateOne(
+        { _id: Types.ObjectId(this.profileId) },
+        { accessToken }
+      );
+
+      return accessToken;
+    } catch (err) {
+      logger.error('Error while refreshing Adobe access token', err);
+      throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+    }
+  }
+
   async getUserGroups({ user }) {
     const username = config.isDev ? config.adobeDefaultUser : user.name;
 
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -109,10 +135,7 @@ class AdobeProvider {
   async getFoldersFromGroupNames({ groupNames = [] }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
 
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery xmlns="urn:xtk:queryDef">
@@ -150,10 +173,7 @@ class AdobeProvider {
     fullName,
     internalName,
   }) {
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -225,7 +245,6 @@ class AdobeProvider {
     await this.saveDeliveryTemplate({
       deliveryLabel: name,
       internalName: adobe.deliveryInternalName,
-      accessToken: this.accessToken,
       folderFullName: adobe.folderFullName,
       contentHtml: htmlWithAdobeUrls,
     });
@@ -270,14 +289,10 @@ class AdobeProvider {
   async saveDeliveryTemplate({
     deliveryLabel,
     internalName,
-    accessToken,
     folderFullName,
     contentHtml,
   }) {
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
         <m:Write xmlns:m="urn:xtk:persist|xtk:session">
@@ -319,10 +334,7 @@ class AdobeProvider {
   }
 
   async saveDeliveryImage({ imageMd5, imageName }) {
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
         <m:Write xmlns:m="urn:xtk:persist|xtk:session">
@@ -345,10 +357,7 @@ class AdobeProvider {
   }
 
   async publishDeliveryImage({ imageMd5, imageName }) {
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:fileRes#PublishIfNeeded',
       xmlBodyRequest: `
         <m:PublishIfNeeded xmlns:m="urn:xtk:fileRes">
@@ -369,10 +378,7 @@ class AdobeProvider {
   }
 
   async getImageUrl({ imageMd5 }) {
-    return soapRequest({
-      userId: this.userId,
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:fileRes#GetURL',
       xmlBodyRequest: `
         <m:GetURL xmlns:m="urn:xtk:fileRes">
@@ -438,6 +444,21 @@ class AdobeProvider {
 
       throw e;
     }
+  }
+
+  async makeSoapRequest({ soapAction, xmlBodyRequest, formatResponseFn }) {
+    return soapRequest({
+      userId: this.userId,
+      url: config.adobeSoapRouterUrl,
+      token: this.accessToken,
+      soapAction,
+      xmlBodyRequest,
+      formatResponseFn,
+      refreshTokenFn: async () => {
+        this.accessToken = await this.refreshToken();
+        return this.accessToken;
+      },
+    });
   }
 }
 module.exports = AdobeProvider;
