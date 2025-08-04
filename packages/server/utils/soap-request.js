@@ -10,6 +10,8 @@ async function soapRequest({
   soapAction,
   xmlBodyRequest,
   formatResponseFn = (response) => response,
+  shouldRetry = true,
+  refreshTokenFn = (response) => response,
 }) {
   const xml = `
     <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -33,7 +35,28 @@ async function soapRequest({
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
     if (errorFromAdobe) {
-      throw new InternalServerError(errorFromAdobe.detail.$t);
+      const detail = errorFromAdobe.detail?.$t || '';
+
+      // If we get a 401 response, we try to refresh the token and perform the request again
+      if (
+        shouldRetry &&
+        typeof detail === 'string' &&
+        detail.includes('HTTP response code is 401')
+      ) {
+        const newToken = await refreshTokenFn();
+        return soapRequest({
+          userId,
+          url,
+          token: newToken,
+          soapAction,
+          xmlBodyRequest,
+          formatResponseFn,
+          shouldRetry: false,
+          refreshTokenFn,
+        });
+      }
+
+      throw new InternalServerError(detail || 'SOAP Fault');
     }
 
     return formatResponseFn(jsObjectFromXml);
