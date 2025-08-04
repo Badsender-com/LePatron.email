@@ -183,4 +183,11 @@ module.exports = {
   'delete-block': 'Supprimer',
   'delete-block-success': 'Bloc supprimé avec succès',
   'delete-block-error': 'Erreur lors de la suppression du bloc',
+
+  //Adobe Connector Modal
+  'delivery-error':
+    "Une erreur est survenue lors du chargement des livrables. Contactez le support avec l'identifiant : {logId}.",
+  'folder-error':
+    "Une erreur est survenue lors du chargement des dossiers. Contactez le support avec l'identifiant : {logId}.",
+  'snackbar-error': "Une erreur s'est produite. Veuillez réessayer.",
 };

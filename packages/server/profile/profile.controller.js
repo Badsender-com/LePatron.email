@@ -91,15 +91,24 @@ async function getAdobeFolders(req, res) {
     throw new Error('Missing apiKey or secretKey in profile data');
   }
 
-  const adobeFoldersResult = await profileService.getAdobeFolders({
-    user,
-    apiKey,
-    secretKey,
-    accessToken,
-    profileId,
-  });
+  try {
+    const adobeFoldersResult = await profileService.getAdobeFolders({
+      user,
+      apiKey,
+      secretKey,
+      accessToken,
+      profileId,
+    });
 
-  res.send({ result: adobeFoldersResult });
+    res.send({ result: adobeFoldersResult });
+  } catch (error) {
+    const logId = error?.logId;
+
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -130,15 +139,23 @@ async function getAdobeDeliveries(req, res) {
     throw new Error('Missing apiKey or secretKey in profile data');
   }
 
-  const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
-    apiKey,
-    secretKey,
-    accessToken,
-    profileId,
-    fullName,
-  });
+  try {
+    const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+      apiKey,
+      secretKey,
+      accessToken,
+      profileId,
+      fullName,
+    });
+    res.send({ result: adobeDeliveriesResult });
+  } catch (error) {
+    const logId = error?.logId;
 
-  res.send({ result: adobeDeliveriesResult });
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**

@@ -63,7 +63,7 @@ async function soapRequest({
   } catch (error) {
     const { response } = error;
 
-    await createLog(
+    const log = await createLog(
       {
         query: xml,
         responseStatus: response?.status || 500,
@@ -72,6 +72,7 @@ async function soapRequest({
       userId
     );
 
+    error.logId = log?.id;
     throw error;
   }
 }

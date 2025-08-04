@@ -15,6 +15,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     fetchedProfile: { type: Object, default: () => ({}) },
     type: { type: Number, default: SEND_MODE.CREATION },
     fetchedFolders: { type: Array, default: [] },
+    fetchedFoldersError: {type: String, default : ""}
   },
   data() {
     return {
@@ -27,6 +28,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       style: styleHelper,
       folders: [],
       deliveries: [],
+      deliveryErrorMessage :"",
       isFolderLoading: false,
       isDeliveryLoading: false,
     };
@@ -90,9 +92,13 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         this.deliveries = data.result;
       } catch (err) {
         console.error('Error while fetching adobe deliveries :', err);
+        const logId = err?.response?.data?.logId;
+        let message = this.vm.t('delivery-error');
+        message = errorMessage.replace( '{logId}', logId || 'N/A' );
+        this.deliveryErrorMessage = message
+        this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
       } finally {
         this.isDeliveryLoading = false;
-
         const deliveryTree = document.getElementById('delivery-tree');
         deliveryTree.dataSource = this.deliveries;
       }
@@ -111,24 +117,36 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         <div class="row">
           <div class="col s12">
             <h5>{{ vm.t('export-to') }} {{ selectedProfile.name }}</h5>
+            <p v-if="fetchedFoldersError" class="red-text text-darken-1" style="margin-top: 8px; margin-bottom: 0;  user-select: text; cursor: text;">
+              {{ fetchedFoldersError }}
+            </p>
+            <p
+              v-if="deliveryErrorMessage"
+              class="red-text text-darken-1"
+              style="margin-top: 4px; margin-bottom: 0; user-select: text; cursor: text;"
+            >
+              {{ deliveryErrorMessage }}
+            </p>
           </div>
           <form class="col s12">
             <div class="row" :style="style.mb0">
               <div style="display: flex; gap: 24px;">
                 <div style="flex: 1;">
-                  <div class="input-field col s12 adobe-label">
-                    <label>{{ vm.t('select-folder') }}</label>
+                  <div :class="fetchedFoldersError ?  'adobe-loader hide' : '' " >
+                    <div class="input-field col s12 adobe-label">
+                      <label>{{ vm.t('select-folder') }}</label>
+                    </div>
+                    <smart-tree
+                      style="width:100%"
+                      id="folder-tree"
+                      filterable
+                      scroll-mode="scrollbar"
+                      selection-mode="zeroOrOne"
+                      toggle-mode="click"
+                      @change="handleFolderChange"
+                      selection-target='leaf'
+                    />
                   </div>
-                  <smart-tree
-                    style="width:100%"
-                    id="folder-tree"
-                    filterable
-                    scroll-mode="scrollbar"
-                    selection-mode="zeroOrOne"
-                    toggle-mode="click"
-                    @change="handleFolderChange"
-                    selection-target='leaf'
-                  />
                 </div>
 
                 <div style="flex: 1;">
