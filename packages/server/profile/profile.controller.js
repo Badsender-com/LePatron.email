@@ -46,17 +46,24 @@ async function createProfile(req, res) {
     _company,
     ...additionalApiData
   } = req.body;
-  const response = await profileService.createProfile({
-    user,
-    name,
-    type,
-    apiKey,
-    secretKey,
-    _company,
-    additionalApiData,
-  });
-
-  res.json(response);
+  try {
+    const response = await profileService.createProfile({
+      user,
+      name,
+      type,
+      apiKey,
+      secretKey,
+      _company,
+      additionalApiData,
+    });
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -187,18 +194,26 @@ async function updateProfile(req, res) {
     ...additionalApiData
   } = req.body;
 
-  const response = await profileService.updateProfile({
-    user,
-    id,
-    name,
-    type,
-    apiKey,
-    secretKey,
-    _company,
-    additionalApiData,
-  });
+  try {
+    const response = await profileService.updateProfile({
+      user,
+      id,
+      name,
+      type,
+      apiKey,
+      secretKey,
+      _company,
+      additionalApiData,
+    });
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.status || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**

@@ -59,16 +59,12 @@ class AdobeProvider {
       const { config, response } = e;
       logger.error({ errorResponseData: e?.response?.data });
 
-      await createLog({
+      const log = await createLog({
         query: JSON.stringify(config),
         responseStatus: response.status,
         response: JSON.stringify(response.data),
       });
-
-      if (e?.response?.status === 500) {
-        logger.error({ errorMessage: e?.response?.data?.message });
-        throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
-      }
+      e.logId = log?.id;
 
       throw e;
     }
@@ -89,8 +85,17 @@ class AdobeProvider {
 
       return accessToken;
     } catch (err) {
-      logger.error('Error while refreshing Adobe access token', err);
-      throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+      const { config, response } = err;
+      logger.error({ errorResponseData: err?.response?.data });
+
+      const log = await createLog({
+        query: JSON.stringify(config),
+        responseStatus: response.status,
+        response: JSON.stringify(response.data),
+      });
+      err.logId = log?.id;
+
+      throw err;
     }
   }
 

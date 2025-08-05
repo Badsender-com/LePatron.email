@@ -94,7 +94,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
         console.error('Error while fetching adobe deliveries :', err);
         const logId = err?.response?.data?.logId;
         let message = this.vm.t('delivery-error');
-        message = errorMessage.replace( '{logId}', logId || 'N/A' );
+        message = message.replace( '{logId}', logId || 'N/A' );
         this.deliveryErrorMessage = message
         this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
       } finally {
