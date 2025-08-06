@@ -59,7 +59,7 @@ async function createProfile(req, res) {
     res.json(response);
   } catch (error) {
     const logId = error.logId;
-    res.status(error.status || 500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message || 'Erreur serveur',
       ...(logId ? { logId } : {}),
     });
@@ -111,7 +111,7 @@ async function getAdobeFolders(req, res) {
   } catch (error) {
     const logId = error?.logId;
 
-    res.status(error.status || 500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message || 'Erreur serveur',
       ...(logId ? { logId } : {}),
     });
@@ -158,7 +158,7 @@ async function getAdobeDeliveries(req, res) {
   } catch (error) {
     const logId = error?.logId;
 
-    res.status(error.status || 500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message || 'Erreur serveur',
       ...(logId ? { logId } : {}),
     });
@@ -209,7 +209,7 @@ async function updateProfile(req, res) {
     res.json(response);
   } catch (error) {
     const logId = error.logId;
-    res.status(error.status || 500).json({
+    res.status(error.statusCode || 500).json({
       message: error.message || 'Erreur serveur',
       ...(logId ? { logId } : {}),
     });
