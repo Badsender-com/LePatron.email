@@ -59,16 +59,30 @@ class AdobeProvider {
       const { config, response } = e;
       logger.error({ errorResponseData: e?.response?.data });
 
-      await createLog({
+      if (e?.response?.status === 400) {
+        if (
+          e?.response?.data?.error_description === 'invalid client_id parameter'
+        ) {
+          const error = new Error(ERROR_CODES.ADOBE_INVALID_CLIENT);
+          error.statusCode = 400;
+          throw error;
+        }
+        if (
+          e?.response?.data?.error_description ===
+          'invalid client_secret parameter'
+        ) {
+          const error = new Error(ERROR_CODES.ADOBE_INVALID_SECRET);
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+      const log = await createLog({
         query: JSON.stringify(config),
         responseStatus: response.status,
         response: JSON.stringify(response.data),
       });
 
-      if (e?.response?.status === 500) {
-        logger.error({ errorMessage: e?.response?.data?.message });
-        throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
-      }
+      e.logId = log?.id;
 
       throw e;
     }
@@ -89,8 +103,35 @@ class AdobeProvider {
 
       return accessToken;
     } catch (err) {
-      logger.error('Error while refreshing Adobe access token', err);
-      throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
+      const { config, response } = err;
+      logger.error({ errorResponseData: err?.response?.data });
+
+      if (err?.response?.status === 400) {
+        if (
+          err?.response?.data?.error_description ===
+          'invalid client_id parameter'
+        ) {
+          const error = new Error(ERROR_CODES.ADOBE_INVALID_CLIENT);
+          error.statusCode = 400;
+          throw error;
+        }
+        if (
+          err?.response?.data?.error_description ===
+          'invalid client_secret parameter'
+        ) {
+          const error = new Error(ERROR_CODES.ADOBE_INVALID_SECRET);
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+      const log = await createLog({
+        query: JSON.stringify(config || {}),
+        responseStatus: response?.status || 500,
+        response: JSON.stringify(response?.data || {}),
+      });
+      err.logId = log?.id;
+
+      throw err;
     }
   }
 
