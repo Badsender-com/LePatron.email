@@ -56,35 +56,20 @@ class AdobeProvider {
       const emailCampaignConnectionResult = await this.connectApiCall(data);
       return emailCampaignConnectionResult;
     } catch (e) {
-      const { config, response } = e;
-      logger.error({ errorResponseData: e?.response?.data });
-
       if (e?.response?.status === 400) {
         if (
           e?.response?.data?.error_description === 'invalid client_id parameter'
         ) {
-          const error = new Error(ERROR_CODES.ADOBE_INVALID_CLIENT);
-          error.statusCode = 400;
-          throw error;
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_CLIENT);
         }
         if (
           e?.response?.data?.error_description ===
           'invalid client_secret parameter'
         ) {
-          const error = new Error(ERROR_CODES.ADOBE_INVALID_SECRET);
-          error.statusCode = 400;
-          throw error;
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_SECRET);
         }
       }
-      const log = await createLog({
-        query: JSON.stringify(config),
-        responseStatus: response.status,
-        response: JSON.stringify(response.data),
-      });
-
-      e.logId = log?.id;
-
-      throw e;
+      await this.handleAdobeError(e, ERROR_CODES.ADOBE_INTERNAL_ERROR);
     }
   }
 
@@ -102,36 +87,21 @@ class AdobeProvider {
       );
 
       return accessToken;
-    } catch (err) {
-      const { config, response } = err;
-      logger.error({ errorResponseData: err?.response?.data });
-
-      if (err?.response?.status === 400) {
+    } catch (e) {
+      if (e?.response?.status === 400) {
         if (
-          err?.response?.data?.error_description ===
-          'invalid client_id parameter'
+          e?.response?.data?.error_description === 'invalid client_id parameter'
         ) {
-          const error = new Error(ERROR_CODES.ADOBE_INVALID_CLIENT);
-          error.statusCode = 400;
-          throw error;
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_CLIENT);
         }
         if (
-          err?.response?.data?.error_description ===
+          e?.response?.data?.error_description ===
           'invalid client_secret parameter'
         ) {
-          const error = new Error(ERROR_CODES.ADOBE_INVALID_SECRET);
-          error.statusCode = 400;
-          throw error;
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_SECRET);
         }
       }
-      const log = await createLog({
-        query: JSON.stringify(config || {}),
-        responseStatus: response?.status || 500,
-        response: JSON.stringify(response?.data || {}),
-      });
-      err.logId = log?.id;
-
-      throw err;
+      await this.handleAdobeError(e, ERROR_CODES.ADOBE_INTERNAL_ERROR);
     }
   }
 
@@ -281,16 +251,25 @@ class AdobeProvider {
   async createCampaignMail({ campaignMailData, html }) {
     const { name, adobe } = campaignMailData;
 
-    const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({ html });
+    try {
+      const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
+        html,
+      });
 
-    await this.saveDeliveryTemplate({
-      deliveryLabel: name,
-      internalName: adobe.deliveryInternalName,
-      folderFullName: adobe.folderFullName,
-      contentHtml: htmlWithAdobeUrls,
-    });
+      await this.saveDeliveryTemplate({
+        deliveryLabel: name,
+        internalName: adobe.deliveryInternalName,
+        folderFullName: adobe.folderFullName,
+        contentHtml: htmlWithAdobeUrls,
+      });
 
-    return name;
+      return name;
+    } catch (error) {
+      await this.handleAdobeError(
+        error,
+        ERROR_CODES.ADOBE_CREATE_CAMPAIGN_MAIL_ERROR
+      );
+    }
   }
 
   async sendAndProcessImageIntoAdobe({ html }) {
@@ -307,20 +286,46 @@ class AdobeProvider {
 
         const md5 = await getMd5FromBlob(blob);
 
-        await this.uploadDeliveryImage({
-          image: blob.stream(),
-          optionImg: {
-            filename: imageName,
-            contentType: blob.type,
-            knownLength: await blob.size,
-          },
-        });
-        await this.saveDeliveryImage({ imageMd5: md5, imageName });
-        await this.publishDeliveryImage({ imageMd5: md5, imageName });
+        try {
+          await this.uploadDeliveryImage({
+            image: blob.stream(),
+            optionImg: {
+              filename: imageName,
+              contentType: blob.type,
+              knownLength: await blob.size,
+            },
+          });
+        } catch (uploadError) {
+          await this.handleAdobeError(
+            uploadError,
+            ERROR_CODES.ADOBE_UPLOAD_ERROR
+          );
+        }
 
-        const url = await this.getImageUrl({ imageMd5: md5 });
+        try {
+          await this.saveDeliveryImage({ imageMd5: md5, imageName });
+        } catch (saveError) {
+          await this.handleAdobeError(saveError, ERROR_CODES.ADOBE_SAVE_ERROR);
+        }
 
-        return `${url}${tag}`;
+        try {
+          await this.publishDeliveryImage({ imageMd5: md5, imageName });
+        } catch (publishError) {
+          await this.handleAdobeError(
+            publishError,
+            ERROR_CODES.ADOBE_PUBLISH_ERROR
+          );
+        }
+
+        try {
+          const url = await this.getImageUrl({ imageMd5: md5 });
+          return `${url}${tag}`;
+        } catch (getImageError) {
+          await this.handleAdobeError(
+            getImageError,
+            ERROR_CODES.ADOBE_GET_IMAGE_URL_ERROR
+          );
+        }
       }
     );
 
@@ -336,25 +341,42 @@ class AdobeProvider {
     return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
-        <m:Write xmlns:m="urn:xtk:persist|xtk:session">
-          <sessiontoken></sessiontoken>
-          <domDoc xsi:type='ns:Element'>
-            <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
-              <content>
-                <html>
-                  <source>
-                    <![CDATA[
-                      ${contentHtml}
-                    ]]>
-                  </source>
-                </html>
-              </content>
-              <folder fullName="${folderFullName}" />
-            </delivery>
-          </domDoc>
-        </m:Write>
-      `,
+      <m:Write xmlns:m="urn:xtk:persist|xtk:session">
+        <sessiontoken></sessiontoken>
+        <domDoc xsi:type='ns:Element'>
+          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
+            <content>
+              <html>
+                <source>
+                  <![CDATA[
+                    ${contentHtml}
+                  ]]>
+                </source>
+              </html>
+            </content>
+            <folder fullName="${folderFullName}" />
+          </delivery>
+        </domDoc>
+      </m:Write>
+    `,
     });
+  }
+
+  async handleAdobeError(error, errorCode) {
+    const { config, response } = error;
+    logger.error({
+      errorResponseData: error?.response?.data,
+    });
+
+    const log = await createLog({
+      query: JSON.stringify(config),
+      responseStatus: response?.status,
+      response: JSON.stringify(response?.data),
+    });
+
+    error.logId = log?.id;
+    error.message = errorCode;
+    throw error;
   }
 
   async uploadDeliveryImage({ image, optionImg }) {

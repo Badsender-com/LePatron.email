@@ -250,6 +250,19 @@ const EspComponent = Vue.component('EspForm', {
         }
       }
 
+      if(errorData.message === 'ADOBE_UPLOAD_ERROR'){
+        return 'uploadError'
+      }
+      if(errorData.message === 'ADOBE_SAVE_ERROR'){
+        return 'saveError'
+      }
+      if(errorData.message === 'ADOBE_PUBLISH_ERROR'){
+        return 'publishError'
+      }
+      if(errorData.message === 'ADOBE_GET_IMAGE_URL_ERROR'){
+        return 'getImageUrlError'
+      }
+
       // Standard error message keys for known status codes
       const handledErrorCodes = {
         400: 'error-server-400',

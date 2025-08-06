@@ -127,6 +127,11 @@ module.exports = {
   'supported-language': 'Supported language',
   'target-table': 'Target table',
   'encoding-type': 'Encoding type',
+  uploadError: 'An error has occured while uploading the images.',
+  saveError: 'An error has occured while saving.',
+  publishError: 'An error has occured while publishing.',
+  getImageUrlError: 'An error has occured while getting images url.',
+
   entity: 'Entity',
 
   // Additional error messages from the handleError function
