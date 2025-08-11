@@ -39,7 +39,8 @@ const EspComponent = Vue.component('EspForm', {
     espIds: [],
     fetchedProfile: {},
     folders: [],
-    foldersError : ""
+    foldersError : "",
+    exportError: "",
   }),
   computed: {
     espComponent() {
@@ -230,6 +231,12 @@ const EspComponent = Vue.component('EspForm', {
           // Fallback to previous error handling
           const errorMessageKey = this.getErrorMessageKeyFromError(error);
           this.vm.notifier.error(this.vm.t(errorMessageKey));
+
+          const logId = error?.response?.data?.logId;
+          let errorMessage = this.vm.t('exportError');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+
+          this.exportError = this.vm.t(errorMessageKey)+' '+errorMessage;
         })
         .finally(() => {
           this.isLoadingExport = false;
@@ -292,6 +299,7 @@ const EspComponent = Vue.component('EspForm', {
         :closeModal="closeModal"
         :fetchedFolders="folders"
         :fetchedFoldersError="foldersError"
+        :exportError="exportError"
         @submit="submitEsp"
       >
       </component>

@@ -251,25 +251,18 @@ class AdobeProvider {
   async createCampaignMail({ campaignMailData, html }) {
     const { name, adobe } = campaignMailData;
 
-    try {
-      const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
-        html,
-      });
+    const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
+      html,
+    });
 
-      await this.saveDeliveryTemplate({
-        deliveryLabel: name,
-        internalName: adobe.deliveryInternalName,
-        folderFullName: adobe.folderFullName,
-        contentHtml: htmlWithAdobeUrls,
-      });
+    await this.saveDeliveryTemplate({
+      deliveryLabel: name,
+      internalName: adobe.deliveryInternalName,
+      folderFullName: adobe.folderFullName,
+      contentHtml: htmlWithAdobeUrls,
+    });
 
-      return name;
-    } catch (error) {
-      await this.handleAdobeError(
-        error,
-        ERROR_CODES.ADOBE_CREATE_CAMPAIGN_MAIL_ERROR
-      );
-    }
+    return name;
   }
 
   async sendAndProcessImageIntoAdobe({ html }) {
@@ -375,7 +368,7 @@ class AdobeProvider {
     });
 
     error.logId = log?.id;
-    error.message = errorCode;
+    error.response.data.message = errorCode;
     throw error;
   }
 
