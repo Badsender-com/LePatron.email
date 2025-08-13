@@ -128,6 +128,13 @@ module.exports = {
   'supported-language': 'Langue',
   'target-table': 'Table cible',
   'encoding-type': "Type d'encodage",
+  uploadError: "Une erreur s'est produite lors de l'upload.",
+  saveError: "Une erreur s'est produite lors de la sauvegarde.",
+  exportError: "Contactez le support avec l'identifiant : {logId}.",
+  publishError: "Une erreur s'est produite lors de la publication.",
+  getImageUrlError:
+    "Une erreur s'est produite lors de la récupération de l'url des images.",
+
   entity: 'Entité',
 
   // Additional error messages from the handleError function

@@ -258,16 +258,24 @@ async function sendCampaignMail(req, res) {
     type,
   };
 
-  if (actionType === MODE_TYPE.EDIT) {
-    response = await profileService.updateEspCampaign({
-      ...communEspApiFields,
-      campaignId,
-    });
-  } else {
-    response = await profileService.sendEspCampaign(communEspApiFields);
-  }
+  try {
+    if (actionType === MODE_TYPE.EDIT) {
+      response = await profileService.updateEspCampaign({
+        ...communEspApiFields,
+        campaignId,
+      });
+    } else {
+      response = await profileService.sendEspCampaign(communEspApiFields);
+    }
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.response.data.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**

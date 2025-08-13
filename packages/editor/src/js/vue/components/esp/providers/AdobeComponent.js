@@ -15,7 +15,9 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     fetchedProfile: { type: Object, default: () => ({}) },
     type: { type: Number, default: SEND_MODE.CREATION },
     fetchedFolders: { type: Array, default: [] },
-    fetchedFoldersError: {type: String, default : ""}
+    fetchedFoldersError: {type: String, default : ""},
+    exportError: {type: String, default : ""}
+
   },
   data() {
     return {
@@ -126,6 +128,9 @@ const AdobeComponent = Vue.component('AdobeComponent', {
               style="margin-top: 4px; margin-bottom: 0; user-select: text; cursor: text;"
             >
               {{ deliveryErrorMessage }}
+            </p>
+            <p v-if="exportError" class="red-text text-darken-1" style="margin-top: 8px; margin-bottom: 0;  user-select: text; cursor: text;">
+              {{ exportError }}
             </p>
           </div>
           <form class="col s12">

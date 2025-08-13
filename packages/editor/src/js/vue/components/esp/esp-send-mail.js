@@ -39,7 +39,8 @@ const EspComponent = Vue.component('EspForm', {
     espIds: [],
     fetchedProfile: {},
     folders: [],
-    foldersError : ""
+    foldersError : "",
+    exportError: "",
   }),
   computed: {
     espComponent() {
@@ -230,6 +231,12 @@ const EspComponent = Vue.component('EspForm', {
           // Fallback to previous error handling
           const errorMessageKey = this.getErrorMessageKeyFromError(error);
           this.vm.notifier.error(this.vm.t(errorMessageKey));
+
+          const logId = error?.response?.data?.logId;
+          let errorMessage = this.vm.t('exportError');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+
+          this.exportError = this.vm.t(errorMessageKey)+' '+errorMessage;
         })
         .finally(() => {
           this.isLoadingExport = false;
@@ -248,6 +255,19 @@ const EspComponent = Vue.component('EspForm', {
         if (errorData.includes('La combinaison code campagne')) {
           return 'error-invalid-campaign-combination';
         }
+      }
+
+      if(errorData.message === 'ADOBE_UPLOAD_ERROR'){
+        return 'uploadError'
+      }
+      if(errorData.message === 'ADOBE_SAVE_ERROR'){
+        return 'saveError'
+      }
+      if(errorData.message === 'ADOBE_PUBLISH_ERROR'){
+        return 'publishError'
+      }
+      if(errorData.message === 'ADOBE_GET_IMAGE_URL_ERROR'){
+        return 'getImageUrlError'
       }
 
       // Standard error message keys for known status codes
@@ -279,6 +299,7 @@ const EspComponent = Vue.component('EspForm', {
         :closeModal="closeModal"
         :fetchedFolders="folders"
         :fetchedFoldersError="foldersError"
+        :exportError="exportError"
         @submit="submitEsp"
       >
       </component>
