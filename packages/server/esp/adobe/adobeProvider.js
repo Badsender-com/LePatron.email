@@ -12,28 +12,31 @@ const FormData = require('form-data');
 const {
   asyncReplace,
 } = require('../../../server/utils/download-zip-markdown.js');
+const { createLog } = require('../../../server/log/log.service.js');
+const { Profiles } = require('../../../server/common/models.common.js');
+const { Types } = require('mongoose');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, accessToken, ...data }) {
+  constructor({ apiKey, secretKey, accessToken, profileId, userId, ...data }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.profileId = profileId;
     this.accessToken = accessToken;
+    this.userId = userId;
     this.data = data;
   }
 
   static async build(initialData) {
-    return new AdobeProvider(initialData);
+    const provider = new AdobeProvider(initialData);
+
+    if (!initialData.accessToken) {
+      provider.accessToken = await provider.refreshToken();
+    }
+
+    return provider;
   }
 
-  async connectApiCall() {
-    const data = qs.stringify({
-      client_id: this.apiKey,
-      client_secret: this.secretKey,
-      grant_type: 'client_credentials',
-      scope:
-        'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
-    });
-
+  async connectApiCall(data) {
     return axios.post(`${config.adobeImsUrl}/ims/token/v3`, data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -42,29 +45,70 @@ class AdobeProvider {
   }
 
   async connectApi() {
+    const data = qs.stringify({
+      client_id: this.apiKey,
+      client_secret: this.secretKey,
+      grant_type: 'client_credentials',
+      scope:
+        'AdobeID,openid,read_organizations,additional_info.projectedProductContext,additional_info.roles,adobeio_api,read_client_secret,manage_client_secrets,campaign_sdk,campaign_config_server_general,deliverability_service_general',
+    });
     try {
-      console.log('ADOBE CONNECT API');
-      const emailCampaignConnectionResult = await this.connectApiCall();
+      const emailCampaignConnectionResult = await this.connectApiCall(data);
       return emailCampaignConnectionResult;
     } catch (e) {
-      logger.error({ errorResponseData: e?.response?.data });
+      if (e?.response?.status === 400) {
+        if (
+          e?.response?.data?.error_description === 'invalid client_id parameter'
+        ) {
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_CLIENT);
+        }
+        if (
+          e?.response?.data?.error_description ===
+          'invalid client_secret parameter'
+        ) {
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_SECRET);
+        }
+      }
+      await this.handleAdobeError(e, ERROR_CODES.ADOBE_INTERNAL_ERROR);
+    }
+  }
 
-      if (e?.response?.status === 500) {
-        logger.error({ errorMessage: e?.response?.data?.message });
+  async refreshToken() {
+    try {
+      const espConnectionResult = await this.connectApi();
+      if (!espConnectionResult) {
         throw new InternalServerError(ERROR_CODES.UNEXPECTED_SERVER_ERROR);
       }
+      const accessToken = espConnectionResult.data.access_token;
 
-      logger.error({ Error: e?.response?.data?.message });
-      throw e;
+      await Profiles.updateOne(
+        { _id: Types.ObjectId(this.profileId) },
+        { accessToken }
+      );
+
+      return accessToken;
+    } catch (e) {
+      if (e?.response?.status === 400) {
+        if (
+          e?.response?.data?.error_description === 'invalid client_id parameter'
+        ) {
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_CLIENT);
+        }
+        if (
+          e?.response?.data?.error_description ===
+          'invalid client_secret parameter'
+        ) {
+          await this.handleAdobeError(e, ERROR_CODES.ADOBE_INVALID_SECRET);
+        }
+      }
+      await this.handleAdobeError(e, ERROR_CODES.ADOBE_INTERNAL_ERROR);
     }
   }
 
   async getUserGroups({ user }) {
     const username = config.isDev ? config.adobeDefaultUser : user.name;
 
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -102,9 +146,7 @@ class AdobeProvider {
   async getFoldersFromGroupNames({ groupNames = [] }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
 
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery xmlns="urn:xtk:queryDef">
@@ -142,9 +184,7 @@ class AdobeProvider {
     fullName,
     internalName,
   }) {
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
       xmlBodyRequest: `
         <ExecuteQuery
@@ -211,12 +251,13 @@ class AdobeProvider {
   async createCampaignMail({ campaignMailData, html }) {
     const { name, adobe } = campaignMailData;
 
-    const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({ html });
+    const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
+      html,
+    });
 
     await this.saveDeliveryTemplate({
       deliveryLabel: name,
       internalName: adobe.deliveryInternalName,
-      accessToken: this.accessToken,
       folderFullName: adobe.folderFullName,
       contentHtml: htmlWithAdobeUrls,
     });
@@ -238,20 +279,46 @@ class AdobeProvider {
 
         const md5 = await getMd5FromBlob(blob);
 
-        await this.uploadDeliveryImage({
-          image: blob.stream(),
-          optionImg: {
-            filename: imageName,
-            contentType: blob.type,
-            knownLength: await blob.size,
-          },
-        });
-        await this.saveDeliveryImage({ imageMd5: md5, imageName });
-        await this.publishDeliveryImage({ imageMd5: md5, imageName });
+        try {
+          await this.uploadDeliveryImage({
+            image: blob.stream(),
+            optionImg: {
+              filename: imageName,
+              contentType: blob.type,
+              knownLength: await blob.size,
+            },
+          });
+        } catch (uploadError) {
+          await this.handleAdobeError(
+            uploadError,
+            ERROR_CODES.ADOBE_UPLOAD_ERROR
+          );
+        }
 
-        const url = await this.getImageUrl({ imageMd5: md5 });
+        try {
+          await this.saveDeliveryImage({ imageMd5: md5, imageName });
+        } catch (saveError) {
+          await this.handleAdobeError(saveError, ERROR_CODES.ADOBE_SAVE_ERROR);
+        }
 
-        return `${url}${tag}`;
+        try {
+          await this.publishDeliveryImage({ imageMd5: md5, imageName });
+        } catch (publishError) {
+          await this.handleAdobeError(
+            publishError,
+            ERROR_CODES.ADOBE_PUBLISH_ERROR
+          );
+        }
+
+        try {
+          const url = await this.getImageUrl({ imageMd5: md5 });
+          return `${url}${tag}`;
+        } catch (getImageError) {
+          await this.handleAdobeError(
+            getImageError,
+            ERROR_CODES.ADOBE_GET_IMAGE_URL_ERROR
+          );
+        }
       }
     );
 
@@ -261,34 +328,48 @@ class AdobeProvider {
   async saveDeliveryTemplate({
     deliveryLabel,
     internalName,
-    accessToken,
     folderFullName,
     contentHtml,
   }) {
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
-        <m:Write xmlns:m="urn:xtk:persist|xtk:session">
-          <sessiontoken></sessiontoken>
-          <domDoc xsi:type='ns:Element'>
-            <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
-              <content>
-                <html>
-                  <source>
-                    <![CDATA[
-                      ${contentHtml}
-                    ]]>
-                  </source>
-                </html>
-              </content>
-              <folder fullName="${folderFullName}" />
-            </delivery>
-          </domDoc>
-        </m:Write>
-      `,
+      <m:Write xmlns:m="urn:xtk:persist|xtk:session">
+        <sessiontoken></sessiontoken>
+        <domDoc xsi:type='ns:Element'>
+          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
+            <content>
+              <html>
+                <source>
+                  <![CDATA[
+                    ${contentHtml}
+                  ]]>
+                </source>
+              </html>
+            </content>
+            <folder fullName="${folderFullName}" />
+          </delivery>
+        </domDoc>
+      </m:Write>
+    `,
     });
+  }
+
+  async handleAdobeError(error, errorCode) {
+    const { config, response } = error;
+    logger.error({
+      errorResponseData: error?.response?.data,
+    });
+
+    const log = await createLog({
+      query: JSON.stringify(config),
+      responseStatus: response?.status,
+      response: JSON.stringify(response?.data),
+    });
+
+    error.logId = log?.id;
+    error.response.data.message = errorCode;
+    throw error;
   }
 
   async uploadDeliveryImage({ image, optionImg }) {
@@ -309,9 +390,7 @@ class AdobeProvider {
   }
 
   async saveDeliveryImage({ imageMd5, imageName }) {
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
         <m:Write xmlns:m="urn:xtk:persist|xtk:session">
@@ -334,9 +413,7 @@ class AdobeProvider {
   }
 
   async publishDeliveryImage({ imageMd5, imageName }) {
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:fileRes#PublishIfNeeded',
       xmlBodyRequest: `
         <m:PublishIfNeeded xmlns:m="urn:xtk:fileRes">
@@ -357,9 +434,7 @@ class AdobeProvider {
   }
 
   async getImageUrl({ imageMd5 }) {
-    return soapRequest({
-      url: config.adobeSoapRouterUrl,
-      token: this.accessToken,
+    return this.makeSoapRequest({
       soapAction: 'xtk:fileRes#GetURL',
       xmlBodyRequest: `
         <m:GetURL xmlns:m="urn:xtk:fileRes">
@@ -425,6 +500,21 @@ class AdobeProvider {
 
       throw e;
     }
+  }
+
+  async makeSoapRequest({ soapAction, xmlBodyRequest, formatResponseFn }) {
+    return soapRequest({
+      userId: this.userId,
+      url: config.adobeSoapRouterUrl,
+      token: this.accessToken,
+      soapAction,
+      xmlBodyRequest,
+      formatResponseFn,
+      refreshTokenFn: async () => {
+        this.accessToken = await this.refreshToken();
+        return this.accessToken;
+      },
+    });
   }
 }
 module.exports = AdobeProvider;

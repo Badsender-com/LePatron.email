@@ -220,6 +220,11 @@ export default {
         apiKey: {
           unauthorized: 'The provided API key is not allowed :(',
         },
+        default : 'An error occurred. Please try again.',
+        creation : 'An error occurred while creating the connector. Please contact support with this ID: {logId}.',
+        update : 'An error occurred while updating the connector. Please contact support with this ID: {logId}.',
+        invalidClient : 'Invalid API Key.',
+        invalidSecret : 'Invalid Secret Key.'
       },
     },
   },

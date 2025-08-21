@@ -39,6 +39,8 @@ const EspComponent = Vue.component('EspForm', {
     espIds: [],
     fetchedProfile: {},
     folders: [],
+    foldersError : "",
+    exportError: "",
   }),
   computed: {
     espComponent() {
@@ -71,14 +73,19 @@ const EspComponent = Vue.component('EspForm', {
       this.isLoading = true;
 
       if (this.selectedProfile?.type === ESP_TYPE.ADOBE) {
-        try {
-          const { data } = await axios.get(
-            `/api/profiles/${this.selectedProfile.id}/adobe-folders`
-          );
-          this.folders = data.result;
-        } catch (err) {
-          console.error('Error while fetching adobe folders : ', err);
-        }
+        axios.get(
+          `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+        ).then((response) => {
+          this.folders = response?.data?.result;
+        })
+        .catch ((err) => {
+          this.folders = [];
+          const logId = err?.response?.data?.logId;
+          let errorMessage = this.vm.t('folder-error');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+          this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
+          this.foldersError = errorMessage;
+        })
       }
 
       return axios
@@ -224,6 +231,12 @@ const EspComponent = Vue.component('EspForm', {
           // Fallback to previous error handling
           const errorMessageKey = this.getErrorMessageKeyFromError(error);
           this.vm.notifier.error(this.vm.t(errorMessageKey));
+
+          const logId = error?.response?.data?.logId;
+          let errorMessage = this.vm.t('exportError');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+
+          this.exportError = this.vm.t(errorMessageKey)+' '+errorMessage;
         })
         .finally(() => {
           this.isLoadingExport = false;
@@ -242,6 +255,19 @@ const EspComponent = Vue.component('EspForm', {
         if (errorData.includes('La combinaison code campagne')) {
           return 'error-invalid-campaign-combination';
         }
+      }
+
+      if(errorData.message === 'ADOBE_UPLOAD_ERROR'){
+        return 'uploadError'
+      }
+      if(errorData.message === 'ADOBE_SAVE_ERROR'){
+        return 'saveError'
+      }
+      if(errorData.message === 'ADOBE_PUBLISH_ERROR'){
+        return 'publishError'
+      }
+      if(errorData.message === 'ADOBE_GET_IMAGE_URL_ERROR'){
+        return 'getImageUrlError'
       }
 
       // Standard error message keys for known status codes
@@ -272,6 +298,8 @@ const EspComponent = Vue.component('EspForm', {
         :campaignId="campaignId"
         :closeModal="closeModal"
         :fetchedFolders="folders"
+        :fetchedFoldersError="foldersError"
+        :exportError="exportError"
         @submit="submitEsp"
       >
       </component>

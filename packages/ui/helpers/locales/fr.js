@@ -220,6 +220,13 @@ export default {
         apiKey: {
           unauthorized: 'La clé API fournie n\'est pas autorisée :(',
         },
+        default:
+           'Une erreur s\'est produite. Veuillez réessayer.',
+        creation :
+            'Une erreur est survenue lors de la création du connecteur. Contactez le support avec l\'identifiant : {logId}.',
+        update : 'Une erreur est survenue lors de la modification du connecteur. Contactez le support avec l\'identifiant : {logId}.',
+        invalidClient : 'Clé api invalide.',
+        invalidSecret : 'Clé secrète invalide.'
       },
     },
   },

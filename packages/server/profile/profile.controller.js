@@ -46,17 +46,24 @@ async function createProfile(req, res) {
     _company,
     ...additionalApiData
   } = req.body;
-  const response = await profileService.createProfile({
-    user,
-    name,
-    type,
-    apiKey,
-    secretKey,
-    _company,
-    additionalApiData,
-  });
-
-  res.json(response);
+  try {
+    const response = await profileService.createProfile({
+      user,
+      name,
+      type,
+      apiKey,
+      secretKey,
+      _company,
+      additionalApiData,
+    });
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -74,6 +81,11 @@ async function getAdobeFolders(req, res) {
     throw new NotFound('Missing profileId');
   }
 
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
+  });
+
   const profile = await profileService.findOne(profileId);
 
   if (!profile?.additionalApiData) {
@@ -82,20 +94,28 @@ async function getAdobeFolders(req, res) {
 
   const { apiKey, secretKey, accessToken } = profile;
 
-  if (!apiKey || !secretKey || !accessToken) {
-    throw new Error(
-      'Missing apiKey or secretKey or accessToken in profile data'
-    );
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
   }
 
-  const adobeFoldersResult = await profileService.getAdobeFolders({
-    user,
-    apiKey,
-    secretKey,
-    accessToken,
-  });
+  try {
+    const adobeFoldersResult = await profileService.getAdobeFolders({
+      user,
+      apiKey,
+      secretKey,
+      accessToken,
+      profileId,
+    });
 
-  res.send({ result: adobeFoldersResult });
+    res.send({ result: adobeFoldersResult });
+  } catch (error) {
+    const logId = error?.logId;
+
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -122,20 +142,27 @@ async function getAdobeDeliveries(req, res) {
 
   const { apiKey, secretKey, accessToken } = profile;
 
-  if (!apiKey || !secretKey || !accessToken) {
-    throw new Error(
-      'Missing apiKey or secretKey or accessToken in profile data'
-    );
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
   }
 
-  const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
-    apiKey,
-    secretKey,
-    accessToken,
-    fullName,
-  });
+  try {
+    const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+      apiKey,
+      secretKey,
+      accessToken,
+      profileId,
+      fullName,
+    });
+    res.send({ result: adobeDeliveriesResult });
+  } catch (error) {
+    const logId = error?.logId;
 
-  res.send({ result: adobeDeliveriesResult });
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -167,18 +194,26 @@ async function updateProfile(req, res) {
     ...additionalApiData
   } = req.body;
 
-  const response = await profileService.updateProfile({
-    user,
-    id,
-    name,
-    type,
-    apiKey,
-    secretKey,
-    _company,
-    additionalApiData,
-  });
+  try {
+    const response = await profileService.updateProfile({
+      user,
+      id,
+      name,
+      type,
+      apiKey,
+      secretKey,
+      _company,
+      additionalApiData,
+    });
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -223,16 +258,24 @@ async function sendCampaignMail(req, res) {
     type,
   };
 
-  if (actionType === MODE_TYPE.EDIT) {
-    response = await profileService.updateEspCampaign({
-      ...communEspApiFields,
-      campaignId,
-    });
-  } else {
-    response = await profileService.sendEspCampaign(communEspApiFields);
-  }
+  try {
+    if (actionType === MODE_TYPE.EDIT) {
+      response = await profileService.updateEspCampaign({
+        ...communEspApiFields,
+        campaignId,
+      });
+    } else {
+      response = await profileService.sendEspCampaign(communEspApiFields);
+    }
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.response.data.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -351,6 +394,7 @@ async function getCampaignMail(req, res) {
   const getCampaignMailData = await profileService.getCampaignMail({
     campaignId,
     profileId,
+    user,
   });
 
   res.send({ result: getCampaignMailData });
