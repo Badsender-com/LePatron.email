@@ -115,6 +115,28 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   template: `
     <div>
+      <!-- Overlay global si en cours de loading -->
+      <div v-if="isLoading" class="loading-overlay">
+        <div style="text-align:center;">
+          <div class="preloader-wrapper big active">
+            <div class="spinner-layer spinner-blue-only">
+              <div class="circle-clipper left">
+                <div class="circle"></div>
+              </div>
+              <div class="gap-patch">
+                <div class="circle"></div>
+              </div>
+              <div class="circle-clipper right">
+                <div class="circle"></div>
+              </div>
+            </div>
+          </div>
+          <p style="margin-top:16px; font-size:16px; color:#1976d2;">
+            {{ vm.t('exporting-in-progress') }}, {{ vm.t('please-wait') }}
+          </p>
+        </div>
+      </div>
+      <!-- Modal Content -->
       <div class="modal-content">
         <div class="row">
           <div class="col s12">
@@ -150,6 +172,8 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                       toggle-mode="click"
                       @change="handleFolderChange"
                       selection-target='leaf'
+                      :disabled="isLoading"
+                      :style="isLoading ? 'pointer-events: none; opacity: 0.6;' : ''"
                     />
                   </div>
                 </div>
@@ -182,6 +206,8 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                     toggle-mode="click"
                     @change="handleDeliveryChange"
                     selection-target='leaf'
+                    :disabled="isLoading"
+                    :style="isLoading ? 'pointer-events: none; opacity: 0.6;' : ''"
                   />
                   </div>
                 </div>
@@ -192,6 +218,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       </div>
       <div class="modal-footer">
         <button
+          v-if="!isLoading"
           @click.prevent="closeModal"
           class="btn-flat waves-effect waves-light"
           name="closeAction"
@@ -206,11 +233,20 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           type="submit"
           name="submitAction"
         >
-          <span v-if="isLoading">{{ vm.t('exporting') }}</span>
-          <span v-else
-            >{{ vm.t('export') }}
-            <i class="fa fa-paper-plane" aria-hidden="true"></i
-          ></span>
+          <span v-if="isLoading">
+            <div class="preloader-wrapper small active" style="vertical-align: middle;">
+              <div class="spinner-layer spinner-white-only">
+                <div class="circle-clipper left"><div class="circle"></div></div>
+                <div class="gap-patch"><div class="circle"></div></div>
+                <div class="circle-clipper right"><div class="circle"></div></div>
+              </div>
+            </div>
+            {{ vm.t('exporting') }}
+          </span>
+          <span v-else>
+            {{ vm.t('export') }}
+            <i class="fa fa-paper-plane" aria-hidden="true"></i>
+          </span>
         </button>
       </div>
     </div>
