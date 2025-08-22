@@ -45,13 +45,23 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       folderTree.dataSource = this.folders;
     }
     M.updateTextFields();
+    window.addEventListener("beforeunload", this.handleBeforeUnload);
+  },
+  beforeDestroy() {
+    window.removeEventListener("beforeunload", this.handleBeforeUnload);
   },
   methods: {
     onSubmit() {
       M.updateTextFields();
       this.$emit('submit', this.profile);
     },
-
+    handleBeforeUnload(e) {
+      if (this.isLoading) {
+        e.preventDefault();
+        e.returnValue = this.vm?.t?.('exporting-in-progress') || 'An export is still running. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    },
     async handleFolderChange(e) {
       if (this.folders?.length === 0) return;
 
@@ -132,7 +142,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
             </div>
           </div>
           <p style="margin-top:16px; font-size:16px; color:#1976d2;">
-            {{ vm.t('exporting-in-progress') }}, {{ vm.t('please-wait') }}
+            {{ vm.t('exporting-in-progress') }}
           </p>
         </div>
       </div>
@@ -234,13 +244,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
           name="submitAction"
         >
           <span v-if="isLoading">
-            <div class="preloader-wrapper small active" style="vertical-align: middle;">
-              <div class="spinner-layer spinner-white-only">
-                <div class="circle-clipper left"><div class="circle"></div></div>
-                <div class="gap-patch"><div class="circle"></div></div>
-                <div class="circle-clipper right"><div class="circle"></div></div>
-              </div>
-            </div>
             {{ vm.t('exporting') }}
           </span>
           <span v-else>
