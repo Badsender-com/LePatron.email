@@ -15,11 +15,21 @@ const {
 const { createLog } = require('../../../server/log/log.service.js');
 const { Profiles } = require('../../../server/common/models.common.js');
 const { Types } = require('mongoose');
+const ADOBE_TYPES = require('../../constant/adobe-target-types.js');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, accessToken, profileId, userId, ...data }) {
+  constructor({
+    apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId,
+    ...data
+  }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.targetType = targetType;
     this.profileId = profileId;
     this.accessToken = accessToken;
     this.userId = userId;
@@ -143,7 +153,10 @@ class AdobeProvider {
     });
   }
 
-  async getFoldersFromGroupNames({ groupNames = [] }) {
+  async getFoldersFromGroupNames({
+    groupNames = [],
+    type = ADOBE_TYPES.NMS_DELIVERY_MODEL,
+  }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
 
     return this.makeSoapRequest({
@@ -162,7 +175,7 @@ class AdobeProvider {
                         ','
                       )})" />
                       <condition expr="@rights like '%write%'" />
-                      <condition expr="[folder/@model]='nmsDeliveryModel'" />
+                      <condition expr="[folder/@model]='${type}'" />
                   </where>
               </queryDef>
           </entity>
@@ -183,6 +196,7 @@ class AdobeProvider {
   async getDeliveriesFromFolderFullNameOrInternalName({
     fullName,
     internalName,
+    type,
   }) {
     return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
@@ -208,6 +222,17 @@ class AdobeProvider {
                     ? `<condition expr="@internalName='${internalName}'"/>`
                     : ''
                 }
+                ${
+                  type === ADOBE_TYPES.NMS_DELIVERY
+                    ? '<condition expr="@state=0"/>'
+                    : ''
+                }
+                ${
+                  type === ADOBE_TYPES.NMS_DELIVERY
+                    ? '<condition expr="@messageType=0"/>'
+                    : ''
+                }
+
               </where>
             </queryDef>
           </entity>

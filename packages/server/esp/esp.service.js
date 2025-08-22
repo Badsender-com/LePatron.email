@@ -11,6 +11,7 @@ class EspService {
     type,
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     profileId,
     userId,
@@ -26,6 +27,7 @@ class EspService {
       throw new InternalServerError(ERROR_CODES.UNAUTHORIZED_ESP);
     }
 
+    // todo ici déclencher une erreur sur le targetType
     switch (type) {
       case EspTypes.SENDINBLUE:
         return SendinBlueProvider.build({
@@ -46,6 +48,7 @@ class EspService {
         return AdobeProvider.build({
           apiKey: apiKey,
           secretKey: secretKey,
+          targetType: targetType,
           accessToken: accessToken,
           profileId: profileId,
           userId: userId,

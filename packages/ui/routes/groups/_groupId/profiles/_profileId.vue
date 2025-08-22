@@ -24,7 +24,14 @@ export default {
         getProfileForAdmin(params.profileId)
       );
 
-      const { type, id, name, apiKey, secretKey } = profileResponse.result;
+      const {
+        type,
+        id,
+        name,
+        apiKey,
+        secretKey,
+        targetType,
+      } = profileResponse.result;
 
       if (type === ESP_TYPES.SENDINBLUE) {
         const {
@@ -96,6 +103,7 @@ export default {
           name,
           apiKey,
           secretKey,
+          targetType,
           type,
         };
       }
