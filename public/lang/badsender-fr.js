@@ -102,6 +102,7 @@ module.exports = {
   mailName: "Nom de l'email",
   templateName: 'Nom du template',
   'export-to': 'Exporter vers',
+  'exporting-in-progress': 'Export en cours, merci de patienter...',
   'select-folder': 'Sélectionner un dossier',
   'select-delivery': 'Sélectionner un livrable',
   exporting: 'Exportation…',
