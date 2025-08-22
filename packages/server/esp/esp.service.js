@@ -27,7 +27,6 @@ class EspService {
       throw new InternalServerError(ERROR_CODES.UNAUTHORIZED_ESP);
     }
 
-    // todo ici déclencher une erreur sur le targetType
     switch (type) {
       case EspTypes.SENDINBLUE:
         return SendinBlueProvider.build({
