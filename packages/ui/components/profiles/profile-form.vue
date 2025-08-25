@@ -106,7 +106,6 @@ export default {
             solo
             outlined
             flat
-            :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
             @change="handleEspChange($event)"
           />
           <client-only>
