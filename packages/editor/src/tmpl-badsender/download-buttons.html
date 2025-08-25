@@ -20,7 +20,7 @@
   />
   <input type="hidden" name="html" id="downloadHtmlTextarea" />
 
-  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp -->
+  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
   <a
     title="Download template"
     href="javascript:void(0)"
@@ -40,7 +40,7 @@
   </a>
   <!-- /ko -->
 
-  <!-- ko if: $root.downloadCdn || $root.downloadFtp  -->
+<!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
   <p
     class="download-form__btn-menu"
     data-bind="
@@ -94,7 +94,11 @@
     >
       DOWNLOAD FTP
     </a>
-      <div data-bind="foreach: profiles">
+    <!-- /ko -->
+
+    <!-- ko if: $root.downloadFtp || $root.hasAdobeProfile -->
+    <div data-bind="foreach: profiles">
+      <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
         <a href="javascript:void(0)" data-bind="
           click: $root.setSelectedProfile.bind($index()),
           button: {
@@ -103,11 +107,10 @@
         }">
           Link
         </a>
-      </div>
+      <!-- /ko -->
+    </div>
     <!-- /ko -->
-
   </aside>
   <!-- /ko -->
 </form>
-
 <!-- /ko -->
