@@ -49,6 +49,9 @@ export default {
     selectedEspName() {
       return this.selectedEsp + 'Component';
     },
+    needsFtpConfig() {
+      return this.selectedEsp !== ESP_TYPES.ADOBE;
+    },
   },
   async mounted() {
     if (this.profile.type) {
@@ -82,7 +85,7 @@ export default {
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-row v-if="!group.downloadMailingWithFtpImages">
+      <v-row v-if="needsFtpConfig && !group.downloadMailingWithFtpImages">
         <v-col cols="12">
           <v-alert
             dense
