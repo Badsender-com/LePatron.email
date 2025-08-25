@@ -51,6 +51,12 @@ function downloadOptions(opts) {
     viewModel.cdnButtonLabel = opts.download.cdnButtonLabel;
     viewModel.downloadFtp = opts.download.ftpImages;
     viewModel.ftpButtonLabel = opts.download.ftpButtonLabel;
+    viewModel.hasAdobeProfile = ko.computed(function () {
+      return Array.isArray(viewModel.profiles()) &&
+            viewModel.profiles().some(function (p) {
+              return p.type === "ADOBE";
+            });
+    });
   };
 }
 
