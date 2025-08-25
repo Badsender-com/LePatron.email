@@ -106,14 +106,14 @@ export default {
             solo
             outlined
             flat
-            :disabled="!group.downloadMailingWithFtpImages"
+            :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
             @change="handleEspChange($event)"
           />
           <client-only>
             <component
               :is="selectedEspName"
               :profile-data="profile"
-              :disabled="!group.downloadMailingWithFtpImages"
+              :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
               :loading="loading"
               @submit="handleSubmit"
             />
