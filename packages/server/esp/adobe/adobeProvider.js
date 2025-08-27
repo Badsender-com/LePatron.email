@@ -124,7 +124,7 @@ class AdobeProvider {
   }
 
   async getUserGroups({ user }) {
-    const username = config.isDev ? config.adobeDefaultUser : user.name;
+    const username = config.isDev ? config.adobeDefaultUser : user.email;
 
     return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
