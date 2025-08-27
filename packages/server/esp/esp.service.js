@@ -11,6 +11,7 @@ class EspService {
     type,
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     profileId,
     userId,
@@ -46,6 +47,7 @@ class EspService {
         return AdobeProvider.build({
           apiKey: apiKey,
           secretKey: secretKey,
+          targetType: targetType,
           accessToken: accessToken,
           profileId: profileId,
           userId: userId,

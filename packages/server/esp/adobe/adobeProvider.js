@@ -15,15 +15,33 @@ const {
 const { createLog } = require('../../../server/log/log.service.js');
 const { Profiles } = require('../../../server/common/models.common.js');
 const { Types } = require('mongoose');
+const ADOBE_TYPES = require('../../constant/adobe-target-types.js');
 
 class AdobeProvider {
-  constructor({ apiKey, secretKey, accessToken, profileId, userId, ...data }) {
+  constructor({
+    apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId,
+    ...data
+  }) {
     this.apiKey = apiKey;
     this.secretKey = secretKey;
+    this.targetType = targetType;
     this.profileId = profileId;
     this.accessToken = accessToken;
     this.userId = userId;
     this.data = data;
+
+    if (!targetType) {
+      this.targetType = ADOBE_TYPES.NMS_DELIVERY_MODEL;
+    } else if (!Object.values(ADOBE_TYPES).includes(targetType)) {
+      throw new Error('Invalid targetType provided to AdobeProvider');
+    } else {
+      this.targetType = targetType;
+    }
   }
 
   static async build(initialData) {
@@ -143,7 +161,22 @@ class AdobeProvider {
     });
   }
 
-  async getFoldersFromGroupNames({ groupNames = [] }) {
+  /**
+   * Retrieves folder information with writting rights based on provided group names and folder type from Adobe Campaign via a SOAP request.
+   *
+   * Differences between the two types:
+   * - If `type` is `ADOBE_TYPES.NMS_DELIVERY`, it returns folders with the delivery model.
+   * - If `type` is `ADOBE_TYPES.NMS_DELIVERY_MODEL`,  it returns folders with the deliveryModel (template) model.
+   *
+   * @async
+   * @param {string[]} [groupNames=[]] - An array of operator group names to filter folders by.
+   * @param {string} [type=ADOBE_TYPES.NMS_DELIVERY_MODEL] - The folder model type to filter by (e.g., delivery model).
+   *
+   **/
+  async getFoldersFromGroupNames({
+    groupNames = [],
+    type = ADOBE_TYPES.NMS_DELIVERY_MODEL,
+  }) {
     const mappedGroupNames = groupNames.map((groupName) => `'${groupName}'`);
 
     return this.makeSoapRequest({
@@ -162,7 +195,7 @@ class AdobeProvider {
                         ','
                       )})" />
                       <condition expr="@rights like '%write%'" />
-                      <condition expr="[folder/@model]='nmsDeliveryModel'" />
+                      <condition expr="[folder/@model]='${type}'" />
                   </where>
               </queryDef>
           </entity>
@@ -180,9 +213,22 @@ class AdobeProvider {
     });
   }
 
+  /**
+   * Retrieves deliveries from Adobe Campaign based on either the folder's full name or the delivery's internal name.
+   *
+   * Differences between the two types:
+   * - If `type` is `ADOBE_TYPES.NMS_DELIVERY`, the query is further filtered to only include deliveries with `@state=0` (draft) and `@messageType=0` (email).
+   * - If `type` is `ADOBE_TYPES.NMS_DELIVERY_MODEL`, the query is not filtered as we don't need this kind of information.
+   *
+   * @async
+   * @param {string} fullName - The full name of the folder to filter deliveries by. If provided, only deliveries in this folder are returned.
+   * @param {string} internalName - The internal name of the delivery to filter by. If provided, only the delivery with this internal name is returned.
+   * @param {string} type - The type of delivery to filter by. If set to `ADOBE_TYPES.NMS_DELIVERY`, only draft email deliveries are returned, otherwise all deliveries templates are returned.
+   */
   async getDeliveriesFromFolderFullNameOrInternalName({
     fullName,
     internalName,
+    type,
   }) {
     return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
@@ -208,6 +254,17 @@ class AdobeProvider {
                     ? `<condition expr="@internalName='${internalName}'"/>`
                     : ''
                 }
+                ${
+                  type === ADOBE_TYPES.NMS_DELIVERY
+                    ? '<condition expr="@state=0"/>'
+                    : ''
+                }
+                ${
+                  type === ADOBE_TYPES.NMS_DELIVERY
+                    ? '<condition expr="@messageType=0"/>'
+                    : ''
+                }
+
               </where>
             </queryDef>
           </entity>
