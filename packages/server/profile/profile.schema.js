@@ -4,6 +4,7 @@ const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const EspTypes = require('../constant/esp-type');
 const encryptionPlugin = require('../utils/encryption-plugin.js');
+const AdobeTargetTypes = require('../constant/adobe-target-types.js');
 /**
  * @apiDefine profile
  * @apiSuccess {String} id
@@ -40,6 +41,14 @@ const ProfileSchema = Schema(
     },
     secretKey: {
       type: String,
+      required: false,
+    },
+    targetType: {
+      type: String,
+      enum: [
+        AdobeTargetTypes.NMS_DELIVERY,
+        AdobeTargetTypes.NMS_DELIVERY_MODEL,
+      ],
       required: false,
     },
     accessToken: {

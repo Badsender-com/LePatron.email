@@ -41,6 +41,7 @@ export default {
     add: 'Add',
     apiKey: 'API key',
     secretKey: 'Secret key',
+    targetType: 'Connector type : ',
     entity: 'Entity',
     encodingType: 'Encoding type',
     targetTable: 'Target table',
@@ -411,4 +412,10 @@ export default {
       error: 'An error occurred. Please try again.',
     },
   },
+  adobe: {
+    targetTypes: {
+      'NMS_DELIVERY': 'Delivery',
+      'NMS_DELIVERY_MODEL': 'Delivery Template'
+    }
+  }
 };

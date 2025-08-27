@@ -66,12 +66,14 @@ async function createProfile({
   type,
   apiKey,
   secretKey,
+  targetType,
   _company,
   additionalApiData,
 }) {
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    targetType,
     userId: user.id,
     type,
     name,
@@ -94,6 +96,7 @@ async function createProfile({
     type,
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     _company,
     additionalApiData,
@@ -107,6 +110,7 @@ async function updateProfile({
   type,
   apiKey,
   secretKey,
+  targetType,
   _company,
   additionalApiData,
 }) {
@@ -115,6 +119,7 @@ async function updateProfile({
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    targetType,
     userId: user.id,
     type,
     name,
@@ -134,6 +139,7 @@ async function updateProfile({
       type,
       apiKey,
       secretKey,
+      targetType,
       _company,
       additionalApiData,
     }
@@ -238,6 +244,7 @@ async function sendEspCampaign({
   const {
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     type: profileType,
     name,
@@ -252,6 +259,7 @@ async function sendEspCampaign({
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     profileId,
     userId: user.id,
@@ -434,12 +442,14 @@ async function getAdobeFolders({
   user,
   apiKey,
   secretKey,
+  targetType,
   accessToken,
   profileId,
 }) {
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     profileId,
     userId: user.id,
@@ -448,11 +458,15 @@ async function getAdobeFolders({
 
   const groupNames = await espProvider.getUserGroups({ user });
 
-  return await espProvider.getFoldersFromGroupNames({ groupNames });
+  return await espProvider.getFoldersFromGroupNames({
+    groupNames,
+    type: targetType,
+  });
 }
 async function getAdobeDeliveries({
   apiKey,
   secretKey,
+  targetType,
   accessToken,
   profileId,
   userId,
@@ -461,6 +475,7 @@ async function getAdobeDeliveries({
   const espProvider = await EspProvider.build({
     apiKey,
     secretKey,
+    targetType,
     accessToken,
     profileId,
     userId,
@@ -469,5 +484,6 @@ async function getAdobeDeliveries({
 
   return await espProvider.getDeliveriesFromFolderFullNameOrInternalName({
     fullName,
+    type: targetType,
   });
 }

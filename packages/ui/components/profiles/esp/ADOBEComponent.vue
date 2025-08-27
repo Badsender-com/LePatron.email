@@ -3,6 +3,8 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
+import { ADOBE_TARGET_TYPES } from '~/helpers/constants/adobe-target-types';
+
 export default {
   name: 'ADOBEComponent',
   mixins: [validationMixin],
@@ -18,23 +20,21 @@ export default {
         name: this.profileData.name ?? '',
         apiKey: this.profileData.apiKey ?? '',
         secretKey: this.profileData.secretKey ?? '',
+        targetType:
+          this.profileData.targetType ?? ADOBE_TARGET_TYPES.NMS_DELIVERY_MODEL,
         contentSendType: CONTENT_ESP_TYPES.MAIL,
         type: ESP_TYPES.ADOBE,
       },
+      adobeTargetTypes: ADOBE_TARGET_TYPES,
     };
   },
   validations() {
     return {
       profile: {
-        name: {
-          required,
-        },
-        apiKey: {
-          required,
-        },
-        secretKey: {
-          required,
-        },
+        name: { required },
+        apiKey: { required },
+        secretKey: { required },
+        targetType: { required },
       },
     };
   },
@@ -47,6 +47,9 @@ export default {
     },
     secretKeyErrors() {
       return this.requiredValidationFunc('secretKey');
+    },
+    targetTypeErrors() {
+      return this.requiredValidationFunc('targetType');
     },
   },
   methods: {
@@ -114,6 +117,25 @@ export default {
             @input="$v.profile.secretKey.$touch()"
             @blur="$v.profile.secretKey.$touch()"
           />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-radio-group
+            v-model="profile.targetType"
+            :label="$t('global.targetType')"
+            :error-messages="targetTypeErrors"
+            row
+            @change="$v.profile.targetType.$touch()"
+            @blur="$v.profile.targetType.$touch()"
+          >
+            <v-radio
+              v-for="(value, key) in adobeTargetTypes"
+              :key="key"
+              :label="$t(`adobe.targetTypes.${key}`)"
+              :value="value"
+            />
+          </v-radio-group>
         </v-col>
       </v-row>
     </v-card-text>

@@ -40,6 +40,7 @@ export default {
     add: 'Ajouter',
     apiKey: 'Clé API',
     secretKey: 'Clé secrète',
+    targetType: 'Type du connecteur :',
     entity: 'Entité',
     encodingType: 'Type d\'encodage',
     targetTable: 'Table cible',
@@ -414,4 +415,10 @@ export default {
       error: 'Une erreur s\'est produite. Veuillez réessayer.',
     },
   },
+  adobe: {
+    targetTypes: {
+      'NMS_DELIVERY': 'Livrable',
+      'NMS_DELIVERY_MODEL': 'Modèle de livrable'
+    }
+  }
 };

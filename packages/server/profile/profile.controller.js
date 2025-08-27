@@ -30,6 +30,8 @@ module.exports = {
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
  * @apiParam (Body) {String} apiKey the provider key
+ * @apiParam (Body) {String} secretKey the provider secret key
+ * @apiParam (Body) {String} targetType the target Type of adove provider
  * @apiParam (Body) {String} _company the ID of the group
  * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
  *
@@ -43,6 +45,7 @@ async function createProfile(req, res) {
     type,
     apiKey,
     secretKey,
+    targetType,
     _company,
     ...additionalApiData
   } = req.body;
@@ -53,6 +56,7 @@ async function createProfile(req, res) {
       type,
       apiKey,
       secretKey,
+      targetType,
       _company,
       additionalApiData,
     });
@@ -92,7 +96,7 @@ async function getAdobeFolders(req, res) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
-  const { apiKey, secretKey, accessToken } = profile;
+  const { apiKey, secretKey, targetType, accessToken } = profile;
 
   if (!apiKey || !secretKey) {
     throw new Error('Missing apiKey or secretKey in profile data');
@@ -103,6 +107,7 @@ async function getAdobeFolders(req, res) {
       user,
       apiKey,
       secretKey,
+      targetType,
       accessToken,
       profileId,
     });
@@ -140,7 +145,7 @@ async function getAdobeDeliveries(req, res) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
-  const { apiKey, secretKey, accessToken } = profile;
+  const { apiKey, secretKey, targetType, accessToken } = profile;
 
   if (!apiKey || !secretKey) {
     throw new Error('Missing apiKey or secretKey in profile data');
@@ -150,6 +155,7 @@ async function getAdobeDeliveries(req, res) {
     const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
       apiKey,
       secretKey,
+      targetType,
       accessToken,
       profileId,
       fullName,
@@ -175,6 +181,7 @@ async function getAdobeDeliveries(req, res) {
  * @apiParam (Body) {String} type Profile type
  * @apiParam (Body) {String} apiKey the provider key
  * @apiParam (Body) {String} secretKey the provider secret Key
+ * @apiParam (Body) {String} targetType the target type
  * @apiParam (Body) {String} _company the ID of the group
  * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
  *
@@ -189,6 +196,7 @@ async function updateProfile(req, res) {
     type,
     apiKey,
     secretKey,
+    targetType,
     _company,
     id,
     ...additionalApiData
@@ -202,6 +210,7 @@ async function updateProfile(req, res) {
       type,
       apiKey,
       secretKey,
+      targetType,
       _company,
       additionalApiData,
     });
