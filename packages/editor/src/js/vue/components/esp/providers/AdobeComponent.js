@@ -35,15 +35,22 @@ const AdobeComponent = Vue.component('AdobeComponent', {
       isDeliveryLoading: false,
     };
   },
+  watch: {
+    fetchedFolders: {
+      immediate: true,
+      handler(newFolders) {
+        this.folders = buildTreeFromFolders(newFolders);
+        this.$nextTick(() => {
+          const folderTree = document.getElementById('folder-tree');
+          if (folderTree) folderTree.dataSource = this.folders;
+        });
+      }
+    }
+  },
   async mounted() {
     this.profile.campaignMailName = this.vm.creationName();
     this.isFolderLoading = false;
-    this.folders = buildTreeFromFolders(this.fetchedFolders);
 
-    const folderTree = document.getElementById('folder-tree');
-    if (folderTree) {
-      folderTree.dataSource = this.folders;
-    }
     M.updateTextFields();
     window.addEventListener("beforeunload", this.handleBeforeUnload);
   },
