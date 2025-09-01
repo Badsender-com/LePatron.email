@@ -186,6 +186,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                       filterable
                       scroll-mode="scrollbar"
                       selection-mode="zeroOrOne"
+                      :filter-input-placeholder="vm.t('search-folder')"
                       toggle-mode="click"
                       @change="handleFolderChange"
                       selection-target='leaf'
@@ -220,6 +221,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                     filterable
                     scroll-mode="scrollbar"
                     selection-mode="zeroOrOne"
+                    :filter-input-placeholder="vm.t('search-delivery')"
                     toggle-mode="click"
                     @change="handleDeliveryChange"
                     selection-target='leaf'
