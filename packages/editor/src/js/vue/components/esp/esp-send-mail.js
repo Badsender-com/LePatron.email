@@ -67,6 +67,7 @@ const EspComponent = Vue.component('EspForm', {
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
+    this.folders = [];
   },
   methods: {
     async fetchData() {
