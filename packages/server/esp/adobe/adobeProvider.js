@@ -279,7 +279,7 @@ class AdobeProvider {
         const delivery = deliveryCollection?.delivery;
 
         if (!delivery) {
-          return {};
+          return [];
         }
 
         if (delivery instanceof Array) {
@@ -290,11 +290,13 @@ class AdobeProvider {
           }));
         }
 
-        return {
-          id: delivery.id,
-          label: delivery.label,
-          internalName: delivery.internalName,
-        };
+        return [
+          {
+            id: delivery.id,
+            label: delivery.label,
+            internalName: delivery.internalName,
+          },
+        ];
       },
     });
   }
