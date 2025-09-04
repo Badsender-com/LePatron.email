@@ -10,6 +10,10 @@ const ModalComponent = Vue.component('ModalComponent', {
       type: Function,
       default: () => {},
     },
+    isFullWidth: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     modalInstance: null,
@@ -35,7 +39,9 @@ const ModalComponent = Vue.component('ModalComponent', {
   template: `
     <div>
       <div class="material-css">
-        <div id="modal1" class="modal  modal-fixed-footer" ref="modalRef">
+        <div id="modal1" class="modal modal-fixed-footer" ref="modalRef" :style="isFullWidth
+            ? { width: '100%', maxWidth: '100%', height: '90%' }
+            : { width: '', maxWidth: '', height: '90%' }">
           <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="isLoading">
             <div class="preloader-wrapper small active">
                 <div class="spinner-layer spinner-green-only">

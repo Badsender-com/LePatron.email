@@ -41,6 +41,7 @@ const EspComponent = Vue.component('EspForm', {
     folders: [],
     foldersError : "",
     exportError: "",
+    ESP_TYPE
   }),
   computed: {
     espComponent() {
@@ -287,6 +288,7 @@ const EspComponent = Vue.component('EspForm', {
         ref="modalRef"
         :isLoading="isLoading"
         v-if="selectedProfile && fetchedProfile"
+        :isFullWidth="selectedProfile.type === ESP_TYPE.ADOBE"
         >
       <component
         :isLoading="isLoadingExport"
