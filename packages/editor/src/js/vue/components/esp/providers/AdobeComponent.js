@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TARGET_TYPE } from '../../../constant/adobe-taget-type';
 
 const Vue = require('vue/dist/vue.common');
 const { SEND_MODE } = require('../../../constant/send-mode');
@@ -56,6 +57,18 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   beforeDestroy() {
     window.removeEventListener("beforeunload", this.handleBeforeUnload);
+  },
+  computed: {
+    deliveryLabel() {
+      return this.selectedProfile.targetType === TARGET_TYPE.NMS_DELIVERY_MODEL
+        ? this.vm.t('select-delivery-template')
+        : this.vm.t('select-delivery');
+    },
+    deliverySearchLabel() {
+      return this.selectedProfile.targetType === TARGET_TYPE.NMS_DELIVERY_MODEL
+        ? this.vm.t('search-delivery-template')
+        : this.vm.t('search-delivery');
+    }
   },
   methods: {
     onSubmit() {
@@ -213,7 +226,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
 
                 <div :class="!isDeliveryLoading && this.profile.folderFullName ? '' : 'adobe-loader hide'">
                   <div class="input-field col s12 adobe-label">
-                    <label>{{ vm.t('select-delivery') }}</label>
+                    <label>{{ deliveryLabel }}</label>
                   </div>
                   <smart-tree
                     style="width:100%"
@@ -221,7 +234,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                     filterable
                     scroll-mode="scrollbar"
                     selection-mode="zeroOrOne"
-                    :filter-input-placeholder="vm.t('search-delivery')"
+                    :filter-input-placeholder="deliverySearchLabel"
                     toggle-mode="click"
                     @change="handleDeliveryChange"
                     selection-target='leaf'
