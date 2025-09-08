@@ -40,7 +40,7 @@ const ModalComponent = Vue.component('ModalComponent', {
     <div>
       <div class="material-css">
         <div id="modal1" class="modal modal-fixed-footer" ref="modalRef" :style="isFullWidth
-            ? { width: '100%', maxWidth: '100%', height: '90%' }
+            ? { width: '90%', maxWidth: '95%', height: '90%' }
             : { width: '', maxWidth: '', height: '90%' }">
           <div class="valign-wrapper" :style="{    height: '100%', justifyContent: 'center'}" v-if="isLoading">
             <div class="preloader-wrapper small active">
