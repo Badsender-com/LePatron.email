@@ -315,7 +315,6 @@ class AdobeProvider {
     });
 
     await this.saveDeliveryTemplate({
-      deliveryLabel: name,
       internalName: adobe.deliveryInternalName,
       folderFullName: adobe.folderFullName,
       contentHtml: htmlWithAdobeUrls,
@@ -384,19 +383,14 @@ class AdobeProvider {
     return replacedHtml;
   }
 
-  async saveDeliveryTemplate({
-    deliveryLabel,
-    internalName,
-    folderFullName,
-    contentHtml,
-  }) {
+  async saveDeliveryTemplate({ internalName, folderFullName, contentHtml }) {
     return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
       xmlBodyRequest: `
       <m:Write xmlns:m="urn:xtk:persist|xtk:session">
         <sessiontoken></sessiontoken>
         <domDoc xsi:type='ns:Element'>
-          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" label="${deliveryLabel}">
+          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}">
             <content>
               <html>
                 <source>
