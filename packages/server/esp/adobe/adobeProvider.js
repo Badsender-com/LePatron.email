@@ -383,6 +383,7 @@ class AdobeProvider {
     return replacedHtml;
   }
 
+  // TODO verify if the isModel is a problem for delivery save
   async saveDeliveryTemplate({ internalName, folderFullName, contentHtml }) {
     return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
@@ -390,7 +391,7 @@ class AdobeProvider {
       <m:Write xmlns:m="urn:xtk:persist|xtk:session">
         <sessiontoken></sessiontoken>
         <domDoc xsi:type='ns:Element'>
-          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}">
+          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" _operation="update">
             <content>
               <html>
                 <source>
