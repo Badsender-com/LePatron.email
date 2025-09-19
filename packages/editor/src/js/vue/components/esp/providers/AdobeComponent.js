@@ -202,7 +202,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                       :filter-input-placeholder="vm.t('search-folder')"
                       toggle-mode="click"
                       @change="handleFolderChange"
-                      selection-target='leaf'
                       :disabled="isLoading"
                       :style="isLoading ? 'pointer-events: none; opacity: 0.6;' : ''"
                     />

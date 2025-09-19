@@ -16,6 +16,10 @@ const { createLog } = require('../../../server/log/log.service.js');
 const { Profiles } = require('../../../server/common/models.common.js');
 const { Types } = require('mongoose');
 const ADOBE_TYPES = require('../../constant/adobe-target-types.js');
+const {
+  handleTrackingData,
+  getMailByMailingIdAndUser,
+} = require('../../mailing/mailing.service.js');
 
 class AdobeProvider {
   constructor({
@@ -242,6 +246,7 @@ class AdobeProvider {
                 <node expr="@id"/>
                 <node expr="@label"/>
                 <node expr="@internalName"/>
+                <node expr="@lastModified"/>
               </select>
               <where>
                 ${
@@ -266,6 +271,9 @@ class AdobeProvider {
                 }
 
               </where>
+              <orderBy>
+                <node expr="@lastModified" sortDesc="true"/>
+              </orderBy>
             </queryDef>
           </entity>
         </ExecuteQuery>
@@ -301,17 +309,20 @@ class AdobeProvider {
     });
   }
 
-  async updateCampaignMail({ campaignMailData, html }) {
+  async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
     // The logic to update and create is the same because the SOAP request that we do
     // for Adobe is an upsert
-    await this.createCampaignMail({ campaignMailData, html });
+    await this.createCampaignMail({ campaignMailData, user, html, mailingId });
   }
 
-  async createCampaignMail({ campaignMailData, html }) {
+  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
     const { name, adobe } = campaignMailData;
+
+    const mailing = await getMailByMailingIdAndUser({ mailingId, user });
 
     const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
       html,
+      tracking: mailing?._doc?.data?.tracking,
     });
 
     await this.saveDeliveryTemplate({
@@ -323,11 +334,15 @@ class AdobeProvider {
     return name;
   }
 
-  async sendAndProcessImageIntoAdobe({ html }) {
+  async sendAndProcessImageIntoAdobe({ html, tracking }) {
+    const { html: htmlWithTracking } = handleTrackingData({
+      html,
+      tracking,
+    });
     const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
 
     const replacedHtml = await asyncReplace(
-      html,
+      htmlWithTracking,
       urlsRegexUrl,
       async (match, tag) => {
         const splittedMatch = match.split('/');

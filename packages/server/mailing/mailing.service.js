@@ -71,6 +71,7 @@ module.exports = {
   getMailByMailingIdAndUser,
   getGroupByCompanyId,
   getMailNameAndCompanyByMailingIdAndUser,
+  handleTrackingData,
 };
 
 async function listMailingForWorkspaceOrFolder({
