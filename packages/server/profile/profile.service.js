@@ -72,9 +72,11 @@ async function createProfile({
   _company,
   additionalApiData,
 }) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
   const espProvider = await EspProvider.build({
     adobeImsUrl,
-    adobeBaseUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -94,7 +96,6 @@ async function createProfile({
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
   const accessToken = espConnectionResult.data.access_token;
-  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   return Profiles.create({
     name,
@@ -124,10 +125,11 @@ async function updateProfile({
   additionalApiData,
 }) {
   await findOne(id);
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
     adobeImsUrl,
-    adobeBaseUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -142,7 +144,6 @@ async function updateProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
-  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   return Profiles.updateOne(
     { _id: Types.ObjectId(id) },
