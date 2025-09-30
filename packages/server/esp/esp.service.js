@@ -9,6 +9,8 @@ const AdobeProvider = require('./adobe/adobeProvider');
 class EspService {
   static async build({
     type,
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -45,6 +47,8 @@ class EspService {
         });
       case EspTypes.ADOBE:
         return AdobeProvider.build({
+          adobeImsUrl: adobeImsUrl,
+          adobeBaseUrl: adobeBaseUrl,
           apiKey: apiKey,
           secretKey: secretKey,
           targetType: targetType,
