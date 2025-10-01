@@ -20,6 +20,8 @@ export default {
       supportedLanguageIsRequired: 'A language is required',
       apiKeyRequired: 'An API Key is Required',
       secretKeyRequired: 'A Secret Key is Required',
+      adobeImsUrlRequired : 'A login url is required',
+      adobeBaseUrlRequired: 'A base url is required',
       senderNameRequired: 'A Sender name is Required',
       senderMailRequired: 'A Sender email is Required',
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
