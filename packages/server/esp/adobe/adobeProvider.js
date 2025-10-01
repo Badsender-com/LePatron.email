@@ -23,6 +23,8 @@ const {
 
 class AdobeProvider {
   constructor({
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -31,6 +33,9 @@ class AdobeProvider {
     userId,
     ...data
   }) {
+    this.adobeImsUrl = adobeImsUrl;
+    this.adobeSoapRouterUrl = adobeBaseUrl + '/jsp/soaprouter.jsp';
+    this.adobeUploadFileUrl = adobeBaseUrl + '/jsp/uploadFile.jsp';
     this.apiKey = apiKey;
     this.secretKey = secretKey;
     this.targetType = targetType;
@@ -59,7 +64,7 @@ class AdobeProvider {
   }
 
   async connectApiCall(data) {
-    return axios.post(`${config.adobeImsUrl}/ims/token/v3`, data, {
+    return axios.post(`${this.adobeImsUrl}/ims/token/v3`, data, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -447,7 +452,7 @@ class AdobeProvider {
     form.append('file_noMd5', image, optionImg);
 
     try {
-      await axios.post(config.adobeUploadFileUrl, form, {
+      await axios.post(this.adobeUploadFileUrl, form, {
         headers: {
           ...form.getHeaders(),
           Authorization: `Bearer ${this.accessToken}`,
@@ -528,7 +533,7 @@ class AdobeProvider {
 
     try {
       const response = await axios.post(
-        `${config.adobeImsUrl}/ims/validate_token/v1`,
+        `${this.adobeImsUrl}/ims/validate_token/v1`,
         form,
         {
           headers: {
@@ -574,7 +579,7 @@ class AdobeProvider {
   async makeSoapRequest({ soapAction, xmlBodyRequest, formatResponseFn }) {
     return soapRequest({
       userId: this.userId,
-      url: config.adobeSoapRouterUrl,
+      url: this.adobeSoapRouterUrl,
       token: this.accessToken,
       soapAction,
       xmlBodyRequest,
