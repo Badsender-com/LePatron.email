@@ -18,6 +18,10 @@ export default {
       profile: {
         id: this.profileData.id ?? '',
         name: this.profileData.name ?? '',
+        adobeImsUrl:
+          this.profileData.adobeImsUrl ??
+          process.env.NUXT_ENV_ADOBE_DEFAULT_IMS_URL,
+        adobeBaseUrl: this.profileData.adobeBaseUrl ?? '',
         apiKey: this.profileData.apiKey ?? '',
         secretKey: this.profileData.secretKey ?? '',
         targetType:
@@ -32,6 +36,8 @@ export default {
     return {
       profile: {
         name: { required },
+        adobeImsUrl: { required },
+        adobeBaseUrl: { required },
         apiKey: { required },
         secretKey: { required },
         targetType: { required },
@@ -41,6 +47,12 @@ export default {
   computed: {
     nameErrors() {
       return this.requiredValidationFunc('name');
+    },
+    adobeImsUrlErrors() {
+      return this.requiredValidationFunc('adobeImsUrl');
+    },
+    adobeBaseUrlErrors() {
+      return this.requiredValidationFunc('adobeBaseUrl');
     },
     apiKeyErrors() {
       return this.requiredValidationFunc('apiKey');
@@ -58,6 +70,7 @@ export default {
       if (this.$v.$invalid) {
         return;
       }
+
       this.$emit('submit', this.profile);
     },
     requiredValidationFunc(valueKey) {
@@ -86,6 +99,38 @@ export default {
             :error-messages="nameErrors"
             @input="$v.profile.name.$touch()"
             @blur="$v.profile.name.$touch()"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
+          <v-text-field
+            id="adobeImsUrl"
+            v-model="profile.adobeImsUrl"
+            :label="$t('global.adobeImsUrl')"
+            name="adobeImsUrl"
+            required
+            :error-messages="adobeImsUrlErrors"
+            @input="$v.profile.adobeImsUrl.$touch()"
+            @blur="$v.profile.adobeImsUrl.$touch()"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-text-field
+            id="adobeBaseUrl"
+            v-model="profile.adobeBaseUrl"
+            :label="$t('global.adobeBaseUrl')"
+            name="adobeBaseUrl"
+            required
+            :error-messages="adobeBaseUrlErrors"
+            placeholder="https://example.campaign.adobe.com/nl"
+            :hint="$t('global.adobeBaseUrlHelper')"
+            persistent-hint
+            @input="$v.profile.adobeBaseUrl.$touch()"
+            @blur="$v.profile.adobeBaseUrl.$touch()"
           />
         </v-col>
       </v-row>

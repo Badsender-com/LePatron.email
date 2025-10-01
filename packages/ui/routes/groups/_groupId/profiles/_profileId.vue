@@ -28,6 +28,8 @@ export default {
         type,
         id,
         name,
+        adobeImsUrl,
+        adobeBaseUrl,
         apiKey,
         secretKey,
         targetType,
@@ -101,6 +103,8 @@ export default {
         profileData = {
           id,
           name,
+          adobeImsUrl,
+          adobeBaseUrl,
           apiKey,
           secretKey,
           targetType,

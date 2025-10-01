@@ -35,6 +35,14 @@ const ProfileSchema = Schema(
       ref: GroupModel,
       alias: 'group',
     },
+    adobeImsUrl: {
+      type: String,
+      required: false,
+    },
+    adobeBaseUrl: {
+      type: String,
+      required: false,
+    },
     apiKey: {
       type: String,
       required: true,

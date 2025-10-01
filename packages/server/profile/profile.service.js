@@ -64,13 +64,19 @@ async function createProfile({
   user,
   name,
   type,
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
   secretKey,
   targetType,
   _company,
   additionalApiData,
 }) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -94,6 +100,8 @@ async function createProfile({
   return Profiles.create({
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -108,6 +116,8 @@ async function updateProfile({
   id,
   name,
   type,
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
   secretKey,
   targetType,
@@ -115,8 +125,11 @@ async function updateProfile({
   additionalApiData,
 }) {
   await findOne(id);
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -137,6 +150,8 @@ async function updateProfile({
     {
       name,
       type,
+      adobeImsUrl,
+      adobeBaseUrl: cleanAdobeBaseUrl,
       apiKey,
       secretKey,
       targetType,
@@ -242,6 +257,8 @@ async function sendEspCampaign({
   }
 
   const {
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -257,6 +274,8 @@ async function sendEspCampaign({
   }
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -440,6 +459,8 @@ async function deleteOne(profileId) {
 
 async function getAdobeFolders({
   user,
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
   secretKey,
   targetType,
@@ -447,6 +468,8 @@ async function getAdobeFolders({
   profileId,
 }) {
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -464,6 +487,8 @@ async function getAdobeFolders({
   });
 }
 async function getAdobeDeliveries({
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
   secretKey,
   targetType,
@@ -473,6 +498,8 @@ async function getAdobeDeliveries({
   fullName,
 }) {
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,

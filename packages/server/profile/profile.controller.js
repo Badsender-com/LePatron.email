@@ -29,6 +29,8 @@ module.exports = {
  *
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
+ * @apiParam (Body) {String} adobeImsUrl Adobe login url
+ * @apiParam (Body) {String} adobeBaseUrl Adobe image upload and soap router url
  * @apiParam (Body) {String} apiKey the provider key
  * @apiParam (Body) {String} secretKey the provider secret key
  * @apiParam (Body) {String} targetType the target Type of adove provider
@@ -43,17 +45,22 @@ async function createProfile(req, res) {
   const {
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
     _company,
     ...additionalApiData
   } = req.body;
+
   try {
     const response = await profileService.createProfile({
       user,
       name,
       type,
+      adobeImsUrl,
+      adobeBaseUrl,
       apiKey,
       secretKey,
       targetType,
@@ -96,7 +103,18 @@ async function getAdobeFolders(req, res) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
-  const { apiKey, secretKey, targetType, accessToken } = profile;
+  const {
+    apiKey,
+    secretKey,
+    adobeImsUrl,
+    adobeBaseUrl,
+    targetType,
+    accessToken,
+  } = profile;
+
+  if (!adobeImsUrl || !adobeBaseUrl) {
+    throw new Error('Missing adobe url in profile data');
+  }
 
   if (!apiKey || !secretKey) {
     throw new Error('Missing apiKey or secretKey in profile data');
@@ -105,6 +123,8 @@ async function getAdobeFolders(req, res) {
   try {
     const adobeFoldersResult = await profileService.getAdobeFolders({
       user,
+      adobeImsUrl,
+      adobeBaseUrl,
       apiKey,
       secretKey,
       targetType,
@@ -145,7 +165,18 @@ async function getAdobeDeliveries(req, res) {
     throw new NotFound('Profile not found or missing API data :', profile);
   }
 
-  const { apiKey, secretKey, targetType, accessToken } = profile;
+  const {
+    apiKey,
+    secretKey,
+    adobeImsUrl,
+    adobeBaseUrl,
+    targetType,
+    accessToken,
+  } = profile;
+
+  if (!adobeImsUrl || !adobeBaseUrl) {
+    throw new Error('Missing adobe url in profile data');
+  }
 
   if (!apiKey || !secretKey) {
     throw new Error('Missing apiKey or secretKey in profile data');
@@ -153,6 +184,8 @@ async function getAdobeDeliveries(req, res) {
 
   try {
     const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+      adobeImsUrl,
+      adobeBaseUrl,
       apiKey,
       secretKey,
       targetType,
@@ -179,6 +212,8 @@ async function getAdobeDeliveries(req, res) {
  *
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
+ * @apiParam (Body) {String} adobeImsUrl Adobe login url
+ * @apiParam (Body) {String} adobeBaseUrl Adobe image upload and soap router url
  * @apiParam (Body) {String} apiKey the provider key
  * @apiParam (Body) {String} secretKey the provider secret Key
  * @apiParam (Body) {String} targetType the target type
@@ -194,6 +229,8 @@ async function updateProfile(req, res) {
   const {
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -208,6 +245,8 @@ async function updateProfile(req, res) {
       id,
       name,
       type,
+      adobeImsUrl,
+      adobeBaseUrl,
       apiKey,
       secretKey,
       targetType,
