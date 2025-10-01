@@ -95,8 +95,10 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
-  const accessToken = espConnectionResult.data.access_token;
-
+  let accessToken = null;
+  if (espConnectionResult?.data?.access_token) {
+    accessToken = espConnectionResult.data.access_token;
+  }
   return Profiles.create({
     name,
     type,
