@@ -177,6 +177,9 @@ async function updateEspCampaign({
 
   const {
     apiKey,
+    secretKey,
+    adobeBaseUrl,
+    adobeImsUrl,
     accessToken,
     type: profileType,
     name,
@@ -189,9 +192,13 @@ async function updateEspCampaign({
   if (profileType !== type) {
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
     accessToken,
     profileId,
     userId: user.id,
@@ -274,10 +281,11 @@ async function sendEspCampaign({
   if (profileType !== type) {
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
     adobeImsUrl,
-    adobeBaseUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -410,6 +418,9 @@ async function getCampaignMail({ campaignId, profileId, user }) {
 
   const {
     apiKey,
+    secretKey,
+    adobeBaseUrl,
+    adobeImsUrl,
     accessToken,
     type,
     name,
@@ -418,9 +429,13 @@ async function getCampaignMail({ campaignId, profileId, user }) {
   } = profile;
 
   const { contentSendType, internalName } = additionalApiData;
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
     accessToken,
     profileId,
     userId: user.id,
@@ -469,9 +484,11 @@ async function getAdobeFolders({
   accessToken,
   profileId,
 }) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
   const espProvider = await EspProvider.build({
     adobeImsUrl,
-    adobeBaseUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
@@ -499,9 +516,11 @@ async function getAdobeDeliveries({
   userId,
   fullName,
 }) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
   const espProvider = await EspProvider.build({
     adobeImsUrl,
-    adobeBaseUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
     secretKey,
     targetType,
