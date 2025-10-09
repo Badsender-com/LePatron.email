@@ -20,6 +20,7 @@ const {
   handleTrackingData,
   getMailByMailingIdAndUser,
 } = require('../../mailing/mailing.service.js');
+const processMosaicoHtmlRender = require('../../utils/process-mosaico-html-render.js');
 
 class AdobeProvider {
   constructor({
@@ -400,7 +401,9 @@ class AdobeProvider {
       }
     );
 
-    return replacedHtml;
+    const cleanedHtml = processMosaicoHtmlRender(replacedHtml);
+
+    return cleanedHtml;
   }
 
   // TODO verify if the isModel is a problem for delivery save
