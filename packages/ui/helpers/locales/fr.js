@@ -174,7 +174,8 @@ export default {
     },
     user: {
       name: 'Nom de l\'utilisateur',
-      externalUsername: 'Nom externe d\'utilisateur',
+      externalUsername: 'Nom d\'utilisateur externe',
+      optional: ' (Optionnel)',
       passwordConfirm: 'Confirmation du mot de passe',
       passwordReset: 'Réinitialisation du mot de passe',
       login: 'Connexion',

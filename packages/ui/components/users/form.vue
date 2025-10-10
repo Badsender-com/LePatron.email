@@ -101,7 +101,9 @@ export default {
           <v-text-field
             id="externalUsername"
             v-model="localModel.externalUsername"
-            :label="$t('forms.user.externalUsername')"
+            :label="
+              $t('forms.user.externalUsername') + $t('forms.user.optional')
+            "
             name="externalUsername"
             @input="$v.user.externalUsername.$touch()"
             @blur="$v.user.externalUsername.$touch()"

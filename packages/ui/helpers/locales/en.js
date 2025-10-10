@@ -175,6 +175,7 @@ export default {
     user: {
       name: 'User name',
       externalUsername: 'External user name',
+      optional: ' (Optional)',
       passwordConfirm: 'Password confirmation',
       passwordReset: 'Password reset',
       login: 'Login',
