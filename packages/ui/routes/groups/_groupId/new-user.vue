@@ -31,6 +31,7 @@ export default {
       newUser: {
         email: '',
         name: '',
+        externalUsername: '',
         lang: 'fr',
         role: 'regular_user',
       },

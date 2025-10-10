@@ -86,6 +86,7 @@ async function getUsersByGroupId(req, res) {
  * @apiParam (Body) {String} groupId the group of the user
  * @apiParam (Body) {String} email should be unique in the application
  * @apiParam (Body) {String} [name]
+ * @apiParam (Body) {String} externalUsername
  * @apiParam (Body) {String} [lang="en"]
  *
  * @apiUse users
@@ -100,7 +101,12 @@ async function create(req, res) {
   }
   await groupService.findById(groupId);
 
-  const userParams = pick(req.body, ['name', 'email', 'lang']);
+  const userParams = pick(req.body, [
+    'name',
+    'email',
+    'lang',
+    'externalUsername',
+  ]);
   const role =
     req.body.role === Roles.GROUP_ADMIN
       ? Roles.GROUP_ADMIN
@@ -184,6 +190,7 @@ async function readMailings(req, res) {
  * @apiParam {string} userId
  * @apiParam (Body) {String} email should be unique in the application
  * @apiParam (Body) {String} name
+ * @apiParam (Body) {String} externalUsername
  * @apiParam (Body) {String} [lang="en"]
  *
  * @apiUse users
@@ -197,7 +204,13 @@ async function update(req, res) {
     );
   }
 
-  const userParams = pick(req.body, ['name', 'email', 'lang', 'role']);
+  const userParams = pick(req.body, [
+    'name',
+    'email',
+    'lang',
+    'role',
+    'externalUsername',
+  ]);
   const updatedUser = await userService.updateUser({ userId, ...userParams });
 
   res.json(updatedUser);
