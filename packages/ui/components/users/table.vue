@@ -29,6 +29,11 @@ export default {
         { text: '', value: 'role' },
         { text: this.$t('global.name'), align: 'left', value: 'name' },
         {
+          text: this.$t('global.externalUsername'),
+          align: 'left',
+          value: 'externalUsername',
+        },
+        {
           text: this.$tc('global.group', 1),
           align: 'left',
           value: 'group',
@@ -111,6 +116,11 @@ export default {
       <template #item.group="{ item }">
         <nuxt-link :to="`/groups/${item.group.id}`">
           {{ item.group.name }}
+        </nuxt-link>
+      </template>
+      <template #item.externalUsername="{ item }">
+        <nuxt-link :to="`/users/${item.id}`">
+          {{ item.externalUsername }}
         </nuxt-link>
       </template>
       <template #item.status="{ item }">
