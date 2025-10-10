@@ -22,6 +22,7 @@ const { GroupModel } = require('../constant/model.names.js');
  * @apiDefine users
  * @apiSuccess {String} id
  * @apiSuccess {String} name
+ * @apiSuccess {String} externalUsername
  * @apiSuccess {Date} createdAt creation date
  * @apiSuccess {Date} updatedAt last update date
  * @apiSuccess {String} lang selected langue of the user
@@ -46,7 +47,10 @@ const UserSchema = Schema(
       enum: [Roles.GROUP_ADMIN, Roles.REGULAR_USER],
       required: false,
     },
-
+    externalUsername: {
+      type: String,
+      required: false,
+    },
     email: {
       type: String,
       required: [true, 'Email address is required'],

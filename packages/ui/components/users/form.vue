@@ -26,6 +26,7 @@ export default {
         email: { required, email },
         name: { required },
         role: { required },
+        externalUsername: {},
       },
     };
   },
@@ -94,6 +95,16 @@ export default {
             :error-messages="nameErrors"
             @input="$v.user.name.$touch()"
             @blur="$v.user.name.$touch()"
+          />
+        </v-col>
+        <v-col cols="6">
+          <v-text-field
+            id="externalUsername"
+            v-model="localModel.externalUsername"
+            :label="$t('forms.user.externalUsername')"
+            name="externalUsername"
+            @input="$v.user.externalUsername.$touch()"
+            @blur="$v.user.externalUsername.$touch()"
           />
         </v-col>
         <v-col cols="6">

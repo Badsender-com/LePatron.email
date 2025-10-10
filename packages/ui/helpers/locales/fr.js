@@ -105,6 +105,7 @@ export default {
     previewMailAlt: 'Aperçu de l\'email',
     newPreview: 'Créer une prévisulisation',
     name: 'Nom',
+    externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
     tags: 'Labels',
@@ -173,6 +174,7 @@ export default {
     },
     user: {
       name: 'Nom de l\'utilisateur',
+      externalUsername: 'Nom externe d\'utilisateur',
       passwordConfirm: 'Confirmation du mot de passe',
       passwordReset: 'Réinitialisation du mot de passe',
       login: 'Connexion',
