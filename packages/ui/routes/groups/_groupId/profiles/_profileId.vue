@@ -24,7 +24,16 @@ export default {
         getProfileForAdmin(params.profileId)
       );
 
-      const { type, id, name, apiKey } = profileResponse.result;
+      const {
+        type,
+        id,
+        name,
+        adobeImsUrl,
+        adobeBaseUrl,
+        apiKey,
+        secretKey,
+        targetType,
+      } = profileResponse.result;
 
       if (type === ESP_TYPES.SENDINBLUE) {
         const {
@@ -90,6 +99,19 @@ export default {
         };
       }
 
+      if (type === ESP_TYPES.ADOBE) {
+        profileData = {
+          id,
+          name,
+          adobeImsUrl,
+          adobeBaseUrl,
+          apiKey,
+          secretKey,
+          targetType,
+          type,
+        };
+      }
+
       return {
         profile: profileData,
       };
@@ -127,6 +149,37 @@ export default {
               color: 'error',
             });
             break;
+          case 400: {
+            const errorCode = error?.response?.data?.message;
+
+            if (errorCode === 'ADOBE_INVALID_CLIENT') {
+              this.showSnackbar({
+                text: this.$t('forms.profile.errors.invalidClient'),
+                color: 'error',
+              });
+            } else if (errorCode === 'ADOBE_INVALID_SECRET') {
+              this.showSnackbar({
+                text: this.$t('forms.profile.errors.invalidSecret'),
+                color: 'error',
+              });
+            } else {
+              this.showSnackbar({
+                text: this.$t('forms.profile.errors.update'),
+                color: 'error',
+              });
+            }
+            break;
+          }
+          case 500: {
+            const logId = error?.response?.data?.logId;
+            let message = this.$t('forms.profile.errors.update');
+            message = message.replace('{logId}', logId || 'N/A');
+            this.showSnackbar({
+              text: message,
+              color: 'error',
+            });
+            break;
+          }
           default:
             this.showSnackbar({
               text: this.$t('global.errors.errorOccured'),

@@ -30,6 +30,8 @@ module.exports = {
   findOneWithoutApiKey,
   checkIfUserIsAuthorizedToAccessProfile,
   updateEspCampaign,
+  getAdobeFolders,
+  getAdobeDeliveries,
 };
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -59,14 +61,26 @@ async function actitoTargetTablesList({ apiKey, entity }) {
 }
 
 async function createProfile({
+  user,
   name,
   type,
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
+  secretKey,
+  targetType,
   _company,
   additionalApiData,
 }) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
+    userId: user.id,
     type,
     name,
     _company,
@@ -81,28 +95,47 @@ async function createProfile({
   if (!espConnectionResult) {
     throw new NotFound(ERROR_CODES.PROFILE_NOT_FOUND);
   }
-
+  let accessToken = null;
+  if (espConnectionResult?.data?.access_token) {
+    accessToken = espConnectionResult.data.access_token;
+  }
   return Profiles.create({
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
+    accessToken,
     _company,
     additionalApiData,
   });
 }
 
 async function updateProfile({
+  user,
   id,
   name,
   type,
+  adobeImsUrl,
+  adobeBaseUrl,
   apiKey,
+  secretKey,
+  targetType,
   _company,
   additionalApiData,
 }) {
   await findOne(id);
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
+    userId: user.id,
     type,
     name,
     _company,
@@ -119,7 +152,11 @@ async function updateProfile({
     {
       name,
       type,
+      adobeImsUrl,
+      adobeBaseUrl: cleanAdobeBaseUrl,
       apiKey,
+      secretKey,
+      targetType,
       _company,
       additionalApiData,
     }
@@ -140,6 +177,10 @@ async function updateEspCampaign({
 
   const {
     apiKey,
+    secretKey,
+    adobeBaseUrl,
+    adobeImsUrl,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -151,21 +192,35 @@ async function updateEspCampaign({
   if (profileType !== type) {
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    accessToken,
+    profileId,
+    userId: user.id,
     type,
     name,
     _company,
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: espSendingMailData.adobe,
+    };
+  }
 
   const espCampaignId =
     contentSendType === ESP_CONTENT_TYPE.MAIL
@@ -203,7 +258,7 @@ async function sendEspCampaign({
   const profile = await findOne(profileId);
 
   /*
-    For DSC, creating a new campaign from the same profile is allowed 
+    For DSC, creating a new campaign from the same profile is allowed
     if the campaign was deleted on DSC's side
   */
   if (type !== 'DSC') {
@@ -211,7 +266,12 @@ async function sendEspCampaign({
   }
 
   const {
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
+    accessToken,
     type: profileType,
     name,
     _company,
@@ -221,21 +281,36 @@ async function sendEspCampaign({
   if (profileType !== type) {
     throw new NotFound(ERROR_CODES.INCOHERENT_PROFILE_TYPES);
   }
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId: user.id,
     type,
     name,
     _company,
     additionalApiData,
   });
 
-  const campaignMailData = {
+  let campaignMailData = {
     ...additionalApiData,
     subject,
     planification,
     name: campaignMailName,
   };
+
+  if (type === EspTypes.ADOBE) {
+    campaignMailData = {
+      ...campaignMailData,
+      adobe: espSendingMailData.adobe,
+    };
+  }
 
   const { contentSendType } = additionalApiData;
   const espCampaignId =
@@ -338,15 +413,32 @@ async function getProfile({ profileId }) {
   return findOne(profileId);
 }
 
-async function getCampaignMail({ campaignId, profileId }) {
+async function getCampaignMail({ campaignId, profileId, user }) {
   const profile = await findOne(profileId);
 
-  const { apiKey, type, name, _company, additionalApiData } = profile;
+  const {
+    apiKey,
+    secretKey,
+    adobeBaseUrl,
+    adobeImsUrl,
+    accessToken,
+    type,
+    name,
+    _company,
+    additionalApiData,
+  } = profile;
 
-  const { contentSendType } = additionalApiData;
+  const { contentSendType, internalName } = additionalApiData;
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
 
   const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
     apiKey,
+    secretKey,
+    accessToken,
+    profileId,
+    userId: user.id,
     type,
     name,
     _company,
@@ -358,6 +450,7 @@ async function getCampaignMail({ campaignId, profileId }) {
     campaignMailResponse = await espProvider.getCampaignMail({
       campaignId,
       ...additionalApiData,
+      internalName,
     });
   } else {
     campaignMailResponse = await espProvider.getTemplate({
@@ -379,4 +472,66 @@ async function getCampaignMail({ campaignId, profileId }) {
 
 async function deleteOne(profileId) {
   return Profiles.deleteOne({ _id: Types.ObjectId(profileId) });
+}
+
+async function getAdobeFolders({
+  user,
+  adobeImsUrl,
+  adobeBaseUrl,
+  apiKey,
+  secretKey,
+  targetType,
+  accessToken,
+  profileId,
+}) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
+  const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
+    apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId: user.id,
+    type: EspTypes.ADOBE,
+  });
+
+  const groupNames = await espProvider.getUserGroups({ user });
+
+  return await espProvider.getFoldersFromGroupNames({
+    groupNames,
+    type: targetType,
+  });
+}
+async function getAdobeDeliveries({
+  adobeImsUrl,
+  adobeBaseUrl,
+  apiKey,
+  secretKey,
+  targetType,
+  accessToken,
+  profileId,
+  userId,
+  fullName,
+}) {
+  const cleanAdobeBaseUrl = adobeBaseUrl?.replace(/\/+$/, '') || adobeBaseUrl;
+
+  const espProvider = await EspProvider.build({
+    adobeImsUrl,
+    adobeBaseUrl: cleanAdobeBaseUrl,
+    apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId,
+    type: EspTypes.ADOBE,
+  });
+
+  return await espProvider.getDeliveriesFromFolderFullNameOrInternalName({
+    fullName,
+    type: targetType,
+  });
 }

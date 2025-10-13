@@ -19,6 +19,9 @@ export default {
       apiKeyInvalid: 'API key invalid',
       supportedLanguageIsRequired: 'A language is required',
       apiKeyRequired: 'An API Key is Required',
+      secretKeyRequired: 'A Secret Key is Required',
+      adobeImsUrlRequired : 'A login url is required',
+      adobeBaseUrlRequired: 'A base url is required',
       senderNameRequired: 'A Sender name is Required',
       senderMailRequired: 'A Sender email is Required',
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
@@ -39,6 +42,11 @@ export default {
     },
     add: 'Add',
     apiKey: 'API key',
+    secretKey: 'Secret key',
+    adobeImsUrl : 'Adobe login Url',
+    adobeBaseUrl : 'Adobe base Url',
+    adobeBaseUrlHelper: 'The URL will automatically be completed with /jsp/soaprouter.jsp and /jsp/uploadFile.jsp',
+    targetType: 'Connector type : ',
     entity: 'Entity',
     encodingType: 'Encoding type',
     targetTable: 'Target table',
@@ -97,6 +105,7 @@ export default {
     previewMailAlt: 'Preview of the email',
     newPreview: 'Create a preview',
     name: 'Name',
+    externalUsername: 'External Username',
     description: 'Description',
     author: 'Author',
     tags: 'Tags',
@@ -165,6 +174,8 @@ export default {
     },
     user: {
       name: 'User name',
+      externalUsername: 'External user name',
+      optional: ' (Optional)',
       passwordConfirm: 'Password confirmation',
       passwordReset: 'Password reset',
       login: 'Login',
@@ -218,6 +229,11 @@ export default {
         apiKey: {
           unauthorized: 'The provided API key is not allowed :(',
         },
+        default : 'An error occurred. Please try again.',
+        creation : 'An error occurred while creating the connector. Please contact support with this ID: {logId}.',
+        update : 'An error occurred while updating the connector. Please contact support with this ID: {logId}.',
+        invalidClient : 'Invalid API Key.',
+        invalidSecret : 'Invalid Secret Key.'
       },
     },
   },
@@ -404,4 +420,10 @@ export default {
       error: 'An error occurred. Please try again.',
     },
   },
+  adobe: {
+    targetTypes: {
+      'NMS_DELIVERY': 'Delivery',
+      'NMS_DELIVERY_MODEL': 'Delivery Template'
+    }
+  }
 };

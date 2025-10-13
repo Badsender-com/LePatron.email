@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [staging-clever]
+    branches: [staging]
   pull_request:
-    branches: [staging-clever]
+    branches: [staging]
 
 jobs:
   build:

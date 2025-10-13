@@ -3,6 +3,8 @@ const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const EspTypes = require('../constant/esp-type');
+const encryptionPlugin = require('../utils/encryption-plugin.js');
+const AdobeTargetTypes = require('../constant/adobe-target-types.js');
 /**
  * @apiDefine profile
  * @apiSuccess {String} id
@@ -20,7 +22,12 @@ const ProfileSchema = Schema(
     },
     type: {
       type: String,
-      enum: [EspTypes.ACTITO, EspTypes.SENDINBLUE, EspTypes.DSC],
+      enum: [
+        EspTypes.ACTITO,
+        EspTypes.SENDINBLUE,
+        EspTypes.DSC,
+        EspTypes.ADOBE,
+      ],
       required: false,
     },
     _company: {
@@ -28,9 +35,33 @@ const ProfileSchema = Schema(
       ref: GroupModel,
       alias: 'group',
     },
+    adobeImsUrl: {
+      type: String,
+      required: false,
+    },
+    adobeBaseUrl: {
+      type: String,
+      required: false,
+    },
     apiKey: {
       type: String,
       required: true,
+    },
+    secretKey: {
+      type: String,
+      required: false,
+    },
+    targetType: {
+      type: String,
+      enum: [
+        AdobeTargetTypes.NMS_DELIVERY,
+        AdobeTargetTypes.NMS_DELIVERY_MODEL,
+      ],
+      required: false,
+    },
+    accessToken: {
+      type: String,
+      required: false,
     },
     // http://mongoosejs.com/docs/schematypes.html#mixed
     additionalApiData: {},
@@ -41,4 +72,7 @@ const ProfileSchema = Schema(
     toObject: { virtuals: true },
   }
 );
+
+ProfileSchema.plugin(encryptionPlugin, ['secretKey', 'accessToken']);
+
 module.exports = ProfileSchema;

@@ -17,6 +17,8 @@ module.exports = {
   actitoTargetTableList: asyncHandler(actitoTargetTablesList),
   readProfile: asyncHandler(readProfile),
   readProfileForAdmin: asyncHandler(readProfileForAdmin),
+  getAdobeFolders: asyncHandler(getAdobeFolders),
+  getAdobeDeliveries: asyncHandler(getAdobeDeliveries),
 };
 
 /**
@@ -27,7 +29,11 @@ module.exports = {
  *
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
+ * @apiParam (Body) {String} adobeImsUrl Adobe login url
+ * @apiParam (Body) {String} adobeBaseUrl Adobe image upload and soap router url
  * @apiParam (Body) {String} apiKey the provider key
+ * @apiParam (Body) {String} secretKey the provider secret key
+ * @apiParam (Body) {String} targetType the target Type of adove provider
  * @apiParam (Body) {String} _company the ID of the group
  * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
  *
@@ -36,17 +42,166 @@ module.exports = {
 
 async function createProfile(req, res) {
   const { user } = req;
-  const { name, type, apiKey, _company, ...additionalApiData } = req.body;
-  const response = await profileService.createProfile({
-    user,
+  const {
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
     _company,
-    additionalApiData,
+    ...additionalApiData
+  } = req.body;
+
+  try {
+    const response = await profileService.createProfile({
+      user,
+      name,
+      type,
+      adobeImsUrl,
+      adobeBaseUrl,
+      apiKey,
+      secretKey,
+      targetType,
+      _company,
+      additionalApiData,
+    });
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
+}
+
+/**
+ * @api {get} /profiles/:profileID/adobe-folders : folders tree entity from Adobe email service provider
+ * @apiName getAdobeFolders
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ */
+async function getAdobeFolders(req, res) {
+  const user = req.user;
+  const { profileId } = req.params;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  await profileService.checkIfUserIsAuthorizedToAccessProfile({
+    user,
+    profileId,
   });
 
-  res.json(response);
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile?.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const {
+    apiKey,
+    secretKey,
+    adobeImsUrl,
+    adobeBaseUrl,
+    targetType,
+    accessToken,
+  } = profile;
+
+  if (!adobeImsUrl || !adobeBaseUrl) {
+    throw new Error('Missing adobe url in profile data');
+  }
+
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
+  }
+
+  try {
+    const adobeFoldersResult = await profileService.getAdobeFolders({
+      user,
+      adobeImsUrl,
+      adobeBaseUrl,
+      apiKey,
+      secretKey,
+      targetType,
+      accessToken,
+      profileId,
+    });
+
+    res.send({ result: adobeFoldersResult });
+  } catch (error) {
+    const logId = error?.logId;
+
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
+}
+
+/**
+ * @api {get} /profiles/:profileID/adobe-deliveries : deliveries tree entity from Adobe email service provider
+ * @apiName getAdobeDeliveries
+ * @apiGroup Profiles
+ *
+ * @apiParam  {String} profileId Adobe connector profile ID
+ * @apiParam  {String} folderName Adobe selected folderName
+ */
+async function getAdobeDeliveries(req, res) {
+  const { profileId } = req.params;
+  const { fullName } = req.query;
+
+  if (!profileId) {
+    throw new NotFound('Missing profileId');
+  }
+
+  const profile = await profileService.findOne(profileId);
+
+  if (!profile?.additionalApiData) {
+    throw new NotFound('Profile not found or missing API data :', profile);
+  }
+
+  const {
+    apiKey,
+    secretKey,
+    adobeImsUrl,
+    adobeBaseUrl,
+    targetType,
+    accessToken,
+  } = profile;
+
+  if (!adobeImsUrl || !adobeBaseUrl) {
+    throw new Error('Missing adobe url in profile data');
+  }
+
+  if (!apiKey || !secretKey) {
+    throw new Error('Missing apiKey or secretKey in profile data');
+  }
+
+  try {
+    const adobeDeliveriesResult = await profileService.getAdobeDeliveries({
+      adobeImsUrl,
+      adobeBaseUrl,
+      apiKey,
+      secretKey,
+      targetType,
+      accessToken,
+      profileId,
+      fullName,
+    });
+    res.send({ result: adobeDeliveriesResult });
+  } catch (error) {
+    const logId = error?.logId;
+
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -57,7 +212,11 @@ async function createProfile(req, res) {
  *
  * @apiParam (Body) {String} name profile name.
  * @apiParam (Body) {String} type Profile type
+ * @apiParam (Body) {String} adobeImsUrl Adobe login url
+ * @apiParam (Body) {String} adobeBaseUrl Adobe image upload and soap router url
  * @apiParam (Body) {String} apiKey the provider key
+ * @apiParam (Body) {String} secretKey the provider secret Key
+ * @apiParam (Body) {String} targetType the target type
  * @apiParam (Body) {String} _company the ID of the group
  * @apiParam (Body) {String} data the data to be used with the adequat ESP provider
  *
@@ -67,19 +226,42 @@ async function createProfile(req, res) {
 
 async function updateProfile(req, res) {
   const { user } = req;
-  const { name, type, apiKey, _company, id, ...additionalApiData } = req.body;
-
-  const response = await profileService.updateProfile({
-    user,
-    id,
+  const {
     name,
     type,
+    adobeImsUrl,
+    adobeBaseUrl,
     apiKey,
+    secretKey,
+    targetType,
     _company,
-    additionalApiData,
-  });
+    id,
+    ...additionalApiData
+  } = req.body;
 
-  res.json(response);
+  try {
+    const response = await profileService.updateProfile({
+      user,
+      id,
+      name,
+      type,
+      adobeImsUrl,
+      adobeBaseUrl,
+      apiKey,
+      secretKey,
+      targetType,
+      _company,
+      additionalApiData,
+    });
+
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -124,16 +306,24 @@ async function sendCampaignMail(req, res) {
     type,
   };
 
-  if (actionType === MODE_TYPE.EDIT) {
-    response = await profileService.updateEspCampaign({
-      ...communEspApiFields,
-      campaignId,
-    });
-  } else {
-    response = await profileService.sendEspCampaign(communEspApiFields);
-  }
+  try {
+    if (actionType === MODE_TYPE.EDIT) {
+      response = await profileService.updateEspCampaign({
+        ...communEspApiFields,
+        campaignId,
+      });
+    } else {
+      response = await profileService.sendEspCampaign(communEspApiFields);
+    }
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    const logId = error.logId;
+    res.status(error.statusCode || 500).json({
+      message: error.response.data.message || 'Erreur serveur',
+      ...(logId ? { logId } : {}),
+    });
+  }
 }
 
 /**
@@ -252,6 +442,7 @@ async function getCampaignMail(req, res) {
   const getCampaignMailData = await profileService.getCampaignMail({
     campaignId,
     profileId,
+    user,
   });
 
   res.send({ result: getCampaignMailData });

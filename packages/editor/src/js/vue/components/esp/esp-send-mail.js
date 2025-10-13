@@ -1,6 +1,7 @@
 const Vue = require('vue/dist/vue.common');
 const { SendinBlueComponent } = require('./providers/SendinBlueComponent');
 const { ActitoComponent } = require('./providers/ActitoComponent');
+const { AdobeComponent } = require('./providers/AdobeComponent');
 const { DscComponent } = require('./providers/DscComponent');
 const { ModalComponent } = require('../modal/modalComponent');
 const { getEspIds } = require('../../utils/apis');
@@ -21,6 +22,7 @@ const EspComponent = Vue.component('EspForm', {
   components: {
     SendinBlueComponent,
     ActitoComponent,
+    AdobeComponent,
     DscComponent,
     ModalComponent,
   },
@@ -36,6 +38,10 @@ const EspComponent = Vue.component('EspForm', {
     campaignId: null,
     espIds: [],
     fetchedProfile: {},
+    folders: [],
+    foldersError : "",
+    exportError: "",
+    ESP_TYPE
   }),
   computed: {
     espComponent() {
@@ -46,6 +52,8 @@ const EspComponent = Vue.component('EspForm', {
           return 'SendinBlueComponent';
         case ESP_TYPE.DSC:
           return 'DscComponent';
+        case ESP_TYPE.ADOBE:
+          return 'AdobeComponent';
         default:
           return 'SendinBlueComponent';
       }
@@ -60,10 +68,28 @@ const EspComponent = Vue.component('EspForm', {
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
+    this.folders = [];
   },
   methods: {
-    fetchData() {
+    async fetchData() {
       this.isLoading = true;
+
+      if (this.selectedProfile?.type === ESP_TYPE.ADOBE) {
+        axios.get(
+          `/api/profiles/${this.selectedProfile.id}/adobe-folders`
+        ).then((response) => {
+          this.folders = response?.data?.result;
+        })
+        .catch ((err) => {
+          this.folders = [];
+          const logId = err?.response?.data?.logId;
+          let errorMessage = this.vm.t('folder-error');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+          this.vm?.notifier?.error?.(this.vm.t('snackbar-error'));
+          this.foldersError = errorMessage;
+        })
+      }
+
       return axios
         .get(getEspIds({ mailingId: this.mailingId }))
         .then((response) => {
@@ -120,7 +146,7 @@ const EspComponent = Vue.component('EspForm', {
             Then it was probably deleted on DSC's side.
             So we allow the user to create a new one
           */
-          if(error.response.status === 404) {
+          if (error.response.status === 404) {
             this.type = SEND_MODE.CREATION;
             this.fetchProfileData(message);
             return;
@@ -180,6 +206,10 @@ const EspComponent = Vue.component('EspForm', {
           campaignId: this.campaignId,
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
+            adobe: {
+              folderFullName: data?.folderFullName,
+              deliveryInternalName: data?.deliveryInternalName,
+            },
             subject: data?.subject,
             planification: data?.planification,
             typeCampagne: data?.typeCampagne,
@@ -203,6 +233,12 @@ const EspComponent = Vue.component('EspForm', {
           // Fallback to previous error handling
           const errorMessageKey = this.getErrorMessageKeyFromError(error);
           this.vm.notifier.error(this.vm.t(errorMessageKey));
+
+          const logId = error?.response?.data?.logId;
+          let errorMessage = this.vm.t('exportError');
+          errorMessage = errorMessage.replace( '{logId}', logId || 'N/A' );
+
+          this.exportError = this.vm.t(errorMessageKey)+' '+errorMessage;
         })
         .finally(() => {
           this.isLoadingExport = false;
@@ -223,6 +259,19 @@ const EspComponent = Vue.component('EspForm', {
         }
       }
 
+      if(errorData.message === 'ADOBE_UPLOAD_ERROR'){
+        return 'uploadError'
+      }
+      if(errorData.message === 'ADOBE_SAVE_ERROR'){
+        return 'saveError'
+      }
+      if(errorData.message === 'ADOBE_PUBLISH_ERROR'){
+        return 'publishError'
+      }
+      if(errorData.message === 'ADOBE_GET_IMAGE_URL_ERROR'){
+        return 'getImageUrlError'
+      }
+
       // Standard error message keys for known status codes
       const handledErrorCodes = {
         400: 'error-server-400',
@@ -239,6 +288,7 @@ const EspComponent = Vue.component('EspForm', {
         ref="modalRef"
         :isLoading="isLoading"
         v-if="selectedProfile && fetchedProfile"
+        :isFullWidth="selectedProfile.type === ESP_TYPE.ADOBE"
         >
       <component
         :isLoading="isLoadingExport"
@@ -250,6 +300,9 @@ const EspComponent = Vue.component('EspForm', {
         :selectedProfile="selectedProfile"
         :campaignId="campaignId"
         :closeModal="closeModal"
+        :fetchedFolders="folders"
+        :fetchedFoldersError="foldersError"
+        :exportError="exportError"
         @submit="submitEsp"
       >
       </component>

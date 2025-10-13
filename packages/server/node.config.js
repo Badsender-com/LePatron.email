@@ -62,6 +62,9 @@ const config = rc('lepatron', {
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
   dscUrl: process.env.DSC_ESP_URL,
   dscUserAgent: process.env.DSC_USER_AGENT,
+  adobeDefaultImsUrl: process.env.NUXT_ENV_ADOBE_DEFAULT_IMS_URL,
+  adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
+  encryptionKey: process.env.ENCRYPTION_KEY,
   NODE_ENV: process.env.NODE_ENV,
 });
 

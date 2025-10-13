@@ -5,6 +5,7 @@ import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
 import DSCComponent from '../../components/profiles/esp/DSCComponent';
 import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
+import ADOBEComponent from '../../components/profiles/esp/ADOBEComponent';
 
 export default {
   name: 'ProfileForm',
@@ -12,6 +13,7 @@ export default {
     SENDINBLUEComponent,
     ACTITOComponent,
     DSCComponent,
+    ADOBEComponent,
   },
   mixins: [validationMixin],
   props: {
@@ -34,6 +36,10 @@ export default {
           text: 'DSC',
           value: ESP_TYPES.DSC,
         },
+        {
+          text: 'Adobe',
+          value: ESP_TYPES.ADOBE,
+        },
       ],
       selectedEsp: ESP_TYPES.SENDINBLUE,
       loading: false,
@@ -42,6 +48,9 @@ export default {
   computed: {
     selectedEspName() {
       return this.selectedEsp + 'Component';
+    },
+    needsFtpConfig() {
+      return this.selectedEsp !== ESP_TYPES.ADOBE;
     },
   },
   async mounted() {
@@ -76,7 +85,7 @@ export default {
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-row v-if="!group.downloadMailingWithFtpImages">
+      <v-row v-if="needsFtpConfig && !group.downloadMailingWithFtpImages">
         <v-col cols="12">
           <v-alert
             dense
@@ -97,14 +106,13 @@ export default {
             solo
             outlined
             flat
-            :disabled="!group.downloadMailingWithFtpImages"
             @change="handleEspChange($event)"
           />
           <client-only>
             <component
               :is="selectedEspName"
               :profile-data="profile"
-              :disabled="!group.downloadMailingWithFtpImages"
+              :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
               :loading="loading"
               @submit="handleSubmit"
             />

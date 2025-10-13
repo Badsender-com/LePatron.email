@@ -19,6 +19,9 @@ export default {
       supportedLanguageIsRequired: 'Veuillez définir La langue',
       apiKeyInvalid: 'La clé API est invalide',
       apiKeyRequired: 'Veuillez saisir une clé API',
+      secretKeyRequired: 'Veuillez saisir une clé secrète',
+      adobeImsUrlRequired : 'Veuillez saisir une adresse de login',
+      adobeBaseUrlRequired: 'Veuillez saisir une adresse',
       senderNameRequired: 'Veuillez saisir un nom d\'expéditeur',
       senderMailRequired: 'Veuillez saisir l\'adresse email de l\'expéditeur',
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec le même nom existe déjà',
@@ -39,6 +42,11 @@ export default {
     },
     add: 'Ajouter',
     apiKey: 'Clé API',
+    secretKey: 'Clé secrète',
+    adobeImsUrl : 'Url de login Adobe',
+    adobeBaseUrl : 'Url de base d\'Adobe',
+    adobeBaseUrlHelper: 'L’URL sera complétée automatiquement par /jsp/soaprouter.jsp et /jsp/uploadFile.jsp',
+    targetType: 'Type du connecteur :',
     entity: 'Entité',
     encodingType: 'Type d\'encodage',
     targetTable: 'Table cible',
@@ -97,6 +105,7 @@ export default {
     previewMailAlt: 'Aperçu de l\'email',
     newPreview: 'Créer une prévisulisation',
     name: 'Nom',
+    externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
     tags: 'Labels',
@@ -165,6 +174,8 @@ export default {
     },
     user: {
       name: 'Nom de l\'utilisateur',
+      externalUsername: 'Nom d\'utilisateur externe',
+      optional: ' (Optionnel)',
       passwordConfirm: 'Confirmation du mot de passe',
       passwordReset: 'Réinitialisation du mot de passe',
       login: 'Connexion',
@@ -219,6 +230,13 @@ export default {
         apiKey: {
           unauthorized: 'La clé API fournie n\'est pas autorisée :(',
         },
+        default:
+           'Une erreur s\'est produite. Veuillez réessayer.',
+        creation :
+            'Une erreur est survenue lors de la création du connecteur. Contactez le support avec l\'identifiant : {logId}.',
+        update : 'Une erreur est survenue lors de la modification du connecteur. Contactez le support avec l\'identifiant : {logId}.',
+        invalidClient : 'Clé api invalide.',
+        invalidSecret : 'Clé secrète invalide.'
       },
     },
   },
@@ -406,4 +424,10 @@ export default {
       error: 'Une erreur s\'est produite. Veuillez réessayer.',
     },
   },
+  adobe: {
+    targetTypes: {
+      'NMS_DELIVERY': 'Livrable',
+      'NMS_DELIVERY_MODEL': 'Modèle de livrable'
+    }
+  }
 };

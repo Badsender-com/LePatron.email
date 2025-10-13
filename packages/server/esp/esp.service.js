@@ -4,10 +4,27 @@ const EspTypes = require('../constant/esp-type');
 const SendinBlueProvider = require('../esp/sendinblue/sendinBlueProvider');
 const ActitoProvider = require('../esp/actito/actitoProvider');
 const DscProvider = require('./dsc/dscProvider');
+const AdobeProvider = require('./adobe/adobeProvider');
 
 class EspService {
-  static async build({ type, apiKey, additionalApiData }) {
-    const authorizedEsps = [EspTypes.ACTITO, EspTypes.SENDINBLUE, EspTypes.DSC];
+  static async build({
+    type,
+    adobeImsUrl,
+    adobeBaseUrl,
+    apiKey,
+    secretKey,
+    targetType,
+    accessToken,
+    profileId,
+    userId,
+    additionalApiData,
+  }) {
+    const authorizedEsps = [
+      EspTypes.ACTITO,
+      EspTypes.SENDINBLUE,
+      EspTypes.DSC,
+      EspTypes.ADOBE,
+    ];
     if (!authorizedEsps.includes(type)) {
       throw new InternalServerError(ERROR_CODES.UNAUTHORIZED_ESP);
     }
@@ -26,6 +43,18 @@ class EspService {
       case EspTypes.DSC:
         return DscProvider.build({
           apiKey: apiKey,
+          data: additionalApiData,
+        });
+      case EspTypes.ADOBE:
+        return AdobeProvider.build({
+          adobeImsUrl: adobeImsUrl,
+          adobeBaseUrl: adobeBaseUrl,
+          apiKey: apiKey,
+          secretKey: secretKey,
+          targetType: targetType,
+          accessToken: accessToken,
+          profileId: profileId,
+          userId: userId,
           data: additionalApiData,
         });
       default:

@@ -102,6 +102,13 @@ module.exports = {
   mailName: "Nom de l'email",
   templateName: 'Nom du template',
   'export-to': 'Exporter vers',
+  'exporting-in-progress': 'Export en cours, merci de patienter...',
+  'search-folder': 'Rechercher un dossier...',
+  'select-folder': 'Sélectionner un dossier',
+  'search-delivery': 'Rechercher un livrable...',
+  'search-delivery-template': 'Rechercher un modèle de livrable...',
+  'select-delivery': 'Sélectionner un livrable',
+  'select-delivery-template': 'Sélectionner un modèle de livrable',
   exporting: 'Exportation…',
   loading: 'Chargement',
   submit: 'Enregistrer',
@@ -126,6 +133,13 @@ module.exports = {
   'supported-language': 'Langue',
   'target-table': 'Table cible',
   'encoding-type': "Type d'encodage",
+  uploadError: "Une erreur s'est produite lors de l'upload.",
+  saveError: "Une erreur s'est produite lors de la sauvegarde.",
+  exportError: "Contactez le support avec l'identifiant : {logId}.",
+  publishError: "Une erreur s'est produite lors de la publication.",
+  getImageUrlError:
+    "Une erreur s'est produite lors de la récupération de l'url des images.",
+
   entity: 'Entité',
 
   // Additional error messages from the handleError function
@@ -181,4 +195,11 @@ module.exports = {
   'delete-block': 'Supprimer',
   'delete-block-success': 'Bloc supprimé avec succès',
   'delete-block-error': 'Erreur lors de la suppression du bloc',
+
+  //Adobe Connector Modal
+  'delivery-error':
+    "Une erreur est survenue lors du chargement des livrables. Contactez le support avec l'identifiant : {logId}.",
+  'folder-error':
+    "Une erreur est survenue lors du chargement des dossiers. Contactez le support avec l'identifiant : {logId}.",
+  'snackbar-error': "Une erreur s'est produite. Veuillez réessayer.",
 };

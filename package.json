@@ -43,6 +43,7 @@
     "@nuxtjs/style-resources": "1.0.0",
     "@nuxtjs/vuetify": "1.11.2",
     "@poziworld/oauth2orize": "1.11.1",
+    "@smarthtmlelements/smart-elements": "6.2.0",
     "apidoc": "0.19.0",
     "archiver": "5.2.0",
     "aws-sdk": "2.543.0",
@@ -277,6 +278,6 @@
   },
   "lint-staged": {
     "*.{js,vue,css,scss,md}": "prettier --write",
-    "*.{js,vue}": "eslint --cache --fix"
+    "*.{js,vue}": "eslint --cache --fix --ignore-pattern 'public/source/*'"
   }
 }
