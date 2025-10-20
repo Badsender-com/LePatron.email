@@ -270,7 +270,7 @@ class AdobeProvider {
                 }
                 ${
                   type === ADOBE_TYPES.NMS_DELIVERY
-                    ? '<condition expr="@state=0"/>'
+                    ? '<condition expr="@state IN (0,11,12,13,15,21,25,37,45)"/>'
                     : ''
                 }
                 ${
@@ -409,7 +409,6 @@ class AdobeProvider {
     return cleanedHtml;
   }
 
-  // TODO verify if the isModel is a problem for delivery save
   async saveDeliveryTemplate({ internalName, folderFullName, contentHtml }) {
     return this.makeSoapRequest({
       soapAction: 'xtk:persist#Write',
@@ -417,7 +416,7 @@ class AdobeProvider {
       <m:Write xmlns:m="urn:xtk:persist|xtk:session">
         <sessiontoken></sessiontoken>
         <domDoc xsi:type='ns:Element'>
-          <delivery xtkschema="nms:delivery" isModel="1" deliveryMode="4" internalName="${internalName}" _operation="update">
+          <delivery xtkschema="nms:delivery" deliveryMode="4" internalName="${internalName}" _operation="update">
             <content>
               <html>
                 <source>
