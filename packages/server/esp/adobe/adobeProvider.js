@@ -17,6 +17,10 @@ const { Profiles } = require('../../../server/common/models.common.js');
 const { Types } = require('mongoose');
 const ADOBE_TYPES = require('../../constant/adobe-target-types.js');
 const {
+  ADOBE_DELIVERY_STATE_VALUES,
+} = require('../../constant/adobe-delivery-states.js');
+
+const {
   handleTrackingData,
   getMailByMailingIdAndUser,
 } = require('../../mailing/mailing.service.js');
@@ -270,7 +274,9 @@ class AdobeProvider {
                 }
                 ${
                   type === ADOBE_TYPES.NMS_DELIVERY
-                    ? '<condition expr="@state IN (0,11,12,13,15,21,25,37,45)"/>'
+                    ? `<condition expr="@state IN (${ADOBE_DELIVERY_STATE_VALUES.join(
+                        ','
+                      )})"/>`
                     : ''
                 }
                 ${
