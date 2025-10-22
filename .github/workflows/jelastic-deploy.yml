@@ -1,0 +1,83 @@
+name: Deploy to Jelastic
+
+on:
+  push:
+    branches: [jlo-experimental]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'jlo-experimental'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14.16.0'
+          cache: 'yarn'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: yarn install
+      
+      - name: Run tests
+        run: yarn test-ci
+      
+      - name: Build application
+        run: yarn build
+      
+      - name: Deploy to Jelastic
+        env:
+          JELASTIC_GIT_URL: ${{ secrets.JELASTIC_GIT_URL }}
+          JELASTIC_GIT_USER: ${{ secrets.JELASTIC_GIT_USER }}
+          JELASTIC_GIT_PASSWORD: ${{ secrets.JELASTIC_GIT_PASSWORD }}
+        run: |
+          # Configure git
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          
+          # Add Jelastic remote with credentials
+          if [ ! -z "$JELASTIC_GIT_URL" ]; then
+            # Extract protocol and URL parts
+            PROTOCOL=$(echo $JELASTIC_GIT_URL | grep -oP '^[^:]+')
+            URL_WITHOUT_PROTOCOL=$(echo $JELASTIC_GIT_URL | sed 's|^[^:]*://||')
+            
+            # Add credentials to URL if provided
+            if [ ! -z "$JELASTIC_GIT_USER" ] && [ ! -z "$JELASTIC_GIT_PASSWORD" ]; then
+              REMOTE_URL="${PROTOCOL}://${JELASTIC_GIT_USER}:${JELASTIC_GIT_PASSWORD}@${URL_WITHOUT_PROTOCOL}"
+            else
+              REMOTE_URL=$JELASTIC_GIT_URL
+            fi
+            
+            # Add Jelastic remote
+            git remote add jelastic $REMOTE_URL
+            
+            # Push to Jelastic
+            echo "Deploying to Jelastic..."
+            git push jelastic HEAD:master --force
+            
+            echo "✅ Successfully deployed to Jelastic!"
+          else
+            echo "❌ Error: JELASTIC_GIT_URL secret is not set"
+            echo "Please configure the following secrets in your GitHub repository:"
+            echo "  - JELASTIC_GIT_URL: Your Jelastic Git repository URL"
+            echo "  - JELASTIC_GIT_USER: Your Jelastic Git username (optional)"
+            echo "  - JELASTIC_GIT_PASSWORD: Your Jelastic Git password/token (optional)"
+            exit 1
+          fi

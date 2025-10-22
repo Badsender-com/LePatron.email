@@ -36,3 +36,59 @@ After forking the repo:
 3. Link the existing application to your local repo with `clever link [--org <ORG-NAME>] <APP-NAME> [--alias <alias>]`
 4. Add this environment variable `CC_POST_BUILD_HOOK = yarn build`
 5. Deploy the application by running `clever deploy [--alias <alias>]`
+
+---
+
+## How to deploy on Jelastic:
+
+Jelastic supports deployment via Git push. Follow these steps:
+
+#### Prerequisites:
+
+- Hosted and accessible `Mongo DB`
+- `AWS` bucket
+- Mail provider
+- Jelastic environment created with Node.js
+
+#### Steps:
+
+1. **Create a Node.js environment in Jelastic:**
+   - Log into your Jelastic dashboard
+   - Create a new environment with Node.js runtime (version 14.16.0)
+   - Note your environment URL and Git repository URL
+
+2. **Configure environment variables:**
+   - In Jelastic dashboard, go to your environment settings
+   - Add all required environment variables (same as [Heroku configuration](./packages/documentation/heroku-configuration.md##-configuring-heroku-environments-variables))
+
+3. **Add Jelastic remote to your local repository:**
+   ```bash
+   git remote add jelastic <JELASTIC_GIT_URL>
+   ```
+   Replace `<JELASTIC_GIT_URL>` with your Jelastic Git repository URL from the dashboard
+
+4. **Deploy to Jelastic:**
+   ```bash
+   # Deploy the jlo-experimental branch
+   git push jelastic jlo-experimental:master
+   ```
+   
+   Or for the current branch:
+   ```bash
+   git push jelastic HEAD:master
+   ```
+
+5. **Build process:**
+   - Jelastic will automatically run `yarn install`
+   - The `heroku-postbuild` script will execute: `yarn build`
+   - The application will start using the command from Procfile: `yarn start`
+
+6. **Verify deployment:**
+   - Check the deployment logs in Jelastic dashboard
+   - Access your application via the Jelastic environment URL
+
+#### Update existing deployment:
+
+```bash
+git push jelastic <branch-name>:master
+```
