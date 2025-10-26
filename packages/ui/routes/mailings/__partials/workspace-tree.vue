@@ -67,8 +67,14 @@ export default {
     $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
     treeviewWorkspaces: {
       handler(newWorkspaces) {
+        console.log('[WorkspaceTree] treeviewWorkspaces changed:', {
+          hasWorkspaces: newWorkspaces && newWorkspaces.length > 0,
+          workspaceCount: newWorkspaces?.length,
+          alreadyInitialized: this.treeStateInitialized,
+        });
         // Initialize tree state only once when workspaces data first loads
         if (newWorkspaces && newWorkspaces.length > 0 && !this.treeStateInitialized) {
+          console.log('[WorkspaceTree] Initializing tree state...');
           this.initializeTreeState();
           this.treeStateInitialized = true;
         }
@@ -125,32 +131,49 @@ export default {
      * Initialize tree state - load saved state or default to all workspaces open
      */
     initializeTreeState() {
+      console.log('[WorkspaceTree] initializeTreeState called');
+      console.log('[WorkspaceTree] storageKey:', this.storageKey);
+
       try {
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem(this.storageKey);
+          console.log('[WorkspaceTree] Saved state from localStorage:', saved);
+
           if (saved) {
             // Restore saved IDs
             const savedIds = JSON.parse(saved);
+            console.log('[WorkspaceTree] Parsed saved IDs:', savedIds);
+
             // Find the actual node objects from treeviewWorkspaces
-            this.openNodes = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
+            const foundNodes = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
+            console.log('[WorkspaceTree] Found nodes:', foundNodes.length, 'nodes');
+
+            this.openNodes = foundNodes;
+            console.log('[WorkspaceTree] Set openNodes to restored nodes');
           } else {
+            console.log('[WorkspaceTree] No saved state, using default (all workspaces open)');
             // Default: open all workspaces (but not folders)
             const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+            console.log('[WorkspaceTree] Default workspace IDs:', workspaceIds);
+
             this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
             // Save this default state as IDs
             this.saveTreeState(workspaceIds);
           }
         } else {
+          console.log('[WorkspaceTree] localStorage not available');
           // No localStorage available, default to all workspaces open
           const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
           this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
         }
       } catch (error) {
-        console.error('Error initializing tree state:', error);
+        console.error('[WorkspaceTree] Error initializing tree state:', error);
         // Fallback to all workspaces open
         const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
         this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
       }
+
+      console.log('[WorkspaceTree] Final openNodes:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -168,10 +191,13 @@ export default {
      * Handle tree expansion state changes
      */
     handleTreeUpdate(openNodes) {
+      console.log('[WorkspaceTree] handleTreeUpdate called with', openNodes.length, 'nodes');
       this.openNodes = openNodes;
       // Extract IDs from node objects before saving
       const openIds = openNodes.map(node => node.id);
+      console.log('[WorkspaceTree] Extracted IDs:', openIds);
       this.saveTreeState(openIds);
+      console.log('[WorkspaceTree] State saved to localStorage');
     },
     async checkIfNotData() {
       if (!this.selectedItem?.id && this.workspaces?.length > 0) {
