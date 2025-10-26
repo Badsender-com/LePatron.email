@@ -36,6 +36,7 @@ export default {
     selectedItemToDelete: {},
     conflictError: false,
     openNodes: [],
+    isInitializing: false,
   }),
   async fetch() {
     const { dispatch } = this.$store;
@@ -136,6 +137,9 @@ export default {
       console.log('[WorkspaceTree] initializeTreeState called');
       console.log('[WorkspaceTree] storageKey:', this.storageKey);
 
+      // Set flag to ignore @update:open events during initialization
+      this.isInitializing = true;
+
       try {
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem(this.storageKey);
@@ -171,6 +175,12 @@ export default {
       }
 
       console.log('[WorkspaceTree] Final openNodes:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
+
+      // Reset flag on next tick (after Vue has updated the DOM and Vuetify has synced)
+      this.$nextTick(() => {
+        this.isInitializing = false;
+        console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
+      });
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -189,6 +199,13 @@ export default {
      */
     handleTreeUpdate(openNodes) {
       console.log('[WorkspaceTree] handleTreeUpdate called with', openNodes.length, 'nodes');
+
+      // Ignore events during initialization (Vuetify emits @update:open when we set :open programmatically)
+      if (this.isInitializing) {
+        console.log('[WorkspaceTree] Ignoring update during initialization');
+        return;
+      }
+
       this.openNodes = openNodes;
       // Extract IDs from node objects before saving
       const openIds = openNodes.map(node => node.id);
