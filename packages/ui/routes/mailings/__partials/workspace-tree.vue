@@ -85,7 +85,7 @@ export default {
   },
   methods: {
     /**
-     * Get all workspace IDs recursively (for default open state)
+     * Get all workspace IDs (for default open state)
      */
     getAllWorkspaceIds(items) {
       const ids = [];
@@ -99,6 +99,29 @@ export default {
       return ids;
     },
     /**
+     * Recursively find nodes by their IDs in the tree
+     */
+    findNodesByIds(ids, items) {
+      const result = [];
+      if (!items || items.length === 0 || !ids || ids.length === 0) {
+        return result;
+      }
+
+      const findInTree = (nodes) => {
+        nodes.forEach(node => {
+          if (ids.includes(node.id)) {
+            result.push(node);
+          }
+          if (node.children && node.children.length > 0) {
+            findInTree(node.children);
+          }
+        });
+      };
+
+      findInTree(items);
+      return result;
+    },
+    /**
      * Initialize tree state - load saved state or default to all workspaces open
      */
     initializeTreeState() {
@@ -106,31 +129,36 @@ export default {
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem(this.storageKey);
           if (saved) {
-            // Restore saved state
-            this.openNodes = JSON.parse(saved);
+            // Restore saved IDs
+            const savedIds = JSON.parse(saved);
+            // Find the actual node objects from treeviewWorkspaces
+            this.openNodes = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
           } else {
             // Default: open all workspaces (but not folders)
-            this.openNodes = this.getAllWorkspaceIds(this.treeviewWorkspaces);
-            // Save this default state
-            this.saveTreeState();
+            const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+            this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
+            // Save this default state as IDs
+            this.saveTreeState(workspaceIds);
           }
         } else {
           // No localStorage available, default to all workspaces open
-          this.openNodes = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+          const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+          this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
         }
       } catch (error) {
         console.error('Error initializing tree state:', error);
         // Fallback to all workspaces open
-        this.openNodes = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+        const workspaceIds = this.getAllWorkspaceIds(this.treeviewWorkspaces);
+        this.openNodes = this.findNodesByIds(workspaceIds, this.treeviewWorkspaces);
       }
     },
     /**
-     * Save tree expansion state to localStorage
+     * Save tree expansion state to localStorage (as IDs only)
      */
-    saveTreeState() {
+    saveTreeState(openIds) {
       try {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(this.storageKey, JSON.stringify(this.openNodes));
+          localStorage.setItem(this.storageKey, JSON.stringify(openIds));
         }
       } catch (error) {
         console.error('Error saving tree state:', error);
@@ -141,7 +169,9 @@ export default {
      */
     handleTreeUpdate(openNodes) {
       this.openNodes = openNodes;
-      this.saveTreeState();
+      // Extract IDs from node objects before saving
+      const openIds = openNodes.map(node => node.id);
+      this.saveTreeState(openIds);
     },
     async checkIfNotData() {
       if (!this.selectedItem?.id && this.workspaces?.length > 0) {
