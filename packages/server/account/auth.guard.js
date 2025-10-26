@@ -77,28 +77,48 @@ function guard(roles = [Roles.REGULAR_USER], redirect) {
  */
 passport.use(
   new LocalStrategy(async (username, password, done) => {
+    console.log('[AUTH] Login attempt started for username:', username);
+    const startTime = Date.now();
+
     // admin
     if (username === config.admin.username) {
+      console.log('[AUTH] Admin login detected, checking password...');
       if (password === config.admin.password) {
+        console.log('[AUTH] Admin password correct, login successful in', Date.now() - startTime, 'ms');
         return done(null, { ...adminUser });
       }
+      console.log('[AUTH] Admin password incorrect');
       return done(null, false, { message: 'password.error.incorrect' });
     }
     // user
     try {
+      console.log('[AUTH] Regular user login, querying database...');
+      const dbQueryStart = Date.now();
       const user = await Users.findOne({
         email: username,
         isDeactivated: { $ne: true },
         token: { $exists: false },
       });
-      if (!user) return done(null, false, { message: 'password.error.nouser' });
+      console.log('[AUTH] Database query completed in', Date.now() - dbQueryStart, 'ms');
+
+      if (!user) {
+        console.log('[AUTH] User not found');
+        return done(null, false, { message: 'password.error.nouser' });
+      }
+
+      console.log('[AUTH] User found, comparing password with bcrypt...');
+      const bcryptStart = Date.now();
       const isPasswordValid = user.comparePassword(password);
+      console.log('[AUTH] Bcrypt comparison completed in', Date.now() - bcryptStart, 'ms');
+
       if (!isPasswordValid) {
+        console.log('[AUTH] Password incorrect');
         return done(null, false, { message: 'password.error.incorrect' });
       }
+      console.log('[AUTH] Login successful in', Date.now() - startTime, 'ms');
       return done(null, user);
     } catch (err) {
-      console.error(err);
+      console.error('[AUTH] Error during login:', err);
       return done(null, false, { message: 'login.error.internal' });
     }
   })
