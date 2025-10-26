@@ -12,6 +12,7 @@ import {
   FETCH_WORKSPACES,
   FETCH_FOLDER_OR_WORKSPACE,
 } from '~/store/folder';
+import { USER } from '~/store/user';
 import { canCreateFolder } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from './folder-rename-modal';
@@ -19,6 +20,8 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+
+const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 
 export default {
   name: 'WorkspaceTree',
@@ -32,6 +35,7 @@ export default {
   data: () => ({
     selectedItemToDelete: {},
     conflictError: false,
+    openNodes: [],
   }),
   async fetch() {
     const { dispatch } = this.$store;
@@ -46,8 +50,16 @@ export default {
       'areLoadingWorkspaces',
       'treeviewWorkspaces',
     ]),
+    ...mapState(USER, {
+      userInfo: 'info',
+    }),
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    storageKey() {
+      // Create unique storage key per user
+      const userId = this.userInfo?.id || 'anonymous';
+      return `${TREE_STATE_STORAGE_KEY}_${userId}`;
     },
   },
   watch: {
@@ -59,8 +71,46 @@ export default {
         query: { wid: this.workspaces[0]?._id },
       });
     }
+    // Restore tree state from localStorage
+    this.loadTreeState();
   },
   methods: {
+    /**
+     * Save tree expansion state to localStorage
+     */
+    saveTreeState() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(this.storageKey, JSON.stringify(this.openNodes));
+        }
+      } catch (error) {
+        console.error('Error saving tree state:', error);
+      }
+    },
+    /**
+     * Load tree expansion state from localStorage
+     */
+    loadTreeState() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem(this.storageKey);
+          if (saved) {
+            this.openNodes = JSON.parse(saved);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading tree state:', error);
+        // Fallback to empty array on error
+        this.openNodes = [];
+      }
+    },
+    /**
+     * Handle tree expansion state changes
+     */
+    handleTreeUpdate(openNodes) {
+      this.openNodes = openNodes;
+      this.saveTreeState();
+    },
     async checkIfNotData() {
       if (!this.selectedItem?.id && this.workspaces?.length > 0) {
         await this.$router.push({
@@ -263,10 +313,11 @@ export default {
       activatable
       :active="[selectedItem]"
       :items="treeviewWorkspaces"
+      :open="openNodes"
       hoverable
-      open-all
       return-object
       @update:active="handleSelectItemFromTreeView"
+      @update:open="handleTreeUpdate"
     >
       <template #prepend="{ item, open }">
         <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">
