@@ -199,14 +199,15 @@ export default {
      * Handle tree expansion state changes
      */
     handleTreeUpdate(openNodes) {
-      console.log('[WorkspaceTree] handleTreeUpdate called with', openNodes.length, 'nodes');
+      console.log('[WorkspaceTree] handleTreeUpdate called with', openNodes.length, 'nodes', '| isInitializing:', this.isInitializing);
 
       // Ignore events during initialization (Vuetify emits @update:open when we set :open programmatically)
       if (this.isInitializing) {
-        console.log('[WorkspaceTree] Ignoring update during initialization');
+        console.log('[WorkspaceTree] ✓ Ignoring update during initialization');
         return;
       }
 
+      console.log('[WorkspaceTree] Processing update (not initializing)');
       this.openNodes = openNodes;
       // Extract IDs from node objects before saving
       const openIds = openNodes.map(node => node.id);
