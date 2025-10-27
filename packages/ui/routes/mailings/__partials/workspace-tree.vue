@@ -37,7 +37,6 @@ export default {
     conflictError: false,
     openNodes: [],
     isInitializing: false,
-    treeKey: 0,
   }),
   async fetch() {
     const { dispatch } = this.$store;
@@ -176,11 +175,6 @@ export default {
       }
 
       console.log('[WorkspaceTree] Final openNodes:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
-
-      // Force v-treeview to re-render with the correct openNodes
-      // Changing the key causes Vue to destroy and recreate the component
-      this.treeKey++;
-      console.log('[WorkspaceTree] Incremented treeKey to', this.treeKey, 'to force re-render');
 
       // Reset flag after a delay to let Vuetify fully sync
       // $nextTick is too fast - Vuetify emits events before it completes
@@ -419,7 +413,6 @@ export default {
   >
     <v-treeview
       ref="tree"
-      :key="treeKey"
       item-key="id"
       activatable
       :active="[selectedItem]"
