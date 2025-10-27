@@ -176,11 +176,12 @@ export default {
 
       console.log('[WorkspaceTree] Final openNodes:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
 
-      // Reset flag on next tick (after Vue has updated the DOM and Vuetify has synced)
-      this.$nextTick(() => {
+      // Reset flag after a delay to let Vuetify fully sync
+      // $nextTick is too fast - Vuetify emits events before it completes
+      setTimeout(() => {
         this.isInitializing = false;
         console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
-      });
+      }, 100);
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
