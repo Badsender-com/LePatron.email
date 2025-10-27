@@ -74,18 +74,12 @@ export default {
     $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
     treeviewWorkspaces: {
       handler(newWorkspaces, oldWorkspaces) {
-        console.log('[WorkspaceTree] treeviewWorkspaces changed:', {
-          newCount: newWorkspaces?.length || 0,
-          oldCount: oldWorkspaces?.length || 0,
-          currentOpenCount: this.openNodes?.length || 0,
-        });
         // Initialize tree state only when workspaces data first loads
         // (transition from empty/undefined to populated)
         const isInitialLoad = newWorkspaces && newWorkspaces.length > 0 &&
                               (!oldWorkspaces || oldWorkspaces.length === 0);
 
         if (isInitialLoad) {
-          console.log('[WorkspaceTree] Initial load detected, initializing tree state...');
           this.initializeTreeState();
         }
       },
@@ -149,9 +143,6 @@ export default {
      * Initialize tree state - load saved state or default to all closed
      */
     initializeTreeState() {
-      console.log('[WorkspaceTree] initializeTreeState called');
-      console.log('[WorkspaceTree] storageKey:', this.storageKey);
-
       // Set flag to ignore @update:open events during initialization
       this.isInitializing = true;
 
@@ -160,25 +151,19 @@ export default {
       try {
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem(this.storageKey);
-          console.log('[WorkspaceTree] Saved state from localStorage:', saved);
 
           if (saved) {
             // Restore saved IDs
             const savedIds = JSON.parse(saved);
-            console.log('[WorkspaceTree] Parsed saved IDs:', savedIds);
-
             // Find the actual node objects from treeviewWorkspaces
             nodesToOpen = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
-            console.log('[WorkspaceTree] Found nodes:', nodesToOpen.length, 'nodes');
           } else {
-            console.log('[WorkspaceTree] No saved state, using default (all closed)');
             // Default: everything closed
             nodesToOpen = [];
             // Save this default state as empty array
             this.saveTreeState([]);
           }
         } else {
-          console.log('[WorkspaceTree] localStorage not available');
           // No localStorage available, default to all closed
           nodesToOpen = [];
         }
@@ -188,17 +173,12 @@ export default {
         nodesToOpen = [];
       }
 
-      console.log('[WorkspaceTree] Nodes to open:', nodesToOpen.map(n => ({ id: n.id, name: n.name })));
-
       // CRITICAL: Increment treeKey FIRST to force v-treeview recreation
       this.treeKey++;
-      console.log('[WorkspaceTree] Incremented treeKey to', this.treeKey, '(forces component recreation)');
 
       // THEN set openNodes in $nextTick when the new component is ready
       this.$nextTick(() => {
-        console.log('[WorkspaceTree] $nextTick: Setting openNodes now that component is recreated');
         this.openNodes = nodesToOpen;
-        console.log('[WorkspaceTree] openNodes set to:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
 
         // Restore selected node after tree state is initialized
         this.restoreSelectedNode();
@@ -206,7 +186,6 @@ export default {
         // Reset flag after a delay to let Vuetify fully sync
         setTimeout(() => {
           this.isInitializing = false;
-          console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
         }, 100);
       });
     },
@@ -217,23 +196,18 @@ export default {
       try {
         // Only restore if there's no query parameter in the URL
         if (this.$route.query.wid || this.$route.query.fid) {
-          console.log('[WorkspaceTree] Skip restoring selection - already in URL');
           return;
         }
 
         if (typeof localStorage !== 'undefined') {
           const savedSelection = localStorage.getItem(this.selectedNodeStorageKey);
-          console.log('[WorkspaceTree] Saved selection from localStorage:', savedSelection);
 
           if (savedSelection) {
             const { nodeId, nodeType } = JSON.parse(savedSelection);
-            console.log('[WorkspaceTree] Parsed selection:', { nodeId, nodeType });
 
             // Verify the node still exists in the tree
             const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
             if (node) {
-              console.log('[WorkspaceTree] Found saved node, restoring selection:', node.name);
-
               // Navigate to the saved node
               const queryParam = nodeType === SPACE_TYPE.WORKSPACE
                 ? { wid: nodeId }
@@ -241,12 +215,9 @@ export default {
 
               this.$router.replace({ query: queryParam });
             } else {
-              console.log('[WorkspaceTree] Saved node no longer exists, clearing selection');
               // Clear invalid selection
               localStorage.removeItem(this.selectedNodeStorageKey);
             }
-          } else {
-            console.log('[WorkspaceTree] No saved selection found');
           }
         }
       } catch (error) {
@@ -261,7 +232,6 @@ export default {
         if (typeof localStorage !== 'undefined') {
           const selection = { nodeId, nodeType };
           localStorage.setItem(this.selectedNodeStorageKey, JSON.stringify(selection));
-          console.log('[WorkspaceTree] Saved selection:', selection);
         }
       } catch (error) {
         console.error('[WorkspaceTree] Error saving selected node:', error);
@@ -283,21 +253,15 @@ export default {
      * Handle tree expansion state changes
      */
     handleTreeUpdate(openNodes) {
-      console.log('[WorkspaceTree] handleTreeUpdate called with', openNodes.length, 'nodes', '| isInitializing:', this.isInitializing);
-
       // Ignore events during initialization (Vuetify emits @update:open when we set :open programmatically)
       if (this.isInitializing) {
-        console.log('[WorkspaceTree] ✓ Ignoring update during initialization');
         return;
       }
 
-      console.log('[WorkspaceTree] Processing update (not initializing)');
       this.openNodes = openNodes;
       // Extract IDs from node objects before saving
       const openIds = openNodes.map(node => node.id);
-      console.log('[WorkspaceTree] Extracted IDs:', openIds);
       this.saveTreeState(openIds);
-      console.log('[WorkspaceTree] State saved to localStorage');
     },
     async checkIfNotData() {
       if (!this.selectedItem?.id && this.workspaces?.length > 0) {
@@ -333,7 +297,7 @@ export default {
 
         this.$refs?.folderNewModalRef?.close();
       } catch (error) {
-        console.error(error);
+        console.error('[WorkspaceTree] Error creating folder:', error);
         if (error?.response?.status === 409) {
           this.conflictError = true;
           return;
@@ -405,11 +369,11 @@ export default {
           color: 'success',
         });
       } catch (error) {
+        console.error('[WorkspaceTree] Error deleting folder:', error);
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
       } finally {
         this.loading = false;
         const deletingCurrent =
@@ -479,7 +443,7 @@ export default {
         });
         await this.fetchWorkspacesData();
       } catch (error) {
-        console.log(error);
+        console.error('[WorkspaceTree] Error moving folder:', error);
         let errorKey = 'global.errors.errorOccured';
         if (error.response?.status === 409) {
           errorKey = 'folders.conflict';
