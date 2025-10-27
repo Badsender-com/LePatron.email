@@ -37,6 +37,7 @@ export default {
     conflictError: false,
     openNodes: [],
     isInitializing: false,
+    treeKey: 0,
   }),
   async fetch() {
     const { dispatch } = this.$store;
@@ -140,6 +141,8 @@ export default {
       // Set flag to ignore @update:open events during initialization
       this.isInitializing = true;
 
+      let nodesToOpen = [];
+
       try {
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem(this.storageKey);
@@ -151,37 +154,44 @@ export default {
             console.log('[WorkspaceTree] Parsed saved IDs:', savedIds);
 
             // Find the actual node objects from treeviewWorkspaces
-            const foundNodes = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
-            console.log('[WorkspaceTree] Found nodes:', foundNodes.length, 'nodes');
-
-            this.openNodes = foundNodes;
-            console.log('[WorkspaceTree] Set openNodes to restored nodes');
+            nodesToOpen = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
+            console.log('[WorkspaceTree] Found nodes:', nodesToOpen.length, 'nodes');
           } else {
             console.log('[WorkspaceTree] No saved state, using default (all closed)');
             // Default: everything closed
-            this.openNodes = [];
+            nodesToOpen = [];
             // Save this default state as empty array
             this.saveTreeState([]);
           }
         } else {
           console.log('[WorkspaceTree] localStorage not available');
           // No localStorage available, default to all closed
-          this.openNodes = [];
+          nodesToOpen = [];
         }
       } catch (error) {
         console.error('[WorkspaceTree] Error initializing tree state:', error);
         // Fallback to all closed
-        this.openNodes = [];
+        nodesToOpen = [];
       }
 
-      console.log('[WorkspaceTree] Final openNodes:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
+      console.log('[WorkspaceTree] Nodes to open:', nodesToOpen.map(n => ({ id: n.id, name: n.name })));
 
-      // Reset flag after a delay to let Vuetify fully sync
-      // $nextTick is too fast - Vuetify emits events before it completes
-      setTimeout(() => {
-        this.isInitializing = false;
-        console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
-      }, 100);
+      // CRITICAL: Increment treeKey FIRST to force v-treeview recreation
+      this.treeKey++;
+      console.log('[WorkspaceTree] Incremented treeKey to', this.treeKey, '(forces component recreation)');
+
+      // THEN set openNodes in $nextTick when the new component is ready
+      this.$nextTick(() => {
+        console.log('[WorkspaceTree] $nextTick: Setting openNodes now that component is recreated');
+        this.openNodes = nodesToOpen;
+        console.log('[WorkspaceTree] openNodes set to:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
+
+        // Reset flag after a delay to let Vuetify fully sync
+        setTimeout(() => {
+          this.isInitializing = false;
+          console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
+        }, 100);
+      });
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -413,6 +423,7 @@ export default {
   >
     <v-treeview
       ref="tree"
+      :key="treeKey"
       item-key="id"
       activatable
       :active="[selectedItem]"
