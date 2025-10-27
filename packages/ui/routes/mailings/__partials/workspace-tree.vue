@@ -22,6 +22,7 @@ import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
+const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
 
 export default {
   name: 'WorkspaceTree',
@@ -63,6 +64,11 @@ export default {
       const userId = this.userInfo?.id || 'anonymous';
       return `${TREE_STATE_STORAGE_KEY}_${userId}`;
     },
+    selectedNodeStorageKey() {
+      // Create unique storage key per user for selected node
+      const userId = this.userInfo?.id || 'anonymous';
+      return `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
+    },
   },
   watch: {
     $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
@@ -95,18 +101,26 @@ export default {
   },
   methods: {
     /**
-     * Get all workspace IDs (for default open state)
+     * Find a single node by its ID in the tree
      */
-    getAllWorkspaceIds(items) {
-      const ids = [];
-      if (!items || items.length === 0) return ids;
+    findNodeById(id, items) {
+      if (!items || items.length === 0 || !id) {
+        return null;
+      }
 
-      items.forEach(item => {
-        if (item.type === SPACE_TYPE.WORKSPACE) {
-          ids.push(item.id);
+      for (const node of items) {
+        if (node.id === id) {
+          return node;
         }
-      });
-      return ids;
+        if (node.children && node.children.length > 0) {
+          const found = this.findNodeById(id, node.children);
+          if (found) {
+            return found;
+          }
+        }
+      }
+
+      return null;
     },
     /**
      * Recursively find nodes by their IDs in the tree
@@ -186,12 +200,72 @@ export default {
         this.openNodes = nodesToOpen;
         console.log('[WorkspaceTree] openNodes set to:', this.openNodes.map(n => ({ id: n.id, name: n.name })));
 
+        // Restore selected node after tree state is initialized
+        this.restoreSelectedNode();
+
         // Reset flag after a delay to let Vuetify fully sync
         setTimeout(() => {
           this.isInitializing = false;
           console.log('[WorkspaceTree] Initialization complete, now listening to user interactions');
         }, 100);
       });
+    },
+    /**
+     * Restore the selected node from localStorage
+     */
+    restoreSelectedNode() {
+      try {
+        // Only restore if there's no query parameter in the URL
+        if (this.$route.query.wid || this.$route.query.fid) {
+          console.log('[WorkspaceTree] Skip restoring selection - already in URL');
+          return;
+        }
+
+        if (typeof localStorage !== 'undefined') {
+          const savedSelection = localStorage.getItem(this.selectedNodeStorageKey);
+          console.log('[WorkspaceTree] Saved selection from localStorage:', savedSelection);
+
+          if (savedSelection) {
+            const { nodeId, nodeType } = JSON.parse(savedSelection);
+            console.log('[WorkspaceTree] Parsed selection:', { nodeId, nodeType });
+
+            // Verify the node still exists in the tree
+            const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
+            if (node) {
+              console.log('[WorkspaceTree] Found saved node, restoring selection:', node.name);
+
+              // Navigate to the saved node
+              const queryParam = nodeType === SPACE_TYPE.WORKSPACE
+                ? { wid: nodeId }
+                : { fid: nodeId };
+
+              this.$router.replace({ query: queryParam });
+            } else {
+              console.log('[WorkspaceTree] Saved node no longer exists, clearing selection');
+              // Clear invalid selection
+              localStorage.removeItem(this.selectedNodeStorageKey);
+            }
+          } else {
+            console.log('[WorkspaceTree] No saved selection found');
+          }
+        }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error restoring selected node:', error);
+      }
+    },
+    /**
+     * Save the selected node to localStorage
+     */
+    saveSelectedNode(nodeId, nodeType) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const selection = { nodeId, nodeType };
+          localStorage.setItem(this.selectedNodeStorageKey, JSON.stringify(selection));
+          console.log('[WorkspaceTree] Saved selection:', selection);
+        }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error saving selected node:', error);
+      }
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -290,14 +364,19 @@ export default {
     },
     handleSelectItemFromTreeView(selectedItems) {
       if (selectedItems[0]?.id) {
+        const selectedNode = selectedItems[0];
+
+        // Save the selected node to localStorage
+        this.saveSelectedNode(selectedNode.id, selectedNode.type);
+
         let querySelectedElement = null;
-        if (selectedItems[0]?.type === SPACE_TYPE.WORKSPACE) {
+        if (selectedNode.type === SPACE_TYPE.WORKSPACE) {
           querySelectedElement = {
-            wid: selectedItems[0].id,
+            wid: selectedNode.id,
           };
         } else {
           querySelectedElement = {
-            fid: selectedItems[0].id,
+            fid: selectedNode.id,
           };
         }
         this.$router.push({
