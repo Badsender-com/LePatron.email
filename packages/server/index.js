@@ -59,6 +59,12 @@ if (cluster.isMaster) {
   const store = new MongoDBStore({
     uri: config.database,
     collection: 'sessions',
+    expires: config.session.maxAge, // Auto-cleanup expired sessions
+  });
+
+  // Handle session store errors
+  store.on('error', (error) => {
+    console.error('Session store error:', error);
   });
 
   app.use(
@@ -68,6 +74,13 @@ if (cluster.isMaster) {
       resave: false,
       saveUninitialized: false,
       store: store,
+      cookie: {
+        maxAge: config.session.maxAge, // 14 days by default
+        httpOnly: true, // Prevents JavaScript access to cookies (XSS protection)
+        secure: !config.isDev, // HTTPS only in production
+        sameSite: 'lax', // CSRF protection
+      },
+      rolling: true, // Reset expiration on each request (idle timeout behavior)
     })
   );
 
@@ -202,6 +215,10 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Enforce unique session per user (except admin)
+  const { enforceUniqueSession } = require('./account/session.middleware.js');
+  app.use(enforceUniqueSession);
+
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
@@ -220,10 +237,13 @@ if (cluster.isMaster) {
     }
   );
 
+  const { createLoginSuccessHandler } = require('./account/session.middleware.js');
+
   app.post(
     '/SAML-login/callback',
     bodyParser.urlencoded({ extended: false }),
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
+    createLoginSuccessHandler('saml'),
     function (req, res) {
       res.redirect('/');
     }
@@ -236,12 +256,58 @@ if (cluster.isMaster) {
       failureRedirect: '/account/login/admin',
       failureFlash: true,
       successFlash: true,
-    })
+    }),
+    createLoginSuccessHandler('local')
   );
 
-  app.get('/account/logout', (req, res) => {
-    req.logout();
-    res.redirect('/account/login');
+  app.get('/account/logout', async (req, res) => {
+    const userId = req.user ? req.user.id : null;
+    const sessionId = req.sessionID;
+    const isAdmin = req.user ? req.user.isAdmin : false;
+
+    // Clear activeSessionId in user document (except for admin)
+    if (userId && !isAdmin) {
+      try {
+        const Users = require('./user/user.model.js');
+        const user = await Users.findById(userId).select('+activeSessionId');
+        if (user) {
+          user.activeSessionId = null;
+          await user.save();
+        }
+      } catch (error) {
+        console.error('Error clearing activeSessionId on logout:', error);
+      }
+    }
+
+    // Log the session destruction
+    if (userId) {
+      const { logSessionDestroyed } = require('./utils/session.logger.js');
+      logSessionDestroyed({
+        userId,
+        sessionId,
+        reason: 'manual_logout',
+      });
+    }
+
+    // Logout from Passport
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+      }
+
+      // Destroy session from store
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+        }
+
+        // Clear session cookie
+        res.clearCookie('badsender.sid');
+
+        // Redirect to login
+        res.redirect('/account/login');
+      });
+    });
   });
 
   // Passport configuration

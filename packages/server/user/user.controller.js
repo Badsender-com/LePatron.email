@@ -373,6 +373,9 @@ async function getPublicProfile(req, res) {
 }
 
 async function login(req, res, next) {
+  const { createLoginSuccessHandler } = require('../account/session.middleware.js');
+  const onLoginSuccess = createLoginSuccessHandler('local');
+
   passport.authenticate('local', (err, user, info) => {
     if (err) {
       return next(new createError.InternalServerError(err));
@@ -386,10 +389,13 @@ async function login(req, res, next) {
       return next(new createError.BadRequest('User not found'));
     }
 
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
         return next(new createError.InternalServerError(err));
       }
+
+      // Call session management hook
+      await onLoginSuccess(req, res, () => {});
 
       return res.json({ isAdmin: user.isAdmin });
     });

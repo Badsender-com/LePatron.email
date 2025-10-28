@@ -59,6 +59,12 @@ const config = rc('lepatron', {
     username: 'admin',
     password: 'admin',
   },
+  session: {
+    // Session duration in days (configurable via environment variable)
+    durationDays: parseInt(process.env.SESSION_DURATION_DAYS || '14', 10),
+    // Enable session logging
+    enableLogging: process.env.SESSION_LOGGING !== 'false',
+  },
   proxyUrl: process.env.QUOTAGUARDSTATIC_URL,
   dscUrl: process.env.DSC_ESP_URL,
   dscUserAgent: process.env.DSC_USER_AGENT,
@@ -75,6 +81,9 @@ config.isDev = config.NODE_ENV === 'development';
 config.isProd = config.NODE_ENV === 'production';
 config.isPreProd = !config.isDev && !config.isProd;
 config.isAws = config.storage.type === 'aws';
+
+// Calculate session maxAge in milliseconds
+config.session.maxAge = config.session.durationDays * 24 * 60 * 60 * 1000;
 
 const isLocalEmailTransport =
   config.emailTransport.port === localEmail.port &&

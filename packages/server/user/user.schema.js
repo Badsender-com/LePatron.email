@@ -80,6 +80,28 @@ const UserSchema = Schema(
     token: { type: String },
     tokenExpire: { type: Date },
     isDeactivated: { type: Boolean, default: false },
+    // Session management fields
+    activeSessionId: {
+      type: String,
+      default: null,
+      select: false, // Hidden by default, must be explicitly selected
+    },
+    sessionCreatedAt: {
+      type: Date,
+      default: null,
+    },
+    lastActivity: {
+      type: Date,
+      default: Date.now,
+    },
+    lastLoginIp: {
+      type: String,
+      default: null,
+    },
+    lastLoginUserAgent: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -91,7 +113,7 @@ const UserSchema = Schema(
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 UserSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, __v: true, password: true, token: true },
+  hidden: { _id: true, __v: true, password: true, token: true, activeSessionId: true },
 });
 
 function encodePassword(password) {
