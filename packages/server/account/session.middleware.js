@@ -36,7 +36,7 @@ async function enforceUniqueSession(req, res, next) {
 
   try {
     // Dynamically import to avoid circular dependency
-    const Users = require('../user/user.model.js');
+    const { Users } = require('../common/models.common.js');
 
     // Fetch user with activeSessionId (which is hidden by default)
     const user = await Users.findById(req.user.id).select('+activeSessionId');
@@ -142,7 +142,7 @@ function createLoginSuccessHandler(authMethod = 'local') {
 
     try {
       // Dynamically import to avoid circular dependency
-      const Users = require('../user/user.model.js');
+      const { Users } = require('../common/models.common.js');
 
       const user = await Users.findById(req.user.id).select('+activeSessionId');
 

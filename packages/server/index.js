@@ -268,7 +268,7 @@ if (cluster.isMaster) {
     // Clear activeSessionId in user document (except for admin)
     if (userId && !isAdmin) {
       try {
-        const Users = require('./user/user.model.js');
+        const { Users } = require('./common/models.common.js');
         const user = await Users.findById(userId).select('+activeSessionId');
         if (user) {
           user.activeSessionId = null;
