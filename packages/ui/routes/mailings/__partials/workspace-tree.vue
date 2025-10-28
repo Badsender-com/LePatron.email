@@ -12,6 +12,7 @@ import {
   FETCH_WORKSPACES,
   FETCH_FOLDER_OR_WORKSPACE,
 } from '~/store/folder';
+import { USER } from '~/store/user';
 import { canCreateFolder } from '~/utils/workspaces';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from './folder-rename-modal';
@@ -19,6 +20,9 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+
+const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
+const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
 
 export default {
   name: 'WorkspaceTree',
@@ -32,6 +36,9 @@ export default {
   data: () => ({
     selectedItemToDelete: {},
     conflictError: false,
+    openNodes: [],
+    isInitializing: false,
+    treeKey: 0,
   }),
   async fetch() {
     const { dispatch } = this.$store;
@@ -46,21 +53,220 @@ export default {
       'areLoadingWorkspaces',
       'treeviewWorkspaces',
     ]),
+    ...mapState(USER, {
+      userInfo: 'info',
+    }),
     selectedItem() {
       return { id: this.currentLocation };
+    },
+    storageKey() {
+      // Create unique storage key per user
+      const userId = this.userInfo?.id || 'anonymous';
+      return `${TREE_STATE_STORAGE_KEY}_${userId}`;
+    },
+    selectedNodeStorageKey() {
+      // Create unique storage key per user for selected node
+      const userId = this.userInfo?.id || 'anonymous';
+      return `${SELECTED_NODE_STORAGE_KEY}_${userId}`;
     },
   },
   watch: {
     $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
+    treeviewWorkspaces: {
+      handler(newWorkspaces, oldWorkspaces) {
+        // Initialize tree state only when workspaces data first loads
+        // (transition from empty/undefined to populated)
+        const isInitialLoad =
+          newWorkspaces &&
+          newWorkspaces.length > 0 &&
+          (!oldWorkspaces || oldWorkspaces.length === 0);
+
+        if (isInitialLoad) {
+          this.initializeTreeState();
+        }
+      },
+      immediate: true,
+    },
   },
   async mounted() {
-    if (!this.selectedItem?.id && this.workspaces?.length > 0) {
-      await this.$router.push({
-        query: { wid: this.workspaces[0]?._id },
-      });
-    }
+    this.restoreSelectedNode();
   },
   methods: {
+    /**
+     * Find a single node by its ID in the tree
+     */
+    findNodeById(id, items) {
+      if (!items || items.length === 0 || !id) {
+        return null;
+      }
+
+      for (const node of items) {
+        if (node.id === id) {
+          return node;
+        }
+        if (node.children && node.children.length > 0) {
+          const found = this.findNodeById(id, node.children);
+          if (found) {
+            return found;
+          }
+        }
+      }
+
+      return null;
+    },
+    /**
+     * Recursively find nodes by their IDs in the tree
+     */
+    findNodesByIds(ids, items) {
+      const result = [];
+      if (!items || items.length === 0 || !ids || ids.length === 0) {
+        return result;
+      }
+
+      const findInTree = (nodes) => {
+        nodes.forEach((node) => {
+          if (ids.includes(node.id)) {
+            result.push(node);
+          }
+          if (node.children && node.children.length > 0) {
+            findInTree(node.children);
+          }
+        });
+      };
+
+      findInTree(items);
+      return result;
+    },
+    /**
+     * Initialize tree state - load saved state or default to all closed
+     */
+    initializeTreeState() {
+      // Set flag to ignore @update:open events during initialization
+      this.isInitializing = true;
+
+      let nodesToOpen = [];
+
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem(this.storageKey);
+
+          if (saved) {
+            // Restore saved IDs
+            const savedIds = JSON.parse(saved);
+            // Find the actual node objects from treeviewWorkspaces
+            nodesToOpen = this.findNodesByIds(
+              savedIds,
+              this.treeviewWorkspaces
+            );
+          } else {
+            // Default: everything closed
+            nodesToOpen = [];
+            // Save this default state as empty array
+            this.saveTreeState([]);
+          }
+        } else {
+          // No localStorage available, default to all closed
+          nodesToOpen = [];
+        }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error initializing tree state:', error);
+        // Fallback to all closed
+        nodesToOpen = [];
+      }
+
+      // CRITICAL: Increment treeKey FIRST to force v-treeview recreation
+      this.treeKey++;
+
+      // THEN set openNodes in $nextTick when the new component is ready
+      this.$nextTick(() => {
+        this.openNodes = nodesToOpen;
+
+        // Restore selected node after tree state is initialized
+        this.restoreSelectedNode();
+
+        // Reset flag after a delay to let Vuetify fully sync
+        setTimeout(() => {
+          this.isInitializing = false;
+        }, 100);
+      });
+    },
+    /**
+     * Restore the selected node from localStorage
+     */
+    restoreSelectedNode() {
+      if (typeof localStorage === 'undefined') return;
+
+      try {
+        const savedSelection = localStorage.getItem(
+          this.selectedNodeStorageKey
+        );
+        if (!savedSelection) return;
+
+        const { nodeId, nodeType } = JSON.parse(savedSelection);
+        const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
+
+        if (node) {
+          const currentQuery = this.$route.query;
+          const queryParam =
+            nodeType === SPACE_TYPE.WORKSPACE
+              ? { wid: nodeId }
+              : { fid: nodeId };
+
+          if (
+            (queryParam.fid && queryParam.fid !== currentQuery.fid) ||
+            (queryParam.wid && queryParam.wid !== currentQuery.wid)
+          ) {
+            this.$router.replace({ query: queryParam });
+          }
+        } else {
+          this.clearSelection();
+        }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error restoring selected node:', error);
+      }
+    },
+    /**
+     * Save the selected node to localStorage
+     */
+    saveSelectedNode(nodeId, nodeType) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const selection = { nodeId, nodeType };
+          localStorage.setItem(
+            this.selectedNodeStorageKey,
+            JSON.stringify(selection)
+          );
+        }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error saving selected node:', error);
+      }
+    },
+    /**
+     * Save tree expansion state to localStorage (as IDs only)
+     */
+    saveTreeState(openIds) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(this.storageKey, JSON.stringify(openIds));
+        }
+      } catch (error) {
+        console.error('Error saving tree state:', error);
+      }
+    },
+    /**
+     * Handle tree expansion state changes
+     */
+    handleTreeUpdate(openNodes) {
+      // Ignore events during initialization (Vuetify emits @update:open when we set :open programmatically)
+      if (this.isInitializing) {
+        return;
+      }
+
+      this.openNodes = openNodes;
+      // Extract IDs from node objects before saving
+      const openIds = openNodes.map((node) => node.id);
+      this.saveTreeState(openIds);
+    },
     async checkIfNotData() {
       if (!this.selectedItem?.id && this.workspaces?.length > 0) {
         await this.$router.push({
@@ -95,7 +301,7 @@ export default {
 
         this.$refs?.folderNewModalRef?.close();
       } catch (error) {
-        console.error(error);
+        console.error('[WorkspaceTree] Error creating folder:', error);
         if (error?.response?.status === 409) {
           this.conflictError = true;
           return;
@@ -125,20 +331,18 @@ export default {
       return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
     },
     handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]?.id) {
-        let querySelectedElement = null;
-        if (selectedItems[0]?.type === SPACE_TYPE.WORKSPACE) {
-          querySelectedElement = {
-            wid: selectedItems[0].id,
-          };
-        } else {
-          querySelectedElement = {
-            fid: selectedItems[0].id,
-          };
-        }
-        this.$router.push({
-          query: querySelectedElement,
-        });
+      const node = selectedItems[0] || null;
+
+      if (node) {
+        this.saveSelectedNode(node.id, node.type);
+        const query =
+          node.type === SPACE_TYPE.WORKSPACE
+            ? { wid: node.id }
+            : { fid: node.id };
+        this.$router.push({ query });
+      } else {
+        this.clearSelection();
+        this.$router.replace({ query: {} });
       }
     },
     displayDeleteModal(selected) {
@@ -154,33 +358,45 @@ export default {
       const { $axios } = this;
       const { id } = selected;
       if (!id) return;
+
       this.loading = true;
       try {
         await $axios.$delete(deleteFolder(id));
+
         this.showSnackbar({
           text: this.$t('groups.mailingTab.deleteFolderSuccessful'),
           color: 'success',
         });
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        console.log(error);
-      } finally {
-        this.loading = false;
+
         const deletingCurrent =
           this.selectedItemToDelete.id === this.selectedItem.id;
         const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(
           (child) => child.id === this.selectedItem.id
         );
+
         if (deletingCurrent || deletingParentOfCurrent) {
+          this.clearSelection();
           await this.$router.replace({
-            query: { wid: this.workspaces[0]?.id },
+            query: { wid: this.workspaces[0]?._id },
+          });
+          this.$nextTick(() => {
+            this.$refs.tree.updateActive([]);
           });
         }
+      } catch (error) {
+        console.error('[WorkspaceTree] Error deleting folder:', error);
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
         await this.fetchWorkspacesData();
       }
+    },
+    clearSelection() {
+      this.selectedItemToDelete = {};
+      this.saveSelectedNode(null, null);
     },
     openRenameFolderModal(folder) {
       this.conflictError = false;
@@ -236,7 +452,7 @@ export default {
         });
         await this.fetchWorkspacesData();
       } catch (error) {
-        console.log(error);
+        console.error('[WorkspaceTree] Error moving folder:', error);
         let errorKey = 'global.errors.errorOccured';
         if (error.response?.status === 409) {
           errorKey = 'folders.conflict';
@@ -259,14 +475,16 @@ export default {
   >
     <v-treeview
       ref="tree"
+      :key="treeKey"
       item-key="id"
       activatable
       :active="[selectedItem]"
       :items="treeviewWorkspaces"
+      :open="openNodes"
       hoverable
-      open-all
       return-object
       @update:active="handleSelectItemFromTreeView"
+      @update:open="handleTreeUpdate"
     >
       <template #prepend="{ item, open }">
         <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">

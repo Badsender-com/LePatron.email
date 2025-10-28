@@ -382,7 +382,9 @@ async function login(req, res, next) {
       return next(new createError.BadRequest(info.message));
     }
 
-    if (!user) return next(new createError.BadRequest('User not found'));
+    if (!user) {
+      return next(new createError.BadRequest('User not found'));
+    }
 
     req.logIn(user, (err) => {
       if (err) {

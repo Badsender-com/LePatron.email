@@ -91,7 +91,11 @@ passport.use(
         isDeactivated: { $ne: true },
         token: { $exists: false },
       });
-      if (!user) return done(null, false, { message: 'password.error.nouser' });
+
+      if (!user) {
+        return done(null, false, { message: 'password.error.nouser' });
+      }
+
       const isPasswordValid = user.comparePassword(password);
       if (!isPasswordValid) {
         return done(null, false, { message: 'password.error.incorrect' });
