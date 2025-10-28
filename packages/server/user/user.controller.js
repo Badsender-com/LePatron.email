@@ -373,37 +373,24 @@ async function getPublicProfile(req, res) {
 }
 
 async function login(req, res, next) {
-  console.log('[LOGIN] Login request received at', new Date().toISOString());
-  const requestStart = Date.now();
-
   passport.authenticate('local', (err, user, info) => {
-    console.log('[LOGIN] Passport authenticate callback triggered after', Date.now() - requestStart, 'ms');
-
     if (err) {
-      console.log('[LOGIN] Error during authentication:', err);
       return next(new createError.InternalServerError(err));
     }
 
     if (info && info.message) {
-      console.log('[LOGIN] Authentication failed with message:', info.message);
       return next(new createError.BadRequest(info.message));
     }
 
     if (!user) {
-      console.log('[LOGIN] No user returned from authentication');
       return next(new createError.BadRequest('User not found'));
     }
 
-    console.log('[LOGIN] User authenticated, logging in...');
-    const loginStart = Date.now();
     req.logIn(user, (err) => {
       if (err) {
-        console.log('[LOGIN] Error during req.logIn:', err);
         return next(new createError.InternalServerError(err));
       }
 
-      console.log('[LOGIN] Session created in', Date.now() - loginStart, 'ms');
-      console.log('[LOGIN] Total login process took', Date.now() - requestStart, 'ms');
       return res.json({ isAdmin: user.isAdmin });
     });
   })(req, res);

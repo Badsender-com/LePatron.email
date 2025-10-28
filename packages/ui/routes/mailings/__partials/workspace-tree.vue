@@ -76,8 +76,10 @@ export default {
       handler(newWorkspaces, oldWorkspaces) {
         // Initialize tree state only when workspaces data first loads
         // (transition from empty/undefined to populated)
-        const isInitialLoad = newWorkspaces && newWorkspaces.length > 0 &&
-                              (!oldWorkspaces || oldWorkspaces.length === 0);
+        const isInitialLoad =
+          newWorkspaces &&
+          newWorkspaces.length > 0 &&
+          (!oldWorkspaces || oldWorkspaces.length === 0);
 
         if (isInitialLoad) {
           this.initializeTreeState();
@@ -87,11 +89,7 @@ export default {
     },
   },
   async mounted() {
-    if (!this.selectedItem?.id && this.workspaces?.length > 0) {
-      await this.$router.push({
-        query: { wid: this.workspaces[0]?._id },
-      });
-    }
+    this.restoreSelectedNode();
   },
   methods: {
     /**
@@ -126,7 +124,7 @@ export default {
       }
 
       const findInTree = (nodes) => {
-        nodes.forEach(node => {
+        nodes.forEach((node) => {
           if (ids.includes(node.id)) {
             result.push(node);
           }
@@ -156,7 +154,10 @@ export default {
             // Restore saved IDs
             const savedIds = JSON.parse(saved);
             // Find the actual node objects from treeviewWorkspaces
-            nodesToOpen = this.findNodesByIds(savedIds, this.treeviewWorkspaces);
+            nodesToOpen = this.findNodesByIds(
+              savedIds,
+              this.treeviewWorkspaces
+            );
           } else {
             // Default: everything closed
             nodesToOpen = [];
@@ -193,32 +194,32 @@ export default {
      * Restore the selected node from localStorage
      */
     restoreSelectedNode() {
+      if (typeof localStorage === 'undefined') return;
+
       try {
-        // Only restore if there's no query parameter in the URL
-        if (this.$route.query.wid || this.$route.query.fid) {
-          return;
-        }
+        const savedSelection = localStorage.getItem(
+          this.selectedNodeStorageKey
+        );
+        if (!savedSelection) return;
 
-        if (typeof localStorage !== 'undefined') {
-          const savedSelection = localStorage.getItem(this.selectedNodeStorageKey);
+        const { nodeId, nodeType } = JSON.parse(savedSelection);
+        const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
 
-          if (savedSelection) {
-            const { nodeId, nodeType } = JSON.parse(savedSelection);
+        if (node) {
+          const currentQuery = this.$route.query;
+          const queryParam =
+            nodeType === SPACE_TYPE.WORKSPACE
+              ? { wid: nodeId }
+              : { fid: nodeId };
 
-            // Verify the node still exists in the tree
-            const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
-            if (node) {
-              // Navigate to the saved node
-              const queryParam = nodeType === SPACE_TYPE.WORKSPACE
-                ? { wid: nodeId }
-                : { fid: nodeId };
-
-              this.$router.replace({ query: queryParam });
-            } else {
-              // Clear invalid selection
-              localStorage.removeItem(this.selectedNodeStorageKey);
-            }
+          if (
+            (queryParam.fid && queryParam.fid !== currentQuery.fid) ||
+            (queryParam.wid && queryParam.wid !== currentQuery.wid)
+          ) {
+            this.$router.replace({ query: queryParam });
           }
+        } else {
+          this.clearSelection();
         }
       } catch (error) {
         console.error('[WorkspaceTree] Error restoring selected node:', error);
@@ -231,7 +232,10 @@ export default {
       try {
         if (typeof localStorage !== 'undefined') {
           const selection = { nodeId, nodeType };
-          localStorage.setItem(this.selectedNodeStorageKey, JSON.stringify(selection));
+          localStorage.setItem(
+            this.selectedNodeStorageKey,
+            JSON.stringify(selection)
+          );
         }
       } catch (error) {
         console.error('[WorkspaceTree] Error saving selected node:', error);
@@ -260,7 +264,7 @@ export default {
 
       this.openNodes = openNodes;
       // Extract IDs from node objects before saving
-      const openIds = openNodes.map(node => node.id);
+      const openIds = openNodes.map((node) => node.id);
       this.saveTreeState(openIds);
     },
     async checkIfNotData() {
@@ -327,25 +331,18 @@ export default {
       return item.hasAccess && item?.type === SPACE_TYPE.WORKSPACE;
     },
     handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]?.id) {
-        const selectedNode = selectedItems[0];
+      const node = selectedItems[0] || null;
 
-        // Save the selected node to localStorage
-        this.saveSelectedNode(selectedNode.id, selectedNode.type);
-
-        let querySelectedElement = null;
-        if (selectedNode.type === SPACE_TYPE.WORKSPACE) {
-          querySelectedElement = {
-            wid: selectedNode.id,
-          };
-        } else {
-          querySelectedElement = {
-            fid: selectedNode.id,
-          };
-        }
-        this.$router.push({
-          query: querySelectedElement,
-        });
+      if (node) {
+        this.saveSelectedNode(node.id, node.type);
+        const query =
+          node.type === SPACE_TYPE.WORKSPACE
+            ? { wid: node.id }
+            : { fid: node.id };
+        this.$router.push({ query });
+      } else {
+        this.clearSelection();
+        this.$router.replace({ query: {} });
       }
     },
     displayDeleteModal(selected) {
@@ -361,13 +358,31 @@ export default {
       const { $axios } = this;
       const { id } = selected;
       if (!id) return;
+
       this.loading = true;
       try {
         await $axios.$delete(deleteFolder(id));
+
         this.showSnackbar({
           text: this.$t('groups.mailingTab.deleteFolderSuccessful'),
           color: 'success',
         });
+
+        const deletingCurrent =
+          this.selectedItemToDelete.id === this.selectedItem.id;
+        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(
+          (child) => child.id === this.selectedItem.id
+        );
+
+        if (deletingCurrent || deletingParentOfCurrent) {
+          this.clearSelection();
+          await this.$router.replace({
+            query: { wid: this.workspaces[0]?._id },
+          });
+          this.$nextTick(() => {
+            this.$refs.tree.updateActive([]);
+          });
+        }
       } catch (error) {
         console.error('[WorkspaceTree] Error deleting folder:', error);
         this.showSnackbar({
@@ -376,18 +391,12 @@ export default {
         });
       } finally {
         this.loading = false;
-        const deletingCurrent =
-          this.selectedItemToDelete.id === this.selectedItem.id;
-        const deletingParentOfCurrent = this.selectedItemToDelete.children?.some(
-          (child) => child.id === this.selectedItem.id
-        );
-        if (deletingCurrent || deletingParentOfCurrent) {
-          await this.$router.replace({
-            query: { wid: this.workspaces[0]?.id },
-          });
-        }
         await this.fetchWorkspacesData();
       }
+    },
+    clearSelection() {
+      this.selectedItemToDelete = {};
+      this.saveSelectedNode(null, null);
     },
     openRenameFolderModal(folder) {
       this.conflictError = false;
