@@ -265,6 +265,8 @@ if (cluster.isMaster) {
     const sessionId = req.sessionID;
     const isAdmin = req.user ? req.user.isAdmin : false;
 
+    console.log('[LOGOUT] Starting logout process for user:', userId);
+
     // Clear activeSessionId in user document (except for admin)
     if (userId && !isAdmin) {
       try {
@@ -273,41 +275,87 @@ if (cluster.isMaster) {
         if (user) {
           user.activeSessionId = null;
           await user.save();
+          console.log('[LOGOUT] Cleared activeSessionId for user:', userId);
         }
       } catch (error) {
-        console.error('Error clearing activeSessionId on logout:', error);
+        console.error('[LOGOUT] Error clearing activeSessionId:', error);
       }
     }
 
     // Log the session destruction
     if (userId) {
-      const { logSessionDestroyed } = require('./utils/session.logger.js');
-      logSessionDestroyed({
-        userId,
-        sessionId,
-        reason: 'manual_logout',
-      });
+      try {
+        const { logSessionDestroyed } = require('./utils/session.logger.js');
+        logSessionDestroyed({
+          userId,
+          sessionId,
+          reason: 'manual_logout',
+        });
+        console.log('[LOGOUT] Logged session destruction');
+      } catch (error) {
+        console.error('[LOGOUT] Error logging session destruction:', error);
+      }
     }
 
-    // Logout from Passport
-    req.logout((err) => {
-      if (err) {
-        console.error('Logout error:', err);
-      }
-
-      // Destroy session from store
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Session destruction error:', err);
-        }
-
-        // Clear session cookie
+    // Create a timeout to ensure response is sent
+    let responseSent = false;
+    const timeoutId = setTimeout(() => {
+      if (!responseSent) {
+        console.error('[LOGOUT] Timeout reached, forcing redirect');
+        responseSent = true;
         res.clearCookie('badsender.sid');
-
-        // Redirect to login
         res.redirect('/account/login');
+      }
+    }, 5000); // 5 second timeout
+
+    try {
+      console.log('[LOGOUT] Calling req.logout()');
+
+      // Use promise wrapper for req.logout
+      await new Promise((resolve, reject) => {
+        req.logout((err) => {
+          if (err) {
+            console.error('[LOGOUT] Passport logout error:', err);
+            return reject(err);
+          }
+          console.log('[LOGOUT] Passport logout successful');
+          resolve();
+        });
       });
-    });
+
+      console.log('[LOGOUT] Calling req.session.destroy()');
+
+      // Use promise wrapper for session.destroy with its own timeout
+      await new Promise((resolve, reject) => {
+        const destroyTimeout = setTimeout(() => {
+          console.warn('[LOGOUT] Session destroy timeout, continuing anyway');
+          resolve();
+        }, 3000);
+
+        req.session.destroy((err) => {
+          clearTimeout(destroyTimeout);
+          if (err) {
+            console.error('[LOGOUT] Session destruction error:', err);
+            return reject(err);
+          }
+          console.log('[LOGOUT] Session destroyed successfully');
+          resolve();
+        });
+      });
+
+    } catch (error) {
+      console.error('[LOGOUT] Error during logout process:', error);
+    }
+
+    // Clear timeout and send response
+    clearTimeout(timeoutId);
+
+    if (!responseSent) {
+      console.log('[LOGOUT] Sending redirect response');
+      responseSent = true;
+      res.clearCookie('badsender.sid');
+      res.redirect('/account/login');
+    }
   });
 
   // Passport configuration
