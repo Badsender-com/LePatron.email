@@ -311,35 +311,44 @@ if (cluster.isMaster) {
     try {
       console.log('[LOGOUT] Calling req.logout()');
 
-      // Use promise wrapper for req.logout
-      await new Promise((resolve, reject) => {
-        req.logout((err) => {
-          if (err) {
-            console.error('[LOGOUT] Passport logout error:', err);
-            return reject(err);
-          }
-          console.log('[LOGOUT] Passport logout successful');
-          resolve();
-        });
-      });
+      // Call req.logout without waiting for callback (callback hangs in passport 0.4.1)
+      // Just call it to clear req.user, but don't wait
+      try {
+        if (typeof req.logout === 'function') {
+          req.logout(() => {
+            console.log('[LOGOUT] Passport logout callback fired (async)');
+          });
+          console.log('[LOGOUT] Passport logout called (not waiting for callback)');
+        }
+      } catch (logoutError) {
+        console.error('[LOGOUT] Passport logout error:', logoutError);
+      }
 
+      // Proceed immediately to destroy session without waiting for passport
       console.log('[LOGOUT] Calling req.session.destroy()');
 
-      // Use promise wrapper for session.destroy with its own timeout
-      await new Promise((resolve, reject) => {
+      // Use promise wrapper for session.destroy with timeout
+      await new Promise((resolve) => {
         const destroyTimeout = setTimeout(() => {
-          console.warn('[LOGOUT] Session destroy timeout, continuing anyway');
+          console.warn('[LOGOUT] Session destroy timeout (3s), continuing anyway');
           resolve();
         }, 3000);
+
+        if (!req.session) {
+          console.warn('[LOGOUT] No session to destroy');
+          clearTimeout(destroyTimeout);
+          resolve();
+          return;
+        }
 
         req.session.destroy((err) => {
           clearTimeout(destroyTimeout);
           if (err) {
             console.error('[LOGOUT] Session destruction error:', err);
-            return reject(err);
+          } else {
+            console.log('[LOGOUT] Session destroyed successfully');
           }
-          console.log('[LOGOUT] Session destroyed successfully');
-          resolve();
+          resolve(); // Always resolve, even on error
         });
       });
 
