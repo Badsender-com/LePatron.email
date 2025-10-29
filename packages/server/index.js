@@ -215,6 +215,24 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Diagnostic logging middleware to debug session/cookie issues
+  app.use((req, res, next) => {
+    // Log session info for login routes to debug cookie issues
+    if (req.path.includes('/account/login') || req.path.includes('/api/account/login')) {
+      console.log('[SESSION_DEBUG]', {
+        method: req.method,
+        path: req.path,
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        userId: req.user ? req.user.id : null,
+        cookies: req.headers.cookie ? 'present' : 'missing',
+        cookieHeader: req.headers.cookie,
+      });
+    }
+    next();
+  });
+
   // Enforce unique session per user (except admin)
   const { enforceUniqueSession } = require('./account/session.middleware.js');
 
