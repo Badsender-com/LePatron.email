@@ -35,16 +35,28 @@ export default {
   },
   mounted() {
     // Check if user was logged out due to session replacement
-    const reason = this.$route.query.reason;
-    if (reason === 'session-replaced') {
+    // Read from cookie (set by server before redirect)
+    const logoutReason = this.getCookie('logout_reason');
+    if (logoutReason === 'session-replaced') {
       this.showSnackbar({
         text: this.$t('global.errors.session.replaced'),
         color: 'warning',
       });
+      // Delete the cookie after reading it
+      this.deleteCookie('logout_reason');
     }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    },
+    deleteCookie(name) {
+      document.cookie = `${name}=; Max-Age=0; path=/;`;
+    },
     checkEmailForm: async function () {
       this.submitted = true;
       this.$v.$touch();

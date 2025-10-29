@@ -72,6 +72,14 @@ async function enforceUniqueSession(req, res, next) {
         reason: 'Session replaced by newer login',
       });
 
+      // Set a temporary cookie to pass the logout reason to the login page
+      res.cookie('logout_reason', 'session-replaced', {
+        maxAge: 10000, // 10 seconds, just enough to show the message
+        httpOnly: false, // Allow JavaScript to read it
+        secure: !require('../node.config.js').isDev,
+        sameSite: 'lax',
+      });
+
       return req.logout((err) => {
         if (err) {
           console.error('Logout error:', err);
@@ -96,8 +104,8 @@ async function enforceUniqueSession(req, res, next) {
 
           res.clearCookie('badsender.sid');
 
-          // Redirect with explanatory message
-          return res.redirect('/account/login?reason=session-replaced');
+          // Redirect to login page (reason is in cookie)
+          return res.redirect('/account/login');
         });
       });
 
