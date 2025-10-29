@@ -39,6 +39,9 @@ export default {
           internal: 'Oups ! Une erreur est survenue :(',
         },
       },
+      session: {
+        replaced: 'Vous avez été déconnecté car une nouvelle session a été démarrée depuis un autre appareil ou navigateur. Une seule session active est autorisée à la fois.',
+      },
     },
     add: 'Ajouter',
     apiKey: 'Clé API',

@@ -33,6 +33,16 @@ export default {
   validations: {
     username: { required },
   },
+  mounted() {
+    // Check if user was logged out due to session replacement
+    const reason = this.$route.query.reason;
+    if (reason === 'session-replaced') {
+      this.showSnackbar({
+        text: this.$t('global.errors.session.replaced'),
+        color: 'warning',
+      });
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     checkEmailForm: async function () {

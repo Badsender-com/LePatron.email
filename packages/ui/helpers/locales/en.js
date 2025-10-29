@@ -39,6 +39,9 @@ export default {
           internal: 'Oops! An error occurred :(',
         },
       },
+      session: {
+        replaced: 'You have been logged out because a new session was started from another device or browser. Only one active session is allowed at a time.',
+      },
     },
     add: 'Add',
     apiKey: 'API key',
