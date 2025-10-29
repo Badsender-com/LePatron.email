@@ -87,20 +87,17 @@ async function enforceUniqueSession(req, res, next) {
         path: '/', // CRITICAL: Make cookie accessible on all paths, including /account/login
       });
 
-      return req.logout((err) => {
-        if (err) {
-          console.error('Logout error:', err);
-          logSessionError({
-            userId: user.id,
-            sessionId: req.sessionID,
-            error: 'Failed to logout after session validation failure',
-            errorObject: err,
-          });
-        }
+      // Destroy session using promise wrapper to handle async properly
+      await new Promise((resolve) => {
+        const destroyTimeout = setTimeout(() => {
+          console.warn('[ENFORCE_UNIQUE_SESSION] Session destroy timeout (3s), redirecting anyway');
+          resolve();
+        }, 3000);
 
         req.session.destroy((err) => {
+          clearTimeout(destroyTimeout);
           if (err) {
-            console.error('Session destruction error:', err);
+            console.error('[ENFORCE_UNIQUE_SESSION] Session destruction error:', err);
             logSessionError({
               userId: user.id,
               sessionId: req.sessionID,
@@ -115,17 +112,16 @@ async function enforceUniqueSession(req, res, next) {
               reason: 'replaced',
             });
           }
-
-          res.clearCookie('badsender.sid');
-
-          // Redirect to login page (reason is in cookie)
-          console.log('[ENFORCE_UNIQUE_SESSION] Redirecting to /account/login with logout_reason cookie');
-          return res.redirect('/account/login');
+          resolve(); // Always resolve, even on error
         });
       });
 
-      // Return early to prevent further execution
-      return;
+      // Clear session cookie
+      res.clearCookie('badsender.sid');
+
+      // Redirect to login page (reason is in logout_reason cookie)
+      console.log('[ENFORCE_UNIQUE_SESSION] Redirecting to /account/login with logout_reason cookie');
+      return res.redirect('/account/login');
     }
 
     console.log('[ENFORCE_UNIQUE_SESSION] ✓ Session valid - updating lastActivity');
