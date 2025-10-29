@@ -34,8 +34,6 @@ async function enforceUniqueSession(req, res, next) {
     return next();
   }
 
-  console.log('[ENFORCE_UNIQUE_SESSION] Checking session for user:', req.user.id, 'sessionID:', req.sessionID);
-
   try {
     // Dynamically import to avoid circular dependency
     const { Users } = require('../common/models.common.js');
@@ -44,7 +42,6 @@ async function enforceUniqueSession(req, res, next) {
     const user = await Users.findById(req.user.id).select('+activeSessionId');
 
     if (!user) {
-      console.log('[ENFORCE_UNIQUE_SESSION] User not found:', req.user.id);
       logSessionValidationFailed({
         userId: req.user.id,
         sessionId: req.sessionID,
@@ -65,12 +62,9 @@ async function enforceUniqueSession(req, res, next) {
       });
     }
 
-    console.log('[ENFORCE_UNIQUE_SESSION] User activeSessionId:', user.activeSessionId, 'current sessionID:', req.sessionID);
-
     // Check if current session matches the registered active session
     if (user.activeSessionId && user.activeSessionId !== req.sessionID) {
       // Another session exists and this one is invalid
-      console.log('[ENFORCE_UNIQUE_SESSION] ⚠️ SESSION MISMATCH - Logging out user');
       logSessionValidationFailed({
         userId: user.id,
         sessionId: req.sessionID,
@@ -120,11 +114,9 @@ async function enforceUniqueSession(req, res, next) {
       res.clearCookie('badsender.sid');
 
       // Redirect to login page (reason is in logout_reason cookie)
-      console.log('[ENFORCE_UNIQUE_SESSION] Redirecting to /account/login with logout_reason cookie');
       return res.redirect('/account/login');
     }
 
-    console.log('[ENFORCE_UNIQUE_SESSION] ✓ Session valid - updating lastActivity');
     // Update last activity timestamp
     user.lastActivity = new Date();
     await user.save();
