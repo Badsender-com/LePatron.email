@@ -187,6 +187,10 @@ export default {
         // Reset flag after a delay to let Vuetify fully sync
         setTimeout(() => {
           this.isInitializing = false;
+
+          // Fallback: if no workspace/folder is selected, select the first one
+          // This handles the case where there's no saved selection or it was cleared
+          this.checkIfNotData();
         }, 100);
       });
     },
@@ -203,6 +207,13 @@ export default {
         if (!savedSelection) return;
 
         const { nodeId, nodeType } = JSON.parse(savedSelection);
+
+        // Don't try to restore if workspaces aren't loaded yet
+        // This prevents clearing the selection prematurely
+        if (!this.treeviewWorkspaces || this.treeviewWorkspaces.length === 0) {
+          return;
+        }
+
         const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
 
         if (node) {
@@ -219,6 +230,7 @@ export default {
             this.$router.replace({ query: queryParam });
           }
         } else {
+          // Node not found in tree - it might have been deleted
           this.clearSelection();
         }
       } catch (error) {
