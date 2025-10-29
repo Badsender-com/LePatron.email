@@ -344,7 +344,6 @@ async function setPassword(req, res) {
           console.error('[SET_PASSWORD] Session save error:', saveErr);
           return reject(saveErr);
         }
-        console.log('[SET_PASSWORD] Session saved successfully. SessionID:', req.sessionID);
         resolve();
       });
     });
@@ -414,7 +413,6 @@ async function login(req, res, next) {
           return next(new createError.InternalServerError('Failed to save session'));
         }
 
-        console.log('[LOGIN] Session saved successfully. SessionID:', req.sessionID);
         return res.json({ isAdmin: user.isAdmin });
       });
     });
