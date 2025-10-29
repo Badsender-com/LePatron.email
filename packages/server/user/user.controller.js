@@ -337,7 +337,16 @@ async function setPassword(req, res) {
   await new Promise((resolve, reject) => {
     req.login(user, (err) => {
       if (err) return reject(err);
-      resolve();
+
+      // Explicitly save session before resolving
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('[SET_PASSWORD] Session save error:', saveErr);
+          return reject(saveErr);
+        }
+        console.log('[SET_PASSWORD] Session saved successfully. SessionID:', req.sessionID);
+        resolve();
+      });
     });
   });
   const updatedUser = await Users.findOneForApi({ _id: user._id });
@@ -397,7 +406,17 @@ async function login(req, res, next) {
       // Call session management hook
       await onLoginSuccess(req, res, () => {});
 
-      return res.json({ isAdmin: user.isAdmin });
+      // Explicitly save session before sending response
+      // This ensures Set-Cookie header is added to the response
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('[LOGIN] Session save error:', saveErr);
+          return next(new createError.InternalServerError('Failed to save session'));
+        }
+
+        console.log('[LOGIN] Session saved successfully. SessionID:', req.sessionID);
+        return res.json({ isAdmin: user.isAdmin });
+      });
     });
   })(req, res);
 }
