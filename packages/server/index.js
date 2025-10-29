@@ -56,6 +56,13 @@ if (cluster.isMaster) {
 } else {
   const app = express();
 
+  // Trust first proxy to correctly identify HTTPS connections
+  // This allows Express to read X-Forwarded-Proto header from load balancer/proxy
+  // Required for secure cookies to work properly behind proxies
+  if (!config.isDev) {
+    app.set('trust proxy', 1);
+  }
+
   const store = new MongoDBStore({
     uri: config.database,
     collection: 'sessions',
@@ -222,6 +229,9 @@ if (cluster.isMaster) {
       console.log('[SESSION_DEBUG]', {
         method: req.method,
         path: req.path,
+        protocol: req.protocol,
+        secure: req.secure,
+        xForwardedProto: req.headers['x-forwarded-proto'],
         sessionID: req.sessionID,
         hasSession: !!req.session,
         isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
