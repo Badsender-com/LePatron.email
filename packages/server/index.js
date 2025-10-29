@@ -217,7 +217,30 @@ if (cluster.isMaster) {
 
   // Enforce unique session per user (except admin)
   const { enforceUniqueSession } = require('./account/session.middleware.js');
-  app.use(enforceUniqueSession);
+
+  // List of public routes that should NOT enforce unique session
+  // These routes are accessible without authentication or during login process
+  const PUBLIC_PATHS = [
+    '/account/login',           // Login page
+    '/account/SAML-login',      // SAML login initiator
+    '/SAML-login/callback',     // SAML callback
+    '/api/account/login',       // API login endpoint
+    '/api/account/',            // All public account API routes (profile, forgot password, etc.)
+  ];
+
+  // Apply enforceUniqueSession conditionally
+  app.use((req, res, next) => {
+    // Skip unique session enforcement for public paths
+    const isPublicPath = PUBLIC_PATHS.some(path => req.path.startsWith(path));
+
+    if (isPublicPath) {
+      // Allow public routes to proceed without session validation
+      return next();
+    }
+
+    // Apply unique session enforcement for all other routes
+    return enforceUniqueSession(req, res, next);
+  });
 
   app.get(
     '/account/SAML-login',
