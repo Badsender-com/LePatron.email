@@ -72,7 +72,7 @@ async function enforceUniqueSession(req, res, next) {
         reason: 'Session replaced by newer login',
       });
 
-      req.logout((err) => {
+      return req.logout((err) => {
         if (err) {
           console.error('Logout error:', err);
           logSessionError({
@@ -102,7 +102,6 @@ async function enforceUniqueSession(req, res, next) {
       });
 
       // Return early to prevent further execution
-      // Don't call next() - let the callback handle the redirect
       return;
     }
 
