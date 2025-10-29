@@ -107,6 +107,13 @@ async function enforceUniqueSession(req, res, next) {
               error: 'Failed to destroy session after validation failure',
               errorObject: err,
             });
+          } else {
+            // Log that the old session has been destroyed
+            logSessionDestroyed({
+              userId: user.id,
+              sessionId: req.sessionID,
+              reason: 'replaced',
+            });
           }
 
           res.clearCookie('badsender.sid');
@@ -143,10 +150,14 @@ async function enforceUniqueSession(req, res, next) {
  * Hook called after successful login
  *
  * Responsibilities:
- * - Destroy the previous session from MongoDB store (if exists)
  * - Register the new session ID in the user document
  * - Record login metadata (IP, user-agent, timestamp)
  * - Log session creation and replacement events
+ *
+ * Note: The old session is NOT destroyed here. It remains in MongoDB
+ * so that when the old browser makes its next request, enforceUniqueSession
+ * can detect the mismatch and display the appropriate UX message.
+ * The old session will be destroyed by enforceUniqueSession when detected.
  *
  * @param {string} authMethod - Authentication method used (local/saml)
  */
@@ -176,29 +187,11 @@ function createLoginSuccessHandler(authMethod = 'local') {
       const oldSessionId = user.activeSessionId;
       const newSessionId = req.sessionID;
 
-      // Destroy old session in MongoDB store if it exists and is different
+      // Log session replacement but DON'T destroy the old session yet
+      // The old session must remain in MongoDB so that when the old browser
+      // makes its next request, enforceUniqueSession can detect the mismatch
+      // and set the logout_reason cookie for UX messaging
       if (oldSessionId && oldSessionId !== newSessionId) {
-        const sessionStore = req.sessionStore;
-
-        sessionStore.destroy(oldSessionId, (err) => {
-          if (err) {
-            console.error('Old session destruction error:', err);
-            logSessionError({
-              userId: user.id,
-              sessionId: oldSessionId,
-              error: 'Failed to destroy old session from store',
-              errorObject: err,
-            });
-          } else {
-            logSessionDestroyed({
-              userId: user.id,
-              sessionId: oldSessionId,
-              reason: 'replaced',
-            });
-          }
-        });
-
-        // Log session replacement
         logSessionReplaced({
           userId: user.id,
           oldSessionId,
