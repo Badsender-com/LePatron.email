@@ -12,13 +12,20 @@ const { Users } = require('../common/models.common.js');
 function sessionValidationMiddleware() {
   return async (req, res, next) => {
     try {
+      // DEBUG: Log every request
+      logger.info(
+        `[SessionValidation] ${req.method} ${req.path} | SessionID: ${req.sessionID} | isAuth: ${req.isAuthenticated()} | User: ${req.user ? req.user.email || req.user.id : 'NONE'}`
+      );
+
       // Skip validation if user is not authenticated
       if (!req.isAuthenticated() || !req.user) {
+        logger.info('[SessionValidation] ⏭️  Skipping - user not authenticated');
         return next();
       }
 
       // Skip validation for admin users (admins can have multiple sessions)
       if (req.user.isAdmin) {
+        logger.info('[SessionValidation] ⏭️  Skipping - user is admin');
         return next();
       }
 
