@@ -5,6 +5,8 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
 const Roles = require('../account/roles');
+const logger = require('../utils/logger.js');
+const { updateSessionTracking } = require('../account/session-tracking.helper.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -386,10 +388,13 @@ async function login(req, res, next) {
       return next(new createError.BadRequest('User not found'));
     }
 
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
         return next(new createError.InternalServerError(err));
       }
+
+      // Update session tracking
+      await updateSessionTracking(req, user);
 
       return res.json({ isAdmin: user.isAdmin });
     });

@@ -80,6 +80,18 @@ const UserSchema = Schema(
     token: { type: String },
     tokenExpire: { type: Date },
     isDeactivated: { type: Boolean, default: false },
+    // Session management fields
+    activeSessionId: { type: String, select: false },
+    sessionMetadata: {
+      type: {
+        ip: String,
+        userAgent: String,
+        loginTime: Date,
+      },
+      required: false,
+      select: false,
+    },
+    lastActivity: { type: Date, default: Date.now },
   },
   {
     timestamps: true,
