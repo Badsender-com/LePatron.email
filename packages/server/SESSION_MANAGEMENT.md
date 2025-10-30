@@ -85,6 +85,11 @@ DATABASE_URL=mongodb://localhost:27017/lepatron
 4. **`packages/server/SESSION_MANAGEMENT.md`**
    - This documentation file
 
+5. **`packages/ui/plugins/axios-interceptor.js`**
+   - Axios response interceptor to handle 401 Unauthorized errors
+   - Prevents infinite redirect loops when parallel XHR requests fail
+   - Redirects to login page where logout_reason cookie is checked
+
 ## Files Modified
 
 1. **`packages/server/node.config.js`**
@@ -108,6 +113,23 @@ DATABASE_URL=mongodb://localhost:27017/lepatron
 
 4. **`packages/server/user/user.controller.js`**
    - Modified `login` function to call session management hook after successful authentication
+
+5. **`nuxt.config.js`**
+   - Added axios-interceptor plugin to handle 401 responses globally
+
+6. **`packages/ui/routes/account/login/index.vue`**
+   - Added `mounted()` hook to check for `logout_reason` cookie
+   - Displays session replacement message when appropriate
+   - Helper methods: `getCookie()`, `deleteCookie()`
+
+7. **`packages/ui/helpers/locales/en.js` & `fr.js`**
+   - Added translations for session replacement message
+   - `global.errors.session.replaced` in English and French
+
+8. **`packages/ui/routes/mailings/__partials/workspace-tree.vue`**
+   - Fixed workspace/folder selection restoration after login
+   - Added guard in `restoreSelectedNode()` to prevent premature localStorage clearing
+   - Added `checkIfNotData()` call as fallback to ensure workspace is selected
 
 ## Database Schema Changes
 
@@ -160,13 +182,28 @@ This will add the session fields to all existing users with default values:
    - Fetches user's `activeSessionId` from database
    - Compares with current session ID
    - If mismatch:
-     - Logs out user
-     - Destroys session
-     - Clears cookie
-     - Redirects to login with `?reason=session-replaced` message
+     - Sets `logout_reason=session-replaced` cookie (10 second TTL)
+     - Destroys session from MongoDB
+     - Clears `badsender.sid` cookie
+     - Redirects to `/account/login`
+     - Login page detects cookie and displays message
    - If match:
      - Updates `lastActivity` timestamp
      - Continues with request
+
+### Race Condition Handling (Parallel XHR Requests)
+
+When a session is invalidated, multiple parallel XHR requests may receive 401 errors:
+
+1. User with invalidated session clicks on folder/workspace
+2. Multiple XHR requests fire simultaneously (GET folder, GET has-access, etc.)
+3. First request detects session mismatch, destroys session, returns 302 redirect
+4. Subsequent requests receive 401 Unauthorized (session already destroyed)
+5. `axios-interceptor.js` catches all 401 errors:
+   - Uses `isRedirecting` flag to prevent multiple redirects
+   - Performs single `window.location.href = '/account/login'` redirect
+   - This stops all pending XHR requests and navigates to login
+6. Login page reads `logout_reason` cookie and displays message
 
 ### Logout Flow
 
@@ -201,14 +238,32 @@ This will add the session fields to all existing users with default values:
 
 ### Manual Testing Checklist
 
-- [ ] Login and verify session is created
-- [ ] Make multiple requests and verify session extends (lastActivity updates)
-- [ ] Login from Browser A, then Browser B, verify Browser A is logged out
-- [ ] Verify "session-replaced" message appears
-- [ ] Logout and verify session is fully destroyed
-- [ ] Verify admin can login from multiple browsers simultaneously
-- [ ] Test SAML login and verify same session behavior
-- [ ] Check logs and verify all events are logged correctly
+- [x] **Test 1: Session replacement with UX message**
+  - Login from Browser A, then Browser B
+  - Verify Browser A is logged out with message
+  - Test both clicking on email (navigation) and clicking on folder/workspace (XHR)
+  - Verify no infinite loops or UI freezing
+
+- [x] **Test 2: Admin multi-session exemption**
+  - Login as admin from Browser A, then Browser B
+  - Verify both browsers remain functional
+  - Verify no logout or session replacement occurs
+
+- [x] **Test 3: 14-day idle timeout**
+  - Temporarily reduce timeout to 10 seconds for testing
+  - Wait 11 seconds without activity
+  - Verify automatic logout on next action
+  - Restore timeout to 14 days
+
+- [x] **Test 4: Rolling session (idle timeout behavior)**
+  - Verified during Test 3
+  - Activity before timeout extends session
+  - `lastActivity` updates on each request
+
+- [ ] **Test 5: SAML login** (skipped - not applicable to this deployment)
+
+- [ ] **Post-deployment**: Run migration script in production
+- [ ] **Post-deployment**: Verify all events are logged correctly
 
 ### Automated Testing
 
