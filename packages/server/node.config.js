@@ -83,8 +83,7 @@ config.isPreProd = !config.isDev && !config.isProd;
 config.isAws = config.storage.type === 'aws';
 
 // Calculate session maxAge in milliseconds
-// TEMPORARY: 10 seconds for testing (normally 14 days)
-config.session.maxAge = 10 * 1000; // config.session.durationDays * 24 * 60 * 60 * 1000;
+config.session.maxAge = config.session.durationDays * 24 * 60 * 60 * 1000;
 
 const isLocalEmailTransport =
   config.emailTransport.port === localEmail.port &&
