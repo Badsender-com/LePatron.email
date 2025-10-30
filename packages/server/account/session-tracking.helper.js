@@ -1,7 +1,7 @@
 'use strict';
 
 const logger = require('../utils/logger.js');
-const { Users } = require('../constant/model.names.js');
+const { Users } = require('../common/models.common.js');
 
 /**
  * Updates session tracking information for a user after login

@@ -2,7 +2,7 @@
 
 const createError = require('http-errors');
 const logger = require('../utils/logger.js');
-const { Users } = require('../constant/model.names.js');
+const { Users } = require('../common/models.common.js');
 
 /**
  * Session validation middleware factory
@@ -26,8 +26,7 @@ function sessionValidationMiddleware() {
       const currentSessionId = req.sessionID;
 
       // Fetch the user with their active session ID (hidden field, so we need to explicitly select it)
-      const UserModel = req.app.get('model')(Users);
-      const user = await UserModel.findById(req.user.id).select(
+      const user = await Users.findById(req.user.id).select(
         '+activeSessionId'
       );
 
