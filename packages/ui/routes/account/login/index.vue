@@ -33,8 +33,39 @@ export default {
   validations: {
     username: { required },
   },
+  mounted() {
+    // Check for logout reason cookie (session replacement)
+    if (typeof document !== 'undefined') {
+      const logoutReason = this.getCookie('logout_reason');
+      if (logoutReason === 'session-replaced') {
+        // Show friendly message explaining why they were logged out
+        const message = this.$t('global.errors.session.replaced');
+        this.showSnackbar({
+          text: message,
+          color: 'warning',
+          timeout: 6000, // Show for 6 seconds
+        });
+        // Delete the cookie after reading it
+        this.deleteCookie('logout_reason');
+      }
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    // Cookie helper functions
+    getCookie(name) {
+      if (typeof document === 'undefined') return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+      }
+      return null;
+    },
+    deleteCookie(name) {
+      if (typeof document === 'undefined') return;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    },
     checkEmailForm: async function () {
       this.submitted = true;
       this.$v.$touch();

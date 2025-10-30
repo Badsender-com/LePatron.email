@@ -61,6 +61,9 @@ if (cluster.isMaster) {
     collection: 'sessions',
   });
 
+  // Session configuration with 14-day idle timeout (rolling window)
+  const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000; // 14 days in milliseconds
+
   app.use(
     session({
       secret: config.sessionSecret,
@@ -68,6 +71,13 @@ if (cluster.isMaster) {
       resave: false,
       saveUninitialized: false,
       store: store,
+      rolling: true, // Reset cookie maxAge on every request (idle timeout behavior)
+      cookie: {
+        maxAge: FOURTEEN_DAYS_MS,
+        httpOnly: true, // Prevent XSS attacks
+        secure: config.isProd, // HTTPS only in production
+        sameSite: 'lax', // CSRF protection
+      },
     })
   );
 
@@ -202,6 +212,14 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Session validation middleware (after passport, before routes)
+  // Validates unique session per user and handles session replacement
+  const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
+  app.use(sessionValidationMiddleware);
+
+  // Helper for updating session after SAML authentication
+  const { updateUserSession } = require('./account/session-update.helper.js');
+
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
@@ -211,12 +229,16 @@ if (cluster.isMaster) {
       next();
     },
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
-    (err, req, res, _next) => {
-      console.log({ err });
-      if (err) {
+    async (req, res, next) => {
+      try {
+        if (req.user && req.user.id) {
+          await updateUserSession(req, req.user.id);
+        }
+        return res.redirect('/');
+      } catch (err) {
+        console.log({ err });
         return res.redirect('/');
       }
-      return res.redirect('/');
     }
   );
 
@@ -224,7 +246,15 @@ if (cluster.isMaster) {
     '/SAML-login/callback',
     bodyParser.urlencoded({ extended: false }),
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
-    function (req, res) {
+    async function (req, res) {
+      try {
+        if (req.user && req.user.id) {
+          await updateUserSession(req, req.user.id);
+        }
+      } catch (error) {
+        // Log but don't fail redirect
+        console.error('Error updating SAML session:', error);
+      }
       res.redirect('/');
     }
   );

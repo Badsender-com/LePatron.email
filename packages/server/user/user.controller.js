@@ -373,7 +373,7 @@ async function getPublicProfile(req, res) {
 }
 
 async function login(req, res, next) {
-  passport.authenticate('local', (err, user, info) => {
+  passport.authenticate('local', async (err, user, info) => {
     if (err) {
       return next(new createError.InternalServerError(err));
     }
@@ -386,10 +386,14 @@ async function login(req, res, next) {
       return next(new createError.BadRequest('User not found'));
     }
 
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
         return next(new createError.InternalServerError(err));
       }
+
+      // Update session using helper function
+      const { updateUserSession } = require('../account/session-update.helper.js');
+      await updateUserSession(req, user.id);
 
       return res.json({ isAdmin: user.isAdmin });
     });
