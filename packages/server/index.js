@@ -71,9 +71,6 @@ if (cluster.isMaster) {
       rolling: true, // Reset cookie expiry on each request (idle timeout)
       cookie: {
         maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
-        httpOnly: true, // Prevent client-side JavaScript access
-        secure: config.isProd, // HTTPS only in production
-        sameSite: 'lax', // CSRF protection
       },
     })
   );
