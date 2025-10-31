@@ -112,10 +112,8 @@ passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
   const logger = require('../utils/logger.js');
-  logger.info(`[Passport] 🔍 deserializeUser called | UserID: ${id}`);
 
   if (id === config.admin.id) {
-    logger.info('[Passport] ✅ Admin user deserialized');
     return done(null, { ...adminUser });
   }
 
@@ -127,16 +125,13 @@ passport.deserializeUser(async (id, done) => {
     });
 
     if (!user) {
-      logger.warn(`[Passport] ❌ User not found or invalid | UserID: ${id}`);
+      logger.warn(`[Passport] User not found or invalid: ${id}`);
       return done(null, false);
     }
 
-    logger.info(
-      `[Passport] ✅ User deserialized | Email: ${user.email} | ID: ${user.id}`
-    );
     done(null, user.toJSON());
   } catch (err) {
-    logger.error(`[Passport] ❌ Error deserializing user:`, err);
+    logger.error(`[Passport] Error deserializing user:`, err);
     done(null, false, err);
   }
 });

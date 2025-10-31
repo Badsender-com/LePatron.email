@@ -390,13 +390,11 @@ async function login(req, res, next) {
 
     req.logIn(user, async (err) => {
       if (err) {
-        logger.error('[Login] req.logIn failed:', err);
+        logger.error('[Login] Login failed:', err);
         return next(new createError.InternalServerError(err));
       }
 
-      logger.info(
-        `[Login] ✅ req.logIn success | User: ${user.email || user.id} | SessionID: ${req.sessionID}`
-      );
+      logger.info(`[Login] User logged in: ${user.email || user.id}`);
 
       // Update session tracking
       await updateSessionTracking(req, user);
@@ -404,13 +402,10 @@ async function login(req, res, next) {
       // Force session save before sending response
       req.session.save((saveErr) => {
         if (saveErr) {
-          logger.error('[Login] ❌ Session save failed:', saveErr);
+          logger.error('[Login] Session save failed:', saveErr);
           return next(new createError.InternalServerError(saveErr));
         }
 
-        logger.info(
-          `[Login] ✅ Session saved to DB | User: ${user.email || user.id} | SessionID: ${req.sessionID}`
-        );
         return res.json({ isAdmin: user.isAdmin });
       });
     });
