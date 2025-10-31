@@ -36,13 +36,10 @@ async function updateSessionTracking(req, user) {
     userDoc.lastActivity = new Date();
     await userDoc.save();
 
+    // Log only when a session is replaced (security audit)
     if (oldSessionId && oldSessionId !== newSessionId) {
       logger.info(
         `Session replaced for user ${user.email}. Old: ${oldSessionId}, New: ${newSessionId}`
-      );
-    } else {
-      logger.info(
-        `New session created for user ${user.email}: ${newSessionId}`
       );
     }
   } catch (error) {

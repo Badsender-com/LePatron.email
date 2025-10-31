@@ -394,8 +394,6 @@ async function login(req, res, next) {
         return next(new createError.InternalServerError(err));
       }
 
-      logger.info(`[Login] User logged in: ${user.email || user.id}`);
-
       // Update session tracking
       await updateSessionTracking(req, user);
 

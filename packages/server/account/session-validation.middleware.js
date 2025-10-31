@@ -46,7 +46,6 @@ function sessionValidationMiddleware() {
         user.activeSessionId = currentSessionId;
         user.lastActivity = new Date();
         await user.save();
-        logger.info(`Session set as active for user ${user.email}`);
         return next();
       }
 
