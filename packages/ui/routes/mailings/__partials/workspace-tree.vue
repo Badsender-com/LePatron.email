@@ -88,9 +88,6 @@ export default {
       immediate: true,
     },
   },
-  async mounted() {
-    this.restoreSelectedNode();
-  },
   methods: {
     /**
      * Find a single node by its ID in the tree
@@ -218,7 +215,12 @@ export default {
           ) {
             this.$router.replace({ query: queryParam });
           }
-        } else {
+        } else if (
+          this.treeviewWorkspaces &&
+          this.treeviewWorkspaces.length > 0
+        ) {
+          // Only clear selection if workspaces are loaded but node doesn't exist
+          // Don't clear if workspaces aren't loaded yet (race condition)
           this.clearSelection();
         }
       } catch (error) {
