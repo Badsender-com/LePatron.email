@@ -70,7 +70,7 @@ if (cluster.isMaster) {
       store: store,
       rolling: true, // Reset cookie expiry on each request (idle timeout)
       cookie: {
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+        maxAge: 30 * 1000, // TESTING: 30 seconds (normally 14 days)
       },
     })
   );
