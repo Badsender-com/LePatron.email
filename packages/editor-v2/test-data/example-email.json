@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "title": "Welcome Email",
+    "subject": "Bienvenue chez LePatron.email !",
+    "preheader": "Découvrez notre nouvel éditeur",
+    "designSystemId": "demo"
+  },
+  "blocks": [
+    {
+      "id": "block-heading-1",
+      "component": "heading",
+      "props": {
+        "text": "Bienvenue !",
+        "level": "h1",
+        "textColor": "{{designSystem.tokens.colors.primary}}",
+        "align": "center"
+      }
+    },
+    {
+      "id": "block-container-1",
+      "component": "container",
+      "props": {
+        "backgroundColor": "#f8f9fa",
+        "padding": "24px",
+        "borderRadius": "8px",
+        "content": "<p style=\"margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 16px; color: #333333; line-height: 1.5;\">Nous sommes ravis de vous accueillir sur notre nouvelle plateforme. Cet email a été créé avec notre nouvel éditeur basé sur Maizzle.</p>"
+      }
+    },
+    {
+      "id": "block-button-1",
+      "component": "button",
+      "props": {
+        "text": "Découvrir l'éditeur",
+        "url": "https://lepatron.email",
+        "backgroundColor": "{{designSystem.tokens.colors.primary}}",
+        "textColor": "#ffffff",
+        "borderRadius": "4px",
+        "align": "center"
+      }
+    },
+    {
+      "id": "block-heading-2",
+      "component": "heading",
+      "props": {
+        "text": "Fonctionnalités principales",
+        "level": "h2",
+        "textColor": "#333333",
+        "align": "left"
+      }
+    },
+    {
+      "id": "block-container-2",
+      "component": "container",
+      "props": {
+        "backgroundColor": "#ffffff",
+        "padding": "16px",
+        "borderWidth": "1",
+        "borderColor": "#dddddd",
+        "borderStyle": "solid",
+        "borderRadius": "4px",
+        "content": "<ul style=\"margin: 0; padding-left: 20px; font-family: Arial, sans-serif; font-size: 14px; color: #666666;\"><li>Design System intégré</li><li>Composants Maizzle réutilisables</li><li>Preview en temps réel</li><li>Export HTML optimisé</li></ul>"
+      }
+    },
+    {
+      "id": "block-button-2",
+      "component": "button",
+      "props": {
+        "text": "En savoir plus",
+        "url": "https://lepatron.email/docs",
+        "backgroundColor": "{{designSystem.tokens.colors.secondary}}",
+        "textColor": "#ffffff",
+        "borderRadius": "4px",
+        "align": "center",
+        "fullWidth": false
+      }
+    }
+  ]
+}

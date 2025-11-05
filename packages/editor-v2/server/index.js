@@ -25,15 +25,21 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       designSystems: '/api/v2/design-systems',
+      components: '/api/v2/components',
       render: '/api/v2/render',
-      emails: '/api/v2/emails',
+      emails: '/api/v2/emails (coming soon)',
     },
   })
 })
 
 // API Routes
 const designSystemsRoutes = require('./routes/design-systems.routes')
+const renderRoutes = require('./routes/render.routes')
+const componentsRoutes = require('./routes/components.routes')
+
 app.use('/v2/design-systems', designSystemsRoutes)
+app.use('/v2/render', renderRoutes)
+app.use('/v2/components', componentsRoutes)
 
 // Error handler
 app.use((err, req, res, next) => {

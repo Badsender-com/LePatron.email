@@ -1,0 +1,58 @@
+const express = require('express');
+const router = express.Router();
+const maizzleRenderService = require('../services/maizzle-render.service');
+
+/**
+ * GET /v2/components
+ * Liste tous les composants disponibles
+ */
+router.get('/', async (req, res) => {
+  try {
+    const components = await maizzleRenderService.listComponents();
+
+    res.json({
+      success: true,
+      components,
+      count: components.length,
+    });
+  } catch (err) {
+    console.error('List components error:', err);
+    res.status(500).json({
+      error: 'Failed to list components',
+      message: err.message,
+    });
+  }
+});
+
+/**
+ * GET /v2/components/:name
+ * Récupère les détails d'un composant (schéma + template source)
+ */
+router.get('/:name', async (req, res) => {
+  try {
+    const { name } = req.params;
+    const category = req.query.category || 'core';
+
+    // Charger schéma et template
+    const schema = await maizzleRenderService.loadComponentSchema(name, category);
+    const template = await maizzleRenderService.loadComponentTemplate(name, category);
+
+    res.json({
+      success: true,
+      component: {
+        name,
+        category,
+        schema,
+        template,
+      },
+    });
+  } catch (err) {
+    console.error('Get component error:', err);
+    res.status(404).json({
+      error: 'Component not found',
+      message: err.message,
+    });
+  }
+});
+
+module.exports = router;
