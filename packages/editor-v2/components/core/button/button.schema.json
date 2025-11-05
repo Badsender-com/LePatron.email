@@ -1,0 +1,90 @@
+{
+  "name": "button",
+  "label": "Bouton",
+  "category": "core",
+  "icon": "🔘",
+  "description": "Bouton cliquable avec lien",
+
+  "configurableProperties": {
+    "content": {
+      "text": {
+        "type": "string",
+        "label": "Texte du bouton",
+        "default": "Click me",
+        "required": true,
+        "maxLength": 50,
+        "placeholder": "Entrez le texte du bouton",
+        "tab": "Contenu"
+      },
+      "url": {
+        "type": "url",
+        "label": "URL de destination",
+        "default": "#",
+        "required": true,
+        "placeholder": "https://example.com",
+        "tab": "Contenu"
+      }
+    },
+
+    "style": {
+      "backgroundColor": {
+        "type": "color",
+        "label": "Couleur de fond",
+        "default": "{{designSystem.tokens.colors.primary}}",
+        "allowCustom": true,
+        "palette": "{{designSystem.tokens.colors}}",
+        "tab": "Style"
+      },
+      "textColor": {
+        "type": "color",
+        "label": "Couleur du texte",
+        "default": "#ffffff",
+        "allowCustom": true,
+        "tab": "Style"
+      },
+      "borderRadius": {
+        "type": "slider",
+        "label": "Arrondi des coins",
+        "default": "{{designSystem.tokens.borderRadius.sm}}",
+        "min": 0,
+        "max": 50,
+        "unit": "px",
+        "tab": "Style"
+      }
+    },
+
+    "layout": {
+      "align": {
+        "type": "button-group",
+        "label": "Alignement",
+        "default": "left",
+        "options": [
+          { "value": "left", "icon": "align-left", "label": "Gauche" },
+          { "value": "center", "icon": "align-center", "label": "Centre" },
+          { "value": "right", "icon": "align-right", "label": "Droite" }
+        ],
+        "tab": "Disposition"
+      },
+      "fullWidth": {
+        "type": "toggle",
+        "label": "Pleine largeur",
+        "default": false,
+        "tab": "Disposition"
+      }
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "field": "textColor",
+        "validator": "contrastRatio",
+        "params": {
+          "background": "backgroundColor",
+          "minRatio": 4.5
+        },
+        "message": "Le contraste texte/fond doit être ≥ 4.5:1 (WCAG AA)"
+      }
+    ]
+  }
+}

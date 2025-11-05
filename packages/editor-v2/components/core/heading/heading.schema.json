@@ -1,0 +1,128 @@
+{
+  "name": "heading",
+  "label": "Titre",
+  "category": "core",
+  "icon": "📝",
+  "description": "Titre hiérarchique avec niveaux H1-H3",
+
+  "configurableProperties": {
+    "content": {
+      "text": {
+        "type": "string",
+        "label": "Texte du titre",
+        "default": "Titre par défaut",
+        "required": true,
+        "maxLength": 100,
+        "placeholder": "Entrez le texte du titre",
+        "tab": "Contenu"
+      },
+      "level": {
+        "type": "button-group",
+        "label": "Niveau de titre",
+        "default": "h2",
+        "options": [
+          { "value": "h1", "label": "H1", "description": "Titre principal" },
+          { "value": "h2", "label": "H2", "description": "Sous-titre" },
+          { "value": "h3", "label": "H3", "description": "Titre tertiaire" }
+        ],
+        "tab": "Contenu"
+      }
+    },
+
+    "style": {
+      "textColor": {
+        "type": "color",
+        "label": "Couleur du texte",
+        "default": "{{designSystem.tokens.colors.textPrimary}}",
+        "allowCustom": true,
+        "palette": "{{designSystem.tokens.colors}}",
+        "tab": "Style"
+      },
+      "fontSize": {
+        "type": "slider",
+        "label": "Taille de police",
+        "default": null,
+        "min": 14,
+        "max": 48,
+        "unit": "px",
+        "nullable": true,
+        "nullLabel": "Auto (selon niveau)",
+        "tab": "Style"
+      },
+      "fontWeight": {
+        "type": "button-group",
+        "label": "Graisse",
+        "default": "bold",
+        "options": [
+          { "value": "normal", "label": "Normal" },
+          { "value": "bold", "label": "Gras" }
+        ],
+        "tab": "Style"
+      },
+      "lineHeight": {
+        "type": "slider",
+        "label": "Hauteur de ligne",
+        "default": "1.3",
+        "min": 1,
+        "max": 2,
+        "step": 0.1,
+        "unit": "",
+        "tab": "Style"
+      }
+    },
+
+    "layout": {
+      "align": {
+        "type": "button-group",
+        "label": "Alignement",
+        "default": "left",
+        "options": [
+          { "value": "left", "icon": "align-left", "label": "Gauche" },
+          { "value": "center", "icon": "align-center", "label": "Centre" },
+          { "value": "right", "icon": "align-right", "label": "Droite" }
+        ],
+        "tab": "Disposition"
+      },
+      "marginTop": {
+        "type": "slider",
+        "label": "Marge supérieure",
+        "default": "{{designSystem.tokens.spacing.md}}",
+        "min": 0,
+        "max": 64,
+        "unit": "px",
+        "tab": "Disposition"
+      },
+      "marginBottom": {
+        "type": "slider",
+        "label": "Marge inférieure",
+        "default": "{{designSystem.tokens.spacing.md}}",
+        "min": 0,
+        "max": 64,
+        "unit": "px",
+        "tab": "Disposition"
+      }
+    }
+  },
+
+  "validation": {
+    "rules": [
+      {
+        "field": "text",
+        "validator": "maxLength",
+        "params": {
+          "max": 100
+        },
+        "message": "Le texte du titre ne doit pas dépasser 100 caractères"
+      },
+      {
+        "field": "fontSize",
+        "validator": "range",
+        "params": {
+          "min": 14,
+          "max": 48
+        },
+        "message": "La taille de police doit être entre 14px et 48px"
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+<script props>
+module.exports = {
+  text: props.text || 'Click me',
+  url: props.url || '#',
+  backgroundColor: props.backgroundColor || '#007bff',
+  textColor: props.textColor || '#ffffff',
+  borderRadius: props.borderRadius || '4px',
+  padding: props.padding || '12px 24px',
+  align: props.align || 'left',
+  fullWidth: props.fullWidth || false,
+  blockId: props.blockId || '',
+}
+</script>
+
+<table
+  role="presentation"
+  style="margin: 16px 0;"
+  data-block-id="{{ blockId }}"
+>
+  <tr>
+    <td align="{{ align }}">
+      <table role="presentation">
+        <tr>
+          <td
+            style="
+              border-radius: {{ borderRadius }};
+              background-color: {{ backgroundColor }};
+            "
+          >
+            <a
+              href="{{ url }}"
+              style="
+                display: {{ fullWidth ? 'block' : 'inline-block' }};
+                padding: {{ padding }};
+                color: {{ textColor }};
+                text-decoration: none;
+                font-family: Arial, sans-serif;
+                font-size: 16px;
+                font-weight: bold;
+              "
+            >
+              {{ text }}
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
