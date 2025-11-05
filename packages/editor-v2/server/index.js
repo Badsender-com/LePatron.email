@@ -31,6 +31,10 @@ app.get('/', (req, res) => {
   })
 })
 
+// API Routes
+const designSystemsRoutes = require('./routes/design-systems.routes')
+app.use('/api/v2/design-systems', designSystemsRoutes)
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err)
