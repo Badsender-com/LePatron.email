@@ -4,7 +4,7 @@ import designSystemService from '../services/design-system.service.js'
  * Transforme le format Email JSON en template Maizzle complet
  */
 export async function jsonToMaizzle(emailData, renderService) {
-  const { metadata = {}, blocks = [] } = emailData
+  const { metadata = {}, sections = [], blocks = [] } = emailData
 
   // Charger le Design System si spécifié
   let designSystem = null
@@ -16,6 +16,91 @@ export async function jsonToMaizzle(emailData, renderService) {
     }
   }
 
+  // Support both old flat blocks structure and new hierarchical sections structure
+  let contentHtml = ''
+
+  if (sections && sections.length > 0) {
+    // NEW: Hierarchical structure with sections -> columns -> components
+    contentHtml = await renderSections(sections, designSystem, renderService)
+  } else if (blocks && blocks.length > 0) {
+    // OLD: Flat blocks structure (for backward compatibility)
+    contentHtml = await renderFlatBlocks(blocks, designSystem, renderService)
+  }
+
+  // Construire le template Maizzle complet
+  const maizzleTemplate = buildMaizzleTemplate(metadata, contentHtml)
+
+  return maizzleTemplate
+}
+
+/**
+ * Rend les sections avec leur structure hiérarchique
+ */
+async function renderSections(sections, designSystem, renderService) {
+  const sectionsHtml = await Promise.all(
+    sections.map(async (section) => {
+      try {
+        // Résoudre les props de la section
+        const resolvedSectionProps = resolvePropsWithDesignSystem(section.props, designSystem)
+        const sectionPropsWithDefaults = applyDefaults(resolvedSectionProps, section.component)
+
+        // Rendre le contenu de chaque colonne
+        const columnContents = {}
+
+        for (let i = 0; i < section.columns.length; i++) {
+          const column = section.columns[i]
+
+          // Rendre tous les composants de la colonne
+          const componentsHtml = await Promise.all(
+            column.components.map(async (component) => {
+              try {
+                const resolvedProps = resolvePropsWithDesignSystem(component.props, designSystem)
+                const propsWithDefaults = applyDefaults(resolvedProps, component.component)
+
+                // Charger et rendre le template du composant
+                const category = determineComponentCategory(component.component)
+                const template = await renderService.loadComponentTemplate(component.component, category)
+                const componentHtml = renderComponentTemplate(template, propsWithDefaults, component.id)
+
+                return componentHtml
+              } catch (err) {
+                console.error(`Error rendering component ${component.id}:`, err)
+                return `<!-- Error rendering component ${component.id}: ${err.message} -->`
+              }
+            })
+          )
+
+          // Stocker le HTML de la colonne avec la clé columnContent_X
+          columnContents[`columnContent_${i}`] = componentsHtml.join('\n')
+        }
+
+        // Charger le template de section
+        const sectionTemplate = await renderService.loadComponentTemplate(section.component, 'sections')
+
+        // Combiner les props de section avec les contenus de colonnes
+        const sectionData = {
+          ...sectionPropsWithDefaults,
+          ...columnContents
+        }
+
+        // Rendre le template de section
+        const sectionHtml = renderComponentTemplate(sectionTemplate, sectionData, section.id)
+
+        return sectionHtml
+      } catch (err) {
+        console.error(`Error rendering section ${section.id}:`, err)
+        return `<!-- Error rendering section ${section.id}: ${err.message} -->`
+      }
+    })
+  )
+
+  return sectionsHtml.join('\n')
+}
+
+/**
+ * Rend les blocks plats (ancien format - compatibilité)
+ */
+async function renderFlatBlocks(blocks, designSystem, renderService) {
   // Résoudre les props de chaque block avec les valeurs du Design System
   const resolvedBlocks = blocks.map(block => {
     const resolvedProps = resolvePropsWithDesignSystem(block.props, designSystem)
@@ -44,10 +129,29 @@ export async function jsonToMaizzle(emailData, renderService) {
     })
   )
 
-  // Construire le template Maizzle complet
-  const maizzleTemplate = buildMaizzleTemplate(metadata, blocksHtml.join('\n'))
+  return blocksHtml.join('\n')
+}
 
-  return maizzleTemplate
+/**
+ * Détermine la catégorie d'un composant basé sur son nom
+ */
+function determineComponentCategory(componentName) {
+  // Liste des sections connues
+  const sections = ['section-1col', 'section-2col-50-50', 'section-2col-33-66', 'section-2col-66-33', 'section-3col']
+
+  if (sections.includes(componentName)) {
+    return 'sections'
+  }
+
+  // Liste des composants de contenu
+  const contentComponents = ['heading', 'paragraph', 'button', 'image', 'spacer']
+
+  if (contentComponents.includes(componentName)) {
+    return 'content'
+  }
+
+  // Par défaut, considérer comme custom
+  return 'custom'
 }
 
 /**
@@ -55,6 +159,43 @@ export async function jsonToMaizzle(emailData, renderService) {
  */
 function applyDefaults(props, componentName) {
   const defaults = {
+    // Sections
+    'section-1col': {
+      maxWidth: '600px',
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '0px',
+      align: 'center',
+    },
+    'section-2col-50-50': {
+      maxWidth: '600px',
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '0px',
+      align: 'center',
+    },
+    'section-2col-33-66': {
+      maxWidth: '600px',
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '0px',
+      align: 'center',
+    },
+    'section-2col-66-33': {
+      maxWidth: '600px',
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '0px',
+      align: 'center',
+    },
+    'section-3col': {
+      maxWidth: '600px',
+      backgroundColor: '#ffffff',
+      padding: '20px',
+      borderRadius: '0px',
+      align: 'center',
+    },
+    // Content components
     button: {
       text: 'Click me',
       url: '#',
@@ -75,6 +216,27 @@ function applyDefaults(props, componentName) {
       marginTop: '16px',
       marginBottom: '16px',
     },
+    paragraph: {
+      text: 'Votre texte ici...',
+      fontSize: '16px',
+      lineHeight: '1.6',
+      textColor: '#333333',
+      align: 'left',
+      marginTop: '0',
+      marginBottom: '16px',
+    },
+    image: {
+      src: 'https://via.placeholder.com/600x400',
+      alt: '',
+      width: '100%',
+      borderRadius: '0px',
+      align: 'center',
+      url: '',
+    },
+    spacer: {
+      height: '20px',
+    },
+    // Old container (backward compatibility)
     container: {
       backgroundColor: '#ffffff',
       padding: '16px',
