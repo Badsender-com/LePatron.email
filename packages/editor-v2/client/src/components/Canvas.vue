@@ -5,7 +5,7 @@
       <div>
         <h2 class="font-bold text-lg text-gray-800">Canvas</h2>
         <p class="text-sm text-gray-500 mt-1">
-          {{ emailStore.blockCount }} bloc(s)
+          {{ emailStore.sectionCount }} section(s) · {{ emailStore.totalComponentCount }} composant(s)
         </p>
       </div>
 
@@ -22,13 +22,13 @@
       </div>
     </div>
 
-    <!-- Zone de drop / Liste des blocs -->
+    <!-- Zone de composition -->
     <div
       class="flex-1 overflow-y-auto p-4 bg-gray-50"
-      :class="{ 'bg-blue-50': isDragOver }"
-      @drop="onDrop"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
+      :class="{ 'bg-blue-50': isDragOverCanvas }"
+      @drop="onDropOnCanvas"
+      @dragover="onDragOverCanvas"
+      @dragleave="onDragLeaveCanvas"
     >
       <!-- Message vide -->
       <div
@@ -38,145 +38,248 @@
         <div>
           <div class="text-6xl mb-4">📧</div>
           <p class="text-lg font-medium">Canvas vide</p>
-          <p class="text-sm mt-2">Glissez un composant ici pour commencer</p>
+          <p class="text-sm mt-2">Glissez une <strong>Section</strong> ici pour commencer</p>
+          <p class="text-xs mt-1 text-gray-400">📋 Sections → ⚏ Section 1 colonne</p>
         </div>
       </div>
 
-      <!-- Liste des blocs -->
-      <div v-else class="space-y-2">
-        <!-- Zone de drop au début (avant le premier bloc) -->
+      <!-- Liste des sections -->
+      <div v-else class="space-y-4">
+        <!-- Zone de drop avant la première section -->
         <div
-          class="h-8 rounded border-2 border-dashed transition-all"
-          :class="dropTargetIndex === 0 ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
-          @drop="onDropBetween($event, 0)"
-          @dragover="onDragOverBetween($event, 0)"
-          @dragleave="onDragLeaveBetween"
+          class="h-12 rounded border-2 border-dashed transition-all"
+          :class="dropTargetSection === 0 ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
+          @drop="onDropSection($event, 0)"
+          @dragover="onDragOverSection($event, 0)"
+          @dragleave="onDragLeaveSection"
         >
           <div class="h-full flex items-center justify-center text-xs text-gray-500">
-            Déposer ici
+            ➕ Déposer une section ici
           </div>
         </div>
 
+        <!-- Section -->
         <div
-          v-for="(block, index) in emailStore.blocks"
-          :key="block.id"
-          class="group relative p-4 bg-white rounded-lg border-2 transition-all duration-200"
+          v-for="(section, sectionIndex) in emailStore.sections"
+          :key="section.id"
+          class="group relative bg-white rounded-lg border-2 transition-all"
           :class="{
-            'border-blue-500 shadow-md': isSelected(block.id),
-            'border-gray-200 hover:border-gray-300': !isSelected(block.id)
+            'border-blue-500 shadow-lg': isSectionSelected(section.id),
+            'border-gray-300': !isSectionSelected(section.id)
           }"
-          @click="selectBlock(block.id)"
         >
-          <!-- Drag handle -->
+          <!-- Section Header -->
           <div
-            class="absolute left-2 top-1/2 transform -translate-y-1/2 cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
-            draggable="true"
-            @dragstart="onBlockDragStart($event, index)"
-            @dragend="onBlockDragEnd"
-            title="Déplacer"
+            class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer"
+            @click="selectSection(section.id)"
           >
-            <div class="flex flex-col gap-1">
-              <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
-              <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
-              <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
-            </div>
-          </div>
-
-          <!-- Contenu du bloc -->
-          <div class="ml-6">
-            <div class="flex items-start justify-between">
-              <!-- Info -->
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-gray-800">
-                    {{ getComponentLabel(block.component) }}
-                  </span>
-                  <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                    {{ block.component }}
-                  </span>
-                </div>
-
-                <!-- Preview des props principales -->
-                <div class="mt-2 text-sm text-gray-600">
-                  <div v-if="block.component === 'button'" class="truncate">
-                    {{ block.props.text || 'Button' }} → {{ block.props.url || '#' }}
-                  </div>
-                  <div v-else-if="block.component === 'heading'" class="truncate">
-                    {{ block.props.level || 'h2' }}: {{ block.props.text || 'Heading' }}
-                  </div>
-                  <div v-else-if="block.component === 'container'" class="truncate">
-                    Container ({{ block.props.maxWidth || '600px' }})
-                  </div>
-                  <div v-else class="text-gray-400 italic">
-                    {{ Object.keys(block.props).length }} propriété(s)
-                  </div>
+            <div class="flex items-center gap-3">
+              <!-- Drag handle -->
+              <div
+                class="cursor-move opacity-50 group-hover:opacity-100 transition-opacity"
+                draggable="true"
+                @dragstart="onSectionDragStart($event, sectionIndex)"
+                @dragend="onSectionDragEnd"
+                @click.stop
+                title="Déplacer la section"
+              >
+                <div class="flex gap-0.5">
+                  <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
                 </div>
               </div>
 
-              <!-- Actions -->
-              <div class="flex gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  @click.stop="duplicateBlock(block.id)"
-                  class="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
-                  title="Dupliquer"
-                >
-                  📋
-                </button>
-                <button
-                  v-if="index > 0"
-                  @click.stop="moveBlockUp(index)"
-                  class="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
-                  title="Monter"
-                >
-                  ⬆️
-                </button>
-                <button
-                  v-if="index < emailStore.blocks.length - 1"
-                  @click.stop="moveBlockDown(index)"
-                  class="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
-                  title="Descendre"
-                >
-                  ⬇️
-                </button>
-                <button
-                  @click.stop="deleteBlock(block.id)"
-                  class="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                  title="Supprimer"
-                >
-                  🗑️
-                </button>
+              <!-- Info section -->
+              <div>
+                <span class="font-semibold text-gray-800">
+                  {{ getComponentLabel(section.component) }}
+                </span>
+                <span class="ml-2 text-xs px-2 py-0.5 bg-gray-200 text-gray-600 rounded">
+                  {{ section.columns.length }} col{{ section.columns.length > 1 ? 's' : '' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Section actions -->
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                @click.stop="duplicateSection(section.id)"
+                class="p-1.5 text-gray-600 hover:bg-gray-200 rounded text-sm"
+                title="Dupliquer section"
+              >
+                📋
+              </button>
+              <button
+                v-if="sectionIndex > 0"
+                @click.stop="moveSectionUp(sectionIndex)"
+                class="p-1.5 text-gray-600 hover:bg-gray-200 rounded text-sm"
+                title="Monter"
+              >
+                ⬆️
+              </button>
+              <button
+                v-if="sectionIndex < emailStore.sections.length - 1"
+                @click.stop="moveSectionDown(sectionIndex)"
+                class="p-1.5 text-gray-600 hover:bg-gray-200 rounded text-sm"
+                title="Descendre"
+              >
+                ⬇️
+              </button>
+              <button
+                @click.stop="deleteSection(section.id)"
+                class="p-1.5 text-red-600 hover:bg-red-50 rounded text-sm"
+                title="Supprimer section"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Content: Colonnes -->
+          <div class="p-4">
+            <div class="grid gap-4" :style="{ gridTemplateColumns: getGridColumns(section.columns) }">
+              <!-- Colonne -->
+              <div
+                v-for="(column, columnIndex) in section.columns"
+                :key="column.id"
+                class="min-h-[100px] rounded border-2 border-dashed transition-all"
+                :class="{
+                  'border-blue-400 bg-blue-50': isColumnSelected(section.id, column.id),
+                  'border-gray-300 bg-gray-50': !isColumnSelected(section.id, column.id)
+                }"
+                @click.stop="selectColumn(section.id, column.id)"
+              >
+                <!-- Column header (optionnel) -->
+                <div class="p-2 text-xs text-gray-500 border-b border-gray-200 bg-gray-100 flex justify-between items-center">
+                  <span>Colonne {{ columnIndex + 1 }}</span>
+                  <span class="text-gray-400">{{ column.width }}</span>
+                </div>
+
+                <!-- Composants dans la colonne -->
+                <div class="p-2 space-y-2">
+                  <!-- Drop zone si colonne vide -->
+                  <div
+                    v-if="column.components.length === 0"
+                    class="h-20 flex items-center justify-center text-xs text-gray-400 border-2 border-dashed border-gray-300 rounded"
+                    :class="{ 'bg-blue-100 border-blue-400': isDropTargetColumn(section.id, column.id, 0) }"
+                    @drop="onDropComponent($event, section.id, column.id, 0)"
+                    @dragover="onDragOverComponent($event, section.id, column.id, 0)"
+                    @dragleave="onDragLeaveComponent"
+                  >
+                    ➕ Glisser un composant ici
+                  </div>
+
+                  <!-- Drop zone avant premier composant -->
+                  <div
+                    v-if="column.components.length > 0"
+                    class="h-8 rounded border-2 border-dashed transition-all"
+                    :class="isDropTargetColumn(section.id, column.id, 0) ? 'bg-blue-100 border-blue-400' : 'border-gray-200 opacity-0 hover:opacity-100'"
+                    @drop="onDropComponent($event, section.id, column.id, 0)"
+                    @dragover="onDragOverComponent($event, section.id, column.id, 0)"
+                    @dragleave="onDragLeaveComponent"
+                  >
+                    <div class="h-full flex items-center justify-center text-xs text-gray-500">+</div>
+                  </div>
+
+                  <!-- Composant -->
+                  <div
+                    v-for="(component, componentIndex) in column.components"
+                    :key="component.id"
+                  >
+                    <div
+                      class="group/comp relative p-3 bg-white rounded border-2 transition-all"
+                      :class="{
+                        'border-blue-500 shadow-md': isComponentSelected(section.id, column.id, component.id),
+                        'border-gray-200 hover:border-gray-300': !isComponentSelected(section.id, column.id, component.id)
+                      }"
+                      @click.stop="selectComponent(section.id, column.id, component.id)"
+                    >
+                      <!-- Drag handle composant -->
+                      <div
+                        class="absolute left-1 top-1/2 transform -translate-y-1/2 cursor-move opacity-0 group-hover/comp:opacity-100 transition-opacity"
+                        draggable="true"
+                        @dragstart="onComponentDragStart($event, section.id, column.id, componentIndex)"
+                        @dragend="onComponentDragEnd"
+                        @click.stop
+                        title="Déplacer"
+                      >
+                        <div class="flex flex-col gap-0.5">
+                          <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+                          <div class="w-1 h-1 bg-gray-400 rounded-full"></div>
+                        </div>
+                      </div>
+
+                      <!-- Contenu composant -->
+                      <div class="ml-4 flex items-start justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-800">
+                              {{ getComponentLabel(component.component) }}
+                            </span>
+                            <span class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                              {{ component.component }}
+                            </span>
+                          </div>
+                          <!-- Preview props -->
+                          <div class="mt-1 text-xs text-gray-500 truncate">
+                            {{ getComponentPreview(component) }}
+                          </div>
+                        </div>
+
+                        <!-- Actions composant -->
+                        <div class="flex gap-0.5 opacity-0 group-hover/comp:opacity-100 transition-opacity">
+                          <button
+                            @click.stop="duplicateComponent(section.id, column.id, component.id)"
+                            class="p-1 text-gray-600 hover:bg-gray-100 rounded text-xs"
+                            title="Dupliquer"
+                          >
+                            📋
+                          </button>
+                          <button
+                            @click.stop="deleteComponent(section.id, column.id, component.id)"
+                            class="p-1 text-red-600 hover:bg-red-50 rounded text-xs"
+                            title="Supprimer"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Drop zone après le composant -->
+                    <div
+                      class="h-8 rounded border-2 border-dashed transition-all mt-2"
+                      :class="isDropTargetColumn(section.id, column.id, componentIndex + 1) ? 'bg-blue-100 border-blue-400' : 'border-gray-200 opacity-0 hover:opacity-100'"
+                      @drop="onDropComponent($event, section.id, column.id, componentIndex + 1)"
+                      @dragover="onDragOverComponent($event, section.id, column.id, componentIndex + 1)"
+                      @dragleave="onDragLeaveComponent"
+                    >
+                      <div class="h-full flex items-center justify-center text-xs text-gray-500">+</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Indicateur de sélection -->
+          <!-- Indicateur de sélection section -->
           <div
-            v-if="isSelected(block.id)"
+            v-if="isSectionSelected(section.id)"
             class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"
           ></div>
-
-          <!-- Zone de drop entre les blocs -->
-          <div
-            class="absolute left-0 right-0 h-2 -bottom-1 cursor-pointer"
-            :class="{
-              'bg-blue-400 opacity-50': dropTargetIndex === index + 1
-            }"
-            @drop="onDropBetween($event, index + 1)"
-            @dragover="onDragOverBetween($event, index + 1)"
-            @dragleave="onDragLeaveBetween"
-          ></div>
         </div>
 
-        <!-- Zone de drop à la fin (après tous les blocs) -->
+        <!-- Zone de drop après chaque section -->
         <div
-          class="h-12 rounded border-2 border-dashed transition-all mt-2"
-          :class="dropTargetIndex === emailStore.blocks.length ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
-          @drop="onDropBetween($event, emailStore.blocks.length)"
-          @dragover="onDragOverBetween($event, emailStore.blocks.length)"
-          @dragleave="onDragLeaveBetween"
+          class="h-12 rounded border-2 border-dashed transition-all"
+          :class="dropTargetSection === emailStore.sections.length ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
+          @drop="onDropSection($event, emailStore.sections.length)"
+          @dragover="onDragOverSection($event, emailStore.sections.length)"
+          @dragleave="onDragLeaveSection"
         >
           <div class="h-full flex items-center justify-center text-xs text-gray-500">
-            ➕ Déposer un nouveau bloc ici
+            ➕ Déposer une section ici
           </div>
         </div>
       </div>
@@ -193,189 +296,339 @@ const emailStore = useEmailStore()
 const componentsComposable = useComponents()
 
 // État local
-const isDragOver = ref(false)
-const dropTargetIndex = ref(null)
-const draggingBlockIndex = ref(null)
+const isDragOverCanvas = ref(false)
+const dropTargetSection = ref(null)
+const draggingSectionIndex = ref(null)
+const draggingComponentInfo = ref(null) // { sectionId, columnId, componentIndex }
+const dropTargetComponent = ref(null) // { sectionId, columnId, index }
 
 // Computed
 const components = computed(() => componentsComposable.components.value)
 
-// Méthodes
-const isSelected = (blockId) => {
-  return emailStore.selectedBlockId === blockId
+// Sélection
+const isSectionSelected = (sectionId) => {
+  return emailStore.selectedSectionId === sectionId && emailStore.selectedType === 'section'
 }
 
-const selectBlock = (blockId) => {
-  emailStore.selectBlock(blockId)
+const isColumnSelected = (sectionId, columnId) => {
+  return emailStore.selectedSectionId === sectionId &&
+         emailStore.selectedColumnId === columnId &&
+         emailStore.selectedType === 'column'
 }
 
+const isComponentSelected = (sectionId, columnId, componentId) => {
+  return emailStore.selectedSectionId === sectionId &&
+         emailStore.selectedColumnId === columnId &&
+         emailStore.selectedComponentId === componentId &&
+         emailStore.selectedType === 'component'
+}
+
+const isDropTargetColumn = (sectionId, columnId, index) => {
+  return dropTargetComponent.value?.sectionId === sectionId &&
+         dropTargetComponent.value?.columnId === columnId &&
+         dropTargetComponent.value?.index === index
+}
+
+const selectSection = (sectionId) => {
+  emailStore.selectSection(sectionId)
+}
+
+const selectColumn = (sectionId, columnId) => {
+  emailStore.selectColumn(sectionId, columnId)
+}
+
+const selectComponent = (sectionId, columnId, componentId) => {
+  emailStore.selectComponent(sectionId, columnId, componentId)
+}
+
+// Helpers
 const getComponentLabel = (componentName) => {
   const component = components.value.find(c => c.name === componentName)
   return component?.label || componentName
 }
 
-const deleteBlock = (blockId) => {
-  if (confirm('Supprimer ce bloc ?')) {
-    emailStore.deleteBlock(blockId)
+const getComponentPreview = (component) => {
+  if (component.component === 'heading') {
+    return `${component.props.level || 'h2'}: ${component.props.text || 'Titre'}`
+  } else if (component.component === 'button') {
+    return `${component.props.text || 'Bouton'} → ${component.props.url || '#'}`
+  } else if (component.component === 'paragraph') {
+    return component.props.text?.substring(0, 50) || 'Paragraphe...'
+  } else if (component.component === 'image') {
+    return component.props.alt || component.props.src || 'Image'
+  } else if (component.component === 'spacer') {
+    return `Espaceur: ${component.props.height || '20px'}`
+  }
+  return `${Object.keys(component.props).length} prop(s)`
+}
+
+const getGridColumns = (columns) => {
+  return columns.map(col => col.width).join(' ')
+}
+
+// Actions Sections
+const deleteSection = (sectionId) => {
+  if (confirm('Supprimer cette section et tous ses composants ?')) {
+    emailStore.deleteSection(sectionId)
   }
 }
 
-const duplicateBlock = (blockId) => {
-  emailStore.duplicateBlock(blockId)
+const duplicateSection = (sectionId) => {
+  emailStore.duplicateSection(sectionId)
 }
 
-const moveBlockUp = (index) => {
+const moveSectionUp = (index) => {
   if (index > 0) {
-    emailStore.moveBlock(index, index - 1)
+    emailStore.moveSection(index, index - 1)
   }
 }
 
-const moveBlockDown = (index) => {
-  if (index < emailStore.blocks.length - 1) {
-    emailStore.moveBlock(index, index + 1)
+const moveSectionDown = (index) => {
+  if (index < emailStore.sections.length - 1) {
+    emailStore.moveSection(index, index + 1)
   }
+}
+
+// Actions Composants
+const deleteComponent = (sectionId, columnId, componentId) => {
+  if (confirm('Supprimer ce composant ?')) {
+    emailStore.deleteComponent(sectionId, columnId, componentId)
+  }
+}
+
+const duplicateComponent = (sectionId, columnId, componentId) => {
+  emailStore.duplicateComponent(sectionId, columnId, componentId)
 }
 
 const clearAll = () => {
-  if (confirm('Supprimer tous les blocs ?')) {
+  if (confirm('Supprimer toutes les sections et composants ?')) {
     emailStore.resetEmail()
   }
 }
 
-// Drag & Drop - Composants depuis ComponentLibrary
-const onDragOver = (event) => {
-  // Only handle on parent container when canvas is empty
-  // When canvas has blocks, let the explicit drop zones handle it
+// Drag & Drop - Canvas vide (sections seulement)
+const onDragOverCanvas = (event) => {
   if (!emailStore.isEmpty) return
 
   event.preventDefault()
   event.dataTransfer.dropEffect = 'copy'
-  isDragOver.value = true
+  isDragOverCanvas.value = true
 }
 
-const onDragLeave = (event) => {
-  // Only handle when canvas is empty
+const onDragLeaveCanvas = (event) => {
   if (!emailStore.isEmpty) return
 
-  // Vérifier si on quitte vraiment la zone (pas un enfant)
   if (!event.currentTarget.contains(event.relatedTarget)) {
-    isDragOver.value = false
+    isDragOverCanvas.value = false
   }
 }
 
-const onDrop = async (event) => {
-  // Only handle on parent container when canvas is empty
-  // When canvas has blocks, let the explicit drop zones handle it
+const onDropOnCanvas = async (event) => {
   if (!emailStore.isEmpty) return
 
   event.preventDefault()
-  isDragOver.value = false
+  isDragOverCanvas.value = false
 
   try {
     const data = JSON.parse(event.dataTransfer.getData('application/json'))
 
-    if (data.type === 'component') {
-      console.log('📦 Dropping component:', data.componentName)
+    if (data.type === 'sections' || data.category === 'sections') {
+      console.log('📦 Dropping first section:', data.componentName)
 
-      // Charger les defaults du composant
-      const defaults = await componentsComposable.getDefaultProps(data.componentName)
+      const defaults = await getDefaultPropsForComponent(data.componentName, data.category)
 
-      // Ajouter le bloc
-      emailStore.addBlock(data.componentName, defaults)
+      emailStore.addSection(
+        data.componentName,
+        defaults,
+        data.columnCount || 1,
+        data.columnWidths || ['100%']
+      )
     }
-
   } catch (err) {
-    console.error('❌ Drop error:', err)
+    console.error('❌ Drop on canvas error:', err)
   }
 }
 
-// Drag & Drop - Réorganisation des blocs
-const onBlockDragStart = (event, index) => {
-  draggingBlockIndex.value = index
-  event.dataTransfer.effectAllowed = 'move'
-  event.dataTransfer.setData('text/plain', index.toString())
-
-  console.log('🎯 Block drag start:', index)
-}
-
-const onBlockDragEnd = () => {
-  draggingBlockIndex.value = null
-  dropTargetIndex.value = null
-  console.log('🎯 Block drag end')
-}
-
-const onDragOverBetween = (event, targetIndex) => {
+// Drag & Drop - Sections
+const onDragOverSection = (event, targetIndex) => {
   event.preventDefault()
   event.stopPropagation()
 
-  // Accepter à la fois 'copy' (nouveaux composants) et 'move' (réorganisation)
-  event.dataTransfer.dropEffect = draggingBlockIndex.value !== null ? 'move' : 'copy'
-
-  dropTargetIndex.value = targetIndex
-  console.log('🎯 Drag over zone index:', targetIndex)
+  event.dataTransfer.dropEffect = draggingSectionIndex.value !== null ? 'move' : 'copy'
+  dropTargetSection.value = targetIndex
 }
 
-const onDragLeaveBetween = () => {
-  dropTargetIndex.value = null
+const onDragLeaveSection = () => {
+  dropTargetSection.value = null
 }
 
-const onDropBetween = async (event, targetIndex) => {
+const onDropSection = async (event, targetIndex) => {
   event.preventDefault()
   event.stopPropagation()
 
-  // Cas 1: Drop d'un nouveau composant depuis ComponentLibrary
+  // Cas 1: Nouvelle section depuis ComponentLibrary
   try {
     const jsonData = event.dataTransfer.getData('application/json')
     if (jsonData) {
       const data = JSON.parse(jsonData)
 
-      if (data.type === 'component') {
-        console.log('📦 Dropping NEW component at index:', targetIndex, data.componentName)
+      if (data.type === 'sections' || data.category === 'sections') {
+        console.log('📦 Dropping section at index:', targetIndex, data.componentName)
 
-        // Charger les defaults du composant
-        const defaults = await componentsComposable.getDefaultProps(data.componentName)
+        const defaults = await getDefaultPropsForComponent(data.componentName, data.category)
 
-        // Insérer le bloc à l'index spécifique
-        emailStore.insertBlockAt(targetIndex, data.componentName, defaults)
+        emailStore.insertSectionAt(
+          targetIndex,
+          data.componentName,
+          defaults,
+          data.columnCount || 1,
+          data.columnWidths || ['100%']
+        )
 
-        dropTargetIndex.value = null
+        dropTargetSection.value = null
         return
       }
     }
   } catch (err) {
-    console.log('Not a new component, checking for block reordering...')
+    console.log('Not a new section, checking for section reordering...')
   }
 
-  // Cas 2: Réorganisation d'un bloc existant
-  if (draggingBlockIndex.value !== null) {
-    const fromIndex = draggingBlockIndex.value
+  // Cas 2: Réorganisation section existante
+  if (draggingSectionIndex.value !== null) {
+    const fromIndex = draggingSectionIndex.value
     let toIndex = targetIndex
 
-    // Ajuster l'index si on déplace vers le bas
     if (fromIndex < toIndex) {
       toIndex--
     }
 
-    // Ne rien faire si on déplace à la même position
-    if (fromIndex === toIndex) {
-      console.log('⚠️ Same position, skipping move:', fromIndex)
-      dropTargetIndex.value = null
-      draggingBlockIndex.value = null
-      return
+    if (fromIndex !== toIndex) {
+      console.log('🔄 Moving section from', fromIndex, 'to', toIndex)
+      emailStore.moveSection(fromIndex, toIndex)
     }
-
-    console.log('📦 Moving block from', fromIndex, 'to', toIndex)
-    emailStore.moveBlock(fromIndex, toIndex)
   }
 
-  dropTargetIndex.value = null
-  draggingBlockIndex.value = null
+  dropTargetSection.value = null
+  draggingSectionIndex.value = null
+}
+
+const onSectionDragStart = (event, index) => {
+  draggingSectionIndex.value = index
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', index.toString())
+  console.log('🎯 Section drag start:', index)
+}
+
+const onSectionDragEnd = () => {
+  draggingSectionIndex.value = null
+  dropTargetSection.value = null
+  console.log('🎯 Section drag end')
+}
+
+// Drag & Drop - Composants
+const onDragOverComponent = (event, sectionId, columnId, index) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  event.dataTransfer.dropEffect = draggingComponentInfo.value ? 'move' : 'copy'
+  dropTargetComponent.value = { sectionId, columnId, index }
+}
+
+const onDragLeaveComponent = () => {
+  dropTargetComponent.value = null
+}
+
+const onDropComponent = async (event, sectionId, columnId, index) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  // Cas 1: Nouveau composant depuis ComponentLibrary
+  try {
+    const jsonData = event.dataTransfer.getData('application/json')
+    if (jsonData) {
+      const data = JSON.parse(jsonData)
+
+      if (data.type === 'content' || data.type === 'custom' || data.category === 'content' || data.category === 'custom') {
+        console.log('📦 Dropping component at column:', sectionId, columnId, index, data.componentName)
+
+        const defaults = await getDefaultPropsForComponent(data.componentName, data.category || data.type)
+
+        emailStore.insertComponentAt(sectionId, columnId, index, data.componentName, defaults)
+
+        dropTargetComponent.value = null
+        return
+      }
+    }
+  } catch (err) {
+    console.log('Not a new component, checking for component reordering...')
+  }
+
+  // Cas 2: Réorganisation composant existant
+  if (draggingComponentInfo.value) {
+    const { sectionId: fromSectionId, columnId: fromColumnId, componentIndex: fromIndex } = draggingComponentInfo.value
+
+    // Pour l'instant, on ne gère que le déplacement dans la même colonne
+    if (fromSectionId === sectionId && fromColumnId === columnId) {
+      let toIndex = index
+
+      if (fromIndex < toIndex) {
+        toIndex--
+      }
+
+      if (fromIndex !== toIndex) {
+        console.log('🔄 Moving component within column from', fromIndex, 'to', toIndex)
+        emailStore.moveComponentWithinColumn(sectionId, columnId, fromIndex, toIndex)
+      }
+    } else {
+      // TODO: Déplacement entre colonnes différentes
+      console.warn('⚠️ Moving components between columns not yet implemented')
+    }
+  }
+
+  dropTargetComponent.value = null
+  draggingComponentInfo.value = null
+}
+
+const onComponentDragStart = (event, sectionId, columnId, componentIndex) => {
+  draggingComponentInfo.value = { sectionId, columnId, componentIndex }
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', componentIndex.toString())
+  console.log('🎯 Component drag start:', { sectionId, columnId, componentIndex })
+}
+
+const onComponentDragEnd = () => {
+  draggingComponentInfo.value = null
+  dropTargetComponent.value = null
+  console.log('🎯 Component drag end')
+}
+
+// Helper pour charger les props par défaut
+const getDefaultPropsForComponent = async (componentName, category) => {
+  try {
+    const schema = await componentsComposable.loadComponentSchema(componentName)
+
+    const defaults = {}
+    if (schema?.configurableProperties) {
+      Object.values(schema.configurableProperties).forEach(section => {
+        Object.entries(section).forEach(([propName, propConfig]) => {
+          if (propConfig.default !== undefined) {
+            defaults[propName] = propConfig.default
+          }
+        })
+      })
+    }
+
+    return defaults
+  } catch (err) {
+    console.error('❌ Failed to load defaults for', componentName, err)
+    return {}
+  }
 }
 </script>
 
 <style scoped>
-/* Smooth transitions */
-.group {
+.group,
+.group\/comp {
   transition: all 0.2s ease;
 }
 </style>
