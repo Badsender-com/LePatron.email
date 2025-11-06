@@ -44,6 +44,19 @@
 
       <!-- Liste des blocs -->
       <div v-else class="space-y-2">
+        <!-- Zone de drop au début (avant le premier bloc) -->
+        <div
+          class="h-8 rounded border-2 border-dashed transition-all"
+          :class="dropTargetIndex === 0 ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
+          @drop="onDropBetween($event, 0)"
+          @dragover="onDragOverBetween($event, 0)"
+          @dragleave="onDragLeaveBetween"
+        >
+          <div class="h-full flex items-center justify-center text-xs text-gray-500">
+            Déposer ici
+          </div>
+        </div>
+
         <div
           v-for="(block, index) in emailStore.blocks"
           :key="block.id"
@@ -152,6 +165,19 @@
             @dragover="onDragOverBetween($event, index + 1)"
             @dragleave="onDragLeaveBetween"
           ></div>
+        </div>
+
+        <!-- Zone de drop à la fin (après tous les blocs) -->
+        <div
+          class="h-12 rounded border-2 border-dashed transition-all mt-2"
+          :class="dropTargetIndex === emailStore.blocks.length ? 'bg-blue-100 border-blue-400' : 'bg-gray-100 border-gray-300 opacity-50 hover:opacity-100'"
+          @drop="onDropBetween($event, emailStore.blocks.length)"
+          @dragover="onDragOverBetween($event, emailStore.blocks.length)"
+          @dragleave="onDragLeaveBetween"
+        >
+          <div class="h-full flex items-center justify-center text-xs text-gray-500">
+            ➕ Déposer un nouveau bloc ici
+          </div>
         </div>
       </div>
     </div>
@@ -279,10 +305,34 @@ const onDragLeaveBetween = () => {
   dropTargetIndex.value = null
 }
 
-const onDropBetween = (event, targetIndex) => {
+const onDropBetween = async (event, targetIndex) => {
   event.preventDefault()
   event.stopPropagation()
 
+  // Cas 1: Drop d'un nouveau composant depuis ComponentLibrary
+  try {
+    const jsonData = event.dataTransfer.getData('application/json')
+    if (jsonData) {
+      const data = JSON.parse(jsonData)
+
+      if (data.type === 'component') {
+        console.log('📦 Dropping NEW component at index:', targetIndex, data.componentName)
+
+        // Charger les defaults du composant
+        const defaults = await componentsComposable.getDefaultProps(data.componentName)
+
+        // Insérer le bloc à l'index spécifique
+        emailStore.insertBlockAt(targetIndex, data.componentName, defaults)
+
+        dropTargetIndex.value = null
+        return
+      }
+    }
+  } catch (err) {
+    console.log('Not a new component, checking for block reordering...')
+  }
+
+  // Cas 2: Réorganisation d'un bloc existant
   if (draggingBlockIndex.value !== null) {
     const fromIndex = draggingBlockIndex.value
     let toIndex = targetIndex
