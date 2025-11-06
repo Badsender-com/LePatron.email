@@ -1,7 +1,11 @@
-const { Maizzle } = require('@maizzle/framework');
-const fs = require('fs').promises;
-const path = require('path');
-const crypto = require('crypto');
+import { render as maizzleRender } from '@maizzle/framework'
+import fs from 'fs/promises'
+import path from 'path'
+import crypto from 'crypto'
+import { fileURLToPath } from 'url'
+import baseConfig from '../../config.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
  * Service de rendu Maizzle avec cache pour performance
@@ -10,49 +14,49 @@ const crypto = require('crypto');
 class MaizzleRenderService {
   constructor() {
     if (MaizzleRenderService.instance) {
-      return MaizzleRenderService.instance;
+      return MaizzleRenderService.instance
     }
 
     // Cache: Map<cacheKey, {html, timestamp}>
-    this.cache = new Map();
-    this.cacheTTL = 5 * 60 * 1000; // 5 minutes en ms
+    this.cache = new Map()
+    this.cacheTTL = 5 * 60 * 1000 // 5 minutes en ms
 
     // Templates cache: Map<componentName, templateContent>
-    this.templateCache = new Map();
+    this.templateCache = new Map()
 
-    MaizzleRenderService.instance = this;
+    MaizzleRenderService.instance = this
   }
 
   /**
    * Génère une clé de cache unique basée sur le contenu
    */
   generateCacheKey(emailData, mode) {
-    const content = JSON.stringify({ emailData, mode });
-    return crypto.createHash('md5').update(content).digest('hex');
+    const content = JSON.stringify({ emailData, mode })
+    return crypto.createHash('md5').update(content).digest('hex')
   }
 
   /**
    * Vérifie si une entrée de cache est valide
    */
   isCacheValid(cacheEntry) {
-    if (!cacheEntry) return false;
-    const age = Date.now() - cacheEntry.timestamp;
-    return age < this.cacheTTL;
+    if (!cacheEntry) return false
+    const age = Date.now() - cacheEntry.timestamp
+    return age < this.cacheTTL
   }
 
   /**
    * Récupère depuis le cache si valide
    */
   getFromCache(cacheKey) {
-    const entry = this.cache.get(cacheKey);
+    const entry = this.cache.get(cacheKey)
     if (this.isCacheValid(entry)) {
-      console.log('✓ Cache hit:', cacheKey);
-      return entry.html;
+      console.log('✓ Cache hit:', cacheKey)
+      return entry.html
     }
     if (entry) {
-      this.cache.delete(cacheKey); // Nettoyer entrée expirée
+      this.cache.delete(cacheKey) // Nettoyer entrée expirée
     }
-    return null;
+    return null
   }
 
   /**
@@ -62,19 +66,19 @@ class MaizzleRenderService {
     this.cache.set(cacheKey, {
       html,
       timestamp: Date.now(),
-    });
-    console.log('✓ Cache stored:', cacheKey);
+    })
+    console.log('✓ Cache stored:', cacheKey)
   }
 
   /**
    * Charge un template de composant depuis le disque (avec cache)
    */
   async loadComponentTemplate(componentName, category = 'core') {
-    const cacheKey = `${category}/${componentName}`;
+    const cacheKey = `${category}/${componentName}`
 
     // Vérifier le cache de templates
     if (this.templateCache.has(cacheKey)) {
-      return this.templateCache.get(cacheKey);
+      return this.templateCache.get(cacheKey)
     }
 
     // Charger depuis le disque
@@ -84,15 +88,15 @@ class MaizzleRenderService {
       category,
       componentName,
       `${componentName}.maizzle.html`
-    );
+    )
 
     try {
-      const content = await fs.readFile(templatePath, 'utf8');
-      this.templateCache.set(cacheKey, content);
-      console.log('✓ Template loaded:', cacheKey);
-      return content;
+      const content = await fs.readFile(templatePath, 'utf8')
+      this.templateCache.set(cacheKey, content)
+      console.log('✓ Template loaded:', cacheKey)
+      return content
     } catch (err) {
-      throw new Error(`Failed to load component template "${cacheKey}": ${err.message}`);
+      throw new Error(`Failed to load component template "${cacheKey}": ${err.message}`)
     }
   }
 
@@ -106,13 +110,13 @@ class MaizzleRenderService {
       category,
       componentName,
       `${componentName}.schema.json`
-    );
+    )
 
     try {
-      const content = await fs.readFile(schemaPath, 'utf8');
-      return JSON.parse(content);
+      const content = await fs.readFile(schemaPath, 'utf8')
+      return JSON.parse(content)
     } catch (err) {
-      throw new Error(`Failed to load component schema "${componentName}": ${err.message}`);
+      throw new Error(`Failed to load component schema "${componentName}": ${err.message}`)
     }
   }
 
@@ -120,8 +124,6 @@ class MaizzleRenderService {
    * Obtient la configuration Maizzle selon le mode
    */
   getMaizzleConfig(mode = 'preview') {
-    const baseConfig = require('../../config.js');
-
     if (mode === 'preview') {
       // Mode preview : rapide, pas d'optimisation
       return {
@@ -130,7 +132,7 @@ class MaizzleRenderService {
         removeUnusedCSS: false,
         minify: false,
         prettify: true,
-      };
+      }
     } else if (mode === 'export') {
       // Mode export : optimisé pour production
       return {
@@ -139,10 +141,10 @@ class MaizzleRenderService {
         removeUnusedCSS: true,
         minify: true,
         prettify: false,
-      };
+      }
     }
 
-    throw new Error(`Unknown render mode: ${mode}`);
+    throw new Error(`Unknown render mode: ${mode}`)
   }
 
   /**
@@ -151,7 +153,7 @@ class MaizzleRenderService {
   async renderComponent(componentName, props = {}, mode = 'preview') {
     try {
       // Charger le template
-      const template = await this.loadComponentTemplate(componentName);
+      const template = await this.loadComponentTemplate(componentName)
 
       // Créer un layout wrapper minimal pour Maizzle
       const wrappedTemplate = `
@@ -165,21 +167,21 @@ class MaizzleRenderService {
   ${template}
 </body>
 </html>
-      `;
+      `
 
       // Configuration Maizzle
-      const config = this.getMaizzleConfig(mode);
+      const config = this.getMaizzleConfig(mode)
 
       // Rendre avec Maizzle
-      const { html } = await Maizzle.render(wrappedTemplate, {
+      const { html } = await maizzleRender(wrappedTemplate, {
         ...config,
         props,
-      });
+      })
 
-      return html;
+      return html
     } catch (err) {
-      console.error('Render error:', err);
-      throw new Error(`Failed to render component "${componentName}": ${err.message}`);
+      console.error('Render error:', err)
+      throw new Error(`Failed to render component "${componentName}": ${err.message}`)
     }
   }
 
@@ -187,42 +189,42 @@ class MaizzleRenderService {
    * Rend un email complet depuis son JSON (méthode principale)
    */
   async renderEmail(emailData, mode = 'preview', useCache = true) {
-    const startTime = Date.now();
+    const startTime = Date.now()
 
     // Vérifier le cache
     if (useCache) {
-      const cacheKey = this.generateCacheKey(emailData, mode);
-      const cached = this.getFromCache(cacheKey);
+      const cacheKey = this.generateCacheKey(emailData, mode)
+      const cached = this.getFromCache(cacheKey)
       if (cached) {
-        console.log(`✓ Render from cache (${Date.now() - startTime}ms)`);
-        return { html: cached, cached: true, renderTime: Date.now() - startTime };
+        console.log(`✓ Render from cache (${Date.now() - startTime}ms)`)
+        return { html: cached, cached: true, renderTime: Date.now() - startTime }
       }
     }
 
     try {
       // Transformer JSON → Template Maizzle complet
-      const { jsonToMaizzle } = require('../utils/json-to-maizzle');
-      const maizzleTemplate = await jsonToMaizzle(emailData, this);
+      const { jsonToMaizzle } = await import('../utils/json-to-maizzle.js')
+      const maizzleTemplate = await jsonToMaizzle(emailData, this)
 
       // Configuration Maizzle
-      const config = this.getMaizzleConfig(mode);
+      const config = this.getMaizzleConfig(mode)
 
       // Rendre avec Maizzle
-      const { html } = await Maizzle.render(maizzleTemplate, config);
+      const { html } = await maizzleRender(maizzleTemplate, config)
 
       // Stocker dans le cache
       if (useCache) {
-        const cacheKey = this.generateCacheKey(emailData, mode);
-        this.storeInCache(cacheKey, html);
+        const cacheKey = this.generateCacheKey(emailData, mode)
+        this.storeInCache(cacheKey, html)
       }
 
-      const renderTime = Date.now() - startTime;
-      console.log(`✓ Email rendered (${renderTime}ms, mode: ${mode})`);
+      const renderTime = Date.now() - startTime
+      console.log(`✓ Email rendered (${renderTime}ms, mode: ${mode})`)
 
-      return { html, cached: false, renderTime };
+      return { html, cached: false, renderTime }
     } catch (err) {
-      console.error('Email render error:', err);
-      throw new Error(`Failed to render email: ${err.message}`);
+      console.error('Email render error:', err)
+      throw new Error(`Failed to render email: ${err.message}`)
     }
   }
 
@@ -230,20 +232,20 @@ class MaizzleRenderService {
    * Vide le cache (utile pour le dev)
    */
   clearCache() {
-    const count = this.cache.size;
-    this.cache.clear();
-    this.templateCache.clear();
-    console.log(`✓ Cache cleared (${count} entries)`);
-    return { cleared: count };
+    const count = this.cache.size
+    this.cache.clear()
+    this.templateCache.clear()
+    console.log(`✓ Cache cleared (${count} entries)`)
+    return { cleared: count }
   }
 
   /**
    * Obtient les statistiques du cache
    */
   getCacheStats() {
-    const entries = Array.from(this.cache.entries());
-    const validEntries = entries.filter(([_, entry]) => this.isCacheValid(entry));
-    const expiredEntries = entries.length - validEntries.length;
+    const entries = Array.from(this.cache.entries())
+    const validEntries = entries.filter(([_, entry]) => this.isCacheValid(entry))
+    const expiredEntries = entries.length - validEntries.length
 
     return {
       total: entries.length,
@@ -251,42 +253,42 @@ class MaizzleRenderService {
       expired: expiredEntries,
       templates: this.templateCache.size,
       ttl: this.cacheTTL,
-    };
+    }
   }
 
   /**
    * Liste tous les composants disponibles
    */
   async listComponents() {
-    const componentsDir = path.join(__dirname, '../../components/core');
+    const componentsDir = path.join(__dirname, '../../components/core')
     try {
-      const dirs = await fs.readdir(componentsDir, { withFileTypes: true });
-      const components = [];
+      const dirs = await fs.readdir(componentsDir, { withFileTypes: true })
+      const components = []
 
       for (const dir of dirs) {
         if (dir.isDirectory()) {
           try {
-            const schema = await this.loadComponentSchema(dir.name, 'core');
+            const schema = await this.loadComponentSchema(dir.name, 'core')
             components.push({
               name: schema.name,
               label: schema.label,
               category: schema.category,
               icon: schema.icon,
               description: schema.description || '',
-            });
+            })
           } catch (err) {
-            console.warn(`Could not load schema for ${dir.name}:`, err.message);
+            console.warn(`Could not load schema for ${dir.name}:`, err.message)
           }
         }
       }
 
-      return components;
+      return components
     } catch (err) {
-      throw new Error(`Failed to list components: ${err.message}`);
+      throw new Error(`Failed to list components: ${err.message}`)
     }
   }
 }
 
 // Export singleton instance
-const instance = new MaizzleRenderService();
-module.exports = instance;
+const instance = new MaizzleRenderService()
+export default instance

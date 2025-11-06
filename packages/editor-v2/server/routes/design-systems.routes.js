@@ -1,14 +1,15 @@
-const express = require('express')
+import express from 'express'
+import designSystemService from '../services/design-system.service.js'
+
 const router = express.Router()
-const designSystemService = require('../services/design-system.service')
 
 /**
  * GET /api/v2/design-systems
  * Liste tous les Design Systems disponibles
  */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const designSystems = designSystemService.list()
+    const designSystems = await designSystemService.list()
 
     res.json({
       success: true,
@@ -28,10 +29,10 @@ router.get('/', (req, res) => {
  * GET /api/v2/design-systems/:id
  * Charge un Design System par son ID
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const designSystem = designSystemService.load(id)
+    const designSystem = await designSystemService.load(id)
 
     res.json({
       success: true,
@@ -45,7 +46,7 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({
         error: 'Design System not found',
         message: error.message,
-        availableDesignSystems: designSystemService.list(),
+        availableDesignSystems: await designSystemService.list(),
       })
     }
 
@@ -78,4 +79,4 @@ router.delete('/cache', (req, res) => {
   }
 })
 
-module.exports = router
+export default router

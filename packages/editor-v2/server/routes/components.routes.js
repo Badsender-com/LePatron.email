@@ -1,6 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const maizzleRenderService = require('../services/maizzle-render.service');
+import express from 'express'
+import maizzleRenderService from '../services/maizzle-render.service.js'
+
+const router = express.Router()
 
 /**
  * GET /v2/components
@@ -55,4 +56,4 @@ router.get('/:name', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router

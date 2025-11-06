@@ -1,5 +1,9 @@
-const path = require('path')
-const fs = require('fs')
+import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
+import { pathToFileURL } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 class DesignSystemService {
   constructor() {
@@ -11,7 +15,7 @@ class DesignSystemService {
    * @param {string} designSystemId - ID du Design System (ex: 'demo')
    * @returns {object} Configuration du Design System avec tokens résolus
    */
-  load(designSystemId) {
+  async load(designSystemId) {
     // Cache check
     if (this.cache.has(designSystemId)) {
       console.log(`✅ Design System '${designSystemId}' loaded from cache`)
@@ -31,10 +35,11 @@ class DesignSystemService {
         throw new Error(`Design System '${designSystemId}' not found at ${configPath}`)
       }
 
-      // Charger la config
-      // Note: supprimer le cache de require pour permettre le hot reload en dev
-      delete require.cache[require.resolve(configPath)]
-      const config = require(configPath)
+      // Charger la config avec import dynamique
+      // Ajouter un timestamp pour éviter le cache en dev
+      const configUrl = pathToFileURL(configPath).href + '?t=' + Date.now()
+      const module = await import(configUrl)
+      const config = module.default
 
       // Résoudre les templates de tokens ({{tokens.colors.primary}})
       const resolved = this.resolveTokens(config)
@@ -51,33 +56,28 @@ class DesignSystemService {
   }
 
   /**
-   * Résout les références de tokens {{tokens.xxx.yyy}} dans componentDefaults
-   * @param {object} config - Configuration brute du Design System
-   * @returns {object} Configuration avec tokens résolus
+   * Résout les références de tokens dans componentDefaults
+   * Exemple : backgroundColor: '{{tokens.colors.primary}}' -> backgroundColor: '#007bff'
    */
   resolveTokens(config) {
-    // Deep clone pour ne pas modifier l'original
+    // Clone pour ne pas modifier l'original
     const resolved = JSON.parse(JSON.stringify(config))
 
-    // Résoudre componentDefaults
-    if (resolved.componentDefaults) {
+    // Résoudre les tokens dans componentDefaults
+    if (config.componentDefaults) {
       Object.keys(resolved.componentDefaults).forEach((componentName) => {
         Object.keys(resolved.componentDefaults[componentName]).forEach((propName) => {
           const value = resolved.componentDefaults[componentName][propName]
 
           if (typeof value === 'string' && value.includes('{{tokens')) {
-            // Ex: "{{tokens.colors.primary}}" → "#007bff"
+            // Extraire le chemin du token
             const match = value.match(/{{tokens\.(.*?)}}/)
             if (match) {
-              const tokenPath = match[1] // "colors.primary"
+              const tokenPath = match[1]
               const resolvedValue = this.getNestedValue(config.tokens, tokenPath)
 
               if (resolvedValue !== undefined) {
                 resolved.componentDefaults[componentName][propName] = resolvedValue
-              } else {
-                console.warn(
-                  `⚠️  Token not found: {{tokens.${tokenPath}}} in ${componentName}.${propName}`
-                )
               }
             }
           }
@@ -89,20 +89,20 @@ class DesignSystemService {
   }
 
   /**
-   * Récupère une valeur imbriquée dans un objet via un chemin
-   * @param {object} obj - Objet à parcourir
-   * @param {string} path - Chemin pointé (ex: "colors.primary")
-   * @returns {*} Valeur trouvée ou undefined
+   * Récupère une valeur imbriquée dans un objet par chemin
+   * Exemple: getNestedValue({colors: {primary: '#007bff'}}, 'colors.primary') -> '#007bff'
    */
   getNestedValue(obj, path) {
-    return path.split('.').reduce((acc, part) => acc?.[part], obj)
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : undefined
+    }, obj)
   }
 
   /**
    * Liste tous les Design Systems disponibles
    * @returns {Array<object>} Liste des Design Systems
    */
-  list() {
+  async list() {
     const designSystemsDir = path.join(__dirname, '../../design-systems')
 
     try {
@@ -110,9 +110,9 @@ class DesignSystemService {
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
 
-      return dirs.map(dirName => {
+      const results = await Promise.all(dirs.map(async (dirName) => {
         try {
-          const ds = this.load(dirName)
+          const ds = await this.load(dirName)
           return {
             id: ds.id,
             name: ds.name,
@@ -122,7 +122,9 @@ class DesignSystemService {
           console.warn(`⚠️  Could not load Design System '${dirName}':`, error.message)
           return null
         }
-      }).filter(Boolean)
+      }))
+
+      return results.filter(Boolean)
     } catch (error) {
       console.error('❌ Error listing Design Systems:', error.message)
       return []
@@ -139,4 +141,4 @@ class DesignSystemService {
 }
 
 // Export singleton
-module.exports = new DesignSystemService()
+export default new DesignSystemService()

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   content: [
     './components/**/*.html',
     './client/src/**/*.{vue,js}',

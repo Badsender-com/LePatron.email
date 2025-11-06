@@ -1,4 +1,4 @@
-const designSystemService = require('../services/design-system.service');
+import designSystemService from '../services/design-system.service.js'
 
 /**
  * Transforme le format Email JSON en template Maizzle complet
@@ -20,83 +20,83 @@ const designSystemService = require('../services/design-system.service');
  *   ]
  * }
  */
-async function jsonToMaizzle(emailData, renderService) {
-  const { metadata = {}, blocks = [] } = emailData;
+export async function jsonToMaizzle(emailData, renderService) {
+  const { metadata = {}, blocks = [] } = emailData
 
   // Charger le Design System si spécifié
-  let designSystem = null;
+  let designSystem = null
   if (metadata.designSystemId) {
     try {
-      designSystem = await designSystemService.load(metadata.designSystemId);
+      designSystem = await designSystemService.load(metadata.designSystemId)
     } catch (err) {
-      console.warn(`Design System "${metadata.designSystemId}" not found, using defaults`);
+      console.warn(`Design System "${metadata.designSystemId}" not found, using defaults`)
     }
   }
 
   // Résoudre les props de chaque block avec les valeurs du Design System
   const resolvedBlocks = blocks.map(block => {
-    const resolvedProps = resolvePropsWithDesignSystem(block.props, designSystem);
+    const resolvedProps = resolvePropsWithDesignSystem(block.props, designSystem)
     return {
       ...block,
       props: resolvedProps,
-    };
-  });
+    }
+  })
 
   // Construire le HTML de chaque block
   const blocksHtml = await Promise.all(
     resolvedBlocks.map(async (block) => {
       try {
         // Charger le template du composant
-        const template = await renderService.loadComponentTemplate(block.component);
+        const template = await renderService.loadComponentTemplate(block.component)
 
         // Injecter les props dans le template (simple remplacement pour POC)
-        const renderedBlock = injectPropsIntoTemplate(template, block.props, block.id);
+        const renderedBlock = injectPropsIntoTemplate(template, block.props, block.id)
 
-        return renderedBlock;
+        return renderedBlock
       } catch (err) {
-        console.error(`Error rendering block ${block.id}:`, err);
-        return `<!-- Error rendering block ${block.id}: ${err.message} -->`;
+        console.error(`Error rendering block ${block.id}:`, err)
+        return `<!-- Error rendering block ${block.id}: ${err.message} -->`
       }
     })
-  );
+  )
 
   // Construire le template Maizzle complet
-  const maizzleTemplate = buildMaizzleTemplate(metadata, blocksHtml.join('\n'));
+  const maizzleTemplate = buildMaizzleTemplate(metadata, blocksHtml.join('\n'))
 
-  return maizzleTemplate;
+  return maizzleTemplate
 }
 
 /**
  * Résout les références au Design System dans les props
  * Ex: "{{designSystem.tokens.colors.primary}}" → "#007bff"
  */
-function resolvePropsWithDesignSystem(props, designSystem) {
-  if (!designSystem || !props) return props;
+export function resolvePropsWithDesignSystem(props, designSystem) {
+  if (!designSystem || !props) return props
 
-  const resolved = {};
+  const resolved = {}
 
   Object.keys(props).forEach(key => {
-    const value = props[key];
+    const value = props[key]
 
     if (typeof value === 'string' && value.includes('{{designSystem.')) {
       // Extraire le chemin du token
-      const match = value.match(/{{designSystem\.(.*?)}}/);
+      const match = value.match(/{{designSystem\.(.*?)}}/)
       if (match) {
-        const tokenPath = match[1];
-        const resolvedValue = getNestedValue(designSystem, tokenPath);
-        resolved[key] = resolvedValue !== undefined ? resolvedValue : value;
+        const tokenPath = match[1]
+        const resolvedValue = getNestedValue(designSystem, tokenPath)
+        resolved[key] = resolvedValue !== undefined ? resolvedValue : value
       } else {
-        resolved[key] = value;
+        resolved[key] = value
       }
     } else if (typeof value === 'object' && value !== null) {
       // Récursif pour objets imbriqués
-      resolved[key] = resolvePropsWithDesignSystem(value, designSystem);
+      resolved[key] = resolvePropsWithDesignSystem(value, designSystem)
     } else {
-      resolved[key] = value;
+      resolved[key] = value
     }
-  });
+  })
 
-  return resolved;
+  return resolved
 }
 
 /**
@@ -105,39 +105,39 @@ function resolvePropsWithDesignSystem(props, designSystem) {
  */
 function getNestedValue(obj, path) {
   return path.split('.').reduce((current, key) => {
-    return current && current[key] !== undefined ? current[key] : undefined;
-  }, obj);
+    return current && current[key] !== undefined ? current[key] : undefined
+  }, obj)
 }
 
 /**
  * Injecte les props dans un template de composant
  * Remplace les {{ propName }} par les valeurs
  */
-function injectPropsIntoTemplate(template, props, blockId) {
-  let result = template;
+export function injectPropsIntoTemplate(template, props, blockId) {
+  let result = template
 
   // Retirer le <script props> block (sera traité par Maizzle)
   // Pour le POC, on fait un simple remplacement manuel
-  result = result.replace(/<script props>[\s\S]*?<\/script>/i, '');
+  result = result.replace(/<script props>[\s\S]*?<\/script>/i, '')
 
   // Remplacer les variables {{ propName }}
   Object.keys(props).forEach(key => {
-    const value = props[key];
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-    result = result.replace(regex, escapeHtml(String(value)));
-  });
+    const value = props[key]
+    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g')
+    result = result.replace(regex, escapeHtml(String(value)))
+  })
 
   // Remplacer {{ blockId }}
-  result = result.replace(/{{\\s*blockId\\s*}}/g, blockId);
+  result = result.replace(/{{\\s*blockId\\s*}}/g, blockId)
 
   // Gérer les conditionnels basiques (if condition="level === 'h1'")
   // Pour le POC, simplification : on évalue les conditions basiques
-  result = evaluateBasicConditionals(result, props);
+  result = evaluateBasicConditionals(result, props)
 
   // Nettoyer les variables non remplacées
-  result = result.replace(/{{[^}]+}}/g, '');
+  result = result.replace(/{{[^}]+}}/g, '')
 
-  return result;
+  return result
 }
 
 /**
@@ -145,23 +145,23 @@ function injectPropsIntoTemplate(template, props, blockId) {
  * Ex: <if condition="level === 'h1'">...</if>
  */
 function evaluateBasicConditionals(template, props) {
-  let result = template;
+  let result = template
 
   // Regex pour capturer <if condition="...">...</if>
-  const ifRegex = /<if\s+condition=["']([^"']+)["']>([\s\S]*?)<\/if>/gi;
+  const ifRegex = /<if\s+condition=["']([^"']+)["']>([\s\S]*?)<\/if>/gi
 
   result = result.replace(ifRegex, (match, condition, content) => {
     try {
       // Évaluer la condition de façon sécurisée (POC simplifié)
-      const evaluated = evaluateCondition(condition, props);
-      return evaluated ? content : '';
+      const evaluated = evaluateCondition(condition, props)
+      return evaluated ? content : ''
     } catch (err) {
-      console.warn('Failed to evaluate condition:', condition, err);
-      return ''; // En cas d'erreur, ne pas afficher
+      console.warn('Failed to evaluate condition:', condition, err)
+      return '' // En cas d'erreur, ne pas afficher
     }
-  });
+  })
 
-  return result;
+  return result
 }
 
 /**
@@ -170,21 +170,21 @@ function evaluateBasicConditionals(template, props) {
  */
 function evaluateCondition(condition, props) {
   // Remplacer les variables dans la condition
-  let evalString = condition;
+  let evalString = condition
   Object.keys(props).forEach(key => {
-    const value = props[key];
-    const regex = new RegExp(`\\b${key}\\b`, 'g');
-    const replacement = typeof value === 'string' ? `'${value}'` : value;
-    evalString = evalString.replace(regex, replacement);
-  });
+    const value = props[key]
+    const regex = new RegExp(`\\b${key}\\b`, 'g')
+    const replacement = typeof value === 'string' ? `'${value}'` : value
+    evalString = evalString.replace(regex, replacement)
+  })
 
   // Évaluer (ATTENTION : eval n'est pas sécurisé en production!)
   // Pour le POC, on garde cette approche simple
   try {
-    return eval(evalString);
+    return eval(evalString)
   } catch (err) {
-    console.warn('Condition eval error:', evalString, err);
-    return false;
+    console.warn('Condition eval error:', evalString, err)
+    return false
   }
 }
 
@@ -198,19 +198,19 @@ function escapeHtml(text) {
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
+  }
+  return text.replace(/[&<>"']/g, m => map[m])
 }
 
 /**
  * Construit le template Maizzle complet avec layout
  */
-function buildMaizzleTemplate(metadata, blocksHtml) {
+export function buildMaizzleTemplate(metadata, blocksHtml) {
   const {
     title = 'Email sans titre',
     subject = '',
     preheader = '',
-  } = metadata;
+  } = metadata
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -243,12 +243,5 @@ function buildMaizzleTemplate(metadata, blocksHtml) {
     </tr>
   </table>
 </body>
-</html>`;
+</html>`
 }
-
-module.exports = {
-  jsonToMaizzle,
-  resolvePropsWithDesignSystem,
-  injectPropsIntoTemplate,
-  buildMaizzleTemplate,
-};

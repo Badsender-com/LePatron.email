@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "POC - Modern Email Editor based on Maizzle for LePatron.email",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev:server": "nodemon server/index.js",
     "dev:client": "cd client && yarn dev",

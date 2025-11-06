@@ -1,5 +1,5 @@
-const express = require('express')
-const cors = require('cors')
+import express from 'express'
+import cors from 'cors'
 
 const app = express()
 const PORT = process.env.PORT || 3200
@@ -33,9 +33,9 @@ app.get('/', (req, res) => {
 })
 
 // API Routes
-const designSystemsRoutes = require('./routes/design-systems.routes')
-const renderRoutes = require('./routes/render.routes')
-const componentsRoutes = require('./routes/components.routes')
+import designSystemsRoutes from './routes/design-systems.routes.js'
+import renderRoutes from './routes/render.routes.js'
+import componentsRoutes from './routes/components.routes.js'
 
 app.use('/v2/design-systems', designSystemsRoutes)
 app.use('/v2/render', renderRoutes)
@@ -63,4 +63,4 @@ app.listen(PORT, () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
 })
 
-module.exports = app
+export default app

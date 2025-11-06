@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   id: 'demo',
   name: 'Demo Design System',
   version: '1.0.0',
