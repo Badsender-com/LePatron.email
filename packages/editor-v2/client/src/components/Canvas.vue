@@ -356,6 +356,14 @@ const onDropBetween = async (event, targetIndex) => {
       toIndex--
     }
 
+    // Ne rien faire si on déplace à la même position
+    if (fromIndex === toIndex) {
+      console.log('⚠️ Same position, skipping move:', fromIndex)
+      dropTargetIndex.value = null
+      draggingBlockIndex.value = null
+      return
+    }
+
     console.log('📦 Moving block from', fromIndex, 'to', toIndex)
     emailStore.moveBlock(fromIndex, toIndex)
   }

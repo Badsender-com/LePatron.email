@@ -190,6 +190,12 @@ export const useEmailStore = defineStore('email', {
         return
       }
 
+      // Ne rien faire si on déplace à la même position
+      if (fromIndex === toIndex) {
+        console.warn('⚠️ Cannot move block to same position:', fromIndex)
+        return
+      }
+
       const [block] = this.blocks.splice(fromIndex, 1)
       this.blocks.splice(toIndex, 0, block)
 
