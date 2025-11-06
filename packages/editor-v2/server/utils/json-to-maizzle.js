@@ -182,36 +182,25 @@ function getNestedValue(obj, path) {
  * Évalue les conditionnels basiques dans le template
  */
 function evaluateBasicConditionals(template, props) {
-  console.log('🔍 evaluateBasicConditionals called')
-  console.log('   Template contains <if>:', template.includes('<if'))
-  console.log('   Props level:', props.level)
-
   let result = template
 
   // Regex qui capture TOUT entre les guillemets de condition (même avec des quotes internes)
   // Double quotes: <if condition="level === 'h1'">
   const ifRegex = /<if\s+condition="([^"]*)">([\s\S]*?)<\/if>|<if\s+condition='([^']*)'>([\s\S]*?)<\/if>/gi
 
-  let matchCount = 0
   result = result.replace(ifRegex, (match, conditionDouble, contentDouble, conditionSingle, contentSingle) => {
-    matchCount++
     // La condition et le contenu sont soit dans les groupes double quotes (1,2) soit single quotes (3,4)
     const condition = conditionDouble || conditionSingle
     const content = contentDouble || contentSingle
 
     try {
-      console.log('🔍 Match #' + matchCount + ' - Evaluating condition:', condition)
-      console.log('   Props:', JSON.stringify(props, null, 2))
       const evaluated = evaluateCondition(condition, props)
-      console.log('   Result:', evaluated)
       return evaluated ? content : ''
     } catch (err) {
       console.warn('Failed to evaluate condition:', condition, err)
       return ''
     }
   })
-
-  console.log('   Total matches:', matchCount)
 
   return result
 }
@@ -229,11 +218,8 @@ function evaluateCondition(condition, props) {
     evalString = evalString.replace(regex, replacement)
   })
 
-  console.log('   Eval string:', evalString)
-
   try {
-    const result = eval(evalString)
-    return result
+    return eval(evalString)
   } catch (err) {
     console.warn('Condition eval error:', evalString, err)
     return false
