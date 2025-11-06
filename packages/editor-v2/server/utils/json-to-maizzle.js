@@ -2,23 +2,6 @@ import designSystemService from '../services/design-system.service.js'
 
 /**
  * Transforme le format Email JSON en template Maizzle complet
- *
- * Format attendu :
- * {
- *   metadata: {
- *     title: string,
- *     subject: string,
- *     preheader: string,
- *     designSystemId: string,
- *   },
- *   blocks: [
- *     {
- *       id: string,
- *       component: string,
- *       props: object,
- *     }
- *   ]
- * }
  */
 export async function jsonToMaizzle(emailData, renderService) {
   const { metadata = {}, blocks = [] } = emailData
@@ -36,9 +19,10 @@ export async function jsonToMaizzle(emailData, renderService) {
   // Résoudre les props de chaque block avec les valeurs du Design System
   const resolvedBlocks = blocks.map(block => {
     const resolvedProps = resolvePropsWithDesignSystem(block.props, designSystem)
+    // Ajouter valeurs par défaut pour les props communes
     return {
       ...block,
-      props: resolvedProps,
+      props: applyDefaults(resolvedProps, block.component),
     }
   })
 
@@ -49,10 +33,10 @@ export async function jsonToMaizzle(emailData, renderService) {
         // Charger le template du composant
         const template = await renderService.loadComponentTemplate(block.component)
 
-        // Injecter les props dans le template (simple remplacement pour POC)
-        const renderedBlock = injectPropsIntoTemplate(template, block.props, block.id)
+        // Rendre le composant avec les props
+        const componentHtml = renderComponentTemplate(template, block.props, block.id)
 
-        return renderedBlock
+        return componentHtml
       } catch (err) {
         console.error(`Error rendering block ${block.id}:`, err)
         return `<!-- Error rendering block ${block.id}: ${err.message} -->`
@@ -67,8 +51,95 @@ export async function jsonToMaizzle(emailData, renderService) {
 }
 
 /**
+ * Applique les valeurs par défaut selon le composant
+ */
+function applyDefaults(props, componentName) {
+  const defaults = {
+    button: {
+      text: 'Click me',
+      url: '#',
+      backgroundColor: '#007bff',
+      textColor: '#ffffff',
+      borderRadius: '4px',
+      padding: '12px 24px',
+      align: 'left',
+    },
+    heading: {
+      text: 'Titre par défaut',
+      level: 'h2',
+      textColor: '#333333',
+      fontSize: '24px',
+      fontWeight: 'bold',
+      align: 'left',
+      lineHeight: '1.3',
+      marginTop: '16px',
+      marginBottom: '16px',
+    },
+    container: {
+      backgroundColor: '#ffffff',
+      padding: '16px',
+      borderWidth: '0',
+      borderColor: '#dddddd',
+      borderStyle: 'solid',
+      borderRadius: '0',
+      maxWidth: '600px',
+      align: 'center',
+      content: '<p style="margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Contenu</p>',
+    },
+  }
+
+  return { ...defaults[componentName] || {}, ...props }
+}
+
+/**
+ * Rend un template de composant en remplaçant les variables
+ */
+function renderComponentTemplate(template, props, blockId) {
+  let result = template
+
+  // Ajouter blockId aux props
+  const finalProps = { ...props, blockId }
+
+  // Évaluer les conditionnels AVANT de remplacer les variables
+  result = evaluateBasicConditionals(result, finalProps)
+
+  // Remplacer les variables {{ propName }}
+  Object.keys(finalProps).forEach(key => {
+    let value = finalProps[key]
+
+    // Gérer les valeurs undefined/null
+    if (value === undefined || value === null) {
+      value = ''
+    }
+
+    // Ne pas échapper le HTML pour le champ 'content'
+    const finalValue = (key === 'content') ? String(value) : escapeHtml(String(value))
+
+    const regex = new RegExp(`{{\\s*${escapeRegex(key)}\\s*}}`, 'g')
+    result = result.replace(regex, finalValue)
+  })
+
+  // Triple curly braces {{{ }}} - ne pas échapper le HTML
+  result = result.replace(/{{{\s*(\w+)\s*}}}/g, (match, varName) => {
+    const value = finalProps[varName.trim()]
+    return value !== undefined ? String(value) : ''
+  })
+
+  // Nettoyer les variables non remplacées
+  result = result.replace(/{{\s*[^}]+\s*}}/g, '')
+
+  return result
+}
+
+/**
+ * Échappe les caractères spéciaux pour regex
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
  * Résout les références au Design System dans les props
- * Ex: "{{designSystem.tokens.colors.primary}}" → "#007bff"
  */
 export function resolvePropsWithDesignSystem(props, designSystem) {
   if (!designSystem || !props) return props
@@ -79,7 +150,6 @@ export function resolvePropsWithDesignSystem(props, designSystem) {
     const value = props[key]
 
     if (typeof value === 'string' && value.includes('{{designSystem.')) {
-      // Extraire le chemin du token
       const match = value.match(/{{designSystem\.(.*?)}}/)
       if (match) {
         const tokenPath = match[1]
@@ -89,7 +159,6 @@ export function resolvePropsWithDesignSystem(props, designSystem) {
         resolved[key] = value
       }
     } else if (typeof value === 'object' && value !== null) {
-      // Récursif pour objets imbriqués
       resolved[key] = resolvePropsWithDesignSystem(value, designSystem)
     } else {
       resolved[key] = value
@@ -101,7 +170,6 @@ export function resolvePropsWithDesignSystem(props, designSystem) {
 
 /**
  * Récupère une valeur imbriquée dans un objet par chemin
- * Ex: getNestedValue(obj, 'tokens.colors.primary')
  */
 function getNestedValue(obj, path) {
   return path.split('.').reduce((current, key) => {
@@ -110,54 +178,20 @@ function getNestedValue(obj, path) {
 }
 
 /**
- * Injecte les props dans un template de composant
- * Remplace les {{ propName }} par les valeurs
- */
-export function injectPropsIntoTemplate(template, props, blockId) {
-  let result = template
-
-  // Retirer le <script props> block (sera traité par Maizzle)
-  // Pour le POC, on fait un simple remplacement manuel
-  result = result.replace(/<script props>[\s\S]*?<\/script>/i, '')
-
-  // Remplacer les variables {{ propName }}
-  Object.keys(props).forEach(key => {
-    const value = props[key]
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g')
-    result = result.replace(regex, escapeHtml(String(value)))
-  })
-
-  // Remplacer {{ blockId }}
-  result = result.replace(/{{\\s*blockId\\s*}}/g, blockId)
-
-  // Gérer les conditionnels basiques (if condition="level === 'h1'")
-  // Pour le POC, simplification : on évalue les conditions basiques
-  result = evaluateBasicConditionals(result, props)
-
-  // Nettoyer les variables non remplacées
-  result = result.replace(/{{[^}]+}}/g, '')
-
-  return result
-}
-
-/**
  * Évalue les conditionnels basiques dans le template
- * Ex: <if condition="level === 'h1'">...</if>
  */
 function evaluateBasicConditionals(template, props) {
   let result = template
 
-  // Regex pour capturer <if condition="...">...</if>
   const ifRegex = /<if\s+condition=["']([^"']+)["']>([\s\S]*?)<\/if>/gi
 
   result = result.replace(ifRegex, (match, condition, content) => {
     try {
-      // Évaluer la condition de façon sécurisée (POC simplifié)
       const evaluated = evaluateCondition(condition, props)
       return evaluated ? content : ''
     } catch (err) {
       console.warn('Failed to evaluate condition:', condition, err)
-      return '' // En cas d'erreur, ne pas afficher
+      return ''
     }
   })
 
@@ -165,21 +199,18 @@ function evaluateBasicConditionals(template, props) {
 }
 
 /**
- * Évalue une condition simple (POC - version simplifiée)
- * Ex: "level === 'h1'" avec props = { level: 'h1' }
+ * Évalue une condition simple
  */
 function evaluateCondition(condition, props) {
-  // Remplacer les variables dans la condition
   let evalString = condition
+
   Object.keys(props).forEach(key => {
     const value = props[key]
-    const regex = new RegExp(`\\b${key}\\b`, 'g')
-    const replacement = typeof value === 'string' ? `'${value}'` : value
+    const regex = new RegExp(`\\b${escapeRegex(key)}\\b`, 'g')
+    const replacement = typeof value === 'string' ? `'${value.replace(/'/g, "\\'")}'` : JSON.stringify(value)
     evalString = evalString.replace(regex, replacement)
   })
 
-  // Évaluer (ATTENTION : eval n'est pas sécurisé en production!)
-  // Pour le POC, on garde cette approche simple
   try {
     return eval(evalString)
   } catch (err) {
@@ -189,7 +220,7 @@ function evaluateCondition(condition, props) {
 }
 
 /**
- * Échappe les caractères HTML pour éviter les injections
+ * Échappe les caractères HTML
  */
 function escapeHtml(text) {
   const map = {

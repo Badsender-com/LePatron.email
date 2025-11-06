@@ -1,39 +1,9 @@
-<script props>
-module.exports = {
-  backgroundColor: props.backgroundColor || '#ffffff',
-  padding: props.padding || '16px',
-  paddingTop: props.paddingTop || null,
-  paddingRight: props.paddingRight || null,
-  paddingBottom: props.paddingBottom || null,
-  paddingLeft: props.paddingLeft || null,
-  borderWidth: props.borderWidth || '0',
-  borderColor: props.borderColor || '#dddddd',
-  borderStyle: props.borderStyle || 'solid',
-  borderRadius: props.borderRadius || '0',
-  maxWidth: props.maxWidth || '600px',
-  align: props.align || 'center',
-  blockId: props.blockId || '',
-  content: props.content || '<p style="margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 14px; color: #666666;">Glissez du contenu ici</p>',
-}
-
-// Calcul du padding final (individuel ou uniforme)
-const finalPaddingTop = paddingTop || padding
-const finalPaddingRight = paddingRight || padding
-const finalPaddingBottom = paddingBottom || padding
-const finalPaddingLeft = paddingLeft || padding
-
-// Construction du style border
-const borderStyleValue = borderWidth !== '0' && borderWidth !== 0
-  ? `${borderWidth} ${borderStyle} ${borderColor}`
-  : 'none'
-</script>
-
 <table role="presentation" style="width: 100%; margin: 0; padding: 0;" data-block-id="{{ blockId }}">
   <tr>
     <td align="{{ align }}" style="padding: 0;">
       <table role="presentation" style="max-width: {{ maxWidth }}; width: 100%; margin: 0 auto;">
         <tr>
-          <td style="background-color: {{ backgroundColor }}; padding-top: {{ finalPaddingTop }}; padding-right: {{ finalPaddingRight }}; padding-bottom: {{ finalPaddingBottom }}; padding-left: {{ finalPaddingLeft }}; border: {{ borderStyleValue }}; border-radius: {{ borderRadius }};">
+          <td style="background-color: {{ backgroundColor }}; padding: {{ padding }}; border: {{ borderWidth }}px {{ borderStyle }} {{ borderColor }}; border-radius: {{ borderRadius }};">
             {{{ content }}}
           </td>
         </tr>

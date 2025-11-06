@@ -1,41 +1,18 @@
-<script props>
-module.exports = {
-  text: props.text || 'Titre par défaut',
-  level: props.level || 'h2',
-  textColor: props.textColor || '#333333',
-  fontSize: props.fontSize || null, // Auto si null
-  fontWeight: props.fontWeight || 'bold',
-  align: props.align || 'left',
-  lineHeight: props.lineHeight || '1.3',
-  marginTop: props.marginTop || '16px',
-  marginBottom: props.marginBottom || '16px',
-  blockId: props.blockId || '',
-}
-
-// Tailles par défaut selon le niveau
-const defaultFontSizes = {
-  h1: '32px',
-  h2: '24px',
-  h3: '20px'
-}
-const computedFontSize = fontSize || defaultFontSizes[level] || '24px'
-</script>
-
 <table role="presentation" style="width: 100%; margin-top: {{ marginTop }}; margin-bottom: {{ marginBottom }};" data-block-id="{{ blockId }}">
   <tr>
     <td align="{{ align }}" style="padding: 0;">
       <if condition="level === 'h1'">
-        <h1 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ computedFontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
+        <h1 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ fontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
           {{ text }}
         </h1>
       </if>
       <if condition="level === 'h2'">
-        <h2 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ computedFontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
+        <h2 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ fontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
           {{ text }}
         </h2>
       </if>
       <if condition="level === 'h3'">
-        <h3 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ computedFontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
+        <h3 style="margin: 0; padding: 0; color: {{ textColor }}; font-family: Arial, Helvetica, sans-serif; font-size: {{ fontSize }}; font-weight: {{ fontWeight }}; line-height: {{ lineHeight }};">
           {{ text }}
         </h3>
       </if>

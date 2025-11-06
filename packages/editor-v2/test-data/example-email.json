@@ -13,6 +13,7 @@
         "text": "Bienvenue !",
         "level": "h1",
         "textColor": "{{designSystem.tokens.colors.primary}}",
+        "fontSize": "32px",
         "align": "center"
       }
     },
@@ -45,6 +46,7 @@
         "text": "Fonctionnalités principales",
         "level": "h2",
         "textColor": "#333333",
+        "fontSize": "24px",
         "align": "left"
       }
     },
