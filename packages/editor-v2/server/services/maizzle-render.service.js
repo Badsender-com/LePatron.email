@@ -24,6 +24,9 @@ class MaizzleRenderService {
     // Templates cache: Map<componentName, templateContent>
     this.templateCache = new Map()
 
+    // Components schema cache (from components.json)
+    this.componentsSchema = null
+
     MaizzleRenderService.instance = this
   }
 
@@ -71,9 +74,30 @@ class MaizzleRenderService {
   }
 
   /**
-   * Charge un template de composant depuis le disque (avec cache)
+   * Charge le fichier components.json (avec cache)
    */
-  async loadComponentTemplate(componentName, category = 'core') {
+  async loadComponentsSchema() {
+    if (this.componentsSchema) {
+      return this.componentsSchema
+    }
+
+    const schemaPath = path.join(__dirname, '../../components/components.json')
+
+    try {
+      const content = await fs.readFile(schemaPath, 'utf8')
+      this.componentsSchema = JSON.parse(content)
+      console.log('✓ Components schema loaded')
+      return this.componentsSchema
+    } catch (err) {
+      throw new Error(`Failed to load components.json: ${err.message}`)
+    }
+  }
+
+  /**
+   * Charge un template de composant depuis le disque (avec cache)
+   * Nouvelle structure: components/sections/section-1col.html, components/content/heading.html
+   */
+  async loadComponentTemplate(componentName, category = 'content') {
     const cacheKey = `${category}/${componentName}`
 
     // Vérifier le cache de templates
@@ -81,13 +105,12 @@ class MaizzleRenderService {
       return this.templateCache.get(cacheKey)
     }
 
-    // Charger depuis le disque
+    // Charger depuis le disque - structure plate maintenant
     const templatePath = path.join(
       __dirname,
       '../../components',
       category,
-      componentName,
-      `${componentName}.maizzle.html`
+      `${componentName}.html`
     )
 
     try {
@@ -101,23 +124,23 @@ class MaizzleRenderService {
   }
 
   /**
-   * Charge le schéma JSON d'un composant
+   * Charge le schéma JSON d'un composant depuis components.json
    */
-  async loadComponentSchema(componentName, category = 'core') {
-    const schemaPath = path.join(
-      __dirname,
-      '../../components',
-      category,
-      componentName,
-      `${componentName}.schema.json`
-    )
+  async loadComponentSchema(componentName, category = 'content') {
+    const schema = await this.loadComponentsSchema()
 
-    try {
-      const content = await fs.readFile(schemaPath, 'utf8')
-      return JSON.parse(content)
-    } catch (err) {
-      throw new Error(`Failed to load component schema "${componentName}": ${err.message}`)
+    // Chercher dans la bonne catégorie
+    const categoryData = schema[category]
+    if (!categoryData) {
+      throw new Error(`Category "${category}" not found in components.json`)
     }
+
+    const componentSchema = categoryData[componentName]
+    if (!componentSchema) {
+      throw new Error(`Component "${componentName}" not found in category "${category}"`)
+    }
+
+    return componentSchema
   }
 
   /**
@@ -257,34 +280,64 @@ class MaizzleRenderService {
   }
 
   /**
-   * Liste tous les composants disponibles
+   * Liste tous les composants disponibles depuis components.json
    */
   async listComponents() {
-    const componentsDir = path.join(__dirname, '../../components/core')
     try {
-      const dirs = await fs.readdir(componentsDir, { withFileTypes: true })
+      const schema = await this.loadComponentsSchema()
       const components = []
 
-      for (const dir of dirs) {
-        if (dir.isDirectory()) {
-          try {
-            const schema = await this.loadComponentSchema(dir.name, 'core')
-            components.push({
-              name: schema.name,
-              label: schema.label,
-              category: schema.category,
-              icon: schema.icon,
-              description: schema.description || '',
-            })
-          } catch (err) {
-            console.warn(`Could not load schema for ${dir.name}:`, err.message)
-          }
+      // Parcourir toutes les catégories (sections, content, custom)
+      for (const [categoryName, categoryComponents] of Object.entries(schema)) {
+        // Ignorer la catégorie "columns" qui n'est pas un composant draggable
+        if (categoryName === 'columns') continue
+
+        for (const [componentName, componentData] of Object.entries(categoryComponents)) {
+          components.push({
+            name: componentData.name,
+            label: componentData.label,
+            category: componentData.category,
+            icon: componentData.icon || '📦',
+            description: componentData.description || '',
+            columnCount: componentData.columnCount || 0, // Pour les sections
+          })
         }
       }
 
       return components
     } catch (err) {
       throw new Error(`Failed to list components: ${err.message}`)
+    }
+  }
+
+  /**
+   * Liste les composants d'une catégorie spécifique
+   */
+  async listComponentsByCategory(category) {
+    try {
+      const schema = await this.loadComponentsSchema()
+      const categoryData = schema[category]
+
+      if (!categoryData) {
+        throw new Error(`Category "${category}" not found`)
+      }
+
+      const components = []
+      for (const [componentName, componentData] of Object.entries(categoryData)) {
+        components.push({
+          name: componentData.name,
+          label: componentData.label,
+          category: componentData.category,
+          icon: componentData.icon || '📦',
+          description: componentData.description || '',
+          columnCount: componentData.columnCount || 0,
+          columnWidths: componentData.columnWidths || [],
+        })
+      }
+
+      return components
+    } catch (err) {
+      throw new Error(`Failed to list components for category "${category}": ${err.message}`)
     }
   }
 }

@@ -1,0 +1,13 @@
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+  <tr>
+    <td align="{{ align || 'center' }}">
+      {{#if url}}
+      <a href="{{ url }}" target="_blank" style="display: inline-block;">
+      {{/if}}
+        <img src="{{ src || 'https://via.placeholder.com/600x400' }}" alt="{{ alt || '' }}" style="display: block; width: {{ width || '100%' }}; max-width: 100%; height: auto; border-radius: {{ borderRadius || '0px' }}; border: 0; outline: none; text-decoration: none;">
+      {{#if url}}
+      </a>
+      {{/if}}
+    </td>
+  </tr>
+</table>

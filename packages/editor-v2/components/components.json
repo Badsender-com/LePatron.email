@@ -1,0 +1,426 @@
+{
+  "sections": {
+    "section-1col": {
+      "name": "section-1col",
+      "category": "sections",
+      "label": "Section 1 colonne",
+      "icon": "📋",
+      "columnCount": 1,
+      "columnWidths": ["100%"],
+      "configurableProperties": {
+        "style": {
+          "backgroundColor": {
+            "type": "color",
+            "label": "Couleur de fond",
+            "default": "#ffffff"
+          },
+          "padding": {
+            "type": "string",
+            "label": "Padding",
+            "default": "20px"
+          },
+          "maxWidth": {
+            "type": "string",
+            "label": "Largeur max",
+            "default": "600px"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "0px"
+          }
+        }
+      }
+    },
+    "section-2col-50-50": {
+      "name": "section-2col-50-50",
+      "category": "sections",
+      "label": "Section 2 colonnes (50/50)",
+      "icon": "⚏",
+      "columnCount": 2,
+      "columnWidths": ["50%", "50%"],
+      "configurableProperties": {
+        "style": {
+          "backgroundColor": {
+            "type": "color",
+            "label": "Couleur de fond",
+            "default": "#ffffff"
+          },
+          "padding": {
+            "type": "string",
+            "label": "Padding",
+            "default": "20px"
+          },
+          "maxWidth": {
+            "type": "string",
+            "label": "Largeur max",
+            "default": "600px"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "0px"
+          }
+        }
+      }
+    },
+    "section-2col-33-66": {
+      "name": "section-2col-33-66",
+      "category": "sections",
+      "label": "Section 2 colonnes (33/66)",
+      "icon": "⚏",
+      "columnCount": 2,
+      "columnWidths": ["33.33%", "66.66%"],
+      "configurableProperties": {
+        "style": {
+          "backgroundColor": {
+            "type": "color",
+            "label": "Couleur de fond",
+            "default": "#ffffff"
+          },
+          "padding": {
+            "type": "string",
+            "label": "Padding",
+            "default": "20px"
+          },
+          "maxWidth": {
+            "type": "string",
+            "label": "Largeur max",
+            "default": "600px"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "0px"
+          }
+        }
+      }
+    },
+    "section-3col": {
+      "name": "section-3col",
+      "category": "sections",
+      "label": "Section 3 colonnes",
+      "icon": "☰",
+      "columnCount": 3,
+      "columnWidths": ["33.33%", "33.33%", "33.33%"],
+      "configurableProperties": {
+        "style": {
+          "backgroundColor": {
+            "type": "color",
+            "label": "Couleur de fond",
+            "default": "#ffffff"
+          },
+          "padding": {
+            "type": "string",
+            "label": "Padding",
+            "default": "20px"
+          },
+          "maxWidth": {
+            "type": "string",
+            "label": "Largeur max",
+            "default": "600px"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "0px"
+          }
+        }
+      }
+    }
+  },
+  "content": {
+    "heading": {
+      "name": "heading",
+      "category": "content",
+      "label": "Titre",
+      "icon": "📝",
+      "configurableProperties": {
+        "content": {
+          "text": {
+            "type": "string",
+            "label": "Texte",
+            "default": "Votre titre"
+          },
+          "level": {
+            "type": "select",
+            "label": "Niveau",
+            "options": ["h1", "h2", "h3", "h4"],
+            "default": "h2"
+          }
+        },
+        "style": {
+          "textColor": {
+            "type": "color",
+            "label": "Couleur",
+            "default": "#000000"
+          },
+          "fontSize": {
+            "type": "string",
+            "label": "Taille",
+            "default": "24px"
+          },
+          "fontWeight": {
+            "type": "select",
+            "label": "Graisse",
+            "options": ["normal", "bold", "bolder"],
+            "default": "bold"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "left"
+          },
+          "lineHeight": {
+            "type": "string",
+            "label": "Hauteur de ligne",
+            "default": "1.2"
+          },
+          "marginTop": {
+            "type": "string",
+            "label": "Marge haut",
+            "default": "0"
+          },
+          "marginBottom": {
+            "type": "string",
+            "label": "Marge bas",
+            "default": "16px"
+          }
+        }
+      }
+    },
+    "paragraph": {
+      "name": "paragraph",
+      "category": "content",
+      "label": "Paragraphe",
+      "icon": "¶",
+      "configurableProperties": {
+        "content": {
+          "text": {
+            "type": "textarea",
+            "label": "Contenu",
+            "default": "Votre texte ici..."
+          }
+        },
+        "style": {
+          "fontSize": {
+            "type": "string",
+            "label": "Taille",
+            "default": "16px"
+          },
+          "lineHeight": {
+            "type": "string",
+            "label": "Hauteur de ligne",
+            "default": "1.6"
+          },
+          "textColor": {
+            "type": "color",
+            "label": "Couleur",
+            "default": "#333333"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right", "justify"],
+            "default": "left"
+          },
+          "marginTop": {
+            "type": "string",
+            "label": "Marge haut",
+            "default": "0"
+          },
+          "marginBottom": {
+            "type": "string",
+            "label": "Marge bas",
+            "default": "16px"
+          }
+        }
+      }
+    },
+    "button": {
+      "name": "button",
+      "category": "content",
+      "label": "Bouton",
+      "icon": "🔘",
+      "configurableProperties": {
+        "content": {
+          "text": {
+            "type": "string",
+            "label": "Texte",
+            "default": "Cliquez ici"
+          },
+          "url": {
+            "type": "url",
+            "label": "URL",
+            "default": "#"
+          }
+        },
+        "style": {
+          "backgroundColor": {
+            "type": "color",
+            "label": "Couleur de fond",
+            "default": "#007bff"
+          },
+          "textColor": {
+            "type": "color",
+            "label": "Couleur du texte",
+            "default": "#ffffff"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "4px"
+          },
+          "padding": {
+            "type": "string",
+            "label": "Padding",
+            "default": "12px 24px"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          }
+        }
+      }
+    },
+    "image": {
+      "name": "image",
+      "category": "content",
+      "label": "Image",
+      "icon": "🖼️",
+      "configurableProperties": {
+        "content": {
+          "src": {
+            "type": "url",
+            "label": "URL image",
+            "default": "https://via.placeholder.com/600x400"
+          },
+          "alt": {
+            "type": "string",
+            "label": "Texte alternatif",
+            "default": ""
+          },
+          "url": {
+            "type": "url",
+            "label": "Lien (optionnel)",
+            "default": ""
+          }
+        },
+        "style": {
+          "width": {
+            "type": "string",
+            "label": "Largeur",
+            "default": "100%"
+          },
+          "align": {
+            "type": "select",
+            "label": "Alignement",
+            "options": ["left", "center", "right"],
+            "default": "center"
+          },
+          "borderRadius": {
+            "type": "string",
+            "label": "Bordure arrondie",
+            "default": "0px"
+          }
+        }
+      }
+    },
+    "spacer": {
+      "name": "spacer",
+      "category": "content",
+      "label": "Espaceur",
+      "icon": "↕️",
+      "configurableProperties": {
+        "style": {
+          "height": {
+            "type": "string",
+            "label": "Hauteur",
+            "default": "20px"
+          },
+          "borderWidth": {
+            "type": "string",
+            "label": "Épaisseur bordure",
+            "default": "0px"
+          },
+          "borderStyle": {
+            "type": "select",
+            "label": "Style bordure",
+            "options": ["none", "solid", "dashed", "dotted"],
+            "default": "none"
+          },
+          "borderColor": {
+            "type": "color",
+            "label": "Couleur bordure",
+            "default": "#cccccc"
+          },
+          "marginTop": {
+            "type": "string",
+            "label": "Marge haut",
+            "default": "0px"
+          },
+          "marginBottom": {
+            "type": "string",
+            "label": "Marge bas",
+            "default": "0px"
+          }
+        }
+      }
+    }
+  },
+  "columns": {
+    "configurableProperties": {
+      "style": {
+        "padding": {
+          "type": "string",
+          "label": "Padding",
+          "default": "0"
+        },
+        "backgroundColor": {
+          "type": "color",
+          "label": "Couleur de fond",
+          "default": "transparent"
+        },
+        "align": {
+          "type": "select",
+          "label": "Alignement horizontal",
+          "options": ["left", "center", "right"],
+          "default": "left"
+        },
+        "verticalAlign": {
+          "type": "select",
+          "label": "Alignement vertical",
+          "options": ["top", "middle", "bottom"],
+          "default": "top"
+        }
+      }
+    }
+  }
+}
