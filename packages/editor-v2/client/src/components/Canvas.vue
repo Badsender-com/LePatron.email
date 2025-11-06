@@ -244,12 +244,19 @@ const clearAll = () => {
 
 // Drag & Drop - Composants depuis ComponentLibrary
 const onDragOver = (event) => {
+  // Only handle on parent container when canvas is empty
+  // When canvas has blocks, let the explicit drop zones handle it
+  if (!emailStore.isEmpty) return
+
   event.preventDefault()
   event.dataTransfer.dropEffect = 'copy'
   isDragOver.value = true
 }
 
 const onDragLeave = (event) => {
+  // Only handle when canvas is empty
+  if (!emailStore.isEmpty) return
+
   // Vérifier si on quitte vraiment la zone (pas un enfant)
   if (!event.currentTarget.contains(event.relatedTarget)) {
     isDragOver.value = false
@@ -257,6 +264,10 @@ const onDragLeave = (event) => {
 }
 
 const onDrop = async (event) => {
+  // Only handle on parent container when canvas is empty
+  // When canvas has blocks, let the explicit drop zones handle it
+  if (!emailStore.isEmpty) return
+
   event.preventDefault()
   isDragOver.value = false
 
@@ -296,9 +307,12 @@ const onBlockDragEnd = () => {
 const onDragOverBetween = (event, targetIndex) => {
   event.preventDefault()
   event.stopPropagation()
-  event.dataTransfer.dropEffect = 'move'
+
+  // Accepter à la fois 'copy' (nouveaux composants) et 'move' (réorganisation)
+  event.dataTransfer.dropEffect = draggingBlockIndex.value !== null ? 'move' : 'copy'
 
   dropTargetIndex.value = targetIndex
+  console.log('🎯 Drag over zone index:', targetIndex)
 }
 
 const onDragLeaveBetween = () => {
