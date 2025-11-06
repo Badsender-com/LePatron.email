@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "dev:server": "nodemon server/index.js",
-    "dev:client": "cd client && npm run dev",
+    "dev:client": "cd client && yarn dev",
     "dev": "npm-run-all --parallel dev:*",
     "test": "echo 'Tests coming soon'"
   },
