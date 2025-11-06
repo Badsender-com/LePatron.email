@@ -103,6 +103,13 @@ function renderComponentTemplate(template, props, blockId) {
   // Évaluer les conditionnels AVANT de remplacer les variables
   result = evaluateBasicConditionals(result, finalProps)
 
+  // IMPORTANT : Traiter les triple curly braces {{{ }}} EN PREMIER
+  // pour éviter que le nettoyage des {{ }} ne les casse
+  result = result.replace(/\{\{\{\s*(\w+)\s*\}\}\}/g, (match, varName) => {
+    const value = finalProps[varName.trim()]
+    return value !== undefined ? String(value) : ''
+  })
+
   // Remplacer les variables {{ propName }}
   Object.keys(finalProps).forEach(key => {
     let value = finalProps[key]
@@ -112,21 +119,15 @@ function renderComponentTemplate(template, props, blockId) {
       value = ''
     }
 
-    // Ne pas échapper le HTML pour le champ 'content'
-    const finalValue = (key === 'content') ? String(value) : escapeHtml(String(value))
+    // Échapper le HTML sauf pour 'content' (déjà traité ci-dessus)
+    const finalValue = escapeHtml(String(value))
 
-    const regex = new RegExp(`{{\\s*${escapeRegex(key)}\\s*}}`, 'g')
+    const regex = new RegExp(`\\{\\{\\s*${escapeRegex(key)}\\s*\\}\\}`, 'g')
     result = result.replace(regex, finalValue)
   })
 
-  // Triple curly braces {{{ }}} - ne pas échapper le HTML
-  result = result.replace(/{{{\s*(\w+)\s*}}}/g, (match, varName) => {
-    const value = finalProps[varName.trim()]
-    return value !== undefined ? String(value) : ''
-  })
-
   // Nettoyer les variables non remplacées
-  result = result.replace(/{{\s*[^}]+\s*}}/g, '')
+  result = result.replace(/\{\{\s*[^}]+\s*\}\}/g, '')
 
   return result
 }
@@ -251,6 +252,8 @@ export function buildMaizzleTemplate(metadata, blocksHtml) {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
   <title>${escapeHtml(title)}</title>
+</head>
+<body style="margin: 0; padding: 0; width: 100%; background-color: #f4f4f4;">
   ${preheader ? `
   <!--[if !mso]><!-->
   <div style="display: none; max-height: 0px; overflow: hidden;">
@@ -258,8 +261,6 @@ export function buildMaizzleTemplate(metadata, blocksHtml) {
   </div>
   <!--<![endif]-->
   ` : ''}
-</head>
-<body style="margin: 0; padding: 0; width: 100%; background-color: #f4f4f4;">
   <table role="presentation" style="width: 100%; margin: 0; padding: 0; background-color: #f4f4f4;">
     <tr>
       <td align="center" style="padding: 20px 0;">
