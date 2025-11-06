@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 
 /**
  * Email Store - Gestion de l'état de l'email en cours d'édition
+ * Structure hiérarchique: Sections → Colonnes → Composants
  */
 export const useEmailStore = defineStore('email', {
   state: () => ({
@@ -13,11 +14,14 @@ export const useEmailStore = defineStore('email', {
       designSystemId: 'demo'
     },
 
-    // Blocs de l'email (flat structure)
-    blocks: [],
+    // Sections de l'email (structure hiérarchique)
+    sections: [],
 
-    // ID du bloc sélectionné
-    selectedBlockId: null,
+    // Sélection multi-niveau
+    selectedSectionId: null,
+    selectedColumnId: null,
+    selectedComponentId: null,
+    selectedType: null, // 'section' | 'column' | 'component'
 
     // UI state
     previewDevice: 'desktop', // 'desktop' | 'mobile'
@@ -33,11 +37,47 @@ export const useEmailStore = defineStore('email', {
 
   getters: {
     /**
-     * Retourne le bloc sélectionné
+     * Retourne la section sélectionnée
      */
-    selectedBlock(state) {
-      if (!state.selectedBlockId) return null
-      return state.blocks.find(block => block.id === state.selectedBlockId)
+    selectedSection(state) {
+      if (!state.selectedSectionId) return null
+      return state.sections.find(s => s.id === state.selectedSectionId)
+    },
+
+    /**
+     * Retourne la colonne sélectionnée
+     */
+    selectedColumn(state) {
+      if (!state.selectedSectionId || !state.selectedColumnId) return null
+      const section = state.sections.find(s => s.id === state.selectedSectionId)
+      if (!section) return null
+      return section.columns.find(c => c.id === state.selectedColumnId)
+    },
+
+    /**
+     * Retourne le composant sélectionné
+     */
+    selectedComponent(state) {
+      if (!state.selectedSectionId || !state.selectedColumnId || !state.selectedComponentId) return null
+      const section = state.sections.find(s => s.id === state.selectedSectionId)
+      if (!section) return null
+      const column = section.columns.find(c => c.id === state.selectedColumnId)
+      if (!column) return null
+      return column.components.find(comp => comp.id === state.selectedComponentId)
+    },
+
+    /**
+     * Retourne l'élément sélectionné (section, column ou component)
+     */
+    selectedElement(state) {
+      if (state.selectedType === 'section') {
+        return this.selectedSection
+      } else if (state.selectedType === 'column') {
+        return this.selectedColumn
+      } else if (state.selectedType === 'component') {
+        return this.selectedComponent
+      }
+      return null
     },
 
     /**
@@ -46,7 +86,7 @@ export const useEmailStore = defineStore('email', {
     emailJSON(state) {
       return {
         metadata: state.metadata,
-        blocks: state.blocks
+        sections: state.sections
       }
     },
 
@@ -54,196 +94,484 @@ export const useEmailStore = defineStore('email', {
      * Indique si l'email est vide
      */
     isEmpty(state) {
-      return state.blocks.length === 0
+      return state.sections.length === 0
     },
 
     /**
-     * Retourne le nombre de blocs
+     * Retourne le nombre de sections
      */
-    blockCount(state) {
-      return state.blocks.length
+    sectionCount(state) {
+      return state.sections.length
+    },
+
+    /**
+     * Retourne le nombre total de composants (tous les composants de toutes les colonnes)
+     */
+    totalComponentCount(state) {
+      let count = 0
+      state.sections.forEach(section => {
+        section.columns.forEach(column => {
+          count += column.components.length
+        })
+      })
+      return count
     }
   },
 
   actions: {
-    /**
-     * Ajoute un bloc à la fin de l'email
-     * @param {string} componentName - Nom du composant (ex: 'button')
-     * @param {object} props - Props initiales (optionnel, sinon defaults du Design System)
-     */
-    addBlock(componentName, props = {}) {
-      const blockId = `block-${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    // ============================================
+    // ACTIONS SECTIONS
+    // ============================================
 
-      const block = {
-        id: blockId,
+    /**
+     * Ajoute une section à la fin de l'email
+     * @param {string} componentName - Nom du composant section (ex: 'section-1col')
+     * @param {object} props - Props de la section
+     * @param {number} columnCount - Nombre de colonnes
+     * @param {array} columnWidths - Largeurs des colonnes (ex: ['100%'] ou ['50%', '50%'])
+     */
+    addSection(componentName, props = {}, columnCount = 1, columnWidths = ['100%']) {
+      const sectionId = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      // Créer les colonnes
+      const columns = []
+      for (let i = 0; i < columnCount; i++) {
+        columns.push({
+          id: `col-${sectionId}-${i}`,
+          width: columnWidths[i] || '100%',
+          props: {
+            padding: '0',
+            backgroundColor: 'transparent',
+            align: 'left',
+            verticalAlign: 'top'
+          },
+          components: []
+        })
+      }
+
+      const section = {
+        id: sectionId,
         component: componentName,
-        props: { ...props }
+        props: { ...props },
+        columns
       }
 
-      this.blocks.push(block)
-      this.selectBlock(blockId)
+      this.sections.push(section)
+      this.selectSection(sectionId)
 
-      console.log('✅ Block added:', blockId, componentName)
+      console.log('✅ Section added:', sectionId, componentName, `${columnCount} columns`)
     },
 
     /**
-     * Insère un bloc à un index spécifique
-     * @param {number} index - Position d'insertion
-     * @param {string} componentName - Nom du composant
-     * @param {object} props - Props initiales
+     * Insère une section à un index spécifique
      */
-    insertBlockAt(index, componentName, props = {}) {
-      const blockId = `block-${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    insertSectionAt(index, componentName, props = {}, columnCount = 1, columnWidths = ['100%']) {
+      const sectionId = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-      const block = {
-        id: blockId,
+      const columns = []
+      for (let i = 0; i < columnCount; i++) {
+        columns.push({
+          id: `col-${sectionId}-${i}`,
+          width: columnWidths[i] || '100%',
+          props: {
+            padding: '0',
+            backgroundColor: 'transparent',
+            align: 'left',
+            verticalAlign: 'top'
+          },
+          components: []
+        })
+      }
+
+      const section = {
+        id: sectionId,
         component: componentName,
-        props: { ...props }
+        props: { ...props },
+        columns
       }
 
-      this.blocks.splice(index, 0, block)
-      this.selectBlock(blockId)
+      this.sections.splice(index, 0, section)
+      this.selectSection(sectionId)
 
-      console.log('✅ Block inserted at', index, ':', blockId, componentName)
+      console.log('✅ Section inserted at', index, ':', sectionId)
     },
 
     /**
-     * Met à jour les props d'un bloc
-     * @param {string} blockId - ID du bloc
-     * @param {object} props - Props à mettre à jour (merge)
+     * Supprime une section
      */
-    updateBlockProps(blockId, props) {
-      const block = this.blocks.find(b => b.id === blockId)
-      if (block) {
-        Object.assign(block.props, props)
-        console.log('✅ Block props updated:', blockId)
-      } else {
-        console.warn('⚠️ Block not found:', blockId)
-      }
-    },
-
-    /**
-     * Remplace complètement les props d'un bloc
-     * @param {string} blockId - ID du bloc
-     * @param {object} props - Nouvelles props
-     */
-    replaceBlockProps(blockId, props) {
-      const block = this.blocks.find(b => b.id === blockId)
-      if (block) {
-        block.props = { ...props }
-        console.log('✅ Block props replaced:', blockId)
-      } else {
-        console.warn('⚠️ Block not found:', blockId)
-      }
-    },
-
-    /**
-     * Supprime un bloc
-     * @param {string} blockId - ID du bloc à supprimer
-     */
-    deleteBlock(blockId) {
-      const index = this.blocks.findIndex(b => b.id === blockId)
+    deleteSection(sectionId) {
+      const index = this.sections.findIndex(s => s.id === sectionId)
       if (index !== -1) {
-        this.blocks.splice(index, 1)
+        this.sections.splice(index, 1)
 
-        // Désélectionner si c'était le bloc sélectionné
-        if (this.selectedBlockId === blockId) {
-          this.selectedBlockId = null
+        if (this.selectedSectionId === sectionId) {
+          this.deselectAll()
         }
 
-        console.log('✅ Block deleted:', blockId)
+        console.log('✅ Section deleted:', sectionId)
       } else {
-        console.warn('⚠️ Block not found:', blockId)
+        console.warn('⚠️ Section not found:', sectionId)
       }
     },
 
     /**
-     * Sélectionne un bloc
-     * @param {string} blockId - ID du bloc à sélectionner
+     * Met à jour les props d'une section
      */
-    selectBlock(blockId) {
-      this.selectedBlockId = blockId
-      console.log('👆 Block selected:', blockId)
+    updateSectionProps(sectionId, props) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (section) {
+        Object.assign(section.props, props)
+        console.log('✅ Section props updated:', sectionId)
+      } else {
+        console.warn('⚠️ Section not found:', sectionId)
+      }
     },
 
     /**
-     * Désélectionne le bloc courant
+     * Déplace une section (vers le haut ou le bas)
      */
-    deselectBlock() {
-      this.selectedBlockId = null
-      console.log('👆 Block deselected')
-    },
-
-    /**
-     * Déplace un bloc d'un index à un autre
-     * @param {number} fromIndex - Index source
-     * @param {number} toIndex - Index destination
-     */
-    moveBlock(fromIndex, toIndex) {
-      if (fromIndex < 0 || fromIndex >= this.blocks.length) {
+    moveSection(fromIndex, toIndex) {
+      if (fromIndex < 0 || fromIndex >= this.sections.length) {
         console.warn('⚠️ Invalid fromIndex:', fromIndex)
         return
       }
 
-      if (toIndex < 0 || toIndex >= this.blocks.length) {
+      if (toIndex < 0 || toIndex >= this.sections.length) {
         console.warn('⚠️ Invalid toIndex:', toIndex)
         return
       }
 
-      // Ne rien faire si on déplace à la même position
       if (fromIndex === toIndex) {
-        console.warn('⚠️ Cannot move block to same position:', fromIndex)
+        console.warn('⚠️ Cannot move section to same position:', fromIndex)
         return
       }
 
-      const [block] = this.blocks.splice(fromIndex, 1)
-      this.blocks.splice(toIndex, 0, block)
+      const [section] = this.sections.splice(fromIndex, 1)
+      this.sections.splice(toIndex, 0, section)
 
-      console.log('✅ Block moved from', fromIndex, 'to', toIndex)
+      console.log('✅ Section moved from', fromIndex, 'to', toIndex)
     },
 
     /**
-     * Duplique un bloc
-     * @param {string} blockId - ID du bloc à dupliquer
+     * Duplique une section
      */
-    duplicateBlock(blockId) {
-      const block = this.blocks.find(b => b.id === blockId)
-      if (!block) {
-        console.warn('⚠️ Block not found:', blockId)
+    duplicateSection(sectionId) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
         return
       }
 
-      const newBlockId = `block-${block.component}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      const newSectionId = `section-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-      const duplicatedBlock = {
-        id: newBlockId,
-        component: block.component,
-        props: { ...block.props }
+      // Deep clone avec nouveaux IDs
+      const duplicatedSection = {
+        id: newSectionId,
+        component: section.component,
+        props: { ...section.props },
+        columns: section.columns.map((col, idx) => ({
+          id: `col-${newSectionId}-${idx}`,
+          width: col.width,
+          props: { ...col.props },
+          components: col.components.map(comp => ({
+            id: `comp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            component: comp.component,
+            props: { ...comp.props }
+          }))
+        }))
       }
 
-      const index = this.blocks.findIndex(b => b.id === blockId)
-      this.blocks.splice(index + 1, 0, duplicatedBlock)
-      this.selectBlock(newBlockId)
+      const index = this.sections.findIndex(s => s.id === sectionId)
+      this.sections.splice(index + 1, 0, duplicatedSection)
+      this.selectSection(newSectionId)
 
-      console.log('✅ Block duplicated:', blockId, '→', newBlockId)
+      console.log('✅ Section duplicated:', sectionId, '→', newSectionId)
     },
+
+    // ============================================
+    // ACTIONS COLONNES
+    // ============================================
+
+    /**
+     * Met à jour les props d'une colonne
+     */
+    updateColumnProps(sectionId, columnId, props) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      Object.assign(column.props, props)
+      console.log('✅ Column props updated:', columnId)
+    },
+
+    // ============================================
+    // ACTIONS COMPOSANTS
+    // ============================================
+
+    /**
+     * Ajoute un composant à une colonne
+     */
+    addComponentToColumn(sectionId, columnId, componentName, props = {}) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      const componentId = `comp-${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      const component = {
+        id: componentId,
+        component: componentName,
+        props: { ...props }
+      }
+
+      column.components.push(component)
+      this.selectComponent(sectionId, columnId, componentId)
+
+      console.log('✅ Component added to column:', componentId, componentName)
+    },
+
+    /**
+     * Insère un composant à un index spécifique dans une colonne
+     */
+    insertComponentAt(sectionId, columnId, index, componentName, props = {}) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      const componentId = `comp-${componentName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      const component = {
+        id: componentId,
+        component: componentName,
+        props: { ...props }
+      }
+
+      column.components.splice(index, 0, component)
+      this.selectComponent(sectionId, columnId, componentId)
+
+      console.log('✅ Component inserted at', index, 'in column:', componentId)
+    },
+
+    /**
+     * Supprime un composant
+     */
+    deleteComponent(sectionId, columnId, componentId) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      const index = column.components.findIndex(comp => comp.id === componentId)
+      if (index !== -1) {
+        column.components.splice(index, 1)
+
+        if (this.selectedComponentId === componentId) {
+          this.deselectAll()
+        }
+
+        console.log('✅ Component deleted:', componentId)
+      } else {
+        console.warn('⚠️ Component not found:', componentId)
+      }
+    },
+
+    /**
+     * Met à jour les props d'un composant
+     */
+    updateComponentProps(sectionId, columnId, componentId, props) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      const component = column.components.find(comp => comp.id === componentId)
+      if (!component) {
+        console.warn('⚠️ Component not found:', componentId)
+        return
+      }
+
+      Object.assign(component.props, props)
+      console.log('✅ Component props updated:', componentId)
+    },
+
+    /**
+     * Déplace un composant dans la même colonne
+     */
+    moveComponentWithinColumn(sectionId, columnId, fromIndex, toIndex) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      if (fromIndex < 0 || fromIndex >= column.components.length) {
+        console.warn('⚠️ Invalid fromIndex:', fromIndex)
+        return
+      }
+
+      if (toIndex < 0 || toIndex >= column.components.length) {
+        console.warn('⚠️ Invalid toIndex:', toIndex)
+        return
+      }
+
+      if (fromIndex === toIndex) {
+        return
+      }
+
+      const [component] = column.components.splice(fromIndex, 1)
+      column.components.splice(toIndex, 0, component)
+
+      console.log('✅ Component moved within column from', fromIndex, 'to', toIndex)
+    },
+
+    /**
+     * Duplique un composant
+     */
+    duplicateComponent(sectionId, columnId, componentId) {
+      const section = this.sections.find(s => s.id === sectionId)
+      if (!section) {
+        console.warn('⚠️ Section not found:', sectionId)
+        return
+      }
+
+      const column = section.columns.find(c => c.id === columnId)
+      if (!column) {
+        console.warn('⚠️ Column not found:', columnId)
+        return
+      }
+
+      const component = column.components.find(comp => comp.id === componentId)
+      if (!component) {
+        console.warn('⚠️ Component not found:', componentId)
+        return
+      }
+
+      const newComponentId = `comp-${component.component}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      const duplicatedComponent = {
+        id: newComponentId,
+        component: component.component,
+        props: { ...component.props }
+      }
+
+      const index = column.components.findIndex(comp => comp.id === componentId)
+      column.components.splice(index + 1, 0, duplicatedComponent)
+      this.selectComponent(sectionId, columnId, newComponentId)
+
+      console.log('✅ Component duplicated:', componentId, '→', newComponentId)
+    },
+
+    // ============================================
+    // SÉLECTION
+    // ============================================
+
+    /**
+     * Sélectionne une section
+     */
+    selectSection(sectionId) {
+      this.selectedSectionId = sectionId
+      this.selectedColumnId = null
+      this.selectedComponentId = null
+      this.selectedType = 'section'
+      console.log('👆 Section selected:', sectionId)
+    },
+
+    /**
+     * Sélectionne une colonne
+     */
+    selectColumn(sectionId, columnId) {
+      this.selectedSectionId = sectionId
+      this.selectedColumnId = columnId
+      this.selectedComponentId = null
+      this.selectedType = 'column'
+      console.log('👆 Column selected:', columnId)
+    },
+
+    /**
+     * Sélectionne un composant
+     */
+    selectComponent(sectionId, columnId, componentId) {
+      this.selectedSectionId = sectionId
+      this.selectedColumnId = columnId
+      this.selectedComponentId = componentId
+      this.selectedType = 'component'
+      console.log('👆 Component selected:', componentId)
+    },
+
+    /**
+     * Désélectionne tout
+     */
+    deselectAll() {
+      this.selectedSectionId = null
+      this.selectedColumnId = null
+      this.selectedComponentId = null
+      this.selectedType = null
+      console.log('👆 Deselected all')
+    },
+
+    // ============================================
+    // EMAIL GLOBAL
+    // ============================================
 
     /**
      * Charge un email depuis JSON
-     * @param {object} emailData - Email au format JSON
      */
     loadEmail(emailData) {
       if (emailData.metadata) {
         this.metadata = { ...emailData.metadata }
       }
 
-      if (emailData.blocks) {
-        this.blocks = JSON.parse(JSON.stringify(emailData.blocks))
+      if (emailData.sections) {
+        this.sections = JSON.parse(JSON.stringify(emailData.sections))
       }
 
-      this.selectedBlockId = null
+      this.deselectAll()
 
-      console.log('✅ Email loaded:', this.blocks.length, 'blocks')
+      console.log('✅ Email loaded:', this.sections.length, 'sections')
     },
 
     /**
@@ -256,15 +584,14 @@ export const useEmailStore = defineStore('email', {
         preheader: '',
         designSystemId: 'demo'
       }
-      this.blocks = []
-      this.selectedBlockId = null
+      this.sections = []
+      this.deselectAll()
 
       console.log('✅ Email reset')
     },
 
     /**
      * Met à jour les metadata
-     * @param {object} metadata - Metadata à mettre à jour
      */
     updateMetadata(metadata) {
       Object.assign(this.metadata, metadata)
@@ -273,7 +600,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Change le Design System
-     * @param {string} designSystemId - ID du Design System
      */
     changeDesignSystem(designSystemId) {
       this.metadata.designSystemId = designSystemId
@@ -282,7 +608,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Change le device de preview
-     * @param {string} device - 'desktop' | 'mobile'
      */
     setPreviewDevice(device) {
       this.previewDevice = device
@@ -291,7 +616,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Définit l'état de rendering
-     * @param {boolean} isRendering - État
      */
     setRendering(isRendering) {
       this.isRendering = isRendering
@@ -299,7 +623,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Définit le temps de dernier render
-     * @param {number} time - Temps en ms
      */
     setLastRenderTime(time) {
       this.lastRenderTime = time
@@ -307,7 +630,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Charge le Design System
-     * @param {object} designSystem - Design System chargé
      */
     setDesignSystem(designSystem) {
       this.designSystem = designSystem
@@ -316,7 +638,6 @@ export const useEmailStore = defineStore('email', {
 
     /**
      * Charge la liste des composants disponibles
-     * @param {array} components - Liste des composants
      */
     setAvailableComponents(components) {
       this.availableComponents = components
