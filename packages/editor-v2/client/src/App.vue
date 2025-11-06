@@ -194,49 +194,125 @@ const loadExampleEmail = async () => {
         preheader: 'Découvrez notre nouvel éditeur',
         designSystemId: 'demo'
       },
-      blocks: [
+      sections: [
+        // Section 1: Titre (single column)
         {
-          id: 'block-heading-' + Date.now(),
-          component: 'heading',
+          id: 'section-1-' + Date.now(),
+          component: 'section-1col',
           props: {
-            text: 'Bienvenue !',
-            level: 'h1',
-            textColor: '#007bff',
-            fontSize: '32px',
-            fontWeight: 'bold',
-            lineHeight: '1.2',
-            align: 'center',
-            marginTop: '0',
-            marginBottom: '16px'
-          }
+            maxWidth: '600px',
+            backgroundColor: '#ffffff',
+            padding: '20px',
+            borderRadius: '0px',
+            align: 'center'
+          },
+          columns: [
+            {
+              id: 'col-section-1-0',
+              width: '100%',
+              props: {
+                padding: '0',
+                backgroundColor: 'transparent',
+                align: 'center',
+                verticalAlign: 'top'
+              },
+              components: [
+                {
+                  id: 'heading-1-' + Date.now(),
+                  component: 'heading',
+                  props: {
+                    text: 'Bienvenue !',
+                    level: 'h1',
+                    textColor: '#007bff',
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    lineHeight: '1.2',
+                    align: 'center',
+                    marginTop: '0',
+                    marginBottom: '16px'
+                  }
+                }
+              ]
+            }
+          ]
         },
+        // Section 2: Contenu texte (single column)
         {
-          id: 'block-container-' + Date.now(),
-          component: 'container',
+          id: 'section-2-' + Date.now(),
+          component: 'section-1col',
           props: {
-            content: '<p style="margin: 0; line-height: 1.6;">Nous sommes ravis de vous présenter notre nouvel éditeur d\'emails, basé sur <strong>Maizzle Framework</strong> et <strong>Vue.js 3</strong>. Cette interface vous permet de composer vos emails en glissant-déposant des composants, et de voir le rendu en temps réel.</p>',
+            maxWidth: '600px',
             backgroundColor: '#f8f9fa',
             padding: '24px',
-            borderWidth: '0',
-            borderStyle: 'solid',
-            borderColor: '#dee2e6',
             borderRadius: '8px',
-            maxWidth: '600px',
             align: 'center'
-          }
+          },
+          columns: [
+            {
+              id: 'col-section-2-0',
+              width: '100%',
+              props: {
+                padding: '0',
+                backgroundColor: 'transparent',
+                align: 'left',
+                verticalAlign: 'top'
+              },
+              components: [
+                {
+                  id: 'paragraph-1-' + Date.now(),
+                  component: 'paragraph',
+                  props: {
+                    text: 'Nous sommes ravis de vous présenter notre nouvel éditeur d\'emails, basé sur Maizzle Framework et Vue.js 3. Cette interface vous permet de composer vos emails en glissant-déposant des composants, et de voir le rendu en temps réel.',
+                    fontSize: '16px',
+                    lineHeight: '1.6',
+                    textColor: '#333333',
+                    align: 'left',
+                    marginTop: '0',
+                    marginBottom: '16px'
+                  }
+                }
+              ]
+            }
+          ]
         },
+        // Section 3: Bouton (single column)
         {
-          id: 'block-button-' + Date.now(),
-          component: 'button',
+          id: 'section-3-' + Date.now(),
+          component: 'section-1col',
           props: {
-            text: 'Découvrir',
-            url: 'https://example.com',
-            backgroundColor: '#007bff',
-            textColor: '#ffffff',
-            borderRadius: '4px',
-            padding: '12px 24px',
+            maxWidth: '600px',
+            backgroundColor: '#ffffff',
+            padding: '20px',
+            borderRadius: '0px',
             align: 'center'
-          }
+          },
+          columns: [
+            {
+              id: 'col-section-3-0',
+              width: '100%',
+              props: {
+                padding: '0',
+                backgroundColor: 'transparent',
+                align: 'center',
+                verticalAlign: 'top'
+              },
+              components: [
+                {
+                  id: 'button-1-' + Date.now(),
+                  component: 'button',
+                  props: {
+                    text: 'Découvrir',
+                    url: 'https://example.com',
+                    backgroundColor: '#007bff',
+                    textColor: '#ffffff',
+                    borderRadius: '4px',
+                    padding: '12px 24px',
+                    align: 'center'
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }
