@@ -188,7 +188,10 @@ function evaluateBasicConditionals(template, props) {
 
   result = result.replace(ifRegex, (match, condition, content) => {
     try {
+      console.log('🔍 Evaluating condition:', condition)
+      console.log('   Props:', JSON.stringify(props, null, 2))
       const evaluated = evaluateCondition(condition, props)
+      console.log('   Result:', evaluated)
       return evaluated ? content : ''
     } catch (err) {
       console.warn('Failed to evaluate condition:', condition, err)
@@ -212,8 +215,11 @@ function evaluateCondition(condition, props) {
     evalString = evalString.replace(regex, replacement)
   })
 
+  console.log('   Eval string:', evalString)
+
   try {
-    return eval(evalString)
+    const result = eval(evalString)
+    return result
   } catch (err) {
     console.warn('Condition eval error:', evalString, err)
     return false
