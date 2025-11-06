@@ -182,13 +182,19 @@ function getNestedValue(obj, path) {
  * Évalue les conditionnels basiques dans le template
  */
 function evaluateBasicConditionals(template, props) {
+  console.log('🔍 evaluateBasicConditionals called')
+  console.log('   Template contains <if>:', template.includes('<if'))
+  console.log('   Props level:', props.level)
+
   let result = template
 
   const ifRegex = /<if\s+condition=["']([^"']+)["']>([\s\S]*?)<\/if>/gi
 
+  let matchCount = 0
   result = result.replace(ifRegex, (match, condition, content) => {
+    matchCount++
     try {
-      console.log('🔍 Evaluating condition:', condition)
+      console.log('🔍 Match #' + matchCount + ' - Evaluating condition:', condition)
       console.log('   Props:', JSON.stringify(props, null, 2))
       const evaluated = evaluateCondition(condition, props)
       console.log('   Result:', evaluated)
@@ -198,6 +204,8 @@ function evaluateBasicConditionals(template, props) {
       return ''
     }
   })
+
+  console.log('   Total matches:', matchCount)
 
   return result
 }
