@@ -177,6 +177,14 @@ const exportHtml = async () => {
   try {
     await exportEmail()
     console.log('✅ HTML exported successfully')
+
+    // Forcer la mise à jour de l'iframe après l'export
+    // car elle a été masquée pendant le chargement (isLoading=true)
+    // L'iframe est recréée dans le DOM, donc il faut attendre un peu
+    await nextTick()
+    setTimeout(() => {
+      updateIframeContent()
+    }, 50)
   } catch (err) {
     console.error('❌ Export failed:', err)
   }
