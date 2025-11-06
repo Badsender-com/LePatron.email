@@ -605,7 +605,7 @@ const onComponentDragEnd = () => {
 // Helper pour charger les props par défaut
 const getDefaultPropsForComponent = async (componentName, category) => {
   try {
-    const schema = await componentsComposable.loadComponentSchema(componentName)
+    const schema = await componentsComposable.loadComponentSchema(componentName, category)
 
     const defaults = {}
     if (schema?.configurableProperties) {

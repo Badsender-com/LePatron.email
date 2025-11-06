@@ -54,21 +54,24 @@ export function useComponents() {
   /**
    * Charge le schema d'un composant spécifique
    * @param {string} componentName - Nom du composant
+   * @param {string} category - Catégorie (sections, content, custom, columns)
    */
-  const loadComponentSchema = async (componentName) => {
+  const loadComponentSchema = async (componentName, category = 'content') => {
+    const cacheKey = `${category}:${componentName}`
+
     // Vérifier si déjà en cache
-    if (componentSchemas.value[componentName]) {
-      console.log('📋 Component schema (cached):', componentName)
-      return componentSchemas.value[componentName]
+    if (componentSchemas.value[cacheKey]) {
+      console.log('📋 Component schema (cached):', cacheKey)
+      return componentSchemas.value[cacheKey]
     }
 
     isLoading.value = true
     error.value = null
 
     try {
-      console.log('📋 Loading component schema:', componentName)
+      console.log('📋 Loading component schema:', cacheKey)
 
-      const response = await fetch(`/api/v2/components/${componentName}`)
+      const response = await fetch(`/api/v2/components/schema/${componentName}?category=${category}`)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -83,9 +86,9 @@ export function useComponents() {
       const schema = data.component.schema
 
       // Mettre en cache
-      componentSchemas.value[componentName] = schema
+      componentSchemas.value[cacheKey] = schema
 
-      console.log('✅ Component schema loaded:', componentName, {
+      console.log('✅ Component schema loaded:', cacheKey, {
         properties: Object.keys(schema.configurableProperties || {}).length
       })
 
@@ -127,11 +130,12 @@ export function useComponents() {
   /**
    * Obtient les props par défaut d'un composant
    * @param {string} componentName - Nom du composant
+   * @param {string} category - Catégorie (sections, content, custom)
    * @returns {object} - Props par défaut
    */
-  const getDefaultProps = async (componentName) => {
+  const getDefaultProps = async (componentName, category = 'content') => {
     try {
-      const schema = await loadComponentSchema(componentName)
+      const schema = await loadComponentSchema(componentName, category)
       return extractDefaultProps(schema)
     } catch (err) {
       console.error('❌ Get default props error:', err)
