@@ -80,7 +80,7 @@ export function useComponents() {
         throw new Error(data.error || 'Failed to load component schema')
       }
 
-      const schema = data.schema
+      const schema = data.component.schema
 
       // Mettre en cache
       componentSchemas.value[componentName] = schema
