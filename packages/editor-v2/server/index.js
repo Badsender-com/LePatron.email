@@ -37,9 +37,9 @@ import designSystemsRoutes from './routes/design-systems.routes.js'
 import renderRoutes from './routes/render.routes.js'
 import componentsRoutes from './routes/components.routes.js'
 
-app.use('/api/v2/design-systems', designSystemsRoutes)
-app.use('/api/v2/render', renderRoutes)
-app.use('/api/v2/components', componentsRoutes)
+app.use('/v2/design-systems', designSystemsRoutes)
+app.use('/v2/render', renderRoutes)
+app.use('/v2/components', componentsRoutes)
 
 // Error handler
 app.use((err, req, res, next) => {

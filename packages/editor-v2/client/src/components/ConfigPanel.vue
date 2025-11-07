@@ -312,7 +312,7 @@ const loadSchema = async () => {
       schema.value = await componentsComposable.loadComponentSchema(componentName, 'sections')
     } else if (emailStore.selectedType === 'column') {
       // Load column schema from components.json
-      const response = await fetch('/api/v2/components/schema/columns')
+      const response = await fetch('/v2/components/schema/columns')
       const data = await response.json()
       schema.value = data.schema || data.component?.schema || data
     } else if (emailStore.selectedType === 'component') {

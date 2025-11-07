@@ -44,7 +44,7 @@ export function useRenderPreview(options = {}) {
         useCache
       })
 
-      const response = await fetch('/api/v2/render/preview', {
+      const response = await fetch('/v2/render/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -121,7 +121,7 @@ export function useRenderPreview(options = {}) {
         designSystem: emailStore.metadata.designSystemId
       })
 
-      const response = await fetch('/api/v2/render/export', {
+      const response = await fetch('/v2/render/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -187,7 +187,7 @@ export function useRenderPreview(options = {}) {
    */
   const clearCache = async () => {
     try {
-      const response = await fetch('/api/v2/render/cache', {
+      const response = await fetch('/v2/render/cache', {
         method: 'DELETE'
       })
 

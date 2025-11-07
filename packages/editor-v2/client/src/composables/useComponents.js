@@ -23,7 +23,7 @@ export function useComponents() {
     try {
       console.log('🧩 Loading components list...')
 
-      const response = await fetch('/api/v2/components')
+      const response = await fetch('/v2/components')
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -71,7 +71,7 @@ export function useComponents() {
     try {
       console.log('📋 Loading component schema:', cacheKey)
 
-      const response = await fetch(`/api/v2/components/schema/${componentName}?category=${category}`)
+      const response = await fetch(`/v2/components/schema/${componentName}?category=${category}`)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)

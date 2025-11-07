@@ -23,7 +23,7 @@ export function useDesignSystem() {
     try {
       console.log('📚 Loading Design Systems list...')
 
-      const response = await fetch('/api/v2/design-systems')
+      const response = await fetch('/v2/design-systems')
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -61,7 +61,7 @@ export function useDesignSystem() {
     try {
       console.log('📦 Loading Design System:', designSystemId)
 
-      const response = await fetch(`/api/v2/design-systems/${designSystemId}`)
+      const response = await fetch(`/v2/design-systems/${designSystemId}`)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -155,7 +155,7 @@ export function useDesignSystem() {
    */
   const clearCache = async () => {
     try {
-      const response = await fetch('/api/v2/design-systems/cache', {
+      const response = await fetch('/v2/design-systems/cache', {
         method: 'DELETE'
       })
 

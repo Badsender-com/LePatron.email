@@ -180,7 +180,7 @@ const loadExampleEmail = async () => {
     console.log('📧 Loading example email...')
 
     // Charger example-email.json
-    const response = await fetch('/api/v2/design-systems/demo')
+    const response = await fetch('/v2/design-systems/demo')
 
     if (!response.ok) {
       throw new Error('Failed to load example')
