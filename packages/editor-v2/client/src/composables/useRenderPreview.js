@@ -39,7 +39,8 @@ export function useRenderPreview(options = {}) {
 
     try {
       console.log('🎨 Rendering preview...', {
-        blocks: emailStore.blocks.length,
+        sections: emailStore.sectionCount,
+        components: emailStore.totalComponentCount,
         designSystem: emailStore.metadata.designSystemId,
         useCache
       })
@@ -117,7 +118,8 @@ export function useRenderPreview(options = {}) {
 
     try {
       console.log('📤 Exporting email...', {
-        blocks: emailStore.blocks.length,
+        sections: emailStore.sectionCount,
+        components: emailStore.totalComponentCount,
         designSystem: emailStore.metadata.designSystemId
       })
 
