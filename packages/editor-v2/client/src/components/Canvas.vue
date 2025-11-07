@@ -363,7 +363,27 @@ const getComponentPreview = (component) => {
 }
 
 const getGridColumns = (columns) => {
-  return columns.map(col => col.width).join(' ')
+  // Convertir les largeurs en % vers fr pour CSS Grid
+  // ex: ['50%', '50%'] → '1fr 1fr'
+  // ex: ['33%', '66%'] → '1fr 2fr'
+  return columns.map(col => {
+    const width = col.width
+    // Si c'est un pourcentage, convertir en fr
+    if (width.endsWith('%')) {
+      const percent = parseFloat(width)
+      // Convertir en fraction (arrondir pour avoir des valeurs propres)
+      // 50% → 1fr, 33% → 1fr, 66% → 2fr, etc.
+      if (percent === 100) return '1fr'
+      if (percent === 50) return '1fr'
+      if (percent >= 65 && percent <= 67) return '2fr' // ~66%
+      if (percent >= 32 && percent <= 34) return '1fr' // ~33%
+      if (percent === 25) return '1fr'
+      // Pour les autres cas, utiliser la proportion
+      return `${Math.round(percent / 10)}fr`
+    }
+    // Sinon retourner tel quel (px, em, etc.)
+    return width
+  }).join(' ')
 }
 
 // Actions Sections
