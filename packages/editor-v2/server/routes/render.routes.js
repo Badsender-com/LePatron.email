@@ -16,11 +16,14 @@ router.post('/preview', async (req, res) => {
   try {
     const emailData = req.body;
 
-    // Validation basique
-    if (!emailData || !emailData.blocks || !Array.isArray(emailData.blocks)) {
+    // Validation basique - support both old blocks[] and new sections[] structure
+    const hasBlocks = emailData.blocks && Array.isArray(emailData.blocks)
+    const hasSections = emailData.sections && Array.isArray(emailData.sections)
+
+    if (!emailData || (!hasBlocks && !hasSections)) {
       return res.status(400).json({
         error: 'Invalid email data',
-        message: 'Body must contain a "blocks" array',
+        message: 'Body must contain either a "blocks" or "sections" array',
       });
     }
 
@@ -56,11 +59,14 @@ router.post('/export', async (req, res) => {
   try {
     const emailData = req.body;
 
-    // Validation basique
-    if (!emailData || !emailData.blocks || !Array.isArray(emailData.blocks)) {
+    // Validation basique - support both old blocks[] and new sections[] structure
+    const hasBlocks = emailData.blocks && Array.isArray(emailData.blocks)
+    const hasSections = emailData.sections && Array.isArray(emailData.sections)
+
+    if (!emailData || (!hasBlocks && !hasSections)) {
       return res.status(400).json({
         error: 'Invalid email data',
-        message: 'Body must contain a "blocks" array',
+        message: 'Body must contain either a "blocks" or "sections" array',
       });
     }
 
