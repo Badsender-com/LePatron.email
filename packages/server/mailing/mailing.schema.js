@@ -98,6 +98,30 @@ const MailingSchema = Schema(
     espIds: {
       type: [],
     },
+    // NEW: Editor type to support both Mosaico and GrapesJS
+    editor_type: {
+      type: String,
+      enum: ['mosaico', 'grapesjs'],
+      default: 'mosaico',
+      required: true,
+    },
+    // NEW: GrapesJS data structure
+    grapesjs_data: {
+      type: {
+        components: { type: Array, default: [] }, // HTML structure
+        styles: { type: Array, default: [] }, // CSS styles
+        assets: { type: Array, default: [] }, // Images/files
+        customBlocks: { type: Array, default: [] }, // Custom blocks for this template
+        pages: { type: Array, default: [] }, // Pages (multi-page support)
+      },
+      required: false,
+    },
+    // NEW: Brand configuration for multi-brand support
+    brand: {
+      type: String,
+      enum: ['badsender', 'sm', 'lepatron'],
+      required: false,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
@@ -157,6 +181,10 @@ MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
+// NEW: Indexes for GrapesJS
+MailingSchema.index({ editor_type: 1 });
+MailingSchema.index({ brand: 1 });
+MailingSchema.index({ editor_type: 1, _workspace: 1 });
 
 MailingSchema.statics.findForApi = async function findForApi(query = {}) {
   return this.find(query, { previewHtml: 0, data: 0 });

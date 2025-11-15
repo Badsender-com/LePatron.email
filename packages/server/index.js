@@ -32,6 +32,7 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
+const grapesJSRouter = require('../grapesjs-editor/server/routes/grapesjs.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -260,6 +261,7 @@ if (cluster.isMaster) {
   app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
+  app.use('/api/grapesjs', grapesJSRouter);
 
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
