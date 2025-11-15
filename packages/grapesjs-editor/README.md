@@ -4,9 +4,9 @@
 
 This package contains the GrapesJS editor integration for LePatron.email. It provides a modern, flexible email editor as an alternative to the existing Mosaico/Knockout editor.
 
-## 🎯 POC Phase 1 - Status
+## 🎯 POC Status
 
-**Completed tasks:**
+### ✅ Phase 1: Infrastructure (COMPLETED)
 
 - ✅ Project structure created
 - ✅ Dependencies added to package.json
@@ -15,9 +15,20 @@ This package contains the GrapesJS editor integration for LePatron.email. It pro
 - ✅ Basic Vue component created
 - ✅ Environment variable configuration documented
 
+### ✅ Phase 2: Standard Blocks & Editor (COMPLETED)
+
+- ✅ GrapesJS configuration file created (`grapesjs-config.js`)
+- ✅ 6 standard blocks implemented (text, title, image, button, divider, spacer)
+- ✅ Full Vue editor component with 3-panel layout
+- ✅ Block loading from API integrated
+- ✅ Device preview (Desktop/Tablet/Mobile)
+- ✅ Style Manager, Trait Manager, Layer Manager panels
+- ✅ GrapesJS CSS configured in Nuxt
+- ✅ Test page created (`/grapesjs-test`)
+
 **Current state:**
 
-This is the **Phase 1** implementation focusing on infrastructure and foundation. The basic structure is in place but needs Node.js 14.16.0 to install dependencies and run.
+The editor is now **fully functional** with drag & drop blocks, responsive preview, and save/load capabilities. Ready for testing!
 
 ## 🏗️ Architecture
 
@@ -165,15 +176,6 @@ export default {
 
 Configuration will be located in `client/config/grapesjs-config.js` (to be implemented in Phase 2).
 
-## 📋 Next Steps (Phase 2)
-
-- [ ] Implement the 6 standard blocks completely
-- [ ] Add GrapesJS configuration file
-- [ ] Integrate block loading in the editor
-- [ ] Add drag-and-drop functionality
-- [ ] Implement auto-save (every 30 seconds)
-- [ ] Add desktop/mobile preview toggle
-
 ## 📋 Next Steps (Phase 3)
 
 - [ ] Replicate Badsender template blocks
@@ -184,19 +186,65 @@ Configuration will be located in `client/config/grapesjs-config.js` (to be imple
 
 ## 🧪 Testing
 
-To test the current implementation:
+### Quick Test Setup
 
-1. Create a new mailing with `editor_type: 'grapesjs'` via MongoDB or API
-2. Access the GrapesJS editor component
-3. Test API endpoints using curl or Postman
+1. **Install dependencies:**
+```bash
+yarn install
+```
 
-Example API test:
+2. **Create a test template in MongoDB:**
+```javascript
+db.mailings.insertOne({
+  name: "Test GrapesJS Newsletter",
+  editor_type: "grapesjs",
+  brand: "badsender",
+  _wireframe: ObjectId("YOUR_TEMPLATE_ID"), // Use an existing template ID
+  _company: ObjectId("YOUR_COMPANY_ID"),    // Use an existing company ID
+  grapesjs_data: {
+    components: [],
+    styles: [],
+    assets: [],
+    customBlocks: [],
+    pages: []
+  },
+  createdAt: new Date(),
+  updatedAt: new Date()
+})
+```
+
+3. **Start the development server:**
+```bash
+yarn dev
+```
+
+4. **Access the test page:**
+```
+http://localhost:3000/grapesjs-test?id=YOUR_MAILING_ID
+```
+
+### What You Can Test
+
+✅ **Drag & Drop:** Drag blocks from the left panel to the canvas
+✅ **Responsive Preview:** Switch between Desktop/Tablet/Mobile views
+✅ **Edit Content:** Click on any block to edit text, styles, properties
+✅ **Save:** Click "Sauvegarder" to save your template
+✅ **Export:** Click "Exporter" to download HTML
+✅ **Brand Selector:** Switch between Badsender/SM/LePatron
+
+### Test API Endpoints
+
 ```bash
 # Get standard blocks
 curl http://localhost:3000/api/grapesjs/blocks/standard
 
 # Load a template
 curl http://localhost:3000/api/grapesjs/templates/YOUR_TEMPLATE_ID
+
+# Save a template
+curl -X POST http://localhost:3000/api/grapesjs/templates/YOUR_TEMPLATE_ID/save \
+  -H "Content-Type: application/json" \
+  -d '{"grapesjs_data": {"components": [], "styles": []}, "brand": "badsender"}'
 ```
 
 ## 📚 Resources
