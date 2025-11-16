@@ -1,6 +1,6 @@
 'use strict';
 
-const mongoose = require('mongoose');
+const { Mailings } = require('../../../server/common/models.common.js');
 
 /**
  * Save GrapesJS template data
@@ -10,8 +10,7 @@ exports.saveTemplate = async (req, res) => {
     const { id } = req.params;
     const { grapesjs_data, brand } = req.body;
 
-    const Mailing = mongoose.model('Mailing');
-    const mailing = await Mailing.findById(id);
+    const mailing = await Mailings.findById(id);
 
     if (!mailing) {
       return res.status(404).json({
@@ -60,8 +59,7 @@ exports.loadTemplate = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const Mailing = mongoose.model('Mailing');
-    const mailing = await Mailing.findById(id);
+    const mailing = await Mailings.findById(id);
 
     if (!mailing) {
       return res.status(404).json({
@@ -108,8 +106,7 @@ exports.exportTemplate = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const Mailing = mongoose.model('Mailing');
-    const mailing = await Mailing.findById(id);
+    const mailing = await Mailings.findById(id);
 
     if (!mailing) {
       return res.status(404).json({
@@ -142,8 +139,7 @@ exports.previewTemplate = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const Mailing = mongoose.model('Mailing');
-    const mailing = await Mailing.findById(id);
+    const mailing = await Mailings.findById(id);
 
     if (!mailing) {
       return res.status(404).json({
