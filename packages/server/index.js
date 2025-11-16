@@ -192,6 +192,15 @@ if (cluster.isMaster) {
     '/lib/skins',
     express.static(path.join(__dirname, '../../public/skins'))
   );
+  // GrapesJS libraries from node_modules
+  app.use(
+    '/lib/grapesjs',
+    express.static(path.join(__dirname, '../../node_modules/grapesjs/dist'))
+  );
+  app.use(
+    '/lib/grapesjs-preset-newsletter',
+    express.static(path.join(__dirname, '../../node_modules/grapesjs-preset-newsletter/dist'))
+  );
   // API documentation
   app.use('/api/documentation', apiDocumentationNoCache);
 

@@ -174,17 +174,17 @@ export default {
 
   methods: {
     async loadGrapesJSResources() {
-      // Load GrapesJS CSS and JS from CDN
+      // Load GrapesJS CSS and JS from local node_modules (served via Express static)
       const resources = [
         // CSS
         {
           type: 'css',
-          href: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/css/grapes.min.css',
+          href: '/lib/grapesjs/css/grapes.min.css',
         },
         // JS - Load GrapesJS first
         {
           type: 'js',
-          src: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/grapes.min.js',
+          src: '/lib/grapesjs/grapes.min.js',
         },
       ];
 
@@ -209,28 +209,27 @@ export default {
       });
 
       await Promise.all(loadPromises);
-      console.log('✅ GrapesJS resources loaded from CDN');
+      console.log('✅ GrapesJS resources loaded from local files');
 
-      // Try to load preset newsletter (optional - will continue without it if it fails)
+      // Load preset newsletter from local node_modules
       try {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          // Use unpkg with full version path (more reliable than jsdelivr)
-          script.src = 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.js';
+          script.src = '/lib/grapesjs-preset-newsletter/grapesjs-preset-newsletter.js';
           script.onload = resolve;
-          script.onerror = () => {
-            console.warn('⚠️ Preset newsletter failed to load from CDN, will use base GrapesJS');
+          script.onerror = (err) => {
+            console.warn('⚠️ Preset newsletter failed to load, will use base GrapesJS', err);
             resolve(); // Don't reject, just continue
           };
           document.head.appendChild(script);
 
-          // Timeout after 5 seconds
+          // Timeout after 3 seconds
           setTimeout(() => {
             console.warn('⚠️ Preset newsletter timeout, continuing without it');
             resolve();
-          }, 5000);
+          }, 3000);
         });
-        console.log('✅ Preset newsletter loaded (or skipped)');
+        console.log('✅ Preset newsletter loaded from local files');
       } catch (err) {
         console.warn('⚠️ Preset newsletter not available, using base GrapesJS', err);
       }
