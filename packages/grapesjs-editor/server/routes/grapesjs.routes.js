@@ -5,6 +5,11 @@ const router = express.Router();
 const blocksController = require('../controllers/blocks.controller');
 const templatesController = require('../controllers/templates.controller');
 
+console.log('✅ GrapesJS routes loaded, templatesController:', {
+  loadTemplate: typeof templatesController.loadTemplate,
+  saveTemplate: typeof templatesController.saveTemplate,
+});
+
 /**
  * @api {get} /api/grapesjs/blocks/standard Get standard blocks
  * @apiName GetStandardBlocks
