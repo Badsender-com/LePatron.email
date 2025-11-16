@@ -215,7 +215,7 @@ export default {
       try {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          script.src = '/lib/grapesjs-preset-newsletter/grapesjs-preset-newsletter.js';
+          script.src = '/lib/grapesjs-preset-newsletter/index.js';
           script.onload = resolve;
           script.onerror = (err) => {
             console.warn('⚠️ Preset newsletter failed to load, will use base GrapesJS', err);
