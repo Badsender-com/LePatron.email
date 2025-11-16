@@ -151,7 +151,7 @@ export default {
       await this.waitForGrapesJS();
 
       // Initialize GrapesJS editor with full configuration
-      await this.initEditor(window.grapesjs, window.grapesJSPresetNewsletter);
+      await this.initEditor(window.grapesjs, window.grapesJSPresetNewsletter || null);
 
       // Load blocks into the editor
       await this.loadBlocks();
@@ -181,14 +181,10 @@ export default {
           type: 'css',
           href: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/css/grapes.min.css',
         },
-        // JS
+        // JS - Load GrapesJS first
         {
           type: 'js',
           src: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/grapes.min.js',
-        },
-        {
-          type: 'js',
-          src: 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2',
         },
       ];
 
@@ -214,6 +210,16 @@ export default {
 
       await Promise.all(loadPromises);
       console.log('✅ GrapesJS resources loaded from CDN');
+
+      // Load preset newsletter after GrapesJS is loaded
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      console.log('✅ Preset newsletter loaded');
     },
 
     waitForGrapesJS() {
@@ -223,12 +229,34 @@ export default {
 
         const checkInterval = setInterval(() => {
           attempts++;
-          if (window.grapesjs && window.grapesJSPresetNewsletter) {
+
+          // Debug: log what's actually available
+          if (attempts === 1) {
+            console.log('🔍 Checking window for GrapesJS:', {
+              grapesjs: typeof window.grapesjs,
+              grapesJSPresetNewsletter: typeof window.grapesJSPresetNewsletter,
+              grapesJsPresetNewsletter: typeof window.grapesJsPresetNewsletter,
+              keys: Object.keys(window).filter(k => k.toLowerCase().includes('grapes'))
+            });
+          }
+
+          // Check different possible names
+          const grapesjs = window.grapesjs;
+          const preset = window.grapesJSPresetNewsletter ||
+                         window.grapesJsPresetNewsletter ||
+                         window['grapesjs-preset-newsletter'] ||
+                         (window.grapesjs && window.grapesjs.plugins && window.grapesjs.plugins.Newsletter);
+
+          if (grapesjs) {
             clearInterval(checkInterval);
-            console.log('✅ GrapesJS globals available');
+            console.log('✅ GrapesJS globals available', { hasPreset: !!preset });
+            if (preset) {
+              window.grapesJSPresetNewsletter = preset; // Normalize the name
+            }
             resolve();
           } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
+            console.error('❌ Available in window:', Object.keys(window).filter(k => k.toLowerCase().includes('grapes')));
             reject(new Error('GrapesJS failed to load'));
           }
         }, 100);
@@ -257,23 +285,29 @@ export default {
         },
       });
 
-      // Add newsletter preset to plugins
-      config.plugins = [grapesJSPresetNewsletter];
-      config.pluginsOpts = {
-        [grapesJSPresetNewsletter]: {
-          modalTitleImport: 'Importer template',
-          modalLabelImport: 'Coller votre HTML ici',
-          modalTitleExport: 'Exporter template',
-          codeViewerTheme: 'material',
-          // Configure preset options
-          cellStyle: {
-            'font-size': '14px',
-            'font-family': 'Arial, Helvetica, sans-serif',
-            color: '#333333',
-            'line-height': '1.5',
+      // Add newsletter preset to plugins if available
+      if (grapesJSPresetNewsletter) {
+        config.plugins = [grapesJSPresetNewsletter];
+        config.pluginsOpts = {
+          [grapesJSPresetNewsletter]: {
+            modalTitleImport: 'Importer template',
+            modalLabelImport: 'Coller votre HTML ici',
+            modalTitleExport: 'Exporter template',
+            codeViewerTheme: 'material',
+            // Configure preset options
+            cellStyle: {
+              'font-size': '14px',
+              'font-family': 'Arial, Helvetica, sans-serif',
+              color: '#333333',
+              'line-height': '1.5',
+            },
           },
-        },
-      };
+        };
+      } else {
+        console.warn('⚠️ Newsletter preset not available, using base GrapesJS');
+        config.plugins = [];
+        config.pluginsOpts = {};
+      }
 
       // Initialize editor
       this.editor = grapesjs.init(config);
