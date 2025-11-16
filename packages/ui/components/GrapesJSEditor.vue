@@ -179,20 +179,20 @@ export default {
         // CSS
         {
           type: 'css',
-          href: 'https://unpkg.com/grapesjs@0.21.7/dist/css/grapes.min.css',
+          href: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/css/grapes.min.css',
         },
         {
           type: 'css',
-          href: 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.css',
+          href: 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.css',
         },
         // JS
         {
           type: 'js',
-          src: 'https://unpkg.com/grapesjs@0.21.7/dist/grapes.min.js',
+          src: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/grapes.min.js',
         },
         {
           type: 'js',
-          src: 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2',
+          src: 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2',
         },
       ];
 
@@ -302,7 +302,7 @@ export default {
 
     async loadBlocks() {
       try {
-        const response = await this.$axios.get('/api/grapesjs/blocks/standard');
+        const response = await this.$axios.get('/grapesjs/blocks/standard');
 
         if (response.data.success && response.data.blocks) {
           const blockManager = this.editor.BlockManager;
@@ -328,7 +328,7 @@ export default {
     async loadTemplate() {
       try {
         const response = await this.$axios.get(
-          `/api/grapesjs/templates/${this.templateId}`
+          `/grapesjs/templates/${this.templateId}`
         );
 
         if (response.data.success) {
@@ -366,7 +366,7 @@ export default {
         };
 
         const response = await this.$axios.post(
-          `/api/grapesjs/templates/${this.templateId}/save`,
+          `/grapesjs/templates/${this.templateId}/save`,
           {
             grapesjs_data,
             brand: this.selectedBrand,
