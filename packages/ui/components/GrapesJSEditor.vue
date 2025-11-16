@@ -181,10 +181,6 @@ export default {
           type: 'css',
           href: 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.7/dist/css/grapes.min.css',
         },
-        {
-          type: 'css',
-          href: 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.css',
-        },
         // JS
         {
           type: 'js',

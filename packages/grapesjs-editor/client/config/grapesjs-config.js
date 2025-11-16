@@ -31,8 +31,8 @@ export const getGrapesJSConfig = (options = {}) => {
       stepsBeforeSave: 1,
       options: {
         remote: {
-          urlLoad: `/grapesjs/templates/${templateId}`,
-          urlStore: `/grapesjs/templates/${templateId}/save`,
+          urlLoad: `/api/grapesjs/templates/${templateId}`,
+          urlStore: `/api/grapesjs/templates/${templateId}/save`,
           onLoad: (result) => {
             if (onLoad) onLoad(result);
             return result.grapesjs_data || {};
@@ -229,7 +229,7 @@ export const setupCommands = (editor) => {
 export const loadBlocks = async (editor, axios) => {
   try {
     // Load standard blocks from API
-    const response = await axios.get('/grapesjs/blocks/standard');
+    const response = await axios.get('/api/grapesjs/blocks/standard');
 
     if (response.data.success && response.data.blocks) {
       const blockManager = editor.BlockManager;
