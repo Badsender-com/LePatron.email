@@ -144,6 +144,9 @@ export default {
 
   async mounted() {
     try {
+      // Load GrapesJS CSS dynamically
+      this.loadGrapesJSCSS();
+
       // Dynamically import GrapesJS and config (client-side only)
       const grapesjs = await import('grapesjs');
       const grapesJSPresetNewsletter = await import('grapesjs-preset-newsletter');
@@ -171,6 +174,22 @@ export default {
   },
 
   methods: {
+    loadGrapesJSCSS() {
+      // Load GrapesJS CSS files dynamically
+      const cssFiles = [
+        '/node_modules/grapesjs/dist/css/grapes.min.css',
+        '/node_modules/grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css',
+      ];
+
+      cssFiles.forEach((href) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = href;
+        document.head.appendChild(link);
+      });
+    },
+
     async initEditor(grapesjs, grapesJSPresetNewsletter) {
       // Import configuration
       const { getGrapesJSConfig, setupCommands } = await import(
@@ -449,10 +468,4 @@ export default {
   width: 32px;
   height: 32px;
 }
-</style>
-
-<style>
-/* Import GrapesJS CSS dynamically */
-@import 'grapesjs/dist/css/grapes.min.css';
-@import 'grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css';
 </style>
