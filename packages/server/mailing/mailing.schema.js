@@ -123,7 +123,11 @@ const MailingSchema = Schema(
       required: false,
     },
   },
-  { timestamps: true, toJSON: { virtuals: true } }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    collection: 'mailings' // Force Mongoose to use 'mailings' collection instead of 'creations'
+  }
 );
 
 MailingSchema.pre('find', function () {
