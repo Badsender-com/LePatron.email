@@ -211,15 +211,29 @@ export default {
       await Promise.all(loadPromises);
       console.log('✅ GrapesJS resources loaded from CDN');
 
-      // Load preset newsletter after GrapesJS is loaded
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.min.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-      console.log('✅ Preset newsletter loaded');
+      // Try to load preset newsletter (optional - will continue without it if it fails)
+      try {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          // Try jsDelivr instead of unpkg
+          script.src = 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.min.js';
+          script.onload = resolve;
+          script.onerror = () => {
+            console.warn('⚠️ Preset newsletter failed to load from CDN, will use base GrapesJS');
+            resolve(); // Don't reject, just continue
+          };
+          document.head.appendChild(script);
+
+          // Timeout after 3 seconds
+          setTimeout(() => {
+            console.warn('⚠️ Preset newsletter timeout, continuing without it');
+            resolve();
+          }, 3000);
+        });
+        console.log('✅ Preset newsletter loaded (or skipped)');
+      } catch (err) {
+        console.warn('⚠️ Preset newsletter not available, using base GrapesJS', err);
+      }
     },
 
     waitForGrapesJS() {
