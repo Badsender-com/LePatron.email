@@ -215,8 +215,8 @@ export default {
       try {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          // Try jsDelivr instead of unpkg
-          script.src = 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.min.js';
+          // Use unpkg with full version path (more reliable than jsdelivr)
+          script.src = 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.js';
           script.onload = resolve;
           script.onerror = () => {
             console.warn('⚠️ Preset newsletter failed to load from CDN, will use base GrapesJS');
@@ -224,11 +224,11 @@ export default {
           };
           document.head.appendChild(script);
 
-          // Timeout after 3 seconds
+          // Timeout after 5 seconds
           setTimeout(() => {
             console.warn('⚠️ Preset newsletter timeout, continuing without it');
             resolve();
-          }, 3000);
+          }, 5000);
         });
         console.log('✅ Preset newsletter loaded (or skipped)');
       } catch (err) {
