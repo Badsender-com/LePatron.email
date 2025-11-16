@@ -56,9 +56,12 @@
 
 <script>
 import GrapesJSEditor from '~/components/GrapesJSEditor.vue';
+import { ACL_USER } from '~/helpers/pages-acls.js';
 
 export default {
   name: 'GrapesJSTestPage',
+
+  meta: { acl: ACL_USER },
 
   components: {
     GrapesJSEditor,
