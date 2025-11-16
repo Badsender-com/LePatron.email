@@ -71,13 +71,13 @@
           <v-tab>Calques</v-tab>
         </v-tabs>
         <v-tabs-items v-model="rightPanelTab">
-          <v-tab-item>
+          <v-tab-item eager>
             <div class="styles-container"></div>
           </v-tab-item>
-          <v-tab-item>
+          <v-tab-item eager>
             <div class="traits-container"></div>
           </v-tab-item>
-          <v-tab-item>
+          <v-tab-item eager>
             <div class="layers-container"></div>
           </v-tab-item>
         </v-tabs-items>
