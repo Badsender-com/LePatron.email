@@ -77,9 +77,6 @@ module.exports = {
   css: [
     '~/assets/global-styles/index.scss',
     '@easylogic/colorpicker/dist/colorpicker.css',
-    // GrapesJS Editor CSS
-    'grapesjs/dist/css/grapes.min.css',
-    'grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css',
   ],
 
   treeShake: true,

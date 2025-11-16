@@ -450,3 +450,9 @@ export default {
   height: 32px;
 }
 </style>
+
+<style>
+/* Import GrapesJS CSS dynamically */
+@import 'grapesjs/dist/css/grapes.min.css';
+@import 'grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css';
+</style>
