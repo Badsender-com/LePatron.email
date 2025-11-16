@@ -144,15 +144,14 @@ export default {
 
   async mounted() {
     try {
-      // Load GrapesJS CSS dynamically
-      this.loadGrapesJSCSS();
+      // Load GrapesJS CSS and JS from CDN
+      await this.loadGrapesJSResources();
 
-      // Dynamically import GrapesJS and config (client-side only)
-      const grapesjs = await import('grapesjs');
-      const grapesJSPresetNewsletter = await import('grapesjs-preset-newsletter');
+      // Wait for grapesjs to be available globally
+      await this.waitForGrapesJS();
 
       // Initialize GrapesJS editor with full configuration
-      await this.initEditor(grapesjs.default, grapesJSPresetNewsletter.default);
+      await this.initEditor(window.grapesjs, window.grapesJSPresetNewsletter);
 
       // Load blocks into the editor
       await this.loadBlocks();
@@ -174,19 +173,69 @@ export default {
   },
 
   methods: {
-    loadGrapesJSCSS() {
-      // Load GrapesJS CSS files dynamically
-      const cssFiles = [
-        '/node_modules/grapesjs/dist/css/grapes.min.css',
-        '/node_modules/grapesjs-preset-newsletter/dist/grapesjs-preset-newsletter.css',
+    async loadGrapesJSResources() {
+      // Load GrapesJS CSS and JS from CDN
+      const resources = [
+        // CSS
+        {
+          type: 'css',
+          href: 'https://unpkg.com/grapesjs@0.21.7/dist/css/grapes.min.css',
+        },
+        {
+          type: 'css',
+          href: 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.css',
+        },
+        // JS
+        {
+          type: 'js',
+          src: 'https://unpkg.com/grapesjs@0.21.7/dist/grapes.min.js',
+        },
+        {
+          type: 'js',
+          src: 'https://unpkg.com/grapesjs-preset-newsletter@1.0.2',
+        },
       ];
 
-      cssFiles.forEach((href) => {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = href;
-        document.head.appendChild(link);
+      const loadPromises = resources.map((resource) => {
+        return new Promise((resolve, reject) => {
+          if (resource.type === 'css') {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = resource.href;
+            link.onload = resolve;
+            link.onerror = reject;
+            document.head.appendChild(link);
+          } else if (resource.type === 'js') {
+            const script = document.createElement('script');
+            script.src = resource.src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          }
+        });
+      });
+
+      await Promise.all(loadPromises);
+      console.log('✅ GrapesJS resources loaded from CDN');
+    },
+
+    waitForGrapesJS() {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50;
+
+        const checkInterval = setInterval(() => {
+          attempts++;
+          if (window.grapesjs && window.grapesJSPresetNewsletter) {
+            clearInterval(checkInterval);
+            console.log('✅ GrapesJS globals available');
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            reject(new Error('GrapesJS failed to load'));
+          }
+        }, 100);
       });
     },
 
