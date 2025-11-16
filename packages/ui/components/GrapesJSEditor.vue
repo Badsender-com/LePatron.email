@@ -209,7 +209,6 @@ export default {
       });
 
       await Promise.all(loadPromises);
-      console.log('✅ GrapesJS resources loaded from local files');
 
       // Load preset newsletter from local node_modules
       try {
@@ -217,21 +216,14 @@ export default {
           const script = document.createElement('script');
           script.src = '/lib/grapesjs-preset-newsletter/index.js';
           script.onload = resolve;
-          script.onerror = (err) => {
-            console.warn('⚠️ Preset newsletter failed to load, will use base GrapesJS', err);
-            resolve(); // Don't reject, just continue
-          };
+          script.onerror = () => resolve(); // Don't reject, just continue
           document.head.appendChild(script);
 
           // Timeout after 3 seconds
-          setTimeout(() => {
-            console.warn('⚠️ Preset newsletter timeout, continuing without it');
-            resolve();
-          }, 3000);
+          setTimeout(() => resolve(), 3000);
         });
-        console.log('✅ Preset newsletter loaded from local files');
       } catch (err) {
-        console.warn('⚠️ Preset newsletter not available, using base GrapesJS', err);
+        // Preset newsletter optional, continue without it
       }
     },
 
@@ -243,16 +235,6 @@ export default {
         const checkInterval = setInterval(() => {
           attempts++;
 
-          // Debug: log what's actually available
-          if (attempts === 1) {
-            console.log('🔍 Checking window for GrapesJS:', {
-              grapesjs: typeof window.grapesjs,
-              grapesJSPresetNewsletter: typeof window.grapesJSPresetNewsletter,
-              grapesJsPresetNewsletter: typeof window.grapesJsPresetNewsletter,
-              keys: Object.keys(window).filter(k => k.toLowerCase().includes('grapes'))
-            });
-          }
-
           // Check different possible names
           const grapesjs = window.grapesjs;
           const preset = window.grapesJSPresetNewsletter ||
@@ -262,14 +244,12 @@ export default {
 
           if (grapesjs) {
             clearInterval(checkInterval);
-            console.log('✅ GrapesJS globals available', { hasPreset: !!preset });
             if (preset) {
               window.grapesJSPresetNewsletter = preset; // Normalize the name
             }
             resolve();
           } else if (attempts >= maxAttempts) {
             clearInterval(checkInterval);
-            console.error('❌ Available in window:', Object.keys(window).filter(k => k.toLowerCase().includes('grapes')));
             reject(new Error('GrapesJS failed to load'));
           }
         }, 100);
@@ -317,7 +297,6 @@ export default {
           },
         };
       } else {
-        console.warn('⚠️ Newsletter preset not available, using base GrapesJS');
         config.plugins = [];
         config.pluginsOpts = {};
       }
@@ -329,17 +308,9 @@ export default {
       setupCommands(this.editor);
 
       // Add event listeners
-      this.editor.on('storage:store', () => {
-        console.log('✅ Template auto-saved');
-      });
-
       this.editor.on('storage:error', (err) => {
-        console.error('❌ Storage error:', err);
+        console.error('Storage error:', err);
         this.showNotification('Erreur lors de la sauvegarde', 'error');
-      });
-
-      this.editor.on('load', () => {
-        console.log('✅ Editor loaded');
       });
     },
 
@@ -359,11 +330,9 @@ export default {
               attributes: { class: 'gjs-block' },
             });
           });
-
-          console.log(`✅ Loaded ${response.data.blocks.length} standard blocks`);
         }
       } catch (error) {
-        console.error('❌ Error loading blocks:', error);
+        console.error('Error loading blocks:', error);
         this.showNotification('Erreur lors du chargement des blocs', 'warning');
       }
     },
@@ -388,11 +357,9 @@ export default {
               this.editor.setStyle(grapesjs_data.styles);
             }
           }
-
-          console.log('✅ Template loaded');
         }
       } catch (error) {
-        console.error('❌ Error loading template:', error);
+        console.error('Error loading template:', error);
         this.showNotification('Erreur lors du chargement du template', 'error');
       }
     },

@@ -58,11 +58,8 @@ exports.saveTemplate = async (req, res) => {
 exports.loadTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('🔍 Loading template with ID:', id);
-    console.log('🔍 Mailings model:', Mailings.modelName, 'collection:', Mailings.collection.name);
 
     const mailing = await Mailings.findById(id);
-    console.log('🔍 Found mailing:', mailing ? 'YES' : 'NO');
 
     if (!mailing) {
       return res.status(404).json({
