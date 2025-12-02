@@ -68,6 +68,10 @@ if (cluster.isMaster) {
       resave: false,
       saveUninitialized: false,
       store: store,
+      rolling: true, // Reset cookie expiry on each request (idle timeout)
+      cookie: {
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days in milliseconds
+      },
     })
   );
 
@@ -202,6 +206,10 @@ if (cluster.isMaster) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Session validation middleware (checks for session replacement)
+  const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
+  app.use(sessionValidationMiddleware());
+
   app.get(
     '/account/SAML-login',
     (req, res, next) => {
@@ -224,7 +232,10 @@ if (cluster.isMaster) {
     '/SAML-login/callback',
     bodyParser.urlencoded({ extended: false }),
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
-    function (req, res) {
+    async function (req, res) {
+      // Update session tracking after SAML login
+      const { updateSessionTracking } = require('./account/session-tracking.helper.js');
+      await updateSessionTracking(req, req.user);
       res.redirect('/');
     }
   );
