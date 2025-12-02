@@ -54,15 +54,19 @@ export default {
     },
     checkLogoutReason() {
       const reason = this.getCookie('logout_reason');
-      reason &&
+      if (reason === 'session-replaced') {
         this.showSnackbar({
-          text:
-            reason === 'session-replaced'
-              ? this.$t('global.errors.session.replaced')
-              : this.$t('global.errors.session.expired'),
-          color: reason === 'session-replaced' ? 'warning' : 'info',
-        }) &&
+          text: this.$t('global.errors.session.replaced'),
+          color: 'warning',
+        });
         this.deleteCookie('logout_reason');
+      } else if (reason === 'session-expired') {
+        this.showSnackbar({
+          text: this.$t('global.errors.session.expired'),
+          color: 'info',
+        });
+        this.deleteCookie('logout_reason');
+      }
     },
     checkEmailForm: async function () {
       this.submitted = true;
