@@ -1,6 +1,5 @@
 'use strict';
 
-const createError = require('http-errors');
 const logger = require('../utils/logger.js');
 const { Users } = require('../common/models.common.js');
 
@@ -26,9 +25,7 @@ function sessionValidationMiddleware() {
       const currentSessionId = req.sessionID;
 
       // Fetch the user with their active session ID (hidden field, so we need to explicitly select it)
-      const user = await Users.findById(req.user.id).select(
-        '+activeSessionId'
-      );
+      const user = await Users.findById(req.user.id).select('+activeSessionId');
 
       if (!user) {
         // User not found, likely deleted

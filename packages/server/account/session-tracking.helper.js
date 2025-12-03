@@ -17,24 +17,24 @@ async function updateSessionTracking(req, user) {
 
   try {
     // Fetch the full user document to update session info
-    const userDoc = await Users.findById(user.id);
-    if (!userDoc) {
+    const userRecord = await Users.findById(user.id);
+    if (!userRecord) {
       logger.warn(`User document not found for session tracking: ${user.id}`);
       return;
     }
 
-    const oldSessionId = userDoc.activeSessionId;
+    const oldSessionId = userRecord.activeSessionId;
     const newSessionId = req.sessionID;
 
     // Update active session ID and metadata
-    userDoc.activeSessionId = newSessionId;
-    userDoc.sessionMetadata = {
+    userRecord.activeSessionId = newSessionId;
+    userRecord.sessionMetadata = {
       ip: req.ip || req.connection.remoteAddress,
       userAgent: req.get('user-agent'),
       loginTime: new Date(),
     };
-    userDoc.lastActivity = new Date();
-    await userDoc.save();
+    userRecord.lastActivity = new Date();
+    await userRecord.save();
 
     // Log only when a session is replaced (security audit)
     if (oldSessionId && oldSessionId !== newSessionId) {
