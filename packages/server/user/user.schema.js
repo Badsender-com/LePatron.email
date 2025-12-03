@@ -103,7 +103,15 @@ const UserSchema = Schema(
 // easily hide keys from toJSON
 // https://www.npmjs.com/package/mongoose-hidden
 UserSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, __v: true, password: true, token: true },
+  hidden: {
+    _id: true,
+    __v: true,
+    password: true,
+    token: true,
+    activeSessionId: true,
+    sessionMetadata: true,
+    lastActivity: true,
+  },
 });
 
 function encodePassword(password) {

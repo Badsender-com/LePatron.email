@@ -32,6 +32,10 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
+const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
+const {
+  updateSessionTracking,
+} = require('./account/session-tracking.helper.js');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -207,7 +211,6 @@ if (cluster.isMaster) {
   app.use(passport.session());
 
   // Session validation middleware (checks for session replacement)
-  const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
   app.use(sessionValidationMiddleware());
 
   app.get(
@@ -234,7 +237,6 @@ if (cluster.isMaster) {
     passport.authenticate('saml', { failureRedirect: '/', failureFlash: true }),
     async function (req, res) {
       // Update session tracking after SAML login
-      const { updateSessionTracking } = require('./account/session-tracking.helper.js');
       await updateSessionTracking(req, req.user);
       res.redirect('/');
     }
