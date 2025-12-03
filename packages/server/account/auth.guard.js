@@ -15,6 +15,7 @@ const xmlParser = require('xml2json');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
+const logger = require('../utils/logger.js');
 
 const {
   Users,
@@ -111,8 +112,6 @@ passport.use(
 passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
-  const logger = require('../utils/logger.js');
-
   if (id === config.admin.id) {
     return done(null, { ...adminUser });
   }
@@ -131,7 +130,7 @@ passport.deserializeUser(async (id, done) => {
 
     done(null, user.toJSON());
   } catch (err) {
-    logger.error(`[Passport] Error deserializing user:`, err);
+    logger.error('[Passport] Error deserializing user:', err);
     done(null, false, err);
   }
 });

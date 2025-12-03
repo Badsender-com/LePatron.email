@@ -8,7 +8,7 @@
 // CRITICAL: Must be module-level, not component-level, to persist across error handler invocations
 let isRedirecting = false;
 
-export default function ({ $axios, redirect }) {
+export default function ({ $axios }) {
   $axios.onError((error) => {
     const code = parseInt(error.response && error.response.status);
 
