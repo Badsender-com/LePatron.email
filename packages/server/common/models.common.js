@@ -23,6 +23,9 @@ const LogSchema = require('../log/log.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 const TagSchema = require('../tag/tag.schema.js');
+const IntegrationSchema = require('../integration/integration.schema.js');
+const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
+
 /// ///
 // EXPORTS
 /// ///
@@ -60,6 +63,14 @@ const OAuthClients = mongoose.model(
 const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
 const Tags = mongoose.model(modelNames.TagModel, TagSchema);
+const Integrations = mongoose.model(
+  modelNames.IntegrationModel,
+  IntegrationSchema
+);
+const AIFeatureConfigs = mongoose.model(
+  modelNames.AIFeatureConfigModel,
+  AIFeatureConfigSchema
+);
 
 module.exports = {
   mongoose,
@@ -81,4 +92,6 @@ module.exports = {
   OAuthClients,
   OAuthCodes,
   Tags,
+  Integrations,
+  AIFeatureConfigs,
 };

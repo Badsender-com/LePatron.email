@@ -250,3 +250,63 @@ export function deletePersonalizedVariable(groupId, variableId) {
 export function postPersonalizedVariables(groupId) {
   return `/groups/${groupId}/personalized-variables`;
 }
+
+/// ///
+// INTEGRATIONS
+/// ///
+
+export function integrations(groupId) {
+  return `/integrations/groups/${groupId}`;
+}
+
+export function integrationsItem(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function integrationsValidate(integrationId) {
+  return `/integrations/${integrationId}/validate`;
+}
+
+export function integrationsProviders() {
+  return '/integrations/providers';
+}
+
+/// ///
+// AI FEATURES
+/// ///
+
+export function aiFeatures(groupId) {
+  return `/ai-features/groups/${groupId}`;
+}
+
+export function aiFeaturesItem(groupId, featureType) {
+  return `/ai-features/groups/${groupId}/features/${featureType}`;
+}
+
+export function aiFeaturesTypes() {
+  return '/ai-features/types';
+}
+
+/// ///
+// TRANSLATION
+/// ///
+
+export function translationLanguages() {
+  return '/translation/languages';
+}
+
+export function translationText() {
+  return '/translation/text';
+}
+
+export function translationDetectLanguage(mailingId) {
+  return `/translation/detect-language/${mailingId}`;
+}
+
+export function mailingDuplicateTranslate(mailingId) {
+  return `/mailings/${mailingId}/duplicate-translate`;
+}
+
+export function translationJobStatus(jobId) {
+  return `/translation/jobs/${jobId}/status`;
+}

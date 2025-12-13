@@ -315,6 +315,32 @@ export default {
     downloadMailSuccessful: 'L\'email a bien été téléchargé',
     moveManySuccessful: 'Les emails ont bien été déplacés',
     editTagsSuccessful: 'Les labels ont bien été mis à jour',
+    duplicateTranslate: 'Dupliquer + Traduire',
+  },
+  translation: {
+    duplicateAndTranslate: 'Dupliquer et traduire',
+    autoDetect: 'Détection automatique',
+    sourceLanguage: 'Langue source',
+    targetLanguage: 'Langue cible',
+    newName: 'Nom du nouvel email',
+    translate: 'Traduire',
+    duplicateNotice: 'L\'email <strong>{name}</strong> sera dupliqué et traduit automatiquement.',
+    noActiveIntegration: 'Aucune intégration IA active. Configurez une intégration dans les paramètres du groupe.',
+    noLanguagesConfigured: 'Aucune langue configurée. Configurez les langues disponibles dans les paramètres du groupe.',
+    success: 'Email dupliqué et traduit avec succès',
+    successTitle: 'Traduction effectuée',
+    successMessage: 'Votre email a été dupliqué et traduit avec succès.',
+    warningTitle: 'Pensez à vérifier :',
+    warningLinks: 'Les liens présents dans l\'email',
+    warningImages: 'Les images contenant du texte',
+    warningVariants: 'La variante de template si applicable',
+    understood: 'J\'ai compris',
+    translatingNotice: 'Traduction en cours, veuillez patienter...',
+    progressStarting: 'Démarrage de la traduction...',
+    progressBatch: 'Traduction en cours... (lot {current}/{total})',
+    progressGeneratingPreview: 'Génération de l\'aperçu...',
+    progressCompleted: 'Terminé !',
+    pleaseWait: 'Veuillez patienter...',
   },
   template: {
     noId: 'Aucun ID',
@@ -428,6 +454,62 @@ export default {
     targetTypes: {
       'NMS_DELIVERY': 'Livrable',
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
+    }
+  },
+  integrations: {
+    title: 'Intégrations',
+    name: 'Nom',
+    provider: 'Fournisseur',
+    status: 'Statut',
+    active: 'Actif',
+    apiKey: 'Clé API',
+    apiHost: 'URL de l\'API (optionnel)',
+    apiKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
+    add: 'Ajouter une intégration',
+    edit: 'Modifier l\'intégration',
+    created: 'Intégration créée avec succès',
+    updated: 'Intégration mise à jour avec succès',
+    deleted: 'Intégration supprimée avec succès',
+    validate: 'Tester la connexion',
+    validationSuccess: 'Connexion validée avec succès',
+    validationFailed: 'Échec de la validation des identifiants',
+    noIntegrations: 'Aucune intégration configurée',
+    deleteConfirmTitle: 'Supprimer l\'intégration',
+    deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
+    statusLabels: {
+      valid: 'Validé',
+      invalid: 'Invalide',
+      pending: 'En attente'
+    },
+    openai: {
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
+    },
+    mistral: {
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
+    }
+  },
+  aiFeatures: {
+    title: 'Fonctionnalités IA',
+    selectIntegration: 'Intégration à utiliser',
+    noIntegration: '-- Aucune intégration --',
+    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
+    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
+    comingSoon: 'Bientôt disponible',
+    translation: {
+      title: 'Traduction',
+      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
+      availableLanguages: 'Langues disponibles',
+      languagesHint: 'Sélectionnez les langues cibles que vos utilisateurs pourront utiliser'
+    },
+    textGeneration: {
+      title: 'Génération de texte',
+      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+    },
+    qualityCheck: {
+      title: 'Contrôle qualité',
+      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
     }
   }
 };

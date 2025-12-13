@@ -85,12 +85,12 @@ function extendViewModel(opts, customExtensions) {
   // we need to expose the eventHub to knockout
   // • we will dispatch some events from the knockout templates
   customExtensions.push(badsenderEventsHub.exposeToKnockout);
-  // expose view-model on dev only
-  if (process.env.NODE_ENV === `development`) {
-    customExtensions.push(function exposeViewModel(vm) {
-      window._viewModel = vm;
-    });
-  }
+  // expose view-model for Puppeteer preview generation
+  // This is needed by preview-generator.service.js to regenerate previewHtml
+  // after translations or other server-side content modifications
+  customExtensions.push(function exposeViewModel(vm) {
+    window.viewModel = vm;
+  });
 }
 
 //////

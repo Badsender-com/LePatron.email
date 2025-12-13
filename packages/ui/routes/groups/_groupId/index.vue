@@ -14,6 +14,8 @@ import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
+import BsGroupIntegrationsTab from '~/components/group/integrations-tab.vue';
+import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
 import BsGroupLoading from '~/components/loadingBar';
 
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -31,6 +33,8 @@ export default {
     BsGroupProfilesTab,
     BsEmailsGroupsTab,
     GroupPersonalizedVariableTab,
+    BsGroupIntegrationsTab,
+    BsGroupAiFeaturesTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -205,6 +209,20 @@ export default {
         >
           {{ $t('global.variables') }}
         </v-tab>
+        <v-tab
+          v-if="isGroupAdmin"
+          href="#group-integrations"
+          @click="activeTab = 'group-integrations'"
+        >
+          {{ $t('integrations.title') }}
+        </v-tab>
+        <v-tab
+          v-if="isGroupAdmin"
+          href="#group-ai-features"
+          @click="activeTab = 'group-ai-features'"
+        >
+          {{ $t('aiFeatures.title') }}
+        </v-tab>
         <v-tab-item value="group-informations">
           <bs-group-form
             v-model="group"
@@ -234,6 +252,12 @@ export default {
         </v-tab-item>
         <v-tab-item v-if="isGroupAdmin" value="group-personalized-variables">
           <group-personalized-variable-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin" value="group-integrations">
+          <bs-group-integrations-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin" value="group-ai-features">
+          <bs-group-ai-features-tab />
         </v-tab-item>
       </v-tabs>
       <bs-group-loading slot="placeholder" />

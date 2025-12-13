@@ -66,13 +66,23 @@ export const actions = {
     const { commit } = vuexCtx;
     commit(M_USER_SET, user);
 
+    // Only fetch group if user has a valid group ID
+    const groupId = user && user.group && user.group.id;
+    if (!groupId) {
+      commit(USER_SET_HAS_FTP_ACCESS, false);
+      return;
+    }
+
     let group;
     try {
-      group = await this.$axios.$get(groupsItem({ groupId: user?.group?.id }));
-    } catch {
-      console.error('Error while fetching group');
+      group = await this.$axios.$get(groupsItem({ groupId }));
+    } catch (error) {
+      console.error('Error while fetching group:', error.message || error);
     }
-    commit(USER_SET_HAS_FTP_ACCESS, !!group?.downloadMailingWithFtpImages);
+    commit(
+      USER_SET_HAS_FTP_ACCESS,
+      !!(group && group.downloadMailingWithFtpImages)
+    );
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

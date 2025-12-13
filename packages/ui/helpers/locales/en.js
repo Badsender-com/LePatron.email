@@ -311,6 +311,32 @@ export default {
     downloadManySuccessful: 'Emails download complete',
     downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
+    duplicateTranslate: 'Duplicate + Translate',
+  },
+  translation: {
+    duplicateAndTranslate: 'Duplicate and translate',
+    autoDetect: 'Auto-detect',
+    sourceLanguage: 'Source language',
+    targetLanguage: 'Target language',
+    newName: 'New email name',
+    translate: 'Translate',
+    duplicateNotice: 'The email <strong>{name}</strong> will be duplicated and automatically translated.',
+    noActiveIntegration: 'No active AI integration. Configure an integration in the group settings.',
+    noLanguagesConfigured: 'No languages configured. Configure available languages in the group settings.',
+    success: 'Email duplicated and translated successfully',
+    successTitle: 'Translation complete',
+    successMessage: 'Your email has been duplicated and translated successfully.',
+    warningTitle: 'Please verify:',
+    warningLinks: 'Links in the email',
+    warningImages: 'Images containing text',
+    warningVariants: 'Template variant if applicable',
+    understood: 'Got it',
+    translatingNotice: 'Translation in progress, please wait...',
+    progressStarting: 'Starting translation...',
+    progressBatch: 'Translating... (batch {current}/{total})',
+    progressGeneratingPreview: 'Generating preview...',
+    progressCompleted: 'Completed!',
+    pleaseWait: 'Please wait...',
   },
   template: {
     noId: 'No ID',
@@ -424,6 +450,62 @@ export default {
     targetTypes: {
       'NMS_DELIVERY': 'Delivery',
       'NMS_DELIVERY_MODEL': 'Delivery Template'
+    }
+  },
+  integrations: {
+    title: 'Integrations',
+    name: 'Name',
+    provider: 'Provider',
+    status: 'Status',
+    active: 'Active',
+    apiKey: 'API Key',
+    apiHost: 'API URL (optional)',
+    apiKeyHintEdit: 'Leave empty to keep the current key',
+    add: 'Add integration',
+    edit: 'Edit integration',
+    created: 'Integration created successfully',
+    updated: 'Integration updated successfully',
+    deleted: 'Integration deleted successfully',
+    validate: 'Test connection',
+    validationSuccess: 'Connection validated successfully',
+    validationFailed: 'Credential validation failed',
+    noIntegrations: 'No integrations configured',
+    deleteConfirmTitle: 'Delete integration',
+    deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    statusLabels: {
+      valid: 'Valid',
+      invalid: 'Invalid',
+      pending: 'Pending'
+    },
+    openai: {
+      apiHostHint: 'Leave empty to use the official OpenAI API'
+    },
+    mistral: {
+      apiHostHint: 'Leave empty to use the official Mistral API'
+    }
+  },
+  aiFeatures: {
+    title: 'AI Features',
+    selectIntegration: 'Integration to use',
+    noIntegration: '-- No integration --',
+    noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
+    integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
+    comingSoon: 'Coming soon',
+    translation: {
+      title: 'Translation',
+      description: 'Automatically translate your emails into different languages using AI.',
+      model: 'AI Model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
+      availableLanguages: 'Available languages',
+      languagesHint: 'Select the target languages your users can use'
+    },
+    textGeneration: {
+      title: 'Text generation',
+      description: 'Generate personalized marketing content for your emails.'
+    },
+    qualityCheck: {
+      title: 'Quality check',
+      description: 'Automatically check the quality and consistency of your emails.'
     }
   }
 };

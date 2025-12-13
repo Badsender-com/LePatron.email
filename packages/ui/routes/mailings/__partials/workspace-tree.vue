@@ -44,7 +44,7 @@ export default {
     const { dispatch } = this.$store;
     await dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
       query: this.$route.query,
-      $t: this.$t,
+      $t: this.$t || null,
     });
   },
   computed: {
@@ -314,7 +314,7 @@ export default {
       await Promise.all([
         dispatch(`${FOLDER}/${FETCH_FOLDER_OR_WORKSPACE}`, {
           query: this.$route.query,
-          $t: this.$t,
+          $t: this.$t || null,
         }),
         commit(`${FOLDER}/${SET_PAGINATION}`, {
           page: 1,

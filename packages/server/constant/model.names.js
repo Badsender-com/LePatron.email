@@ -21,4 +21,7 @@ module.exports = Object.freeze({
   OAuthCodes: 'OAuthCodes',
   // Tags
   TagModel: 'Tag',
+  // AI Integrations
+  IntegrationModel: 'Integration',
+  AIFeatureConfigModel: 'AIFeatureConfig',
 });

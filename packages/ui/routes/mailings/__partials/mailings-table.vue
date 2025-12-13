@@ -7,6 +7,8 @@ import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
 import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-modal';
+import BsMailingModalDuplicateTranslate from '~/components/mailings/modal-duplicate-translate.vue';
+import BsMailingModalTranslationWarning from '~/components/mailings/modal-translation-warning.vue';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
@@ -36,6 +38,7 @@ const TABLE_ACTIONS = [
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
+  ACTIONS.DUPLICATE_TRANSLATE,
   ACTIONS.PREVIEW,
   ACTIONS.DOWNLOAD,
   ACTIONS.DOWNLOAD_FTP,
@@ -53,6 +56,8 @@ export default {
     MailingsTagsMenu,
     MailingsMoveModal,
     MailingsPreviewModal,
+    BsMailingModalDuplicateTranslate,
+    BsMailingModalTranslationWarning,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -372,6 +377,17 @@ export default {
         isWithFtp,
       });
     },
+    openDuplicateTranslateModal(mailing) {
+      this.$refs.duplicateTranslateDialog.open(mailing);
+    },
+    handleTranslated() {
+      this.$emit('on-refetch');
+    },
+    showTranslationWarning() {
+      if (this.$refs.translationWarningDialog) {
+        this.$refs.translationWarningDialog.open();
+      }
+    },
   },
 };
 </script>
@@ -470,6 +486,13 @@ export default {
               {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
             </bs-mailings-actions-dropdown-item>
             <bs-mailings-actions-dropdown-item
+              v-if="filteredActions.includes(actions.DUPLICATE_TRANSLATE)"
+              :icon="actionsDetails[actions.DUPLICATE_TRANSLATE].icon"
+              :on-click="() => openDuplicateTranslateModal(item)"
+            >
+              {{ $t(actionsDetails[actions.DUPLICATE_TRANSLATE].text) }}
+            </bs-mailings-actions-dropdown-item>
+            <bs-mailings-actions-dropdown-item
               v-if="filteredActions.includes(actions.DELETE)"
               :icon="actionsDetails[actions.DELETE].icon"
               :on-click="() => displayDeleteModal(item)"
@@ -538,7 +561,13 @@ export default {
         />
       </mailings-move-modal>
       <mailings-preview-modal ref="previewMailDialog" />
+      <bs-mailing-modal-duplicate-translate
+        ref="duplicateTranslateDialog"
+        @translated="handleTranslated"
+        @show-warning="showTranslationWarning"
+      />
     </v-skeleton-loader>
+    <bs-mailing-modal-translation-warning ref="translationWarningDialog" />
   </div>
 </template>
 

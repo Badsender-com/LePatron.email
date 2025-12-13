@@ -71,7 +71,11 @@ module.exports = {
     port: config.port,
   },
   axios: {
-    prefix: config.nuxt.API_PREFIX,
+    // baseURL is used for SSR (server-side requests)
+    // In production, SSR requests go through the same server, so we use localhost
+    // The external URL (with HTTPS/domain) is only needed for browser requests
+    baseURL: `http://127.0.0.1:${config.PORT}${config.nuxt.API_PREFIX}`,
+    // browserBaseURL is used for client-side requests (relative URL works for any domain/protocol)
     browserBaseURL: config.nuxt.API_PREFIX,
   },
   css: [
