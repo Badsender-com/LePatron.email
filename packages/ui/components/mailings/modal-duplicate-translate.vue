@@ -45,6 +45,10 @@ export default {
         keysTranslated: 0,
         totalKeys: 0,
       },
+      // Time estimation
+      batchTimes: [],
+      estimatedTimeRemaining: null,
+      cancelling: false,
     };
   },
   computed: {
@@ -114,6 +118,17 @@ export default {
     hasProgress() {
       return this.translating && this.progress.totalBatches > 0;
     },
+    estimatedTimeLabel() {
+      if (!this.estimatedTimeRemaining || this.progress.currentBatch < 2) {
+        return null;
+      }
+      const minutes = Math.floor(this.estimatedTimeRemaining / 60);
+      const seconds = Math.round(this.estimatedTimeRemaining % 60);
+      if (minutes > 0) {
+        return this.$t('translation.estimatedTime', { minutes, seconds });
+      }
+      return this.$t('translation.estimatedTimeSeconds', { seconds });
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -140,6 +155,9 @@ export default {
         keysTranslated: 0,
         totalKeys: 0,
       };
+      this.batchTimes = [];
+      this.estimatedTimeRemaining = null;
+      this.cancelling = false;
     },
 
     startPolling(jobId) {
@@ -160,17 +178,29 @@ export default {
       if (!this.jobId) return;
 
       try {
+        // Disable Nuxt progress bar for polling requests
         const job = await this.$axios.$get(
-          apiRoutes.translationJobStatus(this.jobId)
+          apiRoutes.translationJobStatus(this.jobId),
+          { progress: false }
         );
+
+        // Track batch times for estimation
+        const previousBatch = this.progress.currentBatch;
+        const newBatch = job.progress.currentBatch;
 
         this.progress = {
           status: job.status,
-          currentBatch: job.progress.currentBatch,
+          currentBatch: newBatch,
           totalBatches: job.progress.totalBatches,
           keysTranslated: job.progress.keysTranslated,
           totalKeys: job.progress.totalKeys,
         };
+
+        // Record batch completion time for estimation
+        if (newBatch > previousBatch && newBatch > this.batchTimes.length) {
+          this.batchTimes.push(Date.now());
+          this.calculateEstimate();
+        }
 
         if (job.status === 'completed') {
           this.stopPolling();
@@ -178,11 +208,39 @@ export default {
         } else if (job.status === 'failed') {
           this.stopPolling();
           this.handleTranslationError(job.error);
+        } else if (job.status === 'cancelled') {
+          this.stopPolling();
+          this.showSnackbar({
+            text: this.$t('translation.cancelled'),
+            color: 'info',
+          });
+          this.close();
         }
       } catch (error) {
         console.error('Error polling job status:', error);
         // Don't stop polling on network errors, keep trying
       }
+    },
+
+    calculateEstimate() {
+      if (this.batchTimes.length < 2) return;
+
+      // Calculate average time per batch (in ms)
+      const totalTime =
+        this.batchTimes[this.batchTimes.length - 1] - this.batchTimes[0];
+      const batchCount = this.batchTimes.length - 1;
+      const avgTimePerBatch = totalTime / batchCount;
+
+      // Remaining batches
+      const remainingBatches =
+        this.progress.totalBatches - this.progress.currentBatch;
+
+      // Add ~10s for Puppeteer preview generation
+      const puppeteerEstimate = 10000;
+
+      // Estimation in seconds
+      this.estimatedTimeRemaining =
+        (remainingBatches * avgTimePerBatch + puppeteerEstimate) / 1000;
     },
 
     handleTranslationComplete() {
@@ -202,6 +260,28 @@ export default {
         color: 'error',
       });
       this.translating = false;
+    },
+
+    async handleCancel() {
+      if (!this.jobId || this.cancelling) return;
+
+      try {
+        this.cancelling = true;
+        await this.$axios.$post(apiRoutes.translationJobCancel(this.jobId));
+        this.stopPolling();
+        this.showSnackbar({
+          text: this.$t('translation.cancelled'),
+          color: 'info',
+        });
+        this.close();
+      } catch (error) {
+        console.error('Cancel failed:', error);
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        this.cancelling = false;
+      }
     },
 
     async fetchConfig() {
@@ -363,6 +443,9 @@ export default {
 
               <p class="text-center text--secondary mb-0">
                 {{ progressLabel }}
+                <span v-if="estimatedTimeLabel" class="ml-1">
+                  ({{ estimatedTimeLabel }})
+                </span>
               </p>
             </template>
 
@@ -430,8 +513,15 @@ export default {
           </v-icon>
           {{ $t('translation.translate') }}
         </v-btn>
-        <v-btn v-if="translating" text disabled>
-          {{ $t('translation.pleaseWait') }}
+        <v-btn
+          v-if="translating"
+          text
+          color="error"
+          :disabled="cancelling"
+          :loading="cancelling"
+          @click="handleCancel"
+        >
+          {{ $t('global.cancel') }}
         </v-btn>
       </v-card-actions>
     </v-card>
