@@ -310,3 +310,7 @@ export function mailingDuplicateTranslate(mailingId) {
 export function translationJobStatus(jobId) {
   return `/translation/jobs/${jobId}/status`;
 }
+
+export function translationJobCancel(jobId) {
+  return `/translation/jobs/${jobId}/cancel`;
+}

@@ -24,4 +24,7 @@ router.get(
 // Get translation job status (for progress polling)
 router.get('/jobs/:jobId/status', GUARD_USER, translation.getJobStatus);
 
+// Cancel a translation job
+router.post('/jobs/:jobId/cancel', GUARD_USER, translation.cancelJob);
+
 module.exports = router;

@@ -341,6 +341,9 @@ export default {
     progressGeneratingPreview: 'Génération de l\'aperçu...',
     progressCompleted: 'Terminé !',
     pleaseWait: 'Veuillez patienter...',
+    cancelled: 'Traduction annulée',
+    estimatedTime: '~{minutes}min {seconds}s restantes',
+    estimatedTimeSeconds: '~{seconds}s restantes',
   },
   template: {
     noId: 'Aucun ID',

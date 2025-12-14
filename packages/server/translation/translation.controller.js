@@ -10,6 +10,7 @@ const { Mailings } = require('../common/models.common');
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
   getJobStatus: asyncHandler(getJobStatus),
+  cancelJob: asyncHandler(cancelJob),
   translateText: asyncHandler(translateText),
   getLanguages: asyncHandler(getLanguages),
   detectLanguage: asyncHandler(detectLanguage),
@@ -95,10 +96,20 @@ async function processTranslationAsync({
   cookies,
 }) {
   try {
-    // Progress callback to update job status
+    // Progress callback to update job status and check for cancellation
     const onBatchProgress = (batchNumber, keysInBatch) => {
+      // Check if job was cancelled before processing next batch
+      if (translationJobs.isCancelled(jobId)) {
+        throw new Error('TRANSLATION_CANCELLED');
+      }
       translationJobs.updateBatchProgress(jobId, batchNumber, keysInBatch);
     };
+
+    // Check cancellation before starting
+    if (translationJobs.isCancelled(jobId)) {
+      console.log(`[Translation] Job ${jobId} cancelled before starting`);
+      return;
+    }
 
     // Translate the mailing
     const {
@@ -168,6 +179,12 @@ async function processTranslationAsync({
       ],
     });
   } catch (error) {
+    // Handle cancellation gracefully
+    if (error.message === 'TRANSLATION_CANCELLED') {
+      console.log(`[Translation] Job ${jobId} was cancelled by user`);
+      return;
+    }
+
     console.error(`[Translation] Job ${jobId} failed:`, error.message);
     translationJobs.setFailed(jobId, error.message);
   }
@@ -191,6 +208,28 @@ async function getJobStatus(req, res) {
   }
 
   res.json(job);
+}
+
+/**
+ * @api {post} /translation/jobs/:jobId/cancel Cancel a translation job
+ * @apiPermission user
+ * @apiName CancelJob
+ * @apiGroup Translation
+ *
+ * @apiParam {String} jobId Job ID
+ */
+async function cancelJob(req, res) {
+  const { jobId } = req.params;
+
+  const cancelled = translationJobs.cancelJob(jobId);
+
+  if (!cancelled) {
+    return res.status(400).json({
+      error: 'Cannot cancel job - not found or already completed',
+    });
+  }
+
+  res.json({ success: true, message: 'Job cancelled' });
 }
 
 /**

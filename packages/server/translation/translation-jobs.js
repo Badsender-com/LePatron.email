@@ -19,6 +19,7 @@ const JobStatus = {
   GENERATING_PREVIEW: 'generating_preview',
   COMPLETED: 'completed',
   FAILED: 'failed',
+  CANCELLED: 'cancelled',
 };
 
 // TTL for jobs (10 minutes)
@@ -133,6 +134,39 @@ function deleteJob(jobId) {
 }
 
 /**
+ * Cancel a job
+ * @param {string} jobId - Job ID
+ * @returns {boolean} True if job was cancelled, false if not found or already completed
+ */
+function cancelJob(jobId) {
+  const job = jobs.get(jobId);
+  if (!job) return false;
+
+  // Cannot cancel if already completed or failed
+  if (
+    job.status === JobStatus.COMPLETED ||
+    job.status === JobStatus.FAILED ||
+    job.status === JobStatus.CANCELLED
+  ) {
+    return false;
+  }
+
+  job.status = JobStatus.CANCELLED;
+  job.updatedAt = Date.now();
+  return true;
+}
+
+/**
+ * Check if a job has been cancelled
+ * @param {string} jobId - Job ID
+ * @returns {boolean} True if job is cancelled
+ */
+function isCancelled(jobId) {
+  const job = jobs.get(jobId);
+  return job && job.status === JobStatus.CANCELLED;
+}
+
+/**
  * Clean up old jobs (called periodically)
  */
 function cleanupOldJobs() {
@@ -156,4 +190,6 @@ module.exports = {
   setCompleted,
   setFailed,
   deleteJob,
+  cancelJob,
+  isCancelled,
 };

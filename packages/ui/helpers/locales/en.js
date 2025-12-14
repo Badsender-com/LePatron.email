@@ -337,6 +337,9 @@ export default {
     progressGeneratingPreview: 'Generating preview...',
     progressCompleted: 'Completed!',
     pleaseWait: 'Please wait...',
+    cancelled: 'Translation cancelled',
+    estimatedTime: '~{minutes}min {seconds}s remaining',
+    estimatedTimeSeconds: '~{seconds}s remaining',
   },
   template: {
     noId: 'No ID',
