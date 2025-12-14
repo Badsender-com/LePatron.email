@@ -39,6 +39,10 @@ export default {
           internal: 'Oups ! Une erreur est survenue :(',
         },
       },
+      session: {
+        replaced: 'Vous avez été déconnecté car vous vous êtes connecté depuis un autre endroit.',
+        expired: 'Votre session a expiré. Veuillez vous reconnecter.',
+      },
     },
     add: 'Ajouter',
     apiKey: 'Clé API',
