@@ -150,8 +150,9 @@ function extractHtmlText(html) {
  * @param {Object} obj - Object to extract from
  * @param {string} prefix - Current key prefix (for dot notation)
  * @param {Object} result - Accumulator object
+ * @param {Object} [protectionConfig] - Optional protection configuration from template
  */
-function extractFromObject(obj, prefix = '', result = {}) {
+function extractFromObject(obj, prefix = '', result = {}, protectionConfig = null) {
   if (!obj || typeof obj !== 'object') {
     return result;
   }
@@ -161,7 +162,7 @@ function extractFromObject(obj, prefix = '', result = {}) {
     obj.forEach((item, index) => {
       const key = prefix ? `${prefix}.${index}` : `${index}`;
       if (typeof item === 'object') {
-        extractFromObject(item, key, result);
+        extractFromObject(item, key, result, protectionConfig);
       } else if (typeof item === 'string' && isTranslatableValue(item)) {
         result[key] = item;
       }
@@ -177,10 +178,15 @@ function extractFromObject(obj, prefix = '', result = {}) {
       continue;
     }
 
+    // Check if this field is protected from translation (via data-translate="false" in template)
+    if (protectionConfig && protectionConfig[fieldName] === false) {
+      continue; // Skip protected fields
+    }
+
     if (typeof value === 'object') {
       // Recurse into nested objects, but skip style objects
       if (!fieldName.toLowerCase().includes('style')) {
-        extractFromObject(value, key, result);
+        extractFromObject(value, key, result, protectionConfig);
       }
     } else if (typeof value === 'string') {
       // Check if this field should be translated
@@ -196,19 +202,21 @@ function extractFromObject(obj, prefix = '', result = {}) {
 /**
  * Extract all translatable text from a Mosaico mailing
  * @param {Object} mailing - Mailing document with name and data
+ * @param {Object} [protectionConfig] - Optional protection configuration from template
+ *                                      (fields marked as protected will be excluded)
  * @returns {Object} Flat object with translatable texts
  */
-function extractTexts(mailing) {
+function extractTexts(mailing, protectionConfig = null) {
   const result = {};
 
-  // Extract email name/subject
+  // Extract email name/subject (never protected - it's not a template field)
   if (mailing.name && isTranslatableValue(mailing.name)) {
     result._name = mailing.name;
   }
 
   // Extract from Mosaico data
   if (mailing.data) {
-    extractFromObject(mailing.data, 'data', result);
+    extractFromObject(mailing.data, 'data', result, protectionConfig);
   }
 
   return result;

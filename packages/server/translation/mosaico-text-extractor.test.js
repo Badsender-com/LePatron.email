@@ -266,4 +266,138 @@ describe('MosaicoTextExtractor', () => {
       expect(stats.totalCharacters).toBe(0);
     });
   });
+
+  describe('extractTexts with protectionConfig', () => {
+    it('should work without protection config (backward compatible)', () => {
+      const mailing = {
+        name: 'Test Email',
+        data: {
+          block: {
+            titleText: 'Hello',
+            bodyText: 'World',
+          },
+        },
+      };
+
+      const result = extractTexts(mailing);
+
+      expect(result._name).toBe('Test Email');
+      expect(result['data.block.titleText']).toBe('Hello');
+      expect(result['data.block.bodyText']).toBe('World');
+    });
+
+    it('should exclude protected fields', () => {
+      const mailing = {
+        name: 'Test Email',
+        data: {
+          block: {
+            titleText: 'Hello',
+            legalText: 'Do not translate',
+            bodyText: 'World',
+          },
+        },
+      };
+
+      const protectionConfig = {
+        legalText: false,
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      expect(result._name).toBe('Test Email');
+      expect(result['data.block.titleText']).toBe('Hello');
+      expect(result['data.block.bodyText']).toBe('World');
+      expect(result['data.block.legalText']).toBeUndefined();
+    });
+
+    it('should exclude multiple protected fields', () => {
+      const mailing = {
+        name: 'Test Email',
+        data: {
+          headerBlock: {
+            titleText: 'Welcome',
+            companyName: 'ACME Corp',
+          },
+          footerBlock: {
+            legalText: 'Legal disclaimer',
+            copyrightText: '© 2024',
+          },
+        },
+      };
+
+      const protectionConfig = {
+        companyName: false,
+        legalText: false,
+        copyrightText: false,
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      expect(result['data.headerBlock.titleText']).toBe('Welcome');
+      expect(result['data.headerBlock.companyName']).toBeUndefined();
+      expect(result['data.footerBlock.legalText']).toBeUndefined();
+      expect(result['data.footerBlock.copyrightText']).toBeUndefined();
+    });
+
+    it('should handle nested blocks with protected fields', () => {
+      const mailing = {
+        name: 'Nested Test',
+        data: {
+          content: {
+            blocks: [
+              { titleText: 'Title 1', brandName: 'ACME' },
+              { titleText: 'Title 2', brandName: 'ACME' },
+            ],
+          },
+        },
+      };
+
+      const protectionConfig = {
+        brandName: false,
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      expect(result['data.content.blocks.0.titleText']).toBe('Title 1');
+      expect(result['data.content.blocks.1.titleText']).toBe('Title 2');
+      expect(result['data.content.blocks.0.brandName']).toBeUndefined();
+      expect(result['data.content.blocks.1.brandName']).toBeUndefined();
+    });
+
+    it('should not affect email name (never protected)', () => {
+      const mailing = {
+        name: 'Newsletter Name',
+        data: {
+          block: {
+            titleText: 'Hello',
+          },
+        },
+      };
+
+      // Even if someone tries to protect _name, it should still be extracted
+      const protectionConfig = {
+        _name: false,
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      expect(result._name).toBe('Newsletter Name');
+    });
+
+    it('should handle empty protection config', () => {
+      const mailing = {
+        name: 'Test',
+        data: {
+          block: {
+            titleText: 'Hello',
+          },
+        },
+      };
+
+      const result = extractTexts(mailing, {});
+
+      expect(result._name).toBe('Test');
+      expect(result['data.block.titleText']).toBe('Hello');
+    });
+  });
 });

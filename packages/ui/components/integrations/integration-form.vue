@@ -27,6 +27,7 @@ export default {
         provider: '',
         apiKey: '',
         apiHost: '',
+        productId: '',
         isActive: true,
       },
       showApiKey: false,
@@ -53,14 +54,26 @@ export default {
           apiKeyPlaceholder: 'sk-...',
           apiHostPlaceholder: 'https://api.openai.com',
           apiHostHint: this.$t('integrations.openai.apiHostHint'),
+          showProductId: false,
         },
         mistral: {
           apiKeyPlaceholder: 'your-mistral-api-key',
           apiHostPlaceholder: 'https://api.mistral.ai',
           apiHostHint: this.$t('integrations.mistral.apiHostHint'),
+          showProductId: false,
+        },
+        infomaniak: {
+          apiKeyPlaceholder: 'your-infomaniak-api-key',
+          apiHostPlaceholder: '',
+          apiHostHint: '',
+          showProductId: true,
+          productIdHint: this.$t('integrations.infomaniak.productIdHint'),
         },
       };
       return configs[this.form.provider] || {};
+    },
+    showProductIdField() {
+      return this.selectedProviderConfig.showProductId === true;
     },
   },
   watch: {
@@ -74,6 +87,7 @@ export default {
             provider: val.provider || '',
             apiKey: '', // Never pre-fill API key for security
             apiHost: val.apiHost || '',
+            productId: val.productId || '',
             isActive: val.isActive !== false,
           };
         } else {
@@ -93,6 +107,10 @@ export default {
     if (!this.isEdit) {
       rules.form.apiKey = { required };
     }
+    // Product ID required for Infomaniak
+    if (this.form.provider === 'infomaniak') {
+      rules.form.productId = { required };
+    }
     return rules;
   },
   methods: {
@@ -103,6 +121,7 @@ export default {
         provider: '',
         apiKey: '',
         apiHost: '',
+        productId: '',
         isActive: true,
       };
       this.$v.$reset();
@@ -112,8 +131,18 @@ export default {
       const labels = {
         openai: 'OpenAI',
         mistral: 'Mistral AI',
+        infomaniak: 'Infomaniak AI Tools',
       };
       return labels[provider] || provider;
+    },
+
+    productIdErrors() {
+      const errors = [];
+      if (!this.$v.form.productId || !this.$v.form.productId.$dirty)
+        return errors;
+      !this.$v.form.productId.required &&
+        errors.push(this.$t('global.errors.required'));
+      return errors;
     },
 
     nameErrors() {
@@ -159,6 +188,11 @@ export default {
       // Only include apiHost if provided
       if (this.form.apiHost) {
         data.apiHost = this.form.apiHost;
+      }
+
+      // Include productId for Infomaniak
+      if (this.form.productId) {
+        data.productId = this.form.productId;
       }
 
       this.$emit('save', data);
@@ -222,6 +256,20 @@ export default {
         </v-text-field>
 
         <v-text-field
+          v-if="showProductIdField"
+          v-model="form.productId"
+          :label="$t('integrations.productId')"
+          :error-messages="productIdErrors()"
+          :hint="selectedProviderConfig.productIdHint"
+          :disabled="loading"
+          persistent-hint
+          outlined
+          dense
+          @blur="$v.form.productId && $v.form.productId.$touch()"
+        />
+
+        <v-text-field
+          v-if="selectedProviderConfig.apiHostPlaceholder"
           v-model="form.apiHost"
           :label="$t('integrations.apiHost')"
           :placeholder="selectedProviderConfig.apiHostPlaceholder"

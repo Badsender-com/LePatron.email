@@ -3,6 +3,7 @@
 const IntegrationProviders = require('../constant/integration-provider');
 const OpenAIProvider = require('./ai/openai-provider');
 const MistralProvider = require('./ai/mistral-provider');
+const InfomaniakProvider = require('./ai/infomaniak-provider');
 
 /**
  * Map of provider identifiers to their implementations
@@ -10,6 +11,7 @@ const MistralProvider = require('./ai/mistral-provider');
 const PROVIDER_MAP = {
   [IntegrationProviders.OPENAI]: OpenAIProvider,
   [IntegrationProviders.MISTRAL]: MistralProvider,
+  [IntegrationProviders.INFOMANIAK]: InfomaniakProvider,
 };
 
 /**

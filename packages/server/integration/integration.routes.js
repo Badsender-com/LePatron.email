@@ -49,4 +49,11 @@ router.post(
   integrations.validateCredentials
 );
 
+// Get available models for an integration
+router.get(
+  '/:integrationId/models',
+  GUARD_GROUP_ADMIN,
+  integrations.getModels
+);
+
 module.exports = router;

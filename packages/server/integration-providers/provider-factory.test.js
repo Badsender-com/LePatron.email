@@ -3,6 +3,7 @@
 const ProviderFactory = require('./provider-factory');
 const OpenAIProvider = require('./ai/openai-provider');
 const MistralProvider = require('./ai/mistral-provider');
+const InfomaniakProvider = require('./ai/infomaniak-provider');
 const IntegrationProviders = require('../constant/integration-provider');
 
 describe('ProviderFactory', () => {
@@ -36,6 +37,22 @@ describe('ProviderFactory', () => {
       expect(provider.baseUrl).toBe('https://custom.mistral.ai');
     });
 
+    it('should create an Infomaniak provider', () => {
+      const integration = {
+        provider: IntegrationProviders.INFOMANIAK,
+        apiKey: 'test-api-key',
+        productId: 'test-product-id',
+        apiHost: null,
+        config: {},
+      };
+
+      const provider = ProviderFactory.createProvider(integration);
+
+      expect(provider).toBeInstanceOf(InfomaniakProvider);
+      expect(provider.apiKey).toBe('test-api-key');
+      expect(provider.productId).toBe('test-product-id');
+    });
+
     it('should throw error for unsupported provider', () => {
       const integration = {
         provider: 'unsupported-provider',
@@ -61,6 +78,12 @@ describe('ProviderFactory', () => {
       ).toBe(true);
     });
 
+    it('should return true for Infomaniak', () => {
+      expect(
+        ProviderFactory.isProviderSupported(IntegrationProviders.INFOMANIAK)
+      ).toBe(true);
+    });
+
     it('should return false for unsupported provider', () => {
       expect(ProviderFactory.isProviderSupported('deepl')).toBe(false);
     });
@@ -72,7 +95,8 @@ describe('ProviderFactory', () => {
 
       expect(providers).toContain(IntegrationProviders.OPENAI);
       expect(providers).toContain(IntegrationProviders.MISTRAL);
-      expect(providers.length).toBe(2);
+      expect(providers).toContain(IntegrationProviders.INFOMANIAK);
+      expect(providers.length).toBe(3);
     });
   });
 });

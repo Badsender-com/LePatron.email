@@ -13,6 +13,9 @@ const {
   injectTexts,
   validateTranslations,
 } = require('./mosaico-text-injector.js');
+const {
+  parseProtectionConfig,
+} = require('./template-protection-parser.js');
 
 // Maximum number of keys per batch to avoid API timeouts
 // Set high values to keep full email context - adjust if timeouts occur
@@ -32,12 +35,18 @@ module.exports = {
  * Get batch info for a mailing (used for progress tracking)
  * @param {Object} params
  * @param {Object} params.mailing - Mailing document
+ * @param {string} [params.templateMarkup] - Template HTML markup for protection config
  * @returns {Promise<Object>} Batch info { totalKeys, totalBatches }
  */
 // eslint-disable-next-line no-unused-vars
-async function getBatchInfo({ mailing }) {
-  // Extract texts from mailing
-  const textsToTranslate = extractTexts(mailing);
+async function getBatchInfo({ mailing, templateMarkup }) {
+  // Parse protection config from template markup (if provided)
+  const protectionConfig = templateMarkup
+    ? parseProtectionConfig(templateMarkup)
+    : null;
+
+  // Extract texts from mailing (respecting protection config)
+  const textsToTranslate = extractTexts(mailing, protectionConfig);
   const totalKeys = Object.keys(textsToTranslate).length;
 
   if (totalKeys === 0) {
@@ -58,6 +67,7 @@ async function getBatchInfo({ mailing }) {
  * @param {Object} params.mailing - Mailing document to translate
  * @param {string} params.sourceLanguage - Source language code (or 'auto')
  * @param {string} params.targetLanguage - Target language code
+ * @param {string} [params.templateMarkup] - Template HTML markup for protection config
  * @param {Function} [params.onBatchProgress] - Callback for batch progress (batchNumber, keysInBatch)
  * @returns {Promise<Object>} Translated mailing data
  */
@@ -66,6 +76,7 @@ async function translateMailing({
   mailing,
   sourceLanguage,
   targetLanguage,
+  templateMarkup,
   onBatchProgress,
 }) {
   // Get active translation feature with integration
@@ -91,8 +102,13 @@ async function translateMailing({
     );
   }
 
-  // Extract texts from mailing
-  const textsToTranslate = extractTexts(mailing);
+  // Parse protection config from template markup (if provided)
+  const protectionConfig = templateMarkup
+    ? parseProtectionConfig(templateMarkup)
+    : null;
+
+  // Extract texts from mailing (respecting protection config)
+  const textsToTranslate = extractTexts(mailing, protectionConfig);
   const stats = getExtractionStats(textsToTranslate);
 
   if (stats.fieldCount === 0) {

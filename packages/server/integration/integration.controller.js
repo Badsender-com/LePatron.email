@@ -5,6 +5,7 @@ const integrationService = require('./integration.service');
 const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
+const ProviderFactory = require('../integration-providers/provider-factory.js');
 
 module.exports = {
   createIntegration: asyncHandler(createIntegration),
@@ -14,6 +15,7 @@ module.exports = {
   listIntegrations: asyncHandler(listIntegrations),
   validateCredentials: asyncHandler(validateCredentials),
   listProviders: asyncHandler(listProviders),
+  getModels: asyncHandler(getModels),
 };
 
 /**
@@ -78,7 +80,7 @@ async function listIntegrations(req, res) {
 async function createIntegration(req, res) {
   const { user, params, body } = req;
   const { groupId } = params;
-  const { name, type, provider, apiKey, apiHost, config } = body;
+  const { name, type, provider, apiKey, apiHost, productId, config } = body;
 
   await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
@@ -88,6 +90,7 @@ async function createIntegration(req, res) {
     provider,
     apiKey,
     apiHost,
+    productId,
     config,
     _company: groupId,
   });
@@ -133,7 +136,8 @@ async function readIntegration(req, res) {
 async function updateIntegration(req, res) {
   const { user, params, body } = req;
   const { integrationId } = params;
-  const { name, type, provider, apiKey, apiHost, config, isActive } = body;
+  const { name, type, provider, apiKey, apiHost, productId, config, isActive } =
+    body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -147,6 +151,7 @@ async function updateIntegration(req, res) {
     provider,
     apiKey,
     apiHost,
+    productId,
     config,
     isActive,
   });
@@ -198,6 +203,66 @@ async function validateCredentials(req, res) {
   });
 
   res.json({ valid: isValid });
+}
+
+/**
+ * @api {get} /integrations/:integrationId/models Get available models for integration
+ * @apiPermission groupAdmin
+ * @apiName GetIntegrationModels
+ * @apiGroup Integrations
+ *
+ * @apiParam {String} integrationId Integration ID
+ *
+ * @apiSuccess {Array} models List of available models
+ * @apiSuccess {Boolean} dynamic Whether the list was fetched dynamically from the provider
+ */
+async function getModels(req, res) {
+  const { user, params } = req;
+  const { integrationId } = params;
+
+  const integration =
+    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+      user,
+      integrationId,
+    });
+
+  try {
+    const provider = ProviderFactory.createProvider(integration);
+
+    // If the provider supports dynamic model listing
+    if (typeof provider.getAvailableModels === 'function') {
+      const models = await provider.getAvailableModels();
+      return res.json({ models, dynamic: true });
+    }
+
+    // Otherwise return static models for the provider
+    const staticModels = getStaticModelsForProvider(integration.provider);
+    return res.json({ models: staticModels, dynamic: false });
+  } catch (error) {
+    console.error('Error fetching models:', error.message);
+    // Fallback to static models on error
+    const staticModels = getStaticModelsForProvider(integration.provider);
+    return res.json({ models: staticModels, dynamic: false, error: error.message });
+  }
+}
+
+/**
+ * Get static model list for providers that don't support dynamic listing
+ */
+function getStaticModelsForProvider(provider) {
+  const STATIC_MODELS = {
+    openai: [
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini (fast, economical)' },
+      { id: 'gpt-4o', name: 'GPT-4o (balanced)' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (powerful)' },
+    ],
+    mistral: [
+      { id: 'mistral-small-latest', name: 'Mistral Small (fast)' },
+      { id: 'mistral-medium-latest', name: 'Mistral Medium (balanced)' },
+      { id: 'mistral-large-latest', name: 'Mistral Large (powerful)' },
+    ],
+  };
+  return STATIC_MODELS[provider] || [];
 }
 
 /**

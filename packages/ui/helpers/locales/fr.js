@@ -493,6 +493,10 @@ export default {
     },
     mistral: {
       apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
+    },
+    infomaniak: {
+      productId: 'Product ID',
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
     }
   },
   aiFeatures: {

@@ -271,6 +271,10 @@ export function integrationsProviders() {
   return '/integrations/providers';
 }
 
+export function integrationModels(integrationId) {
+  return `/integrations/${integrationId}/models`;
+}
+
 /// ///
 // AI FEATURES
 /// ///
