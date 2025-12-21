@@ -20,6 +20,8 @@
  * - Mosaico expressions (@[...])
  */
 
+const { isFieldProtected } = require('./template-protection-parser');
+
 // Patterns for content that should NOT be translated
 const URL_PATTERN = /^(https?:\/\/|mailto:|tel:)/i;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -178,11 +180,6 @@ function extractFromObject(obj, prefix = '', result = {}, protectionConfig = nul
       continue;
     }
 
-    // Check if this field is protected from translation (via data-translate="false" in template)
-    if (protectionConfig && protectionConfig[fieldName] === false) {
-      continue; // Skip protected fields
-    }
-
     if (typeof value === 'object') {
       // Recurse into nested objects, but skip style objects
       if (!fieldName.toLowerCase().includes('style')) {
@@ -191,6 +188,10 @@ function extractFromObject(obj, prefix = '', result = {}, protectionConfig = nul
     } else if (typeof value === 'string') {
       // Check if this field should be translated
       if (isTranslatableFieldName(fieldName) && isTranslatableValue(value)) {
+        // Check if this field is protected from translation (via data-translate="false" in template)
+        if (protectionConfig && isFieldProtected(key, fieldName, protectionConfig)) {
+          continue; // Skip protected fields
+        }
         result[key] = extractHtmlText(value);
       }
     }
