@@ -7,20 +7,31 @@ const {
 
 describe('Template Protection Parser', () => {
   describe('parseProtectionConfig', () => {
-    it('should return empty object when markup is null or undefined', () => {
-      expect(parseProtectionConfig(null)).toEqual({});
-      expect(parseProtectionConfig(undefined)).toEqual({});
-      expect(parseProtectionConfig('')).toEqual({});
+    it('should return empty config when markup is null or undefined', () => {
+      expect(parseProtectionConfig(null)).toEqual({
+        _protectedBlocks: [],
+        _protectedFields: {},
+      });
+      expect(parseProtectionConfig(undefined)).toEqual({
+        _protectedBlocks: [],
+        _protectedFields: {},
+      });
+      expect(parseProtectionConfig('')).toEqual({
+        _protectedBlocks: [],
+        _protectedFields: {},
+      });
     });
 
-    it('should return empty object when no data-translate attributes exist', () => {
+    it('should return empty config when no data-translate attributes exist', () => {
       const markup = `
         <div data-ko-block="contentBlock">
           <h1 data-ko-editable="titleText">@[titleText]</h1>
           <p data-ko-editable="bodyText">@[bodyText]</p>
         </div>
       `;
-      expect(parseProtectionConfig(markup)).toEqual({});
+      const config = parseProtectionConfig(markup);
+      expect(config._protectedBlocks).toEqual([]);
+      expect(config._protectedFields).toEqual({});
     });
 
     it('should protect a single field with data-translate="false"', () => {
@@ -33,10 +44,13 @@ describe('Template Protection Parser', () => {
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      expect(config).toEqual({ legalDisclaimer: false });
+      expect(config._protectedBlocks).toEqual([]);
+      expect(config._protectedFields).toEqual({
+        'contentBlock.legalDisclaimer': false,
+      });
     });
 
-    it('should protect entire block and all its descendants', () => {
+    it('should protect entire block with data-translate="false"', () => {
       const markup = `
         <div data-ko-block="footerBlock" data-translate="false">
           <p data-ko-editable="legalText">@[legalText]</p>
@@ -44,10 +58,9 @@ describe('Template Protection Parser', () => {
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      expect(config).toEqual({
-        legalText: false,
-        unsubText: false,
-      });
+      expect(config._protectedBlocks).toEqual(['footerBlock']);
+      // Fields inside protected block don't need to be listed
+      expect(config._protectedFields).toEqual({});
     });
 
     it('should allow exception with data-translate="true" inside protected block', () => {
@@ -61,12 +74,11 @@ describe('Template Protection Parser', () => {
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      // customMessage should NOT be in the config (it's translatable)
-      expect(config).toEqual({
-        legalText: false,
-        unsubText: false,
+      expect(config._protectedBlocks).toEqual(['footerBlock']);
+      // customMessage is an exception (translatable) inside protected block
+      expect(config._protectedFields).toEqual({
+        'footerBlock.customMessage': true,
       });
-      expect(config.customMessage).toBeUndefined();
     });
 
     it('should handle nested containers with inheritance', () => {
@@ -85,14 +97,12 @@ describe('Template Protection Parser', () => {
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      // headerText and footerText inherit false from block
-      // contentTitle and contentBody inherit true from content div
-      expect(config).toEqual({
-        headerText: false,
-        footerText: false,
+      expect(config._protectedBlocks).toEqual(['complexBlock']);
+      // contentTitle and contentBody have data-translate="true" override
+      expect(config._protectedFields).toEqual({
+        'complexBlock.contentTitle': true,
+        'complexBlock.contentBody': true,
       });
-      expect(config.contentTitle).toBeUndefined();
-      expect(config.contentBody).toBeUndefined();
     });
 
     it('should handle multiple blocks with different protection', () => {
@@ -111,59 +121,120 @@ describe('Template Protection Parser', () => {
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      expect(config).toEqual({
-        legalText: false,
-        disclaimer: false,
+      expect(config._protectedBlocks).toEqual(['legalBlock']);
+      expect(config._protectedFields).toEqual({
+        'contentBlock.disclaimer': false,
       });
     });
 
-    it('should ignore elements without data-ko-editable', () => {
+    it('should handle same field name in different blocks', () => {
       const markup = `
-        <div data-ko-block="block" data-translate="false">
-          <p>Static text not editable</p>
-          <p data-ko-editable="editableText">@[editableText]</p>
+        <div data-ko-block="headerBlock">
+          <p data-ko-editable="titleText">@[titleText]</p>
+        </div>
+        <div data-ko-block="footerBlock" data-translate="false">
+          <p data-ko-editable="titleText">@[titleText]</p>
+        </div>
+        <div data-ko-block="contentBlock">
+          <p data-ko-editable="titleText">@[titleText]</p>
         </div>
       `;
       const config = parseProtectionConfig(markup);
-      expect(config).toEqual({ editableText: false });
-    });
-
-    it('should handle deeply nested structures', () => {
-      const markup = `
-        <div data-ko-block="outerBlock">
-          <div class="level1">
-            <div class="level2" data-translate="false">
-              <div class="level3">
-                <p data-ko-editable="deepField">@[deepField]</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      const config = parseProtectionConfig(markup);
-      expect(config).toEqual({ deepField: false });
+      // Only footerBlock is protected
+      expect(config._protectedBlocks).toEqual(['footerBlock']);
+      // titleText in headerBlock and contentBlock should NOT be protected
     });
   });
 
   describe('isFieldProtected', () => {
     it('should return false when protectionConfig is null', () => {
-      expect(isFieldProtected('anyField', null)).toBe(false);
+      expect(isFieldProtected('data.block.field', 'field', null)).toBe(false);
     });
 
-    it('should return false when field is not in config', () => {
-      const config = { protectedField: false };
-      expect(isFieldProtected('unprotectedField', config)).toBe(false);
+    it('should return false when field is in non-protected block', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+      expect(
+        isFieldProtected('data.headerBlock.titleText', 'titleText', config)
+      ).toBe(false);
     });
 
-    it('should return true when field is protected', () => {
-      const config = { protectedField: false };
-      expect(isFieldProtected('protectedField', config)).toBe(true);
+    it('should return true when field is in protected block', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+      expect(
+        isFieldProtected('data.footerBlock.legalText', 'legalText', config)
+      ).toBe(true);
     });
 
-    it('should return false for empty fieldName', () => {
-      const config = { protectedField: false };
-      expect(isFieldProtected('', config)).toBe(false);
-      expect(isFieldProtected(null, config)).toBe(false);
+    it('should return false for exception inside protected block', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: { 'footerBlock.customMessage': true },
+      };
+      expect(
+        isFieldProtected(
+          'data.footerBlock.customMessage',
+          'customMessage',
+          config
+        )
+      ).toBe(false);
+    });
+
+    it('should return true for field-level protection in non-protected block', () => {
+      const config = {
+        _protectedBlocks: [],
+        _protectedFields: { 'contentBlock.disclaimer': false },
+      };
+      expect(
+        isFieldProtected('data.contentBlock.disclaimer', 'disclaimer', config)
+      ).toBe(true);
+    });
+
+    it('should handle nested paths correctly', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+      // Path with nested structure containing footerBlock
+      expect(
+        isFieldProtected(
+          'data.mainBlocks.blocks.0.footerBlock.legalText',
+          'legalText',
+          config
+        )
+      ).toBe(true);
+    });
+
+    it('should handle same field in different blocks correctly', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+      // Same field name, different blocks
+      expect(
+        isFieldProtected('data.footerBlock.titleText', 'titleText', config)
+      ).toBe(true);
+      expect(
+        isFieldProtected('data.headerBlock.titleText', 'titleText', config)
+      ).toBe(false);
+      expect(
+        isFieldProtected('data.contentBlock.titleText', 'titleText', config)
+      ).toBe(false);
+    });
+
+    it('should return false for empty path or fieldName', () => {
+      const config = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+      expect(isFieldProtected('', 'field', config)).toBe(false);
+      expect(isFieldProtected('data.block.field', '', config)).toBe(false);
+      expect(isFieldProtected('data.block.field', null, config)).toBe(false);
     });
   });
 });

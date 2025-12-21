@@ -286,11 +286,11 @@ describe('MosaicoTextExtractor', () => {
       expect(result['data.block.bodyText']).toBe('World');
     });
 
-    it('should exclude protected fields', () => {
+    it('should exclude fields in protected blocks', () => {
       const mailing = {
         name: 'Test Email',
         data: {
-          block: {
+          footerBlock: {
             titleText: 'Hello',
             legalText: 'Do not translate',
             bodyText: 'World',
@@ -299,24 +299,26 @@ describe('MosaicoTextExtractor', () => {
       };
 
       const protectionConfig = {
-        legalText: false,
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
       };
 
       const result = extractTexts(mailing, protectionConfig);
 
       expect(result._name).toBe('Test Email');
-      expect(result['data.block.titleText']).toBe('Hello');
-      expect(result['data.block.bodyText']).toBe('World');
-      expect(result['data.block.legalText']).toBeUndefined();
+      // All fields in footerBlock should be excluded
+      expect(result['data.footerBlock.titleText']).toBeUndefined();
+      expect(result['data.footerBlock.legalText']).toBeUndefined();
+      expect(result['data.footerBlock.bodyText']).toBeUndefined();
     });
 
-    it('should exclude multiple protected fields', () => {
+    it('should exclude only protected block, not other blocks', () => {
       const mailing = {
         name: 'Test Email',
         data: {
           headerBlock: {
             titleText: 'Welcome',
-            companyName: 'ACME Corp',
+            subtitleText: 'Hello',
           },
           footerBlock: {
             legalText: 'Legal disclaimer',
@@ -326,42 +328,93 @@ describe('MosaicoTextExtractor', () => {
       };
 
       const protectionConfig = {
-        companyName: false,
-        legalText: false,
-        copyrightText: false,
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
       };
 
       const result = extractTexts(mailing, protectionConfig);
 
+      // headerBlock should be translated
       expect(result['data.headerBlock.titleText']).toBe('Welcome');
-      expect(result['data.headerBlock.companyName']).toBeUndefined();
+      expect(result['data.headerBlock.subtitleText']).toBe('Hello');
+      // footerBlock should be protected
       expect(result['data.footerBlock.legalText']).toBeUndefined();
       expect(result['data.footerBlock.copyrightText']).toBeUndefined();
     });
 
-    it('should handle nested blocks with protected fields', () => {
+    it('should allow exception with field-level override in protected block', () => {
       const mailing = {
-        name: 'Nested Test',
+        name: 'Test Email',
         data: {
-          content: {
-            blocks: [
-              { titleText: 'Title 1', brandName: 'ACME' },
-              { titleText: 'Title 2', brandName: 'ACME' },
-            ],
+          footerBlock: {
+            legalText: 'Do not translate',
+            customText: 'Translate this!',
           },
         },
       };
 
       const protectionConfig = {
-        brandName: false,
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: { 'footerBlock.customText': true },
       };
 
       const result = extractTexts(mailing, protectionConfig);
 
-      expect(result['data.content.blocks.0.titleText']).toBe('Title 1');
-      expect(result['data.content.blocks.1.titleText']).toBe('Title 2');
-      expect(result['data.content.blocks.0.brandName']).toBeUndefined();
-      expect(result['data.content.blocks.1.brandName']).toBeUndefined();
+      expect(result._name).toBe('Test Email');
+      expect(result['data.footerBlock.legalText']).toBeUndefined();
+      // customText has exception (data-translate="true"), should be translated
+      expect(result['data.footerBlock.customText']).toBe('Translate this!');
+    });
+
+    it('should handle field-level protection in non-protected block', () => {
+      const mailing = {
+        name: 'Test Email',
+        data: {
+          contentBlock: {
+            titleText: 'Translate me',
+            disclaimer: 'Do not translate',
+          },
+        },
+      };
+
+      const protectionConfig = {
+        _protectedBlocks: [],
+        _protectedFields: { 'contentBlock.disclaimer': false },
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      expect(result['data.contentBlock.titleText']).toBe('Translate me');
+      expect(result['data.contentBlock.disclaimer']).toBeUndefined();
+    });
+
+    it('should handle same field name in different blocks', () => {
+      const mailing = {
+        name: 'Test Email',
+        data: {
+          headerBlock: {
+            titleText: 'Header Title',
+          },
+          footerBlock: {
+            titleText: 'Footer Title',
+          },
+          contentBlock: {
+            titleText: 'Content Title',
+          },
+        },
+      };
+
+      const protectionConfig = {
+        _protectedBlocks: ['footerBlock'],
+        _protectedFields: {},
+      };
+
+      const result = extractTexts(mailing, protectionConfig);
+
+      // Same field name, different blocks - only footerBlock protected
+      expect(result['data.headerBlock.titleText']).toBe('Header Title');
+      expect(result['data.contentBlock.titleText']).toBe('Content Title');
+      expect(result['data.footerBlock.titleText']).toBeUndefined();
     });
 
     it('should not affect email name (never protected)', () => {
@@ -374,13 +427,14 @@ describe('MosaicoTextExtractor', () => {
         },
       };
 
-      // Even if someone tries to protect _name, it should still be extracted
       const protectionConfig = {
-        _name: false,
+        _protectedBlocks: ['block'],
+        _protectedFields: {},
       };
 
       const result = extractTexts(mailing, protectionConfig);
 
+      // Email name is never protected
       expect(result._name).toBe('Newsletter Name');
     });
 
@@ -394,7 +448,10 @@ describe('MosaicoTextExtractor', () => {
         },
       };
 
-      const result = extractTexts(mailing, {});
+      const result = extractTexts(mailing, {
+        _protectedBlocks: [],
+        _protectedFields: {},
+      });
 
       expect(result._name).toBe('Test');
       expect(result['data.block.titleText']).toBe('Hello');
