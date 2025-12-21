@@ -19,8 +19,8 @@ const LANGUAGE_OPTIONS = [
   { value: 'ar', text: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' },
 ];
 
-// Available models by provider
-const MODEL_OPTIONS = {
+// Fallback static models by provider (used when dynamic fetch fails)
+const FALLBACK_MODEL_OPTIONS = {
   openai: [
     { value: 'gpt-4o-mini', text: 'GPT-4o Mini (fast, economical)' },
     { value: 'gpt-4o', text: 'GPT-4o (balanced)' },
@@ -39,9 +39,12 @@ export default {
     return {
       loading: false,
       saving: false,
+      loadingModels: false,
       config: null,
       integrations: [],
       languageOptions: LANGUAGE_OPTIONS,
+      dynamicModels: [], // Models fetched from API
+      modelsDynamic: false, // Whether models were fetched dynamically
     };
   },
   computed: {
@@ -101,9 +104,17 @@ export default {
       return integration ? integration.provider : null;
     },
     modelOptions() {
+      // Use dynamic models if available
+      if (this.dynamicModels.length > 0) {
+        return this.dynamicModels.map((m) => ({
+          value: m.id,
+          text: m.name || m.id,
+        }));
+      }
+      // Fallback to static models
       const provider = this.selectedIntegrationProvider;
-      if (!provider || !MODEL_OPTIONS[provider]) return [];
-      return MODEL_OPTIONS[provider];
+      if (!provider || !FALLBACK_MODEL_OPTIONS[provider]) return [];
+      return FALLBACK_MODEL_OPTIONS[provider];
     },
     selectedModel: {
       get() {
@@ -113,6 +124,19 @@ export default {
         this.updateFeature('translation', {
           config: { model: value },
         });
+      },
+    },
+  },
+  watch: {
+    selectedIntegrationId: {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          this.loadModelsForIntegration(newId);
+        } else {
+          this.dynamicModels = [];
+          this.modelsDynamic = false;
+        }
       },
     },
   },
@@ -169,8 +193,32 @@ export default {
       const labels = {
         openai: 'OpenAI',
         mistral: 'Mistral AI',
+        infomaniak: 'Infomaniak AI Tools',
       };
       return labels[provider] || provider;
+    },
+
+    async loadModelsForIntegration(integrationId) {
+      if (!integrationId) {
+        this.dynamicModels = [];
+        this.modelsDynamic = false;
+        return;
+      }
+      try {
+        this.loadingModels = true;
+        const response = await this.$axios.$get(
+          apiRoutes.integrationModels(integrationId)
+        );
+        this.dynamicModels = response.models || [];
+        this.modelsDynamic = response.dynamic || false;
+      } catch (error) {
+        console.error('Failed to load models:', error);
+        // Fall back to static models
+        this.dynamicModels = [];
+        this.modelsDynamic = false;
+      } finally {
+        this.loadingModels = false;
+      }
     },
   },
 };
@@ -239,12 +287,12 @@ export default {
 
             <!-- Model Selection -->
             <v-select
-              v-if="modelOptions.length > 0"
+              v-if="modelOptions.length > 0 || loadingModels"
               v-model="selectedModel"
               :items="modelOptions"
               :label="$t('aiFeatures.translation.model')"
-              :disabled="saving || !selectedIntegrationId"
-              :loading="saving"
+              :disabled="saving || !selectedIntegrationId || loadingModels"
+              :loading="saving || loadingModels"
               outlined
               dense
               class="mb-4"

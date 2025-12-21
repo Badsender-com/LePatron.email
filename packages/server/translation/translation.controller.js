@@ -5,7 +5,7 @@ const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
 const previewGenerator = require('../mailing/preview-generator.service');
 const translationJobs = require('./translation-jobs');
-const { Mailings } = require('../common/models.common');
+const { Mailings, Templates } = require('../common/models.common');
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
@@ -42,6 +42,15 @@ async function duplicateAndTranslate(req, res) {
     (user.group && user.group.id) ||
     (originalMailing._company && originalMailing._company.toString());
 
+  // Get template markup for translation protection config
+  let templateMarkup = null;
+  if (originalMailing._wireframe) {
+    const template = await Templates.findById(originalMailing._wireframe, {
+      markup: 1,
+    });
+    templateMarkup = template?.markup || null;
+  }
+
   // Detect source language if not provided
   const detectedSourceLanguage =
     sourceLanguage === 'auto'
@@ -56,6 +65,7 @@ async function duplicateAndTranslate(req, res) {
       data: originalMailing.data,
       previewHtml: originalMailing.previewHtml,
     },
+    templateMarkup,
   });
 
   // Create a job for progress tracking
@@ -77,6 +87,7 @@ async function duplicateAndTranslate(req, res) {
     sourceLanguage: detectedSourceLanguage,
     targetLanguage,
     newName,
+    templateMarkup,
     cookies: req.cookies,
   });
 }
@@ -93,6 +104,7 @@ async function processTranslationAsync({
   sourceLanguage,
   targetLanguage,
   newName,
+  templateMarkup,
   cookies,
 }) {
   try {
@@ -124,6 +136,7 @@ async function processTranslationAsync({
       },
       sourceLanguage,
       targetLanguage,
+      templateMarkup,
       onBatchProgress,
     });
 

@@ -52,6 +52,11 @@ const IntegrationSchema = Schema(
       type: String,
       required: false,
     },
+    // Product ID for Infomaniak AI Tools
+    productId: {
+      type: String,
+      required: false,
+    },
     // Provider-specific configuration
     config: {
       type: Schema.Types.Mixed,

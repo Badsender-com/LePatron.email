@@ -49,6 +49,7 @@ async function createIntegration({
   provider,
   apiKey,
   apiHost,
+  productId,
   config,
   _company,
 }) {
@@ -63,6 +64,7 @@ async function createIntegration({
     provider,
     apiKey,
     apiHost,
+    productId,
     config: config || {},
     _company,
     isActive: true,
@@ -80,6 +82,7 @@ async function updateIntegration({
   provider,
   apiKey,
   apiHost,
+  productId,
   config,
   isActive,
 }) {
@@ -105,11 +108,12 @@ async function updateIntegration({
   if (provider !== undefined) updateData.provider = provider;
   if (apiKey !== undefined) updateData.apiKey = apiKey;
   if (apiHost !== undefined) updateData.apiHost = apiHost;
+  if (productId !== undefined) updateData.productId = productId;
   if (config !== undefined) updateData.config = config;
   if (isActive !== undefined) updateData.isActive = isActive;
 
   // Reset validation status if credentials changed
-  if (apiKey !== undefined || apiHost !== undefined) {
+  if (apiKey !== undefined || apiHost !== undefined || productId !== undefined) {
     updateData.validationStatus = 'pending';
     updateData.lastValidatedAt = null;
   }

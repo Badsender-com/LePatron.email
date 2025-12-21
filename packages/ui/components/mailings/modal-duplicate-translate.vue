@@ -17,11 +17,10 @@ export default {
       },
       form: {
         newName: '',
-        sourceLanguage: 'auto',
+        sourceLanguage: '',
         targetLanguage: '',
       },
       languageLabels: {
-        auto: 'Auto-detect',
         fr: 'Français',
         en: 'English',
         es: 'Español',
@@ -61,13 +60,10 @@ export default {
       return this.mailing ? this.mailing.name : '';
     },
     sourceLanguageOptions() {
-      return [
-        { value: 'auto', text: this.$t('translation.autoDetect') },
-        ...this.config.availableLanguages.map((lang) => ({
-          value: lang,
-          text: this.languageLabels[lang] || lang,
-        })),
-      ];
+      return this.config.availableLanguages.map((lang) => ({
+        value: lang,
+        text: this.languageLabels[lang] || lang,
+      }));
     },
     targetLanguageOptions() {
       return this.config.availableLanguages
@@ -80,6 +76,7 @@ export default {
     isFormValid() {
       return (
         this.form.newName.trim() &&
+        this.form.sourceLanguage &&
         this.form.targetLanguage &&
         this.config.hasActiveIntegration
       );
@@ -136,7 +133,7 @@ export default {
     async open(mailing) {
       this.mailing = mailing;
       this.form.newName = `${mailing.name} - `;
-      this.form.sourceLanguage = 'auto';
+      this.form.sourceLanguage = '';
       this.form.targetLanguage = '';
       this.show = true;
       await this.fetchConfig();
@@ -338,13 +335,10 @@ export default {
       try {
         this.translating = true;
         const payload = {
+          sourceLanguage: this.form.sourceLanguage,
           targetLanguage: this.form.targetLanguage,
           newName: this.form.newName.trim(),
         };
-
-        if (this.form.sourceLanguage !== 'auto') {
-          payload.sourceLanguage = this.form.sourceLanguage;
-        }
 
         // Start async translation and get jobId
         const response = await this.$axios.$post(
@@ -464,6 +458,7 @@ export default {
                 :items="sourceLanguageOptions"
                 :label="$t('translation.sourceLanguage')"
                 :disabled="translating"
+                :rules="[(v) => !!v || $t('global.errors.required')]"
                 outlined
                 dense
                 class="mb-2"
