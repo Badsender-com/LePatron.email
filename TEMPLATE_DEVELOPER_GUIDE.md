@@ -17,10 +17,11 @@
 7. [Conditional Content](#conditional-content)
 8. [Image Handling](#image-handling)
 9. [Advanced Features](#advanced-features)
-10. [Complete Attribute Reference](#complete-attribute-reference)
-11. [Available Block Types](#available-block-types)
-12. [Best Practices](#best-practices)
-13. [Undocumented Features](#undocumented-features)
+10. [AI Translation Protection](#ai-translation-protection)
+11. [Complete Attribute Reference](#complete-attribute-reference)
+12. [Available Block Types](#available-block-types)
+13. [Best Practices](#best-practices)
+14. [Undocumented Features](#undocumented-features)
 
 ---
 
@@ -876,6 +877,98 @@ Define and apply themes to blocks:
 
 ---
 
+## AI Translation Protection
+
+LePatron includes an AI translation feature that can automatically translate mailings to other languages. Template developers can control which content should be translated using the `data-translate` attribute.
+
+### The `data-translate` Attribute
+
+This attribute follows DOM inheritance - children inherit their parent's translation setting unless they override it.
+
+| Value | Behavior |
+|-------|----------|
+| Absent | Translated by default |
+| `data-translate="false"` | Not translated, descendants inherit `false` |
+| `data-translate="true"` | Translated, can override parent's `false` |
+
+### Protecting an Entire Block
+
+Use this for blocks containing legal text, disclaimers, or content that must remain in the original language:
+
+```html
+<!-- All fields in this block will NOT be translated -->
+<div data-ko-block="footerBlock" data-translate="false">
+  <p data-ko-editable="legalText">@[legalText]</p>      <!-- NOT translated -->
+  <p data-ko-editable="unsubText">@[unsubText]</p>      <!-- NOT translated -->
+</div>
+```
+
+### Protecting Individual Fields
+
+Protect specific fields while allowing the rest of the block to be translated:
+
+```html
+<div data-ko-block="contentBlock">
+  <h1 data-ko-editable="titleText">@[titleText]</h1>    <!-- Translated -->
+  <p data-ko-editable="bodyText">@[bodyText]</p>        <!-- Translated -->
+  <p data-ko-editable="disclaimer" data-translate="false">
+    @[disclaimer]                                        <!-- NOT translated -->
+  </p>
+</div>
+```
+
+### Exception Inside Protected Block
+
+Override a protected block for specific fields that should be translated:
+
+```html
+<div data-ko-block="footerBlock" data-translate="false">
+  <p data-ko-editable="legalText">@[legalText]</p>      <!-- NOT translated -->
+  <p data-ko-editable="copyrightText">@[copyrightText]</p>  <!-- NOT translated -->
+  <p data-ko-editable="customText" data-translate="true">
+    @[customText]                                        <!-- Translated (exception) -->
+  </p>
+</div>
+```
+
+### Nested Containers with Inheritance
+
+The attribute cascades through nested elements:
+
+```html
+<div data-ko-block="complexBlock" data-translate="false">
+  <div class="header">
+    <p data-ko-editable="headerText">@[headerText]</p>  <!-- NOT translated -->
+  </div>
+  <div class="content" data-translate="true">
+    <h2 data-ko-editable="contentTitle">@[contentTitle]</h2>  <!-- Translated -->
+    <p data-ko-editable="contentBody">@[contentBody]</p>      <!-- Translated -->
+  </div>
+  <div class="footer">
+    <p data-ko-editable="footerText">@[footerText]</p>  <!-- NOT translated -->
+  </div>
+</div>
+```
+
+### Common Use Cases
+
+| Use Case | Recommendation |
+|----------|----------------|
+| Legal disclaimers | Protect entire block or field |
+| Brand/product names | Protect specific field |
+| Footer with legal text | Protect entire block |
+| Technical terms/code | Protect specific field |
+| Unsubscribe text | Often needs protection (legal requirement) |
+| Custom marketing message in footer | Exception with `data-translate="true"` |
+
+### Important Notes
+
+1. **Email name is always translated** - The mailing name/subject is not controlled by this attribute
+2. **Only text fields are affected** - URLs, colors, and other non-text properties are never translated
+3. **Dynamic variables are preserved** - Placeholders like `%%FIRSTNAME%%` or `{{user.name}}` are kept intact during translation
+
+---
+
 ## Complete Attribute Reference
 
 ### Template Structure Attributes
@@ -1271,6 +1364,7 @@ For issues or questions:
 
 ---
 
-**Document Version:** 1.0
-**Generated:** 2025-10-26
+**Document Version:** 1.1
+**Updated:** 2025-12-22
 **Method:** Reverse engineering of LePatron codebase
+**Changelog:** Added AI Translation Protection section (v1.1)
