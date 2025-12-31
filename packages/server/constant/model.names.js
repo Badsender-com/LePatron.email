@@ -21,4 +21,7 @@ module.exports = Object.freeze({
   OAuthCodes: 'OAuthCodes',
   // Tags
   TagModel: 'Tag',
+  // Assets & Export Profiles
+  AssetModel: 'Asset',
+  ExportProfileModel: 'ExportProfile',
 });

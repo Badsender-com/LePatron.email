@@ -103,6 +103,22 @@ const GroupSchema = Schema(
       set: trimString,
       default: 'FTP',
     },
+    // Export Profiles settings (new multi-asset system)
+    // When true, uses the new ExportProfiles system
+    // When false, uses legacy FTP config above
+    useExportProfiles: {
+      type: Boolean,
+      default: false, // false for existing groups (legacy mode), true for new groups after migration
+    },
+    // Migration tracking
+    exportProfilesMigrated: {
+      type: Boolean,
+      default: false,
+    },
+    exportProfilesMigratedAt: {
+      type: Date,
+      default: null,
+    },
     entryPoint: {
       type: String,
       default: '',

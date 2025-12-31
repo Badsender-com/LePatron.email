@@ -1,4 +1,5 @@
 const { encrypt, decrypt } = require('./crypto');
+const _ = require('lodash');
 
 function encryptionPlugin(schema, encryptedFields = []) {
   // Encrypt on save or updateOne
@@ -13,8 +14,9 @@ function encryptionPlugin(schema, encryptedFields = []) {
     }
 
     encryptedFields.forEach((field) => {
-      if (data[field]) {
-        data[field] = encrypt(data[field]);
+      const value = _.get(data, field);
+      if (value) {
+        _.set(data, field, encrypt(value));
       }
     });
     next();
@@ -25,8 +27,9 @@ function encryptionPlugin(schema, encryptedFields = []) {
     const processDoc = (doc) => {
       if (!doc) return;
       encryptedFields.forEach((field) => {
-        if (doc[field]?.length > 32) {
-          doc[field] = decrypt(doc[field]);
+        const value = _.get(doc, field);
+        if (value?.length > 32) {
+          _.set(doc, field, decrypt(value));
         }
       });
     };

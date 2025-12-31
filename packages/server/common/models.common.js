@@ -23,6 +23,9 @@ const LogSchema = require('../log/log.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 const TagSchema = require('../tag/tag.schema.js');
+const AssetSchema = require('../asset/asset.schema.js');
+const ExportProfileSchema = require('../export-profile/export-profile.schema.js');
+
 /// ///
 // EXPORTS
 /// ///
@@ -60,6 +63,8 @@ const OAuthClients = mongoose.model(
 const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
 const Tags = mongoose.model(modelNames.TagModel, TagSchema);
+const Assets = mongoose.model(modelNames.AssetModel, AssetSchema);
+const ExportProfiles = mongoose.model(modelNames.ExportProfileModel, ExportProfileSchema);
 
 module.exports = {
   mongoose,
@@ -81,4 +86,6 @@ module.exports = {
   OAuthClients,
   OAuthCodes,
   Tags,
+  Assets,
+  ExportProfiles,
 };

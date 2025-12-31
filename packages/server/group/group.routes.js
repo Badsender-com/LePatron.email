@@ -97,6 +97,14 @@ router.delete(
   groups.deletePersonalizedVariable
 );
 
+// Asset routes
+const assetRoutes = require('../asset/asset.routes.js');
+router.use('/:groupId/assets', assetRoutes);
+
+// Export Profile routes
+const exportProfileRoutes = require('../export-profile/export-profile.routes.js');
+router.use('/:groupId/export-profiles', exportProfileRoutes);
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());
