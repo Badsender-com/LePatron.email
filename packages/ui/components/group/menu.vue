@@ -24,6 +24,12 @@ export default {
     newProfileHref() {
       return `/groups/${this.groupId}/new-profile`;
     },
+    newAssetHref() {
+      return `/groups/${this.groupId}/new-asset`;
+    },
+    newExportProfileHref() {
+      return `/groups/${this.groupId}/new-export-profile`;
+    },
     newEmailsGroup() {
       return `/groups/${this.groupId}/new-emails-group`;
     },
@@ -110,6 +116,26 @@ export default {
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item v-if="isAdmin" nuxt link :to="newAssetHref">
+          <v-list-item-avatar>
+            <v-icon color="accent">
+              mdi-server
+            </v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newAsset') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item v-if="isAdmin" nuxt link :to="newExportProfileHref">
+          <v-list-item-avatar>
+            <v-icon color="accent">
+              mdi-export
+            </v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('global.newExportProfile') }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item v-if="isGroupAdmin" nuxt link :to="newEmailsGroup">

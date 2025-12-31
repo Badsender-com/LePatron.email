@@ -15,6 +15,8 @@ import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import BsGroupLoading from '~/components/loadingBar';
+import BsGroupAssetsTab from '~/components/group/assets-tab.vue';
+import BsGroupExportProfilesTab from '~/components/group/export-profiles-tab.vue';
 
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
@@ -31,6 +33,8 @@ export default {
     BsGroupProfilesTab,
     BsEmailsGroupsTab,
     GroupPersonalizedVariableTab,
+    BsGroupAssetsTab,
+    BsGroupExportProfilesTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -192,6 +196,20 @@ export default {
           {{ $tc('global.profile', 2) }}
         </v-tab>
         <v-tab
+          v-if="isAdmin"
+          href="#group-assets"
+          @click="activeTab = 'group-assets'"
+        >
+          {{ $tc('global.assets', 2) }}
+        </v-tab>
+        <v-tab
+          v-if="isAdmin"
+          href="#group-export-profiles"
+          @click="activeTab = 'group-export-profiles'"
+        >
+          {{ $tc('global.exports', 2) }}
+        </v-tab>
+        <v-tab
           v-if="isGroupAdmin"
           href="#group-emails-groups"
           @click="activeTab = 'group-emails-groups'"
@@ -228,6 +246,12 @@ export default {
         </v-tab-item>
         <v-tab-item v-if="isAdmin" value="group-profile">
           <bs-group-profiles-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-assets">
+          <bs-group-assets-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-export-profiles">
+          <bs-group-export-profiles-tab />
         </v-tab-item>
         <v-tab-item v-if="isGroupAdmin" value="group-emails-groups">
           <bs-emails-groups-tab />

@@ -250,3 +250,31 @@ export function deletePersonalizedVariable(groupId, variableId) {
 export function postPersonalizedVariables(groupId) {
   return `/groups/${groupId}/personalized-variables`;
 }
+
+/// ///
+// ASSETS
+/// ///
+
+export function groupAssets(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/assets`;
+}
+
+export function groupAssetItem(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/assets/${routeParams.assetId}`;
+}
+
+export function groupAssetTestConnection(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/assets/test-connection`;
+}
+
+/// ///
+// EXPORT PROFILES
+/// ///
+
+export function groupExportProfiles(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/export-profiles`;
+}
+
+export function groupExportProfileItem(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/export-profiles/${routeParams.exportProfileId}`;
+}
