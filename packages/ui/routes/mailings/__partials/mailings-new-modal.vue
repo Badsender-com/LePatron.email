@@ -29,7 +29,10 @@ export default {
       return `${this.$t('global.location')} :`;
     },
     templatesHasMarkup() {
-      return this.templates?.filter((template) => template.hasMarkup);
+      if (!Array.isArray(this.templates)) {
+        return [];
+      }
+      return this.templates.filter((template) => template.hasMarkup);
     },
     isValidToCreate() {
       return (

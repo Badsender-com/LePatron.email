@@ -8,7 +8,7 @@ export const FETCH_TEMPLATES = 'FETCH_TEMPLATES';
 export const SET_TEMPLATES_LOADING = 'SET_TEMPLATES_LOADING';
 
 export const state = () => ({
-  templates: {},
+  templates: [],
   templatesLoading: false,
 });
 
