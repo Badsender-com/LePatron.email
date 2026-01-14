@@ -197,7 +197,14 @@ export default {
         const savedSelection = localStorage.getItem(
           this.selectedNodeStorageKey
         );
-        if (!savedSelection) return;
+        if (!savedSelection) {
+          // If no saved selection, select the first workspace
+          if (this.treeviewWorkspaces && this.treeviewWorkspaces.length > 0) {
+            const firstWorkspace = this.treeviewWorkspaces[0];
+            this.$router.replace({ query: { wid: firstWorkspace.id } });
+          }
+          return;
+        }
 
         const { nodeId, nodeType } = JSON.parse(savedSelection);
         const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
