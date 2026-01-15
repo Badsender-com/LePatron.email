@@ -4,8 +4,8 @@ import {
   deleteFolder,
   moveFolder,
   folders,
-  getUserLocalStorageKey,
-  setUserLocalStorageKey,
+  getUserPersistedLocalStorageKey,
+  setUserPersistedLocalStorageKey,
 } from '~/helpers/api-routes.js';
 import { mapState } from 'vuex';
 import {
@@ -137,7 +137,14 @@ export default {
       return result;
     },
     /**
-     * Initialize tree state - load saved state or default to all closed
+     * Tree state restoration priority (per user):
+     * 1) Browser localStorage (fast path) if present
+     * 2) DB-persisted localStorage (hydration) if browser keys are missing
+     * 3) Fallback: first workspace (and empty open nodes)
+     *
+     * Notes:
+     * - hydrateBrowserFromDbIfEmpty() only fills missing browser keys; it never overwrites existing local values.
+     * - Selected node restoration runs after open nodes are set to avoid Vuetify race conditions.
      */
     async initializeTreeState() {
       // Set flag to ignore @update:open events during initialization
@@ -192,7 +199,7 @@ export default {
       });
     },
     /**
-     * Restore the selected node from localStorage
+     * Restores selected node from localStorage; if absent, selects the first workspace.
      */
     restoreSelectedNode() {
       if (typeof localStorage === 'undefined') return;
@@ -201,16 +208,28 @@ export default {
         const savedSelection = localStorage.getItem(
           this.selectedNodeStorageKey
         );
+
         if (!savedSelection) {
-          // If no saved selection, select the first workspace
-          if (this.treeviewWorkspaces && this.treeviewWorkspaces.length > 0) {
-            const firstWorkspace = this.treeviewWorkspaces[0];
-            this.$router.replace({ query: { wid: firstWorkspace.id } });
+          if (this.treeviewWorkspaces?.length) {
+            this.$router.replace({
+              query: { wid: this.treeviewWorkspaces[0].id },
+            });
           }
           return;
         }
 
-        const { nodeId, nodeType } = JSON.parse(savedSelection);
+        const parsedSavedCollection = JSON.parse(savedSelection);
+
+        if (parsedSavedCollection === null) {
+          if (this.treeviewWorkspaces?.length) {
+            this.$router.replace({
+              query: { wid: this.treeviewWorkspaces[0].id },
+            });
+          }
+          return;
+        }
+
+        const { nodeId, nodeType } = parsedSavedCollection;
         const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
 
         if (node) {
@@ -421,7 +440,7 @@ export default {
     clearSelection() {
       this.selectedItemToDelete = {};
       if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(this.selectedNodeStorageKey);
+        localStorage.setItem(this.selectedNodeStorageKey, JSON.stringify(null));
       }
       this.setRemoteLocalStorageKey(this.selectedNodeStorageKey, null);
     },
@@ -492,23 +511,18 @@ export default {
       this.$refs?.moveModal?.close();
     },
     async getRemoteLocalStorageKey(key) {
-      const userId = this.userInfo?.id;
-      if (!userId) return null;
-
       try {
-        const res = await this.$axios.$get(getUserLocalStorageKey(userId, key));
+        const res = await this.$axios.$get(
+          getUserPersistedLocalStorageKey(key)
+        );
         return res?.value ?? null;
       } catch (e) {
         return null;
       }
     },
-
     async setRemoteLocalStorageKey(key, value) {
-      const userId = this.userInfo?.id;
-      if (!userId) return;
-
       this.$axios
-        .$put(setUserLocalStorageKey(userId, key), { value })
+        .$put(setUserPersistedLocalStorageKey(key), { value })
         .catch((e) =>
           console.error('[WorkspaceTree] Remote localStorage update failed:', e)
         );
@@ -518,7 +532,7 @@ export default {
 
       const hasTree = !!localStorage.getItem(this.storageKey);
       const hasSel = !!localStorage.getItem(this.selectedNodeStorageKey);
-      if (hasTree && hasSel) return; // déjà ok
+      if (hasTree && hasSel) return; // already ok
 
       // 1) open nodes
       if (!hasTree) {

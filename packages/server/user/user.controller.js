@@ -31,8 +31,8 @@ module.exports = {
   getPublicProfile: asyncHandler(getPublicProfile),
   login: asyncHandler(login),
   getCurrentUser: asyncHandler(getCurrentUser),
-  getLocalStorageKey: asyncHandler(getLocalStorageKey),
-  updateLocalStorageKey: asyncHandler(updateLocalStorageKey),
+  getPersistedLocalStorageKey: asyncHandler(getPersistedLocalStorageKey),
+  updatePersistedLocalStorageKey: asyncHandler(updatePersistedLocalStorageKey),
 };
 
 /**
@@ -415,13 +415,14 @@ async function login(req, res, next) {
 }
 
 /**
- * GET /users/:userId/localStorage/:key
+ * GET /users/me/storage/:key
  * Retrieves the value of a specific key in the user's localStorage persisted in the DB.
  */
-async function getLocalStorageKey(req, res) {
+async function getPersistedLocalStorageKey(req, res) {
   try {
-    const { userId, key } = req.params;
-    const value = await userService.getLocalStorageKey(userId, key);
+    const { key } = req.params;
+    const userId = req.user.id;
+    const value = await userService.getPersistedLocalStorageKey(userId, key);
     res.status(200).json({ key, value });
   } catch (error) {
     res.status(404).json({ error: error.message });
@@ -429,14 +430,15 @@ async function getLocalStorageKey(req, res) {
 }
 
 /**
- * PUT /users/:userId/localStorage/:key
+ * PUT /users/me/storage/:key
  * Updates or adds a key-value pair in the user's localStorage persisted in the DB.
  */
-async function updateLocalStorageKey(req, res) {
+async function updatePersistedLocalStorageKey(req, res) {
   try {
-    const { userId, key } = req.params;
+    const { key } = req.params;
+    const userId = req.user.id;
     const { value } = req.body;
-    const updatedUser = await userService.updateLocalStorageKey(
+    const updatedUser = await userService.updatePersistedLocalStorageKey(
       userId,
       key,
       value

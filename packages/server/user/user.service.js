@@ -9,8 +9,8 @@ module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
   findByGroupId: asyncHandler(findByGroupId),
-  getLocalStorageKey,
-  updateLocalStorageKey,
+  getPersistedLocalStorageKey,
+  updatePersistedLocalStorageKey,
 };
 
 async function createUser(userParams) {
@@ -64,7 +64,7 @@ async function findByGroupId(groupId) {
  * @param {String} key - The key to retrieve.
  * @returns {Promise<*>} - The value associated with the key or undefined if it does not exist.
  */
-async function getLocalStorageKey(userId, key) {
+async function getPersistedLocalStorageKey(userId, key) {
   const user = await Users.findById(userId).select('localStorage');
   if (!user) {
     throw new Error('User not found');
@@ -79,7 +79,7 @@ async function getLocalStorageKey(userId, key) {
  * @param {*} value - The value to associate with the key (can be a string, an array, or null).
  * @returns {Promise<Object>} - The updated user object.
  */
-async function updateLocalStorageKey(userId, key, value) {
+async function updatePersistedLocalStorageKey(userId, key, value) {
   const user = await Users.findById(userId);
   if (!user) {
     throw new Error('User not found');

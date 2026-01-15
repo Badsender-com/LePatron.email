@@ -11,7 +11,10 @@ const users = require('./user.controller.js');
 /// ///
 // USERS
 /// ///
+router.get('/me/storage/:key', users.getPersistedLocalStorageKey);
+router.put('/me/storage/:key', users.updatePersistedLocalStorageKey);
 
+// Place endpoints protected by admin role below, else above
 router.all('*', guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]));
 
 // Add endpoint for getting the current user's details
@@ -27,9 +30,6 @@ router.put('/:userId/activate', users.activate);
 router.put('/:userId/password', users.setPassword);
 router.delete('/:userId/password', users.adminResetPassword);
 router.get('/:userId/mailings', users.readMailings);
-
-router.get('/:userId/localStorage/:key', users.getLocalStorageKey);
-router.put('/:userId/localStorage/:key', users.updateLocalStorageKey);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {
