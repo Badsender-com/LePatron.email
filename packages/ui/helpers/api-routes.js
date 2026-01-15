@@ -99,6 +99,11 @@ export function usersItemPassword(routeParams = {}) {
 export function usersItemMailings(routeParams = {}) {
   return `/users/${routeParams.userId}/mailings`;
 }
+export const getUserPersistedLocalStorageKey = (key) =>
+  `/users/me/storage/${encodeURIComponent(key)}`;
+
+export const setUserPersistedLocalStorageKey = (key) =>
+  `/users/me/storage/${encodeURIComponent(key)}`;
 
 /// ///
 // MAILINGS
