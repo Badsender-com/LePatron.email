@@ -4,6 +4,8 @@ import {
   deleteFolder,
   moveFolder,
   folders,
+  getUserLocalStorageKey,
+  setUserLocalStorageKey,
 } from '~/helpers/api-routes.js';
 import { mapState } from 'vuex';
 import {
@@ -137,9 +139,11 @@ export default {
     /**
      * Initialize tree state - load saved state or default to all closed
      */
-    initializeTreeState() {
+    async initializeTreeState() {
       // Set flag to ignore @update:open events during initialization
       this.isInitializing = true;
+
+      await this.hydrateBrowserFromDbIfEmpty();
 
       let nodesToOpen = [];
 
@@ -249,6 +253,10 @@ export default {
       } catch (error) {
         console.error('[WorkspaceTree] Error saving selected node:', error);
       }
+      this.setRemoteLocalStorageKey(this.selectedNodeStorageKey, {
+        nodeId,
+        nodeType,
+      });
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -261,6 +269,7 @@ export default {
       } catch (error) {
         console.error('Error saving tree state:', error);
       }
+      this.setRemoteLocalStorageKey(this.storageKey, openIds);
     },
     /**
      * Handle tree expansion state changes
@@ -411,7 +420,10 @@ export default {
     },
     clearSelection() {
       this.selectedItemToDelete = {};
-      this.saveSelectedNode(null, null);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(this.selectedNodeStorageKey);
+      }
+      this.setRemoteLocalStorageKey(this.selectedNodeStorageKey, null);
     },
     openRenameFolderModal(folder) {
       this.conflictError = false;
@@ -478,6 +490,56 @@ export default {
         });
       }
       this.$refs?.moveModal?.close();
+    },
+    async getRemoteLocalStorageKey(key) {
+      const userId = this.userInfo?.id;
+      if (!userId) return null;
+
+      try {
+        const res = await this.$axios.$get(getUserLocalStorageKey(userId, key));
+        return res?.value ?? null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    async setRemoteLocalStorageKey(key, value) {
+      const userId = this.userInfo?.id;
+      if (!userId) return;
+
+      this.$axios
+        .$put(setUserLocalStorageKey(userId, key), { value })
+        .catch((e) =>
+          console.error('[WorkspaceTree] Remote localStorage update failed:', e)
+        );
+    },
+    async hydrateBrowserFromDbIfEmpty() {
+      if (typeof localStorage === 'undefined') return;
+
+      const hasTree = !!localStorage.getItem(this.storageKey);
+      const hasSel = !!localStorage.getItem(this.selectedNodeStorageKey);
+      if (hasTree && hasSel) return; // déjà ok
+
+      // 1) open nodes
+      if (!hasTree) {
+        const remoteTree = await this.getRemoteLocalStorageKey(this.storageKey);
+        if (remoteTree) {
+          localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
+        }
+      }
+
+      // 2) selected node
+      if (!hasSel) {
+        const remoteSel = await this.getRemoteLocalStorageKey(
+          this.selectedNodeStorageKey
+        );
+        if (remoteSel) {
+          localStorage.setItem(
+            this.selectedNodeStorageKey,
+            JSON.stringify(remoteSel)
+          );
+        }
+      }
     },
   },
 };

@@ -9,6 +9,8 @@ module.exports = {
   createUser: asyncHandler(createUser),
   updateUser: asyncHandler(updateUser),
   findByGroupId: asyncHandler(findByGroupId),
+  getLocalStorageKey,
+  updateLocalStorageKey,
 };
 
 async function createUser(userParams) {
@@ -54,4 +56,35 @@ async function findByGroupId(groupId) {
     _company: mongoose.Types.ObjectId(groupId),
   });
   return users;
+}
+
+/**
+ * Retrieves the value of a specific key in the user's localStorage persisted in the db.
+ * @param {String} userId - The ID of the user.
+ * @param {String} key - The key to retrieve.
+ * @returns {Promise<*>} - The value associated with the key or undefined if it does not exist.
+ */
+async function getLocalStorageKey(userId, key) {
+  const user = await Users.findById(userId).select('localStorage');
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user.localStorage?.get(key);
+}
+
+/**
+ * Updates or adds a key-value pair in the user's localStorage persisted in the db.
+ * @param {String} userId - The ID of the user.
+ * @param {String} key - The key to update or add.
+ * @param {*} value - The value to associate with the key (can be a string, an array, or null).
+ * @returns {Promise<Object>} - The updated user object.
+ */
+async function updateLocalStorageKey(userId, key, value) {
+  const user = await Users.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  if (!user.localStorage) user.localStorage = new Map();
+  user.localStorage.set(key, value);
+  return await user.save();
 }

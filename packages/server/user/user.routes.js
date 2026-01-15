@@ -28,6 +28,9 @@ router.put('/:userId/password', users.setPassword);
 router.delete('/:userId/password', users.adminResetPassword);
 router.get('/:userId/mailings', users.readMailings);
 
+router.get('/:userId/localStorage/:key', users.getLocalStorageKey);
+router.put('/:userId/localStorage/:key', users.updateLocalStorageKey);
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());
