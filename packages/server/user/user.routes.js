@@ -11,7 +11,10 @@ const users = require('./user.controller.js');
 /// ///
 // USERS
 /// ///
+router.get('/me/storage/:key', users.getPersistedLocalStorageKey);
+router.put('/me/storage/:key', users.updatePersistedLocalStorageKey);
 
+// Place endpoints protected by admin role below, else above
 router.all('*', guard([Roles.SUPER_ADMIN, Roles.GROUP_ADMIN]));
 
 // Add endpoint for getting the current user's details

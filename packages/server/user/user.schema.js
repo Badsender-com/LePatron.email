@@ -92,6 +92,11 @@ const UserSchema = Schema(
       select: false,
     },
     lastActivity: { type: Date, default: Date.now },
+    localStorage: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: true,
