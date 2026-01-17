@@ -12,6 +12,9 @@ const AUTH_TYPES = {
   SSH_KEY: 'ssh_key',
 };
 
+// Mask value used by server - we don't populate with this
+const CREDENTIAL_MASK = '••••••••';
+
 export default {
   name: 'AssetForm',
   mixins: [validationMixin],
@@ -72,23 +75,32 @@ export default {
         port: { required, minValue: minValue(1) },
         username: { required },
       };
-      if (this.form.sftp.authType === AUTH_TYPES.PASSWORD) {
-        baseValidations.form.sftp.password = { required };
-      } else {
-        baseValidations.form.sftp.sshKey = { required };
+      // In edit mode, credentials are optional (empty = keep current)
+      if (!this.isEditMode) {
+        if (this.form.sftp.authType === AUTH_TYPES.PASSWORD) {
+          baseValidations.form.sftp.password = { required };
+        } else {
+          baseValidations.form.sftp.sshKey = { required };
+        }
       }
     } else if (this.form.type === ASSET_TYPES.S3) {
       baseValidations.form.s3 = {
         region: { required },
         bucket: { required },
         accessKeyId: { required },
-        secretAccessKey: { required },
       };
+      // In edit mode, credentials are optional (empty = keep current)
+      if (!this.isEditMode) {
+        baseValidations.form.s3.secretAccessKey = { required };
+      }
     }
 
     return baseValidations;
   },
   computed: {
+    isEditMode() {
+      return this.asset && Object.keys(this.asset).length > 0;
+    },
     isSftp() {
       return this.form.type === ASSET_TYPES.SFTP;
     },
@@ -177,24 +189,31 @@ export default {
       this.form.publicEndpoint = this.asset.publicEndpoint || '';
 
       if (this.asset.sftp) {
+        // Don't populate credentials - they come masked from server
+        // Empty field = keep current password
+        const password = this.asset.sftp.password;
+        const sshKey = this.asset.sftp.sshKey;
         this.form.sftp = {
           host: this.asset.sftp.host || '',
           port: this.asset.sftp.port || 22,
           username: this.asset.sftp.username || '',
           authType: this.asset.sftp.authType || AUTH_TYPES.PASSWORD,
-          password: this.asset.sftp.password || '',
-          sshKey: this.asset.sftp.sshKey || '',
+          password: (password && password !== CREDENTIAL_MASK) ? password : '',
+          sshKey: (sshKey && sshKey !== CREDENTIAL_MASK) ? sshKey : '',
           pathOnServer: this.asset.sftp.pathOnServer || './',
         };
       }
 
       if (this.asset.s3) {
+        // Don't populate credentials - they come masked from server
+        // Empty field = keep current secret key
+        const secretKey = this.asset.s3.secretAccessKey;
         this.form.s3 = {
           endpoint: this.asset.s3.endpoint || '',
           region: this.asset.s3.region || '',
           bucket: this.asset.s3.bucket || '',
           accessKeyId: this.asset.s3.accessKeyId || '',
-          secretAccessKey: this.asset.s3.secretAccessKey || '',
+          secretAccessKey: (secretKey && secretKey !== CREDENTIAL_MASK) ? secretKey : '',
           pathPrefix: this.asset.s3.pathPrefix || '',
           forcePathStyle: this.asset.s3.forcePathStyle || false,
         };
@@ -325,8 +344,11 @@ export default {
                 :error-messages="sftpPasswordErrors"
                 :type="showPassword ? 'text' : 'password'"
                 :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                :placeholder="isEditMode ? $t('assets.form.keepCurrentPlaceholder') : ''"
+                :hint="isEditMode ? $t('assets.form.keepCurrentHint') : ''"
+                :persistent-hint="isEditMode"
                 outlined
-                required
+                :required="!isEditMode"
                 @click:append="showPassword = !showPassword"
                 @blur="$v.form.sftp && $v.form.sftp.password && $v.form.sftp.password.$touch()"
               />
@@ -339,9 +361,12 @@ export default {
                 v-model="form.sftp.sshKey"
                 :label="$t('assets.form.sftp.sshKey')"
                 :error-messages="sftpSshKeyErrors"
+                :placeholder="isEditMode ? $t('assets.form.keepCurrentPlaceholder') : ''"
+                :hint="isEditMode ? $t('assets.form.keepCurrentHint') : ''"
+                :persistent-hint="isEditMode"
                 outlined
                 rows="4"
-                required
+                :required="!isEditMode"
                 @blur="$v.form.sftp && $v.form.sftp.sshKey && $v.form.sftp.sshKey.$touch()"
               />
             </v-col>
@@ -420,10 +445,13 @@ export default {
                 :error-messages="s3SecretAccessKeyErrors"
                 :type="showSecretKey ? 'text' : 'password'"
                 :append-icon="showSecretKey ? 'mdi-eye' : 'mdi-eye-off'"
+                :placeholder="isEditMode ? $t('assets.form.keepCurrentPlaceholder') : ''"
+                :hint="isEditMode ? $t('assets.form.keepCurrentHint') : ''"
+                :persistent-hint="isEditMode"
                 outlined
-                required
+                :required="!isEditMode"
                 @click:append="showSecretKey = !showSecretKey"
-                @blur="$v.form.s3 && $v.form.s3.secretAccessKey.$touch()"
+                @blur="$v.form.s3 && $v.form.s3.secretAccessKey && $v.form.s3.secretAccessKey.$touch()"
               />
             </v-col>
           </v-row>

@@ -3,10 +3,13 @@
 // const cheerio = require('cheerio')
 const asyncHandler = require('express-async-handler');
 const mailingService = require('./mailing.service.js');
+const profileService = require('../profile/profile.service.js');
 const logger = require('../utils/logger.js');
 const archiver = require('archiver');
-const { InternalServerError } = require('http-errors');
+const { InternalServerError, BadRequest } = require('http-errors');
 const { ERROR_CODES } = require('../constant/error-codes.js');
+const { ExportProfiles } = require('../common/models.common.js');
+const DeliveryMethods = require('../constant/delivery-method.js');
 
 module.exports = {
   downloadZip: asyncHandler(downloadZip),
@@ -40,7 +43,25 @@ async function downloadZip(req, res, next) {
 
   const { user, body } = req;
   const { mailingId } = req.params;
-  const { html, ...downloadOptions } = body;
+  const { html, exportProfileId, ...downloadOptions } = body;
+
+  // Check if this is an export profile with ESP delivery
+  if (exportProfileId && exportProfileId !== '' && exportProfileId !== 'null') {
+    const exportProfile = await ExportProfiles.findById(exportProfileId).populate('_espProfile');
+
+    if (exportProfile && exportProfile.deliveryMethod === DeliveryMethods.ESP) {
+      // Handle ESP delivery
+      return handleEspDelivery(req, res, {
+        user,
+        html,
+        mailingId,
+        exportProfile,
+        downloadOptions: { ...downloadOptions, exportProfileId },
+      });
+    }
+  }
+
+  // Continue with ZIP download (legacy or export profile with download delivery)
   const archive = archiver('zip');
   archive.on('error', next);
 
@@ -52,7 +73,7 @@ async function downloadZip(req, res, next) {
       user,
       html,
       archive,
-      downloadOptions,
+      downloadOptions: { ...downloadOptions, exportProfileId },
       mailingId,
     });
 
@@ -73,6 +94,74 @@ async function downloadZip(req, res, next) {
     console.error('Error while downloading zip', { error });
     const backUrl = req.header('Referer') || '/';
     res.redirect(backUrl);
+  }
+}
+
+/**
+ * Handle ESP delivery for export profiles
+ * This will process images (upload to Asset if needed) and send to ESP
+ */
+async function handleEspDelivery(req, res, { user, html, mailingId, exportProfile, downloadOptions }) {
+  logger.log('Handling ESP delivery for export profile:', exportProfile.id);
+
+  try {
+    const espProfile = exportProfile._espProfile;
+    if (!espProfile) {
+      throw new BadRequest('ESP profile not found in export profile');
+    }
+
+    // Get mailing info for campaign name and subject
+    const mailing = await mailingService.getMailByMailingIdAndUser({ mailingId, user });
+    const mailingName = mailing.name || 'Email Campaign';
+
+    // Prepare ESP sending data from the ESP profile
+    // Note: sendEspCampaign expects 'campaignMailName' which it maps to 'name' for the provider
+    const espSendingMailData = {
+      subject: mailingName,
+      campaignMailName: mailingName,
+      // Use sender info from ESP profile's additionalApiData
+      senderName: espProfile.additionalApiData?.senderName || espProfile.name,
+      senderMail: espProfile.additionalApiData?.senderMail || '',
+      replyTo: espProfile.additionalApiData?.replyTo || '',
+      contentSendType: espProfile.additionalApiData?.contentSendType || 'MAIL',
+    };
+
+    // Process HTML with images uploaded to Asset (FTP/S3) if needed
+    // The processHtmlWithFTPOption will use the export profile's asset configuration
+    const processedHtml = await mailingService.processHtmlWithFTPOption({
+      user,
+      html,
+      mailingId,
+      doesWaitForFtp: true,
+      downloadOptions,
+    });
+
+    // Send to ESP (skipHtmlProcessing=true because we already processed the HTML above)
+    const result = await profileService.sendEspCampaign({
+      user,
+      espSendingMailData,
+      profileId: espProfile.id || espProfile._id,
+      html: processedHtml,
+      mailingId,
+      type: espProfile.type,
+      skipHtmlProcessing: true,
+    });
+
+    logger.log('ESP delivery successful:', result);
+
+    // Return success response (not a file download)
+    res.json({
+      success: true,
+      message: 'Email sent to ESP successfully',
+      ...result,
+    });
+  } catch (error) {
+    logger.error('Error during ESP delivery:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Error sending to ESP',
+      error: error.response?.data?.message || error.message,
+    });
   }
 }
 

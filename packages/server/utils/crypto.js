@@ -15,11 +15,26 @@ const encrypt = (text) => {
 };
 
 const decrypt = (hash) => {
-  const iv = Buffer.from(hash.substring(0, 32), 'hex');
-  const content = Buffer.from(hash.substring(32), 'hex');
-  const decipher = crypto.createDecipheriv(algorithm, encryptionKey, iv);
-  const decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
-  return decrypted.toString();
+  try {
+    // Validate hash format: must be hex string with at least 32 chars for IV
+    if (!hash || typeof hash !== 'string' || hash.length < 32) {
+      return hash; // Return original value if not a valid encrypted format
+    }
+    // Check if it looks like encrypted data (hex string)
+    if (!/^[0-9a-fA-F]+$/.test(hash)) {
+      return hash; // Return original value if not hex
+    }
+    const iv = Buffer.from(hash.substring(0, 32), 'hex');
+    const content = Buffer.from(hash.substring(32), 'hex');
+    const decipher = crypto.createDecipheriv(algorithm, encryptionKey, iv);
+    const decrypted = Buffer.concat([decipher.update(content), decipher.final()]);
+    return decrypted.toString();
+  } catch (error) {
+    // If decryption fails, return the original value
+    // This handles cases where data wasn't encrypted or is corrupted
+    console.warn('Decryption failed, returning original value:', error.message);
+    return hash;
+  }
 };
 
 const getMd5FromBlob = async (blob) => {

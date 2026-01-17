@@ -154,7 +154,7 @@ class DscProvider {
     }
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
       logger.log('Creating campaign mail for DSC: ', campaignMailData?.name);
       const emailCampaignsData = await this.formatDscData({
@@ -162,6 +162,7 @@ class DscProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       const createCampaignApiResult = await this.createCampaignMailApi(
@@ -183,7 +184,7 @@ class DscProvider {
     }
   }
 
-  async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async updateCampaignMail({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
       logger.log('Updating campaign mail for DSC: ', campaignMailData?.name);
 
@@ -192,6 +193,7 @@ class DscProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       const updateCampaignApiResult = await this.updateCampaignMailApi(
@@ -218,14 +220,17 @@ class DscProvider {
     return new DscProvider(initialData);
   }
 
-  async formatDscData({ campaignMailData, user, html, mailingId }) {
+  async formatDscData({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
-      const processedHtml = await mailingService.processHtmlWithFTPOption({
-        user,
-        html,
-        mailingId,
-        doesWaitForFtp: false,
-      });
+      // If skipHtmlProcessing is true, the HTML has already been processed (e.g., by handleEspDelivery)
+      const processedHtml = skipHtmlProcessing
+        ? html
+        : await mailingService.processHtmlWithFTPOption({
+            user,
+            html,
+            mailingId,
+            doesWaitForFtp: false,
+          });
 
       const { subject, name, planification, typeCampagne } = campaignMailData;
 

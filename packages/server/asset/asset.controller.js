@@ -6,6 +6,9 @@ const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { NotFound, Forbidden } = require('http-errors');
 
+// Mask value for credentials - used to detect if password was changed
+const CREDENTIAL_MASK = '••••••••';
+
 module.exports = {
   createAsset: asyncHandler(createAsset),
   updateAsset: asyncHandler(updateAsset),
@@ -48,7 +51,8 @@ async function createAsset(req, res) {
     isActive,
   });
 
-  res.status(201).json(asset);
+  // Always mask credentials in response
+  res.status(201).json(maskCredentials(asset));
 }
 
 /**
@@ -74,16 +78,21 @@ async function updateAsset(req, res) {
 
   await checkAdminAccess(user, groupId);
 
+  // Filter out masked credential values - they should not be updated
+  const cleanedSftp = sftp ? filterMaskedCredentials(sftp, ['password', 'sshKey']) : sftp;
+  const cleanedS3 = s3 ? filterMaskedCredentials(s3, ['secretAccessKey']) : s3;
+
   const asset = await assetService.updateAsset({
     assetId,
     name,
-    sftp,
-    s3,
+    sftp: cleanedSftp,
+    s3: cleanedS3,
     publicEndpoint,
     isActive,
   });
 
-  res.json(asset);
+  // Always mask credentials in response
+  res.json(maskCredentials(asset));
 }
 
 /**
@@ -132,7 +141,9 @@ async function listAssets(req, res) {
     assets = await assetService.findAllByGroup({ groupId });
   }
 
-  res.json({ result: assets });
+  // Always mask credentials in response
+  const maskedAssets = assets.map(maskCredentials);
+  res.json({ result: maskedAssets });
 }
 
 /**
@@ -197,24 +208,45 @@ async function checkAdminAccess(user, groupId) {
 
 /**
  * Mask sensitive credentials in asset response
+ * @param {Object} asset - Asset document or object
+ * @returns {Object} Asset with masked credentials
  */
 function maskCredentials(asset) {
   const assetObj = asset.toObject ? asset.toObject() : { ...asset };
 
   if (assetObj.sftp) {
     if (assetObj.sftp.password) {
-      assetObj.sftp.password = '••••••••';
+      assetObj.sftp.password = CREDENTIAL_MASK;
     }
     if (assetObj.sftp.sshKey) {
-      assetObj.sftp.sshKey = '••••••••';
+      assetObj.sftp.sshKey = CREDENTIAL_MASK;
     }
   }
 
   if (assetObj.s3) {
     if (assetObj.s3.secretAccessKey) {
-      assetObj.s3.secretAccessKey = '••••••••';
+      assetObj.s3.secretAccessKey = CREDENTIAL_MASK;
     }
   }
 
   return assetObj;
+}
+
+/**
+ * Filter out masked credential values from an object
+ * If a credential field equals the mask value, remove it so it won't be updated
+ * @param {Object} obj - Object containing potential credential fields
+ * @param {Array<string>} fields - List of credential field names to check
+ * @returns {Object} Object with masked credentials removed
+ */
+function filterMaskedCredentials(obj, fields) {
+  if (!obj) return obj;
+
+  const filtered = { ...obj };
+  fields.forEach((field) => {
+    if (filtered[field] === CREDENTIAL_MASK || filtered[field] === '') {
+      delete filtered[field];
+    }
+  });
+  return filtered;
 }

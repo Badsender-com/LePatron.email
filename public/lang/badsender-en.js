@@ -41,6 +41,11 @@ module.exports = {
   'dl-btn-regular': 'Standard download',
   'dl-btn-cdn': 'zip with CDN',
 
+  // ESP export profile
+  'Sending to ESP...': 'Sending to ESP...',
+  'ESP send success': 'Export to ESP successful',
+  'ESP send error': 'Error while exporting to ESP',
+
   // Editor interface
   'editor-title': 'LePatron - Image editor',
   'editor-panel-title': 'Selected element',

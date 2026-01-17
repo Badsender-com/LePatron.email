@@ -110,7 +110,7 @@
     "sib-api-v3-sdk": "8.2.0",
     "socks": "2.4.1",
     "speakingurl": "14.0.1",
-    "ssh2-sftp-client": "5.1.2",
+    "ssh2-sftp-client": "^7.2.3",
     "stream-buffers": "3.0.2",
     "validator": "10.11.0",
     "vue-i18n": "8.15.3",

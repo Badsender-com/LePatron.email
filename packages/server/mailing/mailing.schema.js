@@ -11,6 +11,7 @@ const {
   GroupModel,
   WorkspaceModel,
   FolderModel,
+  ExportProfileModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 
@@ -395,12 +396,27 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   if (!mailing) return mailing;
 
   // group is needed to check zip format
-  // • a mailing without a group is from the “admin”
+  // • a mailing without a group is from the "admin"
   // • so group configuration will be find on the template
   // • admin will have the same option as a company user
   const Groups = mongoose.models[GroupModel];
   const group = await Groups.findById(mailing._wireframe._company);
   if (!group) return group;
+
+  // Fetch export profiles if new mode is enabled
+  let exportProfiles = [];
+  logger.log('[findOneForMosaico] group.useExportProfiles:', group.useExportProfiles);
+  if (group.useExportProfiles) {
+    const ExportProfiles = mongoose.models[ExportProfileModel];
+    exportProfiles = await ExportProfiles.find({
+      _company: group._id,
+      isActive: true,
+    })
+      .populate('_espProfile', 'name type')
+      .populate('_asset', 'name type publicEndpoint')
+      .sort({ name: 1 });
+    logger.log('[findOneForMosaico] Found export profiles:', exportProfiles.length);
+  }
 
   // we try to keep a response as close as possible as the config used in the mosaico editor
   const mailingId = mailing._id;
@@ -439,6 +455,18 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         ftpImages: group.downloadMailingWithFtpImages,
         ftpButtonLabel: group.ftpButtonLabel,
       },
+      // New export system
+      useExportProfiles: group.useExportProfiles || false,
+      exportProfiles: exportProfiles.map((ep) => ({
+        id: ep.id,
+        name: ep.name,
+        deliveryMethod: ep.deliveryMethod,
+        assetMethod: ep.assetMethod,
+        espProfileName: ep._espProfile?.name || null,
+        espProfileType: ep._espProfile?.type || null,
+        assetName: ep._asset?.name || null,
+        zipWithoutEnclosingFolder: ep.zipWithoutEnclosingFolder || false,
+      })),
       fileuploadConfig: {
         url: {
           mailing: `/api/images/gallery/${mailingId}`,
@@ -472,6 +500,18 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       cdnButtonLabel: group.cdnButtonLabel,
       ftpImages: group.downloadMailingWithFtpImages,
       ftpButtonLabel: group.ftpButtonLabel,
+      // New export system
+      useExportProfiles: group.useExportProfiles || false,
+      exportProfiles: exportProfiles.map((ep) => ({
+        id: ep.id,
+        name: ep.name,
+        deliveryMethod: ep.deliveryMethod,
+        assetMethod: ep.assetMethod,
+        espProfileName: ep._espProfile?.name || null,
+        espProfileType: ep._espProfile?.type || null,
+        assetName: ep._asset?.name || null,
+        zipWithoutEnclosingFolder: ep.zipWithoutEnclosingFolder || false,
+      })),
     },
     // Mosaico absolutely need an object as `data`
     data: mailing.data || {},

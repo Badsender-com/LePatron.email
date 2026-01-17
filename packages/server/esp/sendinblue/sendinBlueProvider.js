@@ -69,7 +69,7 @@ class SendinBlueProvider {
     };
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
       const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
       let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
@@ -79,6 +79,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
@@ -91,12 +92,12 @@ class SendinBlueProvider {
 
       return createCampaignApiResult?.id;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error('Sendinblue createCampaignMail error:', e.response?.text || e.message || e);
       throw e;
     }
   }
 
-  async createTemplate({ campaignMailData, user, html, mailingId }) {
+  async createTemplate({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
       const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi();
       let templateData = new SibApiV3Sdk.CreateSmtpTemplate();
@@ -106,6 +107,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       const createTemplateApiResult = await apiTemplateInstance.createSmtpTemplate(
@@ -120,7 +122,7 @@ class SendinBlueProvider {
       }
       return createTemplateApiResult?.id;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error('Sendinblue createTemplate error:', e.response?.text || e.message || e);
       throw e;
     }
   }
@@ -131,6 +133,7 @@ class SendinBlueProvider {
     html,
     mailingId,
     campaignId,
+    skipHtmlProcessing = false,
   }) {
     try {
       console.log('update a template ...');
@@ -143,6 +146,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       await apiTemplateInstance.updateSmtpTemplate(campaignId, {
@@ -152,7 +156,7 @@ class SendinBlueProvider {
 
       return;
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error('Sendinblue updateTemplate error:', e.response?.text || e.message || e);
       throw e;
     }
   }
@@ -163,6 +167,7 @@ class SendinBlueProvider {
     html,
     mailingId,
     campaignId,
+    skipHtmlProcessing = false,
   }) {
     try {
       const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
@@ -172,6 +177,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        skipHtmlProcessing,
       });
 
       return await apiEmailCampaignsInstance.updateEmailCampaign(
@@ -179,19 +185,22 @@ class SendinBlueProvider {
         emailCampaignsData
       );
     } catch (e) {
-      logger.error(e.response.text);
+      logger.error('Sendinblue updateCampaignMail error:', e.response?.text || e.message || e);
       throw e;
     }
   }
 
-  async formatSendinBlueData({ campaignMailData, user, html, mailingId }) {
+  async formatSendinBlueData({ campaignMailData, user, html, mailingId, skipHtmlProcessing = false }) {
     try {
-      const processedHtml = await mailingService.processHtmlWithFTPOption({
-        user,
-        html,
-        mailingId,
-        doesWaitForFtp: false,
-      });
+      // If skipHtmlProcessing is true, the HTML has already been processed (e.g., by handleEspDelivery)
+      const processedHtml = skipHtmlProcessing
+        ? html
+        : await mailingService.processHtmlWithFTPOption({
+            user,
+            html,
+            mailingId,
+            doesWaitForFtp: false,
+          });
 
       const {
         senderName,

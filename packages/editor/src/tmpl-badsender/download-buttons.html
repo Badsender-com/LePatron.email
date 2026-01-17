@@ -12,6 +12,7 @@
   <input type="hidden" name="action" value="download" />
   <input type="hidden" name="downLoadForCdn" value="false" />
   <input type="hidden" name="downLoadForFtp" value="false" />
+  <input type="hidden" name="exportProfileId" id="downloadExportProfileId" value="" />
   <input
     type="hidden"
     name="filename"
@@ -20,97 +21,156 @@
   />
   <input type="hidden" name="html" id="downloadHtmlTextarea" />
 
-  <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
-  <a
-    title="Download template"
-    href="javascript:void(0)"
-    data-bind="
-      attr: { title: $root.t('Download template') },
-      click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
-      clickBubble: false,
-      button: {
-        disabled: !$root.download.enabled(),
-        icons: { primary: 'fa fa-fw fa-download' },
-        label: $root.t($root.download.name),
-        text: true
-      }
-    "
-  >
-    DOWNLOAD
-  </a>
-  <!-- /ko -->
-
-<!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
-  <p
-    class="download-form__btn-menu"
-    data-bind="
-      button: {
-        icons: { primary: 'fa fa-fw fa-download' },
-        label: $root.t($root.download.name)
-      }"
-  >
-    DL CDN
-  </p>
-  <aside class="download-form__menu">
+  <!-- NEW EXPORT PROFILES MODE -->
+  <!-- ko if: $root.useExportProfiles -->
+    <!-- Simple download button if no export profiles configured -->
+    <!-- ko if: $root.exportProfiles().length === 0 -->
     <a
+      title="Download template"
       href="javascript:void(0)"
       data-bind="
+        attr: { title: $root.t('Download template') },
         click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
-          label: $root.t('dl-btn-regular'),
+          icons: { primary: 'fa fa-fw fa-download' },
+          label: $root.t($root.download.name),
+          text: true
         }
       "
     >
-      DOWNLOAD REGULAR ZIP
-    </a>
-
-    <!-- ko if: $root.downloadCdn  -->
-    <a
-      href="javascript:void(0)"
-      data-bind="
-        click: function (){ $root.download.execute({forCdn: true, forFtp: false}) },
-        clickBubble: false,
-        button: {
-          disabled: !$root.download.enabled(),
-          label: $root.cdnButtonLabel,
-        }"
-    >
-      DOWNLOAD CDN
+      DOWNLOAD
     </a>
     <!-- /ko -->
 
-    <!-- ko if: $root.downloadFtp  -->
-    <a
-      href="javascript:void(0)"
+    <!-- Dropdown menu if export profiles are configured -->
+    <!-- ko if: $root.exportProfiles().length > 0 -->
+    <p
+      class="download-form__btn-menu"
       data-bind="
-        click: function (){ $root.download.execute({forCdn: false, forFtp: true}) },
-        clickBubble: false,
         button: {
-          disabled: !$root.download.enabled(),
-          label: $root.ftpButtonLabel,
+          icons: { primary: 'fa fa-fw fa-download' },
+          label: $root.t($root.download.name)
         }"
     >
-      DOWNLOAD FTP
-    </a>
-    <!-- /ko -->
-
-    <!-- ko if: $root.downloadFtp || $root.hasAdobeProfile -->
-    <div data-bind="foreach: profiles">
-      <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
-        <a href="javascript:void(0)" data-bind="
-          click: $root.setSelectedProfile.bind($index()),
-          button: {
-          disabled: !$root.download.enabled(),
-          label: name,
-        }">
-          Link
+      EXPORT
+    </p>
+    <aside class="download-form__menu">
+      <!-- Export profiles only - no local download in this mode -->
+      <div data-bind="foreach: $root.exportProfiles">
+        <a
+          href="javascript:void(0)"
+          data-bind="
+            click: function (item){ $root.download.execute({exportProfileId: item.id}) },
+            clickBubble: false,
+            button: {
+              disabled: !$root.download.enabled(),
+              label: name,
+            }
+          "
+        >
+          <!-- ko text: name --><!-- /ko -->
         </a>
-      <!-- /ko -->
-    </div>
+      </div>
+    </aside>
     <!-- /ko -->
-  </aside>
+  <!-- /ko -->
+
+  <!-- LEGACY MODE -->
+  <!-- ko ifnot: $root.useExportProfiles -->
+    <!-- ko ifnot: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
+    <a
+      title="Download template"
+      href="javascript:void(0)"
+      data-bind="
+        attr: { title: $root.t('Download template') },
+        click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
+        clickBubble: false,
+        button: {
+          disabled: !$root.download.enabled(),
+          icons: { primary: 'fa fa-fw fa-download' },
+          label: $root.t($root.download.name),
+          text: true
+        }
+      "
+    >
+      DOWNLOAD
+    </a>
+    <!-- /ko -->
+
+  <!-- ko if: $root.downloadCdn || $root.downloadFtp || $root.hasAdobeProfile -->
+    <p
+      class="download-form__btn-menu"
+      data-bind="
+        button: {
+          icons: { primary: 'fa fa-fw fa-download' },
+          label: $root.t($root.download.name)
+        }"
+    >
+      DL CDN
+    </p>
+    <aside class="download-form__menu">
+      <a
+        href="javascript:void(0)"
+        data-bind="
+          click: function (){ $root.download.execute({forCdn: false, forFtp: false}) },
+          clickBubble: false,
+          button: {
+            disabled: !$root.download.enabled(),
+            label: $root.t('dl-btn-regular'),
+          }
+        "
+      >
+        DOWNLOAD REGULAR ZIP
+      </a>
+
+      <!-- ko if: $root.downloadCdn  -->
+      <a
+        href="javascript:void(0)"
+        data-bind="
+          click: function (){ $root.download.execute({forCdn: true, forFtp: false}) },
+          clickBubble: false,
+          button: {
+            disabled: !$root.download.enabled(),
+            label: $root.cdnButtonLabel,
+          }"
+      >
+        DOWNLOAD CDN
+      </a>
+      <!-- /ko -->
+
+      <!-- ko if: $root.downloadFtp  -->
+      <a
+        href="javascript:void(0)"
+        data-bind="
+          click: function (){ $root.download.execute({forCdn: false, forFtp: true}) },
+          clickBubble: false,
+          button: {
+            disabled: !$root.download.enabled(),
+            label: $root.ftpButtonLabel,
+          }"
+      >
+        DOWNLOAD FTP
+      </a>
+      <!-- /ko -->
+
+      <!-- ko if: $root.downloadFtp || $root.hasAdobeProfile -->
+      <div data-bind="foreach: profiles">
+        <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
+          <a href="javascript:void(0)" data-bind="
+            click: $root.setSelectedProfile.bind($index()),
+            button: {
+            disabled: !$root.download.enabled(),
+            label: name,
+          }">
+            Link
+          </a>
+        <!-- /ko -->
+      </div>
+      <!-- /ko -->
+    </aside>
+    <!-- /ko -->
   <!-- /ko -->
 </form>
 <!-- /ko -->

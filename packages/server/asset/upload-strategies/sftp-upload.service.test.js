@@ -16,7 +16,7 @@ jest.mock('../../utils/download-zip-markdown.js', () => ({
   }),
 }));
 
-const Client = require('ssh2-sftp-client');
+const SftpClient = require('ssh2-sftp-client');
 const fs = require('fs-extra');
 const request = require('request');
 const SftpAuthTypes = require('../../constant/sftp-auth-type.js');
@@ -47,7 +47,7 @@ describe('SftpUploadService', () => {
       fastPut: jest.fn().mockResolvedValue(undefined),
     };
 
-    Client.mockImplementation(() => mockClient);
+    SftpClient.mockImplementation(() => mockClient);
 
     fs.mkdirSync = jest.fn();
     fs.removeSync = jest.fn();
@@ -59,7 +59,7 @@ describe('SftpUploadService', () => {
       service = new SftpUploadService(defaultConfig);
 
       expect(service.config).toEqual(defaultConfig);
-      expect(Client).toHaveBeenCalled();
+      expect(SftpClient).toHaveBeenCalled();
     });
   });
 
@@ -196,7 +196,7 @@ describe('SftpUploadService', () => {
 
       await service.upload(sourceUrls, folderName);
 
-      expect(mockClient.mkdir).toHaveBeenCalledWith('/uploads/my-mailing/', true);
+      expect(mockClient.mkdir).toHaveBeenCalledWith('/uploads/my-mailing/', { recursive: true });
     });
 
     it('should handle upload errors gracefully', async () => {

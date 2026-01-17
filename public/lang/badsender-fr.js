@@ -40,6 +40,11 @@ module.exports = {
   'dl-btn-regular': 'Téléchargement local',
   'dl-btn-cdn': 'images ICOU',
 
+  // ESP export profile
+  'Sending to ESP...': 'Envoi vers le routeur...',
+  'ESP send success': 'Export vers le routeur réussi',
+  'ESP send error': "Erreur lors de l'export vers le routeur",
+
   // Editor interface
   'editor-title': "LePatron - Éditeur d'image",
   'editor-panel-title': 'Élément sélectionné',

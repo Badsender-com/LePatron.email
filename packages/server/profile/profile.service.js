@@ -253,6 +253,7 @@ async function sendEspCampaign({
   html,
   mailingId,
   type,
+  skipHtmlProcessing = false,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   const profile = await findOne(profileId);
@@ -320,12 +321,14 @@ async function sendEspCampaign({
           html,
           mailingId,
           campaignMailData,
+          skipHtmlProcessing,
         })
       : await espProvider.createTemplate({
           user,
           html,
           mailingId,
           campaignMailData,
+          skipHtmlProcessing,
         });
 
   await mailingService.updateMailEspIds(mailingId, {

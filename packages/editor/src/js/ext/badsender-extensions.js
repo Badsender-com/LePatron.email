@@ -51,6 +51,19 @@ function downloadOptions(opts) {
     viewModel.cdnButtonLabel = opts.download.cdnButtonLabel;
     viewModel.downloadFtp = opts.download.ftpImages;
     viewModel.ftpButtonLabel = opts.download.ftpButtonLabel;
+    // New export system
+    viewModel.useExportProfiles = opts.download.useExportProfiles || false;
+    viewModel.exportProfiles = ko.observableArray(opts.download.exportProfiles || []);
+    // Selected export profile for the dropdown
+    viewModel.selectedExportProfile = ko.observable(null);
+
+    // Debug: expose to window for inspection (works even in production)
+    window._exportProfilesDebug = {
+      useExportProfiles: viewModel.useExportProfiles,
+      exportProfiles: opts.download.exportProfiles,
+      downloadConfig: opts.download
+    };
+
     viewModel.hasAdobeProfile = ko.computed(function () {
       return Array.isArray(viewModel.profiles()) &&
             viewModel.profiles().some(function (p) {

@@ -233,7 +233,8 @@ export default {
                 {{ $t('forms.group.color.label') }}
                 <bs-color-scheme v-model="localModel.colorScheme" />
               </v-col>
-              <v-col v-if="isAdmin" cols="4">
+              <!-- ZIP format option - only visible in legacy mode -->
+              <v-col v-if="isAdmin && !localModel.useExportProfiles" cols="4">
                 <v-select
                   id="downloadMailingWithoutEnclosingFolder"
                   v-model="localModel.downloadMailingWithoutEnclosingFolder"
@@ -246,7 +247,63 @@ export default {
                 />
               </v-col>
             </v-row>
-            <v-row v-if="isAdmin">
+            <!-- Export Mode Section -->
+            <v-row v-if="isAdmin && isEdit">
+              <v-col cols="12">
+                <v-card outlined class="mb-4">
+                  <v-card-title class="subtitle-1">
+                    {{ $t('forms.group.exportMode.label') }}
+                  </v-card-title>
+                  <v-card-text>
+                    <p class="body-2 grey--text text--darken-1 mb-4">
+                      {{ $t('forms.group.exportMode.description') }}
+                    </p>
+                    <v-radio-group
+                      v-model="localModel.useExportProfiles"
+                      :disabled="disabled"
+                      class="mt-0"
+                    >
+                      <v-radio :value="false">
+                        <template #label>
+                          <div>
+                            <span class="font-weight-medium">
+                              {{ $t('forms.group.exportMode.legacy.label') }}
+                            </span>
+                            <p class="body-2 grey--text mb-0">
+                              {{ $t('forms.group.exportMode.legacy.description') }}
+                            </p>
+                          </div>
+                        </template>
+                      </v-radio>
+                      <v-radio :value="true" class="mt-2">
+                        <template #label>
+                          <div>
+                            <span class="font-weight-medium">
+                              {{ $t('forms.group.exportMode.advanced.label') }}
+                            </span>
+                            <p class="body-2 grey--text mb-0">
+                              {{ $t('forms.group.exportMode.advanced.description') }}
+                            </p>
+                          </div>
+                        </template>
+                      </v-radio>
+                    </v-radio-group>
+                    <v-alert
+                      v-if="localModel.useExportProfiles"
+                      type="info"
+                      dense
+                      text
+                      class="mt-2 mb-0"
+                    >
+                      {{ $t('forms.group.exportMode.warning') }}
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+
+            <!-- Legacy FTP Section - only shown when NOT using export profiles -->
+            <v-row v-if="isAdmin && !localModel.useExportProfiles">
               <v-col cols="12">
                 <p class="caption ma-0">
                   {{ $t('forms.group.exportFtp') }}

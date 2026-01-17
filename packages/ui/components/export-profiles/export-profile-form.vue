@@ -1,7 +1,7 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
-import { groupAssets, getProfiles } from '~/helpers/api-routes.js';
+import { required, requiredIf } from 'vuelidate/lib/validators';
+import { groupAssets, groupsProfiles } from '~/helpers/api-routes.js';
 
 const DELIVERY_METHODS = {
   ESP: 'esp',
@@ -30,30 +30,29 @@ export default {
         _espProfile: null,
         assetMethod: ASSET_METHODS.ASSET,
         _asset: null,
+        zipWithoutEnclosingFolder: false,
       },
       espProfiles: [],
       assets: [],
       loadingData: true,
     };
   },
-  validations() {
-    const validations = {
-      form: {
-        name: { required },
-        deliveryMethod: { required },
-        assetMethod: { required },
+  validations: {
+    form: {
+      name: { required },
+      deliveryMethod: { required },
+      assetMethod: { required },
+      _espProfile: {
+        required: requiredIf(function () {
+          return this.form.deliveryMethod === 'esp';
+        }),
       },
-    };
-
-    if (this.form.deliveryMethod === DELIVERY_METHODS.ESP) {
-      validations.form._espProfile = { required };
-    }
-
-    if (this.form.assetMethod === ASSET_METHODS.ASSET) {
-      validations.form._asset = { required };
-    }
-
-    return validations;
+      _asset: {
+        required: requiredIf(function () {
+          return this.form.assetMethod === 'asset';
+        }),
+      },
+    },
   },
   computed: {
     groupId() {
@@ -101,6 +100,21 @@ export default {
     needsAsset() {
       return this.form.assetMethod === ASSET_METHODS.ASSET;
     },
+    isZipMethod() {
+      return this.form.assetMethod === ASSET_METHODS.ZIP;
+    },
+    zipFormatOptions() {
+      return [
+        {
+          text: this.$t('exportProfiles.form.zipFormat.wrapped'),
+          value: false,
+        },
+        {
+          text: this.$t('exportProfiles.form.zipFormat.unwrapped'),
+          value: true,
+        },
+      ];
+    },
     nameErrors() {
       const errors = [];
       if (!this.$v.form.name.$dirty) return errors;
@@ -115,7 +129,7 @@ export default {
     },
     espProfileErrors() {
       const errors = [];
-      if (!this.isEspDelivery || !this.$v.form._espProfile?.$dirty) return errors;
+      if (!this.isEspDelivery || !this.$v.form._espProfile.$dirty) return errors;
       !this.$v.form._espProfile.required && errors.push(this.$t('exportProfiles.form.espProfileRequired'));
       return errors;
     },
@@ -127,7 +141,7 @@ export default {
     },
     assetErrors() {
       const errors = [];
-      if (!this.needsAsset || !this.$v.form._asset?.$dirty) return errors;
+      if (!this.needsAsset || !this.$v.form._asset.$dirty) return errors;
       !this.$v.form._asset.required && errors.push(this.$t('exportProfiles.form.assetRequired'));
       return errors;
     },
@@ -161,10 +175,11 @@ export default {
       try {
         this.loadingData = true;
         const [espProfilesResponse, assetsResponse] = await Promise.all([
-          this.$axios.$get(getProfiles()),
+          this.$axios.$get(groupsProfiles({ groupId: this.groupId })),
           this.$axios.$get(groupAssets({ groupId: this.groupId })),
         ]);
-        this.espProfiles = espProfilesResponse.result || [];
+        // ESP profiles endpoint returns { items: [] }, assets endpoint returns { result: [] }
+        this.espProfiles = espProfilesResponse.items || espProfilesResponse.result || [];
         this.assets = assetsResponse.result || [];
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -178,10 +193,19 @@ export default {
       this.form._espProfile = this.exportProfile._espProfile?.id || this.exportProfile._espProfile || null;
       this.form.assetMethod = this.exportProfile.assetMethod || ASSET_METHODS.ASSET;
       this.form._asset = this.exportProfile._asset?.id || this.exportProfile._asset || null;
+      this.form.zipWithoutEnclosingFolder = this.exportProfile.zipWithoutEnclosingFolder ?? false;
     },
     handleSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) {
+        return;
+      }
+
+      // Additional validation as safety net
+      if (this.isEspDelivery && !this.form._espProfile) {
+        return;
+      }
+      if (this.needsAsset && !this.form._asset) {
         return;
       }
 
@@ -192,11 +216,15 @@ export default {
       };
 
       if (this.isEspDelivery) {
-        payload._espProfile = this.form._espProfile;
+        payload.espProfileId = this.form._espProfile;
       }
 
       if (this.needsAsset) {
-        payload._asset = this.form._asset;
+        payload.assetId = this.form._asset;
+      }
+
+      if (this.isZipMethod) {
+        payload.zipWithoutEnclosingFolder = this.form.zipWithoutEnclosingFolder;
       }
 
       this.$emit('submit', payload);
@@ -265,7 +293,7 @@ export default {
                   persistent-hint
                   outlined
                   clearable
-                  @blur="$v.form._espProfile && $v.form._espProfile.$touch()"
+                  @blur="$v.form._espProfile.$touch()"
                 />
               </v-col>
             </v-row>
@@ -311,7 +339,21 @@ export default {
                   persistent-hint
                   outlined
                   clearable
-                  @blur="$v.form._asset && $v.form._asset.$touch()"
+                  @blur="$v.form._asset.$touch()"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- ZIP Format options (only visible when assetMethod is 'zip') -->
+            <v-row v-if="isZipMethod">
+              <v-col cols="12">
+                <v-select
+                  v-model="form.zipWithoutEnclosingFolder"
+                  :items="zipFormatOptions"
+                  :label="$t('exportProfiles.form.zipFormat.label')"
+                  :hint="$t('exportProfiles.form.zipFormat.hint')"
+                  persistent-hint
+                  outlined
                 />
               </v-col>
             </v-row>

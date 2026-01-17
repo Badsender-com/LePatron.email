@@ -46,7 +46,7 @@ class FTPClient {
 
       const exists = await client.exists(folderPath);
       if (!exists) {
-        await client.mkdir(folderPath, true);
+        await client.mkdir(folderPath, { recursive: true });
       }
 
       const uploads = sourceArray.map(async (fileUrl) => {

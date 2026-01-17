@@ -2,21 +2,35 @@ const { encrypt, decrypt } = require('./crypto');
 const _ = require('lodash');
 
 function encryptionPlugin(schema, encryptedFields = []) {
-  // Encrypt on save or updateOne
-  schema.pre(['save', 'updateOne'], function (next) {
-    let data;
-    if (this.isNew || this.isModified) {
-      // 'save' hook: 'this' is the document
-      data = this;
-    } else {
-      // 'updateOne' hook: 'this' is the query
-      data = this.getUpdate();
-    }
-
+  // Encrypt on save
+  schema.pre('save', function (next) {
     encryptedFields.forEach((field) => {
-      const value = _.get(data, field);
+      const value = _.get(this, field);
       if (value) {
-        _.set(data, field, encrypt(value));
+        _.set(this, field, encrypt(value));
+      }
+    });
+    next();
+  });
+
+  // Encrypt on updateOne - handle $set operator
+  schema.pre('updateOne', function (next) {
+    const update = this.getUpdate();
+
+    // Check both direct fields and fields under $set
+    encryptedFields.forEach((field) => {
+      // Check direct field (rare, but possible)
+      const directValue = _.get(update, field);
+      if (directValue) {
+        _.set(update, field, encrypt(directValue));
+      }
+
+      // Check field under $set (most common case)
+      if (update.$set) {
+        const setValue = _.get(update.$set, field);
+        if (setValue) {
+          _.set(update.$set, field, encrypt(setValue));
+        }
       }
     });
     next();

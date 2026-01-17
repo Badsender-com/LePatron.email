@@ -59,6 +59,12 @@ const ExportProfileSchema = Schema(
       ref: AssetModel,
       default: null,
     },
+    // ZIP options (only relevant when assetMethod is 'zip')
+    // false = wrap files in a parent folder, true = files at root
+    zipWithoutEnclosingFolder: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -146,9 +146,9 @@ export default {
     group: {
       name: 'Nom de l\'entreprise',
       downloadWithoutEnclosingFolder: {
-        label: 'Format du fichier zip',
-        wrapped: 'Englober dans un dossier parent',
-        unwrapped: 'Laisser les fichiers à la racine',
+        label: 'Format du fichier ZIP',
+        wrapped: 'Avec dossier englobant (dossier/email.html + dossier/images/)',
+        unwrapped: 'Sans dossier englobant (email.html + images/)',
       },
       color: {
         label: 'Couleurs personnalisées',
@@ -162,6 +162,20 @@ export default {
         inactive: 'Inactif',
         active: 'Actif',
         requiredValidationMessage: 'Veuillez choisir un statut',
+      },
+      exportMode: {
+        label: 'Mode d\'export',
+        description: 'Choisissez le système d\'export à utiliser pour ce groupe.',
+        legacy: {
+          label: 'Mode Legacy',
+          description: 'La configuration FTP et ZIP est gérée globalement pour le groupe.',
+        },
+        advanced: {
+          label: 'Mode Export Profiles',
+          description: 'Permet d\'avoir plusieurs profils d\'export avec différentes configurations.',
+        },
+        warning: 'Ce changement affecte immédiatement tous les utilisateurs du groupe.',
+        noProfiles: 'Aucun profil d\'export actif configuré. Seul le téléchargement local sera disponible.',
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
@@ -387,6 +401,8 @@ export default {
     emptyState: 'Aucun profil disponible',
     warningNoFTP:
       'Vous ne pouvez pas ajouter de profil sans avoir configuré un serveur FTP au préalable.',
+    warningNoImageHosting:
+      "Vous ne pouvez pas ajouter de profil ESP sans avoir configuré un service d'hébergement d'images. Veuillez d'abord configurer un Asset (SFTP ou S3) ou un serveur FTP legacy.",
     deleteWarningMessage:
       'Vous êtes sur le point de supprimer le profil : <strong>{name}</strong>.<br/>Cette action est irréversible.',
   },
@@ -464,6 +480,8 @@ export default {
       publicEndpoint: 'URL publique des images',
       publicEndpointRequired: 'L\'URL publique est obligatoire',
       publicEndpointHelper: 'URL de base pour accéder aux images uploadées (ex: https://cdn.exemple.com/images)',
+      keepCurrentPlaceholder: 'Laisser vide pour conserver l\'actuel',
+      keepCurrentHint: 'Laissez vide pour conserver le mot de passe actuel',
       sftp: {
         title: 'Configuration SFTP',
         host: 'Hôte',
@@ -499,7 +517,7 @@ export default {
     },
   },
   exportProfiles: {
-    deliveryMethod: 'Méthode de livraison',
+    deliveryMethod: 'Méthode d\'export HTML',
     espProfile: 'Profil ESP',
     assetMethod: 'Méthode des assets',
     asset: 'Hébergement',
@@ -518,8 +536,8 @@ export default {
     form: {
       name: 'Nom du profil',
       nameRequired: 'Le nom est obligatoire',
-      deliveryMethod: 'Méthode de livraison',
-      deliveryMethodRequired: 'La méthode de livraison est obligatoire',
+      deliveryMethod: 'Méthode d\'export HTML',
+      deliveryMethodRequired: 'La méthode d\'export HTML est obligatoire',
       deliveryMethodHelper: 'Choisissez comment l\'email sera livré',
       espProfile: 'Profil ESP',
       espProfileRequired: 'Le profil ESP est obligatoire pour cette méthode de livraison',
@@ -540,6 +558,12 @@ export default {
         asset: 'Upload sur hébergement externe',
         zip: 'Inclure dans le ZIP',
         esp_api: 'Uploader via l\'API ESP',
+      },
+      zipFormat: {
+        label: 'Format du fichier ZIP',
+        hint: 'Structure des fichiers dans l\'archive ZIP',
+        wrapped: 'Avec dossier englobant (dossier/email.html + dossier/images/)',
+        unwrapped: 'Sans dossier englobant (email.html + images/)',
       },
     },
   },

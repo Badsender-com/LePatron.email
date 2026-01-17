@@ -88,9 +88,8 @@ function loader(opts) {
       enabled: ko.observable(true),
     };
 
-    const dlDefault = { forCdn: false, forFtp: false };
+    const dlDefault = { forCdn: false, forFtp: false, exportProfileId: null };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
-      // ====================================
       // Check for missing input values
       const errors = getErrorsForControlQuality(viewModel);
       if (errors && errors.length > 0) {
@@ -104,16 +103,65 @@ function loader(opts) {
         $('.error-message').remove();
       }
 
+      downloadCmd.enabled(false);
+
+      // Check if this is an export profile with ESP delivery
+      if (downloadOptions.exportProfileId) {
+        const exportProfiles = viewModel.exportProfiles();
+        const exportProfile = exportProfiles.find(
+          (ep) => ep.id === downloadOptions.exportProfileId
+        );
+
+        if (exportProfile && exportProfile.deliveryMethod === 'esp') {
+          // ESP delivery - use AJAX and show notification
+          viewModel.notifier.info(viewModel.t('Sending to ESP...'));
+          viewModel.exportHTMLtoTextarea('#downloadHtmlTextarea');
+          const html = $('#downloadHtmlTextarea').val();
+
+          $.ajax({
+            url: viewModel.metadata.url.zip,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              html,
+              exportProfileId: downloadOptions.exportProfileId,
+              downLoadForCdn: false,
+              downLoadForFtp: false,
+            }),
+            success: function (data) {
+              if (data.success) {
+                viewModel.notifier.success(
+                  viewModel.t('ESP send success') + (data.campaignId ? ' (ID: ' + data.campaignId + ')' : '')
+                );
+              } else {
+                viewModel.notifier.error(data.message || viewModel.t('ESP send error'));
+              }
+            },
+            error: function (jqXHR) {
+              const errorData = jqXHR.responseJSON || {};
+              viewModel.notifier.error(
+                errorData.message || errorData.error || viewModel.t('ESP send error')
+              );
+            },
+            complete: function () {
+              downloadCmd.enabled(true);
+            },
+          });
+          return;
+        }
+      }
+
+      // Download delivery (legacy or export profile) - use form submit
       const $inputHiddenCdnStatus = $('input[name="downLoadForCdn"]');
       const $inputHiddenFtpStatus = $('input[name="downLoadForFtp"]');
-
-      downloadCmd.enabled(false);
+      const $inputHiddenExportProfileId = $('input[name="exportProfileId"]');
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
       viewModel.exportHTMLtoTextarea('#downloadHtmlTextarea');
       $('#downloadHtmlFilename').val(viewModel.metadata.name());
-      $inputHiddenCdnStatus.val(downloadOptions.forCdn);
-      $inputHiddenFtpStatus.val(downloadOptions.forFtp);
+      $inputHiddenCdnStatus.val(downloadOptions.forCdn || false);
+      $inputHiddenFtpStatus.val(downloadOptions.forFtp || false);
+      $inputHiddenExportProfileId.val(downloadOptions.exportProfileId || '');
       $('#downloadForm').attr('action', viewModel.metadata.url.zip).submit();
       downloadCmd.enabled(true);
     };

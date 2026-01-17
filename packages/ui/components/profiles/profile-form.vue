@@ -3,7 +3,7 @@ import { validationMixin } from 'vuelidate';
 import SENDINBLUEComponent from '../../components/profiles/esp/SENDINBLUEComponent';
 import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
 import DSCComponent from '../../components/profiles/esp/DSCComponent';
-import { groupsItem } from '~/helpers/api-routes';
+import { groupsItem, groupAssets } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import ADOBEComponent from '../../components/profiles/esp/ADOBEComponent';
 
@@ -23,6 +23,7 @@ export default {
   data: () => {
     return {
       group: {},
+      assets: [],
       authorizedEsps: [
         {
           text: 'SendinBlue',
@@ -49,15 +50,24 @@ export default {
     selectedEspName() {
       return this.selectedEsp + 'Component';
     },
-    needsFtpConfig() {
+    needsImageHosting() {
       return this.selectedEsp !== ESP_TYPES.ADOBE;
+    },
+    hasActiveAssets() {
+      return this.assets.some((asset) => asset.isActive);
+    },
+    hasImageHosting() {
+      return this.group.downloadMailingWithFtpImages || this.hasActiveAssets;
+    },
+    isFormDisabled() {
+      return this.needsImageHosting && !this.hasImageHosting;
     },
   },
   async mounted() {
     if (this.profile.type) {
       this.selectedEsp = this.profile.type;
     }
-    await this.fetchGroup();
+    await Promise.all([this.fetchGroup(), this.fetchAssets()]);
   },
   methods: {
     handleEspChange(value) {
@@ -70,6 +80,17 @@ export default {
         this.group = await $axios.$get(groupsItem(params));
       } catch (error) {
         console.log(error);
+      }
+    },
+    async fetchAssets() {
+      const { $axios, $route } = this;
+      const { params } = $route;
+      try {
+        const response = await $axios.$get(groupAssets(params));
+        this.assets = response.result || [];
+      } catch (error) {
+        console.log(error);
+        this.assets = [];
       }
     },
     handleSubmit(newProfile) {
@@ -85,7 +106,7 @@ export default {
       {{ title }}
     </v-card-title>
     <v-card-text>
-      <v-row v-if="needsFtpConfig && !group.downloadMailingWithFtpImages">
+      <v-row v-if="isFormDisabled">
         <v-col cols="12">
           <v-alert
             dense
@@ -93,7 +114,7 @@ export default {
             type="warning"
             class="d-flex flex-row p-3"
           >
-            {{ $t('profiles.warningNoFTP') }}
+            {{ $t('profiles.warningNoImageHosting') }}
           </v-alert>
         </v-col>
       </v-row>
@@ -112,7 +133,7 @@ export default {
             <component
               :is="selectedEspName"
               :profile-data="profile"
-              :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
+              :disabled="isFormDisabled"
               :loading="loading"
               @submit="handleSubmit"
             />

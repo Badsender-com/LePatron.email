@@ -1,6 +1,6 @@
 'use strict';
 
-const Client = require('ssh2-sftp-client');
+const SftpClient = require('ssh2-sftp-client');
 const fs = require('fs-extra');
 const crypto = require('crypto');
 const request = require('request');
@@ -12,7 +12,7 @@ const logger = require('../../utils/logger.js');
 class SftpUploadService {
   constructor(config) {
     this.config = config;
-    this.client = new Client();
+    this.client = new SftpClient();
   }
 
   /**
@@ -45,6 +45,11 @@ class SftpUploadService {
   async testConnection() {
     try {
       const settings = this.getConnectionSettings();
+      // Debug: log key info (first/last chars only for security)
+      if (settings.privateKey) {
+        const key = settings.privateKey;
+        logger.log(`SSH Key debug: length=${key.length}, starts="${key.substring(0, 40)}...", ends="...${key.substring(key.length - 30)}"`);
+      }
       await this.client.connect(settings);
 
       const { pathOnServer } = this.config;
@@ -91,7 +96,7 @@ class SftpUploadService {
       // Create folder if it doesn't exist
       const exists = await this.client.exists(folderPath);
       if (!exists) {
-        await this.client.mkdir(folderPath, true);
+        await this.client.mkdir(folderPath, { recursive: true });
       }
 
       // Download and upload each file

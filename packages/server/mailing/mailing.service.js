@@ -16,6 +16,8 @@ const {
   Galleries,
   Folders,
   Groups,
+  ExportProfiles,
+  Assets,
 } = require('../common/models.common.js');
 
 const _ = require('lodash');
@@ -42,6 +44,8 @@ const logger = require('../utils/logger.js');
 
 const simpleI18n = require('../helpers/server-simple-i18n.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+const AssetMethods = require('../constant/asset-method.js');
+const DeliveryMethods = require('../constant/delivery-method.js');
 
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
@@ -274,6 +278,7 @@ async function processHtmlWithFTPOption({
   html,
   user,
   doesWaitForFtp,
+  downloadOptions = {},
 }) {
   logger.log('Calling processHtmlWithFTPOption');
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
@@ -288,9 +293,11 @@ async function processHtmlWithFTPOption({
     name,
   } = await extractFTPparams({
     mailing,
+    user,
     downloadOptions: {
       downLoadForCdn: false,
       downLoadForFtp: true,
+      ...downloadOptions, // Pass through exportProfileId if present
     },
   });
 
@@ -641,6 +648,19 @@ async function extractFTPparams({
   });
   if (!group) throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
 
+  const name = getName(overrideMailName ?? mailing.name);
+
+  // Check if using new export profile system
+  const exportProfileId = downloadOptions.exportProfileId;
+  if (exportProfileId && exportProfileId !== '' && exportProfileId !== 'null') {
+    return extractExportProfileParams({
+      exportProfileId,
+      name,
+      parentContainer,
+    });
+  }
+
+  // Legacy mode: use group FTP/CDN configuration
   const {
     downloadMailingWithoutEnclosingFolder,
     downloadMailingWithCdnImages,
@@ -674,7 +694,6 @@ async function extractFTPparams({
     throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
   }
 
-  const name = getName(overrideMailName ?? mailing.name);
   // prefix is `zip-stream` file prefix => our enclosing folder ^_^
   // !WARNING default mac unzip will always put it in an folder if more than 1 file
   // => test with The Unarchiver
@@ -707,6 +726,154 @@ async function extractFTPparams({
     },
     cdnProtocol,
     cdnEndPoint,
+    name,
+  };
+}
+
+/**
+ * Extract download parameters from an ExportProfile
+ * @param {string} exportProfileId - The export profile ID
+ * @param {string} name - The mailing name (sanitized)
+ * @param {string|null} parentContainer - Parent folder for batch downloads
+ * @returns {Object} Download parameters
+ */
+async function extractExportProfileParams({
+  exportProfileId,
+  name,
+  parentContainer = null,
+}) {
+  console.log('Calling extractExportProfileParams for profile:', exportProfileId);
+
+  // Don't use .lean() here - we need Mongoose documents to trigger
+  // the encryption plugin's post hooks that decrypt credentials
+  const exportProfile = await ExportProfiles.findById(exportProfileId);
+
+  if (!exportProfile) {
+    throw new NotFound(ERROR_CODES.EXPORT_PROFILE_NOT_FOUND);
+  }
+
+  // Fetch the Asset separately to ensure decryption hooks run
+  let asset = null;
+  if (exportProfile._asset) {
+    asset = await Assets.findById(exportProfile._asset);
+  }
+
+  const { assetMethod, zipWithoutEnclosingFolder } = exportProfile;
+  const _asset = asset;
+
+  // Determine prefix based on zip format option
+  const prefix = zipWithoutEnclosingFolder
+    ? ''
+    : `${!parentContainer ? '' : `${parentContainer}/`}${name}/`;
+
+  // ZIP method: regular download with images in archive
+  if (assetMethod === AssetMethods.ZIP) {
+    return {
+      cdnDownload: false,
+      regularDownload: true,
+      prefix,
+      ftpServerParams: {},
+      cdnProtocol: '',
+      cdnEndPoint: '',
+      name,
+    };
+  }
+
+  // ESP API method: no asset upload, ESP handles images
+  if (assetMethod === AssetMethods.ESP_API) {
+    return {
+      cdnDownload: false,
+      regularDownload: true, // Include images in ZIP, ESP will handle upload
+      prefix,
+      ftpServerParams: {},
+      cdnProtocol: '',
+      cdnEndPoint: '',
+      name,
+    };
+  }
+
+  // ASSET method: upload images to external storage (SFTP or S3)
+  if (assetMethod === AssetMethods.ASSET) {
+    if (!_asset) {
+      throw new InternalServerError(ERROR_CODES.ASSET_NOT_FOUND);
+    }
+
+    // Build endpoint from asset's publicEndpoint
+    const publicEndpoint = _asset.publicEndpoint || '';
+    // Normalize endpoint (remove trailing slash if present)
+    const normalizedEndpoint = publicEndpoint.endsWith('/')
+      ? publicEndpoint.slice(0, -1)
+      : publicEndpoint;
+
+    // Parse protocol and endpoint from publicEndpoint
+    let endpointProtocol = 'https://';
+    let endpointPath = normalizedEndpoint;
+    if (normalizedEndpoint.startsWith('http://')) {
+      endpointProtocol = 'http://';
+      endpointPath = normalizedEndpoint.replace('http://', '');
+    } else if (normalizedEndpoint.startsWith('https://')) {
+      endpointProtocol = 'https://';
+      endpointPath = normalizedEndpoint.replace('https://', '');
+    }
+
+    if (_asset.type === 'sftp') {
+      // SFTP asset - access properties from Mongoose document
+      const sftpConfig = _asset.sftp || {};
+      console.log('[extractExportProfileParams] SFTP config:', {
+        host: sftpConfig.host,
+        port: sftpConfig.port,
+        username: sftpConfig.username,
+        authType: sftpConfig.authType,
+        hasPassword: !!sftpConfig.password,
+        passwordLength: sftpConfig.password?.length || 0,
+      });
+      return {
+        cdnDownload: false,
+        regularDownload: false,
+        prefix,
+        ftpServerParams: {
+          ftpEndPointProtocol: endpointProtocol,
+          ftpEndPoint: endpointPath,
+          ftpHost: sftpConfig.host || '',
+          ftpPort: sftpConfig.port || 22,
+          ftpUsername: sftpConfig.username || '',
+          ftpPassword: sftpConfig.password || '',
+          ftpProtocol: 'sftp',
+          ftpPathOnServer: sftpConfig.pathOnServer || '',
+          // Additional fields for SSH key auth
+          sshKey: sftpConfig.sshKey || '',
+          authType: sftpConfig.authType || 'password',
+        },
+        cdnProtocol: '',
+        cdnEndPoint: '',
+        name,
+        assetType: 'sftp',
+        asset: _asset,
+      };
+    } else if (_asset.type === 's3') {
+      // S3 asset - treated like CDN download but with S3 upload
+      return {
+        cdnDownload: true, // Use CDN-like behavior for image URLs
+        regularDownload: false,
+        prefix,
+        ftpServerParams: {},
+        cdnProtocol: endpointProtocol,
+        cdnEndPoint: endpointPath,
+        name,
+        assetType: 's3',
+        asset: _asset,
+      };
+    }
+  }
+
+  // Fallback to regular download if unknown method
+  return {
+    cdnDownload: false,
+    regularDownload: true,
+    prefix,
+    ftpServerParams: {},
+    cdnProtocol: '',
+    cdnEndPoint: '',
     name,
   };
 }
