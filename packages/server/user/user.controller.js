@@ -5,6 +5,10 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const passport = require('passport');
 const Roles = require('../account/roles');
+const logger = require('../utils/logger.js');
+const {
+  updateSessionTracking,
+} = require('../account/session-tracking.helper.js');
 
 const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
@@ -27,6 +31,8 @@ module.exports = {
   getPublicProfile: asyncHandler(getPublicProfile),
   login: asyncHandler(login),
   getCurrentUser: asyncHandler(getCurrentUser),
+  getPersistedLocalStorageKey: asyncHandler(getPersistedLocalStorageKey),
+  updatePersistedLocalStorageKey: asyncHandler(updatePersistedLocalStorageKey),
 };
 
 /**
@@ -382,14 +388,66 @@ async function login(req, res, next) {
       return next(new createError.BadRequest(info.message));
     }
 
-    if (!user) return next(new createError.BadRequest('User not found'));
+    if (!user) {
+      return next(new createError.BadRequest('User not found'));
+    }
 
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
+        logger.error('[Login] Login failed:', err);
         return next(new createError.InternalServerError(err));
       }
 
-      return res.json({ isAdmin: user.isAdmin });
+      // Update session tracking
+      await updateSessionTracking(req, user);
+
+      // Force session save before sending response
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          logger.error('[Login] Session save failed:', saveErr);
+          return next(new createError.InternalServerError(saveErr));
+        }
+
+        return res.json({ isAdmin: user.isAdmin });
+      });
     });
   })(req, res);
+}
+
+/**
+ * GET /users/me/storage/:key
+ * Retrieves the value of a specific key in the user's localStorage persisted in the DB.
+ */
+async function getPersistedLocalStorageKey(req, res) {
+  try {
+    const { key } = req.params;
+    const userId = req.user.id;
+    const value = await userService.getPersistedLocalStorageKey(userId, key);
+    res.status(200).json({ key, value });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+}
+
+/**
+ * PUT /users/me/storage/:key
+ * Updates or adds a key-value pair in the user's localStorage persisted in the DB.
+ */
+async function updatePersistedLocalStorageKey(req, res) {
+  try {
+    const { key } = req.params;
+    const userId = req.user.id;
+    const { value } = req.body;
+    const updatedUser = await userService.updatePersistedLocalStorageKey(
+      userId,
+      key,
+      value
+    );
+    res.status(200).json({
+      message: 'LocalStorage updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
 }

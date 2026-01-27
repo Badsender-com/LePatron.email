@@ -15,6 +15,7 @@ const xmlParser = require('xml2json');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
+const logger = require('../utils/logger.js');
 
 const {
   Users,
@@ -91,7 +92,11 @@ passport.use(
         isDeactivated: { $ne: true },
         token: { $exists: false },
       });
-      if (!user) return done(null, false, { message: 'password.error.nouser' });
+
+      if (!user) {
+        return done(null, false, { message: 'password.error.nouser' });
+      }
+
       const isPasswordValid = user.comparePassword(password);
       if (!isPasswordValid) {
         return done(null, false, { message: 'password.error.incorrect' });
@@ -107,16 +112,25 @@ passport.use(
 passport.serializeUser((user, done) => done(null, user.id));
 
 passport.deserializeUser(async (id, done) => {
-  if (id === config.admin.id) return done(null, { ...adminUser });
+  if (id === config.admin.id) {
+    return done(null, { ...adminUser });
+  }
+
   try {
     const user = await Users.findOneForApi({
       _id: id,
       isDeactivated: { $ne: true },
       token: { $exists: false },
     });
-    if (!user) return done(null, false);
+
+    if (!user) {
+      logger.warn(`[Passport] User not found or invalid: ${id}`);
+      return done(null, false);
+    }
+
     done(null, user.toJSON());
   } catch (err) {
+    logger.error('[Passport] Error deserializing user:', err);
     done(null, false, err);
   }
 });

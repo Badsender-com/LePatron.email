@@ -139,9 +139,14 @@ class AdobeProvider {
 
   async getUserGroups({ user }) {
     // The externalUsername keeps the case which is required for Adobe
+    const cleanedExternalUsername =
+      typeof user.externalUsername === 'string'
+        ? user.externalUsername.trim()
+        : '';
+
     const username = config.isDev
       ? config.adobeDefaultUser
-      : user.externalUsername ?? user.email;
+      : cleanedExternalUsername || user.email;
 
     return this.makeSoapRequest({
       soapAction: 'xtk:queryDef#ExecuteQuery',
