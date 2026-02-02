@@ -259,3 +259,35 @@ export function deletePersonalizedVariable(groupId, variableId) {
 export function postPersonalizedVariables(groupId) {
   return `/groups/${groupId}/personalized-variables`;
 }
+
+/// ///
+// COMMENTS
+/// ///
+
+export function getMailingComments(mailingId) {
+  return `/mailings/${mailingId}/comments`;
+}
+
+export function postMailingComment(mailingId) {
+  return `/mailings/${mailingId}/comments`;
+}
+
+export function getMailingCommentsCounts(mailingId) {
+  return `/mailings/${mailingId}/comments/counts`;
+}
+
+export function getMailingCommentsUnresolvedCount(mailingId) {
+  return `/mailings/${mailingId}/comments/unresolved-count`;
+}
+
+export function getCommentItem(commentId) {
+  return `/comments/${commentId}`;
+}
+
+export function patchCommentResolve(commentId) {
+  return `/comments/${commentId}/resolve`;
+}
+
+export function patchCommentUnresolve(commentId) {
+  return `/comments/${commentId}/unresolve`;
+}

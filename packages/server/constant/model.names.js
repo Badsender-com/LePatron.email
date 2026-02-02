@@ -21,4 +21,6 @@ module.exports = Object.freeze({
   OAuthCodes: 'OAuthCodes',
   // Tags
   TagModel: 'Tag',
+  // Comments
+  CommentModel: 'Comment',
 });

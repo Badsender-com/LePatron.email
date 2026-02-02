@@ -119,7 +119,7 @@ export default {
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           class: 'table-column-action',
           sortable: false,
         },
@@ -427,76 +427,119 @@ export default {
           <span>{{ item.updatedAt | preciseDateTime }}</span>
         </template>
         <template #item.actions="{ item }">
-          <bs-mailings-actions-dropdown>
-            <bs-mailings-actions-dropdown-item
+          <div class="actions-cell">
+            <!-- Quick action icons -->
+            <v-btn
+              v-if="hasAccess"
+              icon
+              small
+              :href="`/editor/${item.id}?comments=1`"
+              :title="$t('mailings.openComments')"
+              :aria-label="$t('mailings.openComments')"
+              class="action-icon"
+            >
+              <v-badge
+                :content="item.unresolvedCommentsCount || 0"
+                :value="item.unresolvedCommentsCount > 0"
+                color="orange"
+                overlap
+              >
+                <v-icon small>
+                  mdi-comment-outline
+                </v-icon>
+              </v-badge>
+            </v-btn>
+            <v-btn
               v-if="filteredActions.includes(actions.RENAME)"
-              :icon="actionsDetails[actions.RENAME].icon"
-              :on-click="() => openRenameModal(item)"
+              icon
+              small
+              class="action-icon"
+              :title="$t(actionsDetails[actions.RENAME].text)"
+              :aria-label="$t(actionsDetails[actions.RENAME].text)"
+              @click="openRenameModal(item)"
             >
-              {{ $t(actionsDetails[actions.RENAME].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.ADD_TAGS)"
-              :icon="actionsDetails[actions.ADD_TAGS].icon"
-              :on-click="() => openTagsMenu(item)"
-            >
-              {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.TRANSFER)"
-              :icon="actionsDetails[actions.TRANSFER].icon"
-              :on-click="() => transferMailing(item)"
-            >
-              {{ $t(actionsDetails[actions.TRANSFER].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              :icon="actionsDetails[actions.PREVIEW].icon"
-              :on-click="() => openPreviewMail(item)"
-            >
-              {{ $t(actionsDetails[actions.PREVIEW].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
+              <v-icon small>
+                mdi-pencil
+              </v-icon>
+            </v-btn>
+            <v-btn
               v-if="filteredActions.includes(actions.COPY_MAIL)"
-              :icon="actionsDetails[actions.COPY_MAIL].icon"
-              :on-click="() => openCopyMail(item)"
+              icon
+              small
+              class="action-icon"
+              :title="$t(actionsDetails[actions.COPY_MAIL].text)"
+              :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
+              @click="openCopyMail(item)"
             >
-              {{ $t(actionsDetails[actions.COPY_MAIL].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.MOVE_MAIL)"
-              :icon="actionsDetails[actions.MOVE_MAIL].icon"
-              :on-click="() => openMoveMail(item)"
-            >
-              {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
+              <v-icon small>
+                mdi-content-copy
+              </v-icon>
+            </v-btn>
+            <v-btn
               v-if="filteredActions.includes(actions.DELETE)"
-              :icon="actionsDetails[actions.DELETE].icon"
-              :on-click="() => displayDeleteModal(item)"
+              icon
+              small
+              class="action-icon action-icon--danger"
+              :title="$t(actionsDetails[actions.DELETE].text)"
+              :aria-label="$t(actionsDetails[actions.DELETE].text)"
+              @click="displayDeleteModal(item)"
             >
-              {{ $t(actionsDetails[actions.DELETE].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="filteredActions.includes(actions.DOWNLOAD)"
-              :icon="actionsDetails[actions.DOWNLOAD].icon"
-              :on-click="
-                () => handleDownloadMail({ mailing: item, isWithFtp: false })
-              "
-            >
-              {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
-            </bs-mailings-actions-dropdown-item>
-            <bs-mailings-actions-dropdown-item
-              v-if="
-                filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
-              "
-              :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
-              :on-click="
-                () => handleDownloadMail({ mailing: item, isWithFtp: true })
-              "
-            >
-              {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
-            </bs-mailings-actions-dropdown-item>
-          </bs-mailings-actions-dropdown>
+              <v-icon small>
+                mdi-delete-outline
+              </v-icon>
+            </v-btn>
+
+            <!-- More actions menu -->
+            <bs-mailings-actions-dropdown>
+              <bs-mailings-actions-dropdown-item
+                v-if="filteredActions.includes(actions.ADD_TAGS)"
+                :icon="actionsDetails[actions.ADD_TAGS].icon"
+                :on-click="() => openTagsMenu(item)"
+              >
+                {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
+                v-if="filteredActions.includes(actions.TRANSFER)"
+                :icon="actionsDetails[actions.TRANSFER].icon"
+                :on-click="() => transferMailing(item)"
+              >
+                {{ $t(actionsDetails[actions.TRANSFER].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
+                :icon="actionsDetails[actions.PREVIEW].icon"
+                :on-click="() => openPreviewMail(item)"
+              >
+                {{ $t(actionsDetails[actions.PREVIEW].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
+                v-if="filteredActions.includes(actions.MOVE_MAIL)"
+                :icon="actionsDetails[actions.MOVE_MAIL].icon"
+                :on-click="() => openMoveMail(item)"
+              >
+                {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
+                v-if="filteredActions.includes(actions.DOWNLOAD)"
+                :icon="actionsDetails[actions.DOWNLOAD].icon"
+                :on-click="
+                  () => handleDownloadMail({ mailing: item, isWithFtp: false })
+                "
+              >
+                {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
+                v-if="
+                  filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
+                "
+                :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
+                :on-click="
+                  () => handleDownloadMail({ mailing: item, isWithFtp: true })
+                "
+              >
+                {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
+              </bs-mailings-actions-dropdown-item>
+            </bs-mailings-actions-dropdown>
+          </div>
         </template>
       </v-data-table>
 
@@ -549,5 +592,28 @@ export default {
 
 .mw18 {
   max-width: 18rem;
+}
+
+/* Actions cell with quick icons */
+.actions-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.action-icon {
+  color: rgba(0, 0, 0, 0.54);
+  text-decoration: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.action-icon:hover {
+  color: var(--v-primary-base);
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.action-icon--danger:hover {
+  color: var(--v-error-base, #ff5252);
 }
 </style>
