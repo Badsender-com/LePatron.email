@@ -271,6 +271,8 @@ if (cluster.isMaster) {
   app.use('/api/workspaces', workspaceRouter);
   app.use('/api/personalized-blocks', personalizedBlockRouter);
   app.use('/api/groups', groupRouter);
+  // Comments routes MUST be before mailings routes (mailing has a catch-all)
+  app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
   app.use('/api/users', userRouter);
@@ -278,7 +280,6 @@ if (cluster.isMaster) {
   app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
-  app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
   app.use('/api/comments', commentsRouter);
   app.use('/api/notifications', notificationRouter);
 

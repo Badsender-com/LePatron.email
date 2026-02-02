@@ -11,6 +11,7 @@ const {
   GroupModel,
   WorkspaceModel,
   FolderModel,
+  CommentModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 
@@ -265,9 +266,37 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const mailingsWithHtmlPreviewSet = new Set(
     mailingsWithHtmlPreview.map((mailing) => mailing._id.toString())
   );
+
+  // Get unresolved comment counts for each mailing
+  const Comment = mongoose.models[CommentModel];
+  let commentCountsMap = {};
+  if (Comment) {
+    const commentCounts = await Comment.aggregate([
+      {
+        $match: {
+          _mailing: { $in: ids },
+          _parentComment: null,
+          resolved: false,
+          isDeleted: false,
+        },
+      },
+      {
+        $group: {
+          _id: '$_mailing',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    commentCountsMap = commentCounts.reduce((acc, item) => {
+      acc[item._id.toString()] = item.count;
+      return acc;
+    }, {});
+  }
+
   const finalDocs = docs.map((doc) => ({
     ...doc,
     hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
+    unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
   }));
 
   const convertedResultMailingDocs = finalDocs.map(

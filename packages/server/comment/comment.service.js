@@ -51,9 +51,14 @@ async function createComment({
 
   // Validate mentions are in the same group
   if (mentions && mentions.length > 0) {
+    // Extract company ID - handle both populated object and raw ObjectId
+    const userCompanyId =
+      user._company?._id || user._company?.id || user._company ||
+      user.group?._id || user.group?.id;
+
     const mentionedUsers = await Users.find({
       _id: { $in: mentions },
-      _company: user._company || user.group?.id,
+      _company: userCompanyId,
     });
     if (mentionedUsers.length !== mentions.length) {
       throw new BadRequest(ERROR_CODES.MENTION_USER_NOT_IN_GROUP);
@@ -108,7 +113,10 @@ async function createComment({
 
   logger.log('Comment created', { commentId: comment._id, mailingId });
 
-  return comment.populate('_author', 'name email');
+  // Re-fetch with lean() to avoid User virtuals accessing unpopulated _company
+  return Comments.findById(comment._id)
+    .populate('_author', 'name email')
+    .lean();
 }
 
 /**
@@ -141,7 +149,8 @@ async function findByMailing({
     .populate('_author', 'name email')
     .populate('_resolvedBy', 'name')
     .populate('mentions', 'name email')
-    .sort({ createdAt: 1 });
+    .sort({ createdAt: 1 })
+    .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
   return comments;
 }
@@ -153,7 +162,8 @@ async function findById(commentId) {
   const comment = await Comments.findById(commentId)
     .populate('_author', 'name email')
     .populate('_resolvedBy', 'name')
-    .populate('mentions', 'name email');
+    .populate('mentions', 'name email')
+    .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
   if (!comment || comment.isDeleted) {
     throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
@@ -191,9 +201,14 @@ async function updateComment({ commentId, user, updates }) {
   if (updates.mentions !== undefined) {
     // Validate new mentions are in the same group
     if (updates.mentions.length > 0) {
+      // Extract company ID - handle both populated object and raw ObjectId
+      const userCompanyId =
+        user._company?._id || user._company?.id || user._company ||
+        user.group?._id || user.group?.id;
+
       const mentionedUsers = await Users.find({
         _id: { $in: updates.mentions },
-        _company: user._company || user.group?.id,
+        _company: userCompanyId,
       });
       if (mentionedUsers.length !== updates.mentions.length) {
         throw new BadRequest(ERROR_CODES.MENTION_USER_NOT_IN_GROUP);
@@ -209,7 +224,8 @@ async function updateComment({ commentId, user, updates }) {
   )
     .populate('_author', 'name email')
     .populate('_resolvedBy', 'name')
-    .populate('mentions', 'name email');
+    .populate('mentions', 'name email')
+    .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
   logger.log('Comment updated', { commentId });
 
@@ -269,7 +285,8 @@ async function resolveComment({ commentId, user }) {
     { new: true }
   )
     .populate('_author', 'name email')
-    .populate('_resolvedBy', 'name');
+    .populate('_resolvedBy', 'name')
+    .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
   // Create notification for comment author
   if (comment._author.toString() !== (user._id || user.id).toString()) {

@@ -198,6 +198,7 @@ module.exports = {
   'snackbar-error': 'An error occurred. Please try again.',
 
   // Comments
+  'Comment block': 'Comment this block',
   'comments-title': 'Comments',
   'comments-toggle': 'Show comments',
   'comments-loading': 'Loading comments...',
@@ -232,4 +233,8 @@ module.exports = {
   'comments-severity-info': 'Info',
   'comments-severity-important': 'Important',
   'comments-severity-blocking': 'Blocking',
+  'comments-block-deleted': 'Block deleted',
+  'comments-mention-placeholder': 'Type @ to mention',
+  'comments-go-to-block': 'Click to go to block',
+  'comments-no-block': 'This comment is not linked to a block',
 };

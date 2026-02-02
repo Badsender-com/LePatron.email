@@ -3,10 +3,11 @@ import { mapState, mapGetters } from 'vuex';
 import { PAGE } from '~/store/page.js';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
+import NotificationBell from '~/components/notifications/notification-bell.vue';
 
 export default {
   name: 'BsLayoutDefault',
-  components: { BsSnackBar },
+  components: { BsSnackBar, NotificationBell },
   computed: {
     ...mapState(PAGE, {
       title: (state) => state.pageTitle,
@@ -135,6 +136,8 @@ export default {
         {{ title }}
       </v-toolbar-title>
       <v-spacer />
+
+      <notification-bell />
 
       <v-tooltip bottom>
         <template #activator="{ on }">
