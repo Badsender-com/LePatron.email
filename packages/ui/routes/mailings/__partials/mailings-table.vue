@@ -10,7 +10,12 @@ import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
-import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
+import {
+  mailingsItem,
+  copyMail,
+  moveMail,
+  mailingCommentsUnresolvedCount,
+} from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -116,6 +121,12 @@ export default {
         },
         { text: this.$t('global.createdAt'), value: 'createdAt' },
         { text: this.$t('global.updatedAt'), value: 'updatedAt' },
+        {
+          text: this.$t('global.comments'),
+          value: 'comments',
+          align: 'center',
+          sortable: false,
+        },
         {
           text: this.$t('global.actions'),
           value: 'actions',
@@ -426,6 +437,29 @@ export default {
         <template #item.updatedAt="{ item }">
           <span>{{ item.updatedAt | preciseDateTime }}</span>
         </template>
+        <template #item.comments="{ item }">
+          <v-btn
+            v-if="hasAccess"
+            icon
+            small
+            :href="`/editor/${item.id}?comments=1`"
+            :title="$t('mailings.openComments')"
+            class="comments-btn"
+          >
+            <v-badge
+              :content="item.unresolvedCommentsCount || 0"
+              :value="item.unresolvedCommentsCount > 0"
+              color="primary"
+              overlap
+            >
+              <v-icon small>mdi-comment-outline</v-icon>
+            </v-badge>
+          </v-btn>
+          <span v-else-if="item.unresolvedCommentsCount > 0">
+            {{ item.unresolvedCommentsCount }}
+          </span>
+          <span v-else>-</span>
+        </template>
         <template #item.actions="{ item }">
           <bs-mailings-actions-dropdown>
             <bs-mailings-actions-dropdown-item
@@ -549,5 +583,13 @@ export default {
 
 .mw18 {
   max-width: 18rem;
+}
+
+.comments-btn {
+  text-decoration: none;
+}
+
+.comments-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 </style>

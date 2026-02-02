@@ -204,6 +204,7 @@ module.exports = {
   'snackbar-error': "Une erreur s'est produite. Veuillez réessayer.",
 
   // Comments
+  'Comment block': 'Commenter ce bloc',
   'comments-title': 'Commentaires',
   'comments-toggle': 'Afficher les commentaires',
   'comments-loading': 'Chargement des commentaires...',
@@ -238,4 +239,8 @@ module.exports = {
   'comments-severity-info': 'Info',
   'comments-severity-important': 'Important',
   'comments-severity-blocking': 'Bloquant',
+  'comments-block-deleted': 'Bloc supprimé',
+  'comments-mention-placeholder': 'Tapez @ pour mentionner',
+  'comments-go-to-block': 'Cliquer pour aller au bloc',
+  'comments-no-block': 'Ce commentaire n\'est pas lié à un bloc',
 };

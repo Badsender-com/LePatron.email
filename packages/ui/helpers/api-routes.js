@@ -255,3 +255,51 @@ export function deletePersonalizedVariable(groupId, variableId) {
 export function postPersonalizedVariables(groupId) {
   return `/groups/${groupId}/personalized-variables`;
 }
+
+/// ///
+// COMMENTS
+/// ///
+
+export function mailingComments(routeParams = {}) {
+  return `/mailings/${routeParams.mailingId}/comments`;
+}
+
+export function mailingCommentsCounts(routeParams = {}) {
+  return `/mailings/${routeParams.mailingId}/comments/counts`;
+}
+
+export function mailingCommentsUnresolvedCount(routeParams = {}) {
+  return `/mailings/${routeParams.mailingId}/comments/unresolved-count`;
+}
+
+export function commentItem(routeParams = {}) {
+  return `/comments/${routeParams.commentId}`;
+}
+
+export function commentResolve(routeParams = {}) {
+  return `/comments/${routeParams.commentId}/resolve`;
+}
+
+/// ///
+// NOTIFICATIONS
+/// ///
+
+export function notifications() {
+  return '/notifications';
+}
+
+export function notificationsUnreadCount() {
+  return '/notifications/unread-count';
+}
+
+export function notificationItem(routeParams = {}) {
+  return `/notifications/${routeParams.notificationId}`;
+}
+
+export function notificationMarkRead(routeParams = {}) {
+  return `/notifications/${routeParams.notificationId}/read`;
+}
+
+export function notificationsMarkAllRead() {
+  return '/notifications/read-all';
+}

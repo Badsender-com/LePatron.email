@@ -189,9 +189,30 @@
 
 #main-edit-area .tools .tool.delete,
 #main-edit-area .tools .tool.clone,
-#main-edit-area .tools .tool.save {
+#main-edit-area .tools .tool.save,
+#main-edit-area .tools .tool.comment {
   float: right;
   margin-left: 3px;
+}
+
+#main-edit-area .tools .tool.comment {
+  position: relative;
+}
+
+#main-edit-area .tools .tool.comment .comment-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #f04e23;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  padding: 0 4px;
 }
 
 #main-edit-area .tools .tool.delete {
@@ -411,4 +432,23 @@
 // Add shadow to tinymce buttonbar buttons
 .mce-toolbar-grp.mce-panel .mce-btn-group {
   box-shadow: 0 0 5px @mosaico-button-shadow-color;
+}
+
+// Highlight animation for comment navigation
+@keyframes comment-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(25, 118, 210, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0);
+  }
+}
+
+#main-edit-area .editable.comment-highlight {
+  animation: comment-highlight-pulse 1s ease-out 2;
+  outline: 3px solid rgba(25, 118, 210, 0.5);
+  outline-offset: 5px;
 }
