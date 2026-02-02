@@ -24,6 +24,12 @@
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
+    <span>
+      <input id="showComments" type="checkbox" data-bind="checked: $root.showComments, button: { refreshOn: $root.showComments, icons: { primary: 'fa fa-fw fa-comments', secondary: null }, text: false, label: $root.t('Comments') }"><label title="Show comments panel" for="showComments" data-bind="attr: { title: $root.t('comments-toggle') }">show comments</label></input>
+      <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
+      <span class="comments-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
+      <!-- /ko -->
+    </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
     <span data-bind="buttonset: { }" class="leftButtons">
       <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'fa fa-reply' }, label: $root.undo.name, text: true }">UNDO</a>
