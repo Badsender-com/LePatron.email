@@ -224,23 +224,24 @@
 </div>
 
 <!-- Comments Panel -->
-<div id="toolcomments" class="slidebar comments-panel" data-bind="css: { hidden: $root.showComments() === false }">
+<div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
   <span class="pane-title" data-bind="text: $root.t('comments-title')">Comments</span>
 
   <!-- ko if: $root.showComments() -->
+  <div class="comments-content">
   <div class="comments-header">
     <!-- Filter info -->
     <!-- ko if: $root.selectedBlockForComments() -->
     <div class="comments-filter-info">
-      <span data-bind="text: $root.t('comments-filter-block')">Filtering by block</span>
-      <button class="comments-btn comments-btn-small" data-bind="click: $root.showAllComments, text: $root.t('comments-show-all')">Show all</button>
+      <span><i class="fa fa-filter"></i> <span data-bind="text: $root.t('comments-filter-block')">Filtré par bloc</span></span>
+      <button class="comments-btn comments-btn-small" data-bind="click: $root.showAllComments, text: $root.t('comments-show-all')">Tout voir</button>
     </div>
     <!-- /ko -->
 
     <!-- Stats -->
     <div class="comments-stats">
-      <span data-bind="text: $root.t('comments-count', { count: $root.unresolvedCommentCount() })">0 unresolved</span>
+      <span class="stats-count" data-bind="text: $root.unresolvedCommentCount()">0</span> <span data-bind="text: $root.t('comments-count-label')">en attente</span>
     </div>
   </div>
 
@@ -265,55 +266,96 @@
     </div>
 
     <div class="comments-form-options">
-      <select class="comments-select" data-bind="value: $root.newCommentCategory">
-        <option value="general" data-bind="text: $root.t('comments-category-general')">General</option>
-        <option value="design" data-bind="text: $root.t('comments-category-design')">Design</option>
-        <option value="content" data-bind="text: $root.t('comments-category-content')">Content</option>
-      </select>
+      <!-- Category chips -->
+      <div class="comments-chips-group">
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('general'); }, css: { selected: $root.newCommentCategory() === 'general' }">
+          <i class="fa fa-comment-o"></i> <span data-bind="text: $root.t('comments-category-general')">Général</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('design'); }, css: { selected: $root.newCommentCategory() === 'design' }">
+          <i class="fa fa-paint-brush"></i> <span data-bind="text: $root.t('comments-category-design')">Design</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('content'); }, css: { selected: $root.newCommentCategory() === 'content' }">
+          <i class="fa fa-file-text-o"></i> <span data-bind="text: $root.t('comments-category-content')">Contenu</span>
+        </span>
+      </div>
 
-      <select class="comments-select" data-bind="value: $root.newCommentSeverity">
-        <option value="info" data-bind="text: $root.t('comments-severity-info')">Info</option>
-        <option value="important" data-bind="text: $root.t('comments-severity-important')">Important</option>
-        <option value="blocking" data-bind="text: $root.t('comments-severity-blocking')">Blocking</option>
-      </select>
+      <!-- Severity chips -->
+      <div class="comments-chips-group">
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('info'); }, css: { selected: $root.newCommentSeverity() === 'info' }">
+          <i class="fa fa-info-circle"></i> Info
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('important'); }, css: { selected: $root.newCommentSeverity() === 'important' }">
+          <i class="fa fa-exclamation-triangle"></i> Important
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
+          <i class="fa fa-ban"></i> Bloquant
+        </span>
+      </div>
 
-      <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment, text: $root.t('comments-add')">Add</button>
+      <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
+        <i class="fa fa-plus"></i> <span data-bind="text: $root.t('comments-add')">Ajouter</span>
+      </button>
     </div>
   </div>
   <!-- /ko -->
 
   <!-- Loading state -->
   <!-- ko if: $root.commentsStatus() === 'loading' -->
-  <div class="comments-loading" data-bind="text: $root.t('comments-loading')">Loading comments...</div>
+  <div class="comments-loading">
+    <i class="fa fa-spinner fa-spin"></i>
+    <span data-bind="text: $root.t('comments-loading')">Chargement...</span>
+  </div>
   <!-- /ko -->
 
   <!-- Empty state -->
   <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
-  <div class="comments-empty" data-bind="text: $root.t('comments-empty')">No comments yet</div>
+  <div class="comments-empty">
+    <i class="fa fa-comments-o"></i>
+    <span data-bind="text: $root.t('comments-empty')">Aucun commentaire</span>
+  </div>
   <!-- /ko -->
 
   <!-- Comments list -->
   <div class="comments-list" data-bind="foreach: $root.filteredComments()">
-    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }">
+    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id, 'comment-severity-important-card': severity === 'important', 'comment-severity-blocking-card': severity === 'blocking' }">
       <!-- Comment header -->
       <div class="comment-header">
-        <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Unknown'"></span>
+        <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
         <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
         <!-- ko if: resolved -->
-        <span class="comment-badge comment-badge-resolved" data-bind="text: $root.t('comments-resolved-badge')">Resolved</span>
+        <span class="comment-badge comment-badge-resolved"><i class="fa fa-check"></i> <span data-bind="text: $root.t('comments-resolved-badge')">Résolu</span></span>
+        <!-- /ko -->
+        <!-- ko if: !resolved && severity === 'important' -->
+        <span class="comment-badge comment-badge-important"><i class="fa fa-exclamation-triangle"></i> Important</span>
+        <!-- /ko -->
+        <!-- ko if: !resolved && severity === 'blocking' -->
+        <span class="comment-badge comment-badge-blocking"><i class="fa fa-ban"></i> Bloquant</span>
         <!-- /ko -->
       </div>
 
       <!-- Comment meta -->
       <div class="comment-meta">
-        <span class="comment-category" data-bind="text: $root.getCategoryLabel(category)"></span>
-        <span class="comment-severity" data-bind="css: $root.getSeverityClass(severity), text: $root.t('comments-severity-' + (severity || 'info'))"></span>
-        <!-- ko if: blockId -->
-        <span class="comment-block comment-block-link"
-          data-bind="text: $root.getBlockInfoText($data),
-                     css: { 'comment-block-deleted': !$root.blockExists(blockId) },
-                     click: function() { $root.goToCommentBlock($data); },
-                     attr: { title: $root.blockExists(blockId) ? $root.t('comments-go-to-block') : '' }"></span>
+        <!-- Category with icon -->
+        <!-- ko if: category === 'general' || !category -->
+        <span class="comment-category"><i class="fa fa-comment-o"></i> <span data-bind="text: $root.t('comments-category-general')">Général</span></span>
+        <!-- /ko -->
+        <!-- ko if: category === 'design' -->
+        <span class="comment-category"><i class="fa fa-paint-brush"></i> <span data-bind="text: $root.t('comments-category-design')">Design</span></span>
+        <!-- /ko -->
+        <!-- ko if: category === 'content' -->
+        <span class="comment-category"><i class="fa fa-file-text-o"></i> <span data-bind="text: $root.t('comments-category-content')">Contenu</span></span>
+        <!-- /ko -->
+
+        <!-- Go to block link -->
+        <!-- ko if: blockId && $root.blockExists(blockId) -->
+        <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, attr: { title: $root.t('comments-go-to-block') }">
+          <i class="fa fa-external-link"></i> <span data-bind="text: $root.t('comments-go-to-block')">Aller au bloc</span>
+        </span>
+        <!-- /ko -->
+        <!-- ko if: blockId && !$root.blockExists(blockId) -->
+        <span class="comment-go-to-block comment-block-deleted">
+          <i class="fa fa-unlink"></i> <span data-bind="text: $root.t('comments-block-deleted')">Bloc supprimé</span>
+        </span>
         <!-- /ko -->
       </div>
 
@@ -327,24 +369,34 @@
       <div class="comment-edit-form">
         <textarea class="comments-textarea" rows="3" data-bind="value: $root.editCommentText"></textarea>
         <div class="comment-edit-actions">
-          <button class="comments-btn comments-btn-small" data-bind="click: $root.saveEditComment, text: $root.t('comments-save')">Save</button>
-          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Cancel</button>
+          <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.saveEditComment">
+            <i class="fa fa-check"></i> <span data-bind="text: $root.t('comments-save')">Enregistrer</span>
+          </button>
+          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Annuler</button>
         </div>
       </div>
       <!-- /ko -->
 
-      <!-- Comment actions -->
+      <!-- Comment actions (icon buttons) -->
       <!-- ko if: !$root.editingComment() || $root.editingComment()._id !== _id -->
       <div class="comment-actions">
         <!-- ko if: !resolved -->
-        <button class="comments-btn comments-btn-small" data-bind="click: function() { $root.startReply($data); }, text: $root.t('comments-reply')">Reply</button>
-        <button class="comments-btn comments-btn-small" data-bind="click: function() { $root.resolveComment($data); }, text: $root.t('comments-resolve')">Resolve</button>
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startReply($data); }, attr: { title: $root.t('comments-reply') }">
+          <i class="fa fa-reply"></i>
+        </button>
+        <button class="comments-btn-icon btn-icon-success" data-bind="click: function() { $root.resolveComment($data); }, attr: { title: $root.t('comments-resolve') }">
+          <i class="fa fa-check"></i>
+        </button>
         <!-- /ko -->
         <!-- ko if: $root.isCommentAuthor($data) -->
-        <button class="comments-btn comments-btn-small" data-bind="click: function() { $root.startEditComment($data); }, text: $root.t('comments-edit')">Edit</button>
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startEditComment($data); }, attr: { title: $root.t('comments-edit') }">
+          <i class="fa fa-pencil"></i>
+        </button>
         <!-- /ko -->
         <!-- ko if: $root.canDeleteComment($data) -->
-        <button class="comments-btn comments-btn-small comments-btn-danger" data-bind="click: function() { $root.deleteComment($data); }, text: $root.t('comments-delete')">Delete</button>
+        <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, attr: { title: $root.t('comments-delete') }">
+          <i class="fa fa-trash-o"></i>
+        </button>
         <!-- /ko -->
       </div>
       <!-- /ko -->
@@ -354,13 +406,15 @@
       <div class="comment-replies" data-bind="foreach: $root.getReplies(_id)">
         <div class="comment-reply" data-bind="css: { 'comment-resolved': resolved }">
           <div class="comment-header">
-            <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Unknown'"></span>
+            <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
             <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
           </div>
           <div class="comment-text" data-bind="html: $root.formatCommentText(text)"></div>
           <div class="comment-actions">
             <!-- ko if: $root.canDeleteComment($data) -->
-            <button class="comments-btn comments-btn-small comments-btn-danger" data-bind="click: function() { $root.deleteComment($data); }, text: $root.t('comments-delete')">Delete</button>
+            <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, attr: { title: $root.t('comments-delete') }">
+              <i class="fa fa-trash-o"></i>
+            </button>
             <!-- /ko -->
           </div>
         </div>
@@ -371,8 +425,8 @@
       <!-- ko if: $root.replyingTo() && $root.replyingTo()._id === _id -->
       <div class="comment-reply-form">
         <div class="comments-replying-to">
-          <span data-bind="text: $root.t('comments-replying-to', { name: $root.replyingTo().authorName })">Replying to...</span>
-          <button class="comments-btn-cancel" data-bind="click: $root.cancelReply">X</button>
+          <span><i class="fa fa-reply"></i> <span data-bind="text: $root.t('comments-replying-to-prefix') + ' ' + $root.replyingTo().authorName">Réponse à...</span></span>
+          <button class="comments-btn-cancel" data-bind="click: $root.cancelReply"><i class="fa fa-times"></i></button>
         </div>
         <div class="comments-textarea-wrapper">
           <textarea class="comments-textarea comment-textarea-reply" rows="2"
@@ -391,12 +445,15 @@
           <!-- /ko -->
         </div>
         <div class="comment-reply-actions">
-          <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.createComment, text: $root.t('comments-add')">Add</button>
-          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Cancel</button>
+          <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.createComment">
+            <i class="fa fa-paper-plane"></i> <span data-bind="text: $root.t('comments-add')">Envoyer</span>
+          </button>
+          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Annuler</button>
         </div>
       </div>
       <!-- /ko -->
     </div>
   </div>
+  </div><!-- .comments-content -->
   <!-- /ko -->
 </div>
