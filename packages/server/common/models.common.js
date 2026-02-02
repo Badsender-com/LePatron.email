@@ -23,6 +23,9 @@ const LogSchema = require('../log/log.schema');
 const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 const TagSchema = require('../tag/tag.schema.js');
+const { CommentSchema } = require('../comment/comment.schema.js');
+const { NotificationSchema } = require('../notification/notification.schema.js');
+
 /// ///
 // EXPORTS
 /// ///
@@ -60,6 +63,11 @@ const OAuthClients = mongoose.model(
 const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
 const Tags = mongoose.model(modelNames.TagModel, TagSchema);
+const Comments = mongoose.model(modelNames.CommentModel, CommentSchema);
+const Notifications = mongoose.model(
+  modelNames.NotificationModel,
+  NotificationSchema
+);
 
 module.exports = {
   mongoose,
@@ -81,4 +89,6 @@ module.exports = {
   OAuthClients,
   OAuthCodes,
   Tags,
+  Comments,
+  Notifications,
 };
