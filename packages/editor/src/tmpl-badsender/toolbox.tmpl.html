@@ -369,27 +369,27 @@
       <!-- ko if: !$root.editingComment() || $root.editingComment()._id !== _id -->
       <div class="comment-actions">
         <!-- ko if: !resolved -->
-        <button class="comments-btn-icon" data-bind="click: function() { $root.startReply($data); }, attr: { title: $root.t('comments-reply') }">
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startReply($data); }, clickBubble: false, attr: { title: $root.t('comments-reply') }">
           <i class="fa fa-reply"></i>
         </button>
-        <button class="comments-btn-icon btn-icon-success" data-bind="click: function() { $root.resolveComment($data); }, attr: { title: $root.t('comments-resolve') }">
+        <button class="comments-btn-icon btn-icon-success" data-bind="click: function() { $root.resolveComment($data); }, clickBubble: false, attr: { title: $root.t('comments-resolve') }">
           <i class="fa fa-check"></i>
         </button>
         <!-- /ko -->
         <!-- ko if: $root.isCommentAuthor($data) -->
-        <button class="comments-btn-icon" data-bind="click: function() { $root.startEditComment($data); }, attr: { title: $root.t('comments-edit') }">
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startEditComment($data); }, clickBubble: false, attr: { title: $root.t('comments-edit') }">
           <i class="fa fa-pencil"></i>
         </button>
         <!-- /ko -->
         <!-- ko if: $root.canDeleteComment($data) -->
-        <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, attr: { title: $root.t('comments-delete') }">
+        <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, clickBubble: false, attr: { title: $root.t('comments-delete') }">
           <i class="fa fa-trash-o"></i>
         </button>
         <!-- /ko -->
         <!-- Go to block link (in actions row) -->
         <!-- ko if: blockId && $root.blockExists(blockId) -->
         <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, clickBubble: false">
-          <i class="fa fa-external-link"></i> Aller au bloc
+          <i class="fa fa-external-link"></i> <span data-bind="text: $root.t('comments-go-to-block')">Aller au bloc</span>
         </span>
         <!-- /ko -->
         <!-- ko if: blockId && !$root.blockExists(blockId) -->
