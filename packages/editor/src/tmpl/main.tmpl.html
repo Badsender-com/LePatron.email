@@ -5,7 +5,8 @@
     <div id="main-wysiwyg-area" data-bind="wysiwygScrollfix: true, scrollable: true, fudroppable: { active: draggingImage }, css: { isdragging: dragging, isdraggingimg: draggingImage }, block: content"></div>
     <!-- /ko -->
 
-    <!-- Floating comments indicator -->
+    <!-- Floating comments indicator - shown when panel is closed.
+         Uses position:fixed so it renders relative to viewport despite #main-edit-area having overflow:hidden -->
     <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 && !$root.showComments() -->
     <div class="comments-floating-indicator" data-bind="click: function() { $root.showComments(true); if ($root.commentsStatus() === false) { $root.loadComments(); } }, attr: { title: $root.t('comments-toggle') }">
       <i class="fa fa-comments"></i>

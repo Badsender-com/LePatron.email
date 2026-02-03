@@ -35,6 +35,9 @@ function commentsLoader(opts) {
     viewModel.mentionCursorPosition = ko.observable(0);
     viewModel.activeMentionTextarea = ko.observable(null);
 
+    // Resolved comments expand/collapse
+    viewModel.expandedResolvedIds = ko.observableArray([]);
+
     // ===== COMPUTED =====
     viewModel.unresolvedCommentCount = ko.computed(function () {
       // If comments are loaded, use the actual count
@@ -65,7 +68,7 @@ function commentsLoader(opts) {
       }
 
       // Sort: unresolved first, then resolved
-      return filtered.sort(function (a, b) {
+      return filtered.slice().sort(function (a, b) {
         if (a.resolved === b.resolved) return 0;
         return a.resolved ? 1 : -1;
       });
@@ -249,7 +252,6 @@ function commentsLoader(opts) {
     /**
      * Toggle expand/collapse on a resolved comment
      */
-    viewModel.expandedResolvedIds = ko.observableArray([]);
     viewModel.toggleResolvedComment = function (comment, event) {
       if (!comment.resolved) return true; // Only for resolved
       var id = comment._id;
