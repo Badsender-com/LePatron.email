@@ -317,7 +317,7 @@
 
   <!-- Comments list -->
   <div class="comments-list" data-bind="foreach: $root.filteredComments()">
-    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id, 'comment-severity-important-card': severity === 'important', 'comment-severity-blocking-card': severity === 'blocking' }">
+    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
       <!-- Comment header -->
       <div class="comment-header">
         <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
@@ -331,11 +331,7 @@
         <!-- ko if: !resolved && severity === 'blocking' -->
         <span class="comment-badge comment-badge-blocking"><i class="fa fa-ban"></i> Bloquant</span>
         <!-- /ko -->
-      </div>
-
-      <!-- Comment meta -->
-      <div class="comment-meta">
-        <!-- Category with icon -->
+        <!-- Category badge in header (always visible, even when collapsed) -->
         <!-- ko if: category === 'general' || !category -->
         <span class="comment-category"><i class="fa fa-comment-o"></i> <span data-bind="text: $root.t('comments-category-general')">Général</span></span>
         <!-- /ko -->
@@ -345,17 +341,9 @@
         <!-- ko if: category === 'content' -->
         <span class="comment-category"><i class="fa fa-file-text-o"></i> <span data-bind="text: $root.t('comments-category-content')">Contenu</span></span>
         <!-- /ko -->
-
-        <!-- Go to block link -->
-        <!-- ko if: blockId && $root.blockExists(blockId) -->
-        <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, attr: { title: $root.t('comments-go-to-block') }">
-          <i class="fa fa-external-link"></i> <span data-bind="text: $root.t('comments-go-to-block')">Aller au bloc</span>
-        </span>
-        <!-- /ko -->
-        <!-- ko if: blockId && !$root.blockExists(blockId) -->
-        <span class="comment-go-to-block comment-block-deleted">
-          <i class="fa fa-unlink"></i> <span data-bind="text: $root.t('comments-block-deleted')">Bloc supprimé</span>
-        </span>
+        <!-- Expand indicator for resolved -->
+        <!-- ko if: resolved -->
+        <i class="fa comment-expand-icon" data-bind="css: { 'fa-chevron-down': !$root.isResolvedExpanded(_id), 'fa-chevron-up': $root.isResolvedExpanded(_id) }"></i>
         <!-- /ko -->
       </div>
 
@@ -397,6 +385,17 @@
         <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, attr: { title: $root.t('comments-delete') }">
           <i class="fa fa-trash-o"></i>
         </button>
+        <!-- /ko -->
+        <!-- Go to block link (in actions row) -->
+        <!-- ko if: blockId && $root.blockExists(blockId) -->
+        <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, clickBubble: false">
+          <i class="fa fa-external-link"></i> Aller au bloc
+        </span>
+        <!-- /ko -->
+        <!-- ko if: blockId && !$root.blockExists(blockId) -->
+        <span class="comment-go-to-block comment-block-deleted">
+          <i class="fa fa-unlink"></i> <span data-bind="text: $root.t('comments-block-deleted')">Bloc supprimé</span>
+        </span>
         <!-- /ko -->
       </div>
       <!-- /ko -->

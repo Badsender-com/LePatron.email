@@ -18,6 +18,7 @@ function commentsLoader(opts) {
     viewModel.comments = ko.observableArray([]);
     viewModel.commentsStatus = ko.observable(false); // false | 'loading' | number
     viewModel.commentCounts = ko.observable({}); // { blockId: count }
+    viewModel.initialUnresolvedCount = ko.observable(0); // Count loaded on init (before full comments load)
     viewModel.selectedBlockForComments = ko.observable(null);
     viewModel.selectedBlockSnapshot = ko.observable(null); // { id, index, type }
     viewModel.newCommentText = ko.observable('');
@@ -36,25 +37,37 @@ function commentsLoader(opts) {
 
     // ===== COMPUTED =====
     viewModel.unresolvedCommentCount = ko.computed(function () {
-      return viewModel.comments().filter(function (c) {
-        return !c.resolved && !c._parentComment;
-      }).length;
+      // If comments are loaded, use the actual count
+      if (viewModel.comments().length > 0 || viewModel.commentsStatus() !== false) {
+        return viewModel.comments().filter(function (c) {
+          return !c.resolved && !c._parentComment;
+        }).length;
+      }
+      // Otherwise use the initial count loaded on init
+      return viewModel.initialUnresolvedCount();
     });
 
     viewModel.filteredComments = ko.computed(function () {
       const blockId = viewModel.selectedBlockForComments();
       const allComments = viewModel.comments();
 
+      var filtered;
       if (!blockId) {
         // Show all root comments
-        return allComments.filter(function (c) {
+        filtered = allComments.filter(function (c) {
           return !c._parentComment;
+        });
+      } else {
+        // Show comments for selected block
+        filtered = allComments.filter(function (c) {
+          return c.blockId === blockId && !c._parentComment;
         });
       }
 
-      // Show comments for selected block
-      return allComments.filter(function (c) {
-        return c.blockId === blockId && !c._parentComment;
+      // Sort: unresolved first, then resolved
+      return filtered.sort(function (a, b) {
+        if (a.resolved === b.resolved) return 0;
+        return a.resolved ? 1 : -1;
       });
     });
 
@@ -74,6 +87,23 @@ function commentsLoader(opts) {
     });
 
     // ===== METHODS =====
+
+    /**
+     * Load only the unresolved comments count (lightweight, called on init)
+     */
+    viewModel.loadUnresolvedCount = function () {
+      $.ajax({
+        url: apiBaseUrl + '/mailings/' + mailingId + '/comments/unresolved-count',
+        method: 'GET',
+        success: function (response) {
+          viewModel.initialUnresolvedCount(response.count || 0);
+        },
+        error: function () {
+          // Silently fail - not critical
+          viewModel.initialUnresolvedCount(0);
+        },
+      });
+    };
 
     /**
      * Load comments for the current mailing
@@ -214,6 +244,23 @@ function commentsLoader(opts) {
         mentions.push(match[2]); // User ID
       }
       return mentions;
+    };
+
+    /**
+     * Toggle expand/collapse on a resolved comment
+     */
+    viewModel.expandedResolvedIds = ko.observableArray([]);
+    viewModel.toggleResolvedComment = function (comment, event) {
+      if (!comment.resolved) return true; // Only for resolved
+      var id = comment._id;
+      if (viewModel.expandedResolvedIds.indexOf(id) >= 0) {
+        viewModel.expandedResolvedIds.remove(id);
+      } else {
+        viewModel.expandedResolvedIds.push(id);
+      }
+    };
+    viewModel.isResolvedExpanded = function (commentId) {
+      return viewModel.expandedResolvedIds.indexOf(commentId) >= 0;
     };
 
     /**
@@ -686,6 +733,9 @@ function commentsLoader(opts) {
     } catch (e) {
       // URLSearchParams not supported or other error
     }
+
+    // Load unresolved count on init (for floating indicator)
+    viewModel.loadUnresolvedCount();
 
     console.info('Comments extension initialized');
   };

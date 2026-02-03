@@ -4,6 +4,14 @@
     <!-- ko withProperties: { templateMode: 'wysiwyg', templateModeFallback: 'show' } -->
     <div id="main-wysiwyg-area" data-bind="wysiwygScrollfix: true, scrollable: true, fudroppable: { active: draggingImage }, css: { isdragging: dragging, isdraggingimg: draggingImage }, block: content"></div>
     <!-- /ko -->
+
+    <!-- Floating comments indicator -->
+    <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 && !$root.showComments() -->
+    <div class="comments-floating-indicator" data-bind="click: function() { $root.showComments(true); if ($root.commentsStatus() === false) { $root.loadComments(); } }, attr: { title: $root.t('comments-toggle') }">
+      <i class="fa fa-comments"></i>
+      <span class="comments-floating-count" data-bind="text: $root.unresolvedCommentCount()"></span>
+    </div>
+    <!-- /ko -->
   </div>
 
   <div id="toolbar" class="mo" data-bind="tooltips: {}">
@@ -24,10 +32,10 @@
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
-    <span>
+    <span class="comments-button-wrapper">
       <input id="showComments" type="checkbox" data-bind="checked: $root.showComments, button: { refreshOn: $root.showComments, icons: { primary: 'fa fa-fw fa-comments', secondary: null }, text: false, label: $root.t('Comments') }"><label title="Show comments panel" for="showComments" data-bind="attr: { title: $root.t('comments-toggle') }">show comments</label></input>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
-      <span class="comments-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
+      <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount(), click: function() { $root.showComments(!$root.showComments()); }"></span>
       <!-- /ko -->
     </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
