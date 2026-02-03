@@ -144,69 +144,53 @@ Basé sur une échelle de 4px :
 
 ### 4.2 Cards
 
+Style flat, pas d'ombres portées. Bordures fines pour délimiter.
+
 ```css
 .card {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  padding: 16px;
-  transition: box-shadow 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 14px;
+  transition: border-color 0.15s ease;
 }
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-.card--with-accent {
-  border-left: 3px solid var(--accent-color);
+  border-color: #d1d5db;
 }
 ```
 
+#### Cards avec état (commentaires)
+
+Les cards de commentaires n'utilisent **pas de bordure de couleur sur le côté gauche**. La distinction se fait par :
+- **Badges** dans le header (Résolu, Important, Bloquant)
+- **État replié/déplié** pour les commentaires résolus
+- **Fond grisé** pour les commentaires résolus (`#f9fafb`)
+
 ### 4.3 Chips / Pills
 
-Pour les sélections multiples et les catégories :
+Design flat, sans bordure. Fond léger au repos, fond foncé quand sélectionné.
 
 ```css
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-.chip--default {
+  transition: all 0.15s ease;
+  border: none;
   background: #f3f4f6;
   color: #6b7280;
 }
-.chip--default:hover {
+.chip:hover {
   background: #e5e7eb;
 }
 .chip--selected {
   background: #0d2b3e;
   color: white;
-}
-.chip--info {
-  background: #eff6ff;
-  color: #3b82f6;
-  border-color: #bfdbfe;
-}
-.chip--warning {
-  background: #fffbeb;
-  color: #d97706;
-  border-color: #fde68a;
-}
-.chip--error {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-.chip--success {
-  background: #ecfdf5;
-  color: #059669;
-  border-color: #a7f3d0;
 }
 ```
 
@@ -236,31 +220,78 @@ Pour les sélections multiples et les catégories :
 
 ### 4.5 Badges
 
+Forme pill (border-radius arrondi), fond léger, pas de bordure.
+
 ```css
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
   font-size: 11px;
   font-weight: 500;
 }
 .badge--info {
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.12);
   color: #2563eb;
 }
 .badge--warning {
-  background: #fffbeb;
+  background: rgba(245, 158, 11, 0.12);
   color: #d97706;
 }
 .badge--error {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.12);
   color: #dc2626;
 }
 .badge--success {
-  background: #ecfdf5;
+  background: rgba(16, 185, 129, 0.12);
   color: #059669;
+}
+```
+
+### 4.6 Toolbar Badge (compteur)
+
+Badge compact aligné horizontalement à côté de l'icône, sans ombre.
+
+```css
+.toolbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f04e23;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+```
+
+### 4.7 Indicateur flottant
+
+Pill fixe en bas à droite pour les compteurs globaux (ex: commentaires non résolus). Se masque quand le panneau associé est ouvert.
+
+```css
+.floating-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0d2b3e;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3);
+  font-weight: 500;
+  font-size: 14px;
+  z-index: 1000;
 }
 ```
 
@@ -337,13 +368,40 @@ Utiliser des dates relatives pour une meilleure UX :
 
 ---
 
-## 8. Responsive
+## 8. Patterns d'interaction
+
+### Commentaires résolus / non-résolus
+
+- Les commentaires **non-résolus** sont affichés en premier, dépliés
+- Les commentaires **résolus** sont affichés en dessous, **repliés** par défaut
+  - Header visible : auteur, date, badge "Résolu", catégorie, icône chevron
+  - Clic sur le commentaire → déplie (texte, actions, réponses)
+  - Fond grisé (`Gray 50`) pour distinction visuelle
+
+### Actions sur les commentaires
+
+Disposées en ligne horizontale, icônes uniquement :
+- **Répondre** (`fa-reply`) — à gauche
+- **Résoudre** (`fa-check`) — à gauche
+- **Éditer** (`fa-pencil`) — à gauche (auteur uniquement)
+- **Supprimer** (`fa-trash-o`) — à gauche (auteur/admin)
+- **Aller au bloc** (`fa-external-link`) — aligné à droite (`margin-left: auto`)
+
+### Visibilité des compteurs
+
+Deux indicateurs complémentaires pour les commentaires non résolus :
+1. **Badge toolbar** : pill coral alignée horizontalement à côté du bouton Comments
+2. **Indicateur flottant** : pill en bas à droite, visible quand le panneau est fermé, chargé dès l'initialisation via un appel API léger (`/comments/unresolved-count`)
+
+---
+
+## 9. Responsive
 
 L'éditeur étant principalement desktop, les breakpoints ne sont pas prioritaires. Cependant, la sidebar doit rester fonctionnelle jusqu'à 300px de largeur minimum.
 
 ---
 
-## 9. Accessibilité
+## 10. Accessibilité
 
 - Contraste minimum : 4.5:1 pour le texte
 - Focus visible sur tous les éléments interactifs
@@ -357,3 +415,4 @@ L'éditeur étant principalement desktop, les breakpoints ne sont pas prioritair
 | Date | Version | Changements |
 |------|---------|-------------|
 | 2026-02-02 | 1.0 | Création initiale - Feature Commentaires |
+| 2026-02-03 | 1.1 | Design flat : suppression ombres/bordures lourdes, chips sans bordure, cards avec border fine, badges pill, commentaires résolus repliés, indicateur flottant, toolbar badge horizontal |
