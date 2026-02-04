@@ -122,6 +122,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
+    comments: 'Comments',
     edit: 'Edit',
     move: 'Move',
     emailsGroups: 'Test lists',
@@ -315,6 +316,7 @@ export default {
     downloadManySuccessful: 'Emails download complete',
     downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
+    openComments: 'Open comments',
   },
   template: {
     noId: 'No ID',
@@ -429,5 +431,19 @@ export default {
       'NMS_DELIVERY': 'Delivery',
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
-  }
+  },
+  notifications: {
+    title: 'Notifications',
+    empty: 'No notifications',
+    markAllRead: 'Mark all as read',
+    justNow: 'Just now',
+    minutesAgo: '{count} min ago',
+    hoursAgo: '{count}h ago',
+    daysAgo: '{count}d ago',
+    types: {
+      comment_mention: 'mentioned you in a comment',
+      comment_reply: 'replied to your comment',
+      comment_resolved: 'resolved a comment',
+    },
+  },
 };

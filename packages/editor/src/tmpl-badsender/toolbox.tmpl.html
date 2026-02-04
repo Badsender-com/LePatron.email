@@ -222,3 +222,237 @@
   <!-- /ko -->
   <!-- /ko -->
 </div>
+
+<!-- Comments Panel -->
+<div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
+  <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
+  <span class="pane-title" data-bind="text: $root.t('comments-title')">Comments</span>
+
+  <!-- ko if: $root.showComments() -->
+  <div class="comments-content">
+  <div class="comments-header">
+    <!-- Filter info -->
+    <!-- ko if: $root.selectedBlockForComments() -->
+    <div class="comments-filter-info">
+      <span><i class="fa fa-filter"></i> <span data-bind="text: $root.t('comments-filter-block')">Filtré par bloc</span></span>
+      <button class="comments-btn comments-btn-small" data-bind="click: $root.showAllComments, text: $root.t('comments-show-all')">Tout voir</button>
+    </div>
+    <!-- /ko -->
+
+    <!-- Stats -->
+    <div class="comments-stats">
+      <span class="stats-count" data-bind="text: $root.unresolvedCommentCount()">0</span> <span data-bind="text: $root.t('comments-count-label')">en attente</span>
+    </div>
+  </div>
+
+  <!-- New comment form (only shown when NOT replying) -->
+  <!-- ko ifnot: $root.replyingTo() -->
+  <div class="comments-form">
+    <div class="comments-textarea-wrapper">
+      <textarea class="comments-textarea comment-textarea-main" rows="3"
+        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
+
+      <!-- Mention suggestions dropdown -->
+      <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
+      <div class="mention-suggestions">
+        <!-- ko foreach: $root.mentionSuggestions() -->
+        <div class="mention-suggestion" data-bind="click: function() { $root.insertMention($data); }">
+          <span class="mention-name" data-bind="text: name"></span>
+          <span class="mention-email" data-bind="text: email"></span>
+        </div>
+        <!-- /ko -->
+      </div>
+      <!-- /ko -->
+    </div>
+
+    <div class="comments-form-options">
+      <!-- Category chips -->
+      <div class="comments-chips-group">
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('general'); }, css: { selected: $root.newCommentCategory() === 'general' }">
+          <i class="fa fa-comment-o"></i> <span data-bind="text: $root.t('comments-category-general')">Général</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('design'); }, css: { selected: $root.newCommentCategory() === 'design' }">
+          <i class="fa fa-paint-brush"></i> <span data-bind="text: $root.t('comments-category-design')">Design</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('content'); }, css: { selected: $root.newCommentCategory() === 'content' }">
+          <i class="fa fa-file-text-o"></i> <span data-bind="text: $root.t('comments-category-content')">Contenu</span>
+        </span>
+      </div>
+
+      <!-- Severity chips -->
+      <div class="comments-chips-group">
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('info'); }, css: { selected: $root.newCommentSeverity() === 'info' }">
+          <i class="fa fa-info-circle"></i> Info
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('important'); }, css: { selected: $root.newCommentSeverity() === 'important' }">
+          <i class="fa fa-exclamation-triangle"></i> Important
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
+          <i class="fa fa-ban"></i> Bloquant
+        </span>
+      </div>
+
+      <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
+        <i class="fa fa-plus"></i> <span data-bind="text: $root.t('comments-add')">Ajouter</span>
+      </button>
+    </div>
+  </div>
+  <!-- /ko -->
+
+  <!-- Loading state -->
+  <!-- ko if: $root.commentsStatus() === 'loading' -->
+  <div class="comments-loading">
+    <i class="fa fa-spinner fa-spin"></i>
+    <span data-bind="text: $root.t('comments-loading')">Chargement...</span>
+  </div>
+  <!-- /ko -->
+
+  <!-- Empty state -->
+  <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
+  <div class="comments-empty">
+    <i class="fa fa-comments-o"></i>
+    <span data-bind="text: $root.t('comments-empty')">Aucun commentaire</span>
+  </div>
+  <!-- /ko -->
+
+  <!-- Comments list -->
+  <div class="comments-list" data-bind="foreach: $root.filteredComments()">
+    <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
+      <!-- Comment header -->
+      <div class="comment-header">
+        <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
+        <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
+        <!-- ko if: resolved -->
+        <span class="comment-badge comment-badge-resolved"><i class="fa fa-check"></i> <span data-bind="text: $root.t('comments-resolved-badge')">Résolu</span></span>
+        <!-- /ko -->
+        <!-- ko if: !resolved && severity === 'important' -->
+        <span class="comment-badge comment-badge-important"><i class="fa fa-exclamation-triangle"></i> Important</span>
+        <!-- /ko -->
+        <!-- ko if: !resolved && severity === 'blocking' -->
+        <span class="comment-badge comment-badge-blocking"><i class="fa fa-ban"></i> Bloquant</span>
+        <!-- /ko -->
+        <!-- Category badge in header (always visible, even when collapsed) -->
+        <!-- ko if: category === 'general' || !category -->
+        <span class="comment-category"><i class="fa fa-comment-o"></i> <span data-bind="text: $root.t('comments-category-general')">Général</span></span>
+        <!-- /ko -->
+        <!-- ko if: category === 'design' -->
+        <span class="comment-category"><i class="fa fa-paint-brush"></i> <span data-bind="text: $root.t('comments-category-design')">Design</span></span>
+        <!-- /ko -->
+        <!-- ko if: category === 'content' -->
+        <span class="comment-category"><i class="fa fa-file-text-o"></i> <span data-bind="text: $root.t('comments-category-content')">Contenu</span></span>
+        <!-- /ko -->
+        <!-- Expand indicator for resolved -->
+        <!-- ko if: resolved -->
+        <i class="fa comment-expand-icon" data-bind="css: { 'fa-chevron-down': !$root.isResolvedExpanded(_id), 'fa-chevron-up': $root.isResolvedExpanded(_id) }"></i>
+        <!-- /ko -->
+      </div>
+
+      <!-- Comment content (view mode) -->
+      <!-- ko if: !$root.editingComment() || $root.editingComment()._id !== _id -->
+      <div class="comment-text" data-bind="html: $root.formatCommentText(text)"></div>
+      <!-- /ko -->
+
+      <!-- Comment content (edit mode) -->
+      <!-- ko if: $root.editingComment() && $root.editingComment()._id === _id -->
+      <div class="comment-edit-form">
+        <textarea class="comments-textarea" rows="3" data-bind="value: $root.editCommentText"></textarea>
+        <div class="comment-edit-actions">
+          <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.saveEditComment">
+            <i class="fa fa-check"></i> <span data-bind="text: $root.t('comments-save')">Enregistrer</span>
+          </button>
+          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Annuler</button>
+        </div>
+      </div>
+      <!-- /ko -->
+
+      <!-- Comment actions (icon buttons) -->
+      <!-- ko if: !$root.editingComment() || $root.editingComment()._id !== _id -->
+      <div class="comment-actions">
+        <!-- ko if: !resolved -->
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startReply($data); }, clickBubble: false, attr: { title: $root.t('comments-reply') }">
+          <i class="fa fa-reply"></i>
+        </button>
+        <button class="comments-btn-icon btn-icon-success" data-bind="click: function() { $root.resolveComment($data); }, clickBubble: false, attr: { title: $root.t('comments-resolve') }">
+          <i class="fa fa-check"></i>
+        </button>
+        <!-- /ko -->
+        <!-- ko if: $root.isCommentAuthor($data) -->
+        <button class="comments-btn-icon" data-bind="click: function() { $root.startEditComment($data); }, clickBubble: false, attr: { title: $root.t('comments-edit') }">
+          <i class="fa fa-pencil"></i>
+        </button>
+        <!-- /ko -->
+        <!-- ko if: $root.canDeleteComment($data) -->
+        <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, clickBubble: false, attr: { title: $root.t('comments-delete') }">
+          <i class="fa fa-trash-o"></i>
+        </button>
+        <!-- /ko -->
+        <!-- Go to block link (in actions row) -->
+        <!-- ko if: blockId && $root.blockExists(blockId) -->
+        <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, clickBubble: false">
+          <i class="fa fa-external-link"></i> <span data-bind="text: $root.t('comments-go-to-block')">Aller au bloc</span>
+        </span>
+        <!-- /ko -->
+        <!-- ko if: blockId && !$root.blockExists(blockId) -->
+        <span class="comment-go-to-block comment-block-deleted">
+          <i class="fa fa-unlink"></i> <span data-bind="text: $root.t('comments-block-deleted')">Bloc supprimé</span>
+        </span>
+        <!-- /ko -->
+      </div>
+      <!-- /ko -->
+
+      <!-- Replies -->
+      <!-- ko if: $root.getReplies(_id).length > 0 -->
+      <div class="comment-replies" data-bind="foreach: $root.getReplies(_id)">
+        <div class="comment-reply" data-bind="css: { 'comment-resolved': resolved }">
+          <div class="comment-header">
+            <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
+            <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
+          </div>
+          <div class="comment-text" data-bind="html: $root.formatCommentText(text)"></div>
+          <div class="comment-actions">
+            <!-- ko if: $root.canDeleteComment($data) -->
+            <button class="comments-btn-icon btn-icon-danger" data-bind="click: function() { $root.deleteComment($data); }, attr: { title: $root.t('comments-delete') }">
+              <i class="fa fa-trash-o"></i>
+            </button>
+            <!-- /ko -->
+          </div>
+        </div>
+      </div>
+      <!-- /ko -->
+
+      <!-- Inline reply form (shown when replying to THIS comment) -->
+      <!-- ko if: $root.replyingTo() && $root.replyingTo()._id === _id -->
+      <div class="comment-reply-form">
+        <div class="comments-replying-to">
+          <span><i class="fa fa-reply"></i> <span data-bind="text: $root.t('comments-replying-to-prefix') + ' ' + $root.replyingTo().authorName">Réponse à...</span></span>
+          <button class="comments-btn-cancel" data-bind="click: $root.cancelReply"><i class="fa fa-times"></i></button>
+        </div>
+        <div class="comments-textarea-wrapper">
+          <textarea class="comments-textarea comment-textarea-reply" rows="2"
+            data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
+
+          <!-- Mention suggestions dropdown -->
+          <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
+          <div class="mention-suggestions">
+            <!-- ko foreach: $root.mentionSuggestions() -->
+            <div class="mention-suggestion" data-bind="click: function() { $root.insertMention($data); }">
+              <span class="mention-name" data-bind="text: name"></span>
+              <span class="mention-email" data-bind="text: email"></span>
+            </div>
+            <!-- /ko -->
+          </div>
+          <!-- /ko -->
+        </div>
+        <div class="comment-reply-actions">
+          <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.createComment">
+            <i class="fa fa-paper-plane"></i> <span data-bind="text: $root.t('comments-add')">Envoyer</span>
+          </button>
+          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Annuler</button>
+        </div>
+      </div>
+      <!-- /ko -->
+    </div>
+  </div>
+  </div><!-- .comments-content -->
+  <!-- /ko -->
+</div>

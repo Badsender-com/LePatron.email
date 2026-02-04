@@ -597,3 +597,725 @@ body {
   justify-content: center;
 }
 
+////////
+// COMMENTS PANEL - Modern Design System
+////////
+
+// Design System Variables
+@comment-primary-dark: #0d2b3e;
+@comment-primary: #1a4a5e;
+@comment-accent-teal: #2dd4bf;
+@comment-accent-coral: #f04e23;
+@comment-gray-900: #1a1a2e;
+@comment-gray-600: #6b7280;
+@comment-gray-400: #9ca3af;
+@comment-gray-300: #d1d5db;
+@comment-gray-200: #e5e7eb;
+@comment-gray-100: #f3f4f6;
+@comment-gray-50: #f9fafb;
+@comment-success: #10b981;
+@comment-warning: #f59e0b;
+@comment-error: #ef4444;
+@comment-info: #3b82f6;
+
+// =============================================
+// Comments Visibility Indicators
+// =============================================
+
+// Wrapper for comments button in toolbar
+.comments-button-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// Badge on Comments button in toolbar (horizontal, tight to icon)
+.comments-toolbar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: @comment-accent-coral;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+// Floating comments indicator - shown when panel is closed
+.comments-floating-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: @comment-primary-dark;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  z-index: 1000;
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+
+  // Pulse animation to attract attention
+  animation: comments-indicator-pulse 2s ease-in-out infinite;
+
+  &:hover {
+    background: lighten(@comment-primary-dark, 8%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 43, 62, 0.4), 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  i {
+    font-size: 18px;
+  }
+
+  .comments-floating-count {
+    background: @comment-accent-coral;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+  }
+}
+
+@keyframes comments-indicator-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(45, 212, 191, 0.2);
+  }
+}
+
+// Comments content area (below the header)
+.comments-content {
+  padding: 16px;
+  height: calc(100vh - var(--top-bar-height));
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+// Header with stats
+.comments-header {
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.comments-filter-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: @comment-gray-100;
+  border-radius: 6px;
+  font-size: 12px;
+  color: @comment-gray-600;
+}
+
+.comments-stats {
+  font-size: 13px;
+  font-weight: 500;
+  color: @comment-primary-dark;
+
+  .stats-count {
+    font-weight: 600;
+    color: @comment-accent-coral;
+  }
+}
+
+// Form styles
+.comments-form {
+  background: @comment-gray-50;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  border: 1px solid @comment-gray-200;
+}
+
+.comments-replying-to {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, fade(@comment-primary, 10%) 0%, fade(@comment-accent-teal, 10%) 100%);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: @comment-primary-dark;
+  border-left: 3px solid @comment-accent-teal;
+}
+
+.comments-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid @comment-gray-200;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 70px;
+  box-sizing: border-box;
+  background: white;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: @comment-accent-teal;
+    box-shadow: 0 0 0 3px fade(@comment-accent-teal, 15%);
+  }
+
+  &::placeholder {
+    color: @comment-gray-400;
+  }
+}
+
+.comments-textarea-wrapper {
+  position: relative;
+}
+
+// Mention autocomplete dropdown
+.mention-suggestions {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid @comment-gray-200;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-bottom: 4px;
+}
+
+.mention-suggestion {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.15s ease;
+
+  &:first-child {
+    border-radius: 7px 7px 0 0;
+  }
+  &:last-child {
+    border-radius: 0 0 7px 7px;
+  }
+
+  &:hover {
+    background: @comment-gray-100;
+  }
+}
+
+.mention-name {
+  font-weight: 500;
+  font-size: 13px;
+  color: @comment-gray-900;
+}
+
+.mention-email {
+  font-size: 11px;
+  color: @comment-gray-400;
+}
+
+// Form options with chips
+.comments-form-options {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.comments-chips-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Chip/Pill component (flat design)
+.comment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: @comment-gray-100;
+  color: @comment-gray-600;
+
+  &:hover {
+    background: @comment-gray-200;
+  }
+
+  &.selected {
+    background: @comment-primary-dark;
+    color: white;
+  }
+
+  .fa {
+    font-size: 11px;
+  }
+}
+
+// Hidden native select (for form submission)
+.comments-select-hidden {
+  display: none;
+}
+
+// Legacy select styling (fallback)
+.comments-select {
+  padding: 8px 12px;
+  border: 1px solid @comment-gray-200;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: @comment-accent-teal;
+  }
+}
+
+// Button styles
+.comments-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  background: @comment-gray-100;
+  color: @comment-gray-600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    background: @comment-gray-200;
+    color: @comment-gray-900;
+  }
+}
+
+.comments-btn-primary {
+  background: linear-gradient(135deg, @comment-primary 0%, @comment-primary-dark 100%);
+  color: white;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px fade(@comment-primary-dark, 30%);
+  }
+}
+
+.comments-btn-small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.comments-btn-danger {
+  color: @comment-error;
+
+  &:hover {
+    background: fade(@comment-error, 10%);
+    color: darken(@comment-error, 10%);
+  }
+}
+
+// Icon-only button
+.comments-btn-icon {
+  padding: 6px;
+  border-radius: 6px;
+  background: transparent;
+  color: @comment-gray-400;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+
+  &:hover {
+    background: @comment-gray-100;
+    color: @comment-primary-dark;
+  }
+
+  &.btn-icon-danger:hover {
+    background: fade(@comment-error, 10%);
+    color: @comment-error;
+  }
+
+  &.btn-icon-success:hover {
+    background: fade(@comment-success, 10%);
+    color: @comment-success;
+  }
+
+  .fa {
+    font-size: 14px;
+  }
+}
+
+.comments-btn-cancel {
+  background: none;
+  border: none;
+  color: @comment-gray-400;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: @comment-gray-900;
+  }
+}
+
+// Loading and empty states
+.comments-loading,
+.comments-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: @comment-gray-400;
+  font-size: 14px;
+
+  .fa {
+    display: block;
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+}
+
+// Comments list
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  min-height: 0;
+}
+
+// Comment card (flat design)
+.comment-item {
+  background: white;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid @comment-gray-200;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: @comment-gray-300;
+  }
+
+  &.comment-editing {
+    border-color: @comment-accent-teal;
+  }
+
+  // Resolved comments: collapsed style
+  &.comment-resolved {
+    background: @comment-gray-50;
+    padding: 10px 14px;
+    cursor: pointer;
+
+    .comment-text,
+    .comment-actions,
+    .comment-replies,
+    .comment-reply-form,
+    .comment-edit-form {
+      display: none;
+    }
+
+    &.comment-expanded {
+      padding: 14px;
+      cursor: default;
+
+      .comment-text,
+      .comment-actions,
+      .comment-replies,
+      .comment-reply-form,
+      .comment-edit-form {
+        display: block;
+      }
+
+      .comment-actions {
+        display: flex;
+      }
+    }
+  }
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: @comment-primary-dark;
+}
+
+.comment-date {
+  font-size: 11px;
+  color: @comment-gray-400;
+}
+
+// Badges (flat)
+.comment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+
+  .fa {
+    font-size: 10px;
+  }
+}
+
+.comment-badge-resolved {
+  background: fade(@comment-success, 12%);
+  color: @comment-success;
+}
+
+.comment-badge-info {
+  background: fade(@comment-info, 12%);
+  color: @comment-info;
+}
+
+.comment-badge-important {
+  background: fade(@comment-warning, 12%);
+  color: darken(@comment-warning, 5%);
+}
+
+.comment-badge-blocking {
+  background: fade(@comment-error, 12%);
+  color: @comment-error;
+}
+
+.comment-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: @comment-gray-100;
+  color: @comment-gray-600;
+
+  .fa {
+    font-size: 10px;
+  }
+}
+
+// Go to block link
+.comment-go-to-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: fade(@comment-accent-teal, 12%);
+  color: darken(@comment-accent-teal, 15%);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+
+  &:hover {
+    background: fade(@comment-accent-teal, 20%);
+    color: darken(@comment-accent-teal, 20%);
+  }
+
+  .fa {
+    font-size: 10px;
+  }
+
+  &.comment-block-deleted {
+    background: fade(@comment-error, 10%);
+    color: @comment-error;
+    cursor: not-allowed;
+    opacity: 0.7;
+
+    &:hover {
+      background: fade(@comment-error, 10%);
+    }
+  }
+}
+
+// Legacy block display (hidden but kept for compatibility)
+.comment-block {
+  display: none;
+}
+
+.comment-severity {
+  display: none; // Hidden, severity shown via badge now
+}
+
+// Comment text
+.comment-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: @comment-gray-900;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// Mention styling in comment text
+.comment-mention {
+  background: fade(@comment-accent-teal, 15%);
+  color: darken(@comment-accent-teal, 20%);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.comment-edit-form {
+  margin-bottom: 12px;
+}
+
+.comment-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+// Comment actions (icons)
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid @comment-gray-100;
+  margin-top: 8px;
+
+  // Push "Aller au bloc" to the right
+  .comment-go-to-block {
+    margin-left: auto;
+  }
+}
+
+// Expand icon for resolved comments
+.comment-expand-icon {
+  margin-left: auto;
+  font-size: 12px;
+  color: @comment-gray-400;
+}
+
+// Replies
+.comment-replies {
+  margin-top: 14px;
+  padding-left: 14px;
+  border-left: 2px solid @comment-gray-200;
+}
+
+.comment-reply {
+  background: @comment-gray-50;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .comment-header {
+    margin-bottom: 6px;
+  }
+
+  .comment-text {
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .comment-actions {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+}
+
+// Inline reply form
+.comment-reply-form {
+  margin-top: 14px;
+  padding: 14px;
+  background: @comment-gray-50;
+  border-radius: 8px;
+  border-left: 3px solid @comment-accent-teal;
+
+  .comments-replying-to {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: white;
+  }
+
+  .comments-textarea {
+    background: white;
+    margin-bottom: 10px;
+  }
+}
+
+.comment-reply-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+// Animation for new comments
+@keyframes commentSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comment-item-new {
+  animation: commentSlideIn 0.3s ease-out;
+}
+
