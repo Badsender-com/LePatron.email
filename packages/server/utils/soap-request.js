@@ -1,5 +1,5 @@
 const axios = require('../../server/config/axios');
-const xmlParser = require('xml2json');
+const { XMLParser } = require('fast-xml-parser');
 const { InternalServerError } = require('http-errors');
 const { createLog } = require('../../server/log/log.service');
 
@@ -29,7 +29,8 @@ async function soapRequest({
         SOAPAction: soapAction,
       },
     });
-    const jsObjectFromXml = JSON.parse(xmlParser.toJson(response.data));
+    const parser = new XMLParser({ ignoreAttributes: false, trimValues: true });
+    const jsObjectFromXml = parser.parse(response.data);
 
     const errorFromAdobe =
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
