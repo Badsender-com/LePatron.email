@@ -41,6 +41,11 @@ yarn build
 # Run tests
 yarn test
 
+# Linting and formatting
+yarn code:lint          # Detect linter warnings and errors
+yarn code:fix           # Auto-fix linter errors and run prettier formatting
+yarn code:pretty        # Run prettier formatting only
+
 # Build editor only
 yarn editor:build
 
@@ -51,19 +56,42 @@ yarn build:ui
 ## Code Conventions
 
 ### General
+
 - Use English for code, comments, and logs (never French in code)
 - French is acceptable only for user-facing strings (i18n files)
 - No hardcoded values - use config or constants
 - All user-facing text must be internationalized
 
 ### Naming
+
 - Files: `kebab-case.js` for JS files, `kebab-case.vue` for Vue components
 - Vue component names: `PascalCase` (e.g., `name: 'BsUserForm'`)
 - Variables/functions: `camelCase`
 - Constants: `UPPER_SNAKE_CASE`
 - MongoDB models: `PascalCase` (e.g., `Mailing`, `User`, `Group`)
 
+### Branch Naming Convention
+
+```
+type/short-description
+
+types:
+- feat/    - New features
+- fix/     - Bug fixes
+- docs/    - Documentation changes
+- refactor/ - Code refactoring
+- test/    - Adding or updating tests
+- chore/   - Maintenance tasks
+
+Examples:
+- feat/user-authentication
+- fix/login-redirect-bug
+- docs/api-guidelines
+- refactor/comment-service
+```
+
 ### Commit Messages (Karma format)
+
 ```
 type(scope): short description
 
@@ -74,13 +102,15 @@ scope: server, ui, editor, etc.
 ## Package-Specific Guidelines
 
 ### packages/server
+
 - Routes in `/{resource}/{resource}.routes.js`
 - Controllers in `/{resource}/{resource}.controller.js`
 - Services in `/{resource}/{resource}.service.js`
 - Models/schemas in `/{resource}/{resource}.schema.js`
-- Tests in `/{resource}/{resource}.test.js`
+- Unit tests in `/tests/server/{resource}/` (centralized test directory)
 
 ### packages/ui
+
 - Pages in `/pages/`
 - Components in `/components/`
 - Store modules in `/store/`
@@ -88,6 +118,7 @@ scope: server, ui, editor, etc.
 - Use tilde for absolute imports: `import { api } from '~/helpers/api-routes'`
 
 ### packages/editor
+
 - Extensions in `/src/js/ext/`
 - Templates in `/src/tmpl-badsender/`
 - Editor locales in `/public/lang/` (badsender-fr.js, badsender-en.js)
@@ -95,7 +126,9 @@ scope: server, ui, editor, etc.
 ## Mongoose Conventions
 
 ### Foreign Keys
+
 Use underscore prefix for references to other collections, with aliases:
+
 ```javascript
 _company: {
   type: ObjectId,
@@ -111,21 +144,26 @@ _user: {
 ```
 
 ### Hidden Fields
+
 Use mongoose-hidden plugin to hide sensitive fields from JSON output:
+
 ```javascript
 Schema.plugin(mongooseHidden, {
-  hidden: { password: true, token: true }
+  hidden: { password: true, token: true },
 });
 ```
 
 ### Sensitive Fields Encryption
+
 Use encryption plugin for API keys and secrets:
+
 ```javascript
 const encryptionPlugin = require('../utils/encryption-plugin.js');
 ProfileSchema.plugin(encryptionPlugin, ['secretKey', 'apiKey']);
 ```
 
 ### Schema Validation
+
 ```javascript
 email: {
   type: String,
@@ -140,7 +178,9 @@ email: {
 ## Error Handling
 
 ### Pattern
+
 Use http-errors library with ERROR_CODES constants:
+
 ```javascript
 const createError = require('http-errors');
 const { ERROR_CODES } = require('../constant/error-codes.js');
@@ -159,10 +199,12 @@ if (!user) {
 ```
 
 ### Error Codes
+
 All error codes are defined in `/packages/server/constant/error-codes.js`.
 Always add new codes there - don't use string literals.
 
 ### Error Response Structure
+
 ```javascript
 // Consistent error handling in controllers
 try {
@@ -178,14 +220,15 @@ try {
 ## Route Protection
 
 Use guard middleware for protected routes:
+
 ```javascript
 const { GUARD_USER, GUARD_ADMIN, guard } = require('../account/auth.guard.js');
 
 // Available guards
-GUARD_USER          // Logged-in users (regular + admin)
-GUARD_ADMIN         // Super admin only
-GUARD_GROUP_ADMIN   // Group admin
-guard([Roles.X])    // Custom role check
+GUARD_USER; // Logged-in users (regular + admin)
+GUARD_ADMIN; // Super admin only
+GUARD_GROUP_ADMIN; // Group admin
+guard([Roles.X]); // Custom role check
 
 // Usage in routes
 router.get('', GUARD_USER, controller.list);
@@ -195,6 +238,7 @@ router.delete('/:id', GUARD_ADMIN, controller.delete);
 ## Logging
 
 ### Rules
+
 - Use `logger` from `../utils/logger.js`, **NOT** `console.log`
 - All logs must be in English
 - Never log sensitive data (passwords, tokens, API keys)
@@ -207,14 +251,16 @@ logger.log('Processing mailing', mailingId);
 logger.error('Failed to send email', { error: err.message });
 
 // Bad - don't do this
-console.log('Upload réussi');  // French + console.log
-console.log('Password:', password);  // Sensitive data
+console.log('Upload réussi'); // French + console.log
+console.log('Password:', password); // Sensitive data
 ```
 
 ## Utility Libraries
 
 ### Lodash
+
 Use for object manipulation:
+
 ```javascript
 const pick = require('lodash').pick;
 const { omit } = require('lodash');
@@ -227,21 +273,24 @@ const copy = omit(original, ['_id', 'createdAt', 'updatedAt']);
 ```
 
 ### Validation
+
 - Backend: `validator` library + Mongoose schema validation
 - Frontend: `vuelidate` for Vue form validation
 
 ## Common Tasks
 
 ### Adding a new API endpoint
+
 1. Create or update route file in `packages/server/{resource}/`
 2. Add controller function wrapped with `asyncHandler`
 3. Add service logic if needed
 4. Update schema if new fields required
 5. Add guard middleware for protection
 6. Add error codes to `error-codes.js` if needed
-7. Add tests
+7. Add tests in `/tests/server/{resource}/`
 
 ### Adding a Vue component
+
 1. Create `kebab-case.vue` in `packages/ui/components/`
 2. Use `PascalCase` for component name property
 3. Add translations in `packages/ui/helpers/locales/fr.js` and `en.js`
@@ -249,20 +298,32 @@ const copy = omit(original, ['_id', 'createdAt', 'updatedAt']);
 5. Import and use in page or parent component
 
 ### Adding editor translations
+
 1. Edit `public/lang/badsender-fr.js` and `badsender-en.js`
 2. Use `viewModel.t('key')` in editor code
 
 ## Testing
 
 - Backend tests: `yarn test` (uses Jest)
-- Test files are co-located with source: `*.test.js`
+- Test structure mirrors source structure in `/tests` directory:
+  ```
+  /tests/
+    /server/
+      /comment/comment.test.js
+      /notification/notification.test.js
+    /ui/
+      /components/...
+      /utils/...
+  ```
 - Run specific test: `yarn test -- --grep "pattern"`
+- See [tests/README.md](./tests/README.md) for detailed testing guidelines
 
 > **Note**: Test coverage is currently low. New features should include tests.
 
 ## Database
 
 MongoDB collections:
+
 - `users` - User accounts
 - `groups` - Organizations/workspaces
 - `mailings` - Email campaigns
@@ -275,6 +336,7 @@ MongoDB collections:
 ## ESP Integrations
 
 Supported providers in `packages/server/esp/`:
+
 - Sendinblue (Brevo)
 - DSC
 - Actito
@@ -283,6 +345,7 @@ Supported providers in `packages/server/esp/`:
 ## Do's and Don'ts
 
 ### Do
+
 - Follow existing code patterns
 - Add translations for any user-facing text
 - Write tests for new backend features
@@ -294,6 +357,7 @@ Supported providers in `packages/server/esp/`:
 - Use Lodash for object manipulation
 
 ### Don't
+
 - Hardcode URLs, credentials, or magic numbers
 - Skip error handling
 - Commit `.env` files or secrets
@@ -312,8 +376,10 @@ Supported providers in `packages/server/esp/`:
 
 ## Useful References
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
-- [TEMPLATE_DEVELOPER_GUIDE.md](./TEMPLATE_DEVELOPER_GUIDE.md) - Mosaico template development
+- [CONTRIBUTING.md](./docs/CONTRIBUTING.md) - Contribution guidelines
+- [TEMPLATE_DEVELOPER_GUIDE.md](./docs/TEMPLATE_DEVELOPER_GUIDE.md) - Mosaico template development
+- [docs/agents/](./docs/agents/) - Additional agent documentation
+- [docs/index.md](./docs/index.md) - Complete documentation index
 - [packages/documentation/](./packages/documentation/) - Technical documentation
 
 ---
@@ -323,6 +389,7 @@ Supported providers in `packages/server/esp/`:
 When reviewing code, evaluate against these criteria organized by severity.
 
 ### CRITICAL - Security
+
 - No hardcoded secrets, API keys, or credentials
 - Input validation on all user inputs
 - SQL/NoSQL injection prevention (use Mongoose, not raw queries)
@@ -332,6 +399,7 @@ When reviewing code, evaluate against these criteria organized by severity.
 - Sensitive fields encrypted (use encryptionPlugin)
 
 ### HIGH - Architecture
+
 - Single Responsibility Principle respected
 - No circular dependencies between modules
 - Proper error handling with ERROR_CODES
@@ -340,6 +408,7 @@ When reviewing code, evaluate against these criteria organized by severity.
 - Uses asyncHandler for async controller functions
 
 ### MEDIUM - Performance
+
 - No N+1 database queries (use `.populate()`)
 - Async operations for I/O-bound tasks
 - No memory leaks (event listeners cleaned up)
@@ -347,12 +416,36 @@ When reviewing code, evaluate against these criteria organized by severity.
 - No blocking operations in hot paths
 
 ### LOW - Maintainability
+
 - Clear, descriptive naming (variables, functions, files)
 - DRY principle (no copy-paste code)
-- Functions under 50 lines, files under 300 lines
+  - Extract duplicated utility functions (e.g., date formatting) into shared `/utils` files
+  - Use libraries like `date-fns` or `dayjs` for common date operations instead of duplicating code
+  - Extract repeated URLs/constants into named constants at file top
+- Functions under 50 lines, **files under 300 lines** (strictly enforced)
+  - If a file exceeds 300 lines, split it into multiple smaller, focused files
+  - Consider breaking large components into sub-components
+  - Separate concerns into different service/utility files
 - Tests for critical paths
+  - Unit tests: `/tests/` directory mirroring source structure
+    - Backend: `/tests/server/{resource}/{resource}.test.js`
+    - UI: `/tests/ui/components/{component}.test.js`
+  - Integration/E2E tests and documentation: `/packages/documentation/tests/`
+  - Test checklists: `/packages/documentation/tests/` (e.g., `comments-testing-checklist.md`)
 - Comments only for "why", not "what"
+  - Document complex business logic
+  - Explain non-obvious role definitions (e.g., "actor" in notifications: someone who mentioned, replied, or resolved)
 - Uses logger, not console.log
+
+### Pre-Review Checklist
+
+Before submitting code for review, **always run**:
+
+```bash
+yarn code:lint    # Check for linting errors
+yarn code:fix     # Auto-fix errors and format code
+yarn test         # Ensure all tests pass
+```
 
 ### Review Output Format
 
@@ -380,4 +473,11 @@ When providing review feedback, use this format:
 
 ## Recommendations
 [Optional architectural or design suggestions]
+
+## Code Quality Checks
+- [ ] All files under 300 lines unless striclty necessary
+- [ ] No duplicate code (extracted to utils)
+- [ ] yarn code:lint passes
+- [ ] Tests added/updated
+- [ ] UX/design system compliance (if UI changes)
 ```
