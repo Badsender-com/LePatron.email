@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Grep, Glob, Bash
+name: review
 description: Critical code review of recent changes following AGENTS.md guidelines
 ---
 
