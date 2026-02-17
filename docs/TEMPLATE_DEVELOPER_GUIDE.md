@@ -31,22 +31,28 @@ A minimal Mosaico template has three key elements:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <style type="text/css">
-    @supports -ko-blockdefs {
-      /* Block definitions go here */
-      text { label: Text; widget: text; }
-      textBlock { label: Text Block; properties: text; }
-    }
-  </style>
-</head>
-<body>
-  <div data-ko-container="main">
-    <div data-ko-block="textBlock">
-      <div data-ko-editable="text">Default text</div>
+  <head>
+    <style type="text/css">
+      @supports -ko-blockdefs {
+        /* Block definitions go here */
+        text {
+          label: Text;
+          widget: text;
+        }
+        textBlock {
+          label: Text Block;
+          properties: text;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div data-ko-container="main">
+      <div data-ko-block="textBlock">
+        <div data-ko-editable="text">Default text</div>
+      </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>
 ```
 
@@ -65,14 +71,14 @@ A minimal Mosaico template has three key elements:
 
 ### Key Terminology
 
-| Term | Definition |
-|------|------------|
-| **Block** | A draggable, reusable content unit (e.g., text block, image block) |
-| **Container** | The main drag-and-drop zone where blocks can be placed |
-| **Editable** | A field within a block that users can modify |
-| **Widget** | The UI control type (text, color picker, dropdown, etc.) |
-| **Mosaico-class** | Block and property definitions in `@supports -ko-blockdefs` |
-| **Binding** | Dynamic connection between data and visual properties |
+| Term              | Definition                                                         |
+| ----------------- | ------------------------------------------------------------------ |
+| **Block**         | A draggable, reusable content unit (e.g., text block, image block) |
+| **Container**     | The main drag-and-drop zone where blocks can be placed             |
+| **Editable**      | A field within a block that users can modify                       |
+| **Widget**        | The UI control type (text, color picker, dropdown, etc.)           |
+| **Mosaico-class** | Block and property definitions in `@supports -ko-blockdefs`        |
+| **Binding**       | Dynamic connection between data and visual properties              |
 
 ---
 
@@ -82,48 +88,52 @@ A minimal Mosaico template has three key elements:
 
 ```html
 <!DOCTYPE html>
-<html xmlns:v="urn:schemas-microsoft-com:vml"
-      xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width">
-  <!--[if !mso]><!--><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]-->
+<html
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <!--[if !mso]><!-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!--<![endif]-->
 
-  <title>Email Template</title>
+    <title>Email Template</title>
 
-  <!-- Mosaico block definitions -->
-  <style type="text/css">
-    @supports -ko-blockdefs {
-      /* Block definitions */
-    }
-  </style>
+    <!-- Mosaico block definitions -->
+    <style type="text/css">
+      @supports -ko-blockdefs {
+        /* Block definitions */
+      }
+    </style>
 
-  <!-- Regular CSS styles -->
-  <style type="text/css">
-    /* Email client styles */
-  </style>
-</head>
-<body>
-  <!-- Main container for drag-and-drop -->
-  <div data-ko-container="main">
-    <!-- Blocks go here -->
-  </div>
-</body>
+    <!-- Regular CSS styles -->
+    <style type="text/css">
+      /* Email client styles */
+    </style>
+  </head>
+  <body>
+    <!-- Main container for drag-and-drop -->
+    <div data-ko-container="main">
+      <!-- Blocks go here -->
+    </div>
+  </body>
 </html>
 ```
 
 ### Core HTML Attributes
 
-| Attribute | Purpose | Example |
-|-----------|---------|---------|
-| `data-ko-container="main"` | Marks the drag-and-drop zone | `<div data-ko-container="main">` |
-| `data-ko-block="blockName"` | Defines a draggable block | `<div data-ko-block="textBlock">` |
-| `data-ko-editable="fieldName"` | Marks content as editable | `<span data-ko-editable="title">` |
-| `data-ko-display="condition"` | Conditional visibility | `<div data-ko-display="imageVisible">` |
-| `data-ko-link="urlField"` | Link binding | `<a data-ko-link="buttonUrl">` |
-| `data-ko-wrap="false"` | Disable container wrapping | `<div data-ko-wrap="false">` |
-| `data-ko-remove` | Remove element during parsing | `<div data-ko-remove>` |
-| `data-ko-properties="p1 p2"` | Declare block properties | Used for complex blocks |
+| Attribute                      | Purpose                       | Example                                |
+| ------------------------------ | ----------------------------- | -------------------------------------- |
+| `data-ko-container="main"`     | Marks the drag-and-drop zone  | `<div data-ko-container="main">`       |
+| `data-ko-block="blockName"`    | Defines a draggable block     | `<div data-ko-block="textBlock">`      |
+| `data-ko-editable="fieldName"` | Marks content as editable     | `<span data-ko-editable="title">`      |
+| `data-ko-display="condition"`  | Conditional visibility        | `<div data-ko-display="imageVisible">` |
+| `data-ko-link="urlField"`      | Link binding                  | `<a data-ko-link="buttonUrl">`         |
+| `data-ko-wrap="false"`         | Disable container wrapping    | `<div data-ko-wrap="false">`           |
+| `data-ko-remove`               | Remove element during parsing | `<div data-ko-remove>`                 |
+| `data-ko-properties="p1 p2"`   | Declare block properties      | Used for complex blocks                |
 
 ---
 
@@ -143,16 +153,16 @@ All block and property definitions must be inside this special CSS rule:
 
 ### Widget Types
 
-| Widget | Purpose | Options |
-|--------|---------|---------|
-| `text` | Multi-line rich text editor | None |
-| `color` | Color picker | None |
-| `url` | URL/link input | None |
-| `src` | Image source picker (with upload) | None |
-| `select` | Dropdown selector | `options: value1\|value2\|value3` |
-| `boolean` | True/false toggle | None |
-| `integer` | Numeric input | `min: X; max: Y;` |
-| `id` | Internal identifier | None |
+| Widget    | Purpose                           | Options                           |
+| --------- | --------------------------------- | --------------------------------- |
+| `text`    | Multi-line rich text editor       | None                              |
+| `color`   | Color picker                      | None                              |
+| `url`     | URL/link input                    | None                              |
+| `src`     | Image source picker (with upload) | None                              |
+| `select`  | Dropdown selector                 | `options: value1\|value2\|value3` |
+| `boolean` | True/false toggle                 | None                              |
+| `integer` | Numeric input                     | `min: X; max: Y;`                 |
+| `id`      | Internal identifier               | None                              |
 
 ### Simple Property Definition
 
@@ -200,10 +210,26 @@ Group multiple properties together:
 ```css
 @supports -ko-blockdefs {
   /* Define individual properties */
-  face { label: Font Family; widget: select; options: Arial|Georgia|Courier; }
-  color { label: Text Color; widget: color; }
-  size { label: Font Size; widget: integer; min: 8; max: 72; }
-  align { label: Alignment; widget: select; options: left|center|right; }
+  face {
+    label: Font Family;
+    widget: select;
+    options: Arial|Georgia|Courier;
+  }
+  color {
+    label: Text Color;
+    widget: color;
+  }
+  size {
+    label: Font Size;
+    widget: integer;
+    min: 8;
+    max: 72;
+  }
+  align {
+    label: Alignment;
+    widget: select;
+    options: left|center|right;
+  }
 
   /* Composite text style */
   textStyle {
@@ -253,19 +279,19 @@ Group multiple properties together:
 
 ### Definition Attributes
 
-| Attribute | Purpose | Example |
-|-----------|---------|---------|
-| `label` | Display name in UI | `label: Text Block` |
-| `widget` | Input control type | `widget: color` |
-| `options` | Dropdown values (pipe-separated) | `options: left\|center\|right` |
-| `extend` | Inherit from another definition | `extend: textStyle` |
-| `properties` | Nested properties | `properties: face color size` |
-| `properties: []` | Array property (repeatable) | `properties: items[]` |
-| `variant` | Property for variant selection | `variant: imagePos` |
-| `theme` | Apply theme styling | `theme: contentTheme` |
-| `category` | Organization category | `category: hidden` |
-| `min` / `max` | Numeric constraints | `min: 4; max: 90;` |
-| `help` | Tooltip help text | `help: Not supported in Outlook` |
+| Attribute        | Purpose                          | Example                          |
+| ---------------- | -------------------------------- | -------------------------------- |
+| `label`          | Display name in UI               | `label: Text Block`              |
+| `widget`         | Input control type               | `widget: color`                  |
+| `options`        | Dropdown values (pipe-separated) | `options: left\|center\|right`   |
+| `extend`         | Inherit from another definition  | `extend: textStyle`              |
+| `properties`     | Nested properties                | `properties: face color size`    |
+| `properties: []` | Array property (repeatable)      | `properties: items[]`            |
+| `variant`        | Property for variant selection   | `variant: imagePos`              |
+| `theme`          | Apply theme styling              | `theme: contentTheme`            |
+| `category`       | Organization category            | `category: hidden`               |
+| `min` / `max`    | Numeric constraints              | `min: 4; max: 90;`               |
+| `help`           | Tooltip help text                | `help: Not supported in Outlook` |
 
 ### Extended Properties
 
@@ -273,15 +299,30 @@ Inherit and customize existing definitions:
 
 ```css
 @supports -ko-blockdefs {
-  color { label: Color; widget: color; }
+  color {
+    label: Color;
+    widget: color;
+  }
 
   /* Extend with custom label */
-  backgroundColor { label: Background Color; extend: color; }
-  linkColor { label: Link Color; extend: color; }
+  backgroundColor {
+    label: Background Color;
+    extend: color;
+  }
+  linkColor {
+    label: Link Color;
+    extend: color;
+  }
 
   /* Extend text style */
-  textStyle { label: Text; properties: face color size align; }
-  titleStyle { label: Title Style; extend: textStyle; }
+  textStyle {
+    label: Text;
+    properties: face color size align;
+  }
+  titleStyle {
+    label: Title Style;
+    extend: textStyle;
+  }
 }
 ```
 
@@ -298,7 +339,7 @@ Define how properties appear in the UI:
 
   /* Show preview with actual font settings */
   textStyle:preview {
-    -ko-bind-text: @['AaZz'];
+    -ko-bind-text: @[ 'AaZz' ];
     -ko-font-family: @face;
     -ko-color: @color;
     -ko-font-size: @[size]px;
@@ -329,20 +370,21 @@ Define how properties appear in the UI:
 
 ### Editor Type Auto-Detection
 
-| Element | Editor Type | Toolbar |
-|---------|------------|---------|
-| `<DIV>` | Multi-line WYSIWYG | Full (bold, italic, lists, links, etc.) |
-| `<TD>` | Multi-line WYSIWYG | Full |
-| `<SPAN>` | Single-line | Simple (basic formatting) |
-| `<H1>`, `<H2>`, etc. | Single-line | Simple |
-| Other inline elements | Single-line | Simple |
+| Element               | Editor Type        | Toolbar                                 |
+| --------------------- | ------------------ | --------------------------------------- |
+| `<DIV>`               | Multi-line WYSIWYG | Full (bold, italic, lists, links, etc.) |
+| `<TD>`                | Multi-line WYSIWYG | Full                                    |
+| `<SPAN>`              | Single-line        | Simple (basic formatting)               |
+| `<H1>`, `<H2>`, etc.  | Single-line        | Simple                                  |
+| Other inline elements | Single-line        | Simple                                  |
 
 ### Editable with Style Bindings
 
 ```html
-<div data-ko-editable="longText"
-     class="long-text"
-     style="
+<div
+  data-ko-editable="longText"
+  class="long-text"
+  style="
        font-family: Arial, sans-serif;
        -ko-font-family: @textStyle.face;
        color: #3f3f3f;
@@ -350,7 +392,8 @@ Define how properties appear in the UI:
        font-size: 13px;
        -ko-font-size: @[textStyle.size]px;
        line-height: 1.5;
-       -ko-line-height: @textStyle.lineHeight;">
+       -ko-line-height: @textStyle.lineHeight;"
+>
   <p>Default content</p>
 </div>
 ```
@@ -361,7 +404,10 @@ The system automatically looks up widget definitions:
 
 ```css
 @supports -ko-blockdefs {
-  text { label: Text; widget: text; }
+  text {
+    label: Text;
+    widget: text;
+  }
 }
 ```
 
@@ -387,15 +433,14 @@ Variables are referenced with `@` prefix:
 -ko-background-color: @backgroundColor
 
 <!-- Nested property -->
--ko-color: @textStyle.color
--ko-font-family: @textStyle.face
+-ko-color: @textStyle.color -ko-font-family: @textStyle.face
 
 <!-- Array index -->
 -ko-bind-text: @items[0].title
 
 <!-- Root/theme references -->
--ko-background-color: @_theme_.frameTheme.backgroundColor
--ko-attr-width: @_root_.bodyWidth
+-ko-background-color: @_theme_.frameTheme.backgroundColor -ko-attr-width:
+@_root_.bodyWidth
 ```
 
 ### JavaScript Expressions
@@ -404,9 +449,8 @@ Use `@[...]` for expressions:
 
 ```html
 <!-- Calculations -->
--ko-font-size: @[fontSize]px
--ko-width: @[imageWidth + 20]px
--ko-attr-width: @[Math.floor(width / 3)]
+-ko-font-size: @[fontSize]px -ko-width: @[imageWidth + 20]px -ko-attr-width:
+@[Math.floor(width / 3)]
 
 <!-- String concatenation -->
 -ko-bind-text: @['Hello ' + userName]
@@ -423,7 +467,8 @@ Use `@[...]` for expressions:
 Prefix CSS properties with `-ko-` to make them dynamic:
 
 ```html
-<div style="
+<div
+  style="
   background-color: #ffffff;
   -ko-background-color: @backgroundColor;
 
@@ -446,7 +491,8 @@ Prefix CSS properties with `-ko-` to make them dynamic:
   -ko-border-radius: @[buttonRadius]px;
 
   line-height: 1.5;
-  -ko-line-height: @lineHeight;">
+  -ko-line-height: @lineHeight;"
+>
   Content
 </div>
 ```
@@ -458,31 +504,31 @@ Use `-ko-attr-` prefix for HTML attributes:
 ```html
 <img
   src="placeholder.jpg"
-  -ko-attr-src: @image.src
-
+  -ko-attr-src:
+  @image.src
   alt="Default alt text"
-  -ko-attr-alt: @image.alt
-
+  -ko-attr-alt:
+  @image.alt
   width="600"
-  -ko-attr-width: @[imageWidth]
-
+  -ko-attr-width:
+  @[imageWidth]
   height="400"
-  -ko-attr-height: @[imageHeight]>
+  -ko-attr-height:
+  @[imageHeight]
+/>
 
 <a
   href="https://example.com"
-  -ko-attr-href: @linkUrl
-
+  -ko-attr-href:
+  @linkUrl
   title="Link title"
-  -ko-attr-title: @linkTitle>
+  -ko-attr-title:
+  @linkTitle
+>
   Click here
 </a>
 
-<td
-  bgcolor="#ffffff"
-  -ko-attr-bgcolor: @backgroundColor>
-  Content
-</td>
+<td bgcolor="#ffffff" -ko-attr-bgcolor: @backgroundColor>Content</td>
 ```
 
 ### Text Content Binding
@@ -508,7 +554,7 @@ Use `-ko-attr-` prefix for HTML attributes:
 
 <!-- Image link -->
 <a href="#" data-ko-link="image.url">
-  <img data-ko-editable="image.src" alt="">
+  <img data-ko-editable="image.src" alt="" />
 </a>
 ```
 
@@ -534,14 +580,14 @@ Show/hide elements based on boolean properties:
 
 ### Comparison Operators
 
-| Operator | Meaning | Example |
-|----------|---------|---------|
-| `eq` | Equal to | `imagePos eq 'left'` |
-| `neq` | Not equal to | `variant neq 'full'` |
-| `gt` | Greater than | `columns gt 2` |
-| `gte` | Greater than or equal | `fontSize gte 14` |
-| `lt` | Less than | `imageWidth lt 300` |
-| `lte` | Less than or equal | `padding lte 20` |
+| Operator | Meaning               | Example              |
+| -------- | --------------------- | -------------------- |
+| `eq`     | Equal to              | `imagePos eq 'left'` |
+| `neq`    | Not equal to          | `variant neq 'full'` |
+| `gt`     | Greater than          | `columns gt 2`       |
+| `gte`    | Greater than or equal | `fontSize gte 14`    |
+| `lt`     | Less than             | `imageWidth lt 300`  |
+| `lte`    | Less than or equal    | `padding lte 20`     |
 
 ### Logical Operators
 
@@ -557,7 +603,9 @@ Show/hide elements based on boolean properties:
 </tr>
 
 <!-- Combined -->
-<div data-ko-display="titleVisible and (imagePos eq 'left' or imagePos eq 'right')">
+<div
+  data-ko-display="titleVisible and (imagePos eq 'left' or imagePos eq 'right')"
+>
   Side layout with title
 </div>
 ```
@@ -566,17 +614,14 @@ Show/hide elements based on boolean properties:
 
 ```html
 <!-- Compare with string -->
-<img data-ko-editable="image.src"
-     data-ko-display="imagePos eq 'left'">
+<img data-ko-editable="image.src" data-ko-display="imagePos eq 'left'" />
 
 <!-- Numeric comparison -->
 <li data-ko-display="listsize gt 1">Second item</li>
 <li data-ko-display="listsize gt 2">Third item</li>
 
 <!-- Negation -->
-<div data-ko-display="preheaderOption neq 'none'">
-  Preheader content
-</div>
+<div data-ko-display="preheaderOption neq 'none'">Preheader content</div>
 
 <!-- Multiple conditions -->
 <tr data-ko-display="imageVisible and fixedImageHeightVisible eq false">
@@ -602,14 +647,16 @@ Use variants to create alternate layouts:
 <div data-ko-block="imageBlock">
   <!-- No gutter variant -->
   <table data-ko-display="gutterVisible eq false">
-    <tr><td><img data-ko-editable="image.src"></td></tr>
+    <tr>
+      <td><img data-ko-editable="image.src" /></td>
+    </tr>
   </table>
 
   <!-- With gutter variant -->
   <table data-ko-display="gutterVisible">
     <tr>
       <td width="30"></td>
-      <td><img data-ko-editable="image.src"></td>
+      <td><img data-ko-editable="image.src" /></td>
       <td width="30"></td>
     </tr>
   </table>
@@ -628,7 +675,8 @@ Use variants to create alternate layouts:
   src="https://via.placeholder.com/600x400"
   alt="Default alt text"
   width="600"
-  height="400">
+  height="400"
+/>
 ```
 
 ### Image with Placeholder Dimensions
@@ -641,7 +689,8 @@ Used for proper preview rendering:
   data-ko-placeholder-width="258"
   data-ko-placeholder-height="150"
   src="placeholder.jpg"
-  alt="">
+  alt=""
+/>
 ```
 
 ### Image with Dynamic Attributes
@@ -649,13 +698,17 @@ Used for proper preview rendering:
 ```html
 <img
   data-ko-editable="image.src"
-  -ko-attr-alt: @image.alt
-  -ko-attr-width: @[imageWidth]
-  -ko-attr-height: @[imageHeight]
+  -ko-attr-alt:
+  @image.alt
+  -ko-attr-width:
+  @[imageWidth]
+  -ko-attr-height:
+  @[imageHeight]
   src="placeholder.jpg"
   style="
     max-width: 600px;
-    -ko-max-width: @[imageWidth]px;">
+    -ko-max-width: @[imageWidth]px;"
+/>
 ```
 
 ### Linked Image
@@ -664,8 +717,10 @@ Used for proper preview rendering:
 <a href="" data-ko-link="image.url">
   <img
     data-ko-editable="image.src"
-    -ko-attr-alt: @image.alt
-    src="placeholder.jpg">
+    -ko-attr-alt:
+    @image.alt
+    src="placeholder.jpg"
+  />
 </a>
 ```
 
@@ -676,9 +731,11 @@ Used for proper preview rendering:
 <tr data-ko-display="imageVisible">
   <td>
     <a href="" data-ko-link="image.url">
-      <img data-ko-editable="image.src"
-           data-ko-placeholder-height="150"
-           src="placeholder.jpg">
+      <img
+        data-ko-editable="image.src"
+        data-ko-placeholder-height="150"
+        src="placeholder.jpg"
+      />
     </a>
   </td>
 </tr>
@@ -688,16 +745,20 @@ Used for proper preview rendering:
 
 ```html
 <!-- Fixed height variant -->
-<img data-ko-editable="image.src"
-     data-ko-display="fixedImageHeight"
-     height="150"
-     src="placeholder.jpg">
+<img
+  data-ko-editable="image.src"
+  data-ko-display="fixedImageHeight"
+  height="150"
+  src="placeholder.jpg"
+/>
 
 <!-- Flexible height variant -->
-<img data-ko-editable="image.src"
-     data-ko-display="fixedImageHeight eq false"
-     data-ko-placeholder-height="150"
-     src="placeholder.jpg">
+<img
+  data-ko-editable="image.src"
+  data-ko-display="fixedImageHeight eq false"
+  data-ko-placeholder-height="150"
+  src="placeholder.jpg"
+/>
 ```
 
 ---
@@ -766,20 +827,20 @@ Define and apply themes to blocks:
 ```html
 <!-- Access root-level properties -->
 <table width="600" style="-ko-attr-width: @_root_.bodyWidth">
-
-<!-- Access theme properties -->
-<td style="
+  <!-- Access theme properties -->
+  <td
+    style="
   background-color: #f5f5f5;
-  -ko-background-color: @_theme_.contentTheme.backgroundColor;">
+  -ko-background-color: @_theme_.contentTheme.backgroundColor;"
+  ></td>
+</table>
 ```
 
 ### Block Wrap Control
 
 ```html
 <!-- Prevent automatic wrapping -->
-<div data-ko-block="preheaderBlock" data-ko-wrap="false">
-  Preheader content
-</div>
+<div data-ko-block="preheaderBlock" data-ko-wrap="false">Preheader content</div>
 ```
 
 ### Remove Helper Elements
@@ -787,8 +848,7 @@ Define and apply themes to blocks:
 ```html
 <!-- Elements marked with data-ko-remove are removed during parsing -->
 <div data-ko-remove>
-  This is a helper comment visible only in source,
-  not in the final template
+  This is a helper comment visible only in source, not in the final template
 </div>
 ```
 
@@ -800,19 +860,19 @@ Define and apply themes to blocks:
     <tr>
       <!-- Column 1 -->
       <td width="33%">
-        <img data-ko-editable="leftImage.src">
+        <img data-ko-editable="leftImage.src" />
         <div data-ko-editable="leftText">Left content</div>
       </td>
 
       <!-- Column 2 -->
       <td width="33%">
-        <img data-ko-editable="middleImage.src">
+        <img data-ko-editable="middleImage.src" />
         <div data-ko-editable="middleText">Middle content</div>
       </td>
 
       <!-- Column 3 -->
       <td width="33%">
-        <img data-ko-editable="rightImage.src">
+        <img data-ko-editable="rightImage.src" />
         <div data-ko-editable="rightText">Right content</div>
       </td>
     </tr>
@@ -826,10 +886,7 @@ Define and apply themes to blocks:
 @supports -ko-blockdefs {
   socialBlock {
     label: Social Block;
-    properties:
-      socialIconType=colors
-      fbVisible=true fbUrl
-      twVisible=true twUrl
+    properties: socialIconType=colors fbVisible=true fbUrl twVisible=true twUrl
       inVisible=false inUrl;
     variant: socialIconType;
   }
@@ -839,24 +896,18 @@ Define and apply themes to blocks:
 ```html
 <div data-ko-block="socialBlock">
   <!-- Facebook -->
-  <a href=""
-     data-ko-link="fbUrl"
-     data-ko-display="fbVisible">
-    <img src="facebook-icon.png" alt="Facebook">
+  <a href="" data-ko-link="fbUrl" data-ko-display="fbVisible">
+    <img src="facebook-icon.png" alt="Facebook" />
   </a>
 
   <!-- Twitter -->
-  <a href=""
-     data-ko-link="twUrl"
-     data-ko-display="twVisible">
-    <img src="twitter-icon.png" alt="Twitter">
+  <a href="" data-ko-link="twUrl" data-ko-display="twVisible">
+    <img src="twitter-icon.png" alt="Twitter" />
   </a>
 
   <!-- LinkedIn -->
-  <a href=""
-     data-ko-link="inUrl"
-     data-ko-display="inVisible">
-    <img src="linkedin-icon.png" alt="LinkedIn">
+  <a href="" data-ko-link="inUrl" data-ko-display="inVisible">
+    <img src="linkedin-icon.png" alt="LinkedIn" />
   </a>
 </div>
 ```
@@ -883,59 +934,50 @@ Define and apply themes to blocks:
 ```html
 <!-- Main container (drag-and-drop zone) -->
 <div data-ko-container="main">
-
-<!-- Block definition -->
-<div data-ko-block="blockName">
-
-<!-- Editable content -->
-<div data-ko-editable="fieldName">
-
-<!-- Conditional display -->
-<div data-ko-display="condition">
-
-<!-- Link binding -->
-<a data-ko-link="urlField">
-
-<!-- Disable wrapping -->
-<div data-ko-wrap="false">
-
-<!-- Remove during parsing -->
-<div data-ko-remove>
-
-<!-- Declare properties (advanced) -->
-<div data-ko-properties="prop1 prop2">
+  <!-- Block definition -->
+  <div data-ko-block="blockName">
+    <!-- Editable content -->
+    <div data-ko-editable="fieldName">
+      <!-- Conditional display -->
+      <div data-ko-display="condition">
+        <!-- Link binding -->
+        <a data-ko-link="urlField">
+          <!-- Disable wrapping -->
+          <div data-ko-wrap="false">
+            <!-- Remove during parsing -->
+            <div data-ko-remove>
+              <!-- Declare properties (advanced) -->
+              <div data-ko-properties="prop1 prop2"></div>
+            </div></div
+        ></a>
+      </div>
+    </div>
+  </div>
+</div>
 ```
 
 ### CSS Bindings (use in style attribute)
 
 ```html
 <!-- Color properties -->
--ko-background-color: @color
--ko-color: @textColor
--ko-border-color: @borderColor
+-ko-background-color: @color -ko-color: @textColor -ko-border-color:
+@borderColor
 
 <!-- Typography -->
--ko-font-family: @fontFace
--ko-font-size: @[fontSize]px
--ko-font-weight: @fontWeight
--ko-line-height: @lineHeight
--ko-text-align: @alignment
+-ko-font-family: @fontFace -ko-font-size: @[fontSize]px -ko-font-weight:
+@fontWeight -ko-line-height: @lineHeight -ko-text-align: @alignment
 -ko-text-decoration: @decoration
 
 <!-- Spacing -->
--ko-padding: @[padding]px
--ko-margin: @[margin]px
--ko-padding-top: @[topPadding]px
+-ko-padding: @[padding]px -ko-margin: @[margin]px -ko-padding-top:
+@[topPadding]px
 
 <!-- Borders -->
--ko-border-radius: @[radius]px
--ko-border-width: @[borderWidth]px
+-ko-border-radius: @[radius]px -ko-border-width: @[borderWidth]px
 -ko-border-bottom: @[height]px solid @color
 
 <!-- Sizing -->
--ko-width: @[width]px
--ko-height: @[height]px
--ko-max-width: @[maxWidth]px
+-ko-width: @[width]px -ko-height: @[height]px -ko-max-width: @[maxWidth]px
 -ko-min-height: @[minHeight]px
 
 <!-- Text binding -->
@@ -946,19 +988,14 @@ Define and apply themes to blocks:
 
 ```html
 <!-- Image attributes -->
--ko-attr-src: @image.src
--ko-attr-alt: @image.alt
--ko-attr-width: @[imageWidth]
+-ko-attr-src: @image.src -ko-attr-alt: @image.alt -ko-attr-width: @[imageWidth]
 -ko-attr-height: @[imageHeight]
 
 <!-- Link attributes -->
--ko-attr-href: @linkUrl
--ko-attr-title: @linkTitle
--ko-attr-target: @linkTarget
+-ko-attr-href: @linkUrl -ko-attr-title: @linkTitle -ko-attr-target: @linkTarget
 
 <!-- Table attributes -->
--ko-attr-bgcolor: @backgroundColor
--ko-attr-width: @[cellWidth]
+-ko-attr-bgcolor: @backgroundColor -ko-attr-width: @[cellWidth]
 -ko-attr-colspan: @[columnSpan]
 ```
 
@@ -966,8 +1003,7 @@ Define and apply themes to blocks:
 
 ```html
 <!-- Placeholder dimensions for preview -->
-data-ko-placeholder-width="600"
-data-ko-placeholder-height="400"
+data-ko-placeholder-width="600" data-ko-placeholder-height="400"
 
 <!-- Image source editor -->
 data-ko-editable="image.src"
@@ -981,41 +1017,41 @@ Based on the versafix-1 template, these are commonly available blocks:
 
 ### Content Blocks
 
-| Block | Description |
-|-------|-------------|
-| `textBlock` | Simple text content with formatting |
-| `titleBlock` | Large title/heading block |
-| `sideArticleBlock` | Image with text sidebar (left/right variants) |
-| `singleArticleBlock` | Full-width image + text |
-| `doubleArticleBlock` | Two-column article layout |
-| `tripleArticleBlock` | Three-column article layout |
+| Block                | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `textBlock`          | Simple text content with formatting           |
+| `titleBlock`         | Large title/heading block                     |
+| `sideArticleBlock`   | Image with text sidebar (left/right variants) |
+| `singleArticleBlock` | Full-width image + text                       |
+| `doubleArticleBlock` | Two-column article layout                     |
+| `tripleArticleBlock` | Three-column article layout                   |
 
 ### Image Blocks
 
-| Block | Description |
-|-------|-------------|
-| `logoBlock` | Logo/brand image with optional background |
-| `imageBlock` | Single image (with/without gutter) |
-| `doubleImageBlock` | Two-image gallery |
-| `tripleImageBlock` | Three-image gallery |
+| Block              | Description                               |
+| ------------------ | ----------------------------------------- |
+| `logoBlock`        | Logo/brand image with optional background |
+| `imageBlock`       | Single image (with/without gutter)        |
+| `doubleImageBlock` | Two-image gallery                         |
+| `tripleImageBlock` | Three-image gallery                       |
 
 ### Interactive Blocks
 
-| Block | Description |
-|-------|-------------|
-| `buttonBlock` | Call-to-action button |
-| `socialBlock` | Social media links (small icons) |
+| Block            | Description                      |
+| ---------------- | -------------------------------- |
+| `buttonBlock`    | Call-to-action button            |
+| `socialBlock`    | Social media links (small icons) |
 | `bigSocialBlock` | Social media links (large icons) |
-| `shareBlock` | Share buttons |
+| `shareBlock`     | Share buttons                    |
 
 ### Utility Blocks
 
-| Block | Description |
-|-------|-------------|
-| `hrBlock` | Horizontal separator/divider |
-| `spacerBlock` | Vertical spacing |
-| `preheaderBlock` | Preheader text area |
-| `footerBlock` | Footer with unsubscribe |
+| Block            | Description                  |
+| ---------------- | ---------------------------- |
+| `hrBlock`        | Horizontal separator/divider |
+| `spacerBlock`    | Vertical spacing             |
+| `preheaderBlock` | Preheader text area          |
+| `footerBlock`    | Footer with unsubscribe      |
 
 ---
 
@@ -1028,9 +1064,15 @@ Always include media queries:
 ```html
 <style type="text/css">
   @media only screen and (max-width: 480px) {
-    .mobile-hide { display: none !important; }
-    .mobile-full { width: 100% !important; }
-    .mobile-padding { padding: 10px !important; }
+    .mobile-hide {
+      display: none !important;
+    }
+    .mobile-full {
+      width: 100% !important;
+    }
+    .mobile-padding {
+      padding: 10px !important;
+    }
   }
 </style>
 ```
@@ -1044,9 +1086,7 @@ Always include media queries:
 <![endif]-->
 
 <!-- Regular content -->
-<div style="max-width: 600px;">
-  Content
-</div>
+<div style="max-width: 600px;">Content</div>
 
 <!--[if mso]>
 </td></tr></table>
@@ -1061,11 +1101,9 @@ Always provide sensible defaults:
 @supports -ko-blockdefs {
   buttonBlock {
     label: Button;
-    properties:
-      buttonVisible=true          /* Show by default */
-      buttonColor=#3498db          /* Default blue */
-      buttonText="Click here"      /* Default text */
-      borderRadius=4;              /* Default 4px */
+    properties: buttonVisible=true /* Show by default */ buttonColor=#3498db
+      /* Default blue */ buttonText= 'Click here' /* Default text */
+      borderRadius=4; /* Default 4px */
   }
 }
 ```
@@ -1105,7 +1143,7 @@ Group related properties:
     widget: integer;
     min: 0;
     max: 20;
-    help: "Note: Border radius is not supported in Outlook";
+    help: 'Note: Border radius is not supported in Outlook';
   }
 }
 ```
@@ -1115,11 +1153,13 @@ Group related properties:
 Always provide fallback values before dynamic bindings:
 
 ```html
-<td style="
+<td
+  style="
   background-color: #ffffff;
   -ko-background-color: @backgroundColor;
   color: #333333;
-  -ko-color: @textColor;">
+  -ko-color: @textColor;"
+>
   Content
 </td>
 ```
@@ -1168,9 +1208,11 @@ The system automatically strips camelCase prefixes from editable field names:
 You can use full JavaScript in variable expressions:
 
 ```html
-<td style="
+<td
+  style="
   -ko-attr-width: @[Math.floor(_root_.bodyWidth / 3)]
-  -ko-width: @['calc(' + (Math.floor(width * 100 / 600)) + '%)']">
+  -ko-width: @['calc(' + (Math.floor(width * 100 / 600)) + '%)']"
+></td>
 ```
 
 ### 3. Root and Theme References
@@ -1179,12 +1221,11 @@ Access global and theme-level properties:
 
 ```html
 <!-- Root properties -->
--ko-attr-width: @_root_.bodyWidth
--ko-max-width: @[_root_.bodyWidth - 40]px
+-ko-attr-width: @_root_.bodyWidth -ko-max-width: @[_root_.bodyWidth - 40]px
 
 <!-- Theme properties -->
--ko-background-color: @_theme_.frameTheme.backgroundColor
--ko-color: @_theme_.contentTheme.textColor
+-ko-background-color: @_theme_.frameTheme.backgroundColor -ko-color:
+@_theme_.contentTheme.textColor
 ```
 
 ### 4. Preview Styling
@@ -1200,7 +1241,7 @@ Control how properties appear in the editor UI:
 
   /* Custom preview rendering */
   textStyle:preview {
-    -ko-bind-text: @['AaZz'];
+    -ko-bind-text: @[ 'AaZz' ];
     -ko-font-family: @face;
     -ko-color: @color;
     -ko-font-size: @[size]px;
@@ -1231,7 +1272,8 @@ Control preview dimensions separately from actual image:
   data-ko-editable="image.src"
   data-ko-placeholder-width="600"
   data-ko-placeholder-height="400"
-  src="placeholder.jpg">
+  src="placeholder.jpg"
+/>
 ```
 
 ---
@@ -1240,17 +1282,17 @@ Control preview dimensions separately from actual image:
 
 For advanced customization, these are the key files:
 
-| Feature | File Location |
-|---------|---------------|
-| Template Parser | `packages/editor/src/js/converter/parser.js` |
-| Block Bindings | `packages/editor/src/js/bindings/blocks.js` |
-| WYSIWYG Editor | `packages/editor/src/js/bindings/wysiwygs.js` |
-| Template Loader | `packages/editor/src/js/template-loader.js` |
-| Block Definitions | `packages/editor/src/js/vue/constant/blocks.js` |
-| HTML Processing | `packages/server/utils/process-mosaico-html-render.js` |
+| Feature           | File Location                                          |
+| ----------------- | ------------------------------------------------------ |
+| Template Parser   | `packages/editor/src/js/converter/parser.js`           |
+| Block Bindings    | `packages/editor/src/js/bindings/blocks.js`            |
+| WYSIWYG Editor    | `packages/editor/src/js/bindings/wysiwygs.js`          |
+| Template Loader   | `packages/editor/src/js/template-loader.js`            |
+| Block Definitions | `packages/editor/src/js/vue/constant/blocks.js`        |
+| HTML Processing   | `packages/server/utils/process-mosaico-html-render.js` |
 | Template Examples | `template-example/versafix-1/template-versafix-1.html` |
-| Tutorial | `template-example/tutorial/` |
-| Documentation | `packages/documentation/mosaico.md` |
+| Tutorial          | `template-example/tutorial/`                           |
+| Documentation     | `packages/documentation/mosaico.md`                    |
 
 ---
 
@@ -1265,6 +1307,7 @@ For advanced customization, these are the key files:
 ## Support
 
 For issues or questions:
+
 - Check the example templates in `/template-example/`
 - Review the tutorial in `/template-example/tutorial/mosaico-tutorial.md`
 - Examine the versafix-1 template for advanced patterns
