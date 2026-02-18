@@ -210,14 +210,14 @@ export default {
           {{ $t('global.variables') }}
         </v-tab>
         <v-tab
-          v-if="isGroupAdmin"
+          v-if="isGroupAdmin || isAdmin"
           href="#group-integrations"
           @click="activeTab = 'group-integrations'"
         >
           {{ $t('integrations.title') }}
         </v-tab>
         <v-tab
-          v-if="isGroupAdmin"
+          v-if="isGroupAdmin || isAdmin"
           href="#group-ai-features"
           @click="activeTab = 'group-ai-features'"
         >
@@ -253,10 +253,10 @@ export default {
         <v-tab-item v-if="isGroupAdmin" value="group-personalized-variables">
           <group-personalized-variable-tab />
         </v-tab-item>
-        <v-tab-item v-if="isGroupAdmin" value="group-integrations">
+        <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-integrations">
           <bs-group-integrations-tab />
         </v-tab-item>
-        <v-tab-item v-if="isGroupAdmin" value="group-ai-features">
+        <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-ai-features">
           <bs-group-ai-features-tab />
         </v-tab-item>
       </v-tabs>

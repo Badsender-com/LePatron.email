@@ -57,7 +57,7 @@ function guard(roles = [Roles.REGULAR_USER], redirect) {
 
     if (
       (isAdminRoute && user?.isAdmin) ||
-      (isGroupUserRoute && user?.isGroupAdmin) ||
+      (isGroupUserRoute && (user?.isGroupAdmin || user?.isAdmin)) ||
       (isUserRoute && !!user)
     ) {
       return next();
