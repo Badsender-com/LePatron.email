@@ -3,6 +3,7 @@
 const { BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const AIFeatureTypes = require('../constant/ai-feature-type.js');
+const logger = require('../utils/logger.js');
 const aiFeatureService = require('../ai-feature/ai-feature.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const {
@@ -139,7 +140,7 @@ async function translateMailing({
       onBatchProgress,
     });
   } catch (error) {
-    console.error('Translation error:', error.message);
+    logger.error(`[Translation] Translation error: ${error.message}`);
     throw new BadRequest(
       ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
     );
@@ -148,10 +149,9 @@ async function translateMailing({
   // Validate translations
   const validation = validateTranslations(textsToTranslate, translations);
   if (!validation.isValid) {
-    console.warn('Translation validation warning:', {
-      missing: validation.missing,
-      extra: validation.extra,
-    });
+    logger.warn(
+      `[Translation] Validation warning - missing: ${validation.missing.length}, extra: ${validation.extra.length}`
+    );
     // Continue anyway - partial translation is better than none
   }
 
@@ -225,7 +225,7 @@ async function translateText({
       targetLanguage,
     });
   } catch (error) {
-    console.error('Translation error:', error.message);
+    logger.error(`[Translation] Translation error: ${error.message}`);
     throw new BadRequest(
       ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
     );
@@ -341,8 +341,8 @@ async function translateInBatches({
 }) {
   const batches = splitIntoBatches(texts);
 
-  console.log(
-    `Translating ${Object.keys(texts).length} keys in ${
+  logger.log(
+    `[Translation] Translating ${Object.keys(texts).length} keys in ${
       batches.length
     } batch(es)`
   );
@@ -352,8 +352,8 @@ async function translateInBatches({
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     const batchSize = Object.keys(batch).length;
-    console.log(
-      `Processing batch ${i + 1}/${batches.length} (${batchSize} keys)`
+    logger.log(
+      `[Translation] Processing batch ${i + 1}/${batches.length} (${batchSize} keys)`
     );
 
     const batchResult = await provider.translateBatch({
@@ -376,8 +376,8 @@ async function translateInBatches({
     Object.assign(mergedTranslations, result);
   }
 
-  console.log(
-    `Translation complete: ${
+  logger.log(
+    `[Translation] Translation complete: ${
       Object.keys(mergedTranslations).length
     } keys translated`
   );

@@ -90,7 +90,7 @@ async function generatePreviewHtml({ mailingId, cookies }) {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
 
-    // Only log real errors from the browser
+    // Log browser errors
     page.on('pageerror', (error) =>
       logger.error(`[PreviewGenerator] Browser error: ${error.message}`)
     );
@@ -99,9 +99,13 @@ async function generatePreviewHtml({ mailingId, cookies }) {
     await page.goto(VERSION_PAGE, { timeout: TOTAL_TIMEOUT });
 
     if (cookies && Object.keys(cookies).length > 0) {
+      // Extract domain from host (remove port if present)
+      const domain = config.host.split(':')[0];
       const puppeteerCookies = Object.entries(cookies).map(([name, value]) => ({
         name,
         value,
+        domain,
+        path: '/',
       }));
       await page.setCookie(...puppeteerCookies);
     }
@@ -112,6 +116,13 @@ async function generatePreviewHtml({ mailingId, cookies }) {
       waitUntil: 'networkidle0',
       timeout: TOTAL_TIMEOUT,
     });
+
+    // Check if redirected to login (authentication failed)
+    const pageUrl = page.url();
+    if (pageUrl.includes('/account/login')) {
+      logger.error('[PreviewGenerator] Redirected to login - authentication failed');
+      throw new Error('Authentication failed - redirected to login page');
+    }
 
     // Wait for Mosaico's viewModel to be ready
     await page.waitForFunction(
