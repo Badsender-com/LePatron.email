@@ -33,6 +33,15 @@ const FALLBACK_MODEL_OPTIONS = {
   ],
 };
 
+// DeepL formality options
+const DEEPL_FORMALITY_OPTIONS = [
+  { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
+  { value: 'more', textKey: 'aiFeatures.translation.formalityMore' },
+  { value: 'less', textKey: 'aiFeatures.translation.formalityLess' },
+  { value: 'prefer_more', textKey: 'aiFeatures.translation.formalityPreferMore' },
+  { value: 'prefer_less', textKey: 'aiFeatures.translation.formalityPreferLess' },
+];
+
 export default {
   name: 'BsGroupAiFeaturesTab',
   data() {
@@ -103,6 +112,15 @@ export default {
       );
       return integration ? integration.provider : null;
     },
+    isDeepLProvider() {
+      return this.selectedIntegrationProvider === 'deepl';
+    },
+    formalityOptions() {
+      return DEEPL_FORMALITY_OPTIONS.map((opt) => ({
+        value: opt.value,
+        text: this.$t(opt.textKey),
+      }));
+    },
     modelOptions() {
       // Use dynamic models if available
       if (this.dynamicModels.length > 0) {
@@ -123,6 +141,16 @@ export default {
       set(value) {
         this.updateFeature('translation', {
           config: { model: value },
+        });
+      },
+    },
+    selectedFormality: {
+      get() {
+        return this.translationFeature?.config?.formality || 'default';
+      },
+      set(value) {
+        this.updateFeature('translation', {
+          config: { formality: value },
         });
       },
     },
@@ -194,6 +222,7 @@ export default {
         openai: 'OpenAI',
         mistral: 'Mistral AI',
         infomaniak: 'Infomaniak AI Tools',
+        deepl: 'DeepL',
       };
       return labels[provider] || provider;
     },
@@ -285,9 +314,9 @@ export default {
               {{ $t('aiFeatures.integrationInactiveWarning') }}
             </v-alert>
 
-            <!-- Model Selection -->
+            <!-- Model Selection (for LLM providers) -->
             <v-select
-              v-if="modelOptions.length > 0 || loadingModels"
+              v-if="!isDeepLProvider && (modelOptions.length > 0 || loadingModels)"
               v-model="selectedModel"
               :items="modelOptions"
               :label="$t('aiFeatures.translation.model')"
@@ -297,6 +326,21 @@ export default {
               dense
               class="mb-4"
               :hint="$t('aiFeatures.translation.modelHint')"
+              persistent-hint
+            />
+
+            <!-- Formality Selection (for DeepL only) -->
+            <v-select
+              v-if="isDeepLProvider"
+              v-model="selectedFormality"
+              :items="formalityOptions"
+              :label="$t('aiFeatures.translation.formality')"
+              :disabled="saving || !selectedIntegrationId"
+              :loading="saving"
+              outlined
+              dense
+              class="mb-4"
+              :hint="$t('aiFeatures.translation.formalityHint')"
               persistent-hint
             />
 

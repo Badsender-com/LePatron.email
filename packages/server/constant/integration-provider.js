@@ -5,7 +5,7 @@ module.exports = {
   OPENAI: 'openai',
   MISTRAL: 'mistral',
   INFOMANIAK: 'infomaniak',
+  DEEPL: 'deepl',
   // Future providers
-  // DEEPL: 'deepl',
   // SMARTCAT: 'smartcat',
 };
