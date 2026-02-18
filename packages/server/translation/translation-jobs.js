@@ -30,14 +30,16 @@ const JOB_TTL_MS = 10 * 60 * 1000;
  * @param {Object} params - Job parameters
  * @param {number} params.totalKeys - Total number of keys to translate
  * @param {number} params.totalBatches - Total number of batches
+ * @param {string} params.userId - Owner user ID for authorization
  * @returns {Object} The created job
  */
-function createJob({ totalKeys, totalBatches }) {
+function createJob({ totalKeys, totalBatches, userId }) {
   const jobId = uuidv4();
   const now = Date.now();
 
   const job = {
     jobId,
+    userId,
     status: JobStatus.PENDING,
     progress: {
       currentBatch: 0,

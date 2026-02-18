@@ -1,11 +1,14 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const createError = require('http-errors');
 const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
 const previewGenerator = require('../mailing/preview-generator.service');
 const translationJobs = require('./translation-jobs');
+const logger = require('../utils/logger.js');
 const { Mailings, Templates } = require('../common/models.common');
+const { ERROR_CODES } = require('../constant/error-codes.js');
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
@@ -68,10 +71,11 @@ async function duplicateAndTranslate(req, res) {
     templateMarkup,
   });
 
-  // Create a job for progress tracking
+  // Create a job for progress tracking (include userId for authorization)
   const job = translationJobs.createJob({
     totalKeys: batchInfo.totalKeys,
     totalBatches: batchInfo.totalBatches,
+    userId: user.id || user._id.toString(),
   });
 
   // Return jobId immediately
@@ -119,7 +123,7 @@ async function processTranslationAsync({
 
     // Check cancellation before starting
     if (translationJobs.isCancelled(jobId)) {
-      console.log(`[Translation] Job ${jobId} cancelled before starting`);
+      logger.log(`[Translation] Job ${jobId} cancelled before starting`);
       return;
     }
 
@@ -158,7 +162,7 @@ async function processTranslationAsync({
     // Regenerate previewHtml via Puppeteer
     let previewGenerated = false;
     try {
-      console.log(
+      logger.log(
         `[Translation] Regenerating preview for mailing ${duplicatedMailing._id}...`
       );
       const previewHtml = await previewGenerator.generatePreviewHtml({
@@ -169,10 +173,10 @@ async function processTranslationAsync({
       // Save the new previewHtml
       await Mailings.findByIdAndUpdate(duplicatedMailing._id, { previewHtml });
       previewGenerated = true;
-      console.log('[Translation] Preview regenerated successfully');
+      logger.log('[Translation] Preview regenerated successfully');
     } catch (error) {
       // Don't fail the translation if preview generation fails
-      console.error(
+      logger.error(
         `[Translation] Preview generation failed: ${error.message}`
       );
     }
@@ -194,11 +198,11 @@ async function processTranslationAsync({
   } catch (error) {
     // Handle cancellation gracefully
     if (error.message === 'TRANSLATION_CANCELLED') {
-      console.log(`[Translation] Job ${jobId} was cancelled by user`);
+      logger.log(`[Translation] Job ${jobId} was cancelled by user`);
       return;
     }
 
-    console.error(`[Translation] Job ${jobId} failed:`, error.message);
+    logger.error(`[Translation] Job ${jobId} failed: ${error.message}`);
     translationJobs.setFailed(jobId, error.message);
   }
 }
@@ -212,12 +216,19 @@ async function processTranslationAsync({
  * @apiParam {String} jobId Job ID
  */
 async function getJobStatus(req, res) {
+  const { user } = req;
   const { jobId } = req.params;
 
   const job = translationJobs.getJob(jobId);
 
   if (!job) {
-    return res.status(404).json({ error: 'Job not found' });
+    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
+  }
+
+  // Authorization check: user must own the job
+  const userId = user.id || user._id.toString();
+  if (job.userId !== userId) {
+    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
   }
 
   res.json(job);
@@ -232,14 +243,25 @@ async function getJobStatus(req, res) {
  * @apiParam {String} jobId Job ID
  */
 async function cancelJob(req, res) {
+  const { user } = req;
   const { jobId } = req.params;
+
+  const job = translationJobs.getJob(jobId);
+
+  if (!job) {
+    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
+  }
+
+  // Authorization check: user must own the job
+  const userId = user.id || user._id.toString();
+  if (job.userId !== userId) {
+    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
+  }
 
   const cancelled = translationJobs.cancelJob(jobId);
 
   if (!cancelled) {
-    return res.status(400).json({
-      error: 'Cannot cancel job - not found or already completed',
-    });
+    throw createError(400, ERROR_CODES.TRANSLATION_JOB_CANCEL_FAILED);
   }
 
   res.json({ success: true, message: 'Job cancelled' });
