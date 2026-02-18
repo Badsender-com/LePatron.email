@@ -2,22 +2,7 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-
-// Available language options for translation
-const LANGUAGE_OPTIONS = [
-  { value: 'fr', text: 'Fran\u00e7ais' },
-  { value: 'en', text: 'English' },
-  { value: 'es', text: 'Espa\u00f1ol' },
-  { value: 'de', text: 'Deutsch' },
-  { value: 'it', text: 'Italiano' },
-  { value: 'pt', text: 'Portugu\u00eas' },
-  { value: 'nl', text: 'Nederlands' },
-  { value: 'pl', text: 'Polski' },
-  { value: 'ru', text: '\u0420\u0443\u0441\u0441\u043a\u0438\u0439' },
-  { value: 'ja', text: '\u65e5\u672c\u8a9e' },
-  { value: 'zh', text: '\u4e2d\u6587' },
-  { value: 'ar', text: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629' },
-];
+import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 
 // Fallback static models by provider (used when dynamic fetch fails)
 const FALLBACK_MODEL_OPTIONS = {

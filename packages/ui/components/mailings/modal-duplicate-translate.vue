@@ -2,6 +2,7 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { LANGUAGE_LABELS, getLanguageLabel } from '~/helpers/constants/languages.js';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
@@ -19,20 +20,6 @@ export default {
         newName: '',
         sourceLanguage: '',
         targetLanguage: '',
-      },
-      languageLabels: {
-        fr: 'Français',
-        en: 'English',
-        es: 'Español',
-        de: 'Deutsch',
-        it: 'Italiano',
-        pt: 'Português',
-        nl: 'Nederlands',
-        pl: 'Polski',
-        ru: 'Русский',
-        ja: '日本語',
-        zh: '中文',
-        ar: 'العربية',
       },
       // Progress tracking
       jobId: null,
@@ -60,18 +47,24 @@ export default {
       return this.mailing ? this.mailing.name : '';
     },
     sourceLanguageOptions() {
-      return this.config.availableLanguages.map((lang) => ({
-        value: lang,
-        text: this.languageLabels[lang] || lang,
-      }));
-    },
-    targetLanguageOptions() {
+      // Filter out unknown languages (old codes stored in DB) and sort alphabetically
       return this.config.availableLanguages
-        .filter((lang) => lang !== this.form.sourceLanguage)
+        .filter((lang) => LANGUAGE_LABELS[lang])
         .map((lang) => ({
           value: lang,
-          text: this.languageLabels[lang] || lang,
-        }));
+          text: getLanguageLabel(lang),
+        }))
+        .sort((a, b) => a.text.localeCompare(b.text));
+    },
+    targetLanguageOptions() {
+      // Filter out unknown languages, exclude selected source, and sort alphabetically
+      return this.config.availableLanguages
+        .filter((lang) => LANGUAGE_LABELS[lang] && lang !== this.form.sourceLanguage)
+        .map((lang) => ({
+          value: lang,
+          text: getLanguageLabel(lang),
+        }))
+        .sort((a, b) => a.text.localeCompare(b.text));
     },
     isFormValid() {
       return (
@@ -322,10 +315,9 @@ export default {
 
     updateNewName() {
       if (this.form.targetLanguage && this.mailing) {
-        const langLabel =
-          this.languageLabels[this.form.targetLanguage] ||
-          this.form.targetLanguage.toUpperCase();
-        this.form.newName = `${this.mailing.name} - ${langLabel}`;
+        // Use ISO code (uppercase) as suffix, e.g., "FR", "EN-US", "PT-BR"
+        const langCode = this.form.targetLanguage.toUpperCase();
+        this.form.newName = `${this.mailing.name} - ${langCode}`;
       }
     },
 
