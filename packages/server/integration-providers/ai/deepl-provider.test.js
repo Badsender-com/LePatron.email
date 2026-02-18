@@ -225,10 +225,10 @@ describe('DeepLProvider', () => {
         context: 'This is an email newsletter about technology.',
       });
 
-      // Note: source language is passed as-is, only target is normalized to uppercase
+      // Source language is normalized to base code uppercase, target keeps variant
       expect(deepl.__mocks__.mockTranslateText).toHaveBeenCalledWith(
         ['Hello'],
-        'en',
+        'EN',
         'FR',
         expect.objectContaining({
           context: 'This is an email newsletter about technology.',
@@ -253,10 +253,10 @@ describe('DeepLProvider', () => {
         targetLanguage: 'fr',
       });
 
-      // Note: source language is passed as-is, only target is normalized to uppercase
+      // Source language is normalized to base code uppercase, target keeps variant
       expect(deepl.__mocks__.mockTranslateText).toHaveBeenCalledWith(
         expect.any(Array),
-        'en',
+        'EN',
         'FR',
         expect.objectContaining({
           formality: 'more',
@@ -296,21 +296,28 @@ describe('DeepLProvider', () => {
     });
   });
 
+  describe('_normalizeSourceLanguage', () => {
+    it('should convert to uppercase base code only', () => {
+      expect(provider._normalizeSourceLanguage('fr')).toBe('FR');
+      expect(provider._normalizeSourceLanguage('en-us')).toBe('EN');
+      expect(provider._normalizeSourceLanguage('en-gb')).toBe('EN');
+      expect(provider._normalizeSourceLanguage('zh-hans')).toBe('ZH');
+      expect(provider._normalizeSourceLanguage('pt-br')).toBe('PT');
+      expect(provider._normalizeSourceLanguage('pt-pt')).toBe('PT');
+    });
+
+    it('should handle null/undefined', () => {
+      expect(provider._normalizeSourceLanguage(null)).toBeNull();
+      expect(provider._normalizeSourceLanguage(undefined)).toBeUndefined();
+    });
+  });
+
   describe('_normalizeTargetLanguage', () => {
-    it('should convert to uppercase', () => {
+    it('should convert to uppercase keeping regional variant', () => {
       expect(provider._normalizeTargetLanguage('fr')).toBe('FR');
-    });
-
-    it('should map EN to EN-US', () => {
-      expect(provider._normalizeTargetLanguage('en')).toBe('EN-US');
-    });
-
-    it('should map PT to PT-PT', () => {
-      expect(provider._normalizeTargetLanguage('pt')).toBe('PT-PT');
-    });
-
-    it('should map ZH to ZH-HANS', () => {
-      expect(provider._normalizeTargetLanguage('zh')).toBe('ZH-HANS');
+      expect(provider._normalizeTargetLanguage('en-us')).toBe('EN-US');
+      expect(provider._normalizeTargetLanguage('zh-hans')).toBe('ZH-HANS');
+      expect(provider._normalizeTargetLanguage('pt-br')).toBe('PT-BR');
     });
 
     it('should handle null/undefined', () => {

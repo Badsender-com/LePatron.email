@@ -164,7 +164,11 @@ class DeepLProvider extends BaseProvider {
   async _callDeepL({ texts, sourceLanguage, targetLanguage, context }) {
     try {
       // DeepL expects null for auto-detection
-      const sourceLang = sourceLanguage === 'auto' ? null : sourceLanguage;
+      // Source language must be base code only (no regional variants)
+      const sourceLang =
+        sourceLanguage === 'auto'
+          ? null
+          : this._normalizeSourceLanguage(sourceLanguage);
 
       // DeepL target language codes are uppercase (e.g., 'EN-US', 'FR')
       const targetLang = this._normalizeTargetLanguage(targetLanguage);
@@ -210,23 +214,26 @@ class DeepLProvider extends BaseProvider {
   }
 
   /**
+   * Normalize source language code for DeepL
+   * DeepL source languages only accept base codes (no regional variants)
+   * e.g., 'en-us' → 'EN', 'pt-br' → 'PT'
+   * @private
+   */
+  _normalizeSourceLanguage(lang) {
+    if (!lang) return lang;
+    // Remove regional variant (e.g., 'en-us' → 'en', 'zh-hans' → 'zh')
+    const baseLang = lang.split('-')[0];
+    return baseLang.toUpperCase();
+  }
+
+  /**
    * Normalize target language code for DeepL
-   * DeepL uses uppercase codes and specific variants
+   * DeepL uses uppercase codes (e.g., 'FR', 'EN-US', 'ZH-HANS')
    * @private
    */
   _normalizeTargetLanguage(lang) {
     if (!lang) return lang;
-
-    const upperLang = lang.toUpperCase();
-
-    // Map common variants to DeepL format
-    const mappings = {
-      EN: 'EN-US', // Default English to American
-      PT: 'PT-PT', // Default Portuguese to European
-      ZH: 'ZH-HANS', // Default Chinese to Simplified
-    };
-
-    return mappings[upperLang] || upperLang;
+    return lang.toUpperCase();
   }
 }
 
