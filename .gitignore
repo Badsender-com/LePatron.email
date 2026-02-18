@@ -144,3 +144,6 @@ dist
 .pnp.*
 
 .idea
+
+
+.clever.json

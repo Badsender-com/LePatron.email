@@ -4,6 +4,8 @@ import {
   deleteFolder,
   moveFolder,
   folders,
+  getUserPersistedLocalStorageKey,
+  setUserPersistedLocalStorageKey,
 } from '~/helpers/api-routes.js';
 import { mapState } from 'vuex';
 import {
@@ -135,11 +137,20 @@ export default {
       return result;
     },
     /**
-     * Initialize tree state - load saved state or default to all closed
+     * Tree state restoration priority (per user):
+     * 1) Browser localStorage (fast path) if present
+     * 2) DB-persisted localStorage (hydration) if browser keys are missing
+     * 3) Fallback: first workspace (and empty open nodes)
+     *
+     * Notes:
+     * - hydrateBrowserFromDbIfEmpty() only fills missing browser keys; it never overwrites existing local values.
+     * - Selected node restoration runs after open nodes are set to avoid Vuetify race conditions.
      */
-    initializeTreeState() {
+    async initializeTreeState() {
       // Set flag to ignore @update:open events during initialization
       this.isInitializing = true;
+
+      await this.hydrateBrowserFromDbIfEmpty();
 
       let nodesToOpen = [];
 
@@ -188,7 +199,7 @@ export default {
       });
     },
     /**
-     * Restore the selected node from localStorage
+     * Restores selected node from localStorage; if absent, selects the first workspace.
      */
     restoreSelectedNode() {
       if (typeof localStorage === 'undefined') return;
@@ -197,9 +208,28 @@ export default {
         const savedSelection = localStorage.getItem(
           this.selectedNodeStorageKey
         );
-        if (!savedSelection) return;
 
-        const { nodeId, nodeType } = JSON.parse(savedSelection);
+        if (!savedSelection) {
+          if (this.treeviewWorkspaces?.length) {
+            this.$router.replace({
+              query: { wid: this.treeviewWorkspaces[0].id },
+            });
+          }
+          return;
+        }
+
+        const parsedSavedCollection = JSON.parse(savedSelection);
+
+        if (parsedSavedCollection === null) {
+          if (this.treeviewWorkspaces?.length) {
+            this.$router.replace({
+              query: { wid: this.treeviewWorkspaces[0].id },
+            });
+          }
+          return;
+        }
+
+        const { nodeId, nodeType } = parsedSavedCollection;
         const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
 
         if (node) {
@@ -242,6 +272,10 @@ export default {
       } catch (error) {
         console.error('[WorkspaceTree] Error saving selected node:', error);
       }
+      this.setRemoteLocalStorageKey(this.selectedNodeStorageKey, {
+        nodeId,
+        nodeType,
+      });
     },
     /**
      * Save tree expansion state to localStorage (as IDs only)
@@ -254,6 +288,7 @@ export default {
       } catch (error) {
         console.error('Error saving tree state:', error);
       }
+      this.setRemoteLocalStorageKey(this.storageKey, openIds);
     },
     /**
      * Handle tree expansion state changes
@@ -404,7 +439,10 @@ export default {
     },
     clearSelection() {
       this.selectedItemToDelete = {};
-      this.saveSelectedNode(null, null);
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.selectedNodeStorageKey, JSON.stringify(null));
+      }
+      this.setRemoteLocalStorageKey(this.selectedNodeStorageKey, null);
     },
     openRenameFolderModal(folder) {
       this.conflictError = false;
@@ -471,6 +509,51 @@ export default {
         });
       }
       this.$refs?.moveModal?.close();
+    },
+    async getRemoteLocalStorageKey(key) {
+      try {
+        const res = await this.$axios.$get(
+          getUserPersistedLocalStorageKey(key)
+        );
+        return res?.value ?? null;
+      } catch (e) {
+        return null;
+      }
+    },
+    async setRemoteLocalStorageKey(key, value) {
+      this.$axios
+        .$put(setUserPersistedLocalStorageKey(key), { value })
+        .catch((e) =>
+          console.error('[WorkspaceTree] Remote localStorage update failed:', e)
+        );
+    },
+    async hydrateBrowserFromDbIfEmpty() {
+      if (typeof localStorage === 'undefined') return;
+
+      const hasTree = !!localStorage.getItem(this.storageKey);
+      const hasSel = !!localStorage.getItem(this.selectedNodeStorageKey);
+      if (hasTree && hasSel) return; // already ok
+
+      // 1) open nodes
+      if (!hasTree) {
+        const remoteTree = await this.getRemoteLocalStorageKey(this.storageKey);
+        if (remoteTree) {
+          localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
+        }
+      }
+
+      // 2) selected node
+      if (!hasSel) {
+        const remoteSel = await this.getRemoteLocalStorageKey(
+          this.selectedNodeStorageKey
+        );
+        if (remoteSel) {
+          localStorage.setItem(
+            this.selectedNodeStorageKey,
+            JSON.stringify(remoteSel)
+          );
+        }
+      }
     },
   },
 };
