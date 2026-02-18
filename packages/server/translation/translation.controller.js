@@ -37,6 +37,11 @@ async function duplicateAndTranslate(req, res) {
   const { mailingId } = params;
   const { targetLanguage, sourceLanguage = 'auto', newName } = body;
 
+  // Validate required parameters
+  if (!targetLanguage || typeof targetLanguage !== 'string') {
+    throw createError(400, ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_REQUIRED);
+  }
+
   // Get original mailing
   const originalMailing = await mailingService.findOne(mailingId);
 
@@ -182,6 +187,7 @@ async function processTranslationAsync({
     }
 
     // Mark job as completed
+    // Warning keys are translated by the frontend
     translationJobs.setCompleted(jobId, {
       mailingId: duplicatedMailing._id.toString(),
       mailingName: duplicatedMailing.name,
@@ -189,10 +195,10 @@ async function processTranslationAsync({
       stats,
       sourceLanguage,
       targetLanguage,
-      warnings: [
-        'Vérifiez les liens présents dans l\'email',
-        'Vérifiez les images contenant du texte',
-        'Vérifiez la variante de template si applicable',
+      warningKeys: [
+        'translation.warnings.checkLinks',
+        'translation.warnings.checkImages',
+        'translation.warnings.checkVariant',
       ],
     });
   } catch (error) {
