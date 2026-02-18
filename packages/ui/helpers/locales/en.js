@@ -493,6 +493,9 @@ export default {
     infomaniak: {
       productId: 'Product ID',
       productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+    },
+    deepl: {
+      apiKeyHint: 'Your DeepL API key (Free or Pro)'
     }
   },
   aiFeatures: {
@@ -508,7 +511,14 @@ export default {
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
-      languagesHint: 'Select the target languages your users can use'
+      languagesHint: 'Select the target languages your users can use',
+      formality: 'Formality level',
+      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityDefault: 'Default',
+      formalityMore: 'Formal',
+      formalityLess: 'Informal',
+      formalityPreferMore: 'Prefer formal',
+      formalityPreferLess: 'Prefer informal'
     },
     textGeneration: {
       title: 'Text generation',

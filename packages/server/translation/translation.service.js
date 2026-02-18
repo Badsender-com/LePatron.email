@@ -28,6 +28,7 @@ module.exports = {
   getAvailableLanguages,
   detectSourceLanguage,
   getBatchInfo,
+  extractFullContext,
 };
 
 /**
@@ -126,6 +127,10 @@ async function translateMailing({
     providerFeatureConfig
   );
 
+  // Extract full context for DeepL (improves translation quality)
+  // LLM providers will ignore this parameter
+  const context = extractFullContext(textsToTranslate);
+
   let translations;
   try {
     translations = await translateInBatches({
@@ -133,6 +138,8 @@ async function translateMailing({
       texts: textsToTranslate,
       sourceLanguage,
       targetLanguage,
+      context,
+      providerType: integration.provider,
       onBatchProgress,
     });
   } catch (error) {
@@ -272,4 +279,24 @@ function detectSourceLanguage(mailing) {
 
   // Fallback to auto-detect
   return 'auto';
+}
+
+/**
+ * Extract full context from mailing for translation
+ * Used by DeepL to provide context for better translations
+ * @param {Object} textsToTranslate - Extracted texts object
+ * @returns {string} Concatenated context text
+ */
+function extractFullContext(textsToTranslate) {
+  if (!textsToTranslate || typeof textsToTranslate !== 'object') {
+    return '';
+  }
+
+  // Get all text values and join them
+  const allTexts = Object.values(textsToTranslate)
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => value.trim());
+
+  // Join with double newlines for clear separation
+  return allTexts.join('\n\n');
 }

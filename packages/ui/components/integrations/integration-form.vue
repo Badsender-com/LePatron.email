@@ -69,6 +69,12 @@ export default {
           showProductId: true,
           productIdHint: this.$t('integrations.infomaniak.productIdHint'),
         },
+        deepl: {
+          apiKeyPlaceholder: 'your-deepl-api-key',
+          apiHostPlaceholder: '',
+          apiHostHint: '',
+          showProductId: false,
+        },
       };
       return configs[this.form.provider] || {};
     },
@@ -132,6 +138,7 @@ export default {
         openai: 'OpenAI',
         mistral: 'Mistral AI',
         infomaniak: 'Infomaniak AI Tools',
+        deepl: 'DeepL',
       };
       return labels[provider] || provider;
     },
