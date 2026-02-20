@@ -117,12 +117,12 @@ class ActitoProvider {
     }
   }
 
-  async getAllEspProfileTableName({ entity }) {
+  async getAllEspProfileTableName({ entityOfTarget }) {
     try {
       const headerAccess = await this.getHeaderAccess();
 
       const allEspProfileTableResult = await axios.get(
-        `${this.getV4ActitoUrl()}/entity/${entity}/table/ `,
+        `${this.getV4ActitoUrl()}/entity/${entityOfTarget}/table/ `,
         { headers: headerAccess }
       );
       return allEspProfileTableResult?.data;
@@ -169,7 +169,7 @@ class ActitoProvider {
 
       const mailSubjectResult = await this.getCampaignMailSubjectLine({
         campaignId,
-        entity: effectiveRoutingEntity,
+        routingEntity: effectiveRoutingEntity,
       });
 
       const {
@@ -204,7 +204,7 @@ class ActitoProvider {
     }
   }
 
-  async setCampaignHtmlMail({ archive, campaignId, entity, archiveName }) {
+  async setCampaignHtmlMail({ archive, campaignId, routingEntity, archiveName }) {
     let tmpDir;
     try {
       const form = new FormData();
@@ -216,7 +216,7 @@ class ActitoProvider {
         contentType: 'multipart/form-data',
         ...form.getHeaders(),
       };
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
 
       const writeStream = fs.createWriteStream(tmpZipFile);
       archive.pipe(writeStream);
@@ -231,7 +231,7 @@ class ActitoProvider {
       form.append('inputFile', fs.createReadStream(tmpZipFile));
 
       return axios.post(
-        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/body?charset=utf8`,
+        `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/body?charset=utf8`,
         form,
         { headers }
       );
@@ -251,12 +251,12 @@ class ActitoProvider {
     }
   }
 
-  async getCampaignHtmlMail({ campaignId, entity }) {
+  async getCampaignHtmlMail({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
-        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/body`,
+        `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/body`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -265,12 +265,12 @@ class ActitoProvider {
     }
   }
 
-  async deleteCampaignMail({ campaignId, entity }) {
+  async deleteCampaignMail({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
       const headerAccess = await this.getHeaderAccess();
       return axios.delete(
-        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}`,
+        `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -279,28 +279,28 @@ class ActitoProvider {
     }
   }
 
-  async setCampaignMailSubjectLine({ subject, campaignId, entity }) {
+  async setCampaignMailSubjectLine({ subject, campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
       const headerAccess = await this.getHeaderAccess();
       return axios.put(
-        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/subject`,
+        `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/subject`,
         subject,
         { headers: headerAccess }
       );
     } catch (e) {
-      await this.deleteCampaignMail({ campaignId, entity });
+      await this.deleteCampaignMail({ campaignId, routingEntity });
       logger.error(e.response.statusText);
       throw e;
     }
   }
 
-  async getCampaignMailSubjectLine({ campaignId, entity }) {
+  async getCampaignMailSubjectLine({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndEntityExists({ campaignId, entity });
+      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
-        `${this.getV4ActitoUrl()}/entity/${entity}/mail/${campaignId}/content/subject`,
+        `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/subject`,
         { headers: headerAccess }
       );
     } catch (e) {
@@ -309,14 +309,14 @@ class ActitoProvider {
     }
   }
 
-  checkIfCampaignIdAndEntityExists({ campaignId, entity }) {
+  checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity }) {
     if (!campaignId) {
       throw new InternalServerError(
         ERROR_CODES.MISSING_PROPERTIES_CAMPAIGN_MAIL_ID
       );
     }
 
-    if (!entity) {
+    if (!routingEntity) {
       throw new InternalServerError(ERROR_CODES.MISSING_PROPERTIES_ENTITY);
     }
   }
@@ -441,7 +441,7 @@ class ActitoProvider {
         archive: processedArchive,
         campaignId: campaignId,
         archiveName,
-        entity: routingEntity,
+        routingEntity,
       });
 
       if (!campaignHtmlMailResult?.data?.campaignId) {
@@ -451,7 +451,7 @@ class ActitoProvider {
       const campaignSubjectMailResult = await this.setCampaignMailSubjectLine({
         subject,
         campaignId,
-        entity: routingEntity,
+        routingEntity,
       });
 
       this.checkIfCampaignIdIsDefined(campaignSubjectMailResult);
@@ -470,7 +470,7 @@ class ActitoProvider {
     } catch (e) {
       logger.error(e?.response?.data);
       if (campaignId) {
-        await this.deleteCampaignMail({ campaignId, entity: routingEntity });
+        await this.deleteCampaignMail({ campaignId, routingEntity });
       }
 
       if (e?.response?.status === 409) {
