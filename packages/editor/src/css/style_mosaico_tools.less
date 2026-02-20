@@ -834,6 +834,20 @@
   .small-modal .modal {
     max-height: 260px;
   }
+
+  // Fix Firefox modal positioning bug - margin:auto doesn't work reliably on position:fixed
+  // Firefox doesn't properly calculate left:0 + right:0 + margin:auto for centering
+  // Use transform technique and force it on all modal states
+  .modal,
+  .modal.open,
+  #modal1 {
+    left: 50% !important;
+    right: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: translateX(-50%) !important;
+  }
+
   .error-button {
     background-color: @error-color;
   }
