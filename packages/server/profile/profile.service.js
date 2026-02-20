@@ -51,13 +51,13 @@ async function actitoEntitiesList({ apiKey }) {
   return await espProvider.getAllEspEntities();
 }
 
-async function actitoTargetTablesList({ apiKey, entity }) {
+async function actitoTargetTablesList({ apiKey, entityOfTarget }) {
   const espProvider = await EspProvider.build({
     apiKey,
     type: EspTypes.ACTITO,
   });
 
-  return espProvider.getAllEspProfileTableName({ entity });
+  return espProvider.getAllEspProfileTableName({ entityOfTarget });
 }
 
 async function createProfile({
