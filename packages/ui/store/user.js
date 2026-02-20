@@ -71,8 +71,12 @@ export const actions = {
     if (groupId) {
       try {
         group = await this.$axios.$get(groupsItem({ groupId }));
-      } catch {
-        console.error('Error while fetching group');
+      } catch (error) {
+        // Silent fail - group fetch is optional for FTP access check
+        // Log in development for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[user store] Failed to fetch group:', error.message);
+        }
       }
     }
     commit(USER_SET_HAS_FTP_ACCESS, !!group?.downloadMailingWithFtpImages);
