@@ -2,18 +2,20 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
-import { groupsItem, groupTestFtpConnection } from '~/helpers/api-routes.js';
+import { groupsItem } from '~/helpers/api-routes.js';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsColorScheme from '~/components/group/color-scheme';
+import BsFtpSettings from '~/components/group/ftp-settings';
 
 export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
     BsColorScheme,
+    BsFtpSettings,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -24,17 +26,9 @@ export default {
     disabled: { type: Boolean, default: false },
   },
   httpOptions: ['http://', 'https://'],
-  ftpOptions: ['sftp'],
-  ftpAuthOptions: [
-    { text: 'Password', value: 'password' },
-    { text: 'SSH Key', value: 'ssh_key' },
-  ],
   data() {
     return {
       useSamlAuthentication: null,
-      isReadOnlyActive: true,
-      testingFtpConnection: false,
-      ftpConnectionResult: null,
       colorScheme: [
         '#F44336',
         '#E91E63',
@@ -121,27 +115,12 @@ export default {
       cdnEndPoint: { required },
       cdnButtonLabel: { required },
     };
-    // Conditional validation based on auth type
-    const ftpCredentialValidation =
-      this.group.ftpAuthType === 'ssh_key'
-        ? { ftpSshKey: { required } }
-        : { ftpPassword: { required } };
-    const ftpValidations = {
-      ftpHost: { required },
-      ftpUsername: { required },
-      ...ftpCredentialValidation,
-      ftpPort: { required },
-      ftpPathOnServer: { required },
-      ftpEndPoint: { required },
-      ftpButtonLabel: { required },
-    };
     return {
       group: {
         name: { required },
         status: { required },
         defaultWorkspaceName: {},
         ...(this.group.downloadMailingWithCdnImages && cdnValidations),
-        ...(this.group.downloadMailingWithFtpImages && ftpValidations),
       },
     };
   },
@@ -149,17 +128,20 @@ export default {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     requiredErrors(fieldName) {
       const errors = [];
-      if (!this.$v.group[fieldName].$dirty) return errors;
-      !this.$v.group[fieldName].required &&
+      if (!this.$v.group[fieldName]?.$dirty) return errors;
+      if (!this.$v.group[fieldName]?.required) {
         errors.push(this.$t('global.errors.required'));
+      }
       return errors;
-    },
-    disableReadOnlyAttribute() {
-      this.isReadOnlyActive = false;
     },
     onSubmit() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      // Validate FTP settings component if FTP is enabled
+      let ftpValid = true;
+      if (this.group.downloadMailingWithFtpImages && this.$refs.ftpSettings) {
+        ftpValid = this.$refs.ftpSettings.validate();
+      }
+      if (this.$v.$invalid || !ftpValid) return;
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
@@ -191,25 +173,6 @@ export default {
         });
       }
       this.closeDelete();
-    },
-    async testFtpConnection() {
-      this.testingFtpConnection = true;
-      this.ftpConnectionResult = null;
-      try {
-        const response = await this.$axios.$post(
-          groupTestFtpConnection({ groupId: this.group?.id })
-        );
-        this.ftpConnectionResult = response;
-      } catch (error) {
-        this.ftpConnectionResult = {
-          success: false,
-          message:
-            error.response?.data?.message ||
-            this.$t('global.errors.errorOccured'),
-        };
-      } finally {
-        this.testingFtpConnection = false;
-      }
     },
   },
 };
@@ -302,194 +265,13 @@ export default {
             </div>
 
             <div v-if="localModel.downloadMailingWithFtpImages" class="form-subsection__content">
-              <!-- Row 1: Server Connection -->
-              <v-row>
-                <v-col cols="12" md="2">
-                  <v-select
-                    id="ftpProtocol"
-                    v-model="localModel.ftpProtocol"
-                    :label="$t('forms.group.ftpProtocol')"
-                    name="ftpProtocol"
-                    :disabled="disabled"
-                    :items="$options.ftpOptions"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    id="ftpHost"
-                    v-model="localModel.ftpHost"
-                    :label="$t('forms.group.host')"
-                    placeholder="ex: 127.0.0.1"
-                    name="ftpHost"
-                    :error-messages="requiredErrors(`ftpHost`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpHost.$touch()"
-                    @blur="$v.group.ftpHost.$touch()"
-                  />
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-text-field
-                    id="ftpPort"
-                    v-model="localModel.ftpPort"
-                    :label="$t('forms.group.port')"
-                    placeholder="ex: 22"
-                    name="ftpPort"
-                    :error-messages="requiredErrors(`ftpPort`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpPort.$touch()"
-                    @blur="$v.group.ftpPort.$touch()"
-                  />
-                </v-col>
-              </v-row>
-
-              <!-- Row 2: Authentication -->
-              <v-row>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    id="ftpUsername"
-                    v-model="localModel.ftpUsername"
-                    autocomplete="username"
-                    :label="$t('forms.group.username')"
-                    name="ftpUsername"
-                    :error-messages="requiredErrors(`ftpUsername`)"
-                    :disabled="disabled"
-                    :readonly="isReadOnlyActive"
-                    @focus="disableReadOnlyAttribute"
-                    @input="$v.group.ftpUsername.$touch()"
-                    @blur="$v.group.ftpUsername.$touch()"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-select
-                    id="ftpAuthType"
-                    v-model="localModel.ftpAuthType"
-                    :label="$t('forms.group.ftpAuthType')"
-                    name="ftpAuthType"
-                    :disabled="disabled"
-                    :items="$options.ftpAuthOptions"
-                  />
-                </v-col>
-                <v-col
-                  v-if="!localModel.ftpAuthType || localModel.ftpAuthType === 'password'"
-                  cols="12"
-                  md="6"
-                >
-                  <v-text-field
-                    id="ftpPassword"
-                    v-model="localModel.ftpPassword"
-                    :readonly="isReadOnlyActive"
-                    autocomplete="new-password"
-                    type="password"
-                    :label="$t('global.password')"
-                    name="ftpPassword"
-                    :error-messages="requiredErrors(`ftpPassword`)"
-                    :disabled="disabled"
-                    @focus="disableReadOnlyAttribute"
-                    @input="$v.group.ftpPassword.$touch()"
-                    @blur="$v.group.ftpPassword.$touch()"
-                  />
-                </v-col>
-                <v-col
-                  v-if="localModel.ftpAuthType === 'ssh_key'"
-                  cols="12"
-                  md="6"
-                >
-                  <v-textarea
-                    id="ftpSshKey"
-                    v-model="localModel.ftpSshKey"
-                    :label="$t('forms.group.ftpSshKey')"
-                    :placeholder="$t('forms.group.ftpSshKeyPlaceholder')"
-                    name="ftpSshKey"
-                    rows="3"
-                    :error-messages="requiredErrors(`ftpSshKey`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpSshKey && $v.group.ftpSshKey.$touch()"
-                    @blur="$v.group.ftpSshKey && $v.group.ftpSshKey.$touch()"
-                  />
-                </v-col>
-              </v-row>
-
-              <!-- Row 3: Paths & URLs -->
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    id="ftpPathOnServer"
-                    v-model="localModel.ftpPathOnServer"
-                    :label="$t('forms.group.path')"
-                    placeholder="ex: ./uploads/"
-                    name="ftpPathOnServer"
-                    :error-messages="requiredErrors(`ftpPathOnServer`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpPathOnServer.$touch()"
-                    @blur="$v.group.ftpPathOnServer.$touch()"
-                  />
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-select
-                    id="ftpEndPointProtocol"
-                    v-model="localModel.ftpEndPointProtocol"
-                    :label="$t('forms.group.httpProtocol')"
-                    name="ftpEndPointProtocol"
-                    :disabled="disabled"
-                    :items="$options.httpOptions"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    id="ftpEndPoint"
-                    v-model="localModel.ftpEndPoint"
-                    :label="$t('forms.group.endpoint')"
-                    placeholder="ex: images.example.com/uploads"
-                    name="ftpEndPoint"
-                    :error-messages="requiredErrors(`ftpEndPoint`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpEndPoint.$touch()"
-                    @blur="$v.group.ftpEndPoint.$touch()"
-                  />
-                </v-col>
-              </v-row>
-
-              <!-- Row 4: Display Settings -->
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    id="ftpButtonLabel"
-                    v-model="localModel.ftpButtonLabel"
-                    :label="$t('forms.group.editorLabel')"
-                    placeholder="ex: HTML avec images"
-                    name="ftpButtonLabel"
-                    :error-messages="requiredErrors(`ftpButtonLabel`)"
-                    :disabled="disabled"
-                    @input="$v.group.ftpButtonLabel.$touch()"
-                    @blur="$v.group.ftpButtonLabel.$touch()"
-                  />
-                </v-col>
-              </v-row>
-
-              <!-- Row 5: Test Connection -->
-              <v-row v-if="isEdit">
-                <v-col cols="12">
-                  <v-btn
-                    outlined
-                    color="primary"
-                    :loading="testingFtpConnection"
-                    :disabled="!localModel.ftpHost || !localModel.ftpUsername"
-                    @click="testFtpConnection"
-                  >
-                    <v-icon left>
-                      mdi-connection
-                    </v-icon>
-                    {{ $t('forms.group.testFtpConnection') }}
-                  </v-btn>
-                  <span
-                    v-if="ftpConnectionResult"
-                    :class="ftpConnectionResult.success ? 'success--text' : 'error--text'"
-                    class="ml-3"
-                  >
-                    {{ ftpConnectionResult.message }}
-                  </span>
-                </v-col>
-              </v-row>
+              <bs-ftp-settings
+                ref="ftpSettings"
+                v-model="localModel"
+                :group-id="group.id"
+                :disabled="disabled"
+                :is-edit="isEdit"
+              />
             </div>
           </div>
 
