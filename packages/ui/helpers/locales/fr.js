@@ -166,6 +166,10 @@ export default {
       httpProtocol: 'Protocole HTTP',
       endpoint: 'URL racine des images',
       editorLabel: 'Libellé du bouton',
+      ftpAuthType: 'Méthode d\'authentification',
+      ftpSshKey: 'Clé SSH privée',
+      ftpSshKeyPlaceholder: '-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----',
+      testFtpConnection: 'Tester la connexion',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
       userHasAccessToAllWorkspaces:

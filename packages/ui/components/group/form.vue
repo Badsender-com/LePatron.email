@@ -2,7 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { mapGetters, mapMutations } from 'vuex';
-import { groupsItem } from '~/helpers/api-routes.js';
+import { groupsItem, groupTestFtpConnection } from '~/helpers/api-routes.js';
 import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
@@ -25,10 +25,16 @@ export default {
   },
   httpOptions: ['http://', 'https://'],
   ftpOptions: ['sftp'],
+  ftpAuthOptions: [
+    { text: 'Password', value: 'password' },
+    { text: 'SSH Key', value: 'ssh_key' },
+  ],
   data() {
     return {
       useSamlAuthentication: null,
       isReadOnlyActive: true,
+      testingFtpConnection: false,
+      ftpConnectionResult: null,
       colorScheme: [
         '#F44336',
         '#E91E63',
@@ -115,10 +121,15 @@ export default {
       cdnEndPoint: { required },
       cdnButtonLabel: { required },
     };
+    // Conditional validation based on auth type
+    const ftpCredentialValidation =
+      this.group.ftpAuthType === 'ssh_key'
+        ? { ftpSshKey: { required } }
+        : { ftpPassword: { required } };
     const ftpValidations = {
       ftpHost: { required },
       ftpUsername: { required },
-      ftpPassword: { required },
+      ...ftpCredentialValidation,
       ftpPort: { required },
       ftpPathOnServer: { required },
       ftpEndPoint: { required },
@@ -180,6 +191,25 @@ export default {
         });
       }
       this.closeDelete();
+    },
+    async testFtpConnection() {
+      this.testingFtpConnection = true;
+      this.ftpConnectionResult = null;
+      try {
+        const response = await this.$axios.$post(
+          groupTestFtpConnection({ groupId: this.group?.id })
+        );
+        this.ftpConnectionResult = response;
+      } catch (error) {
+        this.ftpConnectionResult = {
+          success: false,
+          message:
+            error.response?.data?.message ||
+            this.$t('global.errors.errorOccured'),
+        };
+      } finally {
+        this.testingFtpConnection = false;
+      }
     },
   },
 };
@@ -283,7 +313,7 @@ export default {
                     />
                   </v-col>
 
-                  <v-col cols="3">
+                  <v-col cols="2">
                     <v-text-field
                       id="ftpUsername"
                       v-model="localModel.ftpUsername"
@@ -299,12 +329,26 @@ export default {
                     />
                   </v-col>
 
-                  <v-col cols="3">
+                  <v-col cols="2">
+                    <v-select
+                      id="ftpAuthType"
+                      v-model="localModel.ftpAuthType"
+                      :label="$t('forms.group.ftpAuthType')"
+                      name="ftpAuthType"
+                      :disabled="disabled"
+                      :items="$options.ftpAuthOptions"
+                    />
+                  </v-col>
+
+                  <v-col
+                    v-if="!localModel.ftpAuthType || localModel.ftpAuthType === 'password'"
+                    cols="2"
+                  >
                     <v-text-field
                       id="ftpPassword"
                       v-model="localModel.ftpPassword"
                       :readonly="isReadOnlyActive"
-                      autocomplete="username"
+                      autocomplete="new-password"
                       type="password"
                       :label="$t('global.password')"
                       name="ftpPassword"
@@ -313,6 +357,24 @@ export default {
                       @focus="disableReadOnlyAttribute"
                       @input="$v.group.ftpPassword.$touch()"
                       @blur="$v.group.ftpPassword.$touch()"
+                    />
+                  </v-col>
+
+                  <v-col
+                    v-if="localModel.ftpAuthType === 'ssh_key'"
+                    cols="4"
+                  >
+                    <v-textarea
+                      id="ftpSshKey"
+                      v-model="localModel.ftpSshKey"
+                      :label="$t('forms.group.ftpSshKey')"
+                      :placeholder="$t('forms.group.ftpSshKeyPlaceholder')"
+                      name="ftpSshKey"
+                      rows="3"
+                      :error-messages="requiredErrors(`ftpSshKey`)"
+                      :disabled="disabled"
+                      @input="$v.group.ftpSshKey && $v.group.ftpSshKey.$touch()"
+                      @blur="$v.group.ftpSshKey && $v.group.ftpSshKey.$touch()"
                     />
                   </v-col>
 
@@ -381,6 +443,29 @@ export default {
                       @input="$v.group.ftpButtonLabel.$touch()"
                       @blur="$v.group.ftpButtonLabel.$touch()"
                     />
+                  </v-col>
+
+                  <!-- Test FTP Connection Button -->
+                  <v-col v-if="isEdit" cols="12">
+                    <v-btn
+                      outlined
+                      color="primary"
+                      :loading="testingFtpConnection"
+                      :disabled="!localModel.ftpHost || !localModel.ftpUsername"
+                      @click="testFtpConnection"
+                    >
+                      <v-icon left>
+                        mdi-connection
+                      </v-icon>
+                      {{ $t('forms.group.testFtpConnection') }}
+                    </v-btn>
+                    <span
+                      v-if="ftpConnectionResult"
+                      :class="ftpConnectionResult.success ? 'success--text' : 'error--text'"
+                      class="ml-3"
+                    >
+                      {{ ftpConnectionResult.message }}
+                    </span>
                   </v-col>
                 </v-row>
               </v-col>
