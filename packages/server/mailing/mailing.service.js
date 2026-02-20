@@ -710,6 +710,8 @@ async function extractFTPparams({
       ftpPassword,
       ftpProtocol,
       ftpPathOnServer,
+      ftpAuthType,
+      ftpSshKey,
     },
     cdnProtocol,
     cdnEndPoint,
@@ -765,6 +767,8 @@ async function handleRelativeOrFtpImages({
     ftpPassword,
     ftpProtocol,
     ftpPathOnServer,
+    ftpAuthType,
+    ftpSshKey,
   } = ftpServerParams;
   if (!html) {
     throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);

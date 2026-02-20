@@ -55,7 +55,8 @@ function validateSshKeyFormat(sshKey) {
  * Mask FTP credentials in group object for API response
  */
 function maskFtpCredentials(group) {
-  const groupObj = group.toObject ? group.toObject() : { ...group };
+  // Use toJSON to include virtuals (like 'id') as configured in schema
+  const groupObj = group.toJSON ? group.toJSON() : { ...group };
   if (groupObj.ftpPassword) {
     groupObj.ftpPassword = CREDENTIAL_MASK;
   }
