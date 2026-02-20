@@ -43,7 +43,17 @@ export default {
       profile: {
         id: this.profileData.id ?? '',
         name: this.profileData.name ?? '',
+        /**
+         * Database entity (called "entityOfTarget" in Actito API)
+         * This is the entity containing the profile tables
+         */
         entity: this.profileData.entity ?? '',
+        /**
+         * Routing entity (called "entity" in Actito API URL path)
+         * This is the brand-specific sending configuration
+         * Falls back to entity (database entity) for backward compatibility
+         */
+        routingEntity: this.profileData.routingEntity ?? '',
         targetTable: this.profileData.targetTable ?? '',
         apiKey: this.profileData.apiKey ?? '',
         senderMail: this.profileData.senderMail ?? '',
@@ -129,7 +139,7 @@ export default {
       const errors = [];
       if (!this.$v.profile.entity.$dirty) return [];
       !this.$v.profile.entity.required &&
-        errors.push(this.$t('global.errors.entityRequired'));
+        errors.push(this.$t('global.errors.databaseEntityRequired'));
       return errors;
     },
     targetTableErrors() {
@@ -166,6 +176,10 @@ export default {
     if (!!this.profile.id && !!this.profile.apiKey && !!this.profile.entity) {
       await this.fetchEntitiesWithApiKey(this.profile.apiKey);
       await this.fetchTargetTables(this.profile.entity, this.profile.apiKey);
+      // Initialize routingEntity with entity if not set (backward compatibility)
+      if (!this.profile.routingEntity) {
+        this.profile.routingEntity = this.profile.entity;
+      }
     }
   },
   methods: {
@@ -229,6 +243,10 @@ export default {
     },
     async handleEntityChange(event) {
       await this.fetchTargetTables(event, this.profile.apiKey);
+      // Pre-fill routingEntity with entity if not set
+      if (!this.profile.routingEntity) {
+        this.profile.routingEntity = event;
+      }
     },
   },
 };
@@ -279,7 +297,7 @@ export default {
             v-model="profile.entity"
             :items="entities"
             :error-messages="entityErrors"
-            :label="$t('global.entity')"
+            :label="$t('global.databaseEntity')"
             :disabled="disableEntityField"
             @change="handleEntityChange"
           />
@@ -300,6 +318,18 @@ export default {
             :error-messages="targetTableErrors"
             :label="$t('global.targetTable')"
             :disabled="disableTargetTableField"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-select
+            v-model="profile.routingEntity"
+            :items="entities"
+            :label="$t('global.routingEntity')"
+            :hint="$t('global.routingEntityHint')"
+            :disabled="disableEntityField"
+            persistent-hint
           />
         </v-col>
       </v-row>
