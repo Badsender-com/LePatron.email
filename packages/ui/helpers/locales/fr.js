@@ -136,6 +136,12 @@ export default {
   },
   forms: {
     group: {
+      sections: {
+        generalInfo: 'Informations générales',
+        imageHosting: 'Hébergement des images',
+        authentication: 'Authentification',
+        permissions: 'Permissions',
+      },
       name: 'Nom de l\'entreprise',
       downloadWithoutEnclosingFolder: {
         label: 'Format du fichier zip',
@@ -157,6 +163,7 @@ export default {
       },
       exportFtp: 'Exporter les images sur un FTP',
       exportCdn: 'Exporter les images sur un CDN',
+      samlAuthentication: 'Authentification SAML',
       enable: 'Activer',
       ftpProtocol: 'Protocole FTP',
       host: 'Hôte',
