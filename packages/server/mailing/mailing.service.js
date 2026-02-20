@@ -651,6 +651,8 @@ async function extractFTPparams({
     ftpHost,
     ftpUsername,
     ftpPassword,
+    ftpAuthType,
+    ftpSshKey,
     ftpPort,
     ftpEndPoint,
     ftpEndPointProtocol,
@@ -667,9 +669,13 @@ async function extractFTPparams({
     downloadOptions.downLoadForFtp === 'true' ||
     downloadOptions.downLoadForFtp === true;
 
+  // Validate FTP credentials based on authentication type
+  const hasValidFtpCredentials =
+    ftpAuthType === 'ssh_key' ? !!ftpSshKey : !!ftpPassword;
+
   if (
     downloadOptions.downLoadForFtp &&
-    (!ftpHost || !ftpUsername || !ftpPassword || !ftpEndPoint)
+    (!ftpHost || !ftpUsername || !hasValidFtpCredentials || !ftpEndPoint)
   ) {
     throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
   }
@@ -884,7 +890,8 @@ async function handleRelativeOrFtpImages({
       ftpPort,
       ftpUsername,
       ftpPassword,
-      ftpProtocol
+      ftpProtocol,
+      { authType: ftpAuthType, sshKey: ftpSshKey }
     );
     const folderPath =
       ftpPathOnServer +

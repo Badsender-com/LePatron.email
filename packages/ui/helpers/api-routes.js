@@ -32,6 +32,10 @@ export function groupsProfiles(routeParams = {}) {
   return `/groups/${routeParams.groupId}/profiles`;
 }
 
+export function groupTestFtpConnection(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/test-ftp-connection`;
+}
+
 /// ///
 // TEMPLATES
 /// ///

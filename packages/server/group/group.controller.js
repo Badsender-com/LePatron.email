@@ -1,7 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const { NotFound } = require('http-errors');
+const { NotFound, BadRequest } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -12,8 +12,81 @@ const groupService = require('../group/group.service.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
+const FTPClient = require('../mailing/ftp-client.service.js');
 
 const { Groups, Templates, Mailings } = require('../common/models.common.js');
+
+// Constants for credential masking
+const CREDENTIAL_MASK = '••••••••';
+const DELETE_CREDENTIAL = '__DELETE__';
+
+/**
+ * Validate SSH key format (PEM or OpenSSH)
+ */
+function validateSshKeyFormat(sshKey) {
+  if (!sshKey || sshKey === CREDENTIAL_MASK) return { valid: true };
+
+  const trimmed = sshKey.trim();
+  const isPEM =
+    trimmed.startsWith('-----BEGIN RSA PRIVATE KEY-----') ||
+    trimmed.startsWith('-----BEGIN DSA PRIVATE KEY-----') ||
+    trimmed.startsWith('-----BEGIN EC PRIVATE KEY-----');
+  const isOpenSSH = trimmed.startsWith('-----BEGIN OPENSSH PRIVATE KEY-----');
+
+  if (!isPEM && !isOpenSSH) {
+    return {
+      valid: false,
+      message:
+        'Invalid SSH key format. Accepted formats: PEM or OpenSSH.',
+    };
+  }
+
+  if (!trimmed.includes('-----END')) {
+    return {
+      valid: false,
+      message: 'Incomplete SSH key: missing end marker.',
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Mask FTP credentials in group object for API response
+ */
+function maskFtpCredentials(group) {
+  const groupObj = group.toObject ? group.toObject() : { ...group };
+  if (groupObj.ftpPassword) {
+    groupObj.ftpPassword = CREDENTIAL_MASK;
+  }
+  if (groupObj.ftpSshKey) {
+    groupObj.ftpSshKey = CREDENTIAL_MASK;
+  }
+  return groupObj;
+}
+
+/**
+ * Process credentials before update (handle masking and deletion)
+ */
+function processCredentialsForUpdate(body) {
+  const processed = { ...body };
+
+  // ftpPassword
+  if (processed.ftpPassword === CREDENTIAL_MASK) {
+    delete processed.ftpPassword; // Preserve existing
+  } else if (processed.ftpPassword === DELETE_CREDENTIAL) {
+    processed.ftpPassword = ''; // Explicit deletion
+  }
+
+  // ftpSshKey
+  if (processed.ftpSshKey === CREDENTIAL_MASK) {
+    delete processed.ftpSshKey; // Preserve existing
+  } else if (processed.ftpSshKey === DELETE_CREDENTIAL) {
+    processed.ftpSshKey = ''; // Explicit deletion
+  }
+
+  return processed;
+}
 
 module.exports = {
   list: asyncHandler(list),
@@ -34,6 +107,7 @@ module.exports = {
     createOrUpdatePersonalizedVariables
   ),
   deletePersonalizedVariable: asyncHandler(deletePersonalizedVariable),
+  testFtpConnection: asyncHandler(testFtpConnection),
 };
 
 /**
@@ -77,11 +151,19 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
+  // Validate SSH key format if provided
+  if (req.body.ftpSshKey) {
+    const validation = validateSshKeyFormat(req.body.ftpSshKey);
+    if (!validation.valid) {
+      throw new BadRequest(validation.message);
+    }
+  }
+
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(req.body);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
-  res.json(newGroup);
+  res.json(maskFtpCredentials(newGroup));
 }
 
 /**
@@ -114,7 +196,7 @@ async function read(req, res) {
   const { groupId } = req.params;
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
-  res.json(group);
+  res.json(maskFtpCredentials(group));
 }
 
 /**
@@ -344,9 +426,20 @@ async function readColorScheme(req, res) {
 async function update(req, res) {
   const { user } = req;
 
+  // Process credentials (handle masking and deletion)
+  const processedBody = processCredentialsForUpdate(req.body);
+
+  // Validate SSH key format if provided and not masked
+  if (processedBody.ftpSshKey && processedBody.ftpSshKey !== CREDENTIAL_MASK) {
+    const validation = validateSshKeyFormat(processedBody.ftpSshKey);
+    if (!validation.valid) {
+      throw new BadRequest(validation.message);
+    }
+  }
+
   let groupToUpdate = {
     id: req.params.groupId,
-    ...req.body,
+    ...processedBody,
   };
 
   if (user.isGroupAdmin) {
@@ -355,7 +448,9 @@ async function update(req, res) {
 
   await groupService.updateGroup(groupToUpdate);
 
-  res.send();
+  // Fetch the updated group to return with masked credentials
+  const updatedGroup = await Groups.findById(req.params.groupId);
+  res.json(maskFtpCredentials(updatedGroup));
 }
 
 /**
@@ -420,4 +515,72 @@ async function deletePersonalizedVariable(req, res) {
     groupId
   );
   res.json(result);
+}
+
+/**
+ * @api {post} /groups/:groupId/test-ftp-connection Test FTP connection
+ * @apiPermission admin
+ * @apiName TestFtpConnection
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiSuccess {Boolean} success connection result
+ * @apiSuccess {String} message result message
+ */
+async function testFtpConnection(req, res) {
+  const { groupId } = req.params;
+  const group = await Groups.findById(groupId);
+
+  if (!group) {
+    throw new NotFound();
+  }
+
+  if (!group.downloadMailingWithFtpImages) {
+    return res.json({
+      success: false,
+      message: 'FTP is not enabled for this group',
+    });
+  }
+
+  try {
+    const ftpClient = new FTPClient(
+      group.ftpHost,
+      group.ftpPort,
+      group.ftpUsername,
+      group.ftpPassword,
+      group.ftpProtocol,
+      { authType: group.ftpAuthType, sshKey: group.ftpSshKey }
+    );
+
+    // Simple connection test
+    await ftpClient.client.connect(ftpClient.settings);
+    const exists = await ftpClient.client.exists(group.ftpPathOnServer || './');
+    await ftpClient.client.end();
+
+    if (exists) {
+      return res.json({ success: true, message: 'Connection successful' });
+    } else {
+      return res.json({
+        success: false,
+        message: `Path "${group.ftpPathOnServer}" not found on server`,
+      });
+    }
+  } catch (error) {
+    // Explicit error messages
+    let message = error.message;
+    if (error.message.includes('authentication') || error.message.includes('Authentication')) {
+      message =
+        'Authentication failed. Check your credentials (password or SSH key).';
+    } else if (error.message.includes('getaddrinfo')) {
+      message = `Host not found: ${group.ftpHost}`;
+    } else if (error.message.includes('ECONNREFUSED')) {
+      message = `Connection refused on ${group.ftpHost}:${group.ftpPort}`;
+    } else if (error.message.includes('privateKey')) {
+      message = 'Invalid SSH key or unsupported format.';
+    } else if (error.message.includes('ETIMEDOUT')) {
+      message = `Connection timeout to ${group.ftpHost}:${group.ftpPort}`;
+    }
+    return res.json({ success: false, message });
+  }
 }
