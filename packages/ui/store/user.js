@@ -67,10 +67,13 @@ export const actions = {
     commit(M_USER_SET, user);
 
     let group;
-    try {
-      group = await this.$axios.$get(groupsItem({ groupId: user?.group?.id }));
-    } catch {
-      console.error('Error while fetching group');
+    const groupId = user?.group?.id;
+    if (groupId) {
+      try {
+        group = await this.$axios.$get(groupsItem({ groupId }));
+      } catch {
+        console.error('Error while fetching group');
+      }
     }
     commit(USER_SET_HAS_FTP_ACCESS, !!group?.downloadMailingWithFtpImages);
   },
