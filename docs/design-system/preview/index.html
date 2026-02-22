@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LePatron.email - Design System Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Current LePatron colors */
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Navigation */
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav a:hover {
+      color: var(--primary);
+      background: var(--gray-100);
+    }
+
+    .nav a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Main content */
+    .main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .hero {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 3rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .hero h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--gray-600);
+      max-width: 600px;
+    }
+
+    /* Cards grid */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-bottom: 1rem;
+    }
+
+    .card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .card a:hover {
+      text-decoration: underline;
+    }
+
+    /* Status badges */
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .status.current {
+      background: var(--gray-200);
+      color: var(--gray-600);
+    }
+
+    .status.target {
+      background: rgba(0, 172, 220, 0.15);
+      color: var(--accent);
+    }
+
+    .status.wip {
+      background: rgba(255, 180, 0, 0.15);
+      color: #b37d00;
+    }
+
+    /* Info box */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .info-box h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .info-box p {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    /* Section title */
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html" class="active">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <section class="hero">
+      <h2>Design System Preview</h2>
+      <p>
+        Ce guide visuel documente l'état actuel et la vision cible du design system LePatron.email.
+        Il sert de base de discussion pour l'harmonisation progressive de l'interface.
+      </p>
+    </section>
+
+    <div class="info-box">
+      <h4>Comment lire ce document ?</h4>
+      <p>
+        Chaque section présente l'<strong>état actuel</strong> et l'<strong>état cible</strong>
+        côte à côte. Les badges indiquent le statut :
+        <span class="status current">Actuel</span>
+        <span class="status target">Cible</span>
+        <span class="status wip">En cours</span>
+      </p>
+    </div>
+
+    <h3 class="section-title">Sections</h3>
+
+    <div class="cards">
+
+      <article class="card">
+        <span class="status current">Documenté</span>
+        <h3>Tokens</h3>
+        <p>
+          Couleurs, typographie, espacements.
+          Les primitives visuelles qui définissent l'identité de l'application.
+        </p>
+        <a href="tokens.html">
+          Voir les tokens
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status wip">En cours</span>
+        <h3>Composants Vue</h3>
+        <p>
+          Boutons, champs de texte, cartes, modals.
+          Les briques Vuetify de l'interface admin.
+        </p>
+        <a href="components.html">
+          Voir les composants Vue
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status current">Documenté</span>
+        <h3>Composants Editor</h3>
+        <p>
+          Toolbar, tabs, color picker, galerie d'images.
+          Les composants jQuery UI / Knockout de l'éditeur email.
+        </p>
+        <a href="components-editor.html">
+          Voir les composants Editor
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>Interface Admin</h3>
+        <p>
+          Refonte de l'interface d'administration.
+          Navigation verticale unifiée, pattern moderne.
+        </p>
+        <a href="admin-settings.html">
+          Voir la refonte
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>Barre Supérieure</h3>
+        <p>
+          Harmonisation du header sur tous les contextes.
+          Hauteur unifiée et structure de slots contextuels.
+        </p>
+        <a href="top-bar.html">
+          Voir la refonte
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>Liste Emails</h3>
+        <p>
+          Modernisation de la liste des mailings.
+          Filtres visibles, quick actions et bulk actions.
+        </p>
+        <a href="mailings-list.html">
+          Voir la refonte
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>Canvas Editeur</h3>
+        <p>
+          Modernisation des interactions de blocs.
+          Toolbar groupee, ombres subtiles, transitions fluides.
+        </p>
+        <a href="editor-canvas.html">
+          Voir la refonte
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>Sidebars Editeur</h3>
+        <p>
+          Modernisation des panneaux d'options.
+          Sections collapsibles, toggles accessibles, galerie 2 colonnes.
+        </p>
+        <a href="editor-sidebars.html">
+          Voir la refonte
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="status target">Vision</span>
+        <h3>White-Label</h3>
+        <p>
+          Démonstration de la personnalisation par client.
+          Comment les tokens changent l'apparence globale.
+        </p>
+        <a href="white-label.html">
+          Voir la démo
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </article>
+
+    </div>
+
+    <div class="info-box" style="margin-top: 3rem;">
+      <h4>Principes directeurs</h4>
+      <p>
+        <strong>1. Tokens personnalisables, composants fixes</strong> —
+        Le white-label ne touche que les couleurs, logo et polices. La structure des composants reste identique pour tous.
+      </p>
+      <p style="margin-top: 0.5rem;">
+        <strong>2. Harmonisation progressive</strong> —
+        Pas de refonte massive. Chaque nouvelle feature ou correction applique le design system cible.
+      </p>
+      <p style="margin-top: 0.5rem;">
+        <strong>3. Dual-stack respecté</strong> —
+        Vue App (Vuetify) et Editor (Knockout/jQuery) partagent les tokens mais gardent leurs composants.
+      </p>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Version 1.0 — Février 2026
+  </footer>
+
+</body>
+</html>

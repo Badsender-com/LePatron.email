@@ -6,9 +6,10 @@ You are a UX/UI design system specialist for LePatron.email.
 
 Review code changes for design system compliance and user experience consistency.
 
-## Primary Reference
+## Primary References
 
-**Read [/docs/UX_GUIDELINES.md](../../docs/UX_GUIDELINES.md)** for complete design system guidelines.
+1. **[/docs/UX_GUIDELINES.md](../../docs/UX_GUIDELINES.md)** - UX patterns, accessibility, behavioral guidelines
+2. **[/docs/design-system/](../../docs/design-system/)** - Visual specifications (tokens, components)
 
 ## Key Responsibilities
 
@@ -57,5 +58,9 @@ Review code changes for design system compliance and user experience consistency
 
 ## Related Documentation
 
-- [/docs/UX_GUIDELINES.md](../../docs/UX_GUIDELINES.md) - Complete UX guidelines
+- [/docs/UX_GUIDELINES.md](../../docs/UX_GUIDELINES.md) - UX patterns, accessibility, behavioral guidelines
+- [/docs/design-system/](../../docs/design-system/) - Design system documentation
+  - [00-overview.md](../../docs/design-system/00-overview.md) - Architecture and principles
+  - [01-tokens.md](../../docs/design-system/01-tokens.md) - Colors, typography, spacing
+  - [02-atoms.md](../../docs/design-system/02-atoms.md) - Component specifications
 - [/AGENTS.md](../../AGENTS.md) - Technical conventions

@@ -1,6 +1,12 @@
-# UX-GUIDELINES.md - UI/UX Design System Guidelines
+# UX Guidelines - Behavioral Patterns & Best Practices
 
-This document ensures consistency in UI/UX across LePatron.email by enforcing component reuse and design system compliance.
+This document defines **UX patterns and behavioral guidelines** for LePatron.email development.
+
+> **Related Documentation**
+> - [Design System Documentation](./design-system/00-overview.md) - Tokens, components, visual specifications
+> - [Design System Tokens](./design-system/01-tokens.md) - Colors, typography, spacing
+> - [Design System Components](./design-system/02-atoms.md) - Vuetify component usage
+> - [AGENTS.md](../AGENTS.md) - Technical conventions
 
 ## Design System Principles
 
@@ -303,29 +309,30 @@ Review finding: "Notification should be cleared and stored some where else to se
 
 ## Color Palette
 
-LePatron.email uses Vuetify's theming system:
+> **See [Design System Tokens](./design-system/01-tokens.md)** for complete color specifications.
 
-```javascript
-// Primary colors
-primary: '#1976D2'; // Blue
-secondary: '#424242'; // Grey
-accent: '#82B1FF'; // Light blue
-error: '#FF5252'; // Red
-warning: '#FFC107'; // Amber
-info: '#2196F3'; // Blue
-success: '#4CAF50'; // Green
-```
+LePatron.email uses custom Vuetify theme colors:
 
-### Color Usage
+| Color | Value | Usage |
+|-------|-------|-------|
+| `primary` | `#093040` | Headers, navigation, text emphasis |
+| `secondary` | `#265090` | Secondary actions |
+| `accent` | `#00ACDC` | **Primary actions**, links, highlights |
+| `error` | `#F04E23` | Destructive actions, errors, unread counts |
+| `warning` | `#FFB400` | Warnings, caution states |
+| `success` | `#4CAF50` | Confirmations, resolved states |
 
-- `primary` - Main actions, headers
-- `secondary` - Secondary actions, less important elements
-- `error` - Destructive actions, errors, unread counts
-- `success` - Confirmations, resolved states
-- `warning` - Warnings, caution states
-- `info` - Information, neutral notifications
+### Color Usage Guidelines
+
+- **Primary actions** use `accent` (not `primary`) - e.g., "Save", "Create", "Submit"
+- **Cancel/secondary** actions use `text` style with `primary` color
+- **Destructive actions** use `error` - e.g., "Delete", "Remove"
+- **Navigation and headers** use `primary`
 
 ## Typography
+
+> **See [Design System Tokens](./design-system/01-tokens.md)** for font specifications.
+> **Target font**: Work Sans (migration from Montserrat in progress)
 
 Use Vuetify typography classes:
 
@@ -339,7 +346,9 @@ Use Vuetify typography classes:
 
 ## Spacing
 
-Use Vuetify spacing utilities (0-12 scale):
+> **See [Design System Tokens](./design-system/01-tokens.md)** for spacing scale.
+
+Use Vuetify spacing utilities (0-12 scale, 4px base):
 
 ```vue
 <!-- Margin -->
@@ -458,7 +467,14 @@ When the UX review agent analyzes code:
 
 ## Related Documentation
 
+### Internal Documentation
+- [Design System Overview](./design-system/00-overview.md) - Architecture and principles
+- [Design System Tokens](./design-system/01-tokens.md) - Colors, typography, spacing
+- [Design System Components](./design-system/02-atoms.md) - Vuetify component specifications
+- [Design System Patterns](./design-system/06-patterns.md) - Recurring UI patterns
+- [AGENTS.md](../AGENTS.md) - Technical conventions
+- [AI_POLICIES.md](./AI_POLICIES.md) - Quality standards
+
+### External References
 - [Vuetify 2 Documentation](https://v2.vuetifyjs.com/)
 - [Material Design Icons](https://materialdesignicons.com/)
-- [../../AGENTS.md](./../../AGENTS.md) - Technical conventions
-- [AI_POLICIES.md](./AI_POLICIES.md) - Quality standards

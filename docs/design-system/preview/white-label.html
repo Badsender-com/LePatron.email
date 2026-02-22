@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>White-Label - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --white: #ffffff;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+      --font-family: 'Work Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header h1 { font-size: 1.25rem; font-weight: 500; }
+    .header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    /* Layout */
+    .demo-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 2rem;
+    }
+
+    /* Controls panel */
+    .controls {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 2rem;
+      height: fit-content;
+    }
+
+    .controls h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .control-group input[type="color"] {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .control-group select {
+      width: 100%;
+      padding: 0.625rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    .preset-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .preset-btn {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      background: var(--white);
+      font-family: inherit;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--accent);
+      background: var(--gray-100);
+    }
+
+    .preset-btn.active {
+      border-color: var(--accent);
+      background: rgba(0, 172, 220, 0.1);
+    }
+
+    .preset-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Preview panel */
+    .preview-container {
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .preview-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-family);
+    }
+
+    .preview-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+    }
+
+    .preview-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .preview-nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .preview-nav-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-nav-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .preview-content {
+      padding: 2rem;
+      font-family: var(--font-family);
+    }
+
+    .preview-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .preview-card {
+      background: var(--gray-100);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .preview-card h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .preview-card p {
+      color: var(--gray-600);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+
+    .preview-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 4px;
+      font-family: var(--font-family);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+
+    .preview-btn-primary {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    .preview-btn-text {
+      background: transparent;
+      color: var(--primary);
+    }
+
+    .preview-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .preview-input label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    .preview-input input {
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: var(--font-family);
+      font-size: 0.875rem;
+    }
+
+    .preview-input input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .preview-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .preview-tag {
+      background: var(--accent);
+      color: var(--white);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Info box */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      margin: 2rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .info-box strong { color: var(--primary); }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html" class="active">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Démonstration White-Label</h1>
+    <p class="page-subtitle">Personnalisez les tokens pour voir comment l'interface s'adapte à différentes marques</p>
+
+    <div class="info-box">
+      <strong>Principe :</strong> Seuls les couleurs et le logo sont personnalisables.
+      La police (Work Sans), la structure des composants, le layout et les interactions restent identiques pour tous les clients.
+    </div>
+
+    <div class="demo-layout">
+
+      <!-- Controls -->
+      <aside class="controls">
+        <h3>Configuration</h3>
+
+        <div class="preset-buttons">
+          <button class="preset-btn active" onclick="applyPreset('lepatron')">
+            <span class="preset-dot" style="background: linear-gradient(135deg, #093040 50%, #00ACDC 50%);"></span>
+            LePatron (défaut)
+          </button>
+          <button class="preset-btn" onclick="applyPreset('agency-red')">
+            <span class="preset-dot" style="background: linear-gradient(135deg, #1a1a2e 50%, #e94560 50%);"></span>
+            Agence Rouge
+          </button>
+          <button class="preset-btn" onclick="applyPreset('agency-green')">
+            <span class="preset-dot" style="background: linear-gradient(135deg, #2d3436 50%, #00b894 50%);"></span>
+            Agence Verte
+          </button>
+          <button class="preset-btn" onclick="applyPreset('agency-purple')">
+            <span class="preset-dot" style="background: linear-gradient(135deg, #2c2c54 50%, #a29bfe 50%);"></span>
+            Agence Violette
+          </button>
+        </div>
+
+        <div class="control-group">
+          <label>Couleur primaire</label>
+          <input type="color" id="primaryColor" value="#093040" onchange="updateColors()">
+        </div>
+
+        <div class="control-group">
+          <label>Couleur accent</label>
+          <input type="color" id="accentColor" value="#00ACDC" onchange="updateColors()">
+        </div>
+
+        <div class="control-group">
+          <label>Police (fixe)</label>
+          <input type="text" value="Work Sans" disabled style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px; background: var(--gray-100); color: var(--gray-600);">
+        </div>
+
+        <div class="control-group">
+          <label>Nom de la marque</label>
+          <input type="text" id="brandName" value="LePatron" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px;" onchange="updateBrand()">
+        </div>
+      </aside>
+
+      <!-- Preview -->
+      <div class="preview-container" id="preview">
+        <div class="preview-header">
+          <div class="preview-logo">
+            <div class="preview-logo-icon" id="logoIcon">LP</div>
+            <span id="brandDisplay">LePatron</span>
+          </div>
+          <div class="preview-nav">
+            <button class="preview-nav-btn"><span class="material-icons">help</span></button>
+            <button class="preview-nav-btn"><span class="material-icons">settings</span></button>
+            <button class="preview-nav-btn"><span class="material-icons">power_settings_new</span></button>
+          </div>
+        </div>
+
+        <div class="preview-content">
+          <h2 class="preview-title">Mes mailings</h2>
+
+          <div class="preview-card">
+            <h4>Créer un nouveau mailing</h4>
+            <p>Sélectionnez un template pour commencer à créer votre email.</p>
+
+            <div class="preview-input">
+              <label>Nom du mailing</label>
+              <input type="text" placeholder="Newsletter Février 2026">
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="preview-btn preview-btn-text">Annuler</button>
+              <button class="preview-btn preview-btn-primary">Créer</button>
+            </div>
+          </div>
+
+          <div class="preview-card">
+            <h4>Newsletter Janvier 2026</h4>
+            <p>Dernière modification : il y a 2 jours</p>
+
+            <div class="preview-tags">
+              <span class="preview-tag">Newsletter</span>
+              <span class="preview-tag">Marketing</span>
+            </div>
+          </div>
+
+          <div class="preview-card">
+            <h4>Campagne Soldes</h4>
+            <p>Dernière modification : il y a 1 semaine</p>
+
+            <div class="preview-tags">
+              <span class="preview-tag">Promo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="info-box" style="margin-top: 2rem;">
+      <strong>Implémentation technique :</strong>
+      Les tokens seront stockés dans le schéma Group (<code>Group.branding</code>) et injectés via CSS variables
+      au chargement de l'application. Aucune modification des composants Vue n'est nécessaire.
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Version 1.0 — Février 2026
+  </footer>
+
+  <script>
+    const presets = {
+      'lepatron': {
+        primary: '#093040',
+        accent: '#00ACDC',
+        brand: 'LePatron',
+        logo: 'LP'
+      },
+      'agency-red': {
+        primary: '#1a1a2e',
+        accent: '#e94560',
+        brand: 'RedMail Agency',
+        logo: 'RM'
+      },
+      'agency-green': {
+        primary: '#2d3436',
+        accent: '#00b894',
+        brand: 'GreenSend',
+        logo: 'GS'
+      },
+      'agency-purple': {
+        primary: '#2c2c54',
+        accent: '#a29bfe',
+        brand: 'Purple Mail Co',
+        logo: 'PM'
+      }
+    };
+
+    function applyPreset(name) {
+      const preset = presets[name];
+
+      document.getElementById('primaryColor').value = preset.primary;
+      document.getElementById('accentColor').value = preset.accent;
+      document.getElementById('brandName').value = preset.brand;
+
+      // Update active button
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.closest('.preset-btn').classList.add('active');
+
+      applyStyles(preset);
+    }
+
+    function updateColors() {
+      const primary = document.getElementById('primaryColor').value;
+      const accent = document.getElementById('accentColor').value;
+      applyStyles({ primary, accent });
+
+      // Remove active from presets
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+    }
+
+    function updateBrand() {
+      const brand = document.getElementById('brandName').value;
+      const logo = brand.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      applyStyles({ brand, logo });
+    }
+
+    function applyStyles(options) {
+      const preview = document.getElementById('preview');
+
+      if (options.primary) {
+        preview.style.setProperty('--primary', options.primary);
+        preview.querySelector('.preview-header').style.background = options.primary;
+        preview.querySelectorAll('.preview-title, .preview-card h4').forEach(el => {
+          el.style.color = options.primary;
+        });
+        preview.querySelectorAll('.preview-btn-text').forEach(el => {
+          el.style.color = options.primary;
+        });
+      }
+
+      if (options.accent) {
+        preview.style.setProperty('--accent', options.accent);
+        preview.querySelectorAll('.preview-btn-primary, .preview-tag, .preview-logo-icon').forEach(el => {
+          el.style.background = options.accent;
+        });
+        preview.querySelectorAll('.preview-input input').forEach(el => {
+          el.style.setProperty('--accent', options.accent);
+        });
+      }
+
+      if (options.brand) {
+        document.getElementById('brandDisplay').textContent = options.brand;
+      }
+
+      if (options.logo) {
+        document.getElementById('logoIcon').textContent = options.logo;
+      }
+    }
+  </script>
+
+</body>
+</html>

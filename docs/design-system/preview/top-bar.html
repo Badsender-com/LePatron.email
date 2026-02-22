@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barre Supérieure - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-400: #bdbdbd;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-header h1 { font-size: 1.25rem; font-weight: 500; }
+    .page-header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    /* Info boxes */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .info-box strong { color: var(--primary); }
+
+    /* Section */
+    .section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .section h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin: 1.5rem 0 1rem;
+    }
+
+    /* Current Top Bars Grid */
+    .topbars-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .topbar-demo {
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .topbar-demo-header {
+      padding: 0.75rem 1rem;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-demo-header h5 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .topbar-demo-header .meta {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .topbar-demo-header .meta span {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: var(--gray-200);
+      color: var(--gray-600);
+    }
+
+    .topbar-demo-header .meta .problem {
+      background: rgba(240, 78, 35, 0.15);
+      color: var(--error);
+    }
+
+    /* Current Topbar Styles */
+    .current-topbar {
+      height: var(--topbar-height, 64px);
+      background: var(--primary);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+    }
+
+    .current-topbar.h-64 { --topbar-height: 64px; }
+    .current-topbar.h-48 { --topbar-height: 48px; }
+    .current-topbar.h-40 { --topbar-height: 40px; }
+
+    .current-topbar .logo {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .current-topbar .logo span {
+      color: var(--warning);
+    }
+
+    .current-topbar .spacer {
+      flex: 1;
+    }
+
+    .current-topbar .title {
+      flex: 1;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .current-topbar .icons {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .current-topbar .icon-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+    }
+
+    .current-topbar .icon-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    /* Editor tabs */
+    .editor-tabs {
+      display: flex;
+      gap: 0;
+    }
+
+    .editor-tab {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .editor-tab.active {
+      color: var(--white);
+      border-bottom-color: var(--accent);
+    }
+
+    .editor-tab:hover {
+      color: var(--white);
+    }
+
+    /* Save button */
+    .save-btn {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Comparison */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .comparison-panel {
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .comparison-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .comparison-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .comparison-header .status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status.current { background: var(--gray-200); color: var(--gray-600); }
+    .status.target { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+
+    .comparison-content {
+      padding: 1.5rem;
+    }
+
+    .comparison-content p {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-bottom: 1rem;
+    }
+
+    /* Target Topbar */
+    .target-topbar {
+      height: 48px;
+      background: var(--primary);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+    }
+
+    .target-topbar .slot {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .target-topbar .slot-left {
+      min-width: 120px;
+    }
+
+    .target-topbar .slot-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .target-topbar .slot-right {
+      min-width: 120px;
+      justify-content: flex-end;
+    }
+
+    .target-topbar .logo {
+      font-weight: 600;
+    }
+
+    .target-topbar .logo span {
+      color: var(--warning);
+    }
+
+    .target-topbar .title {
+      font-weight: 500;
+    }
+
+    .target-topbar .icon-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+    }
+
+    .target-topbar .icon-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    /* Slot labels for demo */
+    .slot-label {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.625rem;
+      color: var(--gray-400);
+      white-space: nowrap;
+      padding-top: 0.25rem;
+    }
+
+    .slot-demo {
+      position: relative;
+    }
+
+    /* Table */
+    .changes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .changes-table th,
+    .changes-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .changes-table th {
+      font-weight: 600;
+      color: var(--gray-600);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .changes-table .before {
+      color: var(--error);
+    }
+
+    .changes-table .after {
+      color: var(--success);
+    }
+
+    /* Benefits grid */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .benefit-card {
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: 8px;
+    }
+
+    .benefit-card h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .benefit-card h4 .material-icons {
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    .benefit-card p {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    /* Icon mapping table */
+    .icon-mapping {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .icon-map-item {
+      text-align: center;
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: 8px;
+    }
+
+    .icon-map-item .icons-compare {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .icon-map-item .fa-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--gray-300);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.625rem;
+      color: var(--gray-600);
+    }
+
+    .icon-map-item .mdi-icon {
+      color: var(--accent);
+    }
+
+    .icon-map-item .arrow {
+      color: var(--gray-400);
+    }
+
+    .icon-map-item .label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    /* CSS Tokens section */
+    .css-tokens {
+      background: var(--gray-800);
+      color: var(--gray-200);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+
+    .css-tokens .comment {
+      color: var(--gray-400);
+    }
+
+    .css-tokens .property {
+      color: var(--accent);
+    }
+
+    .css-tokens .value {
+      color: var(--warning);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html" class="active">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Harmonisation de la Barre Supérieure</h1>
+    <p class="page-subtitle">Unifier l'apparence et la structure du header sur tous les contextes de l'application</p>
+
+    <div class="info-box">
+      <strong>Objectif :</strong> Harmoniser les 3 variantes de barre supérieure (Admin, Liste emails, Editor)
+      vers une structure unifiée de 48px avec des slots contextuels et les icônes Material Design.
+    </div>
+
+    <!-- Current State -->
+    <div class="section">
+      <h3>Etat actuel : 3 variantes incohérentes</h3>
+
+      <div class="topbars-grid">
+
+        <!-- Admin -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Admin / Réglages</h5>
+            <div class="meta">
+              <span class="problem">Hauteur: 64px</span>
+              <span>Material Design Icons</span>
+            </div>
+          </div>
+          <div class="current-topbar h-64">
+            <div class="logo">LePatro<span>n</span></div>
+            <span style="margin-left: 1rem; opacity: 0.7">Réglages : Groupe groupetest</span>
+            <div class="spacer"></div>
+            <div class="icons">
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">power_settings_new</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mailings -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Liste des Emails</h5>
+            <div class="meta">
+              <span class="problem">Hauteur: 48px</span>
+              <span>Material Design Icons</span>
+            </div>
+          </div>
+          <div class="current-topbar h-48">
+            <div class="logo">LePatro<span>n</span> <span style="color: white; margin-left: 0.5rem; font-weight: 400;">Emails</span></div>
+            <div class="spacer"></div>
+            <div class="icons">
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">settings</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">power_settings_new</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Editor (Builder email)</h5>
+            <div class="meta">
+              <span class="problem">Hauteur: 40px</span>
+              <span class="problem">Font Awesome</span>
+            </div>
+          </div>
+          <div class="current-topbar h-40">
+            <div class="editor-tabs">
+              <div class="editor-tab active">Blocs</div>
+              <div class="editor-tab">Contenu</div>
+              <div class="editor-tab">Style</div>
+            </div>
+            <div class="title">Test</div>
+            <div class="icons">
+              <button class="icon-btn" title="Plus d'options"><span class="material-icons" style="font-size:18px">more_horiz</span></button>
+              <button class="icon-btn" title="Menu"><span class="material-icons" style="font-size:18px">menu</span></button>
+              <button class="icon-btn" title="Aide"><span class="material-icons" style="font-size:18px">help_outline</span></button>
+              <button class="save-btn">
+                Sauvegarder
+                <span class="material-icons" style="font-size:14px">arrow_drop_down</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Problems table -->
+      <table class="changes-table" style="margin-top: 2rem;">
+        <thead>
+          <tr>
+            <th>Problème</th>
+            <th>Actuel</th>
+            <th>Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hauteurs incohérentes</td>
+            <td class="before">40px / 48px / 64px</td>
+            <td>Rupture visuelle entre les contextes</td>
+          </tr>
+          <tr>
+            <td>Bibliothèques d'icônes différentes</td>
+            <td class="before">Material Design (Vue) vs Font Awesome (Editor)</td>
+            <td>Incohérence visuelle, double charge</td>
+          </tr>
+          <tr>
+            <td>Actions variables</td>
+            <td class="before">Réglages visible/invisible selon contexte</td>
+            <td>Navigation imprévisible</td>
+          </tr>
+          <tr>
+            <td>Structure différente</td>
+            <td class="before">Logo+titre vs Tabs+titre vs Logo seul</td>
+            <td>Pas de pattern réutilisable</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Target Design -->
+    <div class="section">
+      <h3>Design cible : Header unifié avec slots contextuels</h3>
+
+      <div class="info-box" style="margin-top: 0;">
+        <strong>Hauteur unique :</strong> 48px (compromis entre 40px editor et 64px Vuetify)<br>
+        <strong>Structure :</strong> 3 slots (Gauche, Centre, Droite) avec contenu contextuel
+      </div>
+
+      <!-- Structure diagram -->
+      <div style="background: var(--gray-50); padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; font-family: monospace; font-size: 0.8rem;">
+        <pre style="margin: 0; color: var(--gray-600);">
+┌────────────────────────────────────────────────────────────────────┐
+│ [Slot: Gauche]     [Slot: Centre]              [Slot: Droite]      │
+│  Logo/Back         Navigation/Titre             Actions            │
+│                                                                    │
+│  ← 120px min →     ← flexible →                 ← 120px min →      │
+│                                                                    │
+│                         48px                                        │
+└────────────────────────────────────────────────────────────────────┘</pre>
+      </div>
+
+      <!-- Target examples -->
+      <h4>Variantes par contexte</h4>
+
+      <div class="topbars-grid" style="margin-top: 1rem;">
+
+        <!-- Target Admin -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Admin / Réglages</h5>
+            <div class="meta">
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">48px</span>
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">MDI</span>
+            </div>
+          </div>
+          <div class="target-topbar">
+            <div class="slot slot-left">
+              <div class="logo">LePatro<span>n</span></div>
+            </div>
+            <div class="slot slot-center">
+              <span class="title">Réglages : Groupe groupetest</span>
+            </div>
+            <div class="slot slot-right">
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">power_settings_new</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target Mailings -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Liste des Emails</h5>
+            <div class="meta">
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">48px</span>
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">MDI</span>
+            </div>
+          </div>
+          <div class="target-topbar">
+            <div class="slot slot-left">
+              <div class="logo">LePatro<span>n</span></div>
+            </div>
+            <div class="slot slot-center">
+              <span class="title">Emails</span>
+            </div>
+            <div class="slot slot-right">
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">settings</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:20px">power_settings_new</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target Editor -->
+        <div class="topbar-demo">
+          <div class="topbar-demo-header">
+            <h5>Editor (Builder email)</h5>
+            <div class="meta">
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">48px</span>
+              <span style="background: rgba(76, 175, 80, 0.15); color: var(--success);">MDI</span>
+            </div>
+          </div>
+          <div class="target-topbar">
+            <div class="slot slot-left">
+              <div class="editor-tabs">
+                <div class="editor-tab active">Blocs</div>
+                <div class="editor-tab">Contenu</div>
+                <div class="editor-tab">Style</div>
+              </div>
+            </div>
+            <div class="slot slot-center">
+              <span class="title">Test</span>
+            </div>
+            <div class="slot slot-right">
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">more_horiz</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">menu</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">help_outline</span></button>
+              <button class="save-btn">
+                Sauvegarder
+                <span class="material-icons" style="font-size:14px">arrow_drop_down</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Slots mapping table -->
+      <table class="changes-table" style="margin-top: 2rem;">
+        <thead>
+          <tr>
+            <th>Contexte</th>
+            <th>Slot Gauche</th>
+            <th>Slot Centre</th>
+            <th>Slot Droite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Dashboard / Mailings</strong></td>
+            <td>Logo LePatron</td>
+            <td>"Emails" ou vide</td>
+            <td>Aide, Réglages, Logout</td>
+          </tr>
+          <tr>
+            <td><strong>Admin / Réglages</strong></td>
+            <td>Logo LePatron</td>
+            <td>"Réglages : [Groupe]"</td>
+            <td>Aide, Logout</td>
+          </tr>
+          <tr>
+            <td><strong>Editor</strong></td>
+            <td>Tabs navigation</td>
+            <td>Nom du mailing</td>
+            <td>Actions, Sauvegarder</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Icon Migration -->
+    <div class="section">
+      <h3>Migration des icônes : Font Awesome vers Material Design</h3>
+
+      <p style="color: var(--gray-600); margin-bottom: 1rem;">
+        L'Editor utilise actuellement Font Awesome. Pour la cohérence avec Vuetify (Vue App),
+        migrer vers Material Design Icons.
+      </p>
+
+      <div class="icon-mapping">
+        <div class="icon-map-item">
+          <div class="icons-compare">
+            <div class="fa-icon">fa</div>
+            <span class="arrow material-icons" style="font-size: 14px">arrow_forward</span>
+            <span class="mdi-icon material-icons">help_outline</span>
+          </div>
+          <div class="label">Aide</div>
+        </div>
+        <div class="icon-map-item">
+          <div class="icons-compare">
+            <div class="fa-icon">fa</div>
+            <span class="arrow material-icons" style="font-size: 14px">arrow_forward</span>
+            <span class="mdi-icon material-icons">menu</span>
+          </div>
+          <div class="label">Menu</div>
+        </div>
+        <div class="icon-map-item">
+          <div class="icons-compare">
+            <div class="fa-icon">fa</div>
+            <span class="arrow material-icons" style="font-size: 14px">arrow_forward</span>
+            <span class="mdi-icon material-icons">cloud_upload</span>
+          </div>
+          <div class="label">Sauvegarder</div>
+        </div>
+        <div class="icon-map-item">
+          <div class="icons-compare">
+            <div class="fa-icon">fa</div>
+            <span class="arrow material-icons" style="font-size: 14px">arrow_forward</span>
+            <span class="mdi-icon material-icons">visibility</span>
+          </div>
+          <div class="label">Prévisualiser</div>
+        </div>
+        <div class="icon-map-item">
+          <div class="icons-compare">
+            <div class="fa-icon">fa</div>
+            <span class="arrow material-icons" style="font-size: 14px">arrow_forward</span>
+            <span class="mdi-icon material-icons">download</span>
+          </div>
+          <div class="label">Télécharger</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSS Tokens -->
+    <div class="section">
+      <h3>Tokens CSS partagés</h3>
+
+      <p style="color: var(--gray-600); margin-bottom: 1rem;">
+        Variables CSS communes entre Vue App et Editor pour garantir la cohérence.
+      </p>
+
+      <div class="css-tokens">
+        <span class="comment">/* Tokens partagés - Top Bar */</span><br>
+        <span class="property">--topbar-height</span>: <span class="value">48px</span>;<br>
+        <span class="property">--topbar-bg</span>: <span class="value">var(--v-primary-base)</span>;<br>
+        <span class="property">--topbar-color</span>: <span class="value">#ffffff</span>;<br>
+        <span class="property">--topbar-btn-hover</span>: <span class="value">rgba(255, 255, 255, 0.1)</span>;<br>
+        <span class="property">--topbar-slot-min-width</span>: <span class="value">120px</span>;<br>
+        <br>
+        <span class="comment">/* Editor specific */</span><br>
+        <span class="property">--topbar-tab-active-border</span>: <span class="value">var(--v-accent-base)</span>;<br>
+        <span class="property">--topbar-save-btn-bg</span>: <span class="value">var(--v-accent-base)</span>;<br>
+      </div>
+    </div>
+
+    <!-- Benefits -->
+    <div class="section">
+      <h3>Avantages de l'harmonisation</h3>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <h4><span class="material-icons">straighten</span> Cohérence</h4>
+          <p>Même hauteur (48px) sur tous les contextes, transition fluide entre les pages.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">extension</span> Réutilisabilité</h4>
+          <p>Structure de slots réutilisable, facile à adapter pour de nouveaux contextes.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">speed</span> Performance</h4>
+          <p>Une seule bibliothèque d'icônes (MDI) au lieu de deux.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">palette</span> White-Label ready</h4>
+          <p>Tokens CSS permettent de changer les couleurs via la config groupe.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">code</span> Maintenabilité</h4>
+          <p>Pattern unique à maintenir, moins de code dupliqué.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">psychology</span> UX</h4>
+          <p>Utilisateur toujours situé grâce à une structure prévisible.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top: 2rem;">
+      <strong>Fichiers à modifier :</strong><br>
+      <code>packages/ui/layouts/default.vue</code> - Vuetify app-bar<br>
+      <code>packages/ui/routes/mailings/__partials/mailings-header.vue</code><br>
+      <code>packages/editor/src/css/badsender-topbar.less</code> - Editor toolbar styling<br>
+      <code>packages/editor/src/css/style_variables.less</code> - Editor variables<br>
+      <code>packages/editor/src/tmpl/main.tmpl.html</code> - Editor template
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Phase 8 : Barre Supérieure — Février 2026
+  </footer>
+
+</body>
+</html>

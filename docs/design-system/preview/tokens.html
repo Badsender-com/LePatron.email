@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokens - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --info: #2196F3;
+      --white: #ffffff;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header h1 { font-size: 1.25rem; font-weight: 500; }
+    .header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    .section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status.current { background: var(--gray-200); color: var(--gray-600); }
+    .status.target { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+    .status.customizable { background: rgba(76, 175, 80, 0.15); color: var(--success); }
+    .status.fixed { background: rgba(117, 117, 117, 0.15); color: var(--gray-600); }
+
+    /* Comparison layout */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .comparison-side h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-side.current h4 { color: var(--gray-600); }
+    .comparison-side.target h4 { color: var(--accent); }
+
+    /* Color swatches */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .color-swatch {
+      text-align: center;
+    }
+
+    .color-swatch .swatch {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .color-swatch .name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .color-swatch .hex {
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      font-family: monospace;
+    }
+
+    /* Typography samples */
+    .typo-sample {
+      padding: 1rem;
+      background: var(--gray-100);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .typo-sample .label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+    }
+
+    .typo-sample.montserrat { font-family: 'Montserrat', sans-serif; }
+    .typo-sample.trebuchet { font-family: 'Trebuchet MS', Arial, sans-serif; }
+
+    .typo-sample .preview {
+      font-size: 1.5rem;
+    }
+
+    /* Spacing scale */
+    .spacing-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .spacing-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .spacing-item .label {
+      width: 60px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: var(--gray-600);
+    }
+
+    .spacing-item .bar {
+      height: 24px;
+      background: var(--accent);
+      border-radius: 4px;
+      opacity: 0.7;
+    }
+
+    .spacing-item .value {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    /* Notes */
+    .note {
+      background: rgba(255, 180, 0, 0.1);
+      border-left: 4px solid var(--warning);
+      padding: 1rem;
+      margin-top: 1.5rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .note strong { color: var(--primary); }
+
+    .note.info {
+      background: rgba(0, 172, 220, 0.1);
+      border-left-color: var(--accent);
+    }
+
+    .note.success {
+      background: rgba(76, 175, 80, 0.1);
+      border-left-color: var(--success);
+    }
+
+    /* Table */
+    .token-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .token-table th, .token-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .token-table th {
+      font-weight: 600;
+      color: var(--gray-600);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .token-table code {
+      background: var(--gray-100);
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html" class="active">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Design Tokens</h1>
+    <p class="page-subtitle">Les primitives visuelles qui définissent l'identité de l'application</p>
+
+    <!-- COLORS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Couleurs de marque</h2>
+        <span class="status customizable">Personnalisable (White-Label)</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel</h4>
+          <div class="color-grid">
+            <div class="color-swatch">
+              <div class="swatch" style="background: #093040;"></div>
+              <div class="name">Primary</div>
+              <div class="hex">#093040</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #265090;"></div>
+              <div class="name">Secondary</div>
+              <div class="hex">#265090</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #00ACDC;"></div>
+              <div class="name">Accent</div>
+              <div class="hex">#00ACDC</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #FFB400;"></div>
+              <div class="name">Warning</div>
+              <div class="hex">#FFB400</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #F04E23;"></div>
+              <div class="name">Error</div>
+              <div class="hex">#F04E23</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible</h4>
+          <div class="color-grid">
+            <div class="color-swatch">
+              <div class="swatch" style="background: #093040;"></div>
+              <div class="name">Primary</div>
+              <div class="hex">Variable CSS</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #265090;"></div>
+              <div class="name">Secondary</div>
+              <div class="hex">Variable CSS</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #00ACDC;"></div>
+              <div class="name">Accent</div>
+              <div class="hex">Variable CSS</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #FFB400;"></div>
+              <div class="name">Warning</div>
+              <div class="hex">Variable CSS</div>
+            </div>
+            <div class="color-swatch">
+              <div class="swatch" style="background: #F04E23;"></div>
+              <div class="name">Error</div>
+              <div class="hex">Variable CSS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note info">
+        <strong>Direction :</strong> Les couleurs de marque seront stockées en base de données (Group settings)
+        et injectées via variables CSS. Chaque client pourra personnaliser son instance.
+      </div>
+    </section>
+
+    <!-- SEMANTIC COLORS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Couleurs sémantiques</h2>
+        <span class="status fixed">Fixe (non personnalisable)</span>
+      </div>
+
+      <div class="color-grid">
+        <div class="color-swatch">
+          <div class="swatch" style="background: #4caf50;"></div>
+          <div class="name">Success</div>
+          <div class="hex">#4caf50</div>
+        </div>
+        <div class="color-swatch">
+          <div class="swatch" style="background: #FF5252;"></div>
+          <div class="name">Error</div>
+          <div class="hex">#FF5252</div>
+        </div>
+        <div class="color-swatch">
+          <div class="swatch" style="background: #fb8c00;"></div>
+          <div class="name">Warning</div>
+          <div class="hex">#fb8c00</div>
+        </div>
+        <div class="color-swatch">
+          <div class="swatch" style="background: #2196F3;"></div>
+          <div class="name">Info</div>
+          <div class="hex">#2196F3</div>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>Pourquoi fixe ?</strong> Ces couleurs ont une signification fonctionnelle universelle
+        (succès = vert, erreur = rouge). Les modifier pourrait créer de la confusion pour les utilisateurs.
+      </div>
+    </section>
+
+    <!-- TYPOGRAPHY -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Typographie</h2>
+        <span class="status fixed">Fixe (non personnalisable)</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel (3 polices)</h4>
+
+          <div class="typo-sample montserrat">
+            <div class="label">Vue App — Montserrat</div>
+            <div class="preview">Aa Bb Cc 123</div>
+          </div>
+
+          <div class="typo-sample trebuchet">
+            <div class="label">Editor — Trebuchet MS</div>
+            <div class="preview">Aa Bb Cc 123</div>
+          </div>
+
+          <div class="typo-sample" style="font-family: 'Work Sans', sans-serif;">
+            <div class="label">Website — Work Sans</div>
+            <div class="preview">Aa Bb Cc 123</div>
+          </div>
+
+          <div class="note" style="margin-top: 1rem;">
+            <strong>Dette identifiée :</strong> Trois polices différentes créent une rupture visuelle
+            et une incohérence de marque.
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible (unifiée)</h4>
+
+          <div class="typo-sample" style="font-family: 'Work Sans', sans-serif;">
+            <div class="label">Toute l'app — Work Sans</div>
+            <div class="preview" style="font-size: 1.75rem;">Aa Bb Cc 123</div>
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Pourquoi Work Sans ?</strong><br>
+            - Déjà utilisée sur lepatron.email (cohérence de marque)<br>
+            - Conçue pour la lisibilité écran<br>
+            - Moderne, adaptée aux applications SaaS
+          </div>
+
+          <table class="token-table" style="margin-top: 1rem;">
+            <tr>
+              <th>Token</th>
+              <th>White-Label</th>
+            </tr>
+            <tr>
+              <td>Font Family</td>
+              <td><span class="status fixed">Non (Work Sans)</span></td>
+            </tr>
+            <tr>
+              <td>Font Weights</td>
+              <td><span class="status fixed">Non (300-700)</span></td>
+            </tr>
+            <tr>
+              <td>Font Sizes</td>
+              <td><span class="status fixed">Non (échelle fixe)</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPACING -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Espacements</h2>
+        <span class="status fixed">Fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Échelle Vuetify (4px)</h4>
+          <div class="spacing-scale">
+            <div class="spacing-item">
+              <span class="label">pa-1</span>
+              <div class="bar" style="width: 4px;"></div>
+              <span class="value">4px</span>
+            </div>
+            <div class="spacing-item">
+              <span class="label">pa-2</span>
+              <div class="bar" style="width: 8px;"></div>
+              <span class="value">8px</span>
+            </div>
+            <div class="spacing-item">
+              <span class="label">pa-3</span>
+              <div class="bar" style="width: 12px;"></div>
+              <span class="value">12px</span>
+            </div>
+            <div class="spacing-item">
+              <span class="label">pa-4</span>
+              <div class="bar" style="width: 16px;"></div>
+              <span class="value">16px</span>
+            </div>
+            <div class="spacing-item">
+              <span class="label">pa-5</span>
+              <div class="bar" style="width: 20px;"></div>
+              <span class="value">20px</span>
+            </div>
+            <div class="spacing-item">
+              <span class="label">pa-6</span>
+              <div class="bar" style="width: 24px;"></div>
+              <span class="value">24px</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible : Identique</h4>
+          <p style="color: var(--gray-600); font-size: 0.875rem;">
+            L'échelle de spacing reste fixe pour garantir la cohérence des layouts
+            sur toutes les instances white-label.
+          </p>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Pas de changement nécessaire.</strong>
+            L'échelle Vuetify basée sur 4px est standard et bien implémentée.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUMMARY TABLE -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Récapitulatif White-Label</h2>
+      </div>
+
+      <table class="token-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Personnalisable</th>
+            <th>Valeur par défaut</th>
+            <th>Stockage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Couleurs de marque</td>
+            <td><span class="status customizable">Oui</span></td>
+            <td>Palette LePatron</td>
+            <td><code>Group.branding</code></td>
+          </tr>
+          <tr>
+            <td>Logo</td>
+            <td><span class="status customizable">Oui</span></td>
+            <td>Logo LePatron</td>
+            <td><code>Group.branding.logo</code></td>
+          </tr>
+          <tr>
+            <td>Favicon</td>
+            <td><span class="status customizable">Oui</span></td>
+            <td>Favicon LePatron</td>
+            <td><code>Group.branding.favicon</code></td>
+          </tr>
+          <tr>
+            <td>Police principale</td>
+            <td><span class="status fixed">Non</span></td>
+            <td>Work Sans (cible)</td>
+            <td>Code</td>
+          </tr>
+          <tr>
+            <td>Couleurs sémantiques</td>
+            <td><span class="status fixed">Non</span></td>
+            <td>Success/Error/Warning/Info</td>
+            <td>Code</td>
+          </tr>
+          <tr>
+            <td>Espacements</td>
+            <td><span class="status fixed">Non</span></td>
+            <td>Échelle 4px Vuetify</td>
+            <td>Code</td>
+          </tr>
+          <tr>
+            <td>Border radius</td>
+            <td><span class="status fixed">Non</span></td>
+            <td>5px</td>
+            <td>Code</td>
+          </tr>
+          <tr>
+            <td>Icônes</td>
+            <td><span class="status fixed">Non</span></td>
+            <td>MDI / Font Awesome</td>
+            <td>Code</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Version 1.0 — Février 2026
+  </footer>
+
+</body>
+</html>
