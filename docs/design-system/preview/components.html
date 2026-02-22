@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Composants - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header h1 { font-size: 1.25rem; font-weight: 500; }
+    .header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    .section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .section-title { font-size: 1.25rem; font-weight: 600; color: var(--primary); }
+
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status.current { background: var(--gray-200); color: var(--gray-600); }
+    .status.target { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+    .status.fixed { background: rgba(117, 117, 117, 0.15); color: var(--gray-600); }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .comparison-side h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-side.current h4 { color: var(--gray-600); }
+    .comparison-side.target h4 { color: var(--accent); }
+
+    /* Component showcase */
+    .component-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .component-label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    .btn-accent:hover {
+      background: #0095c0;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    .btn-error {
+      background: var(--error);
+      color: var(--white);
+    }
+
+    .btn-text {
+      background: transparent;
+      color: var(--primary);
+    }
+
+    .btn-text:hover {
+      background: var(--gray-100);
+    }
+
+    .btn-outlined {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-icon {
+      padding: 0.5rem;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--gray-600);
+    }
+
+    .btn-icon:hover {
+      background: var(--gray-100);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Wrong pattern */
+    .wrong {
+      position: relative;
+    }
+
+    .wrong::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -5px;
+      right: -5px;
+      height: 2px;
+      background: var(--error);
+      transform: rotate(-5deg);
+    }
+
+    /* Text fields */
+    .text-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .text-field label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    .text-field input {
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
+
+    .text-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .text-field input.error {
+      border-color: var(--error);
+    }
+
+    .text-field .error-text {
+      font-size: 0.75rem;
+      color: var(--error);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .card-title {
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .card-content {
+      padding: 0 1rem 1rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    .card-actions {
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    /* Modal preview */
+    .modal-preview {
+      background: rgba(0,0,0,0.5);
+      padding: 2rem;
+      border-radius: 8px;
+    }
+
+    .modal-box {
+      background: var(--white);
+      border-radius: 8px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .modal-title {
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .modal-content {
+      padding: 0 1rem 1rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    .modal-actions {
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    /* Notes */
+    .note {
+      background: rgba(255, 180, 0, 0.1);
+      border-left: 4px solid var(--warning);
+      padding: 1rem;
+      margin-top: 1.5rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .note strong { color: var(--primary); }
+
+    .note.info {
+      background: rgba(0, 172, 220, 0.1);
+      border-left-color: var(--accent);
+    }
+
+    .note.success {
+      background: rgba(76, 175, 80, 0.1);
+      border-left-color: var(--success);
+    }
+
+    .note.error {
+      background: rgba(240, 78, 35, 0.1);
+      border-left-color: var(--error);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    /* Code */
+    code {
+      background: var(--gray-100);
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html" class="active">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Composants</h1>
+    <p class="page-subtitle">Les briques de base de l'interface utilisateur (non personnalisables en white-label)</p>
+
+    <!-- BUTTONS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Boutons</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel (incohérences)</h4>
+
+          <div class="component-label">Actions primaires (usage inconsistant)</div>
+          <div class="component-row">
+            <button class="btn btn-accent">Enregistrer</button>
+            <span class="wrong"><button class="btn btn-primary">Enregistrer</button></span>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Annulation</div>
+          <div class="component-row">
+            <button class="btn btn-text">Annuler</button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Actions destructives</div>
+          <div class="component-row">
+            <button class="btn btn-error">Supprimer</button>
+          </div>
+
+          <div class="note error">
+            <strong>Problème :</strong> Certains boutons utilisent <code>color="primary"</code>
+            pour les actions principales au lieu de <code>color="accent"</code>.
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible (harmonisé)</h4>
+
+          <div class="component-label">Action primaire</div>
+          <div class="component-row">
+            <button class="btn btn-accent">Enregistrer</button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Action secondaire / Annulation</div>
+          <div class="component-row">
+            <button class="btn btn-text">Annuler</button>
+            <button class="btn btn-outlined">Option</button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Action destructive</div>
+          <div class="component-row">
+            <button class="btn btn-error">Supprimer</button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Boutons icône (toolbar)</div>
+          <div class="component-row">
+            <button class="btn btn-icon"><span class="material-icons">settings</span></button>
+            <button class="btn btn-icon"><span class="material-icons">help</span></button>
+            <button class="btn btn-icon"><span class="material-icons">power_settings_new</span></button>
+          </div>
+
+          <div class="note success">
+            <strong>Convention cible :</strong><br>
+            - Primary action : <code>color="accent"</code> + <code>elevation="0"</code><br>
+            - Cancel : <code>text</code> + <code>color="primary"</code><br>
+            - Destructive : <code>color="error"</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEXT FIELDS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Champs de texte</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel</h4>
+
+          <div class="text-field" style="max-width: 300px;">
+            <label>Email</label>
+            <input type="email" placeholder="exemple@email.com">
+          </div>
+
+          <div class="text-field" style="max-width: 300px; margin-top: 1rem;">
+            <label>Nom (avec erreur)</label>
+            <input type="text" class="error" value="">
+            <span class="error-text">Ce champ est requis</span>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible (identique)</h4>
+
+          <div class="text-field" style="max-width: 300px;">
+            <label>Email</label>
+            <input type="email" placeholder="exemple@email.com">
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Pas de changement majeur.</strong>
+            Les champs de texte Vuetify sont bien utilisés avec vuelidate pour la validation.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Cartes</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel</h4>
+
+          <div class="card" style="max-width: 350px;">
+            <div class="card-title">Titre de la carte</div>
+            <div class="card-content">
+              Contenu de la carte avec du texte explicatif.
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-text">Annuler</button>
+              <button class="btn btn-accent">Valider</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible</h4>
+
+          <div class="card" style="max-width: 350px;">
+            <div class="card-title">Titre de la carte</div>
+            <div class="card-content">
+              Contenu de la carte avec du texte explicatif.
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-text">Annuler</button>
+              <button class="btn btn-accent">Valider</button>
+            </div>
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Convention établie :</strong>
+            <code>v-card flat tile</code> + <code>v-divider</code> avant actions + actions alignées à droite.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODALS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Modales de confirmation</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Actuel</h4>
+
+          <div class="modal-preview">
+            <div class="modal-box">
+              <div class="modal-title">Confirmer la suppression</div>
+              <div class="modal-content">
+                Voulez-vous vraiment supprimer cet élément ?
+                Cette action est irréversible.
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-text">Annuler</button>
+                <button class="btn btn-error">Supprimer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Cible (identique)</h4>
+
+          <div class="modal-preview">
+            <div class="modal-box">
+              <div class="modal-title">Confirmer la suppression</div>
+              <div class="modal-content">
+                Voulez-vous vraiment supprimer cet élément ?
+                Cette action est irréversible.
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-text">Annuler</button>
+                <button class="btn btn-error">Supprimer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Composant existant :</strong>
+            <code>modal-confirm.vue</code> est bien conçu et réutilisable.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Notifications (Snackbar)</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="component-row" style="gap: 1rem; flex-wrap: wrap;">
+        <div style="background: var(--success); color: white; padding: 1rem; border-radius: 4px; display: flex; align-items: center; gap: 1rem;">
+          <span>Enregistrement réussi</span>
+          <button class="btn btn-text" style="color: white; padding: 0.25rem 0.5rem;">Fermer</button>
+        </div>
+
+        <div style="background: var(--error); color: white; padding: 1rem; border-radius: 4px; display: flex; align-items: center; gap: 1rem;">
+          <span>Une erreur est survenue</span>
+          <button class="btn btn-text" style="color: white; padding: 0.25rem 0.5rem;">Fermer</button>
+        </div>
+      </div>
+
+      <div class="note info" style="margin-top: 1rem;">
+        <strong>Centralisé via Vuex :</strong>
+        Les notifications sont gérées par le store <code>page</code> et le composant <code>snackbar.vue</code>.
+      </div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Récapitulatif des actions</h2>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--gray-200);">
+            <th style="text-align: left; padding: 0.75rem;">Composant</th>
+            <th style="text-align: left; padding: 0.75rem;">État</th>
+            <th style="text-align: left; padding: 0.75rem;">Action requise</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Boutons</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(240, 78, 35, 0.15); color: var(--error);">Incohérences</span></td>
+            <td style="padding: 0.75rem;">Harmoniser primary → accent</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Champs de texte</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Cartes</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Modales</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Snackbar</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Version 1.0 — Février 2026
+  </footer>
+
+</body>
+</html>
