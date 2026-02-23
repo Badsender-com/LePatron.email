@@ -194,7 +194,10 @@ function mapFtpError(error, group) {
     };
   }
 
-  if (errorMessage.includes('getaddrinfo')) {
+  if (
+    errorMessage.includes('getaddrinfo') ||
+    errorMessage.includes('Address lookup failed')
+  ) {
     return {
       success: false,
       errorCode: ERROR_CODES.FTP_CONNECTION_HOST_NOT_FOUND,

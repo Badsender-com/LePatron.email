@@ -460,6 +460,7 @@ async function testFtpConnection(req, res) {
 
   // Allow overriding FTP settings from the form (to test before saving)
   const ftpOverrides = [
+    'downloadMailingWithFtpImages',
     'ftpAuthType',
     'ftpHost',
     'ftpPort',
