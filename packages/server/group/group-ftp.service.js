@@ -93,6 +93,14 @@ function processCredentialsForUpdate(body) {
     processed.ftpSshKey = ''; // Explicit deletion
   }
 
+  // Auto-clear the unused credential based on auth type
+  // The backend is responsible for enforcing mutual exclusivity
+  if (processed.ftpAuthType === 'ssh_key') {
+    processed.ftpPassword = ''; // Clear password when switching to SSH key
+  } else if (processed.ftpAuthType === 'password') {
+    processed.ftpSshKey = ''; // Clear SSH key when switching to password
+  }
+
   return processed;
 }
 
@@ -108,6 +116,24 @@ async function testConnection(group) {
       errorCode: ERROR_CODES.FTP_NOT_ENABLED,
       message: 'FTP is not enabled for this group',
     };
+  }
+
+  if (group.ftpAuthType === 'ssh_key') {
+    if (!group.ftpSshKey) {
+      return {
+        success: false,
+        errorCode: ERROR_CODES.FTP_MISSING_SSH_KEY,
+        message: 'No SSH key configured for this group.',
+      };
+    }
+    const keyValidation = validateSshKeyFormat(group.ftpSshKey);
+    if (!keyValidation.valid) {
+      return {
+        success: false,
+        errorCode: keyValidation.errorCode,
+        message: keyValidation.message,
+      };
+    }
   }
 
   try {
@@ -166,7 +192,10 @@ function mapFtpError(error, group) {
     };
   }
 
-  if (errorMessage.includes('ECONNREFUSED')) {
+  if (
+    errorMessage.includes('ECONNREFUSED') ||
+    errorMessage.includes('refused connection')
+  ) {
     return {
       success: false,
       errorCode: ERROR_CODES.FTP_CONNECTION_REFUSED,
@@ -187,6 +216,19 @@ function mapFtpError(error, group) {
       success: false,
       errorCode: ERROR_CODES.FTP_CONNECTION_TIMEOUT,
       message: `Connection timeout to ${group.ftpHost}:${group.ftpPort}`,
+    };
+  }
+
+  if (
+    errorMessage.includes('Handshake') ||
+    errorMessage.includes('handshake') ||
+    errorMessage.includes('HMAC')
+  ) {
+    return {
+      success: false,
+      errorCode: ERROR_CODES.FTP_CONNECTION_HANDSHAKE_FAILED,
+      message:
+        'SSH handshake failed. The server may use unsupported algorithms.',
     };
   }
 

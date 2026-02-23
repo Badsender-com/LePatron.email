@@ -3,6 +3,8 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { groupTestFtpConnection } from '~/helpers/api-routes.js';
 
+const CREDENTIAL_MASK = '••••••••';
+
 export default {
   name: 'BsFtpSettings',
   mixins: [validationMixin],
@@ -72,13 +74,35 @@ export default {
       this.testingFtpConnection = true;
       this.ftpConnectionResult = null;
       try {
+        const payload = {
+          ftpAuthType: this.localModel.ftpAuthType,
+          ftpHost: this.localModel.ftpHost,
+          ftpPort: this.localModel.ftpPort,
+          ftpUsername: this.localModel.ftpUsername,
+          ftpProtocol: this.localModel.ftpProtocol,
+          ftpPathOnServer: this.localModel.ftpPathOnServer,
+        };
+        if (
+          this.localModel.ftpSshKey &&
+          this.localModel.ftpSshKey !== CREDENTIAL_MASK
+        ) {
+          payload.ftpSshKey = this.localModel.ftpSshKey;
+        }
+        if (
+          this.localModel.ftpPassword &&
+          this.localModel.ftpPassword !== CREDENTIAL_MASK
+        ) {
+          payload.ftpPassword = this.localModel.ftpPassword;
+        }
         const response = await this.$axios.$post(
-          groupTestFtpConnection({ groupId: this.groupId })
+          groupTestFtpConnection({ groupId: this.groupId }),
+          payload
         );
         this.ftpConnectionResult = response;
       } catch (error) {
         this.ftpConnectionResult = {
           success: false,
+          errorCode: error.response?.data?.message,
           message:
             error.response?.data?.message ||
             this.$t('global.errors.errorOccured'),
@@ -180,11 +204,7 @@ export default {
           @blur="$v.value.ftpPassword && $v.value.ftpPassword.$touch()"
         />
       </v-col>
-      <v-col
-        v-if="localModel.ftpAuthType === 'ssh_key'"
-        cols="12"
-        md="6"
-      >
+      <v-col v-if="localModel.ftpAuthType === 'ssh_key'" cols="12" md="6">
         <v-textarea
           id="ftpSshKey"
           v-model="localModel.ftpSshKey"
@@ -277,7 +297,13 @@ export default {
           :class="ftpConnectionResult.success ? 'success--text' : 'error--text'"
           class="ml-3"
         >
-          {{ ftpConnectionResult.message }}
+          {{
+            ftpConnectionResult.success
+              ? $t('forms.group.ftpConnectionSuccess')
+              : $te(`global.errors.${ftpConnectionResult.errorCode}`)
+                ? $t(`global.errors.${ftpConnectionResult.errorCode}`)
+                : ftpConnectionResult.message
+          }}
         </span>
       </v-col>
     </v-row>

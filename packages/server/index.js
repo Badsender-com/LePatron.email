@@ -299,7 +299,7 @@ if (cluster.isMaster) {
 
   app.use(nuxt.render);
 
-  app.use(function apiErrorHandler(err, req, res) {
+  app.use(function apiErrorHandler(err, _req, res, _next) {
     logger.error(err);
     // delete err.config;
     // anything can come here
