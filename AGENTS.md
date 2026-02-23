@@ -123,6 +123,39 @@ scope: server, ui, editor, etc.
 - Templates in `/src/tmpl-badsender/`
 - Editor locales in `/public/lang/` (badsender-fr.js, badsender-en.js)
 
+## Design System
+
+LePatron.email has a documented design system for UI consistency and white-label support.
+
+### Documentation
+
+| Document | Content |
+|----------|---------|
+| [docs/design-system/](./docs/design-system/) | Visual specifications (tokens, components, patterns) |
+| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies |
+| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md) | Editor-specific documentation |
+| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md) | UX patterns, accessibility |
+| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md) | UI modernization roadmap (11 phases) |
+
+### Key Constraints
+
+**Vue App (`packages/ui/`):**
+- Use Vuetify 2.x components (never raw HTML for standard UI)
+- Use Material Design Icons via `v-icon`
+- Use CSS variables for colors (enables white-label)
+- Target font: Work Sans (currently Montserrat)
+
+**Email Editor (`packages/editor/`):**
+- Use LESS variables from `style_variables.less`
+- Use CSS variables for theme integration (`--v-primary-base`, etc.)
+- Use jQuery UI widgets and Knockout bindings
+- Use Font Awesome 4.7 icons (`fa fa-*`)
+
+### White-Label Architecture
+
+- **Customizable**: Colors, logo (stored in Group settings)
+- **Fixed**: Component structure, UX patterns, layouts
+
 ## Mongoose Conventions
 
 ### Foreign Keys
