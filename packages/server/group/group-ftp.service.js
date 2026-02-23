@@ -79,26 +79,36 @@ function maskFtpCredentials(group) {
 function processCredentialsForUpdate(body) {
   const processed = { ...body };
 
-  // ftpPassword
-  if (processed.ftpPassword === CREDENTIAL_MASK) {
-    delete processed.ftpPassword; // Preserve existing
-  } else if (processed.ftpPassword === DELETE_CREDENTIAL) {
-    processed.ftpPassword = ''; // Explicit deletion
-  }
-
-  // ftpSshKey
-  if (processed.ftpSshKey === CREDENTIAL_MASK) {
-    delete processed.ftpSshKey; // Preserve existing
-  } else if (processed.ftpSshKey === DELETE_CREDENTIAL) {
-    processed.ftpSshKey = ''; // Explicit deletion
-  }
-
-  // Auto-clear the unused credential based on auth type
-  // The backend is responsible for enforcing mutual exclusivity
   if (processed.ftpAuthType === 'ssh_key') {
-    processed.ftpPassword = ''; // Clear password when switching to SSH key
+    // Inactive credential: always clear
+    processed.ftpPassword = '';
+    // Active credential: respect mask (preserve) or accept new value
+    if (processed.ftpSshKey === CREDENTIAL_MASK) {
+      delete processed.ftpSshKey;
+    } else if (processed.ftpSshKey === DELETE_CREDENTIAL) {
+      processed.ftpSshKey = '';
+    }
   } else if (processed.ftpAuthType === 'password') {
-    processed.ftpSshKey = ''; // Clear SSH key when switching to password
+    // Inactive credential: always clear
+    processed.ftpSshKey = '';
+    // Active credential: respect mask (preserve) or accept new value
+    if (processed.ftpPassword === CREDENTIAL_MASK) {
+      delete processed.ftpPassword;
+    } else if (processed.ftpPassword === DELETE_CREDENTIAL) {
+      processed.ftpPassword = '';
+    }
+  } else {
+    // No auth type change: process both credentials independently
+    if (processed.ftpPassword === CREDENTIAL_MASK) {
+      delete processed.ftpPassword;
+    } else if (processed.ftpPassword === DELETE_CREDENTIAL) {
+      processed.ftpPassword = '';
+    }
+    if (processed.ftpSshKey === CREDENTIAL_MASK) {
+      delete processed.ftpSshKey;
+    } else if (processed.ftpSshKey === DELETE_CREDENTIAL) {
+      processed.ftpSshKey = '';
+    }
   }
 
   return processed;

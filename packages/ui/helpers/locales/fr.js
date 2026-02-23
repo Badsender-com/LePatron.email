@@ -192,8 +192,6 @@ export default {
       ftpSshKeyPlaceholder: '-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----',
       testFtpConnection: 'Tester la connexion',
       ftpConnectionSuccess: 'Connexion réussie',
-      deletePassword: 'Supprimer le mot de passe enregistré',
-      deleteSshKey: 'Supprimer la clé SSH enregistrée',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
       userHasAccessToAllWorkspaces:
