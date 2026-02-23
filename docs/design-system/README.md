@@ -31,9 +31,24 @@ Design system documentation for LePatron.email.
 | [04-editor-stack.md](./04-editor-stack.md) | Editor technical stack |
 | [../UX_GUIDELINES.md](../UX_GUIDELINES.md) | UX patterns and accessibility |
 
-## Key Principle
+## Key Principles
+
+### Single Source of Truth
 
 > **Tokens = Single source of truth**. Other documents **reference** `01-tokens.md` for values (colors, typography). Never duplicate token values.
+
+### Progressive Migration
+
+> **Every code change is a migration opportunity.** When touching existing code (new feature or update), apply target design system values.
+
+When modifying code:
+- Replace Font Awesome icons with MDI equivalents
+- Replace hardcoded colors with CSS variables
+- Add missing accessibility attributes (aria-labels)
+- Use `color="accent"` for primary actions
+- Apply Work Sans typography
+
+This ensures gradual convergence without dedicated refactoring sprints. See [03-debt-registry.md](./03-debt-registry.md) for the full migration table.
 
 ## White-Label
 

@@ -29,6 +29,18 @@ Always search for existing components before creating new ones:
 <button class="custom-btn" @click="save">Save</button>
 ```
 
+### Progressive Migration
+
+**Every code change is a migration opportunity.** When modifying existing code:
+
+- Replace Font Awesome icons with MDI (`fa fa-*` → `mdi mdi-*`)
+- Replace hardcoded colors with CSS variables
+- Add missing `aria-label` attributes
+- Use `color="accent"` for primary actions (not `color="primary"`)
+- Apply Work Sans typography
+
+See [design-system/03-debt-registry.md](./design-system/03-debt-registry.md) for the full migration table.
+
 ---
 
 ## Code Patterns
