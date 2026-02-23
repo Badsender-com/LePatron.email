@@ -131,11 +131,12 @@ LePatron.email has a documented design system for UI consistency and white-label
 
 | Document | Content |
 |----------|---------|
-| [docs/design-system/](./docs/design-system/) | Visual specifications (tokens, components, patterns) |
-| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies |
-| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md) | Editor-specific documentation |
-| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md) | UX patterns, accessibility |
-| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md) | UI modernization roadmap (11 phases) |
+| [docs/design-system/README.md](./docs/design-system/README.md) | Index du design system |
+| [docs/design-system/01-tokens.md](./docs/design-system/01-tokens.md) | **Source unique** : couleurs, typo, espacements |
+| [docs/design-system/02-components.md](./docs/design-system/02-components.md) | Composants Vue App + Editor |
+| [docs/design-system/03-debt-registry.md](./docs/design-system/03-debt-registry.md) | Dettes UI |
+| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md) | Patterns UX, accessibilité |
+| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md) | Plan de modernisation (11 phases) |
 
 ### Key Constraints
 
