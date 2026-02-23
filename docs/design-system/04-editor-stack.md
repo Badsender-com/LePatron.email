@@ -89,7 +89,26 @@ Two implementations (see DEBT-007):
 2. Use CSS variables for theming (`var(--v-primary-base)`)
 3. Use jQuery UI for interactive widgets
 4. Use Knockout for data binding
-5. Icons: Font Awesome 4.7 (`fa fa-*`)
+5. Icons: Font Awesome 4.7 (current) → **MDI** (target)
+
+## Progressive Migration
+
+When modifying existing Editor code, apply these migrations:
+
+| Aspect | Current | Target | Action |
+|--------|---------|--------|--------|
+| Icons | `fa fa-*` | `mdi mdi-*` | Replace FA classes with MDI |
+| Colors | Hardcoded | CSS variables | Use `var(--v-*)` |
+| Typography | Trebuchet MS | Work Sans | Update font-family |
+
+**Example - Icon migration:**
+```html
+<!-- Before -->
+<i class="fa fa-save"></i>
+
+<!-- After -->
+<span class="mdi mdi-content-save"></span>
+```
 
 ---
 

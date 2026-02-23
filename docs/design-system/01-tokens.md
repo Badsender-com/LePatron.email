@@ -60,13 +60,15 @@ var(--v-accent-base)
 
 ---
 
-## Typography (fixed)
+## Typography
 
 | Stack | Current | Target |
 |-------|---------|--------|
 | Vue App | Montserrat | **Work Sans** |
 | Editor | Trebuchet MS | **Work Sans** |
 | Website | Work Sans | Work Sans |
+
+> **Progressive migration**: When modifying UI code, ensure Work Sans is applied.
 
 ### Target Configuration
 
@@ -135,12 +137,15 @@ Vuetify: `elevation` prop (0-24)
 
 ---
 
-## Icons (fixed)
+## Icons
 
-| System | Location | Usage |
-|--------|----------|-------|
-| Material Design Icons | Vue App | `<v-icon>settings</v-icon>` |
-| Font Awesome 4.7 | Editor | `<i class="fa fa-cog"></i>` |
+| Location | Current | Target | Usage |
+|----------|---------|--------|-------|
+| Vue App | MDI | MDI | `<v-icon>mdi-cog</v-icon>` |
+| Editor | Font Awesome 4.7 | **MDI** | `<i class="fa fa-cog"></i>` → `<span class="mdi mdi-cog"></span>` |
+
+> **Progressive migration**: When modifying Editor code, replace FA icons with MDI equivalents.
+> See [materialdesignicons.com](https://materialdesignicons.com/) for icon reference.
 
 ---
 

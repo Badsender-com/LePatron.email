@@ -3,6 +3,24 @@
 > **Resolution plan**: See [docs/plans/ui-progressive-update.md](../plans/ui-progressive-update.md) for the 11-phase plan.
 > **Tokens**: See [01-tokens.md](./01-tokens.md) for target values.
 
+## Resolution Strategy
+
+**Progressive Migration Principle**: Every code change (new feature or update) is an opportunity to migrate towards the target design system.
+
+When touching existing code, apply these migrations:
+
+| Aspect | Current | Target |
+|--------|---------|--------|
+| Icons (Editor) | Font Awesome 4.7 | MDI |
+| Typography | Montserrat / Trebuchet | Work Sans |
+| Colors | Hardcoded values | CSS variables |
+| Primary actions | `color="primary"` | `color="accent"` |
+| Accessibility | Missing | aria-labels, keyboard nav |
+
+This ensures gradual, low-risk convergence without requiring dedicated refactoring sprints.
+
+---
+
 ## Active Debts
 
 ### DEBT-001: Multiple Font Families
@@ -22,7 +40,8 @@
 |---|---|
 | **Severity** | Low |
 | **Current** | Vue App: MDI, Editor: Font Awesome 4.7 |
-| **Direction** | Accepted - Editor stays on FA, new Vue features use MDI |
+| **Target** | MDI everywhere |
+| **Direction** | Progressive migration - Migrate to MDI on each feature change |
 
 ---
 
