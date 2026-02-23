@@ -82,6 +82,15 @@ const GroupSchema = Schema(
       type: String,
       default: '',
     },
+    ftpAuthType: {
+      type: String,
+      enum: ['password', 'ssh_key'],
+      default: 'password',
+    },
+    ftpSshKey: {
+      type: String,
+      default: '',
+    },
     ftpPort: {
       type: Number,
       default: 22,
@@ -132,6 +141,6 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 //   }
 // })
 
-GroupSchema.plugin(encryptionPlugin, ['ftpPassword']);
+GroupSchema.plugin(encryptionPlugin, ['ftpPassword', 'ftpSshKey']);
 
 module.exports = GroupSchema;

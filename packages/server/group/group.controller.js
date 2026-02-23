@@ -12,6 +12,7 @@ const groupService = require('../group/group.service.js');
 const profileService = require('../profile/profile.service.js');
 const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
+const groupFtpService = require('../group/group-ftp.service.js');
 
 const { Groups, Templates, Mailings } = require('../common/models.common.js');
 
@@ -34,6 +35,7 @@ module.exports = {
     createOrUpdatePersonalizedVariables
   ),
   deletePersonalizedVariable: asyncHandler(deletePersonalizedVariable),
+  testFtpConnection: asyncHandler(testFtpConnection),
 };
 
 /**
@@ -77,11 +79,16 @@ async function list(req, res) {
  */
 
 async function create(req, res) {
+  // Validate SSH key format if provided
+  if (req.body.ftpSshKey) {
+    groupFtpService.validateSshKeyOrThrow(req.body.ftpSshKey);
+  }
+
   const defaultWorkspaceName = req.body.defaultWorkspaceName || 'Workspace';
   const newGroup = await groupService.createGroup(req.body);
   const workspaceParams = { name: defaultWorkspaceName, groupId: newGroup.id };
   await createWorkspace(workspaceParams);
-  res.json(newGroup);
+  res.json(groupFtpService.maskFtpCredentials(newGroup));
 }
 
 /**
@@ -114,7 +121,7 @@ async function read(req, res) {
   const { groupId } = req.params;
   const group = await Groups.findById(groupId);
   if (!group) throw new NotFound();
-  res.json(group);
+  res.json(groupFtpService.maskFtpCredentials(group));
 }
 
 /**
@@ -344,9 +351,17 @@ async function readColorScheme(req, res) {
 async function update(req, res) {
   const { user } = req;
 
+  // Process credentials (handle masking and deletion)
+  const processedBody = groupFtpService.processCredentialsForUpdate(req.body);
+
+  // Validate SSH key format if provided and not masked
+  if (processedBody.ftpSshKey) {
+    groupFtpService.validateSshKeyOrThrow(processedBody.ftpSshKey);
+  }
+
   let groupToUpdate = {
     id: req.params.groupId,
-    ...req.body,
+    ...processedBody,
   };
 
   if (user.isGroupAdmin) {
@@ -355,7 +370,9 @@ async function update(req, res) {
 
   await groupService.updateGroup(groupToUpdate);
 
-  res.send();
+  // Fetch the updated group to return with masked credentials
+  const updatedGroup = await Groups.findById(req.params.groupId);
+  res.json(groupFtpService.maskFtpCredentials(updatedGroup));
 }
 
 /**
@@ -420,4 +437,45 @@ async function deletePersonalizedVariable(req, res) {
     groupId
   );
   res.json(result);
+}
+
+/**
+ * @api {post} /groups/:groupId/test-ftp-connection Test FTP connection
+ * @apiPermission admin
+ * @apiName TestFtpConnection
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ *
+ * @apiSuccess {Boolean} success connection result
+ * @apiSuccess {String} message result message
+ */
+async function testFtpConnection(req, res) {
+  const { groupId } = req.params;
+  const group = await Groups.findById(groupId);
+
+  if (!group) {
+    throw new NotFound();
+  }
+
+  // Allow overriding FTP settings from the form (to test before saving)
+  const ftpOverrides = [
+    'downloadMailingWithFtpImages',
+    'ftpAuthType',
+    'ftpHost',
+    'ftpPort',
+    'ftpUsername',
+    'ftpProtocol',
+    'ftpPathOnServer',
+    'ftpSshKey',
+    'ftpPassword',
+  ];
+  for (const field of ftpOverrides) {
+    if (req.body[field] !== undefined) {
+      group[field] = req.body[field];
+    }
+  }
+
+  const result = await groupFtpService.testConnection(group);
+  return res.json(result);
 }
