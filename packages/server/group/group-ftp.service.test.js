@@ -7,12 +7,18 @@ describe('Group FTP Service', () => {
   describe('validateSshKeyFormat', () => {
     it('should return valid for empty or null SSH key', () => {
       expect(groupFtpService.validateSshKeyFormat('')).toEqual({ valid: true });
-      expect(groupFtpService.validateSshKeyFormat(null)).toEqual({ valid: true });
-      expect(groupFtpService.validateSshKeyFormat(undefined)).toEqual({ valid: true });
+      expect(groupFtpService.validateSshKeyFormat(null)).toEqual({
+        valid: true,
+      });
+      expect(groupFtpService.validateSshKeyFormat(undefined)).toEqual({
+        valid: true,
+      });
     });
 
     it('should return valid for masked credential', () => {
-      const result = groupFtpService.validateSshKeyFormat(groupFtpService.CREDENTIAL_MASK);
+      const result = groupFtpService.validateSshKeyFormat(
+        groupFtpService.CREDENTIAL_MASK
+      );
       expect(result).toEqual({ valid: true });
     });
 
@@ -77,7 +83,9 @@ MIIEowIBAAKCAQEA
       const validKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA
 -----END RSA PRIVATE KEY-----`;
-      expect(() => groupFtpService.validateSshKeyOrThrow(validKey)).not.toThrow();
+      expect(() =>
+        groupFtpService.validateSshKeyOrThrow(validKey)
+      ).not.toThrow();
     });
 
     it('should throw BadRequest for invalid SSH key', () => {
@@ -107,7 +115,8 @@ MIIEowIBAAKCAQEA
         toJSON: () => ({
           id: '123',
           name: 'Test Group',
-          ftpSshKey: '-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----',
+          ftpSshKey:
+            '-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----',
           ftpHost: 'localhost',
         }),
       };
@@ -197,7 +206,8 @@ MIIEowIBAAKCAQEA
     });
 
     it('should keep new SSH key when different value is sent', () => {
-      const newKey = '-----BEGIN RSA PRIVATE KEY-----\nnewkey\n-----END RSA PRIVATE KEY-----';
+      const newKey =
+        '-----BEGIN RSA PRIVATE KEY-----\nnewkey\n-----END RSA PRIVATE KEY-----';
       const body = {
         ftpSshKey: newKey,
       };
@@ -213,6 +223,97 @@ MIIEowIBAAKCAQEA
       const result = groupFtpService.processCredentialsForUpdate(body);
       expect(result.ftpPassword).toBeUndefined();
       expect(result.ftpSshKey).toBe('new-key-value');
+    });
+
+    describe('mutual exclusivity (ftpAuthType)', () => {
+      it('should clear password and preserve masked SSH key when switching to ssh_key', () => {
+        const body = {
+          ftpAuthType: 'ssh_key',
+          ftpPassword: 'somepassword',
+          ftpSshKey: groupFtpService.CREDENTIAL_MASK,
+        };
+        const result = groupFtpService.processCredentialsForUpdate(body);
+        expect(result.ftpPassword).toBe('');
+        expect(result.ftpSshKey).toBeUndefined();
+      });
+
+      it('should clear password and keep new SSH key when switching to ssh_key', () => {
+        const newKey =
+          '-----BEGIN RSA PRIVATE KEY-----\nkey\n-----END RSA PRIVATE KEY-----';
+        const body = {
+          ftpAuthType: 'ssh_key',
+          ftpPassword: 'somepassword',
+          ftpSshKey: newKey,
+        };
+        const result = groupFtpService.processCredentialsForUpdate(body);
+        expect(result.ftpPassword).toBe('');
+        expect(result.ftpSshKey).toBe(newKey);
+      });
+
+      it('should clear SSH key and preserve masked password when switching to password', () => {
+        const body = {
+          ftpAuthType: 'password',
+          ftpSshKey: 'some-key-content',
+          ftpPassword: groupFtpService.CREDENTIAL_MASK,
+        };
+        const result = groupFtpService.processCredentialsForUpdate(body);
+        expect(result.ftpSshKey).toBe('');
+        expect(result.ftpPassword).toBeUndefined();
+      });
+
+      it('should clear SSH key and keep new password when switching to password', () => {
+        const body = {
+          ftpAuthType: 'password',
+          ftpSshKey: 'some-key-content',
+          ftpPassword: 'newpassword',
+        };
+        const result = groupFtpService.processCredentialsForUpdate(body);
+        expect(result.ftpSshKey).toBe('');
+        expect(result.ftpPassword).toBe('newpassword');
+      });
+
+      it('should process credentials independently when no ftpAuthType is provided', () => {
+        const body = {
+          ftpPassword: groupFtpService.CREDENTIAL_MASK,
+          ftpSshKey: groupFtpService.CREDENTIAL_MASK,
+          ftpHost: 'newhost.com',
+        };
+        const result = groupFtpService.processCredentialsForUpdate(body);
+        expect(result.ftpPassword).toBeUndefined();
+        expect(result.ftpSshKey).toBeUndefined();
+        expect(result.ftpHost).toBe('newhost.com');
+      });
+    });
+  });
+
+  describe('testConnection', () => {
+    it('should return FTP_MISSING_SSH_KEY when auth type is ssh_key and no key is set', async () => {
+      const group = {
+        downloadMailingWithFtpImages: true,
+        ftpAuthType: 'ssh_key',
+        ftpSshKey: '',
+      };
+      const result = await groupFtpService.testConnection(group);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(ERROR_CODES.FTP_MISSING_SSH_KEY);
+    });
+
+    it('should return INVALID_SSH_KEY_FORMAT when auth type is ssh_key and key format is invalid', async () => {
+      const group = {
+        downloadMailingWithFtpImages: true,
+        ftpAuthType: 'ssh_key',
+        ftpSshKey: 'not-a-valid-key',
+      };
+      const result = await groupFtpService.testConnection(group);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(ERROR_CODES.INVALID_SSH_KEY_FORMAT);
+    });
+
+    it('should return FTP_NOT_ENABLED when FTP is disabled', async () => {
+      const group = { downloadMailingWithFtpImages: false };
+      const result = await groupFtpService.testConnection(group);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(ERROR_CODES.FTP_NOT_ENABLED);
     });
   });
 
@@ -237,11 +338,36 @@ MIIEowIBAAKCAQEA
       expect(result.message).toContain('example.com');
     });
 
-    it('should map connection refused error', () => {
+    it('should map connection refused error (ECONNREFUSED)', () => {
       const error = new Error('connect ECONNREFUSED');
       const result = groupFtpService.mapFtpError(error, mockGroup);
       expect(result.success).toBe(false);
       expect(result.errorCode).toBe(ERROR_CODES.FTP_CONNECTION_REFUSED);
+    });
+
+    it('should map connection refused error (refused connection)', () => {
+      const error = new Error('refused connection to host');
+      const result = groupFtpService.mapFtpError(error, mockGroup);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(ERROR_CODES.FTP_CONNECTION_REFUSED);
+    });
+
+    it('should map SSH handshake failure (Handshake)', () => {
+      const error = new Error('Handshake failed: no matching key exchange');
+      const result = groupFtpService.mapFtpError(error, mockGroup);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(
+        ERROR_CODES.FTP_CONNECTION_HANDSHAKE_FAILED
+      );
+    });
+
+    it('should map SSH handshake failure (HMAC)', () => {
+      const error = new Error('HMAC mismatch');
+      const result = groupFtpService.mapFtpError(error, mockGroup);
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe(
+        ERROR_CODES.FTP_CONNECTION_HANDSHAKE_FAILED
+      );
     });
 
     it('should map invalid private key error', () => {
