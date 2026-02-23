@@ -20,6 +20,7 @@
 | **8** | Canvas Éditeur | Moderniser les interactions blocs | MOYENNE | `ui/editor-canvas-modernization` |
 | **9** | Sidebars Éditeur | Moderniser les panneaux d'options | HAUTE | `ui/editor-sidebars-modernization` |
 | **10** | Patterns modaux | Centraliser la logique | BASSE | `refactor/modal-patterns` |
+| **11** | Chantiers Annexes | Inventaire UI non couverts | VARIABLE | Opportuniste |
 
 > **Note transversale** : La documentation du design system doit être maintenue sur chaque branche (pas une phase séquentielle).
 
@@ -1092,6 +1093,66 @@ export function useModal() {
 
 ---
 
+## Phase 11 : Chantiers Annexes (Inventaire UI)
+
+**Type** : Inventaire des améliorations UI secondaires
+**Priorité** : VARIABLE (par élément)
+**Approche** : Opportuniste - à traiter lors de modifications connexes
+
+### Contexte
+
+Les Phases 1-10 couvrent les grands chantiers structurants. Cette Phase 11 recense les ~45 éléments d'interface **non couverts** qui pourraient bénéficier d'une modernisation.
+
+### Inventaire par catégorie
+
+| Cat. | Nom | Effort | Éléments |
+|------|-----|--------|----------|
+| **A** | Éditeur d'Images | ÉLEVÉ | Editor (Konva.js), Cropper, Text, Filters, Background |
+| **B** | Galerie d'Images | MOYEN | Gallery picker, File upload, Croppie |
+| **C** | Color Pickers | MOYEN | 2 implémentations (nouvelle + legacy à déprécier) |
+| **D** | Éditeur de Liens | FAIBLE | Plugin TinyMCE (URL, couleur, target) |
+| **E** | Modales Éditeur | FAIBLE | Save block, Delete block, Send test, ESP send |
+| **F** | Formulaires ESP | FAIBLE | Actito, Sendinblue, DSC, Adobe |
+| **G** | Modales Mailings | FAIBLE | Download, Preview, Copy, Move, New |
+| **H** | Modales Dossiers | FAIBLE | New, Delete, Rename, Move |
+| **I** | Formulaires Gestion | FAIBLE | Users, Workspaces, Templates, Email groups |
+| **J** | Pages Auth | FAIBLE | Login, Admin login, Set password, Reset |
+| **K** | Pages Erreur | FAIBLE | 404, Error layout |
+| **L** | Legacy jQuery UI | MOYEN | Tabs, Spinner, Tooltips |
+| **M** | Manquants | - | Onboarding, Print UI, Help system |
+
+### Fichiers clés
+
+**Éditeur d'images** (effort élevé) :
+```
+packages/editor/src/js/bindings/image-editor.js
+packages/editor/src/js/bindings/image-editor-cropper.js
+packages/editor/src/js/bindings/image-editor-text.js
+packages/editor/src/js/bindings/image-editor-filters.js
+packages/editor/src/css/badsender-editor.less
+```
+
+**Galerie** :
+```
+packages/editor/src/js/ext/badsender-gallery.js
+packages/editor/src/js/bindings/fileupload.js
+packages/editor/src/css/badesender-image-gallery.less
+```
+
+**Color pickers** :
+```
+packages/editor/src/js/bindings/badsender-colorpicker.js  (nouvelle)
+packages/editor/src/js/bindings/colorpicker.js           (legacy)
+```
+
+### Approche recommandée
+
+1. **Ne pas créer de branche dédiée** - Chantiers trop fragmentés
+2. **Traiter opportunistement** - Quand on modifie une feature connexe
+3. **Prioriser Image Editor** si refonte majeure de l'éditeur envisagée
+
+---
+
 ## Dépendances entre phases
 
 ```
@@ -1111,6 +1172,10 @@ Phase 5 (Top Bar + MDI) ──┬──► Phase 6 (Admin UI)
 REFACTORING (opportuniste)
 ──────────────────────────
 Phase 10 (Modals) ──► Quand pertinent
+
+INVENTAIRE (opportuniste)
+─────────────────────────
+Phase 11 (Chantiers Annexes) ──► ~45 éléments UI à traiter au cas par cas
 ```
 
 - **Phase 1 (Typo)** et **Phase 2 (CSS)** : Fondations, peuvent être faites en parallèle
@@ -1120,6 +1185,7 @@ Phase 10 (Modals) ──► Quand pertinent
 - **Phases 6, 7** : Bénéficient de Top Bar et boutons harmonisés
 - **Phases 8, 9 (Editor)** : Après Phase 5 (icônes MDI), peuvent être groupées en sprint
 - **Phase 10 (Modals)** : Opportuniste, quand un refactoring modal est nécessaire
+- **Phase 11 (Chantiers Annexes)** : Inventaire UI, traiter quand on touche à une feature connexe
 
 ---
 
@@ -1140,6 +1206,9 @@ Phase 10 (Modals) ──► Quand pertinent
 | Taille toggles sidebar (px) | 34x14 | 44x24 |
 | Colonnes galerie blocs | 3 | 2 |
 | Sections collapsibles | 0 | 100% |
+| Chantiers annexes identifiés | 45 | - |
+| Color pickers (implémentations) | 2 | 1 |
+| Composants jQuery UI legacy | 3 | 0 |
 
 ---
 
