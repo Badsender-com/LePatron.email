@@ -11,16 +11,17 @@
 | Phase | Nom | Objectif | Priorité | Branches |
 |-------|-----|----------|----------|----------|
 | **1** | Typographie | Unifier sur Work Sans | HAUTE | `ui/typography-work-sans` |
-| **2** | Boutons | Harmoniser accent/primary | HAUTE | `ui/button-harmonization` |
-| **3** | White-Label Foundation | Couleurs dynamiques via DB | MOYENNE | `feat/white-label-branding` |
-| **4** | Nettoyage CSS | Variables CSS, inline styles | BASSE | `refactor/css-cleanup` |
-| **5** | Patterns modaux | Centraliser la logique | BASSE | `refactor/modal-patterns` |
-| **6** | Documentation continue | Maintenir le design system | CONTINUE | Sur chaque branche |
-| **7** | Interface Admin | Moderniser les réglages groupe | MOYENNE | `ui/admin-interface-redesign` |
-| **8** | Barre supérieure | Harmoniser header app-wide | MOYENNE | `ui/top-bar-harmonization` |
-| **9** | Liste des emails | Moderniser navigation mailings | MOYENNE | `ui/mailings-list-redesign` |
-| **10** | Canvas Éditeur | Moderniser les interactions blocs | MOYENNE | `ui/editor-canvas-modernization` |
-| **11** | Sidebars Éditeur | Moderniser les panneaux d'options | HAUTE | `ui/editor-sidebars-modernization` |
+| **2** | Nettoyage CSS | Variables CSS, inline styles | HAUTE | `refactor/css-cleanup` |
+| **3** | Boutons | Harmoniser accent/primary | HAUTE | `ui/button-harmonization` |
+| **4** | White-Label Foundation | Couleurs dynamiques via DB | MOYENNE | `feat/white-label-branding` |
+| **5** | Barre supérieure | Harmoniser header app-wide | MOYENNE | `ui/top-bar-harmonization` |
+| **6** | Interface Admin | Moderniser les réglages groupe | MOYENNE | `ui/admin-interface-redesign` |
+| **7** | Liste des emails | Moderniser navigation mailings | MOYENNE | `ui/mailings-list-redesign` |
+| **8** | Canvas Éditeur | Moderniser les interactions blocs | MOYENNE | `ui/editor-canvas-modernization` |
+| **9** | Sidebars Éditeur | Moderniser les panneaux d'options | HAUTE | `ui/editor-sidebars-modernization` |
+| **10** | Patterns modaux | Centraliser la logique | BASSE | `refactor/modal-patterns` |
+
+> **Note transversale** : La documentation du design system doit être maintenue sur chaque branche (pas une phase séquentielle).
 
 ---
 
@@ -82,7 +83,43 @@ packages/editor/src/tmpl/main.tmpl.html (font import)
 
 ---
 
-## Phase 2 : Harmonisation des boutons
+## Phase 2 : Nettoyage CSS
+
+**Branche**: `refactor/css-cleanup`
+**Priorité**: HAUTE
+**Dettes**: DEBT-003, DEBT-004
+
+### Contexte
+Le nettoyage CSS doit précéder l'implémentation du White-Label. Il est impossible d'injecter des couleurs dynamiques tant que des couleurs sont hardcodées dans le code.
+
+### Objectifs
+1. Remplacer les couleurs hardcodées par CSS variables
+2. Réduire les `!important`
+3. Supprimer les inline styles non-dynamiques
+
+### Audit à faire
+```bash
+# Couleurs hardcodées
+grep -rE '#[0-9a-fA-F]{6}|rgb\(' packages/ui/ --include="*.vue" --include="*.scss"
+
+# !important
+grep -r '!important' packages/ui/ --include="*.vue" --include="*.scss"
+```
+
+### Fichiers Editor à vérifier
+```
+packages/editor/src/css/badesender-image-gallery.less:798
+# Remplacer @link-color par var(--v-error-base)
+```
+
+### Critères de validation
+- [ ] Aucune couleur de marque hardcodée
+- [ ] `!important` réduits de 50%+
+- [ ] Debt registry mis à jour
+
+---
+
+## Phase 3 : Harmonisation des boutons
 
 **Branche**: `ui/button-harmonization`
 **Priorité**: HAUTE
@@ -117,7 +154,7 @@ packages/ui/routes/**/*.vue
 
 ---
 
-## Phase 3 : White-Label Foundation
+## Phase 4 : White-Label Foundation
 
 **Branche**: `feat/white-label-branding`
 **Priorité**: MOYENNE
@@ -128,9 +165,11 @@ Permettre aux clients/agences de personnaliser leur instance (couleurs, logo).
 ### Objectif
 Injecter les couleurs de marque depuis la base de données via CSS variables.
 
+> **Prérequis** : Phase 2 (Nettoyage CSS) doit être terminée pour que les couleurs dynamiques fonctionnent.
+
 ### Architecture
 
-#### 3.1 Schéma Mongoose (`Group`)
+#### 4.1 Schéma Mongoose (`Group`)
 ```javascript
 // packages/server/group/group.schema.js
 branding: {
@@ -144,12 +183,12 @@ branding: {
 }
 ```
 
-#### 3.2 API endpoint
+#### 4.2 API endpoint
 ```
 GET /api/groups/:id/branding
 ```
 
-#### 3.3 Injection CSS côté client
+#### 4.3 Injection CSS côté client
 ```javascript
 // packages/ui/plugins/branding.js
 export default async function ({ store }) {
@@ -162,7 +201,7 @@ export default async function ({ store }) {
 }
 ```
 
-#### 3.4 UI d'administration
+#### 4.4 UI d'administration
 ```
 packages/ui/components/group/branding-settings.vue
 ```
@@ -175,96 +214,56 @@ packages/ui/components/group/branding-settings.vue
 
 ---
 
-## Phase 4 : Nettoyage CSS
+## Phase 5 : Harmonisation de la barre supérieure
 
-**Branche**: `refactor/css-cleanup`
-**Priorité**: BASSE
-**Dettes**: DEBT-003, DEBT-004
-
-### Objectifs
-1. Remplacer les couleurs hardcodées par CSS variables
-2. Réduire les `!important`
-3. Supprimer les inline styles non-dynamiques
-
-### Audit à faire
-```bash
-# Couleurs hardcodées
-grep -rE '#[0-9a-fA-F]{6}|rgb\(' packages/ui/ --include="*.vue" --include="*.scss"
-
-# !important
-grep -r '!important' packages/ui/ --include="*.vue" --include="*.scss"
-```
-
-### Fichiers Editor à vérifier
-```
-packages/editor/src/css/badesender-image-gallery.less:798
-# Remplacer @link-color par var(--v-error-base)
-```
-
-### Critères de validation
-- [ ] Aucune couleur de marque hardcodée
-- [ ] `!important` réduits de 50%+
-- [ ] Debt registry mis à jour
-
----
-
-## Phase 5 : Patterns modaux centralisés
-
-**Branche**: `refactor/modal-patterns`
-**Priorité**: BASSE
-**Dette**: DEBT-005
+**Branche**: `ui/top-bar-harmonization`
+**Priorité**: MOYENNE
+**Preview**: `docs/design-system/preview/top-bar.html`
 
 ### Contexte
-Plusieurs composants modal avec patterns légèrement différents :
-- `modal-confirm.vue`
-- `modal-confirm-form.vue`
-- `mailings/modal-duplicate.vue`
-- `mailings/modal-rename.vue`
-- etc.
+Cette phase introduit les icônes Material Design dans l'Editor, ce qui est un prérequis pour les phases 8 et 9 (Canvas et Sidebars).
 
-### Objectif
-Créer un composable Vue réutilisable pour la logique modale.
+### Problèmes identifiés
 
-### Architecture proposée
-```javascript
-// packages/ui/composables/useModal.js
-export function useModal() {
-  const isOpen = ref(false);
-  const open = () => { isOpen.value = true; };
-  const close = () => { isOpen.value = false; };
-  return { isOpen, open, close };
-}
+| Problème | Impact |
+|----------|--------|
+| Hauteurs incohérentes (40px / 48px / 64px) | Rupture visuelle entre contextes |
+| Bibliothèques d'icônes différentes (MDI vs FA) | Incohérence, double charge |
+| Actions variables selon contexte | Navigation imprévisible |
+| Structure différente par page | Pas de pattern réutilisable |
+
+### Solution : Header unifié avec slots contextuels
+
+**Hauteur cible** : 48px (compromis entre 40px editor et 64px Vuetify)
+**Structure** : 3 slots (Gauche, Centre, Droite) avec contenu contextuel
+
+| Contexte | Slot Gauche | Slot Centre | Slot Droite |
+|----------|-------------|-------------|-------------|
+| **Dashboard/Mailings** | Logo LePatron | "Emails" | Aide, Réglages, Logout |
+| **Admin/Réglages** | Logo LePatron | "Réglages : [Groupe]" | Aide, Logout |
+| **Editor** | Tabs navigation | Nom du mailing | Actions, Sauvegarder |
+
+### Fichiers à modifier
+
+```
+packages/ui/layouts/default.vue
+packages/ui/routes/mailings/__partials/mailings-header.vue
+packages/editor/src/css/badsender-topbar.less
+packages/editor/src/css/style_variables.less
+packages/editor/src/tmpl/main.tmpl.html
 ```
 
 ### Critères de validation
-- [ ] Composable créé et documenté
-- [ ] Au moins 2 modals migrés vers le nouveau pattern
-- [ ] Documentation mise à jour (`03-molecules.md`)
+
+- [ ] Hauteur unifiée à 48px sur tous les contextes
+- [ ] Icônes Material Design dans l'Editor
+- [ ] Structure de slots implémentée
+- [ ] Tokens CSS partagés
+- [ ] Preview validé par l'équipe
 
 ---
 
-## Phase 6 : Documentation continue
-
-**Sur chaque branche**
-
-### Checklist avant merge
-- [ ] Vérifier si des composants du design system sont affectés
-- [ ] Mettre à jour la documentation correspondante
-- [ ] Si nouveau pattern : l'ajouter à `06-patterns.md`
-- [ ] Si dette résolue : mettre à jour `05-debt-registry.md`
-
-### Fichiers de documentation
-```
-docs/design-system/01-tokens.md      # Tokens (couleurs, typo)
-docs/design-system/02-atoms.md       # Composants de base
-docs/design-system/03-molecules.md   # Composants composés
-docs/design-system/05-debt-registry.md # Dettes techniques
-docs/design-system/preview/*.html    # Previews visuels
-```
-
----
-
-## Phase 7 : Modernisation de l'interface Admin
+## Phase 6 : Modernisation de l'interface Admin
 
 **Branche**: `ui/admin-interface-redesign`
 **Priorité**: MOYENNE
@@ -312,53 +311,7 @@ packages/ui/components/layout-left-menu.vue
 
 ---
 
-## Phase 8 : Harmonisation de la barre supérieure
-
-**Branche**: `ui/top-bar-harmonization`
-**Priorité**: MOYENNE
-**Preview**: `docs/design-system/preview/top-bar.html`
-
-### Problèmes identifiés
-
-| Problème | Impact |
-|----------|--------|
-| Hauteurs incohérentes (40px / 48px / 64px) | Rupture visuelle entre contextes |
-| Bibliothèques d'icônes différentes (MDI vs FA) | Incohérence, double charge |
-| Actions variables selon contexte | Navigation imprévisible |
-| Structure différente par page | Pas de pattern réutilisable |
-
-### Solution : Header unifié avec slots contextuels
-
-**Hauteur cible** : 48px (compromis entre 40px editor et 64px Vuetify)
-**Structure** : 3 slots (Gauche, Centre, Droite) avec contenu contextuel
-
-| Contexte | Slot Gauche | Slot Centre | Slot Droite |
-|----------|-------------|-------------|-------------|
-| **Dashboard/Mailings** | Logo LePatron | "Emails" | Aide, Réglages, Logout |
-| **Admin/Réglages** | Logo LePatron | "Réglages : [Groupe]" | Aide, Logout |
-| **Editor** | Tabs navigation | Nom du mailing | Actions, Sauvegarder |
-
-### Fichiers à modifier
-
-```
-packages/ui/layouts/default.vue
-packages/ui/routes/mailings/__partials/mailings-header.vue
-packages/editor/src/css/badsender-topbar.less
-packages/editor/src/css/style_variables.less
-packages/editor/src/tmpl/main.tmpl.html
-```
-
-### Critères de validation
-
-- [ ] Hauteur unifiée à 48px sur tous les contextes
-- [ ] Icônes Material Design dans l'Editor
-- [ ] Structure de slots implémentée
-- [ ] Tokens CSS partagés
-- [ ] Preview validé par l'équipe
-
----
-
-## Phase 9 : Modernisation de la liste des emails
+## Phase 7 : Modernisation de la liste des emails
 
 **Branche**: `ui/mailings-list-redesign`
 **Priorité**: MOYENNE
@@ -375,17 +328,17 @@ packages/editor/src/tmpl/main.tmpl.html
 
 ### Solution : Filtres visibles et actions rapides
 
-#### 9.1 Barre de filtres toujours visible
+#### 7.1 Barre de filtres toujours visible
 ```
 [+ NEW EMAIL]  🔍 Search...  │ Template [▼] │ Tags [▼] │ [✕ Clear]
 ```
 
-#### 9.2 Quick actions au hover
+#### 7.2 Quick actions au hover
 ```
 │ Email Name  │ pierre │ v4 │ 27/03 │ 👁 📋 ⋯ │
 ```
 
-#### 9.3 Bulk actions toolbar (quand sélection)
+#### 7.3 Bulk actions toolbar (quand sélection)
 ```
 ☑ 3 sélectionnés  │ [Tags] [Move] [Duplicate] [Delete] │ [✕]
 ```
@@ -409,7 +362,7 @@ packages/ui/routes/mailings/__partials/mailings-header.vue
 
 ---
 
-## Phase 10 : Modernisation du canvas éditeur
+## Phase 8 : Modernisation du canvas éditeur
 
 **Branche**: `ui/editor-canvas-modernization`
 **Priorité**: MOYENNE
@@ -454,7 +407,7 @@ Drop zone :      Bordure pointillés + texte centré
 
 ### Solution : Interactions modernes (pattern Notion/Figma)
 
-#### 10.1 États visuels modernisés
+#### 8.1 États visuels modernisés
 
 | État | Actuel | Cible |
 |------|--------|-------|
@@ -471,7 +424,7 @@ Drop zone :      Bordure pointillés + texte centré
 @canvas-drop-bg: fade(@bs-accent-color, 5%);
 ```
 
-#### 10.2 Toolbar flottante groupée
+#### 8.2 Toolbar flottante groupée
 
 **Actuel** : Boutons dispersés (float left / float right)
 ```
@@ -553,7 +506,7 @@ Drop zone :      Bordure pointillés + texte centré
 }
 ```
 
-#### 10.3 Drop zone modernisée
+#### 8.3 Drop zone modernisée
 
 **Actuel** :
 ```
@@ -615,7 +568,7 @@ Animation: pulse subtil sur le fond
 }
 ```
 
-#### 10.4 Icônes Material Design
+#### 8.4 Icônes Material Design
 
 | Action | Font Awesome (actuel) | Material Design (cible) |
 |--------|----------------------|------------------------|
@@ -648,7 +601,7 @@ packages/editor/src/tmpl/main.tmpl.html          # Import MDI fonts
 
 ---
 
-## Phase 11 : Modernisation des Sidebars de l'Éditeur
+## Phase 9 : Modernisation des Sidebars de l'Éditeur
 
 **Branche**: `ui/editor-sidebars-modernization`
 **Priorité**: HAUTE
@@ -665,7 +618,7 @@ C'est une partie critique de l'application qui nécessite une attention particul
 
 ### Problèmes identifiés (captures analysées)
 
-#### 11.1 Layout et Espacement
+#### 9.1 Layout et Espacement
 
 | Problème | Impact | Sévérité |
 |----------|--------|----------|
@@ -674,7 +627,7 @@ C'est une partie critique de l'application qui nécessite une attention particul
 | **Espacement incohérent** | Padding variable entre éléments | MOYENNE |
 | **Labels tronqués** | 45% trop étroit pour certains labels | MOYENNE |
 
-#### 11.2 Composants de formulaire
+#### 9.2 Composants de formulaire
 
 | Problème | Impact | Sévérité |
 |----------|--------|----------|
@@ -683,7 +636,7 @@ C'est une partie critique de l'application qui nécessite une attention particul
 | **Inputs génériques** | Pas de focus states distinctifs | MOYENNE |
 | **Color pickers inline** | Affichage basique sans preview | BASSE |
 
-#### 11.3 Galerie de blocs
+#### 9.3 Galerie de blocs
 
 | Problème | Impact | Sévérité |
 |----------|--------|----------|
@@ -692,7 +645,7 @@ C'est une partie critique de l'application qui nécessite une attention particul
 | **Badges de nom** | Fond primary foncé, peu lisible | MOYENNE |
 | **Pas de catégories** | Tous les blocs mélangés | BASSE |
 
-#### 11.4 CSS/Code
+#### 9.4 CSS/Code
 
 | Problème | Impact | Sévérité |
 |----------|--------|----------|
@@ -702,7 +655,7 @@ C'est une partie critique de l'application qui nécessite une attention particul
 
 ### Solution : Interface moderne et aérée
 
-#### 11.5 Sections collapsibles (Accordéon)
+#### 9.5 Sections collapsibles (Accordéon)
 
 **Actuel** : Toutes les sections visibles
 ```
@@ -772,7 +725,7 @@ Text
 }
 ```
 
-#### 11.6 Toggles modernisés
+#### 9.6 Toggles modernisés
 
 **Actuel** : 34x14px, style iOS ancien
 **Cible** : 44x24px, plus accessible
@@ -829,7 +782,7 @@ Text
 }
 ```
 
-#### 11.7 Inputs améliorés
+#### 9.7 Inputs améliorés
 
 **Actuel** : Border bottom uniquement, focus basique
 **Cible** : Border complète, focus states clairs, labels flottants optionnels
@@ -877,7 +830,7 @@ Text
 }
 ```
 
-#### 11.8 Galerie de blocs redessinée
+#### 9.8 Galerie de blocs redessinée
 
 **Actuel** : Grid 3 colonnes, cards 33% (~120px)
 **Cible** : Grid 2 colonnes, cards ~170px avec preview lisible
@@ -958,7 +911,7 @@ Text
 }
 ```
 
-#### 11.9 Onglets redessinés
+#### 9.9 Onglets redessinés
 
 **Actuel** : Background color sur tab active
 **Cible** : Underline indicator moderne
@@ -1004,7 +957,7 @@ Text
 }
 ```
 
-#### 11.10 Color picker amélioré
+#### 9.10 Color picker amélioré
 
 **Actuel** : Inline avec hex et X
 **Cible** : Preview coloré + popover picker
@@ -1104,39 +1057,69 @@ packages/editor/src/js/ext/badsender-extensions.js  # Section collapse logic
 
 ---
 
+## Phase 10 : Patterns modaux centralisés
+
+**Branche**: `refactor/modal-patterns`
+**Priorité**: BASSE
+**Dette**: DEBT-005
+
+### Contexte
+Plusieurs composants modal avec patterns légèrement différents :
+- `modal-confirm.vue`
+- `modal-confirm-form.vue`
+- `mailings/modal-duplicate.vue`
+- `mailings/modal-rename.vue`
+- etc.
+
+### Objectif
+Créer un composable Vue réutilisable pour la logique modale.
+
+### Architecture proposée
+```javascript
+// packages/ui/composables/useModal.js
+export function useModal() {
+  const isOpen = ref(false);
+  const open = () => { isOpen.value = true; };
+  const close = () => { isOpen.value = false; };
+  return { isOpen, open, close };
+}
+```
+
+### Critères de validation
+- [ ] Composable créé et documenté
+- [ ] Au moins 2 modals migrés vers le nouveau pattern
+- [ ] Documentation mise à jour (`03-molecules.md`)
+
+---
+
 ## Dépendances entre phases
 
 ```
-Phase 1 (Typo) ──────────────────────────────────────────►
-                  │
-Phase 2 (Boutons) ──────────────────────────────────────►
-                        │
-                        ▼
-Phase 3 (White-Label) ─────────────────────────────────►
-                              │
-Phase 4 (CSS) ────────────────┴────────────────────────►
-                                    │
-Phase 5 (Modals) ───────────────────┴──────────────────►
-                                          │
-Phase 7 (Admin UI) ───────────────────────┴────────────►
-                                                │
-Phase 8 (Top Bar) ──────────────────────────────┴──────►
-                                                      │
-Phase 9 (Mailings) ───────────────────────────────────►
-                                                        │
-Phase 10 (Canvas) ────────────────────────────────────►
-                                                          │
-Phase 11 (Sidebars) ─────────────────────────────────►
+FONDATIONS (tokens, nettoyage)
+──────────────────────────────
+Phase 1 (Typo) ─────────┐
+                        ├──► Phase 3 (Boutons)
+Phase 2 (CSS Cleanup) ──┤
+                        └──► Phase 4 (White-Label)
+
+INFRASTRUCTURE (header, icônes)
+───────────────────────────────
+Phase 5 (Top Bar + MDI) ──┬──► Phase 6 (Admin UI)
+                          ├──► Phase 7 (Mailings)
+                          └──► Phase 8 (Canvas) ──► Phase 9 (Sidebars)
+
+REFACTORING (opportuniste)
+──────────────────────────
+Phase 10 (Modals) ──► Quand pertinent
 ```
 
-- **Phases 1 et 2** : Indépendantes, peuvent être faites en parallèle
-- **Phase 3** : Bénéficie des phases 1-2 (interface cohérente)
-- **Phases 4 et 5** : Peuvent être faites quand opportun (refactoring progressif)
-- **Phase 7** : Peut commencer après Phase 2 (boutons harmonisés), bénéficie de Phase 5 (modals)
-- **Phase 8** : Indépendante techniquement, bénéficie de Phase 1 (typo) pour cohérence visuelle
-- **Phase 9** : Peut commencer après Phase 2 (boutons), bénéficie de Phase 8 (top bar cohérente)
-- **Phase 10** : Indépendante, mais bénéficie de Phase 8 (icônes MDI dans editor)
-- **Phase 11** : Bénéficie de Phase 1 (typo), Phase 8 (icônes MDI), Phase 10 (cohérence canvas)
+- **Phase 1 (Typo)** et **Phase 2 (CSS)** : Fondations, peuvent être faites en parallèle
+- **Phase 3 (Boutons)** : Après nettoyage CSS pour cohérence
+- **Phase 4 (White-Label)** : Après Phase 2 (prérequis : couleurs nettoyées)
+- **Phase 5 (Top Bar)** : Apporte les icônes MDI, prérequis pour phases Editor
+- **Phases 6, 7** : Bénéficient de Top Bar et boutons harmonisés
+- **Phases 8, 9 (Editor)** : Après Phase 5 (icônes MDI), peuvent être groupées en sprint
+- **Phase 10 (Modals)** : Opportuniste, quand un refactoring modal est nécessaire
 
 ---
 
