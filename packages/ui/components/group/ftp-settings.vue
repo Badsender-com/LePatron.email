@@ -75,25 +75,13 @@ export default {
       this.ftpConnectionResult = null;
       try {
         const payload = {
-          ftpAuthType: this.localModel.ftpAuthType,
-          ftpHost: this.localModel.ftpHost,
-          ftpPort: this.localModel.ftpPort,
-          ftpUsername: this.localModel.ftpUsername,
-          ftpProtocol: this.localModel.ftpProtocol,
-          ftpPathOnServer: this.localModel.ftpPathOnServer,
+          ...this.localModel,
         };
-        if (
-          this.localModel.ftpSshKey &&
-          this.localModel.ftpSshKey !== CREDENTIAL_MASK
-        ) {
-          payload.ftpSshKey = this.localModel.ftpSshKey;
-        }
-        if (
-          this.localModel.ftpPassword &&
-          this.localModel.ftpPassword !== CREDENTIAL_MASK
-        ) {
-          payload.ftpPassword = this.localModel.ftpPassword;
-        }
+        if (!payload.ftpSshKey || payload.ftpSshKey === CREDENTIAL_MASK)
+          delete payload.ftpSshKey;
+        if (!payload.ftpPassword || payload.ftpPassword === CREDENTIAL_MASK)
+          delete payload.ftpPassword;
+
         const response = await this.$axios.$post(
           groupTestFtpConnection({ groupId: this.groupId }),
           payload
