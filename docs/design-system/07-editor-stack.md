@@ -9,9 +9,11 @@ The email editor (`packages/editor/`) uses a different technology stack than the
 | **Knockout.js** | 3.5.0 | Data binding and MVVM |
 | **jQuery** | 3.4.1 | DOM manipulation |
 | **jQuery UI** | 1.11.4 | Widgets (sortable, draggable, tabs) |
+| **Konva.js** | 8.x | Image editor canvas (layers, transforms) |
 | **LESS** | - | Styling |
 | **Mosaico** | - | Email template framework |
 | **TinyMCE** | 4.5.8 | Rich text editing |
+| **@easylogic/colorpicker** | - | Sketch-style color picker |
 
 ## File Structure
 
@@ -78,8 +80,12 @@ Defined in `style_variables.less`:
 ### Typography
 
 ```less
+// Current (to be migrated - see Plan Phase 1)
 @font-family: 'trebuchet ms', arial, sans-serif;
 @base-font-size: 13.6px;
+
+// Target
+@font-family: 'Work Sans', sans-serif;
 ```
 
 ### Sizing
@@ -167,15 +173,28 @@ $('.tabs-container').tabs();
 
 ### Color Picker
 
-`badsender-colorpicker.less` - Custom color picker styles.
+Two implementations exist (see DEBT-007):
+- **New**: `badsender-colorpicker.js` + `badsender-colorpicker.less` - Uses @easylogic/colorpicker (Sketch-style)
+- **Legacy**: `colorpicker.js` - Uses evol-colorpicker (to be deprecated)
 
 ### Image Gallery
 
-`badesender-image-gallery.less` - Image selection modal.
+`badsender-gallery.js` + `badesender-image-gallery.less` - Image selection modal with:
+- Mailing/Template tabs
+- Lazy-loading
+- blueimp jQuery File Upload integration
+
+### Image Editor
+
+Complex canvas-based editor using Konva.js (see DEBT-009):
+- `image-editor.js` - Main canvas with layers, zoom, transformations
+- `image-editor-cropper.js` - Crop with aspect ratios (16:9, 4:3, 1:1)
+- `image-editor-text.js` - Text overlay with font picker
+- `image-editor-filters.js` - 6 filters (grayscale, blur, pixelate, contrast, brighten, invert)
 
 ### Image Cropper
 
-`badsender-image-cropper.less` - Cropper.js integration.
+`badsender-image-cropper.less` - Croppie integration for upload preview.
 
 ### Mobile Preview
 
