@@ -27,6 +27,20 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'Un workspace avec le même nom existe déjà',
       FORBIDDEN_WORKSPACE_CREATION:
         'Vous n\'avez pas les droits pour créer ce workspace',
+      INVALID_SSH_KEY_FORMAT:
+        'Format de clé SSH invalide. Formats acceptés : PEM ou OpenSSH.',
+      INCOMPLETE_SSH_KEY: 'Clé SSH incomplète : marqueur de fin manquant.',
+      FTP_MISSING_SSH_KEY: 'Aucune clé SSH configurée pour ce groupe.',
+      FTP_NOT_ENABLED: 'Le FTP n\'est pas activé pour ce groupe.',
+      FTP_CONNECTION_AUTH_FAILED:
+        'Échec de l\'authentification. Vérifiez vos identifiants (mot de passe ou clé SSH).',
+      FTP_CONNECTION_HOST_NOT_FOUND: 'Hôte introuvable.',
+      FTP_CONNECTION_REFUSED: 'Connexion refusée.',
+      FTP_CONNECTION_INVALID_KEY: 'Clé SSH invalide ou format non supporté.',
+      FTP_CONNECTION_TIMEOUT: 'Délai de connexion dépassé.',
+      FTP_CONNECTION_HANDSHAKE_FAILED:
+        'Échec de la négociation SSH. Le serveur utilise peut-être des algorithmes non supportés.',
+      FTP_PATH_NOT_FOUND: 'Chemin introuvable sur le serveur.',
       emailsGroupExist: 'Ce nom de liste de test est déjà utilisé',
       password: {
         error: {
@@ -177,6 +191,9 @@ export default {
       ftpSshKey: 'Clé SSH privée',
       ftpSshKeyPlaceholder: '-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----',
       testFtpConnection: 'Tester la connexion',
+      ftpConnectionSuccess: 'Connexion réussie',
+      deletePassword: 'Supprimer le mot de passe enregistré',
+      deleteSshKey: 'Supprimer la clé SSH enregistrée',
       entryPoint: 'Point d\'entrée',
       issuer: 'Issuer',
       userHasAccessToAllWorkspaces:

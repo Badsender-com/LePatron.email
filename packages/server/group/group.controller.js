@@ -458,6 +458,23 @@ async function testFtpConnection(req, res) {
     throw new NotFound();
   }
 
+  // Allow overriding FTP settings from the form (to test before saving)
+  const ftpOverrides = [
+    'ftpAuthType',
+    'ftpHost',
+    'ftpPort',
+    'ftpUsername',
+    'ftpProtocol',
+    'ftpPathOnServer',
+    'ftpSshKey',
+    'ftpPassword',
+  ];
+  for (const field of ftpOverrides) {
+    if (req.body[field] !== undefined) {
+      group[field] = req.body[field];
+    }
+  }
+
   const result = await groupFtpService.testConnection(group);
   return res.json(result);
 }
