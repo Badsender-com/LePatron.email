@@ -28,6 +28,20 @@ export default {
       WORKSPACE_ALREADY_EXISTS: 'A workspace with this name already exists',
       FORBIDDEN_WORKSPACE_CREATION:
         'You don\'t have the rights to create this workspace',
+      INVALID_SSH_KEY_FORMAT:
+        'Invalid SSH key format. Accepted formats: PEM or OpenSSH.',
+      INCOMPLETE_SSH_KEY: 'Incomplete SSH key: missing end marker.',
+      FTP_MISSING_SSH_KEY: 'No SSH key configured for this group.',
+      FTP_NOT_ENABLED: 'FTP is not enabled for this group.',
+      FTP_CONNECTION_AUTH_FAILED:
+        'Authentication failed. Check your credentials (password or SSH key).',
+      FTP_CONNECTION_HOST_NOT_FOUND: 'Host not found.',
+      FTP_CONNECTION_REFUSED: 'Connection refused.',
+      FTP_CONNECTION_INVALID_KEY: 'Invalid SSH key or unsupported format.',
+      FTP_CONNECTION_TIMEOUT: 'Connection timed out.',
+      FTP_CONNECTION_HANDSHAKE_FAILED:
+        'SSH handshake failed. The server may use unsupported algorithms.',
+      FTP_PATH_NOT_FOUND: 'Path not found on server.',
       emailsGroupExist: 'The name of this test list already exist',
       password: {
         error: {
@@ -140,7 +154,13 @@ export default {
   },
   forms: {
     group: {
-      name: 'Compagny name',
+      sections: {
+        generalInfo: 'General information',
+        imageHosting: 'Image hosting',
+        authentication: 'Authentication',
+        permissions: 'Permissions',
+      },
+      name: 'Company name',
       downloadWithoutEnclosingFolder: {
         label: 'Zip file format',
         wrapped: 'Wrap in a parent folder',
@@ -161,15 +181,21 @@ export default {
       },
       exportFtp: 'Export images on an FTP',
       exportCdn: 'Export images on a CDN',
+      samlAuthentication: 'SAML authentication',
       enable: 'Enable',
       ftpProtocol: 'FTP protocol',
       host: 'Host',
       username: 'Username',
       port: 'Port',
       path: 'Folder\'s path',
-      httpProtocol: 'Protocole HTTP',
-      endpoint: 'Images root\'URL',
+      httpProtocol: 'HTTP protocol',
+      endpoint: 'Images root URL',
       editorLabel: 'Button label',
+      ftpAuthType: 'Authentication method',
+      ftpSshKey: 'SSH private key',
+      ftpSshKeyPlaceholder: '-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----',
+      testFtpConnection: 'Test connection',
+      ftpConnectionSuccess: 'Connection successful',
       entryPoint: 'Entry point',
       issuer: 'Issuer',
       userHasAccessToAllWorkspaces:
