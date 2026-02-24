@@ -60,6 +60,25 @@ var(--v-accent-base)
 
 ---
 
+## Neutral Grays (fixed)
+
+| Token | Value | CSS Variable | Usage |
+|-------|-------|--------------|-------|
+| Gray 50 | `#fafafa` | `--gray-50` | Subtle backgrounds |
+| Gray 100 | `#f5f5f5` | `--gray-100` | Hover backgrounds |
+| Gray 200 | `#eeeeee` | `--gray-200` | Light borders |
+| Gray 300 | `#e0e0e0` | `--gray-300` | Input borders |
+| Gray 400 | `#bdbdbd` | `--gray-400` | Disabled text |
+| Gray 500 | `#9e9e9e` | `--gray-500` | Placeholder text |
+| Gray 600 | `#757575` | `--gray-600` | Secondary text |
+| Gray 700 | `#616161` | `--gray-700` | — |
+| Gray 800 | `#424242` | `--gray-800` | Primary text |
+| Gray 900 | `#212121` | `--gray-900` | Headings |
+
+> Based on Material Design gray palette.
+
+---
+
 ## Typography
 
 | Stack | Current | Target |
@@ -106,11 +125,54 @@ Prefixes: `p`=padding, `m`=margin, `a`=all, `x`=horizontal, `y`=vertical, `t`=to
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `@standard-border-radius` | 5px | Default |
-| `@button-border-radius` | 5px | Buttons |
-| `@large-border-radius` | 7px | Cards, dialogs |
+| `@standard-border-radius` | 4px | Default, inputs, buttons |
+| `@large-border-radius` | 8px | Cards, dialogs, panels |
+| `@pill-border-radius` | 9999px | Pills, chips, badges |
 
-Vuetify: `rounded`, `rounded="lg"`, `rounded="0"`
+Vuetify: `rounded`, `rounded="lg"`, `rounded="0"`, `rounded="pill"`
+
+---
+
+## Buttons (fixed)
+
+| Property | Value |
+|----------|-------|
+| Border radius | `4px` |
+| Text transform | `uppercase` |
+| Letter spacing | `0.025em` |
+| Font weight | `500` |
+| Padding | `0.625rem 1.25rem` (10px 20px) |
+
+### Variants
+
+| Variant | Background | Text |
+|---------|------------|------|
+| Primary (accent) | `--accent` | white |
+| Secondary | `--primary` | white |
+| Text | transparent | `--primary` |
+| Outlined | transparent | `--accent` |
+| Destructive | `--error` | white |
+
+> **Convention**: Primary actions always use `accent` color, not `primary`.
+
+---
+
+## Form Fields (fixed)
+
+| Property | Default | Focus | Error |
+|----------|---------|-------|-------|
+| Border | `1px solid --gray-300` | `1px solid --accent` | `1px solid --error` |
+| Border radius | `4px` | — | — |
+| Padding | `0.75rem` (12px) | — | — |
+| Background | `white` | — | — |
+
+### Focus State
+
+```css
+border-color: var(--accent);
+/* Optional: subtle shadow for emphasis */
+box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+```
 
 ---
 
@@ -149,4 +211,4 @@ Vuetify: `elevation` prop (0-24)
 
 ---
 
-*Last updated: February 2026*
+*Last updated: February 2026 (v1.1 - added grays, buttons, form fields)*
