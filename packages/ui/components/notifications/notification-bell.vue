@@ -124,7 +124,7 @@ export default {
     @input="menuOpen ? onMenuOpen() : onMenuClose()"
   >
     <template #activator="{ on, attrs }">
-      <v-btn icon v-bind="attrs" v-on="on">
+      <v-btn icon v-bind="attrs" v-on="on" :aria-label="$t('notifications.title')">
         <v-badge
           :content="unreadCount"
           :value="hasUnread"
@@ -144,7 +144,7 @@ export default {
           v-if="hasUnread"
           text
           x-small
-          color="primary"
+          color="accent"
           @click="handleMarkAllRead"
         >
           {{ $t('notifications.markAllRead') }}

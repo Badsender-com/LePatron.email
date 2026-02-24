@@ -15,7 +15,7 @@
     <div title="Save block" class="tool save" data-bind="attr: { title: $root.t('Save block') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><i class="fa fa-fw fa-download"></i></div>
     <!-- Comment Block Button -->
     <div title="Comment block" class="tool comment" data-bind="attr: { title: $root.t('Comment block') }, click: $root.commentBlock.bind($element, $rawData, $parent, $index)">
-      <i class="fa fa-fw fa-comment-o"></i>
+      <span class="mdi mdi-comment-outline"></span>
       <!-- ko if: $root.getBlockCommentCount && $root.getBlockCommentCount($data.id) > 0 -->
       <span class="comment-count-badge" data-bind="text: $root.getBlockCommentCount($data.id)"></span>
       <!-- /ko -->

@@ -9,7 +9,7 @@
          Uses position:fixed so it renders relative to viewport despite #main-edit-area having overflow:hidden -->
     <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 && !$root.showComments() -->
     <div class="comments-floating-indicator" data-bind="click: function() { $root.showComments(true); if ($root.commentsStatus() === false) { $root.loadComments(); } }, attr: { title: $root.t('comments-toggle') }">
-      <i class="fa fa-comments"></i>
+      <span class="mdi mdi-comment-multiple-outline"></span>
       <span class="comments-floating-count" data-bind="text: $root.unresolvedCommentCount()"></span>
     </div>
     <!-- /ko -->
@@ -34,7 +34,7 @@
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
     <span class="comments-button-wrapper">
-      <input id="showComments" type="checkbox" data-bind="checked: $root.showComments, button: { refreshOn: $root.showComments, icons: { primary: 'fa fa-fw fa-comments', secondary: null }, text: false, label: $root.t('Comments') }"><label title="Show comments panel" for="showComments" data-bind="attr: { title: $root.t('comments-toggle') }">show comments</label></input>
+      <input id="showComments" type="checkbox" data-bind="checked: $root.showComments, button: { refreshOn: $root.showComments, icons: { primary: 'mdi mdi-comment-multiple-outline', secondary: null }, text: false, label: $root.t('Comments') }"><label title="Show comments panel" for="showComments" data-bind="attr: { title: $root.t('comments-toggle') }">show comments</label></input>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount(), click: function() { $root.showComments(!$root.showComments()); }"></span>
       <!-- /ko -->

@@ -206,6 +206,7 @@ module.exports = {
   'comments-load-error': 'Error loading comments',
   'comments-count': '{count} unresolved',
   'comments-count-label': 'pending',
+  'comments-all-resolved': 'All resolved',
   'comments-date-now': 'Just now',
   'comments-go-to-block': 'Go to block',
   'comments-block-not-found': 'Block not found',

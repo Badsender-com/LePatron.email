@@ -214,6 +214,7 @@ module.exports = {
   'comments-load-error': 'Erreur lors du chargement des commentaires',
   'comments-count': '{count} non résolu(s)',
   'comments-count-label': 'en attente',
+  'comments-all-resolved': 'Tous résolus',
   'comments-date-now': "À l'instant",
   'comments-go-to-block': 'Aller au bloc',
   'comments-block-not-found': 'Bloc introuvable',

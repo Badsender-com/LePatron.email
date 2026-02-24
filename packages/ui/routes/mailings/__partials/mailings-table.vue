@@ -444,6 +444,7 @@ export default {
             small
             :href="`/editor/${item.id}?comments=1`"
             :title="$t('mailings.openComments')"
+            :aria-label="$t('mailings.openComments')"
             class="comments-btn"
           >
             <v-badge
