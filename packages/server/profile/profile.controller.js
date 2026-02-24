@@ -401,13 +401,15 @@ async function actitoEntitiesList(req, res) {
  *
  */
 async function actitoTargetTablesList(req, res) {
-  const { apiKey, entity } = req.body;
+  // Note: "entity" in the request body is the database entity (entityOfTarget in Actito API)
+  // This is used to list profile tables, which belong to the database entity
+  const { apiKey, entity: entityOfTarget } = req.body;
 
   if (
     !apiKey ||
-    !entity ||
+    !entityOfTarget ||
     typeof apiKey === 'undefined' ||
-    typeof entity === 'undefined'
+    typeof entityOfTarget === 'undefined'
   ) {
     throw new NotFound();
   }
@@ -415,7 +417,7 @@ async function actitoTargetTablesList(req, res) {
   const actitoTargetTablesListResult = await profileService.actitoTargetTablesList(
     {
       apiKey,
-      entity,
+      entityOfTarget,
     }
   );
 
