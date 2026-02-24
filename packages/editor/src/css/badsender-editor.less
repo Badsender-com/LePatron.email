@@ -829,18 +829,20 @@ body {
   }
 }
 
+// Status Badge: solid background + white text (per preview/components.html)
 .comments-stats-pending {
-  background: fade(@comment-warning, 15%);
-  color: darken(@comment-warning, 10%);
+  background: @comment-warning;
+  color: white;
 
   .stats-count {
-    color: darken(@comment-warning, 15%);
+    color: white;
   }
 }
 
+// Resolved status badge: solid background + white text
 .comments-stats-resolved {
-  background: fade(@comment-success, 15%);
-  color: @comment-success;
+  background: @comment-success;
+  color: white;
 }
 
 // Form styles
@@ -888,7 +890,7 @@ body {
   }
 
   &::placeholder {
-    color: @comment-gray-500;  // Placeholder text color
+    color: @comment-gray-600;  // Per preview: gray-600 for placeholders
   }
 }
 
@@ -943,13 +945,14 @@ body {
   color: @comment-gray-500;  // Placeholder/secondary text
 }
 
-// Form options with chips
+// Form options with chips (button aligned right per design system)
 .comments-form-options {
   display: flex;
   gap: 8px;
   margin-top: 12px;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;  // Push button to the right
 }
 
 .comments-chips-group {
@@ -984,7 +987,7 @@ body {
   }
 
   .fa, .mdi {
-    font-size: 11px;
+    font-size: 16px;  // Per preview: 1rem
   }
 }
 
