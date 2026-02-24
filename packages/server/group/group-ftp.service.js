@@ -216,7 +216,11 @@ function mapFtpError(error, group) {
     };
   }
 
-  if (errorMessage.includes('privateKey')) {
+  if (
+    errorMessage.includes('privateKey') ||
+    errorMessage.includes('signing data with key') ||
+    errorMessage.includes('asn1')
+  ) {
     return {
       success: false,
       errorCode: ERROR_CODES.FTP_CONNECTION_INVALID_KEY,
