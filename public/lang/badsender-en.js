@@ -241,6 +241,6 @@ module.exports = {
   'comments-severity-blocking': 'Blocking',
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
-  'comments-go-to-block': 'Click to go to block',
+  'comments-go-to-block': 'Go to block',
   'comments-no-block': 'This comment is not linked to a block',
 };

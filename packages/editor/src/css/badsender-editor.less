@@ -614,14 +614,30 @@ body {
 }
 
 ////////
-// COMMENTS PANEL - Modern Design System
+// COMMENTS PANEL - Design System Aligned
 ////////
 
-// Design System Variables
-@comment-primary-dark: #0d2b3e;
-@comment-primary: #1a4a5e;
-@comment-accent-teal: #2dd4bf;
-@comment-accent-coral: #f04e23;
+// ===========================================
+// Color Variables - Aligned with Design System
+// Reference: docs/design-system/01-tokens.md
+//
+// White-label support: Use CSS variables for brand colors
+// CSS vars are set by Vuetify and adapt to group branding
+// ===========================================
+
+// Brand colors - LESS fallbacks (compile-time)
+@comment-primary-dark: @bs-primary-color;      // #093040
+@comment-primary: @bs-secondary-color;         // #265090
+@comment-accent: @bs-accent-color;             // #00acdc - Primary actions, links
+@comment-accent-highlight: @link-color;        // #f04e23 - Highlights, badges
+
+// Semantic colors (from style_variables.less)
+@comment-success: @green;                      // #4caf50
+@comment-warning: @yellow;                     // #fb8c00
+@comment-error: @red;                          // #FF5252
+@comment-info: @blue;                          // #2196F3
+
+// Neutral grays (no design system equivalent - keep hardcoded)
 @comment-gray-900: #1a1a2e;
 @comment-gray-600: #6b7280;
 @comment-gray-400: #9ca3af;
@@ -629,10 +645,23 @@ body {
 @comment-gray-200: #e5e7eb;
 @comment-gray-100: #f3f4f6;
 @comment-gray-50: #f9fafb;
-@comment-success: #10b981;
-@comment-warning: #f59e0b;
-@comment-error: #ef4444;
-@comment-info: #3b82f6;
+
+// Border radius (from style_variables.less)
+@comment-border-radius: @standard-border-radius;       // 5px
+@comment-border-radius-lg: @large-border-radius;       // 7px
+@comment-border-radius-pill: 16px;                     // Pills/chips
+
+// ===========================================
+// CSS Variables for White-Label Theming
+// These adapt to group branding at runtime
+// Vuetify sets --v-accent-base when group has custom branding
+// ===========================================
+#toolcomments {
+  // Override accent color with CSS variable for white-label support
+  --comments-accent: var(--v-accent-base, @comment-accent);
+  --comments-accent-light: var(--v-accent-lighten5, fade(@comment-accent, 15%));
+  --comments-primary: var(--v-primary-base, @comment-primary-dark);
+}
 
 // =============================================
 // Comments Visibility Indicators
@@ -650,7 +679,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: @comment-accent-coral;
+  background: @comment-accent-highlight;
   color: white;
   font-size: 11px;
   font-weight: 700;
@@ -701,7 +730,7 @@ body {
   }
 
   .comments-floating-count {
-    background: @comment-accent-coral;
+    background: @comment-accent-highlight;
     color: white;
     font-size: 12px;
     font-weight: 700;
@@ -745,7 +774,7 @@ body {
   margin-bottom: 8px;
   padding: 8px 12px;
   background: @comment-gray-100;
-  border-radius: 6px;
+  border-radius: @comment-border-radius;
   font-size: 12px;
   color: @comment-gray-600;
 }
@@ -786,7 +815,7 @@ body {
 .comments-form {
   background: @comment-gray-50;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: @comment-border-radius-lg;
   margin-bottom: 16px;
   flex-shrink: 0;
   border: 1px solid @comment-gray-200;
@@ -796,21 +825,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, fade(@comment-primary, 10%) 0%, fade(@comment-accent-teal, 10%) 100%);
+  background: linear-gradient(135deg, fade(@comment-primary, 10%) 0%, fade(@comment-accent, 10%) 100%);
   padding: 10px 14px;
-  border-radius: 6px;
+  border-radius: @comment-border-radius;
   margin-bottom: 12px;
   font-size: 12px;
   font-weight: 500;
   color: @comment-primary-dark;
-  border-left: 3px solid @comment-accent-teal;
+  border-left: 3px solid var(--comments-accent, @comment-accent);
 }
 
 .comments-textarea {
   width: 100%;
   padding: 12px;
   border: 1px solid @comment-gray-200;
-  border-radius: 8px;
+  border-radius: @comment-border-radius-lg;
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
@@ -821,8 +850,8 @@ body {
 
   &:focus {
     outline: none;
-    border-color: @comment-accent-teal;
-    box-shadow: 0 0 0 3px fade(@comment-accent-teal, 15%);
+    border-color: var(--comments-accent, @comment-accent);
+    box-shadow: 0 0 0 3px var(--comments-accent-light, fade(@comment-accent, 15%));
   }
 
   &::placeholder {
@@ -842,7 +871,7 @@ body {
   right: 0;
   background: white;
   border: 1px solid @comment-gray-200;
-  border-radius: 8px;
+  border-radius: @comment-border-radius-lg;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   max-height: 200px;
   overflow-y: auto;
@@ -859,10 +888,10 @@ body {
   transition: background 0.15s ease;
 
   &:first-child {
-    border-radius: 7px 7px 0 0;
+    border-radius: @comment-border-radius-lg @comment-border-radius-lg 0 0;
   }
   &:last-child {
-    border-radius: 0 0 7px 7px;
+    border-radius: 0 0 @comment-border-radius-lg @comment-border-radius-lg;
   }
 
   &:hover {
@@ -902,7 +931,7 @@ body {
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
-  border-radius: 16px;
+  border-radius: @comment-border-radius-pill;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -916,7 +945,7 @@ body {
   }
 
   &.selected {
-    background: @comment-primary-dark;
+    background: var(--comments-accent, @comment-accent);
     color: white;
   }
 
@@ -968,7 +997,7 @@ body {
 .comments-select {
   padding: 8px 12px;
   border: 1px solid @comment-gray-200;
-  border-radius: 6px;
+  border-radius: @comment-border-radius;
   font-size: 13px;
   font-family: inherit;
   background: white;
@@ -977,7 +1006,7 @@ body {
 
   &:focus {
     outline: none;
-    border-color: @comment-accent-teal;
+    border-color: var(--comments-accent, @comment-accent);
   }
 }
 
@@ -985,7 +1014,7 @@ body {
 .comments-btn {
   padding: 8px 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: @comment-border-radius;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -1003,13 +1032,17 @@ body {
   }
 }
 
+// Primary button uses accent color (per design system: primary actions = accent)
+// Uses CSS variable for white-label support with filter for hover state
 .comments-btn-primary {
-  background: linear-gradient(135deg, @comment-primary 0%, @comment-primary-dark 100%);
+  background: var(--comments-accent, @comment-accent);
   color: white;
 
   &:hover {
+    background: var(--comments-accent, @comment-accent);
+    filter: brightness(0.9);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px fade(@comment-primary-dark, 30%);
+    box-shadow: 0 4px 12px fade(@comment-accent, 30%);
   }
 }
 
@@ -1030,7 +1063,7 @@ body {
 // Icon-only button
 .comments-btn-icon {
   padding: 6px;
-  border-radius: 6px;
+  border-radius: @comment-border-radius;
   background: transparent;
   color: @comment-gray-400;
   border: none;
@@ -1044,7 +1077,7 @@ body {
 
   &:hover {
     background: @comment-gray-100;
-    color: @comment-primary-dark;
+    color: var(--comments-accent, @comment-accent);
   }
 
   &.btn-icon-danger:hover {
@@ -1114,7 +1147,7 @@ body {
   }
 
   &.comment-editing {
-    border-color: @comment-accent-teal;
+    border-color: var(--comments-accent, @comment-accent);
   }
 
   // Resolved comments: collapsed style
@@ -1227,15 +1260,15 @@ body {
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 4px;
-  background: fade(@comment-accent-teal, 12%);
-  color: darken(@comment-accent-teal, 15%);
+  background: fade(@comment-accent, 12%);
+  color: darken(@comment-accent, 15%);
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
 
   &:hover {
-    background: fade(@comment-accent-teal, 20%);
-    color: darken(@comment-accent-teal, 20%);
+    background: fade(@comment-accent, 20%);
+    color: darken(@comment-accent, 20%);
   }
 
   .fa {
@@ -1275,8 +1308,8 @@ body {
 
 // Mention styling in comment text
 .comment-mention {
-  background: fade(@comment-accent-teal, 15%);
-  color: darken(@comment-accent-teal, 20%);
+  background: fade(@comment-accent, 15%);
+  color: darken(@comment-accent, 20%);
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 500;
@@ -1325,7 +1358,7 @@ body {
 .comment-reply {
   background: @comment-gray-50;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: @comment-border-radius-lg;
   margin-bottom: 8px;
 
   &:last-child {
@@ -1353,8 +1386,8 @@ body {
   margin-top: 14px;
   padding: 14px;
   background: @comment-gray-50;
-  border-radius: 8px;
-  border-left: 3px solid @comment-accent-teal;
+  border-radius: @comment-border-radius-lg;
+  border-left: 3px solid var(--comments-accent, @comment-accent);
 
   .comments-replying-to {
     margin-bottom: 10px;
