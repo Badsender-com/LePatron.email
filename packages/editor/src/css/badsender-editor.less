@@ -647,9 +647,10 @@ body {
 @comment-gray-50: #f9fafb;
 
 // Border radius (from style_variables.less)
-@comment-border-radius: @standard-border-radius;       // 5px
-@comment-border-radius-lg: @large-border-radius;       // 7px
-@comment-border-radius-pill: 16px;                     // Pills/chips
+// Design System border-radius tokens (from docs/design-system/01-tokens.md)
+@comment-border-radius: 4px;        // Standard: inputs, buttons
+@comment-border-radius-lg: 8px;     // Large: cards, dialogs, panels
+@comment-border-radius-pill: 9999px; // Pills, chips, badges
 
 // ===========================================
 // CSS Variables for White-Label Theming
@@ -682,9 +683,9 @@ body {
   background: @comment-accent-highlight;
   color: white;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 2px 6px;
-  border-radius: 10px;
+  border-radius: @comment-border-radius-pill;
   min-width: 18px;
   height: 18px;
   line-height: 1;
@@ -703,7 +704,7 @@ body {
   background: @comment-primary-dark;
   color: white;
   padding: 12px 18px;
-  border-radius: 24px;
+  border-radius: @comment-border-radius-pill;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
@@ -733,9 +734,9 @@ body {
     background: @comment-accent-highlight;
     color: white;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 2px 8px;
-    border-radius: 12px;
+    border-radius: @comment-border-radius-pill;
     min-width: 20px;
     text-align: center;
   }
@@ -783,10 +784,10 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 16px;
+  padding: 4px 12px;
+  border-radius: @comment-border-radius-pill;
 
   .stats-count {
     font-weight: 600;
@@ -1010,14 +1011,16 @@ body {
   }
 }
 
-// Button styles
+// Button styles (per design system: uppercase, letter-spacing)
 .comments-btn {
-  padding: 8px 14px;
+  padding: 10px 20px;
   border: none;
   border-radius: @comment-border-radius;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
   cursor: pointer;
   background: @comment-gray-100;
   color: @comment-gray-600;
@@ -1047,7 +1050,7 @@ body {
 }
 
 .comments-btn-small {
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-size: 12px;
 }
 
@@ -1136,7 +1139,7 @@ body {
 // Comment card (flat design)
 .comment-item {
   background: white;
-  border-radius: 10px;
+  border-radius: @comment-border-radius-lg;
   padding: 14px;
   margin-bottom: 10px;
   border: 1px solid @comment-gray-200;
@@ -1202,17 +1205,17 @@ body {
   color: @comment-gray-400;
 }
 
-// Badges (flat)
+// Badges (flat, pill shape per design system)
 .comment-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 12px;
+  border-radius: @comment-border-radius-pill;
   font-weight: 500;
 
-  .fa {
+  .fa, .mdi {
     font-size: 10px;
   }
 }
@@ -1243,36 +1246,33 @@ body {
   gap: 4px;
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: @comment-border-radius;
   background: @comment-gray-100;
   color: @comment-gray-600;
 
-  .fa {
+  .fa, .mdi {
     font-size: 10px;
   }
 }
 
-// Go to block link
+// Go to block link (text link with icon per design system)
 .comment-go-to-block {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: fade(@comment-accent, 12%);
-  color: darken(@comment-accent, 15%);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--comments-accent, @comment-accent);
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
 
   &:hover {
-    background: fade(@comment-accent, 20%);
-    color: darken(@comment-accent, 20%);
+    text-decoration: underline;
   }
 
-  .fa {
-    font-size: 10px;
+  .fa, .mdi {
+    font-size: 14px;
   }
 
   &.comment-block-deleted {
@@ -1306,12 +1306,12 @@ body {
   word-break: break-word;
 }
 
-// Mention styling in comment text
+// Mention styling in comment text (inline mention per design system)
 .comment-mention {
   background: fade(@comment-accent, 15%);
   color: darken(@comment-accent, 20%);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: @comment-border-radius;
   font-weight: 500;
 }
 
