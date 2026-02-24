@@ -637,14 +637,16 @@ body {
 @comment-error: @red;                          // #FF5252
 @comment-info: @blue;                          // #2196F3
 
-// Neutral grays (no design system equivalent - keep hardcoded)
-@comment-gray-900: #1a1a2e;
-@comment-gray-600: #6b7280;
-@comment-gray-400: #9ca3af;
-@comment-gray-300: #d1d5db;
-@comment-gray-200: #e5e7eb;
-@comment-gray-100: #f3f4f6;
-@comment-gray-50: #f9fafb;
+// Neutral grays - Material Design palette (from 01-tokens.md)
+@comment-gray-900: #212121;  // Headings
+@comment-gray-800: #424242;  // Primary text
+@comment-gray-600: #757575;  // Secondary text
+@comment-gray-500: #9e9e9e;  // Placeholder text
+@comment-gray-400: #bdbdbd;  // Disabled text
+@comment-gray-300: #e0e0e0;  // Input borders
+@comment-gray-200: #eeeeee;  // Light borders
+@comment-gray-100: #f5f5f5;  // Hover backgrounds
+@comment-gray-50: #fafafa;   // Subtle backgrounds
 
 // Border radius (from style_variables.less)
 // Design System border-radius tokens (from docs/design-system/01-tokens.md)
@@ -662,6 +664,34 @@ body {
   --comments-accent: var(--v-accent-base, @comment-accent);
   --comments-accent-light: var(--v-accent-lighten5, fade(@comment-accent, 15%));
   --comments-primary: var(--v-primary-base, @comment-primary-dark);
+
+  // Panel Header (per 02-components.md specifications)
+  > .pane-title {
+    background: var(--comments-primary, @comment-primary-dark);
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px 16px;
+    margin: 0;
+    display: block;
+  }
+
+  // Close button in panel header
+  > .close {
+    top: 12px !important;
+    right: 12px !important;
+    width: 24px;
+    height: 24px;
+
+    &:before {
+      color: white !important;
+      font-size: 20px;
+    }
+
+    &:hover:before {
+      color: @comment-gray-200 !important;
+    }
+  }
 }
 
 // =============================================
@@ -780,12 +810,13 @@ body {
   color: @comment-gray-600;
 }
 
+// Status badge (per 02-components.md specifications)
 .comments-stats {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;  // Per design system
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;  // Per design system
   padding: 4px 12px;
   border-radius: @comment-border-radius-pill;
 
@@ -794,7 +825,7 @@ body {
   }
 
   .mdi {
-    font-size: 16px;
+    font-size: 14px;  // Per design system
   }
 }
 
@@ -819,7 +850,7 @@ body {
   border-radius: @comment-border-radius-lg;
   margin-bottom: 16px;
   flex-shrink: 0;
-  border: 1px solid @comment-gray-200;
+  border: 1px solid @comment-gray-300;  // Input borders per design system
 }
 
 .comments-replying-to {
@@ -836,15 +867,16 @@ body {
   border-left: 3px solid var(--comments-accent, @comment-accent);
 }
 
+// Textarea (per 02-components.md specifications)
 .comments-textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid @comment-gray-200;
-  border-radius: @comment-border-radius-lg;
+  border: 1px solid @comment-gray-300;
+  border-radius: @comment-border-radius;  // 4px standard, not large
   font-size: 14px;
   font-family: inherit;
   resize: vertical;
-  min-height: 70px;
+  min-height: 80px;  // Per design system
   box-sizing: border-box;
   background: white;
   transition: all 0.2s ease;
@@ -852,11 +884,11 @@ body {
   &:focus {
     outline: none;
     border-color: var(--comments-accent, @comment-accent);
-    box-shadow: 0 0 0 3px var(--comments-accent-light, fade(@comment-accent, 15%));
+    box-shadow: 0 0 0 2px fade(@comment-accent, 10%);  // Per design system: 2px, 10% opacity
   }
 
   &::placeholder {
-    color: @comment-gray-400;
+    color: @comment-gray-500;  // Placeholder text color
   }
 }
 
@@ -871,7 +903,7 @@ body {
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid @comment-gray-200;
+  border: 1px solid @comment-gray-300;
   border-radius: @comment-border-radius-lg;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   max-height: 200px;
@@ -903,12 +935,12 @@ body {
 .mention-name {
   font-weight: 500;
   font-size: 13px;
-  color: @comment-gray-900;
+  color: @comment-gray-800;  // Primary text
 }
 
 .mention-email {
   font-size: 11px;
-  color: @comment-gray-400;
+  color: @comment-gray-500;  // Placeholder/secondary text
 }
 
 // Form options with chips
@@ -926,12 +958,12 @@ body {
   flex-wrap: wrap;
 }
 
-// Chip/Pill component (flat design)
+// Chip/Pill component (per 02-components.md specifications)
 .comment-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 12px;
+  padding: 4px 12px;  // Per design system
   border-radius: @comment-border-radius-pill;
   font-size: 12px;
   font-weight: 500;
@@ -943,6 +975,7 @@ body {
 
   &:hover {
     background: @comment-gray-200;
+    color: @comment-gray-800;  // Per design system
   }
 
   &.selected {
@@ -997,7 +1030,7 @@ body {
 // Legacy select styling (fallback)
 .comments-select {
   padding: 8px 12px;
-  border: 1px solid @comment-gray-200;
+  border: 1px solid @comment-gray-300;  // Input borders per design system
   border-radius: @comment-border-radius;
   font-size: 13px;
   font-family: inherit;
@@ -1011,7 +1044,7 @@ body {
   }
 }
 
-// Button styles (per design system: uppercase, letter-spacing)
+// Button styles (per 01-tokens.md: uppercase, letter-spacing)
 .comments-btn {
   padding: 10px 20px;
   border: none;
@@ -1031,7 +1064,7 @@ body {
 
   &:hover {
     background: @comment-gray-200;
-    color: @comment-gray-900;
+    color: @comment-gray-800;  // Primary text on hover
   }
 }
 
@@ -1063,7 +1096,7 @@ body {
   }
 }
 
-// Icon-only button
+// Icon Action Button (per 02-components.md specifications)
 .comments-btn-icon {
   padding: 6px;
   border-radius: @comment-border-radius;
@@ -1093,8 +1126,8 @@ body {
     color: @comment-success;
   }
 
-  .fa {
-    font-size: 14px;
+  .fa, .mdi {
+    font-size: 16px;  // Per design system
   }
 }
 
@@ -1108,7 +1141,7 @@ body {
   transition: color 0.15s ease;
 
   &:hover {
-    color: @comment-gray-900;
+    color: @comment-gray-800;  // Primary text
   }
 }
 
@@ -1117,10 +1150,10 @@ body {
 .comments-empty {
   text-align: center;
   padding: 32px 16px;
-  color: @comment-gray-400;
+  color: @comment-gray-500;  // Placeholder text color
   font-size: 14px;
 
-  .fa {
+  .fa, .mdi {
     display: block;
     font-size: 32px;
     margin-bottom: 12px;
@@ -1296,11 +1329,11 @@ body {
   display: none; // Hidden, severity shown via badge now
 }
 
-// Comment text
+// Comment text (per 02-components.md: Comment Card Body)
 .comment-text {
   font-size: 14px;
   line-height: 1.6;
-  color: @comment-gray-900;
+  color: @comment-gray-800;  // Per design system: primary text
   margin-bottom: 12px;
   white-space: pre-wrap;
   word-break: break-word;
