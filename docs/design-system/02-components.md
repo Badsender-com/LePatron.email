@@ -39,6 +39,26 @@
 | **Error** (destructive) | `--error` | white | none | Delete, Remove |
 | **Disabled** | any | any | any | `opacity: 0.5; cursor: not-allowed` |
 
+### Hover States
+
+```css
+.btn-accent:hover {
+  background: #0095c0;  /* Darkened accent */
+}
+
+.btn-primary:hover {
+  background: #072530;  /* Darkened primary */
+}
+
+.btn-text:hover {
+  background: var(--gray-100);
+}
+
+.btn-error:hover {
+  background: #d32f2f;  /* Darkened error */
+}
+```
+
 ### Icon Button
 
 ```css
@@ -55,6 +75,29 @@
 ```
 
 > **Convention**: Primary actions use `accent`, never `primary`.
+
+---
+
+## Form Actions
+
+Reusable pattern for action buttons in forms, cards, and modals.
+
+```css
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+}
+
+/* When submit button is on its own line (flex-wrap) */
+.form-actions > .btn {
+  margin-left: auto;
+}
+```
+
+> **Convention**: Primary action buttons (Save, Submit, Add) are always **right-aligned**.
 
 ---
 
@@ -164,7 +207,8 @@ Interactive pill-shaped elements for categories, filters, or status indicators.
   color: var(--gray-600);
 }
 
-.chip:hover {
+/* Hover only when NOT selected (prevents hover overriding selected state) */
+.chip:hover:not(.selected) {
   background: var(--gray-200);
   color: var(--gray-800);
 }
@@ -178,6 +222,8 @@ Interactive pill-shaped elements for categories, filters, or status indicators.
   font-size: 16px;
 }
 ```
+
+> **Important**: Use `:hover:not(.selected)` to prevent hover styles from overriding the selected state.
 
 ### Semantic Variants (selected state)
 
@@ -757,4 +803,4 @@ var(--v-accent-base)     /* Vuetify */
 
 ---
 
-*Last updated: February 2026 (v2.0 - restructured to be tech-agnostic with complete CSS specs)*
+*Last updated: February 2026 (v2.1 - added hover states, form actions pattern, chip interaction notes)*
