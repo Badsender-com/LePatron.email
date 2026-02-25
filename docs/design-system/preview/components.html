@@ -186,9 +186,17 @@
       color: var(--white);
     }
 
+    .btn-primary:hover {
+      background: #072530;
+    }
+
     .btn-error {
       background: var(--error);
       color: var(--white);
+    }
+
+    .btn-error:hover {
+      background: #d32f2f;
     }
 
     .btn-text {
@@ -396,7 +404,7 @@
       color: var(--gray-600);
     }
 
-    .chip:hover {
+    .chip:hover:not(.selected) {
       background: var(--gray-200);
       color: var(--gray-800);
     }
