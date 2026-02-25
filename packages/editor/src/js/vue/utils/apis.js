@@ -9,7 +9,7 @@ function getProfileDetail({ profileId }) {
 }
 
 function getCampaignDetail({ profileId, campaignId }) {
-  return `${prefixApi}/profiles/${profileId}/campaign-mail/${campaignId}`;
+  return `${prefixApi}/profiles/${profileId}/campaign-mail/${encodeURIComponent(campaignId)}`;
 }
 
 function getEmailGroups({ groupId }) {
