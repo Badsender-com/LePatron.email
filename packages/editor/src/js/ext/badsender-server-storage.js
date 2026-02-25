@@ -104,18 +104,38 @@ function loader(opts) {
         $('.error-message').remove();
       }
 
-      const $inputHiddenCdnStatus = $('input[name="downLoadForCdn"]');
-      const $inputHiddenFtpStatus = $('input[name="downLoadForFtp"]');
-
       downloadCmd.enabled(false);
 
       viewModel.notifier.info(viewModel.t('Downloading...'));
-      viewModel.exportHTMLtoTextarea('#downloadHtmlTextarea');
-      $('#downloadHtmlFilename').val(viewModel.metadata.name());
-      $inputHiddenCdnStatus.val(downloadOptions.forCdn);
-      $inputHiddenFtpStatus.val(downloadOptions.forFtp);
-      $('#downloadForm').attr('action', viewModel.metadata.url.zip).submit();
-      downloadCmd.enabled(true);
+
+      $.ajax({
+        url: viewModel.metadata.url.zip,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          html: viewModel.exportHTML(),
+          filename: viewModel.metadata.name(),
+          downLoadForCdn: downloadOptions.forCdn,
+          downLoadForFtp: downloadOptions.forFtp,
+        }),
+        xhrFields: { responseType: 'blob' },
+        success: function(blob) {
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = viewModel.metadata.name() + '.zip';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        },
+        error: function() {
+          viewModel.notifier.error(viewModel.t('download-ftp-error'));
+        },
+        complete: function() {
+          downloadCmd.enabled(true);
+        },
+      });
     };
 
     viewModel.save = saveCmd;
