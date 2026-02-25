@@ -39,6 +39,8 @@ module.exports = {
   // download button
   'dl-btn-regular': 'Téléchargement local',
   'dl-btn-cdn': 'images ICOU',
+  'download-ftp-error':
+    "Erreur lors de l'export des images (hébergement sur serveur sFTP)",
 
   // Editor interface
   'editor-title': "LePatron - Éditeur d'image",

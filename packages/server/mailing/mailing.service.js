@@ -46,6 +46,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
 module.exports = {
@@ -889,6 +890,21 @@ async function handleRelativeOrFtpImages({
 
     await Promise.all(imagesRequest);
   } else {
+    const connectionTest = await testConnection({
+      downloadMailingWithFtpImages: true,
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+      ftpPathOnServer,
+      ftpAuthType,
+      ftpSshKey,
+    });
+    if (!connectionTest.success) {
+      throw new InternalServerError(connectionTest.errorCode);
+    }
+
     const ftpClient = new Ftp(
       ftpHost,
       ftpPort,
