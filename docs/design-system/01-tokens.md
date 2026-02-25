@@ -211,4 +211,52 @@ Vuetify: `elevation` prop (0-24)
 
 ---
 
-*Last updated: February 2026 (v1.1 - added grays, buttons, form fields)*
+## Complete CSS Variables Reference
+
+Copy this block to define all design tokens:
+
+```css
+:root {
+  /* Brand colors (customizable via white-label) */
+  --primary: #093040;
+  --secondary: #265090;
+  --accent: #00ACDC;
+
+  /* Semantic colors (fixed) */
+  --success: #4caf50;
+  --error: #FF5252;
+  --warning: #fb8c00;
+  --info: #2196F3;
+
+  /* Neutral grays - Material Design palette */
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eeeeee;
+  --gray-300: #e0e0e0;
+  --gray-400: #bdbdbd;
+  --gray-500: #9e9e9e;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+
+  /* Utility */
+  --white: #ffffff;
+}
+```
+
+---
+
+## White-Label Storage
+
+| Token | Database Field | Default |
+|-------|----------------|---------|
+| Primary | `Group.branding.primaryColor` | #093040 |
+| Secondary | `Group.branding.secondaryColor` | #265090 |
+| Accent | `Group.branding.accentColor` | #00ACDC |
+| Logo | `Group.branding.logo` | LePatron SVG |
+| Favicon | `Group.branding.favicon` | LePatron favicon |
+
+---
+
+*Last updated: February 2026 (v2.0 - added complete CSS variables reference)*
