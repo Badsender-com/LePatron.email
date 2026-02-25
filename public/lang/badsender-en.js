@@ -40,6 +40,7 @@ module.exports = {
   // download button
   'dl-btn-regular': 'Standard download',
   'dl-btn-cdn': 'zip with CDN',
+  'download-ftp-error': 'Image export error (sFTP server)',
 
   // Editor interface
   'editor-title': 'LePatron - Image editor',

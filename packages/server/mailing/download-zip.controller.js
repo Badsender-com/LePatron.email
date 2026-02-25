@@ -71,8 +71,7 @@ async function downloadZip(req, res, next) {
     processedArchive.finalize();
   } catch (error) {
     console.error('Error while downloading zip', { error });
-    const backUrl = req.header('Referer') || '/';
-    res.redirect(backUrl);
+    return res.status(500).json({ errorCode: error.message });
   }
 }
 
@@ -87,23 +86,28 @@ async function downloadMultipleZip(req, res, next) {
     throw new InternalServerError(ERROR_CODES.MISSING_DOWNLOAD_OPTIONS);
   }
 
-  const {
-    archive: processedArchive,
-    name,
-  } = await mailingService.downloadMultipleZip({
-    user,
-    archive,
-    mailingIds,
-    downloadOptions,
-  });
-  res.header('Content-Type', 'application/zip');
-  res.header('Content-Disposition', `attachment; filename="${name}.zip"`);
+  try {
+    const {
+      archive: processedArchive,
+      name,
+    } = await mailingService.downloadMultipleZip({
+      user,
+      archive,
+      mailingIds,
+      downloadOptions,
+    });
+    res.header('Content-Type', 'application/zip');
+    res.header('Content-Disposition', `attachment; filename="${name}.zip"`);
 
-  archive.on('end', () => {
-    console.log(`Archive wrote ${archive.pointer()} bytes`);
-    res.end();
-  });
-  archive.pipe(res);
+    archive.on('end', () => {
+      console.log(`Archive wrote ${archive.pointer()} bytes`);
+      res.end();
+    });
+    archive.pipe(res);
 
-  processedArchive.finalize();
+    processedArchive.finalize();
+  } catch (error) {
+    console.error('Error while downloading multiple zip', { error });
+    return res.status(500).json({ errorCode: error.message });
+  }
 }
