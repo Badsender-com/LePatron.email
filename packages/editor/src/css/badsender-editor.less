@@ -52,9 +52,41 @@
 
 @mosaico-selection-color: @link-color;
 
+// ===========================================
+// Design System CSS Variables
+// Reference: docs/design-system/01-tokens.md
+// Brand colors map to Vuetify for white-label support
+// ===========================================
 :root {
+  // Layout
   --left-bar-width: @leftsidebar-width;
   --top-bar-height: @topbar-height;
+
+  // Brand colors (white-label: inherit from Vuetify if available)
+  --primary: var(--v-primary-base, #093040);
+  --secondary: var(--v-secondary-base, #265090);
+  --accent: var(--v-accent-base, #00ACDC);
+
+  // Semantic colors (fixed)
+  --success: #4caf50;
+  --error: #FF5252;
+  --warning: #fb8c00;
+  --info: #2196F3;
+
+  // Neutral grays - Material Design palette
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eeeeee;
+  --gray-300: #e0e0e0;
+  --gray-400: #bdbdbd;
+  --gray-500: #9e9e9e;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+
+  // Utility
+  --white: #ffffff;
 }
 
 body {
@@ -655,20 +687,14 @@ body {
 @comment-border-radius-pill: 9999px; // Pills, chips, badges
 
 // ===========================================
-// CSS Variables for White-Label Theming
-// These adapt to group branding at runtime
-// Vuetify sets --v-accent-base when group has custom branding
+// Comments Panel Styles
+// Now using standard design system variables from :root
 // ===========================================
 #toolcomments {
-  // Override accent color with CSS variable for white-label support
-  --comments-accent: var(--v-accent-base, @comment-accent);
-  --comments-accent-light: var(--v-accent-lighten5, fade(@comment-accent, 15%));
-  --comments-primary: var(--v-primary-base, @comment-primary-dark);
-
   // Panel Header (per 02-components.md specifications)
   > .pane-title {
-    background: var(--comments-primary, @comment-primary-dark);
-    color: white;
+    background: var(--primary);
+    color: var(--white);
     font-size: 16px;
     font-weight: 500;
     padding: 12px 16px;
@@ -781,6 +807,13 @@ body {
   }
 }
 
+// =============================================
+// Comments Panel Content Styles
+// Wrapped in #toolcomments for specificity over .mo global styles
+// (specificity 1,1,0 beats .mo textarea at 0,1,1)
+// =============================================
+#toolcomments {
+
 // Comments content area (below the header)
 .comments-content {
   padding: 16px;
@@ -866,7 +899,7 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: @comment-primary-dark;
-  border-left: 3px solid var(--comments-accent, @comment-accent);
+  border-left: 3px solid var(--accent);
 }
 
 // Textarea (per 02-components.md specifications)
@@ -885,7 +918,7 @@ body {
 
   &:focus {
     outline: none;
-    border-color: var(--comments-accent, @comment-accent);
+    border-color: var(--accent);
     box-shadow: 0 0 0 2px fade(@comment-accent, 10%);  // Per design system: 2px, 10% opacity
   }
 
@@ -950,78 +983,100 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 12px;
+  padding-top: 12px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;  // Push button to the right
+  // Separator line above actions (per DS: card-actions, modal-actions pattern)
+  border-top: 1px solid var(--gray-200);
+
+  // Push submit button to the right (works even when wrapped to new line)
+  > .comments-btn {
+    margin-left: auto;
+  }
 }
 
+// Chip group (per 02-components.md specifications)
 .comments-chips-group {
   display: flex;
-  gap: 6px;
+  gap: 8px;  // Per design system
   flex-wrap: wrap;
 }
 
 // Chip/Pill component (per 02-components.md specifications)
+// Using high specificity to override any inherited styles
 .comment-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 12px;  // Per design system
+  padding: 4px 12px;
   border-radius: @comment-border-radius-pill;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  border: none;
+  // Force no border/outline (override any inherited styles)
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  // Default state: gray background
   background: @comment-gray-100;
   color: @comment-gray-600;
 
-  &:hover {
+  // Hover only when NOT selected (same pattern as semantic variants)
+  &:hover:not(.selected) {
     background: @comment-gray-200;
-    color: @comment-gray-800;  // Per design system
+    color: @comment-gray-800;
   }
 
+  &:focus {
+    outline: none !important;
+  }
+
+  // Selected: solid accent color (per 02-components.md)
   &.selected {
-    background: var(--comments-accent, @comment-accent);
-    color: white;
+    background: var(--accent) !important;
+    color: white !important;
   }
 
   .fa, .mdi {
-    font-size: 16px;  // Per preview: 1rem
+    font-size: 16px;
   }
 }
 
-// Severity chip color variants
+// Severity chip color variants (per 02-components.md)
+// Selected state uses SOLID semantic color backgrounds
 .comment-chip-info {
-  &:hover {
+  // Hover only when NOT selected
+  &:hover:not(.selected) {
     background: fade(@comment-info, 15%);
     color: @comment-info;
   }
+  // Selected: solid info color
   &.selected {
-    background: @comment-info;
-    color: white;
+    background: @comment-info !important;
+    color: white !important;
   }
 }
 
 .comment-chip-warning {
-  &:hover {
+  &:hover:not(.selected) {
     background: fade(@comment-warning, 15%);
     color: darken(@comment-warning, 10%);
   }
   &.selected {
-    background: @comment-warning;
-    color: white;
+    background: @comment-warning !important;
+    color: white !important;
   }
 }
 
 .comment-chip-error {
-  &:hover {
+  &:hover:not(.selected) {
     background: fade(@comment-error, 15%);
     color: @comment-error;
   }
   &.selected {
-    background: @comment-error;
-    color: white;
+    background: @comment-error !important;
+    color: white !important;
   }
 }
 
@@ -1043,16 +1098,17 @@ body {
 
   &:focus {
     outline: none;
-    border-color: var(--comments-accent, @comment-accent);
+    border-color: var(--accent);
   }
 }
 
 // Button styles (per 01-tokens.md: uppercase, letter-spacing)
+// Button styles (per 02-components.md specifications)
 .comments-btn {
   padding: 10px 20px;
   border: none;
   border-radius: @comment-border-radius;
-  font-size: 13px;
+  font-size: 14px;  // Per design system (was 13px)
   font-weight: 500;
   font-family: inherit;
   text-transform: uppercase;
@@ -1063,7 +1119,7 @@ body {
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;  // Per design system (was 6px)
 
   &:hover {
     background: @comment-gray-200;
@@ -1072,16 +1128,13 @@ body {
 }
 
 // Primary button uses accent color (per design system: primary actions = accent)
-// Uses CSS variable for white-label support with filter for hover state
 .comments-btn-primary {
-  background: var(--comments-accent, @comment-accent);
+  background: var(--accent);
   color: white;
 
+  // Hover: darker accent (#0095c0) per design system preview
   &:hover {
-    background: var(--comments-accent, @comment-accent);
-    filter: brightness(0.9);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px fade(@comment-accent, 30%);
+    background: #0095c0;
   }
 }
 
@@ -1116,7 +1169,7 @@ body {
 
   &:hover {
     background: @comment-gray-100;
-    color: var(--comments-accent, @comment-accent);
+    color: var(--accent);
   }
 
   &.btn-icon-danger:hover {
@@ -1186,7 +1239,7 @@ body {
   }
 
   &.comment-editing {
-    border-color: var(--comments-accent, @comment-accent);
+    border-color: var(--accent);
   }
 
   // Resolved comments: collapsed style
@@ -1298,7 +1351,7 @@ body {
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--comments-accent, @comment-accent);
+  color: var(--accent);
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
@@ -1385,8 +1438,10 @@ body {
 }
 
 // Replies
+// Nested content (per 02-components.md specifications)
 .comment-replies {
-  margin-top: 14px;
+  margin-top: 12px;  // Per design system (was 14px)
+  margin-left: 14px;  // Per design system (was missing)
   padding-left: 14px;
   border-left: 2px solid @comment-gray-200;
 }
@@ -1423,7 +1478,7 @@ body {
   padding: 14px;
   background: @comment-gray-50;
   border-radius: @comment-border-radius-lg;
-  border-left: 3px solid var(--comments-accent, @comment-accent);
+  border-left: 3px solid var(--accent);
 
   .comments-replying-to {
     margin-bottom: 10px;
@@ -1443,7 +1498,13 @@ body {
   justify-content: flex-end;
 }
 
-// Animation for new comments
+.comment-item-new {
+  animation: commentSlideIn 0.3s ease-out;
+}
+
+} // End #toolcomments content styles
+
+// Animation for new comments (must be at root level)
 @keyframes commentSlideIn {
   from {
     opacity: 0;
@@ -1453,9 +1514,5 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.comment-item-new {
-  animation: commentSlideIn 0.3s ease-out;
 }
 
