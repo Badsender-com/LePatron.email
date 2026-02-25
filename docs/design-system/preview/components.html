@@ -11,15 +11,21 @@
       --primary: #093040;
       --secondary: #265090;
       --accent: #00ACDC;
-      --warning: #FFB400;
-      --error: #F04E23;
+      --warning: #fb8c00;
+      --error: #FF5252;
       --success: #4caf50;
+      --info: #2196F3;
       --white: #ffffff;
+      --gray-50: #fafafa;
       --gray-100: #f5f5f5;
       --gray-200: #eeeeee;
       --gray-300: #e0e0e0;
+      --gray-400: #bdbdbd;
+      --gray-500: #9e9e9e;
       --gray-600: #757575;
+      --gray-700: #616161;
       --gray-800: #424242;
+      --gray-900: #212121;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -180,9 +186,17 @@
       color: var(--white);
     }
 
+    .btn-primary:hover {
+      background: #072530;
+    }
+
     .btn-error {
       background: var(--error);
       color: var(--white);
+    }
+
+    .btn-error:hover {
+      background: #d32f2f;
     }
 
     .btn-text {
@@ -372,6 +386,319 @@
       border-radius: 4px;
       font-size: 0.8rem;
       font-family: monospace;
+    }
+
+    /* Chips / Tags */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+
+    .chip:hover:not(.selected) {
+      background: var(--gray-200);
+      color: var(--gray-800);
+    }
+
+    .chip.selected {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    .chip.chip-info.selected { background: #2196F3; }
+    .chip.chip-warning.selected { background: #fb8c00; }
+    .chip.chip-error.selected { background: #FF5252; }
+    .chip.chip-success.selected { background: var(--success); }
+
+    .chip .material-icons {
+      font-size: 1rem;
+    }
+
+    /* Textarea */
+    .textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+    }
+
+    .textarea::placeholder {
+      color: var(--gray-600);
+    }
+
+    /* Select / Dropdown */
+    .select-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .select-field label {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    .select-field select {
+      padding: 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      background: var(--white);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .select-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Icons showcase */
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 1rem;
+    }
+
+    .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      border-radius: 4px;
+      background: var(--gray-100);
+      font-size: 0.75rem;
+      color: var(--gray-600);
+    }
+
+    .icon-item .material-icons {
+      font-size: 1.5rem;
+      color: var(--gray-800);
+    }
+
+    /* Chip Group */
+    .chip-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Panel Header */
+    .panel-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .panel-header-title {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .panel-header-close {
+      background: transparent;
+      border: none;
+      color: var(--white);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-header-close:hover {
+      opacity: 0.8;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .status-badge .material-icons {
+      font-size: 14px;
+    }
+
+    .status-badge.pending { background: var(--warning); }
+    .status-badge.resolved { background: var(--success); }
+    .status-badge.error { background: var(--error); }
+    .status-badge.info { background: var(--info); }
+
+    /* Icon Action Button */
+    .icon-action-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .icon-action-btn .material-icons {
+      font-size: 16px;
+    }
+
+    .icon-action-btn:hover {
+      background: var(--gray-100);
+      color: var(--accent);
+    }
+
+    .icon-action-btn.danger:hover {
+      background: rgba(255, 82, 82, 0.1);
+      color: var(--error);
+    }
+
+    .icon-action-btn.success:hover {
+      background: rgba(76, 175, 80, 0.1);
+      color: var(--success);
+    }
+
+    /* Comment Card */
+    .comment-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.15s;
+    }
+
+    .comment-card:hover {
+      border-color: var(--gray-300);
+    }
+
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .comment-author {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--primary);
+    }
+
+    .comment-date {
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+
+    .comment-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--gray-800);
+      margin-bottom: 12px;
+    }
+
+    .comment-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding-top: 8px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .comment-actions-spacer {
+      flex: 1;
+    }
+
+    /* Nested Content */
+    .nested-content {
+      margin-left: 14px;
+      padding-left: 14px;
+      border-left: 2px solid var(--gray-200);
+      margin-top: 12px;
+    }
+
+    .nested-content.accent {
+      border-left: 3px solid var(--accent);
+    }
+
+    .nested-content .comment-card {
+      background: var(--gray-50);
+    }
+
+    /* Inline Mention */
+    .mention {
+      background: rgba(0, 172, 220, 0.15);
+      color: #0088a8;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Text Link with Icon */
+    .text-link-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .text-link-icon:hover {
+      text-decoration: underline;
+    }
+
+    .text-link-icon .material-icons {
+      font-size: 14px;
+    }
+
+    /* Demo panel container */
+    .panel-demo {
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 350px;
+    }
+
+    .panel-content {
+      padding: 16px;
+      background: var(--white);
     }
   </style>
 </head>
@@ -629,6 +956,462 @@
       </div>
     </section>
 
+    <!-- CHIPS / TAGS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Chips / Tags</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>États</h4>
+
+          <div class="component-label">Default</div>
+          <div class="component-row">
+            <button class="chip"><span class="material-icons">label</span> Général</button>
+            <button class="chip"><span class="material-icons">brush</span> Design</button>
+            <button class="chip"><span class="material-icons">article</span> Contenu</button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Selected</div>
+          <div class="component-row">
+            <button class="chip selected"><span class="material-icons">label</span> Général</button>
+            <button class="chip selected"><span class="material-icons">brush</span> Design</button>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Variantes sémantiques (selected)</h4>
+
+          <div class="component-label">Priorité / Sévérité</div>
+          <div class="component-row">
+            <button class="chip chip-info selected"><span class="material-icons">info</span> Info</button>
+            <button class="chip chip-warning selected"><span class="material-icons">warning</span> Important</button>
+            <button class="chip chip-error selected"><span class="material-icons">error</span> Bloquant</button>
+            <button class="chip chip-success selected"><span class="material-icons">check_circle</span> Résolu</button>
+          </div>
+
+          <div class="note info" style="margin-top: 1rem;">
+            <strong>Spécifications :</strong><br>
+            - Border radius : <code>9999px</code> (pill)<br>
+            - Padding : <code>4px 12px</code><br>
+            - Font : <code>12px / 500</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEXTAREA -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Textarea</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Default</h4>
+
+          <div class="text-field" style="max-width: 400px;">
+            <label>Commentaire</label>
+            <textarea class="textarea" placeholder="Écrire un commentaire..."></textarea>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications</h4>
+
+          <div class="note info">
+            <strong>Styles :</strong><br>
+            - Border : <code>1px solid --gray-300</code><br>
+            - Border radius : <code>4px</code><br>
+            - Padding : <code>12px</code><br>
+            - Min height : <code>80px</code><br>
+            - Focus : <code>border-color: --accent</code> + <code>box-shadow</code>
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Vuetify :</strong> Utiliser <code>&lt;v-textarea outlined&gt;</code> pour cohérence.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SELECT / DROPDOWN -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Select / Dropdown</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Default</h4>
+
+          <div class="select-field" style="max-width: 300px;">
+            <label>Langue</label>
+            <select>
+              <option value="">Sélectionner...</option>
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+
+          <div class="select-field" style="max-width: 300px; margin-top: 1rem;">
+            <label>Catégorie</label>
+            <select>
+              <option value="general" selected>Général</option>
+              <option value="design">Design</option>
+              <option value="content">Contenu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications</h4>
+
+          <div class="note info">
+            <strong>Styles identiques aux inputs :</strong><br>
+            - Border : <code>1px solid --gray-300</code><br>
+            - Border radius : <code>4px</code><br>
+            - Padding : <code>12px</code><br>
+            - Focus : <code>border-color: --accent</code>
+          </div>
+
+          <div class="note success" style="margin-top: 1rem;">
+            <strong>Vuetify :</strong> Utiliser <code>&lt;v-select&gt;</code> ou <code>&lt;v-autocomplete&gt;</code>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ICONS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Icônes</h2>
+        <span class="status fixed">Material Design Icons</span>
+      </div>
+
+      <div class="component-label">Icônes courantes</div>
+      <div class="icon-grid" style="margin-bottom: 1.5rem;">
+        <div class="icon-item">
+          <span class="material-icons">save</span>
+          save
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">delete</span>
+          delete
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">edit</span>
+          edit
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">add</span>
+          add
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">close</span>
+          close
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">settings</span>
+          settings
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">help</span>
+          help
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">search</span>
+          search
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">folder</span>
+          folder
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">email</span>
+          email
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">content_copy</span>
+          content_copy
+        </div>
+        <div class="icon-item">
+          <span class="material-icons">download</span>
+          download
+        </div>
+      </div>
+
+      <div class="note info">
+        <strong>Référence :</strong> <a href="https://materialdesignicons.com/" target="_blank" style="color: var(--accent);">materialdesignicons.com</a><br>
+        <strong>Vue App :</strong> <code>&lt;v-icon&gt;mdi-icon-name&lt;/v-icon&gt;</code><br>
+        <strong>Editor :</strong> Migration progressive FA → MDI (<code>&lt;span class="mdi mdi-icon-name"&gt;</code>)
+      </div>
+    </section>
+
+    <!-- PANEL HEADER -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Panel Header</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Aperçu</h4>
+
+          <div class="panel-demo">
+            <div class="panel-header">
+              <span class="panel-header-title">Commentaires</span>
+              <button class="panel-header-close">
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+            <div class="panel-content">
+              <p style="color: var(--gray-600); font-size: 14px;">Contenu du panel...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications</h4>
+
+          <div class="note info">
+            <strong>Header :</strong><br>
+            - Background : <code>--primary</code><br>
+            - Text : <code>white, 16px, 500</code><br>
+            - Padding : <code>12px 16px</code><br>
+            - Close : Icon button blanc
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATUS BADGE -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Status Badge</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Variantes</h4>
+
+          <div class="component-row">
+            <span class="status-badge pending">
+              <span class="material-icons">schedule</span>
+              4 en attente
+            </span>
+          </div>
+
+          <div class="component-row" style="margin-top: 1rem;">
+            <span class="status-badge resolved">
+              <span class="material-icons">check</span>
+              Tous résolus
+            </span>
+          </div>
+
+          <div class="component-row" style="margin-top: 1rem;">
+            <span class="status-badge error">
+              <span class="material-icons">error</span>
+              3 erreurs
+            </span>
+          </div>
+
+          <div class="component-row" style="margin-top: 1rem;">
+            <span class="status-badge info">
+              <span class="material-icons">info</span>
+              Information
+            </span>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications</h4>
+
+          <div class="note info">
+            <strong>Structure :</strong><br>
+            - Border radius : <code>9999px</code> (pill)<br>
+            - Padding : <code>4px 12px</code><br>
+            - Font : <code>12px, 600</code><br>
+            - Icon : <code>14px</code><br>
+            - Gap : <code>4px</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ICON ACTION BUTTONS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Icon Action Buttons</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>États</h4>
+
+          <div class="component-label">Default</div>
+          <div class="component-row">
+            <button class="icon-action-btn"><span class="material-icons">reply</span></button>
+            <button class="icon-action-btn"><span class="material-icons">check</span></button>
+            <button class="icon-action-btn"><span class="material-icons">edit</span></button>
+            <button class="icon-action-btn"><span class="material-icons">delete</span></button>
+          </div>
+
+          <div class="component-label" style="margin-top: 1rem;">Hover variants</div>
+          <div class="component-row">
+            <button class="icon-action-btn" style="background: var(--gray-100); color: var(--accent);">
+              <span class="material-icons">reply</span>
+            </button>
+            <button class="icon-action-btn success" style="background: rgba(76, 175, 80, 0.1); color: var(--success);">
+              <span class="material-icons">check</span>
+            </button>
+            <button class="icon-action-btn" style="background: var(--gray-100); color: var(--accent);">
+              <span class="material-icons">edit</span>
+            </button>
+            <button class="icon-action-btn danger" style="background: rgba(255, 82, 82, 0.1); color: var(--error);">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications</h4>
+
+          <div class="note info">
+            <strong>Button :</strong><br>
+            - Size : <code>28px × 28px</code><br>
+            - Border radius : <code>4px</code><br>
+            - Icon : <code>16px</code><br>
+            - Default color : <code>--gray-400</code><br>
+            - Hover bg : <code>--gray-100</code>
+          </div>
+
+          <div class="note" style="margin-top: 1rem;">
+            <strong>Variantes hover :</strong><br>
+            - Default → <code>--accent</code><br>
+            - Success → <code>--success</code><br>
+            - Danger → <code>--error</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMENT CARD -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Comment Card</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div style="max-width: 500px;">
+        <div class="comment-card">
+          <div class="comment-header">
+            <span class="comment-author">Jonathan Loriaux</span>
+            <span class="comment-date">2 fév.</span>
+            <button class="chip chip-warning selected" style="font-size: 11px; padding: 2px 8px;">
+              <span class="material-icons" style="font-size: 12px;">warning</span>
+              Important
+            </button>
+            <button class="chip" style="font-size: 11px; padding: 2px 8px;">
+              <span class="material-icons" style="font-size: 12px;">brush</span>
+              Design
+            </button>
+          </div>
+          <div class="comment-body">
+            Attention au commentaire design. Voir avec <span class="mention">@Marie Dupont</span> pour valider.
+          </div>
+          <div class="comment-actions">
+            <button class="icon-action-btn"><span class="material-icons">reply</span></button>
+            <button class="icon-action-btn success"><span class="material-icons">check</span></button>
+            <button class="icon-action-btn"><span class="material-icons">edit</span></button>
+            <button class="icon-action-btn danger"><span class="material-icons">delete</span></button>
+            <span class="comment-actions-spacer"></span>
+            <a class="text-link-icon">
+              <span class="material-icons">open_in_new</span>
+              Aller au bloc
+            </a>
+          </div>
+
+          <!-- Nested reply -->
+          <div class="nested-content accent">
+            <div class="comment-card">
+              <div class="comment-header">
+                <span class="comment-author">Marie Dupont</span>
+                <span class="comment-date">2 fév.</span>
+              </div>
+              <div class="comment-body">
+                C'est noté, je m'en occupe !
+              </div>
+              <div class="comment-actions">
+                <button class="icon-action-btn danger"><span class="material-icons">delete</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="note info" style="margin-top: 1rem;">
+          <strong>Structure :</strong> Header (author + date + badges) → Body (text + mentions) → Actions → Nested replies
+        </div>
+      </div>
+    </section>
+
+    <!-- INLINE ELEMENTS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Éléments inline</h2>
+        <span class="status fixed">Structure fixe</span>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-side current">
+          <h4>Mention</h4>
+          <p style="font-size: 14px; color: var(--gray-800);">
+            Voir avec <span class="mention">@Jonathan Loriaux</span> pour validation.
+          </p>
+
+          <h4 style="margin-top: 1.5rem;">Text Link with Icon</h4>
+          <p>
+            <a class="text-link-icon">
+              <span class="material-icons">open_in_new</span>
+              Aller au bloc
+            </a>
+          </p>
+          <p style="margin-top: 0.5rem;">
+            <a class="text-link-icon">
+              <span class="material-icons">link</span>
+              Voir le document
+            </a>
+          </p>
+        </div>
+
+        <div class="comparison-side target">
+          <h4>Spécifications Mention</h4>
+          <div class="note info">
+            - Background : <code>--accent (15%)</code><br>
+            - Color : <code>--accent darkened</code><br>
+            - Padding : <code>1px 6px</code><br>
+            - Border radius : <code>4px</code>
+          </div>
+
+          <h4 style="margin-top: 1.5rem;">Spécifications Link</h4>
+          <div class="note info">
+            - Color : <code>--accent</code><br>
+            - Font : <code>12px, 500</code><br>
+            - Icon : <code>14px</code><br>
+            - Gap : <code>4px</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- SUMMARY -->
     <section class="section">
       <div class="section-header">
@@ -655,6 +1438,21 @@
             <td style="padding: 0.75rem;">Aucune</td>
           </tr>
           <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Textarea</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Select</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Aucune</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Chips / Tags</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Specs documentées</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
             <td style="padding: 0.75rem;">Cartes</td>
             <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
             <td style="padding: 0.75rem;">Aucune</td>
@@ -669,6 +1467,36 @@
             <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
             <td style="padding: 0.75rem;">Aucune</td>
           </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Icônes</td>
+            <td style="padding: 0.75rem;"><span class="status success" style="background: rgba(76, 175, 80, 0.15); color: var(--success);">OK</span></td>
+            <td style="padding: 0.75rem;">Migration FA → MDI (Editor)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Panel Header</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Specs documentées</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Status Badge</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Specs documentées</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Icon Action Buttons</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Specs documentées</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Comment Card</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Pattern complet documenté</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--gray-200);">
+            <td style="padding: 0.75rem;">Mentions / Links</td>
+            <td style="padding: 0.75rem;"><span class="status" style="background: rgba(0, 172, 220, 0.15); color: var(--accent);">Nouveau</span></td>
+            <td style="padding: 0.75rem;">Specs documentées</td>
+          </tr>
         </tbody>
       </table>
     </section>
@@ -676,7 +1504,7 @@
   </main>
 
   <footer class="footer">
-    LePatron.email Design System — Version 1.0 — Février 2026
+    LePatron.email Design System — Version 1.2 — Février 2026
   </footer>
 
 </body>
