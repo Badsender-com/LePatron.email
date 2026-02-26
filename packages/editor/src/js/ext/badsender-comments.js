@@ -426,6 +426,11 @@ function commentsLoader(opts) {
     viewModel.startReply = function (comment) {
       viewModel.replyingTo(comment);
       viewModel.newCommentText('');
+      // Focus on reply textarea after DOM update
+      setTimeout(function () {
+        var replyTextarea = document.querySelector('.comment-textarea-reply');
+        if (replyTextarea) replyTextarea.focus();
+      }, 50);
     };
 
     /**
@@ -439,7 +444,15 @@ function commentsLoader(opts) {
      * Toggle comments panel
      */
     viewModel.toggleComments = function () {
+      var wasHidden = !viewModel.showComments();
       viewModel.showComments(!viewModel.showComments());
+      // Focus on main textarea when opening panel
+      if (wasHidden) {
+        setTimeout(function () {
+          var mainTextarea = document.querySelector('.comment-textarea-main');
+          if (mainTextarea) mainTextarea.focus();
+        }, 50);
+      }
     };
 
     /**
@@ -448,6 +461,11 @@ function commentsLoader(opts) {
     viewModel.openCommentsForBlock = function (blockId) {
       viewModel.selectedBlockForComments(blockId);
       viewModel.showComments(true);
+      // Focus on main textarea after DOM update
+      setTimeout(function () {
+        var mainTextarea = document.querySelector('.comment-textarea-main');
+        if (mainTextarea) mainTextarea.focus();
+      }, 50);
     };
 
     /**

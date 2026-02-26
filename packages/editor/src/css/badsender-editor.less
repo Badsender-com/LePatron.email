@@ -888,20 +888,6 @@ body {
   border: 1px solid @comment-gray-200;  // Light border for form container
 }
 
-.comments-replying-to {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, fade(@comment-primary, 10%) 0%, fade(@comment-accent, 10%) 100%);
-  padding: 10px 14px;
-  border-radius: @comment-border-radius;
-  margin-bottom: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: @comment-primary-dark;
-  border-left: 3px solid var(--accent);
-}
-
 // Textarea (per 02-components.md specifications)
 .comments-textarea {
   width: 100%;
@@ -978,21 +964,24 @@ body {
   color: @comment-gray-500;  // Placeholder/secondary text
 }
 
-// Form options with chips (button aligned right per design system)
+// Form options with chips and submit button
 .comments-form-options {
   display: flex;
   gap: 8px;
   margin-top: 12px;
-  padding-top: 12px;
   flex-wrap: wrap;
-  align-items: center;
-  // Separator line above actions (per DS: card-actions, modal-actions pattern)
-  border-top: 1px solid var(--gray-200);
+  align-items: flex-start;
+}
 
-  // Push submit button to the right (works even when wrapped to new line)
-  > .comments-btn {
-    margin-left: auto;
-  }
+// Form actions area (per DS: form-actions pattern)
+// Separator line above button only, right-aligned
+.comments-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--gray-200);
 }
 
 // Chip group (per 02-components.md specifications)
@@ -1135,6 +1124,16 @@ body {
   // Hover: darker accent (#0095c0) per design system preview
   &:hover {
     background: #0095c0;
+  }
+}
+
+// Text button variant (per DS: Cancel, Close actions)
+.comments-btn-text {
+  background: transparent;
+  color: var(--primary);
+
+  &:hover {
+    background: var(--gray-100);
   }
 }
 
@@ -1309,33 +1308,35 @@ body {
   }
 }
 
+// Severity badges: SOLID background with white text (per DS: Status Badge pattern)
 .comment-badge-resolved {
-  background: fade(@comment-success, 12%);
-  color: @comment-success;
+  background: var(--success);
+  color: white;
 }
 
 .comment-badge-info {
-  background: fade(@comment-info, 12%);
-  color: @comment-info;
+  background: var(--info);
+  color: white;
 }
 
 .comment-badge-important {
-  background: fade(@comment-warning, 12%);
-  color: darken(@comment-warning, 5%);
+  background: var(--warning);
+  color: white;
 }
 
 .comment-badge-blocking {
-  background: fade(@comment-error, 12%);
-  color: @comment-error;
+  background: var(--error);
+  color: white;
 }
 
+// Category badges: pill shape for consistency with chips
 .comment-category {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: @comment-border-radius;
+  border-radius: @comment-border-radius-pill;  // Pill shape (9999px)
   background: @comment-gray-100;
   color: @comment-gray-600;
 
@@ -1438,12 +1439,17 @@ body {
 }
 
 // Replies
-// Nested content (per 02-components.md specifications)
+// Nested content (per 02-components.md: accent variant)
 .comment-replies {
-  margin-top: 12px;  // Per design system (was 14px)
-  margin-left: 14px;  // Per design system (was missing)
+  margin-top: 12px;
+  margin-left: 14px;
   padding-left: 14px;
-  border-left: 2px solid @comment-gray-200;
+  border-left: 3px solid var(--accent);  // Accent color per DS preview
+
+  // Reply cards have subtle gray background
+  .comment-reply {
+    background: var(--gray-50);
+  }
 }
 
 .comment-reply {
@@ -1472,30 +1478,22 @@ body {
   }
 }
 
-// Inline reply form
+// Inline reply form (same style as .comment-replies)
 .comment-reply-form {
-  margin-top: 14px;
-  padding: 14px;
-  background: @comment-gray-50;
-  border-radius: @comment-border-radius-lg;
+  margin-top: 12px;
+  margin-left: 14px;
+  padding-left: 14px;
   border-left: 3px solid var(--accent);
-
-  .comments-replying-to {
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    background: white;
-  }
-
-  .comments-textarea {
-    background: white;
-    margin-bottom: 10px;
-  }
 }
 
+// Reply form actions (per DS: form-actions pattern)
 .comment-reply-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--gray-200);
 }
 
 .comment-item-new {

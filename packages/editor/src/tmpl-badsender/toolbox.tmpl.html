@@ -301,9 +301,12 @@
         </span>
       </div>
 
-      <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
-        <span data-bind="text: $root.t('comments-add')">Ajouter</span>
-      </button>
+      <!-- Form actions with separator (per DS: form-actions pattern) -->
+      <div class="comments-form-actions">
+        <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
+          <span data-bind="text: $root.t('comments-add')">Ajouter</span>
+        </button>
+      </div>
     </div>
   </div>
   <!-- /ko -->
@@ -432,10 +435,6 @@
       <!-- Inline reply form (shown when replying to THIS comment) -->
       <!-- ko if: $root.replyingTo() && $root.replyingTo()._id === _id -->
       <div class="comment-reply-form">
-        <div class="comments-replying-to">
-          <span><span class="mdi mdi-reply"></span> <span data-bind="text: $root.t('comments-replying-to-prefix') + ' ' + $root.replyingTo().authorName">Réponse à...</span></span>
-          <button class="comments-btn-cancel" data-bind="click: $root.cancelReply"><span class="mdi mdi-close"></span></button>
-        </div>
         <div class="comments-textarea-wrapper">
           <textarea class="comments-textarea comment-textarea-reply" rows="2"
             data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
@@ -453,10 +452,10 @@
           <!-- /ko -->
         </div>
         <div class="comment-reply-actions">
+          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Annuler</button>
           <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.createComment">
-            <span class="mdi mdi-send"></span> <span data-bind="text: $root.t('comments-add')">Envoyer</span>
+            <span data-bind="text: $root.t('comments-add')">Envoyer</span>
           </button>
-          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Annuler</button>
         </div>
       </div>
       <!-- /ko -->
