@@ -462,18 +462,4 @@ export default {
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
   },
-  notifications: {
-    title: 'Notifications',
-    empty: 'No notifications',
-    markAllRead: 'Mark all as read',
-    justNow: 'Just now',
-    minutesAgo: '{count} min ago',
-    hoursAgo: '{count}h ago',
-    daysAgo: '{count}d ago',
-    types: {
-      comment_mention: 'mentioned you in a comment',
-      comment_reply: 'replied to your comment',
-      comment_resolved: 'resolved a comment',
-    },
-  },
 };

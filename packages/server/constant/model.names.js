@@ -23,5 +23,4 @@ module.exports = Object.freeze({
   TagModel: 'Tag',
   // Comments
   CommentModel: 'Comment',
-  NotificationModel: 'Notification',
 });

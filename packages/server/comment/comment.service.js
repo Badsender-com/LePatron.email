@@ -5,7 +5,6 @@ const { NotFound, Forbidden, BadRequest } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
-const notificationService = require('../notification/notification.service.js');
 const logger = require('../utils/logger.js');
 
 module.exports = {
@@ -84,32 +83,6 @@ async function createComment({
     _parentComment: parentCommentId || null,
     mentions: mentions || [],
   });
-
-  // Create notifications for mentions
-  if (mentions && mentions.length > 0) {
-    await notificationService.createMentionNotifications({
-      comment,
-      mailing,
-      actor: user,
-      mentionedUserIds: mentions,
-    });
-  }
-
-  // Create notification for reply
-  if (parentCommentId) {
-    const parentComment = await Comments.findById(parentCommentId);
-    if (
-      parentComment &&
-      parentComment._author.toString() !== (user._id || user.id).toString()
-    ) {
-      await notificationService.createReplyNotification({
-        comment,
-        parentComment,
-        mailing,
-        actor: user,
-      });
-    }
-  }
 
   logger.log('Comment created', { commentId: comment._id, mailingId });
 
@@ -287,16 +260,6 @@ async function resolveComment({ commentId, user }) {
     .populate('_author', 'name email')
     .populate('_resolvedBy', 'name')
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
-
-  // Create notification for comment author
-  if (comment._author.toString() !== (user._id || user.id).toString()) {
-    const mailing = await Mailings.findById(comment._mailing);
-    await notificationService.createResolvedNotification({
-      comment: updatedComment,
-      mailing,
-      actor: user,
-    });
-  }
 
   logger.log('Comment resolved', { commentId, resolvedBy: user._id || user.id });
 

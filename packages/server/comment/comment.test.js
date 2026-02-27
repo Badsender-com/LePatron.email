@@ -4,10 +4,8 @@ const mongoose = require('mongoose');
 
 // Mock models before requiring the service
 jest.mock('../common/models.common.js');
-jest.mock('../notification/notification.service.js');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
-const notificationService = require('../notification/notification.service.js');
 const commentService = require('./comment.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { COMMENT_CATEGORIES, COMMENT_SEVERITIES } = require('./comment.schema.js');
@@ -160,7 +158,7 @@ describe('Comment Service', () => {
       ).rejects.toThrow(ERROR_CODES.COMMENT_INVALID_PARENT);
     });
 
-    it('should create mention notifications', async () => {
+    it('should create comment with mentions', async () => {
       const mailingId = mockObjectId();
       const userId = mockObjectId();
       const mentionedUserId = mockObjectId();
@@ -176,25 +174,31 @@ describe('Comment Service', () => {
       const mockComment = {
         _id: commentId,
         mentions: [mentionedUserId],
-        populate: jest.fn().mockResolvedValue({ _id: commentId }),
       };
 
       Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
       Users.find = jest.fn().mockResolvedValue([{ _id: mentionedUserId }]);
       Comments.create = jest.fn().mockResolvedValue(mockComment);
-      notificationService.createMentionNotifications = jest.fn().mockResolvedValue([]);
+      Comments.findById = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({ _id: commentId, mentions: [mentionedUserId] }),
+      });
 
-      await commentService.createComment({
+      const result = await commentService.createComment({
         mailingId: mailingId.toString(),
         user: { _id: userId, name: 'Test User', _company: groupId },
         text: 'Mentioning @someone',
         mentions: [mentionedUserId.toString()],
       });
 
-      expect(notificationService.createMentionNotifications).toHaveBeenCalledTimes(1);
+      expect(Comments.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mentions: [mentionedUserId.toString()],
+        })
+      );
     });
 
-    it('should create reply notification for parent author', async () => {
+    it('should create reply to parent comment', async () => {
       const mailingId = mockObjectId();
       const userId = mockObjectId();
       const parentAuthorId = mockObjectId();
@@ -218,24 +222,29 @@ describe('Comment Service', () => {
       const mockComment = {
         _id: commentId,
         _parentComment: parentCommentId,
-        populate: jest.fn().mockResolvedValue({ _id: commentId }),
       };
 
       Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
-      Comments.findById = jest.fn()
-        .mockResolvedValueOnce(mockParentComment) // First call for validation
-        .mockResolvedValueOnce(mockParentComment); // Second call for notification
+      Comments.findById = jest.fn().mockResolvedValueOnce(mockParentComment);
       Comments.create = jest.fn().mockResolvedValue(mockComment);
-      notificationService.createReplyNotification = jest.fn().mockResolvedValue({});
+      // Mock the re-fetch after create
+      Comments.findById.mockReturnValueOnce({
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({ _id: commentId, _parentComment: parentCommentId }),
+      });
 
-      await commentService.createComment({
+      const result = await commentService.createComment({
         mailingId: mailingId.toString(),
         user: { _id: userId, name: 'Test User', _company: groupId },
         text: 'Reply to parent',
         parentCommentId: parentCommentId.toString(),
       });
 
-      expect(notificationService.createReplyNotification).toHaveBeenCalledTimes(1);
+      expect(Comments.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          _parentComment: parentCommentId.toString(),
+        })
+      );
     });
   });
 
@@ -562,47 +571,6 @@ describe('Comment Service', () => {
       ).rejects.toThrow(ERROR_CODES.COMMENT_ALREADY_RESOLVED);
     });
 
-    it('should create notification when different user resolves', async () => {
-      const commentId = mockObjectId();
-      const authorId = mockObjectId();
-      const resolverId = mockObjectId();
-      const mailingId = mockObjectId();
-
-      const mockComment = {
-        _id: commentId,
-        _mailing: mailingId,
-        _author: authorId,
-        resolved: false,
-        isDeleted: false,
-      };
-
-      const mockMailing = { _id: mailingId, name: 'Test Mailing' };
-
-      const mockResolvedComment = {
-        _id: commentId,
-        _author: authorId,
-        resolved: true,
-      };
-
-      Comments.findById = jest.fn().mockResolvedValue(mockComment);
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
-
-      const mockQuery = {
-        populate: jest.fn().mockReturnThis(),
-      };
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockResolvedValueOnce(mockResolvedComment);
-
-      Comments.findByIdAndUpdate = jest.fn().mockReturnValue(mockQuery);
-      notificationService.createResolvedNotification = jest.fn().mockResolvedValue({});
-
-      await commentService.resolveComment({
-        commentId: commentId.toString(),
-        user: { _id: resolverId, name: 'Resolver' },
-      });
-
-      expect(notificationService.createResolvedNotification).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('getBlockCommentCounts', () => {

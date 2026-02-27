@@ -466,18 +466,4 @@ export default {
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
   },
-  notifications: {
-    title: 'Notifications',
-    empty: 'Aucune notification',
-    markAllRead: 'Tout marquer comme lu',
-    justNow: 'À l\'instant',
-    minutesAgo: 'Il y a {count} min',
-    hoursAgo: 'Il y a {count}h',
-    daysAgo: 'Il y a {count}j',
-    types: {
-      comment_mention: 'vous a mentionné dans un commentaire',
-      comment_reply: 'a répondu à votre commentaire',
-      comment_resolved: 'a résolu un commentaire',
-    },
-  },
 };

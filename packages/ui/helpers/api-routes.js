@@ -284,26 +284,3 @@ export function commentResolve(routeParams = {}) {
   return `/comments/${routeParams.commentId}/resolve`;
 }
 
-/// ///
-// NOTIFICATIONS
-/// ///
-
-export function notifications() {
-  return '/notifications';
-}
-
-export function notificationsUnreadCount() {
-  return '/notifications/unread-count';
-}
-
-export function notificationItem(routeParams = {}) {
-  return `/notifications/${routeParams.notificationId}`;
-}
-
-export function notificationMarkRead(routeParams = {}) {
-  return `/notifications/${routeParams.notificationId}/read`;
-}
-
-export function notificationsMarkAllRead() {
-  return '/notifications/read-all';
-}
