@@ -25,7 +25,7 @@ async function listFeatureTypes(req, res) {
 
 /**
  * @api {get} /ai-features/groups/:groupId Get AI features configuration
- * @apiPermission groupAdmin
+ * @apiPermission user
  * @apiName GetAIFeaturesConfig
  * @apiGroup AIFeatures
  *
