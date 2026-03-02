@@ -11,8 +11,8 @@ const { GUARD_USER, GUARD_GROUP_ADMIN } = require('../account/auth.guard.js');
 // List available feature types
 router.get('/types', GUARD_USER, aiFeatures.listFeatureTypes);
 
-// Get AI features configuration for a group (Group Admin can manage their own group)
-router.get('/groups/:groupId', GUARD_GROUP_ADMIN, aiFeatures.getConfig);
+// Get AI features configuration for a group (any user in the group can read)
+router.get('/groups/:groupId', GUARD_USER, aiFeatures.getConfig);
 
 // Update specific feature configuration
 router.put(
