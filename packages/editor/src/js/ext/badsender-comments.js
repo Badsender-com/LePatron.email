@@ -421,6 +421,31 @@ function commentsLoader(opts) {
     };
 
     /**
+     * Unresolve (reopen) a comment
+     */
+    viewModel.unresolveComment = function (comment) {
+      $.ajax({
+        url: apiBaseUrl + '/comments/' + comment._id + '/unresolve',
+        method: 'PATCH',
+        success: function (updatedComment) {
+          const comments = viewModel.comments();
+          const index = comments.findIndex(function (c) {
+            return c._id === updatedComment._id;
+          });
+          if (index >= 0) {
+            comments[index] = updatedComment;
+            viewModel.comments(comments);
+          }
+          viewModel.loadCommentCounts();
+          viewModel.notifier.success(viewModel.t('comments-unresolved'));
+        },
+        error: function () {
+          viewModel.notifier.error(viewModel.t('comments-unresolve-error'));
+        },
+      });
+    };
+
+    /**
      * Start replying to a comment
      */
     viewModel.startReply = function (comment) {

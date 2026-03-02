@@ -14,6 +14,7 @@ module.exports = {
   updateComment,
   deleteComment,
   resolveComment,
+  unresolveComment,
   getBlockCommentCounts,
   getUnresolvedCountByMailing,
 };
@@ -262,6 +263,40 @@ async function resolveComment({ commentId, user }) {
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
   logger.log('Comment resolved', { commentId, resolvedBy: user._id || user.id });
+
+  return updatedComment;
+}
+
+/**
+ * Mark a comment as unresolved (reopen)
+ */
+async function unresolveComment({ commentId, user }) {
+  const comment = await Comments.findById(commentId);
+
+  if (!comment || comment.isDeleted) {
+    throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
+  }
+
+  if (!comment.resolved) {
+    throw new BadRequest(ERROR_CODES.COMMENT_NOT_RESOLVED);
+  }
+
+  const updatedComment = await Comments.findByIdAndUpdate(
+    commentId,
+    {
+      $set: {
+        resolved: false,
+        _resolvedBy: null,
+        resolvedAt: null,
+      },
+    },
+    { new: true }
+  )
+    .populate('_author', 'name email')
+    .populate('_resolvedBy', 'name')
+    .lean();
+
+  logger.log('Comment unresolved', { commentId, unresolvedBy: user._id || user.id });
 
   return updatedComment;
 }

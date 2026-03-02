@@ -20,6 +20,7 @@ commentsRouter.get('/:commentId', GUARD_USER, comments.getById);
 commentsRouter.patch('/:commentId', GUARD_USER, comments.update);
 commentsRouter.delete('/:commentId', GUARD_USER, comments.remove);
 commentsRouter.patch('/:commentId/resolve', GUARD_USER, comments.resolve);
+commentsRouter.patch('/:commentId/unresolve', GUARD_USER, comments.unresolve);
 
 module.exports = {
   mailingCommentsRouter,

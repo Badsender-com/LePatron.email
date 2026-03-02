@@ -388,6 +388,11 @@
           <span class="mdi mdi-check"></span>
         </button>
         <!-- /ko -->
+        <!-- ko if: resolved -->
+        <button class="comments-btn-icon btn-icon-warning" data-bind="click: function() { $root.unresolveComment($data); }, clickBubble: false, attr: { title: $root.t('comments-unresolve'), 'aria-label': $root.t('comments-unresolve') }">
+          <span class="mdi mdi-restore"></span>
+        </button>
+        <!-- /ko -->
         <!-- ko if: $root.isCommentAuthor($data) -->
         <button class="comments-btn-icon" data-bind="click: function() { $root.startEditComment($data); }, clickBubble: false, attr: { title: $root.t('comments-edit'), 'aria-label': $root.t('comments-edit') }">
           <span class="mdi mdi-pencil"></span>

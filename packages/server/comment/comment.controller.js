@@ -15,6 +15,7 @@ module.exports = {
   update: asyncHandler(update),
   remove: asyncHandler(remove),
   resolve: asyncHandler(resolve),
+  unresolve: asyncHandler(unresolve),
 };
 
 /**
@@ -217,6 +218,27 @@ async function resolve(req, res) {
   } = req;
 
   const comment = await commentService.resolveComment({ commentId, user });
+
+  res.json(comment);
+}
+
+/**
+ * @api {patch} /comments/:commentId/unresolve mark comment as unresolved (reopen)
+ * @apiPermission user
+ * @apiName UnresolveComment
+ * @apiGroup Comments
+ *
+ * @apiParam {String} commentId Comment ID
+ *
+ * @apiSuccess {Comment} comment Unresolved comment
+ */
+async function unresolve(req, res) {
+  const {
+    user,
+    params: { commentId },
+  } = req;
+
+  const comment = await commentService.unresolveComment({ commentId, user });
 
   res.json(comment);
 }
