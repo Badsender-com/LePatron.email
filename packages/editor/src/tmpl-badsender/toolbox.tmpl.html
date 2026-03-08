@@ -369,10 +369,10 @@
       <div class="comment-edit-form">
         <textarea class="comments-textarea" rows="3" data-bind="value: $root.editCommentText"></textarea>
         <div class="comment-edit-actions">
+          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Annuler</button>
           <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.saveEditComment">
-            <span class="mdi mdi-check"></span> <span data-bind="text: $root.t('comments-save')">Enregistrer</span>
+            <span data-bind="text: $root.t('comments-save')">Enregistrer</span>
           </button>
-          <button class="comments-btn comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Annuler</button>
         </div>
       </div>
       <!-- /ko -->
