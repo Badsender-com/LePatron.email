@@ -687,6 +687,50 @@ body {
 @comment-border-radius-pill: 9999px; // Pills, chips, badges
 
 // ===========================================
+// Comments Panel Positioning - Right Side
+// Override default slidebar (left) to position on right
+// ===========================================
+@keyframes comments-slide-in {
+  0% {
+    right: -(@leftsidebar-width + 50px);
+  }
+  100% {
+    right: 0;
+  }
+}
+
+@keyframes comments-slide-out {
+  0% {
+    right: 0;
+  }
+  100% {
+    right: -(@leftsidebar-width + 50px);
+  }
+}
+
+#toolcomments.slidebar {
+  // Override positioning: fixed to viewport, not relative to parent
+  position: fixed;
+  left: auto;
+  right: 0;
+  top: var(--top-bar-height, 50px);
+  height: calc(100vh - var(--top-bar-height, 50px));
+  animation: comments-slide-in 0.2s ease-out 0s 1;
+
+  &.hidden {
+    left: auto;
+    right: -(@leftsidebar-width + 50px);
+    animation: comments-slide-out 0.2s ease-out 0s 1;
+  }
+}
+
+// Adjust main edit area when comments panel is open
+.withComments #main-edit-area {
+  right: @leftsidebar-width;
+  transition: right 0.2s ease-out;
+}
+
+// ===========================================
 // Comments Panel Styles
 // Now using standard design system variables from :root
 // ===========================================
@@ -808,6 +852,107 @@ body {
 }
 
 // =============================================
+// Comments Rail - Per-block indicators on the right
+// Positioned just to the right of the centered email content
+// Follows block positions on scroll (decision UX #2)
+// Hidden on mobile (decision UX #3)
+// =============================================
+.comments-rail {
+  position: fixed;
+  // Position just to the right of centered email content (700px / 2 = 350px from center)
+  // Account for left sidebar width (content is centered in the area AFTER the sidebar)
+  left: calc(50% + 350px + (@leftsidebar-width / 2));
+  top: var(--top-bar-height, 50px);
+  bottom: 60px;
+  width: 32px;
+  z-index: 150;
+  pointer-events: none;
+  transition: left 0.2s ease;
+
+  // When panel is open, canvas shrinks on right, so center shifts left
+  &.panel-open {
+    left: calc(50% + 350px);
+  }
+
+  // Hide on mobile/tablet
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  // Adjust for larger screens with wider email content
+  @media (min-width: 1400px) {
+    left: calc(50% + 400px + (@leftsidebar-width / 2));
+    &.panel-open {
+      left: calc(50% + 400px);
+    }
+  }
+  @media (min-width: 1600px) {
+    left: calc(50% + 450px + (@leftsidebar-width / 2));
+    &.panel-open {
+      left: calc(50% + 450px);
+    }
+  }
+}
+
+.rail-marker {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: @comment-gray-400;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: auto;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  // Severity-based colors
+  &.severity-blocking {
+    background: @comment-error;
+  }
+
+  &.severity-important {
+    background: @comment-warning;
+  }
+
+  // Active state (selected block)
+  &.active {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(@comment-accent, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+
+    &.active {
+      transform: scale(1.2);
+    }
+  }
+
+  .rail-count {
+    line-height: 1;
+  }
+}
+
+// =============================================
+// Block highlight on rail marker hover
+// Applied to .editable blocks when hovering their rail marker
+// =============================================
+.editable.comment-hover-highlight {
+  outline: 3px solid @comment-accent !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(@comment-accent, 0.15);
+  transition: outline 0.15s ease, box-shadow 0.15s ease;
+}
+
+// =============================================
 // Comments Panel Content Styles
 // Wrapped in #toolcomments for specificity over .mo global styles
 // (specificity 1,1,0 beats .mo textarea at 0,1,1)
@@ -831,6 +976,55 @@ body {
   flex-shrink: 0;
 }
 
+// Filter chips container
+.comments-filter-chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+// Filter chip button (toggle style)
+.comment-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid @comment-gray-300;
+  border-radius: @comment-border-radius-pill;
+  background: white;
+  color: @comment-gray-600;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  .mdi {
+    font-size: 16px;
+  }
+
+  &:hover:not(.disabled) {
+    border-color: @comment-accent;
+    background: @comment-gray-50;
+  }
+
+  &.selected {
+    background: @comment-accent;
+    border-color: @comment-accent;
+    color: white;
+
+    &:hover {
+      background: darken(@comment-accent, 8%);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Legacy filter info (kept for backward compatibility)
 .comments-filter-info {
   display: flex;
   align-items: center;

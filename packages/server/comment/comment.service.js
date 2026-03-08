@@ -303,7 +303,7 @@ async function unresolveComment({ commentId, user }) {
 
 /**
  * Get comment counts per block for a mailing
- * Returns object with blockId as key and count as value
+ * Returns object with blockId as key and { count, maxSeverity } as value
  */
 async function getBlockCommentCounts(mailingId) {
   const results = await Comments.getBlockCommentCounts(mailingId);
@@ -312,7 +312,15 @@ async function getBlockCommentCounts(mailingId) {
   const counts = {};
   for (const result of results) {
     if (result._id) {
-      counts[result._id] = result.count;
+      // Determine max severity
+      let maxSeverity = 'info';
+      if (result.hasBlocking) maxSeverity = 'blocking';
+      else if (result.hasImportant) maxSeverity = 'important';
+
+      counts[result._id] = {
+        count: result.count,
+        maxSeverity: maxSeverity,
+      };
     }
   }
 

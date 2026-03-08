@@ -1,4 +1,4 @@
-<div class="editable block" data-drop-content="Drop here" data-bind="attr: { 'data-drop-content': $root.t('Drop here') }, click: function(obj, evt) { $root.selectBlock(obj); return true }, clickBubble: false, css: { selected: $root.selectedBlock() === $data }, scrollIntoView: $root.selectedBlock() === $data">
+<div class="editable block" data-drop-content="Drop here" data-bind="attr: { 'data-drop-content': $root.t('Drop here'), 'data-block-id': $data.id }, click: function(obj, evt) { $root.selectBlock(obj); return true }, clickBubble: false, css: { selected: $root.selectedBlock() === $data }, scrollIntoView: $root.selectedBlock() === $data">
   <div class="mo-blockselectionhelper"></div>
   <div class="tools" data-bind="tooltips: {}">
     <!-- ko if: typeof $index != 'undefined' -->

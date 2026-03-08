@@ -1,4 +1,4 @@
-<div id="page" style="display: none;" data-bind="visible: true, css: { withToolbox: $root.showToolbox, 'is-both-preview': isBothPreview, 'is-desktop-preview': isDesktopPreview, 'is-mobile-preview': isMobilePreview }">
+<div id="page" style="display: none;" data-bind="visible: true, css: { withToolbox: $root.showToolbox, withComments: $root.showComments, 'is-both-preview': isBothPreview, 'is-desktop-preview': isDesktopPreview, 'is-mobile-preview': isMobilePreview }">
 
   <div id="main-edit-area" data-bind="click: function(obj, evt) { $root.selectBlock(null); $root.bsEventsHub.windowClick(evt); return true; }, clickBubble: false">
     <!-- ko withProperties: { templateMode: 'wysiwyg', templateModeFallback: 'show' } -->
@@ -14,6 +14,29 @@
     </div>
     <!-- /ko -->
   </div>
+
+  <!-- Comments Rail - Visual indicators per block on the right side -->
+  <!-- ko if: $root.commentsRailVisible && $root.commentsRailVisible() -->
+  <div class="comments-rail" data-bind="css: { 'panel-open': $root.showComments() }">
+    <!-- ko foreach: $root.blocksWithComments() -->
+    <div class="rail-marker"
+         data-bind="style: { top: position + 'px' },
+                    css: {
+                      'active': $root.selectedBlockForComments() === blockId,
+                      'severity-blocking': maxSeverity === 'blocking',
+                      'severity-important': maxSeverity === 'important'
+                    },
+                    click: function() { $root.openCommentsForBlock(blockId); },
+                    event: {
+                      mouseenter: function() { $root.highlightBlockFromRail(blockId); },
+                      mouseleave: function() { $root.unhighlightAllBlocks(); }
+                    },
+                    attr: { title: blockLabel }">
+      <span class="rail-count" data-bind="text: unresolvedCount"></span>
+    </div>
+    <!-- /ko -->
+  </div>
+  <!-- /ko -->
 
   <div id="toolbar" class="mo" data-bind="tooltips: {}">
 

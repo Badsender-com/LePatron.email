@@ -231,13 +231,22 @@
   <!-- ko if: $root.showComments() -->
   <div class="comments-content">
   <div class="comments-header">
-    <!-- Filter info -->
-    <!-- ko if: $root.selectedBlockForComments() -->
-    <div class="comments-filter-info">
-      <span><span class="mdi mdi-filter"></span> <span data-bind="text: $root.t('comments-filter-block')">Filtré par bloc</span></span>
-      <button class="comments-btn comments-btn-small" data-bind="click: $root.showAllComments, text: $root.t('comments-show-all')">Tout voir</button>
+    <!-- Filter chips -->
+    <div class="comments-filter-chips">
+      <button class="comment-filter-chip"
+              data-bind="css: { selected: !$root.selectedBlockForComments() },
+                         click: $root.showAllComments">
+        <span class="mdi mdi-view-list"></span>
+        <span data-bind="text: $root.t('comments-filter-all')">Tous</span>
+      </button>
+      <button class="comment-filter-chip"
+              data-bind="css: { selected: $root.selectedBlockForComments(), disabled: !$root.lastSelectedBlock() },
+                         click: $root.filterToCurrentBlock,
+                         enable: $root.lastSelectedBlock()">
+        <span class="mdi mdi-cube-outline"></span>
+        <span data-bind="text: $root.currentBlockLabel()">Bloc actuel</span>
+      </button>
     </div>
-    <!-- /ko -->
 
     <!-- Stats - styled as warning chip when there are pending comments -->
     <!-- ko if: $root.unresolvedCommentCount() > 0 -->

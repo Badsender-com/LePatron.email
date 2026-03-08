@@ -161,7 +161,7 @@ CommentSchema.statics.countUnresolvedByMailing = async function (mailingId) {
   });
 };
 
-// Static: Get comment counts grouped by block
+// Static: Get comment counts grouped by block with severity info
 CommentSchema.statics.getBlockCommentCounts = async function (mailingId) {
   return this.aggregate([
     {
@@ -178,6 +178,9 @@ CommentSchema.statics.getBlockCommentCounts = async function (mailingId) {
         count: { $sum: 1 },
         hasBlocking: {
           $max: { $cond: [{ $eq: ['$severity', 'blocking'] }, 1, 0] },
+        },
+        hasImportant: {
+          $max: { $cond: [{ $eq: ['$severity', 'important'] }, 1, 0] },
         },
       },
     },
