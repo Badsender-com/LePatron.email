@@ -544,11 +544,13 @@ function commentsLoader(opts) {
     viewModel.isCommentAuthor = function (comment) {
       const currentUser = viewModel.currentUser();
       if (!currentUser || !comment._author) return false;
+      // Use .id (not ._id) because mongoose-hidden hides _id from User JSON
       const authorId =
         typeof comment._author === 'object'
-          ? comment._author._id
+          ? comment._author.id || comment._author._id
           : comment._author;
-      return currentUser._id === authorId || currentUser.id === authorId;
+      const currentUserId = currentUser.id || currentUser._id;
+      return currentUserId === authorId;
     };
 
     /**
