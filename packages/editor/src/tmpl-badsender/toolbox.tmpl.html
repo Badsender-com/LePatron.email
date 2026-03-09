@@ -421,6 +421,26 @@
   <!-- New comment form at bottom (only shown when NOT replying) -->
   <!-- ko ifnot: $root.replyingTo() -->
   <div class="comments-form">
+    <!-- Context indicator: shows if comment is global or attached to a block -->
+    <div class="comment-context-indicator">
+      <!-- ko if: $root.commentFormBlockLabel() -->
+      <span class="context-block">
+        <span class="mdi mdi-cube-outline"></span>
+        <span data-bind="text: $root.t('comments-context-block')">Commentaire sur</span>
+        <strong data-bind="text: $root.commentFormBlockLabel()"></strong>
+        <button type="button" class="context-clear" data-bind="click: $root.clearBlockForComment, attr: { title: $root.t('comments-context-clear') }">
+          <span class="mdi mdi-close"></span>
+        </button>
+      </span>
+      <!-- /ko -->
+      <!-- ko ifnot: $root.commentFormBlockLabel() -->
+      <span class="context-global">
+        <span class="mdi mdi-earth"></span>
+        <span data-bind="text: $root.t('comments-context-global')">Commentaire global</span>
+      </span>
+      <!-- /ko -->
+    </div>
+
     <div class="comments-textarea-wrapper">
       <textarea class="comments-textarea comment-textarea-main" rows="3"
         data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>

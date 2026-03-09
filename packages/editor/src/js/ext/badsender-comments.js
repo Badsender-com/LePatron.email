@@ -137,6 +137,45 @@ function commentsLoader(opts) {
       return blockId;
     });
 
+    // Block label for comment form context indicator
+    // Shows which block the new comment will be attached to
+    viewModel.commentFormBlockLabel = ko.computed(function () {
+      const blockId = viewModel.selectedBlockForComments();
+      if (!blockId) return null; // null means global comment
+
+      // Get block type and format it for display
+      try {
+        const blocks = viewModel.content().mainBlocks().blocks();
+        for (var i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          const blockData = typeof block === 'function' ? block() : block;
+          if (!blockData) continue;
+          const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
+          if (id === blockId) {
+            let blockType = blockData._type || blockData.type;
+            if (typeof blockType === 'function') blockType = blockType();
+            if (typeof blockType === 'object' && blockType !== null) {
+              blockType = blockType.name || blockType.label || 'Block';
+            }
+            blockType = blockType || 'Block';
+            return formatBlockName(blockType);
+          }
+        }
+      } catch (e) {
+        // Fallback to block ID
+      }
+
+      return blockId;
+    });
+
+    /**
+     * Clear block association for new comment (switch to global)
+     */
+    viewModel.clearBlockForComment = function () {
+      viewModel.selectedBlockForComments(null);
+      viewModel.selectedBlockSnapshot(null);
+    };
+
     // ===== COMMENTS RAIL =====
     // Observable for rail marker positions (updated on scroll)
     viewModel.railMarkerPositions = ko.observable({});
@@ -1012,6 +1051,39 @@ function commentsLoader(opts) {
         const blockId = typeof block.id === 'function' ? block.id() : block.id;
         if (blockId) {
           viewModel.lastSelectedBlock(blockId);
+
+          // If comments panel is open, also set the block for new comments
+          // This enables the "click on block to associate comment" UX
+          if (viewModel.showComments()) {
+            viewModel.selectedBlockForComments(blockId);
+
+            // Update block snapshot for context
+            try {
+              const blocks = viewModel.content().mainBlocks().blocks();
+              for (var i = 0; i < blocks.length; i++) {
+                const b = blocks[i];
+                const blockData = typeof b === 'function' ? b() : b;
+                if (!blockData) continue;
+                const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
+                if (id === blockId) {
+                  let blockType = blockData._type || blockData.type;
+                  if (typeof blockType === 'function') blockType = blockType();
+                  if (typeof blockType === 'object' && blockType !== null) {
+                    blockType = blockType.name || blockType.label || 'unknown';
+                  }
+                  viewModel.selectedBlockSnapshot({
+                    id: blockId,
+                    index: i,
+                    type: blockType || 'unknown',
+                  });
+                  break;
+                }
+              }
+            } catch (e) {
+              // Fallback - just set the ID
+              viewModel.selectedBlockSnapshot({ id: blockId, index: null, type: 'unknown' });
+            }
+          }
         }
       } else {
         // Block was deselected - reset to "All" filter

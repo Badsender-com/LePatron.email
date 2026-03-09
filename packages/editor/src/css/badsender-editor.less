@@ -1105,6 +1105,74 @@ body {
   border-top: 1px solid @comment-gray-200;  // Separator from list above
 }
 
+// Context indicator - shows if comment is global or attached to a block
+.comment-context-indicator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: @comment-gray-600;
+
+  .context-block,
+  .context-global {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: @comment-border-radius;
+    background: white;
+    border: 1px solid @comment-gray-200;
+  }
+
+  .context-block {
+    color: @comment-accent;
+    border-color: fade(@comment-accent, 30%);
+    background: fade(@comment-accent, 8%);
+
+    strong {
+      color: @comment-gray-800;
+      font-weight: 600;
+    }
+
+    .mdi {
+      font-size: 14px;
+    }
+  }
+
+  .context-global {
+    color: @comment-gray-600;
+
+    .mdi {
+      font-size: 14px;
+    }
+  }
+
+  .context-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: @comment-gray-500;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    .mdi {
+      font-size: 12px;
+    }
+
+    &:hover {
+      background: fade(@comment-accent, 15%);
+      color: @comment-accent;
+    }
+  }
+}
+
 // Textarea (per 02-components.md specifications)
 .comments-textarea {
   width: 100%;
