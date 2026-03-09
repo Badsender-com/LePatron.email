@@ -19,10 +19,6 @@
                       'severity-important': maxSeverity === 'important'
                     },
                     click: function() { $root.openCommentsForBlock(blockId); },
-                    event: {
-                      mouseenter: function() { $root.highlightBlockFromRail(blockId); },
-                      mouseleave: function() { $root.unhighlightAllBlocks(); }
-                    },
                     attr: { title: blockLabel }">
       <span class="mdi mdi-comment-outline rail-icon"></span>
       <span class="rail-count" data-bind="text: unresolvedCount"></span>

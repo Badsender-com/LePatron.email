@@ -116,6 +116,9 @@ function commentsLoader(opts) {
     viewModel.showMentionSuggestions = ko.observable(false);
     viewModel.mentionCursorPosition = ko.observable(0);
     viewModel.activeMentionTextarea = ko.observable(null);
+    // Track inserted mentions: [{ name, userId, displayText }]
+    // displayText is "@Name" as shown in textarea
+    viewModel.trackedMentions = ko.observableArray([]);
 
     // Resolved comments expand/collapse
     viewModel.expandedResolvedIds = ko.observableArray([]);
@@ -166,12 +169,17 @@ function commentsLoader(opts) {
     };
 
     // Filtered mention suggestions based on query
+    // Shows all users (up to 5) when @ is typed, then filters as user types
     viewModel.mentionSuggestions = ko.computed(function () {
       const query = viewModel.mentionQuery().toLowerCase();
-      if (!query) return [];
-      return viewModel.groupUsers().filter(function (user) {
+      const users = viewModel.groupUsers();
+      if (!query) {
+        // Show first 5 users when @ is typed without any filter
+        return users.slice(0, 5);
+      }
+      return users.filter(function (user) {
         return user.name && user.name.toLowerCase().indexOf(query) !== -1;
-      }).slice(0, 5); // Limit to 5 suggestions
+      }).slice(0, 5);
     });
 
     // Current block label for filter chip
@@ -349,33 +357,7 @@ function commentsLoader(opts) {
     };
 
     /**
-     * Highlight a block when hovering its rail marker
-     * @param {string} blockId - ID of the block to highlight
-     */
-    viewModel.highlightBlockFromRail = function (blockId) {
-      const scrollContainer = document.querySelector('#main-wysiwyg-area');
-      if (!scrollContainer) return;
-
-      const blockElement = scrollContainer.querySelector(
-        '.editable[data-block-id="' + blockId + '"]'
-      );
-
-      if (blockElement) {
-        blockElement.classList.add('comment-hover-highlight');
-      }
-    };
-
-    /**
-     * Remove highlight from all blocks
-     */
-    viewModel.unhighlightAllBlocks = function () {
-      const highlightedBlocks = document.querySelectorAll('.comment-hover-highlight');
-      highlightedBlocks.forEach(function (block) {
-        block.classList.remove('comment-hover-highlight');
-      });
-    };
-
-    // ===== METHODS =====
+// ===== METHODS =====
 
     /**
      * Load only the unresolved comments count (lightweight, called on init)
@@ -475,6 +457,7 @@ function commentsLoader(opts) {
 
     /**
      * Insert a mention into the textarea
+     * Displays "@Name" in textarea but tracks the full mention data for submission
      */
     viewModel.insertMention = function (user) {
       const textarea = viewModel.activeMentionTextarea();
@@ -489,8 +472,16 @@ function commentsLoader(opts) {
         const textBefore = text.substring(0, atIndex);
         const textAfter = text.substring(cursorPos);
         const userId = user._id || user.id;
-        const mention = '@[' + user.name + '](' + userId + ') ';
-        const newText = textBefore + mention + textAfter;
+        // Display format: just "@Name " (user-friendly)
+        const displayMention = '@' + user.name + ' ';
+        const newText = textBefore + displayMention + textAfter;
+
+        // Track this mention for later reconstruction
+        viewModel.trackedMentions.push({
+          name: user.name,
+          userId: userId,
+          displayText: '@' + user.name  // Without trailing space for matching
+        });
 
         // Update the appropriate observable
         if (textarea.classList.contains('comment-textarea-main')) {
@@ -503,7 +494,7 @@ function commentsLoader(opts) {
 
         // Set cursor position after mention
         setTimeout(function () {
-          const newPos = textBefore.length + mention.length;
+          const newPos = textBefore.length + displayMention.length;
           textarea.setSelectionRange(newPos, newPos);
           textarea.focus();
         }, 0);
@@ -544,17 +535,49 @@ function commentsLoader(opts) {
     };
 
     /**
-     * Extract mention user IDs from text
-     * Format: @[User Name](userId)
+     * Reconstruct text with full mention format for storage
+     * Converts "@Name" to "@[Name](userId)" using tracked mentions
+     */
+    viewModel.reconstructMentionsForStorage = function (text) {
+      const tracked = viewModel.trackedMentions();
+      let result = text;
+
+      // Process each tracked mention
+      tracked.forEach(function (mention) {
+        const displayText = mention.displayText; // "@Name"
+        const fullFormat = '@[' + mention.name + '](' + mention.userId + ')';
+        // Replace only if the display text still exists in the text
+        if (result.indexOf(displayText) !== -1) {
+          // Replace first occurrence only (in case of duplicate names)
+          result = result.replace(displayText, fullFormat);
+        }
+      });
+
+      return result;
+    };
+
+    /**
+     * Extract mention user IDs from tracked mentions that are still in the text
      */
     viewModel.extractMentions = function (text) {
-      const mentionRegex = /@\[([^\]]+)\]\(([a-f0-9]+)\)/g;
+      const tracked = viewModel.trackedMentions();
       const mentions = [];
-      let match;
-      while ((match = mentionRegex.exec(text)) !== null) {
-        mentions.push(match[2]); // User ID
-      }
+
+      tracked.forEach(function (mention) {
+        // Check if this mention is still in the text
+        if (text.indexOf(mention.displayText) !== -1) {
+          mentions.push(mention.userId);
+        }
+      });
+
       return mentions;
+    };
+
+    /**
+     * Clear tracked mentions (after submit or cancel)
+     */
+    viewModel.clearTrackedMentions = function () {
+      viewModel.trackedMentions.removeAll();
     };
 
     /**
@@ -583,12 +606,15 @@ function commentsLoader(opts) {
         return;
       }
 
-      // Extract mentions from text
+      // Extract mentions from text (uses tracked mentions)
       const mentions = viewModel.extractMentions(text);
+
+      // Reconstruct full mention format for storage
+      const textForStorage = viewModel.reconstructMentionsForStorage(text);
 
       const blockSnapshot = viewModel.selectedBlockSnapshot();
       const data = {
-        text: text,
+        text: textForStorage,
         category: viewModel.newCommentCategory(),
         severity: viewModel.newCommentSeverity(),
         blockId: viewModel.selectedBlockForComments() || null,
@@ -614,7 +640,10 @@ function commentsLoader(opts) {
         success: function (comment) {
           viewModel.comments.push(comment);
           viewModel.newCommentText('');
+          viewModel.newCommentCategory('general');
+          viewModel.newCommentSeverity('info');
           viewModel.replyingTo(null);
+          viewModel.clearTrackedMentions();
           viewModel.loadCommentCounts();
           viewModel.notifier.success(viewModel.t('comments-created'));
         },
@@ -795,11 +824,29 @@ function commentsLoader(opts) {
       viewModel.selectedBlockForComments(blockId);
       viewModel.lastSelectedBlock(blockId); // Remember for filter chip
       viewModel.showComments(true);
+
+      // Select the block in the editor (same as "Go to block")
+      const block = viewModel.findBlockById(blockId);
+      if (block) {
+        viewModel.selectBlock(block, true);
+
+        // Scroll to the block element in the DOM
+        setTimeout(function () {
+          const blockElement = document.querySelector(
+            '.editable[data-block-id="' + blockId + '"]'
+          );
+
+          if (blockElement) {
+            blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+
       // Focus on main textarea after DOM update
       setTimeout(function () {
         var mainTextarea = document.querySelector('.comment-textarea-main');
         if (mainTextarea) mainTextarea.focus();
-      }, 50);
+      }, 150);
     };
 
     /**
@@ -1060,11 +1107,6 @@ function commentsLoader(opts) {
 
         if (blockElement) {
           blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Add a brief highlight effect
-          blockElement.classList.add('comment-highlight');
-          setTimeout(function () {
-            blockElement.classList.remove('comment-highlight');
-          }, 2000);
         }
       }, 100);
     };
