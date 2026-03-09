@@ -814,14 +814,28 @@ body {
 // Comments Visibility Indicators
 // =============================================
 
-// Wrapper for comments button in toolbar
+// Wrapper for comments button in toolbar - simplified clickable button
 .comments-button-wrapper {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.15s ease;
+  border-radius: 2px;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  // Comment icon
+  > .mdi {
+    font-size: 18px;
+  }
 }
 
-// Badge on Comments button in toolbar (horizontal, tight to icon)
+// Badge on Comments button in toolbar
 .comments-toolbar-badge {
   display: inline-flex;
   align-items: center;
@@ -836,66 +850,8 @@ body {
   height: 18px;
   line-height: 1;
   text-align: center;
-  cursor: pointer;
 }
 
-// Floating comments indicator - shown when panel is closed
-.comments-floating-indicator {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: @comment-primary-dark;
-  color: white;
-  padding: 12px 18px;
-  border-radius: @comment-border-radius-pill;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  z-index: 1000;
-  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-
-  // Pulse animation to attract attention
-  animation: comments-indicator-pulse 2s ease-in-out infinite;
-
-  &:hover {
-    background: lighten(@comment-primary-dark, 8%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(13, 43, 62, 0.4), 0 3px 6px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  i {
-    font-size: 18px;
-  }
-
-  .comments-floating-count {
-    background: @comment-accent-highlight;
-    color: white;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: @comment-border-radius-pill;
-    min-width: 20px;
-    text-align: center;
-  }
-}
-
-@keyframes comments-indicator-pulse {
-  0%, 100% {
-    box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  50% {
-    box-shadow: 0 4px 12px rgba(13, 43, 62, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 4px rgba(45, 212, 191, 0.2);
-  }
-}
 
 // =============================================
 // Comments Rail - Per-block indicators on the right
@@ -942,14 +898,15 @@ body {
 
 .rail-marker {
   position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: @comment-border-radius-pill;
   background: @comment-gray-400;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -957,6 +914,12 @@ body {
   transition: all 0.15s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  // Comment icon in rail marker
+  .rail-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
 
   // Severity-based colors
   &.severity-blocking {
@@ -969,16 +932,16 @@ body {
 
   // Active state (selected block)
   &.active {
-    transform: scale(1.15);
+    transform: scale(1.1);
     box-shadow: 0 0 0 3px rgba(@comment-accent, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
   }
 
   &:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
 
     &.active {
-      transform: scale(1.2);
+      transform: scale(1.15);
     }
   }
 

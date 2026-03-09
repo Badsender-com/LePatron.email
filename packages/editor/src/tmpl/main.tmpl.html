@@ -5,14 +5,6 @@
     <div id="main-wysiwyg-area" data-bind="wysiwygScrollfix: true, scrollable: true, fudroppable: { active: draggingImage }, css: { isdragging: dragging, isdraggingimg: draggingImage }, block: content"></div>
     <!-- /ko -->
 
-    <!-- Floating comments indicator - shown when panel is closed.
-         Uses position:fixed so it renders relative to viewport despite #main-edit-area having overflow:hidden -->
-    <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 && !$root.showComments() -->
-    <div class="comments-floating-indicator" data-bind="click: function() { $root.showComments(true); if ($root.commentsStatus() === false) { $root.loadComments(); } }, attr: { title: $root.t('comments-toggle') }">
-      <span class="mdi mdi-comment-multiple-outline"></span>
-      <span class="comments-floating-count" data-bind="text: $root.unresolvedCommentCount()"></span>
-    </div>
-    <!-- /ko -->
   </div>
 
   <!-- Comments Rail - Visual indicators per block on the right side -->
@@ -32,6 +24,7 @@
                       mouseleave: function() { $root.unhighlightAllBlocks(); }
                     },
                     attr: { title: blockLabel }">
+      <span class="mdi mdi-comment-outline rail-icon"></span>
       <span class="rail-count" data-bind="text: unresolvedCount"></span>
     </div>
     <!-- /ko -->
@@ -56,10 +49,10 @@
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
-    <span class="comments-button-wrapper">
-      <input id="showComments" type="checkbox" data-bind="checked: $root.showComments, button: { refreshOn: $root.showComments, icons: { primary: 'mdi mdi-comment-multiple-outline', secondary: null }, text: false, label: $root.t('Comments') }"><label title="Show comments panel" for="showComments" data-bind="attr: { title: $root.t('comments-toggle') }">show comments</label></input>
+    <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle') }">
+      <span class="mdi mdi-comment-multiple-outline"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
-      <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount(), click: function() { $root.showComments(!$root.showComments()); }"></span>
+      <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
       <!-- /ko -->
     </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
