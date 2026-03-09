@@ -1069,36 +1069,47 @@ body {
 }
 
 // Context indicator - shows if comment is global or attached to a block
+// Compact inline version for form actions row
 .comment-context-indicator {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 12px;
+  font-size: 11px;
   color: @comment-gray-600;
+  min-width: 0; // Allow shrinking for ellipsis
+  flex: 1;
 
   .context-block,
   .context-global {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 4px 8px;
     border-radius: @comment-border-radius;
-    background: white;
-    border: 1px solid @comment-gray-200;
+    background: @comment-gray-100;
+    max-width: 100%;
+    min-width: 0; // Allow shrinking
   }
 
   .context-block {
     color: @comment-accent;
-    border-color: fade(@comment-accent, 30%);
     background: fade(@comment-accent, 8%);
 
-    strong {
-      color: @comment-gray-800;
-      font-weight: 600;
+    .mdi {
+      font-size: 12px;
+      flex-shrink: 0;
     }
 
-    .mdi {
-      font-size: 14px;
+    .context-label {
+      flex-shrink: 0;
+    }
+
+    .context-block-name {
+      color: @comment-gray-800;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 120px;
     }
   }
 
@@ -1106,7 +1117,8 @@ body {
     color: @comment-gray-600;
 
     .mdi {
-      font-size: 14px;
+      font-size: 12px;
+      flex-shrink: 0;
     }
   }
 
@@ -1114,9 +1126,9 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
     padding: 0;
     border: none;
     background: transparent;
@@ -1124,9 +1136,10 @@ body {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 
     .mdi {
-      font-size: 12px;
+      font-size: 10px;
     }
 
     &:hover {
@@ -1158,6 +1171,17 @@ body {
 
   &::placeholder {
     color: @comment-gray-600;  // Per preview: gray-600 for placeholders
+  }
+}
+
+// Main comment textarea - compact by default, expands on focus
+.comment-textarea-main {
+  min-height: 44px;  // Compact: ~2 lines
+  transition: min-height 0.2s ease;
+
+  &:focus,
+  &.is-focused {
+    min-height: 110px;  // Expanded: ~5-6 lines
   }
 }
 
@@ -1221,10 +1245,12 @@ body {
 }
 
 // Form actions area (per DS: form-actions pattern)
-// Separator line above button only, right-aligned
+// Context indicator left, submit button right
 .comments-form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   padding-top: 12px;
   margin-top: 4px;

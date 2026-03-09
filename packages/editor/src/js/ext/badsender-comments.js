@@ -7,9 +7,81 @@ const _ = require('lodash');
 /**
  * Format a block type name for display (e.g., "textimageBlock" -> "Text Image")
  */
-function formatBlockName(blockName) {
-  if (!blockName) return '';
-  return _.startCase(blockName.replace('Block', ''));
+function formatBlockName(blockType) {
+  if (!blockType) return '';
+  // Remove "Block" suffix and convert to title case
+  return _.startCase(blockType.replace(/Block$/i, ''));
+}
+
+/**
+ * Get block type from block data, handling observables
+ */
+function getBlockType(blockData) {
+  if (!blockData) return null;
+  let blockType = blockData._type || blockData.type;
+  if (typeof blockType === 'function') blockType = blockType();
+  if (typeof blockType === 'object' && blockType !== null) {
+    blockType = blockType.name || blockType.label || null;
+  }
+  return blockType || null;
+}
+
+/**
+ * Get formatted block label with numbering for duplicates
+ * @param {Array} blocks - All blocks in the email
+ * @param {string} targetBlockId - The block ID to get label for
+ * @returns {string|null} - Formatted label like "Header Block" or "Title Block #2"
+ */
+function getBlockLabelWithNumber(blocks, targetBlockId) {
+  if (!blocks || !targetBlockId) return null;
+
+  let targetType = null;
+  let targetIndex = -1;
+
+  // First pass: find the target block and its type
+  for (var i = 0; i < blocks.length; i++) {
+    const block = blocks[i];
+    const blockData = typeof block === 'function' ? block() : block;
+    if (!blockData) continue;
+
+    const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
+    if (id === targetBlockId) {
+      targetType = getBlockType(blockData);
+      targetIndex = i;
+      break;
+    }
+  }
+
+  if (!targetType) return null;
+
+  // Second pass: count blocks of the same type and find position
+  let sameTypeCount = 0;
+  let positionAmongSameType = 0;
+
+  for (var j = 0; j < blocks.length; j++) {
+    const block = blocks[j];
+    const blockData = typeof block === 'function' ? block() : block;
+    if (!blockData) continue;
+
+    const blockType = getBlockType(blockData);
+    if (blockType === targetType) {
+      sameTypeCount++;
+      if (j < targetIndex) {
+        positionAmongSameType++;
+      } else if (j === targetIndex) {
+        positionAmongSameType++; // This is our block's position (1-indexed)
+      }
+    }
+  }
+
+  const formattedName = formatBlockName(targetType);
+
+  // Add number only if there are multiple blocks of the same type
+  if (sameTypeCount > 1) {
+    return formattedName + ' #' + positionAmongSameType;
+  }
+
+  return formattedName;
 }
 
 /**
@@ -36,6 +108,7 @@ function commentsLoader(opts) {
     viewModel.replyingTo = ko.observable(null);
     viewModel.editingComment = ko.observable(null);
     viewModel.editCommentText = ko.observable('');
+    viewModel.isCommentTextareaFocused = ko.observable(false);
 
     // Mentions autocomplete
     viewModel.groupUsers = ko.observableArray([]);
@@ -102,7 +175,7 @@ function commentsLoader(opts) {
     });
 
     // Current block label for filter chip
-    // Uses formatBlockName() to humanize the block type (e.g., "textimageBlock" -> "Text Image")
+    // Shows human-readable block name with numbering for duplicates
     viewModel.currentBlockLabel = ko.computed(function () {
       const blockId = viewModel.lastSelectedBlock();
       // When no block is selected, show "No block" text
@@ -110,31 +183,13 @@ function commentsLoader(opts) {
         return viewModel.t('comments-no-block-selected') || 'Aucun bloc';
       }
 
-      // Get block type and format it for display
       try {
         const blocks = viewModel.content().mainBlocks().blocks();
-        for (var i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          const blockData = typeof block === 'function' ? block() : block;
-          if (!blockData) continue;
-          const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-          if (id === blockId) {
-            // Unwrap potential observables for block type
-            let blockType = blockData._type || blockData.type;
-            if (typeof blockType === 'function') blockType = blockType();
-            if (typeof blockType === 'object' && blockType !== null) {
-              blockType = blockType.name || blockType.label || 'Block';
-            }
-            blockType = blockType || 'Block';
-            // Format the block name for human readability
-            return formatBlockName(blockType);
-          }
-        }
+        const label = getBlockLabelWithNumber(blocks, blockId);
+        return label || blockId;
       } catch (e) {
-        // Fallback to block ID
+        return blockId;
       }
-
-      return blockId;
     });
 
     // Block label for comment form context indicator
@@ -143,29 +198,13 @@ function commentsLoader(opts) {
       const blockId = viewModel.selectedBlockForComments();
       if (!blockId) return null; // null means global comment
 
-      // Get block type and format it for display
       try {
         const blocks = viewModel.content().mainBlocks().blocks();
-        for (var i = 0; i < blocks.length; i++) {
-          const block = blocks[i];
-          const blockData = typeof block === 'function' ? block() : block;
-          if (!blockData) continue;
-          const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-          if (id === blockId) {
-            let blockType = blockData._type || blockData.type;
-            if (typeof blockType === 'function') blockType = blockType();
-            if (typeof blockType === 'object' && blockType !== null) {
-              blockType = blockType.name || blockType.label || 'Block';
-            }
-            blockType = blockType || 'Block';
-            return formatBlockName(blockType);
-          }
-        }
+        const label = getBlockLabelWithNumber(blocks, blockId);
+        return label || blockId;
       } catch (e) {
-        // Fallback to block ID
+        return blockId;
       }
-
-      return blockId;
     });
 
     /**
@@ -480,6 +519,28 @@ function commentsLoader(opts) {
     viewModel.hideMentionSuggestions = function () {
       viewModel.showMentionSuggestions(false);
       viewModel.mentionQuery('');
+    };
+
+    /**
+     * Handle textarea focus - expand textarea
+     */
+    viewModel.onTextareaFocus = function () {
+      viewModel.isCommentTextareaFocused(true);
+      return true; // Allow default behavior
+    };
+
+    /**
+     * Handle textarea blur - collapse textarea (with delay for mentions)
+     */
+    viewModel.onTextareaBlur = function () {
+      setTimeout(function () {
+        viewModel.hideMentionSuggestions();
+        // Only collapse if textarea is empty
+        if (!viewModel.newCommentText().trim()) {
+          viewModel.isCommentTextareaFocused(false);
+        }
+      }, 200);
+      return true; // Allow default behavior
     };
 
     /**
