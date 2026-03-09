@@ -226,7 +226,17 @@
 <!-- Comments Panel -->
 <div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
-  <span class="pane-title" data-bind="text: $root.t('comments-title')">Comments</span>
+  <span class="pane-title">
+    <span data-bind="text: $root.t('comments-title')">Commentaires</span>
+    <!-- ko if: $root.unresolvedCommentCount() > 0 -->
+    <span class="pane-title-badge pane-title-badge-warning" data-bind="text: $root.unresolvedCommentCount()"></span>
+    <!-- /ko -->
+    <!-- ko if: $root.unresolvedCommentCount() === 0 && $root.comments().length > 0 -->
+    <span class="pane-title-badge pane-title-badge-success">
+      <span class="mdi mdi-check"></span>
+    </span>
+    <!-- /ko -->
+  </span>
 
   <!-- ko if: $root.showComments() -->
   <div class="comments-content">
@@ -247,96 +257,27 @@
         <span data-bind="text: $root.currentBlockLabel()">Bloc actuel</span>
       </button>
     </div>
+  </div>
 
-    <!-- Stats - styled as warning chip when there are pending comments -->
-    <!-- ko if: $root.unresolvedCommentCount() > 0 -->
-    <div class="comments-stats comments-stats-pending">
-      <span class="mdi mdi-clock-outline"></span>
-      <span class="stats-count" data-bind="text: $root.unresolvedCommentCount()">0</span> <span data-bind="text: $root.t('comments-count-label')">en attente</span>
+  <!-- Scrollable area for list -->
+  <div class="comments-list-wrapper">
+    <!-- Loading state -->
+    <!-- ko if: $root.commentsStatus() === 'loading' -->
+    <div class="comments-loading">
+      <span class="mdi mdi-loading mdi-spin"></span>
+      <span data-bind="text: $root.t('comments-loading')">Chargement...</span>
     </div>
     <!-- /ko -->
-    <!-- ko if: $root.unresolvedCommentCount() === 0 -->
-    <div class="comments-stats comments-stats-resolved">
-      <span class="mdi mdi-check-circle"></span>
-      <span data-bind="text: $root.t('comments-all-resolved')">Tous résolus</span>
+
+    <!-- Empty state -->
+    <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
+    <div class="comments-empty">
+      <span class="mdi mdi-comment-multiple-outline"></span>
+      <span data-bind="text: $root.t('comments-empty')">Aucun commentaire</span>
     </div>
     <!-- /ko -->
-  </div>
 
-  <!-- New comment form (only shown when NOT replying) -->
-  <!-- ko ifnot: $root.replyingTo() -->
-  <div class="comments-form">
-    <div class="comments-textarea-wrapper">
-      <textarea class="comments-textarea comment-textarea-main" rows="3"
-        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
-
-      <!-- Mention suggestions dropdown -->
-      <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
-      <div class="mention-suggestions">
-        <!-- ko foreach: $root.mentionSuggestions() -->
-        <div class="mention-suggestion" data-bind="click: function() { $root.insertMention($data); }">
-          <span class="mention-name" data-bind="text: name"></span>
-          <span class="mention-email" data-bind="text: email"></span>
-        </div>
-        <!-- /ko -->
-      </div>
-      <!-- /ko -->
-    </div>
-
-    <div class="comments-form-options">
-      <!-- Category chips -->
-      <div class="comments-chips-group">
-        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('general'); }, css: { selected: $root.newCommentCategory() === 'general' }">
-          <span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">Général</span>
-        </span>
-        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('design'); }, css: { selected: $root.newCommentCategory() === 'design' }">
-          <span class="mdi mdi-brush"></span> <span data-bind="text: $root.t('comments-category-design')">Design</span>
-        </span>
-        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('content'); }, css: { selected: $root.newCommentCategory() === 'content' }">
-          <span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Contenu</span>
-        </span>
-      </div>
-
-      <!-- Severity chips with semantic colors -->
-      <div class="comments-chips-group">
-        <span class="comment-chip comment-chip-info" data-bind="click: function() { $root.newCommentSeverity('info'); }, css: { selected: $root.newCommentSeverity() === 'info' }">
-          <span class="mdi mdi-information"></span> Info
-        </span>
-        <span class="comment-chip comment-chip-warning" data-bind="click: function() { $root.newCommentSeverity('important'); }, css: { selected: $root.newCommentSeverity() === 'important' }">
-          <span class="mdi mdi-alert"></span> Important
-        </span>
-        <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="mdi mdi-block-helper"></span> Bloquant
-        </span>
-      </div>
-
-      <!-- Form actions with separator (per DS: form-actions pattern) -->
-      <div class="comments-form-actions">
-        <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
-          <span data-bind="text: $root.t('comments-add')">Ajouter</span>
-        </button>
-      </div>
-    </div>
-  </div>
-  <!-- /ko -->
-
-  <!-- Loading state -->
-  <!-- ko if: $root.commentsStatus() === 'loading' -->
-  <div class="comments-loading">
-    <span class="mdi mdi-loading mdi-spin"></span>
-    <span data-bind="text: $root.t('comments-loading')">Chargement...</span>
-  </div>
-  <!-- /ko -->
-
-  <!-- Empty state -->
-  <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
-  <div class="comments-empty">
-    <span class="mdi mdi-comment-multiple-outline"></span>
-    <span data-bind="text: $root.t('comments-empty')">Aucun commentaire</span>
-  </div>
-  <!-- /ko -->
-
-  <!-- Comments list -->
+    <!-- Comments list -->
   <div class="comments-list" data-bind="foreach: $root.filteredComments()">
     <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
       <!-- Comment header -->
@@ -475,6 +416,65 @@
       <!-- /ko -->
     </div>
   </div>
+  </div><!-- .comments-list-wrapper -->
+
+  <!-- New comment form at bottom (only shown when NOT replying) -->
+  <!-- ko ifnot: $root.replyingTo() -->
+  <div class="comments-form">
+    <div class="comments-textarea-wrapper">
+      <textarea class="comments-textarea comment-textarea-main" rows="3"
+        data-bind="value: $root.newCommentText, valueUpdate: 'afterkeydown', event: { input: $root.handleCommentInput, blur: function() { setTimeout($root.hideMentionSuggestions, 200); } }, attr: { placeholder: $root.t('comments-placeholder') }"></textarea>
+
+      <!-- Mention suggestions dropdown -->
+      <!-- ko if: $root.showMentionSuggestions() && $root.mentionSuggestions().length > 0 -->
+      <div class="mention-suggestions mention-suggestions-bottom">
+        <!-- ko foreach: $root.mentionSuggestions() -->
+        <div class="mention-suggestion" data-bind="click: function() { $root.insertMention($data); }">
+          <span class="mention-name" data-bind="text: name"></span>
+          <span class="mention-email" data-bind="text: email"></span>
+        </div>
+        <!-- /ko -->
+      </div>
+      <!-- /ko -->
+    </div>
+
+    <div class="comments-form-options">
+      <!-- Category chips -->
+      <div class="comments-chips-group">
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('general'); }, css: { selected: $root.newCommentCategory() === 'general' }">
+          <span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">Général</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('design'); }, css: { selected: $root.newCommentCategory() === 'design' }">
+          <span class="mdi mdi-brush"></span> <span data-bind="text: $root.t('comments-category-design')">Design</span>
+        </span>
+        <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('content'); }, css: { selected: $root.newCommentCategory() === 'content' }">
+          <span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Contenu</span>
+        </span>
+      </div>
+
+      <!-- Severity chips with semantic colors -->
+      <div class="comments-chips-group">
+        <span class="comment-chip comment-chip-info" data-bind="click: function() { $root.newCommentSeverity('info'); }, css: { selected: $root.newCommentSeverity() === 'info' }">
+          <span class="mdi mdi-information"></span> Info
+        </span>
+        <span class="comment-chip comment-chip-warning" data-bind="click: function() { $root.newCommentSeverity('important'); }, css: { selected: $root.newCommentSeverity() === 'important' }">
+          <span class="mdi mdi-alert"></span> Important
+        </span>
+        <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
+          <span class="mdi mdi-block-helper"></span> Bloquant
+        </span>
+      </div>
+
+      <!-- Form actions with separator (per DS: form-actions pattern) -->
+      <div class="comments-form-actions">
+        <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
+          <span data-bind="text: $root.t('comments-add')">Ajouter</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /ko -->
+
   </div><!-- .comments-content -->
   <!-- /ko -->
 </div>

@@ -2,6 +2,15 @@
 
 const $ = require('jquery');
 const ko = require('knockout');
+const _ = require('lodash');
+
+/**
+ * Format a block type name for display (e.g., "textimageBlock" -> "Text Image")
+ */
+function formatBlockName(blockName) {
+  if (!blockName) return '';
+  return _.startCase(blockName.replace('Block', ''));
+}
 
 /**
  * Comments extension for the Mosaico editor
@@ -93,13 +102,15 @@ function commentsLoader(opts) {
     });
 
     // Current block label for filter chip
+    // Uses formatBlockName() to humanize the block type (e.g., "textimageBlock" -> "Text Image")
     viewModel.currentBlockLabel = ko.computed(function () {
       const blockId = viewModel.lastSelectedBlock();
+      // When no block is selected, show "No block" text
       if (!blockId) {
-        return viewModel.t('comments-filter-block') || 'Bloc actuel';
+        return viewModel.t('comments-no-block-selected') || 'Aucun bloc';
       }
 
-      // Get block type and index for label
+      // Get block type and format it for display
       try {
         const blocks = viewModel.content().mainBlocks().blocks();
         for (var i = 0; i < blocks.length; i++) {
@@ -108,8 +119,15 @@ function commentsLoader(opts) {
           if (!blockData) continue;
           const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
           if (id === blockId) {
-            const blockType = blockData._type || blockData.type || 'Bloc';
-            return blockType + ' #' + (i + 1);
+            // Unwrap potential observables for block type
+            let blockType = blockData._type || blockData.type;
+            if (typeof blockType === 'function') blockType = blockType();
+            if (typeof blockType === 'object' && blockType !== null) {
+              blockType = blockType.name || blockType.label || 'Block';
+            }
+            blockType = blockType || 'Block';
+            // Format the block name for human readability
+            return formatBlockName(blockType);
           }
         }
       } catch (e) {
@@ -158,7 +176,7 @@ function commentsLoader(opts) {
         const posData = positions[blockId];
         if (!posData || !posData.visible) return;
 
-        // Get block type for label
+        // Get block type for label (uses formatBlockName for humanization)
         let blockLabel = blockId;
         try {
           const blocks = viewModel.content().mainBlocks().blocks();
@@ -168,8 +186,15 @@ function commentsLoader(opts) {
             if (!blockInfo) continue;
             const id = typeof blockInfo.id === 'function' ? blockInfo.id() : blockInfo.id;
             if (id === blockId) {
-              const blockType = blockInfo._type || blockInfo.type || 'block';
-              blockLabel = blockType + ' #' + (i + 1);
+              // Unwrap potential observables for block type
+              let blockType = blockInfo._type || blockInfo.type;
+              if (typeof blockType === 'function') blockType = blockType();
+              if (typeof blockType === 'object' && blockType !== null) {
+                blockType = blockType.name || blockType.label || 'Block';
+              }
+              blockType = blockType || 'Block';
+              // Format block name for human readability
+              blockLabel = formatBlockName(blockType);
               break;
             }
           }
@@ -979,7 +1004,8 @@ function commentsLoader(opts) {
       }
     }, 500);
 
-    // Also subscribe to selected block changes to update lastSelectedBlock
+    // Subscribe to selected block changes to update lastSelectedBlock
+    // When a block is deselected, reset to "All" filter
     viewModel.selectedBlock.subscribe(function (block) {
       if (block) {
         // Get block ID - handle observable or direct value
@@ -987,6 +1013,10 @@ function commentsLoader(opts) {
         if (blockId) {
           viewModel.lastSelectedBlock(blockId);
         }
+      } else {
+        // Block was deselected - reset to "All" filter
+        viewModel.lastSelectedBlock(null);
+        viewModel.selectedBlockForComments(null);
       }
     });
 
