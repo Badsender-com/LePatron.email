@@ -45,7 +45,7 @@
     <span>
       <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
-    <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle') }">
+    <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle') }" role="button">
       <span class="mdi mdi-comment-multiple-outline"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>

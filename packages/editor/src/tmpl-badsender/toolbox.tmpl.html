@@ -455,13 +455,13 @@
       <!-- Severity chips with semantic colors -->
       <div class="comments-chips-group">
         <span class="comment-chip comment-chip-info" data-bind="click: function() { $root.newCommentSeverity('info'); }, css: { selected: $root.newCommentSeverity() === 'info' }">
-          <span class="mdi mdi-information"></span> Info
+          <span class="mdi mdi-information"></span> <span data-bind="text: $root.t('comments-severity-info')">Info</span>
         </span>
         <span class="comment-chip comment-chip-warning" data-bind="click: function() { $root.newCommentSeverity('important'); }, css: { selected: $root.newCommentSeverity() === 'important' }">
-          <span class="mdi mdi-alert"></span> Important
+          <span class="mdi mdi-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span>
         </span>
         <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="mdi mdi-block-helper"></span> Bloquant
+          <span class="mdi mdi-block-helper"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Bloquant</span>
         </span>
       </div>
 
