@@ -3,12 +3,12 @@
 const mongoose = require('mongoose');
 
 // Mock models before requiring the service
-jest.mock('../common/models.common.js');
+jest.mock('../../../packages/server/common/models.common.js');
 
-const { Comments, Mailings, Users } = require('../common/models.common.js');
-const commentService = require('./comment.service.js');
-const ERROR_CODES = require('../constant/error-codes.js');
-const { COMMENT_CATEGORIES, COMMENT_SEVERITIES } = require('./comment.schema.js');
+const { Comments, Mailings, Users } = require('../../../packages/server/common/models.common.js');
+const commentService = require('../../../packages/server/comment/comment.service.js');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
+const { COMMENT_CATEGORIES, COMMENT_SEVERITIES } = require('../../../packages/server/comment/comment.schema.js');
 
 describe('Comment Service', () => {
   beforeEach(() => {

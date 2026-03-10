@@ -1,6 +1,6 @@
 'use strict';
 
-const { NotFound, Forbidden, BadRequest } = require('http-errors');
+const { BadRequest, Forbidden, NotFound } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
