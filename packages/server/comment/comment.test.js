@@ -18,6 +18,34 @@ describe('Comment Service', () => {
   // Helper to create mock ObjectId
   const mockObjectId = () => new mongoose.Types.ObjectId();
 
+  // Helper to mock mailing access verification
+  const mockMailingAccess = (mailingId, groupId, mailingData = {}) => {
+    const mockMailing = {
+      _id: mailingId,
+      _wireframe: { _company: groupId },
+      data: { mainBlocks: { blocks: [] } },
+      ...mailingData,
+    };
+    Mailings.findById = jest.fn().mockReturnValue({
+      populate: jest.fn().mockResolvedValue(mockMailing),
+    });
+    return mockMailing;
+  };
+
+  // Helper to mock mailing not found
+  const mockMailingNotFound = () => {
+    Mailings.findById = jest.fn().mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    });
+  };
+
+  // Helper to create a test user with company access
+  const createTestUser = (userId, groupId) => ({
+    _id: userId,
+    name: 'Test User',
+    _company: groupId,
+  });
+
   describe('createComment', () => {
     it('should create a comment on a mailing', async () => {
       const mailingId = mockObjectId();
@@ -25,35 +53,22 @@ describe('Comment Service', () => {
       const groupId = mockObjectId();
       const commentId = mockObjectId();
 
-      const mockMailing = {
-        _id: mailingId,
-        _company: groupId,
-        name: 'Test Mailing',
-        data: { mainBlocks: { blocks: [] } },
-      };
+      mockMailingAccess(mailingId, groupId);
 
-      const mockComment = {
-        _id: commentId,
-        _mailing: mailingId,
-        _company: groupId,
-        text: 'Test comment',
-        category: 'general',
-        severity: 'info',
-        _author: userId,
-        authorName: 'Test User',
-        populate: jest.fn().mockResolvedValue({
+      const mockCreatedComment = { _id: commentId };
+      Comments.create = jest.fn().mockResolvedValue(mockCreatedComment);
+      Comments.findById = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({
           _id: commentId,
           text: 'Test comment',
           _author: { _id: userId, name: 'Test User', email: 'test@example.com' },
         }),
-      };
-
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
-      Comments.create = jest.fn().mockResolvedValue(mockComment);
+      });
 
       const result = await commentService.createComment({
         mailingId: mailingId.toString(),
-        user: { _id: userId, name: 'Test User', _company: groupId },
+        user: createTestUser(userId, groupId),
         text: 'Test comment',
         category: 'general',
         severity: 'info',
@@ -74,16 +89,34 @@ describe('Comment Service', () => {
     it('should throw NotFound if mailing does not exist', async () => {
       const mailingId = mockObjectId();
       const userId = mockObjectId();
+      const groupId = mockObjectId();
 
-      Mailings.findById = jest.fn().mockResolvedValue(null);
+      mockMailingNotFound();
 
       await expect(
         commentService.createComment({
           mailingId: mailingId.toString(),
-          user: { _id: userId, name: 'Test User' },
+          user: createTestUser(userId, groupId),
           text: 'Test comment',
         })
       ).rejects.toThrow(ERROR_CODES.MAILING_NOT_FOUND);
+    });
+
+    it('should throw Forbidden if user has no access to mailing', async () => {
+      const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const userGroupId = mockObjectId();
+      const mailingGroupId = mockObjectId(); // Different group
+
+      mockMailingAccess(mailingId, mailingGroupId);
+
+      await expect(
+        commentService.createComment({
+          mailingId: mailingId.toString(),
+          user: createTestUser(userId, userGroupId),
+          text: 'Test comment',
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
     });
 
     it('should create a comment with block snapshot', async () => {
@@ -92,9 +125,7 @@ describe('Comment Service', () => {
       const groupId = mockObjectId();
       const commentId = mockObjectId();
 
-      const mockMailing = {
-        _id: mailingId,
-        _company: groupId,
+      mockMailingAccess(mailingId, groupId, {
         data: {
           mainBlocks: {
             blocks: [
@@ -103,21 +134,17 @@ describe('Comment Service', () => {
             ],
           },
         },
-      };
+      });
 
-      const mockComment = {
-        _id: commentId,
-        blockId: 'block_1',
-        blockSnapshot: { index: 1, type: 'content' },
-        populate: jest.fn().mockResolvedValue({ _id: commentId }),
-      };
-
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
-      Comments.create = jest.fn().mockResolvedValue(mockComment);
+      Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
+      Comments.findById = jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({ _id: commentId }),
+      });
 
       await commentService.createComment({
         mailingId: mailingId.toString(),
-        user: { _id: userId, name: 'Test User', _company: groupId },
+        user: createTestUser(userId, groupId),
         blockId: 'block_1',
         text: 'Comment on block',
       });
@@ -139,19 +166,13 @@ describe('Comment Service', () => {
       const groupId = mockObjectId();
       const parentCommentId = mockObjectId();
 
-      const mockMailing = {
-        _id: mailingId,
-        _company: groupId,
-        data: {},
-      };
-
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
+      mockMailingAccess(mailingId, groupId);
       Comments.findById = jest.fn().mockResolvedValue(null);
 
       await expect(
         commentService.createComment({
           mailingId: mailingId.toString(),
-          user: { _id: userId, name: 'Test User', _company: groupId },
+          user: createTestUser(userId, groupId),
           text: 'Reply comment',
           parentCommentId: parentCommentId.toString(),
         })
@@ -165,28 +186,17 @@ describe('Comment Service', () => {
       const groupId = mockObjectId();
       const commentId = mockObjectId();
 
-      const mockMailing = {
-        _id: mailingId,
-        _company: groupId,
-        data: {},
-      };
-
-      const mockComment = {
-        _id: commentId,
-        mentions: [mentionedUserId],
-      };
-
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
+      mockMailingAccess(mailingId, groupId);
       Users.find = jest.fn().mockResolvedValue([{ _id: mentionedUserId }]);
-      Comments.create = jest.fn().mockResolvedValue(mockComment);
+      Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
       Comments.findById = jest.fn().mockReturnValue({
         populate: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue({ _id: commentId, mentions: [mentionedUserId] }),
       });
 
-      const result = await commentService.createComment({
+      await commentService.createComment({
         mailingId: mailingId.toString(),
-        user: { _id: userId, name: 'Test User', _company: groupId },
+        user: createTestUser(userId, groupId),
         text: 'Mentioning @someone',
         mentions: [mentionedUserId.toString()],
       });
@@ -206,11 +216,7 @@ describe('Comment Service', () => {
       const parentCommentId = mockObjectId();
       const commentId = mockObjectId();
 
-      const mockMailing = {
-        _id: mailingId,
-        _company: groupId,
-        data: {},
-      };
+      mockMailingAccess(mailingId, groupId);
 
       const mockParentComment = {
         _id: parentCommentId,
@@ -219,23 +225,17 @@ describe('Comment Service', () => {
         isDeleted: false,
       };
 
-      const mockComment = {
-        _id: commentId,
-        _parentComment: parentCommentId,
-      };
-
-      Mailings.findById = jest.fn().mockResolvedValue(mockMailing);
       Comments.findById = jest.fn().mockResolvedValueOnce(mockParentComment);
-      Comments.create = jest.fn().mockResolvedValue(mockComment);
+      Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
       // Mock the re-fetch after create
       Comments.findById.mockReturnValueOnce({
         populate: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue({ _id: commentId, _parentComment: parentCommentId }),
       });
 
-      const result = await commentService.createComment({
+      await commentService.createComment({
         mailingId: mailingId.toString(),
-        user: { _id: userId, name: 'Test User', _company: groupId },
+        user: createTestUser(userId, groupId),
         text: 'Reply to parent',
         parentCommentId: parentCommentId.toString(),
       });
@@ -251,6 +251,10 @@ describe('Comment Service', () => {
   describe('findByMailing', () => {
     it('should return all comments for a mailing', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      mockMailingAccess(mailingId, groupId);
 
       const mockComments = [
         { _id: mockObjectId(), text: 'Comment 1' },
@@ -259,12 +263,14 @@ describe('Comment Service', () => {
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockComments),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockComments),
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
       const result = await commentService.findByMailing({
         mailingId: mailingId.toString(),
+        user: createTestUser(userId, groupId),
       });
 
       expect(Comments.find).toHaveBeenCalledWith({
@@ -274,17 +280,39 @@ describe('Comment Service', () => {
       expect(result).toHaveLength(2);
     });
 
+    it('should throw Forbidden if user has no access to mailing', async () => {
+      const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const userGroupId = mockObjectId();
+      const mailingGroupId = mockObjectId(); // Different group
+
+      mockMailingAccess(mailingId, mailingGroupId);
+
+      await expect(
+        commentService.findByMailing({
+          mailingId: mailingId.toString(),
+          user: createTestUser(userId, userGroupId),
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
+    });
+
     it('should filter by blockId', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      mockMailingAccess(mailingId, groupId);
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([]),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
       await commentService.findByMailing({
         mailingId: mailingId.toString(),
+        user: createTestUser(userId, groupId),
         blockId: 'block_0',
       });
 
@@ -297,15 +325,21 @@ describe('Comment Service', () => {
 
     it('should filter by resolved status', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      mockMailingAccess(mailingId, groupId);
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([]),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
       await commentService.findByMailing({
         mailingId: mailingId.toString(),
+        user: createTestUser(userId, groupId),
         resolved: false,
       });
 
@@ -318,15 +352,21 @@ describe('Comment Service', () => {
 
     it('should exclude replies when includeReplies is false', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      mockMailingAccess(mailingId, groupId);
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([]),
+        sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue([]),
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
       await commentService.findByMailing({
         mailingId: mailingId.toString(),
+        user: createTestUser(userId, groupId),
         includeReplies: false,
       });
 
@@ -350,10 +390,8 @@ describe('Comment Service', () => {
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockComment),
       };
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockResolvedValueOnce(mockComment);
 
       Comments.findById = jest.fn().mockReturnValue(mockQuery);
 
@@ -372,10 +410,8 @@ describe('Comment Service', () => {
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockComment),
       };
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockResolvedValueOnce(mockComment);
 
       Comments.findById = jest.fn().mockReturnValue(mockQuery);
 
@@ -406,10 +442,8 @@ describe('Comment Service', () => {
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockUpdatedComment),
       };
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockResolvedValueOnce(mockUpdatedComment);
 
       Comments.findByIdAndUpdate = jest.fn().mockReturnValue(mockQuery);
 
@@ -521,7 +555,7 @@ describe('Comment Service', () => {
       const mockComment = {
         _id: commentId,
         _mailing: mailingId,
-        _author: userId, // Same user resolving their own comment
+        _author: userId,
         resolved: false,
         isDeleted: false,
       };
@@ -537,9 +571,8 @@ describe('Comment Service', () => {
 
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockResolvedComment),
       };
-      mockQuery.populate.mockReturnValueOnce(mockQuery);
-      mockQuery.populate.mockResolvedValueOnce(mockResolvedComment);
 
       Comments.findByIdAndUpdate = jest.fn().mockReturnValue(mockQuery);
 
@@ -574,44 +607,95 @@ describe('Comment Service', () => {
   });
 
   describe('getBlockCommentCounts', () => {
-    it('should return counts per block', async () => {
+    it('should return counts per block with severity', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      mockMailingAccess(mailingId, groupId);
 
       const mockAggregationResult = [
-        { _id: 'block_0', count: 2, hasBlocking: 0 },
-        { _id: 'block_1', count: 1, hasBlocking: 1 },
+        { _id: 'block_0', count: 2, hasBlocking: false, hasImportant: false },
+        { _id: 'block_1', count: 1, hasBlocking: true, hasImportant: false },
       ];
 
       Comments.getBlockCommentCounts = jest.fn().mockResolvedValue(mockAggregationResult);
 
-      const result = await commentService.getBlockCommentCounts(mailingId.toString());
+      const result = await commentService.getBlockCommentCounts(
+        mailingId.toString(),
+        createTestUser(userId, groupId)
+      );
 
       expect(result).toEqual({
-        block_0: 2,
-        block_1: 1,
+        block_0: { count: 2, maxSeverity: 'info' },
+        block_1: { count: 1, maxSeverity: 'blocking' },
       });
     });
 
     it('should return empty object if no comments', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
 
+      mockMailingAccess(mailingId, groupId);
       Comments.getBlockCommentCounts = jest.fn().mockResolvedValue([]);
 
-      const result = await commentService.getBlockCommentCounts(mailingId.toString());
+      const result = await commentService.getBlockCommentCounts(
+        mailingId.toString(),
+        createTestUser(userId, groupId)
+      );
 
       expect(result).toEqual({});
+    });
+
+    it('should throw Forbidden if user has no access', async () => {
+      const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const userGroupId = mockObjectId();
+      const mailingGroupId = mockObjectId();
+
+      mockMailingAccess(mailingId, mailingGroupId);
+
+      await expect(
+        commentService.getBlockCommentCounts(
+          mailingId.toString(),
+          createTestUser(userId, userGroupId)
+        )
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
     });
   });
 
   describe('getUnresolvedCountByMailing', () => {
     it('should return unresolved count', async () => {
       const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
 
+      mockMailingAccess(mailingId, groupId);
       Comments.countUnresolvedByMailing = jest.fn().mockResolvedValue(5);
 
-      const result = await commentService.getUnresolvedCountByMailing(mailingId.toString());
+      const result = await commentService.getUnresolvedCountByMailing(
+        mailingId.toString(),
+        createTestUser(userId, groupId)
+      );
 
       expect(result).toBe(5);
+    });
+
+    it('should throw Forbidden if user has no access', async () => {
+      const mailingId = mockObjectId();
+      const userId = mockObjectId();
+      const userGroupId = mockObjectId();
+      const mailingGroupId = mockObjectId();
+
+      mockMailingAccess(mailingId, mailingGroupId);
+
+      await expect(
+        commentService.getUnresolvedCountByMailing(
+          mailingId.toString(),
+          createTestUser(userId, userGroupId)
+        )
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
     });
   });
 

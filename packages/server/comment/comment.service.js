@@ -1,6 +1,5 @@
 'use strict';
 
-const { Types } = require('mongoose');
 const { NotFound, Forbidden, BadRequest } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
@@ -20,6 +19,56 @@ module.exports = {
 };
 
 /**
+ * Extract user's company ID from various formats
+ * Handles populated objects, raw ObjectIds, and aliased fields
+ */
+function getUserCompanyId(user) {
+  return (
+    user._company?._id ||
+    user._company?.id ||
+    user._company ||
+    user.group?._id ||
+    user.group?.id ||
+    user.group
+  );
+}
+
+/**
+ * Verify user has access to a mailing
+ * @param {string} mailingId - The mailing ID
+ * @param {Object} user - The user object
+ * @returns {Object} The mailing with _wireframe populated
+ * @throws {NotFound} If mailing doesn't exist
+ * @throws {Forbidden} If user doesn't have access
+ */
+async function verifyMailingAccess(mailingId, user) {
+  const mailing = await Mailings.findById(mailingId).populate(
+    '_wireframe',
+    '_company'
+  );
+
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  const userCompanyId = getUserCompanyId(user);
+  const mailingCompanyId = mailing._wireframe?._company;
+
+  if (!userCompanyId || !mailingCompanyId) {
+    throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
+  }
+
+  const hasAccess =
+    String(userCompanyId) === String(mailingCompanyId);
+
+  if (!hasAccess) {
+    throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
+  }
+
+  return mailing;
+}
+
+/**
  * Create a new comment
  */
 async function createComment({
@@ -33,10 +82,7 @@ async function createComment({
   mentions,
 }) {
   // Validate mailing exists and user has access
-  const mailing = await Mailings.findById(mailingId);
-  if (!mailing) {
-    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  }
+  const mailing = await verifyMailingAccess(mailingId, user);
 
   // Validate parent comment if provided
   if (parentCommentId) {
@@ -50,12 +96,8 @@ async function createComment({
   }
 
   // Validate mentions are in the same group
+  const userCompanyId = getUserCompanyId(user);
   if (mentions && mentions.length > 0) {
-    // Extract company ID - handle both populated object and raw ObjectId
-    const userCompanyId =
-      user._company?._id || user._company?.id || user._company ||
-      user.group?._id || user.group?.id;
-
     const mentionedUsers = await Users.find({
       _id: { $in: mentions },
       _company: userCompanyId,
@@ -73,7 +115,7 @@ async function createComment({
 
   const comment = await Comments.create({
     _mailing: mailingId,
-    _company: mailing._company || mailing._wireframe?._company,
+    _company: mailing._wireframe?._company || userCompanyId,
     blockId,
     blockSnapshot,
     text,
@@ -98,10 +140,14 @@ async function createComment({
  */
 async function findByMailing({
   mailingId,
+  user,
   blockId,
   resolved,
   includeReplies = true,
 }) {
+  // Verify user has access to this mailing
+  await verifyMailingAccess(mailingId, user);
+
   const query = {
     _mailing: mailingId,
     isDeleted: false,
@@ -175,11 +221,7 @@ async function updateComment({ commentId, user, updates }) {
   if (updates.mentions !== undefined) {
     // Validate new mentions are in the same group
     if (updates.mentions.length > 0) {
-      // Extract company ID - handle both populated object and raw ObjectId
-      const userCompanyId =
-        user._company?._id || user._company?.id || user._company ||
-        user.group?._id || user.group?.id;
-
+      const userCompanyId = getUserCompanyId(user);
       const mentionedUsers = await Users.find({
         _id: { $in: updates.mentions },
         _company: userCompanyId,
@@ -305,7 +347,10 @@ async function unresolveComment({ commentId, user }) {
  * Get comment counts per block for a mailing
  * Returns object with blockId as key and { count, maxSeverity } as value
  */
-async function getBlockCommentCounts(mailingId) {
+async function getBlockCommentCounts(mailingId, user) {
+  // Verify user has access to this mailing
+  await verifyMailingAccess(mailingId, user);
+
   const results = await Comments.getBlockCommentCounts(mailingId);
 
   // Transform array to object for easier access
@@ -330,7 +375,10 @@ async function getBlockCommentCounts(mailingId) {
 /**
  * Get total unresolved comment count for a mailing
  */
-async function getUnresolvedCountByMailing(mailingId) {
+async function getUnresolvedCountByMailing(mailingId, user) {
+  // Verify user has access to this mailing
+  await verifyMailingAccess(mailingId, user);
+
   return Comments.countUnresolvedByMailing(mailingId);
 }
 

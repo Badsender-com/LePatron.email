@@ -33,12 +33,14 @@ module.exports = {
  */
 async function list(req, res) {
   const {
+    user,
     params: { mailingId },
     query: { blockId, resolved, includeReplies },
   } = req;
 
   const comments = await commentService.findByMailing({
     mailingId,
+    user,
     blockId,
     resolved: resolved !== undefined ? resolved === 'true' : undefined,
     includeReplies: includeReplies !== 'false',
@@ -58,9 +60,10 @@ async function list(req, res) {
  * @apiSuccess {Object} counts Object with blockId keys and count values
  */
 async function getCounts(req, res) {
+  const { user } = req;
   const { mailingId } = req.params;
 
-  const counts = await commentService.getBlockCommentCounts(mailingId);
+  const counts = await commentService.getBlockCommentCounts(mailingId, user);
 
   res.json({ counts });
 }
@@ -76,9 +79,10 @@ async function getCounts(req, res) {
  * @apiSuccess {Number} count Unresolved comment count
  */
 async function getUnresolvedCount(req, res) {
+  const { user } = req;
   const { mailingId } = req.params;
 
-  const count = await commentService.getUnresolvedCountByMailing(mailingId);
+  const count = await commentService.getUnresolvedCountByMailing(mailingId, user);
 
   res.json({ count });
 }
