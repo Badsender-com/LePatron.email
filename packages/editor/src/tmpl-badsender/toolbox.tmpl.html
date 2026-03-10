@@ -283,7 +283,7 @@
       <!-- Comment header -->
       <div class="comment-header">
         <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
-        <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
+        <span class="comment-date" data-bind="text: $root.formatDate(createdAt)"></span>
         <!-- ko if: resolved -->
         <span class="comment-badge comment-badge-resolved"><span class="mdi mdi-check"></span> <span data-bind="text: $root.t('comments-resolved-badge')">Résolu</span></span>
         <!-- /ko -->
@@ -373,7 +373,7 @@
         <div class="comment-reply" data-bind="css: { 'comment-resolved': resolved }">
           <div class="comment-header">
             <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
-            <span class="comment-date" data-bind="text: $root.formatCommentDate(createdAt)"></span>
+            <span class="comment-date" data-bind="text: $root.formatDate(createdAt)"></span>
           </div>
           <div class="comment-text" data-bind="html: $root.formatCommentText(text)"></div>
           <div class="comment-actions">

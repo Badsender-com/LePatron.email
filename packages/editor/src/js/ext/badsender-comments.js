@@ -2,87 +2,19 @@
 
 const $ = require('jquery');
 const ko = require('knockout');
-const _ = require('lodash');
 
-/**
- * Format a block type name for display (e.g., "textimageBlock" -> "Text Image")
- */
-function formatBlockName(blockType) {
-  if (!blockType) return '';
-  // Remove "Block" suffix and convert to title case
-  return _.startCase(blockType.replace(/Block$/i, ''));
-}
-
-/**
- * Get block type from block data, handling observables
- */
-function getBlockType(blockData) {
-  if (!blockData) return null;
-  let blockType = blockData._type || blockData.type;
-  if (typeof blockType === 'function') blockType = blockType();
-  if (typeof blockType === 'object' && blockType !== null) {
-    blockType = blockType.name || blockType.label || null;
-  }
-  return blockType || null;
-}
-
-/**
- * Get formatted block label with numbering for duplicates
- * @param {Array} blocks - All blocks in the email
- * @param {string} targetBlockId - The block ID to get label for
- * @returns {string|null} - Formatted label like "Header Block" or "Title Block #2"
- */
-function getBlockLabelWithNumber(blocks, targetBlockId) {
-  if (!blocks || !targetBlockId) return null;
-
-  let targetType = null;
-  let targetIndex = -1;
-
-  // First pass: find the target block and its type
-  for (var i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-    const blockData = typeof block === 'function' ? block() : block;
-    if (!blockData) continue;
-
-    const id = typeof blockData.id === 'function' ? blockData.id() : blockData.id;
-    if (id === targetBlockId) {
-      targetType = getBlockType(blockData);
-      targetIndex = i;
-      break;
-    }
-  }
-
-  if (!targetType) return null;
-
-  // Second pass: count blocks of the same type and find position
-  let sameTypeCount = 0;
-  let positionAmongSameType = 0;
-
-  for (var j = 0; j < blocks.length; j++) {
-    const block = blocks[j];
-    const blockData = typeof block === 'function' ? block() : block;
-    if (!blockData) continue;
-
-    const blockType = getBlockType(blockData);
-    if (blockType === targetType) {
-      sameTypeCount++;
-      if (j < targetIndex) {
-        positionAmongSameType++;
-      } else if (j === targetIndex) {
-        positionAmongSameType++; // This is our block's position (1-indexed)
-      }
-    }
-  }
-
-  const formattedName = formatBlockName(targetType);
-
-  // Add number only if there are multiple blocks of the same type
-  if (sameTypeCount > 1) {
-    return formattedName + ' #' + positionAmongSameType;
-  }
-
-  return formattedName;
-}
+// Import utility functions
+const {
+  formatBlockName,
+  getBlockType,
+  getBlockLabelWithNumber,
+  formatCommentDate,
+  escapeHtml,
+  formatCommentText,
+  findMentionContext,
+  reconstructMentionsForStorage,
+  extractMentionIds,
+} = require('./comments-utils.js');
 
 /**
  * Comments extension for the Mosaico editor
@@ -434,20 +366,15 @@ function commentsLoader(opts) {
       const text = textarea.value;
       const cursorPos = textarea.selectionStart;
 
-      // Find @ symbol before cursor
-      const textBeforeCursor = text.substring(0, cursorPos);
-      const atIndex = textBeforeCursor.lastIndexOf('@');
+      // Use utility to find mention context
+      const mentionContext = findMentionContext(text, cursorPos);
 
-      if (atIndex !== -1) {
-        const textAfterAt = textBeforeCursor.substring(atIndex + 1);
-        // Check if we're in the middle of typing a mention (no space after @)
-        if (!/\s/.test(textAfterAt)) {
-          viewModel.mentionQuery(textAfterAt);
-          viewModel.mentionCursorPosition(cursorPos);
-          viewModel.activeMentionTextarea(textarea);
-          viewModel.showMentionSuggestions(true);
-          return true;
-        }
+      if (mentionContext) {
+        viewModel.mentionQuery(mentionContext.query);
+        viewModel.mentionCursorPosition(cursorPos);
+        viewModel.activeMentionTextarea(textarea);
+        viewModel.showMentionSuggestions(true);
+        return true;
       }
 
       viewModel.showMentionSuggestions(false);
@@ -536,41 +463,18 @@ function commentsLoader(opts) {
 
     /**
      * Reconstruct text with full mention format for storage
-     * Converts "@Name" to "@[Name](userId)" using tracked mentions
+     * Uses utility function with tracked mentions
      */
-    viewModel.reconstructMentionsForStorage = function (text) {
-      const tracked = viewModel.trackedMentions();
-      let result = text;
-
-      // Process each tracked mention
-      tracked.forEach(function (mention) {
-        const displayText = mention.displayText; // "@Name"
-        const fullFormat = '@[' + mention.name + '](' + mention.userId + ')';
-        // Replace only if the display text still exists in the text
-        if (result.indexOf(displayText) !== -1) {
-          // Replace first occurrence only (in case of duplicate names)
-          result = result.replace(displayText, fullFormat);
-        }
-      });
-
-      return result;
+    viewModel.reconstructTextForStorage = function (text) {
+      return reconstructMentionsForStorage(text, viewModel.trackedMentions());
     };
 
     /**
      * Extract mention user IDs from tracked mentions that are still in the text
+     * Uses utility function with tracked mentions
      */
     viewModel.extractMentions = function (text) {
-      const tracked = viewModel.trackedMentions();
-      const mentions = [];
-
-      tracked.forEach(function (mention) {
-        // Check if this mention is still in the text
-        if (text.indexOf(mention.displayText) !== -1) {
-          mentions.push(mention.userId);
-        }
-      });
-
-      return mentions;
+      return extractMentionIds(text, viewModel.trackedMentions());
     };
 
     /**
@@ -610,7 +514,7 @@ function commentsLoader(opts) {
       const mentions = viewModel.extractMentions(text);
 
       // Reconstruct full mention format for storage
-      const textForStorage = viewModel.reconstructMentionsForStorage(text);
+      const textForStorage = viewModel.reconstructTextForStorage(text);
 
       const blockSnapshot = viewModel.selectedBlockSnapshot();
       const data = {
@@ -935,36 +839,10 @@ function commentsLoader(opts) {
 
     /**
      * Format date for display (relative format)
+     * Uses utility with translation function
      */
-    viewModel.formatCommentDate = function (dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) {
-        return viewModel.t('comments-date-now');
-      } else if (diffMins < 60) {
-        return diffMins + ' min';
-      } else if (diffHours < 24) {
-        return diffHours + 'h';
-      } else if (diffDays < 7) {
-        return diffDays + 'j';
-      } else {
-        // Format: "12 jan." or "12 jan. 2025"
-        const months = ['jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
-        const day = date.getDate();
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-        const currentYear = now.getFullYear();
-        if (year === currentYear) {
-          return day + ' ' + month;
-        }
-        return day + ' ' + month + ' ' + year;
-      }
+    viewModel.formatDate = function (dateString) {
+      return formatCommentDate(dateString, viewModel.t.bind(viewModel));
     };
 
     /**
@@ -983,32 +861,15 @@ function commentsLoader(opts) {
 
     /**
      * Escape HTML to prevent XSS
+     * Uses utility function
      */
-    viewModel.escapeHtml = function (text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    };
+    viewModel.escapeHtml = escapeHtml;
 
     /**
      * Format comment text with styled mentions
-     * Converts @[Name](userId) to <span class="mention">@Name</span>
+     * Uses utility function
      */
-    viewModel.formatCommentText = function (text) {
-      if (!text) return '';
-
-      // First escape HTML
-      let escaped = viewModel.escapeHtml(text);
-
-      // Then replace mention patterns with styled spans
-      const mentionRegex = /@\[([^\]]+)\]\([a-f0-9]+\)/g;
-      escaped = escaped.replace(mentionRegex, '<span class="comment-mention">@$1</span>');
-
-      // Convert newlines to <br>
-      escaped = escaped.replace(/\n/g, '<br>');
-
-      return escaped;
-    };
+    viewModel.formatCommentText = formatCommentText;
 
     /**
      * Check if a block still exists in the mailing
@@ -1071,7 +932,7 @@ function commentsLoader(opts) {
           }
         }
       } catch (e) {
-        console.warn('Could not find block:', e);
+        // Block lookup failed - return null silently
       }
       return null;
     };
@@ -1215,8 +1076,6 @@ function commentsLoader(opts) {
 
     // Load comment counts per block on init (for rail indicators)
     viewModel.loadCommentCounts();
-
-    console.info('Comments extension initialized');
   };
 }
 
