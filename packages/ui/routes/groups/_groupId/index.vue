@@ -126,15 +126,23 @@ export default {
         const payload = this.isGroupAdmin
           ? { name: this.group.name, colorScheme: this.group.colorScheme }
           : this.group;
-        await $axios.$put(apiRoutes.groupsItem(params), payload);
+        const updatedGroup = await $axios.$put(
+          apiRoutes.groupsItem(params),
+          payload
+        );
+        this.group = updatedGroup;
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
         this.mixinPageTitleUpdateTitle(this.title);
       } catch (error) {
+        const errorCode = error?.response?.data?.message;
         this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
+          text:
+            errorCode && this.$te(`global.errors.${errorCode}`)
+              ? this.$t(`global.errors.${errorCode}`)
+              : this.$t('global.errors.errorOccured'),
           color: 'error',
         });
         console.log(error);

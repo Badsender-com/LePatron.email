@@ -14,17 +14,25 @@ class FTPClient {
     host = 'localhost',
     port = 22,
     username = 'anonymous',
-    password = 'guest'
+    password = 'guest',
+    protocol,
+    { authType, sshKey } = {}
   ) {
     this.client = new Client();
     this.settings = {
-      host: host,
-      port: port,
-      username: username,
-      password: password,
+      host,
+      port,
+      username,
       keepaliveInterval: 2000,
       keepaliveCountMax: 50,
     };
+
+    // Use SSH key authentication if authType is 'ssh_key' and key is provided
+    if (authType === 'ssh_key' && sshKey) {
+      this.settings.privateKey = sshKey;
+    } else {
+      this.settings.password = password;
+    }
   }
 
   async upload(sourceArray, folderPath) {

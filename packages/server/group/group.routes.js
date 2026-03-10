@@ -97,6 +97,13 @@ router.delete(
   groups.deletePersonalizedVariable
 );
 
+// FTP connection test
+router.post(
+  '/:groupId/test-ftp-connection',
+  GUARD_ADMIN,
+  groups.testFtpConnection
+);
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());

@@ -46,6 +46,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const templateService = require('../template/template.service.js');
 const folderService = require('../folder/folder.service.js');
 const workspaceService = require('../workspace/workspace.service.js');
+const { testConnection } = require('../group/group-ftp.service.js');
 
 const MULTIPLE_DOWNLOAD_ZIP_NAME = 'lepatron';
 module.exports = {
@@ -651,6 +652,8 @@ async function extractFTPparams({
     ftpHost,
     ftpUsername,
     ftpPassword,
+    ftpAuthType,
+    ftpSshKey,
     ftpPort,
     ftpEndPoint,
     ftpEndPointProtocol,
@@ -667,9 +670,13 @@ async function extractFTPparams({
     downloadOptions.downLoadForFtp === 'true' ||
     downloadOptions.downLoadForFtp === true;
 
+  // Validate FTP credentials based on authentication type
+  const hasValidFtpCredentials =
+    ftpAuthType === 'ssh_key' ? !!ftpSshKey : !!ftpPassword;
+
   if (
     downloadOptions.downLoadForFtp &&
-    (!ftpHost || !ftpUsername || !ftpPassword || !ftpEndPoint)
+    (!ftpHost || !ftpUsername || !hasValidFtpCredentials || !ftpEndPoint)
   ) {
     throw new InternalServerError(ERROR_CODES.FTP_NOT_DEFINED_FOR_GROUP);
   }
@@ -704,6 +711,8 @@ async function extractFTPparams({
       ftpPassword,
       ftpProtocol,
       ftpPathOnServer,
+      ftpAuthType,
+      ftpSshKey,
     },
     cdnProtocol,
     cdnEndPoint,
@@ -759,6 +768,8 @@ async function handleRelativeOrFtpImages({
     ftpPassword,
     ftpProtocol,
     ftpPathOnServer,
+    ftpAuthType,
+    ftpSshKey,
   } = ftpServerParams;
   if (!html) {
     throw new InternalServerError(ERROR_CODES.HTML_IS_NULL);
@@ -879,12 +890,28 @@ async function handleRelativeOrFtpImages({
 
     await Promise.all(imagesRequest);
   } else {
+    const connectionTest = await testConnection({
+      downloadMailingWithFtpImages: true,
+      ftpHost,
+      ftpPort,
+      ftpUsername,
+      ftpPassword,
+      ftpProtocol,
+      ftpPathOnServer,
+      ftpAuthType,
+      ftpSshKey,
+    });
+    if (!connectionTest.success) {
+      throw new InternalServerError(connectionTest.errorCode);
+    }
+
     const ftpClient = new Ftp(
       ftpHost,
       ftpPort,
       ftpUsername,
       ftpPassword,
-      ftpProtocol
+      ftpProtocol,
+      { authType: ftpAuthType, sshKey: ftpSshKey }
     );
     const folderPath =
       ftpPathOnServer +
