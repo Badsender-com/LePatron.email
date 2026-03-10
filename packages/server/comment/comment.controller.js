@@ -98,9 +98,10 @@ async function getUnresolvedCount(req, res) {
  * @apiSuccess {Comment} comment
  */
 async function getById(req, res) {
+  const { user } = req;
   const { commentId } = req.params;
 
-  const comment = await commentService.findById(commentId);
+  const comment = await commentService.findById(commentId, user);
 
   res.json(comment);
 }

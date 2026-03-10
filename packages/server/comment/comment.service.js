@@ -1,10 +1,23 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const { BadRequest, Forbidden, NotFound } = require('http-errors');
 
 const { Comments, Mailings, Users } = require('../common/models.common.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
+
+/**
+ * Validate that a string is a valid MongoDB ObjectId
+ * @param {string} id - The ID to validate
+ * @param {string} fieldName - Name of the field for error message
+ * @throws {BadRequest} If ID is not a valid ObjectId
+ */
+function validateObjectId(id, fieldName = 'ID') {
+  if (!id || !mongoose.isValidObjectId(id)) {
+    throw new BadRequest(ERROR_CODES.INVALID_OBJECT_ID || `Invalid ${fieldName}`);
+  }
+}
 
 module.exports = {
   createComment,
@@ -176,9 +189,17 @@ async function findByMailing({
 }
 
 /**
- * Find comment by ID
+ * Find comment by ID with access verification
+ * @param {string} commentId - The comment ID
+ * @param {Object} user - The requesting user
+ * @returns {Object} The comment
+ * @throws {BadRequest} If commentId is invalid
+ * @throws {NotFound} If comment doesn't exist
+ * @throws {Forbidden} If user doesn't have access to the mailing
  */
-async function findById(commentId) {
+async function findById(commentId, user) {
+  validateObjectId(commentId, 'comment ID');
+
   const comment = await Comments.findById(commentId)
     .populate('_author', 'name email')
     .populate('_resolvedBy', 'name')
@@ -188,6 +209,9 @@ async function findById(commentId) {
   if (!comment || comment.isDeleted) {
     throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
   }
+
+  // Verify user has access to the mailing this comment belongs to
+  await verifyMailingAccess(comment._mailing, user);
 
   return comment;
 }
@@ -277,13 +301,23 @@ async function deleteComment({ commentId, user }) {
 
 /**
  * Mark a comment as resolved
+ * @param {string} commentId - The comment ID
+ * @param {Object} user - The requesting user
+ * @throws {BadRequest} If commentId is invalid or comment already resolved
+ * @throws {NotFound} If comment doesn't exist
+ * @throws {Forbidden} If user doesn't have access to the mailing
  */
 async function resolveComment({ commentId, user }) {
+  validateObjectId(commentId, 'comment ID');
+
   const comment = await Comments.findById(commentId);
 
   if (!comment || comment.isDeleted) {
     throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
   }
+
+  // Verify user has access to the mailing this comment belongs to
+  await verifyMailingAccess(comment._mailing, user);
 
   if (comment.resolved) {
     throw new BadRequest(ERROR_CODES.COMMENT_ALREADY_RESOLVED);
@@ -311,13 +345,23 @@ async function resolveComment({ commentId, user }) {
 
 /**
  * Mark a comment as unresolved (reopen)
+ * @param {string} commentId - The comment ID
+ * @param {Object} user - The requesting user
+ * @throws {BadRequest} If commentId is invalid or comment not resolved
+ * @throws {NotFound} If comment doesn't exist
+ * @throws {Forbidden} If user doesn't have access to the mailing
  */
 async function unresolveComment({ commentId, user }) {
+  validateObjectId(commentId, 'comment ID');
+
   const comment = await Comments.findById(commentId);
 
   if (!comment || comment.isDeleted) {
     throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
   }
+
+  // Verify user has access to the mailing this comment belongs to
+  await verifyMailingAccess(comment._mailing, user);
 
   if (!comment.resolved) {
     throw new BadRequest(ERROR_CODES.COMMENT_NOT_RESOLVED);

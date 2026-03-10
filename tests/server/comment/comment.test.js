@@ -381,9 +381,13 @@ describe('Comment Service', () => {
   describe('findById', () => {
     it('should return comment by ID', async () => {
       const commentId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
+      const userId = mockObjectId();
 
       const mockComment = {
         _id: commentId,
+        _mailing: mailingId,
         text: 'Test comment',
         isDeleted: false,
       };
@@ -395,16 +399,26 @@ describe('Comment Service', () => {
 
       Comments.findById = jest.fn().mockReturnValue(mockQuery);
 
-      const result = await commentService.findById(commentId.toString());
+      // Mock mailing access verification
+      mockMailingAccess(mailingId, groupId);
+
+      const result = await commentService.findById(
+        commentId.toString(),
+        createTestUser(userId, groupId)
+      );
 
       expect(result.text).toBe('Test comment');
     });
 
     it('should throw NotFound for deleted comment', async () => {
       const commentId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
+      const userId = mockObjectId();
 
       const mockComment = {
         _id: commentId,
+        _mailing: mailingId,
         isDeleted: true,
       };
 
@@ -416,8 +430,20 @@ describe('Comment Service', () => {
       Comments.findById = jest.fn().mockReturnValue(mockQuery);
 
       await expect(
-        commentService.findById(commentId.toString())
+        commentService.findById(
+          commentId.toString(),
+          createTestUser(userId, groupId)
+        )
       ).rejects.toThrow(ERROR_CODES.COMMENT_NOT_FOUND);
+    });
+
+    it('should throw BadRequest for invalid ObjectId', async () => {
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      await expect(
+        commentService.findById('invalid-id', createTestUser(userId, groupId))
+      ).rejects.toThrow('INVALID_OBJECT_ID');
     });
   });
 
@@ -551,6 +577,7 @@ describe('Comment Service', () => {
       const commentId = mockObjectId();
       const userId = mockObjectId();
       const mailingId = mockObjectId();
+      const groupId = mockObjectId();
 
       const mockComment = {
         _id: commentId,
@@ -569,6 +596,9 @@ describe('Comment Service', () => {
 
       Comments.findById = jest.fn().mockResolvedValue(mockComment);
 
+      // Mock mailing access verification
+      mockMailingAccess(mailingId, groupId);
+
       const mockQuery = {
         populate: jest.fn().mockReturnThis(),
         lean: jest.fn().mockResolvedValue(mockResolvedComment),
@@ -578,7 +608,7 @@ describe('Comment Service', () => {
 
       const result = await commentService.resolveComment({
         commentId: commentId.toString(),
-        user: { _id: userId, name: 'Test User' },
+        user: createTestUser(userId, groupId),
       });
 
       expect(result.resolved).toBe(true);
@@ -587,23 +617,149 @@ describe('Comment Service', () => {
     it('should throw BadRequest if already resolved', async () => {
       const commentId = mockObjectId();
       const userId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
 
       const mockComment = {
         _id: commentId,
+        _mailing: mailingId,
         resolved: true,
         isDeleted: false,
       };
 
       Comments.findById = jest.fn().mockResolvedValue(mockComment);
 
+      // Mock mailing access verification
+      mockMailingAccess(mailingId, groupId);
+
       await expect(
         commentService.resolveComment({
           commentId: commentId.toString(),
-          user: { _id: userId, name: 'Test User' },
+          user: createTestUser(userId, groupId),
         })
       ).rejects.toThrow(ERROR_CODES.COMMENT_ALREADY_RESOLVED);
     });
 
+    it('should throw BadRequest for invalid ObjectId', async () => {
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      await expect(
+        commentService.resolveComment({
+          commentId: 'invalid-id',
+          user: createTestUser(userId, groupId),
+        })
+      ).rejects.toThrow('INVALID_OBJECT_ID');
+    });
+  });
+
+  describe('unresolveComment', () => {
+    it('should mark comment as unresolved (reopen)', async () => {
+      const commentId = mockObjectId();
+      const userId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
+
+      const mockComment = {
+        _id: commentId,
+        _mailing: mailingId,
+        _author: userId,
+        resolved: true,
+        isDeleted: false,
+      };
+
+      const mockUnresolvedComment = {
+        _id: commentId,
+        resolved: false,
+        _resolvedBy: null,
+        resolvedAt: null,
+      };
+
+      Comments.findById = jest.fn().mockResolvedValue(mockComment);
+
+      // Mock mailing access verification
+      mockMailingAccess(mailingId, groupId);
+
+      const mockQuery = {
+        populate: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue(mockUnresolvedComment),
+      };
+
+      Comments.findByIdAndUpdate = jest.fn().mockReturnValue(mockQuery);
+
+      const result = await commentService.unresolveComment({
+        commentId: commentId.toString(),
+        user: createTestUser(userId, groupId),
+      });
+
+      expect(result.resolved).toBe(false);
+      expect(result._resolvedBy).toBeNull();
+    });
+
+    it('should throw BadRequest if comment is not resolved', async () => {
+      const commentId = mockObjectId();
+      const userId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
+
+      const mockComment = {
+        _id: commentId,
+        _mailing: mailingId,
+        resolved: false,
+        isDeleted: false,
+      };
+
+      Comments.findById = jest.fn().mockResolvedValue(mockComment);
+
+      // Mock mailing access verification
+      mockMailingAccess(mailingId, groupId);
+
+      await expect(
+        commentService.unresolveComment({
+          commentId: commentId.toString(),
+          user: createTestUser(userId, groupId),
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_NOT_RESOLVED);
+    });
+
+    it('should throw BadRequest for invalid ObjectId', async () => {
+      const userId = mockObjectId();
+      const groupId = mockObjectId();
+
+      await expect(
+        commentService.unresolveComment({
+          commentId: 'invalid-id',
+          user: createTestUser(userId, groupId),
+        })
+      ).rejects.toThrow('INVALID_OBJECT_ID');
+    });
+
+    it('should throw Forbidden if user does not have mailing access', async () => {
+      const commentId = mockObjectId();
+      const userId = mockObjectId();
+      const mailingId = mockObjectId();
+      const groupId = mockObjectId();
+      const otherGroupId = mockObjectId();
+
+      const mockComment = {
+        _id: commentId,
+        _mailing: mailingId,
+        resolved: true,
+        isDeleted: false,
+      };
+
+      Comments.findById = jest.fn().mockResolvedValue(mockComment);
+
+      // Mock mailing with different group
+      mockMailingAccess(mailingId, otherGroupId);
+
+      await expect(
+        commentService.unresolveComment({
+          commentId: commentId.toString(),
+          user: createTestUser(userId, groupId),
+        })
+      ).rejects.toThrow(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
+    });
   });
 
   describe('getBlockCommentCounts', () => {
