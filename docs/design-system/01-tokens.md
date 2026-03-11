@@ -84,8 +84,10 @@ var(--v-accent-base)
 | Stack | Current | Target |
 |-------|---------|--------|
 | Vue App | Montserrat | **Work Sans** |
-| Editor | Trebuchet MS | **Work Sans** |
+| Editor | Montserrat | **Work Sans** |
 | Website | Work Sans | Work Sans |
+
+> **Note**: The original Mosaico editor used Trebuchet MS (`style_variables.less`), but LePatron overrides it with Montserrat (`badsender-editor.less`).
 
 > **Progressive migration**: When modifying UI code, ensure Work Sans is applied.
 

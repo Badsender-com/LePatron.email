@@ -151,7 +151,7 @@ packages/ui/routes/**/*.vue
 ### Critères de validation
 - [ ] Aucun bouton d'action principale n'utilise `color="primary"`
 - [ ] Review visuelle des formulaires principaux
-- [ ] Documentation mise à jour (`02-atoms.md`)
+- [ ] Documentation mise à jour (`02-components.md`)
 
 ---
 
@@ -483,7 +483,7 @@ Drop zone :      Bordure pointillés + texte centré
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;  /* @standard-border-radius */
   background: transparent;
   color: @primary-color;
   cursor: pointer;
@@ -562,7 +562,7 @@ Animation: pulse subtil sur le fond
   gap: 8px;
   padding: 12px 20px;
   background: white;
-  border-radius: 6px;
+  border-radius: 4px;  /* @standard-border-radius */
   color: @gray-600;
   font-size: 14px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -757,7 +757,7 @@ Text
     }
 
     &:focus + .toggle-track {
-      box-shadow: 0 0 0 3px fade(@accent-color, 30%);
+      box-shadow: 0 0 0 2px fade(@accent-color, 10%);  // Aligns with 01-tokens.md focus state
     }
   }
 
@@ -796,7 +796,7 @@ Text
     width: 100%;
     padding: 10px 12px;
     border: 1px solid @gray-300;
-    border-radius: 6px;
+    border-radius: 4px;  /* @standard-border-radius */
     background: white;
     font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -807,7 +807,7 @@ Text
 
     &:focus {
       border-color: var(--v-accent-base);
-      box-shadow: 0 0 0 3px fade(@accent-color, 15%);
+      box-shadow: 0 0 0 2px fade(@accent-color, 10%);  // Aligns with 01-tokens.md focus state
       outline: none;
     }
 
@@ -1014,10 +1014,10 @@ packages/editor/src/js/ext/badsender-extensions.js  # Section collapse logic
 
 // Input styling
 @input-padding: 10px 12px;
-@input-border-radius: 6px;
+@input-border-radius: 4px;  // @standard-border-radius
 @input-border-color: @gray-300;
 @input-border-color-hover: @gray-400;
-@input-focus-shadow: 0 0 0 3px fade(@accent-color, 15%);
+@input-focus-shadow: 0 0 0 2px fade(@accent-color, 10%);  // Aligns with 01-tokens.md focus state
 
 // Block gallery
 @gallery-columns: 2;
@@ -1089,7 +1089,7 @@ export function useModal() {
 ### Critères de validation
 - [ ] Composable créé et documenté
 - [ ] Au moins 2 modals migrés vers le nouveau pattern
-- [ ] Documentation mise à jour (`03-molecules.md`)
+- [ ] Documentation mise à jour (`02-components.md`)
 
 ---
 
@@ -1223,4 +1223,4 @@ Phase 11 (Chantiers Annexes) ──► ~45 éléments UI à traiter au cas par c
 
 ---
 
-*Dernière mise à jour : Février 2026*
+*Dernière mise à jour : Mars 2026 - Aligné avec design system v2.0/v2.1*
