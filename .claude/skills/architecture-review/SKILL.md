@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Grep, Glob, Bash
+name: architecture-review
 description: Architectural analysis of code changes
 ---
 
@@ -9,6 +9,7 @@ Changes to review:
 !`git diff --name-only`
 
 For each modified file, consider:
+
 1. Does it follow existing patterns?
 2. Are dependencies appropriate?
 3. Is the module boundary respected?
