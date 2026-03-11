@@ -8,17 +8,17 @@ Tokens are the **only customizable layer** in the design system. For white-label
 
 ### Token Categories
 
-| Category | White-Label | Storage | Scope |
-|----------|-------------|---------|-------|
-| **Brand Colors** | Customizable | Database | Per group |
-| **Logo** | Customizable | Database | Per group |
-| **Typography** | Fixed | Code | Global |
-| **Semantic Colors** | Fixed | Code | Global |
-| **Spacing** | Fixed | Code | Global |
-| **Border Radius** | Fixed | Code | Global |
-| **Shadows** | Fixed | Code | Global |
-| **Z-Index** | Fixed | Code | Global |
-| **Icons** | Fixed | Code | Global |
+| Category            | White-Label  | Storage  | Scope     |
+| ------------------- | ------------ | -------- | --------- |
+| **Brand Colors**    | Customizable | Database | Per group |
+| **Logo**            | Customizable | Database | Per group |
+| **Typography**      | Fixed        | Code     | Global    |
+| **Semantic Colors** | Fixed        | Code     | Global    |
+| **Spacing**         | Fixed        | Code     | Global    |
+| **Border Radius**   | Fixed        | Code     | Global    |
+| **Shadows**         | Fixed        | Code     | Global    |
+| **Z-Index**         | Fixed        | Code     | Global    |
+| **Icons**           | Fixed        | Code     | Global    |
 
 ---
 
@@ -28,15 +28,16 @@ Tokens are the **only customizable layer** in the design system. For white-label
 
 Default LePatron colors (can be overridden per group):
 
-| Token | Default | CSS Variable | Usage |
-|-------|---------|--------------|-------|
-| **Primary** | `#093040` | `--v-primary-base` | Headers, primary actions |
-| **Secondary** | `#265090` | `--v-secondary-base` | Secondary elements |
-| **Accent** | `#00ACDC` | `--v-accent-base` | Highlights, links, CTAs |
-| **Warning** | `#FFB400` | `--v-warning-base` | Warnings |
-| **Error** | `#F04E23` | `--v-error-base` | Errors, destructive actions |
+| Token         | Default   | CSS Variable         | Usage                       |
+| ------------- | --------- | -------------------- | --------------------------- |
+| **Primary**   | `#093040` | `--v-primary-base`   | Headers, primary actions    |
+| **Secondary** | `#265090` | `--v-secondary-base` | Secondary elements          |
+| **Accent**    | `#00ACDC` | `--v-accent-base`    | Highlights, links, CTAs     |
+| **Warning**   | `#FFB400` | `--v-warning-base`   | Warnings                    |
+| **Error**     | `#F04E23` | `--v-error-base`     | Errors, destructive actions |
 
 **White-label implementation**:
+
 ```javascript
 // Group schema (future)
 {
@@ -78,22 +79,22 @@ Defined in `packages/editor/src/css/style_variables.less`:
 @bs-white-color: #ffffff;
 
 @link-color: #f04e23;
-@red: #FF5252;
+@red: #ff5252;
 @green: #4caf50;
 @yellow: #fb8c00;
-@blue: #2196F3;
+@blue: #2196f3;
 ```
 
 ### Semantic Colors (Fixed)
 
 These colors have functional meaning and should NOT be customized:
 
-| Semantic | Color | Vuetify | LESS |
-|----------|-------|---------|------|
-| Success | Green `#4caf50` | `success` | `@green` |
-| Error | Red `#FF5252` | `error` | `@red` |
-| Warning | Yellow `#fb8c00` | `warning` | `@yellow` |
-| Info | Blue `#2196F3` | `info` | `@blue` |
+| Semantic | Color            | Vuetify   | LESS      |
+| -------- | ---------------- | --------- | --------- |
+| Success  | Green `#4caf50`  | `success` | `@green`  |
+| Error    | Red `#FF5252`    | `error`   | `@red`    |
+| Warning  | Yellow `#fb8c00` | `warning` | `@yellow` |
+| Info     | Blue `#2196F3`   | `info`    | `@blue`   |
 
 ---
 
@@ -101,10 +102,10 @@ These colors have functional meaning and should NOT be customized:
 
 The logo can be customized per group:
 
-| Token | Default | Storage |
-|-------|---------|---------|
-| **Logo SVG/URL** | LePatron logo | Database |
-| **Favicon** | LePatron favicon | Database |
+| Token            | Default          | Storage  |
+| ---------------- | ---------------- | -------- |
+| **Logo SVG/URL** | LePatron logo    | Database |
+| **Favicon**      | LePatron favicon | Database |
 
 **Current location**: Inline SVG in `layouts/default.vue`
 
@@ -118,21 +119,32 @@ Typography is **not customizable** in white-label deployments to ensure consiste
 
 ### Current State
 
-| Stack | Font Family | Status |
-|-------|-------------|--------|
-| **Vue App** | Montserrat | Current |
-| **Editor** | Trebuchet MS | Legacy |
-| **Website** | Work Sans | Reference |
+| Stack   | Current    | Target        |
+| ------- | ---------- | ------------- |
+| Vue App | Montserrat | **Work Sans** |
+| Editor  | Montserrat | **Work Sans** |
+| Website | Work Sans  | Work Sans     |
+
+> **Note**: The original Mosaico editor used Trebuchet MS (`style_variables.less`), but LePatron overrides it with Montserrat (`badsender-editor.less`).
+
+> **Progressive migration**: When modifying UI code, ensure Work Sans is applied.
+
+| Stack       | Font Family  | Status    |
+| ----------- | ------------ | --------- |
+| **Vue App** | Montserrat   | Current   |
+| **Editor**  | Trebuchet MS | Legacy    |
+| **Website** | Work Sans    | Reference |
 
 ### Target State
 
-| Property | Value |
-|----------|-------|
-| **Font Family** | `Work Sans` |
+| Property         | Value                   |
+| ---------------- | ----------------------- |
+| **Font Family**  | `Work Sans`             |
 | **Font Weights** | 300, 400, 500, 600, 700 |
-| **Source** | Google Fonts |
+| **Source**       | Google Fonts            |
 
 **Why Work Sans?**
+
 - Already used on lepatron.email website (brand consistency)
 - Designed specifically for screen readability
 - Modern, clean appearance suited for SaaS applications
@@ -164,6 +176,7 @@ Editor (`packages/editor/src/css/style_variables.less`):
 ### Debt: Font Inconsistency
 
 Three different fonts are currently used across the platform:
+
 - **Vue App**: Montserrat
 - **Editor**: Trebuchet MS
 - **Website**: Work Sans
@@ -180,26 +193,32 @@ Spacing tokens are fixed to ensure consistent layouts across all white-label ins
 
 Use Vuetify spacing classes based on 4px increments:
 
-| Class | Value |
-|-------|-------|
-| `pa-0` | 0px |
-| `pa-1` | 4px |
-| `pa-2` | 8px |
-| `pa-3` | 12px |
-| `pa-4` | 16px |
-| `pa-5` | 20px |
-| `pa-6` | 24px |
+| Class  | Value |
+| ------ | ----- |
+| `pa-0` | 0px   |
+| `pa-1` | 4px   |
+| `pa-2` | 8px   |
+| `pa-3` | 12px  |
+| `pa-4` | 16px  |
+| `pa-5` | 20px  |
+| `pa-6` | 24px  |
 
 Prefixes:
+
 - `p` = padding, `m` = margin
 - `a` = all, `x` = horizontal, `y` = vertical
 - `t` = top, `b` = bottom, `l` = left, `r` = right
 
 **Examples**:
+
 ```html
-<div class="pa-4">       <!-- padding: 16px all sides -->
-<div class="mx-2">       <!-- margin: 8px horizontal -->
-<div class="mt-3 mb-2">  <!-- margin-top: 12px, margin-bottom: 8px -->
+<div class="pa-4">
+  <!-- padding: 16px all sides -->
+  <div class="mx-2">
+    <!-- margin: 8px horizontal -->
+    <div class="mt-3 mb-2"><!-- margin-top: 12px, margin-bottom: 8px --></div>
+  </div>
+</div>
 ```
 
 ### Editor (LESS)
@@ -215,22 +234,28 @@ Defined in `style_variables.less`:
 
 ## Border Radius (Fixed)
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `@standard-border-radius` | 5px | Default corners |
-| `@button-border-radius` | 5px | Buttons |
-| `@large-border-radius` | 7px | Cards, dialogs |
-| `@large-balloon-border-radius` | 3em | Round badges |
+| Token                          | Value | Usage           |
+| ------------------------------ | ----- | --------------- |
+| `@standard-border-radius`      | 5px   | Default corners |
+| `@button-border-radius`        | 5px   | Buttons         |
+| `@large-border-radius`         | 7px   | Cards, dialogs  |
+| `@large-balloon-border-radius` | 3em   | Round badges    |
 
 ### Vuetify
 
 Use `rounded` prop on components:
 
 ```html
-<v-card rounded>          <!-- default radius -->
-<v-card rounded="lg">     <!-- larger radius -->
-<v-card rounded="0">      <!-- no radius -->
-<v-btn rounded>           <!-- pill button -->
+<v-card rounded>
+  <!-- default radius -->
+  <v-card rounded="lg">
+    <!-- larger radius -->
+    <v-card rounded="0">
+      <!-- no radius -->
+      <v-btn rounded> <!-- pill button --></v-btn></v-card
+    ></v-card
+  ></v-card
+>
 ```
 
 ---
@@ -242,9 +267,13 @@ Use `rounded` prop on components:
 Use `elevation` prop (0-24):
 
 ```html
-<v-card elevation="0">    <!-- flat -->
-<v-card elevation="2">    <!-- subtle shadow -->
-<v-card elevation="4">    <!-- moderate shadow -->
+<v-card elevation="0">
+  <!-- flat -->
+  <v-card elevation="2">
+    <!-- subtle shadow -->
+    <v-card elevation="4"> <!-- moderate shadow --></v-card></v-card
+  ></v-card
+>
 ```
 
 ### Editor (LESS)
@@ -260,13 +289,13 @@ box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.5);
 
 Defined in editor (`style_variables.less`):
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `@zindex-thead` | 1001 | Sticky table headers |
-| `@zindex-popup` | 1003 | Popups, dropdowns |
-| `@zindex-tooltip` | 1004 | Tooltips |
-| `@zindex-dialog-modal` | 1004 | Modal overlays |
-| `@zindex-dialog` | 1005 | Dialog content |
+| Token                  | Value | Usage                |
+| ---------------------- | ----- | -------------------- |
+| `@zindex-thead`        | 1001  | Sticky table headers |
+| `@zindex-popup`        | 1003  | Popups, dropdowns    |
+| `@zindex-tooltip`      | 1004  | Tooltips             |
+| `@zindex-dialog-modal` | 1004  | Modal overlays       |
+| `@zindex-dialog`       | 1005  | Dialog content       |
 
 ---
 
@@ -274,10 +303,10 @@ Defined in editor (`style_variables.less`):
 
 Icons are fixed to maintain consistent UX across all instances.
 
-| System | Location | Usage |
-|--------|----------|-------|
-| **Material Design Icons** | Vue App | `<v-icon>settings</v-icon>` |
-| **Font Awesome 4.7** | Editor | `<i class="fa fa-cog"></i>` |
+| System                    | Location | Usage                       |
+| ------------------------- | -------- | --------------------------- |
+| **Material Design Icons** | Vue App  | `<v-icon>settings</v-icon>` |
+| **Font Awesome 4.7**      | Editor   | `<i class="fa fa-cog"></i>` |
 
 **Direction**: Prefer MDI for new Vue components. FA remains for editor legacy code.
 
@@ -285,16 +314,16 @@ Icons are fixed to maintain consistent UX across all instances.
 
 ## Summary: White-Label Tokens
 
-| Token | Customizable | Default | Target |
-|-------|--------------|---------|--------|
-| Primary Color | Yes | `#093040` | — |
-| Secondary Color | Yes | `#265090` | — |
-| Accent Color | Yes | `#00ACDC` | — |
-| Logo | Yes | LePatron SVG | — |
-| Favicon | Yes | LePatron favicon | — |
-| Font Family | No | Montserrat | Work Sans |
-| Semantic Colors | No | Fixed | — |
-| Spacing | No | Vuetify 4px scale | — |
-| Border Radius | No | 5px default | — |
-| Shadows | No | Vuetify elevation | — |
-| Icons | No | MDI / FA | — |
+| Token           | Customizable | Default           | Target    |
+| --------------- | ------------ | ----------------- | --------- |
+| Primary Color   | Yes          | `#093040`         | —         |
+| Secondary Color | Yes          | `#265090`         | —         |
+| Accent Color    | Yes          | `#00ACDC`         | —         |
+| Logo            | Yes          | LePatron SVG      | —         |
+| Favicon         | Yes          | LePatron favicon  | —         |
+| Font Family     | No           | Montserrat        | Work Sans |
+| Semantic Colors | No           | Fixed             | —         |
+| Spacing         | No           | Vuetify 4px scale | —         |
+| Border Radius   | No           | 5px default       | —         |
+| Shadows         | No           | Vuetify elevation | —         |
+| Icons           | No           | MDI / FA          | —         |
