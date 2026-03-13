@@ -227,7 +227,7 @@
 <div id="toolcomments" class="slidebar" data-bind="css: { hidden: $root.showComments() === false }">
   <div class="close" data-bind="click: $root.showComments.bind($element, false);">X</div>
   <span class="pane-title">
-    <span data-bind="text: $root.t('comments-title')">Commentaires</span>
+    <span data-bind="text: $root.t('comments-title')">Comments</span>
     <!-- ko if: $root.unresolvedCommentCount() > 0 -->
     <span class="pane-title-badge pane-title-badge-warning" data-bind="text: $root.unresolvedCommentCount()"></span>
     <!-- /ko -->
@@ -247,14 +247,14 @@
               data-bind="css: { selected: !$root.selectedBlockForComments() },
                          click: $root.showAllComments">
         <span class="mdi mdi-view-list"></span>
-        <span data-bind="text: $root.t('comments-filter-all')">Tous</span>
+        <span data-bind="text: $root.t('comments-filter-all')">All</span>
       </button>
       <button class="comment-filter-chip"
               data-bind="css: { selected: $root.selectedBlockForComments(), disabled: !$root.lastSelectedBlock() },
                          click: $root.filterToCurrentBlock,
                          enable: $root.lastSelectedBlock()">
         <span class="mdi mdi-cube-outline"></span>
-        <span data-bind="text: $root.currentBlockLabel()">Bloc actuel</span>
+        <span data-bind="text: $root.currentBlockLabel()">Current block</span>
       </button>
     </div>
   </div>
@@ -265,7 +265,7 @@
     <!-- ko if: $root.commentsStatus() === 'loading' -->
     <div class="comments-loading">
       <span class="mdi mdi-loading mdi-spin"></span>
-      <span data-bind="text: $root.t('comments-loading')">Chargement...</span>
+      <span data-bind="text: $root.t('comments-loading')">Loading...</span>
     </div>
     <!-- /ko -->
 
@@ -273,7 +273,7 @@
     <!-- ko if: $root.commentsStatus() !== 'loading' && $root.filteredComments().length === 0 -->
     <div class="comments-empty">
       <span class="mdi mdi-comment-multiple-outline"></span>
-      <span data-bind="text: $root.t('comments-empty')">Aucun commentaire</span>
+      <span data-bind="text: $root.t('comments-empty')">No comments</span>
     </div>
     <!-- /ko -->
 
@@ -282,26 +282,26 @@
     <div class="comment-item" data-bind="css: { 'comment-resolved': resolved, 'comment-expanded': resolved && $root.isResolvedExpanded(_id), 'comment-editing': $root.editingComment() && $root.editingComment()._id === _id }, click: resolved ? function() { $root.toggleResolvedComment($data); } : function() {}, clickBubble: !resolved">
       <!-- Comment header -->
       <div class="comment-header">
-        <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
+        <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonymous'"></span>
         <span class="comment-date" data-bind="text: $root.formatDate(createdAt)"></span>
         <!-- ko if: resolved -->
-        <span class="comment-badge comment-badge-resolved"><span class="mdi mdi-check"></span> <span data-bind="text: $root.t('comments-resolved-badge')">Résolu</span></span>
+        <span class="comment-badge comment-badge-resolved"><span class="mdi mdi-check"></span> <span data-bind="text: $root.t('comments-resolved-badge')">Resolved</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'important' -->
-        <span class="comment-badge comment-badge-important"><span class="mdi mdi-alert"></span> Important</span>
+        <span class="comment-badge comment-badge-important"><span class="mdi mdi-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span></span>
         <!-- /ko -->
         <!-- ko if: !resolved && severity === 'blocking' -->
-        <span class="comment-badge comment-badge-blocking"><span class="mdi mdi-cancel"></span> Bloquant</span>
+        <span class="comment-badge comment-badge-blocking"><span class="mdi mdi-cancel"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span></span>
         <!-- /ko -->
         <!-- Category badge in header (always visible, even when collapsed) -->
         <!-- ko if: category === 'general' || !category -->
-        <span class="comment-category"><span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">Général</span></span>
+        <span class="comment-category"><span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">General</span></span>
         <!-- /ko -->
         <!-- ko if: category === 'design' -->
         <span class="comment-category"><span class="mdi mdi-brush"></span> <span data-bind="text: $root.t('comments-category-design')">Design</span></span>
         <!-- /ko -->
         <!-- ko if: category === 'content' -->
-        <span class="comment-category"><span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Contenu</span></span>
+        <span class="comment-category"><span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Content</span></span>
         <!-- /ko -->
         <!-- Expand indicator for resolved -->
         <!-- ko if: resolved -->
@@ -319,9 +319,9 @@
       <div class="comment-edit-form">
         <textarea class="comments-textarea" rows="3" data-bind="value: $root.editCommentText"></textarea>
         <div class="comment-edit-actions">
-          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Annuler</button>
+          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelEditComment, text: $root.t('comments-cancel')">Cancel</button>
           <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.saveEditComment">
-            <span data-bind="text: $root.t('comments-save')">Enregistrer</span>
+            <span data-bind="text: $root.t('comments-save')">Save</span>
           </button>
         </div>
       </div>
@@ -356,12 +356,12 @@
         <!-- Go to block link (in actions row) -->
         <!-- ko if: blockId && $root.blockExists(blockId) -->
         <span class="comment-go-to-block" data-bind="click: function() { $root.goToCommentBlock($data); }, clickBubble: false">
-          <span class="mdi mdi-open-in-new"></span> <span data-bind="text: $root.t('comments-go-to-block')">Aller au bloc</span>
+          <span class="mdi mdi-open-in-new"></span> <span data-bind="text: $root.t('comments-go-to-block')">Go to block</span>
         </span>
         <!-- /ko -->
         <!-- ko if: blockId && !$root.blockExists(blockId) -->
         <span class="comment-go-to-block comment-block-deleted">
-          <span class="mdi mdi-link-off"></span> <span data-bind="text: $root.t('comments-block-deleted')">Bloc supprimé</span>
+          <span class="mdi mdi-link-off"></span> <span data-bind="text: $root.t('comments-block-deleted')">Block deleted</span>
         </span>
         <!-- /ko -->
       </div>
@@ -372,7 +372,7 @@
       <div class="comment-replies" data-bind="foreach: $root.getReplies(_id)">
         <div class="comment-reply" data-bind="css: { 'comment-resolved': resolved }">
           <div class="comment-header">
-            <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonyme'"></span>
+            <span class="comment-author" data-bind="text: authorName || (_author && _author.name) || 'Anonymous'"></span>
             <span class="comment-date" data-bind="text: $root.formatDate(createdAt)"></span>
           </div>
           <div class="comment-text" data-bind="html: $root.formatCommentText(text)"></div>
@@ -407,9 +407,9 @@
           <!-- /ko -->
         </div>
         <div class="comment-reply-actions">
-          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Annuler</button>
+          <button class="comments-btn comments-btn-text comments-btn-small" data-bind="click: $root.cancelReply, text: $root.t('comments-cancel')">Cancel</button>
           <button class="comments-btn comments-btn-primary comments-btn-small" data-bind="click: $root.createComment">
-            <span data-bind="text: $root.t('comments-add')">Envoyer</span>
+            <span data-bind="text: $root.t('comments-add')">Add</span>
           </button>
         </div>
       </div>
@@ -442,13 +442,13 @@
       <!-- Category chips -->
       <div class="comments-chips-group">
         <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('general'); }, css: { selected: $root.newCommentCategory() === 'general' }">
-          <span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">Général</span>
+          <span class="mdi mdi-comment-outline"></span> <span data-bind="text: $root.t('comments-category-general')">General</span>
         </span>
         <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('design'); }, css: { selected: $root.newCommentCategory() === 'design' }">
           <span class="mdi mdi-brush"></span> <span data-bind="text: $root.t('comments-category-design')">Design</span>
         </span>
         <span class="comment-chip" data-bind="click: function() { $root.newCommentCategory('content'); }, css: { selected: $root.newCommentCategory() === 'content' }">
-          <span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Contenu</span>
+          <span class="mdi mdi-file-document-outline"></span> <span data-bind="text: $root.t('comments-category-content')">Content</span>
         </span>
       </div>
 
@@ -461,7 +461,7 @@
           <span class="mdi mdi-alert"></span> <span data-bind="text: $root.t('comments-severity-important')">Important</span>
         </span>
         <span class="comment-chip comment-chip-error" data-bind="click: function() { $root.newCommentSeverity('blocking'); }, css: { selected: $root.newCommentSeverity() === 'blocking' }">
-          <span class="mdi mdi-block-helper"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Bloquant</span>
+          <span class="mdi mdi-block-helper"></span> <span data-bind="text: $root.t('comments-severity-blocking')">Blocking</span>
         </span>
       </div>
 
@@ -472,7 +472,7 @@
           <!-- ko if: $root.commentFormBlockLabel() -->
           <span class="context-block">
             <span class="mdi mdi-cube-outline"></span>
-            <span class="context-label" data-bind="text: $root.t('comments-context-block')">Commentaire sur</span>
+            <span class="context-label" data-bind="text: $root.t('comments-context-block')">Comment on</span>
             <strong class="context-block-name" data-bind="text: $root.commentFormBlockLabel()"></strong>
             <button type="button" class="context-clear" data-bind="click: $root.clearBlockForComment, attr: { title: $root.t('comments-context-clear') }">
               <span class="mdi mdi-close"></span>
@@ -482,12 +482,12 @@
           <!-- ko ifnot: $root.commentFormBlockLabel() -->
           <span class="context-global">
             <span class="mdi mdi-earth"></span>
-            <span data-bind="text: $root.t('comments-context-global')">Commentaire global</span>
+            <span data-bind="text: $root.t('comments-context-global')">Global comment</span>
           </span>
           <!-- /ko -->
         </div>
         <button class="comments-btn comments-btn-primary" data-bind="click: $root.createComment">
-          <span data-bind="text: $root.t('comments-add')">Ajouter</span>
+          <span data-bind="text: $root.t('comments-add')">Add</span>
         </button>
       </div>
     </div>

@@ -5,10 +5,17 @@ const mongoose = require('mongoose');
 // Mock models before requiring the service
 jest.mock('../../../packages/server/common/models.common.js');
 
-const { Comments, Mailings, Users } = require('../../../packages/server/common/models.common.js');
+const {
+  Comments,
+  Mailings,
+  Users,
+} = require('../../../packages/server/common/models.common.js');
 const commentService = require('../../../packages/server/comment/comment.service.js');
 const ERROR_CODES = require('../../../packages/server/constant/error-codes.js');
-const { COMMENT_CATEGORIES, COMMENT_SEVERITIES } = require('../../../packages/server/comment/comment.schema.js');
+const {
+  COMMENT_CATEGORIES,
+  COMMENT_SEVERITIES,
+} = require('../../../packages/server/comment/comment.schema.js');
 
 describe('Comment Service', () => {
   beforeEach(() => {
@@ -62,7 +69,11 @@ describe('Comment Service', () => {
         lean: jest.fn().mockResolvedValue({
           _id: commentId,
           text: 'Test comment',
-          _author: { _id: userId, name: 'Test User', email: 'test@example.com' },
+          _author: {
+            _id: userId,
+            name: 'Test User',
+            email: 'test@example.com',
+          },
         }),
       });
 
@@ -191,7 +202,9 @@ describe('Comment Service', () => {
       Comments.create = jest.fn().mockResolvedValue({ _id: commentId });
       Comments.findById = jest.fn().mockReturnValue({
         populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue({ _id: commentId, mentions: [mentionedUserId] }),
+        lean: jest
+          .fn()
+          .mockResolvedValue({ _id: commentId, mentions: [mentionedUserId] }),
       });
 
       await commentService.createComment({
@@ -230,7 +243,12 @@ describe('Comment Service', () => {
       // Mock the re-fetch after create
       Comments.findById.mockReturnValueOnce({
         populate: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue({ _id: commentId, _parentComment: parentCommentId }),
+        lean: jest
+          .fn()
+          .mockResolvedValue({
+            _id: commentId,
+            _parentComment: parentCommentId,
+          }),
       });
 
       await commentService.createComment({
@@ -248,7 +266,7 @@ describe('Comment Service', () => {
     });
   });
 
-  describe('findByMailing', () => {
+  describe('getByMailing', () => {
     it('should return all comments for a mailing', async () => {
       const mailingId = mockObjectId();
       const userId = mockObjectId();
@@ -268,7 +286,7 @@ describe('Comment Service', () => {
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
-      const result = await commentService.findByMailing({
+      const result = await commentService.getByMailing({
         mailingId: mailingId.toString(),
         user: createTestUser(userId, groupId),
       });
@@ -289,7 +307,7 @@ describe('Comment Service', () => {
       mockMailingAccess(mailingId, mailingGroupId);
 
       await expect(
-        commentService.findByMailing({
+        commentService.getByMailing({
           mailingId: mailingId.toString(),
           user: createTestUser(userId, userGroupId),
         })
@@ -310,7 +328,7 @@ describe('Comment Service', () => {
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
-      await commentService.findByMailing({
+      await commentService.getByMailing({
         mailingId: mailingId.toString(),
         user: createTestUser(userId, groupId),
         blockId: 'block_0',
@@ -337,7 +355,7 @@ describe('Comment Service', () => {
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
-      await commentService.findByMailing({
+      await commentService.getByMailing({
         mailingId: mailingId.toString(),
         user: createTestUser(userId, groupId),
         resolved: false,
@@ -364,7 +382,7 @@ describe('Comment Service', () => {
       };
       Comments.find = jest.fn().mockReturnValue(mockQuery);
 
-      await commentService.findByMailing({
+      await commentService.getByMailing({
         mailingId: mailingId.toString(),
         user: createTestUser(userId, groupId),
         includeReplies: false,
@@ -378,7 +396,7 @@ describe('Comment Service', () => {
     });
   });
 
-  describe('findById', () => {
+  describe('getById', () => {
     it('should return comment by ID', async () => {
       const commentId = mockObjectId();
       const mailingId = mockObjectId();
@@ -402,7 +420,7 @@ describe('Comment Service', () => {
       // Mock mailing access verification
       mockMailingAccess(mailingId, groupId);
 
-      const result = await commentService.findById(
+      const result = await commentService.getById(
         commentId.toString(),
         createTestUser(userId, groupId)
       );
@@ -430,7 +448,7 @@ describe('Comment Service', () => {
       Comments.findById = jest.fn().mockReturnValue(mockQuery);
 
       await expect(
-        commentService.findById(
+        commentService.getById(
           commentId.toString(),
           createTestUser(userId, groupId)
         )
@@ -442,7 +460,7 @@ describe('Comment Service', () => {
       const groupId = mockObjectId();
 
       await expect(
-        commentService.findById('invalid-id', createTestUser(userId, groupId))
+        commentService.getById('invalid-id', createTestUser(userId, groupId))
       ).rejects.toThrow('INVALID_OBJECT_ID');
     });
   });
@@ -525,7 +543,9 @@ describe('Comment Service', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(Comments.deleteWithReplies).toHaveBeenCalledWith(commentId.toString());
+      expect(Comments.deleteWithReplies).toHaveBeenCalledWith(
+        commentId.toString()
+      );
     });
 
     it('should allow group admin to delete any comment', async () => {
@@ -775,7 +795,9 @@ describe('Comment Service', () => {
         { _id: 'block_1', count: 1, hasBlocking: true, hasImportant: false },
       ];
 
-      Comments.getBlockCommentCounts = jest.fn().mockResolvedValue(mockAggregationResult);
+      Comments.getBlockCommentCounts = jest
+        .fn()
+        .mockResolvedValue(mockAggregationResult);
 
       const result = await commentService.getBlockCommentCounts(
         mailingId.toString(),

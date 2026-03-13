@@ -15,14 +15,45 @@ const logger = require('../utils/logger.js');
  */
 function validateObjectId(id, fieldName = 'ID') {
   if (!id || !mongoose.isValidObjectId(id)) {
-    throw new BadRequest(ERROR_CODES.INVALID_OBJECT_ID || `Invalid ${fieldName}`);
+    throw new BadRequest(
+      ERROR_CODES.INVALID_OBJECT_ID || `Invalid ${fieldName}`
+    );
+  }
+}
+
+/**
+ * Find a comment by ID and throw NotFound if it doesn't exist or is deleted.
+ * Reusable guard used across update/delete/resolve/unresolve.
+ */
+async function getCommentOrThrow(commentId) {
+  const comment = await Comments.findById(commentId);
+  if (!comment || comment.isDeleted) {
+    throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
+  }
+  return comment;
+}
+
+/**
+ * Validate that all mentioned user IDs belong to the given company.
+ * Deduplicates IDs before querying to avoid false mismatches when the
+ * client sends duplicate IDs (MongoDB $in deduplicates server-side).
+ */
+async function validateMentions(mentions, userCompanyId) {
+  if (!mentions || mentions.length === 0) return;
+  const uniqueIds = [...new Set(mentions.map(String))];
+  const found = await Users.find({
+    _id: { $in: uniqueIds },
+    _company: userCompanyId,
+  });
+  if (found.length !== uniqueIds.length) {
+    throw new BadRequest(ERROR_CODES.MENTION_USER_NOT_IN_GROUP);
   }
 }
 
 module.exports = {
   createComment,
-  findByMailing,
-  findById,
+  getByMailing,
+  getById,
   updateComment,
   deleteComment,
   resolveComment,
@@ -71,8 +102,7 @@ async function verifyMailingAccess(mailingId, user) {
     throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
   }
 
-  const hasAccess =
-    String(userCompanyId) === String(mailingCompanyId);
+  const hasAccess = String(userCompanyId) === String(mailingCompanyId);
 
   if (!hasAccess) {
     throw new Forbidden(ERROR_CODES.COMMENT_MAILING_ACCESS_DENIED);
@@ -100,25 +130,18 @@ async function createComment({
   // Validate parent comment if provided
   if (parentCommentId) {
     const parentComment = await Comments.findById(parentCommentId);
-    if (!parentComment || parentComment.isDeleted) {
-      throw new BadRequest(ERROR_CODES.COMMENT_INVALID_PARENT);
-    }
-    if (parentComment._mailing.toString() !== mailingId) {
+    if (
+      !parentComment ||
+      parentComment.isDeleted ||
+      parentComment._mailing.toString() !== mailingId
+    ) {
       throw new BadRequest(ERROR_CODES.COMMENT_INVALID_PARENT);
     }
   }
 
   // Validate mentions are in the same group
   const userCompanyId = getUserCompanyId(user);
-  if (mentions && mentions.length > 0) {
-    const mentionedUsers = await Users.find({
-      _id: { $in: mentions },
-      _company: userCompanyId,
-    });
-    if (mentionedUsers.length !== mentions.length) {
-      throw new BadRequest(ERROR_CODES.MENTION_USER_NOT_IN_GROUP);
-    }
-  }
+  await validateMentions(mentions, userCompanyId);
 
   // Capture block snapshot if blockId provided
   let blockSnapshot = null;
@@ -151,7 +174,7 @@ async function createComment({
 /**
  * Find comments for a mailing with filters
  */
-async function findByMailing({
+async function getByMailing({
   mailingId,
   user,
   blockId,
@@ -197,7 +220,7 @@ async function findByMailing({
  * @throws {NotFound} If comment doesn't exist
  * @throws {Forbidden} If user doesn't have access to the mailing
  */
-async function findById(commentId, user) {
+async function getById(commentId, user) {
   validateObjectId(commentId, 'comment ID');
 
   const comment = await Comments.findById(commentId)
@@ -220,11 +243,7 @@ async function findById(commentId, user) {
  * Update a comment (text, category, severity)
  */
 async function updateComment({ commentId, user, updates }) {
-  const comment = await Comments.findById(commentId);
-
-  if (!comment || comment.isDeleted) {
-    throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
-  }
+  const comment = await getCommentOrThrow(commentId);
 
   // Only author can update their comment
   const userId = user._id || user.id;
@@ -243,17 +262,8 @@ async function updateComment({ commentId, user, updates }) {
 
   // Handle mentions update
   if (updates.mentions !== undefined) {
-    // Validate new mentions are in the same group
-    if (updates.mentions.length > 0) {
-      const userCompanyId = getUserCompanyId(user);
-      const mentionedUsers = await Users.find({
-        _id: { $in: updates.mentions },
-        _company: userCompanyId,
-      });
-      if (mentionedUsers.length !== updates.mentions.length) {
-        throw new BadRequest(ERROR_CODES.MENTION_USER_NOT_IN_GROUP);
-      }
-    }
+    const userCompanyId = getUserCompanyId(user);
+    await validateMentions(updates.mentions, userCompanyId);
     updateData.mentions = updates.mentions;
   }
 
@@ -276,16 +286,13 @@ async function updateComment({ commentId, user, updates }) {
  * Delete a comment (soft delete with cascade)
  */
 async function deleteComment({ commentId, user }) {
-  const comment = await Comments.findById(commentId);
-
-  if (!comment || comment.isDeleted) {
-    throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
-  }
+  const comment = await getCommentOrThrow(commentId);
 
   // Check permission: author or group admin
   const userId = user._id || user.id;
   const isAuthor = comment._author.toString() === userId.toString();
-  const isGroupAdmin = user.role === 'company_admin' || user.role === 'super_admin';
+  const isGroupAdmin =
+    user.role === 'company_admin' || user.role === 'super_admin';
 
   if (!isAuthor && !isGroupAdmin) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);
@@ -310,11 +317,7 @@ async function deleteComment({ commentId, user }) {
 async function resolveComment({ commentId, user }) {
   validateObjectId(commentId, 'comment ID');
 
-  const comment = await Comments.findById(commentId);
-
-  if (!comment || comment.isDeleted) {
-    throw new NotFound(ERROR_CODES.COMMENT_NOT_FOUND);
-  }
+  const comment = await getCommentOrThrow(commentId);
 
   // Verify user has access to the mailing this comment belongs to
   await verifyMailingAccess(comment._mailing, user);
@@ -338,7 +341,10 @@ async function resolveComment({ commentId, user }) {
     .populate('_resolvedBy', 'name')
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
-  logger.log('Comment resolved', { commentId, resolvedBy: user._id || user.id });
+  logger.log('Comment resolved', {
+    commentId,
+    resolvedBy: user._id || user.id,
+  });
 
   return updatedComment;
 }
@@ -382,7 +388,10 @@ async function unresolveComment({ commentId, user }) {
     .populate('_resolvedBy', 'name')
     .lean();
 
-  logger.log('Comment unresolved', { commentId, unresolvedBy: user._id || user.id });
+  logger.log('Comment unresolved', {
+    commentId,
+    unresolvedBy: user._id || user.id,
+  });
 
   return updatedComment;
 }

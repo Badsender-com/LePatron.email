@@ -7,15 +7,15 @@ const commentService = require('./comment.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
-  list: asyncHandler(list),
-  getCounts: asyncHandler(getCounts),
-  getUnresolvedCount: asyncHandler(getUnresolvedCount),
+  getByMailing: asyncHandler(getByMailing),
+  getBlockCommentCounts: asyncHandler(getBlockCommentCounts),
+  getUnresolvedCountByMailing: asyncHandler(getUnresolvedCountByMailing),
   getById: asyncHandler(getById),
-  create: asyncHandler(create),
-  update: asyncHandler(update),
-  remove: asyncHandler(remove),
-  resolve: asyncHandler(resolve),
-  unresolve: asyncHandler(unresolve),
+  createComment: asyncHandler(createComment),
+  updateComment: asyncHandler(updateComment),
+  deleteComment: asyncHandler(deleteComment),
+  resolveComment: asyncHandler(resolveComment),
+  unresolveComment: asyncHandler(unresolveComment),
 };
 
 /**
@@ -31,14 +31,14 @@ module.exports = {
  *
  * @apiSuccess {Comment[]} items List of comments
  */
-async function list(req, res) {
+async function getByMailing(req, res) {
   const {
     user,
     params: { mailingId },
     query: { blockId, resolved, includeReplies },
   } = req;
 
-  const comments = await commentService.findByMailing({
+  const comments = await commentService.getByMailing({
     mailingId,
     user,
     blockId,
@@ -59,7 +59,7 @@ async function list(req, res) {
  *
  * @apiSuccess {Object} counts Object with blockId keys and count values
  */
-async function getCounts(req, res) {
+async function getBlockCommentCounts(req, res) {
   const { user } = req;
   const { mailingId } = req.params;
 
@@ -78,11 +78,14 @@ async function getCounts(req, res) {
  *
  * @apiSuccess {Number} count Unresolved comment count
  */
-async function getUnresolvedCount(req, res) {
+async function getUnresolvedCountByMailing(req, res) {
   const { user } = req;
   const { mailingId } = req.params;
 
-  const count = await commentService.getUnresolvedCountByMailing(mailingId, user);
+  const count = await commentService.getUnresolvedCountByMailing(
+    mailingId,
+    user
+  );
 
   res.json({ count });
 }
@@ -101,7 +104,7 @@ async function getById(req, res) {
   const { user } = req;
   const { commentId } = req.params;
 
-  const comment = await commentService.findById(commentId, user);
+  const comment = await commentService.getById(commentId, user);
 
   res.json(comment);
 }
@@ -123,7 +126,7 @@ async function getById(req, res) {
  *
  * @apiSuccess {Comment} comment Created comment
  */
-async function create(req, res) {
+async function createComment(req, res) {
   const {
     user,
     params: { mailingId },
@@ -163,7 +166,7 @@ async function create(req, res) {
  *
  * @apiSuccess {Comment} comment Updated comment
  */
-async function update(req, res) {
+async function updateComment(req, res) {
   const {
     user,
     params: { commentId },
@@ -195,7 +198,7 @@ async function update(req, res) {
  *
  * @apiSuccess {Object} result Deletion result
  */
-async function remove(req, res) {
+async function deleteComment(req, res) {
   const {
     user,
     params: { commentId },
@@ -216,7 +219,7 @@ async function remove(req, res) {
  *
  * @apiSuccess {Comment} comment Resolved comment
  */
-async function resolve(req, res) {
+async function resolveComment(req, res) {
   const {
     user,
     params: { commentId },
@@ -237,7 +240,7 @@ async function resolve(req, res) {
  *
  * @apiSuccess {Comment} comment Unresolved comment
  */
-async function unresolve(req, res) {
+async function unresolveComment(req, res) {
   const {
     user,
     params: { commentId },

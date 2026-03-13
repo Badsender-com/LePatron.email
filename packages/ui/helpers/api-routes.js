@@ -264,23 +264,30 @@ export function postPersonalizedVariables(groupId) {
 // COMMENTS
 /// ///
 
-export function mailingComments(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}/comments`;
+export function getMailingComments(mailingId) {
+  return `/mailings/${mailingId}/comments`;
 }
 
-export function mailingCommentsCounts(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}/comments/counts`;
+export function postMailingComment(mailingId) {
+  return `/mailings/${mailingId}/comments`;
 }
 
-export function mailingCommentsUnresolvedCount(routeParams = {}) {
-  return `/mailings/${routeParams.mailingId}/comments/unresolved-count`;
+export function getMailingCommentsCounts(mailingId) {
+  return `/mailings/${mailingId}/comments/counts`;
 }
 
-export function commentItem(routeParams = {}) {
-  return `/comments/${routeParams.commentId}`;
+export function getMailingCommentsUnresolvedCount(mailingId) {
+  return `/mailings/${mailingId}/comments/unresolved-count`;
 }
 
-export function commentResolve(routeParams = {}) {
-  return `/comments/${routeParams.commentId}/resolve`;
+export function getCommentItem(commentId) {
+  return `/comments/${commentId}`;
 }
 
+export function patchCommentResolve(commentId) {
+  return `/comments/${commentId}/resolve`;
+}
+
+export function patchCommentUnresolve(commentId) {
+  return `/comments/${commentId}/unresolve`;
+}

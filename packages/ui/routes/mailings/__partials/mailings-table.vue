@@ -10,12 +10,7 @@ import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
-import {
-  mailingsItem,
-  copyMail,
-  moveMail,
-  mailingCommentsUnresolvedCount,
-} from '~/helpers/api-routes.js';
+import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -449,7 +444,9 @@ export default {
                 color="orange"
                 overlap
               >
-                <v-icon small>mdi-comment-outline</v-icon>
+                <v-icon small>
+                  mdi-comment-outline
+                </v-icon>
               </v-badge>
             </v-btn>
             <v-btn
@@ -461,7 +458,9 @@ export default {
               :aria-label="$t(actionsDetails[actions.RENAME].text)"
               @click="openRenameModal(item)"
             >
-              <v-icon small>mdi-pencil</v-icon>
+              <v-icon small>
+                mdi-pencil
+              </v-icon>
             </v-btn>
             <v-btn
               v-if="filteredActions.includes(actions.COPY_MAIL)"
@@ -472,7 +471,9 @@ export default {
               :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
               @click="openCopyMail(item)"
             >
-              <v-icon small>mdi-content-copy</v-icon>
+              <v-icon small>
+                mdi-content-copy
+              </v-icon>
             </v-btn>
             <v-btn
               v-if="filteredActions.includes(actions.DELETE)"
@@ -483,7 +484,9 @@ export default {
               :aria-label="$t(actionsDetails[actions.DELETE].text)"
               @click="displayDeleteModal(item)"
             >
-              <v-icon small>mdi-delete-outline</v-icon>
+              <v-icon small>
+                mdi-delete-outline
+              </v-icon>
             </v-btn>
 
             <!-- More actions menu -->

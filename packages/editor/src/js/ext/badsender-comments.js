@@ -24,6 +24,7 @@ function commentsLoader(opts) {
   const mailingId = opts.metadata.id;
   const groupId = opts.metadata.groupId;
   const apiBaseUrl = '/api';
+  const mailingCommentsUrl = apiBaseUrl + '/mailings/' + mailingId + '/comments';
 
   return function (viewModel) {
     // ===== OBSERVABLES =====
@@ -315,7 +316,7 @@ function commentsLoader(opts) {
       viewModel.commentsStatus('loading');
 
       $.ajax({
-        url: apiBaseUrl + '/mailings/' + mailingId + '/comments',
+        url: mailingCommentsUrl,
         method: 'GET',
         success: function (response) {
           viewModel.comments(response.items || []);
@@ -537,7 +538,7 @@ function commentsLoader(opts) {
       }
 
       $.ajax({
-        url: apiBaseUrl + '/mailings/' + mailingId + '/comments',
+        url: mailingCommentsUrl,
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(data),
