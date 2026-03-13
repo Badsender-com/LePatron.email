@@ -63,6 +63,17 @@ module.exports = {
 };
 
 /**
+ * Populate options for _author that always returns at least { id } even if the
+ * user has been deleted (or is the admin who has no DB document).
+ * This ensures the frontend can still compare author IDs correctly.
+ */
+const POPULATE_AUTHOR = {
+  path: '_author',
+  select: 'name email id',
+  transform: (doc, id) => doc || { id: id.toString() },
+};
+
+/**
  * Extract user's company ID from various formats
  * Handles populated objects, raw ObjectIds, and aliased fields
  */
@@ -93,6 +104,11 @@ async function verifyMailingAccess(mailingId, user) {
 
   if (!mailing) {
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+
+  // Super admin has access to all mailings
+  if (user?.isAdmin) {
+    return mailing;
   }
 
   const userCompanyId = getUserCompanyId(user);
@@ -139,9 +155,10 @@ async function createComment({
     }
   }
 
-  // Validate mentions are in the same group
+  // Validate mentions belong to the mailing's company
   const userCompanyId = getUserCompanyId(user);
-  await validateMentions(mentions, userCompanyId);
+  const mentionCompanyId = mailing._wireframe?._company || userCompanyId;
+  await validateMentions(mentions, mentionCompanyId);
 
   // Capture block snapshot if blockId provided
   let blockSnapshot = null;
@@ -166,9 +183,7 @@ async function createComment({
   logger.log('Comment created', { commentId: comment._id, mailingId });
 
   // Re-fetch with lean() to avoid User virtuals accessing unpopulated _company
-  return Comments.findById(comment._id)
-    .populate('_author', 'name email')
-    .lean();
+  return Comments.findById(comment._id).populate(POPULATE_AUTHOR).lean();
 }
 
 /**
@@ -202,7 +217,7 @@ async function getByMailing({
   }
 
   const comments = await Comments.find(query)
-    .populate('_author', 'name email')
+    .populate(POPULATE_AUTHOR)
     .populate('_resolvedBy', 'name')
     .populate('mentions', 'name email')
     .sort({ createdAt: 1 })
@@ -224,7 +239,7 @@ async function getById(commentId, user) {
   validateObjectId(commentId, 'comment ID');
 
   const comment = await Comments.findById(commentId)
-    .populate('_author', 'name email')
+    .populate(POPULATE_AUTHOR)
     .populate('_resolvedBy', 'name')
     .populate('mentions', 'name email')
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
@@ -245,7 +260,7 @@ async function getById(commentId, user) {
 async function updateComment({ commentId, user, updates }) {
   const comment = await getCommentOrThrow(commentId);
 
-  // Only author can update their comment
+  // Only the author can update their own comment
   const userId = user._id || user.id;
   if (comment._author.toString() !== userId.toString()) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);
@@ -260,10 +275,10 @@ async function updateComment({ commentId, user, updates }) {
     }
   }
 
-  // Handle mentions update
+  // Handle mentions update — validate against the mailing's company
   if (updates.mentions !== undefined) {
-    const userCompanyId = getUserCompanyId(user);
-    await validateMentions(updates.mentions, userCompanyId);
+    const companyId = user?.isAdmin ? comment._company : getUserCompanyId(user);
+    await validateMentions(updates.mentions, companyId);
     updateData.mentions = updates.mentions;
   }
 
@@ -272,7 +287,7 @@ async function updateComment({ commentId, user, updates }) {
     { $set: updateData },
     { new: true }
   )
-    .populate('_author', 'name email')
+    .populate(POPULATE_AUTHOR)
     .populate('_resolvedBy', 'name')
     .populate('mentions', 'name email')
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
@@ -288,11 +303,10 @@ async function updateComment({ commentId, user, updates }) {
 async function deleteComment({ commentId, user }) {
   const comment = await getCommentOrThrow(commentId);
 
-  // Check permission: author or group admin
+  // Check permission: author, group admin, or super admin
   const userId = user._id || user.id;
   const isAuthor = comment._author.toString() === userId.toString();
-  const isGroupAdmin =
-    user.role === 'company_admin' || user.role === 'super_admin';
+  const isGroupAdmin = user.isAdmin || user.role === 'company_admin';
 
   if (!isAuthor && !isGroupAdmin) {
     throw new Forbidden(ERROR_CODES.COMMENT_ACCESS_DENIED);
@@ -337,7 +351,7 @@ async function resolveComment({ commentId, user }) {
     },
     { new: true }
   )
-    .populate('_author', 'name email')
+    .populate(POPULATE_AUTHOR)
     .populate('_resolvedBy', 'name')
     .lean(); // Use lean() to avoid User virtuals accessing unpopulated _company
 
@@ -384,7 +398,7 @@ async function unresolveComment({ commentId, user }) {
     },
     { new: true }
   )
-    .populate('_author', 'name email')
+    .populate(POPULATE_AUTHOR)
     .populate('_resolvedBy', 'name')
     .lean();
 
