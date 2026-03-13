@@ -25,6 +25,7 @@ const currentUser = require('./badsender-current-user.js');
 const currentMailing = require('./badsender-current-mailing.js');
 const selectItem = require('./badsender-select-item.js');
 const screenPreview = require('./badsender-screen-preview.js');
+const comments = require('./badsender-comments.js');
 
 // widgets
 // https://github.com/voidlabs/mosaico/wiki/Mosaico-Plugins#widget-plugins
@@ -76,6 +77,7 @@ function extendViewModel(opts, customExtensions) {
   customExtensions.push(extendTinyMceColors(opts));
   customExtensions.push(downloadOptions(opts));
   customExtensions.push(screenPreview);
+  customExtensions.push(comments(opts));
   // widget should be differentiating of VM extensions by
   // template-loader.js#pluginsCall
   customExtensions.push(widgetBgImage(opts));

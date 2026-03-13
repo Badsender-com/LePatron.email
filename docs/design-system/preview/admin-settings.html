@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interface Admin - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-400: #bdbdbd;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-header h1 { font-size: 1.25rem; font-weight: 500; }
+    .page-header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    /* Comparison Layout */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .comparison-panel {
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .comparison-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .comparison-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .comparison-header .status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status.current { background: var(--gray-200); color: var(--gray-600); }
+    .status.target { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+
+    /* App Header Simulation */
+    .app-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+
+    .app-header .logo {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .app-header .logo span {
+      color: var(--warning);
+    }
+
+    .app-header .icons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .app-header .icon-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      padding: 0.25rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+    }
+
+    .app-header .icon-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    /* Current Layout (Before) */
+    .current-layout {
+      display: flex;
+      min-height: 400px;
+    }
+
+    .current-sidebar {
+      width: 200px;
+      background: var(--gray-50);
+      border-right: 1px solid var(--gray-200);
+      padding: 1rem 0;
+      flex-shrink: 0;
+    }
+
+    .current-sidebar .back-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .current-sidebar .section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      padding: 1rem 1rem 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .current-sidebar .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      color: var(--gray-800);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+
+    .current-sidebar .nav-item.active {
+      background: var(--white);
+      color: var(--primary);
+      border-left: 3px solid var(--accent);
+    }
+
+    .current-sidebar .nav-item .material-icons {
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    .current-content {
+      flex: 1;
+      padding: 0;
+    }
+
+    /* Current Tabs */
+    .current-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--gray-200);
+      background: var(--white);
+      overflow-x: auto;
+    }
+
+    .current-tabs .tab {
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      text-transform: uppercase;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .current-tabs .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .current-tabs .tab:hover {
+      color: var(--primary);
+    }
+
+    .current-form {
+      padding: 1.5rem;
+      background: var(--white);
+    }
+
+    .current-form-row {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .current-form-field {
+      flex: 1;
+    }
+
+    .current-form-field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 0.25rem;
+    }
+
+    .current-form-field input {
+      width: 100%;
+      padding: 0.5rem;
+      border: none;
+      border-bottom: 1px dotted var(--gray-300);
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    .current-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 1rem;
+      border-top: 1px solid var(--gray-200);
+      margin-top: 2rem;
+    }
+
+    /* Target Layout (After) */
+    .target-layout {
+      display: flex;
+      min-height: 400px;
+    }
+
+    .target-sidebar {
+      width: 220px;
+      background: var(--white);
+      border-right: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .target-sidebar .back-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem;
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .target-sidebar .back-link:hover {
+      color: var(--primary);
+    }
+
+    .target-sidebar .nav-section {
+      padding: 0.75rem 0;
+    }
+
+    .target-sidebar .nav-section-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      padding: 0.5rem 1rem;
+      letter-spacing: 0.1em;
+    }
+
+    .target-sidebar .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem;
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.15s;
+    }
+
+    .target-sidebar .nav-item:hover {
+      background: var(--gray-50);
+      color: var(--primary);
+    }
+
+    .target-sidebar .nav-item.active {
+      background: rgba(0, 172, 220, 0.08);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .target-sidebar .nav-item .material-icons {
+      font-size: 1.125rem;
+      opacity: 0.7;
+    }
+
+    .target-sidebar .nav-item.active .material-icons {
+      opacity: 1;
+    }
+
+    .target-content {
+      flex: 1;
+      background: var(--gray-50);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .target-content-header {
+      padding: 1.25rem 1.5rem;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .target-content-header h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .target-content-body {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .target-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .target-card-header {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .target-card-header .material-icons {
+      font-size: 1.125rem;
+      color: var(--gray-400);
+    }
+
+    .target-card-content {
+      padding: 1rem;
+    }
+
+    .target-form-field {
+      margin-bottom: 1rem;
+    }
+
+    .target-form-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .target-form-field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-bottom: 0.375rem;
+    }
+
+    .target-form-field input {
+      width: 100%;
+      padding: 0.625rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    .target-form-field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .target-content-footer {
+      padding: 1rem 1.5rem;
+      background: var(--white);
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    .btn-text {
+      background: transparent;
+      color: var(--primary);
+    }
+
+    .btn-error-outline {
+      background: transparent;
+      color: var(--error);
+      border: 1px solid var(--error);
+    }
+
+    /* Color box */
+    .color-add-btn {
+      width: 32px;
+      height: 32px;
+      border: 2px dashed var(--gray-300);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      cursor: pointer;
+    }
+
+    /* Info boxes */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .info-box strong { color: var(--primary); }
+
+    /* Summary section */
+    .summary-section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .summary-section h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .benefit-card {
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: 8px;
+    }
+
+    .benefit-card h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .benefit-card h4 .material-icons {
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    .benefit-card p {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    /* Table */
+    .changes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-top: 1.5rem;
+    }
+
+    .changes-table th,
+    .changes-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .changes-table th {
+      font-weight: 600;
+      color: var(--gray-600);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .changes-table .problem {
+      color: var(--error);
+    }
+
+    .changes-table .solution {
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html" class="active">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Interface Admin - Réglages Groupe</h1>
+    <p class="page-subtitle">Comparaison avant/après de la refonte de l'interface d'administration</p>
+
+    <div class="info-box">
+      <strong>Objectif :</strong> Moderniser l'interface admin en remplaçant la navigation dupliquée (sidebar + tabs horizontaux)
+      par une navigation verticale unifiée, inspirée des applications modernes comme Notion, Linear et Figma.
+    </div>
+
+    <!-- Comparison -->
+    <div class="comparison">
+
+      <!-- BEFORE -->
+      <div class="comparison-panel">
+        <div class="comparison-header">
+          <h3>Actuel</h3>
+          <span class="status current">Problèmes UX</span>
+        </div>
+
+        <div class="app-header">
+          <div class="logo">LePatro<span>n</span> &nbsp;Réglages : Groupe groupetest</div>
+          <div class="icons">
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">help</span></button>
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">settings</span></button>
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">power_settings_new</span></button>
+          </div>
+        </div>
+
+        <div class="current-layout">
+          <div class="current-sidebar">
+            <a href="#" class="back-link">
+              <span class="material-icons" style="font-size:18px">arrow_back</span>
+              Retourner aux emails
+            </a>
+
+            <div class="section-title">Groupe</div>
+            <a href="#" class="nav-item active">
+              <span class="material-icons">info</span>
+              Informations
+            </a>
+
+            <div class="section-title">Actions</div>
+            <a href="#" class="nav-item">
+              <span class="material-icons">group_add</span>
+              Ajouter un workspace
+            </a>
+            <a href="#" class="nav-item">
+              <span class="material-icons">person_add</span>
+              Ajouter un utilisateur
+            </a>
+            <a href="#" class="nav-item">
+              <span class="material-icons">mail</span>
+              Ajouter une liste test
+            </a>
+          </div>
+
+          <div class="current-content">
+            <div class="current-tabs">
+              <div class="tab active">Informations</div>
+              <div class="tab">Workspaces</div>
+              <div class="tab">Utilisateurs</div>
+              <div class="tab">Listes de test</div>
+              <div class="tab">Variables</div>
+              <div class="tab">Intégrations</div>
+              <div class="tab">IA</div>
+            </div>
+            <div class="current-form">
+              <div class="current-form-row">
+                <div class="current-form-field">
+                  <label>Nom de l'entreprise</label>
+                  <input type="text" value="groupetest">
+                </div>
+                <div class="current-form-field">
+                  <label>Couleurs personnalisées</label>
+                  <div class="color-add-btn">+</div>
+                </div>
+              </div>
+              <div class="current-form-actions">
+                <button class="btn btn-accent">Enregistrer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="comparison-panel">
+        <div class="comparison-header">
+          <h3>Cible</h3>
+          <span class="status target">Navigation verticale</span>
+        </div>
+
+        <div class="app-header">
+          <div class="logo">LePatro<span>n</span> &nbsp;Réglages : Groupe groupetest</div>
+          <div class="icons">
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">help</span></button>
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">settings</span></button>
+            <button class="icon-btn"><span class="material-icons" style="font-size:18px">power_settings_new</span></button>
+          </div>
+        </div>
+
+        <div class="target-layout">
+          <div class="target-sidebar">
+            <a href="#" class="back-link">
+              <span class="material-icons" style="font-size:18px">arrow_back</span>
+              Retourner aux emails
+            </a>
+
+            <div class="nav-section">
+              <div class="nav-section-title">Général</div>
+              <a href="#" class="nav-item active">
+                <span class="material-icons">info</span>
+                Informations
+              </a>
+            </div>
+
+            <div class="nav-section">
+              <div class="nav-section-title">Contenu</div>
+              <a href="#" class="nav-item">
+                <span class="material-icons">dashboard</span>
+                Templates
+              </a>
+              <a href="#" class="nav-item">
+                <span class="material-icons">folder</span>
+                Workspaces
+              </a>
+            </div>
+
+            <div class="nav-section">
+              <div class="nav-section-title">Utilisateurs</div>
+              <a href="#" class="nav-item">
+                <span class="material-icons">group</span>
+                Utilisateurs
+              </a>
+              <a href="#" class="nav-item">
+                <span class="material-icons">mail</span>
+                Listes de test
+              </a>
+            </div>
+
+            <div class="nav-section">
+              <div class="nav-section-title">Intégrations</div>
+              <a href="#" class="nav-item">
+                <span class="material-icons">send</span>
+                ESP
+              </a>
+              <a href="#" class="nav-item">
+                <span class="material-icons">code</span>
+                Variables
+              </a>
+              <a href="#" class="nav-item">
+                <span class="material-icons">extension</span>
+                Intégrations
+              </a>
+            </div>
+
+            <div class="nav-section">
+              <div class="nav-section-title">Avancé</div>
+              <a href="#" class="nav-item">
+                <span class="material-icons">psychology</span>
+                Fonctionnalités IA
+              </a>
+            </div>
+          </div>
+
+          <div class="target-content">
+            <div class="target-content-header">
+              <h2>Informations</h2>
+            </div>
+            <div class="target-content-body">
+              <div class="target-card">
+                <div class="target-card-header">
+                  <span class="material-icons">domain</span>
+                  Identité du groupe
+                </div>
+                <div class="target-card-content">
+                  <div class="target-form-field">
+                    <label>Nom de l'entreprise</label>
+                    <input type="text" value="groupetest">
+                  </div>
+                  <div class="target-form-field">
+                    <label>Couleurs personnalisées</label>
+                    <div class="color-add-btn">+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="target-content-footer">
+              <button class="btn btn-accent">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Changes Summary -->
+    <div class="summary-section">
+      <h3>Changements proposés</h3>
+
+      <table class="changes-table">
+        <thead>
+          <tr>
+            <th>Problème</th>
+            <th>Solution</th>
+            <th>Bénéfice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="problem">Navigation dupliquée (sidebar + tabs)</td>
+            <td class="solution">Navigation verticale unifiée</td>
+            <td>Clarté, moins de confusion</td>
+          </tr>
+          <tr>
+            <td class="problem">Sidebar sous-utilisée (1 lien + 3 actions)</td>
+            <td class="solution">Tous les onglets dans la sidebar</td>
+            <td>Meilleure utilisation de l'espace</td>
+          </tr>
+          <tr>
+            <td class="problem">Actions "Ajouter" décontextualisées</td>
+            <td class="solution">Actions dans leurs onglets respectifs</td>
+            <td>Logique et découverte naturelle</td>
+          </tr>
+          <tr>
+            <td class="problem">7-8 tabs horizontaux (overflow)</td>
+            <td class="solution">Onglets groupés par catégorie</td>
+            <td>Scalabilité, organisation</td>
+          </tr>
+          <tr>
+            <td class="problem">Champs éparpillés sans structure</td>
+            <td class="solution">Contenu groupé en cards</td>
+            <td>Lisibilité, sections claires</td>
+          </tr>
+          <tr>
+            <td class="problem">Bouton "Enregistrer" loin du contenu</td>
+            <td class="solution">Footer sticky avec actions</td>
+            <td>Accessibilité, visibilité</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Benefits -->
+    <div class="summary-section">
+      <h3>Avantages du nouveau design</h3>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <h4><span class="material-icons">visibility</span> Clarté</h4>
+          <p>Une seule navigation claire, pas de duplication entre sidebar et tabs.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">add_circle</span> Scalabilité</h4>
+          <p>Ajout facile de nouvelles sections sans surcharger la barre horizontale.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">category</span> Organisation</h4>
+          <p>Groupement logique par catégories : Général, Contenu, Utilisateurs, Intégrations.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">touch_app</span> Accessibilité</h4>
+          <p>Labels complets visibles, plus de troncature comme dans les tabs étroits.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">auto_awesome</span> Modernité</h4>
+          <p>Pattern utilisé par Notion, Linear, Figma, GitHub Settings...</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">swap_horiz</span> Cohérence</h4>
+          <p>Même pattern pour Client Admin et Super Admin, seuls les items visibles changent.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top: 2rem;">
+      <strong>Prochaines étapes :</strong><br>
+      1. Validation de cette direction par l'équipe<br>
+      2. Implémentation de la navigation verticale (Phase 7 du plan)<br>
+      3. Déplacement des actions "Ajouter" dans leurs onglets respectifs<br>
+      4. Structuration du contenu en cards avec icônes
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Phase 7 : Interface Admin — Février 2026
+  </footer>
+
+</body>
+</html>
