@@ -40,7 +40,6 @@ const CommentSchema = new Schema(
       type: ObjectId,
       ref: MailingModel,
       required: true,
-      index: true,
     },
 
     // Reference to the group (denormalized for efficient queries)
@@ -48,14 +47,12 @@ const CommentSchema = new Schema(
       type: ObjectId,
       ref: GroupModel,
       required: true,
-      index: true,
     },
 
     // Block identification
     blockId: {
       type: String,
       required: false, // null = mailing-level comment
-      index: true,
     },
 
     // Snapshot of block position at comment time (for deleted block handling)
@@ -99,14 +96,12 @@ const CommentSchema = new Schema(
       type: ObjectId,
       ref: CommentModel,
       default: null,
-      index: true,
     },
 
     // Resolution status
     resolved: {
       type: Boolean,
       default: false,
-      index: true,
     },
     _resolvedBy: {
       type: ObjectId,
@@ -128,7 +123,6 @@ const CommentSchema = new Schema(
     isDeleted: {
       type: Boolean,
       default: false,
-      index: true,
     },
   },
   {
@@ -139,12 +133,10 @@ const CommentSchema = new Schema(
 );
 
 // Compound indexes for common queries
-CommentSchema.index({ _mailing: 1, resolved: 1 });
-CommentSchema.index({ _mailing: 1, blockId: 1 });
-CommentSchema.index({ _company: 1, resolved: 1, createdAt: -1 });
-CommentSchema.index({ _parentComment: 1, createdAt: 1 });
-CommentSchema.index({ mentions: 1, createdAt: -1 });
-CommentSchema.index({ _mailing: 1, isDeleted: 1, resolved: 1 });
+CommentSchema.index({ _mailing: 1, blockId: 1 }); // getByMailing avec blockId
+CommentSchema.index({ _mailing: 1, isDeleted: 1, resolved: 1 }); // getByMailing, aggregate, countDocuments
+CommentSchema.index({ _company: 1, resolved: 1, createdAt: -1 }); // dashboard company (si utilisé ailleurs)
+CommentSchema.index({ _parentComment: 1, createdAt: 1 }); // deleteWithReplies + chargement des replies
 
 // Virtual for checking if this is a root comment (not a reply)
 CommentSchema.virtual('isRootComment').get(function () {
