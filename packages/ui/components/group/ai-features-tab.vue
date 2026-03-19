@@ -356,7 +356,7 @@ export default {
             </v-icon>
             {{ $t('aiFeatures.textGeneration.title') }}
             <v-spacer />
-            <v-chip small outlined>
+            <v-chip small color="grey lighten-1" text-color="grey darken-2">
               {{ $t('aiFeatures.comingSoon') }}
             </v-chip>
           </v-card-title>
@@ -372,7 +372,7 @@ export default {
             </v-icon>
             {{ $t('aiFeatures.qualityCheck.title') }}
             <v-spacer />
-            <v-chip small outlined>
+            <v-chip small color="grey lighten-1" text-color="grey darken-2">
               {{ $t('aiFeatures.comingSoon') }}
             </v-chip>
           </v-card-title>

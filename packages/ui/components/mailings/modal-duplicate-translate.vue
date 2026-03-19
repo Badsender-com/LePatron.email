@@ -491,7 +491,7 @@ export default {
         </v-btn>
         <v-btn
           v-if="!translating"
-          color="primary"
+          color="accent"
           :disabled="!isFormValid"
           @click="handleTranslate"
         >

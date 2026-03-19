@@ -20,8 +20,8 @@ export default {
 <template>
   <v-dialog v-model="show" max-width="500">
     <v-card>
-      <v-card-title class="d-flex align-center success--text">
-        <v-icon left color="success">
+      <v-card-title class="d-flex align-center">
+        <v-icon left color="primary">
           mdi-check-circle
         </v-icon>
         {{ $t('translation.successTitle') }}
@@ -32,7 +32,7 @@ export default {
           {{ $t('translation.successMessage') }}
         </p>
 
-        <v-alert type="info" dense outlined class="mb-0">
+        <v-alert type="info" dense outlined class="mb-4" color="#2196F3">
           <strong>{{ $t('translation.warningTitle') }}</strong>
           <ul class="mt-2 mb-0">
             <li>{{ $t('translation.warningLinks') }}</li>
@@ -46,7 +46,8 @@ export default {
 
       <v-card-actions>
         <v-spacer />
-        <v-btn color="primary" @click="close">
+        <v-btn color="accent" @click="close">
+          <v-icon left>mdi-check</v-icon>
           {{ $t('translation.understood') }}
         </v-btn>
       </v-card-actions>
