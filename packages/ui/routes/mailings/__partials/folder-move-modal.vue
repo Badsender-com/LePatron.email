@@ -91,6 +91,7 @@ export default {
         activatable
         :items="treeviewLocationItems"
         :open="openNodes"
+        :active="activeNode"
         hoverable
         :dense="true"
         :return-object="true"

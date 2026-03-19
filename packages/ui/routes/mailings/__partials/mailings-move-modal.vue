@@ -89,6 +89,7 @@ export default {
         activatable
         :items="treeviewWorkspacesHasRight"
         :open="openNodes"
+        :active="activeNode"
         hoverable
         :dense="true"
         :return-object="true"

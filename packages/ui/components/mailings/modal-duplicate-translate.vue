@@ -505,7 +505,7 @@ export default {
                       activatable
                       :items="treeviewWorkspacesHasRight"
                       :open="openNodes"
-                      :active="currentLocationId ? [currentLocationId] : []"
+                      :active="activeNode"
                       hoverable
                       dense
                       :return-object="true"

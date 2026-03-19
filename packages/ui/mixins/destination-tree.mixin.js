@@ -14,6 +14,7 @@ export default {
     return {
       selectedLocation: null,
       openNodes: [],
+      activeNode: [],
     };
   },
   computed: {
@@ -191,6 +192,7 @@ export default {
     resetDestination() {
       this.selectedLocation = null;
       this.openNodes = [];
+      this.activeNode = [];
     },
     /**
      * Initialize tree state when modal opens
@@ -200,7 +202,26 @@ export default {
       this.selectedLocation = null;
       this.$nextTick(() => {
         this.updateOpenNodes();
+        this.updateActiveNode();
       });
+    },
+    /**
+     * Set the active (selected) node to the current location
+     */
+    updateActiveNode() {
+      const currentId = this.currentLocationId;
+      if (!currentId || !this.treeviewWorkspacesHasRight?.length) {
+        this.activeNode = [];
+        return;
+      }
+
+      // Find the current location node
+      const currentNode = this.findLocationById(
+        this.treeviewWorkspacesHasRight,
+        currentId
+      );
+
+      this.activeNode = currentNode ? [currentNode] : [];
     },
   },
 };
