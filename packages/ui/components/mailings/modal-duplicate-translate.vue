@@ -3,9 +3,11 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { LANGUAGE_LABELS, getLanguageLabel } from '~/helpers/constants/languages.js';
+import destinationTreeMixin from '~/mixins/destination-tree.mixin';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
+  mixins: [destinationTreeMixin],
   data() {
     return {
       show: false,
@@ -130,6 +132,8 @@ export default {
       this.form.targetLanguage = '';
       this.show = true;
       await this.fetchConfig();
+      // Init tree AFTER fetchConfig completes (treeview is not rendered while loading)
+      this.initDestinationTree();
     },
 
     close() {
@@ -148,6 +152,7 @@ export default {
       this.batchTimes = [];
       this.estimatedTimeRemaining = null;
       this.cancelling = false;
+      this.resetDestination();
     },
 
     startPolling(jobId) {
@@ -330,6 +335,13 @@ export default {
           sourceLanguage: this.form.sourceLanguage,
           targetLanguage: this.form.targetLanguage,
           newName: this.form.newName.trim(),
+          // Destination (optional - defaults to same location)
+          ...(this.selectedLocation?.type === 'workspace' && {
+            workspaceId: this.selectedLocation.id,
+          }),
+          ...(this.selectedLocation?.type === 'folder' && {
+            folderId: this.selectedLocation.id,
+          }),
         };
 
         // Start async translation and get jobId
@@ -477,6 +489,43 @@ export default {
                 outlined
                 dense
               />
+
+              <!-- Destination -->
+              <div class="mt-2">
+                <div class="text-subtitle-2 mb-2">
+                  {{ $t('translation.destination') }}
+                </div>
+                <v-skeleton-loader
+                  type="list-item, list-item"
+                  :loading="areLoadingWorkspaces"
+                >
+                  <div class="destination-tree">
+                    <v-treeview
+                      item-key="id"
+                      activatable
+                      :items="treeviewWorkspacesHasRight"
+                      :open="openNodes"
+                      :active="currentLocationId ? [currentLocationId] : []"
+                      hoverable
+                      dense
+                      :return-object="true"
+                      @update:active="handleSelectDestination"
+                    >
+                      <template #prepend="{ item, open }">
+                        <v-icon v-if="!item.icon" color="accent">
+                          {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                        </v-icon>
+                        <v-icon v-else color="accent">
+                          {{ item.icon }}
+                        </v-icon>
+                      </template>
+                    </v-treeview>
+                  </div>
+                </v-skeleton-loader>
+                <div class="text-caption text--secondary mt-1">
+                  {{ $t('translation.destinationHint') }}
+                </div>
+              </div>
             </template>
           </template>
         </template>
@@ -514,3 +563,16 @@ export default {
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.destination-tree {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.destination-tree .v-treeview-node--active {
+  cursor: pointer;
+}
+</style>

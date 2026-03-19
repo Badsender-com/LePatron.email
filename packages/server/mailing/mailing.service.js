@@ -1031,6 +1031,8 @@ async function duplicateWithTranslatedData({
   user,
   newName,
   translatedData,
+  workspaceId,
+  folderId,
 }) {
   const mailing = await findOne(mailingId);
 
@@ -1069,6 +1071,21 @@ async function duplicateWithTranslatedData({
     copy._user = user._id;
     copy.author = user.name;
   }
+
+  // Handle destination: use provided or keep original location
+  if (folderId) {
+    // Validate access to destination folder
+    await folderService.hasAccess(folderId, user);
+    copy._parentFolder = folderId;
+    delete copy.workspace;
+  } else if (workspaceId) {
+    // Validate access to destination workspace
+    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    copy.workspace = workspaceId;
+    delete copy._parentFolder;
+  }
+  // else: keep original location (existing behavior)
 
   // Create the new mailing
   const copiedMailing = await Mailings.create(copy);

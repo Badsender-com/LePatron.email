@@ -35,7 +35,7 @@ module.exports = {
 async function duplicateAndTranslate(req, res) {
   const { user, params, body } = req;
   const { mailingId } = params;
-  const { targetLanguage, sourceLanguage = 'auto', newName } = body;
+  const { targetLanguage, sourceLanguage = 'auto', newName, workspaceId, folderId } = body;
 
   // Validate required parameters
   if (!targetLanguage || typeof targetLanguage !== 'string') {
@@ -98,6 +98,8 @@ async function duplicateAndTranslate(req, res) {
     newName,
     templateMarkup,
     cookies: req.cookies,
+    workspaceId,
+    folderId,
   });
 }
 
@@ -115,6 +117,8 @@ async function processTranslationAsync({
   newName,
   templateMarkup,
   cookies,
+  workspaceId,
+  folderId,
 }) {
   try {
     // Progress callback to update job status and check for cancellation
@@ -159,6 +163,8 @@ async function processTranslationAsync({
       user,
       newName: translatedName,
       translatedData: translatedData.data,
+      workspaceId,
+      folderId,
     });
 
     // Update job status to generating preview

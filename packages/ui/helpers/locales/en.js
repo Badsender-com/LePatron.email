@@ -376,6 +376,8 @@ export default {
     cancelled: 'Translation cancelled',
     estimatedTime: '~{minutes}min {seconds}s remaining',
     estimatedTimeSeconds: '~{seconds}s remaining',
+    destination: 'Destination',
+    destinationHint: 'Select where to create the translated copy',
   },
   template: {
     noId: 'No ID',

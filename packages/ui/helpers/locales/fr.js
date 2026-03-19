@@ -380,6 +380,8 @@ export default {
     cancelled: 'Traduction annulée',
     estimatedTime: '~{minutes}min {seconds}s restantes',
     estimatedTimeSeconds: '~{seconds}s restantes',
+    destination: 'Destination',
+    destinationHint: 'Sélectionnez où créer la copie traduite',
   },
   template: {
     noId: 'Aucun ID',
