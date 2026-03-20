@@ -140,6 +140,7 @@ export default {
     status: 'Statut',
     createdAt: 'Créé le',
     updatedAt: 'Mis à jour le',
+    comments: 'Commentaires',
     edit: 'Modifier',
     move: 'Déplacer',
     emailsGroups: 'Listes de test',
@@ -349,6 +350,7 @@ export default {
     downloadMailSuccessful: 'L\'email a bien été téléchargé',
     moveManySuccessful: 'Les emails ont bien été déplacés',
     editTagsSuccessful: 'Les labels ont bien été mis à jour',
+    openComments: 'Ouvrir les commentaires',
   },
   template: {
     noId: 'Aucun ID',
@@ -463,5 +465,5 @@ export default {
       'NMS_DELIVERY': 'Livrable',
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
-  }
+  },
 };

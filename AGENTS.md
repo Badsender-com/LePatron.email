@@ -123,6 +123,42 @@ scope: server, ui, editor, etc.
 - Templates in `/src/tmpl-badsender/`
 - Editor locales in `/public/lang/` (badsender-fr.js, badsender-en.js)
 
+## Design System
+
+LePatron.email has a documented design system for UI consistency and white-label support.
+
+### Documentation
+
+| Document                                                                           | Content                                                 |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [docs/design-system/README.md](./docs/design-system/README.md)                     | Design system index                                     |
+| [docs/design-system/01-tokens.md](./docs/design-system/01-tokens.md)               | **Single source of truth**: colors, typography, spacing |
+| [docs/design-system/02-components.md](./docs/design-system/02-components.md)       | Vue App + Editor components                             |
+| [docs/design-system/03-debt-registry.md](./docs/design-system/03-debt-registry.md) | UI debt registry                                        |
+| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md)                                   | UX patterns, accessibility                              |
+| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md)       | Modernization plan (11 phases)                          |
+
+### Key Constraints
+
+**Vue App (`packages/ui/`):**
+
+- Use Vuetify 2.x components (never raw HTML for standard UI)
+- Use Material Design Icons via `v-icon`
+- Use CSS variables for colors (enables white-label)
+- Target font: Work Sans (currently Montserrat)
+
+**Email Editor (`packages/editor/`):**
+
+- Use LESS variables from `style_variables.less`
+- Use CSS variables for theme integration (`--v-primary-base`, etc.)
+- Use jQuery UI widgets and Knockout bindings
+- Use Font Awesome 4.7 icons (`fa fa-*`)
+
+### White-Label Architecture
+
+- **Customizable**: Colors, logo (stored in Group settings)
+- **Fixed**: Component structure, UX patterns, layouts
+
 ## Mongoose Conventions
 
 ### Foreign Keys
@@ -385,6 +421,8 @@ Supported providers in `packages/server/esp/`:
 ---
 
 ## Code Review Guidelines
+
+Before reviewing, run `yarn code:lint` to detect linting warnings and errors, and `yarn code:fix` to auto-fix formatting issues.
 
 When reviewing code, evaluate against these criteria organized by severity.
 

@@ -32,6 +32,10 @@ const userRouter = require('./user/user.routes');
 const imageRouter = require('./image/image.routes');
 const accountRouter = require('./account/account.routes');
 const EmailGroupRouter = require('./emails-group/emails-group.routes');
+const {
+  mailingCommentsRouter,
+  commentsRouter,
+} = require('./comment/comment.routes.js');
 const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
 const {
   updateSessionTracking,
@@ -266,6 +270,8 @@ if (cluster.isMaster) {
   app.use('/api/workspaces', workspaceRouter);
   app.use('/api/personalized-blocks', personalizedBlockRouter);
   app.use('/api/groups', groupRouter);
+  // Comments routes MUST be before mailings routes (mailing has a catch-all)
+  app.use('/api/mailings/:mailingId/comments', mailingCommentsRouter);
   app.use('/api/mailings', mailingRouter);
   app.use('/api/templates', templateRouter);
   app.use('/api/users', userRouter);
@@ -273,6 +279,7 @@ if (cluster.isMaster) {
   app.use('/api/emails-groups', EmailGroupRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
+  app.use('/api/comments', commentsRouter);
 
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');
