@@ -2,7 +2,10 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { LANGUAGE_LABELS, getLanguageLabel } from '~/helpers/constants/languages.js';
+import {
+  LANGUAGE_LABELS,
+  getLanguageLabel,
+} from '~/helpers/constants/languages.js';
 import destinationTreeMixin from '~/mixins/destination-tree.mixin';
 
 export default {
@@ -61,7 +64,9 @@ export default {
     targetLanguageOptions() {
       // Filter out unknown languages, exclude selected source, and sort alphabetically
       return this.config.availableLanguages
-        .filter((lang) => LANGUAGE_LABELS[lang] && lang !== this.form.sourceLanguage)
+        .filter(
+          (lang) => LANGUAGE_LABELS[lang] && lang !== this.form.sourceLanguage
+        )
         .map((lang) => ({
           value: lang,
           text: getLanguageLabel(lang),
@@ -230,12 +235,8 @@ export default {
       const remainingBatches =
         this.progress.totalBatches - this.progress.currentBatch;
 
-      // Add ~10s for Puppeteer preview generation
-      const puppeteerEstimate = 10000;
-
       // Estimation in seconds
-      this.estimatedTimeRemaining =
-        (remainingBatches * avgTimePerBatch + puppeteerEstimate) / 1000;
+      this.estimatedTimeRemaining = (remainingBatches * avgTimePerBatch) / 1000;
     },
 
     handleTranslationComplete() {
