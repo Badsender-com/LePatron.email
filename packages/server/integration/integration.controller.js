@@ -136,8 +136,16 @@ async function readIntegration(req, res) {
 async function updateIntegration(req, res) {
   const { user, params, body } = req;
   const { integrationId } = params;
-  const { name, type, provider, apiKey, apiHost, productId, config, isActive } =
-    body;
+  const {
+    name,
+    type,
+    provider,
+    apiKey,
+    apiHost,
+    productId,
+    config,
+    isActive,
+  } = body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -220,49 +228,36 @@ async function getModels(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration =
-    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
+    {
       user,
       integrationId,
-    });
+    }
+  );
+
+  const provider = ProviderFactory.createProvider(integration);
+  const capabilities = provider.getCapabilities();
 
   try {
-    const provider = ProviderFactory.createProvider(integration);
-
-    // If the provider supports dynamic model listing
+    // If the provider supports live model listing (e.g. fetches from the provider API)
     if (typeof provider.getAvailableModels === 'function') {
       const models = await provider.getAvailableModels();
-      return res.json({ models, dynamic: true });
+      return res.json({ models, dynamic: true, capabilities });
     }
 
-    // Otherwise return static models for the provider
-    const staticModels = getStaticModelsForProvider(integration.provider);
-    return res.json({ models: staticModels, dynamic: false });
+    // Otherwise delegate to the provider's own static list
+    const staticModels = provider.getStaticModels();
+    return res.json({ models: staticModels, dynamic: false, capabilities });
   } catch (error) {
     console.error('Error fetching models:', error.message);
-    // Fallback to static models on error
-    const staticModels = getStaticModelsForProvider(integration.provider);
-    return res.json({ models: staticModels, dynamic: false, error: error.message });
+    // Return empty model list but preserve capabilities so the UI stays coherent
+    return res.json({
+      models: [],
+      dynamic: false,
+      capabilities,
+      error: error.message,
+    });
   }
-}
-
-/**
- * Get static model list for providers that don't support dynamic listing
- */
-function getStaticModelsForProvider(provider) {
-  const STATIC_MODELS = {
-    openai: [
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini (fast, economical)' },
-      { id: 'gpt-4o', name: 'GPT-4o (balanced)' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (powerful)' },
-    ],
-    mistral: [
-      { id: 'mistral-small-latest', name: 'Mistral Small (fast)' },
-      { id: 'mistral-medium-latest', name: 'Mistral Medium (balanced)' },
-      { id: 'mistral-large-latest', name: 'Mistral Large (powerful)' },
-    ],
-  };
-  return STATIC_MODELS[provider] || [];
 }
 
 /**

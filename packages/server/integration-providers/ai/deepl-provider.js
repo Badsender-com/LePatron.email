@@ -67,6 +67,16 @@ class DeepLProvider extends BaseProvider {
   }
 
   /**
+   * DeepL supports formality but not model selection.
+   */
+  getCapabilities() {
+    return {
+      supportsModelSelection: false,
+      supportsFormality: true,
+    };
+  }
+
+  /**
    * DeepL doesn't have models to list
    */
   async getAvailableModels() {
