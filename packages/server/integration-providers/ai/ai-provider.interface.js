@@ -40,6 +40,18 @@ class AIProviderInterface extends BaseProvider {
   getDefaultTranslationModel() {
     throw new Error('Method getDefaultTranslationModel() must be implemented');
   }
+
+  /**
+   * Get provider capabilities for the frontend.
+   * Controls which UI options are shown (model selector, formality selector, etc.)
+   * @returns {{ supportsModelSelection: boolean, supportsFormality: boolean }}
+   */
+  getCapabilities() {
+    return {
+      supportsModelSelection: false,
+      supportsFormality: false,
+    };
+  }
 }
 
 module.exports = AIProviderInterface;

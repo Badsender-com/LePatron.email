@@ -4,27 +4,19 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 
-// Fallback static models by provider (used when dynamic fetch fails)
-const FALLBACK_MODEL_OPTIONS = {
-  openai: [
-    { value: 'gpt-4o-mini', text: 'GPT-4o Mini (fast, economical)' },
-    { value: 'gpt-4o', text: 'GPT-4o (balanced)' },
-    { value: 'gpt-4-turbo', text: 'GPT-4 Turbo (powerful)' },
-  ],
-  mistral: [
-    { value: 'mistral-small-latest', text: 'Mistral Small (fast)' },
-    { value: 'mistral-medium-latest', text: 'Mistral Medium (balanced)' },
-    { value: 'mistral-large-latest', text: 'Mistral Large (powerful)' },
-  ],
-};
-
 // DeepL formality options
 const DEEPL_FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
   { value: 'more', textKey: 'aiFeatures.translation.formalityMore' },
   { value: 'less', textKey: 'aiFeatures.translation.formalityLess' },
-  { value: 'prefer_more', textKey: 'aiFeatures.translation.formalityPreferMore' },
-  { value: 'prefer_less', textKey: 'aiFeatures.translation.formalityPreferLess' },
+  {
+    value: 'prefer_more',
+    textKey: 'aiFeatures.translation.formalityPreferMore',
+  },
+  {
+    value: 'prefer_less',
+    textKey: 'aiFeatures.translation.formalityPreferLess',
+  },
 ];
 
 export default {
@@ -39,6 +31,7 @@ export default {
       languageOptions: LANGUAGE_OPTIONS,
       dynamicModels: [], // Models fetched from API
       modelsDynamic: false, // Whether models were fetched dynamically
+      capabilities: null, // Provider capabilities from API
     };
   },
   computed: {
@@ -89,16 +82,13 @@ export default {
       const integration = this.translationFeature?.integration;
       return integration && integration.isActive;
     },
-    selectedIntegrationProvider() {
-      const integrationId = this.selectedIntegrationId;
-      if (!integrationId) return null;
-      const integration = this.integrations.find(
-        (i) => i._id === integrationId
-      );
-      return integration ? integration.provider : null;
+    supportsModelSelection() {
+      return this.capabilities
+        ? this.capabilities.supportsModelSelection
+        : false;
     },
-    isDeepLProvider() {
-      return this.selectedIntegrationProvider === 'deepl';
+    supportsFormality() {
+      return this.capabilities ? this.capabilities.supportsFormality : false;
     },
     formalityOptions() {
       return DEEPL_FORMALITY_OPTIONS.map((opt) => ({
@@ -107,17 +97,11 @@ export default {
       }));
     },
     modelOptions() {
-      // Use dynamic models if available
-      if (this.dynamicModels.length > 0) {
-        return this.dynamicModels.map((m) => ({
-          value: m.id,
-          text: m.name || m.id,
-        }));
-      }
-      // Fallback to static models
-      const provider = this.selectedIntegrationProvider;
-      if (!provider || !FALLBACK_MODEL_OPTIONS[provider]) return [];
-      return FALLBACK_MODEL_OPTIONS[provider];
+      // Dynamic models (from API) or static fallback (also from API via getStaticModels)
+      return this.dynamicModels.map((m) => ({
+        value: m.id,
+        text: m.name || m.id,
+      }));
     },
     selectedModel: {
       get() {
@@ -149,6 +133,7 @@ export default {
         } else {
           this.dynamicModels = [];
           this.modelsDynamic = false;
+          this.capabilities = null;
         }
       },
     },
@@ -216,6 +201,7 @@ export default {
       if (!integrationId) {
         this.dynamicModels = [];
         this.modelsDynamic = false;
+        this.capabilities = null;
         return;
       }
       try {
@@ -225,11 +211,12 @@ export default {
         );
         this.dynamicModels = response.models || [];
         this.modelsDynamic = response.dynamic || false;
+        this.capabilities = response.capabilities || null;
       } catch (error) {
         console.error('Failed to load models:', error);
-        // Fall back to static models
         this.dynamicModels = [];
         this.modelsDynamic = false;
+        this.capabilities = null;
       } finally {
         this.loadingModels = false;
       }
@@ -301,7 +288,10 @@ export default {
 
             <!-- Model Selection (for LLM providers) -->
             <v-select
-              v-if="!isDeepLProvider && (modelOptions.length > 0 || loadingModels)"
+              v-if="
+                supportsModelSelection &&
+                  (modelOptions.length > 0 || loadingModels)
+              "
               v-model="selectedModel"
               :items="modelOptions"
               :label="$t('aiFeatures.translation.model')"
@@ -314,9 +304,9 @@ export default {
               persistent-hint
             />
 
-            <!-- Formality Selection (for DeepL only) -->
+            <!-- Formality Selection (for providers that support it) -->
             <v-select
-              v-if="isDeepLProvider"
+              v-if="supportsFormality"
               v-model="selectedFormality"
               :items="formalityOptions"
               :label="$t('aiFeatures.translation.formality')"

@@ -1,0 +1,284 @@
+'use strict';
+
+const fetch = require('node-fetch');
+const AbortController = require('abort-controller');
+const AIProviderInterface = require('./ai-provider.interface');
+
+/**
+ * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
+ * All three share the same OpenAI-compatible chat completions API contract.
+ *
+ * Subclasses must implement:
+ *   - constructor: set this.baseUrl
+ *   - validateCredentials()
+ *   - _getDefaultModel() → string
+ *
+ * Subclasses may override:
+ *   - _getChatCompletionsUrl() — for providers with non-standard endpoint paths
+ *   - _supportsResponseFormat() → bool  — false for providers that ignore response_format
+ *   - _getMaxTokens() → number          — provider token limit
+ *   - _buildTranslationPrompt()         — for provider-specific prompt tuning
+ *   - _getSystemPrompt()                — for provider-specific system prompt
+ *   - getStaticModels()                 — static fallback model list
+ */
+class BaseLLMProvider extends AIProviderInterface {
+  /**
+   * Get provider capabilities for the frontend.
+   * LLM providers support model selection; they do not support formality.
+   */
+  getCapabilities() {
+    return {
+      supportsModelSelection: true,
+      supportsFormality: false,
+    };
+  }
+
+  /**
+   * Static fallback models shown when dynamic listing fails.
+   * Subclasses with a well-known model list should override this.
+   */
+  getStaticModels() {
+    return [];
+  }
+
+  /**
+   * Get the model to use for translation.
+   * Reads from integration config first, falls back to the provider default.
+   */
+  getDefaultTranslationModel() {
+    return this.config.model || this._getDefaultModel();
+  }
+
+  // ─── hooks ────────────────────────────────────────────────────────────────
+
+  /** @abstract */
+  _getDefaultModel() {
+    throw new Error('_getDefaultModel() must be implemented by subclass');
+  }
+
+  /** URL for the chat completions endpoint. Override for non-standard paths. */
+  _getChatCompletionsUrl() {
+    return `${this.baseUrl}/v1/chat/completions`;
+  }
+
+  /** Whether the provider accepts the response_format parameter. */
+  _supportsResponseFormat() {
+    return true;
+  }
+
+  /** Maximum tokens to request. */
+  _getMaxTokens() {
+    return 16000;
+  }
+
+  // ─── translation ──────────────────────────────────────────────────────────
+
+  async translateBatch({ texts, sourceLanguage, targetLanguage }) {
+    const model = this.getDefaultTranslationModel();
+    const sourceDesc =
+      sourceLanguage === 'auto' ? 'the original language' : sourceLanguage;
+
+    const prompt = this._buildTranslationPrompt({
+      texts,
+      sourceDesc,
+      targetLanguage,
+    });
+
+    const completionOptions = {
+      model,
+      messages: [
+        { role: 'system', content: this._getSystemPrompt() },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.3,
+    };
+
+    if (this._supportsResponseFormat()) {
+      completionOptions.response_format = { type: 'json_object' };
+    }
+
+    const response = await this._callChatCompletion(completionOptions);
+    return this._parseTranslationResponse(response);
+  }
+
+  async translateText({ text, sourceLanguage, targetLanguage }) {
+    const result = await this.translateBatch({
+      texts: { text },
+      sourceLanguage,
+      targetLanguage,
+    });
+    return result.text;
+  }
+
+  // ─── prompt building ──────────────────────────────────────────────────────
+
+  _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {
+    const inputJson = JSON.stringify(texts, null, 2);
+    console.log(
+      'Translation input - keys count:',
+      Object.keys(texts).length,
+      '- size:',
+      inputJson.length,
+      'chars'
+    );
+
+    return `Translate the following JSON object values from ${sourceDesc} to ${targetLanguage}.
+
+IMPORTANT RULES:
+1. Return ONLY a valid JSON object with the exact same keys
+2. Translate only the values, never the keys
+3. Preserve all dynamic variables exactly as they are:
+   - %%VARIABLE%%, {{variable}}, <%=variable%>, @[variable]
+4. Do not translate URLs or email addresses
+5. Do not add any explanation, comments or markdown - just the JSON object
+
+INPUT JSON:
+${inputJson}
+
+OUTPUT (valid JSON only):`;
+  }
+
+  _getSystemPrompt() {
+    return 'You are a JSON translation API. You receive a JSON object and return the same JSON object with translated values. You MUST return valid JSON only, no markdown, no explanation. Keep the exact same structure and keys.';
+  }
+
+  // ─── API call ─────────────────────────────────────────────────────────────
+
+  // eslint-disable-next-line camelcase
+  async _callChatCompletion({ model, messages, temperature, responseFormat }) {
+    const providerName = this.getProviderType();
+    console.log(
+      `Calling ${providerName} API with model:`,
+      model,
+      'at',
+      this.baseUrl
+    );
+
+    const TIMEOUT_MS = 300000; // 5 minutes
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    const startTime = Date.now();
+
+    try {
+      const requestBody = {
+        model,
+        messages,
+        temperature,
+        max_tokens: this._getMaxTokens(),
+      };
+
+      if (responseFormat) {
+        requestBody.response_format = responseFormat;
+      }
+
+      const response = await fetch(this._getChatCompletionsUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage =
+            (errorData.error && errorData.error.message) ||
+            errorData.message ||
+            (errorData.result && errorData.result.message) ||
+            'Unknown error';
+        } catch {
+          errorMessage = errorText || 'Unknown error';
+        }
+        console.error(
+          `${providerName} API error:`,
+          response.status,
+          errorMessage
+        );
+        throw new Error(
+          `${providerName} API error: ${response.status} - ${errorMessage}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error(
+          `Invalid ${providerName} response structure:`,
+          JSON.stringify(data).substring(0, 500)
+        );
+        throw new Error(`Invalid response structure from ${providerName}`);
+      }
+
+      const content = data.choices[0].message.content;
+      const usage = data.usage || {};
+      console.log(
+        `${providerName} response received in ${elapsed}s - length: ${
+          content ? content.length : 0
+        } chars, tokens: ${usage.total_tokens || 'N/A'}`
+      );
+
+      return content;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      if (error.name === 'AbortError') {
+        console.error(
+          `${providerName} API timeout after ${elapsed}s (limit: ${
+            TIMEOUT_MS / 1000
+          }s)`
+        );
+        throw new Error(
+          `${providerName} API timeout - the request took too long.`
+        );
+      }
+      throw error;
+    }
+  }
+
+  // ─── response parsing ─────────────────────────────────────────────────────
+
+  _parseTranslationResponse(responseContent) {
+    const providerName = this.getProviderType();
+    try {
+      if (!responseContent) {
+        console.error(`${providerName} returned empty response`);
+        throw new Error(`Empty response from ${providerName}`);
+      }
+
+      console.log(
+        `${providerName} raw response (first 500 chars):`,
+        responseContent.substring(0, 500)
+      );
+
+      let cleanedContent = responseContent.trim();
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.slice(7);
+      } else if (cleanedContent.startsWith('```')) {
+        cleanedContent = cleanedContent.slice(3);
+      }
+      if (cleanedContent.endsWith('```')) {
+        cleanedContent = cleanedContent.slice(0, -3);
+      }
+      cleanedContent = cleanedContent.trim();
+
+      return JSON.parse(cleanedContent);
+    } catch (error) {
+      console.error(
+        `Failed to parse ${providerName} response:`,
+        responseContent
+      );
+      throw new Error(`Failed to parse translation response: ${error.message}`);
+    }
+  }
+}
+
+module.exports = BaseLLMProvider;
