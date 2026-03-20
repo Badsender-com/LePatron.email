@@ -4,7 +4,7 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
-const previewGenerator = require('../mailing/preview-generator.service');
+const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Mailings, Templates } = require('../common/models.common');
@@ -35,7 +35,13 @@ module.exports = {
 async function duplicateAndTranslate(req, res) {
   const { user, params, body } = req;
   const { mailingId } = params;
-  const { targetLanguage, sourceLanguage = 'auto', newName, workspaceId, folderId } = body;
+  const {
+    targetLanguage,
+    sourceLanguage = 'auto',
+    newName,
+    workspaceId,
+    folderId,
+  } = body;
 
   // Validate required parameters
   if (!targetLanguage || typeof targetLanguage !== 'string') {
@@ -97,7 +103,6 @@ async function duplicateAndTranslate(req, res) {
     targetLanguage,
     newName,
     templateMarkup,
-    cookies: req.cookies,
     workspaceId,
     folderId,
   });
@@ -116,7 +121,6 @@ async function processTranslationAsync({
   targetLanguage,
   newName,
   templateMarkup,
-  cookies,
   workspaceId,
   folderId,
 }) {
@@ -140,6 +144,8 @@ async function processTranslationAsync({
     const {
       mailing: translatedData,
       stats,
+      originalTexts,
+      translations,
     } = await translationService.translateMailing({
       groupId,
       mailing: {
@@ -170,25 +176,28 @@ async function processTranslationAsync({
     // Update job status to generating preview
     translationJobs.setGeneratingPreview(jobId);
 
-    // Regenerate previewHtml via Puppeteer
     let previewGenerated = false;
-    try {
+    if (originalMailing.previewHtml) {
+      try {
+        logger.log(
+          '[Translation] Updating preview HTML via string replacement...'
+        );
+        const previewHtml = updatePreviewWithTranslations(
+          originalMailing.previewHtml,
+          originalTexts,
+          translations
+        );
+        await Mailings.findByIdAndUpdate(duplicatedMailing._id, {
+          previewHtml,
+        });
+        previewGenerated = true;
+        logger.log('[Translation] Preview HTML updated successfully');
+      } catch (error) {
+        logger.error(`[Translation] Preview update failed: ${error.message}`);
+      }
+    } else {
       logger.log(
-        `[Translation] Regenerating preview for mailing ${duplicatedMailing._id}...`
-      );
-      const previewHtml = await previewGenerator.generatePreviewHtml({
-        mailingId: duplicatedMailing._id.toString(),
-        cookies,
-      });
-
-      // Save the new previewHtml
-      await Mailings.findByIdAndUpdate(duplicatedMailing._id, { previewHtml });
-      previewGenerated = true;
-      logger.log('[Translation] Preview regenerated successfully');
-    } catch (error) {
-      // Don't fail the translation if preview generation fails
-      logger.error(
-        `[Translation] Preview generation failed: ${error.message}`
+        '[Translation] No previewHtml on original mailing, skipping preview update'
       );
     }
 

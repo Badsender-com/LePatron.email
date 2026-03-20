@@ -14,9 +14,7 @@ const {
   injectTexts,
   validateTranslations,
 } = require('./mosaico-text-injector.js');
-const {
-  parseProtectionConfig,
-} = require('./template-protection-parser.js');
+const { parseProtectionConfig } = require('./template-protection-parser.js');
 const {
   splitIntoBatches,
   translateInBatches,
@@ -117,6 +115,8 @@ async function translateMailing({
         fieldsTranslated: 0,
         charactersTranslated: 0,
       },
+      originalTexts: textsToTranslate,
+      translations: {},
     };
   }
 
@@ -164,9 +164,6 @@ async function translateMailing({
     translations
   );
 
-  // Note: previewHtml will be regenerated via Puppeteer after the mailing is saved
-  // This is done in translation.controller.js to ensure data is persisted first
-
   return {
     mailing: translatedMailing,
     stats: {
@@ -176,6 +173,8 @@ async function translateMailing({
       fieldsInjected: injectionStats.injected,
       failedInjections: injectionStats.failed,
     },
+    originalTexts: textsToTranslate,
+    translations,
   };
 }
 
