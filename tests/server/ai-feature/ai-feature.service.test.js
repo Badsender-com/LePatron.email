@@ -3,7 +3,7 @@
 const { Types } = require('mongoose');
 
 // Mock dependencies before requiring the service
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   AIFeatureConfigs: {
     create: jest.fn(),
     findOne: jest.fn(),
@@ -15,13 +15,16 @@ jest.mock('../common/models.common', () => ({
   },
 }));
 
-jest.mock('../group/group.service', () => ({
+jest.mock('../../../packages/server/group/group.service', () => ({
   findById: jest.fn(),
 }));
 
-const aiFeatureService = require('./ai-feature.service');
-const { AIFeatureConfigs, Integrations } = require('../common/models.common');
-const groupService = require('../group/group.service');
+const aiFeatureService = require('../../../packages/server/ai-feature/ai-feature.service');
+const {
+  AIFeatureConfigs,
+  Integrations,
+} = require('../../../packages/server/common/models.common');
+const groupService = require('../../../packages/server/group/group.service');
 
 describe('AIFeatureService', () => {
   const mockGroupId = new Types.ObjectId().toString();

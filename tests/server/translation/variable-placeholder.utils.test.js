@@ -6,7 +6,7 @@ const {
   containsVariables,
   PLACEHOLDER_PREFIX,
   PLACEHOLDER_SUFFIX,
-} = require('./variable-placeholder.utils.js');
+} = require('../../../packages/server/translation/variable-placeholder.utils.js');
 
 describe('Variable Placeholder Utils', () => {
   describe('protectVariables', () => {
@@ -16,8 +16,12 @@ describe('Variable Placeholder Utils', () => {
 
       expect(protectedText).not.toContain('%%FIRSTNAME%%');
       expect(protectedText).not.toContain('%%COMPANY%%');
-      expect(protectedText).toContain(`${PLACEHOLDER_PREFIX}0${PLACEHOLDER_SUFFIX}`);
-      expect(protectedText).toContain(`${PLACEHOLDER_PREFIX}1${PLACEHOLDER_SUFFIX}`);
+      expect(protectedText).toContain(
+        `${PLACEHOLDER_PREFIX}0${PLACEHOLDER_SUFFIX}`
+      );
+      expect(protectedText).toContain(
+        `${PLACEHOLDER_PREFIX}1${PLACEHOLDER_SUFFIX}`
+      );
       expect(Object.keys(placeholderMap)).toHaveLength(2);
     });
 
@@ -40,7 +44,8 @@ describe('Variable Placeholder Utils', () => {
     });
 
     it('should protect badsender tags', () => {
-      const text = 'Click here to <badsender-unsubscribe>unsubscribe</badsender-unsubscribe>';
+      const text =
+        'Click here to <badsender-unsubscribe>unsubscribe</badsender-unsubscribe>';
       const { protectedText, placeholderMap } = protectVariables(text);
 
       expect(protectedText).not.toContain('<badsender-unsubscribe>');
@@ -74,9 +79,18 @@ describe('Variable Placeholder Utils', () => {
     });
 
     it('should handle null/undefined input', () => {
-      expect(protectVariables(null)).toEqual({ protectedText: '', placeholderMap: {} });
-      expect(protectVariables(undefined)).toEqual({ protectedText: '', placeholderMap: {} });
-      expect(protectVariables('')).toEqual({ protectedText: '', placeholderMap: {} });
+      expect(protectVariables(null)).toEqual({
+        protectedText: '',
+        placeholderMap: {},
+      });
+      expect(protectVariables(undefined)).toEqual({
+        protectedText: '',
+        placeholderMap: {},
+      });
+      expect(protectVariables('')).toEqual({
+        protectedText: '',
+        placeholderMap: {},
+      });
     });
 
     it('should handle Handlebars block helpers', () => {
@@ -95,7 +109,9 @@ describe('Variable Placeholder Utils', () => {
       const { protectedText, placeholderMap } = protectVariables(original);
 
       // Simulate translation (text changes but placeholders remain)
-      const translated = protectedText.replace('Hello', 'Bonjour').replace('welcome', 'bienvenue');
+      const translated = protectedText
+        .replace('Hello', 'Bonjour')
+        .replace('welcome', 'bienvenue');
       const restored = restoreVariables(translated, placeholderMap);
 
       expect(restored).toContain('%%FIRSTNAME%%');

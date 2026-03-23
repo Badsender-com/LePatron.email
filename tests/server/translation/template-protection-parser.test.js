@@ -3,7 +3,7 @@
 const {
   parseProtectionConfig,
   isFieldProtected,
-} = require('./template-protection-parser');
+} = require('../../../packages/server/translation/template-protection-parser');
 
 describe('Template Protection Parser', () => {
   describe('parseProtectionConfig', () => {
