@@ -1,6 +1,6 @@
 'use strict';
 
-const DeepLProvider = require('./deepl-provider');
+const DeepLProvider = require('../../../../packages/server/integration-providers/ai/deepl-provider');
 
 // Mock deepl-node
 jest.mock('deepl-node', () => {
@@ -26,19 +26,22 @@ jest.mock('deepl-node', () => {
 });
 
 // Mock variable-placeholder utils
-jest.mock('../../translation/variable-placeholder.utils.js', () => ({
-  protectVariables: jest.fn((text) => ({
-    protectedText: text,
-    placeholderMap: {},
-  })),
-  restoreVariables: jest.fn((text) => text),
-}));
+jest.mock(
+  '../../../../packages/server/translation/variable-placeholder.utils.js',
+  () => ({
+    protectVariables: jest.fn((text) => ({
+      protectedText: text,
+      placeholderMap: {},
+    })),
+    restoreVariables: jest.fn((text) => text),
+  })
+);
 
 const deepl = require('deepl-node');
 const {
   protectVariables,
   restoreVariables,
-} = require('../../translation/variable-placeholder.utils.js');
+} = require('../../../../packages/server/translation/variable-placeholder.utils.js');
 
 describe('DeepLProvider', () => {
   let provider;

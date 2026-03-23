@@ -17,8 +17,14 @@ function updatePreviewWithTranslations(
   originalTexts,
   translations
 ) {
-  if (!previewHtml || typeof previewHtml !== 'string') return previewHtml;
-  if (!originalTexts || !translations) return previewHtml;
+  if (
+    !previewHtml ||
+    typeof previewHtml !== 'string' ||
+    !originalTexts ||
+    !translations
+  ) {
+    return previewHtml;
+  }
 
   let html = previewHtml;
 

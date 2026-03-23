@@ -5,7 +5,7 @@ const {
   validateTranslations,
   setByPath,
   deepClone,
-} = require('./mosaico-text-injector');
+} = require('../../../packages/server/translation/mosaico-text-injector');
 
 describe('MosaicoTextInjector', () => {
   describe('setByPath', () => {

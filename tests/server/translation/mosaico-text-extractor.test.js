@@ -5,7 +5,7 @@ const {
   getExtractionStats,
   isTranslatableFieldName,
   isTranslatableValue,
-} = require('./mosaico-text-extractor');
+} = require('../../../packages/server/translation/mosaico-text-extractor');
 
 describe('MosaicoTextExtractor', () => {
   describe('isTranslatableFieldName', () => {

@@ -1,17 +1,20 @@
 'use strict';
 
 // Mock dependencies before requiring the service
-jest.mock('../ai-feature/ai-feature.service', () => ({
+jest.mock('../../../packages/server/ai-feature/ai-feature.service', () => ({
   getActiveFeatureWithIntegration: jest.fn(),
 }));
 
-jest.mock('../integration-providers/provider-factory', () => ({
-  createProvider: jest.fn(),
-}));
+jest.mock(
+  '../../../packages/server/integration-providers/provider-factory',
+  () => ({
+    createProvider: jest.fn(),
+  })
+);
 
-const translationService = require('./translation.service');
-const aiFeatureService = require('../ai-feature/ai-feature.service');
-const ProviderFactory = require('../integration-providers/provider-factory');
+const translationService = require('../../../packages/server/translation/translation.service');
+const aiFeatureService = require('../../../packages/server/ai-feature/ai-feature.service');
+const ProviderFactory = require('../../../packages/server/integration-providers/provider-factory');
 
 describe('TranslationService', () => {
   beforeEach(() => {
@@ -109,7 +112,7 @@ describe('TranslationService', () => {
           sourceLanguage: 'fr',
           targetLanguage: 'zh', // Chinese not in available languages
         })
-      ).rejects.toThrow('Target language \'zh\' is not configured');
+      ).rejects.toThrow('TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED');
     });
 
     it('should return original mailing when no text to translate', async () => {
