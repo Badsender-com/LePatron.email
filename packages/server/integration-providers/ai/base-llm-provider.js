@@ -259,16 +259,14 @@ OUTPUT (valid JSON only):`;
         responseContent.substring(0, 500)
       );
 
-      let cleanedContent = responseContent.trim();
-      if (cleanedContent.startsWith('```json')) {
-        cleanedContent = cleanedContent.slice(7);
-      } else if (cleanedContent.startsWith('```')) {
-        cleanedContent = cleanedContent.slice(3);
-      }
-      if (cleanedContent.endsWith('```')) {
-        cleanedContent = cleanedContent.slice(0, -3);
-      }
-      cleanedContent = cleanedContent.trim();
+      // Extract JSON from markdown code fences if present (e.g. ```json ... ```)
+      const codeFenceMatch = responseContent.match(
+        /```(?:json)?\s*\n?([\s\S]*?)```/i
+      );
+      const cleanedContent = (codeFenceMatch
+        ? codeFenceMatch[1]
+        : responseContent
+      ).trim();
 
       return JSON.parse(cleanedContent);
     } catch (error) {
