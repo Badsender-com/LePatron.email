@@ -1,7 +1,7 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import destinationTreeMixin from '~/mixins/destination-tree.mixin';
+import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 
 export default {
   name: 'MailingsMoveModal',

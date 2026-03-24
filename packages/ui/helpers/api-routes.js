@@ -344,10 +344,6 @@ export function translationText() {
   return '/translation/text';
 }
 
-export function translationDetectLanguage(mailingId) {
-  return `/translation/detect-language/${mailingId}`;
-}
-
 export function mailingDuplicateTranslate(mailingId) {
   return `/mailings/${mailingId}/duplicate-translate`;
 }

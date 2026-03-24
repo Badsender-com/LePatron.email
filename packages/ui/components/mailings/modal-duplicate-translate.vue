@@ -6,7 +6,7 @@ import {
   LANGUAGE_LABELS,
   getLanguageLabel,
 } from '~/helpers/constants/languages.js';
-import destinationTreeMixin from '~/mixins/destination-tree.mixin';
+import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',

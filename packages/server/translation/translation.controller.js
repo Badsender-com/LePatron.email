@@ -16,7 +16,6 @@ module.exports = {
   cancelJob: asyncHandler(cancelJob),
   translateText: asyncHandler(translateText),
   getLanguages: asyncHandler(getLanguages),
-  detectLanguage: asyncHandler(detectLanguage),
 };
 
 /**
@@ -334,26 +333,4 @@ async function getLanguages(req, res) {
   });
 
   res.json(languageConfig);
-}
-
-/**
- * @api {get} /translation/detect-language/:mailingId Detect source language of a mailing
- * @apiPermission user
- * @apiName DetectLanguage
- * @apiGroup Translation
- *
- * @apiParam {String} mailingId Mailing ID
- */
-async function detectLanguage(req, res) {
-  const { params } = req;
-  const { mailingId } = params;
-
-  const mailing = await mailingService.findOne(mailingId);
-  const detectedLanguage = translationService.detectSourceLanguage(mailing);
-
-  res.json({
-    mailingId,
-    detectedLanguage,
-    isAutoDetected: detectedLanguage === 'auto',
-  });
 }

@@ -4,7 +4,7 @@ import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { mapState } from 'vuex';
 import { FOLDER } from '~/store/folder';
-import destinationTreeMixin from '~/mixins/destination-tree.mixin';
+import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 
 export default {
   name: 'FolderMoveModal',
