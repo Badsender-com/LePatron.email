@@ -6224,7 +6224,7 @@ deep-is@^0.1.3, deep-is@~0.1.3:
   resolved "https://registry.npmjs.org/deep-is/-/deep-is-0.1.4.tgz"
   integrity sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==
 
-deepl-node@^1.24.0:
+deepl-node@1.24.0:
   version "1.24.0"
   resolved "https://registry.yarnpkg.com/deepl-node/-/deepl-node-1.24.0.tgz#280983702c70c43fff3b319a121f04709ae5a4ff"
   integrity sha512-vZ9jUpzJRvFamgVOfm1LDy3YYJ7k8FhxtAX9whR92EFshLIP9JlYS0HFwXL5yYsfqzXdb/wssGRSWvR48t7nSg==

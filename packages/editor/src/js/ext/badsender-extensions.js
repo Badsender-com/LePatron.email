@@ -87,10 +87,12 @@ function extendViewModel(opts, customExtensions) {
   // we need to expose the eventHub to knockout
   // • we will dispatch some events from the knockout templates
   customExtensions.push(badsenderEventsHub.exposeToKnockout);
-  // Expose viewModel globally for server-side integrations and tooling
-  customExtensions.push(function exposeViewModel(vm) {
-    window.viewModel = vm;
-  });
+  // expose view-model on dev only
+  if (process.env.NODE_ENV === `development`) {
+    customExtensions.push(function exposeViewModel(vm) {
+      window._viewModel = vm;
+    });
+  }
 }
 
 //////
