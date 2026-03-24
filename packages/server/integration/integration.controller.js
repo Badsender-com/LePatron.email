@@ -6,6 +6,7 @@ const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
+const logger = require('../utils/logger.js');
 
 module.exports = {
   createIntegration: asyncHandler(createIntegration),
@@ -249,7 +250,7 @@ async function getModels(req, res) {
     const staticModels = provider.getStaticModels();
     return res.json({ models: staticModels, dynamic: false, capabilities });
   } catch (error) {
-    console.error('Error fetching models:', error.message);
+    logger.error('Error fetching models:', error.message);
     // Return empty model list but preserve capabilities so the UI stays coherent
     return res.json({
       models: [],

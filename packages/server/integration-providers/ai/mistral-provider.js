@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
+const logger = require('../../utils/logger.js');
 
 const DEFAULT_MODEL = 'mistral-small-latest';
 const DEFAULT_API_HOST = 'https://api.mistral.ai';
@@ -42,14 +43,14 @@ class MistralProvider extends BaseLLMProvider {
 
       return response.ok;
     } catch (error) {
-      console.error('Mistral validation error:', error.message);
+      logger.error('Mistral validation error:', error.message);
       return false;
     }
   }
 
   _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {
     const inputJson = JSON.stringify(texts, null, 2);
-    console.log(
+    logger.log(
       'Translation input - keys count:',
       Object.keys(texts).length,
       '- size:',

@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
+const logger = require('../../utils/logger.js');
 
 const DEFAULT_MODEL = 'mixtral';
 const API_BASE = 'https://api.infomaniak.com';
@@ -69,7 +70,7 @@ class InfomaniakProvider extends BaseLLMProvider {
 
       return response.ok;
     } catch (error) {
-      console.error('Infomaniak validation error:', error.message);
+      logger.error('Infomaniak validation error:', error.message);
       return false;
     }
   }

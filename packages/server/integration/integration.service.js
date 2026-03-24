@@ -8,6 +8,7 @@ const {
   InternalServerError,
   Unauthorized,
 } = require('http-errors');
+const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
@@ -113,7 +114,11 @@ async function updateIntegration({
   if (isActive !== undefined) updateData.isActive = isActive;
 
   // Reset validation status if credentials changed
-  if (apiKey !== undefined || apiHost !== undefined || productId !== undefined) {
+  if (
+    apiKey !== undefined ||
+    apiHost !== undefined ||
+    productId !== undefined
+  ) {
     updateData.validationStatus = 'pending';
     updateData.lastValidatedAt = null;
   }
@@ -200,7 +205,7 @@ async function validateCredentials({ integrationId }) {
     const provider = ProviderFactory.createProvider(integration);
     isValid = await provider.validateCredentials();
   } catch (error) {
-    console.error('Validation error:', error.message);
+    logger.error('Validation error:', error.message);
     isValid = false;
   }
 

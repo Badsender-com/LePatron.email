@@ -85,7 +85,9 @@ describe('ProviderFactory', () => {
     });
 
     it('should return false for unsupported provider', () => {
-      expect(ProviderFactory.isProviderSupported('deepl')).toBe(false);
+      expect(ProviderFactory.isProviderSupported('unknown-provider')).toBe(
+        false
+      );
     });
   });
 
@@ -96,7 +98,8 @@ describe('ProviderFactory', () => {
       expect(providers).toContain(IntegrationProviders.OPENAI);
       expect(providers).toContain(IntegrationProviders.MISTRAL);
       expect(providers).toContain(IntegrationProviders.INFOMANIAK);
-      expect(providers.length).toBe(3);
+      expect(providers).toContain(IntegrationProviders.DEEPL);
+      expect(providers.length).toBe(4);
     });
   });
 });

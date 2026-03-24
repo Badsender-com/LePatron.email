@@ -3,6 +3,7 @@
 const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
+const logger = require('../../utils/logger.js');
 
 /**
  * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
@@ -94,7 +95,7 @@ class BaseLLMProvider extends AIProviderInterface {
     };
 
     if (this._supportsResponseFormat()) {
-      completionOptions.response_format = { type: 'json_object' };
+      completionOptions.responseFormat = { type: 'json_object' };
     }
 
     const response = await this._callChatCompletion(completionOptions);
@@ -114,7 +115,7 @@ class BaseLLMProvider extends AIProviderInterface {
 
   _buildTranslationPrompt({ texts, sourceDesc, targetLanguage }) {
     const inputJson = JSON.stringify(texts, null, 2);
-    console.log(
+    logger.log(
       'Translation input - keys count:',
       Object.keys(texts).length,
       '- size:',
@@ -147,7 +148,7 @@ OUTPUT (valid JSON only):`;
   // eslint-disable-next-line camelcase
   async _callChatCompletion({ model, messages, temperature, responseFormat }) {
     const providerName = this.getProviderType();
-    console.log(
+    logger.log(
       `Calling ${providerName} API with model:`,
       model,
       'at',
@@ -198,7 +199,7 @@ OUTPUT (valid JSON only):`;
         } catch {
           errorMessage = errorText || 'Unknown error';
         }
-        console.error(
+        logger.error(
           `${providerName} API error:`,
           response.status,
           errorMessage
@@ -211,16 +212,13 @@ OUTPUT (valid JSON only):`;
       const data = await response.json();
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        console.error(
-          `Invalid ${providerName} response structure:`,
-          JSON.stringify(data).substring(0, 500)
-        );
+        logger.error(`Invalid ${providerName} response structure`);
         throw new Error(`Invalid response structure from ${providerName}`);
       }
 
       const content = data.choices[0].message.content;
       const usage = data.usage || {};
-      console.log(
+      logger.log(
         `${providerName} response received in ${elapsed}s - length: ${
           content ? content.length : 0
         } chars, tokens: ${usage.total_tokens || 'N/A'}`
@@ -231,7 +229,7 @@ OUTPUT (valid JSON only):`;
       clearTimeout(timeoutId);
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       if (error.name === 'AbortError') {
-        console.error(
+        logger.error(
           `${providerName} API timeout after ${elapsed}s (limit: ${
             TIMEOUT_MS / 1000
           }s)`
@@ -250,11 +248,11 @@ OUTPUT (valid JSON only):`;
     const providerName = this.getProviderType();
     try {
       if (!responseContent) {
-        console.error(`${providerName} returned empty response`);
+        logger.error(`${providerName} returned empty response`);
         throw new Error(`Empty response from ${providerName}`);
       }
 
-      console.log(
+      logger.log(
         `${providerName} raw response (first 500 chars):`,
         responseContent.substring(0, 500)
       );
@@ -270,7 +268,7 @@ OUTPUT (valid JSON only):`;
 
       return JSON.parse(cleanedContent);
     } catch (error) {
-      console.error(
+      logger.error(
         `Failed to parse ${providerName} response:`,
         responseContent
       );

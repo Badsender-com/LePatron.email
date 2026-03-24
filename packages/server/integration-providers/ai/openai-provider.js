@@ -2,6 +2,7 @@
 
 const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
+const logger = require('../../utils/logger.js');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_API_HOST = 'https://api.openai.com';
@@ -38,7 +39,7 @@ class OpenAIProvider extends BaseLLMProvider {
 
       return response.ok;
     } catch (error) {
-      console.error('OpenAI validation error:', error.message);
+      logger.error('OpenAI validation error:', error.message);
       return false;
     }
   }
