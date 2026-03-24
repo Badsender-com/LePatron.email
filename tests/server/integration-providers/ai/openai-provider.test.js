@@ -160,9 +160,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 429,
-        json: async () => ({
-          error: { message: 'Rate limit exceeded' },
-        }),
+        text: async () =>
+          JSON.stringify({ error: { message: 'Rate limit exceeded' } }),
       });
 
       await expect(
@@ -171,7 +170,7 @@ describe('OpenAIProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('OpenAI API error: 429 - Rate limit exceeded');
+      ).rejects.toThrow('openai API error: 429 - Rate limit exceeded');
     });
 
     it('should throw error when response is not valid JSON', async () => {

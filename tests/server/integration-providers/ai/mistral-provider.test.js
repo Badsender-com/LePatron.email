@@ -161,9 +161,7 @@ describe('MistralProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        json: async () => ({
-          message: 'Internal server error',
-        }),
+        text: async () => JSON.stringify({ message: 'Internal server error' }),
       });
 
       await expect(
@@ -172,7 +170,7 @@ describe('MistralProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('Mistral API error: 500 - Internal server error');
+      ).rejects.toThrow('mistral API error: 500 - Internal server error');
     });
   });
 
