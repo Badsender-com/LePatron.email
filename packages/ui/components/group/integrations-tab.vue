@@ -2,6 +2,7 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { getProviderLabel } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
@@ -171,13 +172,7 @@ export default {
       }
     },
 
-    getProviderLabel(provider) {
-      const labels = {
-        openai: 'OpenAI',
-        mistral: 'Mistral AI',
-      };
-      return labels[provider] || provider;
-    },
+    getProviderLabel,
 
     getStatusColor(status) {
       const colors = {

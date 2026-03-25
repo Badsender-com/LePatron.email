@@ -2,6 +2,7 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 
 // DeepL formality options
@@ -187,15 +188,7 @@ export default {
       }
     },
 
-    getProviderLabel(provider) {
-      const labels = {
-        openai: 'OpenAI',
-        mistral: 'Mistral AI',
-        infomaniak: 'Infomaniak AI Tools',
-        deepl: 'DeepL',
-      };
-      return labels[provider] || provider;
-    },
+    getProviderLabel,
 
     async loadModelsForIntegration(integrationId) {
       if (!integrationId) {

@@ -1,6 +1,7 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
+import { getProviderFormConfig, getProviderLabel } from './provider-configs';
 
 export default {
   name: 'BsIntegrationForm',
@@ -49,34 +50,7 @@ export default {
       }));
     },
     selectedProviderConfig() {
-      const configs = {
-        openai: {
-          apiKeyPlaceholder: 'sk-...',
-          apiHostPlaceholder: 'https://api.openai.com',
-          apiHostHint: this.$t('integrations.openai.apiHostHint'),
-          showProductId: false,
-        },
-        mistral: {
-          apiKeyPlaceholder: 'your-mistral-api-key',
-          apiHostPlaceholder: 'https://api.mistral.ai',
-          apiHostHint: this.$t('integrations.mistral.apiHostHint'),
-          showProductId: false,
-        },
-        infomaniak: {
-          apiKeyPlaceholder: 'your-infomaniak-api-key',
-          apiHostPlaceholder: '',
-          apiHostHint: '',
-          showProductId: true,
-          productIdHint: this.$t('integrations.infomaniak.productIdHint'),
-        },
-        deepl: {
-          apiKeyPlaceholder: 'your-deepl-api-key',
-          apiHostPlaceholder: '',
-          apiHostHint: '',
-          showProductId: false,
-        },
-      };
-      return configs[this.form.provider] || {};
+      return getProviderFormConfig(this.form.provider, this.$t);
     },
     showProductIdField() {
       return this.selectedProviderConfig.showProductId === true;
@@ -133,15 +107,7 @@ export default {
       this.$v.$reset();
     },
 
-    getProviderLabel(provider) {
-      const labels = {
-        openai: 'OpenAI',
-        mistral: 'Mistral AI',
-        infomaniak: 'Infomaniak AI Tools',
-        deepl: 'DeepL',
-      };
-      return labels[provider] || provider;
-    },
+    getProviderLabel,
 
     productIdErrors() {
       const errors = [];
