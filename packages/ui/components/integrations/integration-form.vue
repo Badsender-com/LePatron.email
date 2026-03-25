@@ -87,8 +87,7 @@ export default {
     if (!this.isEdit) {
       rules.form.apiKey = { required };
     }
-    // Product ID required for Infomaniak
-    if (this.form.provider === 'infomaniak') {
+    if (this.showProductIdField) {
       rules.form.productId = { required };
     }
     return rules;
@@ -109,37 +108,11 @@ export default {
 
     getProviderLabel,
 
-    productIdErrors() {
-      const errors = [];
-      if (!this.$v.form.productId || !this.$v.form.productId.$dirty)
-        return errors;
-      !this.$v.form.productId.required &&
-        errors.push(this.$t('global.errors.required'));
-      return errors;
-    },
-
-    nameErrors() {
-      const errors = [];
-      if (!this.$v.form.name.$dirty) return errors;
-      !this.$v.form.name.required &&
-        errors.push(this.$t('global.errors.required'));
-      return errors;
-    },
-
-    providerErrors() {
-      const errors = [];
-      if (!this.$v.form.provider.$dirty) return errors;
-      !this.$v.form.provider.required &&
-        errors.push(this.$t('global.errors.required'));
-      return errors;
-    },
-
-    apiKeyErrors() {
-      const errors = [];
-      if (!this.$v.form.apiKey || !this.$v.form.apiKey.$dirty) return errors;
-      !this.$v.form.apiKey.required &&
-        errors.push(this.$t('global.errors.required'));
-      return errors;
+    fieldErrors(fieldName) {
+      const field = this.$v.form[fieldName];
+      if (!field || !field.$dirty) return [];
+      if (!field.required) return [this.$t('global.errors.required')];
+      return [];
     },
 
     onSubmit() {
@@ -190,7 +163,7 @@ export default {
         <v-text-field
           v-model="form.name"
           :label="$t('integrations.name')"
-          :error-messages="nameErrors()"
+          :error-messages="fieldErrors('name')"
           :disabled="loading"
           outlined
           dense
@@ -201,7 +174,7 @@ export default {
           v-model="form.provider"
           :items="providerOptions"
           :label="$t('integrations.provider')"
-          :error-messages="providerErrors()"
+          :error-messages="fieldErrors('provider')"
           :disabled="loading || isEdit"
           outlined
           dense
@@ -212,7 +185,7 @@ export default {
           v-model="form.apiKey"
           :label="$t('integrations.apiKey')"
           :placeholder="selectedProviderConfig.apiKeyPlaceholder"
-          :error-messages="apiKeyErrors()"
+          :error-messages="fieldErrors('apiKey')"
           :disabled="loading"
           :type="showApiKey ? 'text' : 'password'"
           :hint="isEdit ? $t('integrations.apiKeyHintEdit') : ''"
@@ -232,7 +205,7 @@ export default {
           v-if="showProductIdField"
           v-model="form.productId"
           :label="$t('integrations.productId')"
-          :error-messages="productIdErrors()"
+          :error-messages="fieldErrors('productId')"
           :hint="selectedProviderConfig.productIdHint"
           :disabled="loading"
           persistent-hint

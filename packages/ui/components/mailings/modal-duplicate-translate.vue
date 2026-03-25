@@ -33,8 +33,6 @@ export default {
         status: null,
         currentBatch: 0,
         totalBatches: 0,
-        keysTranslated: 0,
-        totalKeys: 0,
       },
       // Time estimation
       batchTimes: [],
@@ -85,17 +83,11 @@ export default {
       return (v) => (v && v.trim() ? true : this.$t('global.errors.required'));
     },
     progressPercent() {
+      if (this.progress.status === 'completed') return 100;
       if (!this.progress.totalBatches) return 0;
-      // Reserve last 10% for preview generation
-      const batchPercent =
-        (this.progress.currentBatch / this.progress.totalBatches) * 90;
-      if (this.progress.status === 'generating_preview') {
-        return 95;
-      }
-      if (this.progress.status === 'completed') {
-        return 100;
-      }
-      return Math.round(batchPercent);
+      return Math.round(
+        (this.progress.currentBatch / this.progress.totalBatches) * 100
+      );
     },
     progressLabel() {
       if (this.progress.status === 'generating_preview') {
@@ -112,19 +104,17 @@ export default {
       }
       return this.$t('translation.progressStarting');
     },
-    hasProgress() {
-      return this.translating && this.progress.totalBatches > 0;
-    },
     estimatedTimeLabel() {
       if (!this.estimatedTimeRemaining || this.progress.currentBatch < 2) {
         return null;
       }
       const minutes = Math.floor(this.estimatedTimeRemaining / 60);
       const seconds = Math.round(this.estimatedTimeRemaining % 60);
-      if (minutes > 0) {
-        return this.$t('translation.estimatedTime', { minutes, seconds });
-      }
-      return this.$t('translation.estimatedTimeSeconds', { seconds });
+      const time =
+        minutes > 0
+          ? `${minutes}min ${String(seconds).padStart(2, '0')}s`
+          : `${seconds}s`;
+      return this.$t('translation.estimatedTime', { time });
     },
   },
   methods: {
@@ -151,8 +141,6 @@ export default {
         status: null,
         currentBatch: 0,
         totalBatches: 0,
-        keysTranslated: 0,
-        totalKeys: 0,
       };
       this.batchTimes = [];
       this.estimatedTimeRemaining = null;
@@ -192,8 +180,6 @@ export default {
           status: job.status,
           currentBatch: newBatch,
           totalBatches: job.progress.totalBatches,
-          keysTranslated: job.progress.keysTranslated,
-          totalKeys: job.progress.totalKeys,
         };
 
         // Record batch completion time for estimation

@@ -5,8 +5,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 
-// DeepL formality options
-const DEEPL_FORMALITY_OPTIONS = [
+const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
   { value: 'more', textKey: 'aiFeatures.translation.formalityMore' },
   { value: 'less', textKey: 'aiFeatures.translation.formalityLess' },
@@ -30,9 +29,8 @@ export default {
       config: null,
       integrations: [],
       languageOptions: LANGUAGE_OPTIONS,
-      dynamicModels: [], // Models fetched from API
-      modelsDynamic: false, // Whether models were fetched dynamically
-      capabilities: null, // Provider capabilities from API
+      dynamicModels: [],
+      capabilities: null,
     };
   },
   computed: {
@@ -84,15 +82,13 @@ export default {
       return integration && integration.isActive;
     },
     supportsModelSelection() {
-      return this.capabilities
-        ? this.capabilities.supportsModelSelection
-        : false;
+      return this.capabilities?.supportsModelSelection || false;
     },
     supportsFormality() {
-      return this.capabilities ? this.capabilities.supportsFormality : false;
+      return this.capabilities?.supportsFormality || false;
     },
     formalityOptions() {
-      return DEEPL_FORMALITY_OPTIONS.map((opt) => ({
+      return FORMALITY_OPTIONS.map((opt) => ({
         value: opt.value,
         text: this.$t(opt.textKey),
       }));
@@ -133,7 +129,6 @@ export default {
           this.loadModelsForIntegration(newId);
         } else {
           this.dynamicModels = [];
-          this.modelsDynamic = false;
           this.capabilities = null;
         }
       },
@@ -191,24 +186,16 @@ export default {
     getProviderLabel,
 
     async loadModelsForIntegration(integrationId) {
-      if (!integrationId) {
-        this.dynamicModels = [];
-        this.modelsDynamic = false;
-        this.capabilities = null;
-        return;
-      }
       try {
         this.loadingModels = true;
         const response = await this.$axios.$get(
           apiRoutes.integrationModels(integrationId)
         );
         this.dynamicModels = response.models || [];
-        this.modelsDynamic = response.dynamic || false;
         this.capabilities = response.capabilities || null;
       } catch (error) {
         console.error('Failed to load models:', error);
         this.dynamicModels = [];
-        this.modelsDynamic = false;
         this.capabilities = null;
       } finally {
         this.loadingModels = false;
