@@ -6,7 +6,7 @@ const { Types } = require('mongoose');
 jest.mock('../common/models.common', () => ({
   Integrations: {
     create: jest.fn(),
-    findOne: jest.fn(),
+    findById: jest.fn(),
     find: jest.fn(),
     findByIdAndUpdate: jest.fn(),
     deleteOne: jest.fn(),
@@ -96,25 +96,25 @@ describe('IntegrationService', () => {
     });
   });
 
-  describe('findOne', () => {
+  describe('findById', () => {
     it('should return integration when found', async () => {
       const mockIntegration = {
         _id: mockIntegrationId,
         name: 'Test Integration',
       };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
 
-      const result = await integrationService.findOne(mockIntegrationId);
+      const result = await integrationService.findById(mockIntegrationId);
 
       expect(result).toEqual(mockIntegration);
     });
 
     it('should throw NotFound when integration does not exist', async () => {
-      Integrations.findOne.mockResolvedValue(null);
+      Integrations.findById.mockResolvedValue(null);
 
       await expect(
-        integrationService.findOne(mockIntegrationId)
+        integrationService.findById(mockIntegrationId)
       ).rejects.toThrow('INTEGRATION_NOT_FOUND');
     });
   });
@@ -174,7 +174,7 @@ describe('IntegrationService', () => {
         name: 'New Name',
       };
 
-      Integrations.findOne.mockResolvedValue(existingIntegration);
+      Integrations.findById.mockResolvedValue(existingIntegration);
       Integrations.exists.mockResolvedValue(false);
       Integrations.findByIdAndUpdate.mockResolvedValue(updatedIntegration);
 
@@ -195,7 +195,7 @@ describe('IntegrationService', () => {
         apiKey: 'old-key',
       };
 
-      Integrations.findOne.mockResolvedValue(existingIntegration);
+      Integrations.findById.mockResolvedValue(existingIntegration);
       Integrations.findByIdAndUpdate.mockResolvedValue({});
 
       await integrationService.updateIntegration({
@@ -217,7 +217,7 @@ describe('IntegrationService', () => {
 
   describe('deleteIntegration', () => {
     it('should delete integration successfully', async () => {
-      Integrations.findOne.mockResolvedValue({ _id: mockIntegrationId });
+      Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });
       Integrations.deleteOne.mockResolvedValue({ deletedCount: 1 });
 
       const result = await integrationService.deleteIntegration({
@@ -228,7 +228,7 @@ describe('IntegrationService', () => {
     });
 
     it('should throw error when delete fails', async () => {
-      Integrations.findOne.mockResolvedValue({ _id: mockIntegrationId });
+      Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });
       Integrations.deleteOne.mockResolvedValue({ deletedCount: 0 });
 
       await expect(
@@ -250,7 +250,7 @@ describe('IntegrationService', () => {
         validateCredentials: jest.fn().mockResolvedValue(true),
       };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
       ProviderFactory.createProvider.mockReturnValue(mockProvider);
       Integrations.findByIdAndUpdate.mockResolvedValue({});
 
@@ -281,7 +281,7 @@ describe('IntegrationService', () => {
         validateCredentials: jest.fn().mockResolvedValue(false),
       };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
       ProviderFactory.createProvider.mockReturnValue(mockProvider);
       Integrations.findByIdAndUpdate.mockResolvedValue({});
 
@@ -307,7 +307,7 @@ describe('IntegrationService', () => {
       };
       const adminUser = { isAdmin: true };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
 
       const result = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
         {
@@ -329,7 +329,7 @@ describe('IntegrationService', () => {
         group: { id: mockGroupId },
       };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
 
       const result = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
         {
@@ -352,7 +352,7 @@ describe('IntegrationService', () => {
         group: { id: mockGroupId },
       };
 
-      Integrations.findOne.mockResolvedValue(mockIntegration);
+      Integrations.findById.mockResolvedValue(mockIntegration);
 
       await expect(
         integrationService.checkIfUserIsAuthorizedToAccessIntegration({

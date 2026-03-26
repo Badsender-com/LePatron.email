@@ -3,7 +3,7 @@
 const asyncHandler = require('express-async-handler');
 const aiFeatureService = require('./ai-feature.service');
 const groupService = require('../group/group.service');
-const AIFeatureTypes = require('../constant/ai-feature-type.js');
+const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
 const logger = require('../utils/logger.js');
 
 module.exports = {
@@ -20,7 +20,7 @@ module.exports = {
  */
 async function listFeatureTypes(req, res) {
   res.json({
-    types: Object.values(AIFeatureTypes),
+    types: AIFeatureTypeValues,
   });
 }
 
@@ -40,10 +40,7 @@ async function getConfig(req, res) {
 
   const config = await aiFeatureService.getOrCreateConfig({ groupId });
 
-  // Sanitize integrations - don't expose API keys
-  const sanitizedConfig = sanitizeConfig(config);
-
-  res.json(sanitizedConfig);
+  res.json(config);
 }
 
 /**
@@ -77,29 +74,5 @@ async function updateFeature(req, res) {
     config,
   });
 
-  res.json(sanitizeConfig(updatedConfig));
-}
-
-/**
- * Sanitize config - mask API keys in integrations
- */
-function sanitizeConfig(config) {
-  const obj = config.toObject ? config.toObject() : { ...config };
-
-  if (obj.features) {
-    obj.features = obj.features.map((feature) => {
-      if (feature.integration) {
-        return {
-          ...feature,
-          integration: {
-            ...feature.integration,
-            apiKey: feature.integration.apiKey ? '••••••••' : null,
-          },
-        };
-      }
-      return feature;
-    });
-  }
-
-  return obj;
+  res.json(updatedConfig);
 }

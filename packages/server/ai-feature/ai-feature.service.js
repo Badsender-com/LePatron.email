@@ -4,7 +4,7 @@ const { AIFeatureConfigs, Integrations } = require('../common/models.common');
 const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
-const AIFeatureTypes = require('../constant/ai-feature-type.js');
+const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
 const groupService = require('../group/group.service.js');
 
 module.exports = {
@@ -26,17 +26,15 @@ async function getOrCreateConfig({ groupId }) {
 
   if (!config) {
     // Create default config with all feature types
-    const defaultFeatures = Object.values(AIFeatureTypes).map(
-      (featureType) => ({
-        featureType,
-        integration: null,
-        isActive: false,
-        config: {
-          availableLanguages: [],
-          defaultSourceLanguage: 'auto',
-        },
-      })
-    );
+    const defaultFeatures = AIFeatureTypeValues.map((featureType) => ({
+      featureType,
+      integration: null,
+      isActive: false,
+      config: {
+        availableLanguages: [],
+        defaultSourceLanguage: 'auto',
+      },
+    }));
 
     config = await AIFeatureConfigs.create({
       _company: Types.ObjectId(groupId),
@@ -52,7 +50,32 @@ async function getOrCreateConfig({ groupId }) {
 }
 
 /**
+ * Validate that integration exists and belongs to the group
+ */
+async function validateIntegrationOwnership({ integrationId, groupId }) {
+  const integration = await Integrations.findOne({
+    _id: Types.ObjectId(integrationId),
+    _company: Types.ObjectId(groupId),
+  });
+  if (!integration) {
+    throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+}
+
+// Config sub-fields that can be partially updated via $set
+const FEATURE_CONFIG_FIELDS = [
+  'availableLanguages',
+  'defaultSourceLanguage',
+  'model',
+];
+
+/**
  * Update a specific feature configuration
+ *
+ * Uses Mongoose positional $set to update only the fields that were
+ * provided in the request body, without overwriting the rest of the
+ * feature sub-document. Each field is mapped to its nested path inside
+ * the features array: "features.<index>.<field>".
  */
 async function updateFeatureConfig({
   groupId,
@@ -63,51 +86,38 @@ async function updateFeatureConfig({
 }) {
   await groupService.findById(groupId);
 
-  // Validate feature type
-  if (!Object.values(AIFeatureTypes).includes(featureType)) {
+  if (!AIFeatureTypeValues.includes(featureType)) {
     throw new BadRequest(ERROR_CODES.UNAUTHORIZED_INTEGRATION_TYPE);
   }
 
-  // If integrationId provided, validate it belongs to this group
   if (integrationId) {
-    const integration = await Integrations.findOne({
-      _id: Types.ObjectId(integrationId),
-      _company: Types.ObjectId(groupId),
-    });
-    if (!integration) {
-      throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
-    }
+    await validateIntegrationOwnership({ integrationId, groupId });
   }
 
-  // Get or create config
   let aiConfig = await getOrCreateConfig({ groupId });
 
-  // Find and update the specific feature
   const featureIndex = aiConfig.features.findIndex(
     (f) => f.featureType === featureType
   );
 
+  const prefix = `features.${featureIndex}`;
   const updateData = {};
+
   if (integrationId !== undefined) {
-    updateData[`features.${featureIndex}.integration`] = integrationId
+    updateData[`${prefix}.integration`] = integrationId
       ? Types.ObjectId(integrationId)
       : null;
   }
   if (isActive !== undefined) {
-    updateData[`features.${featureIndex}.isActive`] = isActive;
+    updateData[`${prefix}.isActive`] = isActive;
   }
-  if (featureConfig !== undefined) {
-    // Merge config
-    if (featureConfig.availableLanguages !== undefined) {
-      updateData[`features.${featureIndex}.config.availableLanguages`] =
-        featureConfig.availableLanguages;
-    }
-    if (featureConfig.defaultSourceLanguage !== undefined) {
-      updateData[`features.${featureIndex}.config.defaultSourceLanguage`] =
-        featureConfig.defaultSourceLanguage;
-    }
-    if (featureConfig.model !== undefined) {
-      updateData[`features.${featureIndex}.config.model`] = featureConfig.model;
+  // Merge only the provided config sub-fields so that omitted fields
+  // keep their current value in the database.
+  if (featureConfig) {
+    for (const field of FEATURE_CONFIG_FIELDS) {
+      if (featureConfig[field] !== undefined) {
+        updateData[`${prefix}.config.${field}`] = featureConfig[field];
+      }
     }
   }
 

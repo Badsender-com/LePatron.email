@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+const AIFeatureTypes = {
   TRANSLATION: 'translation',
   // Future features
   // TEXT_GENERATION: 'text_generation',
@@ -8,3 +8,8 @@ module.exports = {
   // QUALITY_CHECK: 'quality_check',
   // SUBJECT_LINE: 'subject_line',
 };
+
+const AIFeatureTypeValues = Object.values(AIFeatureTypes);
+
+module.exports = AIFeatureTypes;
+module.exports.AIFeatureTypeValues = AIFeatureTypeValues;

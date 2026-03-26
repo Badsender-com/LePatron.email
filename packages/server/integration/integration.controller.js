@@ -58,10 +58,7 @@ async function listIntegrations(req, res) {
     integrations = await integrationService.findAllByGroup({ groupId });
   }
 
-  // Sanitize: never return the actual API keys
-  const sanitized = integrations.map(sanitizeIntegration);
-
-  res.json({ items: sanitized });
+  res.json({ items: integrations });
 }
 
 /**
@@ -96,7 +93,7 @@ async function createIntegration(req, res) {
     _company: groupId,
   });
 
-  res.status(201).json(sanitizeIntegration(integration));
+  res.status(201).json(integration);
 }
 
 /**
@@ -118,7 +115,7 @@ async function readIntegration(req, res) {
     }
   );
 
-  res.json(sanitizeIntegration(integration));
+  res.json(integration);
 }
 
 /**
@@ -165,7 +162,7 @@ async function updateIntegration(req, res) {
     isActive,
   });
 
-  res.json(sanitizeIntegration(integration));
+  res.json(integration);
 }
 
 /**
@@ -259,17 +256,4 @@ async function getModels(req, res) {
       error: error.message,
     });
   }
-}
-
-/**
- * Sanitize integration object - never expose API keys
- */
-function sanitizeIntegration(integration) {
-  const obj = integration.toObject
-    ? integration.toObject()
-    : { ...integration };
-  return {
-    ...obj,
-    apiKey: obj.apiKey ? '••••••••' : null,
-  };
 }

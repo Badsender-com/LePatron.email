@@ -78,7 +78,13 @@ const IntegrationSchema = Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        if (ret.apiKey) ret.apiKey = '••••••••';
+        return ret;
+      },
+    },
     toObject: { virtuals: true },
   }
 );

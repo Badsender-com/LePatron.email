@@ -3,7 +3,7 @@
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
 const { GroupModel, IntegrationModel } = require('../constant/model.names.js');
-const AIFeatureTypes = require('../constant/ai-feature-type.js');
+const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
 
 /**
  * @apiDefine aiFeatureConfig
@@ -21,7 +21,7 @@ const FeatureConfigSchema = Schema(
   {
     featureType: {
       type: String,
-      enum: Object.values(AIFeatureTypes),
+      enum: AIFeatureTypeValues,
       required: [true, 'Feature type is required'],
     },
     integration: {

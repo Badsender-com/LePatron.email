@@ -17,7 +17,7 @@ module.exports = {
   createIntegration,
   updateIntegration,
   deleteIntegration,
-  findOne,
+  findById,
   findAllByGroup,
   findByGroupAndType,
   findActiveByGroup,
@@ -32,7 +32,7 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
   user,
   integrationId,
 }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
   if (!user.isAdmin) {
     if (user?.group?.id !== integration?._company?.toString()) {
       throw new Unauthorized(ERROR_CODES.FORBIDDEN_INTEGRATION_ACCESS);
@@ -87,7 +87,7 @@ async function updateIntegration({
   config,
   isActive,
 }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
 
   // Check for name conflicts if name changed
   if (name && name !== integration.name) {
@@ -134,7 +134,7 @@ async function updateIntegration({
  * Delete an integration
  */
 async function deleteIntegration({ integrationId }) {
-  await findOne(integrationId);
+  await findById(integrationId);
 
   const result = await Integrations.deleteOne({
     _id: Types.ObjectId(integrationId),
@@ -150,10 +150,10 @@ async function deleteIntegration({ integrationId }) {
 /**
  * Find one integration by ID
  */
-async function findOne(integrationId) {
-  const integration = await Integrations.findOne({
-    _id: Types.ObjectId(integrationId),
-  });
+async function findById(integrationId) {
+  const integration = await Integrations.findById(
+    Types.ObjectId(integrationId)
+  );
 
   if (!integration) {
     throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
@@ -198,7 +198,7 @@ async function findActiveByGroup({ groupId }) {
  * Validate integration credentials using the provider factory
  */
 async function validateCredentials({ integrationId }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
 
   let isValid = false;
   try {
