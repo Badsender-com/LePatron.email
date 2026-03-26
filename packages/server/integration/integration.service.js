@@ -103,15 +103,19 @@ async function updateIntegration({
     }
   }
 
-  const updateData = {};
-  if (name !== undefined) updateData.name = name;
-  if (type !== undefined) updateData.type = type;
-  if (provider !== undefined) updateData.provider = provider;
-  if (apiKey !== undefined) updateData.apiKey = apiKey;
-  if (apiHost !== undefined) updateData.apiHost = apiHost;
-  if (productId !== undefined) updateData.productId = productId;
-  if (config !== undefined) updateData.config = config;
-  if (isActive !== undefined) updateData.isActive = isActive;
+  // Keep only fields explicitly provided in the request
+  const updateData = Object.fromEntries(
+    Object.entries({
+      name,
+      type,
+      provider,
+      apiKey,
+      apiHost,
+      productId,
+      config,
+      isActive,
+    }).filter(([, value]) => value !== undefined)
+  );
 
   // Reset validation status if credentials changed
   if (

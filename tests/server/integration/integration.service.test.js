@@ -2,8 +2,14 @@
 
 const { Types } = require('mongoose');
 
+const SERVICE_PATH = '../../../packages/server/integration/integration.service';
+const MODELS_PATH = '../../../packages/server/common/models.common';
+const GROUP_SERVICE_PATH = '../../../packages/server/group/group.service';
+const PROVIDER_FACTORY_PATH =
+  '../../../packages/server/integration-providers/provider-factory';
+
 // Mock dependencies before requiring the service
-jest.mock('../common/models.common', () => ({
+jest.mock(MODELS_PATH, () => ({
   Integrations: {
     create: jest.fn(),
     findById: jest.fn(),
@@ -14,18 +20,18 @@ jest.mock('../common/models.common', () => ({
   },
 }));
 
-jest.mock('../group/group.service', () => ({
+jest.mock(GROUP_SERVICE_PATH, () => ({
   findById: jest.fn(),
 }));
 
-jest.mock('../integration-providers/provider-factory', () => ({
+jest.mock(PROVIDER_FACTORY_PATH, () => ({
   createProvider: jest.fn(),
 }));
 
-const integrationService = require('./integration.service');
-const { Integrations } = require('../common/models.common');
-const groupService = require('../group/group.service');
-const ProviderFactory = require('../integration-providers/provider-factory');
+const integrationService = require(SERVICE_PATH);
+const { Integrations } = require(MODELS_PATH);
+const groupService = require(GROUP_SERVICE_PATH);
+const ProviderFactory = require(PROVIDER_FACTORY_PATH);
 
 describe('IntegrationService', () => {
   const mockGroupId = new Types.ObjectId().toString();

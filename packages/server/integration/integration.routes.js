@@ -25,8 +25,8 @@ router.post(
   integrations.createIntegration
 );
 
-// Read single integration
-router.get('/:integrationId', GUARD_GROUP_ADMIN, integrations.readIntegration);
+// Get single integration
+router.get('/:integrationId', GUARD_GROUP_ADMIN, integrations.getIntegration);
 
 // Update integration
 router.put(
@@ -50,10 +50,6 @@ router.post(
 );
 
 // Get available models for an integration
-router.get(
-  '/:integrationId/models',
-  GUARD_GROUP_ADMIN,
-  integrations.getModels
-);
+router.get('/:integrationId/models', GUARD_GROUP_ADMIN, integrations.getModels);
 
 module.exports = router;

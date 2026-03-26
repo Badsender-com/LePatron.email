@@ -1,10 +1,10 @@
 'use strict';
 
-const ProviderFactory = require('./provider-factory');
-const OpenAIProvider = require('./ai/openai-provider');
-const MistralProvider = require('./ai/mistral-provider');
-const InfomaniakProvider = require('./ai/infomaniak-provider');
-const IntegrationProviders = require('../constant/integration-provider');
+const ProviderFactory = require('../../../packages/server/integration-providers/provider-factory');
+const OpenAIProvider = require('../../../packages/server/integration-providers/ai/openai-provider');
+const MistralProvider = require('../../../packages/server/integration-providers/ai/mistral-provider');
+const InfomaniakProvider = require('../../../packages/server/integration-providers/ai/infomaniak-provider');
+const IntegrationProviders = require('../../../packages/server/constant/integration-provider');
 
 describe('ProviderFactory', () => {
   describe('createProvider', () => {

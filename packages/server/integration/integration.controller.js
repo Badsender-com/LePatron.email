@@ -1,6 +1,7 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
+const pick = require('lodash').pick;
 const integrationService = require('./integration.service');
 const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
@@ -8,11 +9,22 @@ const IntegrationProviders = require('../constant/integration-provider.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const logger = require('../utils/logger.js');
 
+const CREATE_FIELDS = [
+  'name',
+  'type',
+  'provider',
+  'apiKey',
+  'apiHost',
+  'productId',
+  'config',
+];
+const UPDATE_FIELDS = [...CREATE_FIELDS, 'isActive'];
+
 module.exports = {
   createIntegration: asyncHandler(createIntegration),
   updateIntegration: asyncHandler(updateIntegration),
   deleteIntegration: asyncHandler(deleteIntegration),
-  readIntegration: asyncHandler(readIntegration),
+  getIntegration: asyncHandler(getIntegration),
   listIntegrations: asyncHandler(listIntegrations),
   validateCredentials: asyncHandler(validateCredentials),
   listProviders: asyncHandler(listProviders),
@@ -78,18 +90,11 @@ async function listIntegrations(req, res) {
 async function createIntegration(req, res) {
   const { user, params, body } = req;
   const { groupId } = params;
-  const { name, type, provider, apiKey, apiHost, productId, config } = body;
 
   await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   const integration = await integrationService.createIntegration({
-    name,
-    type,
-    provider,
-    apiKey,
-    apiHost,
-    productId,
-    config,
+    ...pick(body, CREATE_FIELDS),
     _company: groupId,
   });
 
@@ -104,7 +109,7 @@ async function createIntegration(req, res) {
  *
  * @apiParam {String} integrationId Integration ID
  */
-async function readIntegration(req, res) {
+async function getIntegration(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
@@ -134,16 +139,6 @@ async function readIntegration(req, res) {
 async function updateIntegration(req, res) {
   const { user, params, body } = req;
   const { integrationId } = params;
-  const {
-    name,
-    type,
-    provider,
-    apiKey,
-    apiHost,
-    productId,
-    config,
-    isActive,
-  } = body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -151,15 +146,8 @@ async function updateIntegration(req, res) {
   });
 
   const integration = await integrationService.updateIntegration({
+    ...pick(body, UPDATE_FIELDS),
     integrationId,
-    name,
-    type,
-    provider,
-    apiKey,
-    apiHost,
-    productId,
-    config,
-    isActive,
   });
 
   res.json(integration);
