@@ -374,7 +374,6 @@ export default {
     translatingNotice: 'Traduction en cours, veuillez patienter...',
     progressStarting: 'Démarrage de la traduction...',
     progressBatch: 'Traduction en cours... (lot {current}/{total})',
-    progressGeneratingPreview: 'Génération de l\'aperçu...',
     progressCompleted: 'Terminé !',
     pleaseWait: 'Veuillez patienter...',
     cancelled: 'Traduction annulée',

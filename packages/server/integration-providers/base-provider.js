@@ -35,6 +35,15 @@ class BaseProvider {
   getIntegrationType() {
     return this.integration.type;
   }
+
+  /**
+   * Get batch limits for translation batching.
+   * Override in subclasses with provider-specific constraints.
+   * @returns {{ maxKeys: number, maxChars: number }}
+   */
+  getBatchLimits() {
+    return { maxKeys: 100, maxChars: 50000 };
+  }
 }
 
 module.exports = BaseProvider;

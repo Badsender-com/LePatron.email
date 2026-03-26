@@ -370,7 +370,6 @@ export default {
     translatingNotice: 'Translation in progress, please wait...',
     progressStarting: 'Starting translation...',
     progressBatch: 'Translating... (batch {current}/{total})',
-    progressGeneratingPreview: 'Generating preview...',
     progressCompleted: 'Completed!',
     pleaseWait: 'Please wait...',
     cancelled: 'Translation cancelled',

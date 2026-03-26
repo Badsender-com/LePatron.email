@@ -90,9 +90,6 @@ export default {
       );
     },
     progressLabel() {
-      if (this.progress.status === 'generating_preview') {
-        return this.$t('translation.progressGeneratingPreview');
-      }
       if (this.progress.status === 'completed') {
         return this.$t('translation.progressCompleted');
       }

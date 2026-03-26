@@ -1,46 +1,23 @@
 'use strict';
 
 const logger = require('../utils/logger.js');
-const IntegrationProviders = require('../constant/integration-provider.js');
 
-// Batch limits by provider type
-// AI providers (LLM-based) can handle larger batches with more context
-// DeepL has a hard limit of 50 texts per request and 128KiB body size
-const BATCH_LIMITS = {
-  default: {
-    maxKeys: 100,
-    maxChars: 50000,
-  },
-  [IntegrationProviders.DEEPL]: {
-    maxKeys: 50, // DeepL limit: max 50 texts per request
-    maxChars: 120000, // DeepL limit: 128KiB body, leave margin
-  },
-};
-
-/**
- * Get batch limits for a provider
- * @param {string} [providerType] - Provider type identifier
- * @returns {{ maxKeys: number, maxChars: number }}
- */
-function getBatchLimits(providerType) {
-  return BATCH_LIMITS[providerType] || BATCH_LIMITS.default;
-}
+const DEFAULT_BATCH_LIMITS = { maxKeys: 100, maxChars: 50000 };
 
 module.exports = {
   splitIntoBatches,
   translateInBatches,
-  getBatchLimits,
-  BATCH_LIMITS,
+  DEFAULT_BATCH_LIMITS,
 };
 
 /**
  * Split texts into batches for translation
  * @param {Object} texts - Object with key-value pairs to translate
- * @param {string} [providerType] - Provider type for batch limits
+ * @param {{ maxKeys: number, maxChars: number }} [batchLimits] - Batch limits
  * @returns {Array<Object>} Array of batch objects
  */
-function splitIntoBatches(texts, providerType) {
-  const { maxKeys, maxChars } = getBatchLimits(providerType);
+function splitIntoBatches(texts, batchLimits) {
+  const { maxKeys, maxChars } = batchLimits || DEFAULT_BATCH_LIMITS;
   const batches = [];
   let currentBatch = {};
   let currentBatchChars = 0;
@@ -84,7 +61,6 @@ function splitIntoBatches(texts, providerType) {
  * @param {string} params.sourceLanguage - Source language
  * @param {string} params.targetLanguage - Target language
  * @param {string} [params.context] - Additional context for translation (used by DeepL)
- * @param {string} [params.providerType] - Provider type for batch limits
  * @param {Function} [params.onBatchProgress] - Callback for batch progress (batchNumber, keysInBatch)
  * @returns {Promise<Object>} Merged translations
  */
@@ -94,10 +70,12 @@ async function translateInBatches({
   sourceLanguage,
   targetLanguage,
   context,
-  providerType,
   onBatchProgress,
 }) {
-  const batches = splitIntoBatches(texts, providerType);
+  const batchLimits = provider.getBatchLimits
+    ? provider.getBatchLimits()
+    : DEFAULT_BATCH_LIMITS;
+  const batches = splitIntoBatches(texts, batchLimits);
 
   logger.log(
     `[Translation] Translating ${Object.keys(texts).length} keys in ${
@@ -111,7 +89,9 @@ async function translateInBatches({
     const batch = batches[i];
     const batchSize = Object.keys(batch).length;
     logger.log(
-      `[Translation] Processing batch ${i + 1}/${batches.length} (${batchSize} keys)`
+      `[Translation] Processing batch ${i + 1}/${
+        batches.length
+      } (${batchSize} keys)`
     );
 
     const batchResult = await provider.translateBatch({

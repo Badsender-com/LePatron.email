@@ -16,7 +16,6 @@ const jobs = new Map();
 const JobStatus = {
   PENDING: 'pending',
   TRANSLATING: 'translating',
-  GENERATING_PREVIEW: 'generating_preview',
   COMPLETED: 'completed',
   FAILED: 'failed',
   CANCELLED: 'cancelled',
@@ -79,18 +78,6 @@ function updateBatchProgress(jobId, batchNumber, keysInBatch) {
   job.status = JobStatus.TRANSLATING;
   job.progress.currentBatch = batchNumber;
   job.progress.keysTranslated += keysInBatch;
-  job.updatedAt = Date.now();
-}
-
-/**
- * Mark job as generating preview
- * @param {string} jobId - Job ID
- */
-function setGeneratingPreview(jobId) {
-  const job = jobs.get(jobId);
-  if (!job) return;
-
-  job.status = JobStatus.GENERATING_PREVIEW;
   job.updatedAt = Date.now();
 }
 
@@ -188,7 +175,6 @@ module.exports = {
   createJob,
   getJob,
   updateBatchProgress,
-  setGeneratingPreview,
   setCompleted,
   setFailed,
   deleteJob,

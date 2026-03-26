@@ -172,9 +172,6 @@ async function processTranslationAsync({
       folderId,
     });
 
-    // Update job status to generating preview
-    translationJobs.setGeneratingPreview(jobId);
-
     let previewGenerated = false;
     if (originalMailing.previewHtml) {
       try {
@@ -228,6 +225,21 @@ async function processTranslationAsync({
 }
 
 /**
+ * Get a job by ID or throw 404/403
+ */
+function getJobOrThrow(jobId, user) {
+  const job = translationJobs.getJob(jobId);
+  if (!job) {
+    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
+  }
+  const userId = user.id || user._id.toString();
+  if (job.userId !== userId) {
+    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
+  }
+  return job;
+}
+
+/**
  * @api {get} /translation/jobs/:jobId/status Get translation job status
  * @apiPermission user
  * @apiName GetJobStatus
@@ -236,21 +248,7 @@ async function processTranslationAsync({
  * @apiParam {String} jobId Job ID
  */
 async function getJobStatus(req, res) {
-  const { user } = req;
-  const { jobId } = req.params;
-
-  const job = translationJobs.getJob(jobId);
-
-  if (!job) {
-    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
-  }
-
-  // Authorization check: user must own the job
-  const userId = user.id || user._id.toString();
-  if (job.userId !== userId) {
-    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
-  }
-
+  const job = getJobOrThrow(req.params.jobId, req.user);
   res.json(job);
 }
 
@@ -263,22 +261,8 @@ async function getJobStatus(req, res) {
  * @apiParam {String} jobId Job ID
  */
 async function cancelJob(req, res) {
-  const { user } = req;
-  const { jobId } = req.params;
-
-  const job = translationJobs.getJob(jobId);
-
-  if (!job) {
-    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
-  }
-
-  // Authorization check: user must own the job
-  const userId = user.id || user._id.toString();
-  if (job.userId !== userId) {
-    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
-  }
-
-  const cancelled = translationJobs.cancelJob(jobId);
+  getJobOrThrow(req.params.jobId, req.user);
+  const cancelled = translationJobs.cancelJob(req.params.jobId);
 
   if (!cancelled) {
     throw createError(400, ERROR_CODES.TRANSLATION_JOB_CANCEL_FAILED);

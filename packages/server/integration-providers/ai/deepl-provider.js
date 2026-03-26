@@ -71,6 +71,14 @@ class DeepLProvider extends BaseProvider {
   }
 
   /**
+   * DeepL has stricter batch limits than LLM providers:
+   * max 50 texts per request and 128KiB body size.
+   */
+  getBatchLimits() {
+    return { maxKeys: 50, maxChars: 120000 };
+  }
+
+  /**
    * DeepL supports formality but not model selection.
    */
   getCapabilities() {
