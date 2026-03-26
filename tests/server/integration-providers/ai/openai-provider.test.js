@@ -156,7 +156,7 @@ describe('OpenAIProvider', () => {
       expect(userMessage).toContain('@[variable]');
     });
 
-    it('should throw error when API fails', async () => {
+    it('should throw ProviderError with QUOTA_EXCEEDED when API returns 429', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 429,
@@ -170,10 +170,14 @@ describe('OpenAIProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('openai API error: 429 - Rate limit exceeded');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: 'openai API error: 429 - Rate limit exceeded',
+        code: 'PROVIDER_QUOTA_EXCEEDED',
+      });
     });
 
-    it('should throw error when response is not valid JSON', async () => {
+    it('should throw ProviderError with INVALID_RESPONSE when response is not valid JSON', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -187,7 +191,13 @@ describe('OpenAIProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('Failed to parse translation response');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: expect.stringContaining(
+          'Failed to parse translation response'
+        ),
+        code: 'PROVIDER_INVALID_RESPONSE',
+      });
     });
   });
 

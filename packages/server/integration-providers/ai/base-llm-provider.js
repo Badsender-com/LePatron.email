@@ -4,6 +4,10 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
 
 /**
  * Base class for LLM-based AI providers (OpenAI, Mistral, Infomaniak, etc.)
@@ -204,8 +208,15 @@ OUTPUT (valid JSON only):`;
           response.status,
           errorMessage
         );
-        throw new Error(
-          `${providerName} API error: ${response.status} - ${errorMessage}`
+        const code =
+          response.status === 401
+            ? CODES.INVALID_CREDENTIALS
+            : response.status === 429
+            ? CODES.QUOTA_EXCEEDED
+            : CODES.API_ERROR;
+        throw new ProviderError(
+          `${providerName} API error: ${response.status} - ${errorMessage}`,
+          code
         );
       }
 
@@ -213,7 +224,10 @@ OUTPUT (valid JSON only):`;
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         logger.error(`Invalid ${providerName} response structure`);
-        throw new Error(`Invalid response structure from ${providerName}`);
+        throw new ProviderError(
+          `Invalid response structure from ${providerName}`,
+          CODES.INVALID_RESPONSE
+        );
       }
 
       const content = data.choices[0].message.content;
@@ -234,8 +248,9 @@ OUTPUT (valid JSON only):`;
             TIMEOUT_MS / 1000
           }s)`
         );
-        throw new Error(
-          `${providerName} API timeout - the request took too long.`
+        throw new ProviderError(
+          `${providerName} API timeout - the request took too long.`,
+          CODES.TIMEOUT
         );
       }
       throw error;
@@ -249,7 +264,10 @@ OUTPUT (valid JSON only):`;
     try {
       if (!responseContent) {
         logger.error(`${providerName} returned empty response`);
-        throw new Error(`Empty response from ${providerName}`);
+        throw new ProviderError(
+          `Empty response from ${providerName}`,
+          CODES.INVALID_RESPONSE
+        );
       }
 
       logger.log(
@@ -272,7 +290,10 @@ OUTPUT (valid JSON only):`;
         `Failed to parse ${providerName} response:`,
         responseContent
       );
-      throw new Error(`Failed to parse translation response: ${error.message}`);
+      throw new ProviderError(
+        `Failed to parse translation response: ${error.message}`,
+        CODES.INVALID_RESPONSE
+      );
     }
   }
 }

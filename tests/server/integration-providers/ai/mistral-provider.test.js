@@ -157,7 +157,7 @@ describe('MistralProvider', () => {
       expect(userMessage).toContain('from the original language to fr');
     });
 
-    it('should throw error when API fails', async () => {
+    it('should throw ProviderError with API_ERROR when API fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -170,7 +170,11 @@ describe('MistralProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('mistral API error: 500 - Internal server error');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: 'mistral API error: 500 - Internal server error',
+        code: 'PROVIDER_API_ERROR',
+      });
     });
   });
 

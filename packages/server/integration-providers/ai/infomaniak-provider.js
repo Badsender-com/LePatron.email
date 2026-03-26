@@ -3,6 +3,10 @@
 const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
 
 const DEFAULT_MODEL = 'mixtral';
 const API_BASE = 'https://api.infomaniak.com';
@@ -34,7 +38,10 @@ class InfomaniakProvider extends BaseLLMProvider {
     super(integration);
     this.productId = integration.productId;
     if (!this.productId) {
-      throw new Error('Infomaniak provider requires a productId');
+      throw new ProviderError(
+        'Infomaniak provider requires a productId',
+        CODES.CONFIG_ERROR
+      );
     }
     this.baseUrl = `${API_BASE}/1/ai/${this.productId}/openai`;
   }

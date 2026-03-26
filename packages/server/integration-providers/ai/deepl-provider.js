@@ -4,6 +4,10 @@ const deepl = require('deepl-node');
 const BaseProvider = require('../base-provider.js');
 const logger = require('../../utils/logger.js');
 const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../provider-error.js');
+const {
   protectVariables,
   restoreVariables,
 } = require('../../translation/variable-placeholder.utils.js');
@@ -211,15 +215,21 @@ class DeepLProvider extends BaseProvider {
     } catch (error) {
       logger.error(`[DeepL] API error: ${error.message}`);
 
-      // Provide more specific error messages
+      // Classify error by type
       if (error.message.includes('Authorization')) {
-        throw new Error('DeepL API key is invalid');
+        throw new ProviderError(
+          'DeepL API key is invalid',
+          CODES.INVALID_CREDENTIALS
+        );
       }
       if (error.message.includes('Quota')) {
-        throw new Error('DeepL quota exceeded');
+        throw new ProviderError('DeepL quota exceeded', CODES.QUOTA_EXCEEDED);
       }
 
-      throw error;
+      throw new ProviderError(
+        `DeepL API error: ${error.message}`,
+        CODES.API_ERROR
+      );
     }
   }
 

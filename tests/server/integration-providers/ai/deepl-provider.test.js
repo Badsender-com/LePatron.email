@@ -330,7 +330,7 @@ describe('DeepLProvider', () => {
   });
 
   describe('error handling', () => {
-    it('should throw specific error for invalid API key', async () => {
+    it('should throw ProviderError with INVALID_CREDENTIALS for invalid API key', async () => {
       deepl.__mocks__.mockTranslateText.mockRejectedValueOnce(
         new Error('Authorization failed')
       );
@@ -341,10 +341,14 @@ describe('DeepLProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('DeepL API key is invalid');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: 'DeepL API key is invalid',
+        code: 'PROVIDER_INVALID_CREDENTIALS',
+      });
     });
 
-    it('should throw specific error for quota exceeded', async () => {
+    it('should throw ProviderError with QUOTA_EXCEEDED for quota exceeded', async () => {
       deepl.__mocks__.mockTranslateText.mockRejectedValueOnce(
         new Error('Quota exceeded')
       );
@@ -355,10 +359,14 @@ describe('DeepLProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('DeepL quota exceeded');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: 'DeepL quota exceeded',
+        code: 'PROVIDER_QUOTA_EXCEEDED',
+      });
     });
 
-    it('should rethrow other errors', async () => {
+    it('should wrap other errors as ProviderError with API_ERROR', async () => {
       deepl.__mocks__.mockTranslateText.mockRejectedValueOnce(
         new Error('Some other error')
       );
@@ -369,7 +377,11 @@ describe('DeepLProvider', () => {
           sourceLanguage: 'en',
           targetLanguage: 'fr',
         })
-      ).rejects.toThrow('Some other error');
+      ).rejects.toMatchObject({
+        name: 'ProviderError',
+        message: 'DeepL API error: Some other error',
+        code: 'PROVIDER_API_ERROR',
+      });
     });
   });
 });

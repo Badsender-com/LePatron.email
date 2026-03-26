@@ -1,7 +1,20 @@
 'use strict';
 
-const { BadRequest } = require('http-errors');
+const createError = require('http-errors');
+const { BadRequest } = createError;
 const ERROR_CODES = require('../constant/error-codes.js');
+const {
+  ProviderError,
+  PROVIDER_ERROR_CODES: CODES,
+} = require('../integration-providers/provider-error.js');
+
+// Maps provider error codes to appropriate HTTP status codes
+const PROVIDER_ERROR_HTTP_STATUS = {
+  [CODES.INVALID_CREDENTIALS]: 401,
+  [CODES.QUOTA_EXCEEDED]: 429,
+  [CODES.TIMEOUT]: 504,
+  [CODES.CONFIG_ERROR]: 400,
+};
 const AIFeatureTypes = require('../constant/ai-feature-type.js');
 const logger = require('../utils/logger.js');
 const aiFeatureService = require('../ai-feature/ai-feature.service.js');
@@ -144,7 +157,12 @@ async function translateMailing({
     });
   } catch (error) {
     logger.error(`[Translation] Translation error: ${error.message}`);
-    throw new BadRequest(
+    const status =
+      error instanceof ProviderError
+        ? PROVIDER_ERROR_HTTP_STATUS[error.code] || 502
+        : 400;
+    throw createError(
+      status,
       ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
     );
   }
@@ -226,7 +244,12 @@ async function translateText({
     });
   } catch (error) {
     logger.error(`[Translation] Translation error: ${error.message}`);
-    throw new BadRequest(
+    const status =
+      error instanceof ProviderError
+        ? PROVIDER_ERROR_HTTP_STATUS[error.code] || 502
+        : 400;
+    throw createError(
+      status,
       ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
     );
   }
