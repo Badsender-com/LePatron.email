@@ -18,46 +18,15 @@ function setByPath(obj, path, value) {
   let current = obj;
 
   for (let i = 0; i < parts.length - 1; i++) {
-    const part = parts[i];
-
-    // Handle array indices
-    const arrayMatch = part.match(/^(\d+)$/);
-    if (arrayMatch) {
-      const index = parseInt(arrayMatch[1], 10);
-      if (!Array.isArray(current)) {
-        return false; // Path mismatch
-      }
-      if (current[index] === undefined) {
-        return false; // Index out of bounds
-      }
-      current = current[index];
-    } else {
-      if (current[part] === undefined) {
-        return false; // Path doesn't exist
-      }
-      current = current[part];
-    }
+    if (current[parts[i]] === undefined) return false;
+    current = current[parts[i]];
   }
 
   const lastPart = parts[parts.length - 1];
+  if (current[lastPart] === undefined) return false;
 
-  // Handle array index for last part
-  const arrayMatch = lastPart.match(/^(\d+)$/);
-  if (arrayMatch) {
-    const index = parseInt(arrayMatch[1], 10);
-    if (Array.isArray(current) && current[index] !== undefined) {
-      current[index] = value;
-      return true;
-    }
-    return false;
-  }
-
-  if (current[lastPart] !== undefined) {
-    current[lastPart] = value;
-    return true;
-  }
-
-  return false;
+  current[lastPart] = value;
+  return true;
 }
 
 /**
@@ -93,12 +62,10 @@ function injectTexts(mailing, translations) {
     }
 
     // Handle data paths
-    const success = setByPath(result, key, translatedValue);
-    if (success) {
-      injectionResults.success.push(key);
-    } else {
-      injectionResults.failed.push(key);
-    }
+    const target = setByPath(result, key, translatedValue)
+      ? injectionResults.success
+      : injectionResults.failed;
+    target.push(key);
   }
 
   return {

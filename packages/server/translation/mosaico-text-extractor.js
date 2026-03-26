@@ -23,11 +23,13 @@
 const { isFieldProtected } = require('./template-protection-parser');
 
 // Patterns for content that should NOT be translated
-const URL_PATTERN = /^(https?:\/\/|mailto:|tel:)/i;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const COLOR_PATTERN = /^(#[0-9a-f]{3,8}|rgba?\([^)]+\)|transparent)$/i;
-const MOSAICO_VAR_ONLY_PATTERN = /^@\[[^\]]+\]$/;
-const NUMERIC_PATTERN = /^-?\d+(\.\d+)?(px|em|rem|%)?$/;
+const NON_TRANSLATABLE_PATTERNS = [
+  /^(https?:\/\/|mailto:|tel:)/i, // URLs
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Email addresses
+  /^(#[0-9a-f]{3,8}|rgba?\([^)]+\)|transparent)$/i, // Color values
+  /^@\[[^\]]+\]$/, // Pure Mosaico variables (keeps mixed content like "Hello @[name]")
+  /^-?\d+(\.\d+)?(px|em|rem|%)?$/, // Numeric values
+];
 
 // Field name patterns that typically contain translatable text
 const TRANSLATABLE_FIELD_PATTERNS = [
@@ -102,39 +104,12 @@ function isTranslatableFieldName(fieldName) {
  * Check if a value should be translated
  */
 function isTranslatableValue(value) {
-  // Must be a non-empty string
   if (typeof value !== 'string' || value.trim() === '') {
     return false;
   }
 
   const trimmed = value.trim();
-
-  // Exclude URLs
-  if (URL_PATTERN.test(trimmed)) {
-    return false;
-  }
-
-  // Exclude email addresses
-  if (EMAIL_PATTERN.test(trimmed)) {
-    return false;
-  }
-
-  // Exclude color values
-  if (COLOR_PATTERN.test(trimmed)) {
-    return false;
-  }
-
-  // Exclude pure Mosaico variables (but keep mixed content like "Hello @[name]")
-  if (MOSAICO_VAR_ONLY_PATTERN.test(trimmed)) {
-    return false;
-  }
-
-  // Exclude pure numeric values
-  if (NUMERIC_PATTERN.test(trimmed)) {
-    return false;
-  }
-
-  return true;
+  return !NON_TRANSLATABLE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
 /**
@@ -154,7 +129,12 @@ function extractHtmlText(html) {
  * @param {Object} result - Accumulator object
  * @param {Object} [protectionConfig] - Optional protection configuration from template
  */
-function extractFromObject(obj, prefix = '', result = {}, protectionConfig = null) {
+function extractFromObject(
+  obj,
+  prefix = '',
+  result = {},
+  protectionConfig = null
+) {
   if (!obj || typeof obj !== 'object') {
     return result;
   }
@@ -189,7 +169,10 @@ function extractFromObject(obj, prefix = '', result = {}, protectionConfig = nul
       // Check if this field should be translated
       if (isTranslatableFieldName(fieldName) && isTranslatableValue(value)) {
         // Check if this field is protected from translation (via data-translate="false" in template)
-        if (protectionConfig && isFieldProtected(key, fieldName, protectionConfig)) {
+        if (
+          protectionConfig &&
+          isFieldProtected(key, fieldName, protectionConfig)
+        ) {
           continue; // Skip protected fields
         }
         result[key] = extractHtmlText(value);
