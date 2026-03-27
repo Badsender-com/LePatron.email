@@ -65,10 +65,7 @@ export default {
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
     title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name}`;
+      return this.$t('modules.settings');
     },
   },
 
