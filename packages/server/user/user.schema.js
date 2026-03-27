@@ -80,6 +80,8 @@ const UserSchema = Schema(
     token: { type: String },
     tokenExpire: { type: Date },
     isDeactivated: { type: Boolean, default: false },
+    // CRM Intelligence access (controlled by Group Admin)
+    hasCrmIntelligenceAccess: { type: Boolean, default: true },
     // Session management fields
     activeSessionId: { type: String, select: false },
     sessionMetadata: {
@@ -224,7 +226,7 @@ UserSchema.methods.comparePassword = function comparePassword(password) {
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: '_company',
-    select: 'id name issuer entryPoint',
+    select: 'id name issuer entryPoint enableCrmIntelligence',
   });
   return mailing;
 };

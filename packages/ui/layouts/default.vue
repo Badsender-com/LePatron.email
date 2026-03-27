@@ -1,23 +1,22 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 import { PAGE } from '~/store/page.js';
-import { USER, IS_ADMIN, IS_GROUP_ADMIN } from '~/store/user.js';
+import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
+import BsModuleRail from '~/components/module-rail.vue';
 
 export default {
   name: 'BsLayoutDefault',
-  components: { BsSnackBar },
+  components: { BsSnackBar, BsModuleRail },
   computed: {
     ...mapState(PAGE, {
       title: (state) => state.pageTitle,
     }),
     ...mapGetters(USER, {
+      isConnected: IS_CONNECTED,
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
-    groupAdminUrl() {
-      return `/groups/${this.$store.state.user?.info?.group?.id}`;
-    },
   },
 };
 </script>
@@ -151,20 +150,6 @@ export default {
         <span>{{ $t('layout.help') }}</span>
       </v-tooltip>
 
-      <v-tooltip v-if="isGroupAdmin" bottom nuxt>
-        <template #activator="{ on }">
-          <v-btn
-            icon
-            color="primary lighten-4"
-            :href="`${groupAdminUrl}?redirectTab=informations`"
-            v-on="on"
-          >
-            <v-icon>settings</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('global.settings') }}</span>
-      </v-tooltip>
-
       <v-tooltip bottom>
         <template #activator="{ on }">
           <v-btn icon color="white" href="/account/logout" v-on="on">
@@ -174,7 +159,11 @@ export default {
         <span>{{ $t('layout.logout') }}</span>
       </v-tooltip>
     </v-app-bar>
-    <v-main>
+
+    <!-- Module Rail (left navigation) -->
+    <bs-module-rail />
+
+    <v-main :class="{ 'with-module-rail': isConnected }">
       <nuxt />
     </v-main>
 
@@ -185,5 +174,10 @@ export default {
 <style scoped>
 .v-toolbar__title {
   font-size: 1rem;
+}
+
+/* Adjust main content when module rail is visible */
+.with-module-rail {
+  padding-left: 56px !important;
 }
 </style>
