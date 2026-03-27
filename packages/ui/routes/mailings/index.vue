@@ -62,7 +62,7 @@ export default {
       return this.mailings.filter(filterFunction);
     },
     title() {
-      return 'Emails';
+      return this.$t('modules.emailBuilder');
     },
     ...mapState(FOLDER, [
       'mailings',
