@@ -22,9 +22,21 @@ class OpenAIProvider extends BaseLLMProvider {
 
   getStaticModels() {
     return [
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini (fast, economical)' },
-      { id: 'gpt-4o', name: 'GPT-4o (balanced)' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (powerful)' },
+      {
+        id: 'gpt-4o-mini',
+        name: 'GPT-4o Mini',
+        descriptionKey: 'integrations.models.fastEconomical',
+      },
+      {
+        id: 'gpt-4o',
+        name: 'GPT-4o',
+        descriptionKey: 'integrations.models.balanced',
+      },
+      {
+        id: 'gpt-4-turbo',
+        name: 'GPT-4 Turbo',
+        descriptionKey: 'integrations.models.powerful',
+      },
     ];
   }
 

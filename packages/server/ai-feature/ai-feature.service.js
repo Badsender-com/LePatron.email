@@ -94,6 +94,14 @@ async function updateFeatureConfig({
     await validateIntegrationOwnership({ integrationId, groupId });
   }
 
+  // Validate minimum 2 languages when provided
+  if (featureConfig?.availableLanguages) {
+    const langs = featureConfig.availableLanguages;
+    if (langs.length > 0 && langs.length < 2) {
+      throw new BadRequest(ERROR_CODES.MIN_LANGUAGES_REQUIRED);
+    }
+  }
+
   let aiConfig = await getOrCreateConfig({ groupId });
 
   const featureIndex = aiConfig.features.findIndex(

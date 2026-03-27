@@ -26,9 +26,21 @@ class MistralProvider extends BaseLLMProvider {
 
   getStaticModels() {
     return [
-      { id: 'mistral-small-latest', name: 'Mistral Small (fast)' },
-      { id: 'mistral-medium-latest', name: 'Mistral Medium (balanced)' },
-      { id: 'mistral-large-latest', name: 'Mistral Large (powerful)' },
+      {
+        id: 'mistral-small-latest',
+        name: 'Mistral Small',
+        descriptionKey: 'integrations.models.fast',
+      },
+      {
+        id: 'mistral-medium-latest',
+        name: 'Mistral Medium',
+        descriptionKey: 'integrations.models.balanced',
+      },
+      {
+        id: 'mistral-large-latest',
+        name: 'Mistral Large',
+        descriptionKey: 'integrations.models.powerful',
+      },
     ];
   }
 

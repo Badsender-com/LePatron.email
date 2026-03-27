@@ -21,6 +21,12 @@ const FORMALITY_OPTIONS = [
 
 export default {
   name: 'BsGroupAiFeaturesTab',
+  props: {
+    active: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       loading: false,
@@ -61,6 +67,7 @@ export default {
     },
     translationIsActive: {
       get() {
+        if (!this.hasActiveIntegration) return false;
         return this.translationFeature?.isActive || false;
       },
       set(value) {
@@ -72,10 +79,18 @@ export default {
         return this.translationFeature?.config?.availableLanguages || [];
       },
       set(value) {
+        if (value.length < 2) return;
         this.updateFeature('translation', {
           config: { availableLanguages: value },
         });
       },
+    },
+    languagesError() {
+      const count = this.selectedLanguages.length;
+      if (count > 0 && count < 2) {
+        return this.$t('aiFeatures.translation.minLanguagesError');
+      }
+      return '';
     },
     hasActiveIntegration() {
       const integration = this.translationFeature?.integration;
@@ -94,11 +109,14 @@ export default {
       }));
     },
     modelOptions() {
-      // Dynamic models (from API) or static fallback (also from API via getStaticModels)
-      return this.dynamicModels.map((m) => ({
-        value: m.id,
-        text: m.name || m.id,
-      }));
+      return this.dynamicModels.map((m) => {
+        const name = m.name || m.id;
+        const description = m.descriptionKey ? this.$t(m.descriptionKey) : '';
+        return {
+          value: m.id,
+          text: description ? `${name} (${description})` : name,
+        };
+      });
     },
     selectedModel: {
       get() {
@@ -122,6 +140,11 @@ export default {
     },
   },
   watch: {
+    active(isActive) {
+      if (isActive) {
+        this.fetchData();
+      }
+    },
     selectedIntegrationId: {
       immediate: true,
       handler(newId) {
@@ -231,6 +254,7 @@ export default {
             <v-spacer />
             <v-switch
               v-model="translationIsActive"
+              :label="$t('integrations.active')"
               :disabled="saving || !hasActiveIntegration"
               :loading="saving"
               hide-details
@@ -306,6 +330,13 @@ export default {
               :label="$t('aiFeatures.translation.availableLanguages')"
               :disabled="saving || !selectedIntegrationId"
               :loading="saving"
+              :error-messages="languagesError"
+              :rules="[
+                (v) =>
+                  !v.length ||
+                  v.length >= 2 ||
+                  $t('aiFeatures.translation.minLanguagesError'),
+              ]"
               multiple
               chips
               small-chips

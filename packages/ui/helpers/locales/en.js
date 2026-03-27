@@ -500,6 +500,7 @@ export default {
     apiKey: 'API Key',
     apiHost: 'API URL (optional)',
     apiKeyHintEdit: 'Leave empty to keep the current key',
+    productId: 'Product ID',
     add: 'Add integration',
     edit: 'Edit integration',
     created: 'Integration created successfully',
@@ -517,17 +518,28 @@ export default {
       pending: 'Pending'
     },
     openai: {
+      apiKeyPlaceholder: 'sk-...',
       apiHostHint: 'Leave empty to use the official OpenAI API'
     },
     mistral: {
+      apiKeyPlaceholder: 'Your Mistral API key',
       apiHostHint: 'Leave empty to use the official Mistral API'
     },
     infomaniak: {
+      apiKeyPlaceholder: 'Your Infomaniak API key',
       productId: 'Product ID',
       productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
     },
     deepl: {
+      apiKeyPlaceholder: 'Your DeepL API key',
       apiKeyHint: 'Your DeepL API key (Free or Pro)'
+    },
+    models: {
+      fastEconomical: 'fast, economical',
+      balanced: 'balanced',
+      powerful: 'powerful',
+      fast: 'fast',
+      recommended: 'recommended',
     }
   },
   aiFeatures: {
@@ -543,7 +555,8 @@ export default {
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
-      languagesHint: 'Select the target languages your users can use',
+      languagesHint: 'Select at least 2 languages (source and target)',
+      minLanguagesError: 'Select at least 2 languages (one source and one target)',
       formality: 'Formality level',
       formalityHint: 'Controls the formality of the translated text (depending on target language)',
       formalityDefault: 'Default',

@@ -265,7 +265,9 @@ export default {
           <bs-group-integrations-tab />
         </v-tab-item>
         <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-ai-features">
-          <bs-group-ai-features-tab />
+          <bs-group-ai-features-tab
+            :active="activeTab === 'group-ai-features'"
+          />
         </v-tab-item>
       </v-tabs>
       <bs-group-loading slot="placeholder" />

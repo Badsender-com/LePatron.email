@@ -285,6 +285,7 @@ export default {
             name: deletingIntegration && deletingIntegration.name,
           })
         "
+        :action-label="$t('global.delete')"
         @confirm="deleteIntegration"
       />
     </v-card-text>

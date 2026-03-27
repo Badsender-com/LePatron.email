@@ -14,7 +14,11 @@ const API_BASE = 'https://api.infomaniak.com';
 // Valid model aliases for Infomaniak chat completions API
 // The /models endpoint returns full model names, but chat API only accepts these aliases
 const VALID_CHAT_MODELS = [
-  { id: 'mixtral', name: 'Mixtral (recommended)' },
+  {
+    id: 'mixtral',
+    name: 'Mixtral',
+    descriptionKey: 'integrations.models.recommended',
+  },
   { id: 'llama3', name: 'LLaMA 3' },
   { id: 'granite', name: 'Granite' },
   { id: 'mistral24b', name: 'Mistral 24B' },

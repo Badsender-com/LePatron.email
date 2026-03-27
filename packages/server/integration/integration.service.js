@@ -1,6 +1,6 @@
 'use strict';
 
-const { Integrations } = require('../common/models.common');
+const { Integrations, AIFeatureConfigs } = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -127,11 +127,18 @@ async function updateIntegration({
     updateData.lastValidatedAt = null;
   }
 
-  return Integrations.findByIdAndUpdate(
+  const updated = await Integrations.findByIdAndUpdate(
     Types.ObjectId(integrationId),
     updateData,
     { new: true }
   );
+
+  // When an integration is deactivated, disable all AI features using it
+  if (isActive === false) {
+    await deactivateFeaturesForIntegration(integrationId);
+  }
+
+  return updated;
 }
 
 /**
@@ -196,6 +203,23 @@ async function findActiveByGroup({ groupId }) {
     _company: Types.ObjectId(groupId),
     isActive: true,
   }).sort({ name: 1 });
+}
+
+/**
+ * Deactivate all AI features that reference a given integration
+ */
+async function deactivateFeaturesForIntegration(integrationId) {
+  const objectId = Types.ObjectId(integrationId);
+  const result = await AIFeatureConfigs.updateMany(
+    { 'features.integration': objectId, 'features.isActive': true },
+    { $set: { 'features.$[feat].isActive': false } },
+    { arrayFilters: [{ 'feat.integration': objectId, 'feat.isActive': true }] }
+  );
+  if (result.nModified > 0) {
+    logger.log(
+      `Deactivated AI features for integration ${integrationId} (${result.nModified} config(s) updated)`
+    );
+  }
 }
 
 /**

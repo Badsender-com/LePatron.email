@@ -504,6 +504,7 @@ export default {
     apiKey: 'Clé API',
     apiHost: 'URL de l\'API (optionnel)',
     apiKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
+    productId: 'ID du produit',
     add: 'Ajouter une intégration',
     edit: 'Modifier l\'intégration',
     created: 'Intégration créée avec succès',
@@ -521,17 +522,28 @@ export default {
       pending: 'En attente'
     },
     openai: {
+      apiKeyPlaceholder: 'sk-...',
       apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
     },
     mistral: {
+      apiKeyPlaceholder: 'Votre clé API Mistral',
       apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
     },
     infomaniak: {
+      apiKeyPlaceholder: 'Votre clé API Infomaniak',
       productId: 'Product ID',
       productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
     },
     deepl: {
+      apiKeyPlaceholder: 'Votre clé API DeepL',
       apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
+    },
+    models: {
+      fastEconomical: 'rapide, économique',
+      balanced: 'équilibré',
+      powerful: 'puissant',
+      fast: 'rapide',
+      recommended: 'recommandé',
     }
   },
   aiFeatures: {
@@ -547,7 +559,8 @@ export default {
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
       availableLanguages: 'Langues disponibles',
-      languagesHint: 'Sélectionnez les langues cibles que vos utilisateurs pourront utiliser',
+      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
       formality: 'Niveau de formalité',
       formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
       formalityDefault: 'Par défaut',

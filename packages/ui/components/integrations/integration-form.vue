@@ -50,7 +50,7 @@ export default {
       }));
     },
     selectedProviderConfig() {
-      return getProviderFormConfig(this.form.provider, this.$t);
+      return getProviderFormConfig(this.form.provider);
     },
     showProductIdField() {
       return this.selectedProviderConfig.showProductId === true;
@@ -184,7 +184,11 @@ export default {
         <v-text-field
           v-model="form.apiKey"
           :label="$t('integrations.apiKey')"
-          :placeholder="selectedProviderConfig.apiKeyPlaceholder"
+          :placeholder="
+            selectedProviderConfig.apiKeyPlaceholderKey
+              ? $t(selectedProviderConfig.apiKeyPlaceholderKey)
+              : ''
+          "
           :error-messages="fieldErrors('apiKey')"
           :disabled="loading"
           :type="showApiKey ? 'text' : 'password'"
@@ -206,7 +210,11 @@ export default {
           v-model="form.productId"
           :label="$t('integrations.productId')"
           :error-messages="fieldErrors('productId')"
-          :hint="selectedProviderConfig.productIdHint"
+          :hint="
+            selectedProviderConfig.productIdHintKey
+              ? $t(selectedProviderConfig.productIdHintKey)
+              : ''
+          "
           :disabled="loading"
           persistent-hint
           outlined
@@ -219,7 +227,11 @@ export default {
           v-model="form.apiHost"
           :label="$t('integrations.apiHost')"
           :placeholder="selectedProviderConfig.apiHostPlaceholder"
-          :hint="selectedProviderConfig.apiHostHint"
+          :hint="
+            selectedProviderConfig.apiHostHintKey
+              ? $t(selectedProviderConfig.apiHostHintKey)
+              : ''
+          "
           :disabled="loading"
           persistent-hint
           outlined

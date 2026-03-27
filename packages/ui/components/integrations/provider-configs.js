@@ -1,50 +1,48 @@
 /**
  * Provider form configurations for the integration form.
  *
- * Each provider defines its UI-specific metadata (placeholders, hints, required fields).
- * To add a new provider, simply add a new entry with a function receiving the $t i18n helper.
+ * Each provider defines its UI-specific metadata (required fields, feature flags).
+ * All user-facing strings use i18n keys resolved by the component template.
  */
 
 export const providerConfigs = {
-  openai: ($t) => ({
-    apiKeyPlaceholder: 'sk-...',
+  openai: {
+    apiKeyPlaceholderKey: 'integrations.openai.apiKeyPlaceholder',
     apiHostPlaceholder: 'https://api.openai.com',
-    apiHostHint: $t('integrations.openai.apiHostHint'),
+    apiHostHintKey: 'integrations.openai.apiHostHint',
     showProductId: false,
-  }),
+  },
 
-  mistral: ($t) => ({
-    apiKeyPlaceholder: 'your-mistral-api-key',
+  mistral: {
+    apiKeyPlaceholderKey: 'integrations.mistral.apiKeyPlaceholder',
     apiHostPlaceholder: 'https://api.mistral.ai',
-    apiHostHint: $t('integrations.mistral.apiHostHint'),
+    apiHostHintKey: 'integrations.mistral.apiHostHint',
     showProductId: false,
-  }),
+  },
 
-  infomaniak: ($t) => ({
-    apiKeyPlaceholder: 'your-infomaniak-api-key',
+  infomaniak: {
+    apiKeyPlaceholderKey: 'integrations.infomaniak.apiKeyPlaceholder',
     apiHostPlaceholder: '',
-    apiHostHint: '',
+    apiHostHintKey: '',
     showProductId: true,
-    productIdHint: $t('integrations.infomaniak.productIdHint'),
-  }),
+    productIdHintKey: 'integrations.infomaniak.productIdHint',
+  },
 
-  deepl: () => ({
-    apiKeyPlaceholder: 'your-deepl-api-key',
+  deepl: {
+    apiKeyPlaceholderKey: 'integrations.deepl.apiKeyPlaceholder',
     apiHostPlaceholder: '',
-    apiHostHint: '',
+    apiHostHintKey: '',
     showProductId: false,
-  }),
+  },
 };
 
 /**
- * Returns the form config for a given provider.
+ * Returns the raw form config for a given provider (no i18n resolution).
  * @param {string} provider - Provider identifier
- * @param {Function} $t - i18n translation function
  * @returns {Object} Provider form config or empty object if unknown
  */
-export function getProviderFormConfig(provider, $t) {
-  const configFn = providerConfigs[provider];
-  return configFn ? configFn($t) : {};
+export function getProviderFormConfig(provider) {
+  return providerConfigs[provider] || {};
 }
 
 /**
