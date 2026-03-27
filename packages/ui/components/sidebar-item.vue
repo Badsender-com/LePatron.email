@@ -30,10 +30,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    expanded: {
-      type: Boolean,
-      default: false,
-    },
   },
   computed: {
     tag() {
@@ -68,7 +64,7 @@ export default {
         {{ icon }}
       </v-icon>
     </div>
-    <span v-if="expanded" class="sidebar-item__label">
+    <span class="sidebar-item__label">
       {{ label }}
     </span>
   </component>

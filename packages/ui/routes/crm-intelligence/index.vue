@@ -114,11 +114,10 @@ export default {
 </script>
 
 <template>
-  <!-- Single dashboard: full width, no sidebar -->
-  <v-container
+  <!-- Single dashboard: full width, no module-specific sidebar -->
+  <div
     v-if="isEnabled && !hasMultipleDashboards"
-    fluid
-    class="pa-0 fill-height"
+    class="crm-fullwidth"
   >
     <dashboard-viewer
       v-if="selectedDashboard"
@@ -126,7 +125,7 @@ export default {
       :loading="loadingEmbed"
       :dashboard-name="selectedDashboard.name"
     />
-  </v-container>
+  </div>
 
   <!-- Multiple dashboards or other states: use sidebar layout -->
   <bs-layout-left-menu v-else>
@@ -242,3 +241,18 @@ export default {
     </v-card>
   </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.crm-fullwidth {
+  margin-left: 56px;
+  height: calc(100vh - 64px);
+  width: calc(100% - 56px);
+}
+
+@media (max-width: 960px) {
+  .crm-fullwidth {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+</style>

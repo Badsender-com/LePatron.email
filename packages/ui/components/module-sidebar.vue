@@ -9,7 +9,6 @@ export default {
   components: { BsSidebarItem },
   data() {
     return {
-      isHovered: false,
       crmIntelligenceEnabled: false,
       crmIntelligenceLoaded: false,
     };
@@ -70,13 +69,7 @@ export default {
 </script>
 
 <template>
-  <nav
-    v-if="isConnected"
-    class="module-sidebar"
-    :class="{ 'module-sidebar--expanded': isHovered }"
-    @mouseenter="isHovered = true"
-    @mouseleave="isHovered = false"
-  >
+  <nav v-if="isConnected" class="module-sidebar">
     <!-- MODULES -->
     <div class="sidebar-section">
       <bs-sidebar-item
@@ -84,7 +77,6 @@ export default {
         icon="mdi-palette"
         :label="$t('modules.emailBuilder')"
         :active="isEmailModule"
-        :expanded="isHovered"
       />
       <bs-sidebar-item
         to="/crm-intelligence"
@@ -92,7 +84,6 @@ export default {
         :label="$t('modules.crmIntelligence')"
         :active="isCrmModule"
         :disabled="!isCrmIntelligenceActive"
-        :expanded="isHovered"
       />
     </div>
 
@@ -107,13 +98,11 @@ export default {
         :label="$t('sidebar.help')"
         href="https://www.lepatron.email/faq/"
         target="_blank"
-        :expanded="isHovered"
       />
       <bs-sidebar-item
         icon="mdi-logout"
         :label="$t('sidebar.logout')"
         href="/account/logout"
-        :expanded="isHovered"
       />
     </div>
 
@@ -126,7 +115,6 @@ export default {
         icon="mdi-cog-outline"
         :label="$t('modules.settings')"
         :active="isSettingsModule"
-        :expanded="isHovered"
       />
     </div>
   </nav>
@@ -148,9 +136,19 @@ export default {
   overflow: hidden;
 }
 
-.module-sidebar--expanded {
+.module-sidebar:hover {
   width: 220px;
   box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide labels when sidebar is not hovered */
+.module-sidebar ::v-deep .sidebar-item__label {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.module-sidebar:hover ::v-deep .sidebar-item__label {
+  opacity: 1;
 }
 
 .sidebar-section {
