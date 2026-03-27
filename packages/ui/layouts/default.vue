@@ -3,11 +3,16 @@ import { mapState, mapGetters } from 'vuex';
 import { PAGE } from '~/store/page.js';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
-import BsModuleRail from '~/components/module-rail.vue';
+import BsModuleSidebar from '~/components/module-sidebar.vue';
 
 export default {
   name: 'BsLayoutDefault',
-  components: { BsSnackBar, BsModuleRail },
+  components: { BsSnackBar, BsModuleSidebar },
+  data() {
+    return {
+      mobileDrawer: false,
+    };
+  },
   computed: {
     ...mapState(PAGE, {
       title: (state) => state.pageTitle,
@@ -17,6 +22,21 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    emailBuilderRoute() {
+      return '/mailings';
+    },
+    settingsRoute() {
+      if (this.isAdmin) {
+        return '/groups';
+      }
+      const groupId = this.$store.state.user?.info?.group?.id;
+      return groupId ? `/groups/${groupId}` : '/mailings';
+    },
+  },
+  methods: {
+    closeMobileDrawer() {
+      this.mobileDrawer = false;
+    },
   },
 };
 </script>
@@ -24,6 +44,13 @@ export default {
 <template>
   <v-app class="fontClass">
     <v-app-bar app color="primary" dark flat>
+      <!-- Mobile hamburger menu -->
+      <v-app-bar-nav-icon
+        v-if="isConnected"
+        class="d-md-none"
+        @click="mobileDrawer = !mobileDrawer"
+      />
+
       <v-toolbar-title>
         <span style="display: inline-box; margin-right: 10px">
           <svg
@@ -134,36 +161,84 @@ export default {
         {{ title }}
       </v-toolbar-title>
       <v-spacer />
-
-      <v-tooltip bottom>
-        <template #activator="{ on }">
-          <v-btn
-            icon
-            color="primary lighten-4"
-            href="https://www.lepatron.email/faq/"
-            target="_blank"
-            v-on="on"
-          >
-            <v-icon>help</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('layout.help') }}</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template #activator="{ on }">
-          <v-btn icon color="white" href="/account/logout" v-on="on">
-            <v-icon>power_settings_new</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('layout.logout') }}</span>
-      </v-tooltip>
     </v-app-bar>
 
-    <!-- Module Rail (left navigation) -->
-    <bs-module-rail />
+    <!-- Module Sidebar (desktop) -->
+    <bs-module-sidebar />
 
-    <v-main :class="{ 'with-module-rail': isConnected }">
+    <!-- Mobile Navigation Drawer -->
+    <v-navigation-drawer
+      v-if="isConnected"
+      v-model="mobileDrawer"
+      temporary
+      app
+      class="d-md-none"
+    >
+      <v-list dense nav>
+        <v-subheader>{{ $t('sidebar.modules') }}</v-subheader>
+
+        <v-list-item nuxt :to="emailBuilderRoute" @click="closeMobileDrawer">
+          <v-list-item-icon>
+            <v-icon>mdi-email-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('modules.emailBuilder') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item nuxt to="/crm-intelligence" @click="closeMobileDrawer">
+          <v-list-item-icon>
+            <v-icon>mdi-chart-areaspline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('modules.crmIntelligence') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+
+      <v-divider />
+
+      <v-list dense nav>
+        <v-subheader>{{ $t('sidebar.utilities') }}</v-subheader>
+
+        <v-list-item
+          href="https://www.lepatron.email/faq/"
+          target="_blank"
+          @click="closeMobileDrawer"
+        >
+          <v-list-item-icon>
+            <v-icon>mdi-help-circle-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('sidebar.help') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-list-item href="/account/logout" @click="closeMobileDrawer">
+          <v-list-item-icon>
+            <v-icon>mdi-logout</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('sidebar.logout') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+
+      <v-divider />
+
+      <v-list dense nav>
+        <v-list-item nuxt :to="settingsRoute" @click="closeMobileDrawer">
+          <v-list-item-icon>
+            <v-icon>mdi-cog-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>{{ $t('modules.settings') }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main :class="{ 'with-module-sidebar': isConnected }">
       <nuxt />
     </v-main>
 
@@ -176,8 +251,10 @@ export default {
   font-size: 1rem;
 }
 
-/* Adjust main content when module rail is visible */
-.with-module-rail {
-  padding-left: 56px !important;
+/* Adjust main content when module sidebar is visible (desktop only) */
+@media (min-width: 961px) {
+  .with-module-sidebar {
+    padding-left: 56px !important;
+  }
 }
 </style>
