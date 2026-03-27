@@ -415,6 +415,7 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    hasCrmIntelligenceAccess: 'CRM Intelligence access',
   },
   workspaces: {
     name: 'Name',
@@ -573,5 +574,64 @@ export default {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
     }
-  }
+  },
+  crmIntelligence: {
+    title: 'CRM Intelligence',
+    subtitle: 'Analytics dashboards',
+    dashboards: 'Dashboards',
+    selectDashboard: 'Select a dashboard from the left menu to get started.',
+    noDashboards: 'No dashboards available',
+    loadingDashboard: 'Loading dashboard...',
+    marketing: {
+      title: 'CRM Intelligence',
+      sidebarTitle: 'Premium Feature',
+      description: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your email performance, deliverability, and customer engagement metrics.',
+      sidebarDescription: 'Access analytics dashboards to drive your CRM strategy.',
+      contactUs: 'Contact Us',
+      features: [
+        'Email campaign performance',
+        'Deliverability analysis',
+        'Customer engagement KPIs',
+        'Marketing ROI tracking',
+      ],
+    },
+    accessDenied: {
+      title: 'Access Restricted',
+      message: 'You do not have access to CRM Intelligence.',
+      contactAdmin: 'Please contact your LePatron account administrator to request access.',
+    },
+    errors: {
+      loadFailed: 'Unable to load the dashboard.',
+      embedFailed: 'Error loading the dashboard.',
+    },
+    admin: {
+      title: 'CRM Intelligence',
+      description: 'Configure Metabase integration for this group.',
+      enabled: 'Enable CRM Intelligence',
+      siteUrl: 'Metabase URL',
+      siteUrlHint: 'E.g., https://metabase.example.com',
+      secretKey: 'Embedding secret key',
+      secretKeyHint: 'Find this key in Admin > Embedding > Static embedding',
+      testConnection: 'Test connection',
+      testConnectionSuccess: 'Connection successful',
+      testConnectionFailed: 'Connection failed',
+      dashboards: 'Dashboards',
+      addDashboard: 'Add dashboard',
+      dashboardId: 'Metabase ID',
+      dashboardIdHint: 'Dashboard number in Metabase',
+      dashboardName: 'Name',
+      dashboardDescription: 'Description',
+      dashboardOrder: 'Order',
+      removeDashboard: 'Remove',
+      noDashboards: 'No dashboards configured',
+      saveSuccess: 'Configuration saved',
+      saveError: 'Error saving configuration',
+    },
+  },
+  modules: {
+    emailBuilder: 'Email Builder',
+    crmIntelligence: 'CRM Intelligence',
+    settings: 'Settings',
+    inactive: 'Not activated',
+  },
 };
