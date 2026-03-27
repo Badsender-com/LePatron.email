@@ -66,20 +66,25 @@ export const actions = {
     const { commit } = vuexCtx;
     commit(M_USER_SET, user);
 
+    // Only fetch group if user has a valid group ID
+    const groupId = user && user.group && user.group.id;
+    if (!groupId) {
+      commit(USER_SET_HAS_FTP_ACCESS, false);
+      return;
+    }
+
     let group;
-    const groupId = user?.group?.id;
-    if (groupId) {
-      try {
-        group = await this.$axios.$get(groupsItem({ groupId }));
-      } catch (error) {
-        // Silent fail - group fetch is optional for FTP access check
-        // Log in development for debugging
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[user store] Failed to fetch group:', error.message);
-        }
+    try {
+      group = await this.$axios.$get(groupsItem({ groupId }));
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[user store] Failed to fetch group:', error.message);
       }
     }
-    commit(USER_SET_HAS_FTP_ACCESS, !!group?.downloadMailingWithFtpImages);
+    commit(
+      USER_SET_HAS_FTP_ACCESS,
+      !!(group && group.downloadMailingWithFtpImages)
+    );
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

@@ -1,0 +1,78 @@
+'use strict';
+
+const asyncHandler = require('express-async-handler');
+const aiFeatureService = require('./ai-feature.service');
+const groupService = require('../group/group.service');
+const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const logger = require('../utils/logger.js');
+
+module.exports = {
+  getConfig: asyncHandler(getConfig),
+  updateFeature: asyncHandler(updateFeature),
+  listFeatureTypes: asyncHandler(listFeatureTypes),
+};
+
+/**
+ * @api {get} /ai-features/types List available AI feature types
+ * @apiPermission user
+ * @apiName ListFeatureTypes
+ * @apiGroup AIFeatures
+ */
+async function listFeatureTypes(req, res) {
+  res.json({
+    types: AIFeatureTypeValues,
+  });
+}
+
+/**
+ * @api {get} /ai-features/groups/:groupId Get AI features configuration
+ * @apiPermission user
+ * @apiName GetAIFeaturesConfig
+ * @apiGroup AIFeatures
+ *
+ * @apiParam {String} groupId Group ID
+ */
+async function getConfig(req, res) {
+  const { user, params } = req;
+  const { groupId } = params;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+
+  const config = await aiFeatureService.getOrCreateConfig({ groupId });
+
+  res.json(config);
+}
+
+/**
+ * @api {put} /ai-features/groups/:groupId/features/:featureType Update feature configuration
+ * @apiPermission groupAdmin
+ * @apiName UpdateFeatureConfig
+ * @apiGroup AIFeatures
+ *
+ * @apiParam {String} groupId Group ID
+ * @apiParam {String} featureType Feature type (translation, etc.)
+ * @apiParam (Body) {String} [integrationId] Integration to use for this feature
+ * @apiParam (Body) {Boolean} [isActive] Active status
+ * @apiParam (Body) {Object} [config] Feature-specific configuration
+ * @apiParam (Body) {Array} [config.availableLanguages] Available target languages (for translation)
+ * @apiParam (Body) {String} [config.defaultSourceLanguage] Default source language (for translation)
+ */
+async function updateFeature(req, res) {
+  const { user, params, body } = req;
+  const { groupId, featureType } = params;
+  const { integrationId, isActive, config } = body;
+
+  logger.log('updateFeature called:', { featureType, isActive });
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+
+  const updatedConfig = await aiFeatureService.updateFeatureConfig({
+    groupId,
+    featureType,
+    integrationId,
+    isActive,
+    config,
+  });
+
+  res.json(updatedConfig);
+}

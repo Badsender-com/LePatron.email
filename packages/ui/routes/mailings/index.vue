@@ -126,7 +126,7 @@ export default {
       const { dispatch } = this.$store;
       await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_FILTER_UPDATE}`, {
         query: this.$route.query,
-        $t: this.$t,
+        $t: this.$t || null,
         ...additionalParams,
       });
       this.resetMailingsSelection();
@@ -135,7 +135,7 @@ export default {
       const { dispatch } = this.$store;
       await dispatch(`${FOLDER}/${FETCH_MAILINGS_FOR_WORKSPACE_UPDATE}`, {
         query: this.$route.query,
-        $t: this.$t,
+        $t: this.$t || null,
         ...additionalParams,
       });
     },
