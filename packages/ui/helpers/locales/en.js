@@ -140,6 +140,7 @@ export default {
     status: 'Status',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
+    comments: 'Comments',
     edit: 'Edit',
     move: 'Move',
     emailsGroups: 'Test lists',
@@ -345,6 +346,7 @@ export default {
     downloadManySuccessful: 'Emails download complete',
     downloadMailSuccessful: 'Email download complete',
     editTagsSuccessful: 'Tags updated',
+    openComments: 'Open comments',
   },
   template: {
     noId: 'No ID',
@@ -459,5 +461,5 @@ export default {
       'NMS_DELIVERY': 'Delivery',
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
-  }
+  },
 };

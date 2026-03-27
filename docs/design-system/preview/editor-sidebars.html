@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidebars Editeur - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --primary-light: #0d4a61;
+      --primary-lighter: #e8f4f8;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --accent-light: rgba(0, 172, 220, 0.15);
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-400: #bdbdbd;
+      --gray-500: #9e9e9e;
+      --gray-600: #757575;
+      --gray-800: #424242;
+      --sidebar-width: 400px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-header h1 { font-size: 1.25rem; font-weight: 500; }
+    .page-header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* Navigation */
+    .nav {
+      background: var(--white);
+      padding: 0.75rem 2rem;
+      display: flex;
+      gap: 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.25rem 0;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav a:hover { color: var(--primary); }
+    .nav a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* Main content */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    /* Status badge */
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status.phase { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+
+    /* Section styling */
+    .section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title .material-icons {
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    /* Info box */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .info-box h4 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-size: 0.9375rem;
+    }
+
+    .info-box p {
+      color: var(--gray-600);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    /* Comparison grid */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .comparison { grid-template-columns: 1fr; }
+    }
+
+    .comparison-item {
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .comparison-header {
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .comparison-header.current {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+
+    .comparison-header.target {
+      background: linear-gradient(135deg, var(--accent), var(--secondary));
+      color: var(--white);
+    }
+
+    .comparison-content {
+      padding: 0;
+      background: var(--primary);
+      min-height: 400px;
+    }
+
+    /* ========================================
+       SIDEBAR MOCK - CURRENT STATE
+       ======================================== */
+    .sidebar-current {
+      width: 100%;
+      background: var(--primary);
+      font-size: 13px;
+    }
+
+    /* Current tabs */
+    .tabs-current {
+      display: flex;
+      background: var(--primary);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .tabs-current .tab {
+      padding: 10px 16px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tabs-current .tab.active {
+      background: var(--primary-light);
+      color: var(--accent);
+    }
+
+    .tabs-current .tab:hover {
+      color: white;
+    }
+
+    /* Current form content */
+    .form-current {
+      padding: 12px;
+      background: #fefdfc;
+      min-height: 350px;
+    }
+
+    .form-current .section-header-old {
+      font-weight: bold;
+      font-size: 12px;
+      color: var(--gray-800);
+      border-bottom: 3px solid var(--gray-800);
+      padding: 3px 10px;
+      margin: 0 -12px 12px -12px;
+      background: #fefdfc;
+    }
+
+    .form-current .prop-row {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .form-current .prop-label {
+      width: 45%;
+      text-align: right;
+      padding-right: 8px;
+      font-size: 12px;
+      color: var(--gray-600);
+    }
+
+    .form-current .prop-input {
+      width: 55%;
+    }
+
+    .form-current input[type="text"],
+    .form-current select {
+      width: 100%;
+      padding: 6px 8px;
+      border: none;
+      border-bottom: 1px solid var(--gray-300);
+      background: transparent;
+      font-size: 12px;
+    }
+
+    /* Current toggle (small) */
+    .toggle-current {
+      position: relative;
+      width: 34px;
+      height: 14px;
+    }
+
+    .toggle-current .track {
+      position: absolute;
+      inset: 0;
+      background: var(--gray-400);
+      border-radius: 7px;
+    }
+
+    .toggle-current .knob {
+      position: absolute;
+      top: -3px;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: left 0.2s;
+    }
+
+    .toggle-current.on .track {
+      background: var(--accent);
+    }
+
+    .toggle-current.on .knob {
+      left: 14px;
+    }
+
+    /* ========================================
+       SIDEBAR MOCK - TARGET STATE
+       ======================================== */
+    .sidebar-target {
+      width: 100%;
+      background: var(--primary);
+      font-size: 13px;
+    }
+
+    /* Target tabs with underline */
+    .tabs-target {
+      display: flex;
+      background: var(--primary);
+      padding: 0 12px;
+    }
+
+    .tabs-target .tab {
+      position: relative;
+      padding: 12px 16px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .tabs-target .tab:hover {
+      color: white;
+    }
+
+    .tabs-target .tab.active {
+      color: white;
+    }
+
+    .tabs-target .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Target form content */
+    .form-target {
+      padding: 16px;
+      background: #fefdfc;
+      min-height: 350px;
+    }
+
+    /* Collapsible section */
+    .section-collapsible {
+      margin-bottom: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+    }
+
+    .section-collapsible-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--gray-50);
+      cursor: pointer;
+      transition: background 0.2s;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--gray-800);
+    }
+
+    .section-collapsible-header:hover {
+      background: var(--gray-100);
+    }
+
+    .section-collapsible-header .icon {
+      transition: transform 0.2s;
+      color: var(--gray-500);
+    }
+
+    .section-collapsible.collapsed .section-collapsible-header .icon {
+      transform: rotate(-90deg);
+    }
+
+    .section-collapsible-content {
+      padding: 16px;
+      background: white;
+    }
+
+    .section-collapsible.collapsed .section-collapsible-content {
+      display: none;
+    }
+
+    /* Target prop row */
+    .form-target .prop-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .form-target .prop-label {
+      width: 40%;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .form-target .prop-input-wrapper {
+      width: 60%;
+    }
+
+    .form-target input[type="text"],
+    .form-target select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+      background: white;
+      font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-target input[type="text"]:focus,
+    .form-target select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-light);
+      outline: none;
+    }
+
+    /* Target toggle (larger) */
+    .toggle-target {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-target .track {
+      position: absolute;
+      inset: 0;
+      background: var(--gray-400);
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+
+    .toggle-target .knob {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+
+    .toggle-target.on .track {
+      background: var(--accent);
+    }
+
+    .toggle-target.on .knob {
+      transform: translateX(20px);
+    }
+
+    /* ========================================
+       BLOCK GALLERY - CURRENT
+       ======================================== */
+    .gallery-current {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px;
+      background: #fefdfc;
+    }
+
+    .block-card-current {
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: grab;
+      transition: transform 0.15s;
+    }
+
+    .block-card-current:hover {
+      transform: scale(1.05);
+    }
+
+    .block-card-current img {
+      width: 100%;
+      display: block;
+    }
+
+    .block-card-current .name {
+      position: absolute;
+      top: 3px;
+      left: 0;
+      background: var(--primary);
+      color: white;
+      padding: 2px 8px;
+      font-size: 10px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ========================================
+       BLOCK GALLERY - TARGET
+       ======================================== */
+    .gallery-target {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 16px;
+      background: #fefdfc;
+    }
+
+    .block-card-target {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: grab;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .block-card-target:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .block-card-target:active {
+      cursor: grabbing;
+      transform: scale(0.98);
+    }
+
+    .block-card-target .preview {
+      aspect-ratio: 4/3;
+      background: var(--gray-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .block-card-target .preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .block-card-target .name {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gray-800);
+      border-top: 1px solid var(--gray-200);
+      background: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Placeholder images */
+    .placeholder-img {
+      width: 100%;
+      height: 60px;
+      background: linear-gradient(135deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      font-size: 10px;
+    }
+
+    .placeholder-img-large {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      font-size: 11px;
+    }
+
+    /* Comparison table */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .comparison-table th {
+      background: var(--gray-50);
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .comparison-table td {
+      font-size: 0.875rem;
+    }
+
+    .comparison-table .value-old {
+      color: var(--error);
+    }
+
+    .comparison-table .value-new {
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* Recommendations */
+    .recommendations {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .recommendation-card {
+      background: var(--gray-50);
+      border-radius: 8px;
+      padding: 1.25rem;
+      border: 1px solid var(--gray-200);
+    }
+
+    .recommendation-card h4 {
+      font-size: 0.9375rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .recommendation-card h4 .material-icons {
+      font-size: 1.125rem;
+      color: var(--accent);
+    }
+
+    .recommendation-card p {
+      font-size: 0.8125rem;
+      color: var(--gray-600);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>LePatron.email Design System</h1>
+    <span class="badge">Preview</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Superieure</a>
+    <a href="mailings-list.html">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html" class="active">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Sidebars de l'Editeur</h1>
+    <p class="page-subtitle">
+      <span class="status phase">Phase 11</span>
+      Modernisation des panneaux d'options (Blocs, Contenu, Style)
+    </p>
+
+    <div class="info-box">
+      <h4>Objectif</h4>
+      <p>
+        Transformer la sidebar de l'editeur en une interface moderne et aeree : sections collapsibles,
+        toggles plus grands et accessibles, galerie de blocs lisible, et inputs avec focus states clairs.
+        La sidebar est le coeur de l'experience utilisateur dans l'editeur.
+      </p>
+    </div>
+
+    <!-- Section 1: Tabs -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="material-icons">tab</span>
+        Onglets de navigation
+      </h2>
+      <p>Les 3 onglets principaux : Blocs, Contenu, Style.</p>
+
+      <div class="comparison">
+        <div class="comparison-item">
+          <div class="comparison-header current">
+            <span class="material-icons">history</span>
+            Actuel - Background color
+          </div>
+          <div class="comparison-content">
+            <div class="sidebar-current">
+              <div class="tabs-current">
+                <div class="tab">Blocs</div>
+                <div class="tab active">Contenu</div>
+                <div class="tab">Style</div>
+              </div>
+              <div class="form-current">
+                <div class="section-header-old">Template Options</div>
+                <div class="prop-row">
+                  <div class="prop-label">Brand</div>
+                  <div class="prop-input">
+                    <select><option>Canada EN</option></select>
+                  </div>
+                </div>
+                <div class="prop-row">
+                  <div class="prop-label">Pre-header</div>
+                  <div class="prop-input">
+                    <div class="toggle-current on">
+                      <div class="track"></div>
+                      <div class="knob"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="prop-row">
+                  <div class="prop-label">header</div>
+                  <div class="prop-input">
+                    <div class="toggle-current on">
+                      <div class="track"></div>
+                      <div class="knob"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-item">
+          <div class="comparison-header target">
+            <span class="material-icons">auto_awesome</span>
+            Vision - Underline indicator
+          </div>
+          <div class="comparison-content">
+            <div class="sidebar-target">
+              <div class="tabs-target">
+                <div class="tab">Blocs</div>
+                <div class="tab active">Contenu</div>
+                <div class="tab">Style</div>
+              </div>
+              <div class="form-target">
+                <div class="section-collapsible">
+                  <div class="section-collapsible-header">
+                    <span>Template Options</span>
+                    <span class="material-icons icon">expand_more</span>
+                  </div>
+                  <div class="section-collapsible-content">
+                    <div class="prop-row">
+                      <div class="prop-label">Brand</div>
+                      <div class="prop-input-wrapper">
+                        <select><option>Canada EN</option></select>
+                      </div>
+                    </div>
+                    <div class="prop-row">
+                      <div class="prop-label">Pre-header</div>
+                      <div class="prop-input-wrapper">
+                        <div class="toggle-target on">
+                          <div class="track"></div>
+                          <div class="knob"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="prop-row">
+                      <div class="prop-label">Header</div>
+                      <div class="prop-input-wrapper">
+                        <div class="toggle-target on">
+                          <div class="track"></div>
+                          <div class="knob"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Form components -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="material-icons">toggle_on</span>
+        Composants de formulaire
+      </h2>
+      <p>Toggles, inputs et sections collapsibles.</p>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Composant</th>
+            <th>Actuel</th>
+            <th>Cible</th>
+            <th>Amelioration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Toggle switch</td>
+            <td class="value-old">34 x 14 px</td>
+            <td class="value-new">44 x 24 px</td>
+            <td>+29% surface cliquable, accessible mobile</td>
+          </tr>
+          <tr>
+            <td>Section header</td>
+            <td class="value-old">Texte gras + border-bottom</td>
+            <td class="value-new">Card collapsible + chevron</td>
+            <td>Hierarchie visuelle, reduction du scroll</td>
+          </tr>
+          <tr>
+            <td>Input text</td>
+            <td class="value-old">Border-bottom only</td>
+            <td class="value-new">Border complete + focus ring</td>
+            <td>Meilleure visibilite, accessibilite</td>
+          </tr>
+          <tr>
+            <td>Espacement</td>
+            <td class="value-old">4-8px variable</td>
+            <td class="value-new">12-16px coherent</td>
+            <td>Interface aeree et scannable</td>
+          </tr>
+          <tr>
+            <td>Transitions</td>
+            <td class="value-old">Aucune</td>
+            <td class="value-new">0.2s ease-out</td>
+            <td>Interface reactive et polie</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box" style="margin-top: 1.5rem;">
+        <h4>Accessibilite</h4>
+        <p>
+          Les toggles de 44x24px respectent le minimum recommande de 44px pour les touch targets (WCAG 2.1).
+          Le focus ring avec box-shadow ameliore la navigation au clavier.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 3: Block Gallery -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="material-icons">dashboard</span>
+        Galerie de blocs
+      </h2>
+      <p>L'onglet "Blocs" avec les elements a glisser-deposer.</p>
+
+      <div class="comparison">
+        <div class="comparison-item">
+          <div class="comparison-header current">
+            <span class="material-icons">history</span>
+            Actuel - 3 colonnes (~120px)
+          </div>
+          <div class="comparison-content" style="background: #fefdfc;">
+            <div class="gallery-current">
+              <div class="block-card-current">
+                <div class="name">cover_v2Block</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+              <div class="block-card-current">
+                <div class="name">columnsBlock</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+              <div class="block-card-current">
+                <div class="name">textimageBlock</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+              <div class="block-card-current">
+                <div class="name">headerBlock</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+              <div class="block-card-current">
+                <div class="name">footerBlock</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+              <div class="block-card-current">
+                <div class="name">buttonBlock</div>
+                <div class="placeholder-img">Preview</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-item">
+          <div class="comparison-header target">
+            <span class="material-icons">auto_awesome</span>
+            Vision - 2 colonnes (~170px)
+          </div>
+          <div class="comparison-content" style="background: #fefdfc;">
+            <div class="gallery-target">
+              <div class="block-card-target">
+                <div class="preview">
+                  <div class="placeholder-img-large">Preview lisible</div>
+                </div>
+                <div class="name">cover_v2Block</div>
+              </div>
+              <div class="block-card-target">
+                <div class="preview">
+                  <div class="placeholder-img-large">Preview lisible</div>
+                </div>
+                <div class="name">columnsBlock</div>
+              </div>
+              <div class="block-card-target">
+                <div class="preview">
+                  <div class="placeholder-img-large">Preview lisible</div>
+                </div>
+                <div class="name">textimageBlock</div>
+              </div>
+              <div class="block-card-target">
+                <div class="preview">
+                  <div class="placeholder-img-large">Preview lisible</div>
+                </div>
+                <div class="name">headerBlock</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top: 1.5rem;">
+        <h4>Avantages du layout 2 colonnes</h4>
+        <p>
+          <strong>Preview lisible</strong> : Les utilisateurs peuvent voir le contenu du bloc avant de le deposer.<br>
+          <strong>Meilleur drag & drop</strong> : Plus d'espace pour saisir les cards.<br>
+          <strong>Nom complet visible</strong> : Moins de troncature des noms de blocs.
+        </p>
+      </div>
+    </section>
+
+    <!-- Recommendations -->
+    <section class="section">
+      <h2 class="section-title">
+        <span class="material-icons">tips_and_updates</span>
+        Recommandations cles
+      </h2>
+
+      <div class="recommendations">
+        <div class="recommendation-card">
+          <h4><span class="material-icons">unfold_less</span> Sections collapsibles</h4>
+          <p>Permettre aux utilisateurs de masquer les sections qu'ils n'utilisent pas pour reduire le scroll et la charge cognitive.</p>
+        </div>
+        <div class="recommendation-card">
+          <h4><span class="material-icons">touch_app</span> Touch targets 44px</h4>
+          <p>Agrandir les toggles et boutons pour respecter les recommandations d'accessibilite mobile (WCAG 2.1).</p>
+        </div>
+        <div class="recommendation-card">
+          <h4><span class="material-icons">space_bar</span> Espacement coherent</h4>
+          <p>Utiliser une grille de 16px pour l'espacement. Plus d'air entre les elements ameliore la lisibilite.</p>
+        </div>
+        <div class="recommendation-card">
+          <h4><span class="material-icons">animation</span> Transitions fluides</h4>
+          <p>Ajouter des transitions de 0.2s sur tous les etats interactifs pour une experience plus polie.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

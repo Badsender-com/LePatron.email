@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste des Emails - LePatron.email Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #093040;
+      --secondary: #265090;
+      --accent: #00ACDC;
+      --warning: #FFB400;
+      --error: #F04E23;
+      --success: #4caf50;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #eeeeee;
+      --gray-300: #e0e0e0;
+      --gray-400: #bdbdbd;
+      --gray-600: #757575;
+      --gray-800: #424242;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-header h1 { font-size: 1.25rem; font-weight: 500; }
+    .page-header .badge {
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-300);
+      padding: 0 2rem;
+      display: flex;
+    }
+
+    .nav a {
+      color: var(--gray-600);
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+    }
+
+    .nav a:hover { color: var(--primary); background: var(--gray-100); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+    }
+
+    /* Info boxes */
+    .info-box {
+      background: rgba(0, 172, 220, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.875rem;
+    }
+
+    .info-box strong { color: var(--primary); }
+
+    /* Section */
+    .section {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .section h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin: 1.5rem 0 1rem;
+    }
+
+    /* Demo panels */
+    .demo-panel {
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .demo-header {
+      padding: 0.75rem 1rem;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .demo-header h5 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .demo-header .status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status.current { background: var(--gray-200); color: var(--gray-600); }
+    .status.target { background: rgba(0, 172, 220, 0.15); color: var(--accent); }
+    .status.problem { background: rgba(240, 78, 35, 0.15); color: var(--error); }
+
+    /* App simulation */
+    .app-frame {
+      background: var(--gray-100);
+      min-height: 400px;
+    }
+
+    .app-topbar {
+      height: 48px;
+      background: var(--primary);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+    }
+
+    .app-topbar .logo {
+      font-weight: 600;
+    }
+
+    .app-topbar .logo span {
+      color: var(--warning);
+    }
+
+    .app-topbar .spacer { flex: 1; }
+
+    .app-topbar .icons {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .app-topbar .icon-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      padding: 0.5rem;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+    }
+
+    .app-topbar .icon-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: 350px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: var(--white);
+      border-right: 1px solid var(--gray-200);
+      padding: 1rem 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar .new-btn {
+      margin: 0 1rem 1rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: calc(100% - 2rem);
+      justify-content: center;
+    }
+
+    .sidebar .workspace-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      color: var(--gray-800);
+      cursor: pointer;
+    }
+
+    .sidebar .workspace-item:hover {
+      background: var(--gray-50);
+    }
+
+    .sidebar .workspace-item.active {
+      background: rgba(0, 172, 220, 0.08);
+      color: var(--accent);
+    }
+
+    .sidebar .workspace-item .material-icons {
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .sidebar .folder-item {
+      padding-left: 2.5rem;
+    }
+
+    .sidebar .subfolder-item {
+      padding-left: 3.5rem;
+    }
+
+    /* Content area */
+    .content-area {
+      flex: 1;
+      padding: 1rem;
+      background: var(--gray-50);
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .breadcrumbs a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .breadcrumbs .divider {
+      color: var(--gray-400);
+    }
+
+    .breadcrumbs .current {
+      color: var(--gray-600);
+    }
+
+    /* Filter bar - Current (accordion) */
+    .filter-accordion {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .filter-accordion-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    .filter-accordion-content {
+      padding: 1rem;
+      border-top: 1px solid var(--gray-200);
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      font-size: 0.75rem;
+    }
+
+    .filter-accordion-content label {
+      display: block;
+      color: var(--gray-600);
+      margin-bottom: 0.25rem;
+    }
+
+    .filter-accordion-content input,
+    .filter-accordion-content select {
+      width: 100%;
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .reset-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.375rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* Filter bar - Target (always visible) */
+    .filter-bar {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-bar .new-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+
+    .filter-bar .search {
+      flex: 1;
+      max-width: 200px;
+      padding: 0.375rem 0.75rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .filter-bar .filter-select {
+      padding: 0.375rem 0.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      min-width: 100px;
+    }
+
+    .filter-bar .clear-btn {
+      background: transparent;
+      color: var(--gray-600);
+      border: none;
+      padding: 0.375rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .filter-bar .clear-btn:hover {
+      color: var(--error);
+    }
+
+    /* Data table */
+    .data-table {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .data-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+
+    .data-table th {
+      background: var(--gray-50);
+      padding: 0.75rem 0.5rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--gray-600);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .data-table td {
+      padding: 0.625rem 0.5rem;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .data-table tr:hover {
+      background: var(--gray-50);
+    }
+
+    .data-table .name-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .data-table .name-link:hover {
+      text-decoration: underline;
+    }
+
+    .data-table .actions {
+      text-align: center;
+    }
+
+    .data-table .actions-btn {
+      background: transparent;
+      border: none;
+      color: var(--gray-400);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .data-table .actions-btn:hover {
+      color: var(--gray-600);
+    }
+
+    /* Quick actions on hover */
+    .data-table .quick-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .data-table tr:hover .quick-actions {
+      opacity: 1;
+    }
+
+    .quick-actions button {
+      background: transparent;
+      border: none;
+      color: var(--gray-400);
+      padding: 0.25rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .quick-actions button:hover {
+      background: var(--gray-100);
+      color: var(--accent);
+    }
+
+    /* Bulk actions toolbar */
+    .bulk-toolbar {
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .bulk-toolbar .count {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .bulk-toolbar .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .bulk-toolbar .action-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .bulk-toolbar .action-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .bulk-toolbar .spacer { flex: 1; }
+
+    .bulk-toolbar .close-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    /* Tables */
+    .changes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .changes-table th,
+    .changes-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .changes-table th {
+      font-weight: 600;
+      color: var(--gray-600);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .changes-table .before {
+      color: var(--error);
+    }
+
+    .changes-table .after {
+      color: var(--success);
+    }
+
+    /* Benefits grid */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .benefit-card {
+      padding: 1rem;
+      background: var(--gray-50);
+      border-radius: 8px;
+    }
+
+    .benefit-card h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .benefit-card h4 .material-icons {
+      font-size: 1.25rem;
+      color: var(--accent);
+    }
+
+    .benefit-card p {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray-600);
+      font-size: 0.875rem;
+    }
+
+    /* Comparison grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>LePatron.email</h1>
+    <span class="badge">Design System</span>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Accueil</a>
+    <a href="tokens.html">Tokens</a>
+    <a href="components.html">Composants Vue</a>
+    <a href="components-editor.html">Composants Editor</a>
+    <a href="admin-settings.html">Interface Admin</a>
+    <a href="top-bar.html">Barre Supérieure</a>
+    <a href="mailings-list.html" class="active">Liste Emails</a>
+    <a href="editor-canvas.html">Canvas Editeur</a>
+    <a href="editor-sidebars.html">Sidebars Editeur</a>
+    <a href="white-label.html">White-Label</a>
+  </nav>
+
+  <main class="main">
+
+    <h1 class="page-title">Liste des Emails - Navigation</h1>
+    <p class="page-subtitle">Modernisation de l'interface de navigation et gestion des mailings</p>
+
+    <div class="info-box">
+      <strong>Objectif :</strong> Améliorer la discoverability des filtres, déplacer le bouton "NEW EMAIL"
+      dans le header, ajouter des quick actions au hover et un toolbar de bulk actions.
+    </div>
+
+    <!-- Current State -->
+    <div class="section">
+      <h3>Etat actuel : Filtres cachés et actions dispersées</h3>
+
+      <div class="demo-panel">
+        <div class="demo-header">
+          <h5>Interface actuelle</h5>
+          <span class="status problem">Problèmes UX</span>
+        </div>
+        <div class="app-frame">
+          <div class="app-topbar">
+            <span class="logo">LePatro<span>n</span></span>
+            <span style="margin-left: 0.5rem;">Emails</span>
+            <span class="spacer"></span>
+            <div class="icons">
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">settings</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">power_settings_new</span></button>
+            </div>
+          </div>
+          <div class="app-layout">
+            <div class="sidebar">
+              <button class="new-btn">
+                <span class="material-icons" style="font-size:16px">add</span>
+                NEW EMAIL
+              </button>
+              <div class="workspace-item">
+                <span class="material-icons">person</span>
+                Badsender Drafts
+              </div>
+              <div class="workspace-item active">
+                <span class="material-icons">person</span>
+                Badsender Production
+              </div>
+              <div class="workspace-item folder-item">
+                <span class="material-icons">folder</span>
+                Exemples et modèles
+              </div>
+              <div class="workspace-item subfolder-item" style="background: rgba(0, 172, 220, 0.08);">
+                <span class="material-icons">folder</span>
+                OLD
+              </div>
+              <div class="workspace-item folder-item">
+                <span class="material-icons">folder</span>
+                Formation
+              </div>
+              <div class="workspace-item">
+                <span class="material-icons">person</span>
+                Belgium
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="breadcrumbs">
+                <a href="#">Badsender Production</a>
+                <span class="divider">&gt;</span>
+                <a href="#">Exemples et modèles</a>
+                <span class="divider">&gt;</span>
+                <span class="current">OLD</span>
+              </div>
+
+              <div class="filter-accordion">
+                <div class="filter-accordion-header">
+                  <span class="material-icons" style="font-size:16px">search</span>
+                  Search in the email list
+                  <span style="flex:1"></span>
+                  <span class="material-icons" style="font-size:16px">tune</span>
+                </div>
+                <div class="filter-accordion-content">
+                  <div>
+                    <label>Name</label>
+                    <input type="text" placeholder="Filter by name...">
+                  </div>
+                  <div>
+                    <label>Templates</label>
+                    <select><option>All templates</option></select>
+                  </div>
+                  <div>
+                    <label>Tags</label>
+                    <select><option>All tags</option></select>
+                  </div>
+                  <div class="filter-row" style="grid-column: 1 / -1;">
+                    <div style="flex:1">
+                      <label>Created between</label>
+                      <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="text" placeholder="Start date">
+                        <span>and</span>
+                        <input type="text" placeholder="End date">
+                      </div>
+                    </div>
+                    <div style="flex:1">
+                      <label>Updated between</label>
+                      <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="text" placeholder="Start date">
+                        <span>and</span>
+                        <input type="text" placeholder="End date">
+                      </div>
+                    </div>
+                    <button class="reset-btn">RESET</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="data-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:30px"><input type="checkbox"></th>
+                      <th>Name</th>
+                      <th>Author</th>
+                      <th>Template</th>
+                      <th>Tags</th>
+                      <th>Created at</th>
+                      <th>Updated at</th>
+                      <th style="width:40px">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle NL Sobriété & Marketing</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>19/12/2023 11:22</td>
+                      <td>27/03/2025 18:33</td>
+                      <td class="actions"><button class="actions-btn"><span class="material-icons" style="font-size:16px">more_vert</span></button></td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle invitation LIVE Badsender</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>19/12/2023 11:39</td>
+                      <td>27/03/2025 18:33</td>
+                      <td class="actions"><button class="actions-btn"><span class="material-icons" style="font-size:16px">more_vert</span></button></td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle jourJ LIVE Badsender</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>19/12/2023 11:54</td>
+                      <td>27/03/2025 18:33</td>
+                      <td class="actions"><button class="actions-btn"><span class="material-icons" style="font-size:16px">more_vert</span></button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <table class="changes-table">
+        <thead>
+          <tr>
+            <th>Problème</th>
+            <th>Impact</th>
+            <th>Sévérité</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="before">Filtres cachés dans un accordéon</td>
+            <td>Discoverability faible, utilisateurs ne trouvent pas les filtres</td>
+            <td>HAUTE</td>
+          </tr>
+          <tr>
+            <td class="before">Bouton "NEW EMAIL" dans la sidebar</td>
+            <td>Déconnecté du contexte actuel (workspace/folder)</td>
+            <td>MOYENNE</td>
+          </tr>
+          <tr>
+            <td class="before">Actions cachées (menu "⋮")</td>
+            <td>Clic supplémentaire pour preview/duplicate</td>
+            <td>MOYENNE</td>
+          </tr>
+          <tr>
+            <td class="before">7 colonnes + actions</td>
+            <td>Difficile à scanner, information dense</td>
+            <td>MOYENNE</td>
+          </tr>
+          <tr>
+            <td class="before">Pas de bulk actions visibles</td>
+            <td>Actions groupées non évidentes pour l'utilisateur</td>
+            <td>BASSE</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Target State -->
+    <div class="section">
+      <h3>Design cible : Filtres visibles et actions rapides</h3>
+
+      <div class="demo-panel">
+        <div class="demo-header">
+          <h5>Interface redesignée</h5>
+          <span class="status target">Améliorations UX</span>
+        </div>
+        <div class="app-frame">
+          <div class="app-topbar">
+            <span class="logo">LePatro<span>n</span></span>
+            <span style="margin-left: 0.5rem;">Emails</span>
+            <span class="spacer"></span>
+            <div class="icons">
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">help_outline</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">settings</span></button>
+              <button class="icon-btn"><span class="material-icons" style="font-size:18px">power_settings_new</span></button>
+            </div>
+          </div>
+          <div class="app-layout">
+            <div class="sidebar">
+              <!-- No NEW EMAIL button here anymore -->
+              <div class="workspace-item">
+                <span class="material-icons">person</span>
+                Badsender Drafts
+              </div>
+              <div class="workspace-item active">
+                <span class="material-icons">person</span>
+                Badsender Production
+              </div>
+              <div class="workspace-item folder-item">
+                <span class="material-icons">folder</span>
+                Exemples et modèles
+              </div>
+              <div class="workspace-item subfolder-item" style="background: rgba(0, 172, 220, 0.08);">
+                <span class="material-icons">folder</span>
+                OLD
+              </div>
+              <div class="workspace-item folder-item">
+                <span class="material-icons">folder</span>
+                Formation
+              </div>
+              <div class="workspace-item">
+                <span class="material-icons">person</span>
+                Belgium
+              </div>
+            </div>
+            <div class="content-area">
+              <div class="breadcrumbs">
+                <a href="#">Badsender Production</a>
+                <span class="divider">&gt;</span>
+                <a href="#">Exemples et modèles</a>
+                <span class="divider">&gt;</span>
+                <span class="current">OLD</span>
+              </div>
+
+              <!-- Always visible filter bar with NEW EMAIL button -->
+              <div class="filter-bar">
+                <button class="new-btn">
+                  <span class="material-icons" style="font-size:14px">add</span>
+                  NEW EMAIL
+                </button>
+                <input type="text" class="search" placeholder="Search...">
+                <select class="filter-select">
+                  <option>Template</option>
+                </select>
+                <select class="filter-select">
+                  <option>Tags</option>
+                </select>
+                <select class="filter-select">
+                  <option>Date</option>
+                </select>
+                <button class="clear-btn">
+                  <span class="material-icons" style="font-size:14px">close</span>
+                  Clear
+                </button>
+              </div>
+
+              <div class="data-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:30px"><input type="checkbox"></th>
+                      <th>Name</th>
+                      <th>Author</th>
+                      <th>Template</th>
+                      <th>Tags</th>
+                      <th>Updated at</th>
+                      <th style="width:80px">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle NL Sobriété & Marketing</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>27/03/2025</td>
+                      <td class="actions">
+                        <div class="quick-actions" style="opacity:1">
+                          <button title="Preview"><span class="material-icons" style="font-size:16px">visibility</span></button>
+                          <button title="Duplicate"><span class="material-icons" style="font-size:16px">content_copy</span></button>
+                          <button title="More"><span class="material-icons" style="font-size:16px">more_vert</span></button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle invitation LIVE Badsender</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>27/03/2025</td>
+                      <td class="actions">
+                        <div class="quick-actions">
+                          <button title="Preview"><span class="material-icons" style="font-size:16px">visibility</span></button>
+                          <button title="Duplicate"><span class="material-icons" style="font-size:16px">content_copy</span></button>
+                          <button title="More"><span class="material-icons" style="font-size:16px">more_vert</span></button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><input type="checkbox"></td>
+                      <td><a href="#" class="name-link">Modèle jourJ LIVE Badsender</a></td>
+                      <td>pierre</td>
+                      <td>badsender - v4</td>
+                      <td>-</td>
+                      <td>27/03/2025</td>
+                      <td class="actions">
+                        <div class="quick-actions">
+                          <button title="Preview"><span class="material-icons" style="font-size:16px">visibility</span></button>
+                          <button title="Duplicate"><span class="material-icons" style="font-size:16px">content_copy</span></button>
+                          <button title="More"><span class="material-icons" style="font-size:16px">more_vert</span></button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Bulk Actions Toolbar (quand items sélectionnés)</h4>
+
+      <div class="demo-panel">
+        <div class="demo-header">
+          <h5>3 emails sélectionnés</h5>
+          <span class="status target">Actions groupées</span>
+        </div>
+        <div style="padding: 1rem; background: var(--gray-100);">
+          <div class="bulk-toolbar">
+            <div class="count">
+              <span class="material-icons" style="font-size:18px">check_box</span>
+              3 sélectionnés
+            </div>
+            <div class="actions">
+              <button class="action-btn">
+                <span class="material-icons" style="font-size:14px">label</span>
+                Tags
+              </button>
+              <button class="action-btn">
+                <span class="material-icons" style="font-size:14px">drive_file_move</span>
+                Move
+              </button>
+              <button class="action-btn">
+                <span class="material-icons" style="font-size:14px">content_copy</span>
+                Duplicate
+              </button>
+              <button class="action-btn" style="color: rgba(240, 78, 35, 0.9);">
+                <span class="material-icons" style="font-size:14px">delete</span>
+                Delete
+              </button>
+            </div>
+            <span class="spacer"></span>
+            <button class="close-btn">
+              <span class="material-icons" style="font-size:18px">close</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Changes Summary -->
+    <div class="section">
+      <h3>Résumé des changements</h3>
+
+      <table class="changes-table">
+        <thead>
+          <tr>
+            <th>Avant</th>
+            <th>Après</th>
+            <th>Bénéfice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="before">Filtres dans accordéon caché</td>
+            <td class="after">Barre de filtres toujours visible</td>
+            <td>Discoverability immédiate</td>
+          </tr>
+          <tr>
+            <td class="before">"NEW EMAIL" dans sidebar</td>
+            <td class="after">"NEW EMAIL" dans le header contenu</td>
+            <td>Action contextuelle, plus visible</td>
+          </tr>
+          <tr>
+            <td class="before">Menu "⋮" pour toutes les actions</td>
+            <td class="after">Quick actions au hover (Preview, Duplicate)</td>
+            <td>1 clic au lieu de 2</td>
+          </tr>
+          <tr>
+            <td class="before">7 colonnes + dates complètes</td>
+            <td class="after">6 colonnes, date simplifiée</td>
+            <td>Moins dense, plus scannable</td>
+          </tr>
+          <tr>
+            <td class="before">Actions groupées non visibles</td>
+            <td class="after">Bulk toolbar quand sélection</td>
+            <td>Feedback clair, actions accessibles</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Benefits -->
+    <div class="section">
+      <h3>Avantages du nouveau design</h3>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <h4><span class="material-icons">search</span> Discoverability</h4>
+          <p>Filtres toujours visibles, pas besoin de chercher comment filtrer.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">speed</span> Efficacité</h4>
+          <p>Quick actions au hover : preview et duplicate en 1 clic.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">select_all</span> Bulk Actions</h4>
+          <p>Toolbar contextuel pour actions groupées sur plusieurs emails.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">visibility</span> Clarté</h4>
+          <p>Moins de colonnes, information plus scannable.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">touch_app</span> Contextuel</h4>
+          <p>"NEW EMAIL" visible dans la zone de contenu, lié au folder actif.</p>
+        </div>
+        <div class="benefit-card">
+          <h4><span class="material-icons">auto_awesome</span> Moderne</h4>
+          <p>Pattern utilisé par Gmail, Drive, Notion, Linear...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top: 2rem;">
+      <strong>Fichiers à modifier :</strong><br>
+      <code>packages/ui/routes/mailings/index.vue</code><br>
+      <code>packages/ui/routes/mailings/__partials/mailings-filters.vue</code><br>
+      <code>packages/ui/routes/mailings/__partials/mailings-table.vue</code><br>
+      <code>packages/ui/routes/mailings/__partials/mailings-header.vue</code><br>
+      <code>packages/ui/routes/mailings/__partials/workspace-tree.vue</code>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    LePatron.email Design System — Phase 9 : Liste des Emails — Février 2026
+  </footer>
+
+</body>
+</html>
