@@ -209,7 +209,7 @@ export default {
           <!-- Metabase Configuration -->
           <v-divider class="mb-4" />
           <h3 class="text-subtitle-1 mb-4">
-            Configuration Metabase
+            {{ $t('crmIntelligence.admin.metabaseConfig') }}
           </h3>
 
           <v-text-field
@@ -218,7 +218,7 @@ export default {
             :hint="$t('crmIntelligence.admin.siteUrlHint')"
             :error-messages="
               $v.localConfig.siteUrl.$dirty && !$v.localConfig.siteUrl.url
-                ? 'URL invalide'
+                ? $t('crmIntelligence.admin.invalidUrl')
                 : ''
             "
             outlined
@@ -331,6 +331,7 @@ export default {
                 <v-btn
                   icon
                   color="error"
+                  :aria-label="$t('crmIntelligence.admin.removeDashboard')"
                   @click="removeDashboard(index)"
                 >
                   <v-icon>mdi-delete</v-icon>
@@ -345,7 +346,7 @@ export default {
     <v-card-actions>
       <v-spacer />
       <v-btn
-        color="primary"
+        color="accent"
         :loading="loading"
         @click="saveConfiguration"
       >
