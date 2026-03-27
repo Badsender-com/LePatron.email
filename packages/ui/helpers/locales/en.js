@@ -524,4 +524,10 @@ export default {
     settings: 'Settings',
     inactive: 'Not activated',
   },
+  sidebar: {
+    modules: 'Modules',
+    utilities: 'Utilities',
+    help: 'Help',
+    logout: 'Logout',
+  },
 };

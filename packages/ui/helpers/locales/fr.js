@@ -528,4 +528,10 @@ export default {
     settings: 'Paramètres',
     inactive: 'Non activé',
   },
+  sidebar: {
+    modules: 'Modules',
+    utilities: 'Utilitaires',
+    help: 'Aide',
+    logout: 'Déconnexion',
+  },
 };
