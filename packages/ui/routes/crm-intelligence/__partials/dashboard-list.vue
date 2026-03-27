@@ -29,22 +29,7 @@ export default {
 
 <template>
   <div>
-    <v-list>
-      <v-list-item>
-        <v-list-item-content>
-          <v-list-item-title class="text-h6">
-            {{ $t('crmIntelligence.title') }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            {{ $t('crmIntelligence.subtitle') }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-
-    <v-divider />
-
-    <v-list nav dense>
+    <v-list nav dense class="pt-2">
       <v-subheader>{{ $t('crmIntelligence.dashboards') }}</v-subheader>
 
       <v-list-item-group :value="selected" color="primary">
