@@ -36,6 +36,7 @@ const {
   mailingCommentsRouter,
   commentsRouter,
 } = require('./comment/comment.routes.js');
+const crmIntelligenceRouter = require('./crm-intelligence/crm-intelligence.routes.js');
 const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
 const {
   updateSessionTracking,
@@ -280,6 +281,7 @@ if (cluster.isMaster) {
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);
+  app.use('/api/crm-intelligence', crmIntelligenceRouter);
 
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');

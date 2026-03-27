@@ -19,6 +19,7 @@ export default {
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
     title: { type: String, default: '' },
+    showCrmIntelligenceAccess: { type: Boolean, default: false },
   },
   validations() {
     return {
@@ -125,6 +126,15 @@ export default {
             :label="$t('users.role')"
             name="role"
             :items="$options.roles"
+          />
+        </v-col>
+        <v-col v-if="showCrmIntelligenceAccess" cols="12">
+          <v-switch
+            v-model="localModel.hasCrmIntelligenceAccess"
+            :label="$t('users.hasCrmIntelligenceAccess')"
+            color="primary"
+            hide-details
+            class="mt-0"
           />
         </v-col>
       </v-row>

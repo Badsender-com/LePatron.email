@@ -98,7 +98,7 @@ async function seedGroups() {
 }
 
 async function findById(groupId) {
-  const group = await Groups.findById(groupId).select('_id').lean();
+  const group = await Groups.findById(groupId);
   if (!group) {
     throw new NotFound(`no group with id ${groupId} found`);
   }

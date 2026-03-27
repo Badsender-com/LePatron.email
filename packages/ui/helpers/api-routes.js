@@ -291,3 +291,19 @@ export function patchCommentResolve(commentId) {
 export function patchCommentUnresolve(commentId) {
   return `/comments/${commentId}/unresolve`;
 }
+
+/// ///
+// CRM INTELLIGENCE
+/// ///
+
+export function getCrmIntelligenceStatus() {
+  return '/crm-intelligence/status';
+}
+
+export function getCrmIntelligenceDashboards() {
+  return '/crm-intelligence/dashboards';
+}
+
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
+}
