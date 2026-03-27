@@ -355,3 +355,19 @@ export function translationJobStatus(jobId) {
 export function translationJobCancel(jobId) {
   return `/translation/jobs/${jobId}/cancel`;
 }
+
+/// ///
+// CRM INTELLIGENCE
+/// ///
+
+export function getCrmIntelligenceStatus() {
+  return '/crm-intelligence/status';
+}
+
+export function getCrmIntelligenceDashboards() {
+  return '/crm-intelligence/dashboards';
+}
+
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
+}

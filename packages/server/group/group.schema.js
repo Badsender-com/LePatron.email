@@ -124,6 +124,46 @@ const GroupSchema = Schema(
       type: [String],
       default: [],
     },
+    // CRM Intelligence settings
+    enableCrmIntelligence: {
+      type: Boolean,
+      default: false,
+    },
+    metabaseConfig: {
+      siteUrl: {
+        type: String,
+        default: '',
+      },
+      secretKey: {
+        type: String,
+        default: '',
+      },
+      dashboards: [
+        {
+          metabaseId: {
+            type: Number,
+            required: true,
+          },
+          name: {
+            type: String,
+            required: true,
+            set: trimString,
+          },
+          description: {
+            type: String,
+            default: '',
+          },
+          lockedParams: {
+            type: Schema.Types.Mixed,
+            default: {},
+          },
+          order: {
+            type: Number,
+            default: 0,
+          },
+        },
+      ],
+    },
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
@@ -141,6 +181,10 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 //   }
 // })
 
-GroupSchema.plugin(encryptionPlugin, ['ftpPassword', 'ftpSshKey']);
+GroupSchema.plugin(encryptionPlugin, [
+  'ftpPassword',
+  'ftpSshKey',
+  'metabaseConfig.secretKey',
+]);
 
 module.exports = GroupSchema;
