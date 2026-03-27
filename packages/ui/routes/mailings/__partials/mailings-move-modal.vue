@@ -1,15 +1,14 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-
-import { mapState } from 'vuex';
-import { FOLDER } from '~/store/folder';
+import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 
 export default {
   name: 'MailingsMoveModal',
   components: {
     BsModalConfirm,
   },
+  mixins: [destinationTreeMixin],
   props: {
     confirmationInputLabel: { type: String, default: '' },
     confirmationTitleLabel: { type: String, default: '' },
@@ -19,15 +18,9 @@ export default {
     return {
       mail: null,
       currentLocation: null,
-      selectedLocation: {},
     };
   },
   computed: {
-    ...mapState(FOLDER, [
-      'workspaces',
-      'areLoadingWorkspaces',
-      'treeviewWorkspacesHasRight',
-    ]),
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
@@ -64,19 +57,15 @@ export default {
         });
       }
     },
-    handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]) {
-        this.selectedLocation = selectedItems[0];
-      }
-    },
     open(selectedMail) {
       this.mail = selectedMail.mail;
       this.currentLocation = selectedMail.location;
       this.$refs.moveMailDialog.open();
+      this.initDestinationTree();
     },
     close() {
       this.$refs.moveMailDialog.close();
-      this.selectedLocation = {};
+      this.resetDestination();
     },
   },
 };
@@ -99,12 +88,13 @@ export default {
         item-key="id"
         activatable
         :items="treeviewWorkspacesHasRight"
+        :open="openNodes"
+        :active="activeNode"
         hoverable
-        open-all
         :dense="true"
         :return-object="true"
         class="pb-8"
-        @update:active="handleSelectItemFromTreeView"
+        @update:active="handleSelectDestination"
       >
         <template #prepend="{ item, open }">
           <v-icon v-if="!item.icon" color="accent">
@@ -124,7 +114,7 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <v-btn color="accent" text @click="close">
+      <v-btn text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
       <v-btn
