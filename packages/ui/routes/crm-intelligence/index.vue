@@ -60,6 +60,12 @@ export default {
     embedUrl: null,
     loadingEmbed: false,
   }),
+  mounted() {
+    // Auto-select first dashboard if available
+    if (this.isEnabled && this.dashboards.length > 0 && !this.selectedDashboard) {
+      this.selectDashboard(this.dashboards[0]);
+    }
+  },
   computed: {
     title() {
       return this.$t('crmIntelligence.title');
