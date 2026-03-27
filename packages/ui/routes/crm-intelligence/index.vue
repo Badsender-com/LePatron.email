@@ -76,6 +76,9 @@ export default {
     hasAccessDenied() {
       return this.status.accessDenied;
     },
+    hasMultipleDashboards() {
+      return this.dashboards.length > 1;
+    },
     ...mapState(USER, {
       userInfo: 'info',
     }),
@@ -111,7 +114,22 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
+  <!-- Single dashboard: full width, no sidebar -->
+  <v-container
+    v-if="isEnabled && !hasMultipleDashboards"
+    fluid
+    class="pa-0 fill-height"
+  >
+    <dashboard-viewer
+      v-if="selectedDashboard"
+      :embed-url="embedUrl"
+      :loading="loadingEmbed"
+      :dashboard-name="selectedDashboard.name"
+    />
+  </v-container>
+
+  <!-- Multiple dashboards or other states: use sidebar layout -->
+  <bs-layout-left-menu v-else>
     <template #menu>
       <!-- Access Denied State -->
       <template v-if="hasAccessDenied">
@@ -137,8 +155,8 @@ export default {
         </div>
       </template>
 
-      <!-- Enabled State with Dashboards -->
-      <template v-else-if="isEnabled">
+      <!-- Enabled State with Multiple Dashboards -->
+      <template v-else-if="isEnabled && hasMultipleDashboards">
         <dashboard-list
           :dashboards="dashboards"
           :selected="selectedDashboard"
@@ -171,7 +189,7 @@ export default {
         </div>
       </template>
 
-      <!-- Dashboard Viewer -->
+      <!-- Dashboard Viewer (multiple dashboards case) -->
       <template v-else-if="isEnabled">
         <dashboard-viewer
           v-if="selectedDashboard"
