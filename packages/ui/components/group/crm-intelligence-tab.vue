@@ -19,7 +19,6 @@ export default {
       testingConnection: false,
       showSecretKey: false,
       localConfig: {
-        enabled: false,
         siteUrl: '',
         secretKey: '',
         dashboards: [],
@@ -64,7 +63,6 @@ export default {
       handler(newGroup) {
         if (newGroup) {
           this.localConfig = {
-            enabled: newGroup.enableCrmIntelligence || false,
             siteUrl: newGroup.metabaseConfig?.siteUrl || '',
             secretKey: newGroup.metabaseConfig?.secretKey || '',
             dashboards: newGroup.metabaseConfig?.dashboards
@@ -145,7 +143,6 @@ export default {
       this.loading = true;
       try {
         const payload = {
-          enabled: this.localConfig.enabled,
           siteUrl: this.localConfig.siteUrl,
           secretKey: this.localConfig.secretKey,
           dashboards: validDashboards.map((d) => ({
@@ -196,17 +193,16 @@ export default {
     </v-card-subtitle>
 
     <v-card-text>
-      <!-- Enable Toggle -->
-      <v-switch
-        v-model="localConfig.enabled"
-        :label="$t('crmIntelligence.admin.enabled')"
-        color="primary"
+      <v-alert
+        type="info"
+        text
+        dense
         class="mb-4"
-      />
+      >
+        {{ $t('groups.modules.crmIntelligence.toggleMovedHint') }}
+      </v-alert>
 
-      <v-expand-transition>
-        <div v-show="localConfig.enabled">
-          <!-- Metabase Configuration -->
+      <!-- Metabase Configuration -->
           <v-divider class="mb-4" />
           <h3 class="text-subtitle-1 mb-4">
             {{ $t('crmIntelligence.admin.metabaseConfig') }}
@@ -339,8 +335,6 @@ export default {
               </v-col>
             </v-row>
           </v-card>
-        </div>
-      </v-expand-transition>
     </v-card-text>
 
     <v-card-actions>

@@ -274,7 +274,21 @@ export default {
   },
   groups: {
     tabs: {
-      informations: 'Information',
+      general: 'General',
+    },
+    modules: {
+      title: 'Enabled modules',
+      notEnabled: 'Module not enabled',
+      emailBuilder: {
+        name: 'Email Builder',
+        description: 'Create and edit responsive emails',
+      },
+      crmIntelligence: {
+        name: 'CRM Intelligence',
+        description: 'Dashboards and analytics',
+        configHint: 'Advanced configuration in dedicated tab',
+        toggleMovedHint: 'Module activation is in the General tab',
+      },
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',
@@ -635,6 +649,20 @@ export default {
     crmIntelligence: 'CRM Intelligence',
     settings: 'Settings',
     inactive: 'Not activated',
+  },
+  emailBuilder: {
+    marketing: {
+      title: 'Email Builder',
+      description:
+        'Create professional responsive emails with our intuitive drag & drop editor.',
+      features: [
+        'Customizable templates',
+        'Optimized HTML export for all email clients',
+        'Integrations with major ESPs',
+        'Team collaboration',
+      ],
+      contactUs: 'Contact us',
+    },
   },
   sidebar: {
     modules: 'Modules',
