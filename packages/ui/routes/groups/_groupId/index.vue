@@ -52,7 +52,7 @@ export default {
       group: {},
       loading: false,
       intersectionObserver: null,
-      activeTab: 'informations',
+      activeTab: 'group-general',
     };
   },
   head() {
@@ -175,10 +175,10 @@ export default {
       <v-tabs ref="tabs" :value="activeTab" centered>
         <v-tabs-slider color="accent" />
         <v-tab
-          href="#group-informations"
-          @click="activeTab = 'group-informations'"
+          href="#group-general"
+          @click="activeTab = 'group-general'"
         >
-          {{ $t('groups.tabs.informations') }}
+          {{ $t('groups.tabs.general') }}
         </v-tab>
         <v-tab
           v-if="isAdmin"
@@ -228,11 +228,20 @@ export default {
         <v-tab
           v-if="isAdmin"
           href="#group-crm-intelligence"
+          :disabled="!group.enableCrmIntelligence"
           @click="activeTab = 'group-crm-intelligence'"
         >
-          {{ $t('crmIntelligence.admin.title') }}
+          <v-tooltip v-if="!group.enableCrmIntelligence" bottom>
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" v-on="on">
+                {{ $t('crmIntelligence.admin.title') }}
+              </span>
+            </template>
+            <span>{{ $t('groups.modules.notEnabled') }}</span>
+          </v-tooltip>
+          <span v-else>{{ $t('crmIntelligence.admin.title') }}</span>
         </v-tab>
-        <v-tab-item value="group-informations">
+        <v-tab-item value="group-general">
           <bs-group-form
             v-model="group"
             :is-edit="true"

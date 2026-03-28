@@ -124,7 +124,11 @@ const GroupSchema = Schema(
       type: [String],
       default: [],
     },
-    // CRM Intelligence settings
+    // Module activation settings
+    enableEmailBuilder: {
+      type: Boolean,
+      default: true, // Enabled by default to not break existing groups
+    },
     enableCrmIntelligence: {
       type: Boolean,
       default: false,
