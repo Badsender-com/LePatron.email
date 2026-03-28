@@ -54,19 +54,6 @@ export default {
           </v-list-item-content>
         </v-list-item>
 
-        <v-subheader>{{ $tc('global.group', 1) }}</v-subheader>
-        <v-list-item exact nuxt link :to="`/groups/${groupId}`">
-          <v-list-item-avatar>
-            <v-icon color="primary">
-              info
-            </v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
-              {{ $t('groups.tabs.informations') }}
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
         <v-subheader>{{ $t('global.actions') }}</v-subheader>
         <v-list-item v-if="isAdmin" nuxt link :to="newTemplateHref">
           <v-list-item-avatar>
