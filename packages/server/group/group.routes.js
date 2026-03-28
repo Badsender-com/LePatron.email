@@ -14,7 +14,6 @@ const {
 const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
-const crmIntelligence = require('../crm-intelligence/crm-intelligence.controller.js');
 
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
@@ -105,18 +104,8 @@ router.post(
   groups.testFtpConnection
 );
 
-// CRM Intelligence configuration (Super Admin only)
-router.put(
-  '/:groupId/crm-intelligence',
-  GUARD_ADMIN,
-  crmIntelligence.updateConfiguration
-);
-
-router.post(
-  '/:groupId/crm-intelligence/test',
-  GUARD_ADMIN,
-  crmIntelligence.testConnection
-);
+// Note: CRM Intelligence configuration is now done through /api/integrations routes
+// See packages/server/integration/integration.routes.js
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {
