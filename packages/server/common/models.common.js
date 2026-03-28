@@ -25,6 +25,7 @@ const PersonalizedBlockSchema = require('../personalized-blocks/personalized-blo
 const TagSchema = require('../tag/tag.schema.js');
 const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
+const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 
 /// ///
@@ -69,6 +70,7 @@ const Integrations = mongoose.model(
   modelNames.IntegrationModel,
   IntegrationSchema
 );
+const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 const AIFeatureConfigs = mongoose.model(
   modelNames.AIFeatureConfigModel,
   AIFeatureConfigSchema
@@ -96,5 +98,6 @@ module.exports = {
   Tags,
   Comments,
   Integrations,
+  Dashboards,
   AIFeatureConfigs,
 };

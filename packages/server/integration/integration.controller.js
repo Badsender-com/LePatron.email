@@ -1,34 +1,19 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const pick = require('lodash').pick;
 const integrationService = require('./integration.service');
 const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
-const ProviderFactory = require('../integration-providers/provider-factory.js');
-const logger = require('../utils/logger.js');
-
-const CREATE_FIELDS = [
-  'name',
-  'type',
-  'provider',
-  'apiKey',
-  'apiHost',
-  'productId',
-  'config',
-];
-const UPDATE_FIELDS = [...CREATE_FIELDS, 'isActive'];
 
 module.exports = {
   createIntegration: asyncHandler(createIntegration),
   updateIntegration: asyncHandler(updateIntegration),
   deleteIntegration: asyncHandler(deleteIntegration),
-  getIntegration: asyncHandler(getIntegration),
+  readIntegration: asyncHandler(readIntegration),
   listIntegrations: asyncHandler(listIntegrations),
   validateCredentials: asyncHandler(validateCredentials),
   listProviders: asyncHandler(listProviders),
-  getModels: asyncHandler(getModels),
 };
 
 /**
@@ -70,7 +55,10 @@ async function listIntegrations(req, res) {
     integrations = await integrationService.findAllByGroup({ groupId });
   }
 
-  res.json({ items: integrations });
+  // Sanitize: never return the actual API keys
+  const sanitized = integrations.map(sanitizeIntegration);
+
+  res.json({ items: sanitized });
 }
 
 /**
@@ -78,27 +66,26 @@ async function listIntegrations(req, res) {
  * @apiPermission groupAdmin
  * @apiName CreateIntegration
  * @apiGroup Integrations
- *
- * @apiParam {String} groupId Group ID
- * @apiParam (Body) {String} name Integration name
- * @apiParam (Body) {String} type Integration type
- * @apiParam (Body) {String} provider Provider identifier
- * @apiParam (Body) {String} apiKey API key
- * @apiParam (Body) {String} [apiHost] Optional API host for self-hosted
- * @apiParam (Body) {Object} [config] Provider-specific configuration
  */
 async function createIntegration(req, res) {
   const { user, params, body } = req;
   const { groupId } = params;
+  const { name, type, provider, apiKey, apiHost, config, dashboards } = body;
 
   await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   const integration = await integrationService.createIntegration({
-    ...pick(body, CREATE_FIELDS),
+    name,
+    type,
+    provider,
+    apiKey,
+    apiHost,
+    config,
+    dashboards,
     _company: groupId,
   });
 
-  res.status(201).json(integration);
+  res.status(201).json(sanitizeIntegration(integration));
 }
 
 /**
@@ -106,21 +93,18 @@ async function createIntegration(req, res) {
  * @apiPermission groupAdmin
  * @apiName ReadIntegration
  * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
  */
-async function getIntegration(req, res) {
+async function readIntegration(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
-    {
+  const integration =
+    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
       user,
       integrationId,
-    }
-  );
+    });
 
-  res.json(integration);
+  res.json(sanitizeIntegration(integration));
 }
 
 /**
@@ -128,17 +112,12 @@ async function getIntegration(req, res) {
  * @apiPermission groupAdmin
  * @apiName UpdateIntegration
  * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
- * @apiParam (Body) {String} [name] Integration name
- * @apiParam (Body) {String} [apiKey] API key
- * @apiParam (Body) {String} [apiHost] API host
- * @apiParam (Body) {Object} [config] Configuration
- * @apiParam (Body) {Boolean} [isActive] Active status
  */
 async function updateIntegration(req, res) {
   const { user, params, body } = req;
   const { integrationId } = params;
+  const { name, type, provider, apiKey, apiHost, config, dashboards, isActive } =
+    body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -146,11 +125,18 @@ async function updateIntegration(req, res) {
   });
 
   const integration = await integrationService.updateIntegration({
-    ...pick(body, UPDATE_FIELDS),
     integrationId,
+    name,
+    type,
+    provider,
+    apiKey,
+    apiHost,
+    config,
+    dashboards,
+    isActive,
   });
 
-  res.json(integration);
+  res.json(sanitizeIntegration(integration));
 }
 
 /**
@@ -158,8 +144,6 @@ async function updateIntegration(req, res) {
  * @apiPermission groupAdmin
  * @apiName DeleteIntegration
  * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
  */
 async function deleteIntegration(req, res) {
   const { user, params } = req;
@@ -180,12 +164,11 @@ async function deleteIntegration(req, res) {
  * @apiPermission groupAdmin
  * @apiName ValidateIntegration
  * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
  */
 async function validateCredentials(req, res) {
-  const { user, params } = req;
+  const { user, params, body } = req;
   const { integrationId } = params;
+  const { apiKey, apiHost } = body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -194,54 +177,22 @@ async function validateCredentials(req, res) {
 
   const isValid = await integrationService.validateCredentials({
     integrationId,
+    apiKey,
+    apiHost,
   });
 
   res.json({ valid: isValid });
 }
 
 /**
- * @api {get} /integrations/:integrationId/models Get available models for integration
- * @apiPermission groupAdmin
- * @apiName GetIntegrationModels
- * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
- *
- * @apiSuccess {Array} models List of available models
- * @apiSuccess {Boolean} dynamic Whether the list was fetched dynamically from the provider
+ * Sanitize integration object - never expose API keys
  */
-async function getModels(req, res) {
-  const { user, params } = req;
-  const { integrationId } = params;
-
-  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
-    {
-      user,
-      integrationId,
-    }
-  );
-
-  const provider = ProviderFactory.createProvider(integration);
-  const capabilities = provider.getCapabilities();
-
-  try {
-    // If the provider supports live model listing (e.g. fetches from the provider API)
-    if (typeof provider.getAvailableModels === 'function') {
-      const models = await provider.getAvailableModels();
-      return res.json({ models, dynamic: true, capabilities });
-    }
-
-    // Otherwise delegate to the provider's own static list
-    const staticModels = provider.getStaticModels();
-    return res.json({ models: staticModels, dynamic: false, capabilities });
-  } catch (error) {
-    logger.error('Error fetching models:', error.message);
-    // Return empty model list but preserve capabilities so the UI stays coherent
-    return res.json({
-      models: [],
-      dynamic: false,
-      capabilities,
-      error: error.message,
-    });
-  }
+function sanitizeIntegration(integration) {
+  const obj = integration.toObject
+    ? integration.toObject()
+    : { ...integration };
+  return {
+    ...obj,
+    apiKey: obj.apiKey ? '••••••••' : null,
+  };
 }

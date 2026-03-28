@@ -368,6 +368,35 @@ export function getCrmIntelligenceDashboards() {
   return '/crm-intelligence/dashboards';
 }
 
-export function getCrmIntelligenceEmbedUrl(dashboardId) {
-  return `/crm-intelligence/embed/${dashboardId}`;
+export function getCrmIntelligenceEmbedUrl(integrationId, dashboardId) {
+  return `/crm-intelligence/embed/${integrationId}/${dashboardId}`;
+}
+
+/// ///
+// INTEGRATIONS
+/// ///
+
+export function getIntegrations(groupId, type = null) {
+  const base = `/integrations/groups/${groupId}`;
+  return type ? `${base}?type=${type}` : base;
+}
+
+export function getIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function createIntegration(groupId) {
+  return `/integrations/groups/${groupId}`;
+}
+
+export function updateIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function deleteIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function validateIntegration(integrationId) {
+  return `/integrations/${integrationId}/validate`;
 }

@@ -133,41 +133,8 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    metabaseConfig: {
-      siteUrl: {
-        type: String,
-        default: '',
-      },
-      secretKey: {
-        type: String,
-        default: '',
-      },
-      dashboards: [
-        {
-          metabaseId: {
-            type: Number,
-            required: true,
-          },
-          name: {
-            type: String,
-            required: true,
-            set: trimString,
-          },
-          description: {
-            type: String,
-            default: '',
-          },
-          lockedParams: {
-            type: Schema.Types.Mixed,
-            default: {},
-          },
-          order: {
-            type: Number,
-            default: 0,
-          },
-        },
-      ],
-    },
+    // Note: Metabase/dashboard configuration is now stored in the Integration collection
+    // See packages/server/integration/integration.schema.js
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
@@ -185,10 +152,6 @@ GroupSchema.plugin(mongooseHidden, { hidden: { _id: true, __v: true } });
 //   }
 // })
 
-GroupSchema.plugin(encryptionPlugin, [
-  'ftpPassword',
-  'ftpSshKey',
-  'metabaseConfig.secretKey',
-]);
+GroupSchema.plugin(encryptionPlugin, ['ftpPassword', 'ftpSshKey']);
 
 module.exports = GroupSchema;
