@@ -72,7 +72,7 @@ async function getCurrentUser(req, res, next) {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: '_company', select: 'id name entryPoint issuer enableCrmIntelligence' })
+    .populate({ path: '_company', select: 'id name entryPoint issuer enableCrmIntelligence enableEmailBuilder' })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
 }
