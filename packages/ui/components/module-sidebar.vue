@@ -89,6 +89,19 @@ export default {
 
     <div class="sidebar-spacer" />
 
+    <!-- SETTINGS (admin only) -->
+    <template v-if="isAdmin || isGroupAdmin">
+      <div class="sidebar-divider" />
+      <div class="sidebar-section">
+        <bs-sidebar-item
+          :to="settingsRoute"
+          icon="mdi-cog-outline"
+          :label="$t('modules.settings')"
+          :active="isSettingsModule"
+        />
+      </div>
+    </template>
+
     <div class="sidebar-divider" />
 
     <!-- UTILITIES -->
@@ -103,18 +116,6 @@ export default {
         icon="mdi-logout"
         :label="$t('sidebar.logout')"
         href="/account/logout"
-      />
-    </div>
-
-    <div class="sidebar-divider" />
-
-    <!-- SETTINGS -->
-    <div class="sidebar-section">
-      <bs-sidebar-item
-        :to="settingsRoute"
-        icon="mdi-cog-outline"
-        :label="$t('modules.settings')"
-        :active="isSettingsModule"
       />
     </div>
   </nav>
