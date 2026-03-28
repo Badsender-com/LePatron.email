@@ -96,7 +96,7 @@ export default {
 
       try {
         const result = await this.$axios.$get(
-          getCrmIntelligenceEmbedUrl(dashboard.id)
+          getCrmIntelligenceEmbedUrl(dashboard.integrationId, dashboard.id)
         );
         this.embedUrl = result.embedUrl;
       } catch (err) {

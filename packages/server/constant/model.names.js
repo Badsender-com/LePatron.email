@@ -23,4 +23,6 @@ module.exports = Object.freeze({
   TagModel: 'Tag',
   // Comments
   CommentModel: 'Comment',
+  // Integrations
+  IntegrationModel: 'Integration',
 });
