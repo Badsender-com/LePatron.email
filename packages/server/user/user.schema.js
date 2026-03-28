@@ -226,7 +226,7 @@ UserSchema.methods.comparePassword = function comparePassword(password) {
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: '_company',
-    select: 'id name issuer entryPoint enableCrmIntelligence',
+    select: 'id name issuer entryPoint enableCrmIntelligence enableEmailBuilder',
   });
   return mailing;
 };
