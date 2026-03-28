@@ -2,6 +2,7 @@
 
 module.exports = {
   AI: 'ai',
+  DASHBOARD: 'dashboard',
   // Future types
   // DATA_FEED: 'data_feed',
   // RSS: 'rss',

@@ -21,8 +21,10 @@ module.exports = {
   findAllByGroup,
   findByGroupAndType,
   findActiveByGroup,
+  findActiveByGroupAndType,
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
+  updateDashboards,
 };
 
 /**
@@ -52,6 +54,7 @@ async function createIntegration({
   apiHost,
   productId,
   config,
+  dashboards,
   _company,
 }) {
   // Check for duplicates
@@ -67,6 +70,7 @@ async function createIntegration({
     apiHost,
     productId,
     config: config || {},
+    dashboards: dashboards || [],
     _company,
     isActive: true,
     validationStatus: 'pending',
@@ -85,6 +89,7 @@ async function updateIntegration({
   apiHost,
   productId,
   config,
+  dashboards,
   isActive,
 }) {
   const integration = await findById(integrationId);
@@ -103,7 +108,6 @@ async function updateIntegration({
     }
   }
 
-  // Keep only fields explicitly provided in the request
   const updateData = Object.fromEntries(
     Object.entries({
       name,
@@ -113,6 +117,7 @@ async function updateIntegration({
       apiHost,
       productId,
       config,
+      dashboards,
       isActive,
     }).filter(([, value]) => value !== undefined)
   );
@@ -142,6 +147,19 @@ async function updateIntegration({
 }
 
 /**
+ * Update dashboards for an integration
+ */
+async function updateDashboards({ integrationId, dashboards }) {
+  await findById(integrationId);
+
+  return Integrations.findByIdAndUpdate(
+    Types.ObjectId(integrationId),
+    { dashboards },
+    { new: true }
+  );
+}
+
+/**
  * Delete an integration
  */
 async function deleteIntegration({ integrationId }) {
@@ -162,6 +180,10 @@ async function deleteIntegration({ integrationId }) {
  * Find one integration by ID
  */
 async function findById(integrationId) {
+  if (!integrationId || !Types.ObjectId.isValid(integrationId)) {
+    throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+
   const integration = await Integrations.findById(
     Types.ObjectId(integrationId)
   );
@@ -206,6 +228,18 @@ async function findActiveByGroup({ groupId }) {
 }
 
 /**
+ * Find active integrations by group and type
+ */
+async function findActiveByGroupAndType({ groupId, type }) {
+  await groupService.findById(groupId);
+  return Integrations.find({
+    _company: Types.ObjectId(groupId),
+    type,
+    isActive: true,
+  }).sort({ name: 1 });
+}
+
+/**
  * Deactivate all AI features that reference a given integration
  */
 async function deactivateFeaturesForIntegration(integrationId) {
@@ -225,13 +259,16 @@ async function deactivateFeaturesForIntegration(integrationId) {
 /**
  * Validate integration credentials using the provider factory
  */
-async function validateCredentials({ integrationId }) {
+async function validateCredentials({ integrationId, apiKey, apiHost }) {
   const integration = await findById(integrationId);
 
   let isValid = false;
   try {
     const provider = ProviderFactory.createProvider(integration);
-    isValid = await provider.validateCredentials();
+    // Pass override credentials if provided (for testing unsaved values)
+    if (typeof provider.validateCredentials === 'function') {
+      isValid = await provider.validateCredentials({ apiKey, apiHost });
+    }
   } catch (error) {
     logger.error('Validation error:', error.message);
     isValid = false;

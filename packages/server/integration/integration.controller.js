@@ -17,6 +17,7 @@ const CREATE_FIELDS = [
   'apiHost',
   'productId',
   'config',
+  'dashboards',
 ];
 const UPDATE_FIELDS = [...CREATE_FIELDS, 'isActive'];
 
@@ -86,6 +87,7 @@ async function listIntegrations(req, res) {
  * @apiParam (Body) {String} apiKey API key
  * @apiParam (Body) {String} [apiHost] Optional API host for self-hosted
  * @apiParam (Body) {Object} [config] Provider-specific configuration
+ * @apiParam (Body) {Array} [dashboards] Dashboard-specific configuration
  */
 async function createIntegration(req, res) {
   const { user, params, body } = req;
@@ -134,6 +136,7 @@ async function getIntegration(req, res) {
  * @apiParam (Body) {String} [apiKey] API key
  * @apiParam (Body) {String} [apiHost] API host
  * @apiParam (Body) {Object} [config] Configuration
+ * @apiParam (Body) {Array} [dashboards] Dashboard configuration
  * @apiParam (Body) {Boolean} [isActive] Active status
  */
 async function updateIntegration(req, res) {
@@ -184,8 +187,9 @@ async function deleteIntegration(req, res) {
  * @apiParam {String} integrationId Integration ID
  */
 async function validateCredentials(req, res) {
-  const { user, params } = req;
+  const { user, params, body } = req;
   const { integrationId } = params;
+  const { apiKey, apiHost } = body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -194,6 +198,8 @@ async function validateCredentials(req, res) {
 
   const isValid = await integrationService.validateCredentials({
     integrationId,
+    apiKey,
+    apiHost,
   });
 
   res.json({ valid: isValid });
@@ -225,18 +231,15 @@ async function getModels(req, res) {
   const capabilities = provider.getCapabilities();
 
   try {
-    // If the provider supports live model listing (e.g. fetches from the provider API)
     if (typeof provider.getAvailableModels === 'function') {
       const models = await provider.getAvailableModels();
       return res.json({ models, dynamic: true, capabilities });
     }
 
-    // Otherwise delegate to the provider's own static list
     const staticModels = provider.getStaticModels();
     return res.json({ models: staticModels, dynamic: false, capabilities });
   } catch (error) {
     logger.error('Error fetching models:', error.message);
-    // Return empty model list but preserve capabilities so the UI stays coherent
     return res.json({
       models: [],
       dynamic: false,

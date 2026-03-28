@@ -2,16 +2,18 @@
 
 const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
-const mongoose = require('mongoose');
+const { Types } = require('mongoose');
 
 const GroupService = require('../group/group.service');
-const { Groups } = require('../common/models.common');
+const { Integrations } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
+const IntegrationTypes = require('../constant/integration-type');
 
 const JWT_EXPIRATION_SECONDS = 10 * 60; // 10 minutes
 
 /**
  * Get CRM Intelligence status for a group
+ * Checks if there are active dashboard integrations
  * @param {string} groupId - The group ID
  * @returns {Promise<Object>} Status object with enabled flag and dashboard count
  */
@@ -21,25 +23,47 @@ async function getStatus(groupId) {
     throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
   }
 
+  // Check if CRM Intelligence is enabled at group level
   const isEnabled = group.enableCrmIntelligence === true;
-  const isConfigured = Boolean(
-    isEnabled &&
-    group.metabaseConfig?.siteUrl &&
-    group.metabaseConfig?.secretKey
+
+  if (!isEnabled) {
+    return {
+      enabled: false,
+      configured: false,
+      dashboardCount: 0,
+      integrations: [],
+    };
+  }
+
+  // Find active dashboard integrations for this group
+  const integrations = await Integrations.find({
+    _company: Types.ObjectId(groupId),
+    type: IntegrationTypes.DASHBOARD,
+    isActive: true,
+  }).sort({ name: 1 });
+
+  const totalDashboardCount = integrations.reduce(
+    (sum, integration) => sum + (integration.dashboards?.length || 0),
+    0
   );
-  const dashboardCount = group.metabaseConfig?.dashboards?.length || 0;
 
   return {
     enabled: isEnabled,
-    configured: isConfigured,
-    dashboardCount,
+    configured: integrations.length > 0 && totalDashboardCount > 0,
+    dashboardCount: totalDashboardCount,
+    integrations: integrations.map((i) => ({
+      id: i._id,
+      name: i.name,
+      provider: i.provider,
+      dashboardCount: i.dashboards?.length || 0,
+    })),
   };
 }
 
 /**
- * Get list of dashboards for a group
+ * Get list of dashboards for a group (across all integrations)
  * @param {string} groupId - The group ID
- * @returns {Promise<Array>} Array of dashboard objects (without sensitive data)
+ * @returns {Promise<Array>} Array of dashboard objects grouped by integration
  */
 async function getDashboards(groupId) {
   const group = await GroupService.findById(groupId);
@@ -51,10 +75,121 @@ async function getDashboards(groupId) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  const dashboards = group.metabaseConfig?.dashboards || [];
+  // Find active dashboard integrations for this group
+  const integrations = await Integrations.find({
+    _company: Types.ObjectId(groupId),
+    type: IntegrationTypes.DASHBOARD,
+    isActive: true,
+  }).sort({ name: 1 });
 
-  // Return dashboards sorted by order, without sensitive data
-  return dashboards
+  // Flatten dashboards with integration context
+  const dashboards = [];
+  for (const integration of integrations) {
+    const integrationDashboards = (integration.dashboards || [])
+      .map((dashboard) => ({
+        id: dashboard._id,
+        integrationId: integration._id,
+        integrationName: integration.name,
+        provider: integration.provider,
+        metabaseId: dashboard.metabaseId,
+        name: dashboard.name,
+        description: dashboard.description,
+        order: dashboard.order,
+      }))
+      .sort((a, b) => a.order - b.order);
+
+    dashboards.push(...integrationDashboards);
+  }
+
+  return dashboards;
+}
+
+/**
+ * Generate a signed embed URL for a Metabase dashboard
+ * @param {string} groupId - The group ID
+ * @param {string} integrationId - The integration MongoDB ID
+ * @param {string} dashboardId - The dashboard MongoDB ID within the integration
+ * @returns {Promise<Object>} Object with embedUrl
+ */
+async function getEmbedUrl(groupId, integrationId, dashboardId) {
+  const group = await GroupService.findById(groupId);
+  if (!group) {
+    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
+  if (!group.enableCrmIntelligence) {
+    throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
+  }
+
+  // Validate IDs
+  if (!Types.ObjectId.isValid(integrationId)) {
+    throw createError(400, ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+  if (!Types.ObjectId.isValid(dashboardId)) {
+    throw createError(400, ERROR_CODES.DASHBOARD_NOT_FOUND);
+  }
+
+  // Find the integration
+  const integration = await Integrations.findOne({
+    _id: Types.ObjectId(integrationId),
+    _company: Types.ObjectId(groupId),
+    type: IntegrationTypes.DASHBOARD,
+    isActive: true,
+  });
+
+  if (!integration) {
+    throw createError(404, ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+
+  if (!integration.apiHost || !integration.apiKey) {
+    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
+  // Find the dashboard
+  const dashboard = integration.dashboards.find(
+    (d) => d._id.toString() === dashboardId
+  );
+  if (!dashboard) {
+    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
+  }
+
+  // Build JWT payload for Metabase
+  const payload = {
+    resource: { dashboard: dashboard.metabaseId },
+    params: dashboard.lockedParams || {},
+    exp: Math.round(Date.now() / 1000) + JWT_EXPIRATION_SECONDS,
+  };
+
+  // Sign the JWT with the integration's secret key
+  const token = jwt.sign(payload, integration.apiKey);
+
+  // Build the embed URL
+  const embedUrl = `${integration.apiHost}/embed/dashboard/${token}#bordered=false&titled=true`;
+
+  return {
+    embedUrl,
+    dashboardName: dashboard.name,
+    integrationName: integration.name,
+    expiresIn: JWT_EXPIRATION_SECONDS,
+  };
+}
+
+/**
+ * Get dashboards for a specific integration
+ * @param {string} integrationId - The integration MongoDB ID
+ * @returns {Promise<Array>} Array of dashboard objects
+ */
+async function getIntegrationDashboards(integrationId) {
+  if (!Types.ObjectId.isValid(integrationId)) {
+    throw createError(400, ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+
+  const integration = await Integrations.findById(integrationId);
+  if (!integration) {
+    throw createError(404, ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+
+  return (integration.dashboards || [])
     .map((dashboard) => ({
       id: dashboard._id,
       metabaseId: dashboard.metabaseId,
@@ -65,153 +200,9 @@ async function getDashboards(groupId) {
     .sort((a, b) => a.order - b.order);
 }
 
-/**
- * Generate a signed embed URL for a Metabase dashboard
- * @param {string} groupId - The group ID
- * @param {string} dashboardId - The dashboard MongoDB ID
- * @returns {Promise<Object>} Object with embedUrl
- */
-async function getEmbedUrl(groupId, dashboardId) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
-  if (!group.enableCrmIntelligence) {
-    throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
-  }
-
-  const { metabaseConfig } = group;
-  if (!metabaseConfig?.siteUrl || !metabaseConfig?.secretKey) {
-    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
-  }
-
-  // Find the dashboard
-  const dashboard = metabaseConfig.dashboards.find(
-    (d) => d._id.toString() === dashboardId
-  );
-  if (!dashboard) {
-    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
-  }
-
-  // Build JWT payload
-  const payload = {
-    resource: { dashboard: dashboard.metabaseId },
-    params: dashboard.lockedParams || {},
-    exp: Math.round(Date.now() / 1000) + JWT_EXPIRATION_SECONDS,
-  };
-
-  // Sign the JWT
-  const token = jwt.sign(payload, metabaseConfig.secretKey);
-
-  // Build the embed URL
-  const embedUrl = `${metabaseConfig.siteUrl}/embed/dashboard/${token}#bordered=false&titled=true`;
-
-  return {
-    embedUrl,
-    dashboardName: dashboard.name,
-    expiresIn: JWT_EXPIRATION_SECONDS,
-  };
-}
-
-/**
- * Update CRM Intelligence configuration for a group (Super Admin only)
- * @param {string} groupId - The group ID
- * @param {Object} config - Configuration object
- * @returns {Promise<Object>} Updated configuration status
- */
-async function updateConfiguration(groupId, config) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
-  const updateData = {};
-
-  // Update enable flag if provided
-  if (typeof config.enabled === 'boolean') {
-    updateData.enableCrmIntelligence = config.enabled;
-  }
-
-  // Update Metabase config if provided
-  if (config.siteUrl !== undefined) {
-    updateData['metabaseConfig.siteUrl'] = config.siteUrl;
-  }
-
-  if (config.secretKey !== undefined) {
-    updateData['metabaseConfig.secretKey'] = config.secretKey;
-  }
-
-  if (config.dashboards !== undefined) {
-    // Validate dashboards
-    const dashboards = config.dashboards.map((d, index) => ({
-      metabaseId: d.metabaseId,
-      name: d.name,
-      description: d.description || '',
-      lockedParams: d.lockedParams || {},
-      order: d.order !== undefined ? d.order : index,
-    }));
-    updateData['metabaseConfig.dashboards'] = dashboards;
-  }
-
-  await Groups.updateOne(
-    { _id: groupId },
-    { $set: updateData }
-  );
-
-  return getStatus(groupId);
-}
-
-/**
- * Test Metabase connection by verifying the config format
- * Note: We can't actually test the connection without making a request to Metabase
- * This just validates the configuration is present and well-formed
- * @param {string} groupId - The group ID
- * @param {Object} [config] - Optional config to test (uses saved config if not provided)
- * @param {string} [config.siteUrl] - Metabase site URL
- * @param {string} [config.secretKey] - Metabase secret key
- * @returns {Promise<Object>} Connection test result
- */
-async function testConnection(groupId, config = null) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
-  // Use provided config or fall back to saved config
-  const siteUrl = config?.siteUrl ?? group.metabaseConfig?.siteUrl;
-  const secretKey = config?.secretKey ?? group.metabaseConfig?.secretKey;
-
-  const hasUrl = Boolean(siteUrl);
-  const hasSecret = Boolean(secretKey);
-
-  if (!hasUrl || !hasSecret) {
-    return {
-      success: false,
-      message: 'Missing Metabase URL or secret key',
-    };
-  }
-
-  // Validate URL format
-  try {
-    new URL(siteUrl);
-  } catch {
-    return {
-      success: false,
-      message: 'Invalid Metabase URL format',
-    };
-  }
-
-  return {
-    success: true,
-    message: 'Configuration looks valid',
-  };
-}
-
 module.exports = {
   getStatus,
   getDashboards,
   getEmbedUrl,
-  updateConfiguration,
-  testConnection,
+  getIntegrationDashboards,
 };

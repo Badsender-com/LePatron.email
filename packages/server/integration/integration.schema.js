@@ -11,8 +11,8 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiDefine integration
  * @apiSuccess {String} id
  * @apiSuccess {String} name
- * @apiSuccess {String} type - Integration type (ai, data_feed, etc.)
- * @apiSuccess {String} provider - Provider identifier (openai, mistral, etc.)
+ * @apiSuccess {String} type - Integration type (ai, dashboard, etc.)
+ * @apiSuccess {String} provider - Provider identifier (openai, mistral, metabase, etc.)
  * @apiSuccess {String} _company - Reference to Group
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {String} validationStatus
@@ -20,6 +20,34 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiSuccess {Date} createdAt
  * @apiSuccess {Date} updatedAt
  */
+
+// Dashboard sub-schema for Metabase dashboards
+const DashboardSchema = Schema(
+  {
+    metabaseId: {
+      type: Number,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      default: '',
+    },
+    lockedParams: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    order: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: true }
+);
+
 const IntegrationSchema = Schema(
   {
     name: {
@@ -42,12 +70,12 @@ const IntegrationSchema = Schema(
       alias: 'group',
       required: [true, 'Group is required'],
     },
-    // Encrypted credentials
+    // Encrypted credentials - API key or secret key
     apiKey: {
       type: String,
       required: [true, 'API key is required'],
     },
-    // Optional API host for self-hosted instances
+    // API host for the provider (e.g., Metabase site URL or self-hosted OpenAI)
     apiHost: {
       type: String,
       required: false,
@@ -57,10 +85,15 @@ const IntegrationSchema = Schema(
       type: String,
       required: false,
     },
-    // Provider-specific configuration
+    // Provider-specific configuration (flexible schema)
     config: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    // Dashboard-specific: array of dashboards
+    dashboards: {
+      type: [DashboardSchema],
+      default: [],
     },
     isActive: {
       type: Boolean,
