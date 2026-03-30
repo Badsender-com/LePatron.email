@@ -80,8 +80,6 @@ const UserSchema = Schema(
     token: { type: String },
     tokenExpire: { type: Date },
     isDeactivated: { type: Boolean, default: false },
-    // CRM Intelligence access (controlled by Group Admin)
-    hasCrmIntelligenceAccess: { type: Boolean, default: true },
     // Session management fields
     activeSessionId: { type: String, select: false },
     sessionMetadata: {
