@@ -536,6 +536,11 @@ export default {
       invalid: 'Invalide',
       pending: 'En attente'
     },
+    metabase: {
+      apiKeyPlaceholder: 'Votre clé secrète Metabase',
+      apiKeyLabel: 'Clé secrète Metabase',
+      apiHostHint: 'URL de votre instance Metabase (ex: https://metabase.example.com)'
+    },
     openai: {
       apiKeyPlaceholder: 'sk-...',
       apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
@@ -622,6 +627,8 @@ export default {
       title: 'CRM Intelligence',
       description: 'Gérez les intégrations de tableaux de bord pour ce groupe.',
       enabled: 'Activer CRM Intelligence',
+      metabaseConfigHint: 'Configurez les connexions Metabase dans l\'onglet Intégrations.',
+      goToIntegrations: 'Aller aux Intégrations',
       metabaseConfig: 'Configuration Metabase',
       siteUrl: 'URL Metabase',
       invalidUrl: 'URL invalide',
