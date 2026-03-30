@@ -12,7 +12,7 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiSuccess {String} id
  * @apiSuccess {String} name
  * @apiSuccess {String} type - Integration type (ai, dashboard, etc.)
- * @apiSuccess {String} provider - Provider identifier (metabase, openai, etc.)
+ * @apiSuccess {String} provider - Provider identifier (metabase, openai, mistral, etc.)
  * @apiSuccess {String} _company - Reference to Group
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {String} validationStatus
@@ -48,8 +48,13 @@ const IntegrationSchema = Schema(
       type: String,
       required: [true, 'API key is required'],
     },
-    // API host for the provider (e.g., Metabase site URL)
+    // API host for the provider (e.g., Metabase site URL, self-hosted instances)
     apiHost: {
+      type: String,
+      required: false,
+    },
+    // Product ID for Infomaniak AI Tools
+    productId: {
       type: String,
       required: false,
     },
@@ -74,7 +79,13 @@ const IntegrationSchema = Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        if (ret.apiKey) ret.apiKey = '••••••••';
+        return ret;
+      },
+    },
     toObject: { virtuals: true },
   }
 );

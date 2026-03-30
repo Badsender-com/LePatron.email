@@ -23,8 +23,9 @@ module.exports = Object.freeze({
   TagModel: 'Tag',
   // Comments
   CommentModel: 'Comment',
-  // Integrations
+  // Integrations & Dashboards
   IntegrationModel: 'Integration',
-  // Dashboards
   DashboardModel: 'Dashboard',
+  // AI Features
+  AIFeatureConfigModel: 'AIFeatureConfig',
 });

@@ -4,35 +4,36 @@ import { getTreeviewWorkspacesWithoutSubfolders } from '~/utils/workspaces';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { mapState } from 'vuex';
 import { FOLDER } from '~/store/folder';
+import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 
 export default {
   name: 'FolderMoveModal',
   components: {
     BsModalConfirm,
   },
+  mixins: [destinationTreeMixin],
   props: {
     confirmationInputLabel: { type: String, default: '' },
   },
   data() {
     return {
-      folder: null,
+      folderToMove: null,
       workspaceIsError: false,
-      selectedLocation: {},
     };
   },
   computed: {
-    ...mapState(FOLDER, ['workspacesHasRight', 'areLoadingWorkspaces']),
+    ...mapState(FOLDER, ['workspacesHasRight']),
     treeviewLocationItems() {
       return getTreeviewWorkspacesWithoutSubfolders(this.workspacesHasRight);
     },
     isValidToBeMoved() {
       return (
         !!this.selectedLocation?.id &&
-        this.selectedLocation?.id !== this.folder?.id
+        this.selectedLocation?.id !== this.folderToMove?.id
       );
     },
     folderName() {
-      return this.folder?.name;
+      return this.folderToMove?.name;
     },
   },
   methods: {
@@ -53,22 +54,18 @@ export default {
         }
         this.$emit('confirm', {
           destinationParam,
-          folderId: this.folder?.id,
+          folderId: this.folderToMove?.id,
         });
       }
     },
-    handleSelectItemFromTreeView(selectedItems) {
-      if (selectedItems[0]) {
-        this.selectedLocation = selectedItems[0];
-      }
-    },
     open(selectedFolder) {
-      this.folder = selectedFolder;
+      this.folderToMove = selectedFolder;
       this.$refs.moveFolderDialog.open();
+      this.initDestinationTree();
     },
     close() {
       this.$refs.moveFolderDialog.close();
-      this.selectedLocation = {};
+      this.resetDestination();
     },
   },
 };
@@ -93,12 +90,13 @@ export default {
         item-key="id"
         activatable
         :items="treeviewLocationItems"
+        :open="openNodes"
+        :active="activeNode"
         hoverable
-        open-all
         :dense="true"
         :return-object="true"
         class="pb-8"
-        @update:active="handleSelectItemFromTreeView"
+        @update:active="handleSelectDestination"
       >
         <template #prepend="{ item, open }">
           <v-icon v-if="!item.icon" color="accent">
@@ -118,7 +116,7 @@ export default {
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <v-btn color="primary" text @click="close">
+      <v-btn text @click="close">
         {{ $t('global.cancel') }}
       </v-btn>
       <v-btn

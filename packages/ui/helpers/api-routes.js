@@ -312,29 +312,24 @@ export function getCrmIntelligenceEmbedUrl(dashboardId) {
 // INTEGRATIONS
 /// ///
 
-export function getIntegrations(groupId, type = null) {
-  const base = `/integrations/groups/${groupId}`;
-  return type ? `${base}?type=${type}` : base;
-}
-
-export function getIntegration(integrationId) {
-  return `/integrations/${integrationId}`;
-}
-
-export function createIntegration(groupId) {
+export function integrations(groupId) {
   return `/integrations/groups/${groupId}`;
 }
 
-export function updateIntegration(integrationId) {
+export function integrationsItem(integrationId) {
   return `/integrations/${integrationId}`;
 }
 
-export function deleteIntegration(integrationId) {
-  return `/integrations/${integrationId}`;
-}
-
-export function validateIntegration(integrationId) {
+export function integrationsValidate(integrationId) {
   return `/integrations/${integrationId}/validate`;
+}
+
+export function integrationsProviders() {
+  return '/integrations/providers';
+}
+
+export function integrationModels(integrationId) {
+  return `/integrations/${integrationId}/models`;
 }
 
 /// ///
@@ -363,4 +358,44 @@ export function deleteDashboard(dashboardId) {
 
 export function reorderDashboards(groupId) {
   return `/dashboards/groups/${groupId}/reorder`;
+}
+
+/// ///
+// AI FEATURES
+/// ///
+
+export function aiFeatures(groupId) {
+  return `/ai-features/groups/${groupId}`;
+}
+
+export function aiFeaturesItem(groupId, featureType) {
+  return `/ai-features/groups/${groupId}/features/${featureType}`;
+}
+
+export function aiFeaturesTypes() {
+  return '/ai-features/types';
+}
+
+/// ///
+// TRANSLATION
+/// ///
+
+export function translationLanguages() {
+  return '/translation/languages';
+}
+
+export function translationText() {
+  return '/translation/text';
+}
+
+export function mailingDuplicateTranslate(mailingId) {
+  return `/mailings/${mailingId}/duplicate-translate`;
+}
+
+export function translationJobStatus(jobId) {
+  return `/translation/jobs/${jobId}/status`;
+}
+
+export function translationJobCancel(jobId) {
+  return `/translation/jobs/${jobId}/cancel`;
 }

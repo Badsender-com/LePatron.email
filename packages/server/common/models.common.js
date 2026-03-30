@@ -26,6 +26,7 @@ const TagSchema = require('../tag/tag.schema.js');
 const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
 const DashboardSchema = require('../dashboard/dashboard.schema.js');
+const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 
 /// ///
 // EXPORTS
@@ -70,6 +71,10 @@ const Integrations = mongoose.model(
   IntegrationSchema
 );
 const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
+const AIFeatureConfigs = mongoose.model(
+  modelNames.AIFeatureConfigModel,
+  AIFeatureConfigSchema
+);
 
 module.exports = {
   mongoose,
@@ -94,4 +99,5 @@ module.exports = {
   Comments,
   Integrations,
   Dashboards,
+  AIFeatureConfigs,
 };

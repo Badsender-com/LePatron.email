@@ -8,8 +8,11 @@ module.exports = {
   // TABLEAU: 'tableau',
   // POWERBI: 'powerbi',
 
-  // AI providers (for future AI translation feature)
-  // OPENAI: 'openai',
-  // MISTRAL: 'mistral',
-  // DEEPL: 'deepl',
+  // AI providers
+  OPENAI: 'openai',
+  MISTRAL: 'mistral',
+  INFOMANIAK: 'infomaniak',
+  DEEPL: 'deepl',
+  // Future providers
+  // SMARTCAT: 'smartcat',
 };

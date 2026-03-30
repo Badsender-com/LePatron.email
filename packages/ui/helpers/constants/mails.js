@@ -8,6 +8,7 @@ export const ACTIONS = {
   PREVIEW: 'PREVIEW',
   DOWNLOAD: 'DOWNLOAD',
   DOWNLOAD_FTP: 'DOWNLOAD_FTP',
+  DUPLICATE_TRANSLATE: 'DUPLICATE_TRANSLATE',
 };
 
 export const ACTIONS_DETAILS = {
@@ -47,5 +48,9 @@ export const ACTIONS_DETAILS = {
   [ACTIONS.DOWNLOAD_FTP]: {
     text: 'global.downloadFtp',
     icon: 'mdi-cloud-download',
+  },
+  [ACTIONS.DUPLICATE_TRANSLATE]: {
+    text: 'mailings.duplicateTranslate',
+    icon: 'mdi-translate',
   },
 };

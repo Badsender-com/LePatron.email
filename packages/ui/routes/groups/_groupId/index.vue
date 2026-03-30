@@ -15,6 +15,8 @@ import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
+import BsGroupIntegrationsTab from '~/components/group/integrations-tab.vue';
+import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
 import BsGroupLoading from '~/components/loadingBar';
 
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -33,6 +35,8 @@ export default {
     BsEmailsGroupsTab,
     GroupPersonalizedVariableTab,
     BsCrmIntelligenceTab,
+    BsGroupIntegrationsTab,
+    BsGroupAiFeaturesTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -226,6 +230,20 @@ export default {
           {{ $t('global.variables') }}
         </v-tab>
         <v-tab
+          v-if="isGroupAdmin || isAdmin"
+          href="#group-integrations"
+          @click="activeTab = 'group-integrations'"
+        >
+          {{ $t('integrations.title') }}
+        </v-tab>
+        <v-tab
+          v-if="isGroupAdmin || isAdmin"
+          href="#group-ai-features"
+          @click="activeTab = 'group-ai-features'"
+        >
+          {{ $t('aiFeatures.title') }}
+        </v-tab>
+        <v-tab
           v-if="isAdmin"
           href="#group-crm-intelligence"
           :disabled="!group.enableCrmIntelligence"
@@ -270,6 +288,14 @@ export default {
         </v-tab-item>
         <v-tab-item v-if="isGroupAdmin" value="group-personalized-variables">
           <group-personalized-variable-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-integrations">
+          <bs-group-integrations-tab />
+        </v-tab-item>
+        <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-ai-features">
+          <bs-group-ai-features-tab
+            :active="activeTab === 'group-ai-features'"
+          />
         </v-tab-item>
         <v-tab-item v-if="isAdmin" value="group-crm-intelligence">
           <bs-crm-intelligence-tab :group="group" @update="refreshGroup" />
