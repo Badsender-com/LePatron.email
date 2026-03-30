@@ -51,9 +51,7 @@ async function getDashboard(dashboardId) {
     .lean();
 
   if (!dashboard) {
-    throw createError(404, 'Dashboard not found', {
-      code: ERROR_CODES.RESOURCE_NOT_FOUND,
-    });
+    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
   return {
@@ -95,9 +93,7 @@ async function createDashboard(groupId, data) {
   });
 
   if (!integration) {
-    throw createError(400, 'Integration not found or does not belong to this group', {
-      code: ERROR_CODES.INVALID_INTEGRATION,
-    });
+    throw createError(400, ERROR_CODES.INVALID_INTEGRATION);
   }
 
   // Get the highest order value to place new dashboard at the end
@@ -126,9 +122,7 @@ async function createDashboard(groupId, data) {
   } catch (err) {
     // Handle duplicate key error
     if (err.code === 11000) {
-      throw createError(409, 'A dashboard with this ID already exists for this integration', {
-        code: ERROR_CODES.DASHBOARD_ALREADY_EXISTS,
-      });
+      throw createError(409, ERROR_CODES.DASHBOARD_ALREADY_EXISTS);
     }
     throw err;
   }
@@ -144,9 +138,7 @@ async function updateDashboard(dashboardId, data) {
   const dashboard = await Dashboards.findById(dashboardId);
 
   if (!dashboard) {
-    throw createError(404, 'Dashboard not found', {
-      code: ERROR_CODES.RESOURCE_NOT_FOUND,
-    });
+    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
   const { name, description, integrationId, providerDashboardId, lockedParams, isActive } =
@@ -189,9 +181,7 @@ async function deleteDashboard(dashboardId) {
   const dashboard = await Dashboards.findById(dashboardId);
 
   if (!dashboard) {
-    throw createError(404, 'Dashboard not found', {
-      code: ERROR_CODES.RESOURCE_NOT_FOUND,
-    });
+    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
   await Dashboards.deleteOne({ _id: dashboard._id });
@@ -211,9 +201,7 @@ async function reorderDashboards(groupId, dashboardIds) {
   });
 
   if (dashboards.length !== dashboardIds.length) {
-    throw createError(400, 'Some dashboards not found or do not belong to this group', {
-      code: ERROR_CODES.INVALID_REQUEST,
-    });
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
   }
 
   // Update order for each dashboard

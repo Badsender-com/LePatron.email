@@ -312,8 +312,9 @@ export function getCrmIntelligenceEmbedUrl(dashboardId) {
 // INTEGRATIONS
 /// ///
 
-export function integrations(groupId) {
-  return `/integrations/groups/${groupId}`;
+export function integrations(groupId, type = null) {
+  const base = `/integrations/groups/${groupId}`;
+  return type ? `${base}?type=${type}` : base;
 }
 
 export function integrationsItem(integrationId) {
@@ -330,32 +331,6 @@ export function integrationsProviders() {
 
 export function integrationModels(integrationId) {
   return `/integrations/${integrationId}/models`;
-}
-
-// Aliases for CRM Intelligence tab (uses different naming convention)
-export function getIntegrations(groupId, type = null) {
-  const base = `/integrations/groups/${groupId}`;
-  return type ? `${base}?type=${type}` : base;
-}
-
-export function getIntegration(integrationId) {
-  return `/integrations/${integrationId}`;
-}
-
-export function createIntegration(groupId) {
-  return `/integrations/groups/${groupId}`;
-}
-
-export function updateIntegration(integrationId) {
-  return `/integrations/${integrationId}`;
-}
-
-export function deleteIntegration(integrationId) {
-  return `/integrations/${integrationId}`;
-}
-
-export function validateIntegration(integrationId) {
-  return `/integrations/${integrationId}/validate`;
 }
 
 /// ///

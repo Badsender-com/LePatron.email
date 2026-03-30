@@ -8,7 +8,7 @@ const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Mailings, Templates } = require('../common/models.common');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),

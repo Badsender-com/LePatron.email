@@ -4,7 +4,7 @@ import { required } from 'vuelidate/lib/validators';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import {
-  getIntegrations,
+  integrations,
   getDashboards,
   createDashboard,
   updateDashboard,
@@ -86,7 +86,7 @@ export default {
     async fetchIntegrations() {
       try {
         const response = await this.$axios.$get(
-          getIntegrations(this.groupId, INTEGRATION_TYPE_DASHBOARD)
+          integrations(this.groupId, INTEGRATION_TYPE_DASHBOARD)
         );
         this.integrations = response.items || [];
       } catch (error) {
