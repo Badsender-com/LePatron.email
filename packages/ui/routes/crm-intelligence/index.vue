@@ -31,7 +31,7 @@ export default {
       const status = await $axios.$get(getCrmIntelligenceStatus());
       let dashboards = [];
 
-      if (status.enabled && status.configured && !status.accessDenied) {
+      if (status.enabled && status.configured) {
         dashboards = await $axios.$get(getCrmIntelligenceDashboards());
       }
 
@@ -45,7 +45,7 @@ export default {
     } catch (err) {
       console.error('[CrmIntelligence] Error fetching status:', err);
       return {
-        status: { enabled: false, configured: false, accessDenied: false },
+        status: { enabled: false, configured: false },
         dashboards: [],
         selectedDashboard: null,
         embedUrl: null,
@@ -54,7 +54,7 @@ export default {
     }
   },
   data: () => ({
-    status: { enabled: false, configured: false, accessDenied: false },
+    status: { enabled: false, configured: false },
     dashboards: [],
     selectedDashboard: null,
     embedUrl: null,
@@ -72,9 +72,6 @@ export default {
     },
     isEnabled() {
       return this.status.enabled && this.status.configured;
-    },
-    hasAccessDenied() {
-      return this.status.accessDenied;
     },
     hasMultipleDashboards() {
       return this.dashboards.length > 1;
@@ -130,32 +127,8 @@ export default {
   <!-- Multiple dashboards or other states: use sidebar layout -->
   <bs-layout-left-menu v-else>
     <template #menu>
-      <!-- Access Denied State -->
-      <template v-if="hasAccessDenied">
-        <v-list>
-          <v-list-item>
-            <v-list-item-content>
-              <v-list-item-title class="text-h6">
-                {{ $t('crmIntelligence.title') }}
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-        <v-divider />
-        <div class="pa-4">
-          <v-alert type="info" text prominent>
-            <div class="text-body-2">
-              {{ $t('crmIntelligence.accessDenied.message') }}
-            </div>
-            <div class="text-body-2 mt-2 font-weight-medium">
-              {{ $t('crmIntelligence.accessDenied.contactAdmin') }}
-            </div>
-          </v-alert>
-        </div>
-      </template>
-
       <!-- Enabled State with Multiple Dashboards -->
-      <template v-else-if="isEnabled && hasMultipleDashboards">
+      <template v-if="isEnabled && hasMultipleDashboards">
         <dashboard-list
           :dashboards="dashboards"
           :selected="selectedDashboard"
@@ -171,25 +144,8 @@ export default {
 
     <!-- Main Content Area -->
     <v-card flat tile class="fill-height">
-      <!-- Access Denied Content -->
-      <template v-if="hasAccessDenied">
-        <div class="d-flex align-center justify-center fill-height">
-          <v-card flat max-width="500" class="text-center pa-8">
-            <v-icon size="80" color="grey lighten-1">
-              mdi-chart-box-outline
-            </v-icon>
-            <h2 class="text-h5 mt-4 grey--text text--darken-1">
-              {{ $t('crmIntelligence.accessDenied.title') }}
-            </h2>
-            <p class="text-body-1 mt-4 grey--text">
-              {{ $t('crmIntelligence.accessDenied.message') }}
-            </p>
-          </v-card>
-        </div>
-      </template>
-
       <!-- Dashboard Viewer (multiple dashboards case) -->
-      <template v-else-if="isEnabled">
+      <template v-if="isEnabled">
         <dashboard-viewer
           v-if="selectedDashboard"
           :embed-url="embedUrl"
