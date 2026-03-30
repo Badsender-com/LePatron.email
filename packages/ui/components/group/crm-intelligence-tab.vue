@@ -303,7 +303,7 @@ export default {
       this.dashboardForm = {
         name: dashboard.name,
         description: dashboard.description || '',
-        integrationId: dashboard.integration?.id || null,
+        integrationId: dashboard.integration && dashboard.integration.id ? dashboard.integration.id : null,
         providerDashboardId: dashboard.providerDashboardId,
       };
       this.$v.dashboardForm.$reset();
@@ -619,7 +619,7 @@ export default {
         </v-card-title>
         <v-card-subtitle>
           <v-chip x-small outlined class="mr-2">
-            {{ dashboard.integration?.name || '-' }}
+            {{ dashboard.integration && dashboard.integration.name ? dashboard.integration.name : '-' }}
           </v-chip>
           ID: {{ dashboard.providerDashboardId }}
           <span v-if="dashboard.description" class="ml-2">
@@ -734,7 +734,7 @@ export default {
                 : ''
             "
           >
-            <template #item="{ item }">
+            <template v-slot:item="{ item }">
               <v-list-item-content>
                 <v-list-item-title>{{ item.name }}</v-list-item-title>
                 <v-list-item-subtitle>{{ item.apiHost }}</v-list-item-subtitle>
