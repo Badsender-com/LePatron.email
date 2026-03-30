@@ -27,6 +27,7 @@ const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
+const DashboardSchema = require('../dashboard/dashboard.schema.js');
 
 /// ///
 // EXPORTS
@@ -78,6 +79,7 @@ const TranslationJobs = mongoose.model(
   modelNames.TranslationJobModel,
   TranslationJobSchema
 );
+const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 
 module.exports = {
   mongoose,
@@ -103,4 +105,5 @@ module.exports = {
   Integrations,
   AIFeatureConfigs,
   TranslationJobs,
+  Dashboards,
 };

@@ -28,4 +28,6 @@ module.exports = Object.freeze({
   AIFeatureConfigModel: 'AIFeatureConfig',
   // Translation
   TranslationJobModel: 'TranslationJob',
+  // Dashboards
+  DashboardModel: 'Dashboard',
 });

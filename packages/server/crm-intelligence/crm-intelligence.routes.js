@@ -20,12 +20,7 @@ router.get('/status', GUARD_USER, crmIntelligence.getStatus);
 router.get('/dashboards', GUARD_USER, crmIntelligence.getDashboards);
 
 // Get signed embed URL for a specific dashboard
-// Requires both integrationId and dashboardId
-router.get(
-  '/embed/:integrationId/:dashboardId',
-  GUARD_USER,
-  crmIntelligence.getEmbedUrl
-);
+router.get('/embed/:dashboardId', GUARD_USER, crmIntelligence.getEmbedUrl);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {
