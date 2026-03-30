@@ -25,8 +25,8 @@ router.post(
   integrations.createIntegration
 );
 
-// Read single integration
-router.get('/:integrationId', GUARD_GROUP_ADMIN, integrations.readIntegration);
+// Get single integration
+router.get('/:integrationId', GUARD_GROUP_ADMIN, integrations.getIntegration);
 
 // Update integration
 router.put(
@@ -47,6 +47,16 @@ router.post(
   '/:integrationId/validate',
   GUARD_GROUP_ADMIN,
   integrations.validateCredentials
+);
+
+// Get available models for an integration
+router.get('/:integrationId/models', GUARD_GROUP_ADMIN, integrations.getModels);
+
+// Get dashboard count for an integration (used before delete to show warning)
+router.get(
+  '/:integrationId/dashboard-count',
+  GUARD_GROUP_ADMIN,
+  integrations.getDashboardCount
 );
 
 module.exports = router;
