@@ -21,33 +21,6 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiSuccess {Date} updatedAt
  */
 
-// Dashboard sub-schema for Metabase dashboards
-const DashboardSchema = Schema(
-  {
-    metabaseId: {
-      type: Number,
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      default: '',
-    },
-    lockedParams: {
-      type: Schema.Types.Mixed,
-      default: {},
-    },
-    order: {
-      type: Number,
-      default: 0,
-    },
-  },
-  { _id: true }
-);
-
 const IntegrationSchema = Schema(
   {
     name: {
@@ -84,11 +57,6 @@ const IntegrationSchema = Schema(
     config: {
       type: Schema.Types.Mixed,
       default: {},
-    },
-    // Dashboard-specific: array of dashboards
-    dashboards: {
-      type: [DashboardSchema],
-      default: [],
     },
     isActive: {
       type: Boolean,
