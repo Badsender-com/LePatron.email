@@ -177,13 +177,16 @@ export default {
 
     getProviderLabel,
 
-    getCategoryInfo(provider) {
+    getCategoryLabel(provider) {
       const category = getProviderCategory(provider);
-      if (!category) return null;
-      return {
-        label: this.$t(category.labelKey),
-        icon: category.icon,
-      };
+      if (!category) return '-';
+      return this.$t(category.labelKey);
+    },
+
+    getCategoryIcon(provider) {
+      const category = getProviderCategory(provider);
+      if (!category) return 'mdi-puzzle';
+      return category.icon;
     },
 
     getStatusColor(status) {
@@ -225,12 +228,12 @@ export default {
       >
         <template #item.provider="{ item }">
           <div class="d-flex align-center">
-            <v-icon small class="mr-2" :title="getCategoryInfo(item.provider)?.label">
-              {{ getCategoryInfo(item.provider)?.icon || 'mdi-puzzle' }}
+            <v-icon small class="mr-2" :title="getCategoryLabel(item.provider)">
+              {{ getCategoryIcon(item.provider) }}
             </v-icon>
             <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
             <v-chip x-small outlined color="grey">
-              {{ getCategoryInfo(item.provider)?.label || '-' }}
+              {{ getCategoryLabel(item.provider) }}
             </v-chip>
           </div>
         </template>
