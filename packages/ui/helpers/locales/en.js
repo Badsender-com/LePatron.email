@@ -585,6 +585,8 @@ export default {
       deleteDashboardConfirmTitle: 'Delete dashboard?',
       deleteDashboardConfirmText: 'This action cannot be undone.',
       reorderError: 'Error reordering dashboards',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
     },
   },
   modules: {
