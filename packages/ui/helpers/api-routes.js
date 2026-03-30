@@ -304,8 +304,8 @@ export function getCrmIntelligenceDashboards() {
   return '/crm-intelligence/dashboards';
 }
 
-export function getCrmIntelligenceEmbedUrl(integrationId, dashboardId) {
-  return `/crm-intelligence/embed/${integrationId}/${dashboardId}`;
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
 }
 
 /// ///
@@ -335,4 +335,32 @@ export function deleteIntegration(integrationId) {
 
 export function validateIntegration(integrationId) {
   return `/integrations/${integrationId}/validate`;
+}
+
+/// ///
+// DASHBOARDS
+/// ///
+
+export function getDashboards(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function getDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function createDashboard(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function updateDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function deleteDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function reorderDashboards(groupId) {
+  return `/dashboards/groups/${groupId}/reorder`;
 }

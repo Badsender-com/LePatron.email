@@ -25,4 +25,6 @@ module.exports = Object.freeze({
   CommentModel: 'Comment',
   // Integrations
   IntegrationModel: 'Integration',
+  // Dashboards
+  DashboardModel: 'Dashboard',
 });

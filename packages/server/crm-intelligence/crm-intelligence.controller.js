@@ -72,12 +72,11 @@ const getDashboards = asyncHandler(async (req, res) => {
 });
 
 /**
- * @api {get} /crm-intelligence/embed/:integrationId/:dashboardId Get embed URL for a dashboard
+ * @api {get} /crm-intelligence/embed/:dashboardId Get embed URL for a dashboard
  * @apiName GetCrmIntelligenceEmbedUrl
  * @apiGroup CrmIntelligence
  * @apiPermission user
  *
- * @apiParam {String} integrationId Integration MongoDB ID
  * @apiParam {String} dashboardId Dashboard MongoDB ID
  *
  * @apiSuccess {String} embedUrl Signed Metabase embed URL
@@ -87,7 +86,7 @@ const getDashboards = asyncHandler(async (req, res) => {
  */
 const getEmbedUrl = asyncHandler(async (req, res) => {
   const { user } = req;
-  const { integrationId, dashboardId } = req.params;
+  const { dashboardId } = req.params;
 
   if (!user.group?.id) {
     throw createError(400, ERROR_CODES.GROUP_NOT_FOUND);
@@ -98,17 +97,12 @@ const getEmbedUrl = asyncHandler(async (req, res) => {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_ACCESS_DENIED);
   }
 
-  if (!integrationId) {
-    throw createError(400, ERROR_CODES.INTEGRATION_NOT_FOUND);
-  }
-
   if (!dashboardId) {
     throw createError(400, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
   const result = await crmIntelligenceService.getEmbedUrl(
     user.group.id,
-    integrationId,
     dashboardId
   );
   res.json(result);

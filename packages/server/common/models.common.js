@@ -25,6 +25,7 @@ const PersonalizedBlockSchema = require('../personalized-blocks/personalized-blo
 const TagSchema = require('../tag/tag.schema.js');
 const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
+const DashboardSchema = require('../dashboard/dashboard.schema.js');
 
 /// ///
 // EXPORTS
@@ -68,6 +69,7 @@ const Integrations = mongoose.model(
   modelNames.IntegrationModel,
   IntegrationSchema
 );
+const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 
 module.exports = {
   mongoose,
@@ -91,4 +93,5 @@ module.exports = {
   Tags,
   Comments,
   Integrations,
+  Dashboards,
 };

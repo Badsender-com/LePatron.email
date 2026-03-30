@@ -5,7 +5,7 @@ const createError = require('http-errors');
 const { Types } = require('mongoose');
 
 const GroupService = require('../group/group.service');
-const { Integrations } = require('../common/models.common');
+const { Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
 
@@ -13,7 +13,7 @@ const JWT_EXPIRATION_SECONDS = 10 * 60; // 10 minutes
 
 /**
  * Get CRM Intelligence status for a group
- * Checks if there are active dashboard integrations
+ * Checks if there are active dashboard integrations and dashboards
  * @param {string} groupId - The group ID
  * @returns {Promise<Object>} Status object with enabled flag and dashboard count
  */
@@ -42,20 +42,20 @@ async function getStatus(groupId) {
     isActive: true,
   }).sort({ name: 1 });
 
-  const totalDashboardCount = integrations.reduce(
-    (sum, integration) => sum + (integration.dashboards?.length || 0),
-    0
-  );
+  // Count active dashboards for this group
+  const dashboardCount = await Dashboards.countDocuments({
+    _company: Types.ObjectId(groupId),
+    isActive: true,
+  });
 
   return {
     enabled: isEnabled,
-    configured: integrations.length > 0 && totalDashboardCount > 0,
-    dashboardCount: totalDashboardCount,
+    configured: integrations.length > 0 && dashboardCount > 0,
+    dashboardCount,
     integrations: integrations.map((i) => ({
       id: i._id,
       name: i.name,
       provider: i.provider,
-      dashboardCount: i.dashboards?.length || 0,
     })),
   };
 }
@@ -63,7 +63,7 @@ async function getStatus(groupId) {
 /**
  * Get list of dashboards for a group (across all integrations)
  * @param {string} groupId - The group ID
- * @returns {Promise<Array>} Array of dashboard objects grouped by integration
+ * @returns {Promise<Array>} Array of dashboard objects with integration context
  */
 async function getDashboards(groupId) {
   const group = await GroupService.findById(groupId);
@@ -75,43 +75,34 @@ async function getDashboards(groupId) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  // Find active dashboard integrations for this group
-  const integrations = await Integrations.find({
+  // Find active dashboards for this group, ordered globally
+  const dashboards = await Dashboards.find({
     _company: Types.ObjectId(groupId),
-    type: IntegrationTypes.DASHBOARD,
     isActive: true,
-  }).sort({ name: 1 });
+  })
+    .sort({ order: 1, createdAt: 1 })
+    .populate('_integration', 'name provider apiHost')
+    .lean();
 
-  // Flatten dashboards with integration context
-  const dashboards = [];
-  for (const integration of integrations) {
-    const integrationDashboards = (integration.dashboards || [])
-      .map((dashboard) => ({
-        id: dashboard._id,
-        integrationId: integration._id,
-        integrationName: integration.name,
-        provider: integration.provider,
-        metabaseId: dashboard.metabaseId,
-        name: dashboard.name,
-        description: dashboard.description,
-        order: dashboard.order,
-      }))
-      .sort((a, b) => a.order - b.order);
-
-    dashboards.push(...integrationDashboards);
-  }
-
-  return dashboards;
+  return dashboards.map((dashboard) => ({
+    id: dashboard._id.toString(),
+    integrationId: dashboard._integration?._id.toString(),
+    integrationName: dashboard._integration?.name,
+    provider: dashboard._integration?.provider,
+    providerDashboardId: dashboard.providerDashboardId,
+    name: dashboard.name,
+    description: dashboard.description,
+    order: dashboard.order,
+  }));
 }
 
 /**
  * Generate a signed embed URL for a Metabase dashboard
  * @param {string} groupId - The group ID
- * @param {string} integrationId - The integration MongoDB ID
- * @param {string} dashboardId - The dashboard MongoDB ID within the integration
+ * @param {string} dashboardId - The dashboard MongoDB ID
  * @returns {Promise<Object>} Object with embedUrl
  */
-async function getEmbedUrl(groupId, integrationId, dashboardId) {
+async function getEmbedUrl(groupId, dashboardId) {
   const group = await GroupService.findById(groupId);
   if (!group) {
     throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
@@ -121,23 +112,25 @@ async function getEmbedUrl(groupId, integrationId, dashboardId) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  // Validate IDs
-  if (!Types.ObjectId.isValid(integrationId)) {
-    throw createError(400, ERROR_CODES.INTEGRATION_NOT_FOUND);
-  }
+  // Validate dashboard ID
   if (!Types.ObjectId.isValid(dashboardId)) {
     throw createError(400, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
-  // Find the integration
-  const integration = await Integrations.findOne({
-    _id: Types.ObjectId(integrationId),
+  // Find the dashboard with its integration
+  const dashboard = await Dashboards.findOne({
+    _id: Types.ObjectId(dashboardId),
     _company: Types.ObjectId(groupId),
-    type: IntegrationTypes.DASHBOARD,
     isActive: true,
-  });
+  }).populate('_integration');
 
-  if (!integration) {
+  if (!dashboard) {
+    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
+  }
+
+  const integration = dashboard._integration;
+
+  if (!integration || !integration.isActive) {
     throw createError(404, ERROR_CODES.INTEGRATION_NOT_FOUND);
   }
 
@@ -145,17 +138,9 @@ async function getEmbedUrl(groupId, integrationId, dashboardId) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Find the dashboard
-  const dashboard = integration.dashboards.find(
-    (d) => d._id.toString() === dashboardId
-  );
-  if (!dashboard) {
-    throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
-  }
-
   // Build JWT payload for Metabase
   const payload = {
-    resource: { dashboard: dashboard.metabaseId },
+    resource: { dashboard: dashboard.providerDashboardId },
     params: dashboard.lockedParams || {},
     exp: Math.round(Date.now() / 1000) + JWT_EXPIRATION_SECONDS,
   };
@@ -174,35 +159,8 @@ async function getEmbedUrl(groupId, integrationId, dashboardId) {
   };
 }
 
-/**
- * Get dashboards for a specific integration
- * @param {string} integrationId - The integration MongoDB ID
- * @returns {Promise<Array>} Array of dashboard objects
- */
-async function getIntegrationDashboards(integrationId) {
-  if (!Types.ObjectId.isValid(integrationId)) {
-    throw createError(400, ERROR_CODES.INTEGRATION_NOT_FOUND);
-  }
-
-  const integration = await Integrations.findById(integrationId);
-  if (!integration) {
-    throw createError(404, ERROR_CODES.INTEGRATION_NOT_FOUND);
-  }
-
-  return (integration.dashboards || [])
-    .map((dashboard) => ({
-      id: dashboard._id,
-      metabaseId: dashboard.metabaseId,
-      name: dashboard.name,
-      description: dashboard.description,
-      order: dashboard.order,
-    }))
-    .sort((a, b) => a.order - b.order);
-}
-
 module.exports = {
   getStatus,
   getDashboards,
   getEmbedUrl,
-  getIntegrationDashboards,
 };
