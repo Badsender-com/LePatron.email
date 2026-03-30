@@ -358,8 +358,13 @@ export default {
         this.$emit('update');
       } catch (error) {
         console.error('[CrmIntelligenceTab] Save dashboard error:', error);
+        const errorCode = error.response?.data?.code;
+        let errorMessage = this.$t('crmIntelligence.admin.dashboardSaveError');
+        if (errorCode === 'DASHBOARD_ALREADY_EXISTS') {
+          errorMessage = this.$t('crmIntelligence.errors.dashboardAlreadyExists');
+        }
         this.showSnackbar({
-          text: this.$t('crmIntelligence.admin.dashboardSaveError'),
+          text: errorMessage,
           color: 'error',
         });
       } finally {

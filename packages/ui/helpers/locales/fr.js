@@ -622,6 +622,7 @@ export default {
     errors: {
       loadFailed: 'Impossible de charger le tableau de bord.',
       embedFailed: 'Erreur lors du chargement du tableau de bord.',
+      dashboardAlreadyExists: 'Un tableau de bord avec cet ID existe déjà pour cette intégration.',
     },
     admin: {
       title: 'CRM Intelligence',
