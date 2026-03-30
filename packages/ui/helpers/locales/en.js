@@ -505,89 +505,6 @@ export default {
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
   },
-  integrations: {
-    title: 'Integrations',
-    name: 'Name',
-    provider: 'Provider',
-    status: 'Status',
-    active: 'Active',
-    apiKey: 'API Key',
-    apiHost: 'API URL (optional)',
-    apiKeyHintEdit: 'Leave empty to keep the current key',
-    productId: 'Product ID',
-    add: 'Add integration',
-    edit: 'Edit integration',
-    created: 'Integration created successfully',
-    updated: 'Integration updated successfully',
-    deleted: 'Integration deleted successfully',
-    validate: 'Test connection',
-    validationSuccess: 'Connection validated successfully',
-    validationFailed: 'Credential validation failed',
-    noIntegrations: 'No integrations configured',
-    deleteConfirmTitle: 'Delete integration',
-    deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
-    statusLabels: {
-      valid: 'Valid',
-      invalid: 'Invalid',
-      pending: 'Pending'
-    },
-    openai: {
-      apiKeyPlaceholder: 'sk-...',
-      apiHostHint: 'Leave empty to use the official OpenAI API'
-    },
-    mistral: {
-      apiKeyPlaceholder: 'Your Mistral API key',
-      apiHostHint: 'Leave empty to use the official Mistral API'
-    },
-    infomaniak: {
-      apiKeyPlaceholder: 'Your Infomaniak API key',
-      productId: 'Product ID',
-      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
-    },
-    deepl: {
-      apiKeyPlaceholder: 'Your DeepL API key',
-      apiKeyHint: 'Your DeepL API key (Free or Pro)'
-    },
-    models: {
-      fastEconomical: 'fast, economical',
-      balanced: 'balanced',
-      powerful: 'powerful',
-      fast: 'fast',
-      recommended: 'recommended',
-    }
-  },
-  aiFeatures: {
-    title: 'AI Features',
-    selectIntegration: 'Integration to use',
-    noIntegration: '-- No integration --',
-    noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
-    integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
-    comingSoon: 'Coming soon',
-    translation: {
-      title: 'Translation',
-      description: 'Automatically translate your emails into different languages using AI.',
-      model: 'AI Model',
-      modelHint: 'More powerful models are more accurate but slower and more expensive',
-      availableLanguages: 'Available languages',
-      languagesHint: 'Select at least 2 languages (source and target)',
-      minLanguagesError: 'Select at least 2 languages (one source and one target)',
-      formality: 'Formality level',
-      formalityHint: 'Controls the formality of the translated text (depending on target language)',
-      formalityDefault: 'Default',
-      formalityMore: 'Formal',
-      formalityLess: 'Informal',
-      formalityPreferMore: 'Prefer formal',
-      formalityPreferLess: 'Prefer informal'
-    },
-    textGeneration: {
-      title: 'Text generation',
-      description: 'Generate personalized marketing content for your emails.'
-    },
-    qualityCheck: {
-      title: 'Quality check',
-      description: 'Automatically check the quality and consistency of your emails.'
-    }
-  },
   crmIntelligence: {
     title: 'CRM Intelligence',
     subtitle: 'Analytics dashboards',
@@ -617,6 +534,8 @@ export default {
       title: 'CRM Intelligence',
       description: 'Manage dashboard integrations for this group.',
       enabled: 'Enable CRM Intelligence',
+      metabaseConfigHint: 'Configure Metabase connections in the Integrations tab.',
+      goToIntegrations: 'Go to Integrations',
       metabaseConfig: 'Metabase Configuration',
       siteUrl: 'Metabase URL',
       invalidUrl: 'Invalid URL',
@@ -694,4 +613,92 @@ export default {
     help: 'Help',
     logout: 'Logout',
   },
+  integrations: {
+    title: 'Integrations',
+    name: 'Name',
+    provider: 'Provider',
+    status: 'Status',
+    active: 'Active',
+    apiKey: 'API Key',
+    apiHost: 'API URL (optional)',
+    apiKeyHintEdit: 'Leave empty to keep the current key',
+    productId: 'Product ID',
+    add: 'Add integration',
+    edit: 'Edit integration',
+    created: 'Integration created successfully',
+    updated: 'Integration updated successfully',
+    deleted: 'Integration deleted successfully',
+    validate: 'Test connection',
+    validationSuccess: 'Connection validated successfully',
+    validationFailed: 'Credential validation failed',
+    noIntegrations: 'No integrations configured',
+    deleteConfirmTitle: 'Delete integration',
+    deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    statusLabels: {
+      valid: 'Valid',
+      invalid: 'Invalid',
+      pending: 'Pending'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Your Metabase API key',
+      apiKeyLabel: 'Metabase Secret Key',
+      apiHostHint: 'URL of your Metabase instance (e.g. https://metabase.example.com)'
+    },
+    openai: {
+      apiKeyPlaceholder: 'sk-...',
+      apiHostHint: 'Leave empty to use the official OpenAI API'
+    },
+    mistral: {
+      apiKeyPlaceholder: 'Your Mistral API key',
+      apiHostHint: 'Leave empty to use the official Mistral API'
+    },
+    infomaniak: {
+      apiKeyPlaceholder: 'Your Infomaniak API key',
+      productId: 'Product ID',
+      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+    },
+    deepl: {
+      apiKeyPlaceholder: 'Your DeepL API key',
+      apiKeyHint: 'Your DeepL API key (Free or Pro)'
+    },
+    models: {
+      fastEconomical: 'fast, economical',
+      balanced: 'balanced',
+      powerful: 'powerful',
+      fast: 'fast',
+      recommended: 'recommended',
+    }
+  },
+  aiFeatures: {
+    title: 'AI Features',
+    selectIntegration: 'Integration to use',
+    noIntegration: '-- No integration --',
+    noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
+    integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
+    comingSoon: 'Coming soon',
+    translation: {
+      title: 'Translation',
+      description: 'Automatically translate your emails into different languages using AI.',
+      model: 'AI Model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
+      availableLanguages: 'Available languages',
+      languagesHint: 'Select at least 2 languages (source and target)',
+      minLanguagesError: 'Select at least 2 languages (one source and one target)',
+      formality: 'Formality level',
+      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityDefault: 'Default',
+      formalityMore: 'Formal',
+      formalityLess: 'Informal',
+      formalityPreferMore: 'Prefer formal',
+      formalityPreferLess: 'Prefer informal'
+    },
+    textGeneration: {
+      title: 'Text generation',
+      description: 'Generate personalized marketing content for your emails.'
+    },
+    qualityCheck: {
+      title: 'Quality check',
+      description: 'Automatically check the quality and consistency of your emails.'
+    }
+  }
 };

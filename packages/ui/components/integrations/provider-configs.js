@@ -6,6 +6,18 @@
  */
 
 export const providerConfigs = {
+  // Dashboard providers
+  metabase: {
+    type: 'dashboard',
+    apiKeyPlaceholderKey: 'integrations.metabase.apiKeyPlaceholder',
+    apiKeyLabelKey: 'integrations.metabase.apiKeyLabel',
+    apiHostPlaceholder: 'https://metabase.example.com',
+    apiHostHintKey: 'integrations.metabase.apiHostHint',
+    apiHostRequired: true,
+    showProductId: false,
+  },
+
+  // AI providers
   openai: {
     apiKeyPlaceholderKey: 'integrations.openai.apiKeyPlaceholder',
     apiHostPlaceholder: 'https://api.openai.com',
@@ -49,6 +61,9 @@ export function getProviderFormConfig(provider) {
  * Provider display labels.
  */
 export const providerLabels = {
+  // Dashboard providers
+  metabase: 'Metabase',
+  // AI providers
   openai: 'OpenAI',
   mistral: 'Mistral AI',
   infomaniak: 'Infomaniak AI Tools',
