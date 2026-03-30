@@ -15,11 +15,9 @@ export default {
 <template>
   <div class="email-builder-placeholder">
     <div class="placeholder-content">
-      <div class="placeholder-icon">
-        <v-icon size="100" color="primary lighten-2">
-          mdi-palette
-        </v-icon>
-      </div>
+      <v-icon size="100" color="accent lighten-2">
+        mdi-palette
+      </v-icon>
 
       <h1 class="text-h4 mt-6 primary--text">
         {{ $t('emailBuilder.marketing.title') }}
@@ -50,8 +48,9 @@ export default {
       </v-card>
 
       <v-btn
-        color="primary"
+        color="accent"
         large
+        elevation="0"
         class="mt-6"
         :href="contactUrl"
         target="_blank"
@@ -84,16 +83,6 @@ export default {
 .placeholder-content {
   text-align: center;
   max-width: 500px;
-}
-
-.placeholder-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  background-color: rgba(0, 172, 220, 0.1);
 }
 
 .placeholder-description {
