@@ -34,7 +34,6 @@ export default {
         externalUsername: '',
         lang: 'fr',
         role: 'regular_user',
-        hasCrmIntelligenceAccess: true,
       },
     };
   },
@@ -51,9 +50,6 @@ export default {
     },
     groupId() {
       return this.$route.params.groupId;
-    },
-    isCrmIntelligenceEnabled() {
-      return this.group?.enableCrmIntelligence === true;
     },
   },
   methods: {
@@ -94,7 +90,6 @@ export default {
       v-model="newUser"
       :title="$t('global.newUser')"
       :loading="loading"
-      :show-crm-intelligence-access="isCrmIntelligenceEnabled"
       @submit="createUser"
     />
   </bs-layout-left-menu>
