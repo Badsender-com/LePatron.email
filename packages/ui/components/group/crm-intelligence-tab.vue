@@ -22,6 +22,10 @@ export default {
       type: Object,
       required: true,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -66,6 +70,14 @@ export default {
     },
     hasDashboards() {
       return this.dashboards.length > 0;
+    },
+  },
+  watch: {
+    // Refresh data when tab becomes active (after adding integrations in another tab)
+    active(isActive) {
+      if (isActive) {
+        this.fetchData();
+      }
     },
   },
   async mounted() {
@@ -258,12 +270,8 @@ export default {
     },
 
     goToIntegrationsTab() {
-      // Update the activeTab query param to navigate to integrations tab
-      this.$router.replace({
-        query: { ...this.$route.query, redirectTab: 'group-integrations' },
-      });
-      // Force page reload to switch tabs
-      window.location.reload();
+      // Emit event to parent to change tab
+      this.$emit('change-tab', 'group-integrations');
     },
   },
 };

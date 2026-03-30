@@ -1,6 +1,6 @@
 'use strict';
 
-const { Integrations } = require('../common/models.common');
+const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -8,20 +8,24 @@ const {
   InternalServerError,
   Unauthorized,
 } = require('http-errors');
+const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
+const ProviderFactory = require('../integration-providers/provider-factory.js');
+const IntegrationTypes = require('../constant/integration-type.js');
 
 module.exports = {
   createIntegration,
   updateIntegration,
   deleteIntegration,
-  findOne,
+  findById,
   findAllByGroup,
   findByGroupAndType,
+  findActiveByGroup,
   findActiveByGroupAndType,
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
-  updateDashboards,
+  countDashboardsForIntegration,
 };
 
 /**
@@ -31,7 +35,7 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
   user,
   integrationId,
 }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
   if (!user.isAdmin) {
     if (user?.group?.id !== integration?._company?.toString()) {
       throw new Unauthorized(ERROR_CODES.FORBIDDEN_INTEGRATION_ACCESS);
@@ -49,8 +53,8 @@ async function createIntegration({
   provider,
   apiKey,
   apiHost,
+  productId,
   config,
-  dashboards,
   _company,
 }) {
   // Check for duplicates
@@ -64,8 +68,8 @@ async function createIntegration({
     provider,
     apiKey,
     apiHost,
+    productId,
     config: config || {},
-    dashboards: dashboards || [],
     _company,
     isActive: true,
     validationStatus: 'pending',
@@ -82,11 +86,11 @@ async function updateIntegration({
   provider,
   apiKey,
   apiHost,
+  productId,
   config,
-  dashboards,
   isActive,
 }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
 
   // Check for name conflicts if name changed
   if (name && name !== integration.name) {
@@ -102,47 +106,60 @@ async function updateIntegration({
     }
   }
 
-  const updateData = {};
-  if (name !== undefined) updateData.name = name;
-  if (type !== undefined) updateData.type = type;
-  if (provider !== undefined) updateData.provider = provider;
-  if (apiKey !== undefined) updateData.apiKey = apiKey;
-  if (apiHost !== undefined) updateData.apiHost = apiHost;
-  if (config !== undefined) updateData.config = config;
-  if (dashboards !== undefined) updateData.dashboards = dashboards;
-  if (isActive !== undefined) updateData.isActive = isActive;
+  // Keep only fields explicitly provided in the request
+  const updateData = Object.fromEntries(
+    Object.entries({
+      name,
+      type,
+      provider,
+      apiKey,
+      apiHost,
+      productId,
+      config,
+      isActive,
+    }).filter(([, value]) => value !== undefined)
+  );
 
   // Reset validation status if credentials changed
-  if (apiKey !== undefined || apiHost !== undefined) {
+  if (
+    apiKey !== undefined ||
+    apiHost !== undefined ||
+    productId !== undefined
+  ) {
     updateData.validationStatus = 'pending';
     updateData.lastValidatedAt = null;
   }
 
-  return Integrations.findByIdAndUpdate(
+  const updated = await Integrations.findByIdAndUpdate(
     Types.ObjectId(integrationId),
     updateData,
     { new: true }
   );
+
+  // When an integration is deactivated, disable all AI features using it
+  if (isActive === false) {
+    await deactivateFeaturesForIntegration(integrationId);
+  }
+
+  return updated;
 }
 
 /**
- * Update dashboards for an integration
- */
-async function updateDashboards({ integrationId, dashboards }) {
-  await findOne(integrationId);
-
-  return Integrations.findByIdAndUpdate(
-    Types.ObjectId(integrationId),
-    { dashboards },
-    { new: true }
-  );
-}
-
-/**
- * Delete an integration
+ * Delete an integration and its associated dashboards
  */
 async function deleteIntegration({ integrationId }) {
-  await findOne(integrationId);
+  await findById(integrationId);
+
+  // Delete all dashboards associated with this integration
+  const dashboardResult = await Dashboards.deleteMany({
+    _integration: Types.ObjectId(integrationId),
+  });
+
+  if (dashboardResult.deletedCount > 0) {
+    logger.log(
+      `Deleted ${dashboardResult.deletedCount} dashboard(s) for integration ${integrationId}`
+    );
+  }
 
   const result = await Integrations.deleteOne({
     _id: Types.ObjectId(integrationId),
@@ -156,16 +173,25 @@ async function deleteIntegration({ integrationId }) {
 }
 
 /**
+ * Count dashboards associated with an integration
+ */
+async function countDashboardsForIntegration(integrationId) {
+  return Dashboards.countDocuments({
+    _integration: Types.ObjectId(integrationId),
+  });
+}
+
+/**
  * Find one integration by ID
  */
-async function findOne(integrationId) {
+async function findById(integrationId) {
   if (!integrationId || !Types.ObjectId.isValid(integrationId)) {
     throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
   }
 
-  const integration = await Integrations.findOne({
-    _id: Types.ObjectId(integrationId),
-  });
+  const integration = await Integrations.findById(
+    Types.ObjectId(integrationId)
+  );
 
   if (!integration) {
     throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
@@ -196,6 +222,17 @@ async function findByGroupAndType({ groupId, type }) {
 }
 
 /**
+ * Find active integrations for a group
+ */
+async function findActiveByGroup({ groupId }) {
+  await groupService.findById(groupId);
+  return Integrations.find({
+    _company: Types.ObjectId(groupId),
+    isActive: true,
+  }).sort({ name: 1 });
+}
+
+/**
  * Find active integrations by group and type
  */
 async function findActiveByGroupAndType({ groupId, type }) {
@@ -208,38 +245,67 @@ async function findActiveByGroupAndType({ groupId, type }) {
 }
 
 /**
- * Validate integration credentials using the provider
+ * Deactivate all AI features that reference a given integration
+ */
+async function deactivateFeaturesForIntegration(integrationId) {
+  const objectId = Types.ObjectId(integrationId);
+  const result = await AIFeatureConfigs.updateMany(
+    { 'features.integration': objectId, 'features.isActive': true },
+    { $set: { 'features.$[feat].isActive': false } },
+    { arrayFilters: [{ 'feat.integration': objectId, 'feat.isActive': true }] }
+  );
+  if (result.nModified > 0) {
+    logger.log(
+      `Deactivated AI features for integration ${integrationId} (${result.nModified} config(s) updated)`
+    );
+  }
+}
+
+/**
+ * Validate integration credentials
+ * - For dashboard providers: basic URL/key validation
+ * - For AI providers: uses ProviderFactory
  */
 async function validateCredentials({ integrationId, apiKey, apiHost }) {
-  const integration = await findOne(integrationId);
+  const integration = await findById(integrationId);
 
-  // Use provided credentials or fall back to stored ones
-  const siteUrl = apiHost ?? integration.apiHost;
-  const secretKey = apiKey ?? integration.apiKey;
+  let isValid = false;
 
-  // Basic validation
-  if (!siteUrl || !secretKey) {
-    return false;
+  // Dashboard providers use basic validation
+  if (integration.type === IntegrationTypes.DASHBOARD) {
+    let siteUrl = apiHost ?? integration.apiHost;
+    const secretKey = apiKey ?? integration.apiKey;
+
+    // Basic validation
+    if (!siteUrl || !secretKey) {
+      isValid = false;
+    } else {
+      // URL format validation
+      try {
+        // Normalize URL: remove trailing slash
+        siteUrl = siteUrl.replace(/\/+$/, '');
+        new URL(siteUrl);
+        // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
+        isValid = secretKey.length >= 32;
+      } catch {
+        isValid = false;
+      }
+    }
+  } else {
+    // AI providers use ProviderFactory
+    try {
+      const provider = ProviderFactory.createProvider(integration);
+      isValid = await provider.validateCredentials();
+    } catch (error) {
+      logger.error('Validation error:', error.message);
+      isValid = false;
+    }
   }
 
-  // URL format validation
-  try {
-    new URL(siteUrl);
-  } catch {
-    return false;
-  }
-
-  // For Metabase, we can't really test without making a request
-  // Just validate that the secret key looks like a JWT secret (at least 32 chars)
-  if (secretKey.length < 32) {
-    return false;
-  }
-
-  // Mark as valid
   await Integrations.findByIdAndUpdate(Types.ObjectId(integrationId), {
-    validationStatus: 'valid',
+    validationStatus: isValid ? 'valid' : 'invalid',
     lastValidatedAt: new Date(),
   });
 
-  return true;
+  return isValid;
 }

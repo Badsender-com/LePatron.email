@@ -7,13 +7,11 @@ import {
   getProviderCategory,
 } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
-import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
   name: 'BsGroupIntegrationsTab',
   components: {
     BsIntegrationForm,
-    BsModalConfirm,
   },
   data() {
     return {
@@ -22,8 +20,10 @@ export default {
       providers: [],
       types: [],
       showForm: false,
+      showDeleteDialog: false,
       editingIntegration: null,
       deletingIntegration: null,
+      deletingDashboardCount: 0,
       validating: {},
     };
   },
@@ -119,9 +119,21 @@ export default {
       }
     },
 
-    confirmDelete(integration) {
+    async confirmDelete(integration) {
       this.deletingIntegration = integration;
-      this.$refs.deleteDialog.open();
+      this.deletingDashboardCount = 0;
+
+      // Fetch dashboard count to show warning if there are associated dashboards
+      try {
+        const result = await this.$axios.$get(
+          apiRoutes.integrationDashboardCount(integration._id)
+        );
+        this.deletingDashboardCount = result.count || 0;
+      } catch (error) {
+        // Ignore error, just show standard delete confirmation
+      }
+
+      this.showDeleteDialog = true;
     },
 
     async deleteIntegration() {
@@ -135,7 +147,9 @@ export default {
           text: this.$t('integrations.deleted'),
           color: 'success',
         });
+        this.showDeleteDialog = false;
         this.deletingIntegration = null;
+        this.deletingDashboardCount = 0;
         await this.fetchData();
       } catch (error) {
         this.showSnackbar({
@@ -297,18 +311,44 @@ export default {
         />
       </v-dialog>
 
-      <!-- Delete Confirmation -->
-      <bs-modal-confirm
-        ref="deleteDialog"
-        :title="$t('integrations.deleteConfirmTitle')"
-        :message="
-          $t('integrations.deleteConfirmMessage', {
-            name: deletingIntegration && deletingIntegration.name,
-          })
-        "
-        :action-label="$t('global.delete')"
-        @confirm="deleteIntegration"
-      />
+      <!-- Delete Confirmation Dialog -->
+      <v-dialog v-model="showDeleteDialog" max-width="500">
+        <v-card>
+          <v-card-title>
+            {{ $t('integrations.deleteConfirmTitle') }}
+          </v-card-title>
+          <v-card-text>
+            <p>
+              {{
+                $t('integrations.deleteConfirmMessage', {
+                  name: deletingIntegration && deletingIntegration.name,
+                })
+              }}
+            </p>
+            <v-alert
+              v-if="deletingDashboardCount > 0"
+              type="warning"
+              dense
+              class="mt-4"
+            >
+              <strong>{{ $t('integrations.deleteWarningDashboards', { count: deletingDashboardCount }) }}</strong>
+            </v-alert>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn text @click="showDeleteDialog = false">
+              {{ $t('global.cancel') }}
+            </v-btn>
+            <v-btn
+              color="error"
+              :loading="loading"
+              @click="deleteIntegration"
+            >
+              {{ $t('global.delete') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-card-text>
   </v-card>
 </template>
