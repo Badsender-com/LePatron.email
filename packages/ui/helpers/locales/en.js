@@ -634,6 +634,7 @@ export default {
     noIntegrations: 'No integrations configured',
     deleteConfirmTitle: 'Delete integration',
     deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    deleteWarningDashboards: 'Warning: {count} associated dashboard(s) will also be deleted.',
     categories: {
       bi: 'BI & Analytics',
       aiGeneration: 'AI - Generation',

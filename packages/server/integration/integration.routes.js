@@ -52,4 +52,11 @@ router.post(
 // Get available models for an integration
 router.get('/:integrationId/models', GUARD_GROUP_ADMIN, integrations.getModels);
 
+// Get dashboard count for an integration (used before delete to show warning)
+router.get(
+  '/:integrationId/dashboard-count',
+  GUARD_GROUP_ADMIN,
+  integrations.getDashboardCount
+);
+
 module.exports = router;

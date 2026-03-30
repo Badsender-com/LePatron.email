@@ -639,6 +639,7 @@ export default {
     noIntegrations: 'Aucune intégration configurée',
     deleteConfirmTitle: 'Supprimer l\'intégration',
     deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
+    deleteWarningDashboards: 'Attention : {count} tableau(x) de bord associé(s) seront également supprimés.',
     categories: {
       bi: 'BI & Analytics',
       aiGeneration: 'IA - Génération',

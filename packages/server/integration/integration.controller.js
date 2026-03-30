@@ -29,6 +29,7 @@ module.exports = {
   validateCredentials: asyncHandler(validateCredentials),
   listProviders: asyncHandler(listProviders),
   getModels: asyncHandler(getModels),
+  getDashboardCount: asyncHandler(getDashboardCount),
 };
 
 /**
@@ -203,6 +204,30 @@ async function validateCredentials(req, res) {
   });
 
   res.json({ valid: isValid });
+}
+
+/**
+ * @api {get} /integrations/:integrationId/dashboard-count Get dashboard count for integration
+ * @apiPermission groupAdmin
+ * @apiName GetDashboardCount
+ * @apiGroup Integrations
+ *
+ * @apiParam {String} integrationId Integration ID
+ *
+ * @apiSuccess {Number} count Number of dashboards using this integration
+ */
+async function getDashboardCount(req, res) {
+  const { user, params } = req;
+  const { integrationId } = params;
+
+  await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+    user,
+    integrationId,
+  });
+
+  const count = await integrationService.countDashboardsForIntegration(integrationId);
+
+  res.json({ count });
 }
 
 /**

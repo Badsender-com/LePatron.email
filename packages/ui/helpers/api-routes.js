@@ -333,6 +333,10 @@ export function integrationModels(integrationId) {
   return `/integrations/${integrationId}/models`;
 }
 
+export function integrationDashboardCount(integrationId) {
+  return `/integrations/${integrationId}/dashboard-count`;
+}
+
 /// ///
 // DASHBOARDS
 /// ///

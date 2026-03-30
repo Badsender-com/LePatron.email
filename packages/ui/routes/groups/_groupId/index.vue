@@ -166,6 +166,9 @@ export default {
         console.error('[GroupPage] Failed to refresh group:', error);
       }
     },
+    changeTab(tabId) {
+      this.activeTab = tabId;
+    },
   },
 };
 </script>
@@ -298,7 +301,12 @@ export default {
           />
         </v-tab-item>
         <v-tab-item v-if="isAdmin" value="group-crm-intelligence">
-          <bs-crm-intelligence-tab :group="group" @update="refreshGroup" />
+          <bs-crm-intelligence-tab
+            :group="group"
+            :active="activeTab === 'group-crm-intelligence'"
+            @update="refreshGroup"
+            @change-tab="changeTab"
+          />
         </v-tab-item>
       </v-tabs>
       <bs-group-loading slot="placeholder" />

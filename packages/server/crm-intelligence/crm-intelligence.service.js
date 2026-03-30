@@ -148,8 +148,9 @@ async function getEmbedUrl(groupId, dashboardId) {
   // Sign the JWT with the integration's secret key
   const token = jwt.sign(payload, integration.apiKey);
 
-  // Build the embed URL
-  const embedUrl = `${integration.apiHost}/embed/dashboard/${token}#bordered=false&titled=true`;
+  // Build the embed URL (normalize apiHost to remove trailing slash)
+  const baseUrl = integration.apiHost.replace(/\/+$/, '');
+  const embedUrl = `${baseUrl}/embed/dashboard/${token}#bordered=false&titled=true`;
 
   return {
     embedUrl,

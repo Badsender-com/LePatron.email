@@ -1,6 +1,6 @@
 'use strict';
 
-const { Integrations, AIFeatureConfigs } = require('../common/models.common');
+const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -25,6 +25,7 @@ module.exports = {
   findActiveByGroupAndType,
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
+  countDashboardsForIntegration,
 };
 
 /**
@@ -144,10 +145,21 @@ async function updateIntegration({
 }
 
 /**
- * Delete an integration
+ * Delete an integration and its associated dashboards
  */
 async function deleteIntegration({ integrationId }) {
   await findById(integrationId);
+
+  // Delete all dashboards associated with this integration
+  const dashboardResult = await Dashboards.deleteMany({
+    _integration: Types.ObjectId(integrationId),
+  });
+
+  if (dashboardResult.deletedCount > 0) {
+    logger.log(
+      `Deleted ${dashboardResult.deletedCount} dashboard(s) for integration ${integrationId}`
+    );
+  }
 
   const result = await Integrations.deleteOne({
     _id: Types.ObjectId(integrationId),
@@ -158,6 +170,15 @@ async function deleteIntegration({ integrationId }) {
   }
 
   return result;
+}
+
+/**
+ * Count dashboards associated with an integration
+ */
+async function countDashboardsForIntegration(integrationId) {
+  return Dashboards.countDocuments({
+    _integration: Types.ObjectId(integrationId),
+  });
 }
 
 /**
@@ -252,7 +273,7 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
 
   // Dashboard providers use basic validation
   if (integration.type === IntegrationTypes.DASHBOARD) {
-    const siteUrl = apiHost ?? integration.apiHost;
+    let siteUrl = apiHost ?? integration.apiHost;
     const secretKey = apiKey ?? integration.apiKey;
 
     // Basic validation
@@ -261,6 +282,8 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
     } else {
       // URL format validation
       try {
+        // Normalize URL: remove trailing slash
+        siteUrl = siteUrl.replace(/\/+$/, '');
         new URL(siteUrl);
         // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
         isValid = secretKey.length >= 32;
