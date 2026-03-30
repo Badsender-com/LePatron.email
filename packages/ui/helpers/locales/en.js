@@ -429,7 +429,6 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
-    hasCrmIntelligenceAccess: 'CRM Intelligence access',
   },
   workspaces: {
     name: 'Name',
@@ -608,11 +607,6 @@ export default {
         'Customer engagement KPIs',
         'Marketing ROI tracking',
       ],
-    },
-    accessDenied: {
-      title: 'Access Restricted',
-      message: 'You do not have access to CRM Intelligence.',
-      contactAdmin: 'Please contact your LePatron account administrator to request access.',
     },
     errors: {
       loadFailed: 'Unable to load the dashboard.',

@@ -49,9 +49,6 @@ export default {
     title() {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
-    isCrmIntelligenceEnabled() {
-      return this.user?.group?.enableCrmIntelligence === true;
-    },
   },
   watch: {
     'pagination.page': 'loadMailings',
@@ -156,7 +153,6 @@ export default {
       v-model="user"
       :title="$t('users.details')"
       :loading="loading"
-      :show-crm-intelligence-access="isCrmIntelligenceEnabled"
       @submit="updateUser"
     />
     <v-card flat tile>
