@@ -24,17 +24,6 @@ const getStatus = asyncHandler(async (req, res) => {
     throw createError(400, ERROR_CODES.GROUP_NOT_FOUND);
   }
 
-  // Check user access to CRM Intelligence
-  if (user.hasCrmIntelligenceAccess === false) {
-    return res.json({
-      enabled: false,
-      configured: false,
-      dashboardCount: 0,
-      integrations: [],
-      accessDenied: true,
-    });
-  }
-
   const status = await crmIntelligenceService.getStatus(user.group.id);
   res.json(status);
 });
@@ -62,11 +51,6 @@ const getDashboards = asyncHandler(async (req, res) => {
     throw createError(400, ERROR_CODES.GROUP_NOT_FOUND);
   }
 
-  // Check user access to CRM Intelligence
-  if (user.hasCrmIntelligenceAccess === false) {
-    throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_ACCESS_DENIED);
-  }
-
   const dashboards = await crmIntelligenceService.getDashboards(user.group.id);
   res.json(dashboards);
 });
@@ -90,11 +74,6 @@ const getEmbedUrl = asyncHandler(async (req, res) => {
 
   if (!user.group?.id) {
     throw createError(400, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
-  // Check user access to CRM Intelligence
-  if (user.hasCrmIntelligenceAccess === false) {
-    throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_ACCESS_DENIED);
   }
 
   if (!dashboardId) {

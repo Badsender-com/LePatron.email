@@ -405,7 +405,6 @@ export default {
     lang: 'Langue',
     details: 'Informations',
     role: 'Rôle',
-    hasCrmIntelligenceAccess: 'Accès CRM Intelligence',
   },
   workspaces: {
     name: 'Nom',
@@ -501,11 +500,6 @@ export default {
         'KPIs d\'engagement client',
         'Suivi du ROI marketing',
       ],
-    },
-    accessDenied: {
-      title: 'Accès restreint',
-      message: 'Vous n\'avez pas accès à CRM Intelligence.',
-      contactAdmin: 'Veuillez contacter l\'administrateur de votre compte LePatron pour obtenir l\'accès.',
     },
     errors: {
       loadFailed: 'Impossible de charger le tableau de bord.',
