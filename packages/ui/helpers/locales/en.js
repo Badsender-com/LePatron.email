@@ -505,6 +505,7 @@ export default {
     errors: {
       loadFailed: 'Unable to load the dashboard.',
       embedFailed: 'Error loading the dashboard.',
+      dashboardAlreadyExists: 'A dashboard with this ID already exists for this integration.',
     },
     admin: {
       title: 'CRM Intelligence',

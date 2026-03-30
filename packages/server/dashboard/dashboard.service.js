@@ -110,18 +110,28 @@ async function createDashboard(groupId, data) {
 
   const nextOrder = lastDashboard ? lastDashboard.order + 1 : 0;
 
-  const dashboard = await Dashboards.create({
-    name,
-    description: description || '',
-    _company: Types.ObjectId(groupId),
-    _integration: Types.ObjectId(integrationId),
-    providerDashboardId,
-    lockedParams: lockedParams || {},
-    order: nextOrder,
-    isActive: true,
-  });
+  try {
+    const dashboard = await Dashboards.create({
+      name,
+      description: description || '',
+      _company: Types.ObjectId(groupId),
+      _integration: Types.ObjectId(integrationId),
+      providerDashboardId,
+      lockedParams: lockedParams || {},
+      order: nextOrder,
+      isActive: true,
+    });
 
-  return getDashboard(dashboard._id.toString());
+    return getDashboard(dashboard._id.toString());
+  } catch (err) {
+    // Handle duplicate key error
+    if (err.code === 11000) {
+      throw createError(409, 'A dashboard with this ID already exists for this integration', {
+        code: ERROR_CODES.DASHBOARD_ALREADY_EXISTS,
+      });
+    }
+    throw err;
+  }
 }
 
 /**
