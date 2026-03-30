@@ -590,6 +590,8 @@ export default {
       deleteDashboardConfirmTitle: 'Supprimer le tableau de bord ?',
       deleteDashboardConfirmText: 'Cette action est irréversible.',
       reorderError: 'Erreur lors du réordonnancement',
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
     },
   },
   modules: {
