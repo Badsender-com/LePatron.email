@@ -52,6 +52,12 @@ export default {
     selectedProviderConfig() {
       return getProviderFormConfig(this.form.provider);
     },
+    apiKeyLabel() {
+      if (this.selectedProviderConfig.apiKeyLabelKey) {
+        return this.$t(this.selectedProviderConfig.apiKeyLabelKey);
+      }
+      return this.$t('integrations.apiKey');
+    },
     showProductIdField() {
       return this.selectedProviderConfig.showProductId === true;
     },
@@ -74,6 +80,17 @@ export default {
           this.resetForm();
         }
       },
+    },
+    'form.provider'(newProvider) {
+      // Auto-set type based on provider config (e.g., 'dashboard' for Metabase)
+      if (newProvider && !this.isEdit) {
+        const config = getProviderFormConfig(newProvider);
+        if (config.type) {
+          this.form.type = config.type;
+        } else {
+          this.form.type = 'ai'; // Default to 'ai' for AI providers
+        }
+      }
     },
   },
   validations() {
@@ -183,7 +200,7 @@ export default {
 
         <v-text-field
           v-model="form.apiKey"
-          :label="$t('integrations.apiKey')"
+          :label="apiKeyLabel"
           :placeholder="
             selectedProviderConfig.apiKeyPlaceholderKey
               ? $t(selectedProviderConfig.apiKeyPlaceholderKey)
