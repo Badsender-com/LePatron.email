@@ -4,7 +4,21 @@ const createError = require('http-errors');
 const asyncHandler = require('express-async-handler');
 
 const dashboardService = require('./dashboard.service.js');
+const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
+
+/**
+ * Check if user is authorized to access a dashboard
+ * @param {Object} user - Current user
+ * @param {string} dashboardId - Dashboard ID to check
+ * @returns {Object} Dashboard if authorized
+ */
+async function getDashboardWithAuthCheck(user, dashboardId) {
+  const dashboard = await dashboardService.getDashboard(dashboardId);
+  const groupId = dashboard._company?.toString() || dashboard.group?.toString();
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+  return dashboard;
+}
 
 /**
  * List dashboards for a group
@@ -24,8 +38,9 @@ async function listDashboards(req, res) {
  */
 async function readDashboard(req, res) {
   const { dashboardId } = req.params;
+  const { user } = req;
 
-  const dashboard = await dashboardService.getDashboard(dashboardId);
+  const dashboard = await getDashboardWithAuthCheck(user, dashboardId);
 
   res.json(dashboard);
 }
@@ -41,21 +56,15 @@ async function createDashboard(req, res) {
 
   // Validate required fields
   if (!name) {
-    throw createError(400, 'Dashboard name is required', {
-      code: ERROR_CODES.INVALID_REQUEST,
-    });
+    throw createError(400, ERROR_CODES.DASHBOARD_NAME_REQUIRED);
   }
 
   if (!integrationId) {
-    throw createError(400, 'Integration ID is required', {
-      code: ERROR_CODES.INVALID_REQUEST,
-    });
+    throw createError(400, ERROR_CODES.DASHBOARD_INTEGRATION_REQUIRED);
   }
 
   if (providerDashboardId === undefined || providerDashboardId === null) {
-    throw createError(400, 'Provider dashboard ID is required', {
-      code: ERROR_CODES.INVALID_REQUEST,
-    });
+    throw createError(400, ERROR_CODES.DASHBOARD_ID_REQUIRED);
   }
 
   const dashboard = await dashboardService.createDashboard(groupId, {
@@ -75,8 +84,12 @@ async function createDashboard(req, res) {
  */
 async function updateDashboard(req, res) {
   const { dashboardId } = req.params;
+  const { user } = req;
   const { name, description, integrationId, providerDashboardId, lockedParams, isActive } =
     req.body;
+
+  // Check authorization before update
+  await getDashboardWithAuthCheck(user, dashboardId);
 
   const dashboard = await dashboardService.updateDashboard(dashboardId, {
     name,
@@ -99,6 +112,10 @@ async function updateDashboard(req, res) {
  */
 async function deleteDashboard(req, res) {
   const { dashboardId } = req.params;
+  const { user } = req;
+
+  // Check authorization before delete
+  await getDashboardWithAuthCheck(user, dashboardId);
 
   await dashboardService.deleteDashboard(dashboardId);
 
@@ -114,9 +131,7 @@ async function reorderDashboards(req, res) {
   const { dashboardIds } = req.body;
 
   if (!Array.isArray(dashboardIds)) {
-    throw createError(400, 'dashboardIds must be an array', {
-      code: ERROR_CODES.INVALID_REQUEST,
-    });
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
   }
 
   const dashboards = await dashboardService.reorderDashboards(

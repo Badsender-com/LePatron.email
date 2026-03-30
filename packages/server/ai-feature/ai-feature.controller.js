@@ -4,7 +4,6 @@ const asyncHandler = require('express-async-handler');
 const aiFeatureService = require('./ai-feature.service');
 const groupService = require('../group/group.service');
 const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
-const logger = require('../utils/logger.js');
 
 module.exports = {
   getConfig: asyncHandler(getConfig),
@@ -61,8 +60,6 @@ async function updateFeature(req, res) {
   const { user, params, body } = req;
   const { groupId, featureType } = params;
   const { integrationId, isActive, config } = body;
-
-  logger.log('updateFeature called:', { featureType, isActive });
 
   await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
