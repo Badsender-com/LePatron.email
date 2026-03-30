@@ -1,5 +1,5 @@
 <script>
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapMutations, mapState } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import {
   getCrmIntelligenceStatus,
@@ -8,6 +8,7 @@ import {
 } from '~/helpers/api-routes.js';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import { IS_ADMIN, USER } from '~/store/user';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import MarketingPlaceholder from './__partials/marketing-placeholder.vue';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
@@ -84,6 +85,8 @@ export default {
     }),
   },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     async selectDashboard(dashboard) {
       if (this.selectedDashboard?.id === dashboard.id) return;
 
