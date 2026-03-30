@@ -534,6 +534,8 @@ export default {
       title: 'CRM Intelligence',
       description: 'Manage dashboard integrations for this group.',
       enabled: 'Enable CRM Intelligence',
+      metabaseConfigHint: 'Configure Metabase connections in the Integrations tab.',
+      goToIntegrations: 'Go to Integrations',
       metabaseConfig: 'Metabase Configuration',
       siteUrl: 'Metabase URL',
       invalidUrl: 'Invalid URL',
@@ -636,6 +638,11 @@ export default {
       valid: 'Valid',
       invalid: 'Invalid',
       pending: 'Pending'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Your Metabase API key',
+      apiKeyLabel: 'Metabase Secret Key',
+      apiHostHint: 'URL of your Metabase instance (e.g. https://metabase.example.com)'
     },
     openai: {
       apiKeyPlaceholder: 'sk-...',
