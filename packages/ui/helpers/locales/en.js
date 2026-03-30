@@ -526,6 +526,11 @@ export default {
     noIntegrations: 'No integrations configured',
     deleteConfirmTitle: 'Delete integration',
     deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    categories: {
+      bi: 'BI & Analytics',
+      aiGeneration: 'AI - Generation',
+      aiTranslation: 'AI - Translation',
+    },
     statusLabels: {
       valid: 'Valid',
       invalid: 'Invalid',
