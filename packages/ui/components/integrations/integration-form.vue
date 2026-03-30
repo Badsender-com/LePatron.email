@@ -1,7 +1,12 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-import { getProviderFormConfig, getProviderLabel } from './provider-configs';
+import {
+  getProviderFormConfig,
+  getProviderLabel,
+  getProvidersGroupedByCategory,
+  getProviderCategory,
+} from './provider-configs';
 
 export default {
   name: 'BsIntegrationForm',
@@ -43,14 +48,37 @@ export default {
         ? this.$t('integrations.edit')
         : this.$t('integrations.add');
     },
-    providerOptions() {
-      return this.providers.map((p) => ({
-        value: p,
-        text: this.getProviderLabel(p),
-      }));
+    /**
+     * Build grouped items for v-select with headers.
+     * Format: [{ header: 'Category' }, { value, text, icon }, ...]
+     */
+    groupedProviderOptions() {
+      const groups = getProvidersGroupedByCategory(this.providers);
+      const items = [];
+
+      for (const group of groups) {
+        // Add category header
+        items.push({
+          header: this.$t(group.category.labelKey),
+        });
+
+        // Add providers in this category
+        for (const provider of group.providers) {
+          items.push({
+            value: provider.key,
+            text: provider.label,
+            icon: group.category.icon,
+          });
+        }
+      }
+
+      return items;
     },
     selectedProviderConfig() {
       return getProviderFormConfig(this.form.provider);
+    },
+    selectedProviderCategory() {
+      return getProviderCategory(this.form.provider);
     },
     apiKeyLabel() {
       if (this.selectedProviderConfig.apiKeyLabelKey) {
@@ -189,14 +217,29 @@ export default {
 
         <v-select
           v-model="form.provider"
-          :items="providerOptions"
+          :items="groupedProviderOptions"
           :label="$t('integrations.provider')"
           :error-messages="fieldErrors('provider')"
           :disabled="loading || isEdit"
           outlined
           dense
           @blur="$v.form.provider.$touch()"
-        />
+        >
+          <template #item="{ item, on, attrs }">
+            <v-list-item v-if="!item.header" v-bind="attrs" v-on="on">
+              <v-list-item-icon class="mr-3">
+                <v-icon small>{{ item.icon }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>{{ item.text }}</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </template>
+          <template #selection="{ item }">
+            <v-icon small class="mr-2">{{ item.icon }}</v-icon>
+            {{ item.text }}
+          </template>
+        </v-select>
 
         <v-text-field
           v-model="form.apiKey"
