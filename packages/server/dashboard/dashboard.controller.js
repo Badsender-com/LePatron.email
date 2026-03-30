@@ -1,6 +1,7 @@
 'use strict';
 
 const createError = require('http-errors');
+const asyncHandler = require('express-async-handler');
 
 const dashboardService = require('./dashboard.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
@@ -127,10 +128,10 @@ async function reorderDashboards(req, res) {
 }
 
 module.exports = {
-  listDashboards,
-  readDashboard,
-  createDashboard,
-  updateDashboard,
-  deleteDashboard,
-  reorderDashboards,
+  listDashboards: asyncHandler(listDashboards),
+  readDashboard: asyncHandler(readDashboard),
+  createDashboard: asyncHandler(createDashboard),
+  updateDashboard: asyncHandler(updateDashboard),
+  deleteDashboard: asyncHandler(deleteDashboard),
+  reorderDashboards: asyncHandler(reorderDashboards),
 };
