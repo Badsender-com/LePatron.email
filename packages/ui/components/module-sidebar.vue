@@ -1,30 +1,11 @@
 <script>
 import { mapGetters } from 'vuex';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
-import { getCrmIntelligenceStatus } from '~/helpers/api-routes.js';
 import BsSidebarItem from '~/components/sidebar-item.vue';
 
 export default {
   name: 'BsModuleSidebar',
   components: { BsSidebarItem },
-  data() {
-    return {
-      crmIntelligenceEnabled: false,
-      crmIntelligenceLoaded: false,
-    };
-  },
-  async fetch() {
-    // Check if CRM Intelligence is available for this user
-    if (!this.isAdmin) {
-      try {
-        const status = await this.$axios.$get(getCrmIntelligenceStatus());
-        this.crmIntelligenceEnabled = status.enabled;
-      } catch (err) {
-        // Silent fail - module will show as inactive
-      }
-    }
-    this.crmIntelligenceLoaded = true;
-  },
   computed: {
     ...mapGetters(USER, {
       isConnected: IS_CONNECTED,
@@ -40,10 +21,6 @@ export default {
       }
       const groupId = this.$store.state.user?.info?.group?.id;
       return groupId ? `/groups/${groupId}` : '/mailings';
-    },
-    isCrmIntelligenceActive() {
-      if (this.isAdmin) return true;
-      return this.crmIntelligenceEnabled;
     },
     isEmailModule() {
       const path = this.$route.path;
@@ -83,7 +60,6 @@ export default {
         icon="mdi-chart-line"
         :label="$t('modules.crmIntelligence')"
         :active="isCrmModule"
-        :disabled="!isCrmIntelligenceActive"
       />
     </div>
 

@@ -279,19 +279,9 @@ export default {
 
 <template>
   <v-card flat>
-    <v-card-title>
-      <v-icon left color="primary">
-        mdi-chart-areaspline
-      </v-icon>
-      {{ $t('crmIntelligence.admin.title') }}
-    </v-card-title>
-    <v-card-subtitle>
-      {{ $t('crmIntelligence.admin.description') }}
-    </v-card-subtitle>
-
     <v-card-text>
-      <!-- Info alert about Metabase configuration -->
-      <v-alert type="info" text dense class="mb-6">
+      <!-- Info alert about Metabase configuration (only when no integrations) -->
+      <v-alert v-if="!hasIntegrations" type="info" text dense class="mb-4">
         <div class="d-flex align-center">
           <span>{{ $t('crmIntelligence.admin.metabaseConfigHint') }}</span>
           <v-btn
@@ -309,27 +299,12 @@ export default {
         </div>
       </v-alert>
 
-      <!-- ==================== -->
-      <!-- DASHBOARDS SECTION -->
-      <!-- ==================== -->
-      <div class="section-header mb-4">
-        <h3 class="text-h6">
-          <v-icon left small>
-            mdi-view-dashboard
-          </v-icon>
-          {{ $t('crmIntelligence.admin.dashboardsSection') }}
-        </h3>
-        <p class="text-body-2 grey--text mb-0">
-          {{ $t('crmIntelligence.admin.dashboardsSectionHint') }}
-        </p>
-      </div>
-
       <div class="d-flex align-center mb-4">
         <v-spacer />
         <v-btn
-          color="primary"
+          color="accent"
           small
-          outlined
+          elevation="0"
           :disabled="!hasIntegrations"
           @click="openAddDashboardForm"
         >
@@ -362,30 +337,44 @@ export default {
         <v-card-title class="py-2">
           <span class="text-body-2 grey--text mr-3">#{{ index + 1 }}</span>
           <v-icon left small color="primary">
-            mdi-chart-bar
+            mdi-chart-line
           </v-icon>
           {{ dashboard.name }}
           <v-spacer />
-          <v-btn
-            icon
-            x-small
-            :disabled="index === 0"
-            @click="moveDashboard(dashboard, 'up')"
-          >
-            <v-icon x-small>
-              mdi-arrow-up
-            </v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            x-small
-            :disabled="index === dashboards.length - 1"
-            @click="moveDashboard(dashboard, 'down')"
-          >
-            <v-icon x-small>
-              mdi-arrow-down
-            </v-icon>
-          </v-btn>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                :disabled="index === 0"
+                v-bind="attrs"
+                v-on="on"
+                @click="moveDashboard(dashboard, 'up')"
+              >
+                <v-icon small>
+                  mdi-arrow-up
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('crmIntelligence.admin.moveUp') }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                :disabled="index === dashboards.length - 1"
+                v-bind="attrs"
+                v-on="on"
+                @click="moveDashboard(dashboard, 'down')"
+              >
+                <v-icon small>
+                  mdi-arrow-down
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('crmIntelligence.admin.moveDown') }}</span>
+          </v-tooltip>
           <v-btn icon small class="ml-2" @click="openEditDashboardForm(dashboard)">
             <v-icon small>
               mdi-pencil
@@ -406,9 +395,8 @@ export default {
           <v-chip x-small outlined class="mr-2">
             {{ dashboard.integration && dashboard.integration.name ? dashboard.integration.name : '-' }}
           </v-chip>
-          ID: {{ dashboard.providerDashboardId }}
-          <span v-if="dashboard.description" class="ml-2">
-            - {{ dashboard.description }}
+          <span v-if="dashboard.description">
+            {{ dashboard.description }}
           </span>
         </v-card-subtitle>
       </v-card>
@@ -423,6 +411,28 @@ export default {
           {{ dashboardFormTitle }}
         </v-card-title>
         <v-card-text>
+          <v-text-field
+            v-model="dashboardForm.name"
+            :label="$t('crmIntelligence.admin.dashboardName')"
+            outlined
+            dense
+            class="mb-3"
+            :error-messages="
+              $v.dashboardForm.name.$dirty && !$v.dashboardForm.name.required
+                ? $t('crmIntelligence.admin.dashboardNameRequired')
+                : ''
+            "
+          />
+
+          <v-textarea
+            v-model="dashboardForm.description"
+            :label="$t('crmIntelligence.admin.dashboardDescription')"
+            outlined
+            dense
+            rows="2"
+            class="mb-3"
+          />
+
           <v-select
             v-model="dashboardForm.integrationId"
             :items="integrations"
@@ -455,7 +465,6 @@ export default {
             outlined
             dense
             persistent-hint
-            class="mb-3"
             :error-messages="
               $v.dashboardForm.providerDashboardId.$dirty &&
               !$v.dashboardForm.providerDashboardId.required
@@ -463,34 +472,13 @@ export default {
                 : ''
             "
           />
-
-          <v-text-field
-            v-model="dashboardForm.name"
-            :label="$t('crmIntelligence.admin.dashboardName')"
-            outlined
-            dense
-            class="mb-3"
-            :error-messages="
-              $v.dashboardForm.name.$dirty && !$v.dashboardForm.name.required
-                ? $t('crmIntelligence.admin.dashboardNameRequired')
-                : ''
-            "
-          />
-
-          <v-textarea
-            v-model="dashboardForm.description"
-            :label="$t('crmIntelligence.admin.dashboardDescription')"
-            outlined
-            dense
-            rows="2"
-          />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="closeDashboardForm">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn color="accent" :loading="loading" @click="saveDashboard">
+          <v-btn color="accent" elevation="0" :loading="loading" @click="saveDashboard">
             <v-icon left>
               mdi-content-save
             </v-icon>
@@ -518,6 +506,7 @@ export default {
           </v-btn>
           <v-btn
             color="error"
+            elevation="0"
             :loading="loading"
             @click="deleteDashboardConfirmed"
           >
@@ -529,9 +518,3 @@ export default {
   </v-card>
 </template>
 
-<style scoped>
-.section-header {
-  border-left: 4px solid var(--v-primary-base);
-  padding-left: 12px;
-}
-</style>

@@ -223,7 +223,7 @@ export default {
   <v-card flat tile>
     <v-card-text>
       <div class="d-flex justify-end mb-4">
-        <v-btn color="primary" @click="openCreateForm">
+        <v-btn color="accent" elevation="0" @click="openCreateForm">
           <v-icon left>
             mdi-plus
           </v-icon>
@@ -341,6 +341,7 @@ export default {
             </v-btn>
             <v-btn
               color="error"
+              elevation="0"
               :loading="loading"
               @click="deleteIntegration"
             >

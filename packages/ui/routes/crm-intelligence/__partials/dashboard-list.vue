@@ -32,15 +32,18 @@ export default {
     <v-list nav dense class="pt-2">
       <v-subheader>{{ $t('crmIntelligence.dashboards') }}</v-subheader>
 
-      <v-list-item-group :value="selected" color="primary">
+      <v-list-item-group :value="selected" color="accent">
         <v-list-item
           v-for="dashboard in sortedDashboards"
           :key="dashboard.id"
           :input-value="isSelected(dashboard)"
+          :class="{ 'dashboard-item--selected': isSelected(dashboard) }"
           @click="selectDashboard(dashboard)"
         >
           <v-list-item-icon>
-            <v-icon>mdi-chart-box</v-icon>
+            <v-icon :color="isSelected(dashboard) ? 'accent' : ''">
+              mdi-chart-line
+            </v-icon>
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ dashboard.name }}</v-list-item-title>
@@ -61,3 +64,10 @@ export default {
     </v-list>
   </div>
 </template>
+
+<style scoped>
+.dashboard-item--selected {
+  background-color: rgba(0, 172, 220, 0.12) !important;
+  border-left: 3px solid #00acdc;
+}
+</style>
