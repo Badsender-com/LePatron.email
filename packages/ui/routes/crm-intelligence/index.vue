@@ -9,14 +9,12 @@ import {
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import { IS_ADMIN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import MarketingPlaceholder from './__partials/marketing-placeholder.vue';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
 
 export default {
   name: 'PageCrmIntelligence',
   components: {
-    MarketingPlaceholder,
     DashboardList,
     DashboardViewer,
   },
@@ -114,9 +112,38 @@ export default {
 </script>
 
 <template>
+  <!-- Marketing Placeholder: full width, no sidebar when module disabled -->
+  <div v-if="!isEnabled" class="crm-fullwidth">
+    <div class="d-flex align-center justify-center fill-height">
+      <v-card flat max-width="600" class="text-center pa-8">
+        <v-icon size="100" color="accent lighten-2">
+          mdi-chart-line
+        </v-icon>
+        <h1 class="text-h4 mt-6 primary--text">
+          {{ $t('crmIntelligence.marketing.title') }}
+        </h1>
+        <p class="text-body-1 mt-4 grey--text text--darken-1">
+          {{ $t('crmIntelligence.marketing.description') }}
+        </p>
+        <v-btn
+          color="accent"
+          large
+          elevation="0"
+          class="mt-6"
+          href="mailto:contact@lepatron.email?subject=CRM%20Intelligence%20-%20Demande%20d'information"
+        >
+          <v-icon left>
+            mdi-email-outline
+          </v-icon>
+          {{ $t('crmIntelligence.marketing.contactUs') }}
+        </v-btn>
+      </v-card>
+    </div>
+  </div>
+
   <!-- Single dashboard: full width, no module-specific sidebar -->
   <div
-    v-if="isEnabled && !hasMultipleDashboards"
+    v-else-if="isEnabled && !hasMultipleDashboards"
     class="crm-fullwidth"
   >
     <dashboard-viewer
@@ -127,76 +154,37 @@ export default {
     />
   </div>
 
-  <!-- Multiple dashboards or other states: use sidebar layout -->
+  <!-- Multiple dashboards: use sidebar layout -->
   <bs-layout-left-menu v-else>
     <template #menu>
-      <!-- Enabled State with Multiple Dashboards -->
-      <template v-if="isEnabled && hasMultipleDashboards">
-        <dashboard-list
-          :dashboards="dashboards"
-          :selected="selectedDashboard"
-          @select="selectDashboard"
-        />
-      </template>
-
-      <!-- Marketing Placeholder for non-enabled groups -->
-      <template v-else>
-        <marketing-placeholder />
-      </template>
+      <dashboard-list
+        :dashboards="dashboards"
+        :selected="selectedDashboard"
+        @select="selectDashboard"
+      />
     </template>
 
     <!-- Main Content Area -->
     <v-card flat tile class="fill-height">
-      <!-- Dashboard Viewer (multiple dashboards case) -->
-      <template v-if="isEnabled">
-        <dashboard-viewer
-          v-if="selectedDashboard"
-          :embed-url="embedUrl"
-          :loading="loadingEmbed"
-          :dashboard-name="selectedDashboard.name"
-        />
-        <div
-          v-else
-          class="d-flex align-center justify-center fill-height grey lighten-4"
-        >
-          <v-card flat max-width="400" class="text-center pa-8 transparent">
-            <v-icon size="64" color="grey">
-              mdi-chart-bar
-            </v-icon>
-            <p class="text-body-1 mt-4 grey--text">
-              {{ $t('crmIntelligence.selectDashboard') }}
-            </p>
-          </v-card>
-        </div>
-      </template>
-
-      <!-- Marketing Placeholder Content -->
-      <template v-else>
-        <div class="d-flex align-center justify-center fill-height">
-          <v-card flat max-width="600" class="text-center pa-8">
-            <v-icon size="100" color="primary lighten-2">
-              mdi-chart-areaspline
-            </v-icon>
-            <h1 class="text-h4 mt-6 primary--text">
-              {{ $t('crmIntelligence.marketing.title') }}
-            </h1>
-            <p class="text-body-1 mt-4 grey--text text--darken-1">
-              {{ $t('crmIntelligence.marketing.description') }}
-            </p>
-            <v-btn
-              color="primary"
-              large
-              class="mt-6"
-              href="mailto:contact@lepatron.email?subject=CRM%20Intelligence%20-%20Demande%20d'information"
-            >
-              <v-icon left>
-                mdi-email-outline
-              </v-icon>
-              {{ $t('crmIntelligence.marketing.contactUs') }}
-            </v-btn>
-          </v-card>
-        </div>
-      </template>
+      <dashboard-viewer
+        v-if="selectedDashboard"
+        :embed-url="embedUrl"
+        :loading="loadingEmbed"
+        :dashboard-name="selectedDashboard.name"
+      />
+      <div
+        v-else
+        class="d-flex align-center justify-center fill-height grey lighten-4"
+      >
+        <v-card flat max-width="400" class="text-center pa-8 transparent">
+          <v-icon size="64" color="grey">
+            mdi-chart-line
+          </v-icon>
+          <p class="text-body-1 mt-4 grey--text">
+            {{ $t('crmIntelligence.selectDashboard') }}
+          </p>
+        </v-card>
+      </div>
     </v-card>
   </bs-layout-left-menu>
 </template>
