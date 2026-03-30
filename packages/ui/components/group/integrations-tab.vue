@@ -2,7 +2,10 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { getProviderLabel } from '~/components/integrations/provider-configs';
+import {
+  getProviderLabel,
+  getProviderCategory,
+} from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 
@@ -174,6 +177,15 @@ export default {
 
     getProviderLabel,
 
+    getCategoryInfo(provider) {
+      const category = getProviderCategory(provider);
+      if (!category) return null;
+      return {
+        label: this.$t(category.labelKey),
+        icon: category.icon,
+      };
+    },
+
     getStatusColor(status) {
       const colors = {
         valid: 'success',
@@ -212,9 +224,15 @@ export default {
         :no-data-text="$t('integrations.noIntegrations')"
       >
         <template #item.provider="{ item }">
-          <v-chip small outlined>
-            {{ getProviderLabel(item.provider) }}
-          </v-chip>
+          <div class="d-flex align-center">
+            <v-icon small class="mr-2" :title="getCategoryInfo(item.provider)?.label">
+              {{ getCategoryInfo(item.provider)?.icon || 'mdi-puzzle' }}
+            </v-icon>
+            <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
+            <v-chip x-small outlined color="grey">
+              {{ getCategoryInfo(item.provider)?.label || '-' }}
+            </v-chip>
+          </div>
         </template>
 
         <template #item.validationStatus="{ item }">
