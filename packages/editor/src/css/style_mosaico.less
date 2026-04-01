@@ -69,8 +69,8 @@
 // Variabili base usate da voxmail: colori, stili
 @import 'style_variables.less';
 
-// Icone font-awesome (.fa-* , configurable via @fa-css-prefix)
-@import (optional) 'font-awesome/less/font-awesome.less';
+// Icons are now handled via lucide-icons.less (CSS mask-based SVG icons)
+// The old font-awesome import has been removed
 
 // Mosaico: editing tools (toolbar, left toolbox, right preview)
 @import 'style_mosaico_tools.less';
@@ -82,10 +82,10 @@
 // Styles for tinymce/moxiemanager (uses .moxman-* and .moxie-*)
 @import 'style_elements_moxie.less';
 
+// Legacy mixin - now icons use CSS mask approach via lucide-icons.less
+// This mixin is kept for compatibility but FontAwesome font is no longer loaded
 .makeFontAwesome() {
-  // TODO move this in style_utils?
   visibility: visible;
-  font-family: FontAwesome;
   color: #333332;
   position: relative;
   top: 1px;
