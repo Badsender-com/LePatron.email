@@ -51,13 +51,13 @@ export default {
     <div class="sidebar-section">
       <bs-sidebar-item
         :to="emailBuilderRoute"
-        icon="mdi-palette"
+        icon="palette"
         :label="$t('modules.emailBuilder')"
         :active="isEmailModule"
       />
       <bs-sidebar-item
         to="/crm-intelligence"
-        icon="mdi-chart-line"
+        icon="line-chart"
         :label="$t('modules.crmIntelligence')"
         :active="isCrmModule"
       />
@@ -71,7 +71,7 @@ export default {
       <div class="sidebar-section">
         <bs-sidebar-item
           :to="settingsRoute"
-          icon="mdi-cog-outline"
+          icon="settings"
           :label="$t('modules.settings')"
           :active="isSettingsModule"
         />
@@ -83,13 +83,13 @@ export default {
     <!-- UTILITIES -->
     <div class="sidebar-section">
       <bs-sidebar-item
-        icon="mdi-help-circle-outline"
+        icon="help-circle"
         :label="$t('sidebar.help')"
         href="https://www.lepatron.email/faq/"
         target="_blank"
       />
       <bs-sidebar-item
-        icon="mdi-logout"
+        icon="log-out"
         :label="$t('sidebar.logout')"
         href="/account/logout"
       />

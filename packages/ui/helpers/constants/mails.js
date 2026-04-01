@@ -47,10 +47,10 @@ export const ACTIONS_DETAILS = {
   },
   [ACTIONS.DOWNLOAD_FTP]: {
     text: 'global.downloadFtp',
-    icon: 'mdi-cloud-download',
+    icon: 'cloud-download',
   },
   [ACTIONS.DUPLICATE_TRANSLATE]: {
     text: 'mailings.duplicateTranslate',
-    icon: 'mdi-translate',
+    icon: 'languages',
   },
 };

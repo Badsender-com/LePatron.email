@@ -12,19 +12,19 @@ export const providerCategories = {
   bi: {
     key: 'bi',
     labelKey: 'integrations.categories.bi',
-    icon: 'mdi-chart-bar',
+    icon: 'bar-chart-3',
     order: 1,
   },
   aiGeneration: {
     key: 'aiGeneration',
     labelKey: 'integrations.categories.aiGeneration',
-    icon: 'mdi-robot',
+    icon: 'bot',
     order: 2,
   },
   aiTranslation: {
     key: 'aiTranslation',
     labelKey: 'integrations.categories.aiTranslation',
-    icon: 'mdi-translate',
+    icon: 'languages',
     order: 3,
   },
 };
