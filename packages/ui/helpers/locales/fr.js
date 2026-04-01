@@ -519,16 +519,42 @@ export default {
     loadingDashboard: 'Chargement du tableau de bord...',
     marketing: {
       title: 'CRM Intelligence',
-      sidebarTitle: 'Fonctionnalité Premium',
-      description: 'Centralisez vos KPIs CRM et Marketing dans LePatron. Visualisez vos performances email, votre délivrabilité et vos indicateurs d\'engagement client.',
-      sidebarDescription: 'Accédez à des tableaux de bord analytiques pour piloter votre stratégie CRM.',
-      contactUs: 'Nous contacter',
+      subtitle: 'Centralisez vos KPIs CRM et Marketing dans LePatron. Visualisez vos performances en temps réel.',
+      ctaPrimary: 'Demander une démo',
+      featuresTitle: 'Pilotez votre stratégie data-driven',
       features: [
-        'Performance des campagnes email',
-        'Analyse de la délivrabilité',
-        'KPIs d\'engagement client',
-        'Suivi du ROI marketing',
+        {
+          icon: 'mdi-chart-areaspline',
+          title: 'Performance campagnes',
+          description: 'Suivez les métriques clés de vos envois email en temps réel.',
+        },
+        {
+          icon: 'mdi-email-check',
+          title: 'Délivrabilité',
+          description: 'Analysez vos taux de délivrabilité et identifiez les problèmes.',
+        },
+        {
+          icon: 'mdi-account-heart',
+          title: 'Engagement client',
+          description: 'Mesurez l\'engagement de vos audiences sur tous les canaux.',
+        },
+        {
+          icon: 'mdi-currency-eur',
+          title: 'ROI Marketing',
+          description: 'Calculez le retour sur investissement de vos campagnes.',
+        },
+        {
+          icon: 'mdi-view-dashboard',
+          title: 'Dashboards personnalisés',
+          description: 'Créez des tableaux de bord adaptés à vos besoins métier.',
+        },
+        {
+          icon: 'mdi-database-sync',
+          title: 'Intégration Metabase',
+          description: 'Connectez vos sources de données via Metabase.',
+        },
       ],
+      footerCta: 'Prêt à piloter votre performance ?',
     },
     errors: {
       loadFailed: 'Impossible de charger le tableau de bord.',
@@ -603,15 +629,44 @@ export default {
   emailBuilder: {
     marketing: {
       title: 'Email Builder',
-      description:
-        "Créez des emails responsives professionnels avec notre éditeur drag & drop intuitif.",
+      subtitle:
+        'Créez des emails responsives professionnels avec notre éditeur drag & drop intuitif.',
+      ctaPrimary: 'Demander une démo',
+      ctaSecondary: 'En savoir plus',
+      featuresTitle: 'Tout ce dont vous avez besoin',
       features: [
-        'Templates personnalisables',
-        'Export HTML optimisé pour tous les clients email',
-        'Intégrations avec les principaux ESP',
-        'Collaboration en équipe',
+        {
+          icon: 'mdi-drag',
+          title: 'Drag & Drop intuitif',
+          description: 'Construisez vos emails visuellement, sans aucune ligne de code.',
+        },
+        {
+          icon: 'mdi-cellphone-link',
+          title: 'Responsive natif',
+          description: 'Emails optimisés pour tous les appareils et clients email.',
+        },
+        {
+          icon: 'mdi-puzzle',
+          title: 'Blocs réutilisables',
+          description: 'Créez une bibliothèque de composants pour vos équipes.',
+        },
+        {
+          icon: 'mdi-palette',
+          title: 'Design system intégré',
+          description: 'Respectez votre charte graphique avec des templates personnalisés.',
+        },
+        {
+          icon: 'mdi-cloud-upload',
+          title: 'Export multi-ESP',
+          description: 'Exportez vers Sendinblue, Mailchimp, Actito et bien d\'autres.',
+        },
+        {
+          icon: 'mdi-account-group',
+          title: 'Collaboration équipe',
+          description: 'Travaillez à plusieurs avec gestion des droits et workspaces.',
+        },
       ],
-      contactUs: 'Nous contacter',
+      footerCta: 'Prêt à créer vos premiers emails ?',
     },
   },
   sidebar: {
