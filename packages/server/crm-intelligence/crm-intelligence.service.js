@@ -138,6 +138,13 @@ async function getEmbedUrl(groupId, dashboardId) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
+  // Validate that apiKey is properly decrypted (not still encrypted or malformed)
+  // Encrypted values typically contain ':' separator or are base64-encoded gibberish
+  const apiKey = integration.apiKey;
+  if (!apiKey || apiKey.includes(':iv:') || apiKey.length < 10) {
+    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
   // Build JWT payload for Metabase
   const payload = {
     resource: { dashboard: dashboard.providerDashboardId },
@@ -146,7 +153,13 @@ async function getEmbedUrl(groupId, dashboardId) {
   };
 
   // Sign the JWT with the integration's secret key
-  const token = jwt.sign(payload, integration.apiKey);
+  let token;
+  try {
+    token = jwt.sign(payload, apiKey);
+  } catch (err) {
+    // Log without exposing the key
+    throw createError(500, 'Failed to sign embed token');
+  }
 
   // Build the embed URL (normalize apiHost to remove trailing slash)
   const baseUrl = integration.apiHost.replace(/\/+$/, '');
