@@ -597,6 +597,9 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Unable to load available models.',
     }
   },
   crmIntelligence: {
@@ -649,6 +652,8 @@ export default {
       loadFailed: 'Unable to load the dashboard.',
       embedFailed: 'Error loading the dashboard.',
       dashboardAlreadyExists: 'A dashboard with this ID already exists for this integration.',
+      fetchIntegrationsFailed: 'Unable to load integrations.',
+      fetchDashboardsFailed: 'Unable to load dashboards.',
     },
     admin: {
       title: 'CRM Intelligence',
