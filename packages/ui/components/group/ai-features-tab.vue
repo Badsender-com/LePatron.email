@@ -217,9 +217,12 @@ export default {
         this.dynamicModels = response.models || [];
         this.capabilities = response.capabilities || null;
       } catch (error) {
-        console.error('Failed to load models:', error);
         this.dynamicModels = [];
         this.capabilities = null;
+        this.showSnackbar({
+          text: this.$t('aiFeatures.errors.loadModelsFailed'),
+          color: 'error',
+        });
       } finally {
         this.loadingModels = false;
       }

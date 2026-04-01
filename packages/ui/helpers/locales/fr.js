@@ -560,6 +560,8 @@ export default {
       loadFailed: 'Impossible de charger le tableau de bord.',
       embedFailed: 'Erreur lors du chargement du tableau de bord.',
       dashboardAlreadyExists: 'Un tableau de bord avec cet ID existe déjà pour cette intégration.',
+      fetchIntegrationsFailed: 'Impossible de charger les intégrations.',
+      fetchDashboardsFailed: 'Impossible de charger les tableaux de bord.',
     },
     admin: {
       title: 'CRM Intelligence',
@@ -767,6 +769,9 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
     }
   }
 };
