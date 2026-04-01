@@ -514,16 +514,42 @@ export default {
     loadingDashboard: 'Loading dashboard...',
     marketing: {
       title: 'CRM Intelligence',
-      sidebarTitle: 'Premium Feature',
-      description: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your email performance, deliverability, and customer engagement metrics.',
-      sidebarDescription: 'Access analytics dashboards to drive your CRM strategy.',
-      contactUs: 'Contact Us',
+      subtitle: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your performance in real-time.',
+      ctaPrimary: 'Request a demo',
+      featuresTitle: 'Drive your data-driven strategy',
       features: [
-        'Email campaign performance',
-        'Deliverability analysis',
-        'Customer engagement KPIs',
-        'Marketing ROI tracking',
+        {
+          icon: 'mdi-chart-areaspline',
+          title: 'Campaign Performance',
+          description: 'Track key metrics of your email sends in real-time.',
+        },
+        {
+          icon: 'mdi-email-check',
+          title: 'Deliverability',
+          description: 'Analyze your deliverability rates and identify issues.',
+        },
+        {
+          icon: 'mdi-account-heart',
+          title: 'Customer Engagement',
+          description: 'Measure your audience engagement across all channels.',
+        },
+        {
+          icon: 'mdi-currency-usd',
+          title: 'Marketing ROI',
+          description: 'Calculate the return on investment of your campaigns.',
+        },
+        {
+          icon: 'mdi-view-dashboard',
+          title: 'Custom Dashboards',
+          description: 'Create dashboards tailored to your business needs.',
+        },
+        {
+          icon: 'mdi-database-sync',
+          title: 'Metabase Integration',
+          description: 'Connect your data sources via Metabase.',
+        },
       ],
+      footerCta: 'Ready to drive your performance?',
     },
     errors: {
       loadFailed: 'Unable to load the dashboard.',
@@ -598,15 +624,44 @@ export default {
   emailBuilder: {
     marketing: {
       title: 'Email Builder',
-      description:
+      subtitle:
         'Create professional responsive emails with our intuitive drag & drop editor.',
+      ctaPrimary: 'Request a demo',
+      ctaSecondary: 'Learn more',
+      featuresTitle: 'Everything you need',
       features: [
-        'Customizable templates',
-        'Optimized HTML export for all email clients',
-        'Integrations with major ESPs',
-        'Team collaboration',
+        {
+          icon: 'mdi-drag',
+          title: 'Intuitive Drag & Drop',
+          description: 'Build your emails visually, without any code.',
+        },
+        {
+          icon: 'mdi-cellphone-link',
+          title: 'Native Responsive',
+          description: 'Emails optimized for all devices and email clients.',
+        },
+        {
+          icon: 'mdi-puzzle',
+          title: 'Reusable Blocks',
+          description: 'Create a component library for your teams.',
+        },
+        {
+          icon: 'mdi-palette',
+          title: 'Built-in Design System',
+          description: 'Follow your brand guidelines with custom templates.',
+        },
+        {
+          icon: 'mdi-cloud-upload',
+          title: 'Multi-ESP Export',
+          description: 'Export to Sendinblue, Mailchimp, Actito and more.',
+        },
+        {
+          icon: 'mdi-account-group',
+          title: 'Team Collaboration',
+          description: 'Work together with role management and workspaces.',
+        },
       ],
-      contactUs: 'Contact us',
+      footerCta: 'Ready to create your first emails?',
     },
   },
   sidebar: {
