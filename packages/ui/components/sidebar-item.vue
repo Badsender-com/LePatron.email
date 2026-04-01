@@ -1,6 +1,30 @@
 <script>
+import {
+  Palette,
+  LineChart,
+  Settings,
+  HelpCircle,
+  LogOut,
+} from 'lucide-vue';
+
+// Map MDI icon names to Lucide components (for migration)
+const ICON_MAP = {
+  'mdi-palette': Palette,
+  'mdi-chart-line': LineChart,
+  'mdi-cog-outline': Settings,
+  'mdi-help-circle-outline': HelpCircle,
+  'mdi-logout': LogOut,
+};
+
 export default {
   name: 'BsSidebarItem',
+  components: {
+    Palette,
+    LineChart,
+    Settings,
+    HelpCircle,
+    LogOut,
+  },
   props: {
     to: {
       type: String,
@@ -42,6 +66,12 @@ export default {
       if (this.href) return { href: this.href, target: this.target };
       return {};
     },
+    lucideIcon() {
+      return ICON_MAP[this.icon] || null;
+    },
+    iconColor() {
+      return this.active ? '#00acdc' : '#757575';
+    },
   },
 };
 </script>
@@ -60,9 +90,12 @@ export default {
     <div class="sidebar-item__indicator" />
 
     <div class="sidebar-item__icon">
-      <v-icon :color="active ? 'accent' : 'grey darken-1'" size="22">
-        {{ icon }}
-      </v-icon>
+      <component
+        :is="lucideIcon"
+        :size="22"
+        :color="iconColor"
+        :stroke-width="2"
+      />
     </div>
     <span class="sidebar-item__label">
       {{ label }}
@@ -123,11 +156,11 @@ export default {
   justify-content: center;
 }
 
-.sidebar-item:hover .sidebar-item__icon .v-icon {
+.sidebar-item:hover .sidebar-item__icon svg {
   transform: scale(1.05);
 }
 
-.sidebar-item__icon .v-icon {
+.sidebar-item__icon svg {
   transition: transform 150ms ease;
 }
 

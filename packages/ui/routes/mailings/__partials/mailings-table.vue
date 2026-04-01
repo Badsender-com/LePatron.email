@@ -20,6 +20,7 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
+import { MessageCircle, Pencil, Copy, Trash2 } from 'lucide-vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -58,6 +59,10 @@ export default {
     MailingsPreviewModal,
     BsMailingModalDuplicateTranslate,
     BsMailingModalTranslationWarning,
+    LucideMessageCircle: MessageCircle,
+    LucidePencil: Pencil,
+    LucideCopy: Copy,
+    LucideTrash2: Trash2,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -460,9 +465,7 @@ export default {
                 color="orange"
                 overlap
               >
-                <v-icon small>
-                  mdi-comment-outline
-                </v-icon>
+                <lucide-message-circle :size="16" />
               </v-badge>
             </v-btn>
             <v-btn
@@ -474,9 +477,7 @@ export default {
               :aria-label="$t(actionsDetails[actions.RENAME].text)"
               @click="openRenameModal(item)"
             >
-              <v-icon small>
-                mdi-pencil
-              </v-icon>
+              <lucide-pencil :size="16" />
             </v-btn>
             <v-btn
               v-if="filteredActions.includes(actions.COPY_MAIL)"
@@ -487,9 +488,7 @@ export default {
               :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
               @click="openCopyMail(item)"
             >
-              <v-icon small>
-                mdi-content-copy
-              </v-icon>
+              <lucide-copy :size="16" />
             </v-btn>
             <v-btn
               v-if="filteredActions.includes(actions.DELETE)"
@@ -500,9 +499,7 @@ export default {
               :aria-label="$t(actionsDetails[actions.DELETE].text)"
               @click="displayDeleteModal(item)"
             >
-              <v-icon small>
-                mdi-delete-outline
-              </v-icon>
+              <lucide-trash2 :size="16" />
             </v-btn>
 
             <!-- More actions menu -->

@@ -11,11 +11,31 @@ import {
   deleteDashboard,
   reorderDashboards,
 } from '~/helpers/api-routes';
+import {
+  ArrowRight,
+  Plus,
+  LineChart,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  Trash2,
+  Save,
+} from 'lucide-vue';
 
 const INTEGRATION_TYPE_DASHBOARD = 'dashboard';
 
 export default {
   name: 'BsCrmIntelligenceTab',
+  components: {
+    LucideArrowRight: ArrowRight,
+    LucidePlus: Plus,
+    LucideLineChart: LineChart,
+    LucideArrowUp: ArrowUp,
+    LucideArrowDown: ArrowDown,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
+    LucideSave: Save,
+  },
   mixins: [validationMixin],
   props: {
     group: {
@@ -295,9 +315,7 @@ export default {
             @click="goToIntegrationsTab"
           >
             {{ $t('crmIntelligence.admin.goToIntegrations') }}
-            <v-icon right small>
-              mdi-arrow-right
-            </v-icon>
+            <lucide-arrow-right :size="16" class="ml-1" />
           </v-btn>
         </div>
       </v-alert>
@@ -311,9 +329,7 @@ export default {
           :disabled="!hasIntegrations"
           @click="openAddDashboardForm"
         >
-          <v-icon left small>
-            mdi-plus
-          </v-icon>
+          <lucide-plus :size="16" class="mr-1" />
           {{ $t('crmIntelligence.admin.addDashboard') }}
         </v-btn>
       </div>
@@ -339,9 +355,7 @@ export default {
       >
         <v-card-title class="py-2">
           <span class="text-body-2 grey--text mr-3">#{{ index + 1 }}</span>
-          <v-icon left small color="primary">
-            mdi-chart-line
-          </v-icon>
+          <lucide-line-chart :size="16" color="#00acdc" class="mr-2" />
           {{ dashboard.name }}
           <v-spacer />
           <v-tooltip bottom>
@@ -354,9 +368,7 @@ export default {
                 v-on="on"
                 @click="moveDashboard(dashboard, 'up')"
               >
-                <v-icon small>
-                  mdi-arrow-up
-                </v-icon>
+                <lucide-arrow-up :size="16" />
               </v-btn>
             </template>
             <span>{{ $t('crmIntelligence.admin.moveUp') }}</span>
@@ -371,17 +383,13 @@ export default {
                 v-on="on"
                 @click="moveDashboard(dashboard, 'down')"
               >
-                <v-icon small>
-                  mdi-arrow-down
-                </v-icon>
+                <lucide-arrow-down :size="16" />
               </v-btn>
             </template>
             <span>{{ $t('crmIntelligence.admin.moveDown') }}</span>
           </v-tooltip>
           <v-btn icon small class="ml-2" @click="openEditDashboardForm(dashboard)">
-            <v-icon small>
-              mdi-pencil
-            </v-icon>
+            <lucide-pencil :size="16" />
           </v-btn>
           <v-btn
             icon
@@ -389,9 +397,7 @@ export default {
             color="error"
             @click="confirmDeleteDashboard(dashboard)"
           >
-            <v-icon small>
-              mdi-delete
-            </v-icon>
+            <lucide-trash2 :size="16" />
           </v-btn>
         </v-card-title>
         <v-card-subtitle>
@@ -482,9 +488,7 @@ export default {
             {{ $t('global.cancel') }}
           </v-btn>
           <v-btn color="accent" elevation="0" :loading="loading" @click="saveDashboard">
-            <v-icon left>
-              mdi-content-save
-            </v-icon>
+            <lucide-save :size="18" class="mr-2" />
             {{ $t('global.save') }}
           </v-btn>
         </v-card-actions>

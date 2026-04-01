@@ -2,11 +2,15 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { groupTestFtpConnection } from '~/helpers/api-routes.js';
+import { Cable } from 'lucide-vue';
 
 const CREDENTIAL_MASK = '••••••••';
 
 export default {
   name: 'BsFtpSettings',
+  components: {
+    LucideCable: Cable,
+  },
   mixins: [validationMixin],
   httpOptions: ['http://', 'https://'],
   ftpOptions: ['sftp'],
@@ -275,9 +279,7 @@ export default {
           :disabled="!localModel.ftpHost || !localModel.ftpUsername"
           @click="testFtpConnection"
         >
-          <v-icon left>
-            mdi-connection
-          </v-icon>
+          <lucide-cable :size="18" class="mr-2" />
           {{ $t('forms.group.testFtpConnection') }}
         </v-btn>
         <span

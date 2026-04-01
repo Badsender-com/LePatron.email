@@ -5,11 +5,13 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
+import { Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsEmailGroupTab',
   components: {
     BsModalConfirm,
+    LucideTrash2: Trash2,
   },
   data() {
     return {
@@ -119,7 +121,7 @@ export default {
           </template>
           <template #item.actionDelete="{ item }">
             <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-              <v-icon>mdi-delete</v-icon>
+              <lucide-trash2 :size="18" />
             </v-btn>
           </template>
         </v-data-table>

@@ -11,10 +11,15 @@ import {
   postPersonalizedVariables,
 } from '~/helpers/api-routes';
 
+import { Plus, Pencil, Trash2 } from 'lucide-vue';
+
 export default {
   name: 'GroupPersonalizedVariableTab',
   components: {
     BsModalConfirm,
+    LucidePlus: Plus,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
   },
   mixins: [validationMixin],
   data() {
@@ -197,12 +202,8 @@ export default {
       class="custom-table-class"
     >
       <template #item.status="{ item }">
-        <v-icon v-if="item.status === 'new'" small color="black">
-          mdi-plus
-        </v-icon>
-        <v-icon v-else-if="item.status === 'modified'" small color="black">
-          mdi-pencil-outline
-        </v-icon>
+        <lucide-plus v-if="item.status === 'new'" :size="14" />
+        <lucide-pencil v-else-if="item.status === 'modified'" :size="14" />
       </template>
       <template #item.label="{ item, index }">
         <v-text-field
@@ -225,15 +226,13 @@ export default {
       <template #item.actions="{ index }">
         <v-progress-circular v-if="variables[index].deleting" indeterminate />
         <v-btn v-else icon @click="openDeleteDialog(index)">
-          <v-icon>mdi-delete</v-icon>
+          <lucide-trash2 :size="18" />
         </v-btn>
       </template>
     </v-data-table>
     <div class="button-container">
       <v-btn class="add-row-button" text @click.prevent="addRow">
-        <v-icon left small color="black">
-          mdi-plus
-        </v-icon>
+        <lucide-plus :size="16" class="mr-1" />
         <span>{{ $t('personalizedVariables.addRow') }}</span>
       </v-btn>
       <v-spacer />

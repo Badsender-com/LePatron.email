@@ -4,10 +4,25 @@ import { PAGE } from '~/store/page.js';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
 import BsModuleSidebar from '~/components/module-sidebar.vue';
+import {
+  Mail,
+  LineChart,
+  HelpCircle,
+  LogOut,
+  Settings,
+} from 'lucide-vue';
 
 export default {
   name: 'BsLayoutDefault',
-  components: { BsSnackBar, BsModuleSidebar },
+  components: {
+    BsSnackBar,
+    BsModuleSidebar,
+    LucideMail: Mail,
+    LucideLineChart: LineChart,
+    LucideHelpCircle: HelpCircle,
+    LucideLogOut: LogOut,
+    LucideSettings: Settings,
+  },
   data() {
     return {
       mobileDrawer: false,
@@ -179,7 +194,7 @@ export default {
 
         <v-list-item nuxt :to="emailBuilderRoute" @click="closeMobileDrawer">
           <v-list-item-icon>
-            <v-icon>mdi-email-outline</v-icon>
+            <lucide-mail :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ $t('modules.emailBuilder') }}</v-list-item-title>
@@ -188,7 +203,7 @@ export default {
 
         <v-list-item nuxt to="/crm-intelligence" @click="closeMobileDrawer">
           <v-list-item-icon>
-            <v-icon>mdi-chart-areaspline</v-icon>
+            <lucide-line-chart :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ $t('modules.crmIntelligence') }}</v-list-item-title>
@@ -207,7 +222,7 @@ export default {
           @click="closeMobileDrawer"
         >
           <v-list-item-icon>
-            <v-icon>mdi-help-circle-outline</v-icon>
+            <lucide-help-circle :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ $t('sidebar.help') }}</v-list-item-title>
@@ -216,7 +231,7 @@ export default {
 
         <v-list-item href="/account/logout" @click="closeMobileDrawer">
           <v-list-item-icon>
-            <v-icon>mdi-logout</v-icon>
+            <lucide-log-out :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ $t('sidebar.logout') }}</v-list-item-title>
@@ -229,7 +244,7 @@ export default {
       <v-list dense nav>
         <v-list-item nuxt :to="settingsRoute" @click="closeMobileDrawer">
           <v-list-item-icon>
-            <v-icon>mdi-cog-outline</v-icon>
+            <lucide-settings :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ $t('modules.settings') }}</v-list-item-title>

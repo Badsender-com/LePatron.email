@@ -22,6 +22,7 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { FolderOpen, Folder, Plus, MoreVertical, Pencil, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -33,6 +34,14 @@ export default {
     FolderDeleteModal,
     FolderMoveModal,
     FolderNewModal,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
+    LucidePlus: Plus,
+    LucideMoreVertical: MoreVertical,
+    LucidePencil: Pencil,
+    LucideFolderPlus: FolderPlus,
+    LucideFolderInput: FolderInput,
+    LucideTrash2: Trash2,
   },
   mixins: [mixinCurrentLocation],
   data: () => ({
@@ -578,12 +587,11 @@ export default {
       @update:open="handleTreeUpdate"
     >
       <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">
-          {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-        </v-icon>
-        <v-icon v-else :color="item.hasAccess ? 'primary' : 'grey'">
-          {{ item.icon }}
-        </v-icon>
+        <template v-if="!item.icon">
+          <lucide-folder-open v-if="open" :size="18" :style="{ color: item.hasAccess ? 'var(--v-accent-base)' : '#9e9e9e' }" />
+          <lucide-folder v-else :size="18" :style="{ color: item.hasAccess ? 'var(--v-accent-base)' : '#9e9e9e' }" />
+        </template>
+        <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" :style="{ color: item.hasAccess ? 'var(--v-primary-base)' : '#9e9e9e' }" />
       </template>
       <template #label="{ item, active }">
         <div @click="active ? $event.stopPropagation() : null">
@@ -597,19 +605,19 @@ export default {
           icon
           @click="(event) => openNewFolderModal(event, item)"
         >
-          <v-icon>add</v-icon>
+          <lucide-plus :size="18" />
         </v-btn>
         <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y>
           <template #activator="{ on }">
             <v-btn color="accent" dark icon v-on="on">
-              <v-icon>mdi-dots-vertical</v-icon>
+              <lucide-more-vertical :size="18" />
             </v-btn>
           </template>
           <v-list activable>
             <v-list-item nuxt @click="openRenameFolderModal(item)">
               <v-list-item-avatar>
                 <v-btn color="accent" icon>
-                  <v-icon>edit</v-icon>
+                  <lucide-pencil :size="18" />
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
@@ -621,7 +629,7 @@ export default {
             >
               <v-list-item-avatar>
                 <v-btn color="accent" icon>
-                  <v-icon>folder</v-icon>
+                  <lucide-folder-plus :size="18" />
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>
@@ -631,7 +639,7 @@ export default {
             <v-list-item nuxt @click="displayMoveModal(item)">
               <v-list-item-avatar>
                 <v-btn color="accent" icon>
-                  <v-icon>drive_file_move</v-icon>
+                  <lucide-folder-input :size="18" />
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>
@@ -641,7 +649,7 @@ export default {
             <v-list-item nuxt @click="displayDeleteModal(item)">
               <v-list-item-avatar>
                 <v-btn color="accent" icon>
-                  <v-icon>delete</v-icon>
+                  <lucide-trash2 :size="18" />
                 </v-btn>
               </v-list-item-avatar>
               <v-list-item-title>

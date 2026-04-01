@@ -99,35 +99,62 @@ Atoms are the smallest UI elements that cannot be broken down further.
 
 ### Icons
 
-**Component**: `v-icon`
+**Target Library**: Lucide (https://lucide.dev)
+**Package**: `lucide-vue` (Vue 2) or `lucide-vue-next` (Vue 3)
 
 **Usage**:
 
-```html
-<!-- Standard icon -->
-<v-icon>settings</v-icon>
+```vue
+<script>
+import { Settings, HelpCircle, Trash2, Pencil, Plus, X, LogOut } from 'lucide-vue';
 
-<!-- With color -->
-<v-icon color="primary">help</v-icon>
+export default {
+  components: { Settings, HelpCircle, Trash2, Pencil, Plus, X, LogOut }
+}
+</script>
 
-<!-- Icon sizes -->
-<v-icon small>info</v-icon>
-<v-icon large>warning</v-icon>
+<template>
+  <!-- Standard icon -->
+  <Settings :size="24" />
+
+  <!-- With color -->
+  <HelpCircle :size="24" color="var(--v-primary-base)" />
+
+  <!-- Icon sizes -->
+  <Settings :size="16" />  <!-- small -->
+  <Settings :size="24" />  <!-- default -->
+  <Settings :size="32" />  <!-- large -->
+</template>
 ```
 
-**Icon library**: Material Design Icons
-**Reference**: https://materialdesignicons.com/
+**Icon library**: Lucide Icons
+**Reference**: https://lucide.dev/icons
 
 **Common icons in LePatron**:
-| Icon | Name | Usage |
-|------|------|-------|
-| settings | `settings` | Settings/configuration |
-| power_settings_new | `power_settings_new` | Logout |
-| help | `help` | Help/FAQ link |
-| delete | `delete` | Delete action |
-| edit | `edit` | Edit action |
-| add | `add` | Create/Add action |
-| close | `close` | Close/Dismiss |
+
+| Purpose               | Lucide Component | Size   |
+| --------------------- | ---------------- | ------ |
+| Settings              | `Settings`       | 24     |
+| Logout                | `LogOut`         | 24     |
+| Help                  | `HelpCircle`     | 24     |
+| Delete                | `Trash2`         | 20     |
+| Edit                  | `Pencil`         | 20     |
+| Add/Create            | `Plus`           | 20     |
+| Close/Dismiss         | `X`              | 20     |
+| User                  | `User`           | 24     |
+| Email                 | `Mail`           | 24     |
+| Dashboard             | `LayoutDashboard`| 24     |
+| Chart                 | `LineChart`      | 24     |
+| Search                | `Search`         | 20     |
+| More options          | `MoreVertical`   | 20     |
+| External link         | `ExternalLink`   | 16     |
+| Save                  | `Save`           | 20     |
+| Arrow up/down         | `ArrowUp/Down`   | 16     |
+| Check                 | `Check`          | 20     |
+| Alert                 | `AlertTriangle`  | 20     |
+| Info                  | `Info`           | 20     |
+
+**Legacy (MDI)**: Material Design Icons via `<v-icon>` - being phased out
 
 ---
 
@@ -291,10 +318,12 @@ Atoms are the smallest UI elements that cannot be broken down further.
 
 ## Summary: When to Use What
 
-| Context | Atom Type | Component |
-|---------|-----------|-----------|
-| Vue App - Button | Vuetify | `<v-btn>` |
-| Vue App - Input | Vuetify | `<v-text-field>` |
-| Vue App - Icon | Material | `<v-icon>name</v-icon>` |
-| Editor - Button | jQuery UI | `<button class="ui-button">` |
-| Editor - Icon | Font Awesome | `<i class="fa fa-...">` |
+| Context          | Atom Type | Component (Target)                    |
+| ---------------- | --------- | ------------------------------------- |
+| Vue App - Button | Vuetify   | `<v-btn>`                             |
+| Vue App - Input  | Vuetify   | `<v-text-field>`                      |
+| Vue App - Icon   | Lucide    | `<Settings :size="24" />`             |
+| Editor - Button  | jQuery UI | `<button class="ui-button">` (legacy) |
+| Editor - Icon    | Lucide    | Migrate from Font Awesome             |
+
+**Migration note**: Replace `<v-icon>mdi-*</v-icon>` with Lucide components progressively.

@@ -1,6 +1,13 @@
 <script>
+import { Palette, Mail, ExternalLink } from 'lucide-vue';
+
 export default {
   name: 'EmailBuilderPlaceholder',
+  components: {
+    LucidePalette: Palette,
+    LucideMail: Mail,
+    LucideExternalLink: ExternalLink,
+  },
   computed: {
     contactUrl() {
       return this.$i18n.locale === 'fr'
@@ -21,9 +28,7 @@ export default {
   <div class="marketing-page">
     <!-- HERO SECTION -->
     <section class="hero-section">
-      <v-icon size="80" color="accent">
-        mdi-palette
-      </v-icon>
+      <lucide-palette :size="80" style="color: var(--v-accent-base)" />
 
       <h1 class="text-h3 mt-6 primary--text font-weight-bold">
         {{ $t('emailBuilder.marketing.title') }}
@@ -42,9 +47,7 @@ export default {
           target="_blank"
           class="mr-4"
         >
-          <v-icon left>
-            mdi-email-outline
-          </v-icon>
+          <lucide-mail :size="20" class="mr-2" />
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
         <v-btn
@@ -55,9 +58,7 @@ export default {
           target="_blank"
         >
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
-          <v-icon right>
-            mdi-open-in-new
-          </v-icon>
+          <lucide-external-link :size="20" class="ml-2" />
         </v-btn>
       </div>
     </section>
@@ -119,9 +120,7 @@ export default {
           target="_blank"
           class="mr-4"
         >
-          <v-icon left>
-            mdi-email-outline
-          </v-icon>
+          <lucide-mail :size="20" class="mr-2" />
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
         <v-btn
@@ -132,9 +131,7 @@ export default {
           target="_blank"
         >
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
-          <v-icon right>
-            mdi-open-in-new
-          </v-icon>
+          <lucide-external-link :size="20" class="ml-2" />
         </v-btn>
       </div>
     </section>

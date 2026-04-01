@@ -6,10 +6,10 @@ This document tracks known UI inconsistencies and technical debt. Each item incl
 
 ## Active Debts
 
-### DEBT-001: Dual Font Families
+### DEBT-001: Multiple Font Families
 
 **Status**: Active
-**Severity**: Medium
+**Severity**: High
 **Area**: Typography
 **Plan Reference**: Phase 1 (Typographie)
 
@@ -18,36 +18,63 @@ This document tracks known UI inconsistencies and technical debt. Each item incl
 - Email Editor uses **Trebuchet MS** (system font)
 - Website uses **Work Sans** (brand font)
 
+**Target State**:
+- All platforms use **Inter** (Google Fonts)
+
 **Impact**:
 - Visual disconnect when transitioning between interfaces
 - Brand inconsistency
+- Montserrat has suboptimal letter spacing for UI text
 
 **Direction**:
-- Migrate both Vue App and Editor to **Work Sans** (brand standard)
+- Migrate all stacks to **Inter** (modern standard for SaaS UIs)
 - Vue App: Update `$body-font-family` in `variables.scss`, add Google Fonts import
 - Editor: Update `@font-family` in `style_variables.less`
-- See `docs/plans/ui-progressive-update.md` Phase 1 for implementation details
+- Website: Update to Inter for full consistency
+
+**Why Inter over Work Sans?**
+- Better screen readability at all sizes
+- Variable font support (performance)
+- Industry standard (GitHub, Figma, Linear, Vercel)
+- Wider character set support
 
 ---
 
-### DEBT-002: Dual Icon Systems
+### DEBT-002: Multiple Icon Systems
 
 **Status**: Active
-**Severity**: Low
+**Severity**: High
 **Area**: Icons
 
 **Current State**:
 - Vue App: Material Design Icons via `<v-icon>`
 - Editor: Font Awesome 4.7 via `<i class="fa fa-...">`
 
+**Target State**:
+- All platforms use **Lucide** icons (https://lucide.dev)
+
 **Impact**:
-- Slightly different icon styles
+- Inconsistent icon styles across interfaces
 - Two icon fonts loaded (bundle size)
+- MDI icons appear heavier than modern alternatives
 
 **Direction**:
-- Keep as-is for now (editor legacy code)
-- New Vue components should use MDI exclusively
-- Future: Consider migrating editor to MDI when refactoring
+- Migrate Vue App from MDI to **Lucide** (`lucide-vue` package)
+- Migrate Editor from Font Awesome to **Lucide**
+- New components must use Lucide exclusively
+
+**Why Lucide over MDI?**
+- Cleaner, more minimal design
+- Tree-shakeable SVG (smaller bundle)
+- Active community, regular updates
+- Industry standard (Shadcn/UI, Tailwind UI)
+- Better visual consistency at small sizes
+
+**Migration approach**:
+- Install `lucide-vue` package
+- Create wrapper component for transition period
+- Replace icons progressively by feature/page
+- See `01-tokens.md` for MDI → Lucide mapping table
 
 ---
 

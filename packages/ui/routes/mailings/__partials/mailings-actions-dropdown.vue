@@ -1,6 +1,11 @@
 <script>
+import { MoreVertical } from 'lucide-vue';
+
 export default {
   name: 'BsMailingsActionsDropdown',
+  components: {
+    LucideMoreVertical: MoreVertical,
+  },
 };
 </script>
 
@@ -8,7 +13,7 @@ export default {
   <v-menu offset-y>
     <template #activator="{ on }">
       <v-btn color="accent" dark icon v-on="on">
-        <v-icon>mdi-dots-vertical</v-icon>
+        <lucide-more-vertical :size="18" />
       </v-btn>
     </template>
     <v-list activable>

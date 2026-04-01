@@ -2,12 +2,15 @@
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUsersTableActionsActivation from '~/components/users/table-actions-activation';
 import BsUserTableActionsMail from '~/components/users/table-actions-mail.vue';
+import { MoreVertical, Pencil } from 'lucide-vue';
 
 export default {
   name: 'BsActionsDropdown',
   components: {
     BsUsersTableActionsActivation,
     BsUserTableActionsMail,
+    LucideMoreVertical: MoreVertical,
+    LucidePencil: Pencil,
   },
   props: {
     user: { type: Object, default: () => ({ group: {} }) },
@@ -34,9 +37,7 @@ export default {
     },
   },
   data() {
-    return {
-      actionsIcon: 'mdi-dots-vertical',
-    };
+    return {};
   },
   computed: {
     actionDisplay() {
@@ -50,7 +51,7 @@ export default {
   <v-menu offset-y>
     <template #activator="{ on }">
       <v-btn color="accent" dark icon v-on="on">
-        <v-icon>{{ actionsIcon }}</v-icon>
+        <lucide-more-vertical :size="18" />
       </v-btn>
     </template>
     <v-list activable>
@@ -71,7 +72,7 @@ export default {
       <v-list-item nuxt link :to="`/users/${user.id}`">
         <v-list-item-avatar>
           <v-btn color="accent" icon>
-            <v-icon>edit</v-icon>
+            <lucide-pencil :size="18" />
           </v-btn>
         </v-list-item-avatar>
         <v-list-item-title>

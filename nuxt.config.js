@@ -22,6 +22,8 @@ module.exports = {
     store: 'store',
   },
   build: {
+    // Transpile lucide-vue (uses modern JS syntax like optional chaining)
+    transpile: ['lucide-vue'],
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
@@ -37,6 +39,7 @@ module.exports = {
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },
     { src: '~/plugins/badsender-global-components.js', ssr: true },
+    { src: '~/plugins/lucide-icons.js', ssr: true },
     { src: '~/plugins/vue-i18n.js', ssr: true },
     { src: '~/plugins/detect-browser-locale.js', ssr: false },
     { src: '~/plugins/axios-error-handler.js', ssr: false },
@@ -107,7 +110,7 @@ module.exports = {
       {
         rel: 'stylesheet',
         href:
-          'https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap,',
+          'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
       },
       {
         rel: 'stylesheet',

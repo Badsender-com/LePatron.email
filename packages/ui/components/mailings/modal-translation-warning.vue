@@ -1,6 +1,12 @@
 <script>
+import { CheckCircle2, Check } from 'lucide-vue';
+
 export default {
   name: 'BsMailingModalTranslationWarning',
+  components: {
+    LucideCheckCircle2: CheckCircle2,
+    LucideCheck: Check,
+  },
   data() {
     return {
       show: false,
@@ -21,9 +27,7 @@ export default {
   <v-dialog v-model="show" max-width="500">
     <v-card>
       <v-card-title class="d-flex align-center">
-        <v-icon left color="primary">
-          mdi-check-circle
-        </v-icon>
+        <lucide-check-circle2 :size="20" class="mr-2" style="color: var(--v-primary-base)" />
         {{ $t('translation.successTitle') }}
       </v-card-title>
 
@@ -47,7 +51,7 @@ export default {
       <v-card-actions>
         <v-spacer />
         <v-btn color="accent" @click="close">
-          <v-icon left>mdi-check</v-icon>
+          <lucide-check :size="16" class="mr-2" />
           {{ $t('translation.understood') }}
         </v-btn>
       </v-card-actions>

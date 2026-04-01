@@ -7,9 +7,16 @@ import {
   getLanguageLabel,
 } from '~/helpers/constants/languages.js';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
+import { Languages, FolderOpen, Folder, Check } from 'lucide-vue';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
+  components: {
+    LucideLanguages: Languages,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
+    LucideCheck: Check,
+  },
   mixins: [destinationTreeMixin],
   data() {
     return {
@@ -370,9 +377,7 @@ export default {
   <v-dialog v-model="show" max-width="550" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
-        <v-icon left color="primary">
-          mdi-translate
-        </v-icon>
+        <lucide-languages :size="20" class="mr-2" style="color: var(--v-primary-base)" />
         {{ $t('translation.duplicateAndTranslate') }}
       </v-card-title>
 
@@ -496,12 +501,11 @@ export default {
                       @update:active="handleSelectDestination"
                     >
                       <template #prepend="{ item, open }">
-                        <v-icon v-if="!item.icon" color="accent">
-                          {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-                        </v-icon>
-                        <v-icon v-else color="accent">
-                          {{ item.icon }}
-                        </v-icon>
+                        <template v-if="!item.icon">
+                          <lucide-folder-open v-if="open" :size="18" style="color: var(--v-accent-base)" />
+                          <lucide-folder v-else :size="18" style="color: var(--v-accent-base)" />
+                        </template>
+                        <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" style="color: var(--v-accent-base)" />
                       </template>
                     </v-treeview>
                   </div>
@@ -528,9 +532,7 @@ export default {
           :disabled="!isFormValid"
           @click="handleTranslate"
         >
-          <v-icon left>
-            mdi-translate
-          </v-icon>
+          <lucide-languages :size="16" class="mr-2" />
           {{ $t('translation.translate') }}
         </v-btn>
         <v-btn

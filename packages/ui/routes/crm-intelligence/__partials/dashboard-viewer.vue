@@ -1,6 +1,11 @@
 <script>
+import { AlertCircle } from 'lucide-vue';
+
 export default {
   name: 'DashboardViewer',
+  components: {
+    LucideAlertCircle: AlertCircle,
+  },
   props: {
     embedUrl: {
       type: String,
@@ -56,9 +61,7 @@ export default {
 
     <!-- Error State -->
     <div v-if="!loading && !embedUrl" class="error-state">
-      <v-icon size="64" color="error">
-        mdi-alert-circle-outline
-      </v-icon>
+      <lucide-alert-circle :size="64" style="color: var(--v-error-base)" />
       <p class="mt-4 text-body-1 grey--text">
         {{ $t('crmIntelligence.errors.loadFailed') }}
       </p>

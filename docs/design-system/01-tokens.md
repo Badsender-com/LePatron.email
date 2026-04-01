@@ -117,51 +117,41 @@ The logo can be customized per group:
 
 Typography is **not customizable** in white-label deployments to ensure consistent readability and UX across all instances.
 
-### Current State
-
-| Stack   | Current    | Target        |
-| ------- | ---------- | ------------- |
-| Vue App | Montserrat | **Work Sans** |
-| Editor  | Montserrat | **Work Sans** |
-| Website | Work Sans  | Work Sans     |
-
-> **Note**: The original Mosaico editor used Trebuchet MS (`style_variables.less`), but LePatron overrides it with Montserrat (`badsender-editor.less`).
-
-> **Progressive migration**: When modifying UI code, ensure Work Sans is applied.
-
-| Stack       | Font Family  | Status    |
-| ----------- | ------------ | --------- |
-| **Vue App** | Montserrat   | Current   |
-| **Editor**  | Trebuchet MS | Legacy    |
-| **Website** | Work Sans    | Reference |
-
 ### Target State
 
 | Property         | Value                   |
 | ---------------- | ----------------------- |
-| **Font Family**  | `Work Sans`             |
+| **Font Family**  | `Inter`                 |
 | **Font Weights** | 300, 400, 500, 600, 700 |
 | **Source**       | Google Fonts            |
 
-**Why Work Sans?**
+**Why Inter?**
 
-- Already used on lepatron.email website (brand consistency)
-- Designed specifically for screen readability
-- Modern, clean appearance suited for SaaS applications
-- Better letter spacing than Montserrat for UI text
+- Modern, highly legible sans-serif designed specifically for screens
+- Excellent support for UI text at all sizes
+- Variable font support for optimal performance
+- Wide character set and language support
+- Industry standard for SaaS applications (used by GitHub, Figma, Linear, etc.)
 
 **Target configuration**:
 
 ```scss
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap');
-$body-font-family: 'Work Sans';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+$body-font-family: 'Inter', sans-serif;
 ```
 
-### Current Configuration
+### Current State (Legacy)
+
+| Stack       | Font Family  | Status    | Target  |
+| ----------- | ------------ | --------- | ------- |
+| **Vue App** | Montserrat   | Current   | Inter   |
+| **Editor**  | Trebuchet MS | Legacy    | Inter   |
+| **Website** | Work Sans    | Current   | Inter   |
 
 Vue App (`packages/ui/assets/global-styles/variables.scss`):
 
 ```scss
+// Current (to be migrated)
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap');
 $body-font-family: 'Montserrat';
 ```
@@ -169,6 +159,7 @@ $body-font-family: 'Montserrat';
 Editor (`packages/editor/src/css/style_variables.less`):
 
 ```less
+// Current (to be migrated)
 @font-family: 'trebuchet ms', arial, sans-serif;
 @base-font-size: 13.6px;
 ```
@@ -181,7 +172,7 @@ Three different fonts are currently used across the platform:
 - **Editor**: Trebuchet MS
 - **Website**: Work Sans
 
-**Direction**: Unify all stacks to **Work Sans** for brand consistency and modern appearance.
+**Direction**: Unify all stacks to **Inter** for modern appearance and optimal screen readability.
 
 ---
 
@@ -303,12 +294,92 @@ Defined in editor (`style_variables.less`):
 
 Icons are fixed to maintain consistent UX across all instances.
 
-| System                    | Location | Usage                       |
-| ------------------------- | -------- | --------------------------- |
-| **Material Design Icons** | Vue App  | `<v-icon>settings</v-icon>` |
-| **Font Awesome 4.7**      | Editor   | `<i class="fa fa-cog"></i>` |
+### Target State
 
-**Direction**: Prefer MDI for new Vue components. FA remains for editor legacy code.
+| System     | Location | Usage                                      |
+| ---------- | -------- | ------------------------------------------ |
+| **Lucide** | Vue App  | `<lucide-icon name="settings" />`          |
+| **Lucide** | Editor   | `<lucide-icon name="settings" />` or SVG   |
+
+**Why Lucide?**
+
+- Modern, consistent icon set with 1500+ icons
+- Lightweight SVG-based (tree-shakeable)
+- Active community and regular updates
+- Clean, minimal design that fits modern UIs
+- MIT licensed
+- Used by Shadcn/UI, Tailwind UI, and many modern frameworks
+
+**Reference**: https://lucide.dev/icons
+
+**Installation**:
+
+```bash
+yarn add lucide-vue  # For Vue 2
+# or
+yarn add lucide-vue-next  # For Vue 3
+```
+
+**Usage in Vue**:
+
+```vue
+<script>
+import { Settings, User, Mail, Trash2, Edit, Plus, X } from 'lucide-vue';
+
+export default {
+  components: { Settings, User, Mail, Trash2, Edit, Plus, X }
+}
+</script>
+
+<template>
+  <Settings :size="24" />
+  <User :size="20" color="currentColor" />
+</template>
+```
+
+**Common icons mapping (MDI → Lucide)**:
+
+| Purpose        | MDI (legacy)           | Lucide (target)    |
+| -------------- | ---------------------- | ------------------ |
+| Settings       | `mdi-cog`              | `Settings`         |
+| User           | `mdi-account`          | `User`             |
+| Email          | `mdi-email`            | `Mail`             |
+| Delete         | `mdi-delete`           | `Trash2`           |
+| Edit           | `mdi-pencil`           | `Edit` or `Pencil` |
+| Add            | `mdi-plus`             | `Plus`             |
+| Close          | `mdi-close`            | `X`                |
+| Help           | `mdi-help-circle`      | `HelpCircle`       |
+| Logout         | `mdi-logout`           | `LogOut`           |
+| Dashboard      | `mdi-view-dashboard`   | `LayoutDashboard`  |
+| Chart          | `mdi-chart-line`       | `LineChart`        |
+| Palette        | `mdi-palette`          | `Palette`          |
+| Arrow Up       | `mdi-arrow-up`         | `ArrowUp`          |
+| Arrow Down     | `mdi-arrow-down`       | `ArrowDown`        |
+| Check          | `mdi-check`            | `Check`            |
+| Alert          | `mdi-alert`            | `AlertTriangle`    |
+| Info           | `mdi-information`      | `Info`             |
+| Search         | `mdi-magnify`          | `Search`           |
+| Menu           | `mdi-menu`             | `Menu`             |
+| More (dots)    | `mdi-dots-vertical`    | `MoreVertical`     |
+| External link  | `mdi-open-in-new`      | `ExternalLink`     |
+| Save           | `mdi-content-save`     | `Save`             |
+| Folder         | `mdi-folder`           | `Folder`           |
+| File           | `mdi-file`             | `File`             |
+| Copy           | `mdi-content-copy`     | `Copy`             |
+| Download       | `mdi-download`         | `Download`         |
+| Upload         | `mdi-upload`           | `Upload`           |
+| Refresh        | `mdi-refresh`          | `RefreshCw`        |
+| Eye            | `mdi-eye`              | `Eye`              |
+| Eye Off        | `mdi-eye-off`          | `EyeOff`           |
+
+### Current State (Legacy)
+
+| System                    | Location | Status  |
+| ------------------------- | -------- | ------- |
+| **Material Design Icons** | Vue App  | Current |
+| **Font Awesome 4.7**      | Editor   | Legacy  |
+
+**Direction**: Migrate all icon usage to **Lucide** for modern appearance and consistency.
 
 ---
 
@@ -321,9 +392,9 @@ Icons are fixed to maintain consistent UX across all instances.
 | Accent Color    | Yes          | `#00ACDC`         | —         |
 | Logo            | Yes          | LePatron SVG      | —         |
 | Favicon         | Yes          | LePatron favicon  | —         |
-| Font Family     | No           | Montserrat        | Work Sans |
+| Font Family     | No           | Montserrat        | Inter     |
 | Semantic Colors | No           | Fixed             | —         |
 | Spacing         | No           | Vuetify 4px scale | —         |
 | Border Radius   | No           | 5px default       | —         |
 | Shadows         | No           | Vuetify elevation | —         |
-| Icons           | No           | MDI / FA          | —         |
+| Icons           | No           | MDI / FA          | Lucide    |

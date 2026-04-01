@@ -6,9 +6,13 @@ import {
 import { mapState } from 'vuex';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { FOLDER } from '~/store/folder';
+import { ChevronRight } from 'lucide-vue';
 
 export default {
   name: 'MailingsBreadcrumbs',
+  components: {
+    LucideChevronRight: ChevronRight,
+  },
   props: {
     large: { type: Boolean, default: false },
     workspaceOrFolderItem: { type: Object, default: null },
@@ -46,7 +50,7 @@ export default {
 <template>
   <v-breadcrumbs class="pl-0" :large="large" :items="breadcrumbsData">
     <template #divider>
-      <v-icon>mdi-chevron-right</v-icon>
+      <lucide-chevron-right :size="16" />
     </template>
     <template #item="{ item }">
       <v-breadcrumbs-item

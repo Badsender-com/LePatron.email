@@ -10,6 +10,7 @@ import {
 } from '~/helpers/api-routes';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { CloudDownload, Download, FolderInput, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'MailingsSelectionActions',
@@ -18,6 +19,10 @@ export default {
     BsModalConfirm,
     MailingsTagsMenu,
     MailingsDownloadModal,
+    LucideCloudDownload: CloudDownload,
+    LucideDownload: Download,
+    LucideFolderInput: FolderInput,
+    LucideTrash2: Trash2,
   },
   props: {
     mailingsSelection: { type: Array, default: () => [] },
@@ -215,7 +220,7 @@ export default {
                 v-on="on"
                 @click="handleInitMultipleDownload({ isWithFtp: true })"
               >
-                <v-icon>mdi-cloud-download</v-icon>
+                <lucide-cloud-download :size="20" />
               </v-btn>
             </template>
             <span>{{
@@ -231,7 +236,7 @@ export default {
                 v-on="on"
                 @click="handleInitMultipleDownload({ isWithFtp: false })"
               >
-                <v-icon>download</v-icon>
+                <lucide-download :size="20" />
               </v-btn>
             </template>
             <span>{{
@@ -249,7 +254,7 @@ export default {
           <v-tooltip bottom>
             <template #activator="{ on }">
               <v-btn icon v-on="on" @click="openMoveManyMailsDialog">
-                <v-icon>drive_file_move</v-icon>
+                <lucide-folder-input :size="20" />
               </v-btn>
             </template>
             <span>{{
@@ -261,7 +266,7 @@ export default {
           <v-tooltip bottom>
             <template #activator="{ on }">
               <v-btn icon v-on="on" @click="openDeleteSelectionModal">
-                <v-icon>delete</v-icon>
+                <lucide-trash2 :size="20" />
               </v-btn>
             </template>
             <span>{{
