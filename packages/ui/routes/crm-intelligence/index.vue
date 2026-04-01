@@ -11,7 +11,28 @@ import { IS_ADMIN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
-import { LineChart, Mail } from 'lucide-vue';
+import {
+  LineChart,
+  Mail,
+  AreaChart,
+  MailCheck,
+  HeartHandshake,
+  DollarSign,
+  Euro,
+  LayoutDashboard,
+  Database,
+} from 'lucide-vue';
+
+// Icon mapping from Lucide names to components
+const FEATURE_ICON_MAP = {
+  'area-chart': AreaChart,
+  'mail-check': MailCheck,
+  'heart-handshake': HeartHandshake,
+  'dollar-sign': DollarSign,
+  'euro': Euro,
+  'layout-dashboard': LayoutDashboard,
+  'database': Database,
+};
 
 export default {
   name: 'PageCrmIntelligence',
@@ -20,6 +41,13 @@ export default {
     DashboardViewer,
     LucideLineChart: LineChart,
     LucideMail: Mail,
+    LucideAreaChart: AreaChart,
+    LucideMailCheck: MailCheck,
+    LucideHeartHandshake: HeartHandshake,
+    LucideDollarSign: DollarSign,
+    LucideEuro: Euro,
+    LucideLayoutDashboard: LayoutDashboard,
+    LucideDatabase: Database,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -96,6 +124,10 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
+    getFeatureIconComponent(iconName) {
+      return FEATURE_ICON_MAP[iconName] || AreaChart;
+    },
+
     async selectDashboard(dashboard) {
       if (this.selectedDashboard?.id === dashboard.id) return;
 
@@ -167,9 +199,12 @@ export default {
             md="4"
           >
             <div class="feature-card">
-              <v-icon size="48" color="accent" class="mb-4">
-                {{ feature.icon }}
-              </v-icon>
+              <component
+                :is="getFeatureIconComponent(feature.icon)"
+                :size="48"
+                style="color: var(--v-accent-base)"
+                class="mb-4"
+              />
               <h3 class="text-subtitle-1 font-weight-medium mb-2">
                 {{ feature.title }}
               </h3>

@@ -7,13 +7,13 @@ import {
   LogOut,
 } from 'lucide-vue';
 
-// Map MDI icon names to Lucide components (for migration)
+// Map icon names to Lucide components
 const ICON_MAP = {
-  'mdi-palette': Palette,
-  'mdi-chart-line': LineChart,
-  'mdi-cog-outline': Settings,
-  'mdi-help-circle-outline': HelpCircle,
-  'mdi-logout': LogOut,
+  palette: Palette,
+  'line-chart': LineChart,
+  settings: Settings,
+  'help-circle': HelpCircle,
+  'log-out': LogOut,
 };
 
 export default {

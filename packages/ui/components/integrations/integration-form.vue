@@ -7,10 +7,27 @@ import {
   getProvidersGroupedByCategory,
   getProviderCategory,
 } from './provider-configs';
+import { BarChart3, Bot, Languages, Puzzle, Eye, EyeOff } from 'lucide-vue';
+
+// Icon mapping from Lucide names to components
+const ICON_MAP = {
+  'bar-chart-3': BarChart3,
+  'bot': Bot,
+  'languages': Languages,
+  'puzzle': Puzzle,
+};
 
 export default {
   name: 'BsIntegrationForm',
   mixins: [validationMixin],
+  components: {
+    LucideBarChart3: BarChart3,
+    LucideBot: Bot,
+    LucideLanguages: Languages,
+    LucidePuzzle: Puzzle,
+    LucideEye: Eye,
+    LucideEyeOff: EyeOff,
+  },
   props: {
     integration: {
       type: Object,
@@ -153,6 +170,10 @@ export default {
 
     getProviderLabel,
 
+    getIconComponent(iconName) {
+      return ICON_MAP[iconName] || Puzzle;
+    },
+
     fieldErrors(fieldName) {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
@@ -228,7 +249,7 @@ export default {
           <template #item="{ item, on, attrs }">
             <v-list-item v-if="!item.header" v-bind="attrs" v-on="on">
               <v-list-item-icon class="mr-3">
-                <v-icon small>{{ item.icon }}</v-icon>
+                <component :is="getIconComponent(item.icon)" :size="16" />
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title>{{ item.text }}</v-list-item-title>
@@ -236,7 +257,7 @@ export default {
             </v-list-item>
           </template>
           <template #selection="{ item }">
-            <v-icon small class="mr-2">{{ item.icon }}</v-icon>
+            <component :is="getIconComponent(item.icon)" :size="16" class="mr-2" />
             {{ item.text }}
           </template>
         </v-select>
@@ -259,9 +280,10 @@ export default {
           @blur="$v.form.apiKey && $v.form.apiKey.$touch()"
         >
           <template #append>
-            <v-icon @click="showApiKey = !showApiKey">
-              {{ showApiKey ? 'mdi-eye-off' : 'mdi-eye' }}
-            </v-icon>
+            <v-btn icon small @click="showApiKey = !showApiKey">
+              <lucide-eye-off v-if="showApiKey" :size="18" />
+              <lucide-eye v-else :size="18" />
+            </v-btn>
           </template>
         </v-text-field>
 

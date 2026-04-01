@@ -1,5 +1,24 @@
 <script>
-import { Palette, Mail, ExternalLink } from 'lucide-vue';
+import {
+  Palette,
+  Mail,
+  ExternalLink,
+  GripVertical,
+  Smartphone,
+  Puzzle,
+  CloudUpload,
+  Users,
+} from 'lucide-vue';
+
+// Icon mapping from Lucide names to components
+const FEATURE_ICON_MAP = {
+  'grip-vertical': GripVertical,
+  'smartphone': Smartphone,
+  'puzzle': Puzzle,
+  'palette': Palette,
+  'cloud-upload': CloudUpload,
+  'users': Users,
+};
 
 export default {
   name: 'EmailBuilderPlaceholder',
@@ -7,6 +26,11 @@ export default {
     LucidePalette: Palette,
     LucideMail: Mail,
     LucideExternalLink: ExternalLink,
+    LucideGripVertical: GripVertical,
+    LucideSmartphone: Smartphone,
+    LucidePuzzle: Puzzle,
+    LucideCloudUpload: CloudUpload,
+    LucideUsers: Users,
   },
   computed: {
     contactUrl() {
@@ -19,6 +43,11 @@ export default {
     },
     features() {
       return this.$t('emailBuilder.marketing.features');
+    },
+  },
+  methods: {
+    getFeatureIconComponent(iconName) {
+      return FEATURE_ICON_MAP[iconName] || Palette;
     },
   },
 };
@@ -90,9 +119,12 @@ export default {
             md="4"
           >
             <div class="feature-card">
-              <v-icon size="48" color="accent" class="mb-4">
-                {{ feature.icon }}
-              </v-icon>
+              <component
+                :is="getFeatureIconComponent(feature.icon)"
+                :size="48"
+                style="color: var(--v-accent-base)"
+                class="mb-4"
+              />
               <h3 class="text-subtitle-1 font-weight-medium mb-2">
                 {{ feature.title }}
               </h3>

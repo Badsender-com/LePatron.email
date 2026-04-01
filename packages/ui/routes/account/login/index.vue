@@ -2,6 +2,7 @@
 import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { mapMutations } from 'vuex';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
@@ -11,6 +12,11 @@ export default {
   name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
   layout: 'centered',
+  components: {
+    LucideArrowLeft: ArrowLeft,
+    LucideEye: Eye,
+    LucideEyeOff: EyeOff,
+  },
   data() {
     return {
       username: '',
@@ -258,7 +264,7 @@ export default {
           icon
           @click="back"
         >
-          <v-icon>{{ 'arrow_back' }}</v-icon>
+          <lucide-arrow-left :size="20" />
         </v-btn>
         <v-toolbar-title class="pl-0">
           {{ $t('forms.user.login') }}
@@ -307,10 +313,15 @@ export default {
               name="password"
               prepend-icon="lock"
               :type="showPassword ? 'text' : 'password'"
-              :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
               required
-              @click:append="showPassword = !showPassword"
-            />
+            >
+              <template #append>
+                <v-btn icon small @click="showPassword = !showPassword">
+                  <lucide-eye v-if="showPassword" :size="18" />
+                  <lucide-eye-off v-else :size="18" />
+                </v-btn>
+              </template>
+            </v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>

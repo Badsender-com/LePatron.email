@@ -524,32 +524,32 @@ export default {
       featuresTitle: 'Pilotez votre stratégie data-driven',
       features: [
         {
-          icon: 'mdi-chart-areaspline',
+          icon: 'area-chart',
           title: 'Performance campagnes',
           description: 'Suivez les métriques clés de vos envois email en temps réel.',
         },
         {
-          icon: 'mdi-email-check',
+          icon: 'mail-check',
           title: 'Délivrabilité',
           description: 'Analysez vos taux de délivrabilité et identifiez les problèmes.',
         },
         {
-          icon: 'mdi-account-heart',
+          icon: 'heart-handshake',
           title: 'Engagement client',
           description: 'Mesurez l\'engagement de vos audiences sur tous les canaux.',
         },
         {
-          icon: 'mdi-currency-eur',
+          icon: 'euro',
           title: 'ROI Marketing',
           description: 'Calculez le retour sur investissement de vos campagnes.',
         },
         {
-          icon: 'mdi-view-dashboard',
+          icon: 'layout-dashboard',
           title: 'Dashboards personnalisés',
           description: 'Créez des tableaux de bord adaptés à vos besoins métier.',
         },
         {
-          icon: 'mdi-database-sync',
+          icon: 'database',
           title: 'Intégration Metabase',
           description: 'Connectez vos sources de données via Metabase.',
         },
@@ -638,32 +638,32 @@ export default {
       featuresTitle: 'Tout ce dont vous avez besoin',
       features: [
         {
-          icon: 'mdi-drag',
+          icon: 'grip-vertical',
           title: 'Drag & Drop intuitif',
           description: 'Construisez vos emails visuellement, sans aucune ligne de code.',
         },
         {
-          icon: 'mdi-cellphone-link',
+          icon: 'smartphone',
           title: 'Responsive natif',
           description: 'Emails optimisés pour tous les appareils et clients email.',
         },
         {
-          icon: 'mdi-puzzle',
+          icon: 'puzzle',
           title: 'Blocs réutilisables',
           description: 'Créez une bibliothèque de composants pour vos équipes.',
         },
         {
-          icon: 'mdi-palette',
+          icon: 'palette',
           title: 'Design system intégré',
           description: 'Respectez votre charte graphique avec des templates personnalisés.',
         },
         {
-          icon: 'mdi-cloud-upload',
+          icon: 'cloud-upload',
           title: 'Export multi-ESP',
           description: 'Exportez vers Sendinblue, Mailchimp, Actito et bien d\'autres.',
         },
         {
-          icon: 'mdi-account-group',
+          icon: 'users',
           title: 'Collaboration équipe',
           description: 'Travaillez à plusieurs avec gestion des droits et workspaces.',
         },

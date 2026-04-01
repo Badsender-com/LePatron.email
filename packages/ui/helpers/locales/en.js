@@ -519,32 +519,32 @@ export default {
       featuresTitle: 'Drive your data-driven strategy',
       features: [
         {
-          icon: 'mdi-chart-areaspline',
+          icon: 'area-chart',
           title: 'Campaign Performance',
           description: 'Track key metrics of your email sends in real-time.',
         },
         {
-          icon: 'mdi-email-check',
+          icon: 'mail-check',
           title: 'Deliverability',
           description: 'Analyze your deliverability rates and identify issues.',
         },
         {
-          icon: 'mdi-account-heart',
+          icon: 'heart-handshake',
           title: 'Customer Engagement',
           description: 'Measure your audience engagement across all channels.',
         },
         {
-          icon: 'mdi-currency-usd',
+          icon: 'dollar-sign',
           title: 'Marketing ROI',
           description: 'Calculate the return on investment of your campaigns.',
         },
         {
-          icon: 'mdi-view-dashboard',
+          icon: 'layout-dashboard',
           title: 'Custom Dashboards',
           description: 'Create dashboards tailored to your business needs.',
         },
         {
-          icon: 'mdi-database-sync',
+          icon: 'database',
           title: 'Metabase Integration',
           description: 'Connect your data sources via Metabase.',
         },
@@ -633,32 +633,32 @@ export default {
       featuresTitle: 'Everything you need',
       features: [
         {
-          icon: 'mdi-drag',
+          icon: 'grip-vertical',
           title: 'Intuitive Drag & Drop',
           description: 'Build your emails visually, without any code.',
         },
         {
-          icon: 'mdi-cellphone-link',
+          icon: 'smartphone',
           title: 'Native Responsive',
           description: 'Emails optimized for all devices and email clients.',
         },
         {
-          icon: 'mdi-puzzle',
+          icon: 'puzzle',
           title: 'Reusable Blocks',
           description: 'Create a component library for your teams.',
         },
         {
-          icon: 'mdi-palette',
+          icon: 'palette',
           title: 'Built-in Design System',
           description: 'Follow your brand guidelines with custom templates.',
         },
         {
-          icon: 'mdi-cloud-upload',
+          icon: 'cloud-upload',
           title: 'Multi-ESP Export',
           description: 'Export to Sendinblue, Mailchimp, Actito and more.',
         },
         {
-          icon: 'mdi-account-group',
+          icon: 'users',
           title: 'Team Collaboration',
           description: 'Work together with role management and workspaces.',
         },

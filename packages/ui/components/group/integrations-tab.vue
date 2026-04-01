@@ -20,12 +20,12 @@ import {
   Languages,
 } from 'lucide-vue';
 
-// Icon mapping from MDI to Lucide components
+// Icon mapping from Lucide icon names to components
 const CATEGORY_ICON_MAP = {
-  'mdi-chart-bar': BarChart3,
-  'mdi-robot': Bot,
-  'mdi-translate': Languages,
-  'mdi-puzzle': Puzzle,
+  'bar-chart-3': BarChart3,
+  'bot': Bot,
+  'languages': Languages,
+  'puzzle': Puzzle,
 };
 
 export default {
@@ -229,7 +229,7 @@ export default {
 
     getCategoryIconComponent(provider) {
       const category = getProviderCategory(provider);
-      const iconName = category?.icon || 'mdi-puzzle';
+      const iconName = category?.icon || 'puzzle';
       return CATEGORY_ICON_MAP[iconName] || Puzzle;
     },
 
