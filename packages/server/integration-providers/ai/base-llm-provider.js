@@ -147,6 +147,19 @@ OUTPUT (valid JSON only):`;
     return 'You are a JSON translation API. You receive a JSON object and return the same JSON object with translated values. You MUST return valid JSON only, no markdown, no explanation. Keep the exact same structure and keys.';
   }
 
+  /**
+   * Sanitize log messages to prevent leaking sensitive data (API keys, tokens).
+   * Truncates long messages and masks potential secrets.
+   */
+  _sanitizeLogMessage(message) {
+    if (!message) return 'Unknown error';
+    const str = String(message);
+    // Truncate to 300 chars max
+    const truncated = str.length > 300 ? str.substring(0, 300) + '...' : str;
+    // Mask potential API keys/tokens (long alphanumeric strings)
+    return truncated.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[REDACTED]');
+  }
+
   // ─── API call ─────────────────────────────────────────────────────────────
 
   // eslint-disable-next-line camelcase
@@ -203,10 +216,12 @@ OUTPUT (valid JSON only):`;
         } catch {
           errorMessage = errorText || 'Unknown error';
         }
+        // Sanitize error message to prevent logging sensitive data
+        const sanitizedMessage = this._sanitizeLogMessage(errorMessage);
         logger.error(
           `${providerName} API error:`,
           response.status,
-          errorMessage
+          sanitizedMessage
         );
         const code =
           response.status === 401
@@ -286,10 +301,11 @@ OUTPUT (valid JSON only):`;
 
       return JSON.parse(cleanedContent);
     } catch (error) {
-      logger.error(
-        `Failed to parse ${providerName} response:`,
-        responseContent
-      );
+      // Log truncated response to avoid leaking sensitive data
+      const truncated = responseContent
+        ? responseContent.substring(0, 200) + '...'
+        : '[empty]';
+      logger.error(`Failed to parse ${providerName} response:`, truncated);
       throw new ProviderError(
         `Failed to parse translation response: ${error.message}`,
         CODES.INVALID_RESPONSE
