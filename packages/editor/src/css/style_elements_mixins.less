@@ -193,14 +193,18 @@
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
 
-      /*
-      content: "▼";
-      font-size: 60%;
-      */
-
-      font-family: FontAwesome;
-      content: '\f0d7';
-      font-weight: normal;
+      // Chevron down icon using CSS mask
+      content: '';
+      display: inline-block;
+      width: 0.8em;
+      height: 0.8em;
+      background-color: currentColor;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
 
       // padding: 0 8px;
       pointer-events: none;
