@@ -102,7 +102,10 @@ export default {
         );
         this.integrations = response.items || [];
       } catch (error) {
-        console.error('[CrmIntelligenceTab] Fetch integrations error:', error);
+        this.showSnackbar({
+          text: this.$t('crmIntelligence.errors.fetchIntegrationsFailed'),
+          color: 'error',
+        });
       }
     },
 
@@ -111,7 +114,10 @@ export default {
         const response = await this.$axios.$get(getDashboards(this.groupId));
         this.dashboards = response.items || [];
       } catch (error) {
-        console.error('[CrmIntelligenceTab] Fetch dashboards error:', error);
+        this.showSnackbar({
+          text: this.$t('crmIntelligence.errors.fetchDashboardsFailed'),
+          color: 'error',
+        });
       }
     },
 
@@ -189,7 +195,6 @@ export default {
         await this.fetchDashboards();
         this.$emit('update');
       } catch (error) {
-        console.error('[CrmIntelligenceTab] Save dashboard error:', error);
         const errorCode = error.response?.data?.code;
         let errorMessage = this.$t('crmIntelligence.admin.dashboardSaveError');
         if (errorCode === 'DASHBOARD_ALREADY_EXISTS') {
@@ -224,7 +229,6 @@ export default {
         await this.fetchDashboards();
         this.$emit('update');
       } catch (error) {
-        console.error('[CrmIntelligenceTab] Delete dashboard error:', error);
         this.showSnackbar({
           text: this.$t('crmIntelligence.admin.dashboardDeleteError'),
           color: 'error',
@@ -259,7 +263,6 @@ export default {
         });
         await this.fetchDashboards();
       } catch (error) {
-        console.error('[CrmIntelligenceTab] Reorder error:', error);
         this.showSnackbar({
           text: this.$t('crmIntelligence.admin.reorderError'),
           color: 'error',
