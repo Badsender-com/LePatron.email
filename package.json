@@ -83,6 +83,7 @@
     "iso-language-codes": "1.1.0",
     "konva": "9.3.18",
     "lodash": "4.17.21",
+    "lucide-vue": "^0.517.0",
     "materialize-css": "1.0.0-rc.2",
     "mime-types": "2.1.24",
     "moment": "2.24.0",

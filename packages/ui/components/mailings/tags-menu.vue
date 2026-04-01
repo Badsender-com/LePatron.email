@@ -1,13 +1,21 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
+import { Tag, X, Square, CheckSquare, MinusSquare } from 'lucide-vue';
 
-const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
-const CHECKBOX_CHECKED = 'check_box';
-const CHECKBOX_INDETERMINATE = 'indeterminate_check_box';
+const CHECKBOX_UNCHECKED = 'unchecked';
+const CHECKBOX_CHECKED = 'checked';
+const CHECKBOX_INDETERMINATE = 'indeterminate';
 
 export default {
   name: 'BsMailingsTagsMenu',
+  components: {
+    LucideTag: Tag,
+    LucideX: X,
+    LucideSquare: Square,
+    LucideCheckSquare: CheckSquare,
+    LucideMinusSquare: MinusSquare,
+  },
   mixins: [validationMixin],
   props: {
     mailingsSelection: { type: Array, default: () => [] },
@@ -143,7 +151,7 @@ export default {
       <v-tooltip bottom :disabled="vShowTagMenu">
         <template #activator="{ on: onTooltip }">
           <v-btn icon v-on="{ ...onMenu, ...onTooltip }">
-            <v-icon>label</v-icon>
+            <lucide-tag :size="20" />
           </v-btn>
         </template>
         <span>{{ $t('tags.handle') }}</span>
@@ -159,7 +167,7 @@ export default {
           </v-list-item-content>
           <v-list-item-action>
             <v-btn icon @click="closeMenu">
-              <v-icon>close</v-icon>
+              <lucide-x :size="20" />
             </v-btn>
           </v-list-item-action>
         </v-list-item>
@@ -172,7 +180,9 @@ export default {
           @click="toggleTag(tagCheckbox)"
         >
           <v-list-item-action>
-            <v-icon>{{ tagCheckbox.checkIcon }}</v-icon>
+            <lucide-check-square v-if="tagCheckbox.checkIcon === 'checked'" :size="20" />
+            <lucide-minus-square v-else-if="tagCheckbox.checkIcon === 'indeterminate'" :size="20" />
+            <lucide-square v-else :size="20" />
           </v-list-item-action>
           <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
         </v-list-item>

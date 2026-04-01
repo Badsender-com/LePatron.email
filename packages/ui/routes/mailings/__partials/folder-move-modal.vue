@@ -5,11 +5,14 @@ import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { mapState } from 'vuex';
 import { FOLDER } from '~/store/folder';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
+import { FolderOpen, Folder } from 'lucide-vue';
 
 export default {
   name: 'FolderMoveModal',
   components: {
     BsModalConfirm,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
   },
   mixins: [destinationTreeMixin],
   props: {
@@ -99,12 +102,11 @@ export default {
         @update:active="handleSelectDestination"
       >
         <template #prepend="{ item, open }">
-          <v-icon v-if="!item.icon" color="accent">
-            {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-          </v-icon>
-          <v-icon v-else color="accent">
-            {{ item.icon }}
-          </v-icon>
+          <template v-if="!item.icon">
+            <lucide-folder-open v-if="open" :size="18" style="color: var(--v-accent-base)" />
+            <lucide-folder v-else :size="18" style="color: var(--v-accent-base)" />
+          </template>
+          <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" style="color: var(--v-accent-base)" />
         </template>
         <template #label="{ item, active }">
           <div @click="active ? $event.stopPropagation() : null">

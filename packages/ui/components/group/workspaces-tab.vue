@@ -5,11 +5,13 @@ import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsGroupWorkspacesTab',
   components: {
     BsModalConfirmForm,
+    LucideTrash2: Trash2,
   },
   data() {
     return {
@@ -148,7 +150,7 @@ export default {
           </template>
           <template #item.actionDelete="{ item }">
             <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-              <v-icon>mdi-delete</v-icon>
+              <lucide-trash2 :size="18" />
             </v-btn>
           </template>
         </v-data-table>

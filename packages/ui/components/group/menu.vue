@@ -1,9 +1,25 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '../../store/user';
+import {
+  ArrowLeft,
+  Globe,
+  UserPlus,
+  FilePlus,
+  MailPlus,
+  Users,
+} from 'lucide-vue';
 
 export default {
   name: 'BsGroupMenu',
+  components: {
+    LucideArrowLeft: ArrowLeft,
+    LucideGlobe: Globe,
+    LucideUserPlus: UserPlus,
+    LucideFilePlus: FilePlus,
+    LucideMailPlus: MailPlus,
+    LucideUsers: Users,
+  },
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
@@ -43,7 +59,7 @@ export default {
           to="/"
         >
           <v-list-item-avatar>
-            <v-icon>arrow_back</v-icon>
+            <lucide-arrow-left :size="24" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
@@ -57,9 +73,7 @@ export default {
         <v-subheader>{{ $t('global.actions') }}</v-subheader>
         <v-list-item v-if="isAdmin" nuxt link :to="newTemplateHref">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              web
-            </v-icon>
+            <lucide-globe :size="24" color="#00acdc" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
@@ -69,9 +83,7 @@ export default {
         </v-list-item>
         <v-list-item v-if="isGroupAdmin" nuxt link :to="newWorkspaceHref">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              group_add
-            </v-icon>
+            <lucide-users :size="24" color="#00acdc" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
@@ -81,9 +93,7 @@ export default {
         </v-list-item>
         <v-list-item nuxt link :to="newUserHref">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              person_add
-            </v-icon>
+            <lucide-user-plus :size="24" color="#00acdc" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newUser') }}</v-list-item-title>
@@ -91,9 +101,7 @@ export default {
         </v-list-item>
         <v-list-item v-if="isAdmin" nuxt link :to="newProfileHref">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              note_add
-            </v-icon>
+            <lucide-file-plus :size="24" color="#00acdc" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>{{ $t('global.newProfile') }}</v-list-item-title>
@@ -101,9 +109,7 @@ export default {
         </v-list-item>
         <v-list-item v-if="isGroupAdmin" nuxt link :to="newEmailsGroup">
           <v-list-item-avatar>
-            <v-icon color="accent">
-              mdi-email-plus
-            </v-icon>
+            <lucide-mail-plus :size="24" color="#00acdc" />
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>

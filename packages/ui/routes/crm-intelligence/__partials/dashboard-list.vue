@@ -1,6 +1,11 @@
 <script>
+import { LineChart } from 'lucide-vue';
+
 export default {
   name: 'DashboardList',
+  components: {
+    LucideLineChart: LineChart,
+  },
   props: {
     dashboards: {
       type: Array,
@@ -41,9 +46,7 @@ export default {
           @click="selectDashboard(dashboard)"
         >
           <v-list-item-icon>
-            <v-icon :color="isSelected(dashboard) ? 'accent' : ''">
-              mdi-chart-line
-            </v-icon>
+            <lucide-line-chart :size="20" :style="{ color: isSelected(dashboard) ? 'var(--v-accent-base)' : '' }" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ dashboard.name }}</v-list-item-title>

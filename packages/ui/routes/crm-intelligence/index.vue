@@ -11,12 +11,15 @@ import { IS_ADMIN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import DashboardList from './__partials/dashboard-list.vue';
 import DashboardViewer from './__partials/dashboard-viewer.vue';
+import { LineChart, Mail } from 'lucide-vue';
 
 export default {
   name: 'PageCrmIntelligence',
   components: {
     DashboardList,
     DashboardViewer,
+    LucideLineChart: LineChart,
+    LucideMail: Mail,
   },
   mixins: [mixinPageTitle],
   meta: { acl: ACL_USER },
@@ -124,9 +127,7 @@ export default {
   <div v-if="!isEnabled" class="marketing-page">
     <!-- HERO SECTION -->
     <section class="hero-section">
-      <v-icon size="80" color="accent">
-        mdi-chart-line
-      </v-icon>
+      <lucide-line-chart :size="80" style="color: var(--v-accent-base)" />
 
       <h1 class="text-h3 mt-6 primary--text font-weight-bold">
         {{ $t('crmIntelligence.marketing.title') }}
@@ -144,9 +145,7 @@ export default {
           :href="contactUrl"
           target="_blank"
         >
-          <v-icon left>
-            mdi-email-outline
-          </v-icon>
+          <lucide-mail :size="20" class="mr-2" />
           {{ $t('crmIntelligence.marketing.ctaPrimary') }}
         </v-btn>
       </div>
@@ -196,9 +195,7 @@ export default {
         :href="contactUrl"
         target="_blank"
       >
-        <v-icon left>
-          mdi-email-outline
-        </v-icon>
+        <lucide-mail :size="20" class="mr-2" />
         {{ $t('crmIntelligence.marketing.ctaPrimary') }}
       </v-btn>
     </section>
@@ -240,9 +237,7 @@ export default {
         class="d-flex align-center justify-center fill-height grey lighten-4"
       >
         <v-card flat max-width="400" class="text-center pa-8 transparent">
-          <v-icon size="64" color="grey">
-            mdi-chart-line
-          </v-icon>
+          <lucide-line-chart :size="64" style="color: #9e9e9e" />
           <p class="text-body-1 mt-4 grey--text">
             {{ $t('crmIntelligence.selectDashboard') }}
           </p>

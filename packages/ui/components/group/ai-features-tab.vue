@@ -4,6 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
+import { Languages, FileText, BadgeCheck } from 'lucide-vue';
 
 const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
@@ -21,6 +22,11 @@ const FORMALITY_OPTIONS = [
 
 export default {
   name: 'BsGroupAiFeaturesTab',
+  components: {
+    LucideLanguages: Languages,
+    LucideFileText: FileText,
+    LucideBadgeCheck: BadgeCheck,
+  },
   props: {
     active: {
       type: Boolean,
@@ -250,9 +256,7 @@ export default {
         <!-- Translation Feature -->
         <v-card outlined class="mb-4">
           <v-card-title class="d-flex align-center">
-            <v-icon left>
-              mdi-translate
-            </v-icon>
+            <lucide-languages :size="24" class="mr-2" />
             {{ $t('aiFeatures.translation.title') }}
             <v-spacer />
             <v-switch
@@ -355,9 +359,7 @@ export default {
         <!-- Future Features Placeholder -->
         <v-card outlined disabled class="mb-4">
           <v-card-title class="d-flex align-center text--disabled">
-            <v-icon left disabled>
-              mdi-text-box-edit
-            </v-icon>
+            <lucide-file-text :size="24" class="mr-2" color="#9e9e9e" />
             {{ $t('aiFeatures.textGeneration.title') }}
             <v-spacer />
             <v-chip small color="grey lighten-1" text-color="grey darken-2">
@@ -371,9 +373,7 @@ export default {
 
         <v-card outlined disabled>
           <v-card-title class="d-flex align-center text--disabled">
-            <v-icon left disabled>
-              mdi-check-decagram
-            </v-icon>
+            <lucide-badge-check :size="24" class="mr-2" color="#9e9e9e" />
             {{ $t('aiFeatures.qualityCheck.title') }}
             <v-spacer />
             <v-chip small color="grey lighten-1" text-color="grey darken-2">

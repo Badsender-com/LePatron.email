@@ -7,11 +7,41 @@ import {
   getProviderCategory,
 } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
+import {
+  Plus,
+  Puzzle,
+  CheckCircle2,
+  XCircle,
+  Cable,
+  Pencil,
+  Trash2,
+  BarChart3,
+  Bot,
+  Languages,
+} from 'lucide-vue';
+
+// Icon mapping from MDI to Lucide components
+const CATEGORY_ICON_MAP = {
+  'mdi-chart-bar': BarChart3,
+  'mdi-robot': Bot,
+  'mdi-translate': Languages,
+  'mdi-puzzle': Puzzle,
+};
 
 export default {
   name: 'BsGroupIntegrationsTab',
   components: {
     BsIntegrationForm,
+    LucidePlus: Plus,
+    LucidePuzzle: Puzzle,
+    LucideCheckCircle2: CheckCircle2,
+    LucideXCircle: XCircle,
+    LucideCable: Cable,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
+    LucideBarChart3: BarChart3,
+    LucideBot: Bot,
+    LucideLanguages: Languages,
   },
   data() {
     return {
@@ -197,10 +227,10 @@ export default {
       return this.$t(category.labelKey);
     },
 
-    getCategoryIcon(provider) {
+    getCategoryIconComponent(provider) {
       const category = getProviderCategory(provider);
-      if (!category) return 'mdi-puzzle';
-      return category.icon;
+      const iconName = category?.icon || 'mdi-puzzle';
+      return CATEGORY_ICON_MAP[iconName] || Puzzle;
     },
 
     getStatusColor(status) {
@@ -224,9 +254,7 @@ export default {
     <v-card-text>
       <div class="d-flex justify-end mb-4">
         <v-btn color="accent" elevation="0" @click="openCreateForm">
-          <v-icon left>
-            mdi-plus
-          </v-icon>
+          <lucide-plus :size="18" class="mr-2" />
           {{ $t('integrations.add') }}
         </v-btn>
       </div>
@@ -242,9 +270,12 @@ export default {
       >
         <template #item.provider="{ item }">
           <div class="d-flex align-center">
-            <v-icon small class="mr-2" :title="getCategoryLabel(item.provider)">
-              {{ getCategoryIcon(item.provider) }}
-            </v-icon>
+            <component
+              :is="getCategoryIconComponent(item.provider)"
+              :size="16"
+              class="mr-2"
+              :title="getCategoryLabel(item.provider)"
+            />
             <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
             <v-chip x-small outlined color="grey">
               {{ getCategoryLabel(item.provider) }}
@@ -259,9 +290,8 @@ export default {
         </template>
 
         <template #item.isActive="{ item }">
-          <v-icon :color="item.isActive ? 'success' : 'grey'">
-            {{ item.isActive ? 'mdi-check-circle' : 'mdi-close-circle' }}
-          </v-icon>
+          <lucide-check-circle2 v-if="item.isActive" :size="20" color="#4caf50" />
+          <lucide-x-circle v-else :size="20" color="#9e9e9e" />
         </template>
 
         <template #item.actions="{ item }">
@@ -272,9 +302,7 @@ export default {
             :title="$t('integrations.validate')"
             @click="validateIntegration(item)"
           >
-            <v-icon small>
-              mdi-connection
-            </v-icon>
+            <lucide-cable :size="16" />
           </v-btn>
           <v-btn
             icon
@@ -282,9 +310,7 @@ export default {
             :title="$t('global.edit')"
             @click="openEditForm(item)"
           >
-            <v-icon small>
-              mdi-pencil
-            </v-icon>
+            <lucide-pencil :size="16" />
           </v-btn>
           <v-btn
             icon
@@ -293,9 +319,7 @@ export default {
             :title="$t('global.delete')"
             @click="confirmDelete(item)"
           >
-            <v-icon small>
-              mdi-delete
-            </v-icon>
+            <lucide-trash2 :size="16" />
           </v-btn>
         </template>
       </v-data-table>

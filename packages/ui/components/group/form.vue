@@ -9,6 +9,7 @@ import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsColorScheme from '~/components/group/color-scheme';
 import BsFtpSettings from '~/components/group/ftp-settings';
+import { Palette, LineChart, ArrowRight } from 'lucide-vue';
 
 export default {
   name: 'BsGroupForm',
@@ -16,6 +17,9 @@ export default {
     BsModalConfirmForm,
     BsColorScheme,
     BsFtpSettings,
+    LucidePalette: Palette,
+    LucideLineChart: LineChart,
+    LucideArrowRight: ArrowRight,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -255,7 +259,7 @@ export default {
           <div class="module-card">
             <div class="module-card__content">
               <div class="module-card__icon">
-                <v-icon color="accent" size="28">mdi-palette</v-icon>
+                <lucide-palette :size="28" color="#00acdc" />
               </div>
               <div class="module-card__info">
                 <div class="module-card__name">{{ $t('groups.modules.emailBuilder.name') }}</div>
@@ -274,13 +278,13 @@ export default {
           <div class="module-card">
             <div class="module-card__content">
               <div class="module-card__icon">
-                <v-icon color="accent" size="28">mdi-chart-line</v-icon>
+                <lucide-line-chart :size="28" color="#00acdc" />
               </div>
               <div class="module-card__info">
                 <div class="module-card__name">{{ $t('groups.modules.crmIntelligence.name') }}</div>
                 <div class="module-card__description">{{ $t('groups.modules.crmIntelligence.description') }}</div>
                 <div v-if="localModel.enableCrmIntelligence" class="module-card__hint">
-                  <v-icon small color="grey">mdi-arrow-right</v-icon>
+                  <lucide-arrow-right :size="14" color="#9e9e9e" />
                   {{ $t('groups.modules.crmIntelligence.configHint') }}
                 </div>
               </div>
