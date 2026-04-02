@@ -316,8 +316,8 @@ export default {
     </v-card>
 
     <!-- ==================== DANGER ZONE ==================== -->
-    <v-card v-if="isAdmin && isEdit" flat tile class="danger-zone mt-6">
-      <v-card-text>
+    <v-card v-if="isAdmin && isEdit" flat tile class="danger-zone mt-6 mb-6">
+      <v-card-text class="pa-6">
         <div class="danger-zone__header">
           <lucide-alert-triangle :size="20" color="#F04E23" />
           <h3 class="danger-zone__title">
