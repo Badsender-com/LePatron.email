@@ -12,7 +12,12 @@ import BsMailingModalTranslationWarning from '~/components/mailings/modal-transl
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
-import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
+import {
+  mailingsItem,
+  copyMail,
+  moveMail,
+  aiFeatures,
+} from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -76,6 +81,7 @@ export default {
       actionsDetails: ACTIONS_DETAILS,
       currentPage: 1,
       search: '',
+      hasActiveTranslation: false,
     };
   },
   computed: {
@@ -134,9 +140,16 @@ export default {
       return this.pagination?.pageCount || 1;
     },
     filteredActions() {
-      return this.tableActions.filter(
-        (action) => !this.hiddenCols.includes(action)
-      );
+      const hidden = this.hiddenCols;
+      return this.tableActions.filter((action) => {
+        if (
+          action === ACTIONS.DUPLICATE_TRANSLATE &&
+          !this.hasActiveTranslation
+        ) {
+          return false;
+        }
+        return !hidden.includes(action);
+      });
     },
     selectedMailTags() {
       return this.selectedMailing?.tags || [];
@@ -146,6 +159,23 @@ export default {
     dialogRename(val) {
       val || this.closeRename();
     },
+  },
+  async mounted() {
+    const groupId = this.$store.state.user?.info?.group?.id;
+    if (!groupId) return;
+    try {
+      const config = await this.$axios.$get(aiFeatures(groupId));
+
+      const features = config?.features || [];
+
+      const translation = features.find((f) => f.featureType === 'translation');
+
+      this.hasActiveTranslation = !!(
+        translation?.isActive && translation?.integration?.isActive
+      );
+    } catch {
+      this.hasActiveTranslation = false;
+    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
