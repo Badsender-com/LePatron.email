@@ -2,26 +2,30 @@
   <div class="mo-blockselectionhelper"></div>
   <div class="tools" data-bind="tooltips: {}">
     <!-- ko if: typeof $index != 'undefined' -->
+    <!-- Drag handle -->
     <div title="Drag this handle to move the block" data-bind="attr: { title: $root.t('Drag this handle to move the block') }" class="tool handle"><span class="lucide lucide-fw lucide-grip-vertical"></span></div>
+    <!-- Move up/down -->
     <!-- ko if: $index() > 0 -->
     <div title="Move this block upside" data-bind="attr: { title: $root.t('Move this block upside') }" class="tool moveup"><span class="lucide lucide-fw lucide-chevron-up" data-bind='click: $root.moveBlock.bind($element, $index, $parent, true)'></span></div>
     <!-- /ko -->
     <!-- ko if: $index() < $parent.blocks().length -1 -->
     <div title="Move this block downside" data-bind="attr: { title: $root.t('Move this block downside') }" class="tool movedown"><span class="lucide lucide-fw lucide-chevron-down" data-bind='click: $root.moveBlock.bind($element, $index, $parent, false)'></span></div>
     <!-- /ko -->
-    <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
+    <!-- Duplicate block -->
     <div title="Duplicate block" class="tool clone" data-bind="attr: { title: $root.t('Duplicate block') }, click: $root.duplicateBlock.bind($element, $index, $parent)"><span class="lucide lucide-fw lucide-copy"></span></div>
-    <!-- New Save Block Button -->
-    <div title="Save block" class="tool save" data-bind="attr: { title: $root.t('Save block') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-download"></span></div>
-    <!-- Comment Block Button -->
+    <!-- Save block to library -->
+    <div title="Save block to library" class="tool save" data-bind="attr: { title: $root.t('Save block to library') }, click: $root.saveBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-bookmark-plus"></span></div>
+    <!-- Comment block -->
     <div title="Comment block" class="tool comment" data-bind="attr: { title: $root.t('Comment block') }, click: $root.commentBlock.bind($element, $rawData, $parent, $index)">
       <span class="lucide lucide-message-circle"></span>
       <!-- ko if: $root.getBlockCommentCount && $root.getBlockCommentCount($data.id) > 0 -->
       <span class="comment-count-badge" data-bind="text: $root.getBlockCommentCount($data.id)"></span>
       <!-- /ko -->
     </div>
-    <!-- /ko -->
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
+    <!-- Delete block (destructive action - always last) -->
+    <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
+    <!-- /ko -->
   </div>
   <!-- ko block: $data --><!-- /ko -->
 </div>

@@ -639,3 +639,266 @@ body {
 // Comments Panel styles (extracted to separate file for maintainability)
 @import 'badsender-comments.less';
 
+// =============================================================================
+// BLOCK & IMAGE TOOLS - Modern Ghost Style
+// Overrides the default Mosaico tool buttons with a cleaner, modern design
+// Reference: docs/design-system/01-tokens.md
+// =============================================================================
+
+// Shared variables for tools styling
+@tools-bg: rgba(255, 255, 255, 0.95);
+@tools-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+@tools-border-radius: 6px;
+@tool-size: 28px;
+@tool-icon-size: 14px;
+@tool-color: var(--v-primary-base, #093040);
+@tool-hover-bg: rgba(0, 172, 220, 0.1);
+@tool-delete-color: var(--v-error-base, #F04E23);
+
+// Tools container - HORIZONTAL toolbar ABOVE the block, aligned left
+#main-edit-area .tools {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: @tools-bg;
+  backdrop-filter: blur(8px);
+  border-radius: @tools-border-radius;
+  box-shadow: @tools-shadow;
+  height: auto;
+  width: auto;
+  // Position above the block, aligned to left
+  left: 0;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform: none;
+  // High z-index to stay above image zones and other elements
+  z-index: 100 !important;
+  pointer-events: auto;
+
+  // Extend hover zone ABOVE toolbar to capture mouse before it enters previous block's image zone
+  &::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    right: -10px;
+    bottom: 100%;
+    height: 20px;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  // Extend hover zone BELOW to connect toolbar to block (prevents losing focus)
+  &::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    right: -10px;
+    top: 100%;
+    height: 12px;
+    background: transparent;
+    pointer-events: auto;
+  }
+}
+
+// Keep toolbar visible when block is SELECTED (not just hovered)
+#main-edit-area .editable.selected .tools {
+  visibility: visible !important;
+}
+
+// =============================================================================
+// IMAGE ZONE POINTER EVENTS FIX
+// Problem: .workzone and .mo-uploadzone cover the entire image area and capture
+// mouse events, preventing hover from reaching the block toolbar above.
+// Solution: Disable pointer events by default, enable only on image hover.
+// =============================================================================
+#main-edit-area .img-wysiwyg .workzone,
+#main-edit-area .img-wysiwyg .mo-uploadzone {
+  pointer-events: none;
+}
+
+#main-edit-area .img-wysiwyg:hover .workzone,
+#main-edit-area .img-wysiwyg:hover .mo-uploadzone {
+  pointer-events: auto;
+}
+
+// Individual tool button - ghost style
+#main-edit-area .tools .tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: @tool-size;
+  height: @tool-size;
+  min-height: @tool-size;
+  min-width: @tool-size;
+  padding: 0;
+  margin: 0 !important; // Override Mosaico margins (handle: 16px, delete: 16px)
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  box-shadow: none;
+  color: @tool-color;
+  font-size: @tool-icon-size;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  float: none !important; // Override Mosaico floats
+  line-height: 1;
+
+  &:hover {
+    background-color: @tool-hover-bg;
+  }
+
+  // Icon styling inside tools - ensure proper centering
+  .lucide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: @tool-icon-size;
+    color: inherit;
+
+    &::before {
+      display: block;
+    }
+  }
+}
+
+// Delete button - use error color, positioned at end with separator
+#main-edit-area .tools .tool.delete {
+  margin-left: 6px !important; // Keep separator margin
+  position: relative;
+
+  // Separator line before delete (vertical for horizontal toolbar)
+  &::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  &:hover {
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
+  }
+
+  .lucide {
+    color: inherit;
+  }
+}
+
+// Handle (drag) - different cursor
+#main-edit-area .tools .tool.handle {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// Remove old margin overrides - no longer needed with flex layout
+#main-edit-area .tools .tool.moveup,
+#main-edit-area .tools .tool.movedown,
+#main-edit-area .tools .tool.save,
+#main-edit-area .tools .tool.comment {
+  margin: 0;
+}
+
+// Separator between navigation tools and action tools (vertical line for horizontal toolbar)
+#main-edit-area .tools .tool.clone {
+  margin: 0 !important;
+  margin-left: 6px !important;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Comment button - needs relative positioning for badge
+#main-edit-area .tools .tool.comment {
+  position: relative;
+}
+
+// Comment count badge
+#main-edit-area .tools .tool.comment .comment-count-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: var(--v-error-base, #F04E23);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  min-width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 7px;
+  padding: 0 3px;
+}
+
+// =============================================================================
+// IMAGE TOOLS (midtools) - Same modern style
+// =============================================================================
+
+#main-edit-area .midtools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: @tools-bg;
+  backdrop-filter: blur(8px);
+  border-radius: @tools-border-radius;
+  box-shadow: @tools-shadow;
+  bottom: 12px;
+  left: 12px;
+  margin-left: 0;
+
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: @tool-size;
+    height: @tool-size;
+    min-height: @tool-size;
+    padding: 0;
+    margin: 0 !important;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+    color: @tool-color;
+    font-size: @tool-icon-size;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background-color: @tool-hover-bg;
+    }
+
+    .lucide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: @tool-icon-size;
+      color: inherit;
+    }
+  }
+
+  .tool.delete:hover {
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
+  }
+}
+
