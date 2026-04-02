@@ -104,6 +104,8 @@ export default {
     group: 'Group | Groups',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',
+    newCompany: 'Add a company',
+    companyName: 'Company name',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
     newMail: 'New email',
@@ -159,7 +161,20 @@ export default {
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
+        authenticationDescription: 'Configure SAML authentication to allow your users to login with their enterprise account.',
         permissions: 'Permissions',
+        permissionsDescription: 'Manage user access rights to different workspaces.',
+        companyInfo: 'Company information',
+        companyInfoDescription: 'Enter the main information about the company.',
+      },
+      enableSaml: 'Enable SAML authentication',
+      entryPointHint: 'Login URL provided by your identity provider',
+      issuerHint: 'Unique identifier for your application at the provider',
+      dangerZone: {
+        title: 'Danger zone',
+        description: 'Actions in this zone are irreversible. Proceed with caution.',
+        deleteCompany: 'Delete company',
+        deleteTitle: 'Delete company',
       },
       name: 'Company name',
       downloadWithoutEnclosingFolder: {
@@ -169,9 +184,11 @@ export default {
       },
       color: {
         label: 'Custom color',
+        description: 'Define the colors available in the email editor for this group.',
       },
       defaultWorkspace: {
         label: 'Default workspace\'s name',
+        hint: 'Leave empty to use the default name',
       },
       status: {
         label: 'Status',
@@ -278,6 +295,7 @@ export default {
     },
     modules: {
       title: 'Enabled modules',
+      description: 'Enable or disable the modules available for this company.',
       notEnabled: 'Module not enabled',
       emailBuilder: {
         name: 'Email Builder',
@@ -505,102 +523,18 @@ export default {
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
   },
-  integrations: {
-    title: 'Integrations',
-    name: 'Name',
-    provider: 'Provider',
-    status: 'Status',
-    active: 'Active',
-    apiKey: 'API Key',
-    apiHost: 'API URL (optional)',
-    apiKeyHintEdit: 'Leave empty to keep the current key',
-    productId: 'Product ID',
-    add: 'Add integration',
-    edit: 'Edit integration',
-    created: 'Integration created successfully',
-    updated: 'Integration updated successfully',
-    deleted: 'Integration deleted successfully',
-    validate: 'Test connection',
-    validationSuccess: 'Connection validated successfully',
-    validationFailed: 'Credential validation failed',
-    noIntegrations: 'No integrations configured',
-    deleteConfirmTitle: 'Delete integration',
-    deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
-    deleteWarningDashboards: 'Warning: {count} associated dashboard(s) will also be deleted.',
-    categories: {
-      bi: 'BI & Analytics',
-      aiGeneration: 'AI - Generation',
-      aiTranslation: 'AI - Translation',
+  exportOptions: {
+    title: 'Export options',
+    sections: {
+      zipFormat: 'Zip file format',
+      zipFormatDescription: 'Configure the structure of the zip file downloaded by users.',
+      ftpHosting: 'FTP/SFTP hosting',
+      ftpHostingDescription: 'Configure an FTP or SFTP server to automatically host email images.',
+      cdnHosting: 'CDN hosting',
+      cdnHostingDescription: 'Configure a custom CDN to host email images.',
     },
-    statusLabels: {
-      valid: 'Valid',
-      invalid: 'Invalid',
-      pending: 'Pending'
-    },
-    metabase: {
-      apiKeyPlaceholder: 'Your Metabase API key',
-      apiKeyLabel: 'Metabase Secret Key',
-      apiHostHint: 'URL of your Metabase instance (e.g. https://metabase.example.com)'
-    },
-    openai: {
-      apiKeyPlaceholder: 'sk-...',
-      apiHostHint: 'Leave empty to use the official OpenAI API'
-    },
-    mistral: {
-      apiKeyPlaceholder: 'Your Mistral API key',
-      apiHostHint: 'Leave empty to use the official Mistral API'
-    },
-    infomaniak: {
-      apiKeyPlaceholder: 'Your Infomaniak API key',
-      productId: 'Product ID',
-      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
-    },
-    deepl: {
-      apiKeyPlaceholder: 'Your DeepL API key',
-      apiKeyHint: 'Your DeepL API key (Free or Pro)'
-    },
-    models: {
-      fastEconomical: 'fast, economical',
-      balanced: 'balanced',
-      powerful: 'powerful',
-      fast: 'fast',
-      recommended: 'recommended',
-    }
-  },
-  aiFeatures: {
-    title: 'AI Features',
-    selectIntegration: 'Integration to use',
-    noIntegration: '-- No integration --',
-    noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
-    integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
-    comingSoon: 'Coming soon',
-    translation: {
-      title: 'Translation',
-      description: 'Automatically translate your emails into different languages using AI.',
-      model: 'AI Model',
-      modelHint: 'More powerful models are more accurate but slower and more expensive',
-      availableLanguages: 'Available languages',
-      languagesHint: 'Select at least 2 languages (source and target)',
-      minLanguagesError: 'Select at least 2 languages (one source and one target)',
-      formality: 'Formality level',
-      formalityHint: 'Controls the formality of the translated text (depending on target language)',
-      formalityDefault: 'Default',
-      formalityMore: 'Formal',
-      formalityLess: 'Informal',
-      formalityPreferMore: 'Prefer formal',
-      formalityPreferLess: 'Prefer informal'
-    },
-    textGeneration: {
-      title: 'Text generation',
-      description: 'Generate personalized marketing content for your emails.'
-    },
-    qualityCheck: {
-      title: 'Quality check',
-      description: 'Automatically check the quality and consistency of your emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Unable to load available models.',
-    }
+    cdnEndpointHint: 'Base URL of your CDN (without protocol)',
+    cdnButtonLabelHint: 'Label displayed in the editor',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -769,4 +703,112 @@ export default {
     help: 'Help',
     logout: 'Logout',
   },
+  integrations: {
+    title: 'Integrations',
+    name: 'Name',
+    provider: 'Provider',
+    status: 'Status',
+    active: 'Active',
+    apiKey: 'API Key',
+    apiHost: 'API URL (optional)',
+    apiKeyHintEdit: 'Leave empty to keep the current key',
+    productId: 'Product ID',
+    add: 'Add integration',
+    edit: 'Edit integration',
+    created: 'Integration created successfully',
+    updated: 'Integration updated successfully',
+    deleted: 'Integration deleted successfully',
+    validate: 'Test connection',
+    validationSuccess: 'Connection validated successfully',
+    validationFailed: 'Credential validation failed',
+    noIntegrations: 'No integrations configured',
+    deleteConfirmTitle: 'Delete integration',
+    deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    deleteWarningDashboards: 'Warning: {count} associated dashboard(s) will also be deleted.',
+    categories: {
+      bi: 'BI & Analytics',
+      aiGeneration: 'AI - Generation',
+      aiTranslation: 'AI - Translation',
+    },
+    statusLabels: {
+      valid: 'Valid',
+      invalid: 'Invalid',
+      pending: 'Pending'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Your Metabase API key',
+      apiKeyLabel: 'Metabase Secret Key',
+      apiHostHint: 'URL of your Metabase instance (e.g. https://metabase.example.com)'
+    },
+    openai: {
+      apiKeyPlaceholder: 'sk-...',
+      apiHostHint: 'Leave empty to use the official OpenAI API'
+    },
+    mistral: {
+      apiKeyPlaceholder: 'Your Mistral API key',
+      apiHostHint: 'Leave empty to use the official Mistral API'
+    },
+    infomaniak: {
+      apiKeyPlaceholder: 'Your Infomaniak API key',
+      productId: 'Product ID',
+      productIdHint: 'Find your Product ID in the Infomaniak console > AI Tools'
+    },
+    deepl: {
+      apiKeyPlaceholder: 'Your DeepL API key',
+      apiKeyHint: 'Your DeepL API key (Free or Pro)'
+    },
+    models: {
+      fastEconomical: 'fast, economical',
+      balanced: 'balanced',
+      powerful: 'powerful',
+      fast: 'fast',
+      recommended: 'recommended',
+    }
+  },
+  settingsNav: {
+    categories: {
+      superAdmin: 'Super Admin',
+      general: 'General',
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+    },
+    companiesList: 'Companies list',
+    superAdminOnly: 'Super admin only',
+    colors: 'Colors',
+  },
+  aiFeatures: {
+    title: 'AI Features',
+    selectIntegration: 'Integration to use',
+    noIntegration: '-- No integration --',
+    noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
+    integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
+    comingSoon: 'Coming soon',
+    translation: {
+      title: 'Translation',
+      description: 'Automatically translate your emails into different languages using AI.',
+      model: 'AI Model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
+      availableLanguages: 'Available languages',
+      languagesHint: 'Select at least 2 languages (source and target)',
+      minLanguagesError: 'Select at least 2 languages (one source and one target)',
+      formality: 'Formality level',
+      formalityHint: 'Controls the formality of the translated text (depending on target language)',
+      formalityDefault: 'Default',
+      formalityMore: 'Formal',
+      formalityLess: 'Informal',
+      formalityPreferMore: 'Prefer formal',
+      formalityPreferLess: 'Prefer informal'
+    },
+    textGeneration: {
+      title: 'Text generation',
+      description: 'Generate personalized marketing content for your emails.'
+    },
+    qualityCheck: {
+      title: 'Quality check',
+      description: 'Automatically check the quality and consistency of your emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Unable to load available models.',
+    }
+  }
 };

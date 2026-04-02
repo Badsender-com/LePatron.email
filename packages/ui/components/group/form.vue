@@ -7,19 +7,16 @@ import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
-import BsColorScheme from '~/components/group/color-scheme';
-import BsFtpSettings from '~/components/group/ftp-settings';
-import { Palette, LineChart, ArrowRight } from 'lucide-vue';
+import { Palette, LineChart, ArrowRight, AlertTriangle } from 'lucide-vue';
 
 export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
-    BsColorScheme,
-    BsFtpSettings,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
+    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -28,32 +25,11 @@ export default {
     isEdit: { type: Boolean, default: false },
     flat: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
   },
-  httpOptions: ['http://', 'https://'],
   data() {
     return {
       useSamlAuthentication: null,
-      colorScheme: [
-        '#F44336',
-        '#E91E63',
-        '#9C27B0',
-        '#673AB7',
-        '#3F51B5',
-        '#2196F3',
-        '#03A9F4',
-        '#00BCD4',
-        '#009688',
-        '#4CAF50',
-        '#8BC34A',
-        '#CDDC39',
-        '#FFEB3B',
-        '#FFC107',
-        '#FF9800',
-        '#FF5722',
-        '#795548',
-        '#9E9E9E',
-        '#607D8B',
-      ],
     };
   },
   computed: {
@@ -71,18 +47,6 @@ export default {
     },
     isGroupCreationPage() {
       return this.$route.path === '/groups/new';
-    },
-    folderOptions() {
-      return [
-        {
-          text: this.$t('forms.group.downloadWithoutEnclosingFolder.wrapped'),
-          value: false,
-        },
-        {
-          text: this.$t('forms.group.downloadWithoutEnclosingFolder.unwrapped'),
-          value: true,
-        },
-      ];
     },
     statusOptions() {
       return [
@@ -115,16 +79,11 @@ export default {
     },
   },
   validations() {
-    const cdnValidations = {
-      cdnEndPoint: { required },
-      cdnButtonLabel: { required },
-    };
     return {
       group: {
         name: { required },
         status: { required },
         defaultWorkspaceName: {},
-        ...(this.group.downloadMailingWithCdnImages && cdnValidations),
       },
     };
   },
@@ -140,21 +99,13 @@ export default {
     },
     onSubmit() {
       this.$v.$touch();
-      // Validate FTP settings component if FTP is enabled
-      let ftpValid = true;
-      if (this.group.downloadMailingWithFtpImages && this.$refs.ftpSettings) {
-        ftpValid = this.$refs.ftpSettings.validate();
-      }
-      if (this.$v.$invalid || !ftpValid) return;
+      if (this.$v.$invalid) return;
       const currentGroup = this.group;
       if (!this.useSamlAuthentication) {
         currentGroup.entryPoint = '';
         currentGroup.issuer = '';
       }
       this.$emit('submit', this.group);
-    },
-    closeDelete() {
-      this.dialogDelete = false;
     },
     openDeleteGroup() {
       this.$refs.deleteDialog.open({
@@ -176,7 +127,6 @@ export default {
           color: 'error',
         });
       }
-      this.closeDelete();
     },
   },
 };
@@ -186,26 +136,30 @@ export default {
   <div>
     <v-card flat tile tag="form">
       <v-card-text>
-        <!-- ==================== SECTION 1: GENERAL INFORMATION ==================== -->
+        <!-- ==================== SECTION 1: COMPANY INFORMATION ==================== -->
         <div class="form-section">
           <h3 class="form-section__title">
-            {{ $t('forms.group.sections.generalInfo') }}
+            {{ $t('forms.group.sections.companyInfo') }}
           </h3>
+          <p class="form-section__description">
+            {{ $t('forms.group.sections.companyInfoDescription') }}
+          </p>
           <v-row>
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="6">
               <v-text-field
                 id="name"
                 v-model="localModel.name"
-                :label="$t('forms.group.name')"
+                :label="$t('global.companyName')"
                 name="name"
                 required
+                outlined
                 :disabled="disabled || isGroupAdmin"
-                :error-messages="requiredErrors(`name`)"
+                :error-messages="requiredErrors('name')"
                 @input="$v.group.name.$touch()"
                 @blur="$v.group.name.$touch()"
               />
             </v-col>
-            <v-col v-if="isAdmin" cols="12" md="4">
+            <v-col v-if="isAdmin" cols="12" md="6">
               <v-select
                 id="groupStatus"
                 v-model="localModel.status"
@@ -213,47 +167,37 @@ export default {
                 :label="$t('forms.group.status.label')"
                 name="status"
                 required
+                outlined
                 :items="statusOptions"
                 @input="$v.group.status.$touch()"
                 @blur="$v.group.status.$touch()"
               />
             </v-col>
-            <v-col v-if="isAdmin" cols="12" md="4">
-              <v-select
-                id="downloadMailingWithoutEnclosingFolder"
-                v-model="localModel.downloadMailingWithoutEnclosingFolder"
-                :label="$t('forms.group.downloadWithoutEnclosingFolder.label')"
-                name="downloadMailingWithoutEnclosingFolder"
-                :disabled="disabled"
-                :items="folderOptions"
-              />
-            </v-col>
           </v-row>
           <v-row v-if="isGroupCreationPage">
-            <v-col cols="12" md="4">
+            <v-col cols="12" md="6">
               <v-text-field
                 id="defaultWorkspaceName"
                 v-model="localModel.defaultWorkspaceName"
                 :label="$t('forms.group.defaultWorkspace.label')"
+                :hint="$t('forms.group.defaultWorkspace.hint')"
                 name="defaultWorkspaceName"
+                outlined
+                persistent-hint
                 :disabled="disabled"
-                @input="$v.group.defaultWorkspaceName.$touch()"
-                @blur="$v.group.defaultWorkspaceName.$touch()"
               />
             </v-col>
           </v-row>
-          <v-row v-if="isGroupAdmin || isAdmin">
-            <v-col cols="12" md="4">
-              <label class="v-label theme--light">{{ $t('forms.group.color.label') }}</label>
-              <bs-color-scheme v-model="localModel.colorScheme" />
-            </v-col>
-          </v-row>
         </div>
+
         <!-- ==================== SECTION 2: MODULES ==================== -->
         <div v-if="isAdmin" class="form-section">
           <h3 class="form-section__title">
             {{ $t('groups.modules.title') }}
           </h3>
+          <p class="form-section__description">
+            {{ $t('groups.modules.description') }}
+          </p>
 
           <!-- Email Builder Module -->
           <div class="module-card">
@@ -262,8 +206,12 @@ export default {
                 <lucide-palette :size="28" color="#00acdc" />
               </div>
               <div class="module-card__info">
-                <div class="module-card__name">{{ $t('groups.modules.emailBuilder.name') }}</div>
-                <div class="module-card__description">{{ $t('groups.modules.emailBuilder.description') }}</div>
+                <div class="module-card__name">
+                  {{ $t('groups.modules.emailBuilder.name') }}
+                </div>
+                <div class="module-card__description">
+                  {{ $t('groups.modules.emailBuilder.description') }}
+                </div>
               </div>
             </div>
             <v-switch
@@ -281,8 +229,12 @@ export default {
                 <lucide-line-chart :size="28" color="#00acdc" />
               </div>
               <div class="module-card__info">
-                <div class="module-card__name">{{ $t('groups.modules.crmIntelligence.name') }}</div>
-                <div class="module-card__description">{{ $t('groups.modules.crmIntelligence.description') }}</div>
+                <div class="module-card__name">
+                  {{ $t('groups.modules.crmIntelligence.name') }}
+                </div>
+                <div class="module-card__description">
+                  {{ $t('groups.modules.crmIntelligence.description') }}
+                </div>
                 <div v-if="localModel.enableCrmIntelligence" class="module-card__hint">
                   <lucide-arrow-right :size="14" color="#9e9e9e" />
                   {{ $t('groups.modules.crmIntelligence.configHint') }}
@@ -298,90 +250,20 @@ export default {
           </div>
         </div>
 
-        <!-- ==================== SECTION 3: IMAGE HOSTING ==================== -->
+        <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
         <div v-if="isAdmin" class="form-section">
           <h3 class="form-section__title">
-            {{ $t('forms.group.sections.imageHosting') }}
+            {{ $t('forms.group.sections.permissions') }}
           </h3>
-
-          <!-- FTP/SFTP Subsection -->
-          <div class="form-subsection">
-            <div class="form-subsection__header">
-              <span class="form-subsection__label">{{ $t('forms.group.exportFtp') }}</span>
-              <v-switch
-                v-model="localModel.downloadMailingWithFtpImages"
-                :label="$t('forms.group.enable')"
-                class="ma-0 ml-4"
-                hide-details
-                :disabled="disabled"
-              />
-            </div>
-
-            <div v-if="localModel.downloadMailingWithFtpImages" class="form-subsection__content">
-              <bs-ftp-settings
-                ref="ftpSettings"
-                v-model="localModel"
-                :group-id="group.id"
-                :disabled="disabled"
-                :is-edit="isEdit"
-              />
-            </div>
-          </div>
-
-          <!-- CDN Subsection -->
-          <div class="form-subsection">
-            <div class="form-subsection__header">
-              <span class="form-subsection__label">{{ $t('forms.group.exportCdn') }}</span>
-              <v-switch
-                v-model="localModel.downloadMailingWithCdnImages"
-                :label="$t('forms.group.enable')"
-                class="ma-0 ml-4"
-                hide-details
-                :disabled="disabled"
-              />
-            </div>
-
-            <div v-if="localModel.downloadMailingWithCdnImages" class="form-subsection__content">
-              <v-row>
-                <v-col cols="12" md="2">
-                  <v-select
-                    id="cdnProtocol"
-                    v-model="localModel.cdnProtocol"
-                    :label="$t('forms.group.httpProtocol')"
-                    name="cdnProtocol"
-                    :disabled="disabled"
-                    :items="$options.httpOptions"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    id="cdnEndPoint"
-                    v-model="localModel.cdnEndPoint"
-                    :label="$t('forms.group.endpoint')"
-                    placeholder="ex: cdn.example.com"
-                    name="cdnEndPoint"
-                    :error-messages="requiredErrors(`cdnEndPoint`)"
-                    :disabled="disabled"
-                    @input="$v.group.cdnEndPoint.$touch()"
-                    @blur="$v.group.cdnEndPoint.$touch()"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    id="cdnButtonLabel"
-                    v-model="localModel.cdnButtonLabel"
-                    :label="$t('forms.group.editorLabel')"
-                    placeholder="ex: Amazon S3"
-                    name="cdnButtonLabel"
-                    :error-messages="requiredErrors(`cdnButtonLabel`)"
-                    :disabled="disabled"
-                    @input="$v.group.cdnButtonLabel.$touch()"
-                    @blur="$v.group.cdnButtonLabel.$touch()"
-                  />
-                </v-col>
-              </v-row>
-            </div>
-          </div>
+          <p class="form-section__description">
+            {{ $t('forms.group.sections.permissionsDescription') }}
+          </p>
+          <v-switch
+            v-model="localModel.userHasAccessToAllWorkspaces"
+            :label="$t('forms.group.userHasAccessToAllWorkspaces')"
+            hide-details
+            :disabled="disabled"
+          />
         </div>
 
         <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
@@ -389,27 +271,30 @@ export default {
           <h3 class="form-section__title">
             {{ $t('forms.group.sections.authentication') }}
           </h3>
+          <p class="form-section__description">
+            {{ $t('forms.group.sections.authenticationDescription') }}
+          </p>
 
-          <div class="form-subsection">
-            <div class="form-subsection__header">
-              <span class="form-subsection__label">{{ $t('forms.group.samlAuthentication') }}</span>
-              <v-switch
-                v-model="useSamlAuthentication"
-                :label="$t('forms.group.enable')"
-                class="ma-0 ml-4"
-                hide-details
-                :disabled="disabled"
-              />
-            </div>
+          <v-switch
+            v-model="useSamlAuthentication"
+            :label="$t('forms.group.enableSaml')"
+            hide-details
+            :disabled="disabled"
+            class="mb-4"
+          />
 
-            <div v-if="useSamlAuthentication" class="form-subsection__content">
+          <v-expand-transition>
+            <div v-if="useSamlAuthentication">
               <v-row>
                 <v-col cols="12" md="6">
                   <v-text-field
                     id="entryPoint"
                     v-model="localModel.entryPoint"
                     :label="$t('forms.group.entryPoint')"
+                    :hint="$t('forms.group.entryPointHint')"
                     name="entryPoint"
+                    outlined
+                    persistent-hint
                     :disabled="disabled"
                   />
                 </v-col>
@@ -418,52 +303,60 @@ export default {
                     id="issuer"
                     v-model="localModel.issuer"
                     :label="$t('forms.group.issuer')"
+                    :hint="$t('forms.group.issuerHint')"
                     name="issuer"
+                    outlined
+                    persistent-hint
                     :disabled="disabled"
                   />
                 </v-col>
               </v-row>
             </div>
-          </div>
-        </div>
-
-        <!-- ==================== SECTION 5: PERMISSIONS ==================== -->
-        <div v-if="isAdmin" class="form-section">
-          <h3 class="form-section__title">
-            {{ $t('forms.group.sections.permissions') }}
-          </h3>
-          <v-checkbox
-            v-model="localModel.userHasAccessToAllWorkspaces"
-            :label="$t('forms.group.userHasAccessToAllWorkspaces')"
-            class="mt-0"
-          />
+          </v-expand-transition>
         </div>
       </v-card-text>
+
       <v-divider />
       <v-card-actions>
         <v-spacer />
         <v-btn
           elevation="0"
           color="accent"
-          :disabled="disabled"
+          :loading="loading"
+          :disabled="disabled || loading"
           @click="onSubmit"
         >
           {{ $t('global.save') }}
         </v-btn>
-        <v-btn
-          v-if="isAdmin && isEdit"
-          depressed
-          outlined
-          color="error"
-          @click="openDeleteGroup"
-        >
-          {{ $t('global.delete') }}
-        </v-btn>
       </v-card-actions>
     </v-card>
+
+    <!-- ==================== DANGER ZONE ==================== -->
+    <v-card v-if="isAdmin && isEdit" flat tile class="danger-zone mt-6">
+      <v-card-text>
+        <div class="danger-zone__header">
+          <lucide-alert-triangle :size="20" color="#F04E23" />
+          <h3 class="danger-zone__title">
+            {{ $t('forms.group.dangerZone.title') }}
+          </h3>
+        </div>
+        <p class="danger-zone__description">
+          {{ $t('forms.group.dangerZone.description') }}
+        </p>
+        <v-btn
+          outlined
+          color="error"
+          :disabled="loading"
+          @click="openDeleteGroup"
+        >
+          {{ $t('forms.group.dangerZone.deleteCompany') }}
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
     <bs-modal-confirm-form
       ref="deleteDialog"
-      :title="`${$t('global.delete')} ?`"
+      :title="$t('forms.group.dangerZone.deleteTitle')"
       :action-label="$t('global.delete')"
       :confirmation-input-label="$t('groups.delete.confirmationField')"
       :confirm-check-box="true"
@@ -497,34 +390,13 @@ export default {
     font-size: 1.1rem;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
+    margin-bottom: 0.25rem;
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
     margin-bottom: 1rem;
-  }
-}
-
-.form-subsection {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: rgba(0, 0, 0, 0.02);
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
-  &__label {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  &__content {
-    padding-top: 0.5rem;
   }
 }
 
@@ -561,6 +433,7 @@ export default {
     justify-content: center;
     background-color: rgba(0, 172, 220, 0.1);
     border-radius: 8px;
+    flex-shrink: 0;
   }
 
   &__info {
@@ -591,6 +464,31 @@ export default {
 
   &__switch {
     flex-shrink: 0;
+  }
+}
+
+.danger-zone {
+  border: 1px solid rgba(240, 78, 35, 0.3);
+  background-color: rgba(240, 78, 35, 0.02);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #f04e23;
+    margin: 0;
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 1rem;
   }
 }
 </style>
