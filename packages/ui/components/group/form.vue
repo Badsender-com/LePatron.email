@@ -7,12 +7,16 @@ import { IS_ADMIN, USER, IS_GROUP_ADMIN } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import BsTextField from '~/components/form/bs-text-field';
+import BsSelect from '~/components/form/bs-select';
 import { Palette, LineChart, ArrowRight, AlertTriangle } from 'lucide-vue';
 
 export default {
   name: 'BsGroupForm',
   components: {
     BsModalConfirmForm,
+    BsTextField,
+    BsSelect,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
@@ -146,44 +150,32 @@ export default {
           </p>
           <v-row>
             <v-col cols="12" md="6">
-              <v-text-field
-                id="name"
+              <bs-text-field
                 v-model="localModel.name"
                 :label="$t('global.companyName')"
-                name="name"
                 required
-                outlined
                 :disabled="disabled || isGroupAdmin"
                 :error-messages="requiredErrors('name')"
-                @input="$v.group.name.$touch()"
                 @blur="$v.group.name.$touch()"
               />
             </v-col>
             <v-col v-if="isAdmin" cols="12" md="6">
-              <v-select
-                id="groupStatus"
+              <bs-select
                 v-model="localModel.status"
-                :error-messages="requiredErrors('status')"
                 :label="$t('forms.group.status.label')"
-                name="status"
-                required
-                outlined
                 :items="statusOptions"
-                @input="$v.group.status.$touch()"
+                required
+                :error-messages="requiredErrors('status')"
                 @blur="$v.group.status.$touch()"
               />
             </v-col>
           </v-row>
           <v-row v-if="isGroupCreationPage">
             <v-col cols="12" md="6">
-              <v-text-field
-                id="defaultWorkspaceName"
+              <bs-text-field
                 v-model="localModel.defaultWorkspaceName"
                 :label="$t('forms.group.defaultWorkspace.label')"
                 :hint="$t('forms.group.defaultWorkspace.hint')"
-                name="defaultWorkspaceName"
-                outlined
-                persistent-hint
                 :disabled="disabled"
               />
             </v-col>
@@ -287,26 +279,18 @@ export default {
             <div v-if="useSamlAuthentication">
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    id="entryPoint"
+                  <bs-text-field
                     v-model="localModel.entryPoint"
                     :label="$t('forms.group.entryPoint')"
                     :hint="$t('forms.group.entryPointHint')"
-                    name="entryPoint"
-                    outlined
-                    persistent-hint
                     :disabled="disabled"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    id="issuer"
+                  <bs-text-field
                     v-model="localModel.issuer"
                     :label="$t('forms.group.issuer')"
                     :hint="$t('forms.group.issuerHint')"
-                    name="issuer"
-                    outlined
-                    persistent-hint
                     :disabled="disabled"
                   />
                 </v-col>

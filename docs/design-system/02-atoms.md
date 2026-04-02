@@ -44,93 +44,104 @@ Atoms are the smallest UI elements that cannot be broken down further.
 
 ### Text Fields
 
-**Component**: `v-text-field`
+**Component**: `bs-text-field` (wrapper around `v-text-field`)
+
+LePatron uses custom form components that display labels **above** the input field (not floating/inline like Vuetify default). This provides a cleaner, more modern look.
 
 **Standard usage**:
 
 ```html
-<v-text-field
-  id="email"
+<bs-text-field
   v-model="localModel.email"
   :label="$t('users.email')"
-  name="email"
   type="email"
   required
   :error-messages="emailErrors"
-  @input="$v.user.email.$touch()"
   @blur="$v.user.email.$touch()"
 />
 ```
 
-**Conventions**:
-- Always use `id` and `name` attributes
-- Use i18n keys for labels: `:label="$t('...')"`
-- Integrate with vuelidate for validation
-- Show errors via `:error-messages` prop
-- Use `persistent-hint` with `:hint` for helper text
-
-**Input style - IMPORTANT**:
-
-Use `outlined` style for all form inputs. This provides a clean, modern look with clear boundaries.
-
-| Style | Usage |
-|-------|-------|
-| **`outlined`** | Standard style for all forms - USE THIS |
-| Default (underline) | Legacy - do not use for new forms |
-| `filled` | Do not use |
-| `solo` | Do not use |
+**With hint text**:
 
 ```html
-<!-- CORRECT - Outlined style (standard) -->
-<v-text-field
-  id="name"
+<bs-text-field
   v-model="localModel.name"
   :label="$t('forms.user.name')"
-  name="name"
-  outlined
-/>
-
-<!-- WRONG - Do not use underline style -->
-<v-text-field
-  id="name"
-  v-model="localModel.name"
-  :label="$t('forms.user.name')"
-  name="name"
+  :hint="$t('forms.user.nameHint')"
+  required
 />
 ```
 
-The `outlined` style shows the label above the field with a full border around the input.
+**Props**:
+| Prop | Type | Description |
+|------|------|-------------|
+| `v-model` | String/Number | Input value |
+| `label` | String | Label displayed above the input |
+| `hint` | String | Helper text below the input |
+| `error-messages` | String/Array | Validation error messages |
+| `required` | Boolean | Shows asterisk and marks as required |
+| `disabled` | Boolean | Disables the input |
+| `placeholder` | String | Placeholder text |
+| `type` | String | Input type (text, email, password, etc.) |
+
+**Conventions**:
+- Always use `bs-text-field` for new forms (not raw `v-text-field`)
+- Use i18n keys for labels and hints
+- Integrate with vuelidate for validation
+- Pass errors via `:error-messages` prop
+
+**Why not use Vuetify's built-in variants?**
+
+| Vuetify Style | Issue |
+|---------------|-------|
+| Default (underline) | Label floats, inconsistent position |
+| `outlined` | Label sits ON the border (not above) |
+| `filled` | Background color, not our style |
+| `solo` | No built-in label support |
+
+Our `bs-text-field` wrapper provides a consistent "label above, bordered input" style.
 
 ---
 
 ### Select
 
-**Component**: `v-select`
+**Component**: `bs-select` (wrapper around `v-select`)
 
 **Standard usage**:
 
 ```html
-<v-select
-  id="lang"
+<bs-select
   v-model="localModel.lang"
   :label="$t('users.lang')"
-  name="lang"
-  :items="$options.supportedLanguages"
+  :items="languageOptions"
+  required
 />
 ```
 
-**Conventions**:
-- Same styling rules as `v-text-field` (use `outlined`)
-- Use `persistent-hint` with `:hint` for helper text
+**Props**:
+| Prop | Type | Description |
+|------|------|-------------|
+| `v-model` | Any | Selected value |
+| `label` | String | Label displayed above the select |
+| `items` | Array | Options array |
+| `hint` | String | Helper text below the select |
+| `error-messages` | String/Array | Validation error messages |
+| `required` | Boolean | Shows asterisk |
+| `multiple` | Boolean | Allow multiple selection |
+| `clearable` | Boolean | Show clear button |
 
 **Items format**:
 ```javascript
 // Array of objects with text/value
 [
   { text: 'English', value: 'en' },
-  { text: 'Francais', value: 'fr' },
+  { text: 'Français', value: 'fr' },
 ]
 ```
+
+**Conventions**:
+- Always use `bs-select` for new forms (not raw `v-select`)
+- Same styling as `bs-text-field` for visual consistency
 
 ---
 
