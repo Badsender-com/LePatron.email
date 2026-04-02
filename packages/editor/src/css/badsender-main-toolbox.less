@@ -167,6 +167,9 @@
       border-radius: 50%;
       font-size: 120%;
       box-shadow: 1px 1px 3px @shadow-color;
+      // Reset mask properties from style_mosaico_tools.less to create toggle switches
+      -webkit-mask-image: none;
+      mask-image: none;
     }
     &:checked + .checkbox-replacer:after {
       background-color: var(--v-accent-lighten3);
