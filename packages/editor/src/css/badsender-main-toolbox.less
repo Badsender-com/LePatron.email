@@ -103,20 +103,37 @@
   .tooltabs__list {
     flex: 1 1 auto;
   }
+  // Back link - navigates back to mailings list
+  .tooltabs__back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: @topbar-height;
+    height: @topbar-height;
+    color: white;
+    text-decoration: none;
+    transition: background-color 150ms ease-out;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .lucide {
+      font-size: 20px;
+    }
+  }
+
+  // Legacy logo support (kept for backwards compatibility)
   .tooltabs__top-logo {
     height: @topbar-height;
     object-fit: contain;
     color: var(--v-primary-base);
     padding: 4px;
-    // a {
-    // }
 
     img {
       display: block;
       height: 100%;
       width: auto;
-      // height: @topbar-height - 4px;
-      // width: auto;
     }
   }
   // .ool
