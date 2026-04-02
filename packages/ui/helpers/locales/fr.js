@@ -104,6 +104,8 @@ export default {
     group: 'Groupe | Groupes',
     workspaces: 'Espaces de travail',
     newGroup: 'Ajouter un groupe',
+    newCompany: 'Ajouter une company',
+    companyName: 'Nom de la company',
     workspace: 'Workspace',
     newWorkspace: 'Ajouter un workspace',
     newMail: 'Créer un email',
@@ -159,7 +161,20 @@ export default {
         generalInfo: 'Informations générales',
         imageHosting: 'Hébergement des images',
         authentication: 'Authentification',
+        authenticationDescription: 'Configurez l\'authentification SAML pour permettre à vos utilisateurs de se connecter avec leur compte d\'entreprise.',
         permissions: 'Permissions',
+        permissionsDescription: 'Gérez les droits d\'accès des utilisateurs aux différents workspaces.',
+        companyInfo: 'Informations de l\'entreprise',
+        companyInfoDescription: 'Renseignez les informations principales de l\'entreprise.',
+      },
+      enableSaml: 'Activer l\'authentification SAML',
+      entryPointHint: 'URL de connexion fournie par votre fournisseur d\'identité',
+      issuerHint: 'Identifiant unique de votre application chez le fournisseur',
+      dangerZone: {
+        title: 'Zone de danger',
+        description: 'Les actions dans cette zone sont irréversibles. Procédez avec prudence.',
+        deleteCompany: 'Supprimer l\'entreprise',
+        deleteTitle: 'Supprimer l\'entreprise',
       },
       name: 'Nom de l\'entreprise',
       downloadWithoutEnclosingFolder: {
@@ -169,9 +184,11 @@ export default {
       },
       color: {
         label: 'Couleurs personnalisées',
+        description: 'Définissez les couleurs disponibles dans l\'éditeur d\'email pour ce groupe.',
       },
       defaultWorkspace: {
         label: 'Nom du workspace par défaut',
+        hint: 'Laisser vide pour utiliser le nom par défaut',
       },
       status: {
         label: 'Statut',
@@ -281,17 +298,18 @@ export default {
     },
     modules: {
       title: 'Modules activés',
+      description: 'Activez ou désactivez les modules disponibles pour cette entreprise.',
       notEnabled: 'Module non activé',
       emailBuilder: {
         name: 'Email Builder',
-        description: "Création et édition d'emails responsive",
+        description: 'Création et édition d\'emails responsive',
       },
       crmIntelligence: {
         name: 'CRM Intelligence',
         description: 'Tableaux de bord et analytics',
-        configHint: "Configuration avancée dans l'onglet dédié",
+        configHint: 'Configuration avancée dans l\'onglet dédié',
         toggleMovedHint:
-          "L'activation du module se fait depuis l'onglet Général",
+          'L\'activation du module se fait depuis l\'onglet Général',
       },
     },
     mailingTab: {
@@ -509,6 +527,19 @@ export default {
       'NMS_DELIVERY': 'Livrable',
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
+  },
+  exportOptions: {
+    title: 'Options d\'export',
+    sections: {
+      zipFormat: 'Format du fichier zip',
+      zipFormatDescription: 'Configurez la structure du fichier zip téléchargé par les utilisateurs.',
+      ftpHosting: 'Hébergement FTP/SFTP',
+      ftpHostingDescription: 'Configurez un serveur FTP ou SFTP pour héberger automatiquement les images des emails.',
+      cdnHosting: 'Hébergement CDN',
+      cdnHostingDescription: 'Configurez un CDN personnalisé pour héberger les images des emails.',
+    },
+    cdnEndpointHint: 'URL de base de votre CDN (sans protocole)',
+    cdnButtonLabelHint: 'Libellé affiché dans l\'éditeur',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -738,6 +769,17 @@ export default {
       fast: 'rapide',
       recommended: 'recommandé',
     }
+  },
+  settingsNav: {
+    categories: {
+      superAdmin: 'Super Admin',
+      general: 'Général',
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+    },
+    companiesList: 'Liste des companies',
+    superAdminOnly: 'Super admin uniquement',
+    colors: 'Couleurs',
   },
   aiFeatures: {
     title: 'Fonctionnalités IA',

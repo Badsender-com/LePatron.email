@@ -67,6 +67,39 @@ Atoms are the smallest UI elements that cannot be broken down further.
 - Use i18n keys for labels: `:label="$t('...')"`
 - Integrate with vuelidate for validation
 - Show errors via `:error-messages` prop
+- Use `persistent-hint` with `:hint` for helper text
+
+**Input style - IMPORTANT**:
+
+Use `outlined` style for all form inputs. This provides a clean, modern look with clear boundaries.
+
+| Style | Usage |
+|-------|-------|
+| **`outlined`** | Standard style for all forms - USE THIS |
+| Default (underline) | Legacy - do not use for new forms |
+| `filled` | Do not use |
+| `solo` | Do not use |
+
+```html
+<!-- CORRECT - Outlined style (standard) -->
+<v-text-field
+  id="name"
+  v-model="localModel.name"
+  :label="$t('forms.user.name')"
+  name="name"
+  outlined
+/>
+
+<!-- WRONG - Do not use underline style -->
+<v-text-field
+  id="name"
+  v-model="localModel.name"
+  :label="$t('forms.user.name')"
+  name="name"
+/>
+```
+
+The `outlined` style shows the label above the field with a full border around the input.
 
 ---
 
@@ -85,6 +118,10 @@ Atoms are the smallest UI elements that cannot be broken down further.
   :items="$options.supportedLanguages"
 />
 ```
+
+**Conventions**:
+- Same styling rules as `v-text-field` (use `outlined`)
+- Use `persistent-hint` with `:hint` for helper text
 
 **Items format**:
 ```javascript
