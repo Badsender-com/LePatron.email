@@ -6,11 +6,15 @@ import { groupsItem } from '~/helpers/api-routes.js';
 import { IS_ADMIN, USER } from '~/store/user';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
+import BsTextField from '~/components/form/bs-text-field';
+import BsSelect from '~/components/form/bs-select';
 
 export default {
   name: 'BsExportOptionsTab',
   components: {
     BsFtpSettings,
+    BsTextField,
+    BsSelect,
   },
   mixins: [validationMixin],
   httpOptions: ['http://', 'https://'],
@@ -118,12 +122,9 @@ export default {
           </p>
           <v-row>
             <v-col cols="12" md="6">
-              <v-select
-                id="downloadMailingWithoutEnclosingFolder"
+              <bs-select
                 v-model="localGroup.downloadMailingWithoutEnclosingFolder"
                 :label="$t('forms.group.downloadWithoutEnclosingFolder.label')"
-                name="downloadMailingWithoutEnclosingFolder"
-                outlined
                 :items="folderOptions"
               />
             </v-col>
@@ -178,42 +179,29 @@ export default {
             <div v-if="localGroup.downloadMailingWithCdnImages">
               <v-row>
                 <v-col cols="12" md="2">
-                  <v-select
-                    id="cdnProtocol"
+                  <bs-select
                     v-model="localGroup.cdnProtocol"
                     :label="$t('forms.group.httpProtocol')"
-                    name="cdnProtocol"
-                    outlined
                     :items="$options.httpOptions"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    id="cdnEndPoint"
+                  <bs-text-field
                     v-model="localGroup.cdnEndPoint"
                     :label="$t('forms.group.endpoint')"
                     :hint="$t('exportOptions.cdnEndpointHint')"
                     placeholder="cdn.example.com"
-                    name="cdnEndPoint"
-                    outlined
-                    persistent-hint
                     :error-messages="requiredErrors('cdnEndPoint')"
-                    @input="$v.localGroup.cdnEndPoint.$touch()"
                     @blur="$v.localGroup.cdnEndPoint.$touch()"
                   />
                 </v-col>
                 <v-col cols="12" md="4">
-                  <v-text-field
-                    id="cdnButtonLabel"
+                  <bs-text-field
                     v-model="localGroup.cdnButtonLabel"
                     :label="$t('forms.group.editorLabel')"
                     :hint="$t('exportOptions.cdnButtonLabelHint')"
                     placeholder="Amazon S3"
-                    name="cdnButtonLabel"
-                    outlined
-                    persistent-hint
                     :error-messages="requiredErrors('cdnButtonLabel')"
-                    @input="$v.localGroup.cdnButtonLabel.$touch()"
                     @blur="$v.localGroup.cdnButtonLabel.$touch()"
                   />
                 </v-col>
