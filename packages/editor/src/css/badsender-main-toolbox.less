@@ -124,64 +124,137 @@
     border-color: var(--v-accent-base);
   }
 
-  ////////
-  // TOGGLES
-  ////////
+  // ==========================================================================
+  // TOGGLE SWITCHES - Modern Material Design 3 Style
+  // Compact design: 36x20px track, 16px thumb
+  // ==========================================================================
 
-  .blockCheck input[type='checkbox'] {
-    &:checked + .checkbox-replacer:after,
-    & + .checkbox-replacer:before {
+  .objEdit .propInput input[type='checkbox'] {
+    // Container for the toggle
+    & + .checkbox-replacer {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    // Track (background pill)
+    & + .checkbox-replacer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 36px;
+      height: 20px;
+      background-color: var(--gray-400, #bdbdbd);
+      border-radius: 10px;
+      transition: background-color 150ms ease-out;
+      // Reset any inherited styles
+      margin: 0;
+      padding: 0;
+      border: none;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    // Thumb (circle)
+    & + .checkbox-replacer::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background-color: white;
       border-radius: 50%;
-      box-shadow: 1px 1px 2px @shadow-color;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      transition: transform 200ms ease-out;
+      z-index: 1;
+      // Reset any inherited mask styles from style_mosaico_tools.less
+      -webkit-mask-image: none;
+      mask-image: none;
+      // Reset other inherited styles
+      margin: 0;
+      padding: 0;
+      border: none;
+      font-size: inherit;
     }
 
-    & + .checkbox-replacer:after,
-    &:checked + .checkbox-replacer:before {
-      border-radius: 30px;
-      background-color: var(--v-accent-lighten3);
-      // color: @button-text-color;
+    // Checked state - Track
+    &:checked + .checkbox-replacer::after {
+      background-color: var(--v-accent-base, #00ACDC);
+      box-shadow: none;
     }
-    & + .checkbox-replacer:after {
-      padding-left: 15px;
-      margin-left: -15px;
-      border-color: transparent;
+
+    // Checked state - Thumb slides to the right
+    &:checked + .checkbox-replacer::before {
+      transform: translateX(16px);
     }
-    &:checked + .checkbox-replacer:before {
-      padding-right: 15px;
-      margin-right: -15px;
-      border-color: transparent;
+
+    // Hover state - subtle highlight
+    & + .checkbox-replacer:hover::after {
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
+
+    &:checked + .checkbox-replacer:hover::after {
+      background-color: var(--v-accent-darken1, #0099c4);
     }
   }
 
-  .objEdit .propInput input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      margin-left: 20px;
-      background-color: var(--v-accent-base);
+  // ==========================================================================
+  // BLOCK CHECK TOGGLES (local/global switch) - Same modern style
+  // ==========================================================================
+
+  .blockCheck input[type='checkbox'] {
+    & + .checkbox-replacer {
+      position: relative;
+      display: inline-flex;
+      width: 56px;
+      height: 24px;
+      vertical-align: middle;
     }
-    & + .checkbox-replacer:before {
-      content: ' ';
-      display: block;
-      width: 20px;
-      height: 20px;
-      background-color: white;
-      border-radius: 50%;
-      font-size: 120%;
-      box-shadow: 1px 1px 3px @shadow-color;
-      // Reset mask properties from style_mosaico_tools.less to create toggle switches
+
+    // Track
+    & + .checkbox-replacer::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 28px;
+      width: 28px;
+      height: 24px;
+      background-color: var(--gray-400, #bdbdbd);
+      border-radius: 0 12px 12px 0;
+      transition: background-color 150ms ease-out;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    & + .checkbox-replacer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 28px;
+      height: 24px;
+      background-color: var(--v-accent-base, #00ACDC);
+      border-radius: 12px 0 0 12px;
+      transition: background-color 150ms ease-out;
+      margin: 0;
+      padding: 0;
+      border: none;
       -webkit-mask-image: none;
       mask-image: none;
     }
-    &:checked + .checkbox-replacer:after {
-      background-color: var(--v-accent-lighten3);
+
+    // Checked state - swap colors
+    &:checked + .checkbox-replacer::after {
+      background-color: var(--v-accent-base, #00ACDC);
     }
-    & + .checkbox-replacer:after {
-      content: ' ';
-      display: block;
-      width: 34px;
-      height: 14px;
-      margin: -16px 2px 0 2px;
-      border-radius: 7px;
-      background-color: lighten(@text-color, 30%);
+
+    &:checked + .checkbox-replacer::before {
+      background-color: var(--gray-400, #bdbdbd);
     }
   }
 }
