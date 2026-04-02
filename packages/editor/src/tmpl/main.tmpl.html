@@ -20,7 +20,7 @@
                     },
                     click: function() { $root.openCommentsForBlock(blockId); },
                     attr: { title: blockLabel }">
-      <span class="mdi mdi-comment-outline rail-icon"></span>
+      <span class="lucide lucide-message-circle rail-icon"></span>
       <span class="rail-count" data-bind="text: unresolvedCount"></span>
     </div>
     <!-- /ko -->
@@ -32,29 +32,29 @@
 
     <!-- ko template: {name: 'edit-name' } --># creation name #<!-- /ko -->
 
-    <input id="previewBoth" type="radio" name="previewMode" value="both" data-bind="checked: $root.previewMode, button: { text: false, label: 'both', icons: { primary: 'fa fa-fw fa-window-restore' } }">
+    <input id="previewBoth" type="radio" name="previewMode" value="both" data-bind="checked: $root.previewMode, button: { text: false, label: 'both', icons: { primary: 'lucide lucide-fw lucide-columns-2' } }">
       <label for="previewBoth" title="Both screen" data-bind="attr: { title: $root.t('Mobile and desktop') }">Mobile and desktop</label>
     </input>
-    <input id="previewDesktop" type="radio" name="previewMode" value="desktop" data-bind="checked: $root.previewMode, button: { text: false, label: 'desktop', icons: { primary: 'fa fa-fw fa-desktop' } }">
+    <input id="previewDesktop" type="radio" name="previewMode" value="desktop" data-bind="checked: $root.previewMode, button: { text: false, label: 'desktop', icons: { primary: 'lucide lucide-fw lucide-monitor' } }">
       <label for="previewDesktop" title="Desktop" data-bind="attr: { title: $root.t('Desktop') }">Desktop</label>
     </input>
-    <input id="previewMobile" type="radio" name="previewMode" value="mobile" data-bind="checked: $root.previewMode, button: { text: false, label: 'mobile', icons: { primary: 'fa fa-fw fa-tablet' } }">
+    <input id="previewMobile" type="radio" name="previewMode" value="mobile" data-bind="checked: $root.previewMode, button: { text: false, label: 'mobile', icons: { primary: 'lucide lucide-fw lucide-smartphone' } }">
       <label for="previewMobile" title="Smartphone" data-bind="attr: { title: $root.t('Smartphone') }">Smartphone</label>
     </input>
 
     <span>
-      <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'fa fa-fw fa-picture-o', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
+      <input id="showGallery" type="checkbox" data-bind="checked: $root.showGallery, button: { refreshOn: $root.showGallery, icons: { primary: 'lucide lucide-fw lucide-image', secondary: null }, text: false, label: $root.t('Gallery') }"><label title="Show image gallery" for="showGallery" data-bind="attr: { title: $root.t('Show image gallery') }">show gallery</label></input>
     </span>
     <span class="comments-button-wrapper" data-bind="click: function() { $root.showComments(!$root.showComments()); }, clickBubble: false, attr: { title: $root.t('comments-toggle'), 'aria-label': $root.t('comments-toggle') }" role="button">
-      <span class="mdi mdi-comment-multiple-outline"></span>
+      <span class="lucide lucide-messages-square"></span>
       <!-- ko if: $root.unresolvedCommentCount && $root.unresolvedCommentCount() > 0 -->
       <span class="comments-toolbar-badge" data-bind="text: $root.unresolvedCommentCount()"></span>
       <!-- /ko -->
     </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
     <span data-bind="buttonset: { }" class="leftButtons">
-      <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'fa fa-reply' }, label: $root.undo.name, text: true }">UNDO</a>
-      <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'fa fa-share' }, label: $root.redo.name, text: true }">REDO</a>
+      <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'lucide lucide-undo' }, label: $root.undo.name, text: true }">UNDO</a>
+      <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'lucide lucide-redo' }, label: $root.redo.name, text: true }">REDO</a>
     </span>
     <!-- ko if: $root.debug -->
     <a href="javascript:void(0)" data-bind="click: $root.undoReset, clickBubble: false, button: { disabled: !$root.undo.enabled() && !$root.redo.enabled(), label: 'reset', text: true }">RESET</a>
@@ -64,7 +64,7 @@
     <!-- ko if: $root.debug -->
     <a href="javascript:void(0)" data-bind="click: $root.export, clickBubble: false, button: { label: 'export', text: true }">EXPORT</a>
     <input type="checkbox" data-bind="checked: $root.debug" /> debug
-    <a href="javascript:void(0)" data-bind="click: $root.loadDefaultBlocks, clickBubble: false, button: { icons: { primary: 'fa fa-fw fa-upload' }, label: 'Default', text: true }">LOAD BLOCKS</a>
+    <a href="javascript:void(0)" data-bind="click: $root.loadDefaultBlocks, clickBubble: false, button: { icons: { primary: 'lucide lucide-fw lucide-upload' }, label: 'Default', text: true }">LOAD BLOCKS</a>
     [<a id="subscriptionsCount" href="javascript:viewModel.loopSubscriptionsCount()">subs</a>]
     <!-- /ko -->
 
@@ -75,10 +75,10 @@
     <div class="rightButtons">
 
     <!-- ko if: typeof $root.save !== 'undefined' -->
-    <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, button: { disabled: !$root.save.enabled(), icons: { primary: 'fa fa-fw fa-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
+    <a class="primaryButton" title="Save template" href="javascript:void(0)" data-bind="attr: { title: $root.t('Save template') }, click: $root.save.execute, clickBubble: false, button: { disabled: !$root.save.enabled(), icons: { primary: 'lucide lucide-fw lucide-cloud-upload' }, label: $root.t($root.save.name), text: true }">SALVA</a>
     <!-- /ko -->
     <!-- ko if: typeof $root.test !== 'undefined' -->
-    <a title="Show preview and send test" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show preview and send test') }, click: $root.test.execute, clickBubble: false, button: { disabled: !$root.test.enabled(), icons: { primary: 'fa fa-fw fa-paper-plane' }, label: $root.t($root.test.name), text: true }">TEST</a>
+    <a title="Show preview and send test" href="javascript:void(0)" data-bind="attr: { title: $root.t('Show preview and send test') }, click: $root.test.execute, clickBubble: false, button: { disabled: !$root.test.enabled(), icons: { primary: 'lucide lucide-fw lucide-send' }, label: $root.t($root.test.name), text: true }">TEST</a>
     <!-- /ko -->
     <!-- ko template: {name: 'download-buttons' } --># download buttons #<!-- /ko -->
     </div>
@@ -95,11 +95,11 @@
   <!-- <div id="main-preview" class="mo" data-bind="scrollable: true, if: $root.showPreviewFrame">
     <div id="preview-toolbar">
       <div data-bind="visible: $root.showPreviewFrame, buttonset: { }" style="display: inline-block">
-        <input id="previewLarge" type="radio" name="previewMode" value="large" data-bind="checked: $root.previewMode, button: { text: false, label: 'large', icons: { primary: 'fa fa-fw fa-desktop' } }" />
+        <input id="previewLarge" type="radio" name="previewMode" value="large" data-bind="checked: $root.previewMode, button: { text: false, label: 'large', icons: { primary: 'lucide lucide-fw lucide-monitor' } }" />
         <label for="previewLarge" title="Large screen" data-bind="attr: { title: $root.t('Large screen') }">Large screen</label>
-        <input id="previewDesktop" type="radio" name="previewMode" value="desktop" data-bind="checked: $root.previewMode, button: { text: false, label: 'desktop', icons: { primary: 'fa fa-fw fa-tablet' } }" />
+        <input id="previewDesktop" type="radio" name="previewMode" value="desktop" data-bind="checked: $root.previewMode, button: { text: false, label: 'desktop', icons: { primary: 'lucide lucide-fw lucide-tablet' } }" />
         <label for="previewDesktop" title="Tablet" data-bind="attr: { title: $root.t('Tablet') }">Tablet</label>
-        <input id="previewMobile" type="radio" name="previewMode" value="mobile" data-bind="checked: $root.previewMode, button: { text: false, label: 'mobile', icons: { primary: 'fa fa-fw fa-mobile' } }" />
+        <input id="previewMobile" type="radio" name="previewMode" value="mobile" data-bind="checked: $root.previewMode, button: { text: false, label: 'mobile', icons: { primary: 'lucide lucide-fw lucide-smartphone' } }" />
         <label for="previewMobile" title="Smartphone" data-bind="attr: { title: $root.t('Smartphone') }">Smartphone</label>
       </div>
     </div>
