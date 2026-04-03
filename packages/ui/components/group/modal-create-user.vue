@@ -145,7 +145,6 @@ export default {
       </v-row>
       <v-divider class="mt-4" />
       <div class="modal-actions">
-        <v-spacer />
         <v-btn text color="primary" :disabled="loading" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
@@ -167,6 +166,8 @@ export default {
 .modal-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
   padding: 1rem 0;
 }
 </style>
