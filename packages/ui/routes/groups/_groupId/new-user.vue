@@ -1,17 +1,16 @@
 <script>
 import { mapMutations } from 'vuex';
-
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsGroupMenu from '~/components/group/menu.vue';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsUserForm from '~/components/users/form.vue';
 
 export default {
   name: 'BsPageGroupNewUser',
-  components: { BsGroupMenu, BsUserForm },
-  mixins: [mixinPageTitle],
+  components: { BsGroupSettingsNav, BsUserForm },
+  mixins: [mixinSettingsTitle],
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
@@ -38,16 +37,9 @@ export default {
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.newUser')}`;
-    },
     groupId() {
       return this.$route.params.groupId;
     },
@@ -66,7 +58,7 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        this.$router.push(apiRoutes.usersItem({ userId: user.id }));
+        this.$router.push(`/groups/${this.groupId}/settings/users/${user.id}`);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -84,7 +76,7 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-group-menu />
+      <bs-group-settings-nav :group="group" />
     </template>
     <bs-user-form
       v-model="newUser"
