@@ -2,15 +2,16 @@
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { getProviderLabel } from '~/components/integrations/provider-configs';
+import {
+  getProviderLabel,
+  getProviderCategory,
+} from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
-import BsModalConfirm from '~/components/modal-confirm.vue';
 
 export default {
   name: 'BsGroupIntegrationsTab',
   components: {
     BsIntegrationForm,
-    BsModalConfirm,
   },
   data() {
     return {
@@ -19,8 +20,10 @@ export default {
       providers: [],
       types: [],
       showForm: false,
+      showDeleteDialog: false,
       editingIntegration: null,
       deletingIntegration: null,
+      deletingDashboardCount: 0,
       validating: {},
     };
   },
@@ -116,9 +119,21 @@ export default {
       }
     },
 
-    confirmDelete(integration) {
+    async confirmDelete(integration) {
       this.deletingIntegration = integration;
-      this.$refs.deleteDialog.open();
+      this.deletingDashboardCount = 0;
+
+      // Fetch dashboard count to show warning if there are associated dashboards
+      try {
+        const result = await this.$axios.$get(
+          apiRoutes.integrationDashboardCount(integration._id)
+        );
+        this.deletingDashboardCount = result.count || 0;
+      } catch (error) {
+        // Ignore error, just show standard delete confirmation
+      }
+
+      this.showDeleteDialog = true;
     },
 
     async deleteIntegration() {
@@ -132,7 +147,9 @@ export default {
           text: this.$t('integrations.deleted'),
           color: 'success',
         });
+        this.showDeleteDialog = false;
         this.deletingIntegration = null;
+        this.deletingDashboardCount = 0;
         await this.fetchData();
       } catch (error) {
         this.showSnackbar({
@@ -174,6 +191,18 @@ export default {
 
     getProviderLabel,
 
+    getCategoryLabel(provider) {
+      const category = getProviderCategory(provider);
+      if (!category) return '-';
+      return this.$t(category.labelKey);
+    },
+
+    getCategoryIcon(provider) {
+      const category = getProviderCategory(provider);
+      if (!category) return 'mdi-puzzle';
+      return category.icon;
+    },
+
     getStatusColor(status) {
       const colors = {
         valid: 'success',
@@ -194,7 +223,7 @@ export default {
   <v-card flat tile>
     <v-card-text>
       <div class="d-flex justify-end mb-4">
-        <v-btn color="primary" @click="openCreateForm">
+        <v-btn color="accent" elevation="0" @click="openCreateForm">
           <v-icon left>
             mdi-plus
           </v-icon>
@@ -212,9 +241,15 @@ export default {
         :no-data-text="$t('integrations.noIntegrations')"
       >
         <template #item.provider="{ item }">
-          <v-chip small outlined>
-            {{ getProviderLabel(item.provider) }}
-          </v-chip>
+          <div class="d-flex align-center">
+            <v-icon small class="mr-2" :title="getCategoryLabel(item.provider)">
+              {{ getCategoryIcon(item.provider) }}
+            </v-icon>
+            <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
+            <v-chip x-small outlined color="grey">
+              {{ getCategoryLabel(item.provider) }}
+            </v-chip>
+          </div>
         </template>
 
         <template #item.validationStatus="{ item }">
@@ -276,18 +311,45 @@ export default {
         />
       </v-dialog>
 
-      <!-- Delete Confirmation -->
-      <bs-modal-confirm
-        ref="deleteDialog"
-        :title="$t('integrations.deleteConfirmTitle')"
-        :message="
-          $t('integrations.deleteConfirmMessage', {
-            name: deletingIntegration && deletingIntegration.name,
-          })
-        "
-        :action-label="$t('global.delete')"
-        @confirm="deleteIntegration"
-      />
+      <!-- Delete Confirmation Dialog -->
+      <v-dialog v-model="showDeleteDialog" max-width="500">
+        <v-card>
+          <v-card-title>
+            {{ $t('integrations.deleteConfirmTitle') }}
+          </v-card-title>
+          <v-card-text>
+            <p>
+              {{
+                $t('integrations.deleteConfirmMessage', {
+                  name: deletingIntegration && deletingIntegration.name,
+                })
+              }}
+            </p>
+            <v-alert
+              v-if="deletingDashboardCount > 0"
+              type="warning"
+              dense
+              class="mt-4"
+            >
+              <strong>{{ $t('integrations.deleteWarningDashboards', { count: deletingDashboardCount }) }}</strong>
+            </v-alert>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn text @click="showDeleteDialog = false">
+              {{ $t('global.cancel') }}
+            </v-btn>
+            <v-btn
+              color="error"
+              elevation="0"
+              :loading="loading"
+              @click="deleteIntegration"
+            >
+              {{ $t('global.delete') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-card-text>
   </v-card>
 </template>

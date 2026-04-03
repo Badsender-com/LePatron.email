@@ -29,6 +29,7 @@ module.exports = {
   validateCredentials: asyncHandler(validateCredentials),
   listProviders: asyncHandler(listProviders),
   getModels: asyncHandler(getModels),
+  getDashboardCount: asyncHandler(getDashboardCount),
 };
 
 /**
@@ -85,6 +86,7 @@ async function listIntegrations(req, res) {
  * @apiParam (Body) {String} provider Provider identifier
  * @apiParam (Body) {String} apiKey API key
  * @apiParam (Body) {String} [apiHost] Optional API host for self-hosted
+ * @apiParam (Body) {String} [productId] Optional product ID (for Infomaniak)
  * @apiParam (Body) {Object} [config] Provider-specific configuration
  */
 async function createIntegration(req, res) {
@@ -104,7 +106,7 @@ async function createIntegration(req, res) {
 /**
  * @api {get} /integrations/:integrationId Get integration details
  * @apiPermission groupAdmin
- * @apiName ReadIntegration
+ * @apiName GetIntegration
  * @apiGroup Integrations
  *
  * @apiParam {String} integrationId Integration ID
@@ -113,12 +115,11 @@ async function getIntegration(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
-    {
+  const integration =
+    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
       user,
       integrationId,
-    }
-  );
+    });
 
   res.json(integration);
 }
@@ -133,6 +134,7 @@ async function getIntegration(req, res) {
  * @apiParam (Body) {String} [name] Integration name
  * @apiParam (Body) {String} [apiKey] API key
  * @apiParam (Body) {String} [apiHost] API host
+ * @apiParam (Body) {String} [productId] Product ID
  * @apiParam (Body) {Object} [config] Configuration
  * @apiParam (Body) {Boolean} [isActive] Active status
  */
@@ -182,10 +184,13 @@ async function deleteIntegration(req, res) {
  * @apiGroup Integrations
  *
  * @apiParam {String} integrationId Integration ID
+ * @apiParam (Body) {String} [apiKey] Optional API key to test (if not provided, uses stored key)
+ * @apiParam (Body) {String} [apiHost] Optional API host to test (if not provided, uses stored host)
  */
 async function validateCredentials(req, res) {
-  const { user, params } = req;
+  const { user, params, body } = req;
   const { integrationId } = params;
+  const { apiKey, apiHost } = body;
 
   await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
     user,
@@ -194,9 +199,35 @@ async function validateCredentials(req, res) {
 
   const isValid = await integrationService.validateCredentials({
     integrationId,
+    apiKey,
+    apiHost,
   });
 
   res.json({ valid: isValid });
+}
+
+/**
+ * @api {get} /integrations/:integrationId/dashboard-count Get dashboard count for integration
+ * @apiPermission groupAdmin
+ * @apiName GetDashboardCount
+ * @apiGroup Integrations
+ *
+ * @apiParam {String} integrationId Integration ID
+ *
+ * @apiSuccess {Number} count Number of dashboards using this integration
+ */
+async function getDashboardCount(req, res) {
+  const { user, params } = req;
+  const { integrationId } = params;
+
+  await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+    user,
+    integrationId,
+  });
+
+  const count = await integrationService.countDashboardsForIntegration(integrationId);
+
+  res.json({ count });
 }
 
 /**
@@ -214,12 +245,11 @@ async function getModels(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
-    {
+  const integration =
+    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
       user,
       integrationId,
-    }
-  );
+    });
 
   const provider = ProviderFactory.createProvider(integration);
   const capabilities = provider.getCapabilities();

@@ -16,6 +16,7 @@ import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import BsGroupIntegrationsTab from '~/components/group/integrations-tab.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
+import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
 import BsGroupLoading from '~/components/loadingBar';
 
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -35,6 +36,7 @@ export default {
     GroupPersonalizedVariableTab,
     BsGroupIntegrationsTab,
     BsGroupAiFeaturesTab,
+    BsCrmIntelligenceTab,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -54,7 +56,7 @@ export default {
       group: {},
       loading: false,
       intersectionObserver: null,
-      activeTab: 'informations',
+      activeTab: 'group-general',
     };
   },
   head() {
@@ -67,10 +69,7 @@ export default {
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
     title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name}`;
+      return this.$t('modules.settings');
     },
   },
 
@@ -154,6 +153,22 @@ export default {
         this.loading = false;
       }
     },
+    async refreshGroup() {
+      // Refresh group data without saving (used by tabs that handle their own saving)
+      const {
+        $axios,
+        $route: { params },
+      } = this;
+      try {
+        const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+        this.group = groupResponse;
+      } catch (error) {
+        console.error('[GroupPage] Failed to refresh group:', error);
+      }
+    },
+    changeTab(tabId) {
+      this.activeTab = tabId;
+    },
   },
 };
 </script>
@@ -167,10 +182,10 @@ export default {
       <v-tabs ref="tabs" :value="activeTab" centered>
         <v-tabs-slider color="accent" />
         <v-tab
-          href="#group-informations"
-          @click="activeTab = 'group-informations'"
+          href="#group-general"
+          @click="activeTab = 'group-general'"
         >
-          {{ $t('groups.tabs.informations') }}
+          {{ $t('groups.tabs.general') }}
         </v-tab>
         <v-tab
           v-if="isAdmin"
@@ -231,7 +246,23 @@ export default {
         >
           {{ $t('aiFeatures.title') }}
         </v-tab>
-        <v-tab-item value="group-informations">
+        <v-tab
+          v-if="isAdmin"
+          href="#group-crm-intelligence"
+          :disabled="!group.enableCrmIntelligence"
+          @click="activeTab = 'group-crm-intelligence'"
+        >
+          <v-tooltip v-if="!group.enableCrmIntelligence" bottom>
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" v-on="on">
+                {{ $t('crmIntelligence.admin.title') }}
+              </span>
+            </template>
+            <span>{{ $t('groups.modules.notEnabled') }}</span>
+          </v-tooltip>
+          <span v-else>{{ $t('crmIntelligence.admin.title') }}</span>
+        </v-tab>
+        <v-tab-item value="group-general">
           <bs-group-form
             v-model="group"
             :is-edit="true"
@@ -267,6 +298,14 @@ export default {
         <v-tab-item v-if="isGroupAdmin || isAdmin" value="group-ai-features">
           <bs-group-ai-features-tab
             :active="activeTab === 'group-ai-features'"
+          />
+        </v-tab-item>
+        <v-tab-item v-if="isAdmin" value="group-crm-intelligence">
+          <bs-crm-intelligence-tab
+            :group="group"
+            :active="activeTab === 'group-crm-intelligence'"
+            @update="refreshGroup"
+            @change-tab="changeTab"
           />
         </v-tab-item>
       </v-tabs>

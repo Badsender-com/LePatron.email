@@ -7,8 +7,8 @@ const mailingService = require('../mailing/mailing.service');
 const { updatePreviewWithTranslations } = require('./preview-html-updater');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
-const { Mailings, Templates } = require('../common/models.common');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const { Templates } = require('../common/models.common');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
@@ -183,9 +183,10 @@ async function processTranslationAsync({
           originalTexts,
           translations
         );
-        await Mailings.findByIdAndUpdate(duplicatedMailing._id, {
-          previewHtml,
-        });
+        await mailingService.updatePreviewHtml(
+          duplicatedMailing._id,
+          previewHtml
+        );
         previewGenerated = true;
         logger.log('[Translation] Preview HTML updated successfully');
       } catch (error) {

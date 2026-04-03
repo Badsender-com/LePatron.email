@@ -274,7 +274,21 @@ export default {
   },
   groups: {
     tabs: {
-      informations: 'Information',
+      general: 'General',
+    },
+    modules: {
+      title: 'Enabled modules',
+      notEnabled: 'Module not enabled',
+      emailBuilder: {
+        name: 'Email Builder',
+        description: 'Create and edit responsive emails',
+      },
+      crmIntelligence: {
+        name: 'CRM Intelligence',
+        description: 'Dashboards and analytics',
+        configHint: 'Advanced configuration in dedicated tab',
+        toggleMovedHint: 'Module activation is in the General tab',
+      },
     },
     mailingTab: {
       confirmationField: 'Type the email name to confirm',
@@ -491,6 +505,173 @@ export default {
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
   },
+  crmIntelligence: {
+    title: 'CRM Intelligence',
+    subtitle: 'Analytics dashboards',
+    dashboards: 'Dashboards',
+    selectDashboard: 'Select a dashboard from the left menu to get started.',
+    noDashboards: 'No dashboards available',
+    loadingDashboard: 'Loading dashboard...',
+    marketing: {
+      title: 'CRM Intelligence',
+      subtitle: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your performance in real-time.',
+      ctaPrimary: 'Request a demo',
+      featuresTitle: 'Drive your data-driven strategy',
+      features: [
+        {
+          icon: 'mdi-chart-areaspline',
+          title: 'Campaign Performance',
+          description: 'Track key metrics of your email sends in real-time.',
+        },
+        {
+          icon: 'mdi-email-check',
+          title: 'Deliverability',
+          description: 'Analyze your deliverability rates and identify issues.',
+        },
+        {
+          icon: 'mdi-account-heart',
+          title: 'Customer Engagement',
+          description: 'Measure your audience engagement across all channels.',
+        },
+        {
+          icon: 'mdi-currency-usd',
+          title: 'Marketing ROI',
+          description: 'Calculate the return on investment of your campaigns.',
+        },
+        {
+          icon: 'mdi-view-dashboard',
+          title: 'Custom Dashboards',
+          description: 'Create dashboards tailored to your business needs.',
+        },
+        {
+          icon: 'mdi-database-sync',
+          title: 'Metabase Integration',
+          description: 'Connect your data sources via Metabase.',
+        },
+      ],
+      footerCta: 'Ready to drive your performance?',
+    },
+    errors: {
+      loadFailed: 'Unable to load the dashboard.',
+      embedFailed: 'Error loading the dashboard.',
+      dashboardAlreadyExists: 'A dashboard with this ID already exists for this integration.',
+      fetchIntegrationsFailed: 'Unable to load integrations.',
+      fetchDashboardsFailed: 'Unable to load dashboards.',
+    },
+    admin: {
+      title: 'CRM Intelligence',
+      description: 'Manage dashboard integrations for this group.',
+      enabled: 'Enable CRM Intelligence',
+      metabaseConfigHint: 'Configure Metabase connections in the Integrations tab.',
+      goToIntegrations: 'Go to Integrations',
+      metabaseConfig: 'Metabase Configuration',
+      siteUrl: 'Metabase URL',
+      invalidUrl: 'Invalid URL',
+      siteUrlHint: 'E.g., https://metabase.example.com',
+      secretKey: 'Embedding secret key',
+      secretKeyHint: 'Find this key in Admin > Embedding > Static embedding',
+      secretKeyHintEdit: 'Leave empty to keep current key',
+      testConnection: 'Test connection',
+      testConnectionSuccess: 'Configuration valid',
+      testConnectionFailed: 'Configuration invalid',
+      // Integrations section
+      integrationsSection: 'Integrations',
+      integrationsSectionHint: 'Configure connections to dashboarding tools (Metabase, etc.)',
+      integrations: 'Integrations',
+      addIntegration: 'Add integration',
+      editIntegration: 'Edit integration',
+      integrationName: 'Integration name',
+      noIntegrations: 'No integrations configured',
+      createSuccess: 'Integration created',
+      deleteSuccess: 'Integration deleted',
+      deleteError: 'Error deleting integration',
+      deleteIntegrationConfirmTitle: 'Delete integration?',
+      deleteIntegrationConfirmText: 'This action cannot be undone. Associated dashboards will no longer work.',
+      saveSuccess: 'Configuration saved',
+      saveError: 'Error saving configuration',
+      // Dashboards section
+      dashboardsSection: 'Dashboards',
+      dashboardsSectionHint: 'Configure the dashboards displayed to users and their display order.',
+      dashboards: 'Dashboards',
+      addDashboard: 'Add dashboard',
+      editDashboard: 'Edit dashboard',
+      selectIntegration: 'Integration',
+      integrationRequired: 'Please select an integration',
+      dashboardId: 'Dashboard ID',
+      dashboardIdHint: 'Number visible in Metabase URL',
+      dashboardIdRequired: 'Dashboard ID is required',
+      dashboardName: 'Display name',
+      dashboardNameRequired: 'Name is required',
+      dashboardDescription: 'Description',
+      noDashboards: 'No dashboards configured',
+      noIntegrationsForDashboards: 'Create an integration first to add dashboards.',
+      dashboardSaveSuccess: 'Dashboard saved',
+      dashboardCreateSuccess: 'Dashboard created',
+      dashboardSaveError: 'Error saving dashboard',
+      dashboardDeleteSuccess: 'Dashboard deleted',
+      dashboardDeleteError: 'Error deleting dashboard',
+      deleteDashboardConfirmTitle: 'Delete dashboard?',
+      deleteDashboardConfirmText: 'This action cannot be undone.',
+      reorderError: 'Error reordering dashboards',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+    },
+  },
+  modules: {
+    emailBuilder: 'Email Builder',
+    crmIntelligence: 'CRM Intelligence',
+    settings: 'Settings',
+    inactive: 'Not activated',
+  },
+  emailBuilder: {
+    marketing: {
+      title: 'Email Builder',
+      subtitle:
+        'Create professional responsive emails with our intuitive drag & drop editor.',
+      ctaPrimary: 'Request a demo',
+      ctaSecondary: 'Learn more',
+      featuresTitle: 'Everything you need',
+      features: [
+        {
+          icon: 'mdi-drag',
+          title: 'Intuitive Drag & Drop',
+          description: 'Build your emails visually, without any code.',
+        },
+        {
+          icon: 'mdi-cellphone-link',
+          title: 'Native Responsive',
+          description: 'Emails optimized for all devices and email clients.',
+        },
+        {
+          icon: 'mdi-puzzle',
+          title: 'Reusable Blocks',
+          description: 'Create a component library for your teams.',
+        },
+        {
+          icon: 'mdi-palette',
+          title: 'Built-in Design System',
+          description: 'Follow your brand guidelines with custom templates.',
+        },
+        {
+          icon: 'mdi-cloud-upload',
+          title: 'Multi-ESP Export',
+          description: 'Export to Sendinblue, Mailchimp, Actito and more.',
+        },
+        {
+          icon: 'mdi-account-group',
+          title: 'Team Collaboration',
+          description: 'Work together with role management and workspaces.',
+        },
+      ],
+      footerCta: 'Ready to create your first emails?',
+    },
+  },
+  sidebar: {
+    modules: 'Modules',
+    utilities: 'Utilities',
+    help: 'Help',
+    logout: 'Logout',
+  },
   integrations: {
     title: 'Integrations',
     name: 'Name',
@@ -512,10 +693,21 @@ export default {
     noIntegrations: 'No integrations configured',
     deleteConfirmTitle: 'Delete integration',
     deleteConfirmMessage: 'Are you sure you want to delete the integration "{name}"?',
+    deleteWarningDashboards: 'Warning: {count} associated dashboard(s) will also be deleted.',
+    categories: {
+      bi: 'BI & Analytics',
+      aiGeneration: 'AI - Generation',
+      aiTranslation: 'AI - Translation',
+    },
     statusLabels: {
       valid: 'Valid',
       invalid: 'Invalid',
       pending: 'Pending'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Your Metabase API key',
+      apiKeyLabel: 'Metabase Secret Key',
+      apiHostHint: 'URL of your Metabase instance (e.g. https://metabase.example.com)'
     },
     openai: {
       apiKeyPlaceholder: 'sk-...',
@@ -572,6 +764,9 @@ export default {
     qualityCheck: {
       title: 'Quality check',
       description: 'Automatically check the quality and consistency of your emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Unable to load available models.',
     }
   }
 };

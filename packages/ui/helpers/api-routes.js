@@ -296,8 +296,9 @@ export function patchCommentUnresolve(commentId) {
 // INTEGRATIONS
 /// ///
 
-export function integrations(groupId) {
-  return `/integrations/groups/${groupId}`;
+export function integrations(groupId, type = null) {
+  const base = `/integrations/groups/${groupId}`;
+  return type ? `${base}?type=${type}` : base;
 }
 
 export function integrationsItem(integrationId) {
@@ -314,6 +315,10 @@ export function integrationsProviders() {
 
 export function integrationModels(integrationId) {
   return `/integrations/${integrationId}/models`;
+}
+
+export function integrationDashboardCount(integrationId) {
+  return `/integrations/${integrationId}/dashboard-count`;
 }
 
 /// ///
@@ -354,4 +359,77 @@ export function translationJobStatus(jobId) {
 
 export function translationJobCancel(jobId) {
   return `/translation/jobs/${jobId}/cancel`;
+}
+
+/// ///
+// CRM INTELLIGENCE
+/// ///
+
+export function getCrmIntelligenceStatus() {
+  return '/crm-intelligence/status';
+}
+
+export function getCrmIntelligenceDashboards() {
+  return '/crm-intelligence/dashboards';
+}
+
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
+}
+
+/// ///
+// INTEGRATIONS
+/// ///
+
+export function getIntegrations(groupId, type = null) {
+  const base = `/integrations/groups/${groupId}`;
+  return type ? `${base}?type=${type}` : base;
+}
+
+export function getIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function createIntegration(groupId) {
+  return `/integrations/groups/${groupId}`;
+}
+
+export function updateIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function deleteIntegration(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function validateIntegration(integrationId) {
+  return `/integrations/${integrationId}/validate`;
+}
+
+/// ///
+// DASHBOARDS
+/// ///
+
+export function getDashboards(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function getDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function createDashboard(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function updateDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function deleteDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function reorderDashboards(groupId) {
+  return `/dashboards/groups/${groupId}/reorder`;
 }

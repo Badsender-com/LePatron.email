@@ -1,6 +1,6 @@
 'use strict';
 
-const { Integrations, AIFeatureConfigs } = require('../common/models.common');
+const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -12,6 +12,7 @@ const logger = require('../utils/logger.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
+const IntegrationTypes = require('../constant/integration-type.js');
 
 module.exports = {
   createIntegration,
@@ -21,8 +22,10 @@ module.exports = {
   findAllByGroup,
   findByGroupAndType,
   findActiveByGroup,
+  findActiveByGroupAndType,
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
+  countDashboardsForIntegration,
 };
 
 /**
@@ -142,10 +145,21 @@ async function updateIntegration({
 }
 
 /**
- * Delete an integration
+ * Delete an integration and its associated dashboards
  */
 async function deleteIntegration({ integrationId }) {
   await findById(integrationId);
+
+  // Delete all dashboards associated with this integration
+  const dashboardResult = await Dashboards.deleteMany({
+    _integration: Types.ObjectId(integrationId),
+  });
+
+  if (dashboardResult.deletedCount > 0) {
+    logger.log(
+      `Deleted ${dashboardResult.deletedCount} dashboard(s) for integration ${integrationId}`
+    );
+  }
 
   const result = await Integrations.deleteOne({
     _id: Types.ObjectId(integrationId),
@@ -159,9 +173,22 @@ async function deleteIntegration({ integrationId }) {
 }
 
 /**
+ * Count dashboards associated with an integration
+ */
+async function countDashboardsForIntegration(integrationId) {
+  return Dashboards.countDocuments({
+    _integration: Types.ObjectId(integrationId),
+  });
+}
+
+/**
  * Find one integration by ID
  */
 async function findById(integrationId) {
+  if (!integrationId || !Types.ObjectId.isValid(integrationId)) {
+    throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+
   const integration = await Integrations.findById(
     Types.ObjectId(integrationId)
   );
@@ -206,6 +233,18 @@ async function findActiveByGroup({ groupId }) {
 }
 
 /**
+ * Find active integrations by group and type
+ */
+async function findActiveByGroupAndType({ groupId, type }) {
+  await groupService.findById(groupId);
+  return Integrations.find({
+    _company: Types.ObjectId(groupId),
+    type,
+    isActive: true,
+  }).sort({ name: 1 });
+}
+
+/**
  * Deactivate all AI features that reference a given integration
  */
 async function deactivateFeaturesForIntegration(integrationId) {
@@ -223,18 +262,44 @@ async function deactivateFeaturesForIntegration(integrationId) {
 }
 
 /**
- * Validate integration credentials using the provider factory
+ * Validate integration credentials
+ * - For dashboard providers: basic URL/key validation
+ * - For AI providers: uses ProviderFactory
  */
-async function validateCredentials({ integrationId }) {
+async function validateCredentials({ integrationId, apiKey, apiHost }) {
   const integration = await findById(integrationId);
 
   let isValid = false;
-  try {
-    const provider = ProviderFactory.createProvider(integration);
-    isValid = await provider.validateCredentials();
-  } catch (error) {
-    logger.error('Validation error:', error.message);
-    isValid = false;
+
+  // Dashboard providers use basic validation
+  if (integration.type === IntegrationTypes.DASHBOARD) {
+    let siteUrl = apiHost ?? integration.apiHost;
+    const secretKey = apiKey ?? integration.apiKey;
+
+    // Basic validation
+    if (!siteUrl || !secretKey) {
+      isValid = false;
+    } else {
+      // URL format validation
+      try {
+        // Normalize URL: remove trailing slash
+        siteUrl = siteUrl.replace(/\/+$/, '');
+        new URL(siteUrl);
+        // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
+        isValid = secretKey.length >= 32;
+      } catch {
+        isValid = false;
+      }
+    }
+  } else {
+    // AI providers use ProviderFactory
+    try {
+      const provider = ProviderFactory.createProvider(integration);
+      isValid = await provider.validateCredentials();
+    } catch (error) {
+      logger.error('Validation error:', error.message);
+      isValid = false;
+    }
   }
 
   await Integrations.findByIdAndUpdate(Types.ObjectId(integrationId), {

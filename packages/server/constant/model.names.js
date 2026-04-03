@@ -25,5 +25,8 @@ module.exports = Object.freeze({
   CommentModel: 'Comment',
   // AI Integrations
   IntegrationModel: 'Integration',
+  DashboardModel: 'Dashboard',
   AIFeatureConfigModel: 'AIFeatureConfig',
+  // Dashboards
+  DashboardModel: 'Dashboard',
 });
