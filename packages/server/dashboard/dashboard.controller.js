@@ -8,6 +8,28 @@ const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 /**
+ * Sanitize lockedParams to only allow flat key/value pairs with safe types.
+ * Prevents injection of arbitrary objects into Metabase JWT payload.
+ */
+function sanitizeLockedParams(params) {
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return {};
+  }
+  const sanitized = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (
+      typeof key === 'string' &&
+      (typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean')
+    ) {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
+/**
  * Check if user is authorized to access a dashboard
  * @param {Object} user - Current user
  * @param {string} dashboardId - Dashboard ID to check
@@ -15,8 +37,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
  */
 async function getDashboardWithAuthCheck(user, dashboardId) {
   const dashboard = await dashboardService.getDashboard(dashboardId);
-  const groupId = dashboard._company?.toString() || dashboard.group?.toString();
-  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({
+    user,
+    groupId: dashboard.groupId,
+  });
   return dashboard;
 }
 
@@ -51,8 +75,13 @@ async function readDashboard(req, res) {
  */
 async function createDashboard(req, res) {
   const { groupId } = req.params;
-  const { name, description, integrationId, providerDashboardId, lockedParams } =
-    req.body;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+  } = req.body;
 
   // Validate required fields
   if (!name) {
@@ -67,12 +96,14 @@ async function createDashboard(req, res) {
     throw createError(400, ERROR_CODES.DASHBOARD_ID_REQUIRED);
   }
 
+  const sanitizedLockedParams = sanitizeLockedParams(lockedParams);
+
   const dashboard = await dashboardService.createDashboard(groupId, {
     name,
     description,
     integrationId,
     providerDashboardId: parseInt(providerDashboardId, 10),
-    lockedParams,
+    lockedParams: sanitizedLockedParams,
   });
 
   res.status(201).json(dashboard);
@@ -85,8 +116,14 @@ async function createDashboard(req, res) {
 async function updateDashboard(req, res) {
   const { dashboardId } = req.params;
   const { user } = req;
-  const { name, description, integrationId, providerDashboardId, lockedParams, isActive } =
-    req.body;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+    isActive,
+  } = req.body;
 
   // Check authorization before update
   await getDashboardWithAuthCheck(user, dashboardId);
@@ -99,7 +136,10 @@ async function updateDashboard(req, res) {
       providerDashboardId !== undefined
         ? parseInt(providerDashboardId, 10)
         : undefined,
-    lockedParams,
+    lockedParams:
+      lockedParams !== undefined
+        ? sanitizeLockedParams(lockedParams)
+        : undefined,
     isActive,
   });
 
