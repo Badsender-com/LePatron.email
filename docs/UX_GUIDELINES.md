@@ -323,6 +323,45 @@ import {
 | **Dates** | Use `preciseDateTime` filter |
 | **Counts** | Use `v-chip small outlined` with icon |
 
+### Table Text Styling Rules
+
+**IMPORTANT**: Data tables should use plain text, not underlined links.
+
+```vue
+<!-- ❌ BAD - Underlined links in table cells -->
+<template #item.email="{ item }">
+  <nuxt-link :to="`/users/${item.id}`">
+    {{ item.email }}
+  </nuxt-link>
+</template>
+
+<!-- ✅ GOOD - Plain text with row-click navigation -->
+<template #item.email="{ item }">
+  <span class="text--secondary">{{ item.email }}</span>
+</template>
+```
+
+**Text styling by column type:**
+
+| Column Type | Style | Example |
+|-------------|-------|---------|
+| **Primary identifier** (name) | `font-weight-medium` | `<span class="font-weight-medium">{{ item.name }}</span>` |
+| **Secondary info** (email, dates) | `text--secondary` | `<span class="text--secondary">{{ item.email }}</span>` |
+| **Language codes** | `text-uppercase text--secondary` | `<span class="text-uppercase text--secondary">{{ item.lang }}</span>` |
+| **Roles/badges** | `v-chip x-small` | `<v-chip x-small color="accent" dark>Admin</v-chip>` |
+| **Status** | `v-chip small` with colors | See Status Chip Pattern below |
+
+**Column ordering best practices:**
+- Primary identifier (name) should be the first column
+- Secondary identifiers (email, username) follow
+- Badges/roles appear after identifiers
+- Status, dates, and actions come last
+
+**Actions in tables:**
+- Use direct icon buttons with tooltips instead of dropdown menus
+- Group related actions (activation, mail, edit) in a flex container
+- Use `@click.stop` to prevent row click when clicking action buttons
+
 ### Action Buttons Pattern
 
 ```vue

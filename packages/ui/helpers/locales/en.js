@@ -450,6 +450,13 @@ export default {
     details: 'Details',
     role: 'Role',
     noUsersAvailable: 'No users available',
+    status: {
+      confirmed: 'Active',
+      saml: 'SSO',
+      passwordSent: 'Pending',
+      toInitialize: 'To initialize',
+      deactivated: 'Deactivated',
+    },
   },
   workspaces: {
     name: 'Name',
