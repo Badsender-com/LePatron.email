@@ -826,9 +826,12 @@ export default {
     noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
     integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
     comingSoon: 'Bientôt disponible',
+    upcomingFeatures: 'Fonctionnalités à venir',
+    upcomingFeaturesDescription: 'Découvrez les prochaines fonctionnalités IA en cours de développement.',
     translation: {
       title: 'Traduction',
       description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
+      enableLabel: 'Activer la traduction',
       model: 'Modèle IA',
       modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
       availableLanguages: 'Langues disponibles',

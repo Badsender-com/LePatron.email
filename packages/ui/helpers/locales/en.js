@@ -820,9 +820,12 @@ export default {
     noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
     integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
     comingSoon: 'Coming soon',
+    upcomingFeatures: 'Upcoming features',
+    upcomingFeaturesDescription: 'Discover the upcoming AI features currently in development.',
     translation: {
       title: 'Translation',
       description: 'Automatically translate your emails into different languages using AI.',
+      enableLabel: 'Enable translation',
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
