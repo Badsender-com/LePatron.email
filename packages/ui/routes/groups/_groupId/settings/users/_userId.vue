@@ -416,28 +416,18 @@ export default {
           <bs-mailings-admin-table
             :mailings="mailings"
             :loading="isLoadingMailings"
-            :options="pagination || {}"
-            :hidden-cols="['userName']"
-            :footer-props="{
-              pagination,
-              disablePagination: true,
-              prevIcon: 'none',
-              nextIcon: 'none',
-              itemsPerPageOptions: [25, 50, 100, -1],
-              itemsPerPageAllText: 'Tout',
-            }"
-            @update:items-per-page="handleItemsPerPageChange"
+            :hidden-cols="['userName', 'actions']"
           />
           <v-card
+            v-if="pagination && pagination.itemsLength > pagination.itemsPerPage"
             flat
             class="d-flex align-center justify-center mx-auto"
             max-width="22rem"
           >
             <v-pagination
-              v-if="pagination && pagination.itemsLength > 0"
               v-model="pagination.page"
               :circle="true"
-              class="my-4 pagination-custom-style"
+              class="my-4"
               :length="pagination.pageCount"
             />
           </v-card>
