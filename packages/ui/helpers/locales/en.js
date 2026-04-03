@@ -449,6 +449,7 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    noUsersAvailable: 'No users available',
   },
   workspaces: {
     name: 'Name',
