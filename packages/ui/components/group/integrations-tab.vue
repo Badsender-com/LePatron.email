@@ -12,10 +12,7 @@ import {
 } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
 import {
-  Plus,
   Puzzle,
-  CheckCircle2,
-  XCircle,
   Cable,
   Pencil,
   Trash2,
@@ -36,10 +33,7 @@ export default {
   name: 'BsGroupIntegrationsTab',
   components: {
     BsIntegrationForm,
-    LucidePlus: Plus,
     LucidePuzzle: Puzzle,
-    LucideCheckCircle2: CheckCircle2,
-    LucideXCircle: XCircle,
     LucideCable: Cable,
     LucidePencil: Pencil,
     LucideTrash2: Trash2,
@@ -258,13 +252,6 @@ export default {
 <template>
   <v-card flat tile>
     <v-card-text>
-      <div class="d-flex justify-end mb-4">
-        <v-btn color="accent" elevation="0" @click="openCreateForm">
-          <lucide-plus :size="18" class="mr-2" />
-          {{ $t('integrations.add') }}
-        </v-btn>
-      </div>
-
       <v-skeleton-loader v-if="loading && !integrations.length" type="table" />
 
       <v-data-table
