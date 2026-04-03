@@ -5,26 +5,17 @@ import {
   getProviderFormConfig,
   getProviderLabel,
   getProvidersGroupedByCategory,
-  getProviderCategory,
 } from './provider-configs';
-import { BarChart3, Bot, Languages, Puzzle, Eye, EyeOff } from 'lucide-vue';
-
-// Icon mapping from Lucide names to components
-const ICON_MAP = {
-  'bar-chart-3': BarChart3,
-  'bot': Bot,
-  'languages': Languages,
-  'puzzle': Puzzle,
-};
+import BsTextField from '~/components/form/bs-text-field';
+import BsSelect from '~/components/form/bs-select';
+import { Eye, EyeOff } from 'lucide-vue';
 
 export default {
   name: 'BsIntegrationForm',
   mixins: [validationMixin],
   components: {
-    LucideBarChart3: BarChart3,
-    LucideBot: Bot,
-    LucideLanguages: Languages,
-    LucidePuzzle: Puzzle,
+    BsTextField,
+    BsSelect,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
   },
@@ -93,9 +84,6 @@ export default {
     },
     selectedProviderConfig() {
       return getProviderFormConfig(this.form.provider);
-    },
-    selectedProviderCategory() {
-      return getProviderCategory(this.form.provider);
     },
     apiKeyLabel() {
       if (this.selectedProviderConfig.apiKeyLabelKey) {
@@ -170,10 +158,6 @@ export default {
 
     getProviderLabel,
 
-    getIconComponent(iconName) {
-      return ICON_MAP[iconName] || Puzzle;
-    },
-
     fieldErrors(fieldName) {
       const field = this.$v.form[fieldName];
       if (!field || !field.$dirty) return [];
@@ -226,68 +210,59 @@ export default {
 
     <v-card-text>
       <v-form @submit.prevent="onSubmit">
-        <v-text-field
+        <bs-text-field
           v-model="form.name"
           :label="$t('integrations.name')"
           :error-messages="fieldErrors('name')"
           :disabled="loading"
-          outlined
-          dense
+          required
           @blur="$v.form.name.$touch()"
         />
 
-        <v-select
+        <bs-select
           v-model="form.provider"
           :items="groupedProviderOptions"
           :label="$t('integrations.provider')"
           :error-messages="fieldErrors('provider')"
           :disabled="loading || isEdit"
-          outlined
-          dense
+          required
           @blur="$v.form.provider.$touch()"
-        >
-          <template #item="{ item, on, attrs }">
-            <v-list-item v-if="!item.header" v-bind="attrs" v-on="on">
-              <v-list-item-icon class="mr-3">
-                <component :is="getIconComponent(item.icon)" :size="16" />
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>{{ item.text }}</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </template>
-          <template #selection="{ item }">
-            <component :is="getIconComponent(item.icon)" :size="16" class="mr-2" />
-            {{ item.text }}
-          </template>
-        </v-select>
+        />
 
-        <v-text-field
-          v-model="form.apiKey"
-          :label="apiKeyLabel"
-          :placeholder="
-            selectedProviderConfig.apiKeyPlaceholderKey
-              ? $t(selectedProviderConfig.apiKeyPlaceholderKey)
-              : ''
-          "
-          :error-messages="fieldErrors('apiKey')"
-          :disabled="loading"
-          :type="showApiKey ? 'text' : 'password'"
-          :hint="isEdit ? $t('integrations.apiKeyHintEdit') : ''"
-          persistent-hint
-          outlined
-          dense
-          @blur="$v.form.apiKey && $v.form.apiKey.$touch()"
-        >
-          <template #append>
-            <v-btn icon small @click="showApiKey = !showApiKey">
-              <lucide-eye-off v-if="showApiKey" :size="18" />
-              <lucide-eye v-else :size="18" />
-            </v-btn>
-          </template>
-        </v-text-field>
+        <div class="bs-text-field">
+          <label class="bs-text-field__label">
+            {{ apiKeyLabel }}
+            <span v-if="!isEdit" class="bs-text-field__required">*</span>
+          </label>
+          <v-text-field
+            v-model="form.apiKey"
+            :placeholder="
+              selectedProviderConfig.apiKeyPlaceholderKey
+                ? $t(selectedProviderConfig.apiKeyPlaceholderKey)
+                : ''
+            "
+            :error-messages="fieldErrors('apiKey')"
+            :disabled="loading"
+            :type="showApiKey ? 'text' : 'password'"
+            solo
+            flat
+            hide-details="auto"
+            class="bs-text-field__input"
+            @blur="$v.form.apiKey && $v.form.apiKey.$touch()"
+          >
+            <template #append>
+              <v-btn icon small @click="showApiKey = !showApiKey">
+                <lucide-eye-off v-if="showApiKey" :size="18" />
+                <lucide-eye v-else :size="18" />
+              </v-btn>
+            </template>
+          </v-text-field>
+          <div v-if="isEdit" class="bs-text-field__hint">
+            {{ $t('integrations.apiKeyHintEdit') }}
+          </div>
+        </div>
 
-        <v-text-field
+        <bs-text-field
           v-if="showProductIdField"
           v-model="form.productId"
           :label="$t('integrations.productId')"
@@ -298,13 +273,11 @@ export default {
               : ''
           "
           :disabled="loading"
-          persistent-hint
-          outlined
-          dense
+          required
           @blur="$v.form.productId && $v.form.productId.$touch()"
         />
 
-        <v-text-field
+        <bs-text-field
           v-if="selectedProviderConfig.apiHostPlaceholder"
           v-model="form.apiHost"
           :label="$t('integrations.apiHost')"
@@ -315,28 +288,98 @@ export default {
               : ''
           "
           :disabled="loading"
-          persistent-hint
-          outlined
-          dense
         />
 
         <v-switch
           v-model="form.isActive"
           :label="$t('integrations.active')"
           :disabled="loading"
-          color="primary"
+          color="accent"
         />
       </v-form>
     </v-card-text>
 
-    <v-card-actions>
-      <v-spacer />
-      <v-btn text :disabled="loading" @click="onCancel">
+    <v-divider />
+    <div class="modal-actions">
+      <v-btn text color="primary" :disabled="loading" @click="onCancel">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn color="primary" :loading="loading" @click="onSubmit">
+      <v-btn color="accent" elevation="0" :loading="loading" @click="onSubmit">
         {{ $t('global.save') }}
       </v-btn>
-    </v-card-actions>
+    </div>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.bs-text-field {
+  margin-bottom: 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.375rem;
+  }
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+
+  &__input {
+    &.v-text-field.v-text-field--solo {
+      ::v-deep .v-input__slot {
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        background: #fff;
+        min-height: 40px;
+        padding: 0 12px;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.4);
+        }
+      }
+
+      &.v-input--is-focused ::v-deep .v-input__slot {
+        border-color: #00acdc;
+      }
+
+      &.error--text ::v-deep .v-input__slot {
+        border-color: #f04e23;
+      }
+
+      ::v-deep input {
+        font-size: 0.875rem;
+        padding: 8px 0;
+      }
+
+      ::v-deep .v-text-field__details {
+        padding: 4px 0 0 0;
+        min-height: auto;
+      }
+
+      ::v-deep .v-messages__message {
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.25rem;
+    padding-left: 2px;
+  }
+}
+</style>
