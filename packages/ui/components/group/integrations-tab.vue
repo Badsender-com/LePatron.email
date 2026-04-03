@@ -3,6 +3,10 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import {
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
+} from '~/helpers/constants/table-config.js';
+import {
   getProviderLabel,
   getProviderCategory,
 } from '~/components/integrations/provider-configs';
@@ -43,6 +47,8 @@ export default {
     LucideBot: Bot,
     LucideLanguages: Languages,
   },
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
   data() {
     return {
       loading: false,
@@ -266,15 +272,21 @@ export default {
         :loading="loading"
         :headers="tableHeaders"
         :items="integrations"
-        :no-data-text="$t('integrations.noIntegrations')"
+        :items-per-page="25"
+        :hide-default-footer="integrations.length <= $options.TABLE_PAGINATION_THRESHOLD"
+        :footer-props="$options.TABLE_FOOTER_PROPS"
+        class="integrations-table"
       >
+        <template #item.name="{ item }">
+          <span class="font-weight-medium">{{ item.name }}</span>
+        </template>
+
         <template #item.provider="{ item }">
           <div class="d-flex align-center">
             <component
               :is="getCategoryIconComponent(item.provider)"
               :size="16"
-              class="mr-2"
-              :title="getCategoryLabel(item.provider)"
+              class="mr-2 text--secondary"
             />
             <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
             <v-chip x-small outlined color="grey">
@@ -284,43 +296,82 @@ export default {
         </template>
 
         <template #item.validationStatus="{ item }">
-          <v-chip small :color="getStatusColor(item.validationStatus)">
+          <v-chip
+            small
+            :color="getStatusColor(item.validationStatus)"
+            :outlined="item.validationStatus !== 'valid'"
+            :dark="item.validationStatus === 'valid'"
+          >
             {{ getStatusLabel(item.validationStatus) }}
           </v-chip>
         </template>
 
         <template #item.isActive="{ item }">
-          <lucide-check-circle2 v-if="item.isActive" :size="20" color="#4caf50" />
-          <lucide-x-circle v-else :size="20" color="#9e9e9e" />
+          <v-chip
+            small
+            :color="item.isActive ? 'success' : 'grey'"
+            :outlined="!item.isActive"
+            :dark="item.isActive"
+          >
+            {{ item.isActive ? $t('global.enabled') : $t('global.disabled') }}
+          </v-chip>
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn
-            icon
-            small
-            :loading="validating[item._id]"
-            :title="$t('integrations.validate')"
-            @click="validateIntegration(item)"
-          >
-            <lucide-cable :size="16" />
-          </v-btn>
-          <v-btn
-            icon
-            small
-            :title="$t('global.edit')"
-            @click="openEditForm(item)"
-          >
-            <lucide-pencil :size="16" />
-          </v-btn>
-          <v-btn
-            icon
-            small
-            color="error"
-            :title="$t('global.delete')"
-            @click="confirmDelete(item)"
-          >
-            <lucide-trash2 :size="16" />
-          </v-btn>
+          <div class="d-flex align-center">
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  :loading="validating[item._id]"
+                  v-bind="attrs"
+                  v-on="on"
+                  @click.stop="validateIntegration(item)"
+                >
+                  <lucide-cable :size="18" />
+                </v-btn>
+              </template>
+              <span>{{ $t('integrations.validate') }}</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  v-bind="attrs"
+                  v-on="on"
+                  @click.stop="openEditForm(item)"
+                >
+                  <lucide-pencil :size="18" />
+                </v-btn>
+              </template>
+              <span>{{ $t('global.edit') }}</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  v-bind="attrs"
+                  v-on="on"
+                  @click.stop="confirmDelete(item)"
+                >
+                  <lucide-trash2 :size="18" class="error--text" />
+                </v-btn>
+              </template>
+              <span>{{ $t('global.delete') }}</span>
+            </v-tooltip>
+          </div>
+        </template>
+
+        <template #no-data>
+          <div class="text-center pa-6">
+            <lucide-puzzle :size="48" class="grey--text text--lighten-1" />
+            <p class="text-body-1 grey--text mt-4">
+              {{ $t('integrations.noIntegrations') }}
+            </p>
+          </div>
         </template>
       </v-data-table>
 
@@ -358,9 +409,9 @@ export default {
               <strong>{{ $t('integrations.deleteWarningDashboards', { count: deletingDashboardCount }) }}</strong>
             </v-alert>
           </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn text @click="showDeleteDialog = false">
+          <v-divider />
+          <div class="modal-actions">
+            <v-btn text color="primary" @click="showDeleteDialog = false">
               {{ $t('global.cancel') }}
             </v-btn>
             <v-btn
@@ -371,9 +422,29 @@ export default {
             >
               {{ $t('global.delete') }}
             </v-btn>
-          </v-card-actions>
+          </div>
         </v-card>
       </v-dialog>
     </v-card-text>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.integrations-table {
+  ::v-deep tbody tr {
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(0, 172, 220, 0.05) !important;
+    }
+  }
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+</style>
