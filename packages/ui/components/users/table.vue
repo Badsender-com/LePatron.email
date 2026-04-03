@@ -128,7 +128,14 @@ export default {
       this.$emit('update', user);
     },
     navigateToUser(user) {
-      this.$router.push(`/users/${user.id}`);
+      // Navigate to user edit page within the group settings structure
+      const groupId = user.group?.id || this.$route.params.groupId;
+      if (groupId) {
+        this.$router.push(`/groups/${groupId}/settings/users/${user.id}`);
+      } else {
+        // Fallback for legacy route
+        this.$router.push(`/users/${user.id}`);
+      }
     },
     getMailActionTooltip(status) {
       const actions = this.getStatusActions(status);
