@@ -455,6 +455,13 @@ export default {
     details: 'Informations',
     role: 'Rôle',
     noUsersAvailable: 'Aucun utilisateur disponible',
+    status: {
+      confirmed: 'Actif',
+      saml: 'SSO',
+      passwordSent: 'En attente',
+      toInitialize: 'À initialiser',
+      deactivated: 'Désactivé',
+    },
   },
   workspaces: {
     name: 'Nom',

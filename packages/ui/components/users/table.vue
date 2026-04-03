@@ -1,20 +1,30 @@
 <script>
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
-import BsActionsDropdown from '~/components/users/actions-dropdown';
 import { Roles } from '~/helpers/constants/roles';
 import {
   TABLE_FOOTER_PROPS,
   TABLE_PAGINATION_THRESHOLD,
 } from '~/helpers/constants/table-config.js';
-import { Users } from 'lucide-vue';
+import {
+  Users,
+  Pencil,
+  Send,
+  UserCheck,
+  UserX,
+  RotateCcw,
+} from 'lucide-vue';
 
 export default {
   name: 'BsUsersTable',
   components: {
-    BsActionsDropdown,
     BsUserActions,
     LucideUsers: Users,
+    LucidePencil: Pencil,
+    LucideSend: Send,
+    LucideUserCheck: UserCheck,
+    LucideUserX: UserX,
+    LucideRotateCcw: RotateCcw,
   },
   TABLE_FOOTER_PROPS,
   TABLE_PAGINATION_THRESHOLD,
@@ -33,14 +43,9 @@ export default {
   computed: {
     tableHeaders() {
       return [
-        { text: this.$t('users.email'), align: 'left', value: 'email' },
-        { text: '', value: 'role' },
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        {
-          text: this.$t('global.externalUsername'),
-          align: 'left',
-          value: 'externalUsername',
-        },
+        { text: this.$t('users.email'), align: 'left', value: 'email' },
+        { text: '', value: 'role', sortable: false, width: '80px' },
         {
           text: this.$tc('global.group', 1),
           align: 'left',
@@ -50,17 +55,16 @@ export default {
         {
           text: this.$t('global.status'),
           value: 'status',
-          class: 'table-column-action',
+          align: 'center',
         },
-        { text: '', align: 'left', value: 'statusText', sortable: false },
-        { text: this.$t('users.lang'), value: 'lang' },
+        { text: this.$t('users.lang'), value: 'lang', align: 'center' },
         { text: this.$t('global.createdAt'), value: 'createdAt' },
         {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
           align: 'center',
-          class: 'table-column-action',
+          width: '140px',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
@@ -74,8 +78,31 @@ export default {
     },
   },
   methods: {
-    getStatusIcon(item) {
-      return userStatusHelpers.getStatusIcon(item.status);
+    getStatusActions(status) {
+      return userStatusHelpers.getStatusActions(status);
+    },
+    getStatusColor(status) {
+      const colors = {
+        confirmed: 'success',
+        'saml-authentication': 'success',
+        'password-mail-sent': 'info',
+        'to-be-initialized': 'warning',
+        deactivated: 'grey',
+      };
+      return colors[status] || 'grey';
+    },
+    getStatusLabel(status) {
+      const labels = {
+        confirmed: this.$t('users.status.confirmed'),
+        'saml-authentication': this.$t('users.status.saml'),
+        'password-mail-sent': this.$t('users.status.passwordSent'),
+        'to-be-initialized': this.$t('users.status.toInitialize'),
+        deactivated: this.$t('users.status.deactivated'),
+      };
+      return labels[status] || status;
+    },
+    isActiveStatus(status) {
+      return status === 'confirmed' || status === 'saml-authentication';
     },
     resetPassword(user) {
       this.selectedUser = user;
@@ -103,6 +130,27 @@ export default {
     navigateToUser(user) {
       this.$router.push(`/users/${user.id}`);
     },
+    getMailActionTooltip(status) {
+      const actions = this.getStatusActions(status);
+      if (actions.resetPassword) return this.$t('users.passwordTooltip.reset');
+      if (actions.sendPassword) return this.$t('users.passwordTooltip.send');
+      if (actions.reSendPassword) return this.$t('users.passwordTooltip.resend');
+      return '';
+    },
+    handleMailAction(user) {
+      const actions = this.getStatusActions(user.status);
+      if (actions.resetPassword) return this.resetPassword(user);
+      if (actions.sendPassword) return this.sendPassword(user);
+      if (actions.reSendPassword) return this.resendPassword(user);
+    },
+    showMailAction(status) {
+      const actions = this.getStatusActions(status);
+      return (
+        actions.resetPassword ||
+        actions.sendPassword ||
+        actions.reSendPassword
+      );
+    },
   },
 };
 </script>
@@ -120,50 +168,122 @@ export default {
       class="users-table"
       @click:row="navigateToUser"
     >
+      <template #item.name="{ item }">
+        <span class="font-weight-medium">{{ item.name }}</span>
+      </template>
+
       <template #item.email="{ item }">
-        <nuxt-link :to="`/users/${item.id}`">
-          {{ item.email }}
-        </nuxt-link>
+        <span class="text--secondary">{{ item.email }}</span>
       </template>
+
       <template #item.role="{ item }">
-        <v-badge
+        <v-chip
           v-if="item.role === roles.GROUP_ADMIN"
-          inline
+          x-small
           color="accent"
-          content="Admin"
-        />
+          dark
+        >
+          Admin
+        </v-chip>
       </template>
+
       <template #item.group="{ item }">
-        <nuxt-link :to="`/groups/${item.group.id}`">
-          {{ item.group.name }}
-        </nuxt-link>
+        <span>{{ item.group.name }}</span>
       </template>
-      <template #item.externalUsername="{ item }">
-        <nuxt-link :to="`/users/${item.id}`">
-          {{ item.externalUsername }}
-        </nuxt-link>
-      </template>
+
       <template #item.status="{ item }">
-        <v-icon color="accent">
-          {{ getStatusIcon(item) }}
-        </v-icon>
+        <v-chip
+          small
+          :color="getStatusColor(item.status)"
+          :outlined="!isActiveStatus(item.status)"
+          :dark="isActiveStatus(item.status)"
+        >
+          {{ getStatusLabel(item.status) }}
+        </v-chip>
       </template>
-      <template #item.statusText="{ item }">
-        <span>{{ item | userStatus }}</span>
+
+      <template #item.lang="{ item }">
+        <span class="text-uppercase text--secondary">{{ item.lang }}</span>
       </template>
+
       <template #item.createdAt="{ item }">
-        <span>{{ item.createdAt | preciseDateTime }}</span>
+        <span class="text--secondary">{{ item.createdAt | preciseDateTime }}</span>
       </template>
+
       <template #item.actions="{ item }">
-        <bs-actions-dropdown
-          :user="item"
-          :loading="loading"
-          :activate="activate"
-          :deactivate="deactivate"
-          :reset-password="resetPassword"
-          :send-password="sendPassword"
-          :resend-password="resendPassword"
-        />
+        <div class="d-flex align-center justify-center">
+          <!-- Activation/Deactivation toggle -->
+          <v-tooltip v-if="getStatusActions(item.status).activate" bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                class="success--text"
+                v-bind="attrs"
+                :disabled="loading"
+                v-on="on"
+                @click.stop="activate(item)"
+              >
+                <lucide-user-check :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.enable') }}</span>
+          </v-tooltip>
+          <v-tooltip v-else-if="item.status !== 'to-be-initialized'" bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                class="grey--text"
+                v-bind="attrs"
+                :disabled="loading"
+                v-on="on"
+                @click.stop="deactivate(item)"
+              >
+                <lucide-user-x :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.disable') }}</span>
+          </v-tooltip>
+
+          <!-- Password/Mail actions -->
+          <v-tooltip v-if="showMailAction(item.status)" bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                v-bind="attrs"
+                :disabled="loading"
+                v-on="on"
+                @click.stop="handleMailAction(item)"
+              >
+                <lucide-send
+                  v-if="!getStatusActions(item.status).resetPassword"
+                  :size="18"
+                  class="accent--text"
+                />
+                <lucide-rotate-ccw v-else :size="18" class="accent--text" />
+              </v-btn>
+            </template>
+            <span>{{ getMailActionTooltip(item.status) }}</span>
+          </v-tooltip>
+
+          <!-- Edit action -->
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                v-bind="attrs"
+                v-on="on"
+                @click.stop="navigateToUser(item)"
+              >
+                <lucide-pencil :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.edit') }}</span>
+          </v-tooltip>
+        </div>
       </template>
 
       <template #no-data>
