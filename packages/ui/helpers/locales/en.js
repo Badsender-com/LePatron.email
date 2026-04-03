@@ -339,6 +339,7 @@ export default {
     },
   },
   mailings: {
+    noMailingsAvailable: 'No emails available',
     transfer: {
       label: 'Transfer email',
       success: 'Email transferred',

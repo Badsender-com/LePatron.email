@@ -343,6 +343,7 @@ export default {
     },
   },
   mailings: {
+    noMailingsAvailable: 'Aucun email disponible',
     transfer: {
       label: 'Transférer l\'email',
       success: 'L\'email a bien été transféré',
