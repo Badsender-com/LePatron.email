@@ -245,6 +245,208 @@ Review finding: "The filtered options is not clear: how to activate/deactivate i
 </v-switch>
 ```
 
+## Data Table Patterns
+
+### BsDataTable Component (Recommended)
+
+Use the `BsDataTable` component for consistent table styling across the application:
+
+```vue
+<script>
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import { Users, Pencil, Trash2 } from 'lucide-vue';
+
+export default {
+  components: {
+    BsDataTable,
+    LucideUsers: Users,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
+  },
+  // ...
+};
+</script>
+
+<template>
+  <bs-data-table
+    :headers="tableHeaders"
+    :items="items"
+    :loading="loading"
+    :empty-icon="$options.components.LucideUsers"
+    :empty-message="$t('workspaces.empty')"
+    clickable
+    @click:row="handleRowClick"
+  >
+    <template #item.name="{ item }">
+      <span class="font-weight-medium">{{ item.name }}</span>
+    </template>
+
+    <template #item.actions="{ item }">
+      <v-tooltip bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn icon small v-bind="attrs" v-on="on" @click.stop="editItem(item)">
+            <lucide-pencil :size="18" />
+          </v-btn>
+        </template>
+        <span>{{ $t('global.edit') }}</span>
+      </v-tooltip>
+    </template>
+  </bs-data-table>
+</template>
+```
+
+### Table Configuration
+
+See `/helpers/constants/table-config.js` for centralized configuration:
+
+- **Pagination options**: 25, 50, 100, All
+- **Default items per page**: 25
+- **Footer hidden threshold**: 25 items
+
+```js
+import {
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
+} from '~/helpers/constants/table-config.js';
+```
+
+### Table Design Guidelines
+
+| Feature | Guideline |
+|---------|-----------|
+| **Row click** | Use `clickable` prop for navigation to detail page |
+| **Actions column** | Use icon buttons with tooltips, right-aligned |
+| **Name column** | Use `font-weight-medium` for emphasis |
+| **Empty state** | Include relevant icon and descriptive message |
+| **Status indicators** | Use `v-chip` with appropriate colors |
+| **Boolean values** | Use Lucide check icon (`lucide-check`) |
+| **Dates** | Use `preciseDateTime` filter |
+| **Counts** | Use `v-chip small outlined` with icon |
+
+### Action Buttons Pattern
+
+```vue
+<template #item.actions="{ item }">
+  <!-- Edit button -->
+  <v-tooltip bottom>
+    <template #activator="{ on, attrs }">
+      <v-btn icon small v-bind="attrs" v-on="on" @click.stop="editItem(item)">
+        <lucide-pencil :size="18" />
+      </v-btn>
+    </template>
+    <span>{{ $t('global.edit') }}</span>
+  </v-tooltip>
+
+  <!-- Delete button (danger style) -->
+  <v-tooltip bottom>
+    <template #activator="{ on, attrs }">
+      <v-btn
+        icon
+        small
+        class="error--text"
+        v-bind="attrs"
+        v-on="on"
+        @click.stop="deleteItem(item)"
+      >
+        <lucide-trash2 :size="18" />
+      </v-btn>
+    </template>
+    <span>{{ $t('global.delete') }}</span>
+  </v-tooltip>
+</template>
+```
+
+### Count Display Pattern
+
+```vue
+<template #item.users="{ item }">
+  <v-chip small outlined>
+    <lucide-users :size="14" class="mr-1" />
+    {{ item.users || 0 }}
+  </v-chip>
+</template>
+```
+
+### Status Chip Pattern
+
+```vue
+<template #item.status="{ item }">
+  <v-chip
+    small
+    :color="getStatusColor(item.status)"
+    :outlined="item.status !== 'active'"
+    :dark="item.status === 'active'"
+  >
+    {{ item.status }}
+  </v-chip>
+</template>
+```
+
+## Modal Patterns
+
+### BsModalForm Component (Recommended for Forms)
+
+Use the `BsModalForm` component for modal dialogs containing forms:
+
+```vue
+<script>
+import BsModalForm from '~/components/modal/bs-modal-form.vue';
+import BsTextField from '~/components/form/bs-text-field';
+import BsSelect from '~/components/form/bs-select';
+
+export default {
+  components: { BsModalForm, BsTextField, BsSelect },
+  data() {
+    return { formData: { name: '', status: '' }, loading: false };
+  },
+  methods: {
+    open() {
+      this.$refs.modal.open();
+    },
+    onSubmit() {
+      // Validate and submit
+      this.$emit('submit', this.formData);
+    },
+  },
+};
+</script>
+
+<template>
+  <bs-modal-form
+    ref="modal"
+    :title="$t('modal.title')"
+    :submit-label="$t('global.create')"
+    :loading="loading"
+    @submit="onSubmit"
+  >
+    <bs-text-field v-model="formData.name" label="Name" required />
+    <bs-select v-model="formData.status" :items="options" label="Status" />
+  </bs-modal-form>
+</template>
+```
+
+### BsModalForm Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | String | required | Modal header title |
+| `width` | String/Number | 500 | Modal width in pixels |
+| `submit-label` | String | "Save" | Submit button text |
+| `cancel-label` | String | "Cancel" | Cancel button text |
+| `submit-color` | String | "accent" | Submit button color |
+| `loading` | Boolean | false | Shows loader on submit button |
+| `submit-disabled` | Boolean | false | Disables submit button |
+| `show-submit` | Boolean | true | Whether to show submit button |
+| `persistent` | Boolean | false | Prevents closing on outside click |
+
+### Modal Components Summary
+
+| Component | Use Case |
+|-----------|----------|
+| `BsModalForm` | Forms in modals (create, edit) |
+| `BsModalConfirm` | Simple confirmation dialogs |
+| `BsModalConfirmForm` | Confirmation with input validation |
+
 ## Form and Input Patterns
 
 ### Text Mentions

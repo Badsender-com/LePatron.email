@@ -150,6 +150,7 @@ export default {
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
     downloadFtp: 'Download FTP',
+    noData: 'No data available',
   },
   layout: {
     logout: 'Logout',
@@ -326,14 +327,15 @@ export default {
       deleteWarningMessage:
         'You are about to delete the workspace: <strong>{name}</strong>.<br/>This action can\'t be undone.',
       deleteSuccessful: 'Workspace deleted',
+      empty: 'No workspaces yet',
     },
     delete: {
       deleteWarningMessage:
-        'You are about to delete the group: <strong>{name}</strong>.<br/>This action can\'t be undone.',
-      confirmationField: 'Type the group name to confirm',
+        'You are about to delete the company: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+      confirmationField: 'Type the company name to confirm',
       deleteNotice:
-        'Administrators, users, templates, workspaces, folders, emails and emails test groups will also be deleted',
-      successful: 'Group deleted',
+        'Administrators, users, templates, workspaces, folders, emails and test lists will also be deleted.',
+      successful: 'Company deleted',
     },
   },
   mailings: {
@@ -452,7 +454,14 @@ export default {
     name: 'Name',
     description: 'Descritpion',
     members: 'Users',
+    membersDescription:
+      'Select the users who will have access to this workspace.',
     userIsGroupAdmin: 'The user is a group admin',
+    noUsersAvailable: 'No users available',
+    sections: {
+      info: 'Information',
+      infoDescription: 'Set the workspace name.',
+    },
   },
   profiles: {
     name: 'Name',
@@ -773,6 +782,7 @@ export default {
       crmIntelligence: 'CRM Intelligence',
     },
     companiesList: 'Companies list',
+    companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
     colors: 'Colors',
   },

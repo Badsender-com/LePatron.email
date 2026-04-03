@@ -150,6 +150,7 @@ export default {
     emailsGroupsEmpty: 'Aucune liste de test disponible',
     continue: 'Continuer',
     downloadFtp: 'Télécharger FTP',
+    noData: 'Aucune donnée disponible',
   },
   layout: {
     logout: 'Déconnexion',
@@ -330,14 +331,15 @@ export default {
       deleteNotice:
         'Les emails et dossiers contenus dans ce workspace seront également supprimés.',
       deleteSuccessful: 'Le workspace a bien été supprimé',
+      empty: 'Aucun workspace pour le moment',
     },
     delete: {
       deleteWarningMessage:
-        'Vous êtes sur le point de supprimer le groupe : <strong>{name}</strong>.<br/>Cette action est irréversible.',
-      confirmationField: 'Tapez le nom du groupe pour confirmer',
+        'Vous êtes sur le point de supprimer l\'entreprise : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+      confirmationField: 'Tapez le nom de l\'entreprise pour confirmer',
       deleteNotice:
-        'Les administrateurs, utilisteurs, templates, workspaces, répertoires, emails et groupes de testes seront supprimés aussi',
-      successful: 'Le groupe a bien été supprimé',
+        'Les administrateurs, utilisateurs, templates, workspaces, répertoires, emails et listes de test seront également supprimés.',
+      successful: 'L\'entreprise a bien été supprimée',
     },
   },
   mailings: {
@@ -457,7 +459,14 @@ export default {
     name: 'Nom',
     description: 'Descritpion',
     members: 'Utilisateurs',
-    userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
+    membersDescription:
+      'Sélectionnez les utilisateurs qui auront accès à ce workspace.',
+    userIsGroupAdmin: "L'utilisateur est un administrateur du groupe",
+    noUsersAvailable: 'Aucun utilisateur disponible',
+    sections: {
+      info: 'Informations',
+      infoDescription: 'Définissez le nom du workspace.',
+    },
   },
   profiles: {
     name: 'Nom',
@@ -778,6 +787,7 @@ export default {
       crmIntelligence: 'CRM Intelligence',
     },
     companiesList: 'Liste des companies',
+    companiesEmpty: 'Aucune company pour le moment',
     superAdminOnly: 'Super admin uniquement',
     colors: 'Couleurs',
   },

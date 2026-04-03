@@ -1,19 +1,17 @@
 <script>
 import { groupsWorkspaces, deleteWorkspace } from '~/helpers/api-routes.js';
 import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
 import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import { Trash2, Pencil, Users } from 'lucide-vue';
 
 export default {
   name: 'BsGroupWorkspacesTab',
   components: {
+    BsDataTable,
     BsModalConfirmForm,
     LucideTrash2: Trash2,
     LucidePencil: Pencil,
@@ -25,8 +23,6 @@ export default {
       dialogDelete: false,
       selectedWorkspace: {},
       loading: false,
-      TABLE_FOOTER_PROPS,
-      TABLE_PAGINATION_THRESHOLD,
     };
   },
   computed: {
@@ -120,8 +116,6 @@ export default {
 
 <template>
   <div>
-    <v-skeleton-loader v-if="loading" type="table" />
-
     <bs-modal-confirm-form
       ref="deleteDialog"
       :title="`${$t('global.delete')} ?`"
@@ -141,13 +135,13 @@ export default {
       />
     </bs-modal-confirm-form>
 
-    <v-data-table
-      v-if="!loading"
+    <bs-data-table
       :headers="tableHeaders"
       :items="workspaces"
-      :hide-default-footer="workspaces.length <= TABLE_PAGINATION_THRESHOLD"
-      :footer-props="TABLE_FOOTER_PROPS"
-      class="workspaces-table"
+      :loading="loading"
+      :empty-icon="$options.components.LucideUsers"
+      :empty-message="$t('groups.workspaceTab.empty')"
+      clickable
       @click:row="goToWorkspace"
     >
       <template #item.name="{ item }">
@@ -193,25 +187,6 @@ export default {
           <span>{{ $t('global.delete') }}</span>
         </v-tooltip>
       </template>
-
-      <template #no-data>
-        <div class="text-center pa-6">
-          <lucide-users :size="48" class="grey--text text--lighten-1" />
-          <p class="text-body-1 grey--text mt-4">
-            {{ $t('groups.workspaceTab.empty') }}
-          </p>
-        </div>
-      </template>
-    </v-data-table>
+    </bs-data-table>
   </div>
 </template>
-
-<style scoped>
-.workspaces-table >>> tbody tr {
-  cursor: pointer;
-}
-
-.workspaces-table >>> tbody tr:hover {
-  background-color: rgba(0, 172, 220, 0.05);
-}
-</style>

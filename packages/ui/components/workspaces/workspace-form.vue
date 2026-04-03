@@ -1,15 +1,21 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-import { TABLE_FOOTER_PROPS } from '~/helpers/constants/table-config.js';
+import {
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
+} from '~/helpers/constants/table-config.js';
 import BsTextField from '~/components/form/bs-text-field';
+import { Users } from 'lucide-vue';
 
 export default {
   name: 'WorkspaceForm',
   components: {
     BsTextField,
+    LucideUsers: Users,
   },
   TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
   mixins: [validationMixin],
   props: {
     workspace: { type: Object, default: () => ({}) },
@@ -85,6 +91,25 @@ export default {
     onCancel() {
       this.$emit('cancel');
     },
+    toggleUserSelection(user) {
+      // Group admins are always selected and can't be toggled
+      if (user.isGroupAdmin) return;
+
+      const index = this.formData.selectedUsers.findIndex(
+        (u) => u.id === user.id
+      );
+      if (index === -1) {
+        this.formData.selectedUsers.push(user);
+      } else {
+        this.formData.selectedUsers.splice(index, 1);
+      }
+    },
+    isUserSelected(user) {
+      return (
+        user.isGroupAdmin ||
+        this.formData.selectedUsers.some((u) => u.id === user.id)
+      );
+    },
   },
 };
 </script>
@@ -129,8 +154,10 @@ export default {
           item-key="id"
           show-select
           :items-per-page="25"
+          :hide-default-footer="groupUsers.length <= $options.TABLE_PAGINATION_THRESHOLD"
           :footer-props="$options.TABLE_FOOTER_PROPS"
           class="users-table"
+          @click:row="toggleUserSelection"
         >
           <template #item.data-table-select="{ item, isSelected, select }">
             <v-tooltip left :disabled="!item.isGroupAdmin">
@@ -145,6 +172,21 @@ export default {
               </template>
               <span>{{ $t('workspaces.userIsGroupAdmin') }}</span>
             </v-tooltip>
+          </template>
+
+          <template #item.name="{ item }">
+            <span :class="{ 'font-weight-medium': isUserSelected(item) }">
+              {{ item.name }}
+            </span>
+          </template>
+
+          <template #no-data>
+            <div class="text-center pa-6">
+              <lucide-users :size="48" class="grey--text text--lighten-1" />
+              <p class="text-body-1 grey--text mt-4">
+                {{ $t('workspaces.noUsersAvailable') }}
+              </p>
+            </div>
           </template>
         </v-data-table>
       </div>
@@ -196,5 +238,18 @@ export default {
 .users-table {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
+
+  ::v-deep tbody tr {
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(0, 172, 220, 0.05) !important;
+    }
+  }
+
+  // Disabled row for group admins (always selected)
+  ::v-deep tbody tr.v-data-table__selected {
+    background-color: rgba(0, 172, 220, 0.08) !important;
+  }
 }
 </style>
