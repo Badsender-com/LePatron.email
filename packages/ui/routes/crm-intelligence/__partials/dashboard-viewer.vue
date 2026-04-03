@@ -52,8 +52,8 @@ export default {
 
 <template>
   <div class="dashboard-viewer fill-height">
-    <!-- Loading State -->
-    <div v-if="loading || !iframeLoaded" class="loading-overlay">
+    <!-- Loading State (only when actually loading, not when in error) -->
+    <div v-if="loading || (embedUrl && !iframeLoaded)" class="loading-overlay">
       <v-progress-circular indeterminate color="primary" size="64" />
       <p class="mt-4 text-body-1 grey--text">
         {{ $t('crmIntelligence.loadingDashboard') }}
