@@ -94,6 +94,7 @@ export default {
     profile: 'ESP',
     user: 'User | Users',
     newUser: 'Add a user',
+    editUser: 'Edit user',
     newEmailsGroup: 'Add a test list',
     editEmailsGroup: 'Edit test list',
     newTeam: 'Add a workspace',
