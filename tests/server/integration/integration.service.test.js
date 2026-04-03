@@ -13,6 +13,9 @@ jest.mock('../../../packages/server/common/models.common', () => ({
     deleteOne: jest.fn(),
     exists: jest.fn(),
   },
+  Dashboards: {
+    deleteMany: jest.fn(),
+  },
 }));
 
 jest.mock('../../../packages/server/group/group.service', () => ({
@@ -29,6 +32,7 @@ jest.mock(
 const integrationService = require('../../../packages/server/integration/integration.service');
 const {
   Integrations,
+  Dashboards,
 } = require('../../../packages/server/common/models.common');
 const groupService = require('../../../packages/server/group/group.service');
 const ProviderFactory = require('../../../packages/server/integration-providers/provider-factory');
@@ -224,6 +228,7 @@ describe('IntegrationService', () => {
   describe('deleteIntegration', () => {
     it('should delete integration successfully', async () => {
       Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });
+      Dashboards.deleteMany.mockResolvedValue({ deletedCount: 0 });
       Integrations.deleteOne.mockResolvedValue({ deletedCount: 1 });
 
       const result = await integrationService.deleteIntegration({
@@ -235,6 +240,7 @@ describe('IntegrationService', () => {
 
     it('should throw error when delete fails', async () => {
       Integrations.findById.mockResolvedValue({ _id: mockIntegrationId });
+      Dashboards.deleteMany.mockResolvedValue({ deletedCount: 0 });
       Integrations.deleteOne.mockResolvedValue({ deletedCount: 0 });
 
       await expect(

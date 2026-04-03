@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 const { Types } = require('mongoose');
 
-const GroupService = require('../group/group.service');
-const { Integrations, Dashboards } = require('../common/models.common');
+const DashboardService = require('../dashboard/dashboard.service');
+const { Groups, Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
 
@@ -18,7 +18,9 @@ const JWT_EXPIRATION_SECONDS = 10 * 60; // 10 minutes
  * @returns {Promise<Object>} Status object with enabled flag and dashboard count
  */
 async function getStatus(groupId) {
-  const group = await GroupService.findById(groupId);
+  const group = await Groups.findById(groupId)
+    .select('enableCrmIntelligence')
+    .lean();
   if (!group) {
     throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
   }
@@ -35,18 +37,18 @@ async function getStatus(groupId) {
     };
   }
 
-  // Find active dashboard integrations for this group
-  const integrations = await Integrations.find({
-    _company: Types.ObjectId(groupId),
-    type: IntegrationTypes.DASHBOARD,
-    isActive: true,
-  }).sort({ name: 1 });
-
-  // Count active dashboards for this group
-  const dashboardCount = await Dashboards.countDocuments({
-    _company: Types.ObjectId(groupId),
-    isActive: true,
-  });
+  // Find active integrations and count dashboards in parallel
+  const [integrations, dashboardCount] = await Promise.all([
+    Integrations.find({
+      _company: Types.ObjectId(groupId),
+      type: IntegrationTypes.DASHBOARD,
+      isActive: true,
+    }).sort({ name: 1 }),
+    Dashboards.countDocuments({
+      _company: Types.ObjectId(groupId),
+      isActive: true,
+    }),
+  ]);
 
   return {
     enabled: isEnabled,
@@ -66,7 +68,9 @@ async function getStatus(groupId) {
  * @returns {Promise<Array>} Array of dashboard objects with integration context
  */
 async function getDashboards(groupId) {
-  const group = await GroupService.findById(groupId);
+  const group = await Groups.findById(groupId)
+    .select('enableCrmIntelligence')
+    .lean();
   if (!group) {
     throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
   }
@@ -75,25 +79,7 @@ async function getDashboards(groupId) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  // Find active dashboards for this group, ordered globally
-  const dashboards = await Dashboards.find({
-    _company: Types.ObjectId(groupId),
-    isActive: true,
-  })
-    .sort({ order: 1, createdAt: 1 })
-    .populate('_integration', 'name provider apiHost')
-    .lean();
-
-  return dashboards.map((dashboard) => ({
-    id: dashboard._id.toString(),
-    integrationId: dashboard._integration?._id.toString(),
-    integrationName: dashboard._integration?.name,
-    provider: dashboard._integration?.provider,
-    providerDashboardId: dashboard.providerDashboardId,
-    name: dashboard.name,
-    description: dashboard.description,
-    order: dashboard.order,
-  }));
+  return DashboardService.listDashboards(groupId);
 }
 
 /**
@@ -103,7 +89,9 @@ async function getDashboards(groupId) {
  * @returns {Promise<Object>} Object with embedUrl
  */
 async function getEmbedUrl(groupId, dashboardId) {
-  const group = await GroupService.findById(groupId);
+  const group = await Groups.findById(groupId)
+    .select('enableCrmIntelligence')
+    .lean();
   if (!group) {
     throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
   }

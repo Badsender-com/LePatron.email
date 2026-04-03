@@ -17,15 +17,34 @@ export default {
   },
   data: () => ({
     iframeLoaded: false,
+    refreshTimer: null,
   }),
   watch: {
     embedUrl() {
       this.iframeLoaded = false;
+      this.scheduleRefresh();
     },
+  },
+  beforeDestroy() {
+    this.clearRefreshTimer();
   },
   methods: {
     onIframeLoad() {
       this.iframeLoaded = true;
+    },
+    scheduleRefresh() {
+      this.clearRefreshTimer();
+      if (!this.embedUrl) return;
+      // Refresh 1 minute before the 10-minute JWT expiration
+      this.refreshTimer = setTimeout(() => {
+        this.$emit('refresh');
+      }, 9 * 60 * 1000);
+    },
+    clearRefreshTimer() {
+      if (this.refreshTimer) {
+        clearTimeout(this.refreshTimer);
+        this.refreshTimer = null;
+      }
     },
   },
 };
