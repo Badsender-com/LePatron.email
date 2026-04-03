@@ -1,17 +1,19 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 
 export default {
   name: 'BsGroupMailingsTab',
   components: { BsMailingsAdminTable },
+  TABLE_ITEMS_PER_PAGE_OPTIONS,
   data() {
     return {
       mailings: [],
       loading: false,
       pagination: {
         page: 1,
-        itemsPerPage: 10,
+        itemsPerPage: 25,
         itemsLength: 0,
         pageCount: 0,
         pageStart: 0,
@@ -75,7 +77,8 @@ export default {
           disablePagination: true,
           prevIcon: 'none',
           nextIcon: 'none',
-          itemsPerPageOptions: [5, 10, 15, -1],
+          itemsPerPageOptions: $options.TABLE_ITEMS_PER_PAGE_OPTIONS,
+          itemsPerPageAllText: 'Tout',
         }"
         @update:items-per-page="handleItemsPerPageChange"
       />
