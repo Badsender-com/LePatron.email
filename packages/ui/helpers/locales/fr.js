@@ -91,6 +91,7 @@ export default {
     newMailing: 'Nouvel email',
     user: 'Utilisateur | Utilisateurs',
     newUser: 'Ajouter un utilisateur',
+    editUser: 'Modifier l\'utilisateur',
     newEmailsGroup: 'Ajouter une liste de test',
     editEmailsGroup: 'Modifier la liste de test',
     newTeam: 'Ajouter un workspace',

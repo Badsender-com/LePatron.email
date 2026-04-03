@@ -227,6 +227,9 @@ export default {
     updateUserFromActions(updatedUser) {
       this.user = updatedUser;
     },
+    onCancel() {
+      this.$router.push(`/groups/${this.group.id}/settings/users`);
+    },
   },
 };
 </script>
@@ -238,10 +241,8 @@ export default {
     </template>
     <div class="settings-content">
       <bs-group-settings-page-header
-        :title="user.name"
+        :title="$t('global.editUser')"
         :group-name="group.name"
-        :show-back-button="true"
-        :back-route="`/groups/${group.id}/settings/users`"
       />
 
       <!-- User form -->
@@ -386,6 +387,9 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
+          <v-btn text color="primary" :disabled="loading" @click="onCancel">
+            {{ $t('global.cancel') }}
+          </v-btn>
           <v-btn
             color="accent"
             elevation="0"
