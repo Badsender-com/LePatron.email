@@ -67,7 +67,7 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        this.$router.push(apiRoutes.usersItem({ userId: createdUser.id }));
+        this.$router.push(`/groups/${this.groupId}/settings/users/${createdUser.id}`);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
