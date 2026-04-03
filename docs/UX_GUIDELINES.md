@@ -362,6 +362,41 @@ import {
 - Group related actions (activation, mail, edit) in a flex container
 - Use `@click.stop` to prevent row click when clicking action buttons
 
+### Action Icon Color Rules
+
+**IMPORTANT**: Action icons in tables should be neutral (no color class) by default.
+
+```vue
+<!-- ❌ BAD - Colored action icons -->
+<v-btn icon small class="success--text">
+  <lucide-user-check :size="18" />
+</v-btn>
+<v-btn icon small class="accent--text">
+  <lucide-pencil :size="18" />
+</v-btn>
+
+<!-- ✅ GOOD - Neutral action icons (inherit default color) -->
+<v-btn icon small>
+  <lucide-user-check :size="18" />
+</v-btn>
+<v-btn icon small>
+  <lucide-pencil :size="18" />
+</v-btn>
+```
+
+**Icon color exceptions:**
+| Context | Color | Example |
+|---------|-------|---------|
+| **Standard actions** | None (neutral) | Edit, activate, send mail |
+| **Destructive actions** | `error--text` | Delete, remove |
+| **Disabled state** | Handled by `:disabled` prop | All actions when loading |
+
+**Rationale:**
+- Neutral icons keep the interface clean and consistent
+- Color should convey meaning, not decoration
+- Only destructive actions (delete) use `error--text` to warn users
+- The tooltip provides context for the action's purpose
+
 ### Action Buttons Pattern
 
 ```vue

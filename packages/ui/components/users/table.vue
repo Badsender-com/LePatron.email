@@ -218,7 +218,6 @@ export default {
               <v-btn
                 icon
                 small
-                class="success--text"
                 v-bind="attrs"
                 :disabled="loading"
                 v-on="on"
@@ -234,7 +233,6 @@ export default {
               <v-btn
                 icon
                 small
-                class="grey--text"
                 v-bind="attrs"
                 :disabled="loading"
                 v-on="on"
@@ -260,9 +258,8 @@ export default {
                 <lucide-send
                   v-if="!getStatusActions(item.status).resetPassword"
                   :size="18"
-                  class="accent--text"
                 />
-                <lucide-rotate-ccw v-else :size="18" class="accent--text" />
+                <lucide-rotate-ccw v-else :size="18" />
               </v-btn>
             </template>
             <span>{{ getMailActionTooltip(item.status) }}</span>
