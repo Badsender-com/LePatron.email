@@ -13,6 +13,7 @@ import BsMailingModalTranslationWarning from '~/components/mailings/modal-transl
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
 import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
+import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -48,6 +49,7 @@ const TABLE_ACTIONS = [
 
 export default {
   name: 'MailingsTable',
+  TABLE_ITEMS_PER_PAGE_OPTIONS,
   components: {
     BsMailingsModalRename,
     BsModalConfirmForm,
@@ -412,7 +414,8 @@ export default {
           disablePagination: true,
           prevIcon: 'none',
           nextIcon: 'none',
-          itemsPerPageOptions: [5, 10, 15, -1],
+          itemsPerPageOptions: $options.TABLE_ITEMS_PER_PAGE_OPTIONS,
+          itemsPerPageAllText: 'Tout',
         }"
         @sort-by="handleSortByChange"
         @sort-desc="handleSortDescChange"

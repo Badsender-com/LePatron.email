@@ -5,6 +5,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsUserMenu from '~/components/user/menu.vue';
 import BsUserForm from '~/components/users/form.vue';
@@ -14,6 +15,7 @@ export default {
   name: 'BsPageUser',
   components: { BsUserMenu, BsUserForm, BsMailingsAdminTable, BsUserActions },
   mixins: [mixinPageTitle],
+  TABLE_ITEMS_PER_PAGE_OPTIONS,
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
@@ -34,7 +36,7 @@ export default {
       isLoadingMailings: false,
       pagination: {
         page: 1,
-        itemsPerPage: 10,
+        itemsPerPage: 25,
         itemsLength: 0,
         pageCount: 0,
         pageStart: 0,
@@ -168,7 +170,8 @@ export default {
             disablePagination: true,
             prevIcon: 'none',
             nextIcon: 'none',
-            itemsPerPageOptions: [5, 10, 15, -1],
+            itemsPerPageOptions: $options.TABLE_ITEMS_PER_PAGE_OPTIONS,
+            itemsPerPageAllText: 'Tout',
           }"
           @update:items-per-page="handleItemsPerPageChange"
         />
