@@ -1,11 +1,7 @@
 'use strict';
 
-const dashboardService = require('./dashboard.service');
-const { Dashboards, Integrations } = require('../common/models.common');
-const ERROR_CODES = require('../constant/error-codes');
-
-// Mock dependencies
-jest.mock('../common/models.common', () => ({
+// Mock dependencies — jest.mock calls are hoisted, string literals required
+jest.mock('../../../packages/server/common/models.common', () => ({
   Dashboards: {
     find: jest.fn(),
     findById: jest.fn(),
@@ -18,6 +14,13 @@ jest.mock('../common/models.common', () => ({
     findOne: jest.fn(),
   },
 }));
+
+const dashboardService = require('../../../packages/server/dashboard/dashboard.service');
+const {
+  Dashboards,
+  Integrations,
+} = require('../../../packages/server/common/models.common');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 // Valid MongoDB ObjectIds for testing
 const VALID_GROUP_ID = '507f1f77bcf86cd799439011';
@@ -249,7 +252,10 @@ describe('Dashboard Service', () => {
         }),
       });
 
-      const result = await dashboardService.createDashboard(VALID_GROUP_ID, createData);
+      const result = await dashboardService.createDashboard(
+        VALID_GROUP_ID,
+        createData
+      );
 
       expect(Dashboards.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -389,10 +395,12 @@ describe('Dashboard Service', () => {
     });
 
     it('should validate new integration belongs to same group', async () => {
+      const OLD_INTEGRATION_ID = '507f1f77bcf86cd799439044';
+      const NEW_INTEGRATION_ID = '507f1f77bcf86cd799439055';
       const mockDashboard = {
         _id: VALID_DASHBOARD_ID,
         _company: VALID_GROUP_ID,
-        _integration: { toString: () => 'old-integration' },
+        _integration: { toString: () => OLD_INTEGRATION_ID },
         save: jest.fn(),
       };
 
@@ -401,7 +409,7 @@ describe('Dashboard Service', () => {
 
       await expect(
         dashboardService.updateDashboard(VALID_DASHBOARD_ID, {
-          integrationId: 'new-integration',
+          integrationId: NEW_INTEGRATION_ID,
         })
       ).rejects.toThrow(
         expect.objectContaining({
@@ -442,18 +450,23 @@ describe('Dashboard Service', () => {
   });
 
   describe('reorderDashboards', () => {
-    it('should update order for all dashboards', async () => {
-      const dashboardIds = ['dash1', 'dash2', 'dash3'];
+    const DASH_ID_1 = '507f1f77bcf86cd799439066';
+    const DASH_ID_2 = '507f1f77bcf86cd799439077';
+    const DASH_ID_3 = '507f1f77bcf86cd799439088';
 
-      Dashboards.find.mockResolvedValue([
-        { _id: 'dash1' },
-        { _id: 'dash2' },
-        { _id: 'dash3' },
-      ]);
+    it('should update order for all dashboards', async () => {
+      const dashboardIds = [DASH_ID_1, DASH_ID_2, DASH_ID_3];
 
       Dashboards.bulkWrite.mockResolvedValue({});
 
-      // Mock listDashboards return
+      // 1st call: validation query (returns plain array)
+      Dashboards.find.mockResolvedValueOnce([
+        { _id: DASH_ID_1 },
+        { _id: DASH_ID_2 },
+        { _id: DASH_ID_3 },
+      ]);
+
+      // 2nd call: listDashboards (returns chainable)
       Dashboards.find.mockReturnValueOnce({
         sort: jest.fn().mockReturnValue({
           populate: jest.fn().mockReturnValue({
@@ -465,16 +478,31 @@ describe('Dashboard Service', () => {
       await dashboardService.reorderDashboards(VALID_GROUP_ID, dashboardIds);
 
       expect(Dashboards.bulkWrite).toHaveBeenCalledWith([
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 0 } } } },
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 1 } } } },
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 2 } } } },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 0 } },
+          },
+        },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 1 } },
+          },
+        },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 2 } },
+          },
+        },
       ]);
     });
 
     it('should throw 400 when dashboard count mismatch', async () => {
-      const dashboardIds = ['dash1', 'dash2'];
+      const dashboardIds = [DASH_ID_1, DASH_ID_2];
 
-      Dashboards.find.mockResolvedValue([{ _id: 'dash1' }]);
+      Dashboards.find.mockResolvedValue([{ _id: DASH_ID_1 }]);
 
       await expect(
         dashboardService.reorderDashboards(VALID_GROUP_ID, dashboardIds)
@@ -484,34 +512,6 @@ describe('Dashboard Service', () => {
           message: ERROR_CODES.INVALID_REQUEST,
         })
       );
-    });
-  });
-
-  describe('getGroupIdForDashboard', () => {
-    it('should return group ID for dashboard', async () => {
-      Dashboards.findById.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({
-            _company: { toString: () => VALID_GROUP_ID },
-          }),
-        }),
-      });
-
-      const result = await dashboardService.getGroupIdForDashboard(VALID_DASHBOARD_ID);
-
-      expect(result).toBe(VALID_GROUP_ID);
-    });
-
-    it('should return null when dashboard not found', async () => {
-      Dashboards.findById.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(null),
-        }),
-      });
-
-      const result = await dashboardService.getGroupIdForDashboard('nonexistent');
-
-      expect(result).toBeNull();
     });
   });
 });

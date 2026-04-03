@@ -25,7 +25,7 @@ export default {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, error }) {
+  async asyncData({ $axios }) {
     try {
       const status = await $axios.$get(getCrmIntelligenceStatus());
       let dashboards = [];
@@ -41,8 +41,7 @@ export default {
         embedUrl: null,
         loadingEmbed: false,
       };
-    } catch (err) {
-      console.error('[CrmIntelligence] Error fetching status:', err);
+    } catch {
       return {
         status: { enabled: false, configured: false },
         dashboards: [],
@@ -59,12 +58,6 @@ export default {
     embedUrl: null,
     loadingEmbed: false,
   }),
-  mounted() {
-    // Auto-select first dashboard if available
-    if (this.isEnabled && this.dashboards.length > 0 && !this.selectedDashboard) {
-      this.selectDashboard(this.dashboards[0]);
-    }
-  },
   computed: {
     title() {
       return this.$t('crmIntelligence.title');
@@ -90,11 +83,27 @@ export default {
       isAdmin: IS_ADMIN,
     }),
   },
+  mounted() {
+    // Auto-select first dashboard if available
+    if (
+      this.isEnabled &&
+      this.dashboards.length > 0 &&
+      !this.selectedDashboard
+    ) {
+      this.selectDashboard(this.dashboards[0]);
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
-    async selectDashboard(dashboard) {
-      if (this.selectedDashboard?.id === dashboard.id) return;
+    async refreshEmbed() {
+      if (this.selectedDashboard) {
+        await this.selectDashboard(this.selectedDashboard, true);
+      }
+    },
+
+    async selectDashboard(dashboard, force = false) {
+      if (!force && this.selectedDashboard?.id === dashboard.id) return;
 
       this.selectedDashboard = dashboard;
       this.loadingEmbed = true;
@@ -105,8 +114,7 @@ export default {
           getCrmIntelligenceEmbedUrl(dashboard.id)
         );
         this.embedUrl = result.embedUrl;
-      } catch (err) {
-        console.error('[CrmIntelligence] Error fetching embed URL:', err);
+      } catch {
         this.showSnackbar({
           text: this.$t('crmIntelligence.errors.embedFailed'),
           color: 'error',
@@ -205,15 +213,13 @@ export default {
   </div>
 
   <!-- Single dashboard: full width, no module-specific sidebar -->
-  <div
-    v-else-if="isEnabled && !hasMultipleDashboards"
-    class="crm-fullwidth"
-  >
+  <div v-else-if="isEnabled && !hasMultipleDashboards" class="crm-fullwidth">
     <dashboard-viewer
       v-if="selectedDashboard"
       :embed-url="embedUrl"
       :loading="loadingEmbed"
       :dashboard-name="selectedDashboard.name"
+      @refresh="refreshEmbed"
     />
   </div>
 
@@ -234,6 +240,7 @@ export default {
         :embed-url="embedUrl"
         :loading="loadingEmbed"
         :dashboard-name="selectedDashboard.name"
+        @refresh="refreshEmbed"
       />
       <div
         v-else

@@ -14,6 +14,16 @@ import {
 
 const INTEGRATION_TYPE_DASHBOARD = 'dashboard';
 
+function createEmptyDashboardForm(overrides = {}) {
+  return {
+    name: '',
+    description: '',
+    integrationId: null,
+    providerDashboardId: null,
+    ...overrides,
+  };
+}
+
 export default {
   name: 'BsCrmIntelligenceTab',
   mixins: [validationMixin],
@@ -38,12 +48,7 @@ export default {
       showDashboardForm: false,
       showDeleteDashboardDialog: false,
       dashboardToDelete: null,
-      dashboardForm: {
-        name: '',
-        description: '',
-        integrationId: null,
-        providerDashboardId: null,
-      },
+      dashboardForm: createEmptyDashboardForm(),
     };
   },
   validations: {
@@ -126,12 +131,10 @@ export default {
     // ==================
     openAddDashboardForm() {
       this.editingDashboard = null;
-      this.dashboardForm = {
-        name: '',
-        description: '',
-        integrationId: this.integrations.length === 1 ? this.integrations[0].id : null,
-        providerDashboardId: null,
-      };
+      this.dashboardForm = createEmptyDashboardForm({
+        integrationId:
+          this.integrations.length === 1 ? this.integrations[0].id : null,
+      });
       this.$v.dashboardForm.$reset();
       this.showDashboardForm = true;
     },
@@ -141,7 +144,10 @@ export default {
       this.dashboardForm = {
         name: dashboard.name,
         description: dashboard.description || '',
-        integrationId: dashboard.integration && dashboard.integration.id ? dashboard.integration.id : null,
+        integrationId:
+          dashboard.integration && dashboard.integration.id
+            ? dashboard.integration.id
+            : null,
         providerDashboardId: dashboard.providerDashboardId,
       };
       this.$v.dashboardForm.$reset();
@@ -151,12 +157,7 @@ export default {
     closeDashboardForm() {
       this.showDashboardForm = false;
       this.editingDashboard = null;
-      this.dashboardForm = {
-        name: '',
-        description: '',
-        integrationId: null,
-        providerDashboardId: null,
-      };
+      this.dashboardForm = createEmptyDashboardForm();
     },
 
     async saveDashboard() {
@@ -171,7 +172,10 @@ export default {
           name: this.dashboardForm.name,
           description: this.dashboardForm.description,
           integrationId: this.dashboardForm.integrationId,
-          providerDashboardId: parseInt(this.dashboardForm.providerDashboardId, 10),
+          providerDashboardId: parseInt(
+            this.dashboardForm.providerDashboardId,
+            10
+          ),
         };
 
         if (this.isEditingDashboard) {
@@ -198,7 +202,9 @@ export default {
         const errorCode = error.response?.data?.code;
         let errorMessage = this.$t('crmIntelligence.admin.dashboardSaveError');
         if (errorCode === 'DASHBOARD_ALREADY_EXISTS') {
-          errorMessage = this.$t('crmIntelligence.errors.dashboardAlreadyExists');
+          errorMessage = this.$t(
+            'crmIntelligence.errors.dashboardAlreadyExists'
+          );
         }
         this.showSnackbar({
           text: errorMessage,
@@ -284,7 +290,7 @@ export default {
   <v-card flat>
     <v-card-text>
       <!-- Info alert about Metabase configuration (only when no integrations) -->
-      <v-alert v-if="!hasIntegrations" type="info" text dense class="mb-4">
+      <v-alert v-if="!hasIntegrations" type="info" outlined class="mb-4">
         <div class="d-flex align-center">
           <span>{{ $t('crmIntelligence.admin.metabaseConfigHint') }}</span>
           <v-btn
@@ -302,31 +308,27 @@ export default {
         </div>
       </v-alert>
 
-      <div class="d-flex align-center mb-4">
-        <v-spacer />
+      <div class="d-flex justify-end mb-4">
         <v-btn
           color="accent"
-          small
           elevation="0"
           :disabled="!hasIntegrations"
           @click="openAddDashboardForm"
         >
-          <v-icon left small>
+          <v-icon left>
             mdi-plus
           </v-icon>
           {{ $t('crmIntelligence.admin.addDashboard') }}
         </v-btn>
       </div>
 
-      <v-alert v-if="!hasIntegrations && !loading" type="warning" text dense>
-        {{ $t('crmIntelligence.admin.noIntegrationsForDashboards') }}
-      </v-alert>
+      <v-skeleton-loader v-if="loading && !hasDashboards" type="table" />
 
       <v-alert
         v-else-if="!hasDashboards && !loading"
         type="info"
-        text
-        dense
+        outlined
+        class="mb-4"
       >
         {{ $t('crmIntelligence.admin.noDashboards') }}
       </v-alert>
@@ -378,7 +380,12 @@ export default {
             </template>
             <span>{{ $t('crmIntelligence.admin.moveDown') }}</span>
           </v-tooltip>
-          <v-btn icon small class="ml-2" @click="openEditDashboardForm(dashboard)">
+          <v-btn
+            icon
+            small
+            class="ml-2"
+            @click="openEditDashboardForm(dashboard)"
+          >
             <v-icon small>
               mdi-pencil
             </v-icon>
@@ -396,7 +403,11 @@ export default {
         </v-card-title>
         <v-card-subtitle>
           <v-chip x-small outlined class="mr-2">
-            {{ dashboard.integration && dashboard.integration.name ? dashboard.integration.name : '-' }}
+            {{
+              dashboard.integration && dashboard.integration.name
+                ? dashboard.integration.name
+                : '-'
+            }}
           </v-chip>
           <span v-if="dashboard.description">
             {{ dashboard.description }}
@@ -447,12 +458,12 @@ export default {
             class="mb-3"
             :error-messages="
               $v.dashboardForm.integrationId.$dirty &&
-              !$v.dashboardForm.integrationId.required
+                !$v.dashboardForm.integrationId.required
                 ? $t('crmIntelligence.admin.integrationRequired')
                 : ''
             "
           >
-            <template v-slot:item="{ item }">
+            <template #item="{ item }">
               <v-list-item-content>
                 <v-list-item-title>{{ item.name }}</v-list-item-title>
                 <v-list-item-subtitle>{{ item.apiHost }}</v-list-item-subtitle>
@@ -470,7 +481,7 @@ export default {
             persistent-hint
             :error-messages="
               $v.dashboardForm.providerDashboardId.$dirty &&
-              !$v.dashboardForm.providerDashboardId.required
+                !$v.dashboardForm.providerDashboardId.required
                 ? $t('crmIntelligence.admin.dashboardIdRequired')
                 : ''
             "
@@ -481,7 +492,12 @@ export default {
           <v-btn text @click="closeDashboardForm">
             {{ $t('global.cancel') }}
           </v-btn>
-          <v-btn color="accent" elevation="0" :loading="loading" @click="saveDashboard">
+          <v-btn
+            color="accent"
+            elevation="0"
+            :loading="loading"
+            @click="saveDashboard"
+          >
             <v-icon left>
               mdi-content-save
             </v-icon>
@@ -520,4 +536,3 @@ export default {
     </v-dialog>
   </v-card>
 </template>
-
