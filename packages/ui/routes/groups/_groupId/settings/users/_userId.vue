@@ -4,10 +4,6 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
 import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsUserActions from '~/components/user/actions.vue';
@@ -16,12 +12,6 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
-import {
-  UserCheck,
-  UserX,
-  Send,
-  RotateCcw,
-} from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsUserEdit',
@@ -32,14 +22,8 @@ export default {
     BsMailingsAdminTable,
     BsTextField,
     BsSelect,
-    LucideUserCheck: UserCheck,
-    LucideUserX: UserX,
-    LucideSend: Send,
-    LucideRotateCcw: RotateCcw,
   },
   mixins: [mixinSettingsTitle, validationMixin],
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   supportedLanguages: [
     { text: 'English', value: 'en' },
     { text: 'Français', value: 'fr' },
@@ -157,6 +141,16 @@ export default {
         this.user.status === 'saml-authentication'
       );
     },
+    statusDescription() {
+      const descriptions = {
+        confirmed: this.$t('users.statusDescription.confirmed'),
+        'saml-authentication': this.$t('users.statusDescription.saml'),
+        'password-mail-sent': this.$t('users.statusDescription.passwordSent'),
+        'to-be-initialized': this.$t('users.statusDescription.toInitialize'),
+        deactivated: this.$t('users.statusDescription.deactivated'),
+      };
+      return descriptions[this.user.status] || '';
+    },
   },
   watch: {
     'pagination.page': 'loadMailings',
@@ -192,10 +186,6 @@ export default {
       } finally {
         this.isLoadingMailings = false;
       }
-    },
-    handleItemsPerPageChange(itemsPerPage) {
-      this.pagination.page = 1;
-      this.pagination.itemsPerPage = itemsPerPage;
     },
     async updateUser() {
       this.$v.$touch();
@@ -252,102 +242,12 @@ export default {
         :group-name="group.name"
         :show-back-button="true"
         :back-route="`/groups/${group.id}/settings/users`"
-      >
-        <template #actions>
-          <!-- Status chip -->
-          <v-chip
-            small
-            :color="statusColor"
-            :outlined="!isActiveStatus"
-            :dark="isActiveStatus"
-            class="mr-2"
-          >
-            {{ statusLabel }}
-          </v-chip>
-
-          <!-- Action buttons -->
-          <v-tooltip v-if="isDeactivated" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click="activateUser"
-              >
-                <lucide-user-check :size="20" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.enable') }}</span>
-          </v-tooltip>
-
-          <template v-if="!isDeactivated && !isSamlUser">
-            <v-tooltip v-if="canSendPassword" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  v-bind="attrs"
-                  :disabled="loading"
-                  v-on="on"
-                  @click="sendPassword"
-                >
-                  <lucide-send :size="20" />
-                </v-btn>
-              </template>
-              <span>{{ $t('users.passwordTooltip.send') }}</span>
-            </v-tooltip>
-
-            <v-tooltip v-if="canResendPassword" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  v-bind="attrs"
-                  :disabled="loading"
-                  v-on="on"
-                  @click="resendPassword"
-                >
-                  <lucide-send :size="20" />
-                </v-btn>
-              </template>
-              <span>{{ $t('users.passwordTooltip.resend') }}</span>
-            </v-tooltip>
-
-            <v-tooltip v-if="canResetPassword" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  v-bind="attrs"
-                  :disabled="loading"
-                  v-on="on"
-                  @click="resetPassword"
-                >
-                  <lucide-rotate-ccw :size="20" />
-                </v-btn>
-              </template>
-              <span>{{ $t('users.passwordTooltip.reset') }}</span>
-            </v-tooltip>
-
-            <v-tooltip bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  v-bind="attrs"
-                  :disabled="loading"
-                  v-on="on"
-                  @click="deactivateUser"
-                >
-                  <lucide-user-x :size="20" />
-                </v-btn>
-              </template>
-              <span>{{ $t('global.disable') }}</span>
-            </v-tooltip>
-          </template>
-        </template>
-      </bs-group-settings-page-header>
+      />
 
       <!-- User form -->
       <v-card flat tile :loading="loading" :disabled="loading">
         <v-card-text>
+          <!-- Section: Informations -->
           <div class="form-section">
             <h3 class="form-section__title">
               {{ $t('users.details') }}
@@ -393,6 +293,94 @@ export default {
                 />
               </v-col>
             </v-row>
+          </div>
+
+          <!-- Section: Statut & Sécurité -->
+          <div class="form-section">
+            <h3 class="form-section__title">
+              {{ $t('users.sections.statusSecurity') }}
+            </h3>
+            <p class="form-section__description">
+              {{ $t('users.sections.statusSecurityDescription') }}
+            </p>
+
+            <!-- Status display -->
+            <div class="status-display mb-4">
+              <div class="d-flex align-center">
+                <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
+                <v-chip
+                  small
+                  :color="statusColor"
+                  :outlined="!isActiveStatus"
+                  :dark="isActiveStatus"
+                >
+                  {{ statusLabel }}
+                </v-chip>
+              </div>
+              <p v-if="statusDescription" class="text-caption text--secondary mt-2 mb-0">
+                {{ statusDescription }}
+              </p>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="status-actions">
+              <!-- Activate (when deactivated) -->
+              <v-btn
+                v-if="isDeactivated"
+                outlined
+                color="success"
+                :disabled="loading"
+                @click="activateUser"
+              >
+                {{ $t('users.actions.activate') }}
+              </v-btn>
+
+              <!-- Actions for active users (non-SAML) -->
+              <template v-if="!isDeactivated && !isSamlUser">
+                <!-- Send password (to-be-initialized) -->
+                <v-btn
+                  v-if="canSendPassword"
+                  outlined
+                  color="accent"
+                  :disabled="loading"
+                  @click="sendPassword"
+                >
+                  {{ $t('users.actions.sendPassword') }}
+                </v-btn>
+
+                <!-- Resend password (password-mail-sent) -->
+                <v-btn
+                  v-if="canResendPassword"
+                  outlined
+                  color="accent"
+                  :disabled="loading"
+                  @click="resendPassword"
+                >
+                  {{ $t('users.actions.resendPassword') }}
+                </v-btn>
+
+                <!-- Reset password (confirmed) -->
+                <v-btn
+                  v-if="canResetPassword"
+                  outlined
+                  color="accent"
+                  :disabled="loading"
+                  @click="resetPassword"
+                >
+                  {{ $t('users.actions.resetPassword') }}
+                </v-btn>
+
+                <!-- Deactivate -->
+                <v-btn
+                  text
+                  color="error"
+                  :disabled="loading"
+                  @click="deactivateUser"
+                >
+                  {{ $t('users.actions.deactivate') }}
+                </v-btn>
+              </template>
+            </div>
           </div>
         </v-card-text>
         <v-divider />
@@ -450,11 +438,38 @@ export default {
 }
 
 .form-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
   &__title {
     font-size: 1.1rem;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
+    margin-bottom: 0.25rem;
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
     margin-bottom: 1rem;
   }
+}
+
+.status-display {
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 </style>
