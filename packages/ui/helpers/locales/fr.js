@@ -438,6 +438,11 @@ export default {
       reset: 'Réinitialiser',
       send: 'Envoyer',
       resend: 'Renvoyer',
+      activate: 'Activer l\'utilisateur',
+      deactivate: 'Désactiver l\'utilisateur',
+      sendPassword: 'Envoyer l\'email de mot de passe',
+      resendPassword: 'Renvoyer l\'email de mot de passe',
+      resetPassword: 'Réinitialiser le mot de passe',
     },
     passwordTooltip: {
       reset: 'Réinitialiser le mot de passe',
@@ -456,12 +461,25 @@ export default {
     details: 'Informations',
     role: 'Rôle',
     noUsersAvailable: 'Aucun utilisateur disponible',
+    sections: {
+      statusSecurity: 'Statut & Sécurité',
+      statusSecurityDescription:
+        'Gérez le statut du compte et les options de mot de passe.',
+    },
     status: {
       confirmed: 'Actif',
       saml: 'SSO',
       passwordSent: 'En attente',
       toInitialize: 'À initialiser',
       deactivated: 'Désactivé',
+    },
+    statusDescription: {
+      confirmed: 'L\'utilisateur a accès à la plateforme.',
+      saml: 'L\'utilisateur se connecte via SSO (authentification unique).',
+      passwordSent:
+        'Un email d\'initialisation a été envoyé, en attente de confirmation.',
+      toInitialize: 'L\'utilisateur n\'a pas encore reçu d\'email de mot de passe.',
+      deactivated: 'L\'utilisateur ne peut plus accéder à la plateforme.',
     },
   },
   workspaces: {
@@ -470,7 +488,7 @@ export default {
     members: 'Utilisateurs',
     membersDescription:
       'Sélectionnez les utilisateurs qui auront accès à ce workspace.',
-    userIsGroupAdmin: "L'utilisateur est un administrateur du groupe",
+    userIsGroupAdmin: 'L\'utilisateur est un administrateur du groupe',
     noUsersAvailable: 'Aucun utilisateur disponible',
     sections: {
       info: 'Informations',

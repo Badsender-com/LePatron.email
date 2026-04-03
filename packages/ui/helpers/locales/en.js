@@ -433,6 +433,11 @@ export default {
       reset: 'Reset',
       send: 'Send',
       resend: 'Resend',
+      activate: 'Activate user',
+      deactivate: 'Deactivate user',
+      sendPassword: 'Send password email',
+      resendPassword: 'Resend password email',
+      resetPassword: 'Reset password',
     },
     passwordTooltip: {
       reset: 'Reset password',
@@ -451,12 +456,24 @@ export default {
     details: 'Details',
     role: 'Role',
     noUsersAvailable: 'No users available',
+    sections: {
+      statusSecurity: 'Status & Security',
+      statusSecurityDescription:
+        'Manage account status and password options.',
+    },
     status: {
       confirmed: 'Active',
       saml: 'SSO',
       passwordSent: 'Pending',
       toInitialize: 'To initialize',
       deactivated: 'Deactivated',
+    },
+    statusDescription: {
+      confirmed: 'The user has access to the platform.',
+      saml: 'The user authenticates via SAML SSO.',
+      passwordSent: 'A password email has been sent. Awaiting user confirmation.',
+      toInitialize: 'The user has not yet received a password email.',
+      deactivated: 'The user can no longer access the platform.',
     },
   },
   workspaces: {
