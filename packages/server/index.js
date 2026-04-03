@@ -43,7 +43,6 @@ const sessionValidationMiddleware = require('./account/session-validation.middle
 const {
   updateSessionTracking,
 } = require('./account/session-tracking.helper.js');
-const integrationRouter = require('./integration/integration.routes');
 const aiFeatureRouter = require('./ai-feature/ai-feature.routes');
 const translationRouter = require('./translation/translation.routes');
 
@@ -291,7 +290,6 @@ if (cluster.isMaster) {
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);
   app.use('/api/crm-intelligence', crmIntelligenceRouter);
-  app.use('/api/integrations', integrationRouter);
   app.use('/api/dashboards', dashboardRouter);
 
   // Mosaico's editor route
