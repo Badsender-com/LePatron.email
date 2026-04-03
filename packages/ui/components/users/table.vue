@@ -3,13 +3,21 @@ import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
 import BsActionsDropdown from '~/components/users/actions-dropdown';
 import { Roles } from '~/helpers/constants/roles';
+import {
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
+} from '~/helpers/constants/table-config.js';
+import { Users } from 'lucide-vue';
 
 export default {
   name: 'BsUsersTable',
   components: {
     BsActionsDropdown,
     BsUserActions,
+    LucideUsers: Users,
   },
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
   model: { prop: 'loading', event: 'update' },
   props: {
     users: { type: Array, default: () => [] },
@@ -92,6 +100,9 @@ export default {
     updateUserFromActions(user) {
       this.$emit('update', user);
     },
+    navigateToUser(user) {
+      this.$router.push(`/users/${user.id}`);
+    },
   },
 };
 </script>
@@ -99,7 +110,16 @@ export default {
 <template>
   <!-- eslint-disable vue/valid-v-slot  -->
   <div class="bs-users-table">
-    <v-data-table :headers="tableHeaders" :items="users" :loading="loading">
+    <v-data-table
+      :headers="tableHeaders"
+      :items="users"
+      :loading="loading"
+      :items-per-page="25"
+      :hide-default-footer="users.length <= $options.TABLE_PAGINATION_THRESHOLD"
+      :footer-props="$options.TABLE_FOOTER_PROPS"
+      class="users-table"
+      @click:row="navigateToUser"
+    >
       <template #item.email="{ item }">
         <nuxt-link :to="`/users/${item.id}`">
           {{ item.email }}
@@ -145,6 +165,15 @@ export default {
           :resend-password="resendPassword"
         />
       </template>
+
+      <template #no-data>
+        <div class="text-center pa-6">
+          <lucide-users :size="48" class="grey--text text--lighten-1" />
+          <p class="text-body-1 grey--text mt-4">
+            {{ $t('users.noUsersAvailable') }}
+          </p>
+        </div>
+      </template>
     </v-data-table>
     <bs-user-actions
       ref="userActions"
@@ -154,3 +183,15 @@ export default {
     />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.users-table {
+  ::v-deep tbody tr {
+    cursor: pointer;
+
+    &:hover {
+      background-color: rgba(0, 172, 220, 0.05) !important;
+    }
+  }
+}
+</style>
