@@ -308,41 +308,39 @@ export default {
   }
 
   &__input {
-    &.v-textarea.v-text-field--solo {
-      ::v-deep .v-input__slot {
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        background: #fff;
-        min-height: 40px;
-        padding: 8px 12px;
-        transition: border-color 0.2s ease;
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2) !important;
+      border-radius: 4px;
+      background: #fff !important;
+      min-height: 40px;
+      padding: 8px 12px;
+      transition: border-color 0.2s ease;
 
-        &:hover {
-          border-color: rgba(0, 0, 0, 0.4);
-        }
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4) !important;
       }
+    }
 
-      &.v-input--is-focused ::v-deep .v-input__slot {
-        border-color: #00acdc;
-      }
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: #00acdc !important;
+    }
 
-      &.error--text ::v-deep .v-input__slot {
-        border-color: #f04e23;
-      }
+    &.error--text ::v-deep .v-input__slot {
+      border-color: #f04e23 !important;
+    }
 
-      ::v-deep textarea {
-        font-size: 0.875rem;
-        line-height: 1.5;
-      }
+    ::v-deep textarea {
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
 
-      ::v-deep .v-text-field__details {
-        padding: 4px 0 0 0;
-        min-height: auto;
-      }
+    ::v-deep .v-text-field__details {
+      padding: 4px 0 0 0;
+      min-height: auto;
+    }
 
-      ::v-deep .v-messages__message {
-        font-size: 0.75rem;
-      }
+    ::v-deep .v-messages__message {
+      font-size: 0.75rem;
     }
   }
 }
