@@ -3,6 +3,8 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import { groupTestFtpConnection } from '~/helpers/api-routes.js';
 import { Cable } from 'lucide-vue';
+import BsTextField from '~/components/form/bs-text-field.vue';
+import BsSelect from '~/components/form/bs-select.vue';
 
 const CREDENTIAL_MASK = '••••••••';
 
@@ -10,6 +12,8 @@ export default {
   name: 'BsFtpSettings',
   components: {
     LucideCable: Cable,
+    BsTextField,
+    BsSelect,
   },
   mixins: [validationMixin],
   httpOptions: ['http://', 'https://'],
@@ -112,38 +116,32 @@ export default {
     <!-- Row 1: Server Connection -->
     <v-row>
       <v-col cols="12" md="2">
-        <v-select
-          id="ftpProtocol"
+        <bs-select
           v-model="localModel.ftpProtocol"
           :label="$t('forms.group.ftpProtocol')"
-          name="ftpProtocol"
           :disabled="disabled"
           :items="$options.ftpOptions"
         />
       </v-col>
       <v-col cols="12" md="4">
-        <v-text-field
-          id="ftpHost"
+        <bs-text-field
           v-model="localModel.ftpHost"
           :label="$t('forms.group.host')"
           placeholder="ex: 127.0.0.1"
-          name="ftpHost"
           :error-messages="requiredErrors('ftpHost')"
           :disabled="disabled"
-          @input="$v.value.ftpHost.$touch()"
+          required
           @blur="$v.value.ftpHost.$touch()"
         />
       </v-col>
       <v-col cols="12" md="2">
-        <v-text-field
-          id="ftpPort"
+        <bs-text-field
           v-model="localModel.ftpPort"
           :label="$t('forms.group.port')"
           placeholder="ex: 22"
-          name="ftpPort"
           :error-messages="requiredErrors('ftpPort')"
           :disabled="disabled"
-          @input="$v.value.ftpPort.$touch()"
+          required
           @blur="$v.value.ftpPort.$touch()"
         />
       </v-col>
@@ -152,26 +150,22 @@ export default {
     <!-- Row 2: Authentication -->
     <v-row>
       <v-col cols="12" md="3">
-        <v-text-field
-          id="ftpUsername"
+        <bs-text-field
           v-model="localModel.ftpUsername"
           autocomplete="username"
           :label="$t('forms.group.username')"
-          name="ftpUsername"
           :error-messages="requiredErrors('ftpUsername')"
           :disabled="disabled"
           :readonly="isReadOnlyActive"
+          required
           @focus="disableReadOnlyAttribute"
-          @input="$v.value.ftpUsername.$touch()"
           @blur="$v.value.ftpUsername.$touch()"
         />
       </v-col>
       <v-col cols="12" md="3">
-        <v-select
-          id="ftpAuthType"
+        <bs-select
           v-model="localModel.ftpAuthType"
           :label="$t('forms.group.ftpAuthType')"
-          name="ftpAuthType"
           :disabled="disabled"
           :items="$options.ftpAuthOptions"
         />
@@ -181,72 +175,70 @@ export default {
         cols="12"
         md="6"
       >
-        <v-text-field
-          id="ftpPassword"
+        <bs-text-field
           v-model="localModel.ftpPassword"
           :readonly="isReadOnlyActive"
           autocomplete="new-password"
           type="password"
           :label="$t('global.password')"
-          name="ftpPassword"
           :error-messages="requiredErrors('ftpPassword')"
           :disabled="disabled"
+          required
           @focus="disableReadOnlyAttribute"
-          @input="$v.value.ftpPassword && $v.value.ftpPassword.$touch()"
           @blur="$v.value.ftpPassword && $v.value.ftpPassword.$touch()"
         />
       </v-col>
       <v-col v-if="localModel.ftpAuthType === 'ssh_key'" cols="12" md="6">
-        <v-textarea
-          id="ftpSshKey"
-          v-model="localModel.ftpSshKey"
-          :label="$t('forms.group.ftpSshKey')"
-          :placeholder="$t('forms.group.ftpSshKeyPlaceholder')"
-          name="ftpSshKey"
-          rows="3"
-          :error-messages="requiredErrors('ftpSshKey')"
-          :disabled="disabled"
-          @input="$v.value.ftpSshKey && $v.value.ftpSshKey.$touch()"
-          @blur="$v.value.ftpSshKey && $v.value.ftpSshKey.$touch()"
-        />
+        <div class="bs-textarea">
+          <label class="bs-textarea__label">
+            {{ $t('forms.group.ftpSshKey') }}
+            <span class="bs-textarea__required">*</span>
+          </label>
+          <v-textarea
+            v-model="localModel.ftpSshKey"
+            :placeholder="$t('forms.group.ftpSshKeyPlaceholder')"
+            rows="3"
+            :error-messages="requiredErrors('ftpSshKey')"
+            :disabled="disabled"
+            solo
+            flat
+            hide-details="auto"
+            class="bs-textarea__input"
+            @blur="$v.value.ftpSshKey && $v.value.ftpSshKey.$touch()"
+          />
+        </div>
       </v-col>
     </v-row>
 
     <!-- Row 3: Paths & URLs -->
     <v-row>
       <v-col cols="12" md="4">
-        <v-text-field
-          id="ftpPathOnServer"
+        <bs-text-field
           v-model="localModel.ftpPathOnServer"
           :label="$t('forms.group.path')"
           placeholder="ex: ./uploads/"
-          name="ftpPathOnServer"
           :error-messages="requiredErrors('ftpPathOnServer')"
           :disabled="disabled"
-          @input="$v.value.ftpPathOnServer.$touch()"
+          required
           @blur="$v.value.ftpPathOnServer.$touch()"
         />
       </v-col>
       <v-col cols="12" md="2">
-        <v-select
-          id="ftpEndPointProtocol"
+        <bs-select
           v-model="localModel.ftpEndPointProtocol"
           :label="$t('forms.group.httpProtocol')"
-          name="ftpEndPointProtocol"
           :disabled="disabled"
           :items="$options.httpOptions"
         />
       </v-col>
       <v-col cols="12" md="6">
-        <v-text-field
-          id="ftpEndPoint"
+        <bs-text-field
           v-model="localModel.ftpEndPoint"
           :label="$t('forms.group.endpoint')"
           placeholder="ex: images.example.com/uploads"
-          name="ftpEndPoint"
           :error-messages="requiredErrors('ftpEndPoint')"
           :disabled="disabled"
-          @input="$v.value.ftpEndPoint.$touch()"
+          required
           @blur="$v.value.ftpEndPoint.$touch()"
         />
       </v-col>
@@ -255,15 +247,13 @@ export default {
     <!-- Row 4: Display Settings -->
     <v-row>
       <v-col cols="12" md="4">
-        <v-text-field
-          id="ftpButtonLabel"
+        <bs-text-field
           v-model="localModel.ftpButtonLabel"
           :label="$t('forms.group.editorLabel')"
           placeholder="ex: HTML avec images"
-          name="ftpButtonLabel"
           :error-messages="requiredErrors('ftpButtonLabel')"
           :disabled="disabled"
-          @input="$v.value.ftpButtonLabel.$touch()"
+          required
           @blur="$v.value.ftpButtonLabel.$touch()"
         />
       </v-col>
@@ -274,7 +264,7 @@ export default {
       <v-col cols="12">
         <v-btn
           outlined
-          color="primary"
+          color="accent"
           :loading="testingFtpConnection"
           :disabled="!localModel.ftpHost || !localModel.ftpUsername"
           @click="testFtpConnection"
@@ -299,3 +289,61 @@ export default {
     </v-row>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.bs-textarea {
+  margin-bottom: 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.375rem;
+  }
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+
+  &__input {
+    &.v-textarea.v-text-field--solo {
+      ::v-deep .v-input__slot {
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        background: #fff;
+        min-height: 40px;
+        padding: 8px 12px;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.4);
+        }
+      }
+
+      &.v-input--is-focused ::v-deep .v-input__slot {
+        border-color: #00acdc;
+      }
+
+      &.error--text ::v-deep .v-input__slot {
+        border-color: #f04e23;
+      }
+
+      ::v-deep textarea {
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+
+      ::v-deep .v-text-field__details {
+        padding: 4px 0 0 0;
+        min-height: auto;
+      }
+
+      ::v-deep .v-messages__message {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+</style>
