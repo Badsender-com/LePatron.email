@@ -863,5 +863,11 @@ export default {
     addColor: 'Ajouter',
     removeColor: 'Supprimer cette couleur',
     hint: '{count}/21 couleurs • Cliquez sur une couleur pour la modifier',
+  },
+  templates: {
+    noTemplates: 'Aucun template pour le moment',
+    deleteConfirmTitle: 'Supprimer le template ?',
+    deleteWarningMessage: 'Êtes-vous sûr de vouloir supprimer le template <strong>{name}</strong> ? Cette action est irréversible.',
+    confirmationField: 'Tapez le nom du template pour confirmer',
   }
 };

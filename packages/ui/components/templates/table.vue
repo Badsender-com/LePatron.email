@@ -1,8 +1,18 @@
 <script>
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import { Check, Pencil, Trash2, FileText } from 'lucide-vue';
 
 export default {
   name: 'BsTemplatesTable',
+  components: {
+    BsDataTable,
+    LucideCheck: Check,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
+  },
+  // FileText is used via $options for BsDataTable emptyIcon
+  FileText,
   mixins: [mixinCreateMailing],
   model: { prop: 'loading', event: 'update' },
   props: {
@@ -26,52 +36,80 @@ export default {
           class: 'table-column-action',
         },
         {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
+          text: this.$t('global.actions'),
+          value: 'actions',
           sortable: false,
           align: 'center',
-          class: 'table-column-action',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    localLoading: {
-      get() {
-        return this.loading;
-      },
-      set(newLoading) {
-        this.$emit('update', newLoading);
-      },
-    },
   },
   methods: {
-    async deleteItem(item) {
-      console.log(item);
+    goToTemplate(template) {
+      this.$router.push(`/templates/${template.id}`);
+    },
+    deleteItem(item) {
+      this.$emit('delete', item);
     },
   },
 };
 </script>
 
 <template>
-  <v-data-table :headers="tableHeaders" :items="templates" :loading="loading">
+  <bs-data-table
+    :headers="tableHeaders"
+    :items="templates"
+    :loading="loading"
+    :empty-icon="$options.FileText"
+    :empty-message="$t('templates.noTemplates')"
+    clickable
+    @click:row="goToTemplate"
+  >
     <template #item.name="{ item }">
-      <nuxt-link :to="`/templates/${item.id}`">
-        {{ item.name }}
-      </nuxt-link>
+      <span class="font-weight-medium">{{ item.name }}</span>
     </template>
+
     <template #item.group="{ item }">
-      <nuxt-link :to="`/groups/${item.group.id}`">
+      <nuxt-link :to="`/groups/${item.group.id}`" @click.stop>
         {{ item.group.name }}
       </nuxt-link>
     </template>
+
     <template #item.hasMarkup="{ item }">
-      <v-icon v-if="item.hasMarkup" color="accent">
-        check
-      </v-icon>
+      <lucide-check v-if="item.hasMarkup" :size="18" class="accent--text" />
     </template>
-    <template #item.actionDelete="{ item }">
-      <v-btn disabled icon color="accent" @click="deleteItem(item)">
-        <v-icon>delete</v-icon>
-      </v-btn>
+
+    <template #item.actions="{ item }">
+      <v-tooltip bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            icon
+            small
+            v-bind="attrs"
+            v-on="on"
+            @click.stop="goToTemplate(item)"
+          >
+            <lucide-pencil :size="18" />
+          </v-btn>
+        </template>
+        <span>{{ $t('global.edit') }}</span>
+      </v-tooltip>
+
+      <v-tooltip bottom>
+        <template #activator="{ on, attrs }">
+          <v-btn
+            icon
+            small
+            class="error--text"
+            v-bind="attrs"
+            v-on="on"
+            @click.stop="deleteItem(item)"
+          >
+            <lucide-trash2 :size="18" />
+          </v-btn>
+        </template>
+        <span>{{ $t('global.delete') }}</span>
+      </v-tooltip>
     </template>
-  </v-data-table>
+  </bs-data-table>
 </template>
