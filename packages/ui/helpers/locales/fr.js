@@ -857,4 +857,11 @@ export default {
     superAdminOnly: 'Super admin uniquement',
     colors: 'Couleurs',
   },
+  colors: {
+    palette: 'Palette de couleurs',
+    paletteDescription: 'Ces couleurs seront proposées dans le sélecteur de couleurs de l\'éditeur d\'email pour tous les utilisateurs de ce groupe.',
+    addColor: 'Ajouter',
+    removeColor: 'Supprimer cette couleur',
+    hint: '{count}/21 couleurs • Cliquez sur une couleur pour la modifier',
+  },
 };

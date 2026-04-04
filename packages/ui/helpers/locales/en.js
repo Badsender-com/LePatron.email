@@ -850,5 +850,12 @@ export default {
     errors: {
       loadModelsFailed: 'Unable to load available models.',
     }
+  },
+  colors: {
+    palette: 'Color palette',
+    paletteDescription: 'These colors will be available in the email editor color picker for all users in this group.',
+    addColor: 'Add',
+    removeColor: 'Remove this color',
+    hint: '{count}/21 colors • Click on a color to edit it',
   }
 };
