@@ -853,7 +853,7 @@ export default {
   },
   colors: {
     palette: 'Color palette',
-    paletteDescription: 'These colors will be available in the email editor color picker for all users in this group.',
+    paletteDescription: 'These colors will be available in the email editor color picker for all users in this company.',
     addColor: 'Add',
     removeColor: 'Remove this color',
     hint: '{count}/21 colors • Click on a color to edit it',
