@@ -255,6 +255,10 @@ export default {
     emailsGroup: {
       emails: 'Emails',
       emailsPlaceholder: 'Example: email.01@domain.com;email.02@domain.com;',
+      emailsHint: 'Separate email addresses with semicolons (;)',
+      configuration: 'Test list configuration',
+      configurationDescription:
+        'Define the name and email addresses for this test list',
       errors: {
         name: {
           required: 'the list name is required',
