@@ -1,17 +1,17 @@
 <script>
-import * as userStatusHelpers from '~/helpers/user-status.js';
-import ProfilesActionsDropdown from './profiles-actions-dropdown.vue';
-import ProfilesActionsDropdownItem from './profiles-actions-dropdown-item.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Pencil, Trash2, Send } from 'lucide-vue';
 
 export default {
   name: 'BsProfilesTable',
+  LucideSend: Send,
   components: {
-    ProfilesActionsDropdown,
-    ProfilesActionsDropdownItem,
+    BsDataTable,
     BsModalConfirmForm,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
   },
-  model: { prop: 'loading', event: 'update' },
   props: {
     profiles: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
@@ -29,32 +29,29 @@ export default {
           text: this.$t('profiles.name'),
           align: 'left',
           value: 'name',
-          sort: (a, b) => String(b.name).localeCompare(a.name),
         },
         {
           text: this.$t('profiles.type'),
-          align: 'center',
+          align: 'left',
           value: 'type',
-          sort: (a, b) => String(b.type).localeCompare(a.type),
         },
         {
           text: this.$t('profiles.createdAt'),
-          align: 'center',
+          align: 'left',
           value: 'createdAt',
         },
         {
-          text: this.$t('profiles.actions'),
+          text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
           align: 'center',
-          class: 'table-column-action',
         },
       ];
     },
   },
   methods: {
-    getStatusIcon(item) {
-      return userStatusHelpers.getStatusIcon(item.status);
+    goToProfile(profile) {
+      this.$router.push(`/groups/${this.groupId}/profiles/${profile.id}`);
     },
     openDeleteModal(profile = {}) {
       this.selectedProfile = profile;
@@ -66,52 +63,73 @@ export default {
     handleDelete() {
       this.$emit('delete', this.selectedProfile);
     },
-    closeModal() {
-      this.$refs.deleteDialog.close();
-    },
   },
 };
 </script>
 
 <template>
-  <!-- eslint-disable vue/valid-v-slot  -->
-  <div class="bs-users-table">
-    <v-data-table
+  <div>
+    <bs-data-table
       :headers="tableHeaders"
       :items="profiles"
       :loading="loading"
-      :no-data-text="$t('profiles.emptyState')"
+      :empty-icon="$options.LucideSend"
+      :empty-message="$t('profiles.emptyState')"
+      clickable
+      @click:row="goToProfile"
     >
       <template #item.name="{ item }">
-        <nuxt-link :to="`/groups/${groupId}/profiles/${item.id}`">
-          {{ item.name }}
-        </nuxt-link>
+        <span class="font-weight-medium">{{ item.name }}</span>
       </template>
+
       <template #item.type="{ item }">
-        <span> {{ item.type }} </span>
+        <v-chip small outlined>
+          {{ item.type }}
+        </v-chip>
       </template>
+
       <template #item.createdAt="{ item }">
-        <span> {{ item.createdAt | preciseDateTime }} </span>
+        {{ item.createdAt | preciseDateTime }}
       </template>
+
       <template #item.actions="{ item }">
-        <profiles-actions-dropdown>
-          <profiles-actions-dropdown-item
-            icon="edit"
-            :to="`/groups/${groupId}/profiles/${item.id}`"
-          >
-            {{ $t('global.edit') }}
-          </profiles-actions-dropdown-item>
-          <profiles-actions-dropdown-item
-            icon="delete"
-            :on-click="() => openDeleteModal(item)"
-          >
-            {{ $t('profiles.delete') }}
-          </profiles-actions-dropdown-item>
-        </profiles-actions-dropdown>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="goToProfile(item)"
+            >
+              <lucide-pencil :size="18" />
+            </v-btn>
+          </template>
+          <span>{{ $t('global.edit') }}</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              class="error--text"
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="openDeleteModal(item)"
+            >
+              <lucide-trash2 :size="18" />
+            </v-btn>
+          </template>
+          <span>{{ $t('global.delete') }}</span>
+        </v-tooltip>
       </template>
-    </v-data-table>
+    </bs-data-table>
+
     <bs-modal-confirm-form
       ref="deleteDialog"
+      :title="`${$t('global.delete')} ?`"
+      :action-label="$t('global.delete')"
       :with-input-confirmation="false"
       @confirm="handleDelete"
     >

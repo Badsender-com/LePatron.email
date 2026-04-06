@@ -48,14 +48,12 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <bs-profiles-table
-        :profiles="profiles"
-        :group-id="groupId"
-        :loading="loading"
-        @delete="handleDelete"
-      />
-    </v-card-text>
-  </v-card>
+  <div>
+    <bs-profiles-table
+      :profiles="profiles"
+      :group-id="groupId"
+      :loading="loading"
+      @delete="handleDelete"
+    />
+  </div>
 </template>

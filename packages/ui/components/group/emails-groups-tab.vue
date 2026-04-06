@@ -5,12 +5,14 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsEmailGroupTab',
   components: {
     BsModalConfirm,
+    BsDataTable,
     LucideTrash2: Trash2,
   },
   data() {
@@ -101,32 +103,28 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <v-card flat tile>
-        <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
-        <v-data-table
-          v-show="!loading"
-          :loading="loading"
-          :headers="tableHeaders"
-          :items="emailsGroups"
-          :no-data-text="$t('global.emailsGroupsEmpty')"
+  <div>
+    <bs-data-table
+      :headers="tableHeaders"
+      :items="emailsGroups"
+      :loading="loading"
+      :empty-icon="$options.components.LucideMail"
+      :empty-message="$t('global.emailsGroupsEmpty')"
+    >
+      <template #item.name="{ item }">
+        <nuxt-link
+          :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
         >
-          <template #item.name="{ item }">
-            <nuxt-link
-              :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
-            >
-              {{ item.name }}
-            </nuxt-link>
-          </template>
-          <template #item.actionDelete="{ item }">
-            <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-              <lucide-trash2 :size="18" />
-            </v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
-    </v-card-text>
+          {{ item.name }}
+        </nuxt-link>
+      </template>
+      <template #item.actionDelete="{ item }">
+        <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
+          <lucide-trash2 :size="18" />
+        </v-btn>
+      </template>
+    </bs-data-table>
+
     <bs-modal-confirm
       ref="deleteDialog"
       :title="`${$t('global.delete')}`"
@@ -137,5 +135,5 @@ export default {
     >
       {{ $t('forms.emailsGroup.deleteNotice') }}
     </bs-modal-confirm>
-  </v-card>
+  </div>
 </template>

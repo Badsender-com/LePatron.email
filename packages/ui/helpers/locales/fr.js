@@ -512,6 +512,22 @@ export default {
       'Vous ne pouvez pas ajouter de profil sans avoir configuré un serveur FTP au préalable.',
     deleteWarningMessage:
       'Vous êtes sur le point de supprimer le profil : <strong>{name}</strong>.<br/>Cette action est irréversible.',
+    newProfile: 'Nouveau profil ESP',
+    espType: 'Fournisseur ESP',
+    espTypeDescription:
+      'Sélectionnez le fournisseur de services email pour ce profil.',
+    selectEsp: 'Fournisseur de services email',
+    apiConfiguration: 'Configuration API',
+    apiConfigurationDescription:
+      'Entrez les identifiants API de votre compte ESP.',
+    senderConfiguration: 'Informations expéditeur',
+    senderConfigurationDescription:
+      'Configurez les informations par défaut de l\'expéditeur pour les emails envoyés via ce profil.',
+    databaseConfiguration: 'Configuration base de données',
+    databaseConfigurationDescription:
+      'Configurez l\'entité de base de données et la table cible.',
+    targetTypeDescription:
+      'Sélectionnez le type de cible pour les envois Adobe Campaign.',
   },
   folders: {
     name: 'Nom du dossier',
@@ -869,5 +885,24 @@ export default {
     deleteConfirmTitle: 'Supprimer le template ?',
     deleteWarningMessage: 'Êtes-vous sûr de vouloir supprimer le template <strong>{name}</strong> ? Cette action est irréversible.',
     confirmationField: 'Tapez le nom du template pour confirmer',
+    newTemplate: 'Nouveau template',
+    generalInfo: 'Informations générales',
+    generalInfoDescription: 'Nom et description du template',
+    templateFiles: 'Fichiers du template',
+    templateFilesDescription: 'Uploadez le markup HTML et les images associées',
+    markup: 'Markup (fichier HTML)',
+    markupUploaded: 'Markup uploadé',
+    dropMarkupHere: 'Glissez un fichier ici ou cliquez pour sélectionner',
+    markupFormats: 'Format accepté : .html',
+    invalidMarkupFormat: 'Format invalide. Veuillez uploader un fichier HTML.',
+    dropImagesHere: 'Glissez des images ici ou cliquez pour sélectionner',
+    imageFormats: 'Formats acceptés : PNG, JPG, GIF, WEBP',
+    existingImages: '{count} images uploadées',
+    newImages: '{count} nouvelles images à uploader',
+    removeAllImages: 'Supprimer tout',
+    imagesRemoved: 'Images supprimées avec succès',
+    previewDescription: 'Aperçu du template rendu',
+    regeneratePreview: 'Régénérer l\'aperçu',
+    filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
   }
 };

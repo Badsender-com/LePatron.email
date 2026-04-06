@@ -506,6 +506,21 @@ export default {
     emptyState: 'No profile available',
     deleteWarningMessage:
       'You are about to delete the profile: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+    newProfile: 'New ESP profile',
+    espType: 'ESP provider',
+    espTypeDescription: 'Select the email service provider for this profile.',
+    selectEsp: 'Email service provider',
+    apiConfiguration: 'API configuration',
+    apiConfigurationDescription:
+      'Enter the API credentials for your ESP account.',
+    senderConfiguration: 'Sender information',
+    senderConfigurationDescription:
+      'Configure the default sender details for emails sent via this profile.',
+    databaseConfiguration: 'Database configuration',
+    databaseConfigurationDescription:
+      'Configure the database entity and target table settings.',
+    targetTypeDescription:
+      'Select the target type for Adobe Campaign deliveries.',
   },
   folders: {
     name: 'Folder name',
@@ -863,5 +878,24 @@ export default {
     deleteConfirmTitle: 'Delete template?',
     deleteWarningMessage: 'Are you sure you want to delete the template <strong>{name}</strong>? This action cannot be undone.',
     confirmationField: 'Type the template name to confirm',
+    newTemplate: 'New template',
+    generalInfo: 'General information',
+    generalInfoDescription: 'Template name and description',
+    templateFiles: 'Template files',
+    templateFilesDescription: 'Upload the HTML markup and associated images',
+    markup: 'Markup (HTML file)',
+    markupUploaded: 'Markup uploaded',
+    dropMarkupHere: 'Drop file here or click to select',
+    markupFormats: 'Accepted format: .html',
+    invalidMarkupFormat: 'Invalid format. Please upload an HTML file.',
+    dropImagesHere: 'Drop images here or click to select',
+    imageFormats: 'Accepted formats: PNG, JPG, GIF, WEBP',
+    existingImages: '{count} uploaded images',
+    newImages: '{count} new images to upload',
+    removeAllImages: 'Remove all',
+    imagesRemoved: 'Images removed successfully',
+    previewDescription: 'Preview of the rendered template',
+    regeneratePreview: 'Regenerate preview',
+    filesAvailableAfterCreation: 'You can upload the HTML markup and images after creating the template.',
   }
 };
