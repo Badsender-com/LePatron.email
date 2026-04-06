@@ -21,7 +21,7 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { MessageCircle, Pencil, Copy, Trash2 } from 'lucide-vue';
+import { MessageCircle, Pencil, Copy, Trash2, Mail } from 'lucide-vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -65,6 +65,7 @@ export default {
     LucidePencil: Pencil,
     LucideCopy: Copy,
     LucideTrash2: Trash2,
+    LucideMail: Mail,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -72,6 +73,9 @@ export default {
     mailings: { type: Array, default: () => [] },
     mailingsSelection: { type: Array, default: () => [] },
     hasFtpAccess: { type: Boolean, default: false },
+    currentPage: { type: Number, default: 1 },
+    totalPages: { type: Number, default: 1 },
+    itemsLength: { type: Number, default: 0 },
   },
   data() {
     return {
@@ -81,7 +85,6 @@ export default {
       tableActions: TABLE_ACTIONS,
       actions: ACTIONS,
       actionsDetails: ACTIONS_DETAILS,
-      currentPage: 1,
       search: '',
     };
   },
@@ -137,8 +140,16 @@ export default {
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    totalPages() {
-      return this.pagination?.pageCount || 1;
+    localPage: {
+      get() {
+        return this.currentPage;
+      },
+      set(val) {
+        this.$emit('update:page', val);
+      },
+    },
+    showPagination() {
+      return this.itemsLength > 0 && this.totalPages > 1;
     },
     filteredActions() {
       return this.tableActions.filter(
@@ -400,7 +411,7 @@ export default {
 </script>
 
 <template>
-  <div>
+  <div class="mailings-table-wrapper">
     <v-skeleton-loader :loading="isLoadingMailingsForFilterUpdate" type="table">
       <v-data-table
         v-model="selectedRows"
@@ -422,10 +433,10 @@ export default {
         @update:items-per-page="handleItemsPerPageChange"
       >
         <template #item.name="{ item }">
-          <a v-if="hasAccess" :href="`/editor/${item.id}`">{{ item.name }}</a>
-          <template v-else>
+          <a v-if="hasAccess" :href="`/editor/${item.id}`" class="email-link">
             {{ item.name }}
-          </template>
+          </a>
+          <span v-else class="font-weight-medium">{{ item.name }}</span>
         </template>
         <template #item.userName="{ item }">
           <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
@@ -453,57 +464,77 @@ export default {
         <template #item.actions="{ item }">
           <div class="actions-cell">
             <!-- Quick action icons -->
-            <v-btn
-              v-if="hasAccess"
-              icon
-              small
-              :href="`/editor/${item.id}?comments=1`"
-              :title="$t('mailings.openComments')"
-              :aria-label="$t('mailings.openComments')"
-              class="action-icon"
-            >
-              <v-badge
-                :content="item.unresolvedCommentsCount || 0"
-                :value="item.unresolvedCommentsCount > 0"
-                color="orange"
-                overlap
-              >
-                <lucide-message-circle :size="16" />
-              </v-badge>
-            </v-btn>
-            <v-btn
-              v-if="filteredActions.includes(actions.RENAME)"
-              icon
-              small
-              class="action-icon"
-              :title="$t(actionsDetails[actions.RENAME].text)"
-              :aria-label="$t(actionsDetails[actions.RENAME].text)"
-              @click="openRenameModal(item)"
-            >
-              <lucide-pencil :size="16" />
-            </v-btn>
-            <v-btn
-              v-if="filteredActions.includes(actions.COPY_MAIL)"
-              icon
-              small
-              class="action-icon"
-              :title="$t(actionsDetails[actions.COPY_MAIL].text)"
-              :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
-              @click="openCopyMail(item)"
-            >
-              <lucide-copy :size="16" />
-            </v-btn>
-            <v-btn
-              v-if="filteredActions.includes(actions.DELETE)"
-              icon
-              small
-              class="action-icon action-icon--danger"
-              :title="$t(actionsDetails[actions.DELETE].text)"
-              :aria-label="$t(actionsDetails[actions.DELETE].text)"
-              @click="displayDeleteModal(item)"
-            >
-              <lucide-trash2 :size="16" />
-            </v-btn>
+            <v-tooltip v-if="hasAccess" bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  :href="`/editor/${item.id}?comments=1`"
+                  :aria-label="$t('mailings.openComments')"
+                  class="action-icon"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  <v-badge
+                    :content="item.unresolvedCommentsCount || 0"
+                    :value="item.unresolvedCommentsCount > 0"
+                    color="accent"
+                    overlap
+                  >
+                    <lucide-message-circle :size="18" />
+                  </v-badge>
+                </v-btn>
+              </template>
+              <span>{{ $t('mailings.openComments') }}</span>
+            </v-tooltip>
+            <v-tooltip v-if="filteredActions.includes(actions.RENAME)" bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  class="action-icon"
+                  :aria-label="$t(actionsDetails[actions.RENAME].text)"
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="openRenameModal(item)"
+                >
+                  <lucide-pencil :size="18" />
+                </v-btn>
+              </template>
+              <span>{{ $t(actionsDetails[actions.RENAME].text) }}</span>
+            </v-tooltip>
+            <v-tooltip v-if="filteredActions.includes(actions.COPY_MAIL)" bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  class="action-icon"
+                  :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="openCopyMail(item)"
+                >
+                  <lucide-copy :size="18" />
+                </v-btn>
+              </template>
+              <span>{{ $t(actionsDetails[actions.COPY_MAIL].text) }}</span>
+            </v-tooltip>
+            <v-tooltip v-if="filteredActions.includes(actions.DELETE)" bottom>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  small
+                  class="action-icon action-icon--danger"
+                  :aria-label="$t(actionsDetails[actions.DELETE].text)"
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="displayDeleteModal(item)"
+                >
+                  <lucide-trash2 :size="18" />
+                </v-btn>
+              </template>
+              <span>{{ $t(actionsDetails[actions.DELETE].text) }}</span>
+            </v-tooltip>
 
             <!-- More actions menu -->
             <bs-mailings-actions-dropdown>
@@ -564,7 +595,26 @@ export default {
             </bs-mailings-actions-dropdown>
           </div>
         </template>
+
+        <template #no-data>
+          <div class="empty-state">
+            <lucide-mail :size="48" class="empty-state__icon" />
+            <p class="empty-state__text">
+              {{ $t('mailings.noMailingsAvailable') }}
+            </p>
+          </div>
+        </template>
       </v-data-table>
+
+      <!-- Pagination -->
+      <div v-if="showPagination" class="table-pagination">
+        <v-pagination
+          v-model="localPage"
+          :length="totalPages"
+          :total-visible="7"
+          circle
+        />
+      </div>
 
       <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
       <mailings-tags-menu
@@ -614,7 +664,63 @@ export default {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss">
+/* Table styling - NOT scoped to ensure Vuetify overrides work */
+.mailings-table-wrapper {
+  .v-data-table {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+
+    // Table header styling
+    thead th {
+      background: #fafafa !important;
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+      height: 48px !important;
+    }
+
+    // Row styling
+    tbody tr {
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.08) !important;
+      }
+
+      td {
+        font-size: 0.875rem;
+        height: 52px !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+      }
+
+      &:last-child td {
+        border-bottom: none !important;
+      }
+    }
+
+    // Footer styling
+    .v-data-footer {
+      border-top: 1px solid rgba(0, 0, 0, 0.12);
+      font-size: 0.75rem;
+    }
+  }
+
+  // Comment badge styling
+  .v-badge__badge {
+    font-size: 10px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0 5px;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
 .v-list {
   cursor: pointer;
 }
@@ -627,7 +733,7 @@ export default {
 .actions-cell {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   white-space: nowrap;
 }
 
@@ -635,14 +741,78 @@ export default {
   color: rgba(0, 0, 0, 0.54);
   text-decoration: none;
   transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: var(--v-primary-base);
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  &--danger:hover {
+    color: var(--v-error-base, #ff5252);
+  }
 }
 
-.action-icon:hover {
+/* Email link styling */
+.email-link {
+  color: var(--v-primary-base, #00acdc) !important;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Tags styling */
+.tags {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+  background: rgba(0, 172, 220, 0.1);
   color: var(--v-primary-base);
-  background-color: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.action-icon--danger:hover {
-  color: var(--v-error-base, #ff5252);
+/* Pagination styling */
+.table-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: -1px;
+
+  ::v-deep {
+    .v-pagination__item,
+    .v-pagination__navigation {
+      box-shadow: none;
+    }
+
+    .v-pagination__item--active {
+      background-color: var(--v-primary-base) !important;
+    }
+  }
+}
+
+/* Empty state styling */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: rgba(0, 0, 0, 0.38);
+
+  &__icon {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
 }
 </style>

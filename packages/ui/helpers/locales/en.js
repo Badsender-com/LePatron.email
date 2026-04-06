@@ -352,9 +352,13 @@ export default {
     list: 'Search in the email list',
     creationNotice: 'Click on any of above templates to create email',
     filters: {
+      title: 'Filters',
       createdBetween: 'Created between',
       updatedBetween: 'Updated between',
       and: 'and',
+      searchPlaceholder: 'Search by name...',
+      startDate: 'Start date',
+      endDate: 'End date',
     },
     deleteManySuccessful: 'Emails deleted',
     deleteConfirmationMessage:

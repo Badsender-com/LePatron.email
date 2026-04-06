@@ -133,7 +133,7 @@ export default {
     externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
-    tags: 'Labels',
+    tags: 'Tags',
     password: 'Mot de passe',
     email: 'Email',
     enable: 'Activer',
@@ -357,9 +357,13 @@ export default {
       'Veuillez choisir un template afin de créer un nouvel email',
     list: 'Rechercher dans la liste d\'emails',
     filters: {
+      title: 'Filtres',
       createdBetween: 'Créé entre le',
       updatedBetween: 'Mis à jour entre le',
       and: 'et le',
+      searchPlaceholder: 'Rechercher par nom...',
+      startDate: 'Date début',
+      endDate: 'Date fin',
     },
     deleteManySuccessful: 'Les emails ont bien été supprimés',
     deleteConfirmationMessage:
