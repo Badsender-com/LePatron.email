@@ -255,6 +255,10 @@ export default {
     emailsGroup: {
       emails: 'Emails',
       emailsPlaceholder: 'Exemple: email.01@domaine.com;email.02@domaine.com;',
+      emailsHint: 'Séparez les adresses email par des points-virgules (;)',
+      configuration: 'Configuration de la liste de test',
+      configurationDescription:
+        'Définissez le nom et les adresses email pour cette liste de test',
       errors: {
         name: {
           required: 'Veuillez saisir un nom de liste de test',
@@ -267,7 +271,7 @@ export default {
       },
       deleteNotice:
         'Vous êtes sur le point de supprimer cette liste de test. Cette action est irréversible.',
-      deleteSuccess: 'La liste de test a bien été supprimé',
+      deleteSuccess: 'La liste de test a bien été supprimée',
     },
     workspace: {
       checkBoxError:
