@@ -33,7 +33,7 @@ async function listEmailsGroups(groupId) {
   }).sort({ name: 1 });
 }
 
-async function createEmailsGroup({ name, emails, user }) {
+async function createEmailsGroup({ name, emails, user, groupId }) {
   logger.log('emailsGroupService:createEmailsGroup');
   checkNameAndEmailsExists({ name, emails });
 
@@ -41,14 +41,21 @@ async function createEmailsGroup({ name, emails, user }) {
     throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
   }
 
-  if (await EmailsGroups.exists({ name, _company: user.group.id })) {
+  // Use explicit groupId if provided (for admin users), otherwise fallback to user's group
+  const companyId = groupId || user.group?.id;
+
+  if (!companyId) {
+    throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
+  }
+
+  if (await EmailsGroups.exists({ name, _company: companyId })) {
     throw new Conflict(ERROR_CODES.EMAIL_GROUP_NAME_ALREADY_EXIST);
   }
 
   return EmailsGroups.create({
     name,
     emails,
-    _company: user.group.id,
+    _company: companyId,
   });
 }
 
