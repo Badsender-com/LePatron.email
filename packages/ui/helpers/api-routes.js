@@ -236,6 +236,10 @@ export function getEntitiesList() {
 // Email groups
 /// ///
 
+export function getGroupEmailsGroups(groupId) {
+  return `/groups/${groupId}/email-groups`;
+}
+
 export function getEmailsGroups() {
   return '/emails-groups';
 }

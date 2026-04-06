@@ -3,7 +3,7 @@ import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
 import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { getEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
+import { getGroupEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { Trash2 } from 'lucide-vue';
@@ -46,17 +46,16 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async fetchData() {
-      /* const {
+      const {
         $axios,
         $route: { params },
-      } = this; */
-      const { $axios } = this;
+      } = this;
 
       try {
         this.loading = true;
         const {
           data: { items: emailsGroups },
-        } = await $axios.get(getEmailsGroups());
+        } = await $axios.get(getGroupEmailsGroups(params.groupId));
 
         this.emailsGroups = emailsGroups.map(({ createdAt, ...rest }) => ({
           ...rest,
