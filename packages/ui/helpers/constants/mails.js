@@ -14,7 +14,7 @@ export const ACTIONS = {
 export const ACTIONS_DETAILS = {
   [ACTIONS.RENAME]: {
     text: 'tableHeaders.mailings.rename',
-    icon: 'title',
+    icon: 'text-cursor',
   },
   [ACTIONS.TRANSFER]: {
     text: 'tableHeaders.mailings.transfer',
@@ -22,24 +22,24 @@ export const ACTIONS_DETAILS = {
   },
   [ACTIONS.DELETE]: {
     text: 'global.delete',
-    icon: 'delete',
+    icon: 'trash-2',
   },
   [ACTIONS.COPY_MAIL]: {
     text: 'global.copyMail',
-    icon: 'content_copy',
+    icon: 'copy',
   },
   [ACTIONS.ADD_TAGS]: {
     text: 'global.addTags',
-    icon: 'label',
+    icon: 'tag',
   },
   [ACTIONS.MOVE_MAIL]: {
     text: 'global.moveMail',
-    icon: 'drive_file_move',
+    icon: 'folder-input',
     emit: 'copy-mail-action',
   },
   [ACTIONS.PREVIEW]: {
     text: 'global.preview',
-    icon: 'visibility',
+    icon: 'eye',
   },
   [ACTIONS.DOWNLOAD]: {
     text: 'global.download',

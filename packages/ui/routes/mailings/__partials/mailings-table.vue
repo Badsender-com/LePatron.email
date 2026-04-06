@@ -26,7 +26,7 @@ import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { MessageCircle, Pencil, Copy, Trash2, Mail } from 'lucide-vue';
+import { MessageCircle, TextCursor, Copy, Trash2, Mail } from 'lucide-vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -67,7 +67,7 @@ export default {
     BsMailingModalDuplicateTranslate,
     BsMailingModalTranslationWarning,
     LucideMessageCircle: MessageCircle,
-    LucidePencil: Pencil,
+    LucideTextCursor: TextCursor,
     LucideCopy: Copy,
     LucideTrash2: Trash2,
     LucideMail: Mail,
@@ -528,7 +528,7 @@ export default {
                   v-on="on"
                   @click="openRenameModal(item)"
                 >
-                  <lucide-pencil :size="18" />
+                  <lucide-text-cursor :size="18" />
                 </v-btn>
               </template>
               <span>{{ $t(actionsDetails[actions.RENAME].text) }}</span>
