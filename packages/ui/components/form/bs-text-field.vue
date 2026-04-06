@@ -27,6 +27,8 @@ export default {
     placeholder: { type: String, default: '' },
     readonly: { type: Boolean, default: false },
     autofocus: { type: Boolean, default: false },
+    hideLabel: { type: Boolean, default: false },
+    dense: { type: Boolean, default: false },
   },
   computed: {
     localValue: {
@@ -65,8 +67,15 @@ export default {
 </script>
 
 <template>
-  <div class="bs-text-field" :class="{ 'bs-text-field--error': hasError, 'bs-text-field--disabled': disabled }">
-    <label v-if="label" class="bs-text-field__label">
+  <div
+    class="bs-text-field"
+    :class="{
+      'bs-text-field--error': hasError,
+      'bs-text-field--disabled': disabled,
+      'bs-text-field--dense': dense,
+    }"
+  >
+    <label v-if="label && !hideLabel" class="bs-text-field__label">
       {{ label }}
       <span v-if="required" class="bs-text-field__required">*</span>
     </label>
@@ -164,6 +173,22 @@ export default {
   &--error {
     .bs-text-field__label {
       color: #f04e23;
+    }
+  }
+
+  &--dense {
+    margin-bottom: 0;
+
+    .bs-text-field__input {
+      &.v-text-field.v-text-field--solo {
+        ::v-deep .v-input__slot {
+          min-height: 36px;
+        }
+
+        ::v-deep input {
+          padding: 6px 0;
+        }
+      }
     }
   }
 }

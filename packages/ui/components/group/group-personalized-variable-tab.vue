@@ -2,6 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import BsModalConfirm from '~/components/modal-confirm';
+import BsTextField from '~/components/form/bs-text-field.vue';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { mapMutations } from 'vuex';
 
@@ -11,14 +12,15 @@ import {
   postPersonalizedVariables,
 } from '~/helpers/api-routes';
 
-import { Plus, Pencil, Trash2 } from 'lucide-vue';
+import { Braces, Plus, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'GroupPersonalizedVariableTab',
   components: {
     BsModalConfirm,
+    BsTextField,
+    LucideBraces: Braces,
     LucidePlus: Plus,
-    LucidePencil: Pencil,
     LucideTrash2: Trash2,
   },
   mixins: [validationMixin],
@@ -42,38 +44,15 @@ export default {
     groupId() {
       return this.$route.params.groupId;
     },
-    tableHeaders() {
-      return [
-        {
-          align: 'right',
-          value: 'status',
-          sortable: false,
-          width: '2rem',
-        },
-        {
-          text: this.$t('personalizedVariables.label'),
-          align: 'left',
-          value: 'label',
-          sortable: false,
-        },
-        {
-          text: this.$t('personalizedVariables.variable'),
-          align: 'left',
-          value: 'variable',
-          sortable: false,
-        },
-        {
-          text: this.$t('personalizedVariables.actions'),
-          value: 'actions',
-          sortable: false,
-          align: 'center',
-        },
-      ];
-    },
     deleteVariableName() {
       return this.deleteIndex !== null
         ? this.variables[this.deleteIndex].variable
         : '';
+    },
+    hasUnsavedChanges() {
+      return this.variables.some(
+        (v) => v.status === 'new' || v.status === 'modified'
+      );
     },
   },
   created() {
@@ -95,6 +74,10 @@ export default {
         this.error = null;
       } catch (error) {
         this.error = error;
+        this.showSnackbar({
+          text: this.$t('personalizedVariables.snackbars.error'),
+          color: 'error',
+        });
       } finally {
         this.loading = false;
       }
@@ -106,6 +89,15 @@ export default {
         status: 'new',
         _id: '',
         deleting: false,
+      });
+      // Focus the new row's label input after DOM update
+      this.$nextTick(() => {
+        const inputs = this.$el.querySelectorAll(
+          '.variables-table__row:last-child input'
+        );
+        if (inputs.length > 0) {
+          inputs[0].focus();
+        }
       });
     },
     openDeleteDialog(index) {
@@ -187,94 +179,307 @@ export default {
         errors.push(this.$t('personalizedVariables.validation.required'));
       return errors;
     },
+    getStatusClass(status) {
+      return {
+        'variables-table__status--new': status === 'new',
+        'variables-table__status--modified': status === 'modified',
+      };
+    },
   },
 };
 </script>
 
 <template>
-  <div class="group-personalized-variable-tab">
-    <v-data-table
-      :headers="tableHeaders"
-      :items="variables"
-      :loading="loading"
-      :hide-default-footer="true"
-      :disable-pagination="true"
-      class="custom-table-class"
-    >
-      <template #item.status="{ item }">
-        <lucide-plus v-if="item.status === 'new'" :size="14" />
-        <lucide-pencil v-else-if="item.status === 'modified'" :size="14" />
-      </template>
-      <template #item.label="{ item, index }">
-        <v-text-field
-          v-model="item.label"
-          :label="$t('personalizedVariables.label')"
-          :error-messages="validationErrors(index, 'label')"
-          @input="updateVariable(index, 'label', $event)"
-          @blur="$v.variables.$each[index].label.$touch()"
-        />
-      </template>
-      <template #item.variable="{ item, index }">
-        <v-text-field
-          v-model="item.variable"
-          :label="$t('personalizedVariables.variable')"
-          :error-messages="validationErrors(index, 'variable')"
-          @input="updateVariable(index, 'variable', $event)"
-          @blur="$v.variables.$each[index].variable.$touch()"
-        />
-      </template>
-      <template #item.actions="{ index }">
-        <v-progress-circular v-if="variables[index].deleting" indeterminate />
-        <v-btn v-else icon @click="openDeleteDialog(index)">
-          <lucide-trash2 :size="18" />
-        </v-btn>
-      </template>
-    </v-data-table>
-    <div class="button-container">
-      <v-btn class="add-row-button" text @click.prevent="addRow">
+  <div class="personalized-variables">
+    <!-- Form Section Header -->
+    <div class="form-section">
+      <div class="form-section__header">
+        <lucide-braces class="form-section__icon" :size="20" />
+        <div class="form-section__title">
+          <h3>{{ $t('personalizedVariables.title') }}</h3>
+          <p>{{ $t('personalizedVariables.description') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variables Table -->
+    <div class="variables-table">
+      <!-- Table Header -->
+      <div class="variables-table__header">
+        <div class="variables-table__col variables-table__col--status" />
+        <div class="variables-table__col variables-table__col--label">
+          {{ $t('personalizedVariables.label') }}
+        </div>
+        <div class="variables-table__col variables-table__col--variable">
+          {{ $t('personalizedVariables.variable') }}
+        </div>
+        <div class="variables-table__col variables-table__col--actions">
+          {{ $t('personalizedVariables.actions') }}
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div
+        v-if="loading && variables.length === 0"
+        class="variables-table__loading"
+      >
+        <v-progress-circular indeterminate color="primary" size="32" />
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="variables.length === 0" class="variables-table__empty">
+        <lucide-braces :size="48" class="variables-table__empty-icon" />
+        <p>{{ $t('personalizedVariables.empty') }}</p>
+      </div>
+
+      <!-- Table Rows -->
+      <div
+        v-for="(variable, index) in variables"
+        v-else
+        :key="index"
+        class="variables-table__row"
+      >
+        <div class="variables-table__col variables-table__col--status">
+          <span
+            class="variables-table__status"
+            :class="getStatusClass(variable.status)"
+          >
+            <template v-if="variable.status === 'new'">+</template>
+            <template v-else-if="variable.status === 'modified'">*</template>
+          </span>
+        </div>
+        <div class="variables-table__col variables-table__col--label">
+          <bs-text-field
+            :value="variable.label"
+            :error-messages="validationErrors(index, 'label')"
+            :disabled="loading || variable.deleting"
+            hide-label
+            dense
+            @input="updateVariable(index, 'label', $event)"
+            @blur="$v.variables.$each[index].label.$touch()"
+          />
+        </div>
+        <div class="variables-table__col variables-table__col--variable">
+          <bs-text-field
+            :value="variable.variable"
+            :error-messages="validationErrors(index, 'variable')"
+            :disabled="loading || variable.deleting"
+            hide-label
+            dense
+            @input="updateVariable(index, 'variable', $event)"
+            @blur="$v.variables.$each[index].variable.$touch()"
+          />
+        </div>
+        <div class="variables-table__col variables-table__col--actions">
+          <v-progress-circular
+            v-if="variable.deleting"
+            indeterminate
+            size="20"
+            width="2"
+          />
+          <v-tooltip v-else bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                class="error--text"
+                :disabled="loading"
+                v-bind="attrs"
+                v-on="on"
+                @click="openDeleteDialog(index)"
+              >
+                <lucide-trash2 :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.delete') }}</span>
+          </v-tooltip>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <v-btn text color="primary" :disabled="loading" @click="addRow">
         <lucide-plus :size="16" class="mr-1" />
-        <span>{{ $t('personalizedVariables.addRow') }}</span>
+        {{ $t('personalizedVariables.addRow') }}
       </v-btn>
       <v-spacer />
-      <v-btn elevation="0" color="accent" :disabled="loading" @click="onSubmit">
-        {{ $t('personalizedVariables.save') }}
+      <v-btn
+        color="accent"
+        elevation="0"
+        :loading="loading"
+        :disabled="loading || !hasUnsavedChanges"
+        @click="onSubmit"
+      >
+        {{ $t('global.save') }}
       </v-btn>
     </div>
+
+    <!-- Delete Confirmation Modal -->
     <bs-modal-confirm
       ref="deleteDialog"
-      :title="`${$t('personalizedVariables.delete')} ${deleteVariableName}?`"
-      :action-label="$t('personalizedVariables.delete')"
+      :title="$t('personalizedVariables.deleteTitle')"
+      :action-label="$t('global.delete')"
+      action-button-color="error"
+      action-button-elevation="0"
       @confirm="deleteVariable"
     >
-      {{ $t('personalizedVariables.deleteNotice') }}
+      <p>
+        {{
+          $t('personalizedVariables.deleteNotice', {
+            variable: deleteVariableName,
+          })
+        }}
+      </p>
     </bs-modal-confirm>
   </div>
 </template>
 
-<style>
-.group-personalized-variable-tab {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 10rem);
-  gap: 2rem;
+<style lang="scss" scoped>
+.personalized-variables {
+  max-width: 900px;
 }
-.custom-table-class {
-  flex-grow: 1;
-  overflow-y: auto;
+
+.form-section {
+  margin-bottom: 1.5rem;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    color: #00acdc;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.87);
+      margin: 0 0 0.25rem 0;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: rgba(0, 0, 0, 0.6);
+      margin: 0;
+    }
+  }
 }
-.button-container {
-  display: flex;
-  justify-content: space-between;
+
+.variables-table {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    background: #fafafa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  &__col {
+    &--status {
+      width: 2rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 0.5rem;
+    }
+
+    &--label {
+      flex: 1;
+      padding-right: 1rem;
+    }
+
+    &--variable {
+      flex: 1;
+      padding-right: 1rem;
+    }
+
+    &--actions {
+      width: 4rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 0.25rem;
+    }
+  }
+
+  &__status {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 50%;
+
+    &--new {
+      color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+    }
+
+    &--modified {
+      color: #ff9800;
+      background: rgba(255, 152, 0, 0.1);
+    }
+  }
+
+  &__loading,
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: rgba(0, 0, 0, 0.38);
+  }
+
+  &__empty-icon {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  &__empty p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
 }
-.custom-table-class tbody tr td {
-  border: none !important;
-}
-.custom-table-class tbody tr td:first-child {
-  padding: 0 !important;
-}
-.add-row-button {
+
+.form-actions {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  padding-top: 0.5rem;
 }
 </style>
