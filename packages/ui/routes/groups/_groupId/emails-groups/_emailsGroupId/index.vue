@@ -1,28 +1,31 @@
 <script>
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import { mapMutations } from 'vuex';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { mapMutations } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
 import { getEmailsGroup } from '~/helpers/api-routes.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import EmailsGroupForm from '~/components/group/form-emails-group';
-import BsGroupMenu from '~/components/group/menu.vue';
+import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 
 export default {
   name: 'PageEditEmailGroup',
-  components: { EmailsGroupForm, BsGroupMenu },
-  mixins: [mixinPageTitle],
+  components: { EmailsGroupForm, BsGroupSettingsNav },
+  mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_GROUP_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData({ params, $axios }) {
     const { emailsGroupId } = params;
     try {
-      const { data: emailsGroup } = await $axios.get(
-        getEmailsGroup(emailsGroupId)
-      );
+      const [emailsGroupResponse, groupResponse] = await Promise.all([
+        $axios.get(getEmailsGroup(emailsGroupId)),
+        $axios.$get(apiRoutes.groupsItem(params)),
+      ]);
       return {
-        emailsGroup,
+        emailsGroup: emailsGroupResponse.data,
+        group: groupResponse,
         isLoading: false,
       };
     } catch (error) {
@@ -34,7 +37,11 @@ export default {
       isLoading: true,
       isError: false,
       emailsGroup: {},
+      group: {},
     };
+  },
+  head() {
+    return { title: this.settingsTitle };
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -58,10 +65,7 @@ export default {
           color: 'success',
         });
 
-        this.$router.push({
-          path: `/groups/${groupId}`,
-          query: { redirectTab: 'emails-groups' },
-        });
+        this.$router.push(`/groups/${groupId}/settings/emails-groups`);
       } catch (error) {
         const errorKey = `global.errors.${
           ERROR_CODES[error.response?.data] || 'errorOccured'
@@ -81,7 +85,7 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-group-menu />
+      <bs-group-settings-nav :group="group" />
     </template>
     <emails-group-form
       v-model="emailsGroup"
