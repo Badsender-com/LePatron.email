@@ -191,17 +191,6 @@ export default {
 
 <template>
   <div class="personalized-variables">
-    <!-- Form Section Header -->
-    <div class="form-section">
-      <div class="form-section__header">
-        <lucide-braces class="form-section__icon" :size="20" />
-        <div class="form-section__title">
-          <h3>{{ $t('personalizedVariables.title') }}</h3>
-          <p>{{ $t('personalizedVariables.description') }}</p>
-        </div>
-      </div>
-    </div>
-
     <!-- Variables Table -->
     <div class="variables-table">
       <!-- Table Header -->
@@ -338,37 +327,6 @@ export default {
 <style lang="scss" scoped>
 .personalized-variables {
   max-width: 900px;
-}
-
-.form-section {
-  margin-bottom: 1.5rem;
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  &__icon {
-    color: #00acdc;
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
-
-  &__title {
-    h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.87);
-      margin: 0 0 0.25rem 0;
-    }
-
-    p {
-      font-size: 0.875rem;
-      color: rgba(0, 0, 0, 0.6);
-      margin: 0;
-    }
-  }
 }
 
 .variables-table {

@@ -70,6 +70,10 @@ export default {
         this.loading = false;
       }
     },
+    goToEmailsGroup(item) {
+      const { groupId } = this.$route.params;
+      this.$router.push(`/groups/${groupId}/emails-groups/${item.id}`);
+    },
     deleteItem(item) {
       this.selectedEmailsGroup = item;
       this.$refs.deleteDialog.open({ name: item.name, id: item.id });
@@ -109,13 +113,11 @@ export default {
       :loading="loading"
       :empty-icon="$options.components.LucideMail"
       :empty-message="$t('global.emailsGroupsEmpty')"
+      clickable
+      @click:row="goToEmailsGroup"
     >
       <template #item.name="{ item }">
-        <nuxt-link
-          :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
-        >
-          {{ item.name }}
-        </nuxt-link>
+        <span class="font-weight-medium">{{ item.name }}</span>
       </template>
       <template #item.actionDelete="{ item }">
         <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
