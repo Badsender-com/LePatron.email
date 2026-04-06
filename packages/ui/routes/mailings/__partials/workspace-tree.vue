@@ -22,7 +22,7 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import { FolderOpen, Folder, Plus, MoreVertical, Pencil, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
+import { FolderOpen, Folder, Users, Plus, MoreVertical, Pencil, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -36,6 +36,7 @@ export default {
     FolderNewModal,
     LucideFolderOpen: FolderOpen,
     LucideFolder: Folder,
+    LucideUsers: Users,
     LucidePlus: Plus,
     LucideMoreVertical: MoreVertical,
     LucidePencil: Pencil,
@@ -586,12 +587,33 @@ export default {
       @update:active="handleSelectItemFromTreeView"
       @update:open="handleTreeUpdate"
     >
-      <template #prepend="{ item, open }">
-        <template v-if="!item.icon">
-          <lucide-folder-open v-if="open" :size="18" :style="{ color: item.hasAccess ? 'var(--v-accent-base)' : '#9e9e9e' }" />
-          <lucide-folder v-else :size="18" :style="{ color: item.hasAccess ? 'var(--v-accent-base)' : '#9e9e9e' }" />
+      <template #prepend="{ item, active }">
+        <!-- Workspace icon -->
+        <lucide-users
+          v-if="item.type === 'workspace'"
+          :size="18"
+          :class="['tree-icon', {
+            'tree-icon--active': active,
+            'tree-icon--disabled': !item.hasAccess
+          }]"
+        />
+        <!-- Folder icons -->
+        <template v-else>
+          <lucide-folder-open
+            v-if="active"
+            :size="18"
+            :class="['tree-icon', 'tree-icon--active', {
+              'tree-icon--disabled': !item.hasAccess
+            }]"
+          />
+          <lucide-folder
+            v-else
+            :size="18"
+            :class="['tree-icon', {
+              'tree-icon--disabled': !item.hasAccess
+            }]"
+          />
         </template>
-        <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" :style="{ color: item.hasAccess ? 'var(--v-primary-base)' : '#9e9e9e' }" />
       </template>
       <template #label="{ item, active }">
         <div @click="active ? $event.stopPropagation() : null">
@@ -686,6 +708,20 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+/* Tree icon color states */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
+
+  &--disabled {
+    color: rgba(0, 0, 0, 0.26);
+  }
+}
+
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
@@ -704,7 +740,7 @@ export default {
       transition: background-color 0.15s ease;
 
       &:hover {
-        background-color: rgba(0, 172, 220, 0.05);
+        background-color: rgba(0, 0, 0, 0.04);
       }
     }
 
@@ -726,7 +762,7 @@ export default {
     }
 
     .v-treeview-node--active .v-treeview-node__label {
-      color: var(--v-primary-base);
+      color: var(--v-accent-base);
       font-weight: 600;
     }
 
