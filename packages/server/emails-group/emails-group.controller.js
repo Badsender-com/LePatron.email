@@ -49,13 +49,14 @@ async function createEmailGroup(req, res) {
   logger.log('emailsGroupController:createEmailsGroup');
   const {
     user,
-    body: { name, emails },
+    body: { name, emails, groupId },
   } = req;
 
   const emailGroup = await emailsGroupService.createEmailsGroup({
     name,
     emails,
     user,
+    groupId,
   });
 
   res.json({
