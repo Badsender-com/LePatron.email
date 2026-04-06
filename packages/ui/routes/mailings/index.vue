@@ -7,6 +7,7 @@ import { mailings } from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
+import { Plus } from 'lucide-vue';
 import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
@@ -36,6 +37,7 @@ export default {
     MailingsHeader,
     BsGroupLoading,
     EmailBuilderPlaceholder,
+    LucidePlus: Plus,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
@@ -208,23 +210,6 @@ export default {
   <!-- Email Builder enabled: show normal UI -->
   <bs-layout-left-menu v-else>
     <template #menu>
-      <v-list>
-        <v-list-item class="justify-center">
-          <v-btn
-            large
-            color="accent"
-            elevation="0"
-            style="margin: 1em 0"
-            :disabled="!hasAccess"
-            @click="openNewMailModal"
-          >
-            <v-icon left>
-              add_box
-            </v-icon>
-            {{ $t('global.newMail') }}
-          </v-btn>
-        </v-list-item>
-      </v-list>
       <workspace-tree ref="workspaceTree" />
     </template>
     <v-card flat tile>
@@ -235,7 +220,19 @@ export default {
           "
           type="table"
         >
-          <mailings-header @on-refresh="refreshLeftMenuData" />
+          <mailings-header @on-refresh="refreshLeftMenuData">
+            <template #actions>
+              <v-btn
+                color="accent"
+                elevation="0"
+                :disabled="!hasAccess"
+                @click="openNewMailModal"
+              >
+                <lucide-plus :size="18" class="mr-1" />
+                {{ $t('global.newMail') }}
+              </v-btn>
+            </template>
+          </mailings-header>
           <mailings-filters
             :tags="tags"
             @on-refresh="fetchMailListingForFilterUpdate"
@@ -254,23 +251,14 @@ export default {
             :mailings="filteredMailings"
             :has-ftp-access="hasFtpAccess"
             :tags="tags"
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :items-length="itemsLength"
             @on-single-mail-download="handleDownloadSingleMail"
             @on-refetch="fetchMailListingForFilterUpdate"
             @update-tags="onMailTableTagsUpdate"
+            @update:page="currentPage = $event"
           />
-          <v-card
-            flat
-            class="d-flex align-center justify-center mx-auto"
-            max-width="22rem"
-          >
-            <v-pagination
-              v-if="parseInt(itemsLength) > 0"
-              v-model="currentPage"
-              :circle="true"
-              class="my-4 pagination-custom-style"
-              :length="totalPages"
-            />
-          </v-card>
         </v-skeleton-loader>
         <bs-group-loading slot="placeholder" />
       </client-only>
@@ -283,15 +271,3 @@ export default {
   </bs-layout-left-menu>
 </template>
 
-<style>
-.pagination-custom-style > ul > li > .v-pagination__item,
-.pagination-custom-style > ul > li > .v-pagination__navigation {
-  box-shadow: none;
-  border: none;
-}
-
-.pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
-  border: 1px solid #bbb2ad;
-  border: none;
-}
-</style>

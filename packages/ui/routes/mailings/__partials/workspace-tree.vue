@@ -685,7 +685,7 @@ export default {
   </v-skeleton-loader>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
@@ -694,13 +694,74 @@ export default {
 .v-treeview {
   overflow-y: auto;
   font-size: 0.875rem;
+
+  ::v-deep {
+    .v-treeview-node__root {
+      padding-left: 8px;
+      min-height: 40px;
+      border-radius: 4px;
+      margin: 2px 4px;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.05);
+      }
+    }
+
+    .v-treeview-node--active > .v-treeview-node__root {
+      background-color: rgba(0, 172, 220, 0.1);
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.15);
+      }
+    }
+
+    .v-treeview-node__content {
+      margin-left: 4px;
+    }
+
+    .v-treeview-node__label {
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+    }
+
+    .v-treeview-node--active .v-treeview-node__label {
+      color: var(--v-primary-base);
+      font-weight: 600;
+    }
+
+    .v-treeview-node__toggle {
+      color: rgba(0, 0, 0, 0.4);
+    }
+  }
 }
+
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
 }
+
 .v-list-item__title {
   font-size: 0.875rem;
+}
+
+/* Context menu styling */
+::v-deep .v-list {
+  padding: 4px 0;
+
+  .v-list-item {
+    min-height: 40px;
+    padding: 0 12px;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  .v-list-item__avatar {
+    min-width: 32px;
+    margin-right: 8px;
+  }
 }
 </style>
