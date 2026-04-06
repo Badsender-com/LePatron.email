@@ -59,13 +59,15 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
   });
 }
 
-async function getEmailsGroup({ emailsGroupId, userGroupId }) {
+async function getEmailsGroup({ emailsGroupId, userGroupId, isAdmin }) {
   logger.log('emailsGroupService:getEmailsGroup');
   await checkIfEmailGroupExist(emailsGroupId);
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  if (emailsGroup.group?.toString() !== userGroupId) {
+  // Admin users can access any emails group
+  // Regular users can only access their own group's emails groups
+  if (!isAdmin && emailsGroup._company?.toString() !== userGroupId) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -84,7 +86,9 @@ async function editEmailsGroup({ emailsGroupId, name, emails, user }) {
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  if (emailsGroup.group?.toString() !== user.group.id) {
+  // Admin users can edit any emails group
+  // Regular users can only edit their own group's emails groups
+  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -101,11 +105,13 @@ async function deleteEmailsGroup({ emailsGroupId, user }) {
   logger.log('emailsGroupService:deleteEmailsGroup');
   const emailsGroup = await findOne(emailsGroupId);
 
-  const deleteEmailsGroupResponse = await deleteOne(emailsGroup.id);
-
-  if (emailsGroup.group?.toString() !== user.group.id) {
+  // Admin users can delete any emails group
+  // Regular users can only delete their own group's emails groups
+  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
+
+  const deleteEmailsGroupResponse = await deleteOne(emailsGroup.id);
 
   if (deleteEmailsGroupResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_EMAIL_GROUP_DELETE);
