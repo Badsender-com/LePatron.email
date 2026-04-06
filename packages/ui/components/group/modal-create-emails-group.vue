@@ -116,6 +116,9 @@ export default {
             error
           }}</span>
         </div>
+        <p class="bs-textarea__hint">
+          {{ $t('forms.emailsGroup.emailsHint') }}
+        </p>
       </div>
 
       <v-divider class="mt-4" />
@@ -197,6 +200,12 @@ export default {
     color: #f44336;
     display: flex;
     flex-direction: column;
+  }
+
+  &__hint {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
   }
 
   &--error &__input ::v-deep .v-input__slot {
