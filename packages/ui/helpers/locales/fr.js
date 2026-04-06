@@ -562,20 +562,26 @@ export default {
     },
   },
   personalizedVariables: {
+    title: 'Variables personnalisées',
+    description:
+      'Définissez des variables personnalisées utilisables dans vos templates email',
+    empty: 'Aucune variable définie',
     status: 'Statut',
     label: 'Libellé',
     variable: 'Variable',
     actions: 'Actions',
-    addRow: 'Ajouter une ligne',
+    addRow: 'Ajouter une variable',
     save: 'Enregistrer',
     delete: 'Supprimer',
-    deleteNotice: 'Êtes-vous sûr de vouloir supprimer cette variable?',
+    deleteTitle: 'Supprimer la variable',
+    deleteNotice:
+      'Êtes-vous sûr de vouloir supprimer la variable "{variable}" ?',
     validation: {
       required: 'Ce champ est requis.',
     },
     snackbars: {
-      deleted: 'Variable personnalisée supprimée avec succès.',
-      updated: 'Variables personnalisées mises à jour avec succès.',
+      deleted: 'Variable supprimée avec succès.',
+      updated: 'Variables enregistrées avec succès.',
       error: 'Une erreur s\'est produite. Veuillez réessayer.',
     },
   },
