@@ -83,6 +83,7 @@ async function getEmailsGroup(req, res) {
   const emailsGroup = await emailsGroupService.getEmailsGroup({
     emailsGroupId,
     userGroupId: user?.group?.id,
+    isAdmin: user?.isAdmin,
   });
 
   res.send(emailsGroup);
