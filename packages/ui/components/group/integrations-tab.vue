@@ -24,9 +24,9 @@ import {
 // Icon mapping from Lucide icon names to components
 const CATEGORY_ICON_MAP = {
   'bar-chart-3': BarChart3,
-  'bot': Bot,
-  'languages': Languages,
-  'puzzle': Puzzle,
+  bot: Bot,
+  languages: Languages,
+  puzzle: Puzzle,
 };
 
 export default {
@@ -260,9 +260,12 @@ export default {
         :headers="tableHeaders"
         :items="integrations"
         :items-per-page="25"
-        :hide-default-footer="integrations.length <= $options.TABLE_PAGINATION_THRESHOLD"
+        :hide-default-footer="
+          integrations.length <= $options.TABLE_PAGINATION_THRESHOLD
+        "
         :footer-props="$options.TABLE_FOOTER_PROPS"
         class="integrations-table"
+        @click:row="openEditForm"
       >
         <template #item.name="{ item }">
           <span class="font-weight-medium">{{ item.name }}</span>
@@ -393,7 +396,11 @@ export default {
               dense
               class="mt-4"
             >
-              <strong>{{ $t('integrations.deleteWarningDashboards', { count: deletingDashboardCount }) }}</strong>
+              <strong>{{
+                $t('integrations.deleteWarningDashboards', {
+                  count: deletingDashboardCount,
+                })
+              }}</strong>
             </v-alert>
           </v-card-text>
           <v-divider />

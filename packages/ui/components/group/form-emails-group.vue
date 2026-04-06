@@ -1,14 +1,12 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
-import { Mail } from 'lucide-vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 
 export default {
   name: 'FormEmailGroup',
   components: {
     BsTextField,
-    LucideMail: Mail,
   },
   mixins: [validationMixin],
   model: { prop: 'emailsGroup', event: 'update' },
@@ -71,68 +69,55 @@ export default {
 <template>
   <div class="emails-group-form">
     <v-form @submit.prevent="onSubmit">
-      <!-- Form Section: Test List Configuration -->
-      <div class="form-section">
-        <div class="form-section__header">
-          <lucide-mail class="form-section__icon" :size="20" />
-          <div class="form-section__title">
-            <h3>{{ $t('forms.emailsGroup.configuration') }}</h3>
-            <p>{{ $t('forms.emailsGroup.configurationDescription') }}</p>
+      <v-row>
+        <v-col cols="12" md="6">
+          <bs-text-field
+            v-model="localModel.name"
+            :label="$t('global.name')"
+            :error-messages="nameErrors"
+            :disabled="loading"
+            required
+            @blur="$v.emailsGroup.name.$touch()"
+          />
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="12">
+          <div
+            class="bs-textarea"
+            :class="{ 'bs-textarea--error': emailsErrors.length > 0 }"
+          >
+            <label class="bs-textarea__label">
+              {{ $t('forms.emailsGroup.emails') }}
+              <span class="bs-textarea__required">*</span>
+            </label>
+            <v-textarea
+              v-model="localModel.emails"
+              :placeholder="$t('forms.emailsGroup.emailsPlaceholder')"
+              :disabled="loading"
+              rows="4"
+              solo
+              flat
+              hide-details
+              class="bs-textarea__input"
+              @input="$v.emailsGroup.emails.$touch()"
+              @blur="$v.emailsGroup.emails.$touch()"
+            />
+            <div v-if="emailsErrors.length > 0" class="bs-textarea__errors">
+              <span v-for="(error, index) in emailsErrors" :key="index">{{
+                error
+              }}</span>
+            </div>
+            <p class="bs-textarea__hint">
+              {{ $t('forms.emailsGroup.emailsHint') }}
+            </p>
           </div>
-        </div>
-
-        <div class="form-section__content">
-          <v-row>
-            <v-col cols="12" md="6">
-              <bs-text-field
-                v-model="localModel.name"
-                :label="$t('global.name')"
-                :error-messages="nameErrors"
-                :disabled="loading"
-                required
-                @blur="$v.emailsGroup.name.$touch()"
-              />
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12">
-              <div
-                class="bs-textarea"
-                :class="{ 'bs-textarea--error': emailsErrors.length > 0 }"
-              >
-                <label class="bs-textarea__label">
-                  {{ $t('forms.emailsGroup.emails') }}
-                  <span class="bs-textarea__required">*</span>
-                </label>
-                <v-textarea
-                  v-model="localModel.emails"
-                  :placeholder="$t('forms.emailsGroup.emailsPlaceholder')"
-                  :disabled="loading"
-                  rows="4"
-                  solo
-                  flat
-                  hide-details
-                  class="bs-textarea__input"
-                  @input="$v.emailsGroup.emails.$touch()"
-                  @blur="$v.emailsGroup.emails.$touch()"
-                />
-                <div v-if="emailsErrors.length > 0" class="bs-textarea__errors">
-                  <span v-for="(error, index) in emailsErrors" :key="index">{{
-                    error
-                  }}</span>
-                </div>
-                <p class="bs-textarea__hint">
-                  {{ $t('forms.emailsGroup.emailsHint') }}
-                </p>
-              </div>
-            </v-col>
-          </v-row>
-        </div>
-      </div>
+        </v-col>
+      </v-row>
 
       <!-- Form Actions -->
-      <v-divider class="mt-6" />
+      <v-divider class="mt-4" />
       <div class="form-actions">
         <v-btn text color="primary" :disabled="loading" @click="onCancel">
           {{ $t('global.cancel') }}
@@ -154,42 +139,6 @@ export default {
 <style lang="scss" scoped>
 .emails-group-form {
   max-width: 800px;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__icon {
-    color: #00acdc;
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
-
-  &__title {
-    h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: rgba(0, 0, 0, 0.87);
-      margin: 0 0 0.25rem 0;
-    }
-
-    p {
-      font-size: 0.875rem;
-      color: rgba(0, 0, 0, 0.6);
-      margin: 0;
-    }
-  }
-
-  &__content {
-    padding-left: 2rem;
-  }
 }
 
 .form-actions {
