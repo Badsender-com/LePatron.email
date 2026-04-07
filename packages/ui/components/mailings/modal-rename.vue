@@ -41,7 +41,7 @@ export default {
           class="form-input"
         />
       </v-card-text>
-      <v-divider />
+      <v-divider class="mt-4" />
       <v-card-actions>
         <v-spacer />
         <v-btn text color="primary" @click="close">

@@ -104,7 +104,7 @@ export default {
         hide-details="auto"
         class="form-input"
       />
-      <v-divider />
+      <v-divider class="mt-4" />
       <v-card-actions>
         <v-spacer />
         <v-btn color="primary" text @click="close">

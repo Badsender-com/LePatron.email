@@ -121,7 +121,7 @@ export default {
           />
         </v-card>
       </div>
-      <v-divider />
+      <v-divider class="mt-4" />
       <v-card-actions>
         <v-spacer />
         <v-btn color="primary" text @click="close">
