@@ -452,37 +452,53 @@ export default {
               />
 
               <!-- Source Language -->
+              <label class="form-label">
+                {{ $t('translation.sourceLanguage') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-select
                 v-model="form.sourceLanguage"
                 :items="sourceLanguageOptions"
-                :label="$t('translation.sourceLanguage')"
                 :disabled="translating"
                 :rules="[(v) => !!v || $t('global.errors.required')]"
-                outlined
+                solo
+                flat
                 dense
-                class="mb-2"
+                hide-details="auto"
+                class="form-input mb-4"
               />
 
               <!-- Target Language -->
+              <label class="form-label">
+                {{ $t('translation.targetLanguage') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-select
                 v-model="form.targetLanguage"
                 :items="targetLanguageOptions"
-                :label="$t('translation.targetLanguage')"
                 :disabled="translating"
                 :rules="[(v) => !!v || $t('global.errors.required')]"
-                outlined
+                solo
+                flat
                 dense
-                class="mb-2"
+                hide-details="auto"
+                class="form-input mb-4"
               />
 
               <!-- New Name -->
+              <label class="form-label">
+                {{ $t('translation.newName') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-text-field
                 v-model="form.newName"
-                :label="$t('translation.newName')"
                 :disabled="translating"
                 :rules="[nameRequired]"
-                outlined
+                solo
+                flat
                 dense
+                hide-details="auto"
+                class="form-input"
               />
 
               <!-- Destination -->
@@ -538,7 +554,7 @@ export default {
         </template>
       </v-card-text>
 
-      <v-divider />
+      <v-divider class="mt-4" />
 
       <v-card-actions>
         <v-spacer />
@@ -589,6 +605,61 @@ export default {
 
   &--active {
     color: var(--v-accent-base);
+  }
+}
+
+/* Form label styling - matching BsTextField */
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.375rem;
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+}
+
+/* Form input styling - matching BsTextField */
+.form-input {
+  &.v-text-field.v-text-field--solo,
+  &.v-select.v-text-field--solo {
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      background: #fff;
+      min-height: 36px;
+      padding: 0 12px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: var(--v-accent-base);
+    }
+
+    &.error--text ::v-deep .v-input__slot {
+      border-color: #f04e23;
+    }
+
+    ::v-deep input,
+    ::v-deep .v-select__selection {
+      font-size: 0.875rem;
+    }
+
+    ::v-deep .v-text-field__details {
+      padding: 4px 0 0 0;
+      min-height: auto;
+    }
+
+    ::v-deep .v-messages__message {
+      font-size: 0.75rem;
+    }
   }
 }
 </style>
