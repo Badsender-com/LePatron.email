@@ -5,7 +5,7 @@ import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { mapState } from 'vuex';
 import { FOLDER } from '~/store/folder';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
-import { FolderOpen, Folder } from 'lucide-vue';
+import { FolderOpen, Folder, Users } from 'lucide-vue';
 
 export default {
   name: 'FolderMoveModal',
@@ -13,7 +13,9 @@ export default {
     BsModalConfirm,
     LucideFolderOpen: FolderOpen,
     LucideFolder: Folder,
+    LucideUsers: Users,
   },
+  SPACE_TYPE,
   mixins: [destinationTreeMixin],
   props: {
     confirmationInputLabel: { type: String, default: '' },
@@ -101,12 +103,22 @@ export default {
         class="pb-8"
         @update:active="handleSelectDestination"
       >
-        <template #prepend="{ item, open }">
-          <template v-if="!item.icon">
-            <lucide-folder-open v-if="open" :size="18" style="color: var(--v-accent-base)" />
-            <lucide-folder v-else :size="18" style="color: var(--v-accent-base)" />
+        <template #prepend="{ item, active }">
+          <!-- Workspace icon -->
+          <lucide-users
+            v-if="item.type === $options.SPACE_TYPE.WORKSPACE"
+            :size="18"
+            :class="['tree-icon', { 'tree-icon--active': active }]"
+          />
+          <!-- Folder icons -->
+          <template v-else>
+            <lucide-folder-open
+              v-if="active"
+              :size="18"
+              class="tree-icon tree-icon--active"
+            />
+            <lucide-folder v-else :size="18" class="tree-icon" />
           </template>
-          <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" style="color: var(--v-accent-base)" />
         </template>
         <template #label="{ item, active }">
           <div @click="active ? $event.stopPropagation() : null">
@@ -133,7 +145,7 @@ export default {
   </bs-modal-confirm>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
@@ -143,9 +155,20 @@ export default {
   overflow-y: auto;
   max-height: 400px;
 }
+
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+/* Tree icon color states - aligned with sidebar */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
 }
 </style>

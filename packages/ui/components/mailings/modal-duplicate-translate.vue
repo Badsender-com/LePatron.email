@@ -7,7 +7,8 @@ import {
   getLanguageLabel,
 } from '~/helpers/constants/languages.js';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
-import { Languages, FolderOpen, Folder, Check } from 'lucide-vue';
+import { Languages, FolderOpen, Folder, Users } from 'lucide-vue';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
@@ -15,8 +16,9 @@ export default {
     LucideLanguages: Languages,
     LucideFolderOpen: FolderOpen,
     LucideFolder: Folder,
-    LucideCheck: Check,
+    LucideUsers: Users,
   },
+  SPACE_TYPE,
   mixins: [destinationTreeMixin],
   data() {
     return {
@@ -377,7 +379,11 @@ export default {
   <v-dialog v-model="show" max-width="550" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
-        <lucide-languages :size="20" class="mr-2" style="color: var(--v-primary-base)" />
+        <lucide-languages
+          :size="20"
+          class="mr-2"
+          style="color: var(--v-primary-base)"
+        />
         {{ $t('translation.duplicateAndTranslate') }}
       </v-card-title>
 
@@ -500,12 +506,25 @@ export default {
                       :return-object="true"
                       @update:active="handleSelectDestination"
                     >
-                      <template #prepend="{ item, open }">
-                        <template v-if="!item.icon">
-                          <lucide-folder-open v-if="open" :size="18" style="color: var(--v-accent-base)" />
-                          <lucide-folder v-else :size="18" style="color: var(--v-accent-base)" />
+                      <template #prepend="{ item, active }">
+                        <!-- Workspace icon -->
+                        <lucide-users
+                          v-if="item.type === $options.SPACE_TYPE.WORKSPACE"
+                          :size="18"
+                          :class="[
+                            'tree-icon',
+                            { 'tree-icon--active': active },
+                          ]"
+                        />
+                        <!-- Folder icons -->
+                        <template v-else>
+                          <lucide-folder-open
+                            v-if="active"
+                            :size="18"
+                            class="tree-icon tree-icon--active"
+                          />
+                          <lucide-folder v-else :size="18" class="tree-icon" />
                         </template>
-                        <component v-else :is="item.iconComponent || 'lucide-folder'" :size="18" style="color: var(--v-accent-base)" />
                       </template>
                     </v-treeview>
                   </div>
@@ -550,15 +569,25 @@ export default {
   </v-dialog>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .destination-tree {
   max-height: 200px;
   overflow-y: auto;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
+
+  .v-treeview-node--active {
+    cursor: pointer;
+  }
 }
 
-.destination-tree .v-treeview-node--active {
-  cursor: pointer;
+/* Tree icon color states - aligned with sidebar */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
 }
 </style>
