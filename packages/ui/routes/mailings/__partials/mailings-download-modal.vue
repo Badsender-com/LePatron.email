@@ -1,10 +1,12 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
+import { AlertTriangle } from 'lucide-vue';
 
 export default {
   name: 'MailingsDownloadModal',
   components: {
     BsModalConfirm,
+    LucideAlertTriangle: AlertTriangle,
   },
   data: () => ({
     isDownloadFtp: false,
@@ -80,9 +82,7 @@ export default {
     @confirm="submit"
   >
     <v-card class="d-flex flex-row align-center mb-3" flat tile>
-      <v-icon color="orange darken-2">
-        warning_amber
-      </v-icon>
+      <lucide-alert-triangle :size="24" class="warning-icon" />
       <p class="mb-0 ml-3">
         {{ modalText }}
       </p>
@@ -96,3 +96,10 @@ export default {
     </v-card>
   </bs-modal-confirm>
 </template>
+
+<style lang="scss" scoped>
+.warning-icon {
+  color: #f57c00; /* orange darken-2 equivalent */
+  flex-shrink: 0;
+}
+</style>

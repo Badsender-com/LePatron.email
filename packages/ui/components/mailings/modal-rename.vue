@@ -32,6 +32,8 @@ export default {
           v-model="data.newName"
           :label="$t(`global.name`)"
           name="new-mailing-name"
+          outlined
+          dense
         />
       </v-card-text>
       <v-divider />
