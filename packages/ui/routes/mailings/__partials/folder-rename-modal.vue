@@ -69,15 +69,19 @@ export default {
       <p v-if="conflictError" class="red--text">
         {{ $t('folders.conflict') }}
       </p>
+      <label class="form-label">
+        {{ $t('folders.name') }}
+        <span class="form-label__required">*</span>
+      </label>
       <v-text-field
         v-model="folderName"
-        class="pt-1"
         :rules="[nameRule, maxLength]"
         :counter="folderNameMaxLength"
-        :label="this.$t('folders.name')"
-        required
-        outlined
+        solo
+        flat
         dense
+        hide-details="auto"
+        class="form-input"
       />
       <v-divider />
       <v-card-actions>
@@ -97,3 +101,57 @@ export default {
     </v-form>
   </bs-modal-confirm>
 </template>
+
+<style lang="scss" scoped>
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.375rem;
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+}
+
+.form-input {
+  &.v-text-field.v-text-field--solo {
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      background: #fff;
+      min-height: 36px;
+      padding: 0 12px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: var(--v-accent-base);
+    }
+
+    &.error--text ::v-deep .v-input__slot {
+      border-color: #f04e23;
+    }
+
+    ::v-deep input {
+      font-size: 0.875rem;
+      padding: 6px 0;
+    }
+
+    ::v-deep .v-text-field__details {
+      padding: 4px 0 0 0;
+      min-height: auto;
+    }
+
+    ::v-deep .v-messages__message {
+      font-size: 0.75rem;
+    }
+  }
+}
+</style>
