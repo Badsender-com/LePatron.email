@@ -22,7 +22,7 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import { FolderOpen, Folder, Users, Plus, MoreVertical, Pencil, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
+import { FolderOpen, Folder, Users, Plus, MoreVertical, TextCursor, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -39,7 +39,7 @@ export default {
     LucideUsers: Users,
     LucidePlus: Plus,
     LucideMoreVertical: MoreVertical,
-    LucidePencil: Pencil,
+    LucideTextCursor: TextCursor,
     LucideFolderPlus: FolderPlus,
     LucideFolderInput: FolderInput,
     LucideTrash2: Trash2,
@@ -629,52 +629,51 @@ export default {
         >
           <lucide-plus :size="18" />
         </v-btn>
-        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y>
+        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y left>
           <template #activator="{ on }">
-            <v-btn color="accent" dark icon v-on="on">
+            <v-btn
+              icon
+              small
+              class="folder-menu-btn"
+              v-on="on"
+            >
               <lucide-more-vertical :size="18" />
             </v-btn>
           </template>
-          <v-list activable>
-            <v-list-item nuxt @click="openRenameFolderModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <lucide-pencil :size="18" />
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
+          <v-list class="folder-context-menu" dense>
+            <v-list-item class="folder-menu-item" @click="openRenameFolderModal(item)">
+              <v-list-item-icon class="folder-menu-item__icon">
+                <lucide-text-cursor :size="18" />
+              </v-list-item-icon>
+              <v-list-item-title class="folder-menu-item__title">
+                {{ $t('folders.rename') }}
+              </v-list-item-title>
             </v-list-item>
             <v-list-item
               v-if="hasRightToCreateFolder(item)"
-              nuxt
+              class="folder-menu-item"
               @click="(event) => openNewFolderModal(event, item)"
             >
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <lucide-folder-plus :size="18" />
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
+              <v-list-item-icon class="folder-menu-item__icon">
+                <lucide-folder-plus :size="18" />
+              </v-list-item-icon>
+              <v-list-item-title class="folder-menu-item__title">
                 {{ $t('global.newFolder') }}
               </v-list-item-title>
             </v-list-item>
-            <v-list-item nuxt @click="displayMoveModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <lucide-folder-input :size="18" />
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
+            <v-list-item class="folder-menu-item" @click="displayMoveModal(item)">
+              <v-list-item-icon class="folder-menu-item__icon">
+                <lucide-folder-input :size="18" />
+              </v-list-item-icon>
+              <v-list-item-title class="folder-menu-item__title">
                 {{ $t('global.move') }}
               </v-list-item-title>
             </v-list-item>
-            <v-list-item nuxt @click="displayDeleteModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <lucide-trash2 :size="18" />
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
+            <v-list-item class="folder-menu-item" @click="displayDeleteModal(item)">
+              <v-list-item-icon class="folder-menu-item__icon">
+                <lucide-trash2 :size="18" />
+              </v-list-item-icon>
+              <v-list-item-title class="folder-menu-item__title">
                 {{ $t('global.delete') }}
               </v-list-item-title>
             </v-list-item>
@@ -778,26 +777,44 @@ export default {
   white-space: nowrap;
 }
 
-.v-list-item__title {
-  font-size: 0.875rem;
+/* Folder menu button */
+.folder-menu-btn {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: var(--v-primary-base);
+    background-color: rgba(0, 0, 0, 0.04);
+  }
 }
 
-/* Context menu styling */
-::v-deep .v-list {
-  padding: 4px 0;
+/* Folder context menu */
+.folder-context-menu {
+  padding: 8px 0;
+  min-width: 180px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
 
-  .v-list-item {
-    min-height: 40px;
-    padding: 0 12px;
+.folder-menu-item {
+  min-height: 40px;
+  padding: 0 16px;
+  cursor: pointer;
 
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04);
-    }
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
   }
 
-  .v-list-item__avatar {
-    min-width: 32px;
-    margin-right: 8px;
+  &__icon {
+    margin-right: 12px;
+    min-width: 24px;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.54);
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.87);
   }
 }
 </style>
