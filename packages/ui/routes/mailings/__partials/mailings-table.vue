@@ -487,14 +487,19 @@ export default {
                   v-on="on"
                   @click.stop
                 >
-                  <v-badge
-                    :content="item.unresolvedCommentsCount || 0"
-                    :value="item.unresolvedCommentsCount > 0"
-                    color="accent"
-                    overlap
-                  >
+                  <span class="comment-icon-wrapper">
                     <lucide-message-circle :size="18" />
-                  </v-badge>
+                    <span
+                      v-if="item.unresolvedCommentsCount > 0"
+                      class="comment-badge"
+                    >
+                      {{
+                        item.unresolvedCommentsCount > 99
+                          ? '99+'
+                          : item.unresolvedCommentsCount
+                      }}
+                    </span>
+                  </span>
                 </v-btn>
               </template>
               <span>{{ $t('mailings.openComments') }}</span>
@@ -679,12 +684,29 @@ export default {
     }
   }
 
-  // Comment badge styling
-  .v-badge__badge {
-    font-size: 10px;
-    height: 18px;
+  // Comment icon with badge
+  .comment-icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .comment-badge {
+    position: absolute;
+    top: -6px;
+    right: -10px;
     min-width: 18px;
+    height: 18px;
     padding: 0 5px;
+    background-color: var(--v-accent-base);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 9px;
+    box-sizing: border-box;
   }
 }
 </style>
