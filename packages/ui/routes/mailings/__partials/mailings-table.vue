@@ -18,7 +18,10 @@ import {
   moveMail,
   aiFeatures,
 } from '~/helpers/api-routes.js';
-import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
+import {
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
+} from '~/helpers/constants/table-config.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -54,7 +57,8 @@ const TABLE_ACTIONS = [
 
 export default {
   name: 'MailingsTable',
-  TABLE_ITEMS_PER_PAGE_OPTIONS,
+  TABLE_FOOTER_PROPS,
+  TABLE_PAGINATION_THRESHOLD,
   components: {
     BsMailingsModalRename,
     BsModalConfirmForm,
@@ -79,7 +83,6 @@ export default {
     mailingsSelection: { type: Array, default: () => [] },
     hasFtpAccess: { type: Boolean, default: false },
     currentPage: { type: Number, default: 1 },
-    totalPages: { type: Number, default: 1 },
     itemsLength: { type: Number, default: 0 },
   },
   data() {
@@ -146,16 +149,21 @@ export default {
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    localPage: {
+    tableOptions: {
       get() {
-        return this.currentPage;
+        return {
+          page: this.currentPage,
+          itemsPerPage: this.pagination?.itemsPerPage || 25,
+          sortBy: this.pagination?.sortBy ? [this.pagination.sortBy] : [],
+          sortDesc: this.pagination?.sortDesc ? [this.pagination.sortDesc] : [],
+        };
       },
-      set(val) {
-        this.$emit('update:page', val);
+      set() {
+        // Handled by handleOptionsChange
       },
     },
-    showPagination() {
-      return this.itemsLength > 0 && this.totalPages > 1;
+    hideFooter() {
+      return this.itemsLength <= this.$options.TABLE_PAGINATION_THRESHOLD;
     },
     filteredActions() {
       const hidden = this.hiddenCols;
@@ -197,6 +205,11 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    handleRowClick(item) {
+      if (this.hasAccess) {
+        window.location.href = `/editor/${item.id}`;
+      }
+    },
     openRenameModal(mailing) {
       this.$refs.renameDialog.open({
         newName: mailing.name,
@@ -384,26 +397,33 @@ export default {
       }
       this.closeMoveMailDialog();
     },
-    handleItemsPerPageChange(itemsPerPage) {
-      this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
-        page: 1,
-        itemsPerPage: itemsPerPage,
-      });
-      this.$emit('on-refetch');
-    },
-    handleSortByChange(sortBy) {
-      if (sortBy !== this.pagination?.sortBy) {
+    handleOptionsChange(options) {
+      const { page, itemsPerPage, sortBy, sortDesc } = options;
+      const currentPagination = this.pagination || {};
+
+      const newPage = page;
+      const newItemsPerPage = itemsPerPage;
+      const newSortBy = sortBy?.[0] || null;
+      const newSortDesc = sortDesc?.[0] || false;
+
+      const hasChanges =
+        newPage !== this.currentPage ||
+        newItemsPerPage !== currentPagination.itemsPerPage ||
+        newSortBy !== currentPagination.sortBy ||
+        newSortDesc !== currentPagination.sortDesc;
+
+      if (hasChanges) {
+        // Reset to page 1 when changing items per page
+        const targetPage =
+          newItemsPerPage !== currentPagination.itemsPerPage ? 1 : newPage;
+
         this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
-          sortBy: sortBy,
+          page: targetPage,
+          itemsPerPage: newItemsPerPage,
+          sortBy: newSortBy,
+          sortDesc: newSortDesc,
         });
-        this.$emit('on-refetch');
-      }
-    },
-    handleSortDescChange(sortDesc) {
-      if (sortDesc !== this.pagination?.sortDesc) {
-        this.$store.commit(`${FOLDER}/${SET_PAGINATION}`, {
-          sortDesc: sortDesc,
-        });
+        this.$emit('update:page', targetPage);
         this.$emit('on-refetch');
       }
     },
@@ -446,27 +466,19 @@ export default {
       <v-data-table
         v-model="selectedRows"
         :headers="tablesHeaders"
-        :options="pagination || {}"
         :items="mailings"
+        :server-items-length="itemsLength"
+        :options.sync="tableOptions"
         must-sort
         :show-select="hasAccess"
-        :footer-props="{
-          pagination: pagination,
-          disablePagination: true,
-          prevIcon: 'none',
-          nextIcon: 'none',
-          itemsPerPageOptions: $options.TABLE_ITEMS_PER_PAGE_OPTIONS,
-          itemsPerPageAllText: 'Tout',
-        }"
-        @sort-by="handleSortByChange"
-        @sort-desc="handleSortDescChange"
-        @update:items-per-page="handleItemsPerPageChange"
+        :hide-default-footer="hideFooter"
+        :footer-props="$options.TABLE_FOOTER_PROPS"
+        :class="{ 'clickable-rows': hasAccess }"
+        @update:options="handleOptionsChange"
+        @click:row="handleRowClick"
       >
         <template #item.name="{ item }">
-          <a v-if="hasAccess" :href="`/editor/${item.id}`" class="email-link">
-            {{ item.name }}
-          </a>
-          <span v-else class="font-weight-medium">{{ item.name }}</span>
+          <span class="font-weight-medium">{{ item.name }}</span>
         </template>
         <template #item.userName="{ item }">
           <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
@@ -501,9 +513,9 @@ export default {
                   small
                   :href="`/editor/${item.id}?comments=1`"
                   :aria-label="$t('mailings.openComments')"
-                  class="action-icon"
                   v-bind="attrs"
                   v-on="on"
+                  @click.stop
                 >
                   <v-badge
                     :content="item.unresolvedCommentsCount || 0"
@@ -522,27 +534,28 @@ export default {
                 <v-btn
                   icon
                   small
-                  class="action-icon"
                   :aria-label="$t(actionsDetails[actions.RENAME].text)"
                   v-bind="attrs"
                   v-on="on"
-                  @click="openRenameModal(item)"
+                  @click.stop="openRenameModal(item)"
                 >
                   <lucide-text-cursor :size="18" />
                 </v-btn>
               </template>
               <span>{{ $t(actionsDetails[actions.RENAME].text) }}</span>
             </v-tooltip>
-            <v-tooltip v-if="filteredActions.includes(actions.COPY_MAIL)" bottom>
+            <v-tooltip
+              v-if="filteredActions.includes(actions.COPY_MAIL)"
+              bottom
+            >
               <template #activator="{ on, attrs }">
                 <v-btn
                   icon
                   small
-                  class="action-icon"
                   :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
                   v-bind="attrs"
                   v-on="on"
-                  @click="openCopyMail(item)"
+                  @click.stop="openCopyMail(item)"
                 >
                   <lucide-copy :size="18" />
                 </v-btn>
@@ -554,11 +567,11 @@ export default {
                 <v-btn
                   icon
                   small
-                  class="action-icon action-icon--danger"
+                  class="error--text"
                   :aria-label="$t(actionsDetails[actions.DELETE].text)"
                   v-bind="attrs"
                   v-on="on"
-                  @click="displayDeleteModal(item)"
+                  @click.stop="displayDeleteModal(item)"
                 >
                   <lucide-trash2 :size="18" />
                 </v-btn>
@@ -567,7 +580,7 @@ export default {
             </v-tooltip>
 
             <!-- More actions menu -->
-            <bs-mailings-actions-dropdown>
+            <bs-mailings-actions-dropdown @click.native.stop>
               <bs-mailings-actions-dropdown-item
                 v-if="filteredActions.includes(actions.ADD_TAGS)"
                 :icon="actionsDetails[actions.ADD_TAGS].icon"
@@ -636,16 +649,6 @@ export default {
         </template>
       </v-data-table>
 
-      <!-- Pagination -->
-      <div v-if="showPagination" class="table-pagination">
-        <v-pagination
-          v-model="localPage"
-          :length="totalPages"
-          :total-visible="7"
-          circle
-        />
-      </div>
-
       <bs-mailings-modal-rename ref="renameDialog" @update="updateName" />
       <mailings-tags-menu
         ref="addTagsMenu"
@@ -697,46 +700,12 @@ export default {
 <style lang="scss">
 /* Table styling - NOT scoped to ensure Vuetify overrides work */
 .mailings-table-wrapper {
-  .v-data-table {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 4px;
-    overflow: hidden;
+  // Clickable rows - aligned with BsDataTable
+  .clickable-rows tbody tr {
+    cursor: pointer;
 
-    // Table header styling
-    thead th {
-      background: #fafafa !important;
-      font-size: 0.75rem !important;
-      font-weight: 600 !important;
-      color: rgba(0, 0, 0, 0.6) !important;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
-      height: 48px !important;
-    }
-
-    // Row styling
-    tbody tr {
-      transition: background-color 0.15s ease;
-
-      &:hover {
-        background-color: rgba(0, 172, 220, 0.08) !important;
-      }
-
-      td {
-        font-size: 0.875rem;
-        height: 52px !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-      }
-
-      &:last-child td {
-        border-bottom: none !important;
-      }
-    }
-
-    // Footer styling
-    .v-data-footer {
-      border-top: 1px solid rgba(0, 0, 0, 0.12);
-      font-size: 0.75rem;
+    &:hover {
+      background-color: rgba(0, 172, 220, 0.05) !important;
     }
   }
 
@@ -755,42 +724,12 @@ export default {
   cursor: pointer;
 }
 
-.mw18 {
-  max-width: 18rem;
-}
-
 /* Actions cell with quick icons */
 .actions-cell {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   white-space: nowrap;
-}
-
-.action-icon {
-  color: rgba(0, 0, 0, 0.54);
-  text-decoration: none;
-  transition: color 0.15s ease, background-color 0.15s ease;
-
-  &:hover {
-    color: var(--v-primary-base);
-    background-color: rgba(0, 0, 0, 0.04);
-  }
-
-  &--danger:hover {
-    color: var(--v-error-base, #ff5252);
-  }
-}
-
-/* Email link styling */
-.email-link {
-  color: var(--v-primary-base, #00acdc) !important;
-  text-decoration: none;
-  font-weight: 500;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 /* Tags styling */
@@ -803,26 +742,6 @@ export default {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 500;
-}
-
-/* Pagination styling */
-.table-pagination {
-  display: flex;
-  justify-content: center;
-  padding: 1rem 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  margin-top: -1px;
-
-  ::v-deep {
-    .v-pagination__item,
-    .v-pagination__navigation {
-      box-shadow: none;
-    }
-
-    .v-pagination__item--active {
-      background-color: var(--v-primary-base) !important;
-    }
-  }
 }
 
 /* Empty state styling */

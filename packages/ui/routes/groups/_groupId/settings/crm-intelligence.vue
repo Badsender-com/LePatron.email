@@ -1,19 +1,19 @@
 <script>
+import { mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
-import { Plus } from 'lucide-vue';
+import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
 
 export default {
-  name: 'BsPageSettingsTemplates',
+  name: 'BsPageSettingsCrmIntelligence',
   components: {
     BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
-    BsGroupTemplatesTab,
-    LucidePlus: Plus,
+    BsCrmIntelligenceTab,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -37,14 +37,32 @@ export default {
   head() {
     return { title: this.settingsTitle };
   },
-  computed: {
-    groupId() {
-      return this.$route.params.groupId;
-    },
-  },
   methods: {
-    goToNewTemplate() {
-      this.$router.push(`/groups/${this.groupId}/new-template`);
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async refreshGroup() {
+      const {
+        $axios,
+        $route: { params },
+      } = this;
+      try {
+        const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
+        this.group = groupResponse;
+      } catch (error) {
+        console.error('[CrmIntelligence] Failed to refresh group:', error);
+      }
+    },
+    changeTab(tabId) {
+      // Navigate to the appropriate settings page
+      const routeMap = {
+        'group-general': 'general',
+        'group-integrations': 'integrations',
+      };
+      const route = routeMap[tabId];
+      if (route) {
+        this.$router.push(
+          `/groups/${this.$route.params.groupId}/settings/${route}`
+        );
+      }
     },
   },
 };
@@ -57,17 +75,15 @@ export default {
     </template>
     <div class="settings-content">
       <bs-group-settings-page-header
-        :title="$tc('global.template', 2)"
+        :title="$t('crmIntelligence.dashboards')"
         :group-name="group.name"
-      >
-        <template #actions>
-          <v-btn color="accent" elevation="0" @click="goToNewTemplate">
-            <lucide-plus :size="18" class="mr-2" />
-            {{ $t('global.add') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-      <bs-group-templates-tab ref="templatesTab" />
+      />
+      <bs-crm-intelligence-tab
+        :group="group"
+        :active="true"
+        @update="refreshGroup"
+        @change-tab="changeTab"
+      />
     </div>
   </bs-layout-left-menu>
 </template>

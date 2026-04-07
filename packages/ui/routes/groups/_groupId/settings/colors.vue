@@ -1,23 +1,24 @@
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsExportOptionsTab from '~/components/group/export-options-tab.vue';
+import BsGroupColorsTab from '~/components/group/colors-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
-  name: 'BsPageSettingsExportOptions',
+  name: 'BsPageSettingsColors',
   components: {
     BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
-    BsExportOptionsTab,
+    BsGroupColorsTab,
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -32,6 +33,7 @@ export default {
   data() {
     return {
       group: {},
+      loading: false,
     };
   },
   head() {
@@ -44,16 +46,38 @@ export default {
     }),
   },
   methods: {
-    async refreshGroup() {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    async updateGroup() {
       const {
         $axios,
         $route: { params },
       } = this;
       try {
-        const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
-        this.group = groupResponse;
+        this.loading = true;
+        const payload =
+          this.isGroupAdmin && !this.isAdmin
+            ? { name: this.group.name, colorScheme: this.group.colorScheme }
+            : this.group;
+        const updatedGroup = await $axios.$put(
+          apiRoutes.groupsItem(params),
+          payload
+        );
+        this.group = updatedGroup;
+        this.showSnackbar({
+          text: this.$t('snackbars.updated'),
+          color: 'success',
+        });
       } catch (error) {
-        console.error('[ExportOptions] Failed to refresh group:', error);
+        const errorCode = error?.response?.data?.message;
+        this.showSnackbar({
+          text:
+            errorCode && this.$te(`global.errors.${errorCode}`)
+              ? this.$t(`global.errors.${errorCode}`)
+              : this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -67,13 +91,14 @@ export default {
     </template>
     <div class="settings-content">
       <bs-group-settings-page-header
-        :title="$t('exportOptions.title')"
+        :title="$t('settingsNav.colors')"
         :group-name="group.name"
       />
-      <bs-export-options-tab
-        :group="group"
-        :active="true"
-        @update="refreshGroup"
+      <bs-group-colors-tab
+        v-model="group"
+        :disabled="loading"
+        :loading="loading"
+        @save="updateGroup"
       />
     </div>
   </bs-layout-left-menu>

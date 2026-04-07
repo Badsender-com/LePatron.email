@@ -1,15 +1,14 @@
 <script>
 import { mapMutations } from 'vuex';
-
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
-import BsTemplateMenu from '~/components/template/menu.vue';
-import BsTemplateEditForm from '~/components/template/edit-form.vue';
-import BsTemplateHtmlPreview from '~/components/template/html-preview.vue';
-import BsTemplateImagesList from '~/components/template/images-list.vue';
+import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
+import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsTemplateForm from '~/components/template/form.vue';
+import { Trash2 } from 'lucide-vue';
 
 const UPDATE_AXIOS_CONFIG = Object.freeze({
   headers: { 'content-type': 'multipart/form-data' },
@@ -18,10 +17,10 @@ const UPDATE_AXIOS_CONFIG = Object.freeze({
 export default {
   name: 'BsPageTemplate',
   components: {
-    BsTemplateMenu,
-    BsTemplateEditForm,
-    BsTemplateHtmlPreview,
-    BsTemplateImagesList,
+    BsGroupSettingsNav,
+    BsGroupSettingsPageHeader,
+    BsTemplateForm,
+    LucideTrash2: Trash2,
   },
   mixins: [mixinPageTitle],
   meta: { acl: acls.ACL_ADMIN },
@@ -31,15 +30,33 @@ export default {
       const templateResponse = await $axios.$get(
         apiRoutes.templatesItem(params)
       );
-      return { template: templateResponse };
+      // Fetch the group for the settings nav
+      let group = templateResponse.group || {};
+      if (group.id) {
+        try {
+          const groupResponse = await $axios.$get(
+            apiRoutes.groupsItem({ groupId: group.id })
+          );
+          group = groupResponse;
+        } catch (error) {
+          console.error('Failed to fetch group details:', error);
+        }
+      }
+      return { template: templateResponse, group };
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      return {
+        template: { name: '', description: '', group: {} },
+        group: {},
+      };
     }
   },
   data() {
     return {
-      template: { group: {} },
+      template: { name: '', description: '', group: {} },
+      group: {},
       loading: false,
+      eventSource: null,
     };
   },
   head() {
@@ -47,36 +64,46 @@ export default {
   },
   computed: {
     title() {
-      return `template – ${this.template.name}`;
+      return `${this.$tc('global.template', 1)} – ${this.template.name}`;
     },
-    hasImages() {
-      if (this.template.assets == null) return false;
-      return Object.keys(this.template.assets).length > 0;
+    pageTitle() {
+      return this.template.name || this.$tc('global.template', 1);
+    },
+    groupName() {
+      return this.group.name || '';
+    },
+    backRoute() {
+      if (this.group.id) {
+        return `/groups/${this.group.id}/settings/templates`;
+      }
+      return '/templates';
     },
   },
   mounted() {
-    this.listenTemplateEvents();
+    if (this.template.id) {
+      this.listenTemplateEvents();
+    }
   },
   beforeDestroy() {
     this.closeTemplateEvents();
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
+    // SSE for template processing feedback
     listenTemplateEvents() {
       const { $route } = this;
       const { params } = $route;
       const eventSource = new EventSource(
         apiRoutes.templatesItemEvents(params),
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       eventSource.onmessage = (event) => {
         try {
           const parsedData = JSON.parse(event.data);
           const sseStatus = sseHelpers.getEventStatus(parsedData);
           const { payload } = parsedData;
-          // update snackbar & data on end
+
           if (sseStatus.isCreate || sseStatus.isUpdate) {
             this.loading = true;
             this.showSnackbar({ text: payload.message, color: 'info' });
@@ -91,8 +118,7 @@ export default {
             }
           }
         } catch (error) {
-          console.log(error);
-          console.log(event.data);
+          console.error(error);
         }
       };
       eventSource.onerror = (event) => {
@@ -100,12 +126,15 @@ export default {
       };
       this.eventSource = eventSource;
     },
+
     closeTemplateEvents() {
       if (!this.eventSource) return;
       this.eventSource.close();
-      this.eventSource = false;
+      this.eventSource = null;
     },
-    async updateTemplate(formData) {
+
+    // Form submission
+    async onSubmit(formData) {
       const { $axios, $route } = this;
       const { params } = $route;
       try {
@@ -126,12 +155,19 @@ export default {
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
+        console.error(error);
       } finally {
         this.loading = false;
       }
     },
-    async deleteTemplate() {
+
+    // Cancel action
+    onCancel() {
+      this.$router.push(this.backRoute);
+    },
+
+    // Delete template
+    async onDelete() {
       const { $axios, $route } = this;
       const { params } = $route;
       try {
@@ -141,18 +177,20 @@ export default {
           text: this.$t('snackbars.deleted'),
           color: 'success',
         });
-        this.$router.push('/templates');
+        this.$router.push(this.backRoute);
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
+        console.error(error);
       } finally {
         this.loading = false;
       }
     },
-    async generatePreviews() {
+
+    // Generate previews
+    async onGeneratePreviews() {
       const { $axios, $route } = this;
       const { params } = $route;
       try {
@@ -163,13 +201,13 @@ export default {
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        // loading only error
-        // • if request ok => SSE
         this.loading = false;
-        console.log(error);
+        console.error(error);
       }
     },
-    async deleteImages() {
+
+    // Delete images
+    async onDeleteImages() {
       const { $axios, $route } = this;
       const { params } = $route;
       try {
@@ -178,7 +216,7 @@ export default {
           apiRoutes.templatesItemImages(params)
         );
         this.showSnackbar({
-          text: this.$t('template.imagesRemoved'),
+          text: this.$t('templates.imagesRemoved'),
           color: 'success',
         });
         this.template = template;
@@ -187,10 +225,15 @@ export default {
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
+        console.error(error);
       } finally {
         this.loading = false;
       }
+    },
+
+    // Open delete confirmation (accessed via $refs from form)
+    confirmDelete() {
+      this.$refs.templateForm.confirmDelete();
     },
   },
 };
@@ -199,33 +242,41 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-template-menu
-        v-model="loading"
-        :template="template"
-        @delete="deleteTemplate"
-        @generatePreviews="generatePreviews"
-      />
+      <bs-group-settings-nav :group="group" />
     </template>
-    <v-row>
-      <bs-template-edit-form
-        v-model="template"
+    <div class="settings-content">
+      <bs-group-settings-page-header :title="pageTitle" :group-name="groupName">
+        <template #actions>
+          <v-btn
+            outlined
+            color="error"
+            :disabled="loading"
+            @click="confirmDelete"
+          >
+            <lucide-trash2 :size="18" class="mr-2" />
+            {{ $t('global.delete') }}
+          </v-btn>
+        </template>
+      </bs-group-settings-page-header>
+
+      <bs-template-form
+        ref="templateForm"
+        :template="template"
+        :groups="[]"
+        :is-edit-mode="true"
         :disabled="loading"
-        @submit="updateTemplate"
+        @submit="onSubmit"
+        @cancel="onCancel"
+        @delete="onDelete"
+        @generatePreviews="onGeneratePreviews"
+        @deleteImages="onDeleteImages"
       />
-      <v-col v-if="template.hasMarkup" cols="12">
-        <bs-template-html-preview
-          :markup="template.markup"
-          :template-id="template.id"
-        />
-      </v-col>
-      <v-col v-if="hasImages" cols="12">
-        <bs-template-images-list
-          :assets="template.assets"
-          :disabled="loading"
-          :template-id="template.id"
-          @delete="deleteImages"
-        />
-      </v-col>
-    </v-row>
+    </div>
   </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>

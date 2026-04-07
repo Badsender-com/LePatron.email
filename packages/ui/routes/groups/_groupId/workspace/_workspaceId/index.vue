@@ -1,29 +1,42 @@
 <script>
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import { mapMutations } from 'vuex';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { mapMutations } from 'vuex';
-import { groupsItemUsers, getWorkspace } from '~/helpers/api-routes.js';
+import {
+  groupsItem,
+  groupsItemUsers,
+  getWorkspace,
+} from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
-import BsGroupMenu from '~/components/group/menu.vue';
+import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
+import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 
 export default {
   name: 'PageUpdateWorkspace',
-  components: { WorkspaceForm, BsGroupMenu },
-  mixins: [mixinPageTitle],
+  components: {
+    WorkspaceForm,
+    BsGroupSettingsNav,
+    BsGroupSettingsPageHeader,
+  },
+  mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_GROUP_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const workspace = await $axios.$get(getWorkspace(params?.workspaceId));
-      const { items: users } = await $axios.$get(groupsItemUsers(params));
+      const [workspace, groupResponse, usersResponse] = await Promise.all([
+        $axios.$get(getWorkspace(params.workspaceId)),
+        $axios.$get(groupsItem(params)),
+        $axios.$get(groupsItemUsers(params)),
+      ]);
 
       return {
         workspace,
-        groupUsers: users,
+        group: groupResponse,
+        groupUsers: usersResponse.items || [],
         isLoading: false,
       };
     } catch (error) {
@@ -33,44 +46,37 @@ export default {
   data() {
     return {
       group: {},
-      isLoading: true,
+      isLoading: false,
       isError: false,
       groupUsers: [],
       workspace: {},
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.editTeam')}`;
-    },
     groupId() {
       return this.$route.params.groupId;
+    },
+    workspaceId() {
+      return this.$route.params.workspaceId;
     },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateWorkspace(values) {
-      const { $axios } = this;
       try {
         this.isLoading = true;
-        const { groupId, workspaceId } = this.$route.params;
-        await $axios.$put(`/workspaces/${workspaceId}`, {
+        await this.$axios.$put(`/workspaces/${this.workspaceId}`, {
           ...values,
-          groupId,
+          groupId: this.groupId,
         });
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
-
-        this.$router.push(`/groups/${groupId}`);
+        this.$router.push(`/groups/${this.groupId}/settings/workspaces`);
       } catch (error) {
         const errorKey = `global.errors.${
           ERROR_CODES[error.response?.data] || 'errorOccured'
@@ -83,6 +89,9 @@ export default {
         this.isLoading = false;
       }
     },
+    onCancel() {
+      this.$router.push(`/groups/${this.groupId}/settings/workspaces`);
+    },
   },
 };
 </script>
@@ -90,13 +99,27 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-group-menu />
+      <bs-group-settings-nav :group="group" />
     </template>
-    <workspace-form
-      :workspace="workspace"
-      :group-users="groupUsers"
-      :is-loading="isLoading"
-      @submit="updateWorkspace"
-    />
+    <div class="settings-content">
+      <bs-group-settings-page-header
+        :title="$t('global.editTeam')"
+        :group-name="group.name"
+      />
+      <workspace-form
+        :workspace="workspace"
+        :group-users="groupUsers"
+        :is-loading="isLoading"
+        is-edit
+        @submit="updateWorkspace"
+        @cancel="onCancel"
+      />
+    </div>
   </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>
