@@ -537,6 +537,7 @@ export default {
     rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
+    hasChildren: 'This folder contains subfolders and cannot be moved to another folder',
     moveFolderConfirmationMessage: 'Please choose the destination:',
     moveFolderSuccessful: 'Folder moved',
   },

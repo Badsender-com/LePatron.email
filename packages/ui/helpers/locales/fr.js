@@ -544,6 +544,8 @@ export default {
     rename: 'Renommer',
     created: 'Le dossier a bien été créé',
     conflict: 'Un dossier avec le même nom existe déjà',
+    hasChildren:
+      'Ce dossier contient des sous-dossiers et ne peut pas être déplacé vers un autre dossier',
     moveFolderConfirmationMessage: 'Veuillez choisir la destination :',
     moveFolderSuccessful: 'Le dossier a bien été déplacé',
   },

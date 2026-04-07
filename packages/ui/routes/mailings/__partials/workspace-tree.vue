@@ -518,10 +518,11 @@ export default {
         });
         await this.fetchWorkspacesData();
       } catch (error) {
-        console.error('[WorkspaceTree] Error moving folder:', error);
         let errorKey = 'global.errors.errorOccured';
         if (error.response?.status === 409) {
           errorKey = 'folders.conflict';
+        } else if (error.response?.status === 406) {
+          errorKey = 'folders.hasChildren';
         }
         this.showSnackbar({
           text: this.$t(errorKey),

@@ -95,6 +95,8 @@ export default {
         :rules="nameRule"
         :label="this.$t('mailings.name')"
         required
+        outlined
+        dense
       />
 
       <div class="mt-8 bs-templates_container">

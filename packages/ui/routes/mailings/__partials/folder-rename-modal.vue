@@ -76,6 +76,8 @@ export default {
         :counter="folderNameMaxLength"
         :label="this.$t('folders.name')"
         required
+        outlined
+        dense
       />
       <v-divider />
       <v-card-actions>

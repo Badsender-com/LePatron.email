@@ -24,10 +24,8 @@ export default {
     close() {
       this.$refs.deleteDialog.close();
     },
-    async submit() {
-      if (this.$refs.deleteDialog.valid) {
-        await this.$emit('delete-folder', this.selectedFolder);
-      }
+    submit() {
+      this.$emit('delete-folder', this.selectedFolder);
     },
   },
 };
