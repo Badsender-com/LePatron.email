@@ -1,23 +1,23 @@
 <script>
+import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
-import { Plus } from 'lucide-vue';
+import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
-  name: 'BsPageSettingsTemplates',
+  name: 'BsPageSettingsVariables',
   components: {
     BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
-    BsGroupTemplatesTab,
-    LucidePlus: Plus,
+    GroupPersonalizedVariableTab,
   },
   mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
@@ -38,14 +38,10 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
-    groupId() {
-      return this.$route.params.groupId;
-    },
-  },
-  methods: {
-    goToNewTemplate() {
-      this.$router.push(`/groups/${this.groupId}/new-template`);
-    },
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
   },
 };
 </script>
@@ -57,17 +53,10 @@ export default {
     </template>
     <div class="settings-content">
       <bs-group-settings-page-header
-        :title="$tc('global.template', 2)"
+        :title="$t('global.variables')"
         :group-name="group.name"
-      >
-        <template #actions>
-          <v-btn color="accent" elevation="0" @click="goToNewTemplate">
-            <lucide-plus :size="18" class="mr-2" />
-            {{ $t('global.add') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-      <bs-group-templates-tab ref="templatesTab" />
+      />
+      <group-personalized-variable-tab />
     </div>
   </bs-layout-left-menu>
 </template>

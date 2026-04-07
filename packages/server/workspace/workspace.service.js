@@ -72,23 +72,29 @@ async function hasAccess(user, workspaceId) {
 
 async function getWorkspaceWithAccessRight(id, user) {
   const workspace = await getWorkspace(id);
-  const group = await Groups.findById(workspace.group);
+  const group = await Groups.findById(workspace._company);
 
-  if (!user.isGroupAdmin) {
+  // Super admins have full access to all workspaces
+  const isAdmin = user?.isAdmin;
+  const isGroupAdmin = user?.isGroupAdmin;
+
+  if (!isAdmin && !isGroupAdmin) {
     if (
       await restrictAccessingWorkspacesForNonMemberUser(workspace, user, group)
     ) {
       throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
   }
+
   let workspaceWithAccess = {
     ...workspace?.toObject(),
     hasAccess: false,
   };
 
   if (
-    user.isGroupAdmin ||
-    (!user.isGroupAdmin && workspaceContainsUser(workspaceWithAccess, user))
+    isAdmin ||
+    isGroupAdmin ||
+    workspaceContainsUser(workspaceWithAccess, user)
   ) {
     workspaceWithAccess = {
       ...workspaceWithAccess,

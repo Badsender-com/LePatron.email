@@ -4,16 +4,14 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsGroupTemplatesTab from '~/components/group/templates-tab.vue';
-import { Plus } from 'lucide-vue';
+import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 
 export default {
-  name: 'BsPageSettingsTemplates',
+  name: 'BsPageSettingsMailings',
   components: {
     BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
-    BsGroupTemplatesTab,
-    LucidePlus: Plus,
+    BsGroupMailingsTab,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -37,16 +35,6 @@ export default {
   head() {
     return { title: this.settingsTitle };
   },
-  computed: {
-    groupId() {
-      return this.$route.params.groupId;
-    },
-  },
-  methods: {
-    goToNewTemplate() {
-      this.$router.push(`/groups/${this.groupId}/new-template`);
-    },
-  },
 };
 </script>
 
@@ -57,17 +45,10 @@ export default {
     </template>
     <div class="settings-content">
       <bs-group-settings-page-header
-        :title="$tc('global.template', 2)"
+        :title="$tc('global.mailing', 2)"
         :group-name="group.name"
-      >
-        <template #actions>
-          <v-btn color="accent" elevation="0" @click="goToNewTemplate">
-            <lucide-plus :size="18" class="mr-2" />
-            {{ $t('global.add') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-      <bs-group-templates-tab ref="templatesTab" />
+      />
+      <bs-group-mailings-tab />
     </div>
   </bs-layout-left-menu>
 </template>

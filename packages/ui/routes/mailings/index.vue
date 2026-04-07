@@ -89,9 +89,6 @@ export default {
       const enabled = this.$store.state.user?.info?.group?.enableEmailBuilder;
       return enabled !== false;
     },
-    totalPages() {
-      return this.pagination?.pageCount || 1;
-    },
     itemsLength() {
       return this.pagination?.itemsLength;
     },
@@ -252,7 +249,6 @@ export default {
             :has-ftp-access="hasFtpAccess"
             :tags="tags"
             :current-page="currentPage"
-            :total-pages="totalPages"
             :items-length="itemsLength"
             @on-single-mail-download="handleDownloadSingleMail"
             @on-refetch="fetchMailListingForFilterUpdate"
@@ -270,4 +266,3 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
-

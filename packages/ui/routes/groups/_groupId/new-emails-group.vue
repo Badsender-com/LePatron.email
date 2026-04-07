@@ -1,13 +1,12 @@
 <script>
 import { mapMutations } from 'vuex';
-
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
-import { getEmailsGroups } from '~/helpers/api-routes.js';
-import BsGroupMenu from '~/components/group/menu.vue';
-import FormEmailsGroup from '~/components/group/form-emails-group';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { getEmailsGroups } from '~/helpers/api-routes.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
+import FormEmailsGroup from '~/components/group/form-emails-group';
 
 const errors = {
   409: 'global.errors.emailsGroupExist',
@@ -15,8 +14,8 @@ const errors = {
 
 export default {
   name: 'BsPageNewEmailsGroup',
-  components: { BsGroupMenu, FormEmailsGroup },
-  mixins: [mixinPageTitle],
+  components: { BsGroupSettingsNav, FormEmailsGroup },
+  mixins: [mixinSettingsTitle],
   meta: {
     acl: [acls.ACL_GROUP_ADMIN],
   },
@@ -44,16 +43,9 @@ export default {
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.newEmailsGroup')}`;
-    },
     groupId() {
       return this.$route.params.groupId;
     },
@@ -94,7 +86,7 @@ export default {
 <template>
   <bs-layout-left-menu>
     <template #menu>
-      <bs-group-menu />
+      <bs-group-settings-nav :group="group" />
     </template>
     <form-emails-group
       v-model="emailsGroup"

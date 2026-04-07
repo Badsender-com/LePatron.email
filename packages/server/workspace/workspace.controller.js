@@ -26,7 +26,10 @@ module.exports = {
  */
 
 async function hasAccess(req, res) {
-  const { user, params: { workspaceId } } = req;
+  const {
+    user,
+    params: { workspaceId },
+  } = req;
 
   const hasAccess = await workspaceService.hasAccess(user, workspaceId);
 
@@ -76,7 +79,17 @@ async function listWorkspace(req, res, next) {
 
 async function createWorkspace(req, res) {
   try {
-    if (!!req.user?.group?.id && req.body.groupId === req.user?.group?.id) {
+    // Super admins can create workspaces for any group
+    // Group admins can only create workspaces for their own group
+    const isAdmin = req.user?.isAdmin;
+    const isGroupAdmin = req.user?.isGroupAdmin;
+    const userGroupId = req.user?.group?.id;
+    const targetGroupId = req.body.groupId;
+
+    const canCreate =
+      isAdmin || (isGroupAdmin && userGroupId && userGroupId === targetGroupId);
+
+    if (canCreate) {
       const newWorkspace = await workspaceService.createWorkspace(req.body);
       res.json(newWorkspace);
     } else {
@@ -132,15 +145,31 @@ async function updateWorkspace(req, res) {
 
 async function deleteWorkspace(req, res) {
   const { workspaceId } = req.params;
-  if (req.user?.group?.id) {
+  const { user } = req;
+
+  try {
     const workspace = await workspaceService.getWorkspace(workspaceId);
-    if (!workspace || workspace._company?.toString() !== req.user.group.id) {
-      res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    if (!workspace) {
+      return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
+
+    // Super admins can delete any workspace
+    // Group admins can only delete workspaces from their group
+    const isAdmin = user?.isAdmin;
+    const userGroupId = user?.group?.id;
+    const workspaceGroupId = workspace._company?.toString();
+
+    if (!isAdmin && workspaceGroupId !== userGroupId) {
+      return res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+    }
+
     await workspaceService.deleteWorkspace(workspaceId);
     res.status(204).send();
-  } else {
-    res.status(403).send(ERROR_CODES.FORBIDDEN_WORKSPACE_RETRIEVAL);
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).send(error.message);
+    }
+    res.status(500).send();
   }
 }
 
@@ -161,7 +190,7 @@ async function getWorkspace(req, res) {
     const { user } = req;
 
     if (workspaceId === 'undefined') {
-      res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
     const workspace = await workspaceService.getWorkspaceWithAccessRight(
@@ -169,8 +198,14 @@ async function getWorkspace(req, res) {
       user
     );
 
-    if (`${workspace._company}` !== req.user?.group?.id) {
-      res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    // Super admins can access any workspace
+    // Group admins/users can only access workspaces from their group
+    const isAdmin = user?.isAdmin;
+    const userGroupId = user?.group?.id;
+    const workspaceGroupId = `${workspace._company}`;
+
+    if (!isAdmin && workspaceGroupId !== userGroupId) {
+      return res.status(404).send(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
 
     res.json(workspace);
