@@ -162,10 +162,11 @@ export default {
   white-space: nowrap;
 }
 
-/* Tree icon color states - aligned with sidebar */
+/* Tree icon color states and alignment - aligned with sidebar */
 .tree-icon {
   color: rgba(0, 0, 0, 0.54);
   transition: color 0.15s ease;
+  vertical-align: middle;
 
   &--active {
     color: var(--v-accent-base);
