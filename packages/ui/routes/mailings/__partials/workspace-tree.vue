@@ -22,7 +22,17 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
-import { FolderOpen, Folder, Users, Plus, MoreVertical, TextCursor, FolderPlus, FolderInput, Trash2 } from 'lucide-vue';
+import {
+  FolderOpen,
+  Folder,
+  Users,
+  Plus,
+  MoreVertical,
+  TextCursor,
+  FolderPlus,
+  FolderInput,
+  Trash2,
+} from 'lucide-vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -592,26 +602,36 @@ export default {
         <lucide-users
           v-if="item.type === 'workspace'"
           :size="18"
-          :class="['tree-icon', {
-            'tree-icon--active': active,
-            'tree-icon--disabled': !item.hasAccess
-          }]"
+          :class="[
+            'tree-icon',
+            {
+              'tree-icon--active': active,
+              'tree-icon--disabled': !item.hasAccess,
+            },
+          ]"
         />
         <!-- Folder icons -->
         <template v-else>
           <lucide-folder-open
             v-if="active"
             :size="18"
-            :class="['tree-icon', 'tree-icon--active', {
-              'tree-icon--disabled': !item.hasAccess
-            }]"
+            :class="[
+              'tree-icon',
+              'tree-icon--active',
+              {
+                'tree-icon--disabled': !item.hasAccess,
+              },
+            ]"
           />
           <lucide-folder
             v-else
             :size="18"
-            :class="['tree-icon', {
-              'tree-icon--disabled': !item.hasAccess
-            }]"
+            :class="[
+              'tree-icon',
+              {
+                'tree-icon--disabled': !item.hasAccess,
+              },
+            ]"
           />
         </template>
       </template>
@@ -631,17 +651,15 @@ export default {
         </v-btn>
         <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y left>
           <template #activator="{ on }">
-            <v-btn
-              icon
-              small
-              class="folder-menu-btn"
-              v-on="on"
-            >
+            <v-btn icon small class="folder-menu-btn" v-on="on">
               <lucide-more-vertical :size="18" />
             </v-btn>
           </template>
           <v-list class="folder-context-menu" dense>
-            <v-list-item class="folder-menu-item" @click="openRenameFolderModal(item)">
+            <v-list-item
+              class="folder-menu-item"
+              @click="openRenameFolderModal(item)"
+            >
               <v-list-item-icon class="folder-menu-item__icon">
                 <lucide-text-cursor :size="18" />
               </v-list-item-icon>
@@ -661,7 +679,10 @@ export default {
                 {{ $t('global.newFolder') }}
               </v-list-item-title>
             </v-list-item>
-            <v-list-item class="folder-menu-item" @click="displayMoveModal(item)">
+            <v-list-item
+              class="folder-menu-item"
+              @click="displayMoveModal(item)"
+            >
               <v-list-item-icon class="folder-menu-item__icon">
                 <lucide-folder-input :size="18" />
               </v-list-item-icon>
@@ -669,7 +690,10 @@ export default {
                 {{ $t('global.move') }}
               </v-list-item-title>
             </v-list-item>
-            <v-list-item class="folder-menu-item" @click="displayDeleteModal(item)">
+            <v-list-item
+              class="folder-menu-item"
+              @click="displayDeleteModal(item)"
+            >
               <v-list-item-icon class="folder-menu-item__icon">
                 <lucide-trash2 :size="18" />
               </v-list-item-icon>
@@ -707,10 +731,11 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-/* Tree icon color states */
+/* Tree icon color states and alignment */
 .tree-icon {
   color: rgba(0, 0, 0, 0.54);
   transition: color 0.15s ease;
+  vertical-align: middle;
 
   &--active {
     color: var(--v-accent-base);
