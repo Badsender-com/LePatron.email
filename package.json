@@ -101,13 +101,13 @@
     "probe-image-size": "4.0.0",
     "promisify-child-process": "3.1.1",
     "pug": "2.0.4",
-    "puppeteer": "^21.0.0",
+    "puppeteer": "21.11.0",
     "qs": "6.9.0",
     "rand-token": "0.4.0",
     "rc": "1.2.8",
     "request": "2.88.0",
     "serve-favicon": "2.4.3",
-    "sharp": "^0.33.5",
+    "sharp": "0.33.5",
     "sib-api-v3-sdk": "8.2.0",
     "socks": "2.4.1",
     "speakingurl": "14.0.1",
@@ -119,7 +119,7 @@
     "vue2-timepicker": "1.1.6",
     "vuelidate": "0.7.4",
     "vuex": "3.6.2",
-    "fast-xml-parser": "^4.3.0"
+    "fast-xml-parser": "4.5.6"
   },
   "devDependencies": {
     "@testing-library/cypress": "8.0.0",
