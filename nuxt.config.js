@@ -22,6 +22,11 @@ module.exports = {
     store: 'store',
   },
   build: {
+    postcss: {
+      postcssOptions: {
+        plugins: {},
+      },
+    },
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
