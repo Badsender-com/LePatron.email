@@ -162,8 +162,11 @@ export default {
       try {
         const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
         this.group = groupResponse;
-      } catch (error) {
-        console.error('[GroupPage] Failed to refresh group:', error);
+      } catch {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
       }
     },
     changeTab(tabId) {
@@ -181,10 +184,7 @@ export default {
     <client-only>
       <v-tabs ref="tabs" :value="activeTab" centered>
         <v-tabs-slider color="accent" />
-        <v-tab
-          href="#group-general"
-          @click="activeTab = 'group-general'"
-        >
+        <v-tab href="#group-general" @click="activeTab = 'group-general'">
           {{ $t('groups.tabs.general') }}
         </v-tab>
         <v-tab

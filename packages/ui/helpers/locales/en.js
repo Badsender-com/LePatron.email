@@ -664,6 +664,7 @@ export default {
         },
       ],
       footerCta: 'Ready to create your first emails?',
+      screenshotAlt: 'Email Builder Interface',
     },
   },
   sidebar: {

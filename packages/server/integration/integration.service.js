@@ -1,6 +1,10 @@
 'use strict';
 
-const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
+const {
+  Integrations,
+  AIFeatureConfigs,
+  Dashboards,
+} = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -254,9 +258,9 @@ async function deactivateFeaturesForIntegration(integrationId) {
     { $set: { 'features.$[feat].isActive': false } },
     { arrayFilters: [{ 'feat.integration': objectId, 'feat.isActive': true }] }
   );
-  if (result.nModified > 0) {
+  if (result.modifiedCount > 0) {
     logger.log(
-      `Deactivated AI features for integration ${integrationId} (${result.nModified} config(s) updated)`
+      `Deactivated AI features for integration ${integrationId} (${result.modifiedCount} config(s) updated)`
     );
   }
 }
@@ -284,9 +288,9 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
       try {
         // Normalize URL: remove trailing slash
         siteUrl = siteUrl.replace(/\/+$/, '');
-        new URL(siteUrl);
+        const parsed = new URL(siteUrl);
         // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
-        isValid = secretKey.length >= 32;
+        isValid = !!parsed.hostname && secretKey.length >= 32;
       } catch {
         isValid = false;
       }

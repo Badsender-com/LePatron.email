@@ -50,6 +50,9 @@ async function getDashboardWithAuthCheck(user, dashboardId) {
  */
 async function listDashboards(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   const dashboards = await dashboardService.listDashboards(groupId);
 
@@ -75,6 +78,7 @@ async function readDashboard(req, res) {
  */
 async function createDashboard(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
   const {
     name,
     description,
@@ -82,6 +86,8 @@ async function createDashboard(req, res) {
     providerDashboardId,
     lockedParams,
   } = req.body;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   // Validate required fields
   if (!name) {
@@ -96,13 +102,18 @@ async function createDashboard(req, res) {
     throw createError(400, ERROR_CODES.DASHBOARD_ID_REQUIRED);
   }
 
+  const parsedDashboardId = parseInt(providerDashboardId, 10);
+  if (isNaN(parsedDashboardId)) {
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
+  }
+
   const sanitizedLockedParams = sanitizeLockedParams(lockedParams);
 
   const dashboard = await dashboardService.createDashboard(groupId, {
     name,
     description,
     integrationId,
-    providerDashboardId: parseInt(providerDashboardId, 10),
+    providerDashboardId: parsedDashboardId,
     lockedParams: sanitizedLockedParams,
   });
 
@@ -134,7 +145,12 @@ async function updateDashboard(req, res) {
     integrationId,
     providerDashboardId:
       providerDashboardId !== undefined
-        ? parseInt(providerDashboardId, 10)
+        ? (() => {
+            const parsed = parseInt(providerDashboardId, 10);
+            if (isNaN(parsed))
+              throw createError(400, ERROR_CODES.INVALID_REQUEST);
+            return parsed;
+          })()
         : undefined,
     lockedParams:
       lockedParams !== undefined
@@ -168,7 +184,10 @@ async function deleteDashboard(req, res) {
  */
 async function reorderDashboards(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
   const { dashboardIds } = req.body;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   if (!Array.isArray(dashboardIds)) {
     throw createError(400, ERROR_CODES.INVALID_REQUEST);

@@ -284,14 +284,14 @@ export default {
       notEnabled: 'Module non activé',
       emailBuilder: {
         name: 'Email Builder',
-        description: "Création et édition d'emails responsive",
+        description: 'Création et édition d\'emails responsive',
       },
       crmIntelligence: {
         name: 'CRM Intelligence',
         description: 'Tableaux de bord et analytics',
-        configHint: "Configuration avancée dans l'onglet dédié",
+        configHint: 'Configuration avancée dans l\'onglet dédié',
         toggleMovedHint:
-          "L'activation du module se fait depuis l'onglet Général",
+          'L\'activation du module se fait depuis l\'onglet Général',
       },
     },
     mailingTab: {
@@ -669,6 +669,7 @@ export default {
         },
       ],
       footerCta: 'Prêt à créer vos premiers emails ?',
+      screenshotAlt: 'Interface Email Builder',
     },
   },
   sidebar: {

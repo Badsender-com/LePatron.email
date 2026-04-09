@@ -27,6 +27,4 @@ module.exports = Object.freeze({
   IntegrationModel: 'Integration',
   DashboardModel: 'Dashboard',
   AIFeatureConfigModel: 'AIFeatureConfig',
-  // Dashboards
-  DashboardModel: 'Dashboard',
 });

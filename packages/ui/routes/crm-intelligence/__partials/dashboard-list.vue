@@ -13,7 +13,9 @@ export default {
   },
   computed: {
     sortedDashboards() {
-      return [...this.dashboards].sort((a, b) => (a.order || 0) - (b.order || 0));
+      return [...this.dashboards].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+      );
     },
   },
   methods: {
@@ -67,7 +69,7 @@ export default {
 
 <style scoped>
 .dashboard-item--selected {
-  background-color: rgba(0, 172, 220, 0.12) !important;
-  border-left: 3px solid #00acdc;
+  background-color: rgba(var(--v-accent-rgb, 0, 172, 220), 0.12) !important;
+  border-left: 3px solid var(--v-accent-base, #00acdc);
 }
 </style>
