@@ -17,9 +17,9 @@ jobs:
           python-version: '3.10'
       - uses: actions/setup-node@v4
         with:
-          node-version: '14.16.0'
+          node-version: '18.18.0'
           cache: 'yarn'
-      - run: yarn install
+      - run: yarn install --ignore-engines
       - run: yarn build
   unit-tests:
     runs-on: ubuntu-latest
@@ -31,9 +31,9 @@ jobs:
           python-version: '3.10'
       - uses: actions/setup-node@v4
         with:
-          node-version: '14.16.0'
+          node-version: '18.18.0'
           cache: 'yarn'
-      - run: yarn install
+      - run: yarn install --ignore-engines
       - run: yarn test-ci
   deployment:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
     if: "github.event_name == 'push' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
     timeout-minutes: 40
     env:
-      NODE_VERSION: 16.17.1
+      NODE_VERSION: 18.18.0
     steps:
       - uses: actions/checkout@v3
         with:
