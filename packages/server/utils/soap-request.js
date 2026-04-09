@@ -29,21 +29,25 @@ async function soapRequest({
         SOAPAction: soapAction,
       },
     });
-    const parser = new XMLParser({ ignoreAttributes: false, trimValues: true });
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '',
+      trimValues: true,
+    });
     const jsObjectFromXml = parser.parse(response.data);
 
     const errorFromAdobe =
       jsObjectFromXml['SOAP-ENV:Envelope']['SOAP-ENV:Body']['SOAP-ENV:Fault'];
 
     if (errorFromAdobe) {
-      const detail = errorFromAdobe.detail?.$t || '';
+      const detail = errorFromAdobe.detail || '';
 
       // If we get a 401 response, we try to refresh the token and perform the request again
-      if (
-        shouldRetry &&
+      const isTokenExpired =
         typeof detail === 'string' &&
-        detail.includes('HTTP response code is 401')
-      ) {
+        (detail.includes('HTTP response code is 401') ||
+          detail.includes('Access token has expired'));
+      if (shouldRetry && isTokenExpired) {
         const newToken = await refreshTokenFn();
         return soapRequest({
           userId,
@@ -63,6 +67,21 @@ async function soapRequest({
     return formatResponseFn(jsObjectFromXml);
   } catch (error) {
     const { response } = error;
+
+    // If we get a 401/403 HTTP response, try to refresh the token and retry once
+    if (shouldRetry && (response?.status === 401 || response?.status === 403)) {
+      const newToken = await refreshTokenFn();
+      return soapRequest({
+        userId,
+        url,
+        token: newToken,
+        soapAction,
+        xmlBodyRequest,
+        formatResponseFn,
+        shouldRetry: false,
+        refreshTokenFn,
+      });
+    }
 
     const log = await createLog(
       {
