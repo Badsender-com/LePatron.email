@@ -269,7 +269,11 @@ export default {
 .hero-section {
   padding: 80px 24px;
   text-align: center;
-  background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+  background: linear-gradient(
+    180deg,
+    var(--v-background-lighten, #f8f9fa) 0%,
+    var(--v-background-base, #fff) 100%
+  );
 }
 
 .hero-subtitle {
@@ -288,7 +292,7 @@ export default {
 
 .features-section {
   padding: 60px 24px;
-  background: #fafafa;
+  background: var(--v-background-lighten, #fafafa);
 }
 
 .feature-card {
@@ -299,7 +303,7 @@ export default {
 .footer-cta {
   padding: 60px 24px;
   text-align: center;
-  background: #fff;
+  background: var(--v-background-base, #fff);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 

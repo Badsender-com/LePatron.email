@@ -47,13 +47,7 @@ export default {
           </v-icon>
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
-        <v-btn
-          outlined
-          x-large
-          color="primary"
-          :href="infoUrl"
-          target="_blank"
-        >
+        <v-btn outlined x-large color="primary" :href="infoUrl" target="_blank">
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
           <v-icon right>
             mdi-open-in-new
@@ -67,7 +61,7 @@ export default {
       <div class="screenshot-wrapper">
         <img
           src="/img/marketing/email-builder-screenshot.png"
-          alt="Email Builder Interface"
+          :alt="$t('emailBuilder.marketing.screenshotAlt')"
           class="screenshot-image"
         >
       </div>
@@ -124,13 +118,7 @@ export default {
           </v-icon>
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
-        <v-btn
-          outlined
-          large
-          color="primary"
-          :href="infoUrl"
-          target="_blank"
-        >
+        <v-btn outlined large color="primary" :href="infoUrl" target="_blank">
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
           <v-icon right>
             mdi-open-in-new
@@ -151,7 +139,11 @@ export default {
 .hero-section {
   padding: 80px 24px;
   text-align: center;
-  background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+  background: linear-gradient(
+    180deg,
+    var(--v-background-lighten, #f8f9fa) 0%,
+    var(--v-background-base, #fff) 100%
+  );
 }
 
 .hero-subtitle {
@@ -171,7 +163,7 @@ export default {
 /* Screenshot Section */
 .screenshot-section {
   padding: 40px 24px;
-  background: #fff;
+  background: var(--v-background-base, #fff);
 }
 
 .screenshot-wrapper {
@@ -192,7 +184,7 @@ export default {
 /* Features Section */
 .features-section {
   padding: 60px 24px;
-  background: #fafafa;
+  background: var(--v-background-lighten, #fafafa);
 }
 
 .feature-card {
@@ -204,7 +196,7 @@ export default {
 .footer-cta {
   padding: 60px 24px;
   text-align: center;
-  background: #fff;
+  background: var(--v-background-base, #fff);
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 

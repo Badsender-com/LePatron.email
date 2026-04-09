@@ -26,10 +26,10 @@ export default {
           </v-icon>
         </div>
         <h3 class="text-subtitle-1 text-center mt-3">
-          {{ $t('crmIntelligence.marketing.sidebarTitle') }}
+          {{ $t('crmIntelligence.marketing.title') }}
         </h3>
         <p class="text-body-2 text-center mt-2 grey--text">
-          {{ $t('crmIntelligence.marketing.sidebarDescription') }}
+          {{ $t('crmIntelligence.marketing.subtitle') }}
         </p>
 
         <v-list dense class="mt-3">
@@ -44,7 +44,7 @@ export default {
             </v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title class="text-body-2">
-                {{ feature }}
+                {{ feature.title }}
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>

@@ -79,7 +79,7 @@ async function getDashboards(groupId) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  return DashboardService.listDashboards(groupId);
+  return DashboardService.listDashboards(groupId, { activeOnly: true });
 }
 
 /**
@@ -126,10 +126,9 @@ async function getEmbedUrl(groupId, dashboardId) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Validate that apiKey is properly decrypted (not still encrypted or malformed)
-  // Encrypted values typically contain ':' separator or are base64-encoded gibberish
+  // Validate that apiKey is available and meets minimum length for JWT signing
   const apiKey = integration.apiKey;
-  if (!apiKey || apiKey.includes(':iv:') || apiKey.length < 10) {
+  if (!apiKey || apiKey.length < 10) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
@@ -146,7 +145,7 @@ async function getEmbedUrl(groupId, dashboardId) {
     token = jwt.sign(payload, apiKey);
   } catch (err) {
     // Log without exposing the key
-    throw createError(500, 'Failed to sign embed token');
+    throw createError(500, ERROR_CODES.EMBED_TOKEN_SIGN_FAILED);
   }
 
   // Build the embed URL (normalize apiHost to remove trailing slash)
