@@ -177,22 +177,18 @@ describe('IntegrationService', () => {
         name: 'Old Name',
         type: 'ai',
         _company: mockGroupId,
-      };
-
-      const updatedIntegration = {
-        ...existingIntegration,
-        name: 'New Name',
+        save: jest.fn().mockResolvedValue(),
       };
 
       Integrations.findById.mockResolvedValue(existingIntegration);
       Integrations.exists.mockResolvedValue(false);
-      Integrations.findByIdAndUpdate.mockResolvedValue(updatedIntegration);
 
       const result = await integrationService.updateIntegration({
         integrationId: mockIntegrationId,
         name: 'New Name',
       });
 
+      expect(existingIntegration.save).toHaveBeenCalled();
       expect(result.name).toBe('New Name');
     });
 
@@ -203,25 +199,20 @@ describe('IntegrationService', () => {
         type: 'ai',
         _company: mockGroupId,
         apiKey: 'old-key',
+        save: jest.fn().mockResolvedValue(),
       };
 
       Integrations.findById.mockResolvedValue(existingIntegration);
-      Integrations.findByIdAndUpdate.mockResolvedValue({});
 
       await integrationService.updateIntegration({
         integrationId: mockIntegrationId,
         apiKey: 'new-key',
       });
 
-      expect(Integrations.findByIdAndUpdate).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          apiKey: 'new-key',
-          validationStatus: 'pending',
-          lastValidatedAt: null,
-        }),
-        { new: true }
-      );
+      expect(existingIntegration.save).toHaveBeenCalled();
+      expect(existingIntegration.apiKey).toBe('new-key');
+      expect(existingIntegration.validationStatus).toBe('pending');
+      expect(existingIntegration.lastValidatedAt).toBeNull();
     });
   });
 

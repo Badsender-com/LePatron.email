@@ -1,6 +1,4 @@
 <script>
-import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import {
@@ -11,22 +9,19 @@ import {
   deleteDashboard,
   reorderDashboards,
 } from '~/helpers/api-routes';
+import BsDashboardCard from './dashboard-card.vue';
+import BsDashboardFormDialog from './dashboard-form-dialog.vue';
+import BsDashboardDeleteDialog from './dashboard-delete-dialog.vue';
 
 const INTEGRATION_TYPE_DASHBOARD = 'dashboard';
 
-function createEmptyDashboardForm(overrides = {}) {
-  return {
-    name: '',
-    description: '',
-    integrationId: null,
-    providerDashboardId: null,
-    ...overrides,
-  };
-}
-
 export default {
   name: 'BsCrmIntelligenceTab',
-  mixins: [validationMixin],
+  components: {
+    BsDashboardCard,
+    BsDashboardFormDialog,
+    BsDashboardDeleteDialog,
+  },
   props: {
     group: {
       type: Object,
@@ -40,35 +35,17 @@ export default {
   data() {
     return {
       loading: false,
-      // Integrations (read-only, for dashboard select)
       integrations: [],
-      // Dashboards
       dashboards: [],
       editingDashboard: null,
       showDashboardForm: false,
       showDeleteDashboardDialog: false,
       dashboardToDelete: null,
-      dashboardForm: createEmptyDashboardForm(),
     };
-  },
-  validations: {
-    dashboardForm: {
-      name: { required },
-      integrationId: { required },
-      providerDashboardId: { required },
-    },
   },
   computed: {
     groupId() {
       return this.$route.params.groupId;
-    },
-    isEditingDashboard() {
-      return this.editingDashboard !== null;
-    },
-    dashboardFormTitle() {
-      return this.isEditingDashboard
-        ? this.$t('crmIntelligence.admin.editDashboard')
-        : this.$t('crmIntelligence.admin.addDashboard');
     },
     hasIntegrations() {
       return this.integrations.length > 0;
@@ -78,7 +55,6 @@ export default {
     },
   },
   watch: {
-    // Refresh data when tab becomes active (after adding integrations in another tab)
     active(isActive) {
       if (isActive) {
         this.fetchData();
@@ -106,7 +82,7 @@ export default {
           integrations(this.groupId, INTEGRATION_TYPE_DASHBOARD)
         );
         this.integrations = response.items || [];
-      } catch (error) {
+      } catch {
         this.showSnackbar({
           text: this.$t('crmIntelligence.errors.fetchIntegrationsFailed'),
           color: 'error',
@@ -118,7 +94,7 @@ export default {
       try {
         const response = await this.$axios.$get(getDashboards(this.groupId));
         this.dashboards = response.items || [];
-      } catch (error) {
+      } catch {
         this.showSnackbar({
           text: this.$t('crmIntelligence.errors.fetchDashboardsFailed'),
           color: 'error',
@@ -126,59 +102,20 @@ export default {
       }
     },
 
-    // ==================
-    // Dashboard methods
-    // ==================
     openAddDashboardForm() {
       this.editingDashboard = null;
-      this.dashboardForm = createEmptyDashboardForm({
-        integrationId:
-          this.integrations.length === 1 ? this.integrations[0].id : null,
-      });
-      this.$v.dashboardForm.$reset();
       this.showDashboardForm = true;
     },
 
     openEditDashboardForm(dashboard) {
       this.editingDashboard = dashboard;
-      this.dashboardForm = {
-        name: dashboard.name,
-        description: dashboard.description || '',
-        integrationId:
-          dashboard.integration && dashboard.integration.id
-            ? dashboard.integration.id
-            : null,
-        providerDashboardId: dashboard.providerDashboardId,
-      };
-      this.$v.dashboardForm.$reset();
       this.showDashboardForm = true;
     },
 
-    closeDashboardForm() {
-      this.showDashboardForm = false;
-      this.editingDashboard = null;
-      this.dashboardForm = createEmptyDashboardForm();
-    },
-
-    async saveDashboard() {
-      this.$v.dashboardForm.$touch();
-      if (this.$v.dashboardForm.$invalid) {
-        return;
-      }
-
+    async saveDashboard(payload) {
       this.loading = true;
       try {
-        const payload = {
-          name: this.dashboardForm.name,
-          description: this.dashboardForm.description,
-          integrationId: this.dashboardForm.integrationId,
-          providerDashboardId: parseInt(
-            this.dashboardForm.providerDashboardId,
-            10
-          ),
-        };
-
-        if (this.isEditingDashboard) {
+        if (this.editingDashboard) {
           await this.$axios.$put(
             updateDashboard(this.editingDashboard.id),
             payload
@@ -195,21 +132,22 @@ export default {
           });
         }
 
-        this.closeDashboardForm();
+        this.showDashboardForm = false;
+        this.editingDashboard = null;
         await this.fetchDashboards();
         this.$emit('update');
       } catch (error) {
-        const errorCode = error.response?.data?.code;
+        const errorCode =
+          error.response && error.response.data
+            ? error.response.data.code
+            : null;
         let errorMessage = this.$t('crmIntelligence.admin.dashboardSaveError');
         if (errorCode === 'DASHBOARD_ALREADY_EXISTS') {
           errorMessage = this.$t(
             'crmIntelligence.errors.dashboardAlreadyExists'
           );
         }
-        this.showSnackbar({
-          text: errorMessage,
-          color: 'error',
-        });
+        this.showSnackbar({ text: errorMessage, color: 'error' });
       } finally {
         this.loading = false;
       }
@@ -234,7 +172,7 @@ export default {
         this.dashboardToDelete = null;
         await this.fetchDashboards();
         this.$emit('update');
-      } catch (error) {
+      } catch {
         this.showSnackbar({
           text: this.$t('crmIntelligence.admin.dashboardDeleteError'),
           color: 'error',
@@ -252,14 +190,12 @@ export default {
 
       if (newIndex < 0 || newIndex >= this.dashboards.length) return;
 
-      // Swap in local array
       const dashboardsCopy = [...this.dashboards];
       [dashboardsCopy[currentIndex], dashboardsCopy[newIndex]] = [
         dashboardsCopy[newIndex],
         dashboardsCopy[currentIndex],
       ];
 
-      // Get new order of IDs
       const dashboardIds = dashboardsCopy.map((d) => d.id);
 
       this.loading = true;
@@ -268,7 +204,7 @@ export default {
           dashboardIds,
         });
         await this.fetchDashboards();
-      } catch (error) {
+      } catch {
         this.showSnackbar({
           text: this.$t('crmIntelligence.admin.reorderError'),
           color: 'error',
@@ -279,7 +215,6 @@ export default {
     },
 
     goToIntegrationsTab() {
-      // Emit event to parent to change tab
       this.$emit('change-tab', 'group-integrations');
     },
   },
@@ -333,206 +268,33 @@ export default {
         {{ $t('crmIntelligence.admin.noDashboards') }}
       </v-alert>
 
-      <v-card
+      <bs-dashboard-card
         v-for="(dashboard, index) in dashboards"
         :key="dashboard.id"
-        outlined
-        class="mb-2"
-      >
-        <v-card-title class="py-2">
-          <span class="text-body-2 grey--text mr-3">#{{ index + 1 }}</span>
-          <v-icon left small color="primary">
-            mdi-chart-line
-          </v-icon>
-          {{ dashboard.name }}
-          <v-spacer />
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                :disabled="index === 0"
-                v-bind="attrs"
-                v-on="on"
-                @click="moveDashboard(dashboard, 'up')"
-              >
-                <v-icon small>
-                  mdi-arrow-up
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('crmIntelligence.admin.moveUp') }}</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                :disabled="index === dashboards.length - 1"
-                v-bind="attrs"
-                v-on="on"
-                @click="moveDashboard(dashboard, 'down')"
-              >
-                <v-icon small>
-                  mdi-arrow-down
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>{{ $t('crmIntelligence.admin.moveDown') }}</span>
-          </v-tooltip>
-          <v-btn
-            icon
-            small
-            class="ml-2"
-            @click="openEditDashboardForm(dashboard)"
-          >
-            <v-icon small>
-              mdi-pencil
-            </v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            small
-            color="error"
-            @click="confirmDeleteDashboard(dashboard)"
-          >
-            <v-icon small>
-              mdi-delete
-            </v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-subtitle>
-          <v-chip x-small outlined class="mr-2">
-            {{
-              dashboard.integration && dashboard.integration.name
-                ? dashboard.integration.name
-                : '-'
-            }}
-          </v-chip>
-          <span v-if="dashboard.description">
-            {{ dashboard.description }}
-          </span>
-        </v-card-subtitle>
-      </v-card>
+        :dashboard="dashboard"
+        :index="index"
+        :is-first="index === 0"
+        :is-last="index === dashboards.length - 1"
+        @move="moveDashboard(dashboard, $event)"
+        @edit="openEditDashboardForm(dashboard)"
+        @delete="confirmDeleteDashboard(dashboard)"
+      />
     </v-card-text>
 
-    <!-- ==================== -->
     <!-- Dashboard Form Dialog -->
-    <!-- ==================== -->
-    <v-dialog v-model="showDashboardForm" max-width="600" persistent>
-      <v-card>
-        <v-card-title>
-          {{ dashboardFormTitle }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="dashboardForm.name"
-            :label="$t('crmIntelligence.admin.dashboardName')"
-            outlined
-            dense
-            class="mb-3"
-            :error-messages="
-              $v.dashboardForm.name.$dirty && !$v.dashboardForm.name.required
-                ? $t('crmIntelligence.admin.dashboardNameRequired')
-                : ''
-            "
-          />
+    <bs-dashboard-form-dialog
+      v-model="showDashboardForm"
+      :dashboard="editingDashboard"
+      :integrations="integrations"
+      :loading="loading"
+      @save="saveDashboard"
+    />
 
-          <v-textarea
-            v-model="dashboardForm.description"
-            :label="$t('crmIntelligence.admin.dashboardDescription')"
-            outlined
-            dense
-            rows="2"
-            class="mb-3"
-          />
-
-          <v-select
-            v-model="dashboardForm.integrationId"
-            :items="integrations"
-            :label="$t('crmIntelligence.admin.selectIntegration')"
-            item-text="name"
-            item-value="id"
-            outlined
-            dense
-            class="mb-3"
-            :error-messages="
-              $v.dashboardForm.integrationId.$dirty &&
-                !$v.dashboardForm.integrationId.required
-                ? $t('crmIntelligence.admin.integrationRequired')
-                : ''
-            "
-          >
-            <template #item="{ item }">
-              <v-list-item-content>
-                <v-list-item-title>{{ item.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ item.apiHost }}</v-list-item-subtitle>
-              </v-list-item-content>
-            </template>
-          </v-select>
-
-          <v-text-field
-            v-model.number="dashboardForm.providerDashboardId"
-            :label="$t('crmIntelligence.admin.dashboardId')"
-            :hint="$t('crmIntelligence.admin.dashboardIdHint')"
-            type="number"
-            outlined
-            dense
-            persistent-hint
-            :error-messages="
-              $v.dashboardForm.providerDashboardId.$dirty &&
-                !$v.dashboardForm.providerDashboardId.required
-                ? $t('crmIntelligence.admin.dashboardIdRequired')
-                : ''
-            "
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text @click="closeDashboardForm">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn
-            color="accent"
-            elevation="0"
-            :loading="loading"
-            @click="saveDashboard"
-          >
-            <v-icon left>
-              mdi-content-save
-            </v-icon>
-            {{ $t('global.save') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- ==================== -->
     <!-- Delete Dashboard Dialog -->
-    <!-- ==================== -->
-    <v-dialog v-model="showDeleteDashboardDialog" max-width="400">
-      <v-card>
-        <v-card-title>
-          {{ $t('crmIntelligence.admin.deleteDashboardConfirmTitle') }}
-        </v-card-title>
-        <v-card-text>
-          {{ $t('crmIntelligence.admin.deleteDashboardConfirmText') }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text @click="showDeleteDashboardDialog = false">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn
-            color="error"
-            elevation="0"
-            :loading="loading"
-            @click="deleteDashboardConfirmed"
-          >
-            {{ $t('global.delete') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <bs-dashboard-delete-dialog
+      v-model="showDeleteDashboardDialog"
+      :loading="loading"
+      @confirm="deleteDashboardConfirmed"
+    />
   </v-card>
 </template>
