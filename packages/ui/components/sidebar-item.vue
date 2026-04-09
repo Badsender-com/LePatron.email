@@ -89,7 +89,7 @@ export default {
 }
 
 .sidebar-item--active {
-  background-color: rgba(0, 172, 220, 0.12);
+  background-color: rgba(var(--v-accent-rgb, 0, 172, 220), 0.12);
 }
 
 .sidebar-item--disabled {
@@ -110,7 +110,7 @@ export default {
 }
 
 .sidebar-item--active .sidebar-item__indicator {
-  background-color: #00acdc;
+  background-color: var(--v-accent-base, #00acdc);
 }
 
 /* Icon container */
@@ -144,6 +144,6 @@ export default {
 
 .sidebar-item--active .sidebar-item__label {
   font-weight: 500;
-  color: #00acdc;
+  color: var(--v-accent-base, #00acdc);
 }
 </style>

@@ -104,7 +104,7 @@ export default {
   left: 0;
   bottom: 0;
   width: 56px;
-  background: #fff;
+  background: var(--v-background-base, #fff);
   border-right: 1px solid rgba(0, 0, 0, 0.12);
   z-index: 5;
   display: flex;
