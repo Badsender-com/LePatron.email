@@ -25,10 +25,11 @@ Summary of all changes on `feat/upgrade-node18` to migrate from **Node 14.16.0 â
 
 ## 3. Dependency Removals
 
-| Package            | Version | Why                                                                                 |
-| ------------------ | ------- | ----------------------------------------------------------------------------------- |
-| `segfault-handler` | 1.3.0   | Native module incompatible with Node 18 / arm64                                     |
-| `xml2json`         | 0.12.0  | Native deps (`node-expat`) incompatible with Node 18; replaced by `fast-xml-parser` |
+| Package            | Version | Why                                                                                               |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------- |
+| `segfault-handler` | 1.3.0   | Native module incompatible with Node 18 / arm64                                                   |
+| `xml2json`         | 0.12.0  | Native deps (`node-expat`) incompatible with Node 18; replaced by `fast-xml-parser`               |
+| `canvas`           | 2.11.2  | Native module not used by project code; only optional jsdom peer dep; dlopen failures on Node 18+ |
 
 ## 4. Dependency Additions
 
