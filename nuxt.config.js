@@ -31,6 +31,7 @@ module.exports = {
     store: 'store',
   },
   build: {
+    quiet: true,
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
@@ -38,6 +39,8 @@ module.exports = {
         type: 'javascript/auto',
         loader: '@kazupon/vue-i18n-loader',
       });
+      config.performance = config.performance || {};
+      config.performance.hints = false;
     },
   },
   router: {
