@@ -142,7 +142,7 @@ async function getEmbedUrl(groupId, dashboardId) {
   // Sign the JWT with the integration's secret key
   let token;
   try {
-    token = jwt.sign(payload, apiKey);
+    token = jwt.sign(payload, apiKey, { algorithm: 'HS256' });
   } catch (err) {
     // Log without exposing the key
     throw createError(500, ERROR_CODES.EMBED_TOKEN_SIGN_FAILED);

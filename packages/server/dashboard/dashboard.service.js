@@ -205,7 +205,10 @@ async function deleteDashboard(dashboardId) {
  * @returns {Promise<Array>}
  */
 async function reorderDashboards(groupId, dashboardIds) {
-  // Validate ObjectId format and check for duplicates
+  // Validate array size, ObjectId format, and check for duplicates
+  if (dashboardIds.length > 100) {
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
+  }
   const uniqueIds = new Set(dashboardIds);
   if (uniqueIds.size !== dashboardIds.length) {
     throw createError(400, ERROR_CODES.INVALID_REQUEST);

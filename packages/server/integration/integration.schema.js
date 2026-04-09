@@ -5,6 +5,7 @@ const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
+const mongooseHidden = require('mongoose-hidden')();
 const encryptionPlugin = require('../utils/encryption-plugin.js');
 
 /**
@@ -26,6 +27,7 @@ const IntegrationSchema = Schema(
     name: {
       type: String,
       required: [true, 'Integration name is required'],
+      maxlength: [255, 'Name must be under 255 characters'],
     },
     type: {
       type: String,
@@ -78,6 +80,11 @@ const IntegrationSchema = Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Hide sensitive fields from JSON output
+IntegrationSchema.plugin(mongooseHidden, {
+  hidden: { _id: true, __v: true, apiKey: true },
+});
 
 // Apply encryption plugin for sensitive fields
 IntegrationSchema.plugin(encryptionPlugin, ['apiKey']);

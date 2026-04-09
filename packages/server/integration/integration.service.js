@@ -49,6 +49,21 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
+ * Validate that a URL uses http or https scheme
+ */
+function validateApiHost(apiHost) {
+  if (!apiHost) return;
+  try {
+    const parsed = new URL(apiHost);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+  } catch {
+    throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
+  }
+}
+
+/**
  * Create a new integration
  */
 async function createIntegration({
@@ -61,6 +76,8 @@ async function createIntegration({
   config,
   _company,
 }) {
+  validateApiHost(apiHost);
+
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
     throw new Conflict(ERROR_CODES.INTEGRATION_NAME_ALREADY_EXIST);
@@ -110,19 +127,17 @@ async function updateIntegration({
     }
   }
 
-  // Keep only fields explicitly provided in the request
-  const updateData = Object.fromEntries(
-    Object.entries({
-      name,
-      type,
-      provider,
-      apiKey,
-      apiHost,
-      productId,
-      config,
-      isActive,
-    }).filter(([, value]) => value !== undefined)
-  );
+  validateApiHost(apiHost);
+
+  // Apply only fields explicitly provided in the request
+  if (name !== undefined) integration.name = name;
+  if (type !== undefined) integration.type = type;
+  if (provider !== undefined) integration.provider = provider;
+  if (apiKey !== undefined) integration.apiKey = apiKey;
+  if (apiHost !== undefined) integration.apiHost = apiHost;
+  if (productId !== undefined) integration.productId = productId;
+  if (config !== undefined) integration.config = config;
+  if (isActive !== undefined) integration.isActive = isActive;
 
   // Reset validation status if credentials changed
   if (
@@ -130,22 +145,18 @@ async function updateIntegration({
     apiHost !== undefined ||
     productId !== undefined
   ) {
-    updateData.validationStatus = 'pending';
-    updateData.lastValidatedAt = null;
+    integration.validationStatus = 'pending';
+    integration.lastValidatedAt = null;
   }
 
-  const updated = await Integrations.findByIdAndUpdate(
-    Types.ObjectId(integrationId),
-    updateData,
-    { new: true }
-  );
+  await integration.save();
 
   // When an integration is deactivated, disable all AI features using it
   if (isActive === false) {
     await deactivateFeaturesForIntegration(integrationId);
   }
 
-  return updated;
+  return integration;
 }
 
 /**

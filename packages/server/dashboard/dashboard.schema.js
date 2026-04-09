@@ -2,10 +2,7 @@
 
 const { Schema } = require('mongoose');
 const { ObjectId } = Schema.Types;
-const {
-  GroupModel,
-  IntegrationModel,
-} = require('../constant/model.names.js');
+const { GroupModel, IntegrationModel } = require('../constant/model.names.js');
 
 /**
  * Dashboard Schema
@@ -19,10 +16,12 @@ const DashboardSchema = Schema(
     name: {
       type: String,
       required: [true, 'Dashboard name is required'],
+      maxlength: [255, 'Name must be under 255 characters'],
     },
     description: {
       type: String,
       default: '',
+      maxlength: [2000, 'Description must be under 2000 characters'],
     },
     _company: {
       type: ObjectId,
