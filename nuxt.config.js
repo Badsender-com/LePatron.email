@@ -1,5 +1,14 @@
 'use strict';
 
+// Suppress false-positive "PostCSS does nothing" warning from postcss 7
+// embedded in @vue/component-compiler-utils (used by vue-loader for <style> parsing)
+const _warn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('PostCSS does nothing'))
+    return;
+  _warn.apply(console, args);
+};
+
 const path = require('path');
 // Don't use ESM
 // • this will be also required in express app
@@ -22,11 +31,6 @@ module.exports = {
     store: 'store',
   },
   build: {
-    postcss: {
-      postcssOptions: {
-        plugins: {},
-      },
-    },
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({

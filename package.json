@@ -69,6 +69,7 @@
     "express-favicon": "2.0.1",
     "express-oauth-server": "2.0.0",
     "express-session": "1.17.1",
+    "fast-xml-parser": "4.5.6",
     "font-awesome": "4.7.0",
     "form-data": "4.0.0",
     "formidable": "1.2.2",
@@ -98,6 +99,7 @@
     "passport-local": "1.0.0",
     "passport-oauth2-client-password": "0.1.2",
     "passport-saml": "2.0.4",
+    "postcss-preset-env": "7.8.3",
     "probe-image-size": "4.0.0",
     "promisify-child-process": "3.1.1",
     "pug": "2.0.4",
@@ -118,8 +120,7 @@
     "vue-select": "3.13.0",
     "vue2-timepicker": "1.1.6",
     "vuelidate": "0.7.4",
-    "vuex": "3.6.2",
-    "fast-xml-parser": "4.5.6"
+    "vuex": "3.6.2"
   },
   "devDependencies": {
     "@testing-library/cypress": "8.0.0",
@@ -170,7 +171,7 @@
     "gulp-load-plugins": "2.0.6",
     "gulp-order": "1.2.0",
     "gulp-plumber": "1.2.1",
-    "gulp-postcss": "9.0.0",
+    "gulp-postcss": "8.0.0",
     "gulp-prettier": "3.0.0",
     "gulp-pug": "4.0.1",
     "gulp-purge-sourcemaps": "1.0.0",
