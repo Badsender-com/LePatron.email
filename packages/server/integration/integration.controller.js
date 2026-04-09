@@ -115,11 +115,12 @@ async function getIntegration(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration =
-    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
+    {
       user,
       integrationId,
-    });
+    }
+  );
 
   res.json(integration);
 }
@@ -225,7 +226,9 @@ async function getDashboardCount(req, res) {
     integrationId,
   });
 
-  const count = await integrationService.countDashboardsForIntegration(integrationId);
+  const count = await integrationService.countDashboardsForIntegration(
+    integrationId
+  );
 
   res.json({ count });
 }
@@ -245,11 +248,12 @@ async function getModels(req, res) {
   const { user, params } = req;
   const { integrationId } = params;
 
-  const integration =
-    await integrationService.checkIfUserIsAuthorizedToAccessIntegration({
+  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
+    {
       user,
       integrationId,
-    });
+    }
+  );
 
   const provider = ProviderFactory.createProvider(integration);
   const capabilities = provider.getCapabilities();
@@ -271,7 +275,7 @@ async function getModels(req, res) {
       models: [],
       dynamic: false,
       capabilities,
-      error: error.message,
+      error: 'Failed to fetch models from provider',
     });
   }
 }
