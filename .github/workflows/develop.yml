@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -19,10 +21,12 @@ jobs:
         with:
           node-version: '18.18.0'
           cache: 'yarn'
-      - run: yarn install --ignore-engines
+      - run: yarn install --ignore-engines --network-timeout 600000
       - run: yarn build
   unit-tests:
     runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -33,7 +37,7 @@ jobs:
         with:
           node-version: '18.18.0'
           cache: 'yarn'
-      - run: yarn install --ignore-engines
+      - run: yarn install --ignore-engines --network-timeout 600000
       - run: yarn test-ci
   deployment:
     runs-on: ubuntu-latest
