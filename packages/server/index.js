@@ -87,6 +87,7 @@ if (cluster.isMaster) {
   );
 
   mongoose.set('useFindAndModify', false);
+  mongoose.set('useCreateIndex', true);
   mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
