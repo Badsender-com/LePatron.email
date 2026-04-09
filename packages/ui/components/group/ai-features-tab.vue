@@ -168,7 +168,7 @@ export default {
         this.loading = true;
         const [configRes, integrationsRes] = await Promise.all([
           this.$axios.$get(apiRoutes.aiFeatures(this.groupId)),
-          this.$axios.$get(apiRoutes.integrations(this.groupId)),
+          this.$axios.$get(apiRoutes.integrations(this.groupId, 'ai')),
         ]);
         this.config = configRes;
         this.integrations = integrationsRes.items || [];
