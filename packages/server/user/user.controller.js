@@ -14,7 +14,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   list: asyncHandler(list),
