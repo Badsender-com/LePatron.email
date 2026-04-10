@@ -26,4 +26,6 @@ module.exports = Object.freeze({
   // AI Integrations
   IntegrationModel: 'Integration',
   AIFeatureConfigModel: 'AIFeatureConfig',
+  // Translation
+  TranslationJobModel: 'TranslationJob',
 });
