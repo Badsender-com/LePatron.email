@@ -9,13 +9,14 @@
 
 When touching existing code, apply these migrations:
 
-| Aspect | Current | Target |
-|--------|---------|--------|
-| Icons (Editor) | Font Awesome 4.7 | MDI |
-| Typography | Montserrat / Trebuchet | Work Sans |
-| Colors | Hardcoded values | CSS variables |
-| Primary actions | `color="primary"` | `color="accent"` |
-| Accessibility | Missing | aria-labels, keyboard nav |
+| Aspect          | Current                | Target                    |
+| --------------- | ---------------------- | ------------------------- |
+| Icons (Editor)  | Font Awesome 4.7       | Lucide                    |
+| Icons (Vue App) | MDI                    | Lucide                    |
+| Typography      | Montserrat / Trebuchet | Inter                     |
+| Colors          | Hardcoded values       | CSS variables             |
+| Primary actions | `color="primary"`      | `color="accent"`          |
+| Accessibility   | Missing                | aria-labels, keyboard nav |
 
 This ensures gradual, low-risk convergence without requiring dedicated refactoring sprints.
 
@@ -25,97 +26,97 @@ This ensures gradual, low-risk convergence without requiring dedicated refactori
 
 ### DEBT-001: Multiple Font Families
 
-| | |
-|---|---|
-| **Severity** | Medium |
-| **Plan** | Phase 1 |
-| **Current** | Vue App: Montserrat, Editor: Trebuchet MS |
-| **Target** | Work Sans everywhere (see [01-tokens.md](./01-tokens.md#typography-fixed)) |
+|              |                                                                        |
+| ------------ | ---------------------------------------------------------------------- |
+| **Severity** | Medium                                                                 |
+| **Plan**     | Phase 1                                                                |
+| **Current**  | Vue App: Montserrat, Editor: Trebuchet MS                              |
+| **Target**   | Inter everywhere (see [01-tokens.md](./01-tokens.md#typography-fixed)) |
 
 ---
 
 ### DEBT-002: Multiple Icon Systems
 
-| | |
-|---|---|
-| **Severity** | Low |
-| **Current** | Vue App: MDI, Editor: Font Awesome 4.7 |
-| **Target** | MDI everywhere |
-| **Direction** | Progressive migration - Migrate to MDI on each feature change |
+|               |                                                                  |
+| ------------- | ---------------------------------------------------------------- |
+| **Severity**  | Low                                                              |
+| **Current**   | Vue App: MDI, Editor: Font Awesome 4.7                           |
+| **Target**    | Lucide everywhere (see [01-tokens.md](./01-tokens.md#icons))     |
+| **Direction** | Progressive migration - Migrate to Lucide on each feature change |
 
 ---
 
 ### DEBT-003: Mixed CSS Conventions
 
-| | |
-|---|---|
-| **Severity** | Medium |
-| **Plan** | Phase 2 |
-| **Issues** | Inline styles, `!important`, hardcoded colors |
-| **Direction** | Use CSS variables, Vuetify classes |
+|               |                                               |
+| ------------- | --------------------------------------------- |
+| **Severity**  | Medium                                        |
+| **Plan**      | Phase 2                                       |
+| **Issues**    | Inline styles, `!important`, hardcoded colors |
+| **Direction** | Use CSS variables, Vuetify classes            |
 
 ---
 
 ### DEBT-004: Hardcoded Colors
 
-| | |
-|---|---|
-| **Severity** | Low |
-| **Plan** | Phase 2 |
+|               |                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| **Severity**  | Low                                                                                       |
+| **Plan**      | Phase 2                                                                                   |
 | **Direction** | Replace with CSS variables (see [01-tokens.md](./01-tokens.md#brand-colors-customizable)) |
 
 ---
 
 ### DEBT-005: Non-Centralized Modals
 
-| | |
-|---|---|
-| **Severity** | Low |
-| **Plan** | Phase 10 |
-| **Issues** | Different patterns across modals |
+|               |                                        |
+| ------------- | -------------------------------------- |
+| **Severity**  | Low                                    |
+| **Plan**      | Phase 10                               |
+| **Issues**    | Different patterns across modals       |
 | **Direction** | Extract common logic into a composable |
 
 ---
 
 ### DEBT-006: jQuery UI in Editor
 
-| | |
-|---|---|
-| **Severity** | Low (Accepted) |
-| **Current** | Editor uses jQuery UI widgets |
+|               |                                  |
+| ------------- | -------------------------------- |
+| **Severity**  | Low (Accepted)                   |
+| **Current**   | Editor uses jQuery UI widgets    |
 | **Direction** | Accepted debt - editor is stable |
 
 ---
 
 ### DEBT-007: Multiple Color Pickers
 
-| | |
-|---|---|
-| **Severity** | Medium |
-| **Plan** | Phase 11 |
-| **Current** | @easylogic/colorpicker (new) + evol-colorpicker (legacy) |
-| **Direction** | Deprecate evol-colorpicker, unify on @easylogic |
+|               |                                                          |
+| ------------- | -------------------------------------------------------- |
+| **Severity**  | Medium                                                   |
+| **Plan**      | Phase 11                                                 |
+| **Current**   | @easylogic/colorpicker (new) + evol-colorpicker (legacy) |
+| **Direction** | Deprecate evol-colorpicker, unify on @easylogic          |
 
 ---
 
 ### DEBT-008: Legacy jQuery UI Components
 
-| | |
-|---|---|
-| **Severity** | Low |
-| **Plan** | Phase 11 |
-| **Components** | jqueryui-tabs, jqueryui-spinner, tooltips |
-| **Direction** | Progressively replace with CSS-only alternatives |
+|                |                                                  |
+| -------------- | ------------------------------------------------ |
+| **Severity**   | Low                                              |
+| **Plan**       | Phase 11                                         |
+| **Components** | jqueryui-tabs, jqueryui-spinner, tooltips        |
+| **Direction**  | Progressively replace with CSS-only alternatives |
 
 ---
 
 ### DEBT-009: Complex Image Editor
 
-| | |
-|---|---|
-| **Severity** | Low (Accepted) |
-| **Plan** | Phase 11 |
-| **Stack** | Konva.js + jQuery + Knockout |
+|               |                                       |
+| ------------- | ------------------------------------- |
+| **Severity**  | Low (Accepted)                        |
+| **Plan**      | Phase 11                              |
+| **Stack**     | Konva.js + jQuery + Knockout          |
 | **Direction** | Accepted debt - functional and stable |
 
 ---
@@ -131,14 +132,14 @@ _No debts have been fully resolved yet._
 ```markdown
 ### DEBT-XXX: [Title]
 
-| | |
-|---|---|
-| **Severity** | Critical/High/Medium/Low |
-| **Plan** | Phase X |
-| **Current** | Description |
-| **Direction** | Solution |
+|               |                          |
+| ------------- | ------------------------ |
+| **Severity**  | Critical/High/Medium/Low |
+| **Plan**      | Phase X                  |
+| **Current**   | Description              |
+| **Direction** | Solution                 |
 ```
 
 ---
 
-*Last updated: February 2026*
+_Last updated: February 2026_
