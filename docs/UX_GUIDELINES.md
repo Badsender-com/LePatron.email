@@ -3,6 +3,7 @@
 This document defines **UX patterns and behavioral guidelines** for LePatron.email development.
 
 > **Related Documentation**
+>
 > - [Design System Documentation](./design-system/00-overview.md) - Tokens, components, visual specifications
 > - [Design System Tokens](./design-system/01-tokens.md) - Colors, typography, spacing
 > - [Design System Components](./design-system/02-atoms.md) - Vuetify component usage
@@ -284,7 +285,13 @@ export default {
     <template #item.actions="{ item }">
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
-          <v-btn icon small v-bind="attrs" v-on="on" @click.stop="editItem(item)">
+          <v-btn
+            icon
+            small
+            v-bind="attrs"
+            v-on="on"
+            @click.stop="editItem(item)"
+          >
             <lucide-pencil :size="18" />
           </v-btn>
         </template>
@@ -312,16 +319,16 @@ import {
 
 ### Table Design Guidelines
 
-| Feature | Guideline |
-|---------|-----------|
-| **Row click** | Use `clickable` prop for navigation to detail page |
-| **Actions column** | Use icon buttons with tooltips, right-aligned |
-| **Name column** | Use `font-weight-medium` for emphasis |
-| **Empty state** | Include relevant icon and descriptive message |
-| **Status indicators** | Use `v-chip` with appropriate colors |
-| **Boolean values** | Use Lucide check icon (`lucide-check`) |
-| **Dates** | Use `preciseDateTime` filter |
-| **Counts** | Use `v-chip small outlined` with icon |
+| Feature               | Guideline                                          |
+| --------------------- | -------------------------------------------------- |
+| **Row click**         | Use `clickable` prop for navigation to detail page |
+| **Actions column**    | Use icon buttons with tooltips, right-aligned      |
+| **Name column**       | Use `font-weight-medium` for emphasis              |
+| **Empty state**       | Include relevant icon and descriptive message      |
+| **Status indicators** | Use `v-chip` with appropriate colors               |
+| **Boolean values**    | Use Lucide check icon (`lucide-check`)             |
+| **Dates**             | Use `preciseDateTime` filter                       |
+| **Counts**            | Use `v-chip small outlined` with icon              |
 
 ### Table Text Styling Rules
 
@@ -343,21 +350,23 @@ import {
 
 **Text styling by column type:**
 
-| Column Type | Style | Example |
-|-------------|-------|---------|
-| **Primary identifier** (name) | `font-weight-medium` | `<span class="font-weight-medium">{{ item.name }}</span>` |
-| **Secondary info** (email, dates) | `text--secondary` | `<span class="text--secondary">{{ item.email }}</span>` |
-| **Language codes** | `text-uppercase text--secondary` | `<span class="text-uppercase text--secondary">{{ item.lang }}</span>` |
-| **Roles/badges** | `v-chip x-small` | `<v-chip x-small color="accent" dark>Admin</v-chip>` |
-| **Status** | `v-chip small` with colors | See Status Chip Pattern below |
+| Column Type                       | Style                            | Example                                                               |
+| --------------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| **Primary identifier** (name)     | `font-weight-medium`             | `<span class="font-weight-medium">{{ item.name }}</span>`             |
+| **Secondary info** (email, dates) | `text--secondary`                | `<span class="text--secondary">{{ item.email }}</span>`               |
+| **Language codes**                | `text-uppercase text--secondary` | `<span class="text-uppercase text--secondary">{{ item.lang }}</span>` |
+| **Roles/badges**                  | `v-chip x-small`                 | `<v-chip x-small color="accent" dark>Admin</v-chip>`                  |
+| **Status**                        | `v-chip small` with colors       | See Status Chip Pattern below                                         |
 
 **Column ordering best practices:**
+
 - Primary identifier (name) should be the first column
 - Secondary identifiers (email, username) follow
 - Badges/roles appear after identifiers
 - Status, dates, and actions come last
 
 **Actions in tables:**
+
 - Use direct icon buttons with tooltips instead of dropdown menus
 - Group related actions (activation, mail, edit) in a flex container
 - Use `@click.stop` to prevent row click when clicking action buttons
@@ -392,6 +401,7 @@ import {
 | **Disabled state** | Handled by `:disabled` prop | All actions when loading |
 
 **Rationale:**
+
 - Neutral icons keep the interface clean and consistent
 - Color should convey meaning, not decoration
 - Only destructive actions (delete) use `error--text` to warn users
@@ -501,24 +511,24 @@ export default {
 
 ### BsModalForm Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `title` | String | required | Modal header title |
-| `width` | String/Number | 500 | Modal width in pixels |
-| `submit-label` | String | "Save" | Submit button text |
-| `cancel-label` | String | "Cancel" | Cancel button text |
-| `submit-color` | String | "accent" | Submit button color |
-| `loading` | Boolean | false | Shows loader on submit button |
-| `submit-disabled` | Boolean | false | Disables submit button |
-| `show-submit` | Boolean | true | Whether to show submit button |
-| `persistent` | Boolean | false | Prevents closing on outside click |
+| Prop              | Type          | Default  | Description                       |
+| ----------------- | ------------- | -------- | --------------------------------- |
+| `title`           | String        | required | Modal header title                |
+| `width`           | String/Number | 500      | Modal width in pixels             |
+| `submit-label`    | String        | "Save"   | Submit button text                |
+| `cancel-label`    | String        | "Cancel" | Cancel button text                |
+| `submit-color`    | String        | "accent" | Submit button color               |
+| `loading`         | Boolean       | false    | Shows loader on submit button     |
+| `submit-disabled` | Boolean       | false    | Disables submit button            |
+| `show-submit`     | Boolean       | true     | Whether to show submit button     |
+| `persistent`      | Boolean       | false    | Prevents closing on outside click |
 
 ### Modal Components Summary
 
-| Component | Use Case |
-|-----------|----------|
-| `BsModalForm` | Forms in modals (create, edit) |
-| `BsModalConfirm` | Simple confirmation dialogs |
+| Component            | Use Case                           |
+| -------------------- | ---------------------------------- |
+| `BsModalForm`        | Forms in modals (create, edit)     |
+| `BsModalConfirm`     | Simple confirmation dialogs        |
 | `BsModalConfirmForm` | Confirmation with input validation |
 
 ## Form and Input Patterns
@@ -589,14 +599,14 @@ Review finding: "Notification should be cleared and stored some where else to se
 
 LePatron.email uses custom Vuetify theme colors:
 
-| Color | Value | Usage |
-|-------|-------|-------|
-| `primary` | `#093040` | Headers, navigation, text emphasis |
-| `secondary` | `#265090` | Secondary actions |
-| `accent` | `#00ACDC` | **Primary actions**, links, highlights |
-| `error` | `#F04E23` | Destructive actions, errors, unread counts |
-| `warning` | `#FFB400` | Warnings, caution states |
-| `success` | `#4CAF50` | Confirmations, resolved states |
+| Color       | Value     | Usage                                      |
+| ----------- | --------- | ------------------------------------------ |
+| `primary`   | `#093040` | Headers, navigation, text emphasis         |
+| `secondary` | `#265090` | Secondary actions                          |
+| `accent`    | `#00ACDC` | **Primary actions**, links, highlights     |
+| `error`     | `#F04E23` | Destructive actions, errors, unread counts |
+| `warning`   | `#FFB400` | Warnings, caution states                   |
+| `success`   | `#4CAF50` | Confirmations, resolved states             |
 
 ### Color Usage Guidelines
 
@@ -744,6 +754,7 @@ When the UX review agent analyzes code:
 ## Related Documentation
 
 ### Internal Documentation
+
 - [Design System Overview](./design-system/00-overview.md) - Architecture and principles
 - [Design System Tokens](./design-system/01-tokens.md) - Colors, typography, spacing
 - [Design System Components](./design-system/02-atoms.md) - Vuetify component specifications
@@ -752,5 +763,6 @@ When the UX review agent analyzes code:
 - [AI_POLICIES.md](./AI_POLICIES.md) - Quality standards
 
 ### External References
+
 - [Vuetify 2 Documentation](https://v2.vuetifyjs.com/)
 - [Material Design Icons](https://materialdesignicons.com/)

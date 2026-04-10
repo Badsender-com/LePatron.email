@@ -227,7 +227,10 @@ class AdobeProvider {
         const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
         const rightsCollection =
           body.ExecuteQueryResponse.pdomOutput['rights-collection'];
-        return rightsCollection.rights.map((right) => ({
+        const rights = rightsCollection?.rights;
+        if (!rights) return [];
+        const rightsArray = Array.isArray(rights) ? rights : [rights];
+        return rightsArray.map((right) => ({
           fullName: right.folder.fullName,
           name: right.folder.name,
         }));
@@ -475,7 +478,19 @@ class AdobeProvider {
         },
       });
     } catch (err) {
-      console.error('Error while uploading delivery image:', err);
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        this.accessToken = await this.refreshToken();
+        const retryForm = new FormData();
+        retryForm.append('file_noMd5', image, optionImg);
+        await axios.post(this.adobeUploadFileUrl, retryForm, {
+          headers: {
+            ...retryForm.getHeaders(),
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        });
+      } else {
+        console.error('Error while uploading delivery image:', err);
+      }
     }
   }
 
@@ -535,8 +550,7 @@ class AdobeProvider {
         </m:GetURL>
       `,
       formatResponseFn: (response) =>
-        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl
-          .$t,
+        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl,
     });
   }
 

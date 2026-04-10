@@ -1,5 +1,14 @@
 'use strict';
 
+// Suppress false-positive "PostCSS does nothing" warning from postcss 7
+// embedded in @vue/component-compiler-utils (used by vue-loader for <style> parsing)
+const _warn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('PostCSS does nothing'))
+    return;
+  _warn.apply(console, args);
+};
+
 const path = require('path');
 // Don't use ESM
 // • this will be also required in express app
@@ -24,6 +33,7 @@ module.exports = {
   build: {
     // Transpile lucide-vue (uses modern JS syntax like optional chaining)
     transpile: ['lucide-vue'],
+    quiet: true,
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
@@ -31,6 +41,8 @@ module.exports = {
         type: 'javascript/auto',
         loader: '@kazupon/vue-i18n-loader',
       });
+      config.performance = config.performance || {};
+      config.performance.hints = false;
     },
   },
   router: {

@@ -53,4 +53,8 @@ export const ACTIONS_DETAILS = {
     text: 'mailings.duplicateTranslate',
     icon: 'languages',
   },
+  [ACTIONS.DUPLICATE_TRANSLATE]: {
+    text: 'mailings.duplicateTranslate',
+    icon: 'mdi-translate',
+  },
 };
