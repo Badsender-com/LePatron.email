@@ -82,7 +82,7 @@ async function duplicateAndTranslate(req, res) {
   });
 
   // Create a job for progress tracking (include userId for authorization)
-  const job = translationJobs.createJob({
+  const job = await translationJobs.createJob({
     totalKeys: batchInfo.totalKeys,
     totalBatches: batchInfo.totalBatches,
     userId: user.id || user._id.toString(),
@@ -91,7 +91,7 @@ async function duplicateAndTranslate(req, res) {
   // Return jobId immediately
   res.status(202).json({ jobId: job.jobId });
 
-  // Process translation asynchronously
+  // Process translation asynchronously (fire-and-forget after the 202 response)
   processTranslationAsync({
     jobId: job.jobId,
     originalMailing,
@@ -104,6 +104,10 @@ async function duplicateAndTranslate(req, res) {
     templateMarkup,
     workspaceId,
     folderId,
+  }).catch((error) => {
+    logger.error(
+      `[Translation] Unhandled error in background job ${job.jobId}: ${error.message}`
+    );
   });
 }
 
@@ -125,16 +129,20 @@ async function processTranslationAsync({
 }) {
   try {
     // Progress callback to update job status and check for cancellation
-    const onBatchProgress = (batchNumber, keysInBatch) => {
+    const onBatchProgress = async (batchNumber, keysInBatch) => {
       // Check if job was cancelled before processing next batch
-      if (translationJobs.isCancelled(jobId)) {
+      if (await translationJobs.isCancelled(jobId)) {
         throw new Error('TRANSLATION_CANCELLED');
       }
-      translationJobs.updateBatchProgress(jobId, batchNumber, keysInBatch);
+      await translationJobs.updateBatchProgress(
+        jobId,
+        batchNumber,
+        keysInBatch
+      );
     };
 
     // Check cancellation before starting
-    if (translationJobs.isCancelled(jobId)) {
+    if (await translationJobs.isCancelled(jobId)) {
       logger.log(`[Translation] Job ${jobId} cancelled before starting`);
       return;
     }
@@ -199,7 +207,7 @@ async function processTranslationAsync({
 
     // Mark job as completed
     // Warning keys are translated by the frontend
-    translationJobs.setCompleted(jobId, {
+    await translationJobs.setCompleted(jobId, {
       mailingId: duplicatedMailing._id.toString(),
       mailingName: duplicatedMailing.name,
       previewGenerated,
@@ -220,15 +228,15 @@ async function processTranslationAsync({
     }
 
     logger.error(`[Translation] Job ${jobId} failed: ${error.message}`);
-    translationJobs.setFailed(jobId, error.message);
+    await translationJobs.setFailed(jobId, error.message);
   }
 }
 
 /**
  * Get a job by ID or throw 404/403
  */
-function getJobOrThrow(jobId, user) {
-  const job = translationJobs.getJob(jobId);
+async function getJobOrThrow(jobId, user) {
+  const job = await translationJobs.getJob(jobId);
   if (!job) {
     throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
   }
@@ -248,7 +256,7 @@ function getJobOrThrow(jobId, user) {
  * @apiParam {String} jobId Job ID
  */
 async function getJobStatus(req, res) {
-  const job = getJobOrThrow(req.params.jobId, req.user);
+  const job = await getJobOrThrow(req.params.jobId, req.user);
   res.json(job);
 }
 
@@ -261,8 +269,8 @@ async function getJobStatus(req, res) {
  * @apiParam {String} jobId Job ID
  */
 async function cancelJob(req, res) {
-  getJobOrThrow(req.params.jobId, req.user);
-  const cancelled = translationJobs.cancelJob(req.params.jobId);
+  await getJobOrThrow(req.params.jobId, req.user);
+  const cancelled = await translationJobs.cancelJob(req.params.jobId);
 
   if (!cancelled) {
     throw createError(400, ERROR_CODES.TRANSLATION_JOB_CANCEL_FAILED);
