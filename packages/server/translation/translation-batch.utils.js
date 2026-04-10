@@ -54,10 +54,12 @@ function splitIntoBatches(texts, batchLimits) {
 }
 
 /**
- * Translate texts in batches to avoid API timeouts
+ * Translate already-split batches sequentially.
+ * Splitting is done by the caller so that batch counts can be reported
+ * before any provider call (avoids the previous duplicate split + extract).
  * @param {Object} params
  * @param {Object} params.provider - AI provider instance
- * @param {Object} params.texts - Texts to translate
+ * @param {Array<Object>} params.batches - Pre-split batches
  * @param {string} params.sourceLanguage - Source language
  * @param {string} params.targetLanguage - Target language
  * @param {string} [params.context] - Additional context for translation (used by DeepL)
@@ -66,21 +68,19 @@ function splitIntoBatches(texts, batchLimits) {
  */
 async function translateInBatches({
   provider,
-  texts,
+  batches,
   sourceLanguage,
   targetLanguage,
   context,
   onBatchProgress,
 }) {
-  const batchLimits = provider.getBatchLimits
-    ? provider.getBatchLimits()
-    : DEFAULT_BATCH_LIMITS;
-  const batches = splitIntoBatches(texts, batchLimits);
+  const totalKeys = batches.reduce(
+    (sum, batch) => sum + Object.keys(batch).length,
+    0
+  );
 
   logger.log(
-    `[Translation] Translating ${Object.keys(texts).length} keys in ${
-      batches.length
-    } batch(es)`
+    `[Translation] Translating ${totalKeys} keys in ${batches.length} batch(es)`
   );
 
   // Translate batches sequentially to avoid rate limiting

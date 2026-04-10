@@ -5,9 +5,9 @@ const { Schema } = require('mongoose');
 const ProgressSchema = new Schema(
   {
     currentBatch: { type: Number, default: 0 },
-    totalBatches: { type: Number, required: true },
+    totalBatches: { type: Number, default: 0 },
     keysTranslated: { type: Number, default: 0 },
-    totalKeys: { type: Number, required: true },
+    totalKeys: { type: Number, default: 0 },
   },
   { _id: false }
 );
