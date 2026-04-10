@@ -47,44 +47,10 @@ async function duplicateAndTranslate(req, res) {
     throw createError(400, ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_REQUIRED);
   }
 
-  // Get original mailing
-  const originalMailing = await mailingService.findOne(mailingId);
-
-  // Get user's group
-  const groupId =
-    (user.group && user.group.id) ||
-    (originalMailing._company && originalMailing._company.toString());
-
-  // Get template markup for translation protection config
-  let templateMarkup = null;
-  if (originalMailing._wireframe) {
-    const template = await Templates.findById(originalMailing._wireframe, {
-      markup: 1,
-    });
-    templateMarkup = template?.markup || null;
-  }
-
-  // Detect source language if not provided
-  const detectedSourceLanguage =
-    sourceLanguage === 'auto'
-      ? translationService.detectSourceLanguage(originalMailing)
-      : sourceLanguage;
-
-  // Get batch info for progress tracking
-  const batchInfo = await translationService.getBatchInfo({
-    groupId,
-    mailing: {
-      name: originalMailing.name,
-      data: originalMailing.data,
-      previewHtml: originalMailing.previewHtml,
-    },
-    templateMarkup,
-  });
-
-  // Create a job for progress tracking (include userId for authorization)
+  // Create the job up-front so the client can start polling immediately.
+  // Heavy work (DB lookups, text extraction, batching) is moved to the
+  // background task below to keep this handler from blocking the event loop.
   const job = await translationJobs.createJob({
-    totalKeys: batchInfo.totalKeys,
-    totalBatches: batchInfo.totalBatches,
     userId: user.id || user._id.toString(),
   });
 
@@ -94,14 +60,11 @@ async function duplicateAndTranslate(req, res) {
   // Process translation asynchronously (fire-and-forget after the 202 response)
   processTranslationAsync({
     jobId: job.jobId,
-    originalMailing,
     mailingId,
     user,
-    groupId,
-    sourceLanguage: detectedSourceLanguage,
+    sourceLanguage,
     targetLanguage,
     newName,
-    templateMarkup,
     workspaceId,
     folderId,
   }).catch((error) => {
@@ -116,14 +79,11 @@ async function duplicateAndTranslate(req, res) {
  */
 async function processTranslationAsync({
   jobId,
-  originalMailing,
   mailingId,
   user,
-  groupId,
   sourceLanguage,
   targetLanguage,
   newName,
-  templateMarkup,
   workspaceId,
   folderId,
 }) {
@@ -147,6 +107,28 @@ async function processTranslationAsync({
       return;
     }
 
+    // Heavy work that used to run synchronously inside the HTTP handler is
+    // now done here so the 202 response can be sent without blocking the
+    // event loop.
+    const originalMailing = await mailingService.findOne(mailingId);
+
+    const groupId =
+      (user.group && user.group.id) ||
+      (originalMailing._company && originalMailing._company.toString());
+
+    let templateMarkup = null;
+    if (originalMailing._wireframe) {
+      const template = await Templates.findById(originalMailing._wireframe, {
+        markup: 1,
+      });
+      templateMarkup = template?.markup || null;
+    }
+
+    const detectedSourceLanguage =
+      sourceLanguage === 'auto'
+        ? translationService.detectSourceLanguage(originalMailing)
+        : sourceLanguage;
+
     // Translate the mailing
     const {
       mailing: translatedData,
@@ -160,9 +142,11 @@ async function processTranslationAsync({
         data: originalMailing.data,
         previewHtml: originalMailing.previewHtml,
       },
-      sourceLanguage,
+      sourceLanguage: detectedSourceLanguage,
       targetLanguage,
       templateMarkup,
+      onTotalsKnown: ({ totalKeys, totalBatches }) =>
+        translationJobs.setTotals(jobId, { totalKeys, totalBatches }),
       onBatchProgress,
     });
 
@@ -212,7 +196,7 @@ async function processTranslationAsync({
       mailingName: duplicatedMailing.name,
       previewGenerated,
       stats,
-      sourceLanguage,
+      sourceLanguage: detectedSourceLanguage,
       targetLanguage,
       warningKeys: [
         'translation.warnings.checkLinks',
