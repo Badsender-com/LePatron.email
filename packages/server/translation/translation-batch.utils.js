@@ -105,7 +105,7 @@ async function translateInBatches({
 
     // Call progress callback if provided
     if (onBatchProgress) {
-      onBatchProgress(i + 1, batchSize);
+      await onBatchProgress(i + 1, batchSize);
     }
   }
 
