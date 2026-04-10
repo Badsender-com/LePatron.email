@@ -23,24 +23,39 @@ const JobStatus = {
 /**
  * Create a new translation job
  * @param {Object} params - Job parameters
- * @param {number} params.totalKeys - Total number of keys to translate
- * @param {number} params.totalBatches - Total number of batches
  * @param {string} params.userId - Owner user ID for authorization
  * @returns {Promise<Object>} The created job
  */
-async function createJob({ totalKeys, totalBatches, userId }) {
+async function createJob({ userId }) {
   const doc = await TranslationJobs.create({
     jobId: uuidv4(),
     userId,
     status: JobStatus.PENDING,
     progress: {
       currentBatch: 0,
-      totalBatches,
+      totalBatches: 0,
       keysTranslated: 0,
-      totalKeys,
+      totalKeys: 0,
     },
   });
   return doc.toObject();
+}
+
+/**
+ * Set the totals on a job once they are known (after extraction + batching)
+ * @param {string} jobId - Job ID
+ * @param {{ totalKeys: number, totalBatches: number }} totals
+ */
+async function setTotals(jobId, { totalKeys, totalBatches }) {
+  await TranslationJobs.updateOne(
+    { jobId },
+    {
+      $set: {
+        'progress.totalKeys': totalKeys,
+        'progress.totalBatches': totalBatches,
+      },
+    }
+  );
 }
 
 /**
@@ -138,6 +153,7 @@ async function isCancelled(jobId) {
 module.exports = {
   JobStatus,
   createJob,
+  setTotals,
   getJob,
   updateBatchProgress,
   setCompleted,
