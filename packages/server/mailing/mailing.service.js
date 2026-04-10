@@ -58,6 +58,7 @@ module.exports = {
   deleteMailing,
   deleteOne,
   copyMailing,
+  duplicateWithTranslatedData,
   moveMailing,
   moveManyMailings,
   findAllIn,
@@ -1013,6 +1014,104 @@ async function copyMailing(mailingId, destination, user) {
       `MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`
     );
   }
+}
+
+/**
+ * Duplicate a mailing with translated/modified data
+ * Used for the "Duplicate + Translate" feature
+ * @param {Object} params
+ * @param {string} params.mailingId - Original mailing ID
+ * @param {Object} params.user - User performing the action
+ * @param {string} params.newName - Name for the new mailing
+ * @param {Object} params.translatedData - Translated Mosaico data to use
+ * @returns {Object} The newly created mailing
+ */
+async function duplicateWithTranslatedData({
+  mailingId,
+  user,
+  newName,
+  translatedData,
+  workspaceId,
+  folderId,
+}) {
+  const mailing = await findOne(mailingId);
+
+  // Check access to original mailing
+  if (mailing?._parentFolder) {
+    await folderService.hasAccess(mailing._parentFolder, user);
+  }
+
+  if (mailing?.workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing.workspace
+    );
+    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
+  }
+
+  // Create copy object
+  const copy = omit(mailing, [
+    '_id',
+    'createdAt',
+    'updatedAt',
+    '_user',
+    'author',
+    'espIds',
+  ]);
+
+  // Set new name
+  copy.name = newName || `${mailing.name} - Translated`;
+
+  // Replace data with translated data
+  if (translatedData) {
+    copy.data = translatedData;
+  }
+
+  // Set user info
+  if (user.id) {
+    copy._user = user._id;
+    copy.author = user.name;
+  }
+
+  // Handle destination: use provided or keep original location
+  if (folderId) {
+    // Validate access to destination folder
+    await folderService.hasAccess(folderId, user);
+    copy._parentFolder = folderId;
+    delete copy.workspace;
+  } else if (workspaceId) {
+    // Validate access to destination workspace
+    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    copy.workspace = workspaceId;
+    delete copy._parentFolder;
+  }
+  // else: keep original location (existing behavior)
+
+  // Create the new mailing
+  const copiedMailing = await Mailings.create(copy);
+
+  // Copy images
+  await fileManager.copyImages(
+    mailing._id?.toString(),
+    copiedMailing._id?.toString()
+  );
+  await copiedMailing.save();
+
+  // Duplicate gallery if exists
+  try {
+    const gallery = await Galleries.findOne({
+      creationOrWireframeId: mailing._id,
+    });
+    if (gallery) {
+      gallery.duplicate(copiedMailing._id).save();
+    }
+  } catch (error) {
+    logger.warn(
+      `MAILING DUPLICATE TRANSLATE – can't duplicate gallery for ${copiedMailing._id}`
+    );
+  }
+
+  return copiedMailing;
 }
 
 async function renameMailing(

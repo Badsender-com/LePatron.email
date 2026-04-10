@@ -24,6 +24,9 @@ const WorkspaceSchema = require('../workspace/workspace.schema');
 const PersonalizedBlockSchema = require('../personalized-blocks/personalized-block-schema.js');
 const TagSchema = require('../tag/tag.schema.js');
 const { CommentSchema } = require('../comment/comment.schema.js');
+const IntegrationSchema = require('../integration/integration.schema.js');
+const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
+const TranslationJobSchema = require('../translation/translation-job.schema.js');
 
 /// ///
 // EXPORTS
@@ -63,6 +66,18 @@ const OAuthCodes = mongoose.model(modelNames.OAuthCodes, OAuthCodesSchema);
 
 const Tags = mongoose.model(modelNames.TagModel, TagSchema);
 const Comments = mongoose.model(modelNames.CommentModel, CommentSchema);
+const Integrations = mongoose.model(
+  modelNames.IntegrationModel,
+  IntegrationSchema
+);
+const AIFeatureConfigs = mongoose.model(
+  modelNames.AIFeatureConfigModel,
+  AIFeatureConfigSchema
+);
+const TranslationJobs = mongoose.model(
+  modelNames.TranslationJobModel,
+  TranslationJobSchema
+);
 
 module.exports = {
   mongoose,
@@ -85,4 +100,7 @@ module.exports = {
   OAuthCodes,
   Tags,
   Comments,
+  Integrations,
+  AIFeatureConfigs,
+  TranslationJobs,
 };

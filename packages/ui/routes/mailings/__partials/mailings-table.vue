@@ -7,10 +7,17 @@ import { FOLDER, SET_PAGINATION } from '~/store/folder.js';
 import MailingsCopyModal from '~/routes/mailings/__partials/mailings-copy-modal';
 import MailingsMoveModal from '~/routes/mailings/__partials/mailings-move-modal';
 import MailingsPreviewModal from '~/routes/mailings/__partials/mailings-preview-modal';
+import BsMailingModalDuplicateTranslate from '~/components/mailings/modal-duplicate-translate.vue';
+import BsMailingModalTranslationWarning from '~/components/mailings/modal-translation-warning.vue';
 
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 
-import { mailingsItem, copyMail, moveMail } from '~/helpers/api-routes.js';
+import {
+  mailingsItem,
+  copyMail,
+  moveMail,
+  aiFeatures,
+} from '~/helpers/api-routes.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsMailingsActionsDropdown from './mailings-actions-dropdown';
@@ -36,6 +43,7 @@ const TABLE_ACTIONS = [
   ACTIONS.DELETE,
   ACTIONS.COPY_MAIL,
   ACTIONS.MOVE_MAIL,
+  ACTIONS.DUPLICATE_TRANSLATE,
   ACTIONS.PREVIEW,
   ACTIONS.DOWNLOAD,
   ACTIONS.DOWNLOAD_FTP,
@@ -53,6 +61,8 @@ export default {
     MailingsTagsMenu,
     MailingsMoveModal,
     MailingsPreviewModal,
+    BsMailingModalDuplicateTranslate,
+    BsMailingModalTranslationWarning,
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -71,6 +81,7 @@ export default {
       actionsDetails: ACTIONS_DETAILS,
       currentPage: 1,
       search: '',
+      hasActiveTranslation: false,
     };
   },
   computed: {
@@ -129,9 +140,16 @@ export default {
       return this.pagination?.pageCount || 1;
     },
     filteredActions() {
-      return this.tableActions.filter(
-        (action) => !this.hiddenCols.includes(action)
-      );
+      const hidden = this.hiddenCols;
+      return this.tableActions.filter((action) => {
+        if (
+          action === ACTIONS.DUPLICATE_TRANSLATE &&
+          !this.hasActiveTranslation
+        ) {
+          return false;
+        }
+        return !hidden.includes(action);
+      });
     },
     selectedMailTags() {
       return this.selectedMailing?.tags || [];
@@ -141,6 +159,23 @@ export default {
     dialogRename(val) {
       val || this.closeRename();
     },
+  },
+  async mounted() {
+    const groupId = this.$store.state.user?.info?.group?.id;
+    if (!groupId) return;
+    try {
+      const config = await this.$axios.$get(aiFeatures(groupId));
+
+      const features = config?.features || [];
+
+      const translation = features.find((f) => f.featureType === 'translation');
+
+      this.hasActiveTranslation = !!(
+        translation?.isActive && translation?.integration?.isActive
+      );
+    } catch {
+      this.hasActiveTranslation = false;
+    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -372,6 +407,17 @@ export default {
         isWithFtp,
       });
     },
+    openDuplicateTranslateModal(mailing) {
+      this.$refs.duplicateTranslateDialog.open(mailing);
+    },
+    handleTranslated() {
+      this.$emit('on-refetch');
+    },
+    showTranslationWarning() {
+      if (this.$refs.translationWarningDialog) {
+        this.$refs.translationWarningDialog.open();
+      }
+    },
   },
 };
 </script>
@@ -519,6 +565,13 @@ export default {
                 {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
               </bs-mailings-actions-dropdown-item>
               <bs-mailings-actions-dropdown-item
+                v-if="filteredActions.includes(actions.DUPLICATE_TRANSLATE)"
+                :icon="actionsDetails[actions.DUPLICATE_TRANSLATE].icon"
+                :on-click="() => openDuplicateTranslateModal(item)"
+              >
+                {{ $t(actionsDetails[actions.DUPLICATE_TRANSLATE].text) }}
+              </bs-mailings-actions-dropdown-item>
+              <bs-mailings-actions-dropdown-item
                 v-if="filteredActions.includes(actions.DOWNLOAD)"
                 :icon="actionsDetails[actions.DOWNLOAD].icon"
                 :on-click="
@@ -581,7 +634,13 @@ export default {
         />
       </mailings-move-modal>
       <mailings-preview-modal ref="previewMailDialog" />
+      <bs-mailing-modal-duplicate-translate
+        ref="duplicateTranslateDialog"
+        @translated="handleTranslated"
+        @show-warning="showTranslationWarning"
+      />
     </v-skeleton-loader>
+    <bs-mailing-modal-translation-warning ref="translationWarningDialog" />
   </div>
 </template>
 

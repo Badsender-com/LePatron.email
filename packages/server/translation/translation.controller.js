@@ -1,0 +1,312 @@
+'use strict';
+
+const asyncHandler = require('express-async-handler');
+const createError = require('http-errors');
+const translationService = require('./translation.service');
+const mailingService = require('../mailing/mailing.service');
+const { updatePreviewWithTranslations } = require('./preview-html-updater');
+const translationJobs = require('./translation-jobs');
+const logger = require('../utils/logger.js');
+const { Mailings, Templates } = require('../common/models.common');
+const ERROR_CODES = require('../constant/error-codes.js');
+
+module.exports = {
+  duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
+  getJobStatus: asyncHandler(getJobStatus),
+  cancelJob: asyncHandler(cancelJob),
+  translateText: asyncHandler(translateText),
+  getLanguages: asyncHandler(getLanguages),
+};
+
+/**
+ * @api {post} /mailings/:mailingId/duplicate-translate Duplicate and translate a mailing
+ * @apiPermission user
+ * @apiName DuplicateAndTranslate
+ * @apiGroup Translation
+ *
+ * @apiParam {String} mailingId Mailing ID to duplicate and translate
+ * @apiParam (Body) {String} targetLanguage Target language code
+ * @apiParam (Body) {String} [sourceLanguage='auto'] Source language code
+ * @apiParam (Body) {String} [newName] Name for the translated copy
+ *
+ * @apiSuccess {String} jobId Job ID to poll for progress
+ */
+async function duplicateAndTranslate(req, res) {
+  const { user, params, body } = req;
+  const { mailingId } = params;
+  const {
+    targetLanguage,
+    sourceLanguage = 'auto',
+    newName,
+    workspaceId,
+    folderId,
+  } = body;
+
+  // Validate required parameters
+  if (!targetLanguage || typeof targetLanguage !== 'string') {
+    throw createError(400, ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_REQUIRED);
+  }
+
+  // Create the job up-front so the client can start polling immediately.
+  // Heavy work (DB lookups, text extraction, batching) is moved to the
+  // background task below to keep this handler from blocking the event loop.
+  const job = await translationJobs.createJob({
+    userId: user.id || user._id.toString(),
+  });
+
+  // Return jobId immediately
+  res.status(202).json({ jobId: job.jobId });
+
+  // Process translation asynchronously (fire-and-forget after the 202 response)
+  processTranslationAsync({
+    jobId: job.jobId,
+    mailingId,
+    user,
+    sourceLanguage,
+    targetLanguage,
+    newName,
+    workspaceId,
+    folderId,
+  }).catch((error) => {
+    logger.error(
+      `[Translation] Unhandled error in background job ${job.jobId}: ${error.message}`
+    );
+  });
+}
+
+/**
+ * Process translation asynchronously (runs in background after response)
+ */
+async function processTranslationAsync({
+  jobId,
+  mailingId,
+  user,
+  sourceLanguage,
+  targetLanguage,
+  newName,
+  workspaceId,
+  folderId,
+}) {
+  try {
+    // Progress callback to update job status and check for cancellation
+    const onBatchProgress = async (batchNumber, keysInBatch) => {
+      // Check if job was cancelled before processing next batch
+      if (await translationJobs.isCancelled(jobId)) {
+        throw new Error('TRANSLATION_CANCELLED');
+      }
+      await translationJobs.updateBatchProgress(
+        jobId,
+        batchNumber,
+        keysInBatch
+      );
+    };
+
+    // Check cancellation before starting
+    if (await translationJobs.isCancelled(jobId)) {
+      logger.log(`[Translation] Job ${jobId} cancelled before starting`);
+      return;
+    }
+
+    // Heavy work that used to run synchronously inside the HTTP handler is
+    // now done here so the 202 response can be sent without blocking the
+    // event loop.
+    const originalMailing = await mailingService.findOne(mailingId);
+
+    const groupId =
+      (user.group && user.group.id) ||
+      (originalMailing._company && originalMailing._company.toString());
+
+    let templateMarkup = null;
+    if (originalMailing._wireframe) {
+      const template = await Templates.findById(originalMailing._wireframe, {
+        markup: 1,
+      });
+      templateMarkup = template?.markup || null;
+    }
+
+    const detectedSourceLanguage =
+      sourceLanguage === 'auto'
+        ? translationService.detectSourceLanguage(originalMailing)
+        : sourceLanguage;
+
+    // Translate the mailing
+    const {
+      mailing: translatedData,
+      stats,
+      originalTexts,
+      translations,
+    } = await translationService.translateMailing({
+      groupId,
+      mailing: {
+        name: originalMailing.name,
+        data: originalMailing.data,
+        previewHtml: originalMailing.previewHtml,
+      },
+      sourceLanguage: detectedSourceLanguage,
+      targetLanguage,
+      templateMarkup,
+      onTotalsKnown: ({ totalKeys, totalBatches }) =>
+        translationJobs.setTotals(jobId, { totalKeys, totalBatches }),
+      onBatchProgress,
+    });
+
+    // Generate new name
+    const translatedName =
+      newName || `${translatedData.name} - ${targetLanguage.toUpperCase()}`;
+
+    // Duplicate the mailing with translated content
+    const duplicatedMailing = await mailingService.duplicateWithTranslatedData({
+      mailingId,
+      user,
+      newName: translatedName,
+      translatedData: translatedData.data,
+      workspaceId,
+      folderId,
+    });
+
+    let previewGenerated = false;
+    if (originalMailing.previewHtml) {
+      try {
+        logger.log(
+          '[Translation] Updating preview HTML via string replacement...'
+        );
+        const previewHtml = updatePreviewWithTranslations(
+          originalMailing.previewHtml,
+          originalTexts,
+          translations
+        );
+        await Mailings.findByIdAndUpdate(duplicatedMailing._id, {
+          previewHtml,
+        });
+        previewGenerated = true;
+        logger.log('[Translation] Preview HTML updated successfully');
+      } catch (error) {
+        logger.error(`[Translation] Preview update failed: ${error.message}`);
+      }
+    } else {
+      logger.log(
+        '[Translation] No previewHtml on original mailing, skipping preview update'
+      );
+    }
+
+    // Mark job as completed
+    // Warning keys are translated by the frontend
+    await translationJobs.setCompleted(jobId, {
+      mailingId: duplicatedMailing._id.toString(),
+      mailingName: duplicatedMailing.name,
+      previewGenerated,
+      stats,
+      sourceLanguage: detectedSourceLanguage,
+      targetLanguage,
+      warningKeys: [
+        'translation.warnings.checkLinks',
+        'translation.warnings.checkImages',
+        'translation.warnings.checkVariant',
+      ],
+    });
+  } catch (error) {
+    // Handle cancellation gracefully
+    if (error.message === 'TRANSLATION_CANCELLED') {
+      logger.log(`[Translation] Job ${jobId} was cancelled by user`);
+      return;
+    }
+
+    logger.error(`[Translation] Job ${jobId} failed: ${error.message}`);
+    await translationJobs.setFailed(jobId, error.message);
+  }
+}
+
+/**
+ * Get a job by ID or throw 404/403
+ */
+async function getJobOrThrow(jobId, user) {
+  const job = await translationJobs.getJob(jobId);
+  if (!job) {
+    throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
+  }
+  const userId = user.id || user._id.toString();
+  if (job.userId !== userId) {
+    throw createError(403, ERROR_CODES.TRANSLATION_JOB_ACCESS_DENIED);
+  }
+  return job;
+}
+
+/**
+ * @api {get} /translation/jobs/:jobId/status Get translation job status
+ * @apiPermission user
+ * @apiName GetJobStatus
+ * @apiGroup Translation
+ *
+ * @apiParam {String} jobId Job ID
+ */
+async function getJobStatus(req, res) {
+  const job = await getJobOrThrow(req.params.jobId, req.user);
+  res.json(job);
+}
+
+/**
+ * @api {post} /translation/jobs/:jobId/cancel Cancel a translation job
+ * @apiPermission user
+ * @apiName CancelJob
+ * @apiGroup Translation
+ *
+ * @apiParam {String} jobId Job ID
+ */
+async function cancelJob(req, res) {
+  await getJobOrThrow(req.params.jobId, req.user);
+  const cancelled = await translationJobs.cancelJob(req.params.jobId);
+
+  if (!cancelled) {
+    throw createError(400, ERROR_CODES.TRANSLATION_JOB_CANCEL_FAILED);
+  }
+
+  res.json({ success: true, message: 'Job cancelled' });
+}
+
+/**
+ * @api {post} /translation/text Translate a single text
+ * @apiPermission user
+ * @apiName TranslateText
+ * @apiGroup Translation
+ *
+ * @apiParam (Body) {String} text Text to translate
+ * @apiParam (Body) {String} targetLanguage Target language code
+ * @apiParam (Body) {String} [sourceLanguage='auto'] Source language code
+ */
+async function translateText(req, res) {
+  const { user, body } = req;
+  const { text, targetLanguage, sourceLanguage = 'auto' } = body;
+
+  const groupId = user.group && user.group.id;
+
+  const translatedText = await translationService.translateText({
+    groupId,
+    text,
+    sourceLanguage,
+    targetLanguage,
+  });
+
+  res.json({
+    original: text,
+    translated: translatedText,
+    sourceLanguage,
+    targetLanguage,
+  });
+}
+
+/**
+ * @api {get} /translation/languages Get available languages for user's group
+ * @apiPermission user
+ * @apiName GetTranslationLanguages
+ * @apiGroup Translation
+ */
+async function getLanguages(req, res) {
+  const { user } = req;
+  const groupId = user.group && user.group.id;
+
+  const languageConfig = await translationService.getAvailableLanguages({
+    groupId,
+  });
+
+  res.json(languageConfig);
+}
