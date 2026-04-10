@@ -6,7 +6,7 @@ const mailingService = require('./mailing.service.js');
 const logger = require('../utils/logger.js');
 const archiver = require('archiver');
 const { InternalServerError } = require('http-errors');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   downloadZip: asyncHandler(downloadZip),
