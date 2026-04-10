@@ -52,14 +52,14 @@ export default {
       return [
         { value: null, text: this.$t('aiFeatures.noIntegration') },
         ...this.integrations.map((i) => ({
-          value: i._id,
+          value: i.id,
           text: `${i.name} (${this.getProviderLabel(i.provider)})`,
         })),
       ];
     },
     selectedIntegrationId: {
       get() {
-        return this.translationFeature?.integration?._id || null;
+        return this.translationFeature?.integration?.id || null;
       },
       set(value) {
         this.updateFeature('translation', { integrationId: value });

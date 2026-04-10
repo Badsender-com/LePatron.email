@@ -92,7 +92,7 @@ export default {
         this.loading = true;
         if (this.editingIntegration) {
           await this.$axios.$put(
-            apiRoutes.integrationsItem(this.editingIntegration._id),
+            apiRoutes.integrationsItem(this.editingIntegration.id),
             data
           );
           this.showSnackbar({
@@ -126,7 +126,7 @@ export default {
       // Fetch dashboard count to show warning if there are associated dashboards
       try {
         const result = await this.$axios.$get(
-          apiRoutes.integrationDashboardCount(integration._id)
+          apiRoutes.integrationDashboardCount(integration.id)
         );
         this.deletingDashboardCount = result.count || 0;
       } catch (error) {
@@ -141,7 +141,7 @@ export default {
       try {
         this.loading = true;
         await this.$axios.$delete(
-          apiRoutes.integrationsItem(this.deletingIntegration._id)
+          apiRoutes.integrationsItem(this.deletingIntegration.id)
         );
         this.showSnackbar({
           text: this.$t('integrations.deleted'),
@@ -163,9 +163,9 @@ export default {
 
     async validateIntegration(integration) {
       try {
-        this.$set(this.validating, integration._id, true);
+        this.$set(this.validating, integration.id, true);
         const result = await this.$axios.$post(
-          apiRoutes.integrationsValidate(integration._id)
+          apiRoutes.integrationsValidate(integration.id)
         );
         if (result.valid) {
           this.showSnackbar({
@@ -185,7 +185,7 @@ export default {
           color: 'error',
         });
       } finally {
-        this.$set(this.validating, integration._id, false);
+        this.$set(this.validating, integration.id, false);
       }
     },
 
@@ -268,7 +268,7 @@ export default {
           <v-btn
             icon
             small
-            :loading="validating[item._id]"
+            :loading="validating[item.id]"
             :title="$t('integrations.validate')"
             @click="validateIntegration(item)"
           >
@@ -331,7 +331,11 @@ export default {
               dense
               class="mt-4"
             >
-              <strong>{{ $t('integrations.deleteWarningDashboards', { count: deletingDashboardCount }) }}</strong>
+              <strong>{{
+                $t('integrations.deleteWarningDashboards', {
+                  count: deletingDashboardCount,
+                })
+              }}</strong>
             </v-alert>
           </v-card-text>
           <v-card-actions>
