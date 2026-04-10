@@ -245,7 +245,56 @@ export default {
             </v-col>
           </v-row>
         </div>
-        <!-- ==================== SECTION 2: IMAGE HOSTING ==================== -->
+        <!-- ==================== SECTION 2: MODULES ==================== -->
+        <div v-if="isAdmin" class="form-section">
+          <h3 class="form-section__title">
+            {{ $t('groups.modules.title') }}
+          </h3>
+
+          <!-- Email Builder Module -->
+          <div class="module-card">
+            <div class="module-card__content">
+              <div class="module-card__icon">
+                <v-icon color="accent" size="28">mdi-palette</v-icon>
+              </div>
+              <div class="module-card__info">
+                <div class="module-card__name">{{ $t('groups.modules.emailBuilder.name') }}</div>
+                <div class="module-card__description">{{ $t('groups.modules.emailBuilder.description') }}</div>
+              </div>
+            </div>
+            <v-switch
+              v-model="localModel.enableEmailBuilder"
+              hide-details
+              :disabled="disabled"
+              class="module-card__switch"
+            />
+          </div>
+
+          <!-- CRM Intelligence Module -->
+          <div class="module-card">
+            <div class="module-card__content">
+              <div class="module-card__icon">
+                <v-icon color="accent" size="28">mdi-chart-line</v-icon>
+              </div>
+              <div class="module-card__info">
+                <div class="module-card__name">{{ $t('groups.modules.crmIntelligence.name') }}</div>
+                <div class="module-card__description">{{ $t('groups.modules.crmIntelligence.description') }}</div>
+                <div v-if="localModel.enableCrmIntelligence" class="module-card__hint">
+                  <v-icon small color="grey">mdi-arrow-right</v-icon>
+                  {{ $t('groups.modules.crmIntelligence.configHint') }}
+                </div>
+              </div>
+            </div>
+            <v-switch
+              v-model="localModel.enableCrmIntelligence"
+              hide-details
+              :disabled="disabled"
+              class="module-card__switch"
+            />
+          </div>
+        </div>
+
+        <!-- ==================== SECTION 3: IMAGE HOSTING ==================== -->
         <div v-if="isAdmin" class="form-section">
           <h3 class="form-section__title">
             {{ $t('forms.group.sections.imageHosting') }}
@@ -331,7 +380,7 @@ export default {
           </div>
         </div>
 
-        <!-- ==================== SECTION 3: SAML AUTHENTICATION ==================== -->
+        <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
         <div v-if="isAdmin" class="form-section">
           <h3 class="form-section__title">
             {{ $t('forms.group.sections.authentication') }}
@@ -374,7 +423,7 @@ export default {
           </div>
         </div>
 
-        <!-- ==================== SECTION 4: PERMISSIONS ==================== -->
+        <!-- ==================== SECTION 5: PERMISSIONS ==================== -->
         <div v-if="isAdmin" class="form-section">
           <h3 class="form-section__title">
             {{ $t('forms.group.sections.permissions') }}
@@ -472,6 +521,72 @@ export default {
 
   &__content {
     padding-top: 0.5rem;
+  }
+}
+
+.module-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    border-color: rgba(0, 172, 220, 0.4);
+  }
+
+  &__content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 172, 220, 0.1);
+    border-radius: 8px;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 1rem;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.25rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &__switch {
+    flex-shrink: 0;
   }
 }
 </style>

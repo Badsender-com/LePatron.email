@@ -23,6 +23,7 @@ import {
 } from '~/store/folder';
 import { TEMPLATE, FETCH_TEMPLATES } from '~/store/template';
 import BsGroupLoading from '~/components/loadingBar';
+import EmailBuilderPlaceholder from '~/routes/mailings/__partials/email-builder-placeholder';
 
 export default {
   name: 'PageMailings',
@@ -34,6 +35,7 @@ export default {
     BsMailingsModalNew,
     MailingsHeader,
     BsGroupLoading,
+    EmailBuilderPlaceholder,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
   meta: { acl: ACL_USER },
@@ -62,7 +64,7 @@ export default {
       return this.mailings.filter(filterFunction);
     },
     title() {
-      return 'Emails';
+      return this.$t('modules.emailBuilder');
     },
     ...mapState(FOLDER, [
       'mailings',
@@ -79,6 +81,11 @@ export default {
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
+    },
+    isEmailBuilderEnabled() {
+      // Default to true if not set (backward compatibility)
+      const enabled = this.$store.state.user?.info?.group?.enableEmailBuilder;
+      return enabled !== false;
     },
     totalPages() {
       return this.pagination?.pageCount || 1;
@@ -195,7 +202,11 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
+  <!-- Email Builder disabled: show marketing placeholder -->
+  <email-builder-placeholder v-if="!isEmailBuilderEnabled" />
+
+  <!-- Email Builder enabled: show normal UI -->
+  <bs-layout-left-menu v-else>
     <template #menu>
       <v-list>
         <v-list-item class="justify-center">

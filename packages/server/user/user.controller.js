@@ -14,7 +14,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -72,7 +72,11 @@ async function getCurrentUser(req, res, next) {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: '_company', select: 'id name entryPoint issuer' })
+    .populate({
+      path: '_company',
+      select:
+        'id name entryPoint issuer enableCrmIntelligence enableEmailBuilder',
+    })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
 }

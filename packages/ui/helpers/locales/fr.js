@@ -277,7 +277,22 @@ export default {
   },
   groups: {
     tabs: {
-      informations: 'Informations',
+      general: 'Général',
+    },
+    modules: {
+      title: 'Modules activés',
+      notEnabled: 'Module non activé',
+      emailBuilder: {
+        name: 'Email Builder',
+        description: 'Création et édition d\'emails responsive',
+      },
+      crmIntelligence: {
+        name: 'CRM Intelligence',
+        description: 'Tableaux de bord et analytics',
+        configHint: 'Configuration avancée dans l\'onglet dédié',
+        toggleMovedHint:
+          'L\'activation du module se fait depuis l\'onglet Général',
+      },
     },
     mailingTab: {
       confirmationField: 'Veuillez saisir le nom de l\'email pour confirmer',
@@ -495,6 +510,174 @@ export default {
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
   },
+  crmIntelligence: {
+    title: 'CRM Intelligence',
+    subtitle: 'Tableaux de bord analytiques',
+    dashboards: 'Tableaux de bord',
+    selectDashboard: 'Sélectionnez un tableau de bord dans le menu de gauche pour commencer.',
+    noDashboards: 'Aucun tableau de bord disponible',
+    loadingDashboard: 'Chargement du tableau de bord...',
+    marketing: {
+      title: 'CRM Intelligence',
+      subtitle: 'Centralisez vos KPIs CRM et Marketing dans LePatron. Visualisez vos performances en temps réel.',
+      ctaPrimary: 'Demander une démo',
+      featuresTitle: 'Pilotez votre stratégie data-driven',
+      features: [
+        {
+          icon: 'mdi-chart-areaspline',
+          title: 'Performance campagnes',
+          description: 'Suivez les métriques clés de vos envois email en temps réel.',
+        },
+        {
+          icon: 'mdi-email-check',
+          title: 'Délivrabilité',
+          description: 'Analysez vos taux de délivrabilité et identifiez les problèmes.',
+        },
+        {
+          icon: 'mdi-account-heart',
+          title: 'Engagement client',
+          description: 'Mesurez l\'engagement de vos audiences sur tous les canaux.',
+        },
+        {
+          icon: 'mdi-currency-eur',
+          title: 'ROI Marketing',
+          description: 'Calculez le retour sur investissement de vos campagnes.',
+        },
+        {
+          icon: 'mdi-view-dashboard',
+          title: 'Dashboards personnalisés',
+          description: 'Créez des tableaux de bord adaptés à vos besoins métier.',
+        },
+        {
+          icon: 'mdi-database-sync',
+          title: 'Intégration Metabase',
+          description: 'Connectez vos sources de données via Metabase.',
+        },
+      ],
+      footerCta: 'Prêt à piloter votre performance ?',
+    },
+    errors: {
+      loadFailed: 'Impossible de charger le tableau de bord.',
+      embedFailed: 'Erreur lors du chargement du tableau de bord.',
+      dashboardAlreadyExists: 'Un tableau de bord avec cet ID existe déjà pour cette intégration.',
+      fetchIntegrationsFailed: 'Impossible de charger les intégrations.',
+      fetchDashboardsFailed: 'Impossible de charger les tableaux de bord.',
+    },
+    admin: {
+      title: 'CRM Intelligence',
+      description: 'Gérez les intégrations de tableaux de bord pour ce groupe.',
+      enabled: 'Activer CRM Intelligence',
+      metabaseConfigHint: 'Configurez les connexions Metabase dans l\'onglet Intégrations.',
+      goToIntegrations: 'Aller aux Intégrations',
+      metabaseConfig: 'Configuration Metabase',
+      siteUrl: 'URL Metabase',
+      invalidUrl: 'URL invalide',
+      siteUrlHint: 'Ex: https://metabase.example.com',
+      secretKey: 'Clé secrète d\'embedding',
+      secretKeyHint: 'Trouvez cette clé dans Admin > Embedding > Static embedding',
+      secretKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
+      testConnection: 'Tester la connexion',
+      testConnectionSuccess: 'Configuration valide',
+      testConnectionFailed: 'Configuration invalide',
+      // Integrations section
+      integrationsSection: 'Intégrations',
+      integrationsSectionHint: 'Configurez les connexions aux outils de dashboarding (Metabase, etc.)',
+      integrations: 'Intégrations',
+      addIntegration: 'Ajouter une intégration',
+      editIntegration: 'Modifier l\'intégration',
+      integrationName: 'Nom de l\'intégration',
+      noIntegrations: 'Aucune intégration configurée',
+      createSuccess: 'Intégration créée',
+      deleteSuccess: 'Intégration supprimée',
+      deleteError: 'Erreur lors de la suppression',
+      deleteIntegrationConfirmTitle: 'Supprimer l\'intégration ?',
+      deleteIntegrationConfirmText: 'Cette action est irréversible. Les tableaux de bord associés ne fonctionneront plus.',
+      saveSuccess: 'Configuration sauvegardée',
+      saveError: 'Erreur lors de la sauvegarde',
+      // Dashboards section
+      dashboardsSection: 'Tableaux de bord',
+      dashboardsSectionHint: 'Configurez les dashboards affichés aux utilisateurs et leur ordre d\'apparition.',
+      dashboards: 'Tableaux de bord',
+      addDashboard: 'Ajouter un tableau de bord',
+      editDashboard: 'Modifier le tableau de bord',
+      selectIntegration: 'Intégration',
+      integrationRequired: 'Veuillez sélectionner une intégration',
+      dashboardId: 'ID du dashboard',
+      dashboardIdHint: 'Numéro visible dans l\'URL Metabase',
+      dashboardIdRequired: 'L\'ID du dashboard est requis',
+      dashboardName: 'Nom affiché',
+      dashboardNameRequired: 'Le nom est requis',
+      dashboardDescription: 'Description',
+      noDashboards: 'Aucun tableau de bord configuré',
+      noIntegrationsForDashboards: 'Créez d\'abord une intégration pour ajouter des tableaux de bord.',
+      dashboardSaveSuccess: 'Tableau de bord sauvegardé',
+      dashboardCreateSuccess: 'Tableau de bord créé',
+      dashboardSaveError: 'Erreur lors de la sauvegarde du tableau de bord',
+      dashboardDeleteSuccess: 'Tableau de bord supprimé',
+      dashboardDeleteError: 'Erreur lors de la suppression du tableau de bord',
+      deleteDashboardConfirmTitle: 'Supprimer le tableau de bord ?',
+      deleteDashboardConfirmText: 'Cette action est irréversible.',
+      reorderError: 'Erreur lors du réordonnancement',
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
+    },
+  },
+  modules: {
+    emailBuilder: 'Email Builder',
+    crmIntelligence: 'CRM Intelligence',
+    settings: 'Paramètres',
+    inactive: 'Non activé',
+  },
+  emailBuilder: {
+    marketing: {
+      title: 'Email Builder',
+      subtitle:
+        'Créez des emails responsives professionnels avec notre éditeur drag & drop intuitif.',
+      ctaPrimary: 'Demander une démo',
+      ctaSecondary: 'En savoir plus',
+      featuresTitle: 'Tout ce dont vous avez besoin',
+      features: [
+        {
+          icon: 'mdi-drag',
+          title: 'Drag & Drop intuitif',
+          description: 'Construisez vos emails visuellement, sans aucune ligne de code.',
+        },
+        {
+          icon: 'mdi-cellphone-link',
+          title: 'Responsive natif',
+          description: 'Emails optimisés pour tous les appareils et clients email.',
+        },
+        {
+          icon: 'mdi-puzzle',
+          title: 'Blocs réutilisables',
+          description: 'Créez une bibliothèque de composants pour vos équipes.',
+        },
+        {
+          icon: 'mdi-palette',
+          title: 'Design system intégré',
+          description: 'Respectez votre charte graphique avec des templates personnalisés.',
+        },
+        {
+          icon: 'mdi-cloud-upload',
+          title: 'Export multi-ESP',
+          description: 'Exportez vers Sendinblue, Mailchimp, Actito et bien d\'autres.',
+        },
+        {
+          icon: 'mdi-account-group',
+          title: 'Collaboration équipe',
+          description: 'Travaillez à plusieurs avec gestion des droits et workspaces.',
+        },
+      ],
+      footerCta: 'Prêt à créer vos premiers emails ?',
+      screenshotAlt: 'Interface Email Builder',
+    },
+  },
+  sidebar: {
+    modules: 'Modules',
+    utilities: 'Utilitaires',
+    help: 'Aide',
+    logout: 'Déconnexion',
+  },
   integrations: {
     title: 'Intégrations',
     name: 'Nom',
@@ -516,10 +699,21 @@ export default {
     noIntegrations: 'Aucune intégration configurée',
     deleteConfirmTitle: 'Supprimer l\'intégration',
     deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
+    deleteWarningDashboards: 'Attention : {count} tableau(x) de bord associé(s) seront également supprimés.',
+    categories: {
+      bi: 'BI & Analytics',
+      aiGeneration: 'IA - Génération',
+      aiTranslation: 'IA - Traduction',
+    },
     statusLabels: {
       valid: 'Validé',
       invalid: 'Invalide',
       pending: 'En attente'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Votre clé secrète Metabase',
+      apiKeyLabel: 'Clé secrète Metabase',
+      apiHostHint: 'URL de votre instance Metabase (ex: https://metabase.example.com)'
     },
     openai: {
       apiKeyPlaceholder: 'sk-...',
@@ -576,6 +770,9 @@ export default {
     qualityCheck: {
       title: 'Contrôle qualité',
       description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
     }
   }
 };
