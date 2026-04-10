@@ -110,3 +110,28 @@ export NODE_OPTIONS=--openssl-legacy-provider
 # --ignore-engines needed because bson@7.1.1 declares node>=20 but works fine on 18
 yarn install --ignore-engines
 ```
+
+### node-gyp (optional native deps)
+
+On `yarn install` you may see warnings about optional native deps failing to build (`fsevents`, `cpu-features`):
+
+```
+Error: spawn node-gyp ENOENT
+```
+
+These warnings are **harmless** (the deps are optional and the app runs fine without them), but if you want a clean install, install a Node 18–compatible version of `node-gyp` globally:
+
+```bash
+# If an incompatible version is already installed, remove it first
+npm uninstall -g node-gyp
+
+# node-gyp@12+ requires Node 20+ (uses tracingChannel from lru-cache)
+# → pin to node-gyp@10 for Node 18 compatibility
+npm install -g node-gyp@10
+```
+
+On macOS, also ensure Xcode Command Line Tools are installed:
+
+```bash
+xcode-select --install
+```
