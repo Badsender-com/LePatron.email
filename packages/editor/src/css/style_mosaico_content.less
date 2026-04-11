@@ -17,7 +17,6 @@
   // flex-direction: column;
   border: 2px dotted @mosaico-outline-color;
   border-radius: 10px;
-  animation: border-color-selection-pulsate 2s infinite;
   position: relative;
 }
 
@@ -77,14 +76,12 @@
 #main-edit-area .sortable-placeholder:after {
   content: '';
   position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-  border: 10px solid red;
-  border-color: rgba(255, 0, 0, 0.1) red rgba(255, 0, 0, 0.1) red;
+  top: 0;
+  left: -2px;
+  right: -2px;
+  bottom: 0;
+  outline: 1px solid @mosaico-selection-color;
   z-index: 50;
-  opacity: 0.8;
 }
 
 #main-edit-area .img-wysiwyg {
@@ -372,9 +369,6 @@
     // blocks
     .editable {
       .makeSelectable(2px, ~'.selected', 0, ~' .mo-blockselectionhelper');
-
-      .makeEditableHover(2px, ~'.mce-content-body');
-      .makeEditableHover(2px, ~'.selectable-img', ~' .mo-imgselectionhelper:before');
     }
     // texts
     .mce-content-body {
