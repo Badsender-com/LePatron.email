@@ -93,20 +93,6 @@
   display: inline-block;
 }
 
-@keyframes border-color-selection-pulsate {
-  0% {
-    border-color: @mosaico-outline-color;
-  }
-  40% {
-    border-color: @mosaico-selection-color;
-  }
-  60% {
-    border-color: @mosaico-selection-color;
-  }
-  100% {
-    border-color: @mosaico-outline-color;
-  }
-}
 
 @keyframes droppable-pulsate {
   0% {
@@ -143,6 +129,7 @@
 
 // Selection and hover states use outline only (no borders) to avoid layout shifts
 // Outline doesn't take layout space, preventing block displacement on selection
+// Both states use identical dimensions - only color differs
 .makeSelectable(@size: 10px, @selectedSelector: ~'.selected', @selectedSize: 1px, @borderElementSelector: ~':after') {
   position: relative;
 
@@ -157,30 +144,21 @@
 
     // Use outline for both hover and selection (no layout impact)
     outline: 1px solid transparent;
-    outline-offset: -1px;
 
     // otherwise this catches clicks and prevent correct selection of underlying text
     pointer-events: none;
   }
-  // Selected state: accent color outline
+  // Selected state: accent color (same dimensions as hover)
   &@{selectedSelector}@{borderElementSelector} {
     outline-color: @mosaico-selection-color;
-    outline-style: solid;
-    outline-width: 2px;
-    outline-offset: -2px;
   }
-  // Hover state: gray outline
+  // Hover state: gray color
   &:hover@{borderElementSelector} {
     outline-color: @mosaico-outline-color;
-    outline-style: solid;
-    outline-width: 1px;
-    outline-offset: -1px;
   }
   // Selected + hover: keep accent color
   &@{selectedSelector}:hover@{borderElementSelector} {
     outline-color: @mosaico-selection-color;
-    outline-width: 2px;
-    outline-offset: -2px;
   }
 
   &@{selectedSelector} {
@@ -191,31 +169,7 @@
   }
 }
 
-.makeEditableHover(@size, @editableSelector, @borderElementSelector: ~':before') {
-  @{editableSelector}@{borderElementSelector} {
-    content: '';
-    display: block;
-    position: absolute;
-    // z-index: 0;
-    top: -3px;
-    bottom: -3px;
-    left: -7px;
-    right: -7px;
-    border: 1px dashed transparent;
-    opacity: 0.3;
-
-    // otherwise this catches clicks and prevent correct selection of underlying text
-    pointer-events: none;
-  }
-
-  &:hover @{editableSelector}@{borderElementSelector} {
-    border-color: @mosaico-outline-color;
-  }
-
-  &:hover @{editableSelector}:hover@{borderElementSelector} {
-    border-color: transparent;
-  }
-}
+// .makeEditableHover mixin removed - was creating duplicate dashed borders on editable elements
 
 .resetFont() {
   font-family: @font-family;

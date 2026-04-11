@@ -198,18 +198,10 @@ body {
   }
 }
 
-@keyframes border-color-selection-pulsate {
-  0% {
-    border-color: @mosaico-outline-color;
-  }
-  40% {
-    border-color: var(--v-accent-base);
-  }
-  60% {
-    border-color: var(--v-accent-base);
-  }
-  100% {
-    border-color: @mosaico-outline-color;
+@keyframes border-color-selection-pulsate-REMOVED {
+  // Animation removed - kept empty keyframe to avoid build errors if referenced elsewhere
+  0%, 100% {
+    border-color: transparent;
   }
 }
 
