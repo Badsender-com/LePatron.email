@@ -700,6 +700,11 @@ body {
   visibility: visible !important;
 }
 
+// Hide toolbar container when it has no visible tool buttons (e.g., fixed header/footer blocks)
+#main-edit-area .tools:not(:has(.tool)) {
+  display: none !important;
+}
+
 // =============================================================================
 // IMAGE ZONE POINTER EVENTS FIX
 // Problem: .workzone and .mo-uploadzone cover the entire image area and capture
