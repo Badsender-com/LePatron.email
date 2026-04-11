@@ -141,7 +141,8 @@
   pointer-events: none;
 }
 
-// Note that we avoid altering border/outline widths/opacity on hover/selection because of Webkit bugs (see safarihacks.css)
+// Selection and hover states use outline only (no borders) to avoid layout shifts
+// Outline doesn't take layout space, preventing block displacement on selection
 .makeSelectable(@size: 10px, @selectedSelector: ~'.selected', @selectedSize: 1px, @borderElementSelector: ~':after') {
   position: relative;
 
@@ -149,39 +150,37 @@
     content: '';
     display: block;
     position: absolute;
-    // z-index: 0;
-    top: -3px;
-    bottom: -3px;
-    left: -2px - @size;
-    right: -2px - @size;
+    top: 0;
+    bottom: 0;
+    left: -@size;
+    right: -@size;
 
-    // Use border for selection
-    border: 1px solid transparent;
-    border-width: @selectedSize;
-    border-left-width: @size;
-    border-right-width: @size;
-
-    // Use outline for hover effects
+    // Use outline for both hover and selection (no layout impact)
     outline: 1px solid transparent;
-    // outline-offset: -1px;
+    outline-offset: -1px;
 
     // otherwise this catches clicks and prevent correct selection of underlying text
     pointer-events: none;
   }
+  // Selected state: accent color outline
   &@{selectedSelector}@{borderElementSelector} {
-    outline-color: transparent;
-    // border: @selectedSize dashed @mosaico-selection-color;
-    // border-left-width: @size;
-    // border-right-width: @size;
-    border-color: @mosaico-selection-color;
-    border-style: dashed solid;
-    animation: border-color-selection-pulsate 4s infinite;
+    outline-color: @mosaico-selection-color;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: -2px;
   }
+  // Hover state: gray outline
   &:hover@{borderElementSelector} {
     outline-color: @mosaico-outline-color;
-    border-top-color: transparent !important;
-    border-bottom-color: transparent !important;
-    animation: none;
+    outline-style: solid;
+    outline-width: 1px;
+    outline-offset: -1px;
+  }
+  // Selected + hover: keep accent color
+  &@{selectedSelector}:hover@{borderElementSelector} {
+    outline-color: @mosaico-selection-color;
+    outline-width: 2px;
+    outline-offset: -2px;
   }
 
   &@{selectedSelector} {
