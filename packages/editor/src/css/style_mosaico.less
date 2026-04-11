@@ -62,9 +62,9 @@
 @mosaico-helpwin-background-color: @helpwin-background-color;
 @mosaico-helpwin-text-color: @helpwin-text-color;
 @mosaico-accent-color: @accent-color;
-@mosaico-outline-color: currentcolor;
+@mosaico-outline-color: var(--gray-500, #9e9e9e);
 @mosaico-shadow-color: #808080;
-@mosaico-selection-color: #cc0000;
+@mosaico-selection-color: var(--v-accent-base, #00acdc);
 
 // Variabili base usate da voxmail: colori, stili
 @import 'style_variables.less';
@@ -130,7 +130,7 @@
   top: -14px;
   left: -10px;
   height: 24px;
-  background-color: fade(@mosaico-selection-color, 60%);
+  background-color: rgba(0, 172, 220, 0.6); // accent at 60% opacity
   background-clip: content-box;
   color: white;
   right: -10px;
