@@ -103,7 +103,7 @@
     bottom: -10px;
   }
   &.ui-state-draghover:before {
-    background-color: fade(@mosaico-selection-color, 80%);
+    background-color: rgba(0, 172, 220, 0.8); // accent at 80% opacity
     animation: none;
   }
 }
@@ -371,19 +371,19 @@
   #main-wysiwyg-area:not(.isdragging):not(.isdraggingimg) {
     // blocks
     .editable {
-      .makeSelectable(10px, ~'.selected', 0, ~' .mo-blockselectionhelper');
+      .makeSelectable(2px, ~'.selected', 0, ~' .mo-blockselectionhelper');
 
-      .makeEditableHover(10px, ~'.mce-content-body');
-      .makeEditableHover(10px, ~'.selectable-img', ~' .mo-imgselectionhelper:before');
+      .makeEditableHover(2px, ~'.mce-content-body');
+      .makeEditableHover(2px, ~'.selectable-img', ~' .mo-imgselectionhelper:before');
     }
     // texts
     .mce-content-body {
-      .makeSelectable(5px, ~'.selecteditem', 0);
+      .makeSelectable(2px, ~'.selecteditem', 0);
       cursor: text;
     }
     // images
     .selectable-img {
-      .makeSelectable(5px, ~'.selecteditem', 0, ~' .mo-imgselectionhelper:after');
+      .makeSelectable(2px, ~'.selecteditem', 0, ~' .mo-imgselectionhelper:after');
     }
   }
 
