@@ -148,17 +148,21 @@
     // otherwise this catches clicks and prevent correct selection of underlying text
     pointer-events: none;
   }
-  // Selected state: accent color (same dimensions as hover)
+  // Selected state: accent color, 2px outline toward outside
   &@{selectedSelector}@{borderElementSelector} {
     outline-color: @mosaico-selection-color;
+    outline-width: 2px;
+    outline-offset: 0;
   }
   // Hover state: gray color
   &:hover@{borderElementSelector} {
     outline-color: @mosaico-outline-color;
   }
-  // Selected + hover: keep accent color
+  // Selected + hover: keep accent color and 2px width
   &@{selectedSelector}:hover@{borderElementSelector} {
     outline-color: @mosaico-selection-color;
+    outline-width: 2px;
+    outline-offset: 0;
   }
 
   &@{selectedSelector} {
