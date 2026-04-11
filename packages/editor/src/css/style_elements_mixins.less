@@ -138,20 +138,24 @@
   width: 100%;
 }
 
+// Modern input colors - aligned with Design System
+@input-modern-border: #e0e0e0;  // gray-300
+@input-modern-radius: 4px;
+@input-modern-accent: var(--v-accent-base, #00acdc);
+
 .input-style() {
   .input-base;
   color: @input-text-color;
-  background: none @input-background-color;
-  border-radius: @standard-border-radius;
-  border-color: @input-border-color;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
-  transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+  background: white;
+  border-radius: @input-modern-radius;
+  border-color: @input-modern-border;
+  box-shadow: none;
+  transition: all 0.2s ease;
 
   &:focus {
-    border-color: @input-focus-border-color;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset,
-      0 0 8px fade(@input-focus-border-color, 60);
-    outline: 0 none;
+    border-color: @input-modern-accent;
+    box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+    outline: none;
   }
   &.inline {
     margin-right: 0.5em;
@@ -171,33 +175,35 @@
         display: none;
       }
 
-      padding-right: 30px;
+      padding-right: 36px;
 
       .input-button-common;
-      // sovrapposizioni arrotondamenti
-      border-top-right-radius: 15px;
-      border-bottom-right-radius: 15px;
+      // Modern rounded corners (uniform)
+      border-radius: @input-modern-radius;
     }
 
     &:after {
-      .button-style();
+      // Modern chevron button - subtle gray background
       margin: 0;
-
       position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      line-height: 30px;
+      top: 1px;
+      right: 1px;
+      bottom: 1px;
       width: 28px;
-      margin-right: 0;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;  // gray-100 - subtle background
+      border-left: 1px solid @input-modern-border;
+      border-radius: 0 (@input-modern-radius - 1px) (@input-modern-radius - 1px) 0;
+      pointer-events: none;
+      color: #757575;  // gray-600
 
       // Chevron down icon using CSS mask
       content: '';
-      display: inline-block;
-      width: 0.8em;
-      height: 0.8em;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
       background-color: currentColor;
       -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -205,10 +211,6 @@
       mask-repeat: no-repeat;
       -webkit-mask-size: contain;
       mask-size: contain;
-
-      // padding: 0 8px;
-      pointer-events: none;
-      // box-sizing: border-box;
     }
   }
 }
