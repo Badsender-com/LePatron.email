@@ -351,9 +351,14 @@ body {
   }
 }
 
+// =============================================================================
+// SECTION HEADERS - Hierarchical styling
+// =============================================================================
+
+// Level 1 subsection labels - minimal, no borders
 #main-toolbox .objLabel.level1 {
-  font-weight: bold;
-  border-bottom-width: 1px;
+  font-weight: 500;
+  border: none;  // Remove all borders for cleaner look
 }
 
 .mo .objPreview {
@@ -361,19 +366,21 @@ body {
   box-shadow: 1px 1px 3px @shadow-color;
 }
 
+// Base objLabel - clean defaults
 .mo .objLabel {
-  border-bottom: 0;
-  font-weight: bold;
-  font-size: 80%;
+  font-weight: 500;
+  border: none;
 }
 
+// Level 1 container - NO top border, use spacing instead
 .mo .objEdit.level1 {
-  border-top: 2px solid rgba(0, 0, 0, 0.12);
+  border: none;  // Remove border separators
 }
 
 #main-toolbox .objLabel.level1 {
-  font-size: 1em;
-  padding-top: 0.5em;
+  font-size: 0.8125rem;  // 13px - smaller than level0
+  padding-top: 4px;
+  color: rgba(0, 0, 0, 0.6);  // Secondary text color
 }
 
 .mo #toolstyles .objLabel.level1,
@@ -381,27 +388,40 @@ body {
   padding-left: 70px;
 }
 
+// Level 0 - main section header with accent left border
 .mo .objLabel.level0 {
-  border-bottom: none;
+  border: none;
+  border-left: 3px solid var(--v-accent-base, #00acdc);
 }
 
 .input-style() {
   box-shadow: none;
 }
 & when(true) {
+  // Level 1 edit containers - card-like grouping
   .mo .objEdit.level1 {
     background-color: white;
-    padding: 1em;
-    padding-top: 0.5em;
+    padding: 12px 16px 16px 16px;
+    border-radius: 4px;
+    margin-top: 12px;
+    border: none;  // No borders - use spacing and background
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);  // Very subtle shadow for depth
   }
 
+  // First level1 after level0 needs less top margin
+  .mo .objEdit.level0 + .objEdit.level1,
+  .mo .objLabel.level0 + .objEdit.level1 {
+    margin-top: 0;
+  }
+
+  // Toolstyles and tooltheme specific adjustments
   .mo #toolstyles,
   .mo #tooltheme {
     .objEdit.level1 {
       border-top-left-radius: 0;
       .objLabel.level1 {
-        padding-bottom: 0;
-        padding-top: 1em;
+        padding-bottom: 4px;
+        padding-top: 8px;
       }
     }
   }
@@ -418,36 +438,73 @@ body {
     padding-left: 60px;
   }
 
+  // Modern form fields - Design System aligned
+  // Full border box instead of underline-only
   .mo .propInput input[type='text'],
   .mo .propInput input[type='number'],
   .mo .propInput input[type='url'],
   .mo .propInput select,
   .mo .propInput .data-select select,
   .mo .propInput .ui-spinner .ui-spinner-input {
-    border-width: 0 0 2px 0;
-    background-color: transparent;
-    &:hover,
+    border: 1px solid #e0e0e0;  // gray-300
+    border-radius: 4px;
+    background-color: white;
+    padding: 8px 10px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #bdbdbd;  // gray-400
+    }
+
     &:focus {
-      border-color: var(--v-accent-lighten2);
+      border-color: var(--v-accent-base);
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+      outline: none;
     }
   }
 
+  // Color picker hex input - positioned next to color swatch
   .mo .propInput .data-color input[type='text'] {
-    margin-left: 35px;
-    &:hover,
+    margin-left: 40px;
+    width: calc(100% - 44px);
+    // Override inherited styles - ensure consistent border on all states
+    border: 1px solid #e0e0e0 !important;
+    border-style: solid !important;
+    background: white !important;
+
+    &:hover {
+      margin-left: 40px;
+      border-color: #bdbdbd !important;
+    }
+
     &:focus {
-      margin-left: 35px;
+      margin-left: 40px;
+      border-color: var(--v-accent-base) !important;
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
     }
   }
 
+  // Color swatch button - circular design
   .mo .propInput .evo-pointer {
-    border-radius: 50%;
-    width: 30px;
-    border: 0;
-    box-shadow: 1px 1px 3px @shadow-color;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    border: 2px solid #e0e0e0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-color: var(--v-accent-base) !important;
+      // Prevent any margin/padding changes on hover
+      margin: 0 !important;
+    }
+
+    // Hide the chevron pseudo-element completely
     &:before {
-      content: none;
-      display: none;
+      content: none !important;
+      display: none !important;
     }
   }
 
@@ -529,19 +586,29 @@ body {
   }
 }
 
-.mo .propInput input[type='text']:hover,
-.mo .propInput input[type='number']:hover,
-.mo .propInput input[type='url']:hover,
-.mo .propInput select:hover,
-.mo .propInput .data-select select:hover,
-.mo .propInput .ui-spinner .ui-spinner-input:hover,
-.mo .propInput input[type='text']:focus,
-.mo .propInput input[type='number']:focus,
-.mo .propInput input[type='url']:focus,
-.mo .propInput select:focus,
-.mo .propInput .data-select select:focus,
-.mo .propInput .ui-spinner .ui-spinner-input:focus {
-  border-color: var(--v-accent-base);
+// Hover/focus states now handled inline in the main form field styles above
+
+// Modern select dropdown with chevron indicator
+.mo .propInput select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 32px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+// Remove default arrow on IE
+.mo .propInput select::-ms-expand {
+  display: none;
+}
+
+// Hide the external pseudo-element chevron from .input-select() mixin
+.mo .propInput .data-select::after {
+  display: none !important;
 }
 
 .mo .ui-tabs-nav li:hover,

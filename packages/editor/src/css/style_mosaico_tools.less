@@ -266,17 +266,25 @@
     display: none;
   }
 
+  // Level 1 container: card-like grouping for subsections
   .objEdit.level1 {
-    /*  border-bottom: 2px solid #CCC; */
-    padding-top: 4px;
-    padding-bottom: 2px;
-    margin-bottom: 3px;
-    /*  padding: 2px; */
+    padding-top: 0;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    margin-top: 16px;  // Space before each subsection group
   }
+
+  // Level 1: Subsection header (Section, Image, Title, Button, etc.)
+  // Lighter style - no borders, just typography hierarchy
   .objLabel.level1 {
-    color: black;
     display: block;
-    /* display: none; */
+    color: rgba(0, 0, 0, 0.6);  // secondary text - clearly lighter than level0
+    font-size: 0.8125rem;  // 13px - smaller than level0
+    font-weight: 500;
+    padding: 4px 0 8px 0;
+    margin: 0 0 4px;
+    border: none;  // No border - cleaner look
+    text-transform: none;
   }
 
   #toolstyles .objLabel.level1,
@@ -285,37 +293,37 @@
   }
 
   // Modern section headers - Design System aligned
+  // Base style for all section labels - minimal, no borders
   .objLabel {
-    border-bottom: 2px solid var(--v-accent-base, @accent-color);
-    color: #424242;  // gray-800 - primary text
     display: block;
-    margin: -4px -2px 8px;
-    padding: 8px 6px;
-    border-radius: 4px 4px 0 0;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    color: #424242;  // gray-800 - primary text
+    font-size: 0.875rem;  // 14px
+    font-weight: 500;
+    margin: 0 0 8px;
+    padding: 8px 0;
+    border: none;  // No borders by default - reduce visual noise
   }
 
   .objEdit.level0 {
-    // border: 1px solid @mosaico-text-color;
     padding: 0px 1px;
-    margin-top: 12px;
+    margin-top: 20px;
   }
 
-  // Top-level section header - more prominent
+  // Level 0: Main section header (Cover, Template Options, etc.)
+  // Strong visual hierarchy with accent left border
   .objLabel.level0 {
     display: block;
-    color: #212121;  // gray-900 - headings
-    background-color: #f5f5f5;  // gray-100 - subtle background
+    color: rgba(0, 0, 0, 0.87);  // primary text
+    background-color: #f5f5f5;  // gray-100 - visible background
     font-weight: 600;
-    font-size: 14px;
-    border-bottom: 2px solid #424242;  // gray-800
+    font-size: 0.9375rem;  // 15px
+    border: none;
+    border-left: 3px solid var(--v-accent-base, #00acdc);  // Accent left border
     border-radius: 0;
     padding: 10px 12px;
-    margin: 0px -7px 12px -7px;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+    margin: 0 -7px 12px -7px;
+    text-transform: none;
+    letter-spacing: 0.01em;
   }
   .supportsCustomStyles .objLabel.level0 {
     margin-right: 70px;
