@@ -17,40 +17,6 @@ module.exports = {
         utmMediumValue: vm.content().tracking().utmMediumValue(),
         utmCampaignKey: vm.content().tracking().utmCampaignKey(),
         utmCampaignValue: vm.content().tracking().utmCampaignValue(),
-        style: {
-          mh1: {
-            marginLeft: '10px',
-            marginRight: '10px'
-          },
-          mv1: {
-            marginTop: '10px',
-            marginBottom: '10px'
-          },
-          removeIconButton: {
-            background: 'none',
-            border: 0,
-            marginLeft: '0.5rem',
-            fontSize: '1rem',
-          },
-          plusIconButton: {
-            background: 'none',
-            border: 0,
-          },
-          plusIcon: {
-            color: 'black',
-          },
-          needHelpText: {
-            fontStyle: 'italic',
-            fontWeight: 'normal',
-            fontSize: '.9em',
-            marginLeft: '5px',
-            textDecoration: 'underline',
-            color: 'black',
-          },
-          addParamText: {
-            marginLeft: '10px',
-          }
-        }
       }),
       mounted() {
         this.hasGoogleAnalyticsUtmSubscription = vm.content().tracking().hasGoogleAnalyticsUtm.subscribe(this.updateHasGoogleAnalyticsUtm);
@@ -115,128 +81,105 @@ module.exports = {
         }
       },
       template: `
-        <div class="objEdit level1">
+        <div class="objEdit level1 tracking-section">
           <span class="objLabel level1">
             <span data-bind="text: $root.ut('template', 'Tracking')">Tracking</span>
-            <a href="https://www.lepatron.email/faq" target="_blank" :style="style.needHelpText">{{getNeedHelpText()}}</a>
+            <a href="https://www.lepatron.email/faq" target="_blank" class="tracking-help-link">{{getNeedHelpText()}}</a>
           </span>
-          <div v-for="(trackingUrl, index) in trackingUrls">
-            <div class="propEditor" :style="style.mv1">
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="key"
-                    v-model="trackingUrl.key"
-                  />
-                </label>
+          <div v-for="(trackingUrl, index) in trackingUrls" class="tracking-param-row">
+            <div class="propEditor tracking-param-editor">
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="key"
+                  v-model="trackingUrl.key"
+                />
               </div>
-              <span :style="style.mh1">
-                =
-              </span>
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="value"
-                    v-model="trackingUrl.value"
-                  />
-                </label>
+              <span class="tracking-equals">=</span>
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="value"
+                  v-model="trackingUrl.value"
+                />
               </div>
               <button
                 v-if="trackingUrls.length > 1"
                 @click.prevent="() => removeTrackingUrl(index)"
-                :style="[style.mh1, style.removeIconButton]"
+                class="tracking-remove-btn"
+                title="Remove parameter"
               >
-                <i class="fa fa-times"></i>
+                <span class="lucide lucide-x"></span>
               </button>
             </div>
           </div>
-          <div>
+          <div class="tracking-actions">
             <button
               @click.prevent="addTrackingUrl"
-              :style="[style.plusIconButton]"
+              class="tracking-add-btn"
             >
-              <i :style="style.plusIcon" class="fa fa-plus" aria-hidden="true"></i>
-              <span :style="style.addParamText">{{getAddParamText()}}</span>
+              <span class="lucide lucide-plus"></span>
+              <span>{{getAddParamText()}}</span>
+            </button>
+            <button
+              @click.prevent="handleGoogleAnalytics"
+              class="tracking-utm-btn"
+              :class="{ 'tracking-utm-btn--active': hasGoogleAnalyticsUtm }"
+            >
+              <span class="lucide" :class="hasGoogleAnalyticsUtm ? 'lucide-minus' : 'lucide-plus'"></span>
+              <span>{{getGoogleAnalyticsButtonText()}}</span>
             </button>
           </div>
-          <button
-            @click.prevent="handleGoogleAnalytics"
-            class="ui-button"
-          >
-            <span>
-              {{getGoogleAnalyticsButtonText()}}
-            </span>
-          </button>
-          <div v-if="hasGoogleAnalyticsUtm">
-            <div class="propEditor" :style="style.mv1">
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="utm_source"
-                    v-model="utmSourceKey"
-                  />
-                </label>
+          <div v-if="hasGoogleAnalyticsUtm" class="tracking-utm-fields">
+            <div class="propEditor tracking-param-editor">
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="utm_source"
+                  v-model="utmSourceKey"
+                />
               </div>
-              <span :style="style.mh1">
-                =
-              </span>
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="value"
-                    v-model="utmSourceValue"
-                  />
-                </label>
+              <span class="tracking-equals">=</span>
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="value"
+                  v-model="utmSourceValue"
+                />
               </div>
             </div>
-            <div class="propEditor" :style="style.mv1">
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="utm_medium"
-                    v-model="utmMediumKey"
-                  />
-                </label>
+            <div class="propEditor tracking-param-editor">
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="utm_medium"
+                  v-model="utmMediumKey"
+                />
               </div>
-              <span :style="style.mh1">
-                =
-              </span>
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="value"
-                    v-model="utmMediumValue"
-                  />
-                </label>
+              <span class="tracking-equals">=</span>
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="value"
+                  v-model="utmMediumValue"
+                />
               </div>
             </div>
-            <div class="propEditor" :style="style.mv1">
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="utm_campaign"
-                    v-model="utmCampaignKey"
-                  />
-                </label>
+            <div class="propEditor tracking-param-editor">
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="utm_campaign"
+                  v-model="utmCampaignKey"
+                />
               </div>
-              <span :style="style.mh1">
-                =
-              </span>
-              <div class="propInput">
-                <label>
-                  <input
-                    type="text"
-                    placeholder="value"
-                    v-model="utmCampaignValue"
-                  />
-                </label>
+              <span class="tracking-equals">=</span>
+              <div class="propInput tracking-input">
+                <input
+                  type="text"
+                  placeholder="value"
+                  v-model="utmCampaignValue"
+                />
               </div>
             </div>
           </div>
