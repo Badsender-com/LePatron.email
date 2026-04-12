@@ -275,22 +275,21 @@
   }
 
   // Level 1: Subsection header (Section, Image, Title, Button, etc.)
-  // Lighter style - no borders, just typography hierarchy
+  // Stronger differentiation from field labels
   .objLabel.level1 {
     display: block;
-    color: rgba(0, 0, 0, 0.6);  // secondary text - clearly lighter than level0
-    font-size: 0.8125rem;  // 13px - smaller than level0
-    font-weight: 500;
+    color: rgba(0, 0, 0, 0.75);  // Darker than before for better visibility
+    font-size: 0.8125rem;  // 13px
+    font-weight: 600;  // Bolder than labels (500)
     padding: 4px 0 8px 0;
-    margin: 0 0 4px;
-    border: none;  // No border - cleaner look
-    text-transform: none;
+    margin: 0 0 8px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);  // Very subtle separator
+    text-transform: uppercase;  // Uppercase for clear differentiation
+    letter-spacing: 0.03em;  // Slight letter spacing for uppercase
   }
 
-  #toolstyles .objLabel.level1,
-  #tooltheme .objLabel.level1 {
-    padding-left: 60px;
-  }
+  // Note: padding-left for objPreview circles removed - not used in current UI
 
   // Modern section headers - Design System aligned
   // Base style for all section labels - minimal, no borders

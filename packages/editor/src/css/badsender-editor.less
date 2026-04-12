@@ -338,17 +338,85 @@ body {
   color: var(--v-accent-base);
 }
 
-.mo .propInput .ui-spinner .ui-spinner-input {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+// =============================================================================
+// NUMBER SPINNER - Modern chevrons
+// =============================================================================
+
+.mo .propInput .ui-spinner {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: white;
+
+  &:focus-within {
+    border-color: var(--v-accent-base);
+    box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+  }
+
+  .ui-spinner-input {
+    border: none !important;
+    border-radius: 0 !important;
+    flex: 1;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
 }
 
+// Spinner buttons container - stacked vertically
 .mo .ui-button.ui-spinner-button {
-  background-color: transparent;
-  // color: lighten(@text-color, 30%);
-  .ui-button-text .ui-icon {
-    color: lighten(@text-color, 30%);
+  background: #f5f5f5;
+  border: none;
+  border-left: 1px solid #e0e0e0;
+  width: 28px;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin: 0;
+  padding: 0;
+
+  &:hover {
+    background: #eeeeee;
   }
+
+  &:active {
+    background: #e0e0e0;
+  }
+
+  .ui-button-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+
+    &:after {
+      width: 14px !important;
+      height: 14px !important;
+      color: #757575;
+    }
+  }
+
+  &:hover .ui-button-text:after {
+    color: var(--v-accent-base);
+  }
+}
+
+// Top button specific
+.mo .ui-spinner-up {
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 0 4px 0 0;
+}
+
+// Bottom button specific
+.mo .ui-spinner-down {
+  border-radius: 0 0 4px 0;
 }
 
 // =============================================================================
@@ -377,15 +445,15 @@ body {
   border: none;  // Remove border separators
 }
 
+// Level 1 headers - stronger differentiation from field labels
 #main-toolbox .objLabel.level1 {
-  font-size: 0.8125rem;  // 13px - smaller than level0
+  font-size: 0.75rem;  // 12px - compact uppercase
+  font-weight: 600;
   padding-top: 4px;
-  color: rgba(0, 0, 0, 0.6);  // Secondary text color
-}
-
-.mo #toolstyles .objLabel.level1,
-.mo #tooltheme .objLabel.level1 {
-  padding-left: 70px;
+  color: rgba(0, 0, 0, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 // Level 0 - main section header with accent left border
@@ -393,6 +461,17 @@ body {
   border: none;
   border-left: 3px solid var(--v-accent-base, #00acdc);
 }
+
+// Fix Level 0 background not reaching edges in Style tab
+.mo #toolstyles .objLabel.level0,
+.mo #tooltheme .objLabel.level0 {
+  margin-left: -15px;
+  margin-right: -15px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+// Level 1 alignment - uniform across all tabs (objPreview not used)
 
 .input-style() {
   box-shadow: none;
@@ -433,10 +512,8 @@ body {
     left: 4px;
   }
 
-  .mo #toolstyles .objLabel.level1,
-  .mo #tooltheme .objLabel.level1 {
-    padding-left: 60px;
-  }
+  // Note: padding-left for Style/Theme tab Level 1 labels is set in style_mosaico_tools.less
+  // to accommodate the preview circle. Content tab has padding-left: 0 set above.
 
   // Modern form fields - Design System aligned
   // Full border box instead of underline-only
@@ -464,47 +541,68 @@ body {
     }
   }
 
-  // Color picker hex input - positioned next to color swatch
-  .mo .propInput .data-color input[type='text'] {
-    margin-left: 40px;
-    width: calc(100% - 44px);
-    // Override inherited styles - ensure consistent border on all states
-    border: 1px solid #e0e0e0 !important;
-    border-style: solid !important;
-    background: white !important;
+  // =============================================================================
+  // COLOR PICKER - Circular swatch design
+  // =============================================================================
 
-    &:hover {
-      margin-left: 40px;
-      border-color: #bdbdbd !important;
-    }
-
-    &:focus {
-      margin-left: 40px;
-      border-color: var(--v-accent-base) !important;
-      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
-    }
+  // Container needs relative positioning for absolute swatch
+  .mo .propInput .data-color {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
   }
 
-  // Color swatch button - circular design
-  .mo .propInput .evo-pointer {
+  // Color swatch button - circular design positioned at start of container
+  .mo .propInput .data-color .evo-pointer {
+    position: absolute !important;
+    left: 4px !important;  // Centered in the 40px space (4px + 32px + 4px = 40px)
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     border-radius: 50% !important;
     width: 32px !important;
     height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
     border: 2px solid #e0e0e0 !important;
     box-shadow: none !important;
     background: transparent !important;
-    transition: border-color 0.2s ease;
+    margin: 0 !important;
+    padding: 0 !important;
+    transition: border-color 0.2s ease !important;
+    z-index: 1;
 
     &:hover {
       border-color: var(--v-accent-base) !important;
-      // Prevent any margin/padding changes on hover
-      margin: 0 !important;
     }
 
     // Hide the chevron pseudo-element completely
     &:before {
       content: none !important;
       display: none !important;
+    }
+  }
+
+  // Color picker hex input - positioned next to color swatch
+  .mo .propInput .data-color input[type='text'] {
+    margin-left: 40px !important;
+    width: calc(100% - 40px) !important;
+    border: 1px solid #e0e0e0 !important;
+    background: white !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+
+    &:hover {
+      border-color: #bdbdbd !important;
+    }
+
+    &:focus {
+      border-color: var(--v-accent-base) !important;
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+      outline: none;
     }
   }
 
@@ -614,6 +712,143 @@ body {
 .mo .ui-tabs-nav li:hover,
 .mo .ui-tabs-nav li.pressed {
   background: var(--v-accent-lightent4);
+}
+
+// =============================================================================
+// TRACKING SECTION - Modern styling
+// =============================================================================
+
+.tracking-section {
+  .tracking-help-link {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.85em;
+    margin-left: 8px;
+    text-decoration: underline;
+    color: rgba(0, 0, 0, 0.6);
+
+    &:hover {
+      color: var(--v-accent-base);
+    }
+  }
+
+  .tracking-param-row {
+    margin-bottom: 8px;
+  }
+
+  .tracking-param-editor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tracking-input {
+    flex: 1;
+    width: auto !important;
+    float: none !important;
+  }
+
+  .tracking-equals {
+    color: rgba(0, 0, 0, 0.4);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .tracking-remove-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #f04e23;
+      background: rgba(240, 78, 35, 0.1);
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .tracking-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 13px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      border-color: var(--v-accent-base);
+      color: var(--v-accent-base);
+      background: rgba(0, 172, 220, 0.05);
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-utm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--v-accent-base);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--v-accent-darken1);
+    }
+
+    &--active {
+      background: rgba(0, 0, 0, 0.1);
+      color: rgba(0, 0, 0, 0.7);
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-utm-fields {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+    .tracking-param-editor {
+      margin-bottom: 8px;
+    }
+  }
 }
 
 @import (less) './badsender-image-cropper.less';
