@@ -42,10 +42,10 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 ### 5. Éditeur d'images (Konva.js)
 
-| #   | Modale              | Fichier                                | Priorité | Statut      |
-| --- | ------------------- | -------------------------------------- | -------- | ----------- |
-| 5.1 | Image Editor        | `src/js/bindings/image-editor.js`      | Haute    | [ ] À faire |
-| 5.2 | Styles Image Editor | `src/css/badsender-image-cropper.less` | Haute    | [ ] À faire |
+| #   | Modale              | Fichier                                | Priorité | Statut       |
+| --- | ------------------- | -------------------------------------- | -------- | ------------ |
+| 5.1 | Image Editor        | `src/js/bindings/image-editor.js`      | Haute    | [x] **Fait** |
+| 5.2 | Styles Image Editor | `src/css/badsender-image-cropper.less` | Haute    | [x] **Fait** |
 
 ### 6. Dialogues TinyMCE
 
@@ -326,6 +326,22 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 | 2025-04-13 | **Phase 1 complétée** : Base Modal (1.4) modernisé vers Vuetify-style |
 | 2025-04-13 | **Phase 2 & 3 complétées** : Toutes les modales Vue.js modernisées    |
 | 2025-04-13 | **Phase 4 complétée** : Galerie d'images Knockout.js modernisée       |
+| 2025-04-13 | **Phase 5 complétée** : Éditeur d'images Konva.js modernisé           |
+
+### Détails Phase 5
+
+**Changements CSS (`badsender-image-cropper.less`) :**
+
+- Backdrop sombre conservé (rgba(0,0,0,0.85)) pour séparation visuelle avec la topbar
+- Z-index élevé (10001) pour passer au-dessus de tous les éléments
+- Conteneur avec border-radius 8px uniforme et box-shadow Vuetify (elevation-24)
+- Header avec couleur plus foncée (#00626e) pour différencier de la topbar principale
+- Header avec min-height 48px (cohérent avec Vuetify toolbar)
+
+**Changements JS (`image-editor.js`) :**
+
+- Injection de la modale dans le `body` au lieu d'après la dropzone (évite les problèmes de stacking context)
+- Ajout de la classe `mo` pour hériter des styles Mosaico globaux
 
 ### Détails Phase 4
 
