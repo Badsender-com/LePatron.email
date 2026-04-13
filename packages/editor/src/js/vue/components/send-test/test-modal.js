@@ -2,7 +2,7 @@ const Vue = require('vue/dist/vue.common');
 const isEmail = require('validator/lib/isEmail');
 const { validationMixin } = require('vuelidate');
 const { ModalComponent } = require('../modal/modalComponent');
-const { SelectComponent } = require('../select/selectComponent');
+const { SimpleSelect } = require('../select/simpleSelect');
 const { getEmailGroups, sendTestEmails } = require('../../utils/apis');
 const styleHelper = require('../../utils/style/styleHelper');
 
@@ -11,7 +11,7 @@ const axios = require('axios');
 const TestModalComponent = Vue.component('TestModal', {
   components: {
     ModalComponent,
-    SelectComponent,
+    SimpleSelect,
   },
   mixins: [validationMixin],
   props: {
@@ -162,8 +162,8 @@ const TestModalComponent = Vue.component('TestModal', {
                 </div>
                 </div>
                 <div class="row" :style="style.mb0">
-                  <div class="col s12 m6" v-if="displayEmailsGroupsSelect">
-                      <SelectComponent
+                  <div class="col s12" v-if="displayEmailsGroupsSelect">
+                      <SimpleSelect
                         v-model="selectedEmailGroup"
                         :placeholder="vm.t('placeholder-emails-groups')"
                         :options="emailsGroups"/>
