@@ -134,8 +134,6 @@ const EspComponent = Vue.component('EspForm', {
             subject,
             id,
           };
-
-          M.updateTextFields();
         })
         .catch((error) => {
           // handle error

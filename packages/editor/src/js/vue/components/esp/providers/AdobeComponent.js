@@ -52,7 +52,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     this.profile.campaignMailName = this.vm.creationName();
     this.isFolderLoading = false;
 
-    M.updateTextFields();
     window.addEventListener("beforeunload", this.handleBeforeUnload);
   },
   beforeDestroy() {
@@ -72,7 +71,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$emit('submit', this.profile);
     },
     handleBeforeUnload(e) {
