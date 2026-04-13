@@ -61,11 +61,9 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
       subject: subject ?? '',
       id: id ?? '',
     };
-    M.updateTextFields();
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$v.$touch();
       if (this.$v.$invalid) {
         return;

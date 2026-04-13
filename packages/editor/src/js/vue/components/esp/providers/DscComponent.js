@@ -53,11 +53,9 @@ const DscComponent = Vue.component('DscComponent', {
       typeCampagne: typeCampagne ?? '',
       id: id ?? '',
     };
-    M.updateTextFields();
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$v.$touch();
       if (this.$v.$invalid) {
         return;

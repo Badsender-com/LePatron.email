@@ -48,7 +48,6 @@ const TestModalComponent = Vue.component('TestModal', {
       this.vm.openTestModal.subscribe(this.handleOpenTestModalChange),
     ];
     this.fetchEmailsGroups();
-    M.updateTextFields();
   },
   beforeDestroy() {
     this.subscriptions.forEach((subscription) => subscription.dispose());
@@ -80,7 +79,6 @@ const TestModalComponent = Vue.component('TestModal', {
             label: emailsGroup.name,
             code: emailsGroup.id,
           }));
-          M.updateTextFields();
         })
         .catch((error) => {
           console.error(error);

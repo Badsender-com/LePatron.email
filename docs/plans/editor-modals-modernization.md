@@ -12,20 +12,20 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 | #   | Modale          | Fichier                                                    | Priorité | Statut       |
 | --- | --------------- | ---------------------------------------------------------- | -------- | ------------ |
-| 1.1 | Delete Block    | `src/js/vue/components/delete-block-modal/delete.modal.js` | Haute    | [ ] À faire  |
-| 1.2 | Save Block      | `src/js/vue/components/save-block-modal/save-modal.js`     | Haute    | [ ] À faire  |
-| 1.3 | Send Test Email | `src/js/vue/components/send-test/test-modal.js`            | Haute    | [ ] À faire  |
+| 1.1 | Delete Block    | `src/js/vue/components/delete-block-modal/delete.modal.js` | Haute    | [x] **Fait** |
+| 1.2 | Save Block      | `src/js/vue/components/save-block-modal/save-modal.js`     | Haute    | [x] **Fait** |
+| 1.3 | Send Test Email | `src/js/vue/components/send-test/test-modal.js`            | Haute    | [x] **Fait** |
 | 1.4 | Base Modal      | `src/js/vue/components/modal/modalComponent.js`            | Critique | [x] **Fait** |
 
 ### 2. Modales ESP (Email Service Provider)
 
-| #   | Modale         | Fichier                                                      | Priorité | Statut      |
-| --- | -------------- | ------------------------------------------------------------ | -------- | ----------- |
-| 2.1 | ESP Container  | `src/js/vue/components/esp/esp-send-mail.js`                 | Haute    | [ ] À faire |
-| 2.2 | Actito         | `src/js/vue/components/esp/providers/ActitoComponent.js`     | Moyenne  | [ ] À faire |
-| 2.3 | SendinBlue     | `src/js/vue/components/esp/providers/SendinBlueComponent.js` | Moyenne  | [ ] À faire |
-| 2.4 | DSC            | `src/js/vue/components/esp/providers/DscComponent.js`        | Moyenne  | [ ] À faire |
-| 2.5 | Adobe Campaign | `src/js/vue/components/esp/providers/AdobeComponent.js`      | Moyenne  | [ ] À faire |
+| #   | Modale         | Fichier                                                      | Priorité | Statut       |
+| --- | -------------- | ------------------------------------------------------------ | -------- | ------------ |
+| 2.1 | ESP Container  | `src/js/vue/components/esp/esp-send-mail.js`                 | Haute    | [x] **Fait** |
+| 2.2 | Actito         | `src/js/vue/components/esp/providers/ActitoComponent.js`     | Moyenne  | [x] **Fait** |
+| 2.3 | SendinBlue     | `src/js/vue/components/esp/providers/SendinBlueComponent.js` | Moyenne  | [x] **Fait** |
+| 2.4 | DSC            | `src/js/vue/components/esp/providers/DscComponent.js`        | Moyenne  | [x] **Fait** |
+| 2.5 | Adobe Campaign | `src/js/vue/components/esp/providers/AdobeComponent.js`      | Moyenne  | [x] **Fait** |
 
 ### 3. Modales jQuery UI (Legacy)
 
@@ -324,6 +324,25 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 | ---------- | --------------------------------------------------------------------- |
 | 2025-04-13 | Création du plan initial                                              |
 | 2025-04-13 | **Phase 1 complétée** : Base Modal (1.4) modernisé vers Vuetify-style |
+| 2025-04-13 | **Phase 2 & 3 complétées** : Toutes les modales Vue.js modernisées    |
+
+### Détails Phase 2 & 3
+
+**Changements :**
+
+- Suppression de tous les appels `M.updateTextFields()` (Materialize)
+- Les modales utilisent déjà le `ModalComponent` modernisé
+- Les styles sont appliqués via `badsender-modal.less` (classes legacy supportées)
+- Création de `SimpleSelect` pour remplacer `vue-select` dans test-modal.js
+
+**Fichiers modifiés :**
+
+- `esp-send-mail.js` - Suppression M.updateTextFields()
+- `test-modal.js` - Suppression M.updateTextFields(), utilisation SimpleSelect
+- `SendinBlueComponent.js` - Suppression M.updateTextFields()
+- `ActitoComponent.js` - Suppression M.updateTextFields()
+- `DscComponent.js` - Suppression M.updateTextFields()
+- `AdobeComponent.js` - Suppression M.updateTextFields()
 
 ### Détails Phase 1
 

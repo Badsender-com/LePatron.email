@@ -71,13 +71,10 @@ const ActitoComponent = Vue.component('ActitoComponent', {
       senderMail: senderMail ?? '',
       replyTo: replyTo ?? '',
       subject: subject ?? '',
-    }
-
-    M.updateTextFields();
+    };
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$v.$touch();
 
       if (this.$v.$invalid) {
