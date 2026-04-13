@@ -12,10 +12,8 @@
   //font-size: 1.1em;
   line-height: normal;
 
-  .propEditor .propInput .checkbox-replacer {
-    padding: 4px 2px;
-    font-size: 1.2em;
-  }
+  // Checkbox replacer base styling removed - now handled by Vuetify toggle styles below
+  // Old: .propEditor .propInput .checkbox-replacer { padding: 4px 2px; font-size: 1.2em; }
   .objLabel.level0,
   .pane-title {
     font-size: 1.2em;
@@ -476,42 +474,105 @@
     }
   }
 
-  .objEdit input[type='checkbox'] {
-    display: none;
+  // ==========================================================================
+  // TOGGLE SWITCHES - Vuetify v-switch Style (EXACT MATCH)
+  // Based on vuetify.css specifications:
+  // Track: 36x14px, border-radius: 8px, opacity: 0.6
+  // Thumb: 20x20px, transform: 20px when checked
+  // ==========================================================================
 
+  .objEdit .propInput input[type='checkbox'] {
+    display: none !important;
+
+    // Container - width: 38px (Vuetify selection-controls__input width)
     & + .checkbox-replacer {
-      width: 1.28571429em;
-      display: block;
-      text-align: center;
-      // Rompe IE10
-      // visibility: hidden;
+      position: relative !important;
+      display: inline-block !important;
+      width: 38px !important;
+      height: 20px !important;
+      vertical-align: middle !important;
+      cursor: pointer !important;
+      text-align: left !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
 
-    /* , &:checked + .checkbox-replacer:before */
-    & + .checkbox-replacer:before {
-      display: inline-block;
-      width: 1.2em;
-      height: 1.2em;
-      background-color: currentColor;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-size: contain;
-      mask-size: contain;
+    // Track (background bar) - Vuetify specs: 36x14px, border-radius: 8px
+    & + .checkbox-replacer::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 3px !important;  // Center vertically: (20 - 14) / 2 = 3
+      left: 1px !important;
+      width: 36px !important;
+      height: 14px !important;
+      background-color: rgba(0, 0, 0, 0.38) !important;  // Vuetify theme--light track color
+      border-radius: 8px !important;
+      opacity: 0.6 !important;
+      transition: background-color 0.3s cubic-bezier(0.25, 0.8, 0.5, 1) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      float: none !important;
+      display: block !important;
+      // Reset mask (prevents icon display)
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
     }
-  }
 
-  .objEdit input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      content: '';
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+    // Thumb (circle) - Vuetify specs: 20x20px
+    & + .checkbox-replacer::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      background-color: #FFFFFF !important;  // Vuetify theme--light thumb color
+      border-radius: 50% !important;
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12) !important;  // elevation-1
+      transition: 0.3s cubic-bezier(0.25, 0.8, 0.5, 1) !important;
+      z-index: 1 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      float: none !important;
+      display: block !important;
+      font-size: inherit !important;
+      line-height: normal !important;
+      opacity: 1 !important;
+      // Reset mask (prevents icon display)
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
     }
-    & + .checkbox-replacer:before {
-      font-size: 150%;
-      text-align: center;
-      content: '';
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3C/svg%3E");
+
+    // Checked state - Track becomes accent color
+    &:checked + .checkbox-replacer::after {
+      background-color: var(--v-accent-base, #00ACDC) !important;
+      opacity: 0.6 !important;  // Maintain opacity for checked state
+    }
+
+    // Checked state - Thumb slides right (20px as per Vuetify)
+    &:checked + .checkbox-replacer::before {
+      transform: translateX(18px) !important;  // 38 - 20 = 18px to align with right edge
+      background-color: var(--v-accent-base, #00ACDC) !important;
+    }
+
+    // Hover states - ripple effect simulation
+    & + .checkbox-replacer:hover::before {
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12),
+                  0 0 0 8px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    &:checked + .checkbox-replacer:hover::before {
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12),
+                  0 0 0 8px rgba(0, 172, 220, 0.12) !important;
     }
   }
 
