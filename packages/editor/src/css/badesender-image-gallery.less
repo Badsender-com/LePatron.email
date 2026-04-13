@@ -173,9 +173,12 @@
   }
 }
 
-//----- IMAGE GALLERY DIALOG
+// ==========================================================================
+// IMAGE GALLERY DIALOG - Modernized to match Vuetify design system
+// ==========================================================================
 
-@dialog-margin: 32px;
+@dialog-margin: 24px;
+@dialog-border-radius: 8px;
 
 #dialogGallery {
   position: fixed;
@@ -183,39 +186,87 @@
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: 200;
-  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000; // Same as modal overlay
+  background: rgba(0, 0, 0, 0.5); // Same as modal backdrop
   padding: @dialog-margin;
   display: flex;
   justify-content: center;
+  align-items: center;
+
+  // Tab navigation - Vuetify style
   .ui-tabs-nav {
     background: var(--v-primary-base) !important;
+    border-radius: @dialog-border-radius @dialog-border-radius 0 0;
+    padding: 0 48px 0 0; // Space for close button
+
+    li {
+      margin: 0;
+
+      a {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 12px 16px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.0892857143em;
+        transition: color 0.2s ease, background-color 0.2s ease;
+
+        &:hover {
+          color: #ffffff;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      &.ui-state-active a {
+        color: var(--v-accent-base);
+        background: transparent;
+      }
+    }
   }
+
+  // Main container - card style
   .tabs_horizontal {
-    background: white;
+    background: #ffffff;
     width: 100%;
-    max-width: 1024px;
+    max-width: 900px;
+    max-height: 90vh;
     position: relative;
+    border-radius: @dialog-border-radius;
+    box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+      0 24px 38px 3px rgba(0, 0, 0, 0.14),
+      0 9px 46px 8px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
+
+  // Close button - Vuetify icon button style
   .close {
     visibility: hidden;
     color: #fff;
     cursor: pointer;
-    width: 24px;
-    display: block;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: 6px;
     right: 6px;
+    z-index: 10;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
 
     &:before {
       visibility: visible;
       content: '';
-      position: relative;
-      top: 0px;
-      right: 0px;
-      width: 24px;
-      height: 24px;
-      display: inline-block;
+      width: 20px;
+      height: 20px;
+      display: block;
       background-color: currentColor;
       -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
@@ -225,6 +276,8 @@
       mask-size: contain;
     }
   }
+
+  // Gallery panel content
   .gallery-panel {
     position: absolute;
     top: @topbar-height;
@@ -232,18 +285,29 @@
     bottom: 0;
     left: 0;
     text-align: center;
-    padding: 0.5em 0;
+    padding: 16px;
     display: flex;
     flex-direction: column;
+    background: #ffffff;
+    border-radius: 0 0 @dialog-border-radius @dialog-border-radius;
   }
+
+  // Upload dropzone - modern dashed border
   .img-dropzone {
     position: relative;
-    margin: 0 0.5em 0.5em;
+    margin: 0 0 16px 0;
     flex-grow: 0;
     flex-shrink: 0;
-    background-color: @mosaico-background-color;
-    border-radius: 5px;
-    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.02);
+    border: 2px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 16px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+
+    &:hover {
+      border-color: var(--v-accent-base);
+      background-color: rgba(0, 172, 220, 0.04);
+    }
 
     &.ui-state-highlight:before {
       .makeDroppable();
@@ -252,44 +316,84 @@
       top: -10px;
       bottom: -10px;
     }
+
+    &.ui-state-draghover,
     &.ui-state-draghover:before {
-      background-color: rgba(0, 172, 220, 0.8); // accent at 80% opacity
+      background-color: rgba(0, 172, 220, 0.1);
+      border-color: var(--v-accent-base);
       animation: none;
     }
   }
+
   .uploadzone {
-    font-size: 1.2em;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
   }
+
+  // Gallery grid wrapper
   .dialog-gallery-wrapper {
     .scrolling-shadow();
     flex-grow: 1;
     overflow: auto;
-    padding: 0 7px;
+    padding: 8px;
 
     ul,
     li {
       list-style: none;
       margin: 0;
+      padding: 0;
     }
+
     ul {
-      display: inline-block;
-      font-size: 0;
-      line-height: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
     }
+
+    // Image thumbnails
     li {
-      display: inline-block;
-      padding: 7px;
-      font-size: initial;
-      margin: 4px;
+      display: block;
       overflow: hidden;
-      width: 125px;
-      height: 125px;
-      box-shadow: 0 0 1px @mosaico-shadow-color;
+      width: 120px;
+      height: 120px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
 
       &:hover {
         transform: scale(1.05);
-        box-shadow: 0 0 15px @mosaico-shadow-color;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.15);
       }
+    }
+  }
+
+  // Empty state message
+  .galleryEmpty {
+    padding: 32px 16px;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.875rem;
+  }
+
+  // Load button
+  .loadbutton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    background-color: var(--v-accent-base, #00acdc);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--v-accent-darken1, #0097c4);
     }
   }
 }

@@ -35,10 +35,10 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 ### 4. Dialogues Knockout.js (Custom)
 
-| #   | Modale           | Fichier                                            | Priorité | Statut      |
-| --- | ---------------- | -------------------------------------------------- | -------- | ----------- |
-| 4.1 | Image Gallery    | `src/tmpl-badsender/dialog-select-image.tmpl.html` | Haute    | [ ] À faire |
-| 4.2 | Background Image | `src/js/ext/badsender-widget-bgimage.js`           | Moyenne  | [ ] À faire |
+| #   | Modale           | Fichier                                            | Priorité | Statut       |
+| --- | ---------------- | -------------------------------------------------- | -------- | ------------ |
+| 4.1 | Image Gallery    | `src/tmpl-badsender/dialog-select-image.tmpl.html` | Haute    | [x] **Fait** |
+| 4.2 | Background Image | `src/js/ext/badsender-widget-bgimage.js`           | Moyenne  | [x] **Fait** |
 
 ### 5. Éditeur d'images (Konva.js)
 
@@ -325,6 +325,21 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 | 2025-04-13 | Création du plan initial                                              |
 | 2025-04-13 | **Phase 1 complétée** : Base Modal (1.4) modernisé vers Vuetify-style |
 | 2025-04-13 | **Phase 2 & 3 complétées** : Toutes les modales Vue.js modernisées    |
+| 2025-04-13 | **Phase 4 complétée** : Galerie d'images Knockout.js modernisée       |
+
+### Détails Phase 4
+
+**Changements (CSS only - pas de migration vers Vue.js) :**
+
+- Modernisation de `badesender-image-gallery.less`
+- Backdrop aligné avec les modales (rgba(0,0,0,0.5), z-index: 1000)
+- Conteneur avec border-radius 8px et box-shadow Vuetify
+- Onglets avec style Vuetify (uppercase, letter-spacing, hover states)
+- Bouton de fermeture avec hover state circulaire
+- Zone de drop modernisée (dashed border, hover accent)
+- Grille d'images avec gap, border-radius, transitions
+
+**Décision architecturale :** Option B retenue (CSS only) - la logique Knockout.js reste intacte, seuls les styles sont modernisés.
 
 ### Détails Phase 2 & 3
 
