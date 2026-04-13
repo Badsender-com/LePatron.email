@@ -1,0 +1,585 @@
+// ==========================================================================
+// MODAL COMPONENT - Vuetify-style modal for the editor
+// ==========================================================================
+//
+// Modern modal component that matches the admin panel design system.
+// Replaces the Materialize CSS modal with a custom implementation.
+//
+// Structure:
+// .bs-modal-overlay          - Full-screen backdrop
+//   .bs-modal-container      - Centering container
+//     .bs-modal-card         - The modal card itself
+//       .bs-modal-loading    - Loading state overlay
+//       .bs-modal-content-wrapper - Content container
+//         .modal-content     - Legacy class for content (from child components)
+//         .modal-footer      - Legacy class for actions (from child components)
+
+// ==========================================================================
+// VARIABLES
+// ==========================================================================
+
+@modal-backdrop-color: rgba(0, 0, 0, 0.5);
+@modal-card-background: #ffffff;
+@modal-card-border-radius: 8px;
+@modal-card-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+  0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+@modal-z-index: 1000;
+@modal-transition-duration: 0.2s;
+@modal-default-width: 560px;
+
+// ==========================================================================
+// OVERLAY & CONTAINER
+// ==========================================================================
+
+.bs-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: @modal-backdrop-color;
+  z-index: @modal-z-index;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.bs-modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 90vh;
+  min-width: @modal-default-width;
+}
+
+// ==========================================================================
+// CARD
+// ==========================================================================
+
+.bs-modal-card {
+  background-color: @modal-card-background;
+  border-radius: @modal-card-border-radius;
+  box-shadow: @modal-card-shadow;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  width: 100%;
+}
+
+.bs-modal-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  overflow: visible; // Allow dropdowns to overflow
+  max-height: 90vh;
+}
+
+// ==========================================================================
+// LOADING STATE
+// ==========================================================================
+
+.bs-modal-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  min-width: 300px;
+  padding: 48px;
+}
+
+.bs-modal-spinner {
+  width: 48px;
+  height: 48px;
+}
+
+.bs-modal-spinner-svg {
+  animation: bs-modal-rotate 1.4s linear infinite;
+  width: 100%;
+  height: 100%;
+}
+
+.bs-modal-spinner-circle {
+  stroke: var(--v-accent-base, #00acdc);
+  stroke-linecap: round;
+  animation: bs-modal-dash 1.4s ease-in-out infinite;
+}
+
+@keyframes bs-modal-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bs-modal-dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+// ==========================================================================
+// TRANSITIONS
+// ==========================================================================
+
+.bs-modal-fade-enter-active,
+.bs-modal-fade-leave-active {
+  transition: opacity @modal-transition-duration ease;
+
+  .bs-modal-card {
+    transition: transform @modal-transition-duration ease;
+  }
+}
+
+.bs-modal-fade-enter,
+.bs-modal-fade-leave-to {
+  opacity: 0;
+
+  .bs-modal-card {
+    transform: scale(0.95) translateY(-20px);
+  }
+}
+
+// ==========================================================================
+// LEGACY CONTENT CLASSES (from child components using Materialize structure)
+// ==========================================================================
+
+.bs-modal-content-wrapper {
+  // Modal content area
+  // z-index: 2 to be above footer (z-index: 1) so dropdowns can overlay footer
+  .modal-content {
+    padding: 24px;
+    overflow: visible; // Allow dropdowns to escape content area
+    flex: 1 1 auto;
+    position: relative;
+    z-index: 2;
+
+    // Title styling
+    h5 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.87);
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+    }
+
+    // Row and column reset for Materialize grid
+    .row {
+      margin-left: -12px;
+      margin-right: -12px;
+      margin-bottom: 16px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .col {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    // Form fields - Design system style with label above input
+    // Materialize places label AFTER input in DOM, so we use flexbox to reverse
+    // Using !important to override Materialize's high specificity styles
+    .input-field {
+      display: flex !important;
+      flex-direction: column-reverse !important; // Puts label visually above input
+      margin-top: 0 !important;
+      margin-bottom: 16px !important;
+      position: relative !important;
+      padding-top: 0 !important;
+
+      // Label above input - override Materialize completely
+      label {
+        display: block !important;
+        font-size: 0.75rem !important;
+        font-weight: 500 !important;
+        color: rgba(0, 0, 0, 0.6) !important;
+        margin-bottom: 6px !important;
+        margin-top: 0 !important;
+        position: static !important;
+        transform: none !important;
+        pointer-events: auto !important;
+        order: 2 !important;
+        top: auto !important;
+        left: auto !important;
+        line-height: 1.4 !important;
+
+        &.active {
+          color: rgba(0, 0, 0, 0.6) !important;
+          transform: none !important;
+          font-size: 0.75rem !important;
+        }
+      }
+
+      // Input with full border (not underline)
+      input[type='text'],
+      input[type='email'],
+      input[type='number'],
+      input[type='url'],
+      textarea {
+        width: 100% !important;
+        padding: 8px 12px !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+        border-radius: 4px !important;
+        background: #ffffff !important;
+        font-size: 0.875rem !important;
+        color: rgba(0, 0, 0, 0.87) !important;
+        outline: none !important;
+        transition: border-color 0.2s ease !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        height: 40px !important;
+        order: 1 !important;
+        box-shadow: none !important;
+
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.4) !important;
+        }
+
+        &:focus {
+          border-color: var(--v-accent-base, #00acdc) !important;
+          border-width: 2px !important;
+          box-shadow: none !important;
+        }
+
+        &.invalid {
+          border-color: #f04e23 !important;
+        }
+
+        &.valid {
+          border-color: rgba(0, 0, 0, 0.2) !important;
+        }
+
+        &::placeholder {
+          color: rgba(0, 0, 0, 0.38) !important;
+        }
+
+        // Disabled state
+        &:disabled {
+          background-color: rgba(0, 0, 0, 0.04) !important;
+          color: rgba(0, 0, 0, 0.6) !important;
+          border-color: rgba(0, 0, 0, 0.1) !important;
+          cursor: not-allowed !important;
+        }
+      }
+
+      .helper-text {
+        font-size: 0.75rem !important;
+        color: rgba(0, 0, 0, 0.5) !important;
+        margin-top: 4px !important;
+        display: block !important;
+        min-height: 0 !important;
+        order: 0 !important;
+        position: static !important;
+
+        &[data-error] {
+          color: #f04e23 !important;
+        }
+      }
+
+      // Show error text when input is invalid
+      input.invalid ~ .helper-text::after {
+        content: attr(data-error);
+        color: #f04e23 !important;
+      }
+
+      // Error state - label color change
+      &:has(input.invalid) label,
+      &:has(input:invalid) label {
+        color: #f04e23 !important;
+      }
+    }
+
+    // Disabled fields styling (for ESP modals)
+    input:disabled,
+    input[disabled] {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      cursor: not-allowed !important;
+    }
+
+    // ==========================================================================
+    // SIMPLE SELECT - Native HTML select styled for design system
+    // ==========================================================================
+    .simple-select {
+      position: relative;
+      margin-bottom: 16px;
+
+      &__input {
+        width: 100%;
+        height: 40px;
+        padding: 0 36px 0 12px; // Right padding for arrow
+        font-size: 0.875rem;
+        font-family: inherit;
+        color: rgba(0, 0, 0, 0.87);
+        background-color: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        appearance: none; // Remove native arrow
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        transition: border-color 0.2s ease;
+
+        &:hover {
+          border-color: rgba(0, 0, 0, 0.4);
+        }
+
+        &:focus {
+          border-color: var(--v-accent-base, #00acdc);
+          border-width: 2px;
+          padding: 0 35px 0 11px; // Adjust for thicker border
+        }
+
+        // Placeholder style (disabled first option)
+        &:invalid,
+        &:required:invalid {
+          color: rgba(0, 0, 0, 0.38);
+        }
+
+        option {
+          color: rgba(0, 0, 0, 0.87);
+        }
+
+        option[value=""][disabled] {
+          color: rgba(0, 0, 0, 0.38);
+        }
+      }
+
+      &__arrow {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: rgba(0, 0, 0, 0.54);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    // Legacy vue-select support (if still used elsewhere)
+    .vue-select,
+    .v-select {
+      margin-bottom: 16px !important;
+
+      .vs__dropdown-toggle {
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+        border-radius: 4px !important;
+        min-height: 40px !important;
+      }
+
+      .vs__no-options {
+        padding: 10px 12px !important;
+        font-size: 0.875rem !important;
+        color: rgba(0, 0, 0, 0.5) !important;
+      }
+    }
+
+    // Info panels
+    .card-panel {
+      padding: 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+
+      &.blue-grey {
+        background-color: #eceff1;
+
+        &.lighten-5 {
+          background-color: #eceff1;
+        }
+      }
+    }
+  }
+
+  // Modal footer / actions area
+  // z-index: 1 to stay below dropdown (z-index: 9999)
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    gap: 8px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    background: #ffffff; // Explicit background
+  }
+}
+
+// ==========================================================================
+// BUTTONS (Override Materialize buttons with Vuetify style)
+// ==========================================================================
+
+.bs-modal-content-wrapper {
+  // Primary action button - flat style without shadow (like admin)
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 64px;
+    height: 36px;
+    padding: 0 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: var(--v-accent-base, #00acdc);
+    color: #ffffff;
+    box-shadow: none; // No shadow - flat design
+
+    &:hover {
+      background-color: var(--v-accent-darken1, #0097c4);
+      box-shadow: none;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    &:disabled {
+      background-color: rgba(0, 0, 0, 0.12) !important;
+      color: rgba(0, 0, 0, 0.26) !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
+    }
+
+    // FontAwesome icon in button
+    i.fa {
+      font-size: 0.875rem;
+    }
+
+    // Error/danger variant
+    &.btn-danger,
+    &.red {
+      background-color: #f44336;
+
+      &:hover {
+        background-color: #d32f2f;
+      }
+    }
+  }
+
+  // Text/flat button (cancel, secondary actions)
+  .btn-flat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 36px;
+    padding: 0 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: transparent;
+    color: var(--v-primary-base, #37474f);
+    box-shadow: none;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    &:focus {
+      outline: none;
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    &:disabled {
+      color: rgba(0, 0, 0, 0.26) !important;
+      cursor: not-allowed;
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+
+  // Waves effect override (remove Materialize ripple)
+  .waves-effect {
+    position: relative;
+    overflow: hidden;
+  }
+}
+
+// ==========================================================================
+// SMALL MODAL VARIANT
+// ==========================================================================
+
+.small-modal .bs-modal-card {
+  max-width: 400px;
+}
+
+// ==========================================================================
+// ERROR MODAL VARIANT
+// ==========================================================================
+
+.error-modal {
+  .modal-content h5 {
+    color: #f44336;
+  }
+
+  .btn {
+    background-color: #f44336;
+
+    &:hover {
+      background-color: #d32f2f;
+    }
+  }
+}
+
+// ==========================================================================
+// ADOBE/FULL WIDTH MODAL ADJUSTMENTS
+// ==========================================================================
+
+.bs-modal-overlay {
+  // Smart Tree component styling for Adobe modal
+  smart-tree {
+    --smart-tree-default-height: 300px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+  }
+}
+
+// ==========================================================================
+// LOADING OVERLAY FOR LONG OPERATIONS (Adobe export)
+// ==========================================================================
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: @modal-card-border-radius;
+}
