@@ -475,7 +475,19 @@ class AdobeProvider {
         },
       });
     } catch (err) {
-      console.error('Error while uploading delivery image:', err);
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        this.accessToken = await this.refreshToken();
+        const retryForm = new FormData();
+        retryForm.append('file_noMd5', image, optionImg);
+        await axios.post(this.adobeUploadFileUrl, retryForm, {
+          headers: {
+            ...retryForm.getHeaders(),
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        });
+      } else {
+        console.error('Error while uploading delivery image:', err);
+      }
     }
   }
 
