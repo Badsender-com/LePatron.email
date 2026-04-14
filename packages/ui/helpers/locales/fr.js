@@ -351,6 +351,35 @@ export default {
     moveManySuccessful: 'Les emails ont bien été déplacés',
     editTagsSuccessful: 'Les labels ont bien été mis à jour',
     openComments: 'Ouvrir les commentaires',
+    duplicateTranslate: 'Dupliquer + Traduire',
+  },
+  translation: {
+    duplicateAndTranslate: 'Dupliquer et traduire',
+    autoDetect: 'Détection automatique',
+    sourceLanguage: 'Langue source',
+    targetLanguage: 'Langue cible',
+    newName: 'Nom du nouvel email',
+    translate: 'Traduire',
+    duplicateNotice: 'L\'email <strong>{name}</strong> sera dupliqué et traduit automatiquement.',
+    noActiveIntegration: 'Aucune intégration IA active. Configurez une intégration dans les paramètres du groupe.',
+    noLanguagesConfigured: 'Aucune langue configurée. Configurez les langues disponibles dans les paramètres du groupe.',
+    success: 'Email dupliqué et traduit avec succès',
+    successTitle: 'Traduction effectuée',
+    successMessage: 'Votre email a été dupliqué et traduit avec succès.',
+    warningTitle: 'Pensez à vérifier :',
+    warningLinks: 'Les liens présents dans l\'email',
+    warningImages: 'Les images contenant du texte',
+    warningVariants: 'La variante de template si applicable',
+    understood: 'J\'ai compris',
+    translatingNotice: 'Traduction en cours, veuillez patienter...',
+    progressStarting: 'Démarrage de la traduction...',
+    progressBatch: 'Traduction en cours... (lot {current}/{total})',
+    progressCompleted: 'Terminé !',
+    pleaseWait: 'Veuillez patienter...',
+    cancelled: 'Traduction annulée',
+    estimatedTime: '~{time} restantes',
+    destination: 'Destination',
+    destinationHint: 'Sélectionnez où créer la copie traduite',
   },
   template: {
     noId: 'Aucun ID',
@@ -466,4 +495,87 @@ export default {
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
   },
+  integrations: {
+    title: 'Intégrations',
+    name: 'Nom',
+    provider: 'Fournisseur',
+    status: 'Statut',
+    active: 'Actif',
+    apiKey: 'Clé API',
+    apiHost: 'URL de l\'API (optionnel)',
+    apiKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
+    productId: 'ID du produit',
+    add: 'Ajouter une intégration',
+    edit: 'Modifier l\'intégration',
+    created: 'Intégration créée avec succès',
+    updated: 'Intégration mise à jour avec succès',
+    deleted: 'Intégration supprimée avec succès',
+    validate: 'Tester la connexion',
+    validationSuccess: 'Connexion validée avec succès',
+    validationFailed: 'Échec de la validation des identifiants',
+    noIntegrations: 'Aucune intégration configurée',
+    deleteConfirmTitle: 'Supprimer l\'intégration',
+    deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
+    statusLabels: {
+      valid: 'Validé',
+      invalid: 'Invalide',
+      pending: 'En attente'
+    },
+    openai: {
+      apiKeyPlaceholder: 'sk-...',
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
+    },
+    mistral: {
+      apiKeyPlaceholder: 'Votre clé API Mistral',
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
+    },
+    infomaniak: {
+      apiKeyPlaceholder: 'Votre clé API Infomaniak',
+      productId: 'Product ID',
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+    },
+    deepl: {
+      apiKeyPlaceholder: 'Votre clé API DeepL',
+      apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
+    },
+    models: {
+      fastEconomical: 'rapide, économique',
+      balanced: 'équilibré',
+      powerful: 'puissant',
+      fast: 'rapide',
+      recommended: 'recommandé',
+    }
+  },
+  aiFeatures: {
+    title: 'Fonctionnalités IA',
+    selectIntegration: 'Intégration à utiliser',
+    noIntegration: '-- Aucune intégration --',
+    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
+    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
+    comingSoon: 'Bientôt disponible',
+    translation: {
+      title: 'Traduction',
+      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
+      availableLanguages: 'Langues disponibles',
+      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
+      formality: 'Niveau de formalité',
+      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityDefault: 'Par défaut',
+      formalityMore: 'Formel',
+      formalityLess: 'Informel',
+      formalityPreferMore: 'Plutôt formel',
+      formalityPreferLess: 'Plutôt informel'
+    },
+    textGeneration: {
+      title: 'Génération de texte',
+      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+    },
+    qualityCheck: {
+      title: 'Contrôle qualité',
+      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
+    }
+  }
 };
