@@ -1,50 +1,113 @@
 /**************************************************************************************************************************
- * TINYMCE / MOXIEMANAGER HTML ELEMENTS
+ * TINYMCE / MOXIEMANAGER HTML ELEMENTS - Aligned with Vuetify design system
  *************************************************************************************************************************/
+
+// Design system variables for TinyMCE dialogs
+// Aligned with admin modals (bs-modal-form.vue) - Option A: Complete alignment
+@tinymce-border-radius: 8px;
+@tinymce-header-bg: #ffffff; // White header like admin modals
+@tinymce-title-color: rgba(0, 0, 0, 0.87); // Black title like admin modals
+@tinymce-close-btn-color: rgba(0, 0, 0, 0.54); // Gray close button
+@tinymce-primary-color: #093040; // Primary color for secondary actions (Cancel)
+@tinymce-accent: var(--v-accent-base, #00acdc); // Accent for primary actions (OK)
+
+// ==========================================================================
+// TinyMCE Window Container - Override skin.min.css
+// ==========================================================================
+
+// Window container - needs high specificity to override TinyMCE's CSS
+.mce-floatpanel.mce-window,
+.mce-window {
+  border: none !important;
+  border-radius: @tinymce-border-radius !important;
+  // Vuetify elevation-24
+  box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+    0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12) !important;
+  overflow: hidden !important;
+}
+
+// ==========================================================================
+// TinyMCE Window Header - Vuetify style
+// ==========================================================================
+
+// Header - override .mce-window-head from skin.min.css
+// Aligned with admin modals: white background, no border
+.mce-window .mce-window-head,
+.mce-floatpanel.mce-window .mce-window-head {
+  background: @tinymce-header-bg !important;
+  background-color: @tinymce-header-bg !important;
+  border-bottom: none !important; // No separator like admin modals
+  border-radius: @tinymce-border-radius @tinymce-border-radius 0 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  padding: 16px 24px 8px 24px !important; // Match admin padding (more top, less bottom)
+  display: flex !important;
+  align-items: center !important;
+}
+
+// Title styling - black text like admin modals
+.mce-window .mce-window-head .mce-title,
+.mce-floatpanel.mce-window .mce-window-head .mce-title {
+  color: @tinymce-title-color !important;
+  font-weight: 500 !important;
+  font-size: 1.25rem !important; // Match admin 1.25rem
+  line-height: 1.5 !important;
+}
+
+// Close button - HIDDEN to match admin modals (no close button in header)
+.mce-window .mce-window-head .mce-close,
+.mce-floatpanel.mce-window .mce-window-head .mce-close {
+  display: none !important;
+}
 
 /**
  * moxiemanager window
  */
-.moxman-container.moxman-window,
-.mce-window {
+.moxman-container.moxman-window {
   border: none;
-  border-top-left-radius: @large-border-radius;
-  border-top-right-radius: @large-border-radius;
-  border-color: fade(@shadow-color, 0%);
-  box-shadow: 0 2px 20px @shadow-color;
+  border-radius: @tinymce-border-radius !important;
+  box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+    0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12) !important;
   overflow: hidden;
 }
-.moxman-window,
-.mce-window {
-  .moxman-window-head,
-  .mce-window-head {
-    background: none @dialog-title-background-color;
-    font-size: 1.1em;
-    //border-top-left-radius: @large-border-radius;
-    //border-top-right-radius: @large-border-radius;
 
-    .moxman-title,
-    .mce-title {
-      color: @dialog-title-color;
+// MoxieManager window styles (separate from TinyMCE)
+// Note: MoxieManager keeps the colored header style as it's a file manager, not a form dialog
+@moxman-header-bg: var(--v-primary-base, #00838f);
+@moxman-header-color: #ffffff;
+
+.moxman-window {
+  .moxman-window-head {
+    background: @moxman-header-bg !important;
+    font-size: 1.1em;
+    border-radius: @tinymce-border-radius @tinymce-border-radius 0 0;
+    min-height: 48px;
+
+    .moxman-title {
+      color: @moxman-header-color;
+      font-weight: 500;
     }
-    button.moxman-close,
-    button.mce-close {
-      //color: @background-color;
+    button.moxman-close {
+      color: @moxman-header-color;
       font-size: 1.6em;
-      top: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+
       &:hover {
-        color: @dialog-title-color;
+        color: @moxman-header-color;
+        opacity: 1;
       }
     }
   }
-  .moxman-panel,
-  .mce-panel {
+  .moxman-panel {
     background-color: @background-color;
   }
-  .moxman-container-body,
-  .mce-container-body {
-    .moxman-panel.moxman-first,
-    .mce-panel.mce-first {
+  .moxman-container-body {
+    .moxman-panel.moxman-first {
       border-bottom: none;
     }
   }
@@ -109,30 +172,10 @@
       }
     }
   }
-  i.moxman-i-checkbox,
-  i.mce-i-checkbox {
+  i.moxman-i-checkbox {
     background-color: transparent;
   }
-  //.mce-btn.mce-active, .mce-btn.mce-active:hover {
-
-  .mce-listbox,
-  .mce-listbox:hover,
-  .mce-listbox.mce-active,
-  .mce-listbox.mce-active:hover,
-  .mce-listbox:focus {
-    background-color: transparent;
-    text-shadow: none;
-    border: 1px solid #c5c5c5; // Could be @button-border-color, but moxiemanager have a different color for other fields
-    span,
-    .mce-ico {
-      color: @text-color;
-    }
-    i.mce-caret {
-      border-top-color: @text-color; // Down arrow is written with borders, but uses text color
-    }
-  }
-  .moxman-btn i,
-  .mce-btn i {
+  .moxman-btn i {
     text-shadow: none;
   }
   input,
@@ -141,8 +184,34 @@
   button {
     // resets the "max-width: 100%;" from style_page.less, otherwise breaking images
     max-width: none;
-    //border: 1px solid @button-border-color; // This doesn't work
   }
+}
+
+// ==========================================================================
+// TinyMCE Listbox styles (outside of .moxman-window)
+// ==========================================================================
+
+.mce-window .mce-listbox,
+.mce-window .mce-listbox:hover,
+.mce-window .mce-listbox.mce-active,
+.mce-window .mce-listbox.mce-active:hover,
+.mce-window .mce-listbox:focus {
+  background-color: transparent;
+  text-shadow: none;
+  border: 1px solid #c5c5c5;
+  span,
+  .mce-ico {
+    color: @text-color;
+  }
+  i.mce-caret {
+    border-top-color: @text-color;
+  }
+}
+
+.mce-window .mce-btn i,
+.mce-window i.mce-i-checkbox {
+  text-shadow: none;
+  background-color: transparent;
 }
 
 .moxman-tooltip,
@@ -217,5 +286,191 @@ body.moxman-v2 {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
     }
+  }
+}
+
+// ==========================================================================
+// TinyMCE Dialog Footer - Vuetify style (override skin.min.css)
+// ==========================================================================
+
+// Footer container - OVERRIDE TinyMCE's absolute positioning with flexbox
+// TinyMCE uses .mce-abs-layout with position:absolute on buttons - we must disable it
+.mce-window .mce-foot,
+.mce-floatpanel.mce-window .mce-foot {
+  border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-radius: 0 0 @tinymce-border-radius @tinymce-border-radius !important;
+  // Override absolute layout
+  position: static !important;
+  height: auto !important;
+  // Reset TinyMCE padding, we'll apply it on the inner container
+  padding: 0 !important;
+}
+
+// The inner container-body holds the buttons - convert from abs-layout to flexbox
+.mce-window .mce-foot > .mce-container-body,
+.mce-floatpanel.mce-window .mce-foot > .mce-container-body {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  // Apply padding here for proper button alignment (top right bottom left)
+  padding: 12px 24px 20px 24px !important; // More bottom padding
+  box-sizing: border-box !important;
+}
+
+// ==========================================================================
+// TinyMCE Dialog Buttons - Vuetify style
+// ==========================================================================
+
+// All buttons in footer - base styles
+// CRITICAL: Override position:absolute from .mce-abs-layout-item
+.mce-window .mce-foot .mce-btn,
+.mce-floatpanel.mce-window .mce-foot .mce-btn {
+  // Disable absolute positioning from TinyMCE
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  // Vuetify button styles
+  border-radius: 4px !important;
+  height: 36px !important;
+  min-width: 64px !important;
+  padding: 0 !important; // Remove padding on wrapper, apply on button
+  transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+  text-shadow: none !important;
+  border: none !important;
+  margin: 0 !important;
+  // Flex for vertical centering
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  button {
+    text-transform: uppercase !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    letter-spacing: 0.0892857143em !important;
+    line-height: 1 !important; // Use line-height: 1 for proper centering
+    text-shadow: none !important;
+    padding: 0 16px !important;
+    height: 100% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// Secondary button (Cancel, etc.) - text button style with PRIMARY color
+// Matches admin modals: v-btn text color="primary"
+// With flexbox row + justify-end, DOM order is: first button = left, second = right
+// TinyMCE renders OK first, then Cancel - so we use order to swap them
+.mce-window .mce-foot .mce-btn:not(.mce-primary),
+.mce-floatpanel.mce-window .mce-foot .mce-btn:not(.mce-primary) {
+  background-color: transparent !important;
+  background: transparent !important;
+  border: none !important;
+  order: 1 !important; // Cancel goes FIRST (left)
+
+  button {
+    color: @tinymce-primary-color !important; // Primary (#093040), not accent
+  }
+
+  &:hover,
+  &:focus {
+    background-color: rgba(9, 48, 64, 0.08) !important;
+    background: rgba(9, 48, 64, 0.08) !important;
+  }
+}
+
+// Primary button (OK, Insert, etc.) - filled accent color
+.mce-window .mce-foot .mce-btn.mce-primary,
+.mce-floatpanel.mce-window .mce-foot .mce-btn.mce-primary {
+  background-color: @tinymce-accent !important;
+  background: @tinymce-accent !important;
+  order: 2 !important; // OK goes SECOND (right)
+
+  button {
+    color: #ffffff !important;
+  }
+
+  &:hover,
+  &:focus {
+    background-color: var(--v-accent-darken1, #0097c4) !important;
+    background: var(--v-accent-darken1, #0097c4) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+// ==========================================================================
+// TinyMCE Form Inputs - Vuetify style
+// ==========================================================================
+
+// Text inputs - only style borders and focus, don't change sizing
+.mce-window .mce-container-body .mce-textbox,
+.mce-floatpanel.mce-window .mce-container-body .mce-textbox {
+  border: 1px solid rgba(0, 0, 0, 0.42) !important;
+  border-radius: 4px !important;
+  transition: border-color 0.2s ease !important;
+
+  &:focus {
+    border-color: @tinymce-accent !important;
+    outline: none !important;
+  }
+}
+
+// Labels - preserve TinyMCE layout, match admin modal label color
+// DO NOT change width, overflow, or display properties
+.mce-window .mce-container-body .mce-label,
+.mce-floatpanel.mce-window .mce-container-body .mce-label {
+  color: rgba(0, 0, 0, 0.6) !important; // Match Vuetify label color
+  font-size: 0.875rem !important; // 14px like Vuetify
+  // Ensure labels are not hidden by our other styles
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+// ==========================================================================
+// TinyMCE Listbox/Combobox - Vuetify style
+// ==========================================================================
+
+.mce-window .mce-container-body .mce-combobox,
+.mce-floatpanel.mce-window .mce-container-body .mce-combobox {
+  .mce-btn {
+    background: #f5f5f5 !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.42) !important;
+  }
+}
+
+// ==========================================================================
+// TinyMCE Code Source Dialog - Fix textarea height
+// ==========================================================================
+
+// The code source dialog textarea should fill available space
+.mce-window .mce-container-body .mce-textbox.mce-multiline,
+.mce-floatpanel.mce-window .mce-container-body .mce-textbox.mce-multiline {
+  min-height: 350px !important;
+  resize: vertical !important;
+}
+
+// ==========================================================================
+// TinyMCE Input autofill fix - remove yellow background
+// ==========================================================================
+
+.mce-window .mce-container-body input,
+.mce-floatpanel.mce-window .mce-container-body input {
+  background-color: #ffffff !important;
+
+  // Override browser autofill styles
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    box-shadow: 0 0 0 30px white inset !important;
   }
 }

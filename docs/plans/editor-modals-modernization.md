@@ -49,11 +49,11 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 ### 6. Dialogues TinyMCE
 
-| #   | Modale      | Fichier                                              | Priorité | Statut      |
-| --- | ----------- | ---------------------------------------------------- | -------- | ----------- |
-| 6.1 | Link Editor | `src/js/ext/link-with-color.js:505`                  | Moyenne  | [ ] À faire |
-| 6.2 | Font Size   | `src/js/ext/tinymce/tinymce-extend-functions.js:101` | Basse    | [ ] À faire |
-| 6.3 | Source Code | Plugin TinyMCE `code` (intégré)                      | Basse    | [ ] À faire |
+| #   | Modale      | Fichier                                              | Priorité | Statut       |
+| --- | ----------- | ---------------------------------------------------- | -------- | ------------ |
+| 6.1 | Link Editor | `src/js/ext/link-with-color.js:505`                  | Moyenne  | [x] **Fait** |
+| 6.2 | Font Size   | `src/js/ext/tinymce/tinymce-extend-functions.js:101` | Basse    | [x] **Fait** |
+| 6.3 | Source Code | Plugin TinyMCE `code` (intégré)                      | Basse    | [x] **Fait** |
 
 ---
 
@@ -327,6 +327,7 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 | 2025-04-13 | **Phase 2 & 3 complétées** : Toutes les modales Vue.js modernisées    |
 | 2025-04-13 | **Phase 4 complétée** : Galerie d'images Knockout.js modernisée       |
 | 2025-04-13 | **Phase 5 complétée** : Éditeur d'images Konva.js modernisé           |
+| 2025-04-13 | **Phase 6 complétée** : Dialogues TinyMCE alignés avec design system  |
 
 ### Détails Phase 5
 
@@ -356,6 +357,31 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 - Grille d'images avec gap, border-radius, transitions
 
 **Décision architecturale :** Option B retenue (CSS only) - la logique Knockout.js reste intacte, seuls les styles sont modernisés.
+
+### Détails Phase 6
+
+**Décision architecturale :** Option A retenue (alignement complet avec design system admin)
+
+**Changements CSS (`style_elements_moxie.less`) :**
+
+- Header blanc (#ffffff) au lieu de cyan, comme les modales admin (`bs-modal-form.vue`)
+- Titre noir (rgba(0,0,0,0.87)) au lieu de blanc
+- Bouton de fermeture masqué (`display: none`) - pas de croix comme dans les modales admin
+- Pas de bordure sous le header (supprimée pour cohérence)
+- Hauteur du header réduite (padding: 16px 24px 8px 24px)
+- Bouton Annuler : style text avec couleur primary (#093040), order: 1 (gauche)
+- Bouton OK : background accent (#00ACDC) avec texte blanc, order: 2 (droite)
+- Footer avec padding 16px 24px pour marges cohérentes
+- Labels avec couleur Vuetify (rgba(0,0,0,0.6)) et font-size 0.875rem
+- Inputs avec border-radius 4px et focus state accent
+- Textarea multiline avec min-height 350px
+- Fix autofill jaune des navigateurs
+
+**Fichiers modifiés :**
+
+- `src/css/style_elements_moxie.less` - Refonte complète des styles TinyMCE dialogs
+
+**Note :** MoxieManager (gestionnaire de fichiers) conserve le header coloré car c'est un gestionnaire de fichiers, pas un formulaire de dialogue.
 
 ### Détails Phase 2 & 3
 
