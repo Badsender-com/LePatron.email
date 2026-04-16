@@ -29,9 +29,9 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 
 ### 3. Modales jQuery UI (Legacy)
 
-| #   | Modale                | Fichier                         | Priorité | Statut      |
-| --- | --------------------- | ------------------------------- | -------- | ----------- |
-| 3.1 | Incompatible Template | `src/js/template-loader.js:594` | Basse    | [ ] À faire |
+| #   | Modale                | Fichier                         | Priorité | Statut       |
+| --- | --------------------- | ------------------------------- | -------- | ------------ |
+| 3.1 | Incompatible Template | `src/js/template-loader.js:594` | Basse    | [x] **Fait** |
 
 ### 4. Dialogues Knockout.js (Custom)
 
@@ -328,6 +328,7 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 | 2025-04-13 | **Phase 4 complétée** : Galerie d'images Knockout.js modernisée       |
 | 2025-04-13 | **Phase 5 complétée** : Éditeur d'images Konva.js modernisé           |
 | 2025-04-13 | **Phase 6 complétée** : Dialogues TinyMCE alignés avec design system  |
+| 2025-04-13 | **Phase 7 complétée** : Modale jQuery UI (Incompatible Template)      |
 
 ### Détails Phase 5
 
@@ -382,6 +383,23 @@ Uniformiser toutes les modales de l'éditeur vers le design system Vuetify utili
 - `src/css/style_elements_moxie.less` - Refonte complète des styles TinyMCE dialogs
 
 **Note :** MoxieManager (gestionnaire de fichiers) conserve le header coloré car c'est un gestionnaire de fichiers, pas un formulaire de dialogue.
+
+### Détails Phase 7
+
+**Changements CSS (`style_elements_jquery.less`) :**
+
+- Refonte complète de `.ui-dialog` pour correspondre au design system admin
+- Header blanc (#ffffff) avec titre noir (rgba(0,0,0,0.87))
+- Bouton de fermeture masqué (`display: none`)
+- Border-radius 8px avec box-shadow Vuetify (elevation-24)
+- Footer avec flexbox, boutons alignés à droite
+- Bouton OK avec style accent Vuetify (#00ACDC)
+- Overlay modernisé : `rgba(0,0,0,0.5)` au lieu de gris
+- Padding cohérent avec les autres modales (16px 24px)
+
+**Fichiers modifiés :**
+
+- `src/css/style_elements_jquery.less` - Refonte des styles jQuery UI Dialog
 
 ### Détails Phase 2 & 3
 
