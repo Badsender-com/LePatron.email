@@ -133,7 +133,8 @@
 .ui-dialog {
   position: absolute;
   overflow: hidden;
-  width: 300px;
+  width: 420px !important; // Override jQuery UI inline style
+  min-width: 420px !important;
   padding: 0;
   font-size: 1em;
   z-index: @zindex-dialog;
@@ -170,18 +171,22 @@
 
   // Content
   .ui-dialog-content {
-    border: 0;
-    padding: 8px 24px 16px 24px;
-    background: #ffffff;
+    border: 0 !important;
+    padding: 8px 24px 8px 24px !important; // Reduced bottom padding
+    background: #ffffff !important;
     zoom: 1;
     max-height: 600px;
     position: relative;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 0.875rem;
-    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.6) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
 
     p {
       margin: 0 0 0.5em 0;
+
+      &:last-child {
+        margin-bottom: 0; // No margin on last paragraph
+      }
     }
 
     .async_loading_iframe {
@@ -210,35 +215,36 @@
 
   // Footer with buttons - aligned right like admin modals
   .ui-dialog-buttonpane {
-    background: #ffffff;
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
-    margin: 0;
-    padding: 12px 24px 20px 24px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    border-radius: 0 0 @dialog-border-radius @dialog-border-radius;
+    background: #ffffff !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+    margin: 0 !important;
+    padding: 12px 24px 20px 24px !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    border-radius: 0 0 @dialog-border-radius @dialog-border-radius !important;
 
     .ui-dialog-buttonset {
-      display: flex;
-      gap: 8px;
+      display: flex !important;
+      gap: 8px !important;
     }
 
     // Button styling - Vuetify style
     .ui-button {
-      border-radius: 4px;
-      height: 36px;
-      min-width: 64px;
-      padding: 0 16px;
-      border: none;
+      border-radius: 4px !important;
+      height: 36px !important;
+      min-width: 64px !important;
+      padding: 0 16px !important;
+      border: none !important;
+      margin: 0 !important; // Remove inherited margins (10px top/bottom from .button-style)
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
       transition: background-color 0.2s ease;
       // Primary button style (accent color)
-      background-color: var(--v-accent-base, #00acdc);
-      color: #ffffff;
+      background-color: var(--v-accent-base, #00acdc) !important;
+      color: #ffffff !important;
 
       .ui-button-text {
         text-transform: uppercase;
