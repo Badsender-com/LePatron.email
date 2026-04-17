@@ -566,6 +566,46 @@
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 4px;
   }
+
+  // Fix Adobe modal two-column layout (folder + delivery)
+  // The template uses flexbox but Materialize .col classes break it
+  .adobe-label {
+    width: 100% !important; // Override Materialize col width
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
+  }
+
+  // Override Materialize .row negative margins that break flexbox layout
+  .modal-content {
+    .row {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    // Allow the flex container to work properly
+    div[style*="display: flex"] {
+      display: flex !important;
+      gap: 24px !important;
+      flex-wrap: nowrap !important;
+      align-items: flex-start !important; // Prevent stretch behavior that breaks layout
+
+      // Ensure flex children properly share space
+      > div {
+        min-width: 0; // Allow shrinking below content size
+
+        // Neutralize Materialize .col classes inside flex children
+        // These would otherwise force width: 100% and break the flexbox layout
+        .col {
+          width: auto !important;
+          float: none !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+      }
+    }
+  }
 }
 
 // ==========================================================================
