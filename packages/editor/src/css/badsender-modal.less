@@ -158,10 +158,12 @@
   // z-index: 2 to be above footer (z-index: 1) so dropdowns can overlay footer
   .modal-content {
     padding: 24px;
-    overflow: visible; // Allow dropdowns to escape content area
+    overflow-y: auto; // Enable vertical scrolling when content is too tall
+    overflow-x: visible; // Allow dropdowns to escape horizontally
     flex: 1 1 auto;
     position: relative;
     z-index: 2;
+    max-height: calc(90vh - 120px); // Max height to ensure scrollability (90vh - header estimate)
 
     // Title styling
     h5 {
