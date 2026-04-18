@@ -165,6 +165,10 @@
     z-index: 2;
     max-height: calc(90vh - 120px); // Max height to ensure scrollability (90vh - header estimate)
 
+    // Import design system form field styles
+    // Normal import (not reference) so styles actually apply
+    @import 'badsender-form-field.less';
+
     // Title styling
     h5 {
       font-size: 1.25rem;
@@ -190,118 +194,8 @@
       padding-right: 12px;
     }
 
-    // Form fields - Design system style with label above input
-    // Materialize places label AFTER input in DOM, so we use flexbox to reverse
-    // High specificity selector to override Materialize without excessive !important
-    .input-field {
-      display: flex;
-      flex-direction: column-reverse; // Puts label visually above input
-      margin-top: 0;
-      margin-bottom: 16px;
-      position: relative;
-      padding-top: 0;
-
-      // Label above input - matches admin form-label style
-      label {
-        display: block;
-        font-size: 0.75rem; // 12px
-        font-weight: 500;
-        color: rgba(0, 0, 0, 0.6);
-        margin-bottom: 0.375rem; // 6px - matches admin
-        margin-top: 0;
-        position: static;
-        transform: none;
-        pointer-events: auto;
-        order: 2;
-        top: auto;
-        left: auto;
-        line-height: 1.4;
-
-        &.active {
-          color: rgba(0, 0, 0, 0.6);
-          transform: none;
-          font-size: 0.75rem;
-        }
-      }
-
-      // Input with full border - matches admin form-input style
-      input[type='text'],
-      input[type='email'],
-      input[type='number'],
-      input[type='url'],
-      textarea {
-        width: 100%;
-        padding: 0 12px;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        background: #ffffff;
-        font-size: 0.875rem;
-        color: rgba(0, 0, 0, 0.87);
-        outline: none;
-        transition: border-color 0.2s ease;
-        box-sizing: border-box;
-        margin: 0;
-        min-height: 36px; // Matches admin
-        height: auto;
-        order: 1;
-        box-shadow: none;
-
-        &:hover:not(:focus):not(:disabled) {
-          border-color: rgba(0, 0, 0, 0.4);
-        }
-
-        &:focus {
-          border-color: @bs-accent-color; // Use design system variable
-          box-shadow: none;
-        }
-
-        &.invalid {
-          border-color: #f04e23;
-        }
-
-        &.valid {
-          border-color: rgba(0, 0, 0, 0.2);
-        }
-
-        &::placeholder {
-          color: rgba(0, 0, 0, 0.38);
-        }
-
-        // Disabled state
-        &:disabled {
-          background-color: rgba(0, 0, 0, 0.04);
-          color: rgba(0, 0, 0, 0.6);
-          border-color: rgba(0, 0, 0, 0.1);
-          cursor: not-allowed;
-        }
-      }
-
-      .helper-text {
-        font-size: 0.75rem;
-        color: rgba(0, 0, 0, 0.5);
-        margin-top: 4px;
-        display: block;
-        min-height: 0;
-        order: 0;
-        position: static;
-
-        &[data-error] {
-          color: #f04e23;
-        }
-      }
-
-      // Show error text when input is invalid
-      input.invalid ~ .helper-text::after {
-        content: attr(data-error);
-        color: #f04e23;
-      }
-
-      // Error state - label color change
-      &:has(input.invalid) label,
-      &:has(input:invalid) label {
-        color: #f04e23;
-      }
-    }
+    // Form field styles are now imported from badsender-form-field.less
+    // This provides a common design system for both admin and editor
 
     // Disabled fields styling (for ESP modals)
     input:disabled,

@@ -1,0 +1,291 @@
+/**
+ * Design System Form Field Styles
+ *
+ * Shared styles between Admin (Vuetify) and Editor (Materialize)
+ * Based on: packages/ui/components/mailings/modal-duplicate-translate.vue
+ *
+ * Usage in Editor:
+ *   <div class="bs-form-field">
+ *     <label>Label Text</label>
+ *     <input type="text" />
+ *   </div>
+ *
+ * These styles use very high specificity to override Materialize defaults.
+ */
+
+// =============================================================================
+// FORM FIELD WRAPPER
+// =============================================================================
+
+.bs-form-field,
+.bs-modal-content-wrapper .modal-content .bs-form-field,
+.bs-modal-content-wrapper .bs-form-field {
+  display: flex !important;
+  flex-direction: column !important;
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  position: relative !important;
+  padding-top: 0 !important;
+
+  // =============================================================================
+  // LABEL STYLES - Match admin form-label
+  // =============================================================================
+
+  > label,
+  label {
+    display: block !important;
+    font-size: 0.75rem !important; // 12px
+    font-weight: 500 !important;
+    color: rgba(0, 0, 0, 0.6) !important;
+    margin-bottom: 0.375rem !important; // 6px - matches admin exactly
+    margin-top: 0 !important;
+    position: static !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    top: auto !important;
+    left: auto !important;
+    line-height: 1.4 !important;
+    text-transform: none !important; // NO uppercase
+    letter-spacing: normal !important;
+
+    // Override Materialize .active state
+    &.active {
+      color: rgba(0, 0, 0, 0.6) !important;
+      transform: none !important;
+      font-size: 0.75rem !important;
+    }
+  }
+
+  // =============================================================================
+  // INPUT STYLES - Match admin form-input
+  // =============================================================================
+
+  > input[type='text'],
+  > input[type='email'],
+  > input[type='number'],
+  > input[type='url'],
+  > textarea,
+  input[type='text'],
+  input[type='email'],
+  input[type='number'],
+  input[type='url'],
+  textarea {
+    width: 100% !important;
+    padding: 0 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    font-size: 0.875rem !important; // 14px
+    color: rgba(0, 0, 0, 0.87) !important;
+    outline: none !important;
+    transition: border-color 0.2s ease !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    min-height: 36px !important; // Matches admin exactly
+    height: auto !important; // Override Materialize fixed height
+    box-shadow: none !important;
+    line-height: 1.5 !important;
+
+    // Hover state
+    &:hover:not(:focus):not(:disabled) {
+      border-color: rgba(0, 0, 0, 0.4) !important;
+    }
+
+    // Focus state - accent color from design system
+    &:focus {
+      border-color: @bs-accent-color !important;
+      box-shadow: none !important;
+    }
+
+    // Invalid state
+    &.invalid,
+    &:invalid {
+      border-color: #f04e23 !important;
+    }
+
+    // Valid state
+    &.valid {
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    // Placeholder
+    &::placeholder {
+      color: rgba(0, 0, 0, 0.38) !important;
+    }
+
+    // Disabled state
+    &:disabled,
+    &[disabled] {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      cursor: not-allowed !important;
+    }
+  }
+
+  // Textarea specific
+  textarea,
+  > textarea {
+    padding: 8px 12px !important;
+    min-height: 80px !important;
+    resize: vertical !important;
+  }
+
+  // =============================================================================
+  // HELPER TEXT / ERROR MESSAGES
+  // =============================================================================
+
+  .helper-text {
+    font-size: 0.75rem !important;
+    color: rgba(0, 0, 0, 0.5) !important;
+    margin-top: 4px !important;
+    display: block !important;
+    min-height: 0 !important;
+    position: static !important;
+
+    &[data-error] {
+      color: #f04e23 !important;
+    }
+  }
+
+  // Show error text when input is invalid
+  input.invalid ~ .helper-text::after,
+  input:invalid ~ .helper-text::after {
+    content: attr(data-error);
+    color: #f04e23 !important;
+  }
+
+  // Error state - label color change
+  &:has(input.invalid) label,
+  &:has(input:invalid) label {
+    color: #f04e23 !important;
+  }
+}
+
+// =============================================================================
+// LEGACY SUPPORT - Apply to existing .input-field without class change
+// =============================================================================
+
+// Apply bs-form-field styles to legacy .input-field in modal context
+// Materialize places label AFTER input in DOM, so we use flexbox column-reverse
+.bs-modal-content-wrapper .modal-content .input-field {
+  // Extend .bs-form-field styles
+  display: flex !important;
+  flex-direction: column-reverse !important; // Materialize DOM order: input, label
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  position: relative !important;
+  padding-top: 0 !important;
+
+  > label,
+  label {
+    display: block !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    color: rgba(0, 0, 0, 0.6) !important;
+    margin-bottom: 0.375rem !important;
+    margin-top: 0 !important;
+    position: static !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    top: auto !important;
+    left: auto !important;
+    line-height: 1.4 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+
+    &.active {
+      color: rgba(0, 0, 0, 0.6) !important;
+      transform: none !important;
+      font-size: 0.75rem !important;
+    }
+  }
+
+  > input[type='text'],
+  > input[type='email'],
+  > input[type='number'],
+  > input[type='url'],
+  > textarea,
+  input[type='text'],
+  input[type='email'],
+  input[type='number'],
+  input[type='url'],
+  textarea {
+    width: 100% !important;
+    padding: 0 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    font-size: 0.875rem !important;
+    color: rgba(0, 0, 0, 0.87) !important;
+    outline: none !important;
+    transition: border-color 0.2s ease !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    min-height: 36px !important;
+    height: auto !important;
+    box-shadow: none !important;
+    line-height: 1.5 !important;
+
+    &:hover:not(:focus):not(:disabled) {
+      border-color: rgba(0, 0, 0, 0.4) !important;
+    }
+
+    &:focus {
+      border-color: @bs-accent-color !important;
+      box-shadow: none !important;
+    }
+
+    &.invalid,
+    &:invalid {
+      border-color: #f04e23 !important;
+    }
+
+    &.valid {
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    &::placeholder {
+      color: rgba(0, 0, 0, 0.38) !important;
+    }
+
+    &:disabled,
+    &[disabled] {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      cursor: not-allowed !important;
+    }
+  }
+
+  textarea,
+  > textarea {
+    padding: 8px 12px !important;
+    min-height: 80px !important;
+    resize: vertical !important;
+  }
+
+  .helper-text {
+    font-size: 0.75rem !important;
+    color: rgba(0, 0, 0, 0.5) !important;
+    margin-top: 4px !important;
+    display: block !important;
+    min-height: 0 !important;
+    position: static !important;
+
+    &[data-error] {
+      color: #f04e23 !important;
+    }
+  }
+
+  input.invalid ~ .helper-text::after,
+  input:invalid ~ .helper-text::after {
+    content: attr(data-error);
+    color: #f04e23 !important;
+  }
+
+  &:has(input.invalid) label,
+  &:has(input:invalid) label {
+    color: #f04e23 !important;
+  }
+}
