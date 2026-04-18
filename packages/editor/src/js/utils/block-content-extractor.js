@@ -207,8 +207,12 @@ function setNestedProperty(obj, path, value) {
   const parts = path.split('.');
   const last = parts.pop();
 
+  console.log(`[BlockExtractor] setNestedProperty path="${path}", parts=`, parts, 'last=', last);
+
   let current = obj;
   for (const part of parts) {
+    console.log(`[BlockExtractor] Navigating to "${part}", current type:`, typeof current);
+
     // Handle array indices
     if (!isNaN(part)) {
       const index = parseInt(part, 10);
@@ -216,6 +220,7 @@ function setNestedProperty(obj, path, value) {
       // Unwrap observable if needed
       let target = current[index];
       if (typeof target === 'function' && target.subscribe !== undefined) {
+        console.log(`[BlockExtractor] Unwrapping observable at index ${index}`);
         target = target();
       }
 
@@ -227,8 +232,12 @@ function setNestedProperty(obj, path, value) {
     } else {
       // Unwrap observable if needed
       let target = current[part];
+      console.log(`[BlockExtractor] At "${part}", target type:`, typeof target, 'isObservable:', typeof target === 'function' && target?.subscribe !== undefined);
+
       if (typeof target === 'function' && target.subscribe !== undefined) {
+        console.log(`[BlockExtractor] Unwrapping observable "${part}"`);
         target = target();
+        console.log(`[BlockExtractor] Unwrapped value type:`, typeof target);
       }
 
       if (!target) {
@@ -238,6 +247,9 @@ function setNestedProperty(obj, path, value) {
       current = target;
     }
   }
+
+  console.log(`[BlockExtractor] Final current type:`, typeof current, 'current:', current);
+  console.log(`[BlockExtractor] Checking "${last}", type:`, typeof current[last], 'isObservable:', typeof current[last] === 'function' && current[last]?.subscribe !== undefined);
 
   // Handle Knockout observables for final property
   if (
