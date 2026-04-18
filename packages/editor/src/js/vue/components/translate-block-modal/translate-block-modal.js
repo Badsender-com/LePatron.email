@@ -38,7 +38,7 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
     },
     sourceLanguageOptions() {
       // Include 'auto' option for auto-detection (Phase 4)
-      const autoOption = { code: 'auto', name: this.vm.t('language-auto-detect') || 'Auto-detect' };
+      const autoOption = { code: 'auto', name: 'Détection automatique' };
       return [autoOption, ...this.availableLanguages];
     },
     targetLanguageOptions() {
@@ -136,10 +136,11 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
       try {
         // Extract translatable content from block
         const blockContent = extractBlockTranslatableContent(this.blockData);
+        console.log('[Translation] Extracted content:', blockContent);
 
         // Check if there's anything to translate
         if (Object.keys(blockContent).length === 0) {
-          this.error = this.vm.t('translate-block-empty') || 'This block has no translatable content.';
+          this.error = 'Ce bloc ne contient aucun contenu traduisible.';
           this.isLoading = false;
           return;
         }
@@ -152,18 +153,20 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
         });
 
         const { translated } = response.data;
+        console.log('[Translation] Received translations:', translated);
+        console.log('[Translation] Block observable:', this.blockObservable);
 
         // Wrap injection in undo transaction
         this.vm.startMultiple();
         try {
           injectBlockTranslations(this.blockObservable, translated);
+          console.log('[Translation] Injection completed');
         } finally {
           this.vm.stopMultiple();
         }
 
         // Show success message
-        const successMessage = this.vm.t('translate-block-success') ||
-          'Block translated successfully. Use Undo (Ctrl+Z) to revert.';
+        const successMessage = 'Bloc traduit avec succès. Utilisez Annuler (Ctrl+Z) pour revenir en arrière.';
         this.vm.notifier.success(successMessage);
 
         // Close modal
@@ -172,31 +175,26 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
         console.error('Translation error:', error);
 
         // Handle different error types
-        let errorMessage = this.vm.t('translate-block-error') || 'Translation failed. Please try again.';
+        let errorMessage = 'La traduction a échoué. Veuillez réessayer.';
 
         if (error.response) {
           const { status, data } = error.response;
 
           if (status === 400) {
             if (data.message && data.message.includes('NO_INTEGRATION_FOR_FEATURE')) {
-              errorMessage = this.vm.t('translate-no-provider') ||
-                'Translation feature not configured. Please contact your administrator.';
+              errorMessage = 'La fonctionnalité de traduction n\'est pas configurée. Veuillez contacter votre administrateur.';
             } else if (data.message && data.message.includes('TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED')) {
-              errorMessage = this.vm.t('translate-language-not-allowed') ||
-                'This language is not available. Check your group settings.';
+              errorMessage = 'Cette langue n\'est pas disponible. Vérifiez les paramètres de votre groupe.';
             } else if (data.message) {
               errorMessage = data.message;
             }
           } else if (status === 429) {
-            errorMessage = this.vm.t('translate-quota-exceeded') ||
-              'Translation quota exceeded. Please try again later.';
+            errorMessage = 'Quota de traduction dépassé. Veuillez réessayer plus tard.';
           } else if (status === 504) {
-            errorMessage = this.vm.t('translate-timeout') ||
-              'Translation timeout. The provider took too long to respond.';
+            errorMessage = 'Délai de traduction dépassé. Le fournisseur a mis trop de temps à répondre.';
           }
         } else if (error.request) {
-          errorMessage = this.vm.t('translate-network-error') ||
-            'Network error. Please check your connection.';
+          errorMessage = 'Erreur réseau. Veuillez vérifier votre connexion.';
         }
 
         this.error = errorMessage;
@@ -213,7 +211,7 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
   <div class="modal-content">
       <div class="row">
           <div class="col s12">
-              <h5>{{ vm.t('translate-block-title') || 'Translate block' }}</h5>
+              <h5>Traduire le bloc</h5>
           </div>
 
           <!-- Error message -->
@@ -227,7 +225,7 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
               <div class="row">
                   <!-- Source Language -->
                   <div class="input-field col s12">
-                      <label for="sourceLanguage">{{ vm.t('translate-source-language') || 'Source language' }}</label>
+                      <label for="sourceLanguage">Langue source</label>
                       <select
                         id="sourceLanguage"
                         v-model="sourceLanguage"
@@ -244,13 +242,13 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
 
                   <!-- Target Language -->
                   <div class="input-field col s12">
-                      <label for="targetLanguage">{{ vm.t('translate-target-language') || 'Target language' }}</label>
+                      <label for="targetLanguage">Langue cible</label>
                       <select
                         id="targetLanguage"
                         v-model="targetLanguage"
                         class="browser-default"
                         style="margin-top: 8px; padding: 8px 12px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px;">
-                        <option value="" disabled>{{ vm.t('translate-select-language') || 'Select a language' }}</option>
+                        <option value="" disabled>Sélectionnez une langue</option>
                         <option
                           v-for="lang in targetLanguageOptions"
                           :key="lang.code"
@@ -269,7 +267,7 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
           :disabled="isLoading"
           class="btn-flat waves-effect waves-light"
           name="closeAction">
-          {{ vm.t('block-modal-close') || 'Cancel' }}
+          Annuler
       </button>
       <button
           @click.prevent="handleTranslate"
@@ -277,8 +275,8 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
           class="btn waves-effect waves-light"
           type="submit"
           name="submitAction">
-          <span v-if="isLoading">{{ vm.t('translating-block') || 'Translating...' }}</span>
-          <span v-else>{{ vm.t('translate-block') || 'Translate' }}</span>
+          <span v-if="isLoading">Traduction en cours...</span>
+          <span v-else>Traduire</span>
       </button>
   </div>
 </modal-component>

@@ -192,6 +192,8 @@ function extractBlockTranslatableContent(blockData) {
 
   const result = {};
   extractFromObject(blockData, '', result);
+  console.log('[BlockExtractor] Extracted fields:', Object.keys(result));
+  console.log('[BlockExtractor] Full extraction:', result);
   return result;
 }
 
@@ -256,19 +258,25 @@ function setNestedProperty(obj, path, value) {
  */
 function injectBlockTranslations(blockObservable, translations) {
   if (!blockObservable || !translations || typeof translations !== 'object') {
+    console.log('[BlockExtractor] Injection skipped - invalid input');
     return;
   }
+
+  console.log('[BlockExtractor] Injecting translations for keys:', Object.keys(translations));
 
   Object.keys(translations).forEach((key) => {
     const translatedValue = translations[key];
     if (translatedValue !== null && translatedValue !== undefined) {
       try {
+        console.log(`[BlockExtractor] Injecting "${key}":`, translatedValue);
         setNestedProperty(blockObservable, key, translatedValue);
       } catch (error) {
         console.error(`Failed to inject translation for key "${key}":`, error);
       }
     }
   });
+
+  console.log('[BlockExtractor] Injection completed');
 }
 
 module.exports = {
