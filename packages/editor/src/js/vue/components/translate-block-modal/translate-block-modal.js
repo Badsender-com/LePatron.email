@@ -9,6 +9,10 @@ const {
   extractBlockTranslatableContent,
   injectBlockTranslations,
 } = require('../../../utils/block-content-extractor');
+const {
+  getLanguageLabel,
+  LANGUAGE_LABELS,
+} = require('../../utils/languages');
 const ko = require('knockout');
 
 const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
@@ -72,12 +76,15 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
           return;
         }
 
-        // Transform language codes to objects with code and name
-        // For now, we'll use the code as the name (can be enhanced with language names later)
-        this.availableLanguages = languages.map((code) => ({
-          code,
-          name: this.getLanguageName(code),
-        }));
+        // Transform language codes to objects with code and name using centralized language labels
+        // Filter out unknown languages (codes not in our supported list) and sort alphabetically
+        this.availableLanguages = languages
+          .filter((code) => LANGUAGE_LABELS[code])
+          .map((code) => ({
+            code,
+            name: getLanguageLabel(code),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         this.defaultSourceLanguage = defaultSourceLanguage || 'auto';
         this.sourceLanguage = this.defaultSourceLanguage;
@@ -85,28 +92,6 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
         console.error('Failed to load languages:', error);
         this.availableLanguages = [];
       }
-    },
-    /**
-     * Get human-readable language name from code
-     * @param {string} code - Language code (e.g., 'en', 'fr')
-     * @returns {string} Language name
-     */
-    getLanguageName(code) {
-      const languageNames = {
-        en: 'English',
-        fr: 'Français',
-        de: 'Deutsch',
-        es: 'Español',
-        it: 'Italiano',
-        pt: 'Português',
-        nl: 'Nederlands',
-        pl: 'Polski',
-        ru: 'Русский',
-        ja: '日本語',
-        zh: '中文',
-        ar: 'العربية',
-      };
-      return languageNames[code] || code.toUpperCase();
     },
     /**
      * Handle modal open/close
