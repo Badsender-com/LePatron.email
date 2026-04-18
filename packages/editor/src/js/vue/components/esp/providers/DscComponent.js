@@ -92,7 +92,7 @@ const DscComponent = Vue.component('DscComponent', {
               </div>
             </div>
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
+              <div class="bs-form-field col s12" :style="style.mb0">
                 <input
                   id="campaignMailName"
                   v-model="profile.campaignMailName"
@@ -123,7 +123,7 @@ const DscComponent = Vue.component('DscComponent', {
               </div>
             </div>
             <div class="row" :style="style.mb0">
-              <div class="input-field col s12" :style="style.mb0">
+              <div class="bs-form-field col s12" :style="style.mb0">
                 <input
                   id="subject"
                   type="text"

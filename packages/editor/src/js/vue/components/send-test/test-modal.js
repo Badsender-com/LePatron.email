@@ -142,7 +142,7 @@ const TestModalComponent = Vue.component('TestModal', {
             </div>
             <form class="col s12">
                 <div class="row" :style="style.mb0">
-                <div class="input-field col s12" :style="style.mb0">
+                <div class="bs-form-field col s12" :style="style.mb0">
                     <input
                       id="testMails"
                       v-model="inputEmailsTest"
