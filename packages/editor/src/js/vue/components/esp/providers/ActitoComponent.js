@@ -111,7 +111,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="campaignMailName"
               v-model="profile.campaignMailName"
@@ -130,7 +130,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="subject"
               type="text"
@@ -150,7 +150,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="entity"
               type="text"
@@ -163,7 +163,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="target-table"
               type="text"
@@ -176,7 +176,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="supported-language"
               type="text"
@@ -189,7 +189,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="encoding-type"
               type="text"
@@ -202,7 +202,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="sender-mail"
               type="text"
@@ -215,7 +215,7 @@ const ActitoComponent = Vue.component('ActitoComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="replyto"
               type="text"

@@ -1,16 +1,17 @@
 /**
  * Design System Form Field Styles
  *
- * Shared styles between Admin (Vuetify) and Editor (Materialize)
+ * Shared styles between Admin (Vuetify) and Editor
  * Based on: packages/ui/components/mailings/modal-duplicate-translate.vue
  *
  * Usage in Editor:
  *   <div class="bs-form-field">
- *     <label>Label Text</label>
  *     <input type="text" />
+ *     <label>Label Text</label>
  *   </div>
  *
- * These styles use very high specificity to override Materialize defaults.
+ * Note: Editor places input BEFORE label in DOM, so we use flexbox column-reverse
+ * to display label above input visually.
  */
 
 // =============================================================================
@@ -21,7 +22,7 @@
 .bs-modal-content-wrapper .modal-content .bs-form-field,
 .bs-modal-content-wrapper .bs-form-field {
   display: flex !important;
-  flex-direction: column !important;
+  flex-direction: column-reverse !important; // Editor DOM order: input, label
   margin-top: 0 !important;
   margin-bottom: 16px !important;
   position: relative !important;
@@ -48,7 +49,7 @@
     text-transform: none !important; // NO uppercase
     letter-spacing: normal !important;
 
-    // Override Materialize .active state
+    // Active state (no change from default)
     &.active {
       color: rgba(0, 0, 0, 0.6) !important;
       transform: none !important;
@@ -82,7 +83,7 @@
     box-sizing: border-box !important;
     margin: 0 !important;
     min-height: 36px !important; // Matches admin exactly
-    height: auto !important; // Override Materialize fixed height
+    height: auto !important;
     box-shadow: none !important;
     line-height: 1.5 !important;
 
@@ -167,11 +168,11 @@
 // =============================================================================
 
 // Apply bs-form-field styles to legacy .input-field in modal context
-// Materialize places label AFTER input in DOM, so we use flexbox column-reverse
+// Editor places label AFTER input in DOM, so we use flexbox column-reverse
 .bs-modal-content-wrapper .modal-content .input-field {
   // Extend .bs-form-field styles
   display: flex !important;
-  flex-direction: column-reverse !important; // Materialize DOM order: input, label
+  flex-direction: column-reverse !important; // Editor DOM order: input, label
   margin-top: 0 !important;
   margin-bottom: 16px !important;
   position: relative !important;
