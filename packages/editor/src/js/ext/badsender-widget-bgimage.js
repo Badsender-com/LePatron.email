@@ -24,8 +24,10 @@ const isValidSize = (size) => /(\d+)x(\d+)/.test(size.trim());
 function html(propAccessor, onfocusbinding, parameters) {
   return `
     <input size="7" value="nothing" type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
-    <button data-bind=" button: { css: { disabledButton: $root.hasImageByProp('${propAccessor}') }, disabled: $root.hasImageByProp('${propAccessor}') }, text: $root.t('widget-bgimage-button'), click: function(element, evt) { $root.openDialogGallery('${propAccessor}', '${parameters}', element); }">pick an image</button>
-    <button data-bind="button: { css: { disabledButton: !$root.hasImageByProp('${propAccessor}') }, disabled: !$root.hasImageByProp('${propAccessor}'), icons: {primary: 'fa fa-eraser'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
+    <div class="bgimage-button-group">
+      <button class="bgimage-button-primary" data-bind="button: { css: { disabledButton: $root.hasImageByProp('${propAccessor}') }, disabled: $root.hasImageByProp('${propAccessor}'), icons: {primary: 'lucide lucide-image'} }, text: $root.t('widget-bgimage-button'), click: function(element, evt) { $root.openDialogGallery('${propAccessor}', '${parameters}', element); }">pick an image</button>
+      <button class="bgimage-button-reset" data-bind="button: { css: { disabledButton: !$root.hasImageByProp('${propAccessor}') }, disabled: !$root.hasImageByProp('${propAccessor}'), icons: {primary: 'lucide lucide-x'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
+    </div>
   `;
 }
 

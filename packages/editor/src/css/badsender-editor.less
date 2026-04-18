@@ -1208,3 +1208,191 @@ body {
 // This section is kept for reference but styles have been moved
 // =============================================================================
 
+// =============================================================================
+// BACKGROUND IMAGE WIDGET BUTTONS - Vuetify Style
+// =============================================================================
+
+.bgimage-button-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+// Primary button (Choisir image) - Accent color with icon + text
+.bgimage-button-primary.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: auto;
+  padding: 0 12px;
+  font-size: 0.8125rem; // 13px
+  font-weight: 500;
+  text-transform: none; // No uppercase
+  letter-spacing: normal;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--v-accent-base, #00acdc);
+  color: #ffffff;
+  box-shadow: none;
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1;
+
+  &:hover:not(.ui-button-disabled) {
+    background-color: var(--v-accent-darken1, #0097c4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &.ui-button-disabled {
+    background-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.26);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  // Lucide icon
+  .ui-icon.lucide {
+    font-size: 16px;
+    margin-right: 6px;
+    line-height: 1;
+
+    &::before {
+      color: inherit;
+    }
+  }
+
+  .ui-button-text {
+    display: inline;
+    line-height: 1;
+    color: inherit;
+  }
+}
+
+// Reset button - Icon only, neutral style
+.bgimage-button-reset.ui-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+
+  &:hover:not(.ui-button-disabled):not(.ui-state-disabled) {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+
+  &.ui-button-disabled,
+  &.ui-state-disabled {
+    background-color: transparent;
+    color: rgba(0, 0, 0, 0.26);
+    cursor: not-allowed;
+  }
+
+  // Lucide icon - force display in all states including disabled
+  .ui-icon.lucide {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    margin: 0;
+    width: auto !important;
+    height: auto !important;
+    text-indent: 0 !important;
+    overflow: visible !important;
+    visibility: visible !important; // Force visibility
+    color: rgba(0, 0, 0, 0.6); // Default dark color for icon
+
+    &::before {
+      display: inline-block !important;
+      color: inherit;
+      content: '' !important;
+      visibility: visible !important; // Force visibility
+    }
+  }
+
+  // When button is NOT disabled (image exists), make icon darker
+  &:not(.ui-button-disabled):not(.ui-state-disabled) .ui-icon.lucide {
+    color: rgba(0, 0, 0, 0.87); // Darker icon when button is active
+  }
+
+  // Force icon display even when disabled state is applied
+  &.ui-state-disabled .ui-icon.lucide,
+  &.ui-button-disabled .ui-icon.lucide {
+    display: inline-flex !important;
+    opacity: 1 !important;
+
+    &::before {
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  }
+
+  // Override any jQuery UI or mixin styles that hide icons - apply mask directly
+  .ui-icon.lucide-x::before {
+    content: '' !important;
+    display: inline-block !important;
+    width: 1em !important;
+    height: 1em !important;
+    background-color: currentColor !important;
+    -webkit-mask-image: @lucide-x !important;
+    mask-image: @lucide-x !important;
+    -webkit-mask-repeat: no-repeat !important;
+    mask-repeat: no-repeat !important;
+    -webkit-mask-size: contain !important;
+    mask-size: contain !important;
+    -webkit-mask-position: center !important;
+    mask-position: center !important;
+    vertical-align: middle !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .ui-button-text {
+    display: none !important; // Icon-only button
+  }
+}
+
+// Global override for reset button icon - ensure it always displays
+.bgimage-button-reset .ui-icon.lucide-x::before {
+  content: '' !important;
+  display: inline-block !important;
+  width: 1em !important;
+  height: 1em !important;
+  background-color: currentColor !important;
+  -webkit-mask-image: @lucide-x !important;
+  mask-image: @lucide-x !important;
+  -webkit-mask-repeat: no-repeat !important;
+  mask-repeat: no-repeat !important;
+  -webkit-mask-size: contain !important;
+  mask-size: contain !important;
+  -webkit-mask-position: center !important;
+  mask-position: center !important;
+  vertical-align: middle !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
