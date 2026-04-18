@@ -205,9 +205,9 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
   },
   template: `<modal-component
   ref="modalRef"
+  class="medium-modal"
   :isLoading="isLoading"
-  persistent
-  :maxWidth="560">
+  persistent>
   <div class="modal-content">
       <div class="row">
           <div class="col s12">
