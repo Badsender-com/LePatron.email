@@ -15,6 +15,7 @@ module.exports = {
   getJobStatus: asyncHandler(getJobStatus),
   cancelJob: asyncHandler(cancelJob),
   translateText: asyncHandler(translateText),
+  translateBlock: asyncHandler(translateBlock),
   getLanguages: asyncHandler(getLanguages),
 };
 
@@ -297,6 +298,42 @@ async function translateText(req, res) {
   res.json({
     original: text,
     translated: translatedText,
+    sourceLanguage,
+    targetLanguage,
+  });
+}
+
+/**
+ * @api {post} /translation/block Translate a single block
+ * @apiPermission user
+ * @apiName TranslateBlock
+ * @apiGroup Translation
+ *
+ * @apiParam (Body) {Object} blockContent Block content to translate (flat object with text fields)
+ * @apiParam (Body) {String} targetLanguage Target language code
+ * @apiParam (Body) {String} [sourceLanguage='auto'] Source language code
+ */
+async function translateBlock(req, res) {
+  const { user, body } = req;
+  const { blockContent, targetLanguage, sourceLanguage = 'auto' } = body;
+
+  // Validate inputs
+  if (!blockContent || typeof blockContent !== 'object') {
+    throw createError(400, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
+  }
+
+  const groupId = user.group && user.group.id;
+
+  const translatedBlock = await translationService.translateBlockContent({
+    groupId,
+    blockContent,
+    sourceLanguage,
+    targetLanguage,
+  });
+
+  res.json({
+    original: blockContent,
+    translated: translatedBlock,
     sourceLanguage,
     targetLanguage,
   });

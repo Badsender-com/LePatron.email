@@ -36,6 +36,14 @@ function deletePersonalizedBlock(blockId) {
   return `${prefixApi}/personalized-blocks/${blockId}`;
 }
 
+function translateBlock() {
+  return `${prefixApi}/translation/block`;
+}
+
+function getTranslationLanguages() {
+  return `${prefixApi}/translation/languages`;
+}
+
 module.exports = {
   getEspIds,
   getProfileDetail,
@@ -46,4 +54,6 @@ module.exports = {
   getPersonalizedBlocks,
   editPersonalizedBlock,
   deletePersonalizedBlock,
+  translateBlock,
+  getTranslationLanguages,
 };

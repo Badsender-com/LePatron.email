@@ -25,6 +25,7 @@ const {
 module.exports = {
   translateMailing,
   translateText,
+  translateBlockContent,
   getAvailableLanguages,
   detectSourceLanguage,
   getBatchInfo,
@@ -229,6 +230,82 @@ async function translateText({
     });
   } catch (error) {
     logger.error(`[Translation] Translation error: ${error.message}`);
+    const status = error instanceof ProviderError ? error.httpStatus : 400;
+    throw createError(
+      status,
+      ERROR_CODES.TRANSLATION_PROVIDER_ERROR + ': ' + error.message
+    );
+  }
+}
+
+/**
+ * Translate block content (for block-level translation in editor)
+ * Block content is already extracted on client side as a flat object
+ * @param {Object} params
+ * @param {string} params.groupId - Group ID
+ * @param {Object} params.blockContent - Block content to translate (flat object with text fields)
+ * @param {string} params.sourceLanguage - Source language code (or 'auto')
+ * @param {string} params.targetLanguage - Target language code
+ * @returns {Promise<Object>} Translated block content
+ */
+async function translateBlockContent({
+  groupId,
+  blockContent,
+  sourceLanguage,
+  targetLanguage,
+}) {
+  // Get active translation feature with integration
+  const featureConfig = await aiFeatureService.getActiveFeatureWithIntegration({
+    groupId,
+    featureType: AIFeatureTypes.TRANSLATION,
+  });
+
+  if (!featureConfig) {
+    throw new BadRequest(ERROR_CODES.NO_INTEGRATION_FOR_FEATURE);
+  }
+
+  const { integration, feature } = featureConfig;
+
+  // Validate target language is allowed
+  const availableLanguages = feature.config?.availableLanguages || [];
+  if (
+    availableLanguages.length > 0 &&
+    !availableLanguages.includes(targetLanguage)
+  ) {
+    throw new BadRequest(ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_NOT_ALLOWED);
+  }
+
+  // blockContent is already extracted on client side (flat object)
+  // No need to extract again - just validate it has content
+  if (!blockContent || typeof blockContent !== 'object') {
+    throw new BadRequest(ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
+  }
+
+  if (Object.keys(blockContent).length === 0) {
+    // Nothing to translate
+    return blockContent;
+  }
+
+  // Create provider with feature config (includes model selection)
+  const providerConfig = feature.config || {};
+  const provider = ProviderFactory.createProvider(integration, providerConfig);
+
+  // Extract full context for DeepL (improves translation quality)
+  // LLM providers will ignore this parameter
+  const context = extractFullContext(blockContent);
+
+  try {
+    // Use translateBatch for consistency with mailing translation
+    const translations = await provider.translateBatch({
+      texts: blockContent,
+      sourceLanguage,
+      targetLanguage,
+      context,
+    });
+
+    return translations;
+  } catch (error) {
+    logger.error(`[Translation] Block translation error: ${error.message}`);
     const status = error instanceof ProviderError ? error.httpStatus : 400;
     throw createError(
       status,
