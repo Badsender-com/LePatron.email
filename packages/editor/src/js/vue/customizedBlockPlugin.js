@@ -5,6 +5,9 @@ const {
 const {
   DeleteBlockModalComponent,
 } = require('./components/delete-block-modal/delete.modal');
+const {
+  TranslateBlockModalComponent,
+} = require('./components/translate-block-modal/translate-block-modal');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -14,6 +17,7 @@ module.exports = {
       components: {
         SaveBlockModalComponent,
         DeleteBlockModalComponent,
+        TranslateBlockModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -22,6 +26,7 @@ module.exports = {
         <div>
           <save-block-modal :vm="viewModel"></save-block-modal>
           <delete-block-modal :vm="viewModel"></delete-block-modal>
+          <translate-block-modal :vm="viewModel"></translate-block-modal>
         </div>
       `,
     });
