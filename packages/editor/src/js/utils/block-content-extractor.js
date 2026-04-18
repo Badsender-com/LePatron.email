@@ -293,12 +293,21 @@ function injectBlockTranslations(blockObservable, translations) {
 
   console.log('[BlockExtractor] Injecting translations for keys:', Object.keys(translations));
 
+  // If blockObservable is itself an observable function, unwrap it first to get the actual block object
+  let targetBlock = blockObservable;
+  if (typeof blockObservable === 'function' && blockObservable.subscribe !== undefined) {
+    console.log('[BlockExtractor] Root block is an observable, unwrapping it');
+    targetBlock = blockObservable();
+  }
+
+  console.log('[BlockExtractor] Target block type:', typeof targetBlock);
+
   Object.keys(translations).forEach((key) => {
     const translatedValue = translations[key];
     if (translatedValue !== null && translatedValue !== undefined) {
       try {
         console.log(`[BlockExtractor] Injecting "${key}":`, translatedValue);
-        setNestedProperty(blockObservable, key, translatedValue);
+        setNestedProperty(targetBlock, key, translatedValue);
       } catch (error) {
         console.error(`Failed to inject translation for key "${key}":`, error);
       }
