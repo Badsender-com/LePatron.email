@@ -201,13 +201,13 @@
       position: relative;
       padding-top: 0;
 
-      // Label above input - override Materialize completely
+      // Label above input - Vuetify design system style
       label {
         display: block;
-        font-size: 0.75rem;
-        font-weight: 500;
+        font-size: 0.75rem; // 12px
+        font-weight: 400; // Regular weight (not medium)
         color: rgba(0, 0, 0, 0.6);
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         margin-top: 0;
         position: static;
         transform: none;
@@ -215,7 +215,9 @@
         order: 2;
         top: auto;
         left: auto;
-        line-height: 1.4;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.0333333333em; // Vuetify standard
 
         &.active {
           color: rgba(0, 0, 0, 0.6);
@@ -232,7 +234,7 @@
       textarea {
         width: 100%;
         padding: 8px 12px;
-        border: 1px solid rgba(0, 0, 0, 0.2);
+        border: 2px solid rgba(0, 0, 0, 0.2); // 2px border to prevent layout shift on focus
         border-radius: 4px;
         background: #ffffff;
         font-size: 0.875rem;
@@ -245,13 +247,12 @@
         order: 1;
         box-shadow: none;
 
-        &:hover {
-          border-color: rgba(0, 0, 0, 0.4);
+        &:hover:not(:focus):not(:disabled) {
+          border-color: rgba(0, 0, 0, 0.5);
         }
 
         &:focus {
-          border-color: var(--v-accent-base, #00acdc);
-          border-width: 2px;
+          border-color: #00acdc; // Accent color - direct value instead of CSS var
           box-shadow: none;
         }
 
