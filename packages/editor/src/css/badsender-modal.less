@@ -201,13 +201,13 @@
       position: relative;
       padding-top: 0;
 
-      // Label above input - Vuetify design system style
+      // Label above input - matches admin form-label style
       label {
         display: block;
         font-size: 0.75rem; // 12px
-        font-weight: 400; // Regular weight (not medium)
+        font-weight: 500;
         color: rgba(0, 0, 0, 0.6);
-        margin-bottom: 8px;
+        margin-bottom: 0.375rem; // 6px - matches admin
         margin-top: 0;
         position: static;
         transform: none;
@@ -215,9 +215,7 @@
         order: 2;
         top: auto;
         left: auto;
-        line-height: 1;
-        text-transform: uppercase;
-        letter-spacing: 0.0333333333em; // Vuetify standard
+        line-height: 1.4;
 
         &.active {
           color: rgba(0, 0, 0, 0.6);
@@ -226,15 +224,15 @@
         }
       }
 
-      // Input with full border (not underline)
+      // Input with full border - matches admin form-input style
       input[type='text'],
       input[type='email'],
       input[type='number'],
       input[type='url'],
       textarea {
         width: 100%;
-        padding: 8px 12px;
-        border: 2px solid rgba(0, 0, 0, 0.2); // 2px border to prevent layout shift on focus
+        padding: 0 12px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
         border-radius: 4px;
         background: #ffffff;
         font-size: 0.875rem;
@@ -243,16 +241,17 @@
         transition: border-color 0.2s ease;
         box-sizing: border-box;
         margin: 0;
-        height: 40px;
+        min-height: 36px; // Matches admin
+        height: auto;
         order: 1;
         box-shadow: none;
 
         &:hover:not(:focus):not(:disabled) {
-          border-color: rgba(0, 0, 0, 0.5);
+          border-color: rgba(0, 0, 0, 0.4);
         }
 
         &:focus {
-          border-color: #00acdc; // Accent color - direct value instead of CSS var
+          border-color: @bs-accent-color; // Use design system variable
           box-shadow: none;
         }
 
