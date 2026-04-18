@@ -136,7 +136,6 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
       try {
         // Extract translatable content from block
         const blockContent = extractBlockTranslatableContent(this.blockData);
-        console.log('[Translation] Extracted content:', blockContent);
 
         // Check if there's anything to translate
         if (Object.keys(blockContent).length === 0) {
@@ -153,14 +152,11 @@ const TranslateBlockModalComponent = Vue.component('TranslateBlockModal', {
         });
 
         const { translated } = response.data;
-        console.log('[Translation] Received translations:', translated);
-        console.log('[Translation] Block observable:', this.blockObservable);
 
         // Wrap injection in undo transaction
         this.vm.startMultiple();
         try {
           injectBlockTranslations(this.blockObservable, translated);
-          console.log('[Translation] Injection completed');
         } finally {
           this.vm.stopMultiple();
         }
