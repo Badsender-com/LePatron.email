@@ -192,35 +192,35 @@
 
     // Form fields - Design system style with label above input
     // Materialize places label AFTER input in DOM, so we use flexbox to reverse
-    // Using !important to override Materialize's high specificity styles
+    // High specificity selector to override Materialize without excessive !important
     .input-field {
-      display: flex !important;
-      flex-direction: column-reverse !important; // Puts label visually above input
-      margin-top: 0 !important;
-      margin-bottom: 16px !important;
-      position: relative !important;
-      padding-top: 0 !important;
+      display: flex;
+      flex-direction: column-reverse; // Puts label visually above input
+      margin-top: 0;
+      margin-bottom: 16px;
+      position: relative;
+      padding-top: 0;
 
       // Label above input - override Materialize completely
       label {
-        display: block !important;
-        font-size: 0.75rem !important;
-        font-weight: 500 !important;
-        color: rgba(0, 0, 0, 0.6) !important;
-        margin-bottom: 6px !important;
-        margin-top: 0 !important;
-        position: static !important;
-        transform: none !important;
-        pointer-events: auto !important;
-        order: 2 !important;
-        top: auto !important;
-        left: auto !important;
-        line-height: 1.4 !important;
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.6);
+        margin-bottom: 6px;
+        margin-top: 0;
+        position: static;
+        transform: none;
+        pointer-events: auto;
+        order: 2;
+        top: auto;
+        left: auto;
+        line-height: 1.4;
 
         &.active {
-          color: rgba(0, 0, 0, 0.6) !important;
-          transform: none !important;
-          font-size: 0.75rem !important;
+          color: rgba(0, 0, 0, 0.6);
+          transform: none;
+          font-size: 0.75rem;
         }
       }
 
@@ -230,86 +230,86 @@
       input[type='number'],
       input[type='url'],
       textarea {
-        width: 100% !important;
-        padding: 8px 12px !important;
-        border: 1px solid rgba(0, 0, 0, 0.2) !important;
-        border-radius: 4px !important;
-        background: #ffffff !important;
-        font-size: 0.875rem !important;
-        color: rgba(0, 0, 0, 0.87) !important;
-        outline: none !important;
-        transition: border-color 0.2s ease !important;
-        box-sizing: border-box !important;
-        margin: 0 !important;
-        height: 40px !important;
-        order: 1 !important;
-        box-shadow: none !important;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        background: #ffffff;
+        font-size: 0.875rem;
+        color: rgba(0, 0, 0, 0.87);
+        outline: none;
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+        margin: 0;
+        height: 40px;
+        order: 1;
+        box-shadow: none;
 
         &:hover {
-          border-color: rgba(0, 0, 0, 0.4) !important;
+          border-color: rgba(0, 0, 0, 0.4);
         }
 
         &:focus {
-          border-color: var(--v-accent-base, #00acdc) !important;
-          border-width: 2px !important;
-          box-shadow: none !important;
+          border-color: var(--v-accent-base, #00acdc);
+          border-width: 2px;
+          box-shadow: none;
         }
 
         &.invalid {
-          border-color: #f04e23 !important;
+          border-color: #f04e23;
         }
 
         &.valid {
-          border-color: rgba(0, 0, 0, 0.2) !important;
+          border-color: rgba(0, 0, 0, 0.2);
         }
 
         &::placeholder {
-          color: rgba(0, 0, 0, 0.38) !important;
+          color: rgba(0, 0, 0, 0.38);
         }
 
         // Disabled state
         &:disabled {
-          background-color: rgba(0, 0, 0, 0.04) !important;
-          color: rgba(0, 0, 0, 0.6) !important;
-          border-color: rgba(0, 0, 0, 0.1) !important;
-          cursor: not-allowed !important;
+          background-color: rgba(0, 0, 0, 0.04);
+          color: rgba(0, 0, 0, 0.6);
+          border-color: rgba(0, 0, 0, 0.1);
+          cursor: not-allowed;
         }
       }
 
       .helper-text {
-        font-size: 0.75rem !important;
-        color: rgba(0, 0, 0, 0.5) !important;
-        margin-top: 4px !important;
-        display: block !important;
-        min-height: 0 !important;
-        order: 0 !important;
-        position: static !important;
+        font-size: 0.75rem;
+        color: rgba(0, 0, 0, 0.5);
+        margin-top: 4px;
+        display: block;
+        min-height: 0;
+        order: 0;
+        position: static;
 
         &[data-error] {
-          color: #f04e23 !important;
+          color: #f04e23;
         }
       }
 
       // Show error text when input is invalid
       input.invalid ~ .helper-text::after {
         content: attr(data-error);
-        color: #f04e23 !important;
+        color: #f04e23;
       }
 
       // Error state - label color change
       &:has(input.invalid) label,
       &:has(input:invalid) label {
-        color: #f04e23 !important;
+        color: #f04e23;
       }
     }
 
     // Disabled fields styling (for ESP modals)
     input:disabled,
     input[disabled] {
-      background-color: rgba(0, 0, 0, 0.04) !important;
-      color: rgba(0, 0, 0, 0.6) !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      cursor: not-allowed !important;
+      background-color: rgba(0, 0, 0, 0.04);
+      color: rgba(0, 0, 0, 0.6);
+      border-color: rgba(0, 0, 0, 0.1);
+      cursor: not-allowed;
     }
 
     // ==========================================================================
