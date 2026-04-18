@@ -24,7 +24,7 @@
     </div>
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
     <!-- Translate block -->
-    <div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-globe"></span></div>
+    <div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-languages"></span></div>
     <!-- Delete block (destructive action - always last) -->
     <div title="Delete block" class="tool delete" data-bind="attr: { title: $root.t('Delete block') }, click: $root.removeBlock.bind($element, $rawData, $parent)"><span class="lucide lucide-fw lucide-trash-2"></span></div>
     <!-- /ko -->

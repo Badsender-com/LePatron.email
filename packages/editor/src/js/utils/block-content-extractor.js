@@ -212,26 +212,43 @@ function setNestedProperty(obj, path, value) {
     // Handle array indices
     if (!isNaN(part)) {
       const index = parseInt(part, 10);
-      if (!current[index]) {
+
+      // Unwrap observable if needed
+      let target = current[index];
+      if (typeof target === 'function' && target.subscribe !== undefined) {
+        target = target();
+      }
+
+      if (!target) {
         current[index] = {};
+        target = current[index];
       }
-      current = current[index];
+      current = target;
     } else {
-      if (!current[part]) {
-        current[part] = {};
+      // Unwrap observable if needed
+      let target = current[part];
+      if (typeof target === 'function' && target.subscribe !== undefined) {
+        target = target();
       }
-      current = current[part];
+
+      if (!target) {
+        current[part] = {};
+        target = current[part];
+      }
+      current = target;
     }
   }
 
-  // Handle Knockout observables
+  // Handle Knockout observables for final property
   if (
     typeof current[last] === 'function' &&
     current[last].subscribe !== undefined
   ) {
-    // It's a Knockout observable
+    // It's a Knockout observable - set it
+    console.log(`[BlockExtractor] Setting observable "${last}" to:`, value);
     current[last](value);
   } else {
+    console.log(`[BlockExtractor] Setting property "${last}" to:`, value);
     current[last] = value;
   }
 }
