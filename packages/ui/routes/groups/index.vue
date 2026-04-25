@@ -11,6 +11,7 @@ import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { IS_ADMIN, USER } from '~/store/user';
 import { Building2, Pencil, Check } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 export default {
   name: 'PageGroups',
@@ -20,8 +21,10 @@ export default {
     BsCompaniesNav,
     BsModalCreateGroup,
     BsDataTable,
+    BsRowActions,
+    // Used via $options.components.LucideBuilding2 in template
+    // eslint-disable-next-line vue/no-unused-components
     LucideBuilding2: Building2,
-    LucidePencil: Pencil,
     LucideCheck: Check,
   },
   mixins: [mixinPageTitle],
@@ -61,7 +64,11 @@ export default {
     tableHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        { text: this.$t('global.createdAt'), align: 'left', value: 'createdAt' },
+        {
+          text: this.$t('global.createdAt'),
+          align: 'left',
+          value: 'createdAt',
+        },
         {
           text: this.$t('tableHeaders.groups.status'),
           align: 'center',
@@ -108,6 +115,20 @@ export default {
     },
     goToGroup(group) {
       this.$router.push(`/groups/${group.id}/settings/general`);
+    },
+    /**
+     * Build quick actions for a group row
+     * Design System: Only Edit action
+     */
+    buildQuickActions(item) {
+      return [
+        {
+          key: 'edit',
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.goToGroup(item),
+        },
+      ];
     },
     async createGroup(group) {
       try {
@@ -213,20 +234,7 @@ export default {
             </template>
 
             <template #item.actions="{ item }">
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-btn
-                    icon
-                    small
-                    v-bind="attrs"
-                    v-on="on"
-                    @click.stop="goToGroup(item)"
-                  >
-                    <lucide-pencil :size="18" />
-                  </v-btn>
-                </template>
-                <span>{{ $t('global.edit') }}</span>
-              </v-tooltip>
+              <bs-row-actions :quick-actions="buildQuickActions(item)" />
             </template>
           </bs-data-table>
         </v-card>

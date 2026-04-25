@@ -2,14 +2,14 @@
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { Check, Pencil, Trash2, FileText } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 export default {
   name: 'BsTemplatesTable',
   components: {
     BsDataTable,
+    BsRowActions,
     LucideCheck: Check,
-    LucidePencil: Pencil,
-    LucideTrash2: Trash2,
   },
   // FileText is used via $options for BsDataTable emptyIcon
   FileText,
@@ -51,6 +51,27 @@ export default {
     deleteItem(item) {
       this.$emit('delete', item);
     },
+    /**
+     * Build quick actions for a template row
+     * Design System: Edit, Delete
+     */
+    buildQuickActions(item) {
+      return [
+        {
+          key: 'edit',
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.goToTemplate(item),
+        },
+        {
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.deleteItem(item),
+        },
+      ];
+    },
   },
 };
 </script>
@@ -80,36 +101,7 @@ export default {
     </template>
 
     <template #item.actions="{ item }">
-      <v-tooltip bottom>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            icon
-            small
-            v-bind="attrs"
-            v-on="on"
-            @click.stop="goToTemplate(item)"
-          >
-            <lucide-pencil :size="18" />
-          </v-btn>
-        </template>
-        <span>{{ $t('global.edit') }}</span>
-      </v-tooltip>
-
-      <v-tooltip bottom>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            icon
-            small
-            class="error--text"
-            v-bind="attrs"
-            v-on="on"
-            @click.stop="deleteItem(item)"
-          >
-            <lucide-trash2 :size="18" />
-          </v-btn>
-        </template>
-        <span>{{ $t('global.delete') }}</span>
-      </v-tooltip>
+      <bs-row-actions :quick-actions="buildQuickActions(item)" />
     </template>
   </bs-data-table>
 </template>
