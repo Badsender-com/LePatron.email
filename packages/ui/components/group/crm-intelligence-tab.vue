@@ -367,7 +367,9 @@ export default {
     <div class="dashboards-table">
       <!-- Table Header -->
       <div class="dashboards-table__header">
-        <div class="dashboards-table__col dashboards-table__col--order">#</div>
+        <div class="dashboards-table__col dashboards-table__col--order">
+          #
+        </div>
         <div class="dashboards-table__col dashboards-table__col--name">
           {{ $t('global.name') }}
         </div>
@@ -624,6 +626,11 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable Styles — LePatron Design System v1.0
+   Applied to custom table structure
+   ========================================================================= */
+
 .crm-intelligence {
   max-width: 900px;
 }
@@ -637,21 +644,25 @@ export default {
   &__header {
     display: flex;
     align-items: center;
-    background: #fafafa;
+    background: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
+    padding: 10px 16px;
+    font-size: 11px;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04em;
+    height: 40px;
+    user-select: none;
   }
 
   &__row {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    height: 40px;
+    transition: background 0.15s ease-out;
 
     &:last-child {
       border-bottom: none;
@@ -689,6 +700,7 @@ export default {
       align-items: center;
       justify-content: flex-end;
       gap: 0.25rem;
+      text-align: right;
     }
   }
 
@@ -712,20 +724,20 @@ export default {
   }
 
   &__icon {
-    color: #00acdc;
+    color: var(--v-primary-base);
     flex-shrink: 0;
     margin-top: 2px;
   }
 
   &__name {
-    font-size: 0.875rem;
+    font-size: 13px;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
+    color: var(--v-primary-base);
   }
 
   &__desc {
-    font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.54);
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
     margin-top: 2px;
   }
 
@@ -735,8 +747,8 @@ export default {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem;
-    color: rgba(0, 0, 0, 0.38);
+    padding: 48px 24px;
+    color: rgba(0, 0, 0, 0.87);
   }
 
   &__empty-icon {
@@ -746,9 +758,18 @@ export default {
 
   &__empty p {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: 14px;
+    font-weight: 600;
     text-align: center;
   }
+}
+
+/* Chips - small style */
+::v-deep .v-chip {
+  font-size: 11px !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  font-weight: 500 !important;
 }
 
 .form-actions {

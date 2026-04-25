@@ -37,7 +37,7 @@ export default {
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -80,7 +80,9 @@ export default {
 
     async deleteTemplate(template) {
       try {
-        await this.$axios.$delete(apiRoutes.templatesItem({ templateId: template.id }));
+        await this.$axios.$delete(
+          apiRoutes.templatesItem({ templateId: template.id })
+        );
         await this.fetchData();
         this.showSnackbar({
           text: this.$t('snackbars.deleted'),
@@ -107,7 +109,11 @@ export default {
       @confirm="deleteTemplate"
     >
       <p class="black--text">
-        {{ $t('templates.deleteWarningMessage', { name: selectedTemplate && selectedTemplate.name }) }}
+        {{
+          $t('templates.deleteWarningMessage', {
+            name: selectedTemplate && selectedTemplate.name,
+          })
+        }}
       </p>
     </bs-modal-confirm-form>
 
@@ -163,3 +169,80 @@ export default {
     </bs-data-table>
   </div>
 </template>
+
+<style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable Styles — LePatron Design System v1.0
+   ========================================================================= */
+
+::v-deep .v-data-table thead th {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: rgba(0, 0, 0, 0.6) !important;
+  padding: 10px 16px !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+  height: 40px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+  white-space: nowrap;
+  user-select: none;
+}
+
+::v-deep .v-data-table tbody tr {
+  height: 40px !important;
+  cursor: pointer;
+  transition: background 0.15s ease-out;
+}
+
+::v-deep .v-data-table tbody td {
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  height: 40px !important;
+  vertical-align: middle;
+}
+
+::v-deep .v-data-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+::v-deep .v-data-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected {
+  background: rgba(0, 172, 220, 0.06) !important;
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected:hover {
+  background: rgba(0, 172, 220, 0.1) !important;
+}
+
+::v-deep .v-data-table__empty-wrapper {
+  padding: 48px 24px !important;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.87) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Name column - primary color */
+::v-deep .v-data-table tbody td:nth-child(1) {
+  font-weight: 500 !important;
+  color: var(--v-primary-base) !important;
+}
+
+/* Actions column - right aligned */
+::v-deep .v-data-table tbody td:last-child {
+  text-align: right !important;
+  width: 1%;
+  white-space: nowrap;
+}
+
+::v-deep .v-data-table thead th:last-child {
+  text-align: right !important;
+  width: 1%;
+}
+</style>
