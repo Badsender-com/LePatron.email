@@ -6,25 +6,15 @@ import {
   TABLE_FOOTER_PROPS,
   TABLE_PAGINATION_THRESHOLD,
 } from '~/helpers/constants/table-config.js';
-import {
-  Users,
-  Pencil,
-  Send,
-  UserCheck,
-  UserX,
-  RotateCcw,
-} from 'lucide-vue';
+import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 export default {
   name: 'BsUsersTable',
   components: {
     BsUserActions,
+    BsRowActions,
     LucideUsers: Users,
-    LucidePencil: Pencil,
-    LucideSend: Send,
-    LucideUserCheck: UserCheck,
-    LucideUserX: UserX,
-    LucideRotateCcw: RotateCcw,
   },
   TABLE_FOOTER_PROPS,
   TABLE_PAGINATION_THRESHOLD,
@@ -141,7 +131,8 @@ export default {
       const actions = this.getStatusActions(status);
       if (actions.resetPassword) return this.$t('users.passwordTooltip.reset');
       if (actions.sendPassword) return this.$t('users.passwordTooltip.send');
-      if (actions.reSendPassword) return this.$t('users.passwordTooltip.resend');
+      if (actions.reSendPassword)
+        return this.$t('users.passwordTooltip.resend');
       return '';
     },
     handleMailAction(user) {
@@ -153,10 +144,54 @@ export default {
     showMailAction(status) {
       const actions = this.getStatusActions(status);
       return (
-        actions.resetPassword ||
-        actions.sendPassword ||
-        actions.reSendPassword
+        actions.resetPassword || actions.sendPassword || actions.reSendPassword
       );
+    },
+    /**
+     * Build quick actions for a user row
+     * Design System: Activation/Deactivation toggle, Send/Reset password, Edit
+     */
+    buildQuickActions(item) {
+      const actions = [];
+      const statusActions = this.getStatusActions(item.status);
+
+      // 1. Activation/Deactivation toggle
+      if (statusActions.activate) {
+        actions.push({
+          key: 'activate',
+          icon: UserCheck,
+          text: 'global.enable',
+          onClick: () => this.activate(item),
+        });
+      } else if (item.status !== 'to-be-initialized') {
+        actions.push({
+          key: 'deactivate',
+          icon: UserX,
+          text: 'global.disable',
+          onClick: () => this.deactivate(item),
+        });
+      }
+
+      // 2. Password/Mail actions
+      if (this.showMailAction(item.status)) {
+        const isReset = statusActions.resetPassword;
+        actions.push({
+          key: 'mail-action',
+          icon: isReset ? RotateCcw : Send,
+          text: this.getMailActionTooltip(item.status),
+          onClick: () => this.handleMailAction(item),
+        });
+      }
+
+      // 3. Edit
+      actions.push({
+        key: 'edit',
+        icon: Pencil,
+        text: 'global.edit',
+        onClick: () => this.navigateToUser(item),
+      });
+
+      return actions;
     },
   },
 };
@@ -214,80 +249,13 @@ export default {
       </template>
 
       <template #item.createdAt="{ item }">
-        <span class="text--secondary">{{ item.createdAt | preciseDateTime }}</span>
+        <span class="text--secondary">{{
+          item.createdAt | preciseDateTime
+        }}</span>
       </template>
 
       <template #item.actions="{ item }">
-        <div class="d-flex align-center justify-center">
-          <!-- Activation/Deactivation toggle -->
-          <v-tooltip v-if="getStatusActions(item.status).activate" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="activate(item)"
-              >
-                <lucide-user-check :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.enable') }}</span>
-          </v-tooltip>
-          <v-tooltip v-else-if="item.status !== 'to-be-initialized'" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="deactivate(item)"
-              >
-                <lucide-user-x :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.disable') }}</span>
-          </v-tooltip>
-
-          <!-- Password/Mail actions -->
-          <v-tooltip v-if="showMailAction(item.status)" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="handleMailAction(item)"
-              >
-                <lucide-send
-                  v-if="!getStatusActions(item.status).resetPassword"
-                  :size="18"
-                />
-                <lucide-rotate-ccw v-else :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ getMailActionTooltip(item.status) }}</span>
-          </v-tooltip>
-
-          <!-- Edit action -->
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                v-on="on"
-                @click.stop="navigateToUser(item)"
-              >
-                <lucide-pencil :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.edit') }}</span>
-          </v-tooltip>
-        </div>
+        <bs-row-actions :quick-actions="buildQuickActions(item)" />
       </template>
 
       <template #no-data>
