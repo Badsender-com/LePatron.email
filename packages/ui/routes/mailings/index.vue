@@ -242,6 +242,7 @@ export default {
             @createTag="onTagCreate"
             @updateTags="onMailSelectionTagsUpdate"
             @on-refetch="fetchMailListingForFilterUpdate"
+            @clear-selection="resetMailingsSelection"
           />
           <mailings-table
             v-model="mailingsSelection"
