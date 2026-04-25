@@ -53,7 +53,7 @@ export default {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
-          align: 'center',
+          align: 'right',
           width: '140px',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
