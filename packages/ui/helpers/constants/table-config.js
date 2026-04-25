@@ -83,8 +83,10 @@ export const TABLE_PAGINATION_THRESHOLD = 25;
 /**
  * Standard footer props for v-data-table.
  * Provides consistent pagination options across the application.
+ *
+ * Note: The 'items-per-page-all-text' will be set dynamically in components
+ * using this.$t('global.all') for proper i18n support.
  */
 export const TABLE_FOOTER_PROPS = {
   'items-per-page-options': TABLE_ITEMS_PER_PAGE_OPTIONS,
-  'items-per-page-all-text': 'Tout',
 };

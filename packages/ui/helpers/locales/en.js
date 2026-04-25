@@ -152,6 +152,7 @@ export default {
     variables: 'Variables',
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
+    all: 'All',
     downloadFtp: 'Download FTP',
     noData: 'No data available',
   },

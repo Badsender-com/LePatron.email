@@ -55,6 +55,7 @@ export default {
       class="dashboard-iframe"
       :class="{ 'iframe-hidden': loading || !iframeLoaded }"
       frameborder="0"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
       allowfullscreen
       @load="onIframeLoad"
     />
