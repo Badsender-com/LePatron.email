@@ -111,12 +111,13 @@ export default {
      */
     sortDesc: { type: [Boolean, Array], default: undefined },
   },
-  data() {
-    return {
-      TABLE_FOOTER_PROPS,
-    };
-  },
   computed: {
+    footerProps() {
+      return {
+        ...TABLE_FOOTER_PROPS,
+        'items-per-page-all-text': this.$t('global.all'),
+      };
+    },
     selectedItems: {
       get() {
         return this.value;
@@ -160,7 +161,7 @@ export default {
       :items="items"
       :item-key="itemKey"
       :hide-default-footer="hideFooter"
-      :footer-props="TABLE_FOOTER_PROPS"
+      :footer-props="footerProps"
       :show-select="showSelect"
       :must-sort="mustSort"
       :sort-by="sortBy"

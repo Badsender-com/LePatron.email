@@ -29,9 +29,9 @@ const FEATURE_ICON_MAP = {
   'mail-check': MailCheck,
   'heart-handshake': HeartHandshake,
   'dollar-sign': DollarSign,
-  'euro': Euro,
+  euro: Euro,
   'layout-dashboard': LayoutDashboard,
-  'database': Database,
+  database: Database,
 };
 
 export default {
@@ -56,7 +56,7 @@ export default {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, error }) {
+  async asyncData({ $axios }) {
     try {
       const status = await $axios.$get(getCrmIntelligenceStatus());
       let dashboards = [];
@@ -72,8 +72,9 @@ export default {
         embedUrl: null,
         loadingEmbed: false,
       };
-    } catch (err) {
-      console.error('[CrmIntelligence] Error fetching status:', err);
+    } catch (_err) {
+      // AsyncData runs on server-side, so we can't use snackbar here
+      // Just return safe defaults and let the UI handle the empty state
       return {
         status: { enabled: false, configured: false },
         dashboards: [],
@@ -90,12 +91,6 @@ export default {
     embedUrl: null,
     loadingEmbed: false,
   }),
-  mounted() {
-    // Auto-select first dashboard if available
-    if (this.isEnabled && this.dashboards.length > 0 && !this.selectedDashboard) {
-      this.selectDashboard(this.dashboards[0]);
-    }
-  },
   computed: {
     title() {
       return this.$t('crmIntelligence.title');
@@ -121,6 +116,16 @@ export default {
       isAdmin: IS_ADMIN,
     }),
   },
+  mounted() {
+    // Auto-select first dashboard if available
+    if (
+      this.isEnabled &&
+      this.dashboards.length > 0 &&
+      !this.selectedDashboard
+    ) {
+      this.selectDashboard(this.dashboards[0]);
+    }
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
@@ -141,7 +146,6 @@ export default {
         );
         this.embedUrl = result.embedUrl;
       } catch (err) {
-        console.error('[CrmIntelligence] Error fetching embed URL:', err);
         this.showSnackbar({
           text: this.$t('crmIntelligence.errors.embedFailed'),
           color: 'error',
@@ -237,10 +241,7 @@ export default {
   </div>
 
   <!-- Single dashboard: full width, no module-specific sidebar -->
-  <div
-    v-else-if="isEnabled && !hasMultipleDashboards"
-    class="crm-fullwidth"
-  >
+  <div v-else-if="isEnabled && !hasMultipleDashboards" class="crm-fullwidth">
     <dashboard-viewer
       v-if="selectedDashboard"
       :embed-url="embedUrl"

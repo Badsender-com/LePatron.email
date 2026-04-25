@@ -16,6 +16,14 @@ const ERROR_CODES = require('../constant/error-codes.js');
 async function getDashboardWithAuthCheck(user, dashboardId) {
   const dashboard = await dashboardService.getDashboard(dashboardId);
   const groupId = dashboard._company?.toString() || dashboard.group?.toString();
+
+  if (!groupId) {
+    throw createError(
+      500,
+      'Dashboard has no associated group. Data integrity issue.'
+    );
+  }
+
   await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
   return dashboard;
 }
@@ -51,8 +59,13 @@ async function readDashboard(req, res) {
  */
 async function createDashboard(req, res) {
   const { groupId } = req.params;
-  const { name, description, integrationId, providerDashboardId, lockedParams } =
-    req.body;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+  } = req.body;
 
   // Validate required fields
   if (!name) {
@@ -67,11 +80,17 @@ async function createDashboard(req, res) {
     throw createError(400, ERROR_CODES.DASHBOARD_ID_REQUIRED);
   }
 
+  // Validate that providerDashboardId is a valid positive integer
+  const dashboardIdInt = parseInt(providerDashboardId, 10);
+  if (isNaN(dashboardIdInt) || dashboardIdInt < 1) {
+    throw createError(400, 'Invalid dashboard ID: must be a positive integer');
+  }
+
   const dashboard = await dashboardService.createDashboard(groupId, {
     name,
     description,
     integrationId,
-    providerDashboardId: parseInt(providerDashboardId, 10),
+    providerDashboardId: dashboardIdInt,
     lockedParams,
   });
 
@@ -85,20 +104,36 @@ async function createDashboard(req, res) {
 async function updateDashboard(req, res) {
   const { dashboardId } = req.params;
   const { user } = req;
-  const { name, description, integrationId, providerDashboardId, lockedParams, isActive } =
-    req.body;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+    isActive,
+  } = req.body;
 
   // Check authorization before update
   await getDashboardWithAuthCheck(user, dashboardId);
+
+  // Validate providerDashboardId if provided
+  let validatedProviderId;
+  if (providerDashboardId !== undefined) {
+    const dashboardIdInt = parseInt(providerDashboardId, 10);
+    if (isNaN(dashboardIdInt) || dashboardIdInt < 1) {
+      throw createError(
+        400,
+        'Invalid dashboard ID: must be a positive integer'
+      );
+    }
+    validatedProviderId = dashboardIdInt;
+  }
 
   const dashboard = await dashboardService.updateDashboard(dashboardId, {
     name,
     description,
     integrationId,
-    providerDashboardId:
-      providerDashboardId !== undefined
-        ? parseInt(providerDashboardId, 10)
-        : undefined,
+    providerDashboardId: validatedProviderId,
     lockedParams,
     isActive,
   });
