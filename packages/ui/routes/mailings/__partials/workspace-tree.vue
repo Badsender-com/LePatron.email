@@ -27,12 +27,12 @@ import {
   Folder,
   Users,
   Plus,
-  MoreVertical,
   TextCursor,
   FolderPlus,
   FolderInput,
   Trash2,
 } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -44,15 +44,11 @@ export default {
     FolderDeleteModal,
     FolderMoveModal,
     FolderNewModal,
+    BsRowActions,
     LucideFolderOpen: FolderOpen,
     LucideFolder: Folder,
     LucideUsers: Users,
     LucidePlus: Plus,
-    LucideMoreVertical: MoreVertical,
-    LucideTextCursor: TextCursor,
-    LucideFolderPlus: FolderPlus,
-    LucideFolderInput: FolderInput,
-    LucideTrash2: Trash2,
   },
   mixins: [mixinCurrentLocation],
   data: () => ({
@@ -576,6 +572,50 @@ export default {
         }
       }
     },
+    /**
+     * Build menu actions for folder kebab menu
+     * Design System: Rename, New Folder (conditional), Move, Delete
+     */
+    buildFolderMenuActions(item) {
+      const actions = [];
+
+      // Rename
+      actions.push({
+        key: 'rename',
+        icon: TextCursor,
+        text: 'folders.rename',
+        onClick: () => this.openRenameFolderModal(item),
+      });
+
+      // New Folder (conditional)
+      if (this.hasRightToCreateFolder(item)) {
+        actions.push({
+          key: 'new-folder',
+          icon: FolderPlus,
+          text: 'global.newFolder',
+          onClick: (event) => this.openNewFolderModal(event, item),
+        });
+      }
+
+      // Move
+      actions.push({
+        key: 'move',
+        icon: FolderInput,
+        text: 'global.move',
+        onClick: () => this.displayMoveModal(item),
+      });
+
+      // Delete (danger variant)
+      actions.push({
+        key: 'delete',
+        icon: Trash2,
+        text: 'global.delete',
+        variant: 'danger',
+        onClick: () => this.displayDeleteModal(item),
+      });
+
+      return actions;
+    },
   },
 };
 </script>
@@ -650,60 +690,10 @@ export default {
         >
           <lucide-plus :size="18" />
         </v-btn>
-        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y left>
-          <template #activator="{ on }">
-            <v-btn icon small class="folder-menu-btn" v-on="on">
-              <lucide-more-vertical :size="18" />
-            </v-btn>
-          </template>
-          <v-list class="folder-context-menu" dense>
-            <v-list-item
-              class="folder-menu-item"
-              @click="openRenameFolderModal(item)"
-            >
-              <v-list-item-icon class="folder-menu-item__icon">
-                <lucide-text-cursor :size="18" />
-              </v-list-item-icon>
-              <v-list-item-title class="folder-menu-item__title">
-                {{ $t('folders.rename') }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="hasRightToCreateFolder(item)"
-              class="folder-menu-item"
-              @click="(event) => openNewFolderModal(event, item)"
-            >
-              <v-list-item-icon class="folder-menu-item__icon">
-                <lucide-folder-plus :size="18" />
-              </v-list-item-icon>
-              <v-list-item-title class="folder-menu-item__title">
-                {{ $t('global.newFolder') }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              class="folder-menu-item"
-              @click="displayMoveModal(item)"
-            >
-              <v-list-item-icon class="folder-menu-item__icon">
-                <lucide-folder-input :size="18" />
-              </v-list-item-icon>
-              <v-list-item-title class="folder-menu-item__title">
-                {{ $t('global.move') }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              class="folder-menu-item"
-              @click="displayDeleteModal(item)"
-            >
-              <v-list-item-icon class="folder-menu-item__icon">
-                <lucide-trash2 :size="18" />
-              </v-list-item-icon>
-              <v-list-item-title class="folder-menu-item__title">
-                {{ $t('global.delete') }}
-              </v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <bs-row-actions
+          v-if="checkIfAuthorizedFolderMenu(item)"
+          :menu-actions="buildFolderMenuActions(item)"
+        />
       </template>
     </v-treeview>
     <folder-delete-modal
@@ -801,46 +791,5 @@ export default {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-}
-
-/* Folder menu button */
-.folder-menu-btn {
-  color: rgba(0, 0, 0, 0.54);
-  transition: color 0.15s ease, background-color 0.15s ease;
-
-  &:hover {
-    color: var(--v-primary-base);
-    background-color: rgba(0, 0, 0, 0.04);
-  }
-}
-
-/* Folder context menu */
-.folder-context-menu {
-  padding: 8px 0;
-  min-width: 180px;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.folder-menu-item {
-  min-height: 40px;
-  padding: 0 16px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-  }
-
-  &__icon {
-    margin-right: 12px;
-    min-width: 24px;
-    justify-content: center;
-    color: rgba(0, 0, 0, 0.54);
-  }
-
-  &__title {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.87);
-  }
 }
 </style>
