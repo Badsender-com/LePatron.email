@@ -277,13 +277,140 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.users-table {
-  ::v-deep tbody tr {
-    cursor: pointer;
+/* =========================================================================
+   BsDataTable Styles — LePatron Design System v1.0
+   Based on: /tmp/lepatron-design-latest/preview/components-data-table.html
+   ========================================================================= */
 
-    &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
-    }
-  }
+/* Headers */
+::v-deep .v-data-table thead th {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+  padding: 10px 16px !important;
+  background: rgba(0, 0, 0, 0.02) !important; // --gray-50
+  height: 40px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Rows */
+::v-deep .v-data-table tbody tr {
+  height: 40px !important;
+  cursor: pointer;
+  transition: background 0.15s ease-out;
+}
+
+::v-deep .v-data-table tbody td {
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; // --gray-200
+  height: 40px !important;
+  vertical-align: middle;
+}
+
+::v-deep .v-data-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* Row states */
+::v-deep .v-data-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important; // --gray-50
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected {
+  background: rgba(0, 172, 220, 0.06) !important;
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected:hover {
+  background: rgba(0, 172, 220, 0.1) !important;
+}
+
+/* Empty state */
+::v-deep .v-data-table__empty-wrapper {
+  padding: 48px 24px !important;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* ========================================================================= */
+/* Users table specific styles */
+/* ========================================================================= */
+
+/* Name column (primary identifier) */
+::v-deep .v-data-table tbody td:nth-child(1) {
+  font-weight: 500 !important;
+  color: var(--v-primary-base) !important;
+}
+
+/* Email column (monospace, muted) */
+::v-deep .v-data-table tbody td:nth-child(2) {
+  color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+  font-family: var(--font-mono);
+  font-size: 12px !important;
+}
+
+/* Role column (small badge) */
+::v-deep .v-data-table tbody td:nth-child(3) {
+  text-align: center;
+}
+
+/* Role badge styling */
+::v-deep .v-data-table tbody td:nth-child(3) .v-chip {
+  font-size: 10px !important;
+  height: 18px !important;
+  padding: 0 6px !important;
+  font-weight: 600 !important;
+}
+
+/* Group column (muted) */
+::v-deep .v-data-table tbody td:nth-child(4) {
+  color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+}
+
+/* Status column (chip) */
+::v-deep .v-data-table tbody td:nth-child(5) {
+  text-align: center;
+}
+
+/* Status chip styling */
+::v-deep .v-data-table tbody td:nth-child(5) .v-chip {
+  font-size: 11px !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  font-weight: 500 !important;
+}
+
+/* Lang column (centered, muted) */
+::v-deep .v-data-table tbody td:nth-child(6) {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.54) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+/* CreatedAt column (date) */
+::v-deep .v-data-table tbody td:nth-child(7) {
+  color: rgba(0, 0, 0, 0.7) !important; // --gray-700
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Actions column */
+::v-deep .v-data-table tbody td:last-child {
+  text-align: right !important;
+  width: 140px;
+  white-space: nowrap;
+}
+
+::v-deep .v-data-table thead th:last-child {
+  text-align: right !important;
+  width: 140px;
 }
 </style>
