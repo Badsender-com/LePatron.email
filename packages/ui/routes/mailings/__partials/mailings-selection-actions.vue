@@ -215,26 +215,34 @@ export default {
       </span>
 
       <div class="bsdt-bulkbar__actions">
-        <!-- FTP Download -->
-        <v-tooltip v-if="hasFtpAccess" bottom>
+        <!-- Tags menu -->
+        <mailings-tags-menu
+          :tags="tags"
+          :mailings-selection="mailingsSelection"
+          @create="$emit(`createTag`, $event)"
+          @update="$emit(`updateTags`, $event)"
+        />
+
+        <!-- Move -->
+        <v-tooltip bottom>
           <template #activator="{ on }">
             <button
               class="bsdt-bulkbar__btn"
               v-on="on"
-              @click="handleInitMultipleDownload({ isWithFtp: true })"
+              @click="openMoveManyMailsDialog"
             >
-              <lucide-cloud-download :size="13" />
-              {{ $t('mailings.downloadFtp') }}
+              <lucide-folder-input :size="13" />
+              {{ $t('global.moveTo') }}
             </button>
           </template>
           <span>{{
-            $tc('mailings.downloadFtpCount', selectionLength, {
+            $tc('mailings.moveCount', selectionLength, {
               count: selectionLength,
             })
           }}</span>
         </v-tooltip>
 
-        <!-- Download -->
+        <!-- Export (Download) -->
         <v-tooltip bottom>
           <template #activator="{ on }">
             <button
@@ -253,28 +261,20 @@ export default {
           }}</span>
         </v-tooltip>
 
-        <!-- Tags menu (keep as is for now) -->
-        <mailings-tags-menu
-          :tags="tags"
-          :mailings-selection="mailingsSelection"
-          @create="$emit(`createTag`, $event)"
-          @update="$emit(`updateTags`, $event)"
-        />
-
-        <!-- Move -->
-        <v-tooltip bottom>
+        <!-- Send to FTP -->
+        <v-tooltip v-if="hasFtpAccess" bottom>
           <template #activator="{ on }">
             <button
               class="bsdt-bulkbar__btn"
               v-on="on"
-              @click="openMoveManyMailsDialog"
+              @click="handleInitMultipleDownload({ isWithFtp: true })"
             >
-              <lucide-folder-input :size="13" />
-              {{ $t('global.move') }}
+              <lucide-cloud-download :size="13" />
+              {{ $t('mailings.downloadFtp') }}
             </button>
           </template>
           <span>{{
-            $tc('mailings.moveCount', selectionLength, {
+            $tc('mailings.downloadFtpCount', selectionLength, {
               count: selectionLength,
             })
           }}</span>

@@ -150,9 +150,10 @@ export default {
     <template #activator="{ on: onMenu }">
       <v-tooltip bottom :disabled="vShowTagMenu">
         <template #activator="{ on: onTooltip }">
-          <v-btn icon v-on="{ ...onMenu, ...onTooltip }">
-            <lucide-tag :size="20" />
-          </v-btn>
+          <button class="bsdt-bulkbar__btn" v-on="{ ...onMenu, ...onTooltip }">
+            <lucide-tag :size="13" />
+            {{ $t('tags.tag') }}
+          </button>
         </template>
         <span>{{ $t('tags.handle') }}</span>
       </v-tooltip>
@@ -180,8 +181,14 @@ export default {
           @click="toggleTag(tagCheckbox)"
         >
           <v-list-item-action>
-            <lucide-check-square v-if="tagCheckbox.checkIcon === 'checked'" :size="20" />
-            <lucide-minus-square v-else-if="tagCheckbox.checkIcon === 'indeterminate'" :size="20" />
+            <lucide-check-square
+              v-if="tagCheckbox.checkIcon === 'checked'"
+              :size="20"
+            />
+            <lucide-minus-square
+              v-else-if="tagCheckbox.checkIcon === 'indeterminate'"
+              :size="20"
+            />
             <lucide-square v-else :size="20" />
           </v-list-item-action>
           <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
@@ -226,4 +233,26 @@ export default {
   </v-menu>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+/* BsDataTable bulk bar button styles (inherited from parent) */
+.bsdt-bulkbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 4px; // --r-sm
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.7); // --gray-800
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease-out, border 0.15s ease-out;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04); // --gray-100
+    border-color: rgba(0, 0, 0, 0.2); // --gray-400
+  }
+}
+</style>

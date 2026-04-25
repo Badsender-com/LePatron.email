@@ -147,6 +147,7 @@ export default {
     comments: 'Comments',
     edit: 'Edit',
     move: 'Move',
+    moveTo: 'Move to…',
     emailsGroups: 'Test lists',
     variables: 'Variables',
     emailsGroupsEmpty: 'No test list available',
@@ -439,6 +440,7 @@ export default {
     list: 'Tags\' list',
     new: 'New tag',
     handle: 'Handle tags',
+    tag: 'Tag',
   },
   users: {
     actions: {
