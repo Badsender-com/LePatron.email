@@ -147,6 +147,7 @@ export default {
     comments: 'Commentaires',
     edit: 'Modifier',
     move: 'Déplacer',
+    moveTo: 'Déplacer vers…',
     emailsGroups: 'Listes de test',
     variables: 'Variables',
     emailsGroupsEmpty: 'Aucune liste de test disponible',
@@ -444,6 +445,7 @@ export default {
     list: 'Liste des labels',
     new: 'Nouveau label',
     handle: 'Gérer les labels',
+    tag: 'Label',
   },
   users: {
     actions: {
