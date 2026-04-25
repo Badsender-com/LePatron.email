@@ -19,12 +19,24 @@ import {
 } from '~/helpers/constants/table-config.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
-import BsMailingsActionsDropdown from './mailings-actions-dropdown';
-import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { MessageCircle, TextCursor, Copy, Trash2, Mail } from 'lucide-vue';
+import {
+  MessageCircle,
+  TextCursor,
+  Copy,
+  Trash2,
+  Mail,
+  Tag,
+  Maximize2,
+  Eye,
+  ArrowRight,
+  Languages,
+  Download,
+  Server,
+} from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -58,18 +70,15 @@ export default {
     BsMailingsModalRename,
     BsModalConfirmForm,
     MailingsCopyModal,
-    BsMailingsActionsDropdown,
-    BsMailingsActionsDropdownItem,
+    BsRowActions,
     MailingsTagsMenu,
     MailingsMoveModal,
     MailingsPreviewModal,
     BsMailingModalDuplicateTranslate,
     BsMailingModalTranslationWarning,
-    LucideMessageCircle: MessageCircle,
-    LucideTextCursor: TextCursor,
-    LucideCopy: Copy,
-    LucideTrash2: Trash2,
     LucideMail: Mail,
+    // Lucide icons for BsRowActions are imported at top but passed as strings
+    // They're resolved dynamically by BsRowActions component
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -179,6 +188,152 @@ export default {
       if (this.hasAccess) {
         window.location.href = `/editor/${item.id}`;
       }
+    },
+    /**
+     * Build quick actions (always visible) for a mailing row
+     * Design System: Comment, Rename, Copy, Delete
+     */
+    buildQuickActions(item) {
+      const actions = [];
+
+      // 1. Comment (with unresolved badge)
+      if (this.hasAccess) {
+        actions.push({
+          key: 'comment',
+          icon: MessageCircle,
+          text: 'mailings.openComments',
+          badge:
+            item.unresolvedCommentsCount > 0
+              ? item.unresolvedCommentsCount
+              : null,
+          onClick: () => {
+            window.location.href = `/editor/${item.id}?comments=1`;
+          },
+        });
+      }
+
+      // 2. Rename
+      if (this.filteredActions.includes(this.actions.RENAME)) {
+        actions.push({
+          key: 'rename',
+          icon: TextCursor,
+          text: this.actionsDetails[this.actions.RENAME].text,
+          onClick: () => this.openRenameModal(item),
+        });
+      }
+
+      // 3. Copy
+      if (this.filteredActions.includes(this.actions.COPY_MAIL)) {
+        actions.push({
+          key: 'copy',
+          icon: Copy,
+          text: this.actionsDetails[this.actions.COPY_MAIL].text,
+          onClick: () => this.openCopyMail(item),
+        });
+      }
+
+      // 4. Delete
+      if (this.filteredActions.includes(this.actions.DELETE)) {
+        actions.push({
+          key: 'delete',
+          icon: Trash2,
+          text: this.actionsDetails[this.actions.DELETE].text,
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
+
+      return actions;
+    },
+    /**
+     * Build menu actions (behind kebab) for a mailing row
+     * Design System: Tags, Transfer, Preview, Move, Duplicate+Translate | Download, FTP | Delete
+     */
+    buildMenuActions(item) {
+      const actions = [];
+
+      // Main actions group
+      if (this.filteredActions.includes(this.actions.ADD_TAGS)) {
+        actions.push({
+          key: 'tags',
+          icon: Tag,
+          text: this.actionsDetails[this.actions.ADD_TAGS].text,
+          count: item.tags?.length || null,
+          onClick: () => this.openTagsMenu(item),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.TRANSFER)) {
+        actions.push({
+          key: 'transfer',
+          icon: Maximize2,
+          text: this.actionsDetails[this.actions.TRANSFER].text,
+          onClick: () => this.transferMailing(item),
+        });
+      }
+
+      actions.push({
+        key: 'preview',
+        icon: Eye,
+        text: this.actionsDetails[this.actions.PREVIEW].text,
+        onClick: () => this.openPreviewMail(item),
+      });
+
+      if (this.filteredActions.includes(this.actions.MOVE_MAIL)) {
+        actions.push({
+          key: 'move',
+          icon: ArrowRight,
+          text: this.actionsDetails[this.actions.MOVE_MAIL].text,
+          onClick: () => this.openMoveMail(item),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.DUPLICATE_TRANSLATE)) {
+        actions.push({
+          key: 'duplicate-translate',
+          icon: Languages,
+          text: this.actionsDetails[this.actions.DUPLICATE_TRANSLATE].text,
+          onClick: () => this.openDuplicateTranslateModal(item),
+        });
+      }
+
+      // Export group (separated by divider)
+      actions.push({ type: 'divider' });
+
+      if (this.filteredActions.includes(this.actions.DOWNLOAD)) {
+        actions.push({
+          key: 'download',
+          icon: Download,
+          text: this.actionsDetails[this.actions.DOWNLOAD].text,
+          onClick: () =>
+            this.handleDownloadMail({ mailing: item, isWithFtp: false }),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.DOWNLOAD_FTP)) {
+        actions.push({
+          key: 'ftp',
+          icon: Server,
+          text: this.actionsDetails[this.actions.DOWNLOAD_FTP].text,
+          disabled: !this.hasFtpAccess,
+          onClick: () =>
+            this.handleDownloadMail({ mailing: item, isWithFtp: true }),
+        });
+      }
+
+      // Destructive action (Delete) - isolated by divider
+      if (this.filteredActions.includes(this.actions.DELETE)) {
+        actions.push({ type: 'divider' });
+        actions.push({
+          key: 'delete-menu',
+          icon: Trash2,
+          text: this.actionsDetails[this.actions.DELETE].text,
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
+
+      return actions;
     },
     openRenameModal(mailing) {
       this.$refs.renameDialog.open({
@@ -474,144 +629,10 @@ export default {
           <span>{{ item.updatedAt | preciseDateTime }}</span>
         </template>
         <template #item.actions="{ item }">
-          <div class="actions-cell">
-            <!-- Quick action icons -->
-            <v-tooltip v-if="hasAccess" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :href="`/editor/${item.id}?comments=1`"
-                  :aria-label="$t('mailings.openComments')"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop
-                >
-                  <span class="comment-icon-wrapper">
-                    <lucide-message-circle :size="18" />
-                    <span
-                      v-if="item.unresolvedCommentsCount > 0"
-                      class="comment-badge"
-                    >
-                      {{
-                        item.unresolvedCommentsCount > 99
-                          ? '99+'
-                          : item.unresolvedCommentsCount
-                      }}
-                    </span>
-                  </span>
-                </v-btn>
-              </template>
-              <span>{{ $t('mailings.openComments') }}</span>
-            </v-tooltip>
-            <v-tooltip v-if="filteredActions.includes(actions.RENAME)" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :aria-label="$t(actionsDetails[actions.RENAME].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="openRenameModal(item)"
-                >
-                  <lucide-text-cursor :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.RENAME].text) }}</span>
-            </v-tooltip>
-            <v-tooltip
-              v-if="filteredActions.includes(actions.COPY_MAIL)"
-              bottom
-            >
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="openCopyMail(item)"
-                >
-                  <lucide-copy :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.COPY_MAIL].text) }}</span>
-            </v-tooltip>
-            <v-tooltip v-if="filteredActions.includes(actions.DELETE)" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  class="error--text"
-                  :aria-label="$t(actionsDetails[actions.DELETE].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="displayDeleteModal(item)"
-                >
-                  <lucide-trash2 :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.DELETE].text) }}</span>
-            </v-tooltip>
-
-            <!-- More actions menu -->
-            <bs-mailings-actions-dropdown @click.native.stop>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.ADD_TAGS)"
-                :icon="actionsDetails[actions.ADD_TAGS].icon"
-                :on-click="() => openTagsMenu(item)"
-              >
-                {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.TRANSFER)"
-                :icon="actionsDetails[actions.TRANSFER].icon"
-                :on-click="() => transferMailing(item)"
-              >
-                {{ $t(actionsDetails[actions.TRANSFER].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                :icon="actionsDetails[actions.PREVIEW].icon"
-                :on-click="() => openPreviewMail(item)"
-              >
-                {{ $t(actionsDetails[actions.PREVIEW].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.MOVE_MAIL)"
-                :icon="actionsDetails[actions.MOVE_MAIL].icon"
-                :on-click="() => openMoveMail(item)"
-              >
-                {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.DUPLICATE_TRANSLATE)"
-                :icon="actionsDetails[actions.DUPLICATE_TRANSLATE].icon"
-                :on-click="() => openDuplicateTranslateModal(item)"
-              >
-                {{ $t(actionsDetails[actions.DUPLICATE_TRANSLATE].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.DOWNLOAD)"
-                :icon="actionsDetails[actions.DOWNLOAD].icon"
-                :on-click="
-                  () => handleDownloadMail({ mailing: item, isWithFtp: false })
-                "
-              >
-                {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="
-                  filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
-                "
-                :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
-                :on-click="
-                  () => handleDownloadMail({ mailing: item, isWithFtp: true })
-                "
-              >
-                {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
-              </bs-mailings-actions-dropdown-item>
-            </bs-mailings-actions-dropdown>
-          </div>
+          <bs-row-actions
+            :quick-actions="buildQuickActions(item)"
+            :menu-actions="buildMenuActions(item)"
+          />
         </template>
 
         <template #no-data>
