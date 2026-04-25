@@ -694,18 +694,108 @@ export default {
 </template>
 
 <style lang="scss">
-/* Table styling - NOT scoped to ensure Vuetify overrides work */
+/* =========================================================================
+   BsDataTable — LePatron Design System v1.0
+   Standardized table pattern for Mailings (reference implementation)
+   Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
+   ========================================================================= */
+
 .mailings-table-wrapper {
-  // Clickable rows - aligned with BsDataTable
+  /* Shell - already handled by v-data-table but ensure borders */
+  .v-data-table {
+    border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+    border-radius: 10px; // --r-md
+    overflow: hidden;
+  }
+
+  /* -------- Table headers (BsDataTable spec) ----------------------------- */
+  .v-data-table thead th {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+    padding: 10px 16px !important;
+    background: rgba(0, 0, 0, 0.02) !important; // --gray-50
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
+    height: 40px !important;
+  }
+
+  /* -------- Table rows (BsDataTable spec) -------------------------------- */
+  .v-data-table tbody td {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; // --gray-200
+    height: 40px !important;
+  }
+
+  .v-data-table tbody tr:last-child td {
+    border-bottom: none !important;
+  }
+
+  /* -------- Row states ---------------------------------------------------- */
   .clickable-rows tbody tr {
     cursor: pointer;
+    transition: background 0.15s ease-out;
 
     &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
+      background: rgba(0, 0, 0, 0.02) !important; // --gray-50
     }
   }
 
-  // Comment icon with badge
+  .v-data-table tbody tr.v-data-table__selected {
+    background: rgba(
+      0,
+      172,
+      220,
+      0.06
+    ) !important; // Design system selected state
+  }
+
+  .v-data-table tbody tr.v-data-table__selected:hover {
+    background: rgba(
+      0,
+      172,
+      220,
+      0.1
+    ) !important; // Design system selected + hover
+  }
+
+  /* -------- Name cell (primary identifier) ------------------------------- */
+  .v-data-table tbody td:has(.font-weight-medium) {
+    font-weight: 500 !important;
+    color: var(--v-primary-base) !important;
+  }
+
+  /* -------- Muted cells (author, template) ------------------------------- */
+  .v-data-table tbody td:has(a),
+  .v-data-table tbody td:has(span:not(.tags):not(.font-weight-medium)) {
+    color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+  }
+
+  /* -------- Date cells ---------------------------------------------------- */
+  .v-data-table tbody td:has(span[data-v-]) {
+    color: rgba(0, 0, 0, 0.54) !important; // --gray-700
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* -------- Actions column ------------------------------------------------ */
+  .v-data-table thead th:last-child,
+  .v-data-table tbody td:last-child {
+    text-align: right !important;
+    width: 1% !important;
+    white-space: nowrap !important;
+  }
+
+  /* -------- Checkbox column ----------------------------------------------- */
+  .v-data-table thead th:first-child,
+  .v-data-table tbody td:first-child {
+    width: 36px !important;
+    padding-right: 0 !important;
+  }
+
+  /* Comment icon with badge (unchanged, already correct) */
   .comment-icon-wrapper {
     position: relative;
     display: inline-flex;
@@ -737,44 +827,39 @@ export default {
   cursor: pointer;
 }
 
-/* Actions cell with quick icons */
-.actions-cell {
+/* -------- Tags (BsDataTable spec) -------------------------------------- */
+.tags {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-/* Tags styling */
-.tags {
-  display: inline-block;
-  padding: 2px 8px;
-  margin: 2px 4px 2px 0;
-  background: rgba(0, 172, 220, 0.1);
-  color: var(--v-primary-base);
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 1px 8px;
+  margin-right: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 9999px; // --r-pill
+  font-size: 11px;
   font-weight: 500;
+  color: rgba(0, 0, 0, 0.54); // --gray-700
+  background: #fff;
 }
 
-/* Empty state styling */
+/* -------- Empty state (BsDataTable spec) ------------------------------- */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: rgba(0, 0, 0, 0.38);
+  padding: 48px 24px;
+  text-align: center;
 
   &__icon {
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    color: rgba(0, 0, 0, 0.26); // --gray-500
+    margin-bottom: 12px;
   }
 
   &__text {
-    margin: 0;
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.87); // --gray-900
   }
 }
 </style>
