@@ -15,7 +15,9 @@ const ERROR_CODES = require('../constant/error-codes.js');
  */
 async function getDashboardWithAuthCheck(user, dashboardId) {
   const dashboard = await dashboardService.getDashboard(dashboardId);
-  const groupId = dashboard._company?.toString() || dashboard.group?.toString();
+
+  // getDashboard() returns a transformed object with 'groupId' property
+  const groupId = dashboard.groupId;
 
   if (!groupId) {
     throw createError(
