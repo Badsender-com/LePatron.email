@@ -261,40 +261,48 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable Filters Panel — LePatron Design System v1.0
+   Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
+   ========================================================================= */
+
 .filters-panel {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 10px; // --r-md
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 
   &__header {
-    background: #fafafa;
-    font-size: 0.875rem;
+    background: rgba(0, 0, 0, 0.02); // --gray-50
+    font-size: 13px;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.7);
-    min-height: 48px;
-    padding: 0 1rem;
+    color: rgba(0, 0, 0, 0.87); // --gray-900
+    min-height: 52px; // BsDataTable toolbar height
+    padding: 0 16px;
+    transition: background 0.15s ease-out;
 
     &:hover {
-      background: #f5f5f5;
+      background: rgba(0, 0, 0, 0.04); // --gray-100
     }
   }
 
   &__content {
-    background: #fff;
+    background: rgba(0, 0, 0, 0.02); // --gray-50 (BsDataTable spec)
+    border-top: 1px solid rgba(0, 0, 0, 0.08); // --gray-200
 
     ::v-deep .v-expansion-panel-content__wrap {
-      padding: 1rem;
+      padding: 16px; // BsDataTable filters padding
     }
   }
 }
 
 .filters-form {
+  /* Grid 3 columns like BsDataTable spec */
   &__row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 0.5rem;
+    gap: 12px 16px; // BsDataTable spec: 12px row gap, 16px column gap
+    margin-bottom: 8px;
 
     &--dates {
       grid-template-columns: repeat(2, 1fr);
@@ -304,59 +312,85 @@ export default {
   &__date-group {
     display: flex;
     flex-direction: column;
+    gap: 4px; // BsDataTable label-to-control gap
   }
 
   &__date-label {
     display: flex;
     align-items: center;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 0.375rem;
+    font-size: 11px; // BsDataTable filters label size
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.54); // --gray-700
+    letter-spacing: 0.02em;
   }
 
   &__date-inputs {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 6px; // BsDataTable range gap
 
     .bs-text-field {
       flex: 1;
       margin-bottom: 0;
     }
 
-    // Ensure date fields have visible borders
+    /* BsDataTable filter input styles */
     ::v-deep .v-input__slot {
-      border: 1px solid rgba(0, 0, 0, 0.2) !important;
-      border-radius: 4px;
+      height: 32px !important; // BsDataTable filter input height
+      min-height: 32px !important;
+      padding: 0 10px !important;
       background: #fff !important;
-      min-height: 36px;
+      border: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
+      border-radius: 4px !important; // --r-sm
       cursor: pointer;
+      font-size: 12px !important;
+      transition: border 0.15s ease-out, box-shadow 0.15s ease-out;
 
       &:hover {
-        border-color: rgba(0, 0, 0, 0.4) !important;
+        border-color: rgba(0, 0, 0, 0.2) !important;
       }
     }
 
     ::v-deep .v-input--is-focused .v-input__slot {
-      border-color: #00acdc !important;
+      border-color: var(--v-accent-base) !important;
+      box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.15) !important;
     }
   }
 
   &__date-separator {
     display: flex;
     align-items: center;
-    height: 36px;
-    color: rgba(0, 0, 0, 0.4);
-    font-size: 0.875rem;
+    height: 32px; // Match input height
+    color: rgba(0, 0, 0, 0.38); // --gray-500
+    font-size: 11px; // BsDataTable range separator size
   }
 
+  /* Reset button (BsDataTable spec) */
   &__actions {
+    grid-column: 1 / -1; // Span all columns
     display: flex;
     justify-content: flex-end;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: 4px; // BsDataTable filters footer padding
+
+    ::v-deep .v-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      background: transparent !important;
+      padding: 4px 8px !important;
+      min-width: auto !important;
+      height: auto !important;
+      border-radius: 4px !important; // --r-sm
+      font-size: 12px !important;
+      color: rgba(0, 0, 0, 0.54) !important; // --gray-700
+      text-transform: none !important;
+      letter-spacing: normal !important;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.08) !important; // --gray-200
+        color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+      }
+    }
   }
 }
 

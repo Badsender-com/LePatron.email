@@ -204,80 +204,105 @@ export default {
 
 <template>
   <div>
-    <v-alert v-if="hasSelection" dense tile color="grey lighten-2">
-      <div class="bs-mailing-selection-actions">
-        <span class="bs-mailing-selection-actions__count">{{
-          $tc('mailings.selectedCount', selectionLength, {
-            count: selectionLength,
-          })
-        }}</span>
+    <!-- BsDataTable bulk bar (design system spec) -->
+    <div v-if="hasSelection" class="bsdt-bulkbar">
+      <span class="bsdt-bulkbar__count">
+        <strong>{{ selectionLength }}</strong>
+        {{ $tc('mailings.selectedMailings', selectionLength) }}
+        <button class="bsdt-bulkbar__clear" @click="$emit('clear-selection')">
+          {{ $t('global.clear') }}
+        </button>
+      </span>
 
-        <div class="bs-mailing-selection-actions__actions">
-          <v-tooltip bottom>
-            <template v-if="hasFtpAccess" #activator="{ on }">
-              <v-btn
-                icon
-                v-on="on"
-                @click="handleInitMultipleDownload({ isWithFtp: true })"
-              >
-                <lucide-cloud-download :size="20" />
-              </v-btn>
-            </template>
-            <span>{{
-              $tc('mailings.downloadFtpCount', selectionLength, {
-                count: selectionLength,
-              })
-            }}</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template #activator="{ on }">
-              <v-btn
-                icon
-                v-on="on"
-                @click="handleInitMultipleDownload({ isWithFtp: false })"
-              >
-                <lucide-download :size="20" />
-              </v-btn>
-            </template>
-            <span>{{
-              $tc('mailings.downloadCount', selectionLength, {
-                count: selectionLength,
-              })
-            }}</span>
-          </v-tooltip>
-          <mailings-tags-menu
-            :tags="tags"
-            :mailings-selection="mailingsSelection"
-            @create="$emit(`createTag`, $event)"
-            @update="$emit(`updateTags`, $event)"
-          />
-          <v-tooltip bottom>
-            <template #activator="{ on }">
-              <v-btn icon v-on="on" @click="openMoveManyMailsDialog">
-                <lucide-folder-input :size="20" />
-              </v-btn>
-            </template>
-            <span>{{
-              $tc('mailings.moveCount', selectionLength, {
-                count: selectionLength,
-              })
-            }}</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template #activator="{ on }">
-              <v-btn icon v-on="on" @click="openDeleteSelectionModal">
-                <lucide-trash2 :size="20" />
-              </v-btn>
-            </template>
-            <span>{{
-              $tc('mailings.deleteCount', selectionLength, {
-                count: selectionLength,
-              })
-            }}</span>
-          </v-tooltip>
-        </div>
+      <div class="bsdt-bulkbar__actions">
+        <!-- FTP Download -->
+        <v-tooltip v-if="hasFtpAccess" bottom>
+          <template #activator="{ on }">
+            <button
+              class="bsdt-bulkbar__btn"
+              v-on="on"
+              @click="handleInitMultipleDownload({ isWithFtp: true })"
+            >
+              <lucide-cloud-download :size="13" />
+              {{ $t('mailings.downloadFtp') }}
+            </button>
+          </template>
+          <span>{{
+            $tc('mailings.downloadFtpCount', selectionLength, {
+              count: selectionLength,
+            })
+          }}</span>
+        </v-tooltip>
+
+        <!-- Download -->
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <button
+              class="bsdt-bulkbar__btn"
+              v-on="on"
+              @click="handleInitMultipleDownload({ isWithFtp: false })"
+            >
+              <lucide-download :size="13" />
+              {{ $t('global.download') }}
+            </button>
+          </template>
+          <span>{{
+            $tc('mailings.downloadCount', selectionLength, {
+              count: selectionLength,
+            })
+          }}</span>
+        </v-tooltip>
+
+        <!-- Tags menu (keep as is for now) -->
+        <mailings-tags-menu
+          :tags="tags"
+          :mailings-selection="mailingsSelection"
+          @create="$emit(`createTag`, $event)"
+          @update="$emit(`updateTags`, $event)"
+        />
+
+        <!-- Move -->
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <button
+              class="bsdt-bulkbar__btn"
+              v-on="on"
+              @click="openMoveManyMailsDialog"
+            >
+              <lucide-folder-input :size="13" />
+              {{ $t('global.move') }}
+            </button>
+          </template>
+          <span>{{
+            $tc('mailings.moveCount', selectionLength, {
+              count: selectionLength,
+            })
+          }}</span>
+        </v-tooltip>
+
+        <!-- Divider before destructive action -->
+        <span class="bsdt-bulkbar__divider" />
+
+        <!-- Delete (danger) -->
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <button
+              class="bsdt-bulkbar__btn bsdt-bulkbar__btn--danger"
+              v-on="on"
+              @click="openDeleteSelectionModal"
+            >
+              <lucide-trash2 :size="13" />
+              {{ $t('global.delete') }}
+            </button>
+          </template>
+          <span>{{
+            $tc('mailings.deleteCount', selectionLength, {
+              count: selectionLength,
+            })
+          }}</span>
+        </v-tooltip>
       </div>
-    </v-alert>
+    </div>
     <bs-modal-confirm
       ref="deleteSelectionDialog"
       :title="
@@ -315,11 +340,91 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.bs-mailing-selection-actions {
+/* =========================================================================
+   BsDataTable Bulk Bar — LePatron Design System v1.0
+   Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
+   ========================================================================= */
+
+.bsdt-bulkbar {
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  min-height: 44px;
+  background: rgba(0, 172, 220, 0.06); // Accent tint
+  border-bottom: 1px solid rgba(0, 172, 220, 0.18);
+  color: var(--v-primary-base);
 }
-.bs-mailing-selection-actions__count {
-  margin-right: auto;
+
+.bsdt-bulkbar__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+
+  strong {
+    font-weight: 600;
+    color: var(--v-primary-base);
+  }
+}
+
+.bsdt-bulkbar__clear {
+  background: transparent;
+  border: none;
+  color: #0095c0; // --v-accent-darken1
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  padding: 0;
+
+  &:hover {
+    color: #007a9f;
+  }
+}
+
+.bsdt-bulkbar__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bsdt-bulkbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 4px; // --r-sm
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.7); // --gray-800
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease-out, border 0.15s ease-out;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04); // --gray-100
+    border-color: rgba(0, 0, 0, 0.2); // --gray-400
+  }
+
+  &--danger {
+    color: #f04e23; // --color-error
+
+    &:hover {
+      background: rgba(240, 78, 35, 0.08);
+      border-color: rgba(240, 78, 35, 0.4);
+    }
+  }
+}
+
+.bsdt-bulkbar__divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(0, 172, 220, 0.25);
+  margin: 0 4px;
 }
 </style>
