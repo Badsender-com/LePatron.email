@@ -50,7 +50,7 @@ export default {
     LucideDatabase: Database,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: ACL_USER },
+  meta: { acl: ACL_USER, sidebarModule: 'crm-intelligence' },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
       redirect('/groups');
