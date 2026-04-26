@@ -98,6 +98,13 @@ export default {
     isEnabled() {
       return this.status.enabled && this.status.configured;
     },
+    dashboardContainerStyle() {
+      const sidebarWidth = this.$store.getters['sidebar/sidebarWidth'] || 320;
+      return {
+        marginLeft: `${sidebarWidth}px`,
+        width: `calc(100% - ${sidebarWidth}px)`,
+      };
+    },
     hasMultipleDashboards() {
       return this.dashboards.length > 1;
     },
@@ -255,7 +262,11 @@ export default {
   </div>
 
   <!-- Single dashboard: full width, no module-specific sidebar -->
-  <div v-else-if="isEnabled && !hasMultipleDashboards" class="crm-fullwidth">
+  <div
+    v-else-if="isEnabled && !hasMultipleDashboards"
+    class="crm-fullwidth"
+    :style="dashboardContainerStyle"
+  >
     <dashboard-viewer
       v-if="selectedDashboard"
       :embed-url="embedUrl"
@@ -265,7 +276,7 @@ export default {
   </div>
 
   <!-- Multiple dashboards: dashboard list is in BsSidebar -->
-  <div v-else class="crm-dashboard-container">
+  <div v-else class="crm-dashboard-container" :style="dashboardContainerStyle">
     <dashboard-viewer
       v-if="selectedDashboard"
       :embed-url="embedUrl"
@@ -335,10 +346,9 @@ export default {
 .crm-dashboard-container {
   position: fixed;
   top: 64px; /* App bar height */
-  left: 0;
-  right: 0;
   bottom: 0;
   overflow: hidden;
+  transition: margin-left 200ms ease, width 200ms ease;
 }
 
 @media (max-width: 960px) {
