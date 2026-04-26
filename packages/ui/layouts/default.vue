@@ -43,8 +43,11 @@ export default {
     },
     mainStyle() {
       if (!this.isConnected) return {};
-      const sidebarWidth = this.$store.state.sidebar?.collapsed ? 60 : 240;
-      return { marginLeft: `${sidebarWidth}px` };
+      const sidebarWidth = this.$store.getters['sidebar/sidebarWidth'] || 320;
+      return {
+        marginLeft: `${sidebarWidth}px`,
+        transition: 'margin-left 200ms ease',
+      };
     },
   },
   methods: {
@@ -197,9 +200,7 @@ export default {
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $t('modules.emailBuilder')
-              }}
+              {{ $t('modules.emailBuilder') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -210,9 +211,7 @@ export default {
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>
-              {{
-                $t('modules.crmIntelligence')
-              }}
+              {{ $t('modules.crmIntelligence') }}
             </v-list-item-title>
           </v-list-item-content>
         </v-list-item>

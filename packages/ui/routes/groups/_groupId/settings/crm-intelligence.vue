@@ -4,14 +4,12 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
 
 export default {
   name: 'BsPageSettingsCrmIntelligence',
   components: {
-    BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
     BsCrmIntelligenceTab,
   },
@@ -69,10 +67,7 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
+  <v-container fluid>
     <div class="settings-content">
       <bs-group-settings-page-header
         :title="$t('crmIntelligence.dashboards')"
@@ -85,11 +80,5 @@ export default {
         @change-tab="changeTab"
       />
     </div>
-  </bs-layout-left-menu>
+  </v-container>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

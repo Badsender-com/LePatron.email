@@ -4,7 +4,6 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
@@ -16,7 +15,6 @@ import { required, email } from 'vuelidate/lib/validators';
 export default {
   name: 'BsPageSettingsUserEdit',
   components: {
-    BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
     BsUserActions,
     BsMailingsAdminTable,
@@ -235,10 +233,7 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
+  <v-container fluid>
     <div class="settings-content">
       <bs-group-settings-page-header
         :title="$t('global.editUser')"
@@ -276,7 +271,10 @@ export default {
               <v-col cols="12" md="6">
                 <bs-text-field
                   v-model="user.externalUsername"
-                  :label="$t('forms.user.externalUsername') + $t('forms.user.optional')"
+                  :label="
+                    $t('forms.user.externalUsername') +
+                      $t('forms.user.optional')
+                  "
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -318,7 +316,10 @@ export default {
                   {{ statusLabel }}
                 </v-chip>
               </div>
-              <p v-if="statusDescription" class="text-caption text--secondary mt-2 mb-0">
+              <p
+                v-if="statusDescription"
+                class="text-caption text--secondary mt-2 mb-0"
+              >
                 {{ statusDescription }}
               </p>
             </div>
@@ -411,7 +412,9 @@ export default {
             :hidden-cols="['userName', 'actions']"
           />
           <v-card
-            v-if="pagination && pagination.itemsLength > pagination.itemsPerPage"
+            v-if="
+              pagination && pagination.itemsLength > pagination.itemsPerPage
+            "
             flat
             class="d-flex align-center justify-center mx-auto"
             max-width="22rem"
@@ -433,7 +436,7 @@ export default {
       :user="user"
       @update="updateUserFromActions"
     />
-  </bs-layout-left-menu>
+  </v-container>
 </template>
 
 <style lang="scss" scoped>
