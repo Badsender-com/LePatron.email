@@ -22,15 +22,13 @@
 </template>
 
 <script>
-// Context components will be created in subsequent phases
-// import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
+import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
 // import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
 
 export default {
   name: 'BsSidebarContextZone',
   components: {
-    // Will be uncommented as we implement each phase
-    // BsSidebarWorkspaceTree,
+    BsSidebarWorkspaceTree,
     // BsSidebarDashboardList,
   },
   props: {

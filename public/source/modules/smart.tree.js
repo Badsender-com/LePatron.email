@@ -13,7 +13,7 @@ License: https://htmlelements.com/license/ */
 
   /******/ (() => {
     // webpackBootstrap
-    /******/ var __webpack_modules__ = {
+    /******/ const __webpack_modules__ = {
       /***/ 2612: /***/ () => {
         Smart(
           'smart-button',
@@ -35,12 +35,15 @@ License: https://htmlelements.com/license/ */
                 },
               };
             }
+
             static get styleUrls() {
               return ['smart.button.css'];
             }
+
             template() {
               return "<button class=\"smart-button smart-unselectable\" inner-h-t-m-l='[[innerHTML]]' id='button' type='[[type]]' name='[[name]]' value='[[value]]' disabled='[[disabled]]' role=\"presentation\"></button>";
             }
+
             refresh() {}
             static get listeners() {
               return {
@@ -55,18 +58,21 @@ License: https://htmlelements.com/license/ */
                 'button.blur': '_blurHandler',
               };
             }
+
             focus() {
               const e = this;
               e.$.button
                 ? e.$.button.focus()
                 : HTMLElement.prototype.focus.call(e);
             }
+
             blur() {
               const e = this;
               e.$.button
                 ? e.$.button.blur()
                 : HTMLElement.prototype.blur.call(e);
             }
+
             _upHandler(e) {
               const t = this;
               if (
@@ -75,23 +81,23 @@ License: https://htmlelements.com/license/ */
                 t.dataset.target)
               ) {
                 const n = document.querySelector(t.dataset.target);
-                let a = t.dataset.toggle,
-                  r = t.dataset.arguments;
+                let a = t.dataset.toggle;
+                const r = t.dataset.arguments;
                 const i = 'smart-window'.toLowerCase();
                 if (
                   (n &&
                     n.nodeName.toLowerCase() === i &&
-                    'modal' === a &&
+                    a === 'modal' &&
                     (a = 'openModal'),
-                  'tab' === a || 'pill' === a || 'list' === a)
+                  a === 'tab' || a === 'pill' || a === 'list')
                 ) {
-                  const e = this.closest('.nav, .list-group'),
-                    a =
-                      '[data-toggle="tab"], [data-toggle="pill"], [data-toggle="list"]',
-                    r =
-                      !e || ('UL' !== e.nodeName && 'OL' !== e.nodeName)
-                        ? e.children('.active')
-                        : e.querySelectorAll('li > .active');
+                  const e = this.closest('.nav, .list-group');
+                  const a =
+                    '[data-toggle="tab"], [data-toggle="pill"], [data-toggle="list"]';
+                  const r =
+                    !e || (e.nodeName !== 'UL' && e.nodeName !== 'OL')
+                      ? e.children('.active')
+                      : e.querySelectorAll('li > .active');
                   if (e) {
                     const n = e.querySelectorAll(a);
                     for (let e = 0; e < n.length; e++)
@@ -100,7 +106,7 @@ License: https://htmlelements.com/license/ */
                       r[e].classList.remove('active');
                     let i = t.parentNode;
                     for (; i; ) {
-                      if ('LI' === i.nodeName) {
+                      if (i.nodeName === 'LI') {
                         i.classList.add('active');
                         break;
                       }
@@ -120,14 +126,14 @@ License: https://htmlelements.com/license/ */
                 a &&
                   n &&
                   !n[a] &&
-                  'collapse' === a &&
+                  a === 'collapse' &&
                   (setTimeout(() => {
                     n.classList.contains('smart-hidden')
                       ? n.classList.remove('smart-hidden')
                       : n.classList.add('smart-hidden');
                   }),
                   e.originalEvent.preventDefault()),
-                  a && n && !n[a] && 'dropdown' === a
+                  a && n && !n[a] && a === 'dropdown'
                     ? (setTimeout(() => {
                         n.opened = !n.opened;
                       }),
@@ -141,19 +147,23 @@ License: https://htmlelements.com/license/ */
                       e.originalEvent.preventDefault());
               }
             }
+
             _focusHandler() {
               this.$.setAttributeValue('focus', !0), this.$.fireEvent('focus');
             }
+
             _blurHandler() {
               this.$.setAttributeValue('focus', !1), this.$.fireEvent('blur');
             }
+
             _clickHandler(e) {
               const t = this;
-              (('release' !== t.clickMode &&
-                'pressAndRelease' !== t.clickMode) ||
+              ((t.clickMode !== 'release' &&
+                t.clickMode !== 'pressAndRelease') ||
                 t.readonly) &&
                 (e.preventDefault(), e.stopPropagation());
             }
+
             _downHandler(e) {
               const t = this;
               if (
@@ -166,8 +176,8 @@ License: https://htmlelements.com/license/ */
                       e.pageY
                     ),
                   t.$.setAttributeValue('active', !0),
-                  ('press' !== t.clickMode &&
-                    'pressAndRelease' !== t.clickMode) ||
+                  (t.clickMode !== 'press' &&
+                    t.clickMode !== 'pressAndRelease') ||
                     t.readonly)
                 )
               ) {
@@ -185,13 +195,14 @@ License: https://htmlelements.com/license/ */
                 });
               }
             }
+
             _mouseEnterHandler(e) {
               const t = this;
               if (
                 !t.readonly &&
                 (t.$button.setAttributeValue('hover', !0),
                 t.$.setAttributeValue('hover', !0),
-                'hover' === t.clickMode)
+                t.clickMode === 'hover')
               ) {
                 const n = 'buttons' in e ? e.buttons : e.which;
                 if (t.hasAttribute('smart-blazor'))
@@ -207,6 +218,7 @@ License: https://htmlelements.com/license/ */
                 });
               }
             }
+
             _touchEndHandler() {
               const e = this;
               setTimeout(function () {
@@ -214,27 +226,31 @@ License: https://htmlelements.com/license/ */
                   e.$.setAttributeValue('hover', !1);
               }, 300);
             }
+
             _mouseLeaveHandler() {
               this.$button.setAttributeValue('hover', !1),
                 this.$.setAttributeValue('hover', !1);
             }
+
             propertyChangedHandler(e, t, n) {
               super.propertyChangedHandler(e, t, n);
               const a = this;
-              'disabled' === e
+              e === 'disabled'
                 ? (a._setFocusable(),
                   a.$button && a.$button.setAttributeValue('hover', !1),
                   a.$.setAttributeValue('hover', !1),
                   a instanceof Smart.RepeatButton && a._stopRepeat())
-                : 'unfocusable' === e && a._setFocusable();
+                : e === 'unfocusable' && a._setFocusable();
             }
+
             _setFocusable() {
-              const e = this,
-                t = e.$.button ? e.$.button : e;
+              const e = this;
+              const t = e.$.button ? e.$.button : e;
               if (e.disabled || e.unfocusable)
                 return t.removeAttribute('tabindex'), void (t.tabIndex = -1);
               t.tabIndex = e.tabIndex > 0 ? e.tabIndex : 0;
             }
+
             ready() {
               const e = this;
               super.ready(),
@@ -255,6 +271,7 @@ License: https://htmlelements.com/license/ */
                   initialDelay: { value: 150, type: 'number' },
                 };
               }
+
               static get listeners() {
                 return {
                   'button.down': '_startRepeat',
@@ -266,9 +283,10 @@ License: https://htmlelements.com/license/ */
                   'document.up': '_stopRepeat',
                 };
               }
+
               _clickHandler(e) {
                 const t = this;
-                ('release' !== t.clickMode ||
+                (t.clickMode !== 'release' ||
                   t.preventDefaultClick ||
                   t.readonly ||
                   t.disabled) &&
@@ -276,18 +294,20 @@ License: https://htmlelements.com/license/ */
                   e.stopPropagation(),
                   (t.preventDefaultClick = !1));
               }
+
               _updateInBoundsFlag(e) {
                 const t = this;
-                -1 !== e.type.indexOf('leave')
+                e.type.indexOf('leave') !== -1
                   ? ((t._isPointerInBounds = !1),
                     t.$button.setAttributeValue('hover', !1),
                     t.$.setAttributeValue('hover', !1))
                   : ((t._isPointerInBounds = !0),
                     t.$button.setAttributeValue('hover', !0),
                     t.$.setAttributeValue('hover', !0)),
-                  1 !== ('buttons' in e ? e.buttons : e.which) &&
+                  ('buttons' in e ? e.buttons : e.which) !== 1 &&
                     t._stopRepeat(e);
               }
+
               _startRepeat(e) {
                 const t = this;
                 t.setAttribute('active', ''),
@@ -316,24 +336,27 @@ License: https://htmlelements.com/license/ */
                       }, t.delay);
                     }, t.initialDelay));
               }
+
               _stopRepeat(e) {
                 const t = this;
                 t.readonly ||
                   (e &&
-                    ('pointercancel' === e.type ||
+                    (e.type === 'pointercancel' ||
                       (e.originalEvent &&
-                        'pointercancel' === e.originalEvent.type))) ||
+                        e.originalEvent.type === 'pointercancel'))) ||
                   (t.$.setAttributeValue('active', !1),
                   t._repeatTimer &&
                     (clearInterval(t._repeatTimer), (t._repeatTimer = null)),
                   t._initialTimer &&
                     (clearTimeout(t._initialTimer), (t._initialTimer = null)));
               }
+
               _touchmoveHandler(e) {
                 this.preventDefaultClick &&
                   e.cancelable &&
                   (e.preventDefault(), e.stopPropagation());
               }
+
               _overriddenHandler() {}
             }
           ),
@@ -370,6 +393,7 @@ License: https://htmlelements.com/license/ */
                   },
                 };
               }
+
               static get listeners() {
                 return {
                   keydown: '_keyHandler',
@@ -381,42 +405,48 @@ License: https://htmlelements.com/license/ */
                   'document.up': '_documentUpHandler',
                 };
               }
+
               ready() {
                 super.ready(), this._setAriaState(), this._updateGroupValue();
               }
+
               _setAriaState() {
-                const e = this,
-                  t = e.checked;
-                null !== t
+                const e = this;
+                const t = e.checked;
+                t !== null
                   ? e.setAttribute('aria-pressed', t)
                   : e.setAttribute('aria-pressed', 'mixed');
               }
+
               _buttonClickHandler() {}
               _buttonMouseLeaveHandler() {
                 this.removeAttribute('hover');
               }
+
               _buttonMouseEnterHandler() {
                 const e = this;
                 e.setAttribute('hover', ''),
                   e.disabled ||
                     e.readonly ||
-                    'hover' !== e.clickMode ||
+                    e.clickMode !== 'hover' ||
                     (e._changeCheckState('pointer'),
                     e.focus(),
                     e._updateHidenInputNameAndValue());
               }
+
               _documentUpHandler(e) {
                 const t = this;
                 t._pressed &&
                   ((t._pressed = !1),
                   t.disabled ||
                     t.readonly ||
-                    'press' === t.clickMode ||
-                    'pointercancel' === e.originalEvent.type ||
+                    t.clickMode === 'press' ||
+                    e.originalEvent.type === 'pointercancel' ||
                     (t._changeCheckState('pointer'),
                     t.focus(),
                     t._updateHidenInputNameAndValue()));
               }
+
               _downHandler(e) {
                 const t = this;
                 t.disabled ||
@@ -428,44 +458,47 @@ License: https://htmlelements.com/license/ */
                       e.pageY
                     ),
                   (t._pressed = !0),
-                  ('press' !== t.clickMode &&
-                    'pressAndRelease' !== t.clickMode) ||
+                  (t.clickMode !== 'press' &&
+                    t.clickMode !== 'pressAndRelease') ||
                     (t._changeCheckState('pointer'),
                     t.hasAttribute('smart-blazor')
                       ? t.$.dispatchEvent(new Event('click'))
                       : t.$.fireEvent('click'),
                     t._updateHidenInputNameAndValue()),
-                  'press' === t.clickMode &&
+                  t.clickMode === 'press' &&
                     (e.preventDefault(), e.stopPropagation()));
               }
+
               _dragStartHandler(e) {
                 e.preventDefault();
               }
+
               _keyHandler(e) {
                 const t = this;
-                if (!0 !== t.disabled && !t.readonly && 32 === e.keyCode) {
-                  if ('keydown' === e.type) return void e.preventDefault();
-                  if ('none' === t.switchMode) return;
+                if (!0 !== t.disabled && !t.readonly && e.keyCode === 32) {
+                  if (e.type === 'keydown') return void e.preventDefault();
+                  if (t.switchMode === 'none') return;
                   t._changeCheckState('keyboard'),
                     t._updateHidenInputNameAndValue();
                 }
               }
+
               _updateGroupValue() {
                 const e = this;
                 if (e.dataset.target) {
                   const t = document.querySelector(e.dataset.target);
                   if (t) {
                     const n = document.querySelectorAll(
-                        '[data-target="' + e.dataset.target + '"]'
-                      ),
-                      a = [];
+                      '[data-target="' + e.dataset.target + '"]'
+                    );
+                    const a = [];
                     if (e.checked) {
-                      const n = e.dataset.property,
-                        a = e.dataset.value;
+                      const n = e.dataset.property;
+                      const a = e.dataset.value;
                       if (n && void 0 !== t[n]) {
                         let e = a;
-                        'true' === e && (e = !0),
-                          'false' === e && (e = !1),
+                        e === 'true' && (e = !0),
+                          e === 'false' && (e = !1),
                           (t[n] = e);
                       }
                     }
@@ -486,10 +519,11 @@ License: https://htmlelements.com/license/ */
                   }
                 }
               }
+
               _changeCheckState(e) {
                 const t = this;
                 let n = null;
-                null === t.checked
+                t.checked === null
                   ? (t.checked = !0)
                   : ((n = t.checked), (t.checked = !t.checked)),
                   t._handleTextSelection(),
@@ -504,6 +538,7 @@ License: https://htmlelements.com/license/ */
                   t._updateGroupValue(),
                   t._setAriaState();
               }
+
               _handleTextSelection() {
                 const e = this;
                 e.$.addClass('smart-unselectable'),
@@ -513,10 +548,11 @@ License: https://htmlelements.com/license/ */
                     500
                   ));
               }
+
               propertyChangedHandler(e, t, n) {
                 super.propertyChangedHandler(e, t, n);
                 const a = this;
-                if ('checked' === e)
+                if (e === 'checked')
                   return (
                     a.$.fireEvent('change', {
                       value: n,
@@ -536,6 +572,7 @@ License: https://htmlelements.com/license/ */
                     a._handleTemplate();
                 }
               }
+
               _htmlBindOnInitialization() {
                 const e = this;
                 e._bindContentProperty('trueContent', 'smart-true-content'),
@@ -545,17 +582,19 @@ License: https://htmlelements.com/license/ */
                     'smart-indeterminate-content'
                   );
               }
+
               _bindContentProperty(e, t) {
                 const n = this;
                 if (!n.$[e + 'Container']) return;
-                let a = document.createElement('div');
+                const a = document.createElement('div');
                 a.innerHTML = n.innerHTML;
-                let r,
-                  i = a.getElementsByClassName(t);
+                let r;
+                const i = a.getElementsByClassName(t);
                 if (i.length > 0) for (let e = 0; e < i.length; e++) r = i[e];
-                '' === n[e] && (n[e] = void 0 === r ? '' : r.outerHTML),
+                n[e] === '' && (n[e] = void 0 === r ? '' : r.outerHTML),
                   (n.$[e + 'Container'].innerHTML = n[e]);
               }
+
               _updateContentProperties() {
                 const e = this;
                 function t(t) {
@@ -564,27 +603,31 @@ License: https://htmlelements.com/license/ */
                 }
                 t('trueContent'), t('falseContent'), t('indeterminateContent');
               }
+
               _updateHidenInputValue() {
                 const e = this;
                 if (!e.$.hiddenInput) return;
                 let t;
                 (t =
-                  null === e.checked
+                  e.checked === null
                     ? 'null'
                     : !1 === e.checked
                     ? 'off'
                     : e.value || 'on'),
                   e.$.hiddenInput.setAttribute('value', t);
               }
+
               _updateHidenInputName() {
                 const e = this;
                 if (!e.$.hiddenInput) return;
-                let t = !1 === e.checked ? '' : e.name || '';
+                const t = !1 === e.checked ? '' : e.name || '';
                 e.$.hiddenInput.setAttribute('name', t);
               }
+
               _updateHidenInputNameAndValue() {
                 this._updateHidenInputName(), this._updateHidenInputValue();
               }
+
               _handleTemplate(e, t) {
                 const n = this;
                 let a, r, i;
@@ -601,10 +644,10 @@ License: https://htmlelements.com/license/ */
                       (r = n.$.indeterminateContentContainer),
                       (i = n.indeterminateContent)),
                   t && (r.innerHTML = i || ''),
-                  null === a || !a)
+                  a === null || !a)
                 )
                   return;
-                if ('function' == typeof a) return void a(r, { value: i });
+                if (typeof a === 'function') return void a(r, { value: i });
                 if (!('content' in document.createElement('template')))
                   return void n.error(
                     n.localize('htmlTemplateNotSuported', {
@@ -613,7 +656,7 @@ License: https://htmlelements.com/license/ */
                   );
                 if (
                   ((a = document.getElementById(a)),
-                  null === a || !('content' in a))
+                  a === null || !('content' in a))
                 )
                   return void n.error(
                     n.localize('invalidTemplate', {
@@ -621,19 +664,19 @@ License: https://htmlelements.com/license/ */
                       property: 'template',
                     })
                   );
-                const o = a.content,
-                  l = o.childNodes.length,
-                  s = /{{\w+}}/g;
-                let u,
-                  d = [];
+                const o = a.content;
+                const l = o.childNodes.length;
+                const s = /{{\w+}}/g;
+                let u;
+                const d = [];
                 for (let e = 0; e < l; e++)
                   for (u = s.exec(o.childNodes[e].innerHTML); u; )
                     d.push({ childNodeIndex: e, bindingString: u[0] }),
                       (u = s.exec(o.childNodes[e].innerHTML));
                 const c = d.length;
-                let p,
-                  h,
-                  m = document.importNode(a.content, !0);
+                let p;
+                let h;
+                const m = document.importNode(a.content, !0);
                 for (let e = 0; e < c; e++) {
                   (p = m.childNodes[d[e].childNodeIndex]), (h = d.length);
                   for (let t = 0; t < h; t++)
@@ -669,9 +712,11 @@ License: https://htmlelements.com/license/ */
                 },
               };
             }
+
             template() {
               return "<div id='container' class='smart-container' role=\"presentation\">\n                    <div class='smart-overlay' role=\"presentation\"></div>\n                    <span id='checkBoxInput' class='smart-input' aria-hidden=\"true\"></span>\n                    <span id='checkBoxLabel' inner-h-t-m-l='[[innerHTML]]' class='smart-label'><content></content></span>\n                    <input id='hiddenInput' class='smart-hidden-input' type='hidden'>\n                </div>";
             }
+
             static get listeners() {
               return {
                 down: '_downHandler',
@@ -682,21 +727,27 @@ License: https://htmlelements.com/license/ */
                 blur: '_blurHandler',
               };
             }
+
             static get styleUrls() {
               return ['smart.toggle.css'];
             }
+
             _focusHandler() {
               this.$.setAttributeValue('focus', !0);
             }
+
             _blurHandler() {
               this.$.setAttributeValue('focus', !1);
             }
+
             _mouseEnterHandler() {
               this.$.setAttributeValue('hover', !0);
             }
+
             _mouseLeaveHandler() {
               this.$.setAttributeValue('hover', !1);
             }
+
             ready() {
               const e = this;
               super.ready(),
@@ -708,6 +759,7 @@ License: https://htmlelements.com/license/ */
                 e.classList.add('smart-toggle-box'),
                 e._updateHidenInputNameAndValue();
             }
+
             propertyChangedHandler(e, t, a) {
               super.propertyChangedHandler(e, t, a);
               const n = this;
@@ -727,9 +779,10 @@ License: https://htmlelements.com/license/ */
                   n._updateHidenInputName();
               }
             }
+
             _documentUpHandler(e) {
               const t = this;
-              if (!t._pressed || 'pointercancel' === e.originalEvent.type)
+              if (!t._pressed || e.originalEvent.type === 'pointercancel')
                 return;
               const a = t.enableShadowDOM
                 ? e.originalEvent.composedPath()[0]
@@ -740,11 +793,11 @@ License: https://htmlelements.com/license/ */
                 !(
                   t.disabled ||
                   t.readonly ||
-                  ('input' === t.checkMode && a !== t.$.checkBoxInput) ||
-                  ('label' === t.checkMode && a !== t.$.checkBoxLabel)
+                  (t.checkMode === 'input' && a !== t.$.checkBoxInput) ||
+                  (t.checkMode === 'label' && a !== t.$.checkBoxLabel)
                 ))
               ) {
-                if ('press' === t.clickMode)
+                if (t.clickMode === 'press')
                   return e.preventDefault(), void e.stopPropagation();
                 t._changeCheckState('pointer'),
                   t.focus(),
@@ -752,25 +805,26 @@ License: https://htmlelements.com/license/ */
                   t._updateHidenInputNameAndValue();
               }
             }
+
             _downHandler(e) {
-              const t = this,
-                a = t.enableShadowDOM
-                  ? e.originalEvent.composedPath()[0]
-                  : e.originalEvent.target;
+              const t = this;
+              const a = t.enableShadowDOM
+                ? e.originalEvent.composedPath()[0]
+                : e.originalEvent.target;
               if (
                 !(
                   t.disabled ||
                   t.readonly ||
-                  ('input' === t.checkMode && a !== t.$.checkBoxInput) ||
-                  ('label' === t.checkMode && a !== t.$.checkBoxLabel)
+                  (t.checkMode === 'input' && a !== t.$.checkBoxInput) ||
+                  (t.checkMode === 'label' && a !== t.$.checkBoxLabel)
                 )
               ) {
                 if (
                   (t.$.setAttributeValue('active', !0), t.hasRippleAnimation)
                 ) {
-                  const e = t.$.checkBoxInput.getBoundingClientRect(),
-                    a = window.scrollX || window.pageXOffset,
-                    n = window.scrollY || window.pageYOffset;
+                  const e = t.$.checkBoxInput.getBoundingClientRect();
+                  const a = window.scrollX || window.pageXOffset;
+                  const n = window.scrollY || window.pageYOffset;
                   Smart.Utilities.Animation.Ripple.animate(
                     t.$.checkBoxInput,
                     e.left + e.width / 2 + a,
@@ -778,18 +832,19 @@ License: https://htmlelements.com/license/ */
                   );
                 }
                 (t._pressed = !0),
-                  ('press' !== t.clickMode &&
-                    'pressAndRelease' !== t.clickMode) ||
+                  (t.clickMode !== 'press' &&
+                    t.clickMode !== 'pressAndRelease') ||
                     (t._changeCheckState('pointer'),
                     t.$.fireEvent('click'),
                     t.focus(),
                     t._updateHidenInputNameAndValue());
               }
             }
+
             _setAriaState() {
-              const e = this,
-                t = e.checked;
-              null !== t
+              const e = this;
+              const t = e.checked;
+              t !== null
                 ? e.setAttribute('aria-checked', t)
                 : e.setAttribute('aria-checked', 'mixed');
             }
@@ -802,8 +857,8 @@ License: https://htmlelements.com/license/ */
       /***/ 6321: /***/ () => {
         !(function () {
           if (void 0 === typeof window) return;
-          const e = '21.0.0',
-            t = [];
+          const e = '21.0.0';
+          const t = [];
           let n = 'Smart';
           if (window[n] && window[n].Version) {
             if (window[n].Version === e) return;
@@ -820,39 +875,46 @@ License: https://htmlelements.com/license/ */
             (document.elementsFromPoint = document.msElementsFromPoint);
           class o {
             static isBoolean(e) {
-              return 'boolean' == typeof e;
+              return typeof e === 'boolean';
             }
+
             static isFunction(e) {
               return !!(e && e.constructor && e.call && e.apply);
             }
+
             static isArray(e) {
               return Array.isArray(e);
             }
+
             static isObject(e) {
-              return (e && ('object' == typeof e || this.isFunction(e))) || !1;
+              return (e && (typeof e === 'object' || this.isFunction(e))) || !1;
             }
+
             static isDate(e) {
               return e instanceof Date;
             }
+
             static isString(e) {
-              return 'string' == typeof e;
+              return typeof e === 'string';
             }
+
             static isNumber(e) {
-              return 'number' == typeof e;
+              return typeof e === 'number';
             }
+
             static getType(e) {
-              const t = this,
-                n = [
-                  'Boolean',
-                  'Number',
-                  'String',
-                  'Function',
-                  'Array',
-                  'Date',
-                  'Object',
-                ].find((n) => {
-                  if (t['is' + n](e)) return n;
-                });
+              const t = this;
+              const n = [
+                'Boolean',
+                'Number',
+                'String',
+                'Function',
+                'Array',
+                'Date',
+                'Object',
+              ].find((n) => {
+                if (t['is' + n](e)) return n;
+              });
               return n ? n.toLowerCase() : void 0;
             }
           }
@@ -860,12 +922,12 @@ License: https://htmlelements.com/license/ */
             static animate(e, t, r, o) {
               const i = e;
               if (!i || i instanceof HTMLElement == 0) return;
-              if (0 === i.getElementsByClassName('smart-ripple').length) {
+              if (i.getElementsByClassName('smart-ripple').length === 0) {
                 const e = document.createElement('span');
                 e.classList.add('smart-ripple'),
                   e.setAttribute('role', 'presentation');
-                let t = !0,
-                  r = null;
+                let t = !0;
+                let r = null;
                 if (
                   window[n].EnableShadowDOM &&
                   i.enableShadowDOM &&
@@ -876,10 +938,9 @@ License: https://htmlelements.com/license/ */
                     e < i.shadowRoot.host.shadowRoot.children.length;
                     e++
                   )
-                    'link' !==
-                      i.shadowRoot.host.shadowRoot.children[
-                        e
-                      ].tagName.toLowerCase() &&
+                    i.shadowRoot.host.shadowRoot.children[
+                      e
+                    ].tagName.toLowerCase() !== 'link' &&
                       (r = i.shadowRoot.host.shadowRoot.children[e]);
                   i.shadowRoot.host.shadowRoot.querySelector('.smart-ripple') &&
                     (t = !1);
@@ -904,12 +965,14 @@ License: https://htmlelements.com/license/ */
                 s.classList.remove('smart-animate'),
                 (s.style.height = s.style.width =
                   Math.max(i.offsetHeight, i.offsetWidth) + 'px');
-              const a = window.getComputedStyle(s.parentElement),
-                l = parseInt(a.borderLeftWidth) || 0,
-                d = parseInt(a.borderTopWidth) || 0,
-                c = i.getBoundingClientRect(),
-                u = t - (c.left + window.pageXOffset) - s.offsetWidth / 2 - l,
-                p = r - (c.top + window.pageYOffset) - s.offsetHeight / 2 - d;
+              const a = window.getComputedStyle(s.parentElement);
+              const l = parseInt(a.borderLeftWidth) || 0;
+              const d = parseInt(a.borderTopWidth) || 0;
+              const c = i.getBoundingClientRect();
+              const u =
+                t - (c.left + window.pageXOffset) - s.offsetWidth / 2 - l;
+              const p =
+                r - (c.top + window.pageYOffset) - s.offsetHeight / 2 - d;
               (s.style.left = u + 'px'),
                 (s.style.top = p + 'px'),
                 s.classList.add('smart-animate'),
@@ -931,64 +994,81 @@ License: https://htmlelements.com/license/ */
             static easeInQuad(e, t, n, r) {
               return n * (e /= r) * e + t;
             }
+
             static easeOutQuad(e, t, n, r) {
               return -n * (e /= r) * (e - 2) + t;
             }
+
             static easeInOutQuad(e, t, n, r) {
               return (e /= r / 2) < 1
                 ? (n / 2) * e * e + t
                 : (-n / 2) * (--e * (e - 2) - 1) + t;
             }
+
             static easeInCubic(e, t, n, r) {
               return n * (e /= r) * e * e + t;
             }
+
             static easeOutCubic(e, t, n, r) {
               return n * ((e = e / r - 1) * e * e + 1) + t;
             }
+
             static easeInOutCubic(e, t, n, r) {
               return (e /= r / 2) < 1
                 ? (n / 2) * e * e * e + t
                 : (n / 2) * ((e -= 2) * e * e + 2) + t;
             }
+
             static easeInQuart(e, t, n, r) {
               return n * (e /= r) * e * e * e + t;
             }
+
             static easeOutQuart(e, t, n, r) {
               return -n * ((e = e / r - 1) * e * e * e - 1) + t;
             }
+
             static easeInOutQuart(e, t, n, r) {
               return (e /= r / 2) < 1
                 ? (n / 2) * e * e * e * e + t
                 : (-n / 2) * ((e -= 2) * e * e * e - 2) + t;
             }
+
             static easeInQuint(e, t, n, r) {
               return n * (e /= r) * e * e * e * e + t;
             }
+
             static easeOutQuint(e, t, n, r) {
               return n * ((e = e / r - 1) * e * e * e * e + 1) + t;
             }
+
             static easeInOutQuint(e, t, n, r) {
               return (e /= r / 2) < 1
                 ? (n / 2) * e * e * e * e * e + t
                 : (n / 2) * ((e -= 2) * e * e * e * e + 2) + t;
             }
+
             static easeInSine(e, t, n, r) {
               return -n * Math.cos((e / r) * (Math.PI / 2)) + n + t;
             }
+
             static easeOutSine(e, t, n, r) {
               return n * Math.sin((e / r) * (Math.PI / 2)) + t;
             }
+
             static easeInOutSine(e, t, n, r) {
               return (-n / 2) * (Math.cos((Math.PI * e) / r) - 1) + t;
             }
+
             static easeInExpo(e, t, n, r) {
-              return 0 === e ? t : n * Math.pow(2, 10 * (e / r - 1)) + t;
+              return e === 0 ? t : n * Math.pow(2, 10 * (e / r - 1)) + t;
             }
+
             static easeOutExpo(e, t, n, r) {
               return e === r ? t + n : n * (1 - Math.pow(2, (-10 * e) / r)) + t;
             }
+
             static easeInOutExpo(e, t, n, r) {
-              return 0 === e
+              return e === 0
                 ? t
                 : e === r
                 ? t + n
@@ -996,24 +1076,28 @@ License: https://htmlelements.com/license/ */
                 ? (n / 2) * Math.pow(2, 10 * (e - 1)) + t
                 : (n / 2) * (2 - Math.pow(2, -10 * --e)) + t;
             }
+
             static easeInCirc(e, t, n, r) {
               return -n * (Math.sqrt(1 - (e /= r) * e) - 1) + t;
             }
+
             static easeOutCirc(e, t, n, r) {
               return n * Math.sqrt(1 - (e = e / r - 1) * e) + t;
             }
+
             static easeInOutCirc(e, t, n, r) {
               return (e /= r / 2) < 1
                 ? (-n / 2) * (Math.sqrt(1 - e * e) - 1) + t
                 : (n / 2) * (Math.sqrt(1 - (e -= 2) * e) + 1) + t;
             }
+
             static easeInElastic(e, t, n, r) {
-              let o = 1.70158,
-                i = 0,
-                s = n;
-              return 0 === e
+              let o = 1.70158;
+              let i = 0;
+              let s = n;
+              return e === 0
                 ? t
-                : 1 == (e /= r)
+                : (e /= r) == 1
                 ? t + n
                 : (i || (i = 0.3 * r),
                   s < Math.abs(n)
@@ -1024,13 +1108,14 @@ License: https://htmlelements.com/license/ */
                     Math.sin(((e * r - o) * (2 * Math.PI)) / i) +
                     t);
             }
+
             static easeOutElastic(e, t, n, r) {
-              let o = 1.70158,
-                i = 0,
-                s = n;
-              return 0 === e
+              let o = 1.70158;
+              let i = 0;
+              let s = n;
+              return e === 0
                 ? t
-                : 1 == (e /= r)
+                : (e /= r) == 1
                 ? t + n
                 : (i || (i = 0.3 * r),
                   s < Math.abs(n)
@@ -1042,13 +1127,14 @@ License: https://htmlelements.com/license/ */
                     n +
                     t);
             }
+
             static easeInOutElastic(e, t, n, r) {
-              let o = 1.70158,
-                i = 0,
-                s = n;
-              return 0 === e
+              let o = 1.70158;
+              let i = 0;
+              let s = n;
+              return e === 0
                 ? t
-                : 2 == (e /= r / 2)
+                : (e /= r / 2) == 2
                 ? t + n
                 : (i || (i = r * (0.3 * 1.5)),
                   s < Math.abs(n)
@@ -1067,18 +1153,21 @@ License: https://htmlelements.com/license/ */
                       n +
                       t);
             }
+
             static easeInBack(e, t, n, r, o) {
               return (
                 void 0 === o && (o = 1.70158),
                 n * (e /= r) * e * ((o + 1) * e - o) + t
               );
             }
+
             static easeOutBack(e, t, n, r, o) {
               return (
                 void 0 === o && (o = 1.70158),
                 n * ((e = e / r - 1) * e * ((o + 1) * e + o) + 1) + t
               );
             }
+
             static easeInOutBack(e, t, n, r, o) {
               return (
                 void 0 === o && (o = 1.70158),
@@ -1089,9 +1178,11 @@ License: https://htmlelements.com/license/ */
                     t
               );
             }
+
             static easeInBounce(e, t, n, r) {
               return n - this.easeOutBounce(r - e, 0, n, r) + t;
             }
+
             static easeOutBounce(e, t, n, r) {
               return (e /= r) < 1 / 2.75
                 ? n * (7.5625 * e * e) + t
@@ -1101,6 +1192,7 @@ License: https://htmlelements.com/license/ */
                 ? n * (7.5625 * (e -= 2.25 / 2.75) * e + 0.9375) + t
                 : n * (7.5625 * (e -= 2.625 / 2.75) * e + 0.984375) + t;
             }
+
             static easeInOutBounce(e, t, n, r) {
               return e < r / 2
                 ? 0.5 * this.easeInBounce(2 * e, 0, n, r) + t
@@ -1126,17 +1218,18 @@ License: https://htmlelements.com/license/ */
                   'ontouchend' in document)
               );
             }
+
             static get Browser() {
               let e;
               const t = function (t) {
-                let n = t.indexOf(e);
-                if (-1 === n) return;
+                const n = t.indexOf(e);
+                if (n === -1) return;
                 const r = t.indexOf('rv:');
-                return 'Trident' === e && -1 !== r
+                return e === 'Trident' && r !== -1
                   ? parseFloat(t.substring(r + 3))
                   : parseFloat(t.substring(n + e.length + 1));
               };
-              let n = {};
+              const n = {};
               return (
                 (n[
                   (function () {
@@ -1183,9 +1276,9 @@ License: https://htmlelements.com/license/ */
                       },
                     ];
                     for (let n = 0; n < t.length; n++) {
-                      let r = t[n].string;
+                      const r = t[n].string;
                       if (
-                        ((e = t[n].subString), -1 !== r.indexOf(t[n].subString))
+                        ((e = t[n].subString), r.indexOf(t[n].subString) !== -1)
                       )
                         return t[n].identity;
                     }
@@ -1199,21 +1292,25 @@ License: https://htmlelements.com/license/ */
                 n
               );
             }
+
             static toCamelCase(e) {
               return e.replace(/-([a-z])/g, function (e) {
                 return e[1].toUpperCase();
               });
             }
+
             static toDash(e) {
               return e
                 .split(/(?=[A-Z])/)
                 .join('-')
                 .toLowerCase();
             }
+
             static unescapeHTML(e) {
               return new DOMParser().parseFromString(e, 'text/html')
                 .documentElement.textContent;
             }
+
             static escapeHTML(e) {
               const t = {
                 '&': '&amp;',
@@ -1227,6 +1324,7 @@ License: https://htmlelements.com/license/ */
               };
               return String(e).replace(/[&<>"'`=\/]/g, (e) => t[e]);
             }
+
             static sanitizeHTML(e) {
               if (
                 e &&
@@ -1241,6 +1339,7 @@ License: https://htmlelements.com/license/ */
               );
               return String(e).replace(t, (e) => this.escapeHTML(e));
             }
+
             static createGUID() {
               function e() {
                 return Math.floor(65536 * (1 + Math.random()))
@@ -1262,18 +1361,19 @@ License: https://htmlelements.com/license/ */
                 e()
               );
             }
+
             static getScriptLocation() {
-              return './' !== window[n].BaseUrl
+              return window[n].BaseUrl !== './'
                 ? window[n].BaseUrl
                 : (function () {
                     if (document.currentScript) {
-                      let e = document.currentScript.src,
-                        t = e.lastIndexOf('/');
+                      let e = document.currentScript.src;
+                      const t = e.lastIndexOf('/');
                       return (e = e.substring(0, t)), e;
                     }
                     const e = new Error();
-                    let t = '(',
-                      n = ')';
+                    let t = '(';
+                    let n = ')';
                     if (
                       (Smart.Utilities.Core.Browser.Safari &&
                         ((t = '@'), (n = '\n')),
@@ -1291,6 +1391,7 @@ License: https://htmlelements.com/license/ */
                     );
                   })();
             }
+
             static CSSVariablesSupport() {
               return (
                 window.CSS &&
@@ -1298,10 +1399,11 @@ License: https://htmlelements.com/license/ */
                 window.CSS.supports('(--fake-var: 0)')
               );
             }
+
             static assign(e, t) {
               const n = (e) =>
-                e && 'object' == typeof e && !Array.isArray(e) && null !== e;
-              let r = Object.assign({}, e);
+                e && typeof e === 'object' && !Array.isArray(e) && e !== null;
+              const r = Object.assign({}, e);
               return (
                 n(e) &&
                   n(t) &&
@@ -1315,10 +1417,11 @@ License: https://htmlelements.com/license/ */
                 r
               );
             }
+
             static html(e, t) {
               const n = this;
-              let r = '',
-                o = e.childNodes;
+              let r = '';
+              const o = e.childNodes;
               if (!t) {
                 for (let e, t = 0, i = o.length; t < i && (e = o[t]); t++) {
                   const t = ['strong'];
@@ -1326,8 +1429,8 @@ License: https://htmlelements.com/license/ */
                     e instanceof HTMLElement ||
                     (e.tagName && t.indexOf(e.tagName.toLowerCase()) >= 0)
                   ) {
-                    const t = e.tagName.toLowerCase(),
-                      o = e.attributes;
+                    const t = e.tagName.toLowerCase();
+                    const o = e.attributes;
                     let i = '<' + t;
                     for (let e, t = 0; (e = o[t]); t++)
                       i +=
@@ -1357,7 +1460,7 @@ License: https://htmlelements.com/license/ */
                       ][t] && (r += i),
                       (r = r + i + n.html(e) + '</' + t + '>');
                   } else {
-                    if (8 === e.nodeType) continue;
+                    if (e.nodeType === 8) continue;
                     r += e.textContent.replace(
                       /[&\u00A0<>]/g,
                       y.Core.escapeHTML
@@ -1372,7 +1475,7 @@ License: https://htmlelements.com/license/ */
               }
             }
           }
-          let l = [];
+          const l = [];
           class d {
             static watch(e) {
               switch (e.nodeName.toLowerCase()) {
@@ -1398,54 +1501,57 @@ License: https://htmlelements.com/license/ */
               }
               d.start();
             }
+
             static start() {
               d.isStarted ||
                 ((d.isStarted = !0),
                 d.interval && clearInterval(d.interval),
-                0 === l.length || document.hidden
+                l.length === 0 || document.hidden
                   ? (d.isStarted = !1)
                   : (d.interval = setInterval(function () {
                       d.observe();
                     }, 100)));
             }
+
             static stop() {
               (d.isStarted = !1), d.interval && clearInterval(d.interval);
             }
+
             static observeElement(e) {
               const t = e;
-              if ('test' === window.Smart.Mode || document.hidden)
+              if (window.Smart.Mode === 'test' || document.hidden)
                 return void (d.interval && clearInterval(d.interval));
-              let n =
-                  e._computedStyle || 'resize' !== t.hasStyleObserver
-                    ? document.defaultView.getComputedStyle(t, null)
-                    : {},
-                r = !0,
-                o =
-                  'resize' !== t.hasStyleObserver
-                    ? [
-                        'paddingLeft',
-                        'paddingRight',
-                        'paddingTop',
-                        'paddingBottom',
-                        'borderLeftWidth',
-                        'borderRightWidth',
-                        'borderTopWidth',
-                        'borderBottomWidth',
-                        'display',
-                        'visibility',
-                        'font-size',
-                        'font-family',
-                        'font-style',
-                        'font-weight',
-                        'max-height',
-                        'min-height',
-                        'max-width',
-                        'min-width',
-                        'overflow',
-                        'overflow-x',
-                        'overflow-y',
-                      ]
-                    : [];
+              const n =
+                e._computedStyle || t.hasStyleObserver !== 'resize'
+                  ? document.defaultView.getComputedStyle(t, null)
+                  : {};
+              let r = !0;
+              let o =
+                t.hasStyleObserver !== 'resize'
+                  ? [
+                      'paddingLeft',
+                      'paddingRight',
+                      'paddingTop',
+                      'paddingBottom',
+                      'borderLeftWidth',
+                      'borderRightWidth',
+                      'borderTopWidth',
+                      'borderBottomWidth',
+                      'display',
+                      'visibility',
+                      'font-size',
+                      'font-family',
+                      'font-style',
+                      'font-weight',
+                      'max-height',
+                      'min-height',
+                      'max-width',
+                      'min-width',
+                      'overflow',
+                      'overflow-x',
+                      'overflow-y',
+                    ]
+                  : [];
               if (
                 (e.styleProperties && (o = o.concat(e.styleProperties)),
                 e.observableStyleProperties &&
@@ -1454,26 +1560,26 @@ License: https://htmlelements.com/license/ */
               ) {
                 t._styleInfo = [];
                 for (let e = 0; e < o.length; e++) {
-                  const r = o[e],
-                    i = r.startsWith('--') ? n.getPropertyValue(r) : n[r];
+                  const r = o[e];
+                  const i = r.startsWith('--') ? n.getPropertyValue(r) : n[r];
                   t._styleInfo[r] = i;
                 }
                 return;
               }
               if (
                 (e.isHidden ||
-                  ('none' !== n.display &&
-                    ((0 !== e.offsetWidth && 0 !== e.offsetHeight) ||
+                  (n.display !== 'none' &&
+                    ((e.offsetWidth !== 0 && e.offsetHeight !== 0) ||
                       (e.isHidden = !0))),
                 e.isHidden)
               ) {
                 if ((e.visibilityChangedHandler(), e.isHidden)) return;
                 r = !1;
               }
-              let i = [];
+              const i = [];
               for (let e = 0; e < o.length; e++) {
-                const r = o[e],
-                  s = r.startsWith('--') ? n.getPropertyValue(r) : n[r];
+                const r = o[e];
+                const s = r.startsWith('--') ? n.getPropertyValue(r) : n[r];
                 t._styleInfo[r] !== s &&
                   ((i[r] = { oldValue: t._styleInfo[r], value: s }),
                   i.length++),
@@ -1489,32 +1595,34 @@ License: https://htmlelements.com/license/ */
                   r &&
                   t.$.fireEvent('resize', t, { bubbles: !1, cancelable: !0 }));
             }
+
             static observe() {
               for (let e = 0; e < l.length; e++) {
                 const t = l[e];
                 this.observeElement(t);
               }
             }
+
             static unwatch(e) {
               d.stop();
               const t = l.indexOf(e);
-              -1 !== t && l.splice(t, 1), d.start();
+              t !== -1 && l.splice(t, 1), d.start();
             }
           }
-          let c = [];
-          const u = [],
-            p = [
-              'resize',
-              'down',
-              'up',
-              'move',
-              'tap',
-              'taphold',
-              'swipeleft',
-              'swiperight',
-              'swipetop',
-              'swipebottom',
-            ];
+          const c = [];
+          const u = [];
+          const p = [
+            'resize',
+            'down',
+            'up',
+            'move',
+            'tap',
+            'taphold',
+            'swipeleft',
+            'swiperight',
+            'swipetop',
+            'swipebottom',
+          ];
           class h {
             constructor(e) {
               const t = this;
@@ -1525,7 +1633,7 @@ License: https://htmlelements.com/license/ */
                   Date.now().toString(36) +
                   Math.random().toString(36).substr(2, 5)
                 ).toUpperCase());
-              let n = {
+              const n = {
                 handlers: {},
                 boundEventTypes: [],
                 listen: t.listen.bind(t),
@@ -1552,9 +1660,9 @@ License: https://htmlelements.com/license/ */
                     (t[e] = (e) => {
                       if (!n.handlers[e.type]) {
                         if (
-                          ('mousemove' === e.type ||
-                            'pointermove' === e.type ||
-                            'touchmove' === e.type) &&
+                          (e.type === 'mousemove' ||
+                            e.type === 'pointermove' ||
+                            e.type === 'touchmove') &&
                           n.handlers.move
                         ) {
                           const r = t.createEvent(e, 'move');
@@ -1570,22 +1678,23 @@ License: https://htmlelements.com/license/ */
                 n
               );
             }
+
             listen(e) {
               const t = this;
               if (
-                'resize' === e &&
+                e === 'resize' &&
                 t.target !== document &&
                 t.target !== window &&
                 !1 !== t.target.hasResizeObserver
               )
                 if (Smart.Utilities.Core.Browser.Firefox) {
                   if (!t.target.resizeObserver) {
-                    let e,
-                      n,
-                      r,
-                      o = !1,
-                      i = t.target.offsetWidth,
-                      s = t.target.offsetHeight;
+                    let e;
+                    let n;
+                    let r;
+                    let o = !1;
+                    let i = t.target.offsetWidth;
+                    let s = t.target.offsetHeight;
                     const a = new ResizeObserver(() => {
                       if (!o) return void (o = !0);
                       const a = new CustomEvent('resize', {
@@ -1614,24 +1723,24 @@ License: https://htmlelements.com/license/ */
                       ? t.target.shadowRoot.appendChild(e)
                       : t.target.appendChild(e),
                     (t.target.resizeTrigger = e);
-                  const r = e.childNodes[0],
-                    o = r.childNodes[0],
-                    i = e.childNodes[1],
-                    s = function () {
-                      (o.style.width = '100000px'),
-                        (o.style.height = '100000px'),
-                        (r.scrollLeft = 1e5),
-                        (r.scrollTop = 1e5),
-                        (i.scrollLeft = 1e5),
-                        (i.scrollTop = 1e5);
-                    };
-                  let a,
-                    l,
-                    d,
-                    c,
-                    u = t.target.offsetWidth,
-                    p = t.target.offsetHeight;
-                  if (0 === u || 0 === p) {
+                  const r = e.childNodes[0];
+                  const o = r.childNodes[0];
+                  const i = e.childNodes[1];
+                  const s = function () {
+                    (o.style.width = '100000px'),
+                      (o.style.height = '100000px'),
+                      (r.scrollLeft = 1e5),
+                      (r.scrollTop = 1e5),
+                      (i.scrollLeft = 1e5),
+                      (i.scrollTop = 1e5);
+                  };
+                  let a;
+                  let l;
+                  let d;
+                  let c;
+                  let u = t.target.offsetWidth;
+                  let p = t.target.offsetHeight;
+                  if (u === 0 || p === 0) {
                     const e = function () {
                       s(), t.target.removeEventListener('resize', e);
                     };
@@ -1724,6 +1833,7 @@ License: https://htmlelements.com/license/ */
                     t.target._handleDocumentUp
                   )));
             }
+
             unlisten(e) {
               const t = this;
               if (
@@ -1749,16 +1859,16 @@ License: https://htmlelements.com/license/ */
                   ),
                   delete t.target._handleDocumentUp,
                   delete t.target._handleDocumentUpId),
-                'resize' === e)
+                e === 'resize')
               )
                 if (Smart.Utilities.Core.Browser.Firefox)
                   t.target.resizeObserver &&
                     (t.target.resizeObserver.unobserve(t.target),
                     delete t.target.resizeObserver);
                 else if (t.target.resizeTrigger) {
-                  const e = t.target.resizeTrigger,
-                    n = e.childNodes[0],
-                    r = e.childNodes[1];
+                  const e = t.target.resizeTrigger;
+                  const n = e.childNodes[0];
+                  const r = e.childNodes[1];
                   n.removeEventListener('scroll', t.target.resizeHandler),
                     r.removeEventListener('scroll', t.target.resizeHandler),
                     (t.target.resizeHandler = null),
@@ -1766,20 +1876,22 @@ License: https://htmlelements.com/license/ */
                     delete t.target.resizeTrigger;
                 }
             }
+
             handleDocumentUp(e) {
               const t = this;
               (t.isPressed = !1), (t.isReleased = !1), t.resetSwipe(e);
             }
+
             createEvent(e, t) {
-              const n = this,
-                r = e.touches,
-                o = e.changedTouches,
-                i = r && r.length ? r[0] : o && o.length ? o[0] : void 0,
-                s = new CustomEvent(t, {
-                  bubbles: !0,
-                  cancelable: !0,
-                  composed: void 0 !== n.$target.element.getRootNode().host,
-                });
+              const n = this;
+              const r = e.touches;
+              const o = e.changedTouches;
+              const i = r && r.length ? r[0] : o && o.length ? o[0] : void 0;
+              const s = new CustomEvent(t, {
+                bubbles: !0,
+                cancelable: !0,
+                composed: void 0 !== n.$target.element.getRootNode().host,
+              });
               if (((s.originalEvent = e), i)) {
                 for (let e = 0; e < n.inputEventProperties.length; e++) {
                   const t = n.inputEventProperties[e];
@@ -1787,9 +1899,10 @@ License: https://htmlelements.com/license/ */
                 }
                 return s;
               }
-              for (let t in e) t in s || (s[t] = e[t]);
+              for (const t in e) t in s || (s[t] = e[t]);
               return s;
             }
+
             fireTap(e) {
               const t = this;
               if (
@@ -1800,6 +1913,7 @@ License: https://htmlelements.com/license/ */
                 t.tap(n);
               }
             }
+
             initTap(e) {
               const t = this;
               (t.isInBounds = !0),
@@ -1812,9 +1926,11 @@ License: https://htmlelements.com/license/ */
                   }
                 }, t.tapHoldDelay));
             }
+
             pointerDown(e) {
               return this.handleDown(e);
             }
+
             mouseDown(e) {
               const t = this;
               if (
@@ -1825,6 +1941,7 @@ License: https://htmlelements.com/license/ */
               )
                 return t.handleDown(e);
             }
+
             touchStart(e) {
               const t = this;
               return (
@@ -1833,6 +1950,7 @@ License: https://htmlelements.com/license/ */
                 t.handleDown(e)
               );
             }
+
             mouseUp(e) {
               const t = this;
               if (
@@ -1843,6 +1961,7 @@ License: https://htmlelements.com/license/ */
               )
                 return t.handleUp(e);
             }
+
             handleDown(e) {
               const t = this;
               (t.isReleased = !1), (t.isPressed = !0);
@@ -1857,17 +1976,19 @@ License: https://htmlelements.com/license/ */
                 t.down(n)
               );
             }
+
             handleUp(e) {
               const t = this;
               (t.isReleased = !0), (t.isPressed = !1);
-              const n = t.createEvent(e, 'up'),
-                r = t.up(n);
+              const n = t.createEvent(e, 'up');
+              const r = t.up(n);
               return (
                 (t.handlers.tap || t.handlers.taphold) && t.fireTap(n),
                 t.resetSwipe(n),
                 r
               );
             }
+
             handleMove(e) {
               const t = this;
               let n = t.move(e);
@@ -1885,38 +2006,47 @@ License: https://htmlelements.com/license/ */
                 n
               );
             }
+
             touchEnd(e) {
               return (this.touchEndTime = new Date()), this.handleUp(e);
             }
+
             pointerUp(e) {
               return this.handleUp(e);
             }
+
             pointerCancel(e) {
               this.pointerUp(e);
             }
+
             touchCancel(e) {
               this.touchEnd(e);
             }
+
             mouseLeave() {
               this.isInBounds = !1;
             }
+
             mouseMove(e) {
               if (!this.isTouchMoved) return this.handleMove(e);
             }
+
             pointerMove(e) {
               return this.handleMove(e);
             }
+
             touchMove(e) {
-              const t = this,
-                n = e.touches,
-                r = e.changedTouches,
-                o = n && n.length ? n[0] : r && r.length ? r[0] : void 0;
+              const t = this;
+              const n = e.touches;
+              const r = e.changedTouches;
+              const o = n && n.length ? n[0] : r && r.length ? r[0] : void 0;
               for (let n = 0; n < t.inputEventProperties.length; n++) {
                 const r = t.inputEventProperties[n];
                 void 0 === e[r] && (e[r] = o[r]);
               }
               return (t.isTouchMoved = !0), t.handleMove(e);
             }
+
             handleSwipeEvents(e) {
               const t = this;
               let n = !0;
@@ -1929,6 +2059,7 @@ License: https://htmlelements.com/license/ */
                 n
               );
             }
+
             handleVerticalSwipeEvents(e) {
               let t, n;
               return (
@@ -1937,6 +2068,7 @@ License: https://htmlelements.com/license/ */
                 this.swiped(e, n, 'vertical')
               );
             }
+
             handleHorizontalSwipeEvents(e) {
               let t, n;
               return (
@@ -1945,6 +2077,7 @@ License: https://htmlelements.com/license/ */
                 this.swiped(e, n, 'horizontal')
               );
             }
+
             swiped(e, t, n) {
               const r = this;
               if (
@@ -1953,7 +2086,7 @@ License: https://htmlelements.com/license/ */
               ) {
                 let o = t < 0 ? 'swipeleft' : 'swiperight';
                 if (
-                  ('horizontal' === n
+                  (n === 'horizontal'
                     ? (r._swipeEvent = r.createEvent(e, o))
                     : ((o = t < 0 ? 'swipetop' : 'swipebottom'),
                       (r._swipeEvent = r.createEvent(
@@ -1967,9 +2100,11 @@ License: https://htmlelements.com/license/ */
               }
               return !0;
             }
+
             resetSwipe() {
               (this._swipeEvent = null), clearTimeout(this._swipeTimeout);
             }
+
             initSwipe(e) {
               const t = this;
               (t._maxSwipeVerticalDistance = 0),
@@ -1988,44 +2123,54 @@ License: https://htmlelements.com/license/ */
               const e = this;
               return e.horizontalScrollBar ? e.horizontalScrollBar.max : -1;
             }
+
             set scrollWidth(e) {
               const t = this;
               e < 0 && (e = 0),
                 t.horizontalScrollBar && (t.horizontalScrollBar.max = e);
             }
+
             get scrollHeight() {
               const e = this;
               return e.verticalScrollBar ? e.verticalScrollBar.max : -1;
             }
+
             set scrollHeight(e) {
               const t = this;
               e < 0 && (e = 0),
                 t.verticalScrollBar && (t.verticalScrollBar.max = e);
             }
+
             get scrollLeft() {
               const e = this;
               return e.horizontalScrollBar ? e.horizontalScrollBar.value : -1;
             }
+
             set scrollLeft(e) {
               const t = this;
               e < 0 && (e = 0),
                 t.horizontalScrollBar && (t.horizontalScrollBar.value = e);
             }
+
             get scrollTop() {
               const e = this;
               return e.verticalScrollBar ? e.verticalScrollBar.value : -1;
             }
+
             set scrollTop(e) {
               const t = this;
               e < 0 && (e = 0),
                 t.verticalScrollBar && (t.verticalScrollBar.value = e);
             }
+
             get vScrollBar() {
               return this.verticalScrollBar;
             }
+
             get hScrollBar() {
               return this.horizontalScrollBar;
             }
+
             constructor(e, t, n) {
               const r = this;
               (r.container = e),
@@ -2034,48 +2179,49 @@ License: https://htmlelements.com/license/ */
                 (r.disableSwipeScroll = !1),
                 r.listen();
             }
+
             listen() {
-              const e = this,
-                t = a.isMobile,
-                n = e.horizontalScrollBar,
-                r = e.verticalScrollBar;
+              const e = this;
+              const t = a.isMobile;
+              const n = e.horizontalScrollBar;
+              const r = e.verticalScrollBar;
               let o, i, s, l, d, c, u, p;
               e.inputEvents = new h(e.container);
               const m = function (e) {
-                  return {
-                    amplitude: 0,
-                    delta: 0,
-                    initialValue: 0,
-                    min: 0,
-                    max: e.max,
-                    previousValue: 0,
-                    pointerPosition: 0,
-                    targetValue: 0,
-                    scrollBar: e,
-                    value: 0,
-                    velocity: 0,
-                  };
-                },
-                f = m(n),
-                g = m(r),
-                w = function () {
-                  const t = e.container.touchVelocityCoefficient || 50;
-                  (c = Date.now()), (u = c - l), (l = c);
-                  const n = function (e) {
-                    (e.delta = e.value - e.previousValue),
-                      (e.previousValue = e.value);
-                    let n = (t * e.delta) / (1 + u);
-                    e.velocity = 0.8 * n + 0.2 * e.velocity;
-                  };
-                  n(g), n(f);
-                },
-                b = function (e) {
-                  return (
-                    (p.value = e > p.max ? p.max : e < p.min ? p.min : e),
-                    (p.scrollBar.value = p.value),
-                    e > p.max ? 'max' : e < p.min ? 'min' : 'value'
-                  );
+                return {
+                  amplitude: 0,
+                  delta: 0,
+                  initialValue: 0,
+                  min: 0,
+                  max: e.max,
+                  previousValue: 0,
+                  pointerPosition: 0,
+                  targetValue: 0,
+                  scrollBar: e,
+                  value: 0,
+                  velocity: 0,
                 };
+              };
+              const f = m(n);
+              const g = m(r);
+              const w = function () {
+                const t = e.container.touchVelocityCoefficient || 50;
+                (c = Date.now()), (u = c - l), (l = c);
+                const n = function (e) {
+                  (e.delta = e.value - e.previousValue),
+                    (e.previousValue = e.value);
+                  const n = (t * e.delta) / (1 + u);
+                  e.velocity = 0.8 * n + 0.2 * e.velocity;
+                };
+                n(g), n(f);
+              };
+              const b = function (e) {
+                return (
+                  (p.value = e > p.max ? p.max : e < p.min ? p.min : e),
+                  (p.scrollBar.value = p.value),
+                  e > p.max ? 'max' : e < p.min ? 'min' : 'value'
+                );
+              };
               function v() {
                 let t, n;
                 p.amplitude &&
@@ -2092,8 +2238,9 @@ License: https://htmlelements.com/license/ */
               let C;
               e.inputEvents.down(function (n) {
                 if (!t) return;
-                const r = n.originalEvent.target,
-                  i = r && r.closest ? r.closest('smart-scroll-bar') : void 0;
+                const r = n.originalEvent.target;
+                const i =
+                  r && r.closest ? r.closest('smart-scroll-bar') : void 0;
                 if (i === e.horizontalScrollBar || i === e.verticalScrollBar)
                   return;
                 (s = !0), (o = !1);
@@ -2141,13 +2288,13 @@ License: https://htmlelements.com/license/ */
                     !s || (!f.visible && !g.visible))
                   )
                     return;
-                  const n = e.container.touchScrollRatio,
-                    r = e.container;
+                  const n = e.container.touchScrollRatio;
+                  const r = e.container;
                   let i, a;
                   n &&
-                    ('number' == typeof n
+                    (typeof n === 'number'
                       ? ((i = -n), (a = -n))
-                      : 'function' == typeof n &&
+                      : typeof n === 'function' &&
                         ((i = n(g.max, r.offsetHeight)),
                         (a = n(f.max, r.offsetWidth)))),
                     (g.ratio = i || -g.max / r.offsetHeight),
@@ -2164,8 +2311,8 @@ License: https://htmlelements.com/license/ */
                             : t.initialValue + t.delta < p.min
                             ? 'min'
                             : 'value'),
-                        ('min' === l && 0 === t.initialValue) ||
-                          ('max' === l && t.initialValue === t.max) ||
+                        (l === 'min' && t.initialValue === 0) ||
+                          (l === 'max' && t.initialValue === t.max) ||
                           !t.visible ||
                           (e.container.$.fireEvent('kineticScroll'),
                           b(t.initialValue + t.delta),
@@ -2176,11 +2323,11 @@ License: https://htmlelements.com/license/ */
                           !1))
                       : null;
                   };
-                  let c = d(g, t.clientY, t);
-                  if (null !== c) return c;
+                  const c = d(g, t.clientY, t);
+                  if (c !== null) return c;
                   {
-                    let e = d(f, t.clientX, t);
-                    if (null !== e) return e;
+                    const e = d(f, t.clientX, t);
+                    if (e !== null) return e;
                   }
                 }),
                 (e.scrollTo = function (t, n) {
@@ -2199,49 +2346,50 @@ License: https://htmlelements.com/license/ */
                     t >= r.max && (t = r.max),
                     (r.targetValue = t);
                   const s = t;
-                  let a = r.value;
+                  const a = r.value;
                   (r.velocity = (100 * r.delta) / (1 + r.max)), (r.from = a);
                   const d = function (e) {
-                      return (
-                        (r.value = e > r.max ? r.max : e < r.min ? r.min : e),
-                        (r.scrollBar.value = r.value),
-                        e > r.max ? 'max' : e < r.min ? 'min' : 'value'
-                      );
-                    },
-                    c = function () {
-                      let n,
-                        u = Date.now() - C,
-                        p = Math.min(1e3, Date.now() - l),
-                        h = r.velocity * Math.exp(p / 175);
-                      if (o)
-                        ((h < 0 && r.value <= t) || (h > 0 && r.value >= t)) &&
+                    return (
+                      (r.value = e > r.max ? r.max : e < r.min ? r.min : e),
+                      (r.scrollBar.value = r.value),
+                      e > r.max ? 'max' : e < r.min ? 'min' : 'value'
+                    );
+                  };
+                  const c = function () {
+                    let n;
+                    const u = Date.now() - C;
+                    const p = Math.min(1e3, Date.now() - l);
+                    let h = r.velocity * Math.exp(p / 175);
+                    if (o)
+                      ((h < 0 && r.value <= t) || (h > 0 && r.value >= t)) &&
+                        (h = 0),
+                        (r.value + h <= r.min || r.value + h >= r.max) &&
                           (h = 0),
-                          (r.value + h <= r.min || r.value + h >= r.max) &&
-                            (h = 0),
-                          h > 0.5 || h < -0.5
-                            ? (d(r.value + h),
-                              cancelAnimationFrame(i),
-                              (i = 0),
-                              (i = requestAnimationFrame(c)))
-                            : d(r.targetValue);
-                      else {
-                        if (u >= 175)
-                          return (
+                        h > 0.5 || h < -0.5
+                          ? (d(r.value + h),
                             cancelAnimationFrame(i),
-                            e.container.$.fireEvent('kineticScroll'),
-                            void (i = 0)
-                          );
-                        (n = y.Animation.Easings.easeInSine(u, a, s - a, 175)),
-                          d(n),
+                            (i = 0),
+                            (i = requestAnimationFrame(c)))
+                          : d(r.targetValue);
+                    else {
+                      if (u >= 175)
+                        return (
                           cancelAnimationFrame(i),
-                          (i = 0),
-                          (i = requestAnimationFrame(c));
-                      }
-                    };
+                          e.container.$.fireEvent('kineticScroll'),
+                          void (i = 0)
+                        );
+                      (n = y.Animation.Easings.easeInSine(u, a, s - a, 175)),
+                        d(n),
+                        cancelAnimationFrame(i),
+                        (i = 0),
+                        (i = requestAnimationFrame(c));
+                    }
+                  };
                   cancelAnimationFrame(i), (i = requestAnimationFrame(c));
                 }),
                 e.inputEvents.listen();
             }
+
             unlisten() {
               const e = this;
               e.inputEvents && e.inputEvents.unlisten(), delete e.inputEvents;
@@ -2251,13 +2399,15 @@ License: https://htmlelements.com/license/ */
             constructor(e) {
               (this.events = {}), (this.handlers = {}), (this.element = e);
             }
+
             hasClass(e) {
-              const t = this,
-                n = e.split(' ');
+              const t = this;
+              const n = e.split(' ');
               for (let e = 0; e < n.length; e++)
                 if (!t.element.classList.contains(n[e])) return !1;
               return !0;
             }
+
             addClass(e) {
               const t = this;
               if (t.hasClass(e)) return;
@@ -2265,38 +2415,42 @@ License: https://htmlelements.com/license/ */
               for (let e = 0; e < n.length; e++) t.element.classList.add(n[e]);
               t.isNativeElement || d.observeElement(t.element);
             }
+
             removeClass(e) {
               const t = this;
-              if (0 === arguments.length)
+              if (arguments.length === 0)
                 return void t.element.removeAttribute('class');
               const n = e.split(' ');
               for (let e = 0; e < n.length; e++)
                 t.element.classList.remove(n[e]);
-              '' === t.element.className && t.element.removeAttribute('class'),
+              t.element.className === '' && t.element.removeAttribute('class'),
                 t.isNativeElement || d.observeElement(t.element);
             }
+
             get isCustomElement() {
               const e = this;
               return (
                 !!e.element.tagName.startsWith(n) ||
                 e.element instanceof window[n].BaseElement == 1 ||
-                ('DIV' !== e.element.tagName &&
-                  'SPAN' !== e.element.tagName &&
-                  'BUTTON' !== e.element.tagName &&
-                  'INPUT' !== e.element.tagName &&
-                  'UL' !== e.element.tagName &&
-                  'LI' !== e.element.tagName &&
+                (e.element.tagName !== 'DIV' &&
+                  e.element.tagName !== 'SPAN' &&
+                  e.element.tagName !== 'BUTTON' &&
+                  e.element.tagName !== 'INPUT' &&
+                  e.element.tagName !== 'UL' &&
+                  e.element.tagName !== 'LI' &&
                   document.createElement(e.element.nodeName) instanceof
                     window[n].BaseElement ==
                     1)
               );
             }
+
             get isNativeElement() {
               return !this.isCustomElement;
             }
+
             dispatch(e) {
-              const t = this,
-                n = t.events[e.type];
+              const t = this;
+              const n = t.events[e.type];
               let r = !1;
               if (n.length > 1)
                 for (let e = 0; e < n.length; e++) {
@@ -2308,15 +2462,15 @@ License: https://htmlelements.com/license/ */
                 }
               r &&
                 n.sort(function (e, t) {
-                  let n = e.namespace,
-                    r = t.namespace;
+                  let n = e.namespace;
+                  let r = t.namespace;
                   return (
                     (n =
-                      -1 === n.indexOf('_')
+                      n.indexOf('_') === -1
                         ? 0
                         : parseInt(n.substring(n.indexOf('_') + 1))),
                     (r =
-                      -1 === r.indexOf('_')
+                      r.indexOf('_') === -1
                         ? 0
                         : parseInt(r.substring(r.indexOf('_') + 1))),
                     n < r ? -1 : n > r ? 1 : 0
@@ -2338,13 +2492,14 @@ License: https://htmlelements.com/license/ */
               }
               return e.result;
             }
+
             fireEvent(e, t, r) {
               const o = this;
               r ||
                 (r = {
                   bubbles: !0,
                   cancelable: !0,
-                  composed: null !== o.element.getRootNode().host,
+                  composed: o.element.getRootNode().host !== null,
                 }),
                 (r.detail = t || {});
               const i = new CustomEvent(e, r);
@@ -2373,12 +2528,13 @@ License: https://htmlelements.com/license/ */
               }
               return i;
             }
+
             get isPassiveSupported() {
               const e = this;
               if (void 0 !== e.supportsPassive) return e.supportsPassive;
               e.supportsPassive = !1;
               try {
-                let t = Object.defineProperty({}, 'passive', {
+                const t = Object.defineProperty({}, 'passive', {
                   get: function () {
                     e.supportsPassive = !0;
                   },
@@ -2388,11 +2544,12 @@ License: https://htmlelements.com/license/ */
               } catch (e) {}
               return e.supportsPassive;
             }
+
             dispatchEvent(e) {
-              const t = this,
-                n = e.type,
-                r = t.element.context,
-                o = n.substring(0, 1).toUpperCase() + n.substring(1);
+              const t = this;
+              const n = e.type;
+              const r = t.element.context;
+              const o = n.substring(0, 1).toUpperCase() + n.substring(1);
               (t.element.context = document),
                 t.element['on' + o]
                   ? t.element['on' + o](e)
@@ -2401,11 +2558,12 @@ License: https://htmlelements.com/license/ */
                   : t.element.dispatchEvent(e),
                 (t.element.context = r);
             }
+
             listen(e, t) {
-              const n = this,
-                r = e.split('.'),
-                o = r.slice(1).join('.'),
-                i = r[0];
+              const n = this;
+              const r = e.split('.');
+              const o = r.slice(1).join('.');
+              const i = r[0];
               n.events[i] || (n.events[i] = []);
               const s = {
                 type: i,
@@ -2420,17 +2578,17 @@ License: https://htmlelements.com/license/ */
                 }),
                 n.inputEvents.boundEventTypes.push(i),
                 n.inputEvents.listen(i)),
-                0 === n.events[i].length &&
+                n.events[i].length === 0 &&
                   ((n.handlers[i] = n.dispatch.bind(n)),
-                  'wheel' === i
+                  i === 'wheel'
                     ? n.element.addEventListener(
                         'wheel',
                         n.handlers[i],
                         !!n.isPassiveSupported && { passive: !1 }
                       )
-                    : 'touchmove' === i ||
-                      'touchstart' === i ||
-                      'touchend' === i
+                    : i === 'touchmove' ||
+                      i === 'touchstart' ||
+                      i === 'touchend'
                     ? n.element.addEventListener(
                         i,
                         n.handlers[i],
@@ -2439,11 +2597,12 @@ License: https://htmlelements.com/license/ */
                     : n.element.addEventListener(i, n.handlers[i], !1)),
                 n.events[i].push(s);
             }
+
             unlisten(e) {
-              const t = this,
-                n = e.split('.'),
-                r = n.slice(1).join('.'),
-                o = n[0];
+              const t = this;
+              const n = e.split('.');
+              const r = n.slice(1).join('.');
+              const o = n[0];
               let i = t.events[o];
               if (
                 (t.inputEvents &&
@@ -2452,41 +2611,43 @@ License: https://htmlelements.com/license/ */
                     t.inputEvents.boundEventTypes.indexOf(o),
                     1
                   ),
-                  0 === t.inputEvents.boundEventTypes.length &&
+                  t.inputEvents.boundEventTypes.length === 0 &&
                     t.inputEvents.unlisten(o)),
                 i)
               ) {
                 for (let e = 0; e < i.length; e++) {
-                  if ('' !== r) {
-                    let e = i.findIndex((e) => e.namespace === r);
+                  if (r !== '') {
+                    const e = i.findIndex((e) => e.namespace === r);
                     i.splice(e, 1);
                     break;
                   }
                   i = [];
                 }
-                0 === i.length &&
+                i.length === 0 &&
                   (t.element.removeEventListener(o, t.handlers[o]),
                   (t.events[o] = []),
                   delete t.handlers[o]);
               }
             }
+
             getAttributeValue(e, t) {
-              const n = this,
-                r = n.element.getAttribute(e);
+              const n = this;
+              const r = n.element.getAttribute(e);
               if (n.isNativeElement) return n.deserialize(r, t);
               const o = n.element.propertyByAttributeName[e];
               return void 0 === o.deserialize
                 ? n.deserialize(r, t, o.nullable)
                 : n.element[o.deserialize](r);
             }
+
             setAttributeValue(e, t, n) {
               const r = this;
-              let o,
-                i = !1;
+              let o;
+              let i = !1;
               if (r.isNativeElement) {
                 if (
                   ((o = r.serialize(t, n)),
-                  'boolean' === n &&
+                  n === 'boolean' &&
                     [
                       'checked',
                       'selected',
@@ -2517,7 +2678,7 @@ License: https://htmlelements.com/license/ */
                       ? r.element[s.serialize](t)
                       : r.serialize(t, n, i));
               }
-              ('array' !== n && 'object' !== n) || ('[]' !== o && '{}' !== o)
+              (n !== 'array' && n !== 'object') || (o !== '[]' && o !== '{}')
                 ? void 0 === o
                   ? (r.element.removeAttribute(e),
                     r.element.shadowRoot &&
@@ -2529,19 +2690,20 @@ License: https://htmlelements.com/license/ */
                       r.element.$.root.setAttribute(e, o))
                 : r.element.removeAttribute(e);
             }
+
             serialize(e, t, n) {
               if (
                 (void 0 === t && (t = y.Types.getType(e)),
-                void 0 !== e && (n || null !== e))
+                void 0 !== e && (n || e !== null))
               ) {
-                if (n && null === e) return 'null';
-                if ('string' === t) return e;
-                if ('boolean' === t || 'bool' === t) {
-                  if (!0 === e || 'true' === e || 1 === e || '1' === e)
+                if (n && e === null) return 'null';
+                if (t === 'string') return e;
+                if (t === 'boolean' || t === 'bool') {
+                  if (!0 === e || e === 'true' || e === 1 || e === '1')
                     return '';
-                  if (!1 === e || 'false' === e || 0 === e || '0' === e) return;
+                  if (!1 === e || e === 'false' || e === 0 || e === '0') return;
                 }
-                return 'array' === t
+                return t === 'array'
                   ? JSON.stringify(e)
                   : [
                       'string',
@@ -2554,64 +2716,65 @@ License: https://htmlelements.com/license/ */
                       'function',
                     ].indexOf(t) >= 0
                   ? e.toString()
-                  : 'object' === t
+                  : t === 'object'
                   ? JSON.stringify(e)
                   : void 0;
               }
             }
+
             deserialize(e, t, n) {
-              const r = 'null' === e;
+              const r = e === 'null';
               if (void 0 !== e && (!r || n)) {
                 if (r && n) return null;
-                if ('boolean' === t || 'bool' === t) return null !== e;
-                if ('number' === t || 'float' === t)
-                  return 'NaN' === e
+                if (t === 'boolean' || t === 'bool') return e !== null;
+                if (t === 'number' || t === 'float')
+                  return e === 'NaN'
                     ? NaN
-                    : 'Infinity' === e
+                    : e === 'Infinity'
                     ? 1 / 0
-                    : '-Infinity' === e
+                    : e === '-Infinity'
                     ? -1 / 0
                     : parseFloat(e);
-                if ('int' === t || 'integer' === t)
-                  return 'NaN' === e
+                if (t === 'int' || t === 'integer')
+                  return e === 'NaN'
                     ? NaN
-                    : 'Infinity' === e
+                    : e === 'Infinity'
                     ? 1 / 0
-                    : '-Infinity' === e
+                    : e === '-Infinity'
                     ? -1 / 0
                     : parseInt(e);
-                if ('string' === t) return e;
-                if ('any' === t) return e;
-                if ('date' === t) return new Date(e);
-                if ('function' === t) {
-                  if ('function' == typeof window[e]) return window[e];
-                } else if ('array' === t || 'object' === t)
+                if (t === 'string') return e;
+                if (t === 'any') return e;
+                if (t === 'date') return new Date(e);
+                if (t === 'function') {
+                  if (typeof window[e] === 'function') return window[e];
+                } else if (t === 'array' || t === 'object')
                   try {
                     const t = JSON.parse(e);
                     if (t) return t;
                   } catch (n) {
-                    if (window[e] && 'object' == typeof window[e])
+                    if (window[e] && typeof window[e] === 'object')
                       return window[e];
-                    if ('object' === t && e.indexOf('{') >= 0) {
-                      let t = (e = e
-                          .replace(/{/gi, '')
-                          .replace(/}/gi, '')
-                          .replace('[', '')
-                          .replace(']', '')
-                          .replace(/'/gi, '')
-                          .replace(/"/gi, '')
-                          .trim())
-                          .trim()
-                          .split(','),
-                        n = {};
+                    if (t === 'object' && e.indexOf('{') >= 0) {
+                      const t = (e = e
+                        .replace(/{/gi, '')
+                        .replace(/}/gi, '')
+                        .replace('[', '')
+                        .replace(']', '')
+                        .replace(/'/gi, '')
+                        .replace(/"/gi, '')
+                        .trim())
+                        .trim()
+                        .split(',');
+                      const n = {};
                       for (let e = 0; e < t.length; e++) {
-                        const r = t[e].split(':')[0].trim(),
-                          o = t[e].split(':')[1].trim();
+                        const r = t[e].split(':')[0].trim();
+                        const o = t[e].split(':')[1].trim();
                         n[r] = o;
                       }
                       return n;
                     }
-                    if ('array' === t && e.indexOf('[') >= 0) {
+                    if (t === 'array' && e.indexOf('[') >= 0) {
                       if (e.indexOf('{') >= 0) {
                         let t = e
                           .replace(/{/gi, '')
@@ -2622,11 +2785,11 @@ License: https://htmlelements.com/license/ */
                           .trim();
                         t = t.split('},');
                         for (let e = 0; e < t.length; e++) {
-                          let n = {},
-                            r = t[e].trim().split(',');
+                          const n = {};
+                          const r = t[e].trim().split(',');
                           for (let e = 0; e < r.length; e++) {
-                            const t = r[e].split(':')[0].trim(),
-                              o = r[e].split(':')[1].trim();
+                            const t = r[e].split(':')[0].trim();
+                            const o = r[e].split(':')[1].trim();
                             n[t] = o;
                           }
                           t[e] = n;
@@ -2649,6 +2812,7 @@ License: https://htmlelements.com/license/ */
             static get Ripple() {
               return i;
             }
+
             static get Easings() {
               return s;
             }
@@ -2657,21 +2821,27 @@ License: https://htmlelements.com/license/ */
             static get Types() {
               return o;
             }
+
             static get Core() {
               return a;
             }
+
             static get Animation() {
               return g;
             }
+
             static get Scroll() {
               return m;
             }
+
             static get InputEvents() {
               return h;
             }
+
             static Extend(e) {
               return new f(e);
             }
+
             static Assign(e, t) {
               if (e.indexOf('.') >= 0) {
                 const n = e.split('.');
@@ -2787,28 +2957,29 @@ License: https://htmlelements.com/license/ */
                 wait: { value: !1, type: 'boolean' },
               };
             }
+
             getBindings(e, t) {
               const n = this;
-              let r = 0,
-                o = {},
-                i = ((e) => {
-                  if (e instanceof HTMLElement) return n.parseAttributes(e);
-                  {
-                    let t = n.parseProperty(
-                      e.data ? e.data.trim() : null,
-                      'textContent',
-                      e
+              let r = 0;
+              const o = {};
+              const i = ((e) => {
+                if (e instanceof HTMLElement) return n.parseAttributes(e);
+                {
+                  const t = n.parseProperty(
+                    e.data ? e.data.trim() : null,
+                    'textContent',
+                    e
+                  );
+                  if (t)
+                    return (
+                      n &&
+                        e.parentNode === n.$.content &&
+                        ((t.value = n.$.html !== '' ? n.$.html : void 0),
+                        (n.innerHTML = '')),
+                      { textContent: t }
                     );
-                    if (t)
-                      return (
-                        n &&
-                          e.parentNode === n.$.content &&
-                          ((t.value = '' !== n.$.html ? n.$.html : void 0),
-                          (n.innerHTML = '')),
-                        { textContent: t }
-                      );
-                  }
-                })(e);
+                }
+              })(e);
               i && (o.data = i),
                 t || ((o.mapping = []), (t = o)),
                 e.getAttribute &&
@@ -2820,12 +2991,13 @@ License: https://htmlelements.com/license/ */
                 o.children[r++] = n.getBindings(i, t);
               return o;
             }
+
             _addRemovePropertyBinding(e, t, n, r, o) {
               if (!e || !t || !n) return;
-              const i = this,
-                s = i.bindings,
-                a = n.getAttribute('smart-id'),
-                l = e.indexOf('{{') >= 0;
+              const i = this;
+              const s = i.bindings;
+              const a = n.getAttribute('smart-id');
+              const l = e.indexOf('{{') >= 0;
               let d = !1;
               (e = e
                 .replace('{{', '')
@@ -2833,28 +3005,28 @@ License: https://htmlelements.com/license/ */
                 .replace('[[', '')
                 .replace(']]', '')).indexOf('!') >= 0 &&
                 ((e = e.replace('!', '')), (d = !0));
-              const c = i._properties[e],
-                u = {
+              const c = i._properties[e];
+              const u = {
+                name: e,
+                reflectToAttribute: c.reflectToAttribute,
+                twoWay: l,
+                type: c.type,
+                not: d,
+              };
+              if (o && !r) {
+                const n = {};
+                const r = {
                   name: e,
+                  targetPropertyName: t,
                   reflectToAttribute: c.reflectToAttribute,
                   twoWay: l,
                   type: c.type,
                   not: d,
                 };
-              if (o && !r) {
-                const n = {},
-                  r = {
-                    name: e,
-                    targetPropertyName: t,
-                    reflectToAttribute: c.reflectToAttribute,
-                    twoWay: l,
-                    type: c.type,
-                    not: d,
-                  };
                 (n[e] = r), (s.mapping[a] = n);
               }
               const p = function (e) {
-                for (let o in e) {
+                for (const o in e) {
                   const s = e[o];
                   if (s.nodeId === a) {
                     s.data || (s.data = {}),
@@ -2883,24 +3055,27 @@ License: https://htmlelements.com/license/ */
                 r ? delete i.boundProperties[e] : (i.boundProperties[e] = !0),
                 i.updateBoundNodes(e);
             }
+
             addPropertyBinding(e, t, n, r) {
               this._addRemovePropertyBinding(e, t, n, !1, r);
             }
+
             removePropertyBinding(e, t, n, r) {
               this._addRemovePropertyBinding(e, t, n, !0, r);
             }
+
             parseAttributes(e) {
               const t = this;
               let n;
               for (let r = 0; r < e.attributes.length; r++) {
-                const o = e.attributes[r],
-                  i = o.name,
-                  s = o.value;
+                const o = e.attributes[r];
+                const i = o.name;
+                const s = o.value;
                 v.cache['toCamelCase' + i] ||
                   (v.cache['toCamelCase' + i] = y.Core.toCamelCase(i));
                 const a = v.cache['toCamelCase' + i];
                 if (i.indexOf('(') >= 0) {
-                  let r = i.substring(1, i.length - 1);
+                  const r = i.substring(1, i.length - 1);
                   if (t && !t.dataContext) {
                     (t.templateListeners[
                       e.getAttribute('smart-id') + '.' + r
@@ -2915,24 +3090,25 @@ License: https://htmlelements.com/license/ */
                     continue;
                   }
                 }
-                let l = t.parseProperty(s, i, e);
+                const l = t.parseProperty(s, i, e);
                 l && (n || (n = {}), (n[a] = l));
               }
               return n;
             }
+
             parseProperty(e, t) {
               if (!e || !e.length) return;
               const n = this;
-              let r,
-                o = e.length,
-                i = 0,
-                s = 0,
-                a = 0,
-                l = !0;
+              let r;
+              const o = e.length;
+              let i = 0;
+              let s = 0;
+              let a = 0;
+              let l = !0;
               for (; s < o; ) {
                 i = e.indexOf('{{', s);
-                let t = e.indexOf('[[', s),
-                  n = '}}';
+                const t = e.indexOf('[[', s);
+                let n = '}}';
                 if (
                   (t >= 0 &&
                     (i < 0 || t < i) &&
@@ -2942,11 +3118,11 @@ License: https://htmlelements.com/license/ */
                 )
                   return;
                 r = r || {};
-                let o = e.slice(i + 2, a).trim();
+                const o = e.slice(i + 2, a).trim();
                 (r.name = o), (s = a + 2);
               }
-              const d = r.name,
-                c = n ? n._properties[d] : null;
+              const d = r.name;
+              const c = n ? n._properties[d] : null;
               return (
                 (r.twoWay = l),
                 (r.ready = !1),
@@ -2981,10 +3157,12 @@ License: https://htmlelements.com/license/ */
                 r
               );
             }
+
             updateTextNodes() {
               const e = this;
               e.updateTextNode(e.shadowRoot || e, e.bindings, e);
             }
+
             updateTextNode(e, t, n) {
               const r = this;
               if (!t) return;
@@ -2992,21 +3170,23 @@ License: https://htmlelements.com/license/ */
               for (let i = e.firstChild; i && t.children; i = i.nextSibling)
                 r.updateTextNode(i, t.children[o++], n);
               if (t && t.data)
-                for (let e in t.data) {
-                  const r = t.data[e],
-                    o = r.name;
-                  'textContent' === e &&
+                for (const e in t.data) {
+                  const r = t.data[e];
+                  const o = r.name;
+                  e === 'textContent' &&
                     r.twoWay &&
                     !r.updating &&
                     void 0 !== r.value &&
                     (n[o] = r.value);
                 }
             }
+
             updateBoundProperty(e, t) {
               if (t.updating) return;
               const n = this;
               (t.updating = !0), (n[e] = t.value), (t.updating = !1);
             }
+
             updateBoundNodes(e) {
               const t = this;
               if (
@@ -3014,31 +3194,30 @@ License: https://htmlelements.com/license/ */
                 t.detachedChildren.length > 0)
               )
                 for (let n = 0; n < t.detachedChildren.length; n++) {
-                  const r = t.detachedChildren[n],
-                    o = r.getAttribute('smart-id'),
-                    i = function (e) {
-                      if (e.nodeId === o) return e;
-                      for (let t in e.children) {
-                        const n = e.children[t];
-                        if (
-                          (n.getAttribute ? n.getAttribute('smart-id') : '') ===
-                          o
-                        )
-                          return e;
-                        if (n.children) {
-                          const e = i(n);
-                          if (e) return e;
-                        }
+                  const r = t.detachedChildren[n];
+                  const o = r.getAttribute('smart-id');
+                  const i = function (e) {
+                    if (e.nodeId === o) return e;
+                    for (const t in e.children) {
+                      const n = e.children[t];
+                      if (
+                        (n.getAttribute ? n.getAttribute('smart-id') : '') === o
+                      )
+                        return e;
+                      if (n.children) {
+                        const e = i(n);
+                        if (e) return e;
                       }
-                      return null;
-                    },
-                    s = i(t.bindings);
+                    }
+                    return null;
+                  };
+                  const s = i(t.bindings);
                   if (s) t.updateBoundNode(r, s, t, e, !0);
                   else if (r.getAttribute && t.bindings.mapping) {
-                    const n = t,
-                      r = t.bindings;
+                    const n = t;
+                    const r = t.bindings;
                     if (r)
-                      for (let o in r.mapping) {
+                      for (const o in r.mapping) {
                         const i = n.querySelector('[smart-id="' + o + '"]');
                         if (i) {
                           const s = r.mapping[o];
@@ -3048,12 +3227,13 @@ License: https://htmlelements.com/license/ */
                   }
                 }
             }
+
             updateBoundMappedNodes() {
-              const e = this,
-                t = e.bindings,
-                n = e;
+              const e = this;
+              const t = e.bindings;
+              const n = e;
               if (t.mapping)
-                for (let r in t.mapping) {
+                for (const r in t.mapping) {
                   let o = n.querySelector('[smart-id="' + r + '"]');
                   if (
                     (n.shadowRoot &&
@@ -3087,6 +3267,7 @@ License: https://htmlelements.com/license/ */
                   }
                 }
             }
+
             updateBoundNode(e, t, n, r, o) {
               const i = this;
               if (!t) return;
@@ -3095,31 +3276,31 @@ License: https://htmlelements.com/license/ */
                 if (o && !t.data)
                   for (let a = e.firstChild; a && t.children; a = a.nextSibling)
                     if (a.getAttribute) {
-                      const e = a.getAttribute('smart-id'),
-                        o = (function () {
-                          for (let n in t.children)
-                            if (t.children[n].nodeId === e)
-                              return t.children[n];
-                        })();
+                      const e = a.getAttribute('smart-id');
+                      const o = (function () {
+                        for (const n in t.children)
+                          if (t.children[n].nodeId === e) return t.children[n];
+                      })();
                       i.updateBoundNode(a, o, n, r), s++;
                     } else i.updateBoundNode(a, t.children[s++], n, r, o);
               } else
                 for (let o = e.firstChild; o && t.children; o = o.nextSibling)
                   if (o.getAttribute) {
-                    const e = o.getAttribute('smart-id'),
-                      a = (function () {
-                        for (let n in t.children)
-                          if (t.children[n].nodeId === e) return t.children[n];
-                      })();
+                    const e = o.getAttribute('smart-id');
+                    const a = (function () {
+                      for (const n in t.children)
+                        if (t.children[n].nodeId === e) return t.children[n];
+                    })();
                     i.updateBoundNode(o, a, n, r), s++;
                   } else i.updateBoundNode(o, t.children[s++], n, r);
               if (!t || !t.data) return;
               const a = t.data;
               i.updateBoundData(e, a, n, r);
             }
+
             updateBoundData(e, t, n, r) {
               const o = this;
-              for (let i in t) {
+              for (const i in t) {
                 const s = t[i];
                 let a = s.name;
                 if (
@@ -3135,15 +3316,15 @@ License: https://htmlelements.com/license/ */
                       ((e = e.substring(1, e.length - 1)),
                       (e = e.replace(/ /gi, '')),
                       (e = e.split(',')),
-                      e.length > 0 && '' !== e[0])
+                      e.length > 0 && e[0] !== '')
                     ) {
-                      let r = [];
+                      const r = [];
                       for (let t = 0; t < e.length; t++) r.push(n[e[t]]);
                       s.value = n[t].apply(n, r);
                     } else s.value = n[t]();
                     s.type = typeof s.value;
                   } else s.value = n[a];
-                  if ('innerHTML' === a) {
+                  if (a === 'innerHTML') {
                     if (e[i].toString().trim() !== n[a].toString().trim()) {
                       if (window.smartBlazor && e[i].indexOf('\x3c!--') >= 0) {
                         (s.ready ||
@@ -3165,8 +3346,8 @@ License: https://htmlelements.com/license/ */
                   if (e.$ && e.$.isNativeElement) {
                     v.cache['toDash' + i] ||
                       (v.cache['toDash' + i] = y.Core.toDash(i));
-                    const t = v.cache['toDash' + i],
-                      n = e.$.getAttributeValue(t, s.type);
+                    const t = v.cache['toDash' + i];
+                    const n = e.$.getAttributeValue(t, s.type);
                     !s.reflectToAttribute ||
                       (n === s.value && s.ready) ||
                       e.$.setAttributeValue(t, s.value, s.type),
@@ -3208,8 +3389,8 @@ License: https://htmlelements.com/license/ */
                         if (((s.value = t), e.$ && e.$.isNativeElement)) {
                           v.cache['toDash' + i] ||
                             (v.cache['toDash' + i] = y.Core.toDash(i));
-                          const t = v.cache['toDash' + i],
-                            n = e.$.getAttributeValue(t, s.type);
+                          const t = v.cache['toDash' + i];
+                          const n = e.$.getAttributeValue(t, s.type);
                           s.reflectToAttribute &&
                             n !== s.value &&
                             e.$.setAttributeValue(t, s.value, s.type),
@@ -3218,8 +3399,8 @@ License: https://htmlelements.com/license/ */
                         }
                       };
                       if (s.name.indexOf('::') >= 0) {
-                        const n = s.name.indexOf('::'),
-                          r = s.name.substring(n + 2);
+                        const n = s.name.indexOf('::');
+                        const r = s.name.substring(n + 2);
                         o['$' + e.getAttribute('smart-id')].listen(
                           r,
                           function () {
@@ -3237,7 +3418,7 @@ License: https://htmlelements.com/license/ */
                         o['$' + e.getAttribute('smart-id')].listen(
                           n + '-changed',
                           function (e) {
-                            let n = e.detail;
+                            const n = e.detail;
                             t(n.value);
                             const r = o.context;
                             e.context !== document && (o.context = o),
@@ -3252,24 +3433,27 @@ License: https://htmlelements.com/license/ */
                 }
               }
             }
+
             static clearCache() {
               this.cache = {};
             }
+
             addMessages(e, t) {
               Object.assign(this.messages[e], t);
             }
+
             localize(e, t) {
               const n = this;
               if (!n.messages || !n.messages[n.locale]) return;
               let r = n.messages[n.locale][e];
-              if ('' === r) return '';
+              if (r === '') return '';
               if (!r) {
                 const r = n.messages.en;
                 if (r) {
                   let n = r[e];
                   if (n) {
-                    for (let e in t) {
-                      let r = t[e];
+                    for (const e in t) {
+                      const r = t[e];
                       n = n.replace(new RegExp('{{' + e + '}}', 'g'), r);
                     }
                     return n;
@@ -3278,8 +3462,8 @@ License: https://htmlelements.com/license/ */
                 }
               }
               const o = r;
-              for (let e in t) {
-                let n = t[e];
+              for (const e in t) {
+                const n = t[e];
                 r = r.replace(new RegExp('{{' + e + '}}', 'g'), n);
               }
               if (n.localizeFormatFunction) {
@@ -3288,9 +3472,11 @@ License: https://htmlelements.com/license/ */
               }
               return r;
             }
+
             static get requires() {
               return {};
             }
+
             static get listeners() {
               return {
                 'theme-changed': function (e) {
@@ -3298,40 +3484,47 @@ License: https://htmlelements.com/license/ */
                 },
               };
             }
+
             static get methods() {
               return {};
             }
+
             get classNamesMap() {
               return {
                 animation: 'smart-animate',
                 rippleAnimation: 'smart-ripple',
               };
             }
+
             get hasAnimation() {
-              return 'none' !== this.animation;
+              return this.animation !== 'none';
             }
+
             get hasRippleAnimation() {
-              return 'none' !== this.animation && 'advanced' === this.animation;
+              return this.animation !== 'none' && this.animation === 'advanced';
             }
+
             static get modules() {
               return window[n].Modules;
             }
+
             get properties() {
               const e = this;
               return e._properties || (e._properties = []), e._properties;
             }
+
             get parents() {
               const e = this;
-              let t = [],
-                r = e.parentNode;
-              for (; r && 9 !== r.nodeType; )
+              let t = [];
+              let r = e.parentNode;
+              for (; r && r.nodeType !== 9; )
                 r instanceof HTMLElement == 1 && t.push(r), (r = r.parentNode);
               const o = e.getRootNode();
               if (o.host) {
                 const e = (e) => {
-                  let t = [e],
-                    n = e.parentNode;
-                  for (; n && 9 !== n.nodeType; )
+                  const t = [e];
+                  let n = e.parentNode;
+                  for (; n && n.nodeType !== 9; )
                     n instanceof HTMLElement == 1 && t.push(n),
                       (n = n.parentNode);
                   return t;
@@ -3346,32 +3539,40 @@ License: https://htmlelements.com/license/ */
                 t
               );
             }
+
             log(e) {
               this._logger('log', e);
             }
+
             warn(e) {
               this._logger('warn', e);
             }
+
             error(e) {
               this._logger('error', e);
             }
+
             _logger(e, t) {
               if (this.debugMode) {
                 const n = t instanceof Error ? t.message : t.toString();
                 console[e](n);
               }
-              if (this.rethrowError && 'error' === e) throw t;
+              if (this.rethrowError && e === 'error') throw t;
             }
+
             get focused() {
               return this.contains(document.activeElement);
             }
+
             template() {
               return '<div></div>';
             }
+
             registered() {
               const e = this;
               e.onRegistered && e.onRegistered();
             }
+
             created() {
               const e = this;
               (e.isReady = !1),
@@ -3379,12 +3580,14 @@ License: https://htmlelements.com/license/ */
                 e._setModuleState('created'),
                 e.onCreated && e.onCreated();
             }
+
             completed() {
               const e = this;
               (e.isCompleted = !0),
                 e._onCompleted && e._onCompleted(),
                 e.onCompleted && e.onCompleted();
             }
+
             whenReady(e) {
               const t = this;
               t.isCompleted
@@ -3392,6 +3595,7 @@ License: https://htmlelements.com/license/ */
                 : (t.whenReadyCallbacks || (t.whenReadyCallbacks = []),
                   t.whenReadyCallbacks.push(e));
             }
+
             whenRendered(e) {
               const t = this;
               t.isRendered
@@ -3399,38 +3603,42 @@ License: https://htmlelements.com/license/ */
                 : (t.whenRenderedCallbacks || (t.whenRenderedCallbacks = []),
                   t.whenRenderedCallbacks.push(e));
             }
+
             addThemeClass() {
               const e = this;
-              '' !== e.theme && e.classList.add('smart-' + e.theme);
+              e.theme !== '' && e.classList.add('smart-' + e.theme);
             }
+
             addDefaultClass() {
               const e = this;
               e.classList.add(n.toLowerCase() + '-element'),
                 e.classList.add(e.nodeName.toLowerCase());
             }
+
             _renderShadowRoot() {
               const e = this;
               if (e.shadowRoot) {
                 e.$.root.classList.add(e.nodeName.toLowerCase());
                 for (let t = 0; t < e.attributes.length; t++) {
                   const n = e.attributes[t];
-                  'class' === n.name ||
-                    'id' === n.name ||
-                    'style' === n.name ||
-                    'tabindex' === n.name ||
+                  n.name === 'class' ||
+                    n.name === 'id' ||
+                    n.name === 'style' ||
+                    n.name === 'tabindex' ||
                     n.name.indexOf('aria') >= 0 ||
                     e.$.root.setAttribute(n.name, n.value);
                 }
                 for (let t = 0; t < e.classList.length; t++) {
                   const n = e.classList[t];
-                  'smart-element-init' !== n &&
-                    'smart-element' !== n &&
-                    'smart-hidden' !== n &&
-                    'smart-visibility-hidden' !== n &&
+                  n !== 'smart-element-init' &&
+                    n !== 'smart-element' &&
+                    n !== 'smart-hidden' &&
+                    n !== 'smart-visibility-hidden' &&
                     e.$.root.classList.add(n);
                 }
               }
             }
+
             render() {
               const e = this;
               if (
@@ -3448,29 +3656,29 @@ License: https://htmlelements.com/license/ */
               e.onRender && e.onRender(),
                 e.disabled && e.setAttribute('aria-disabled', !0),
                 e.readonly &&
-                  -1 !==
-                    [
-                      'checkbox',
-                      'combobox',
-                      'grid',
-                      'gridcell',
-                      'listbox',
-                      'radiogroup',
-                      'slider',
-                      'spinbutton',
-                      'textbox',
-                    ].indexOf(e.getAttribute('role')) &&
+                  [
+                    'checkbox',
+                    'combobox',
+                    'grid',
+                    'gridcell',
+                    'listbox',
+                    'radiogroup',
+                    'slider',
+                    'spinbutton',
+                    'textbox',
+                  ].indexOf(e.getAttribute('role')) !== -1 &&
                   e.setAttribute('aria-readonly', !0);
             }
+
             ready() {
               const e = this;
               if (
                 (e._setId(),
                 e.addThemeClass(),
                 e.addDefaultClass(),
-                'collapsed' === e.visibility
+                e.visibility === 'collapsed'
                   ? e.classList.add('smart-hidden')
-                  : 'hidden' === e.visibility &&
+                  : e.visibility === 'hidden' &&
                     e.classList.add('smart-visibility-hidden'),
                 e.dataContext && e.applyDataContext(),
                 e.onReady && e.onReady(),
@@ -3490,6 +3698,7 @@ License: https://htmlelements.com/license/ */
                 Smart(e._selector).ready &&
                 Smart(e._selector).ready();
             }
+
             _setId() {
               const e = this;
               if (!e.id) {
@@ -3502,19 +3711,20 @@ License: https://htmlelements.com/license/ */
                     .substring(1);
               }
             }
+
             checkLicense() {
               const e = this;
               if (
-                'Evaluation' === window[n].License &&
-                -1 === window.location.hostname.indexOf('htmlelements') &&
-                '8414516F-15A2-4D84-A7AF-A9A72400DB02' !== window[n].License
+                window[n].License === 'Evaluation' &&
+                window.location.hostname.indexOf('htmlelements') === -1 &&
+                window[n].License !== '8414516F-15A2-4D84-A7AF-A9A72400DB02'
               ) {
-                if ('8414516F-15A2-4D84-A7AF-A9A72400DB02' === e.unlockKey)
+                if (e.unlockKey === '8414516F-15A2-4D84-A7AF-A9A72400DB02')
                   return;
                 if (
                   document.body.hasAttribute('smart-license') &&
-                  '8414516F-15A2-4D84-A7AF-A9A72400DB02' ===
-                    document.body.getAttribute('smart-license')
+                  document.body.getAttribute('smart-license') ===
+                    '8414516F-15A2-4D84-A7AF-A9A72400DB02'
                 )
                   return void (window[n].License =
                     '8414516F-15A2-4D84-A7AF-A9A72400DB02');
@@ -3523,6 +3733,7 @@ License: https://htmlelements.com/license/ */
                   (window[n].License = '8414516F-15A2-4D84-A7AF-A9A72400DB02');
               }
             }
+
             logWatermark() {
               const e = document.createElement('a');
               (e.href = 'https://www.htmlelements.com/'),
@@ -3558,6 +3769,7 @@ License: https://htmlelements.com/license/ */
                       }, 6e3));
                   }, 1e3);
             }
+
             logLicense() {
               console.log(
                 '****************************************************************************************************************'
@@ -3585,6 +3797,7 @@ License: https://htmlelements.com/license/ */
                   '****************************************************************************************************************'
                 );
             }
+
             get _selector() {
               const e = this;
               return e.id
@@ -3593,10 +3806,11 @@ License: https://htmlelements.com/license/ */
                 ? '.' + e.classList[0]
                 : '';
             }
+
             applyDataContext(e) {
               const t = this;
               let n =
-                'string' == typeof t.dataContext
+                typeof t.dataContext === 'string'
                   ? window[t.dataContext] || document[t.dataContext]
                   : t.dataContext;
               if ((e && ((n = e), (t.dataContext = e)), n)) {
@@ -3606,11 +3820,11 @@ License: https://htmlelements.com/license/ */
                     Math.random().toString(36).substr(2, 5)
                   ).toUpperCase()),
                     (n._properties = []);
-                  for (let e in n) {
+                  for (const e in n) {
                     const r = n[e];
-                    'function' != typeof r &&
-                      '_properties' !== e &&
-                      '_uid' !== e &&
+                    typeof r !== 'function' &&
+                      e !== '_properties' &&
+                      e !== '_uid' &&
                       ((n._properties[e] = r),
                       Object.defineProperty(n, e, {
                         configurable: !1,
@@ -3619,7 +3833,7 @@ License: https://htmlelements.com/license/ */
                         set(r) {
                           const o = n._properties[e];
                           n._properties[e] = r;
-                          let i = [];
+                          const i = [];
                           (i[e] = { oldValue: o, value: r }),
                             i.length++,
                             (t.updatingDataContext = !0),
@@ -3640,9 +3854,9 @@ License: https://htmlelements.com/license/ */
                   t.dataContextProperties)
                 ) {
                   t.updatingDataContext = !0;
-                  for (let e in t.dataContextProperties) {
-                    const r = t.dataContextProperties[e],
-                      o = r.name;
+                  for (const e in t.dataContextProperties) {
+                    const r = t.dataContextProperties[e];
+                    const o = r.name;
                     if (
                       ((r.propertyName = e),
                       (t.dataContextPropertiesMap[o] = e),
@@ -3669,13 +3883,13 @@ License: https://htmlelements.com/license/ */
                     const n = e.detail.properties;
                     if (
                       e.detail.dataContext ===
-                      ('string' == typeof t.dataContext
+                      (typeof t.dataContext === 'string'
                         ? window[t.dataContext] || document[t.dataContext]
                         : t.dataContext)
                     )
-                      for (let e in n) {
-                        const r = t.dataContextPropertiesMap[e],
-                          o = t.context;
+                      for (const e in n) {
+                        const r = t.dataContextPropertiesMap[e];
+                        const o = t.context;
                         r &&
                           ((t.context = document),
                           (t[r] = n[e].value),
@@ -3691,7 +3905,7 @@ License: https://htmlelements.com/license/ */
               } else {
                 t.dataContextProperties = null;
                 const e = function () {
-                  ('string' == typeof t.dataContext
+                  (typeof t.dataContext === 'string'
                     ? window[t.dataContext] || document[t.dataContext]
                     : t.dataContext) &&
                     (t.applyDataContext(),
@@ -3700,13 +3914,14 @@ License: https://htmlelements.com/license/ */
                 window.addEventListener('load', e);
               }
             }
+
             updateDataContextProperty(e) {
-              const t = this,
-                n =
-                  'string' == typeof t.dataContext
-                    ? window[t.dataContext] || document[t.dataContext]
-                    : t.dataContext,
-                r = t.dataContextProperties[e];
+              const t = this;
+              const n =
+                typeof t.dataContext === 'string'
+                  ? window[t.dataContext] || document[t.dataContext]
+                  : t.dataContext;
+              const r = t.dataContextProperties[e];
               if (!t.updatingDataContext && r.twoWay) {
                 const o = r.name;
                 if (o.indexOf('.') >= 0) {
@@ -3717,9 +3932,11 @@ License: https://htmlelements.com/license/ */
                 } else (n[o] = t[e]), c[n._uid] && (c[n._uid][e] = n[o]);
               }
             }
+
             static get version() {
               return window[n].Version;
             }
+
             initProperties() {
               const e = this;
               if (
@@ -3733,9 +3950,9 @@ License: https://htmlelements.com/license/ */
               ) {
                 const t = Object.keys(e._initProperties);
                 for (let n = 0; n < t.length; n++) {
-                  const r = t[n],
-                    o = e._initProperties[r];
-                  if (null != o) {
+                  const r = t[n];
+                  const o = e._initProperties[r];
+                  if (o != null) {
                     if (
                       o.constructor === Smart.ObservableArray ||
                       o instanceof Smart.ObservableArray
@@ -3745,26 +3962,25 @@ License: https://htmlelements.com/license/ */
                     }
                     if (
                       o.constructor === Smart.DataAdapter ||
-                      'smartDataAdapter' === o.constructor.name ||
-                      ('object' == typeof o &&
+                      o.constructor.name === 'smartDataAdapter' ||
+                      (typeof o === 'object' &&
                         Smart.DataAdapter &&
                         o instanceof Smart.DataAdapter) ||
                       o instanceof Smart.Observable ||
                       o.constructor === Smart.Observable ||
-                      'object' != typeof o ||
+                      typeof o !== 'object' ||
                       y.Types.isArray(o) ||
                       o instanceof Date
                     ) {
                       if (
                         void 0 === e[r] &&
-                        -1 ===
-                          [
-                            'onReady',
-                            'onAttached',
-                            'onDetached',
-                            'onCreated',
-                            'onCompleted',
-                          ].indexOf(r)
+                        [
+                          'onReady',
+                          'onAttached',
+                          'onDetached',
+                          'onCreated',
+                          'onCompleted',
+                        ].indexOf(r) === -1
                       ) {
                         const t = e.localize('propertyUnknownName', {
                           name: r,
@@ -3775,17 +3991,17 @@ License: https://htmlelements.com/license/ */
                       continue;
                     }
                   }
-                  if ('messages' !== r)
-                    if ('dataSourceMap' !== r && 'rowCSSRules' !== r)
-                      if ('keys' !== r) {
-                        if (o && 'object' == typeof o) {
+                  if (r !== 'messages')
+                    if (r !== 'dataSourceMap' && r !== 'rowCSSRules')
+                      if (r !== 'keys') {
+                        if (o && typeof o === 'object') {
                           const t = function (n, r) {
                             const o = Object.keys(n);
                             for (let i = 0; i < o.length; i++) {
-                              const s = o[i],
-                                a = n[s],
-                                l = e._properties[r + '_' + s];
-                              if (l && null === l.value) {
+                              const s = o[i];
+                              const a = n[s];
+                              const l = e._properties[r + '_' + s];
+                              if (l && l.value === null) {
                                 if (void 0 === e[r + '_' + s]) {
                                   const t = e.localize('propertyUnknownName', {
                                     name: r + '_' + s,
@@ -3794,7 +4010,7 @@ License: https://htmlelements.com/license/ */
                                 }
                                 e[r + '_' + s] = a;
                               } else if (
-                                'object' == typeof a &&
+                                typeof a === 'object' &&
                                 !y.Types.isArray(a) &&
                                 a &&
                                 a.constructor !== Date
@@ -3819,12 +4035,13 @@ License: https://htmlelements.com/license/ */
                 }
               }
             }
+
             setProperties(e) {
-              const t = this,
-                n = Object.keys(e);
+              const t = this;
+              const n = Object.keys(e);
               for (let r = 0; r < n.length; r++) {
-                const o = n[r],
-                  i = e[o];
+                const o = n[r];
+                const i = e[o];
                 if (
                   i.constructor === Smart.ObservableArray ||
                   i instanceof Smart.ObservableArray
@@ -3832,54 +4049,53 @@ License: https://htmlelements.com/license/ */
                   t[o] = i.toArray();
                 else if (
                   i.constructor === Smart.DataAdapter ||
-                  'smartDataAdapter' === i.constructor.name ||
-                  ('object' == typeof i &&
+                  i.constructor.name === 'smartDataAdapter' ||
+                  (typeof i === 'object' &&
                     Smart.DataAdapter &&
                     i instanceof Smart.DataAdapter) ||
                   i instanceof Smart.Observable ||
                   i.constructor === Smart.Observable ||
-                  'object' != typeof i ||
+                  typeof i !== 'object' ||
                   y.Types.isArray(i) ||
                   i instanceof Date
                 ) {
                   if (
                     void 0 === t[o] &&
-                    -1 ===
-                      [
-                        'onReady',
-                        'onAttached',
-                        'onDetached',
-                        'onCreated',
-                        'onCompleted',
-                      ].indexOf(o)
+                    [
+                      'onReady',
+                      'onAttached',
+                      'onDetached',
+                      'onCreated',
+                      'onCompleted',
+                    ].indexOf(o) === -1
                   )
                     continue;
                   const e = t._properties[o];
-                  'int' === e.type ||
-                  ('number' === e.type && 'string' == typeof subPropertyValue)
-                    ? 'int' === e.type
+                  e.type === 'int' ||
+                  (e.type === 'number' && typeof subPropertyValue === 'string')
+                    ? e.type === 'int'
                       ? (t[o] = parseInt(i))
                       : (t[o] = parseFloat(i))
                     : (t[o] = i);
-                } else if ('messages' !== o && 'dataSourceMap' !== o) {
-                  if ('object' == typeof i) {
+                } else if (o !== 'messages' && o !== 'dataSourceMap') {
+                  if (typeof i === 'object') {
                     const e = function (n, r) {
                       const o = Object.keys(n);
                       for (let i = 0; i < o.length; i++) {
-                        const s = o[i],
-                          a = n[s],
-                          l = t._properties[r + '_' + s];
-                        if (l && null === l.value) {
+                        const s = o[i];
+                        const a = n[s];
+                        const l = t._properties[r + '_' + s];
+                        if (l && l.value === null) {
                           if (void 0 === t[r + '_' + s]) continue;
                           const e = t._properties[r + '_' + s];
-                          'int' === e.type ||
-                          ('number' === e.type && 'string' == typeof a)
-                            ? 'int' === e.type
+                          e.type === 'int' ||
+                          (e.type === 'number' && typeof a === 'string')
+                            ? e.type === 'int'
                               ? (t[r + '_' + s] = parseInt(a))
                               : (t[r + '_' + s] = parseFloat(a))
                             : (t[r + '_' + s] = a);
                         } else if (
-                          'object' == typeof a &&
+                          typeof a === 'object' &&
                           !y.Types.isArray(a) &&
                           a &&
                           a.constructor !== Date
@@ -3888,9 +4104,9 @@ License: https://htmlelements.com/license/ */
                         else {
                           if (void 0 === t[r + '_' + s]) continue;
                           const e = t._properties[r + '_' + s];
-                          'int' === e.type ||
-                          ('number' === e.type && 'string' == typeof a)
-                            ? 'int' === e.type
+                          e.type === 'int' ||
+                          (e.type === 'number' && typeof a === 'string')
+                            ? e.type === 'int'
                               ? (t[r + '_' + s] = parseInt(a))
                               : (t[r + '_' + s] = parseFloat(a))
                             : (t[r + '_' + s] = a);
@@ -3902,6 +4118,7 @@ License: https://htmlelements.com/license/ */
                 } else t[o] = i;
               }
             }
+
             setup() {
               const e = this;
               if (((e.context = this), e.isReady && !e.isCompleted)) return;
@@ -3926,39 +4143,39 @@ License: https://htmlelements.com/license/ */
               for (let t = 0; t < e.attributes.length; t += 1) {
                 const n = e.propertyByAttributeName[e.attributes[t].name];
                 if (!n) continue;
-                let r = e.$.getAttributeValue(n.attributeName, n.type);
+                const r = e.$.getAttributeValue(n.attributeName, n.type);
                 const o = r ? r.toString() : '';
                 if (
                   !(
                     o.indexOf('{{') >= 0 ||
                     o.indexOf('[[') >= 0 ||
-                    ('object' !== n.type &&
-                      'array' !== n.type &&
+                    (n.type !== 'object' &&
+                      n.type !== 'array' &&
                       (e.attributes[t].value.indexOf('{{') >= 0 ||
                         e.attributes[t].value.indexOf('[[') >= 0)) ||
                     void 0 === r ||
                     n.value === r
                   )
                 ) {
-                  const o = y.Types.getType(r),
-                    i = e.attributes[t].value;
+                  const o = y.Types.getType(r);
+                  const i = e.attributes[t].value;
                   if (
-                    ('any' === n.type || 'object' === n.type) &&
+                    (n.type === 'any' || n.type === 'object') &&
                     '' + e[n.name] === r
                   )
                     continue;
                   if (
-                    'array' === n.type &&
+                    n.type === 'array' &&
                     e[n.name] &&
                     JSON.stringify(e[n.name]) === r
                   )
                     continue;
                   if (
-                    'number' === o &&
+                    o === 'number' &&
                     isNaN(r) &&
-                    'NaN' !== i &&
-                    'Infinity' !== i &&
-                    '-Infinity' !== i
+                    i !== 'NaN' &&
+                    i !== 'Infinity' &&
+                    i !== '-Infinity'
                   ) {
                     const t = e.localize('propertyInvalidValueType', {
                       name: n.name,
@@ -3972,14 +4189,14 @@ License: https://htmlelements.com/license/ */
                     (n.isUpdatingFromAttribute = !1);
                 }
               }
-              for (let t in e._properties) {
+              for (const t in e._properties) {
                 const n = e._properties[t];
                 if (
-                  ('innerHTML' === t &&
+                  (t === 'innerHTML' &&
                     n.value === n.defaultValue &&
                     (n.value = n.defaultValue = y.Core.html(e)),
-                  ('boolean' !== n.type && 'bool' !== n.type) ||
-                    ('false' === e.getAttribute(n.attributeName) &&
+                  (n.type !== 'boolean' && n.type !== 'bool') ||
+                    (e.getAttribute(n.attributeName) === 'false' &&
                       ((n.isUpdating = !0),
                       e.setAttribute(n.attributeName, ''),
                       (n.isUpdating = !1))),
@@ -3997,7 +4214,7 @@ License: https://htmlelements.com/license/ */
                     ) {
                       const o = n.defaultReflectToAttributeConditions[r];
                       let i, s;
-                      for (let e in o) (i = e), (s = o[e]);
+                      for (const e in o) (i = e), (s = o[e]);
                       e._properties[i] &&
                         e._properties[i].value !== s &&
                         (t = !1);
@@ -4025,8 +4242,8 @@ License: https://htmlelements.com/license/ */
                         e.updateBoundNodes());
                     };
                     if (e.ownerElement) {
-                      let n = e.ownerElement,
-                        r = [];
+                      let n = e.ownerElement;
+                      const r = [];
                       for (; n; ) r.push(n), (n = n.ownerElement);
                       for (let e = r.length - 1; e >= 0; e--) t(r[e]);
                       t(e);
@@ -4036,13 +4253,13 @@ License: https://htmlelements.com/license/ */
                     if (
                       (e._setModuleState('ready'),
                       e.ready(),
-                      'auto' !== e.renderMode || e.isRendered || e.render(),
+                      e.renderMode !== 'auto' || e.isRendered || e.render(),
                       (e.isAttached = !0),
                       e._setModuleState('attached'),
                       e.attached(),
                       e._handleListeners('listen'),
                       e.isHidden ||
-                        (0 !== e.offsetWidth && 0 !== e.offsetHeight) ||
+                        (e.offsetWidth !== 0 && e.offsetHeight !== 0) ||
                         (e.isHidden = !0),
                       e.completed(),
                       e.isRendered && (e.context = document),
@@ -4062,26 +4279,25 @@ License: https://htmlelements.com/license/ */
                     const n = e.shadowParent;
                     e.shadowParent = null;
                     const r = e.parents;
-                    if (((e.shadowParent = n), 0 === r.length)) return;
+                    if (((e.shadowParent = n), r.length === 0)) return;
                     const o = () => {
-                      let t = e.ownerElement,
-                        n = [];
+                      let t = e.ownerElement;
+                      const n = [];
                       for (; t; ) n.push(t), (t = t.ownerElement);
                       for (let e = n.length - 1; e >= 0; e--)
                         n[e].updateBoundMappedNodes();
                     };
-                    e.ownerElement && 'HTML' !== r[r.length - 1].nodeName
+                    e.ownerElement && r[r.length - 1].nodeName !== 'HTML'
                       ? e.getRootNode().host
                         ? t()
                         : e.ownerElement &&
-                          'HTML' ===
-                            e.ownerElement.parents[
-                              e.ownerElement.parents.length - 1
-                            ].nodeName
+                          e.ownerElement.parents[
+                            e.ownerElement.parents.length - 1
+                          ].nodeName === 'HTML'
                         ? (o(), t())
                         : (e.checkIsInDomInterval = setInterval(() => {
                             const n = e.parents;
-                            'HTML' === n[n.length - 1].nodeName &&
+                            n[n.length - 1].nodeName === 'HTML' &&
                               (clearInterval(e.checkIsInDomInterval), o(), t());
                           }, 100))
                       : t();
@@ -4094,7 +4310,7 @@ License: https://htmlelements.com/license/ */
                   (r = [].slice
                     .call(e.shadowRoot.querySelectorAll('[smart-id]'))
                     .concat(t)),
-                0 === r.length)
+                r.length === 0)
               )
                 e.complete();
               else {
@@ -4104,9 +4320,9 @@ License: https://htmlelements.com/license/ */
                   if (y.Extend(n).isCustomElement) {
                     const t = function () {
                       e._completeListeners--,
-                        0 === e._completeListeners &&
+                        e._completeListeners === 0 &&
                           (e.complete(), delete e._completeListeners);
-                    }.bind(e);
+                    };
                     n.isCompleted ||
                       n.isUtilityElement ||
                       !0 === n.wait ||
@@ -4120,14 +4336,15 @@ License: https://htmlelements.com/license/ */
                       n.completeHandlers.push(t));
                   }
                 }
-                0 === e._completeListeners && e.complete();
+                e._completeListeners === 0 && e.complete();
               }
             }
+
             visibilityChangedHandler() {
               const e = this;
               e.isReady &&
                 requestAnimationFrame(() => {
-                  0 === e.offsetWidth || 0 === e.offsetHeight
+                  e.offsetWidth === 0 || e.offsetHeight === 0
                     ? (e.isHidden = !0)
                     : ((e.isHidden = !1),
                       e.$.fireEvent('resize', e, {
@@ -4136,18 +4353,19 @@ License: https://htmlelements.com/license/ */
                       }));
                 });
             }
+
             attributeChangedCallback(e, t, n) {
-              const r = this,
-                o = r.propertyByAttributeName[e];
+              const r = this;
+              const o = r.propertyByAttributeName[e];
               if (
-                (('class' !== e && 'style' !== e) ||
+                ((e !== 'class' && e !== 'style') ||
                   r.visibilityChangedHandler(),
                 o || r.attributeChanged(e, t, n),
                 r.onAttributeChanged && r.onAttributeChanged(e, t, n),
                 !o || (o && o.isUpdating))
               )
                 return;
-              let i = r.$.getAttributeValue(o.attributeName, o.type);
+              const i = r.$.getAttributeValue(o.attributeName, o.type);
               void 0 !== n &&
                 r[o.name] !== i &&
                 ((o.isUpdatingFromAttribute = !0),
@@ -4155,16 +4373,19 @@ License: https://htmlelements.com/license/ */
                   void 0 !== i ? i : r._properties[o.name].defaultValue),
                 (o.isUpdatingFromAttribute = !1));
             }
+
             attributeChanged(e, t, n) {}
             set hasStyleObserver(e) {
               const t = this;
               void 0 === t._hasStyleObserver && (t._hasStyleObserver = e),
                 e ? d.watch(t) : d.unwatch(t);
             }
+
             get hasStyleObserver() {
               const e = this;
               return void 0 === e._hasStyleObserver || e._hasStyleObserver;
             }
+
             attached() {
               const e = this;
               e.hasStyleObserver && d.watch(e),
@@ -4173,13 +4394,14 @@ License: https://htmlelements.com/license/ */
                   Smart(e._selector).attached &&
                   Smart(e._selector).attached();
             }
+
             detached() {
               const e = this;
               e.hasStyleObserver && d.unwatch(e),
                 e._setModuleState('detached'),
                 (e.isAttached = !1),
                 e.ownerElement &&
-                  -1 === e.ownerElement.detachedChildren.indexOf(e) &&
+                  e.ownerElement.detachedChildren.indexOf(e) === -1 &&
                   e.ownerElement.detachedChildren.push(e),
                 e._handleListeners('unlisten'),
                 e.onDetached && e.onDetached(),
@@ -4188,123 +4410,127 @@ License: https://htmlelements.com/license/ */
                   Smart(e._selector).detached(),
                 u && u[e._selector] && delete u[e._selector];
             }
+
             propertyChangedHandler(e, t, n) {
               const r = this;
               t !== n &&
-                ('theme' === e &&
-                  ('' !== t && r.classList.remove('smart-' + t),
-                  '' !== n && r.classList.add('smart-' + n)),
-                'visibility' === e
-                  ? ('collapsed' === t
+                (e === 'theme' &&
+                  (t !== '' && r.classList.remove('smart-' + t),
+                  n !== '' && r.classList.add('smart-' + n)),
+                e === 'visibility'
+                  ? (t === 'collapsed'
                       ? r.classList.remove('smart-hidden')
-                      : 'hidden' === t &&
+                      : t === 'hidden' &&
                         r.classList.remove('smart-visibility-hidden'),
-                    'collapsed' === n
+                    n === 'collapsed'
                       ? r.classList.add('smart-hidden')
-                      : 'hidden' === n &&
+                      : n === 'hidden' &&
                         r.classList.add('smart-visibility-hidden'))
-                  : ('disabled' === e || 'readonly' === e) &&
+                  : (e === 'disabled' || e === 'readonly') &&
                     r._ariaPropertyChangedHandler(e, n),
                 r.propertyChanged && r.propertyChanged(e, t, n));
             }
+
             _ariaPropertyChangedHandler(e, t) {
               const n = this;
-              ('readonly' === e &&
-                -1 ===
-                  [
-                    'checkbox',
-                    'combobox',
-                    'grid',
-                    'gridcell',
-                    'listbox',
-                    'radiogroup',
-                    'slider',
-                    'spinbutton',
-                    'textbox',
-                  ].indexOf(n.getAttribute('role'))) ||
+              (e === 'readonly' &&
+                [
+                  'checkbox',
+                  'combobox',
+                  'grid',
+                  'gridcell',
+                  'listbox',
+                  'radiogroup',
+                  'slider',
+                  'spinbutton',
+                  'textbox',
+                ].indexOf(n.getAttribute('role')) === -1) ||
                 (t
                   ? n.setAttribute('aria-' + e, !0)
                   : n.removeAttribute('aria-' + e));
             }
+
             _handleListeners(e) {
-              const t = this,
-                n = t.tagName.toLowerCase(),
-                r = (r) => {
-                  for (let o in r) {
-                    const i = o.split('.');
-                    let s = i[0],
-                      a = t.$;
-                    if (i[1])
-                      if (
-                        ((s = i[1]), (a = t['$' + i[0]]), 'document' === i[0])
-                      ) {
-                        let e = t.smartId;
-                        '' === e && (e = y.Core.toCamelCase(n)),
-                          (s = s + '.' + e);
-                      } else
-                        t.smartId &&
-                          (s = s + '.' + t.smartId + '_' + t.parents.length);
-                    else t.smartId && (s = s + '.' + t.smartId);
-                    const l = r[o],
-                      d = function (e) {
-                        const n = t.context;
-                        (t.context = t),
-                          t[l] && t[l].apply(t, [e]),
-                          (t.context = n);
-                      };
-                    a && a[e](s, d);
-                  }
-                };
+              const t = this;
+              const n = t.tagName.toLowerCase();
+              const r = (r) => {
+                for (const o in r) {
+                  const i = o.split('.');
+                  let s = i[0];
+                  let a = t.$;
+                  if (i[1])
+                    if (
+                      ((s = i[1]), (a = t['$' + i[0]]), i[0] === 'document')
+                    ) {
+                      let e = t.smartId;
+                      e === '' && (e = y.Core.toCamelCase(n)),
+                        (s = s + '.' + e);
+                    } else
+                      t.smartId &&
+                        (s = s + '.' + t.smartId + '_' + t.parents.length);
+                  else t.smartId && (s = s + '.' + t.smartId);
+                  const l = r[o];
+                  const d = function (e) {
+                    const n = t.context;
+                    (t.context = t),
+                      t[l] && t[l].apply(t, [e]),
+                      (t.context = n);
+                  };
+                  a && a[e](s, d);
+                }
+              };
               r(t.getStaticMember('listeners')),
                 r(t.templateListeners),
                 Smart(t._selector) &&
                   Smart(t._selector).properties &&
                   r(Smart(t._selector).listeners);
             }
+
             parseTemplate() {
-              const e = this,
-                n = e.template(),
-                o = document.createDocumentFragment();
+              const e = this;
+              const n = e.template();
+              const o = document.createDocumentFragment();
               if (t[e.nodeName] && !r) return t[e.nodeName].cloneNode(!0);
-              if ('' === n) return null;
-              let i = document.createElement('div');
+              if (n === '') return null;
+              const i = document.createElement('div');
               o.appendChild(i), (i.innerHTML = n);
-              let s = i.childNodes;
+              const s = i.childNodes;
               i.parentNode.removeChild(i);
               for (let e = 0; e < s.length; e++) o.appendChild(s[e]);
               return (t[e.nodeName] = o), r ? o : o.cloneNode(!0);
             }
+
             applyTemplate() {
-              const e = this,
-                t = e.parseTemplate();
+              const e = this;
+              const t = e.parseTemplate();
               if (!t) return;
               if (!t.hasChildNodes) return;
-              const n = t.childNodes[0],
-                r = (t, n) => {
-                  (e['$' + t] = n.$ = y.Extend(n)),
-                    (e.$[t] = n),
-                    (n.ownerElement = e);
-                };
+              const n = t.childNodes[0];
+              const r = (t, n) => {
+                (e['$' + t] = n.$ = y.Extend(n)),
+                  (e.$[t] = n),
+                  (n.ownerElement = e);
+              };
               let o = n;
               if (n.getElementsByTagName('content').length > 0) {
-                let e = n.getElementsByTagName('content')[0];
+                const e = n.getElementsByTagName('content')[0];
                 (o = e.parentNode), o.removeChild(e);
               } else {
                 const e = t.querySelectorAll('[inner-h-t-m-l]');
                 e && e.length > 0 && (o = e[0]);
               }
               e.$.template =
-                'template' === n.nodeName.toLowerCase()
+                n.nodeName.toLowerCase() === 'template'
                   ? n
                   : n.querySelector('template');
               let i = t.querySelectorAll('[id]');
-              0 === i.length && (i = t.querySelectorAll('*')),
+              i.length === 0 && (i = t.querySelectorAll('*')),
                 r('root', n),
                 r('content', o),
                 (e.$.html = e.innerHTML.toString().trim());
               for (let t = 0; t < i.length; t += 1) {
-                let n = i[t];
-                '' === n.id && (n.id = 'child' + t),
+                const n = i[t];
+                n.id === '' && (n.id = 'child' + t),
                   r(n.id, n),
                   n.setAttribute('smart-id', n.id),
                   e.shadowRoot ? (n.shadowParent = e) : n.removeAttribute('id');
@@ -4326,6 +4552,7 @@ License: https://htmlelements.com/license/ */
                   e.refreshTemplate();
               }
             }
+
             refreshTemplate() {
               const e = this;
               if (!e.$.templateContainer) return;
@@ -4333,22 +4560,22 @@ License: https://htmlelements.com/license/ */
               const t = e.$.template.content.cloneNode(!0);
               (e.templateBindings = e.getBindings(t)),
                 (e.templateProperties = []);
-              let n = document.createDocumentFragment();
+              const n = document.createDocumentFragment();
               const r = function (t, n, o) {
-                for (let i in t) {
-                  const s = t[i],
-                    a = s.node.cloneNode();
+                for (const i in t) {
+                  const s = t[i];
+                  const a = s.node.cloneNode();
                   n.appendChild(a);
-                  let l = [],
-                    d = !1;
+                  let l = [];
+                  let d = !1;
                   if (s.data)
-                    for (let t in s.data) {
-                      const r = s.data[t],
-                        i = r.name;
+                    for (const t in s.data) {
+                      const r = s.data[t];
+                      const i = r.name;
                       if (
                         ((e.templateProperties[i] = !0),
                         a.removeAttribute(y.Core.toDash(t)),
-                        '*items' === t)
+                        t === '*items')
                       )
                         (l = e[i]), (d = !0);
                       else if (i.indexOf('item.') >= 0 && void 0 !== o)
@@ -4356,18 +4583,18 @@ License: https://htmlelements.com/license/ */
                           (a[t] = r.value);
                       else if (i.indexOf('item') >= 0 && void 0 !== o)
                         (r.value = o), (a[t] = r.value);
-                      else if ('*if' === t)
+                      else if (t === '*if')
                         if (i.indexOf('(') >= 0) {
-                          let t,
-                            r = i.substring(i.indexOf('('));
+                          let t;
+                          let r = i.substring(i.indexOf('('));
                           const o = i.substring(0, i.indexOf('('));
                           if (
                             ((r = r.substring(1, r.length - 1)),
                             (r = r.replace(/ /gi, '')),
                             (r = r.split(',')),
-                            r.length > 0 && '' !== r[0])
+                            r.length > 0 && r[0] !== '')
                           ) {
-                            let n = [];
+                            const n = [];
                             for (let t = 0; t < r.length; t++) n.push(e[r[t]]);
                             t = e[o].apply(e, n);
                           } else t = e[o]();
@@ -4378,7 +4605,7 @@ License: https://htmlelements.com/license/ */
                   if (l.length > 0 || d) {
                     for (let e = 0; e < l.length; e++)
                       s.children && r(s.children, a, l[e]);
-                    if ('number' == typeof l)
+                    if (typeof l === 'number')
                       for (let e = 0; e < l; e++)
                         s.children && r(s.children, a, e);
                   } else s.children && r(s.children, a, o);
@@ -4389,15 +4616,17 @@ License: https://htmlelements.com/license/ */
                 e.$.templateContainer.appendChild(n),
                 e.templateAttached(e.$.templateContainer);
             }
+
             templateAttached() {}
             templateDetached() {}
             appendTemplate(e) {
               this.appendChild(e);
             }
+
             defineElementModules() {
-              const e = this,
-                t = e.constructor.prototype;
-              if ('BaseElement' === t.elementName) {
+              const e = this;
+              const t = e.constructor.prototype;
+              if (t.elementName === 'BaseElement') {
                 t.modules = e.constructor.modules;
                 const n = t.modules;
                 for (let t = 0; t < n.length; t += 1) e.addModule(n[t]);
@@ -4405,52 +4634,58 @@ License: https://htmlelements.com/license/ */
                 const n = t.modules;
                 if (!n) return;
                 for (let t = 0; t < n.length; t += 1) {
-                  const r = n[t],
-                    o = r.prototype;
+                  const r = n[t];
+                  const o = r.prototype;
                   e.defineElementMethods(o.methodNames, o),
                     e.defineElementProperties(r.properties);
                 }
               }
             }
+
             watch(e, t) {
               const n = this;
               n._watch =
-                null !== e && null !== t
+                e !== null && t !== null
                   ? { properties: e, propertyChangedCallback: t }
                   : null;
             }
+
             unwatch() {
               this._watch = null;
             }
+
             set(e, t, n) {
-              const r = this,
-                o = r.context;
+              const r = this;
+              const o = r.context;
               (r.context = !0 === n ? document : r),
                 (r[e] = t),
                 (r.context = o);
             }
+
             get(e) {
               return this[e];
             }
+
             _setModuleState(e, t) {
-              const n = this,
-                r = 'is' + e.substring(0, 1).toUpperCase() + e.substring(1),
-                o = 'on' + e.substring(0, 1).toUpperCase() + e.substring(1);
+              const n = this;
+              const r = 'is' + e.substring(0, 1).toUpperCase() + e.substring(1);
+              const o = 'on' + e.substring(0, 1).toUpperCase() + e.substring(1);
               for (let i = 0; i < n.modulesList.length; i++) {
                 const s = n.modulesList[i];
                 (s[r] = !0), s[e] && s[e](t), s[o] && s[o](t);
               }
             }
+
             addModule(e, t) {
               const n = this;
               if (!e) return;
-              const r = n.modules.slice(0),
-                o = e.prototype,
-                i = Object.getPrototypeOf(e);
+              const r = n.modules.slice(0);
+              const o = e.prototype;
+              const i = Object.getPrototypeOf(e);
               if (
                 (i.name && i.name !== e.name && n.addModule(i),
                 !e.moduleName && e.name && (e.moduleName = e.name),
-                -1 === r.findIndex((t) => e.moduleName === t.moduleName) &&
+                r.findIndex((t) => e.moduleName === t.moduleName) === -1 &&
                   r.push(e),
                 n.defineModule(e),
                 n.defineElementMethods(o.methodNames, o),
@@ -4458,27 +4693,28 @@ License: https://htmlelements.com/license/ */
                 (n.constructor.prototype.modules = r),
                 t)
               )
-                for (let t in Smart.Elements.tagNames) {
+                for (const t in Smart.Elements.tagNames) {
                   const r = Smart.Elements.tagNames[t];
-                  let o = Object.getPrototypeOf(r),
-                    i = [];
+                  let o = Object.getPrototypeOf(r);
+                  const i = [];
                   for (; o !== HTMLElement; )
                     i.push(o.prototype), (o = Object.getPrototypeOf(o));
                   i.indexOf(n) >= 0 && r !== n && r.prototype.addModule(e);
                 }
             }
+
             defineModule(e) {
               if (e.isDefined) return;
               e.prototype._initModule = function (e) {
                 this.ownerElement = e;
               };
-              const t = e.properties || {},
-                n = Object.keys(t),
-                r = Object.getOwnPropertyNames(e.prototype);
+              const t = e.properties || {};
+              const n = Object.keys(t);
+              const r = Object.getOwnPropertyNames(e.prototype);
               e.prototype.methodNames = r;
               for (let r = 0; r < n.length; r += 1) {
-                const o = n[r],
-                  i = t[o];
+                const o = n[r];
+                const i = t[o];
                 Object.defineProperty(e.prototype, o, {
                   configurable: !1,
                   enumerable: !0,
@@ -4492,62 +4728,64 @@ License: https://htmlelements.com/license/ */
               }
               e.isDefined = !0;
             }
+
             getStaticMember(e, t) {
-              const r = window[n][this.elementName],
-                o = r[e];
+              const r = window[n][this.elementName];
+              const o = r[e];
               t || (t = '');
-              let i = 'array' === t ? [] : 'string' === t ? '' : {},
-                s = Object.getPrototypeOf(r),
-                a = [];
+              let i = t === 'array' ? [] : t === 'string' ? '' : {};
+              let s = Object.getPrototypeOf(r);
+              const a = [];
               for (; s[e]; ) a.push(s[e]), (s = Object.getPrototypeOf(s));
               for (let e = a.length - 1; e >= 0; e--)
-                if ('array' === t)
+                if (t === 'array')
                   for (let t = 0; t < a[e].length; t++)
-                    -1 === i.indexOf(a[e][t]) && i.push(a[e][t]);
+                    i.indexOf(a[e][t]) === -1 && i.push(a[e][t]);
                 else
-                  'string' === t
-                    ? -1 === i.indexOf(a[e]) && (i += a[e])
+                  t === 'string'
+                    ? i.indexOf(a[e]) === -1 && (i += a[e])
                     : (i = y.Core.assign(i, a[e]));
-              if ('array' === t) {
+              if (t === 'array') {
                 for (let e = 0; e < o.length; e++)
-                  -1 === i.indexOf(o[e]) && i.push(o[e]);
+                  i.indexOf(o[e]) === -1 && i.push(o[e]);
                 return i;
               }
-              return 'string' === t
-                ? (-1 === i.indexOf(o) && (i += o), i)
+              return t === 'string'
+                ? (i.indexOf(o) === -1 && (i += o), i)
                 : y.Core.assign(i, o);
             }
+
             defineElementHierarchicalProperties(e, t) {
-              const n = this,
-                r = [];
+              const n = this;
+              const r = [];
               !(function (e) {
                 const n = Object.keys(e);
                 for (let o = 0; o < n.length; o++) {
                   const i = n[o];
-                  if ('messages' === i) continue;
-                  if ('keys' === i) continue;
-                  const s = e[i],
-                    a = Object.keys(s),
-                    l =
-                      a.indexOf('value') >= 0 &&
-                      a.indexOf('type') >= 0 &&
-                      'object' == typeof s.value;
-                  if ('propertyObject' === s.type || l) {
+                  if (i === 'messages') continue;
+                  if (i === 'keys') continue;
+                  const s = e[i];
+                  const a = Object.keys(s);
+                  const l =
+                    a.indexOf('value') >= 0 &&
+                    a.indexOf('type') >= 0 &&
+                    typeof s.value === 'object';
+                  if (s.type === 'propertyObject' || l) {
                     const e = function (n, o) {
                       if (!n.value) return;
                       const i = Object.keys(n.value);
                       for (let s = 0; s < i.length; s++) {
-                        const a = i[s],
-                          l = n.value[a],
-                          d = o + '_' + a;
-                        if ('object' != typeof l || null === l) break;
+                        const a = i[s];
+                        const l = n.value[a];
+                        const d = o + '_' + a;
+                        if (typeof l !== 'object' || l === null) break;
                         const c = Object.keys(l);
                         if (
                           !(c.indexOf('value') >= 0 && c.indexOf('type') >= 0)
                         )
                           break;
                         if (
-                          ('array' !== n.type &&
+                          (n.type !== 'array' &&
                             (n.isHierarchicalProperty = !0),
                           (l.parentPropertyName = o),
                           t)
@@ -4568,9 +4806,9 @@ License: https://htmlelements.com/license/ */
                             });
                         }
                         r[d] || ((r[d] = l), r.length++),
-                          ('propertyObject' === l.type ||
-                            ('object' == typeof l.value &&
-                              'array' !== l.type)) &&
+                          (l.type === 'propertyObject' ||
+                            (typeof l.value === 'object' &&
+                              l.type !== 'array')) &&
                             e(t ? t._properties[d] : l, d);
                       }
                     };
@@ -4580,11 +4818,12 @@ License: https://htmlelements.com/license/ */
               })(e),
                 r.length > 0 && !t && n.defineElementProperties(r);
             }
+
             defineElement() {
-              const e = this,
-                t = e.constructor.prototype,
-                r = e.getStaticMember('properties'),
-                o = Object.getOwnPropertyNames(t);
+              const e = this;
+              const t = e.constructor.prototype;
+              const r = e.getStaticMember('properties');
+              const o = Object.getOwnPropertyNames(t);
               (t.extendedProperties = {}),
                 (t.boundProperties = {}),
                 (t.templateListeners = {}),
@@ -4593,10 +4832,10 @@ License: https://htmlelements.com/license/ */
                 e.defineElementProperties(r),
                 e.defineElementHierarchicalProperties(e.extendedProperties),
                 (t._initElement = function () {
-                  const e = this,
-                    r = t.extendedProperties,
-                    o = Object.keys(r),
-                    i = e.modules;
+                  const e = this;
+                  const r = t.extendedProperties;
+                  const o = Object.keys(r);
+                  const i = e.modules;
                   (e.$ = y.Extend(e)),
                     (e.$document = w),
                     (e.smartId = (
@@ -4612,21 +4851,21 @@ License: https://htmlelements.com/license/ */
                       (e.detachedChildren = []),
                       (e.propertyByAttributeName = []));
                   for (let t = 0; t < i.length; t += 1) {
-                    let n = new (0, i[t])();
+                    const n = new (0, i[t])();
                     n._initModule(e), e.modulesList.push(n);
                   }
                   const s = [];
                   for (let t = 0; t < o.length; t += 1) {
-                    const n = o[t],
-                      i = r[n];
+                    const n = o[t];
+                    const i = r[n];
                     let a = i.value;
                     if (e._properties[n]) {
                       if (void 0 !== e._properties[n].notify) continue;
                       delete e._properties[n];
                     }
                     if (
-                      (E && 'innerHTML' === n && delete e[n],
-                      -1 === window.navigator.userAgent.indexOf('PhantomJS') &&
+                      (E && n === 'innerHTML' && delete e[n],
+                      window.navigator.userAgent.indexOf('PhantomJS') === -1 &&
                         e.hasOwnProperty(n))
                     )
                       if (i.isHierarchicalProperty && e[n]) {
@@ -4636,9 +4875,9 @@ License: https://htmlelements.com/license/ */
                           delete e[n];
                       } else (a = e[n]), delete e[n];
                     if (
-                      ('array' === i.type && null != a && (a = a.slice(0)),
-                      'object' === i.type &&
-                        null != a &&
+                      (i.type === 'array' && a != null && (a = a.slice(0)),
+                      i.type === 'object' &&
+                        a != null &&
                         (a = Array.isArray(a)
                           ? a.slice(0)
                           : Object.assign({}, a)),
@@ -4668,13 +4907,13 @@ License: https://htmlelements.com/license/ */
                       const t = e.localize('propertyUnknownType', { name: n });
                       e.log(t);
                     }
-                    if ('any' === i.type || 'propertyObject' === i.type)
+                    if (i.type === 'any' || i.type === 'propertyObject')
                       continue;
                     const l = y.Types.getType(a);
-                    if (null != a && i.type !== l && !i.validator) {
-                      if ('object' === i.type && 'array' === l) continue;
+                    if (a != null && i.type !== l && !i.validator) {
+                      if (i.type === 'object' && l === 'array') continue;
                       if (
-                        'number' === l &&
+                        l === 'number' &&
                         ['integer', 'int', 'float'].findIndex(
                           (e) => e === i.type
                         ) >= 0
@@ -4690,7 +4929,7 @@ License: https://htmlelements.com/license/ */
                   }
                   if (
                     (e.defineElementHierarchicalProperties(e._properties, e),
-                    s.length && 'manual' !== window[n].RenderMode)
+                    s.length && window[n].RenderMode !== 'manual')
                   )
                     for (let t = 0; t < s.length; t++) {
                       const n = s[t];
@@ -4700,195 +4939,192 @@ License: https://htmlelements.com/license/ */
                 }),
                 t.registered();
             }
+
             defineElementMethods(e, t) {
-              const n = this.constructor.prototype,
-                r = function (e, t) {
-                  const n = Array.prototype.slice.call(arguments, 2),
-                    r = function () {
-                      if (
-                        !this.isReady &&
-                        'localize' !== t &&
-                        'localize' !== t &&
-                        'cloneNode' !== t &&
-                        'importStyle' !== t &&
-                        'log' !== t &&
-                        'parseAttributes' !== t
-                      ) {
-                        const e = this.localize('elementNotInDOM');
-                        this.log(e);
+              const n = this.constructor.prototype;
+              const r = function (e, t) {
+                const n = Array.prototype.slice.call(arguments, 2);
+                const r = function () {
+                  if (
+                    !this.isReady &&
+                    t !== 'localize' &&
+                    t !== 'localize' &&
+                    t !== 'cloneNode' &&
+                    t !== 'importStyle' &&
+                    t !== 'log' &&
+                    t !== 'parseAttributes'
+                  ) {
+                    const e = this.localize('elementNotInDOM');
+                    this.log(e);
+                  }
+                  let r = this;
+                  for (let e = 0; e < this.modulesList.length; e++) {
+                    const n = this.modulesList[e];
+                    if (t in n) {
+                      r = n;
+                      break;
+                    }
+                  }
+                  const o = this.context;
+                  const i = n.concat(Array.prototype.slice.call(arguments));
+                  let s = null;
+                  const a = function (e, t) {
+                    return (
+                      e === t ||
+                      (e === 'number' &&
+                        (t === 'int' || t === 'integer' || t === 'float')) ||
+                      (e === 'bool' && t === 'boolean') ||
+                      (e === 'boolean' && t === 'bool') ||
+                      (e === 'object' && t === 'any') ||
+                      void 0
+                    );
+                  };
+                  if (this.methods) {
+                    const e = this.methods[t];
+                    if (e) {
+                      const n = e.split(':');
+                      s = n[n.length - 1].trim();
+                      const r = [];
+                      const o = e
+                        .substring(1 + e.indexOf('('), e.lastIndexOf(')'))
+                        .split(',');
+                      let l = '';
+                      for (let e = 0; e < o.length; e++) {
+                        const t = o[e];
+                        (l += t),
+                          t.indexOf(':') >= 0
+                            ? (r.push(l), (l = ''))
+                            : (l += ',');
                       }
-                      let r = this;
-                      for (let e = 0; e < this.modulesList.length; e++) {
-                        let n = this.modulesList[e];
-                        if (t in n) {
-                          r = n;
-                          break;
-                        }
-                      }
-                      const o = this.context,
-                        i = n.concat(Array.prototype.slice.call(arguments));
-                      let s = null;
-                      const a = function (e, t) {
-                        return (
-                          e === t ||
-                          ('number' === e &&
-                            ('int' === t ||
-                              'integer' === t ||
-                              'float' === t)) ||
-                          ('bool' === e && 'boolean' === t) ||
-                          ('boolean' === e && 'bool' === t) ||
-                          ('object' === e && 'any' === t) ||
-                          void 0
-                        );
-                      };
-                      if (this.methods) {
-                        const e = this.methods[t];
-                        if (e) {
-                          const n = e.split(':');
-                          s = n[n.length - 1].trim();
-                          const r = [],
-                            o = e
-                              .substring(1 + e.indexOf('('), e.lastIndexOf(')'))
-                              .split(',');
-                          let l = '';
-                          for (let e = 0; e < o.length; e++) {
-                            const t = o[e];
-                            (l += t),
-                              t.indexOf(':') >= 0
-                                ? (r.push(l), (l = ''))
-                                : (l += ',');
-                          }
-                          let d = r.length;
-                          for (let e = 0; e < r.length; e++) {
-                            const n = r[e].trim().split(':'),
-                              o = n[0].split('=')[0].trim().indexOf('?') >= 0,
-                              s = n[1].indexOf('?') >= 0,
-                              l = n[1].replace(/\?/gi, '').trim(),
-                              c = l.split('|');
-                            let u = n[0].split('=')[1];
-                            const p = y.Types.getType(i[e]);
-                            if (void 0 === i[e] && u) {
-                              switch (((u = u.trim()), l[0])) {
-                                case 'date': {
-                                  let e = u.substring(
-                                    u.indexOf('(') + 1,
-                                    u.lastIndexOf(')')
-                                  );
-                                  (e =
-                                    e.length > 0
-                                      ? e.split(',').map((e) => parseInt(e))
-                                      : []),
-                                    (u =
-                                      0 === e.length
-                                        ? new Date()
-                                        : new Date(e[0], e[1], e[2]));
-                                  break;
-                                }
-                                case 'bool':
-                                case 'boolean':
-                                  u = 'true' === u || '1' === u;
-                                  break;
-                                case 'int':
-                                case 'integer':
-                                  u = parseInt(u);
-                                  break;
-                                case 'float':
-                                case 'number':
-                                  u = parseFloat(u);
-                                  break;
-                                case 'any':
-                                case 'object':
-                                  u = u.indexOf('{') >= 0 ? JSON.parse(u) : u;
-                              }
-                              i.push(u);
-                            } else o && d--;
-                            if (l !== p && p) {
-                              let n = !0;
-                              for (let e = 0; e < c.length; e++)
-                                if (a(p, c[e])) {
-                                  n = !1;
-                                  break;
-                                }
-                              if (n && (null !== i[e] || !s)) {
-                                const n = this.localize(
-                                  'methodInvalidValueType',
-                                  {
-                                    name: t,
-                                    actualType: p,
-                                    type: l,
-                                    argumentIndex: e,
-                                  }
-                                );
-                                this.log(n);
-                              }
-                            }
-                            if (i.length < d) {
-                              const e = this.localize(
-                                'methodInvalidArgumentsCount',
-                                {
-                                  name: t,
-                                  actualArgumentsCount: i.length,
-                                  argumentsCount: d,
-                                }
+                      let d = r.length;
+                      for (let e = 0; e < r.length; e++) {
+                        const n = r[e].trim().split(':');
+                        const o = n[0].split('=')[0].trim().indexOf('?') >= 0;
+                        const s = n[1].indexOf('?') >= 0;
+                        const l = n[1].replace(/\?/gi, '').trim();
+                        const c = l.split('|');
+                        let u = n[0].split('=')[1];
+                        const p = y.Types.getType(i[e]);
+                        if (void 0 === i[e] && u) {
+                          switch (((u = u.trim()), l[0])) {
+                            case 'date': {
+                              let e = u.substring(
+                                u.indexOf('(') + 1,
+                                u.lastIndexOf(')')
                               );
-                              this.log(e);
+                              (e =
+                                e.length > 0
+                                  ? e.split(',').map((e) => parseInt(e))
+                                  : []),
+                                (u =
+                                  e.length === 0
+                                    ? new Date()
+                                    : new Date(e[0], e[1], e[2]));
+                              break;
                             }
+                            case 'bool':
+                            case 'boolean':
+                              u = u === 'true' || u === '1';
+                              break;
+                            case 'int':
+                            case 'integer':
+                              u = parseInt(u);
+                              break;
+                            case 'float':
+                            case 'number':
+                              u = parseFloat(u);
+                              break;
+                            case 'any':
+                            case 'object':
+                              u = u.indexOf('{') >= 0 ? JSON.parse(u) : u;
+                          }
+                          i.push(u);
+                        } else o && d--;
+                        if (l !== p && p) {
+                          let n = !0;
+                          for (let e = 0; e < c.length; e++)
+                            if (a(p, c[e])) {
+                              n = !1;
+                              break;
+                            }
+                          if (n && (i[e] !== null || !s)) {
+                            const n = this.localize('methodInvalidValueType', {
+                              name: t,
+                              actualType: p,
+                              type: l,
+                              argumentIndex: e,
+                            });
+                            this.log(n);
                           }
                         }
-                      }
-                      this.context = this;
-                      const l = e.apply(r, i);
-                      if (s) {
-                        const e =
-                          void 0 === y.Types.getType(l)
-                            ? 'void'
-                            : y.Types.getType(l);
-                        if (!a(e, s)) {
-                          const n = this.localize('methodInvalidReturnType', {
-                            name: t,
-                            actualType: e,
-                            type: s,
-                          });
-                          this.log(n);
+                        if (i.length < d) {
+                          const e = this.localize(
+                            'methodInvalidArgumentsCount',
+                            {
+                              name: t,
+                              actualArgumentsCount: i.length,
+                              argumentsCount: d,
+                            }
+                          );
+                          this.log(e);
                         }
                       }
-                      return (this.context = o), l;
-                    };
-                  return r;
-                },
-                o = [
-                  'constructor',
-                  'ready',
-                  'created',
-                  'render',
-                  'attached',
-                  'detached',
-                  'appendChild',
-                  'insertBefore',
-                  'removeChild',
-                  'connect',
-                  'disconnectedCallback',
-                  'connectedCallback',
-                  'attributeChangedCallback',
-                  'propertyChangedHandler',
-                  'enableShadowDOM',
-                  'isInShadowDOM',
-                  'addPropertyBindings',
-                ];
-              for (let i in e) {
-                let s = e[i];
+                    }
+                  }
+                  this.context = this;
+                  const l = e.apply(r, i);
+                  if (s) {
+                    const e =
+                      void 0 === y.Types.getType(l)
+                        ? 'void'
+                        : y.Types.getType(l);
+                    if (!a(e, s)) {
+                      const n = this.localize('methodInvalidReturnType', {
+                        name: t,
+                        actualType: e,
+                        type: s,
+                      });
+                      this.log(n);
+                    }
+                  }
+                  return (this.context = o), l;
+                };
+                return r;
+              };
+              const o = [
+                'constructor',
+                'ready',
+                'created',
+                'render',
+                'attached',
+                'detached',
+                'appendChild',
+                'insertBefore',
+                'removeChild',
+                'connect',
+                'disconnectedCallback',
+                'connectedCallback',
+                'attributeChangedCallback',
+                'propertyChangedHandler',
+                'enableShadowDOM',
+                'isInShadowDOM',
+                'addPropertyBindings',
+              ];
+              for (const i in e) {
+                const s = e[i];
                 (s && s.startsWith && s.startsWith('_')) ||
                   void 0 !== o.find((e) => e === s) ||
                   n.extendedProperties[s] ||
                   (y.Types.isFunction(t[s]) && (n[s] = r(t[s], s)));
               }
             }
+
             defineElementProperties(e) {
               if (!e) return;
-              const t = this,
-                n = t.constructor.prototype,
-                r = Object.keys(e),
-                o = t.getStaticMember('properties');
+              const t = this;
+              const n = t.constructor.prototype;
+              const r = Object.keys(e);
+              const o = t.getStaticMember('properties');
               Object.assign(n.extendedProperties, e),
                 (t.updateProperty = function (e, t, n) {
                   const r = e;
@@ -4902,20 +5138,20 @@ License: https://htmlelements.com/license/ */
                       }
                     if (!e) {
                       const e = JSON.stringify(t.allowedValues)
-                          .replace(/\[|\]/gi, '')
-                          .replace(',', ', ')
-                          .replace(/"/gi, "'"),
-                        o = "'" + n + "'",
-                        i = r.localize('propertyInvalidValue', {
-                          name: t.name,
-                          actualValue: o,
-                          value: e,
-                        });
+                        .replace(/\[|\]/gi, '')
+                        .replace(',', ', ')
+                        .replace(/"/gi, "'");
+                      const o = "'" + n + "'";
+                      const i = r.localize('propertyInvalidValue', {
+                        name: t.name,
+                        actualValue: o,
+                        value: e,
+                      });
                       return void r.log(i);
                     }
                   }
-                  const o = t.name,
-                    i = r._properties[o].value;
+                  const o = t.name;
+                  const i = r._properties[o].value;
                   if (t.validator && r[t.validator]) {
                     const e = r.context;
                     r.context = r;
@@ -4925,30 +5161,30 @@ License: https://htmlelements.com/license/ */
                   if (i !== n) {
                     if (r.propertyChanging) {
                       const e = r.propertyChanging(o, i, n);
-                      if (!1 === e || null === e) return;
+                      if (!1 === e || e === null) return;
                     }
                     if (!t.hasOwnProperty('type')) {
                       const e = r.localize('propertyUnknownType', { name: o });
                       r.log(e);
                     }
                     if (
-                      'array' !== t.type ||
+                      t.type !== 'array' ||
                       JSON.stringify(i) !== JSON.stringify(n)
                     ) {
                       if (
-                        (null != n &&
-                          'any' !== t.type &&
-                          'propertyObject' !== t.type &&
+                        (n != null &&
+                          t.type !== 'any' &&
+                          t.type !== 'propertyObject' &&
                           t.type !== y.Types.getType(n) &&
                           !t.validator) ||
-                        (null === n && !t.nullable)
+                        (n === null && !t.nullable)
                       ) {
                         let e = !0;
                         if (
-                          ('object' === t.type &&
-                            'array' === y.Types.getType(n) &&
+                          (t.type === 'object' &&
+                            y.Types.getType(n) === 'array' &&
                             (e = !1),
-                          'number' === y.Types.getType(n) &&
+                          y.Types.getType(n) === 'number' &&
                             ['integer', 'int', 'float'].findIndex(
                               (e) => e === t.type
                             ) >= 0 &&
@@ -4968,9 +5204,9 @@ License: https://htmlelements.com/license/ */
                           if (!t) return;
                           const o = Object.keys(t);
                           for (let i = 0; i < o.length; i++) {
-                            const s = o[i],
-                              a = t[s];
-                            'object' == typeof a &&
+                            const s = o[i];
+                            const a = t[s];
+                            typeof a === 'object' &&
                             !y.Types.isArray(a) &&
                             a &&
                             a.constructor !== Date
@@ -4989,7 +5225,7 @@ License: https://htmlelements.com/license/ */
                             (r.ownerElement && r.ownerElement.isReady)))
                       ) {
                         if (
-                          ('wait' === o &&
+                          (o === 'wait' &&
                             (n ||
                               !i ||
                               r.isCompleted ||
@@ -4998,7 +5234,7 @@ License: https://htmlelements.com/license/ */
                                 r.ownerElement.updateBoundMappedNodes(),
                               r.updateBoundMappedNodes(),
                               r.complete())),
-                          'renderMode' === o)
+                          o === 'renderMode')
                         )
                           return;
                         if (r.context !== r && !r.wait) {
@@ -5028,7 +5264,7 @@ License: https://htmlelements.com/license/ */
                             r.templateProperties[o] &&
                             r.refreshTemplate(),
                           r.dataContextProperties &&
-                            ('dataContext' === o
+                            (o === 'dataContext'
                               ? r.applyDataContext()
                               : r.dataContextProperties[o] &&
                                 r.updateDataContextProperty(o));
@@ -5038,12 +5274,12 @@ License: https://htmlelements.com/license/ */
                   }
                 });
               for (let t = 0; t < r.length; t += 1) {
-                const i = r[t],
-                  s = e[i],
-                  a = y.Core.toDash(i),
-                  l = s.type || 'any',
-                  d = l.indexOf('?') >= 0 || 'any' === l;
-                d && 'any' !== l && (s.type = l.substring(0, l.length - 1)),
+                const i = r[t];
+                const s = e[i];
+                const a = y.Core.toDash(i);
+                const l = s.type || 'any';
+                const d = l.indexOf('?') >= 0 || l === 'any';
+                d && l !== 'any' && (s.type = l.substring(0, l.length - 1)),
                   (s.nullable = d),
                   (s.attributeName = a.toLowerCase()),
                   (s.name = i),
@@ -5067,23 +5303,23 @@ License: https://htmlelements.com/license/ */
               }
             }
           }
-          let _ = [],
-            S = [],
-            x = [],
-            E = !1;
+          const _ = [];
+          const S = [];
+          let x = [];
+          let E = !1;
           const A = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
           A && parseInt(A[2], 10) <= 50 && (E = !0);
           class D {
             static register(e, t) {
               const r = t.prototype;
-              let o = a.toCamelCase(e).replace(/[a-z]+/, ''),
-                i = t.version || window[n].Version;
+              let o = a.toCamelCase(e).replace(/[a-z]+/, '');
+              let i = t.version || window[n].Version;
               if (
                 window.customElements.get(e) &&
                 window.customElements.get(e).version === i
               )
                 return;
-              let s = e;
+              const s = e;
               for (i = i.split('.'); window.customElements.get(e); )
                 (e = s + '-' + i.join('.')), (i[2] = parseInt(i[2]) + 1);
               if (!_[e]) {
@@ -5103,6 +5339,7 @@ License: https://htmlelements.com/license/ */
                   window.customElements.define(e, t);
               }
             }
+
             static registerElements() {
               const e = this;
               if (e.toRegister) {
@@ -5114,14 +5351,16 @@ License: https://htmlelements.com/license/ */
                 e.isRegistering = !1;
               }
             }
+
             static get(e) {
               if (_[e]) return _[e];
             }
+
             static whenRegistered(e, t) {
               if (!e) throw new Error('Syntax Error: Invalid tag name');
-              const n = S[e],
-                r = this.get(e),
-                o = r ? r.modules.length : 3;
+              const n = S[e];
+              const r = this.get(e);
+              const o = r ? r.modules.length : 3;
               try {
                 n || r
                   ? !n && r
@@ -5168,15 +5407,15 @@ License: https://htmlelements.com/license/ */
                   return e.apply(t, n);
                 },
                 get: function (t, n) {
-                  return 'symbol' == typeof (r = n) ||
-                    ('object' == typeof r &&
-                      '[object Symbol]' ===
-                        Object.prototype.toString.call(r)) ||
+                  return typeof (r = n) === 'symbol' ||
+                    (typeof r === 'object' &&
+                      Object.prototype.toString.call(r) ===
+                        '[object Symbol]') ||
                     t[n] ||
                     isNaN(parseInt(n))
                     ? t[n]
                     : e.getItem(parseInt(n));
-                  var r;
+                  let r;
                 },
                 set: function (t, n, r) {
                   return t[n] || isNaN(parseInt(n))
@@ -5210,31 +5449,37 @@ License: https://htmlelements.com/license/ */
                   e._array.push(r);
                 }
               } else e._array = Array.apply(null, arguments);
-              return 2 === arguments.length && (e.notifyFn = arguments[1]), t;
+              return arguments.length === 2 && (e.notifyFn = arguments[1]), t;
             }
+
             get canNotify() {
               const e = this;
               return (
                 void 0 === e._canNotify && (e._canNotify = !0), e._canNotify
               );
             }
+
             set canNotify(e) {
               this._canNotify = e;
             }
+
             _notify(e) {
               const t = this;
               t.canNotify && t.notifyFn && t.notifyFn(e);
             }
+
             notify(e) {
               e && (this.notifyFn = e);
             }
+
             toArray() {
               return this._array;
             }
+
             _getItem(e, t) {
               const n = this;
-              return 'string' == typeof t ||
-                'number' == typeof t ||
+              return typeof t === 'string' ||
+                typeof t === 'number' ||
                 void 0 === t
                 ? t
                 : new Proxy(t, {
@@ -5264,12 +5509,14 @@ License: https://htmlelements.com/license/ */
                     },
                   });
             }
+
             getItem(e) {
               return this._array[e];
             }
+
             setItem(e, t) {
-              const n = this,
-                r = n._array[e];
+              const n = this;
+              const r = n._array[e];
               (n._array[e] = n._getItem(e, t)),
                 n._notify({
                   eventName: 'change',
@@ -5280,9 +5527,11 @@ License: https://htmlelements.com/license/ */
                   addedCount: 1,
                 });
             }
+
             get length() {
               return this._array.length;
             }
+
             set length(e) {
               const t = this;
               o.isNumber(e) &&
@@ -5290,21 +5539,26 @@ License: https://htmlelements.com/license/ */
                 t._array.length !== e &&
                 t.splice(e, t._array.length - e);
             }
+
             toString() {
               return this._array.toString();
             }
+
             toLocaleString() {
               return this._array.toLocaleString();
             }
+
             concat() {
               const e = this;
               e._addArgs.index = e._array.length;
               const t = e._array.concat.apply(e._array, arguments);
               return new Smart.ObservableArray(t);
             }
+
             join(e) {
               return this._array.join(e);
             }
+
             pop() {
               const e = this;
               (e._removeArgs.index = e._array.length - 1),
@@ -5317,11 +5571,12 @@ License: https://htmlelements.com/license/ */
                 t
               );
             }
+
             push() {
               const e = this;
               if (
                 ((e._addArgs.index = e._array.length),
-                1 === arguments.length && Array.isArray(arguments[0]))
+                arguments.length === 1 && Array.isArray(arguments[0]))
               ) {
                 const t = arguments[0];
                 for (let n = 0, r = t.length; n < r; n++) {
@@ -5339,12 +5594,14 @@ License: https://htmlelements.com/license/ */
                 e._array.length
               );
             }
+
             _notifyLengthChange() {
               const e = this;
               if (!e.canNotify) return;
               const t = e._createPropertyChangeData('length', e._array.length);
               e._notify(t);
             }
+
             _createPropertyChangeData(e, t, n) {
               return {
                 eventName: 'change',
@@ -5354,12 +5611,14 @@ License: https://htmlelements.com/license/ */
                 oldValue: n,
               };
             }
+
             reverse() {
               return this._array.reverse();
             }
+
             shift() {
-              const e = this,
-                t = e._array.shift();
+              const e = this;
+              const t = e._array.shift();
               return (
                 (e._removeArgs.index = 0),
                 (e._removeArgs.removed = [t]),
@@ -5368,22 +5627,25 @@ License: https://htmlelements.com/license/ */
                 t
               );
             }
+
             slice(e, t) {
               return this._array.slice(e, t);
             }
+
             sort(e) {
               return this._array.sort(e);
             }
+
             splice(e, t, n) {
-              const r = this,
-                o = r._array.length;
+              const r = this;
+              const o = r._array.length;
               let i;
               if (n && n.length)
                 for (let o = 0; o < n.length; o++)
                   i = r._array.splice(e + o, t, n[o]);
               else i = r._array.splice.apply(r._array, arguments);
               if (n) {
-                let t = r.canNotify;
+                const t = r.canNotify;
                 if (((r.canNotify = !1), n.length))
                   for (let t = 0; t < n.length; t++) r.setItem(e + t, n[t]);
                 else r.setItem(e, n);
@@ -5407,10 +5669,11 @@ License: https://htmlelements.com/license/ */
                 });
               return r._array.length !== o && r._notifyLengthChange(), i;
             }
+
             unshift() {
-              const e = this,
-                t = e._array.length,
-                n = e._array.unshift.apply(e._array, arguments);
+              const e = this;
+              const t = e._array.length;
+              const n = e._array.unshift.apply(e._array, arguments);
               return (
                 (e._addArgs.index = 0),
                 (e._addArgs.addedCount = n - t),
@@ -5419,49 +5682,61 @@ License: https://htmlelements.com/license/ */
                 n
               );
             }
+
             indexOf(e, t) {
               const n = this;
               for (let r = t || 0, o = n._array.length; r < o; r++)
                 if (n._array[r] === e) return r;
               return -1;
             }
+
             lastIndexOf(e, t) {
               const n = this;
               for (let r = t || n._array.length - 1; r >= 0; r--)
                 if (n._array[r] === e) return r;
               return -1;
             }
+
             find(e, t) {
               return this._array.find(e, t);
             }
+
             findIndex(e, t) {
               return this._array.findIndex(e, t);
             }
+
             every(e, t) {
               return this._array.every(e, t);
             }
+
             some(e, t) {
               return this._array.some(e, t);
             }
+
             forEach(e, t) {
               this._array.forEach(e, t);
             }
+
             map(e, t) {
               return this._array.map(e, t);
             }
+
             filter(e, t) {
               return this._array.filter(e, t);
             }
+
             reduce(e, t) {
               return void 0 !== t
                 ? this._array.reduce(e, t)
                 : this._array.reduce(e);
             }
+
             reduceRight(e, t) {
               return void 0 !== t
                 ? this._array.reduceRight(e, t)
                 : this._array.reduceRight(e);
             }
+
             move(e, t) {
               this.splice(t, 0, this.splice(e, 1)[0]);
             }
@@ -5469,7 +5744,7 @@ License: https://htmlelements.com/license/ */
           let P = {};
           window[n] && (P = window[n]),
             (window[n] = function (e, t) {
-              let r = e;
+              const r = e;
               if (e) {
                 if (e.indexOf('#') >= 0 || e.indexOf('.') >= 0)
                   return u[e]
@@ -5482,16 +5757,16 @@ License: https://htmlelements.com/license/ */
                         const r = function (n, o) {
                           const i = Object.keys(n);
                           for (let s = 0; s < i.length; s++) {
-                            const a = i[s],
-                              l = n[a];
+                            const a = i[s];
+                            const l = n[a];
                             (t._properties[o + a] = l),
                               Array.isArray(l)
                                 ? (t._properties[o + a] = new T(
                                     l,
                                     function (t) {
-                                      const n = a + '.' + t.path,
-                                        r = t.newValue,
-                                        o = document.querySelector(e);
+                                      const n = a + '.' + t.path;
+                                      const r = t.newValue;
+                                      const o = document.querySelector(e);
                                       if (o) {
                                         const e = n.split('.');
                                         let t = o;
@@ -5509,12 +5784,12 @@ License: https://htmlelements.com/license/ */
                                       t._properties[o + a] = e;
                                     },
                                   }),
-                                  (l && 'DataAdapter' === l.constructor.name) ||
+                                  (l && l.constructor.name === 'DataAdapter') ||
                                     (l &&
-                                      'object' == typeof l &&
+                                      typeof l === 'object' &&
                                       Smart.DataAdapter &&
                                       l instanceof Smart.DataAdapter) ||
-                                    ('object' == typeof l &&
+                                    (typeof l === 'object' &&
                                       l &&
                                       Object.keys(l).length > 0 &&
                                       r(l, o + a + '.')));
@@ -5528,14 +5803,14 @@ License: https://htmlelements.com/license/ */
                           });
                         const o = document.querySelector(e);
                         if (o && o.isReady)
-                          for (let e in n)
-                            if ('properties' === e) {
+                          for (const e in n)
+                            if (e === 'properties') {
                               const t = n[e];
-                              for (let e in t) o[e] = t[e];
+                              for (const e in t) o[e] = t[e];
                             } else o[e] = n[e];
                         else if (o) {
                           o.props = {};
-                          for (let e in n) o.props[e] = n[e];
+                          for (const e in n) o.props[e] = n[e];
                         }
                       })(e, u[e]),
                       u[e])
@@ -5555,8 +5830,8 @@ License: https://htmlelements.com/license/ */
             }),
             window.addEventListener('load', function () {
               const e = window[n].Elements.tagNames;
-              let t = [];
-              for (let r in e) {
+              const t = [];
+              for (const r in e) {
                 const o = e[r];
                 let i = document.querySelectorAll('[' + r + ']');
                 for (let e = 0; e < i.length; e++) {
@@ -5568,7 +5843,7 @@ License: https://htmlelements.com/license/ */
                     t.classList.add('smart-element-ready');
                 }
                 let s = o.name;
-                'Item' === s && (s = 'ListItem'),
+                s === 'Item' && (s = 'ListItem'),
                   (i = document.querySelectorAll(
                     '[is="' + n.toLocaleLowerCase() + s + '"]'
                   ));
@@ -5576,24 +5851,24 @@ License: https://htmlelements.com/license/ */
               }
               if (t.length > 0) {
                 const e = (e) => {
-                  let t = [],
-                    n = e.parentNode;
-                  for (; n && 9 !== n.nodeType; )
+                  const t = [];
+                  let n = e.parentNode;
+                  for (; n && n.nodeType !== 9; )
                     n instanceof HTMLElement == 1 && t.push(n),
                       (n = n.parentNode);
                   return t;
                 };
                 t.sort(function (t, n) {
-                  let r = e(t).length,
-                    o = e(n).length;
+                  const r = e(t).length;
+                  const o = e(n).length;
                   return r < o ? 1 : r > o ? -1 : 0;
                 });
                 for (let e = 0; e < t.length; e++) {
-                  const n = t[e],
-                    r = n.getAttribute('is');
+                  const n = t[e];
+                  const r = n.getAttribute('is');
                   let o;
                   (o =
-                    'smartItem' === r
+                    r === 'smartItem'
                       ? new window.smartListItem(n)
                       : new window[r](n)),
                     o.removeAttribute('is');
@@ -5602,12 +5877,12 @@ License: https://htmlelements.com/license/ */
             });
           const B = function () {
             if (
-              'complete' === document.readyState &&
-              'manual' !== window[n].RenderMode
+              document.readyState === 'complete' &&
+              window[n].RenderMode !== 'manual'
             ) {
               x.sort(function (e, t) {
-                let n = e.element.parents.length,
-                  r = t.element.parents.length;
+                const n = e.element.parents.length;
+                const r = t.element.parents.length;
                 return n < r ? -1 : n > r ? 1 : 0;
               });
               for (let e = 0; e < x.length; e++)
@@ -5623,76 +5898,85 @@ License: https://htmlelements.com/license/ */
             Modules: [],
             BaseElement: class extends C {
               static get observedAttributes() {
-                let e = this,
-                  t = ['external-style'];
-                for (let n in e.prototype.extendedProperties) {
+                const e = this;
+                const t = ['external-style'];
+                for (const n in e.prototype.extendedProperties) {
                   const r = e.prototype.extendedProperties[n];
                   t.push(r.attributeName);
                 }
                 return t;
               }
+
               static get styleUrls() {
                 return [];
               }
+
               static get styles() {
                 return '';
               }
+
               get styleUrl() {
                 return this._styleUrl;
               }
+
               set styleUrl(e) {
                 this._styleUrl = e;
               }
+
               get isInShadowDOM() {
-                const e = this,
-                  t = e.getRootNode();
+                const e = this;
+                const t = e.getRootNode();
                 return (
                   !e.hasAttribute('smart-blazor') && t !== document && t !== e
                 );
               }
+
               getShadowRootOrBody() {
                 const e = this;
                 return e.isInShadowDOM && e.getRootNode().host
                   ? e.getRootNode().host.shadowRoot
                   : document.body;
               }
+
               get enableShadowDOM() {
                 return window[n].EnableShadowDOM;
               }
+
               importStyle(e, t) {
                 this._importStyle(e, t);
               }
+
               _importStyle(e, t) {
                 const n = this;
                 if (!n.shadowRoot || !e) return;
                 const r = (e) => {
-                    const r = n.shadowRoot.children;
-                    for (let n = 0; n < r.length; n++) {
-                      const o = r[n];
-                      if (o instanceof HTMLLinkElement && o.href === e)
-                        return t && t(), null;
-                    }
-                    const o = document.createElement('link');
-                    return (
-                      (o.rel = 'stylesheet'),
-                      (o.type = 'text/css'),
-                      (o.href = e),
-                      (o.onload = t),
-                      o
-                    );
-                  },
-                  o = (() => {
-                    const e = n.shadowRoot.children;
-                    let t = null;
-                    for (let n = 0; n < e.length; n++) {
-                      const r = e[n];
-                      r instanceof HTMLLinkElement && (t = r);
-                    }
-                    return t;
-                  })(),
-                  i = (e, t) => {
-                    t.parentNode.insertBefore(e, t.nextSibling);
-                  };
+                  const r = n.shadowRoot.children;
+                  for (let n = 0; n < r.length; n++) {
+                    const o = r[n];
+                    if (o instanceof HTMLLinkElement && o.href === e)
+                      return t && t(), null;
+                  }
+                  const o = document.createElement('link');
+                  return (
+                    (o.rel = 'stylesheet'),
+                    (o.type = 'text/css'),
+                    (o.href = e),
+                    (o.onload = t),
+                    o
+                  );
+                };
+                const o = (() => {
+                  const e = n.shadowRoot.children;
+                  let t = null;
+                  for (let n = 0; n < e.length; n++) {
+                    const r = e[n];
+                    r instanceof HTMLLinkElement && (t = r);
+                  }
+                  return t;
+                })();
+                const i = (e, t) => {
+                  t.parentNode.insertBefore(e, t.nextSibling);
+                };
                 if (Array.isArray(e)) {
                   const t = document.createDocumentFragment();
                   for (let n = 0; n < e.length; n++) {
@@ -5710,29 +5994,32 @@ License: https://htmlelements.com/license/ */
                     : n.shadowRoot.insertBefore(t, n.shadowRoot.firstChild);
                 }
               }
+
               attributeChanged(e, t, n) {
-                'style-url' === e && (this.styleUrl = n);
+                e === 'style-url' && (this.styleUrl = n);
               }
+
               attributeChangedCallback(e, t, n) {
                 this.isReady && super.attributeChangedCallback(e, t, n);
               }
+
               constructor(e, t) {
                 super();
                 const n = this;
                 if (e) {
                   t && (n._initProperties = t);
                   const r = (e) => {
-                    if ('string' == typeof e ? document.querySelector(e) : e) {
+                    if (typeof e === 'string' ? document.querySelector(e) : e) {
                       const r =
-                        'string' == typeof e ? document.querySelector(e) : e;
+                        typeof e === 'string' ? document.querySelector(e) : e;
                       if (r instanceof HTMLDivElement) {
                         const o = document.createElement(n.tagName);
-                        for (let e of r.attributes)
+                        for (const e of r.attributes)
                           o.setAttribute(e.name, r.getAttribute(e.name));
                         for (; r.childNodes.length; )
                           o.appendChild(r.firstChild);
                         return (
-                          'string' == typeof e && (o.id = e.substring(1)),
+                          typeof e === 'string' && (o.id = e.substring(1)),
                           (o._initProperties = t),
                           r.parentNode && r.parentNode.replaceChild(o, r),
                           o
@@ -5742,9 +6029,9 @@ License: https://htmlelements.com/license/ */
                         const e = r.context;
                         if (((r._initProperties = t), r.isReady)) {
                           r.context = r;
-                          const n = {},
-                            o = {};
-                          for (let e in t) (n[e] = r[e]), (o[e] = t[e]);
+                          const n = {};
+                          const o = {};
+                          for (const e in t) (n[e] = r[e]), (o[e] = t[e]);
                           Object.getOwnPropertyNames(t).length > 0 &&
                             (r.initProperties(),
                             r.propertyChangedHandler(t, n, o)),
@@ -5754,9 +6041,9 @@ License: https://htmlelements.com/license/ */
                       return r;
                     }
                   };
-                  if ('string' == typeof e) {
-                    const t = document.querySelectorAll(e),
-                      n = [];
+                  if (typeof e === 'string') {
+                    const t = document.querySelectorAll(e);
+                    const n = [];
                     if (t.length > 1) {
                       for (let e = 0; e < t.length; e++) {
                         const o = r(t[e]);
@@ -5778,6 +6065,7 @@ License: https://htmlelements.com/license/ */
                 }
                 (n._styleUrl = ''), n.isUtilityElement || n.created();
               }
+
               _getRootShadowParent() {
                 let e = this.shadowParent;
                 for (; e; ) {
@@ -5786,22 +6074,25 @@ License: https://htmlelements.com/license/ */
                 }
                 return e || this.shadowParent;
               }
+
               _getStyleUrl(e) {
                 let t = y.Core.getScriptLocation() + window[n].StyleBaseUrl + e;
                 return this.shadowParent && (t = t.replace('scoped/', '')), t;
               }
+
               _getStyleUrls() {
                 const e = this;
                 e.nodeName.startsWith(n);
-                const t = e.getStaticMember('styleUrls', 'array'),
-                  r = [];
+                const t = e.getStaticMember('styleUrls', 'array');
+                const r = [];
                 for (let n = 0; n < t.length; n++) {
-                  const o = t[n],
-                    i = e._getStyleUrl(o);
+                  const o = t[n];
+                  const i = e._getStyleUrl(o);
                   r.push(i);
                 }
                 return r;
               }
+
               _setupShadowRoot() {
                 const e = this;
                 e.classList.add('smart-element-init');
@@ -5825,7 +6116,7 @@ License: https://htmlelements.com/license/ */
                         window[n].AdoptedStyleSheetsLoadedQueue.push(e));
                   else {
                     const r = new CSSStyleSheet();
-                    let o =
+                    const o =
                       y.Core.getScriptLocation() + '/styles/smart.default.css';
                     r
                       .replace('@import url("' + o + '")')
@@ -5852,6 +6143,7 @@ License: https://htmlelements.com/license/ */
                         window[n].AdoptedStyleSheets);
                   }
               }
+
               connect() {
                 const e = this;
                 window[n].EnableShadowDOM &&
@@ -5868,6 +6160,7 @@ License: https://htmlelements.com/license/ */
                       : (e.shadowParent && window[n].EnableShadowDOM, e.setup())
                     : e.setup();
               }
+
               connectedCallback() {
                 const e = this;
                 if (e.isLoading || e.isUtilityElement) return;
@@ -5876,13 +6169,13 @@ License: https://htmlelements.com/license/ */
                   e.classList.remove('smart-element-init');
                 };
                 if (
-                  'complete' === document.readyState &&
+                  document.readyState === 'complete' &&
                   (void 0 === window[n].isAngular &&
                     (window[n].isAngular =
-                      null !== document.body.querySelector('[ng-version]')),
+                      document.body.querySelector('[ng-version]') !== null),
                   void 0 === window[n].isVue &&
                     (window[n].isVue =
-                      null !== document.querySelector('.vue-root')),
+                      document.querySelector('.vue-root') !== null),
                   window[n].isAngular)
                 )
                   for (
@@ -5901,11 +6194,11 @@ License: https://htmlelements.com/license/ */
                       break;
                     }
                 if (
-                  'complete' === document.readyState &&
-                  'manual' !== window[n].RenderMode
+                  document.readyState === 'complete' &&
+                  window[n].RenderMode !== 'manual'
                 ) {
                   const n = e.parents;
-                  (n.length && 'HTML' === n[n.length - 1].nodeName) ||
+                  (n.length && n[n.length - 1].nodeName === 'HTML') ||
                   e.getRootNode().host
                     ? (e.checkIsInDomTimer &&
                         clearInterval(e.checkIsInDomTimer),
@@ -5916,9 +6209,9 @@ License: https://htmlelements.com/license/ */
                       n.length > 0 &&
                         (e.checkIsInDomTimer = setInterval(() => {
                           const n = e.parents;
-                          0 === n.length && clearInterval(e.checkIsInDomTimer),
+                          n.length === 0 && clearInterval(e.checkIsInDomTimer),
                             n.length > 0 &&
-                              'HTML' === n[n.length - 1].nodeName &&
+                              n[n.length - 1].nodeName === 'HTML' &&
                               (clearInterval(e.checkIsInDomTimer),
                               t(),
                               e.connect());
@@ -5932,28 +6225,32 @@ License: https://htmlelements.com/license/ */
                       }.bind(e),
                     });
               }
+
               disconnectedCallback() {
                 const e = this;
                 e.isAttached
                   ? ((e.shadowParent = null), e.detached())
                   : e._resetShadowParent();
               }
+
               adoptedCallback() {
                 this.setup();
               }
+
               appendTemplate(e) {
                 const t = this;
                 t.shadowRoot ? t.shadowRoot.appendChild(e) : t.appendChild(e);
               }
+
               _resetShadowParent() {
                 const e = this;
-                if (!window[n].EnableShadowDOM || null === e.shadowParent)
+                if (!window[n].EnableShadowDOM || e.shadowParent === null)
                   return;
                 const t = [];
                 let r = e.parentNode;
-                for (; r && 9 !== r.nodeType; ) {
+                for (; r && r.nodeType !== 9; ) {
                   if (r instanceof HTMLElement == 1) t.push(r);
-                  else if (11 === r.nodeType && r.host) {
+                  else if (r.nodeType === 11 && r.host) {
                     r = r.host;
                     continue;
                   }
@@ -5962,7 +6259,7 @@ License: https://htmlelements.com/license/ */
                 for (let n = 0; n < t.length; n++)
                   if (t[n] === e.shadowParent) return;
                 t.length > 0 &&
-                  'HTML' === t[t.length - 1].nodeName &&
+                  t[t.length - 1].nodeName === 'HTML' &&
                   (e.shadowParent = null);
               }
             },
@@ -5982,14 +6279,14 @@ License: https://htmlelements.com/license/ */
                 });
               };
               return new Promise((o) => {
-                const i = y.Core.getScriptLocation(),
-                  s = function (t) {
-                    if (!e[t]) return;
-                    const a = i + '/' + e[t];
-                    r(a, e[t]).then(function () {
-                      n++, n === e.length && o(), s(t + 1);
-                    });
-                  };
+                const i = y.Core.getScriptLocation();
+                const s = function (t) {
+                  if (!e[t]) return;
+                  const a = i + '/' + e[t];
+                  r(a, e[t]).then(function () {
+                    n++, n === e.length && o(), s(t + 1);
+                  });
+                };
                 if (t)
                   for (let t = 0; t < e.length; t++) {
                     const s = i + '/' + e[t];
@@ -6004,14 +6301,14 @@ License: https://htmlelements.com/license/ */
             Observable: class {
               constructor(e, t) {
                 const n = this;
-                var r;
+                let r;
                 return (
                   (this.name = 'observable'),
                   e && Object.assign(n, e),
                   (r = e),
                   Object.getOwnPropertyNames(Object.getPrototypeOf(r)).forEach(
                     (e) =>
-                      'constructor' === e ||
+                      e === 'constructor' ||
                       !!e.startsWith('_') ||
                       void (n[e] = r[e])
                   ),
@@ -6028,10 +6325,10 @@ License: https://htmlelements.com/license/ */
                         i === o ||
                         ((e[r] = o),
                         !(
-                          'notifyFn' !== r &&
+                          r !== 'notifyFn' &&
                           !r.startsWith('_') &&
-                          'canNotify' !== r &&
-                          (!t || -1 !== t.indexOf(r)) &&
+                          r !== 'canNotify' &&
+                          (!t || t.indexOf(r) !== -1) &&
                           n.canNotify &&
                           (n._notify({
                             target: e,
@@ -6046,20 +6343,24 @@ License: https://htmlelements.com/license/ */
                   })
                 );
               }
+
               get canNotify() {
                 const e = this;
                 return (
                   void 0 === e._canNotify && (e._canNotify = !0), e._canNotify
                 );
               }
+
               set canNotify(e) {
                 this._canNotify = e;
               }
+
               _notify(e) {
                 const t = this;
                 if (t.canNotify && t.notifyFn)
                   for (let n = 0; n < t.notifyFn.length; n++) t.notifyFn[n](e);
               }
+
               notify(e) {
                 const t = this;
                 e && (t.notifyFn || (t.notifyFn = []), t.notifyFn.push(e));
@@ -6077,9 +6378,11 @@ License: https://htmlelements.com/license/ */
                   r
                 );
               }
+
               get name() {
                 return 'Component';
               }
+
               get element() {
                 return this._element;
               }
@@ -6095,7 +6398,7 @@ License: https://htmlelements.com/license/ */
               const e = () => {
                 (window[n].RenderMode = ''), B();
               };
-              'complete' === document.readyState
+              document.readyState === 'complete'
                 ? e()
                 : (window.removeEventListener('load', e),
                   window.addEventListener('load', e));
@@ -6105,7 +6408,7 @@ License: https://htmlelements.com/license/ */
             License: P.License || 'Evaluation',
           });
           let L = window[n].Theme;
-          'manual' !== window[n].RenderMode &&
+          window[n].RenderMode !== 'manual' &&
             document.addEventListener('readystatechange', B),
             Object.defineProperty(window[n], 'Theme', {
               configurable: !1,
@@ -6131,48 +6434,53 @@ License: https://htmlelements.com/license/ */
                     innerHTML: { type: 'string', reflectToAttribute: !1 },
                   };
                 }
+
                 template() {
                   return "<div inner-h-t-m-l='[[innerHTML]]'></div>";
                 }
+
                 ready() {
                   super.ready(), this.applyContent();
                 }
+
                 refresh() {}
                 clearContent() {
                   const e = this;
                   for (; e.$.content.firstChild; )
                     e.$.content.removeChild(e.$.content.firstChild);
                 }
+
                 applyContent() {
                   const e = this;
                   if (void 0 === e.content)
                     return void (e.content = e.$.content);
-                  if ('' === e.content || null === e.content)
+                  if (e.content === '' || e.content === null)
                     return void e.clearContent();
                   if (e.content instanceof HTMLElement)
                     return (
                       e.clearContent(), void e.$.content.appendChild(e.content)
                     );
                   const t = document.createDocumentFragment();
-                  let n = document.createElement('div');
+                  const n = document.createElement('div');
                   t.appendChild(n),
                     e.content instanceof HTMLElement
                       ? n.appendChild(e.content)
                       : (n.innerHTML = e.content);
-                  let r = Array.from(n.childNodes);
+                  const r = Array.from(n.childNodes);
                   n.parentNode.removeChild(n);
                   for (let e = 0; e < r.length; e++) t.appendChild(r[e]);
                   e.clearContent(), e.$.content.appendChild(t);
                 }
+
                 propertyChangedHandler(e, t, n) {
                   super.propertyChangedHandler(e, t, n);
                   const r = this;
                   t !== n &&
-                    ('innerHTML' === e &&
+                    (e === 'innerHTML' &&
                       ((r.content = n),
                       r.applyContent(),
                       (r.innerHTML = r.content = y.Core.html(r.$.content))),
-                    'content' === e && r.applyContent());
+                    e === 'content' && r.applyContent());
                 }
               }
             ),
@@ -6196,6 +6504,7 @@ License: https://htmlelements.com/license/ */
                     },
                   };
                 }
+
                 static get listeners() {
                   return {
                     touchmove: '_touchmoveHandler',
@@ -6204,12 +6513,15 @@ License: https://htmlelements.com/license/ */
                     'document.up': '_upHandler',
                   };
                 }
+
                 static get styleUrls() {
                   return ['smart.scrollviewer.css'];
                 }
+
                 template() {
                   return '<div id="container" class="smart-container" role="presentation">\n                        <div id="scrollViewerContainer" class="smart-scroll-viewer-container" role="presentation">\n                            <div id="scrollViewerContentContainer" inner-h-t-m-l=\'[[innerHTML]]\' class="smart-scroll-viewer-content-container" role="presentation">\n                                <content></content>\n                            </div>\n                        </div>\n                        <smart-scroll-bar id="verticalScrollBar" theme="[[theme]]"  animation="[[animation]]" disabled="[[disabled]]" right-to-left="[[rightToLeft]]" orientation="vertical"></smart-scroll-bar>\n                        <smart-scroll-bar id="horizontalScrollBar" theme="[[theme]]" disabled="[[disabled]]" right-to-left="[[rightToLeft]]"></smart-scroll-bar>\n                    </div>';
                 }
+
                 appendChild(e) {
                   const t = this;
                   if (e) {
@@ -6227,6 +6539,7 @@ License: https://htmlelements.com/license/ */
                     t.$.scrollViewerContentContainer.appendChild(e);
                   }
                 }
+
                 removeChild(e) {
                   const t = this;
                   if (e) {
@@ -6244,11 +6557,13 @@ License: https://htmlelements.com/license/ */
                     t.$.scrollViewerContentContainer.removeChild(e);
                   }
                 }
+
                 removeAll() {
                   const e = this;
                   e.isCompleted &&
                     (e.$.scrollViewerContentContainer.innerHTML = '');
                 }
+
                 _horizontalScrollbarHandler(e) {
                   const t = this;
                   (t.$.scrollViewerContentContainer.style.left =
@@ -6256,6 +6571,7 @@ License: https://htmlelements.com/license/ */
                     e.stopPropagation && e.stopPropagation(),
                     t.onHorizontalChange && t.onHorizontalChange(e);
                 }
+
                 _verticalScrollbarHandler(e) {
                   const t = this;
                   (t.$.scrollViewerContentContainer.style.top =
@@ -6263,13 +6579,14 @@ License: https://htmlelements.com/license/ */
                     e.stopPropagation && e.stopPropagation(),
                     t.onVerticalChange && t.onVerticalChange(e);
                 }
+
                 _touchmoveHandler(e) {
                   const t = this;
                   if (t._touchmoveInside && e.cancelable)
                     return e.preventDefault(), void e.stopPropagation();
-                  const n = t.scrollHeight > 0,
-                    r = t.scrollWidth > 0,
-                    o = t._touchCoords;
+                  const n = t.scrollHeight > 0;
+                  const r = t.scrollWidth > 0;
+                  const o = t._touchCoords;
                   if ((!n && !r) || !o) return;
                   const i = e.touches[0];
                   let s, a, l, d;
@@ -6283,17 +6600,19 @@ License: https://htmlelements.com/license/ */
                         (a = t.scrollWidth),
                         (l = i.pageX),
                         (d = o[0]));
-                  const c = parseFloat(l.toFixed(5)),
-                    u = parseFloat(d.toFixed(5));
-                  (0 === s && c >= u) ||
+                  const c = parseFloat(l.toFixed(5));
+                  const u = parseFloat(d.toFixed(5));
+                  (s === 0 && c >= u) ||
                     (s === a && c <= u) ||
                     (l !== d && (t._touchmoveInside = !0),
                     e.cancelable && (e.preventDefault(), e.stopPropagation()));
                 }
+
                 _touchstartHandler(e) {
                   const t = e.touches[0];
                   this._touchCoords = [t.pageX, t.pageY];
                 }
+
                 _mouseWheelHandler(e) {
                   const t = this;
                   if (
@@ -6304,7 +6623,7 @@ License: https://htmlelements.com/license/ */
                     if (e.shiftKey && t.computedHorizontalScrollBarVisibility) {
                       const n = t.scrollLeft;
                       if (
-                        (0 === n && e.deltaX < 0) ||
+                        (n === 0 && e.deltaX < 0) ||
                         (n === t.scrollHeight && e.deltaX > 0)
                       )
                         return;
@@ -6324,7 +6643,7 @@ License: https://htmlelements.com/license/ */
                     if (t.computedVerticalScrollBarVisibility) {
                       const n = t.scrollTop;
                       if (
-                        (0 === n && e.deltaY < 0) ||
+                        (n === 0 && e.deltaY < 0) ||
                         (n === t.scrollHeight && e.deltaY > 0)
                       )
                         return;
@@ -6344,68 +6663,75 @@ License: https://htmlelements.com/license/ */
                     }
                   }
                 }
+
                 _overriddenHandler() {}
                 _upHandler() {
                   delete this._touchCoords, delete this._touchmoveInside;
                 }
+
                 _getScrollCoefficient(e, t) {
-                  const n = e.deltaMode,
-                    r = Math.abs(e.deltaY);
+                  const n = e.deltaMode;
+                  const r = Math.abs(e.deltaY);
                   let o;
                   return (
-                    0 === n
+                    n === 0
                       ? (o = r < 100 / 3 ? r : t)
-                      : 1 === n
+                      : n === 1
                       ? (o = r < 1 ? r * (100 / 3) : t)
-                      : 2 === n && (o = t),
+                      : n === 2 && (o = t),
                     e.deltaY < 0 ? -o : o
                   );
                 }
+
                 applyContent() {
                   super.applyContent(), this.refresh();
                 }
+
                 get computedHorizontalScrollBarVisibility() {
                   const e = this;
                   return e._scrollView && e._scrollView.hScrollBar
                     ? !e._scrollView.hScrollBar.$.hasClass('smart-hidden')
                     : null;
                 }
+
                 get computedVerticalScrollBarVisibility() {
                   const e = this;
                   return e._scrollView && e._scrollView.vScrollBar
                     ? !e._scrollView.vScrollBar.$.hasClass('smart-hidden')
                     : null;
                 }
+
                 scrollTo(e, t) {
                   const n = this;
                   n._scrollView &&
                     (void 0 !== e && n._scrollView.scrollTo(e),
                     void 0 !== t && n._scrollView.scrollTo(t, !1));
                 }
+
                 refreshScrollBarsVisibility() {
                   const e = this;
                   e._scrollView &&
                     ((e._scrollView.hScrollBar.disabled = e.disabled),
                     (e._scrollView.vScrollBar.disabled = e.disabled),
-                    'disabled' === e.horizontalScrollBarVisibility &&
+                    e.horizontalScrollBarVisibility === 'disabled' &&
                       (e._scrollView.hScrollBar.disabled = !0),
-                    'disabled' === e.verticalScrollBarVisibility &&
+                    e.verticalScrollBarVisibility === 'disabled' &&
                       (e._scrollView.vScrollBar.disabled = !0),
                     e.scrollWidth > 0
                       ? e._scrollView.hScrollBar.$.removeClass('smart-hidden')
-                      : 'visible' !== e.horizontalScrollBarVisibility &&
+                      : e.horizontalScrollBarVisibility !== 'visible' &&
                         e._scrollView.hScrollBar.$.addClass('smart-hidden'),
                     e.scrollHeight > 0
                       ? e._scrollView.vScrollBar.$.removeClass('smart-hidden')
-                      : 'visible' !== e.verticalScrollBarVisibility &&
+                      : e.verticalScrollBarVisibility !== 'visible' &&
                         e._scrollView.vScrollBar.$.addClass('smart-hidden'),
-                    'hidden' === e.horizontalScrollBarVisibility &&
+                    e.horizontalScrollBarVisibility === 'hidden' &&
                       e._scrollView.hScrollBar.$.addClass('smart-hidden'),
-                    'hidden' === e.verticalScrollBarVisibility &&
+                    e.verticalScrollBarVisibility === 'hidden' &&
                       e._scrollView.vScrollBar.$.addClass('smart-hidden'),
-                    'visible' === e.horizontalScrollBarVisibility &&
+                    e.horizontalScrollBarVisibility === 'visible' &&
                       e._scrollView.hScrollBar.$.removeClass('smart-hidden'),
-                    'visible' === e.verticalScrollBarVisibility &&
+                    e.verticalScrollBarVisibility === 'visible' &&
                       (e._scrollView.vScrollBar.$.removeClass('smart-hidden'),
                       e.disabled ||
                         (e._scrollView.vScrollBar.disabled =
@@ -6421,6 +6747,7 @@ License: https://htmlelements.com/license/ */
                           'bottom-corner'
                         )));
                 }
+
                 ready() {
                   super.ready();
                   const e = this;
@@ -6440,6 +6767,7 @@ License: https://htmlelements.com/license/ */
                       )),
                     e.refresh();
                 }
+
                 refresh() {
                   const e = this;
                   function t() {
@@ -6451,8 +6779,8 @@ License: https://htmlelements.com/license/ */
                       e.$.scrollViewerContentContainer.offsetWidth -
                       e.$.scrollViewerContainer.offsetWidth;
                     return (
-                      (n > 0 && 'hidden' !== e.horizontalScrollBarVisibility) ||
-                      'visible' === e.horizontalScrollBarVisibility
+                      (n > 0 && e.horizontalScrollBarVisibility !== 'hidden') ||
+                      e.horizontalScrollBarVisibility === 'visible'
                         ? e.$.scrollViewerContainer.classList.add('hscroll')
                         : e.$.scrollViewerContainer.classList.remove('hscroll'),
                       t && e.$.scrollViewerContainer.classList.add('vscroll'),
@@ -6469,9 +6797,9 @@ License: https://htmlelements.com/license/ */
                       Smart.Utilities.Core.Browser.Safari)
                     ) {
                       const n = e.$.scrollViewerContentContainer.getBoundingClientRect()
-                          .height,
-                        r = e.$.scrollViewerContainer.getBoundingClientRect()
-                          .height;
+                        .height;
+                      const r = e.$.scrollViewerContainer.getBoundingClientRect()
+                        .height;
                       t =
                         n && r
                           ? parseInt(n) - parseInt(r)
@@ -6483,8 +6811,8 @@ License: https://htmlelements.com/license/ */
                         e.$.scrollViewerContainer.offsetHeight;
                     return (
                       e.virtualScrollHeight && (t = e.virtualScrollHeight),
-                      (t > 0 && 'hidden' !== e.verticalScrollBarVisibility) ||
-                      'visible' === e.verticalScrollBarVisibility
+                      (t > 0 && e.verticalScrollBarVisibility !== 'hidden') ||
+                      e.verticalScrollBarVisibility === 'visible'
                         ? e.$.scrollViewerContainer.classList.add('vscroll')
                         : e.$.scrollViewerContainer.classList.remove('vscroll'),
                       n && e.$.scrollViewerContainer.classList.add('hscroll'),
@@ -6492,18 +6820,18 @@ License: https://htmlelements.com/license/ */
                     );
                   }
                   if (!e.$.scrollViewerContentContainer) return;
-                  'hidden' === e.verticalScrollBarVisibility &&
+                  e.verticalScrollBarVisibility === 'hidden' &&
                     e.$.scrollViewerContentContainer.setAttribute(
                       'disable-vertical',
                       ''
                     ),
-                    'hidden' === e.horizontalScrollBarVisibility &&
+                    e.horizontalScrollBarVisibility === 'hidden' &&
                       e.$.scrollViewerContentContainer.setAttribute(
                         'disable-horizontal',
                         ''
                       );
-                  let r = e.scrollWidth,
-                    o = e.scrollHeight;
+                  const r = e.scrollWidth;
+                  const o = e.scrollHeight;
                   (e.scrollWidth = t()),
                     (e.scrollHeight = n()),
                     (e.scrollHeight && o === e.scrollHeight) ||
@@ -6514,7 +6842,7 @@ License: https://htmlelements.com/license/ */
                       (e.scrollHeight += e._scrollView.hScrollBar.offsetHeight),
                     e.computedHorizontalScrollBarVisibility &&
                       (e.scrollWidth += e._scrollView.vScrollBar.offsetWidth),
-                    0 === e.scrollHeight &&
+                    e.scrollHeight === 0 &&
                       e.scrollWidth > 0 &&
                       e.$.container.offsetHeight - e.$.content.offsetHeight <
                         5 &&
@@ -6524,6 +6852,7 @@ License: https://htmlelements.com/license/ */
                       ((e.$.scrollViewerContainer.scrollLeft = 0),
                       (e.$.scrollViewerContainer.scrollTop = 0));
                 }
+
                 attached() {
                   const e = this;
                   super.attached(),
@@ -6535,56 +6864,63 @@ License: https://htmlelements.com/license/ */
                         e.$.verticalScrollBar
                       ));
                 }
+
                 detached() {
                   const e = this;
                   super.detached(),
                     e._scrollView &&
                       (e._scrollView.unlisten(), delete e._scrollView);
                 }
+
                 get scrollWidth() {
                   const e = this;
                   return e._scrollView && e._scrollView.hScrollBar
-                    ? 1 === e._scrollView.hScrollBar.max &&
-                      'visible' === e.horizontalScrollBarVisibility
+                    ? e._scrollView.hScrollBar.max === 1 &&
+                      e.horizontalScrollBarVisibility === 'visible'
                       ? 0
                       : e._scrollView.hScrollBar.max
                     : -1;
                 }
+
                 set scrollWidth(e) {
                   const t = this;
                   e < 0 && (e = 0),
                     t._scrollView &&
                       t._scrollView.hScrollBar &&
-                      (0 === e && 'visible' === t.horizontalScrollBarVisibility
+                      (e === 0 && t.horizontalScrollBarVisibility === 'visible'
                         ? (t._scrollView.hScrollBar.max = 0)
                         : (t._scrollView.hScrollBar.max = e),
                       t.refreshScrollBarsVisibility());
                 }
+
                 get scrollHeight() {
                   const e = this;
                   return e._scrollView && e._scrollView.vScrollBar
-                    ? 1 === e._scrollView.vScrollBar.max &&
-                      'visible' === e.verticalScrollBarVisibility
+                    ? e._scrollView.vScrollBar.max === 1 &&
+                      e.verticalScrollBarVisibility === 'visible'
                       ? 0
                       : e._scrollView.vScrollBar.max
                     : 0;
                 }
+
                 set scrollHeight(e) {
                   const t = this;
                   e < 0 && (e = 0),
                     t._scrollView &&
                       t._scrollView.vScrollBar &&
-                      (0 === e && 'visible' === t.verticalScrollBarVisibility
+                      (e === 0 && t.verticalScrollBarVisibility === 'visible'
                         ? (t._scrollView.vScrollBar.max = 1)
                         : (t._scrollView.vScrollBar.max = e),
                       t.refreshScrollBarsVisibility());
                 }
+
                 get scrollLeft() {
                   const e = this;
                   return e._scrollView && e._scrollView.hScrollBar
                     ? e._scrollView.hScrollBar.value
                     : 0;
                 }
+
                 set scrollLeft(e) {
                   const t = this;
                   e < 0 && (e = 0),
@@ -6592,12 +6928,14 @@ License: https://htmlelements.com/license/ */
                       t._scrollView.hScrollBar &&
                       (t._scrollView.hScrollBar.value = e);
                 }
+
                 get scrollTop() {
                   const e = this;
                   return e._scrollView && e._scrollView.vScrollBar
                     ? e._scrollView.vScrollBar.value
                     : 0;
                 }
+
                 set scrollTop(e) {
                   const t = this;
                   e < 0 && (e = 0),
@@ -6605,10 +6943,11 @@ License: https://htmlelements.com/license/ */
                       t._scrollView.vScrollBar &&
                       (t._scrollView.vScrollBar.value = e);
                 }
+
                 propertyChangedHandler(e, t, n) {
                   const r = this;
                   super.propertyChangedHandler(e, t, n),
-                    'animation' !== e && 'theme' !== e && r.refresh();
+                    e !== 'animation' && e !== 'theme' && r.refresh();
                 }
               }
             ),
@@ -6630,19 +6969,20 @@ License: https://htmlelements.com/license/ */
                     (o.defaultParent = n),
                     (o.closeMethod = r);
                 }
+
                 handleAutoPositioning() {
-                  const e = this,
-                    t = e.context;
-                  if ('auto' !== t.dropDownPosition || t.disabled || t.isHidden)
+                  const e = this;
+                  const t = e.context;
+                  if (t.dropDownPosition !== 'auto' || t.disabled || t.isHidden)
                     return;
                   const n = window.requestAnimationFrame;
-                  let r,
-                    o = Date.now();
+                  let r;
+                  let o = Date.now();
                   return (r = n(function i() {
                     t.isHidden ||
                       document.hidden ||
                       ((r = n(i)),
-                      ('auto' === t.dropDownPosition &&
+                      (t.dropDownPosition === 'auto' &&
                         !t.disabled &&
                         (t.isInShadowDOM
                           ? document.body.contains(t.shadowParent)
@@ -6653,9 +6993,10 @@ License: https://htmlelements.com/license/ */
                         (e.scrollHandler(), (o = Date.now())));
                   }));
                 }
+
                 checkBrowserBounds(e) {
                   const t = this.context;
-                  if ('auto' === t.dropDownPosition && !t.disabled)
+                  if (t.dropDownPosition === 'auto' && !t.disabled)
                     switch (e) {
                       case 'vertically':
                         this.checkBrowserBoundsVertically();
@@ -6668,17 +7009,18 @@ License: https://htmlelements.com/license/ */
                           this.checkBrowserBoundsHorizontally();
                     }
                 }
+
                 checkBrowserBoundsHorizontally() {
-                  const e = this.context,
-                    t = this.dropDown;
-                  let n,
-                    r = 0;
+                  const e = this.context;
+                  const t = this.dropDown;
+                  let n;
+                  let r = 0;
                   a.isMobile ||
                     window.innerWidth ===
                       document.documentElement.clientWidth ||
                     (r =
                       window.innerWidth - document.documentElement.clientWidth),
-                    null !== e._dropDownParent ? (n = !0) : (t.style.left = '');
+                    e._dropDownParent !== null ? (n = !0) : (t.style.left = '');
                   const o = window.innerWidth - r;
                   let i = e.getBoundingClientRect().left;
                   if (
@@ -6699,12 +7041,13 @@ License: https://htmlelements.com/license/ */
                         this.positionDropDown(!0);
                   }
                 }
+
                 checkBrowserBoundsVertically(e) {
-                  const t = this.context,
-                    n = this.dropDown,
-                    r = t._dropDownListPosition;
+                  const t = this.context;
+                  const n = this.dropDown;
+                  const r = t._dropDownListPosition;
                   e || (e = t.getBoundingClientRect()),
-                    0 !== e.height &&
+                    e.height !== 0 &&
                       (document.documentElement.clientHeight -
                         Math.abs(e.top + e.height + n.offsetHeight) >=
                       0
@@ -6714,6 +7057,7 @@ License: https://htmlelements.com/license/ */
                         : (t._dropDownListPosition = 'overlay-center'),
                       this.updatePositionAttribute(r, t._dropDownListPosition));
                 }
+
                 scrollHandler() {
                   const e = this.context;
                   if (!e.parentElement) return;
@@ -6724,20 +7068,21 @@ License: https://htmlelements.com/license/ */
                     e._dropDownListPosition !== n && this.positionDropDown(),
                     (e._positionTop = t.top);
                 }
+
                 getDropDownParent(e) {
-                  const t = this.context,
-                    n = this.dropDown;
+                  const t = this.context;
+                  const n = this.dropDown;
                   let r = t.dropDownAppendTo;
                   (t._positionedParent = null),
-                    null === r
+                    r === null
                       ? (t._dropDownParent = null)
-                      : 'body' === r || r === document.body
+                      : r === 'body' || r === document.body
                       ? t.getRootNode().host
                         ? (t._dropDownParent = t.getRootNode().host.shadowRoot)
                         : (t._dropDownParent = document.body)
                       : r instanceof HTMLElement
                       ? (t._dropDownParent = r)
-                      : 'string' == typeof r
+                      : typeof r === 'string'
                       ? ((r = document.getElementById(r)),
                         r instanceof HTMLElement
                           ? (t._dropDownParent = r)
@@ -6746,12 +7091,12 @@ License: https://htmlelements.com/license/ */
                       : ((t.dropDownAppendTo = null),
                         (t._dropDownParent = null));
                   let o = t._dropDownParent;
-                  if (null !== o) {
+                  if (o !== null) {
                     for (
                       ;
                       o &&
                       o instanceof HTMLElement &&
-                      'static' === window.getComputedStyle(o).position &&
+                      window.getComputedStyle(o).position === 'static' &&
                       o !== t.getShadowRootOrBody();
 
                     )
@@ -6761,18 +7106,19 @@ License: https://htmlelements.com/license/ */
                       : (t._positionedParent = o),
                       n &&
                         (n.setAttribute('animation', t.animation),
-                        '' !== t.theme && n.$.addClass(t.theme),
+                        t.theme !== '' && n.$.addClass(t.theme),
                         e &&
                           (t._dropDownParent.appendChild(n),
                           n.$.addClass('smart-drop-down-repositioned')),
-                        -1 === t.detachedChildren.indexOf(n) &&
+                        t.detachedChildren.indexOf(n) === -1 &&
                           t.detachedChildren.push(n));
                   }
                 }
+
                 dropDownAppendToChangedHandler() {
-                  const e = this.context,
-                    t = this.dropDown,
-                    n = e._dropDownParent;
+                  const e = this.context;
+                  const t = this.dropDown;
+                  const n = e._dropDownParent;
                   this.getDropDownParent(),
                     e._dropDownParent !== n &&
                       (e[this.closeMethod](),
@@ -6784,12 +7130,13 @@ License: https://htmlelements.com/license/ */
                         'font-style',
                         'font-weight',
                       ].forEach((e) => (t.style[e] = null)),
-                      null === e._dropDownParent
+                      e._dropDownParent === null
                         ? (this.defaultParent.appendChild(t),
                           t.$.removeClass('smart-drop-down-repositioned'))
                         : (e._dropDownParent.appendChild(t),
                           t.$.addClass('smart-drop-down-repositioned')));
                 }
+
                 dropDownPositionChangedHandler() {
                   const e = this;
                   (e.dropDown.style.transition = 'none'),
@@ -6797,32 +7144,36 @@ License: https://htmlelements.com/license/ */
                     e.setDropDownPosition(),
                     e.handleAutoPositioning();
                 }
+
                 dropDownAttached(e) {
                   const t = this.context;
-                  null !== t._dropDownParent &&
+                  t._dropDownParent !== null &&
                     (t._dropDownParent.appendChild(this.dropDown),
                     this.handleAutoPositioning(),
                     e && t[e]());
                 }
+
                 dropDownDetached() {
                   const e = this.context;
-                  null !== e._dropDownParent &&
+                  e._dropDownParent !== null &&
                     document.body.contains(this.dropDown) &&
                     document.body.contains(e._dropDownParent) &&
                     e._dropDownParent.removeChild(this.dropDown);
                 }
+
                 setDropDownPosition() {
-                  const e = this.context,
-                    t = e.dropDownPosition,
-                    n = e._dropDownListPosition;
-                  'auto' === t
+                  const e = this.context;
+                  const t = e.dropDownPosition;
+                  const n = e._dropDownListPosition;
+                  t === 'auto'
                     ? this.checkBrowserBounds()
                     : (e._dropDownListPosition = t),
                     this.updatePositionAttribute(n, e._dropDownListPosition);
                 }
+
                 updatePositionAttribute(e, t) {
-                  const n = this.context,
-                    r = this.dropDown;
+                  const n = this.context;
+                  const r = this.dropDown;
                   n.$.dropDownButton &&
                     !n.$.dropDownButton.hasAttribute(t) &&
                     (n.$.dropDownButton.removeAttribute(e),
@@ -6835,10 +7186,11 @@ License: https://htmlelements.com/license/ */
                         r.style.transition = null;
                       }));
                 }
+
                 positionDropDown(e) {
-                  const t = this.context,
-                    n = this.dropDown;
-                  if (!t.opened || null === t._dropDownParent) return;
+                  const t = this.context;
+                  const n = this.dropDown;
+                  if (!t.opened || t._dropDownParent === null) return;
                   const r = t.getBoundingClientRect();
                   let o, i;
                   if (this.customPositionDropDown) {
@@ -6874,15 +7226,17 @@ License: https://htmlelements.com/license/ */
                   (n.style.top = i + s.y + 'px'),
                     e || (n.style.left = o + s.x + 'px');
                 }
+
                 getDropDownOffset() {
                   const e = this.context._positionedParent;
                   let t, n;
-                  if (e && '#document-fragment' !== e.nodeName) {
+                  if (e && e.nodeName !== '#document-fragment') {
                     const r = e.getBoundingClientRect();
                     (t = -r.left), (n = -r.top);
                   } else (t = window.pageXOffset), (n = window.pageYOffset);
                   return { x: t, y: n };
                 }
+
                 placeOverlay() {
                   const e = this.context;
                   if (!e.dropDownOverlay || e._overlay) return;
@@ -6895,9 +7249,10 @@ License: https://htmlelements.com/license/ */
                     document.body.appendChild(t),
                     (e._overlay = t);
                 }
+
                 removeOverlay(e) {
-                  const t = this,
-                    n = t.context;
+                  const t = this;
+                  const n = t.context;
                   n._overlay &&
                     (n.hasAnimation && e
                       ? requestAnimationFrame(function e() {
@@ -6936,12 +7291,14 @@ License: https://htmlelements.com/license/ */
                     b: this.b,
                   }));
               }
+
               getStandardizedColor(e) {
                 const t = document.createElement('canvas').getContext('2d');
                 return (t.fillStyle = e), t.fillStyle;
               }
+
               getInvertedColor() {
-                if ('' === this.hex) return 'transparent';
+                if (this.hex === '') return 'transparent';
                 const e = {
                   '#DD5347': '#F8DCDA',
                   '#8E24AA': '#F9EEFB',
@@ -6979,12 +7336,13 @@ License: https://htmlelements.com/license/ */
                   ? 'Black'
                   : 'White';
               }
+
               hexToRgb(e) {
-                let t = '00',
-                  n = '00',
-                  r = '00';
+                let t = '00';
+                let n = '00';
+                let r = '00';
                 return (
-                  6 === (e = this.validateHex(e)).length
+                  (e = this.validateHex(e)).length === 6
                     ? ((t = e.substring(0, 2)),
                       (n = e.substring(2, 4)),
                       (r = e.substring(4, 6)))
@@ -7002,6 +7360,7 @@ License: https://htmlelements.com/license/ */
                   }
                 );
               }
+
               validateHex(e) {
                 return (
                   (e = (e = new String(e).toUpperCase()).replace(
@@ -7011,13 +7370,15 @@ License: https://htmlelements.com/license/ */
                   e
                 );
               }
+
               webSafeDec(e) {
                 return (e = Math.round(e / 51)), (e *= 51);
               }
+
               hexToWebSafe(e) {
                 let t, n, r;
                 return (
-                  3 === e.length
+                  e.length === 3
                     ? ((t = e.substring(0, 1)),
                       (n = e.substring(1, 1)),
                       (r = e.substring(2, 1)))
@@ -7029,6 +7390,7 @@ License: https://htmlelements.com/license/ */
                     this.intToHex(this.webSafeDec(this.hexToInt(r)))
                 );
               }
+
               rgbToWebSafe(e) {
                 return {
                   r: this.webSafeDec(e.r),
@@ -7036,20 +7398,24 @@ License: https://htmlelements.com/license/ */
                   b: this.webSafeDec(e.b),
                 };
               }
+
               rgbToHex(e) {
                 return (
                   this.intToHex(e.r) + this.intToHex(e.g) + this.intToHex(e.b)
                 );
               }
+
               intToHex(e) {
                 let t = parseInt(e).toString(16);
-                return 1 === t.length && (t = '0' + t), t.toUpperCase();
+                return t.length === 1 && (t = '0' + t), t.toUpperCase();
               }
+
               hexToInt(e) {
                 return parseInt(e, 16);
               }
+
               setRgb(e, t, n) {
-                let r = function (e) {
+                const r = function (e) {
                   return e < 0 || e > 255 || isNaN(parseInt(e)) ? 0 : e;
                 };
                 (this.r = r(e)),
@@ -7057,9 +7423,10 @@ License: https://htmlelements.com/license/ */
                   (this.b = r(n)),
                   (this.hex = this.rgbToHex(this));
               }
+
               setHex(e) {
                 this.hex = e;
-                let t = this.hexToRgb(this.hex);
+                const t = this.hexToRgb(this.hex);
                 (this.r = t.r), (this.g = t.g), (this.b = t.b);
               }
             });
@@ -7082,12 +7449,15 @@ License: https://htmlelements.com/license/ */
                 value: { value: null, type: 'any' },
               };
             }
+
             get enableShadowDOM() {
               return !1;
             }
+
             template() {
               return '';
             }
+
             ready() {
               const e = this;
               if (
@@ -7106,29 +7476,30 @@ License: https://htmlelements.com/license/ */
                   t._lazyInitItems();
                 })));
             }
+
             propertyChangedHandler(e, t, n) {
               const o = this;
               if (
                 (super.propertyChangedHandler(e, t, n),
-                'smart-tree-item' === o.tagName.toLowerCase())
+                o.tagName.toLowerCase() === 'smart-tree-item')
               )
                 return;
-              const i = o.menu,
-                r = o.parentItem,
-                a = r || i;
-              if ('label' === e)
-                return '' === n
+              const i = o.menu;
+              const r = o.parentItem;
+              const a = r || i;
+              if (e === 'label')
+                return n === ''
                   ? void (o.label = t)
                   : (o.setAttribute('aria-label', n),
                     void (i && i._setItemLabel(o, n)));
               if (!i) return;
-              if ('separator' === e) return void i._refreshCheckableItems(a);
-              if ('disabled' !== e || !1 === n || !o.checked) return;
+              if (e === 'separator') return void i._refreshCheckableItems(a);
+              if (e !== 'disabled' || !1 === n || !o.checked) return;
               super.propertyChangedHandler(e, t, n), (o.checked = !1);
               const s = a.checkMode;
-              'radioButton' === s
+              s === 'radioButton'
                 ? i._validateRadioButtonSelection(r, o.level, [])
-                : 'checkbox' !== s && i._refreshCheckableItems(a);
+                : s !== 'checkbox' && i._refreshCheckableItems(a);
             }
           }
         ),
@@ -7148,12 +7519,15 @@ License: https://htmlelements.com/license/ */
                   value: { value: null, type: 'any' },
                 };
               }
+
               get enableShadowDOM() {
                 return !1;
               }
+
               template() {
                 return '';
               }
+
               ready() {
                 const e = this;
                 if (
@@ -7174,27 +7548,27 @@ License: https://htmlelements.com/license/ */
                     t._lazyInitItems();
                   })));
               }
+
               propertyChangedHandler(e, t, n) {
                 const o = this;
                 if (
                   (super.propertyChangedHandler(e, t, n),
-                  'smart-tree-items-group' === o.tagName.toLowerCase())
+                  o.tagName.toLowerCase() === 'smart-tree-items-group')
                 )
                   return;
-                const i = o.menu,
-                  r = o.parentItem,
-                  a = r || i;
-                if ('label' === e)
-                  return '' === n
+                const i = o.menu;
+                const r = o.parentItem;
+                const a = r || i;
+                if (e === 'label')
+                  return n === ''
                     ? void (o.label = t)
                     : (o.setAttribute('aria-label', n),
                       void (i && i._setItemLabel(o, n)));
                 if (
                   i &&
-                  -1 !==
-                    ['checkable', 'checkMode', 'disabled', 'separator'].indexOf(
-                      e
-                    )
+                  ['checkable', 'checkMode', 'disabled', 'separator'].indexOf(
+                    e
+                  ) !== -1
                 )
                   switch (e) {
                     case 'checkable':
@@ -7202,7 +7576,7 @@ License: https://htmlelements.com/license/ */
                         ? o.itemContainer.setAttribute('checkable', '')
                         : o.itemContainer.removeAttribute('checkable'),
                         i._isContainerOpened(o.container.level, o.container) &&
-                          'tree' !== i.mode &&
+                          i.mode !== 'tree' &&
                           !i._minimized &&
                           i._closeSubContainers(o.level + 2),
                         i._updateItemRoles(o);
@@ -7223,9 +7597,9 @@ License: https://htmlelements.com/license/ */
                       if (!o.checked) return;
                       o.checked = !1;
                       const e = a.checkMode;
-                      'radioButton' === e
+                      e === 'radioButton'
                         ? i._validateRadioButtonSelection(r, o.level, [])
-                        : 'checkbox' !== e && i._refreshCheckableItems(a);
+                        : e !== 'checkbox' && i._refreshCheckableItems(a);
                       break;
                     }
                     case 'separator':
@@ -7301,6 +7675,7 @@ License: https://htmlelements.com/license/ */
                   valueMember: { value: 'value', type: 'string' },
                 };
               }
+
               static get listeners() {
                 return {
                   'container.click': '_selectionHandler',
@@ -7320,36 +7695,41 @@ License: https://htmlelements.com/license/ */
                   'document.up': '_documentUpHandler',
                 };
               }
+
               static get requires() {
                 return { 'Smart.RepeatButton': 'smart.button.js' };
               }
+
               static get styleUrls() {
                 return ['smart.button.css', 'smart.menu.css'];
               }
+
               get items() {
                 return this._menuItems;
               }
+
               template() {
                 return '<div id="container" role="presentation">\n                    <div id="minimizedHeader" class="smart-header smart-minimized-header smart-hidden" role="presentation">\n                        <div id="hamburgerIcon" class="smart-hamburger-icon smart-hidden" role="button" aria-label="Toggle minimized menu" aria-haspopup="true">\n                            <div id="hamburgerIconLineTop" class="smart-hamburger-icon-line smart-hamburger-icon-line-top" role="presentation"></div>\n                            <div id="hamburgerIconLineCenter" class="smart-hamburger-icon-line smart-hamburger-icon-line-center" role="presentation"></div>\n                            <div id="hamburgerIconLineBottom" class="smart-hamburger-icon-line smart-hamburger-icon-line-bottom" role="presentation"></div>\n                            <div id="customIconContainer" class="smart-hamburger-icon-custom-container smart-hidden" role="presentation"></div>\n                        </div>\n                    </div>\n                    <smart-repeat-button id="scrollButtonNear" class="smart-menu-scroll-button smart-spin-button smart-scroll-button-near smart-hidden" animation="[[animation]]" unfocusable right-to-left="[[rightToLeft]]">\n                        <div id="arrowNear" class="smart-arrow" aria-hidden="true"></div>\n                    </smart-repeat-button>\n                    <div id="mainContainer" class="smart-menu-main-container" role="presentation">\n                        <content></content>\n                    </div>\n                    <smart-repeat-button id="scrollButtonFar" class="smart-menu-scroll-button smart-spin-button smart-scroll-button-far smart-hidden" animation="[[animation]]" unfocusable right-to-left="[[rightToLeft]]">\n                        <div id="arrowFar" class="smart-arrow" aria-hidden="true"></div>\n                    </smart-repeat-button>\n                </div>';
               }
+
               attached() {
                 const e = this;
                 if (
                   (super.attached(),
                   !e.isCompleted ||
                     !e.isRendered ||
-                    'tree' === e._element ||
+                    e._element === 'tree' ||
                     (Smart.ListMenu && e instanceof Smart.ListMenu))
                 )
                   return;
                 const t = e._scrollInfo;
-                if (null !== e.dropDownAppendTo) {
+                if (e.dropDownAppendTo !== null) {
                   if (e._minimized)
                     e._dropDownParent.appendChild(e.$.mainContainer);
                   else
                     for (let t = 0; t < e._containersInBody.length; t++)
                       e._dropDownParent.appendChild(e._containersInBody[t]);
-                  'dropDown' === e.mode &&
+                  e.mode === 'dropDown' &&
                     (e._dropDownParent === e.parentElement
                       ? e._dynamicallyReparented
                         ? delete e._dynamicallyReparented
@@ -7365,27 +7745,30 @@ License: https://htmlelements.com/license/ */
                     (t.scrollLeft = e.left), (t.scrollTop = e.top);
                   });
               }
+
               detached() {
                 const e = this;
                 super.detached(),
-                  'tree' === e._element ||
+                  e._element === 'tree' ||
                     (Smart.ListMenu && e instanceof Smart.ListMenu) ||
                     (e._close(),
-                    null !== e.dropDownAppendTo &&
+                    e.dropDownAppendTo !== null &&
                       (e._minimized
                         ? e._dropDownParent.removeChild(e.$.mainContainer)
                         : e._removeContainersInBody()));
               }
+
               ready() {
                 super.ready();
               }
+
               render() {
                 const e = this;
                 (e._element = 'menu'),
                   (e._edgeMacFF =
                     Smart.Utilities.Core.Browser.Edge ||
                     (Smart.Utilities.Core.Browser.Firefox &&
-                      -1 !== navigator.platform.toLowerCase().indexOf('mac'))),
+                      navigator.platform.toLowerCase().indexOf('mac') !== -1)),
                   (e._containers = []),
                   (e._containersInBody = []),
                   (e._openedContainers = []),
@@ -7396,6 +7779,7 @@ License: https://htmlelements.com/license/ */
                   e._createElement(),
                   super.render();
               }
+
               addItem(e, t) {
                 const n = this;
                 if (
@@ -7404,7 +7788,7 @@ License: https://htmlelements.com/license/ */
                     e instanceof Smart.MenuItemsGroup
                   )
                 )
-                  if ('string' == typeof e) {
+                  if (typeof e === 'string') {
                     const t = document.createElement('smart-menu-item');
                     (t.label = e), (e = t);
                   } else {
@@ -7429,7 +7813,7 @@ License: https://htmlelements.com/license/ */
                   r.appendChild(e),
                   n._checkOverflowAddRemove(e.level, r),
                   e instanceof Smart.MenuItemsGroup &&
-                    ('tree' === n.mode || n._minimized))
+                    (n.mode === 'tree' || n._minimized))
                 ) {
                   const t = e.getElementsByClassName(
                     'smart-menu-items-group-arrow'
@@ -7439,12 +7823,13 @@ License: https://htmlelements.com/license/ */
                       'smart-menu-items-group-arrow down smart-arrow-down';
                   n._expandItemsByDefault();
                 }
-                n._checkOverflow(n.$.mainContainer, 'horizontal' === n.mode, [
+                n._checkOverflow(n.$.mainContainer, n.mode === 'horizontal', [
                   n.$.scrollButtonNear,
                   n.$.scrollButtonFar,
                 ]),
                   n._refreshCheckableItems(o);
               }
+
               checkItem(e) {
                 void 0 === (e = this.getItem(e)) ||
                   e.checked ||
@@ -7452,6 +7837,7 @@ License: https://htmlelements.com/license/ */
                   e.templateApplied ||
                   this._toggleItem(e);
               }
+
               clear() {
                 const e = this;
                 (e.$.mainContainer.innerHTML = ''),
@@ -7464,9 +7850,10 @@ License: https://htmlelements.com/license/ */
                   (e._menuItemsGroupsToExpand = []),
                   (e._additionalScrollButtons = []);
               }
+
               clickItem(e) {
                 const t = this;
-                'string' == typeof e && (e = t.getItem(e)),
+                typeof e === 'string' && (e = t.getItem(e)),
                   e &&
                     e.nodeName &&
                     t._selectionHandler({
@@ -7477,9 +7864,10 @@ License: https://htmlelements.com/license/ */
                       preventDefault: () => {},
                     });
               }
+
               close() {
                 const e = this;
-                'dropDown' !== e.mode ||
+                e.mode !== 'dropDown' ||
                   (!1 === e.opened &&
                     e.$.hasClass('smart-visibility-hidden')) ||
                   (e.$.fireEvent(
@@ -7492,10 +7880,11 @@ License: https://htmlelements.com/license/ */
                       e._close(),
                       e.$.fireEvent('close')));
               }
+
               collapseItem(e, t) {
-                const n = this,
-                  o = n.animation,
-                  i = !1 === t && n.hasAnimation;
+                const n = this;
+                const o = n.animation;
+                const i = !1 === t && n.hasAnimation;
                 if (void 0 === e)
                   return (
                     i && (n.animation = 'none'),
@@ -7525,14 +7914,15 @@ License: https://htmlelements.com/license/ */
                       void 0,
                       !1 !== arguments[2]
                     ),
-                    (1 !== r && 'tree' !== t) ||
-                      n._checkOverflow(n.$.mainContainer, 'horizontal' === t, [
+                    (r !== 1 && t !== 'tree') ||
+                      n._checkOverflow(n.$.mainContainer, t === 'horizontal', [
                         n.$.scrollButtonNear,
                         n.$.scrollButtonFar,
                       ]),
                     i && (n.animation = o);
                 }
               }
+
               expandItem(e, t) {
                 const n = this;
                 if (
@@ -7543,9 +7933,9 @@ License: https://htmlelements.com/license/ */
                 )
                   return;
                 void 0 !== Smart.Menu.processTimer && n._lazyInitItems();
-                const o = [e],
-                  i = n.animation,
-                  r = !1 === t && n.hasAnimation;
+                const o = [e];
+                const i = n.animation;
+                const r = !1 === t && n.hasAnimation;
                 let a = e.parentItem;
                 for (
                   r && (n.animation = 'none'), n._discardKeyboardHover();
@@ -7568,18 +7958,19 @@ License: https://htmlelements.com/license/ */
                 }
                 r && (n.animation = i);
               }
+
               getItem(e) {
                 const t = this;
                 let n;
-                if (null != e && t._menuItems) {
-                  if ('string' == typeof e) {
+                if (e != null && t._menuItems) {
+                  if (typeof e === 'string') {
                     if (/^[0-9]*([.]?[0-9]*)*$/gm.test(e))
                       return t._menuItems[e];
                     if (
                       ((n = t.$.mainContainer.querySelector(
                         '[id="' + e + '"]'
                       )),
-                      null === n)
+                      n === null)
                     )
                       return t._menuItems[e];
                   } else {
@@ -7596,6 +7987,7 @@ License: https://htmlelements.com/license/ */
                     return n;
                 }
               }
+
               maximize() {
                 const e = this;
                 if (!e._minimized) return;
@@ -7608,7 +8000,7 @@ License: https://htmlelements.com/license/ */
                     (e.$.mainContainer.id = e.$.mainContainer.getAttribute(
                       'smart-id'
                     )),
-                  'none' !== t && (e.animation = 'none'),
+                  t !== 'none' && (e.animation = 'none'),
                   e._positionDetection.removeOverlay(),
                   e._closeSubContainers(2),
                   e.$minimizedHeader.addClass('smart-hidden'),
@@ -7616,12 +8008,12 @@ License: https://htmlelements.com/license/ */
                   e._minimizedDropDownOpened &&
                     (e.$hamburgerIcon.removeClass('smart-close-button'),
                     (e._minimizedDropDownOpened = !1)),
-                  null !== e.dropDownAppendTo &&
+                  e.dropDownAppendTo !== null &&
                     e._appendMinimizedContainerToMenu(
                       e.$.mainContainer,
                       e.$.scrollButtonFar
                     ),
-                  'tree' !== e.mode)
+                  e.mode !== 'tree')
                 ) {
                   e.$mainContainer.addClass('smart-menu-main-container'),
                     e.$mainContainer.removeClass(
@@ -7635,18 +8027,18 @@ License: https://htmlelements.com/license/ */
                       t[n],
                       t[n].parentElement.parentElement.level + 1
                     );
-                  null !== e.dropDownAppendTo &&
+                  e.dropDownAppendTo !== null &&
                     e._moveDropDownsToExternalContainer(),
                     e._applyContainerFixedHeight();
                 }
                 e.$mainContainer.removeClass('smart-visibility-hidden'),
                   e.$hamburgerIcon.addClass('smart-hidden'),
                   e.removeAttribute('minimized'),
-                  e._checkOverflow(e.$.mainContainer, 'horizontal' === e.mode, [
+                  e._checkOverflow(e.$.mainContainer, e.mode === 'horizontal', [
                     e.$.scrollButtonNear,
                     e.$.scrollButtonFar,
                   ]),
-                  'none' !== t &&
+                  t !== 'none' &&
                     setTimeout(function () {
                       e.animation = t;
                     }, 0),
@@ -7658,22 +8050,23 @@ License: https://htmlelements.com/license/ */
                   e.setAttribute('role', 'menu'),
                   e.setAttribute(
                     'aria-orientation',
-                    'horizontal' === e.mode ? 'horizontal' : 'vertical'
+                    e.mode === 'horizontal' ? 'horizontal' : 'vertical'
                   );
               }
+
               minimize() {
                 const e = this;
-                if (e._minimized || 'dropDown' === e.mode) return;
+                if (e._minimized || e.mode === 'dropDown') return;
                 e.$minimizedHeader.removeClass('smart-hidden');
-                const t = null !== e.dropDownAppendTo,
-                  n = e.animation,
-                  o = e.hasAnimation;
+                const t = e.dropDownAppendTo !== null;
+                const n = e.animation;
+                const o = e.hasAnimation;
                 if (
                   (o && (e.animation = 'none'),
                   e._positionDetection.removeOverlay(),
                   e._closeSubContainers(2),
                   o && t && (e.animation = n),
-                  'tree' !== e.mode &&
+                  e.mode !== 'tree' &&
                     (t && e._moveDropDownsToMenu(),
                     e._removeContainerFixedHeight()),
                   e._hideMainContainerScrollButtons(),
@@ -7697,7 +8090,7 @@ License: https://htmlelements.com/license/ */
                   }, 0),
                   (e._minimized = !0),
                   e.setAttribute('minimized', ''),
-                  'tree' !== e.mode)
+                  e.mode !== 'tree')
                 )
                   for (let t = 0; t < e._containers.length; t++) {
                     const n = e._containers[t];
@@ -7721,9 +8114,10 @@ License: https://htmlelements.com/license/ */
                     'vertical'
                   );
               }
+
               open(e, t) {
                 const n = this;
-                if ('dropDown' !== n.mode) return;
+                if (n.mode !== 'dropDown') return;
                 if (n.$.fireEvent('opening').defaultPrevented)
                   return void (n.opened = !1);
                 let o;
@@ -7738,9 +8132,9 @@ License: https://htmlelements.com/license/ */
                       : ((e += window.pageXOffset), (t += window.pageYOffset));
                 }
                 let i =
-                    e + n.offsetWidth - document.documentElement.clientWidth,
-                  r =
-                    t + n.offsetHeight - document.documentElement.clientHeight;
+                  e + n.offsetWidth - document.documentElement.clientWidth;
+                let r =
+                  t + n.offsetHeight - document.documentElement.clientHeight;
                 o
                   ? ((i += o.left), (r += o.top))
                   : ((i -= window.pageXOffset), (r -= window.pageYOffset)),
@@ -7770,23 +8164,24 @@ License: https://htmlelements.com/license/ */
                       delete n._checkOverflowOnOpen),
                     n._noAutoFocus || n.focus());
               }
+
               removeItem(e) {
                 const t = this;
                 if (void 0 === (e = t.getItem(e))) return;
-                const n = e.parentElement,
-                  o = e.parentItem || t;
+                const n = e.parentElement;
+                const o = e.parentItem || t;
                 if (e instanceof Smart.MenuItemsGroup) {
                   const n = e.container;
                   if (
                     (t._isContainerOpened(n.level, n) &&
                       t._closeSubContainers(n.level, n),
-                    1 === e.level)
+                    e.level === 1)
                   ) {
                     const e = t._containersInBody.indexOf(n);
-                    -1 !== e &&
+                    e !== -1 &&
                       (t._containersInBody.splice(e, 1),
-                      null === t.dropDownAppendTo ||
-                        'tree' === t.mode ||
+                      t.dropDownAppendTo === null ||
+                        t.mode === 'tree' ||
                         t._minimized ||
                         t._dropDownParent.removeChild(n));
                   }
@@ -7798,6 +8193,7 @@ License: https://htmlelements.com/license/ */
                   t._checkOverflowAddRemove(e.level, n),
                   t._refreshCheckableItems(o);
               }
+
               uncheckItem(e) {
                 void 0 === (e = this.getItem(e)) ||
                   !e.checked ||
@@ -7805,31 +8201,32 @@ License: https://htmlelements.com/license/ */
                   e.templateApplied ||
                   this._toggleItem(e);
               }
+
               propertyChangedHandler(e, t, n) {
                 super.propertyChangedHandler(e, t, n);
                 const o = this;
-                if ('tree' !== o._element)
+                if (o._element !== 'tree')
                   switch (e) {
                     case 'animation':
                       o.$.mainContainer.setAttribute('animation', n),
                         o._additionalScrollButtons.forEach(function (e) {
                           (e[0].animation = n), (e[1].animation = n);
                         }),
-                        null !== o._dropDownParent &&
+                        o._dropDownParent !== null &&
                           o._containers.forEach(function (e) {
                             e.setAttribute('animation', n);
                           });
                       break;
                     case 'checkable':
-                      'tree' === o.mode || o._minimized
+                      o.mode === 'tree' || o._minimized
                         ? o._minimized &&
-                          null !== o.dropDownAppendTo &&
+                          o.dropDownAppendTo !== null &&
                           r('checkable', o.$.mainContainer, n)
                         : o._closeSubContainers(2),
                         o._updateItemRoles(o);
                       break;
                     case 'checkboxes':
-                      if ((o._close(), null !== o.dropDownAppendTo)) {
+                      if ((o._close(), o.dropDownAppendTo !== null)) {
                         for (let e = 0; e < o._containers.length; e++)
                           r('checkboxes', o._containers[e], n);
                         o._minimized && r('checkboxes', o.$.mainContainer, n);
@@ -7839,7 +8236,7 @@ License: https://htmlelements.com/license/ */
                     case 'checkMode':
                       o._changeToRadioButtonMode(n, o.$.mainContainer),
                         o._minimized &&
-                          null !== o.dropDownAppendTo &&
+                          o.dropDownAppendTo !== null &&
                           o.$.mainContainer.setAttribute('check-mode', n),
                         o._updateItemRoles(o);
                       break;
@@ -7866,11 +8263,11 @@ License: https://htmlelements.com/license/ */
                       if (
                         (o._positionDetection.getDropDownParent(),
                         o._dropDownParent === e ||
-                          ('tree' === o.mode && !o._minimized))
+                          (o.mode === 'tree' && !o._minimized))
                       )
                         return;
                       if ((o._close(), o._minimized))
-                        return void (null === n
+                        return void (n === null
                           ? o._appendMinimizedContainerToMenu(
                               o.$.mainContainer,
                               o.$.scrollButtonFar
@@ -7878,17 +8275,17 @@ License: https://htmlelements.com/license/ */
                           : o._appendMinimizedContainerToExternalElement(
                               o.$.mainContainer
                             ));
-                      if (null !== o._dropDownParent && null === e)
+                      if (o._dropDownParent !== null && e === null)
                         o._moveDropDownsToExternalContainer();
-                      else if (null === o._dropDownParent && null !== e)
+                      else if (o._dropDownParent === null && e !== null)
                         o._moveDropDownsToMenu();
-                      else if (null !== o._dropDownParent && null !== e)
+                      else if (o._dropDownParent !== null && e !== null)
                         for (let e = 0; e < o._containersInBody.length; e++)
                           o._dropDownParent.appendChild(o._containersInBody[e]);
-                      null !== n || o.$mainContainer.hasClass('simple')
+                      n !== null || o.$mainContainer.hasClass('simple')
                         ? o._checkOverflow(
                             o.$.mainContainer,
-                            'horizontal' === o.mode,
+                            o.mode === 'horizontal',
                             [o.$.scrollButtonNear, o.$.scrollButtonFar]
                           )
                         : o._hideMainContainerScrollButtons();
@@ -7896,7 +8293,7 @@ License: https://htmlelements.com/license/ */
                         o._containersFixedHeight[
                           e
                         ].itemContainer.checkOverflow = !0;
-                      'dropDown' === o.mode &&
+                      o.mode === 'dropDown' &&
                         (o.close({ trigger: 'internal' }),
                         o._reparentMenu(!0, e));
                       break;
@@ -7910,21 +8307,21 @@ License: https://htmlelements.com/license/ */
                         (o.$.scrollButtonNear.disabled = n),
                         (o.$.scrollButtonFar.disabled = n),
                         n ||
-                          (null === o.dropDownAppendTo &&
+                          (o.dropDownAppendTo === null &&
                             !o.$mainContainer.hasClass('simple') &&
-                            'tree' !== o.mode) ||
+                            o.mode !== 'tree') ||
                           o._updateScrollButtonVisibility(
                             o.$.mainContainer,
-                            'horizontal' === o.mode,
+                            o.mode === 'horizontal',
                             [o.$.scrollButtonNear, o.$.scrollButtonFar]
                           );
                       break;
                     case 'dropDownPosition':
                     case 'mode': {
-                      if ('mode' === e) {
+                      if (e === 'mode') {
                         if (
                           (delete o._dynamicallyReparented,
-                          'tree' === t || o._minimized
+                          t === 'tree' || o._minimized
                             ? (o._closeSubContainersTreeMode(
                                 2,
                                 void 0,
@@ -7943,22 +8340,22 @@ License: https://htmlelements.com/license/ */
                             o.$hamburgerIcon.removeClass('smart-close-button'),
                             o.$.hamburgerIcon.setAttribute('aria-expanded', !1),
                             (o._minimizedDropDownOpened = !1)),
-                          ('horizontal' !== n && 'horizontal' !== t) ||
+                          (n !== 'horizontal' && t !== 'horizontal') ||
                             o._changeScrollButtonsArrows(),
                           o._minimized)
                         )
-                          return void ('dropDown' === n && (o.mode = t));
+                          return void (n === 'dropDown' && (o.mode = t));
                         o.setAttribute(
                           'aria-orientation',
-                          'horizontal' === o.mode ? 'horizontal' : 'vertical'
+                          o.mode === 'horizontal' ? 'horizontal' : 'vertical'
                         ),
                           !1 === o.opened &&
-                            ('dropDown' === n
+                            (n === 'dropDown'
                               ? o.$.addClass('smart-visibility-hidden')
-                              : 'dropDown' === t &&
+                              : t === 'dropDown' &&
                                 o.$.removeClass('smart-visibility-hidden')),
-                          'tree' === t
-                            ? (null !== o.dropDownAppendTo &&
+                          t === 'tree'
+                            ? (o.dropDownAppendTo !== null &&
                                 o._moveDropDownsToExternalContainer(),
                               o.$mainContainer.addClass(
                                 'smart-menu-main-container'
@@ -7967,27 +8364,27 @@ License: https://htmlelements.com/license/ */
                                 'smart-menu-minimized-items-container'
                               ),
                               o._applyContainerFixedHeight())
-                            : 'tree' === n &&
-                              (null !== o.dropDownAppendTo &&
+                            : n === 'tree' &&
+                              (o.dropDownAppendTo !== null &&
                                 o._moveDropDownsToMenu(),
                               o._applyTreeMode()),
-                          'auto' === o.overflow &&
+                          o.overflow === 'auto' &&
                             o._hideMainContainerScrollButtons(),
                           i();
                       }
-                      if ('tree' === o.mode || o._minimized)
+                      if (o.mode === 'tree' || o._minimized)
                         return (
                           o._minimizedDropDownOpened && o._close(),
                           void (
                             o._minimized &&
-                            null !== o.dropDownAppendTo &&
+                            o.dropDownAppendTo !== null &&
                             o.$.mainContainer.setAttribute(
                               o.properties[e].attributeName,
                               n
                             )
                           )
                         );
-                      'dropDownPosition' === e && o._close();
+                      e === 'dropDownPosition' && o._close();
                       const r = o._containers.map((e) => e.menuItemsGroup);
                       for (let e = 0; e < r.length; e++) {
                         const t = r[e];
@@ -7996,7 +8393,7 @@ License: https://htmlelements.com/license/ */
                           t.level + 1
                         );
                       }
-                      if (null !== o.dropDownAppendTo)
+                      if (o.dropDownAppendTo !== null)
                         for (let t = 0; t < o._containers.length; t++) {
                           const i = o._containers[t];
                           i.setAttribute(Smart.Utilities.Core.toDash(e), n),
@@ -8021,7 +8418,7 @@ License: https://htmlelements.com/license/ */
                       o._handleOverflowChange();
                       break;
                     case 'rightToLeft':
-                      if ('tree' !== o.mode) {
+                      if (o.mode !== 'tree') {
                         const e = o._containers.map((e) => e.menuItemsGroup);
                         for (let t = 0; t < e.length; t++) {
                           const n = e[t];
@@ -8030,7 +8427,7 @@ License: https://htmlelements.com/license/ */
                             n.level + 1
                           );
                         }
-                        if (null !== o.dropDownAppendTo) {
+                        if (o.dropDownAppendTo !== null) {
                           n
                             ? o.$.mainContainer.setAttribute(
                                 'right-to-left',
@@ -8055,28 +8452,28 @@ License: https://htmlelements.com/license/ */
                       break;
                     case 'theme':
                       if (
-                        null === o.dropDownAppendTo ||
+                        o.dropDownAppendTo === null ||
                         (Smart.ListMenu && o instanceof Smart.ListMenu)
                       )
                         return;
                       if (o._minimized)
-                        '' !== t && o.$mainContainer.removeClass(t),
-                          '' !== n && o.$mainContainer.addClass(n);
+                        t !== '' && o.$mainContainer.removeClass(t),
+                          n !== '' && o.$mainContainer.addClass(n);
                       else
                         for (let e = 0; e < o._containers.length; e++) {
                           const i = o._containers[e];
-                          '' !== t && i.classList.remove(t),
-                            '' !== n && i.classList.add(n);
+                          t !== '' && i.classList.remove(t),
+                            n !== '' && i.classList.add(n);
                         }
                       break;
                     case 'unfocusable':
                       o._setFocusable();
                   }
                 function i() {
-                  (null === o.dropDownAppendTo && 'tree' !== o.mode) ||
+                  (o.dropDownAppendTo === null && o.mode !== 'tree') ||
                     o._checkOverflow(
                       o.$.mainContainer,
-                      'horizontal' === o.mode,
+                      o.mode === 'horizontal',
                       [o.$.scrollButtonNear, o.$.scrollButtonFar]
                     );
                 }
@@ -8084,9 +8481,10 @@ License: https://htmlelements.com/license/ */
                   n ? t.setAttribute(e, '') : t.removeAttribute(e);
                 }
               }
+
               _addOpenedContainer(e, t) {
                 const n = this;
-                if ('tree' === n.mode || n._minimized) {
+                if (n.mode === 'tree' || n._minimized) {
                   n._openedContainers[e] || (n._openedContainers[e] = []);
                   const o = t.menuItemsGroup;
                   return (
@@ -8098,12 +8496,13 @@ License: https://htmlelements.com/license/ */
                 }
                 n._openedContainers[e] = t;
               }
+
               _appendMinimizedContainerToExternalElement(e) {
                 const t = this;
                 (e.ownerElement = t),
                   t._dropDownParent.appendChild(e),
                   e.setAttribute('animation', t.animation),
-                  '' !== t.theme && e.$.addClass(t.theme),
+                  t.theme !== '' && e.$.addClass(t.theme),
                   e.$.addClass('smart-menu-drop-down smart-drop-down'),
                   e.$.addClass('smart-drop-down-repositioned'),
                   e.setAttribute('check-mode', t.checkMode),
@@ -8120,12 +8519,13 @@ License: https://htmlelements.com/license/ */
                     t.detachedChildren.indexOf(t.$.view) &&
                     t.detachedChildren.push(t.$.view);
               }
+
               _appendMinimizedContainerToMenu(e, t) {
                 const n = this;
                 delete e.ownerElement,
                   n.$.container.insertBefore(e, t),
                   e.removeAttribute('animation'),
-                  '' !== n.theme && e.$.removeClass(n.theme),
+                  n.theme !== '' && e.$.removeClass(n.theme),
                   e.$.removeClass('smart-menu-drop-down smart-drop-down'),
                   e.$.removeClass('smart-drop-down-repositioned'),
                   e.removeAttribute('checkable'),
@@ -8137,17 +8537,19 @@ License: https://htmlelements.com/license/ */
                   e.removeAttribute('style'),
                   e.removeAttribute('right-to-left');
               }
+
               _applyContainerFixedHeight() {
                 const e = this;
                 for (let t = 0; t < e._containers.length; t++) {
                   const n = e._containers[t];
-                  -1 !== e._containersFixedHeight.indexOf(n)
+                  e._containersFixedHeight.indexOf(n) !== -1
                     ? ((n.style.height =
                         n.menuItemsGroup.dropDownHeight + 'px'),
                       (n.itemContainer.checkOverflow = !0))
                     : (n.style.height = '');
                 }
               }
+
               _applyGrouping(e, t) {
                 const n = this;
                 let o;
@@ -8164,10 +8566,11 @@ License: https://htmlelements.com/license/ */
                 }
                 n._sortItems(e);
               }
+
               _applyMinimizeIconTemplate(e, t) {
                 const n = this;
-                if (null === e) {
-                  if (null === t) return;
+                if (e === null) {
+                  if (t === null) return;
                   n.$customIconContainer.addClass('smart-hidden'),
                     (n.$.customIconContainer.innerHTML = ''),
                     n.$hamburgerIconLineTop.removeClass('smart-hidden'),
@@ -8175,7 +8578,7 @@ License: https://htmlelements.com/license/ */
                     n.$hamburgerIconLineBottom.removeClass('smart-hidden');
                 } else {
                   const o = document.getElementById(e);
-                  if (null !== o && 'template' === o.tagName.toLowerCase()) {
+                  if (o !== null && o.tagName.toLowerCase() === 'template') {
                     const e = document.importNode(o.content, !0);
                     n.$hamburgerIconLineTop.addClass('smart-hidden'),
                       n.$hamburgerIconLineCenter.addClass('smart-hidden'),
@@ -8186,11 +8589,12 @@ License: https://htmlelements.com/license/ */
                   } else n.minimizeIconTemplate = t;
                 }
               }
+
               _applyTreeMode() {
-                const e = this,
-                  t = e.$.mainContainer.getElementsByClassName(
-                    'smart-menu-items-group-arrow'
-                  );
+                const e = this;
+                const t = e.$.mainContainer.getElementsByClassName(
+                  'smart-menu-items-group-arrow'
+                );
                 if (
                   (e.$mainContainer.removeClass('smart-menu-main-container'),
                   e.$mainContainer.addClass(
@@ -8202,22 +8606,24 @@ License: https://htmlelements.com/license/ */
                     t[e].className = 'smart-menu-items-group-arrow down';
                 e._removeContainerFixedHeight();
               }
+
               _arrowLeftHandler(e, t, n, o) {
                 const i = this;
-                1 === e
-                  ? 'horizontal' === t &&
+                e === 1
+                  ? t === 'horizontal' &&
                     i._levelOneNavigate('_getLastEnabledChild', n, o)
-                  : 2 === e
+                  : e === 2
                   ? i._levelOneNavigateFromLowerLevel(
                       '_getPreviousEnabledChild',
                       n
                     )
                   : i._escapeHandler(n, e, o);
               }
+
               _arrowRightHandler(e, t, n, o) {
                 const i = this;
-                1 === e
-                  ? 'horizontal' === t
+                e === 1
+                  ? t === 'horizontal'
                     ? i._levelOneNavigate('_getFirstEnabledChild', n, o)
                     : i._levelOneOpenDropDown(n)
                   : n instanceof Smart.MenuItemsGroup
@@ -8227,32 +8633,34 @@ License: https://htmlelements.com/license/ */
                       n
                     );
               }
+
               _browserBoundsDetection(e) {
                 const t = this;
-                if ('tree' === t.mode && !t._minimized) return;
+                if (t.mode === 'tree' && !t._minimized) return;
                 if (
                   ((e.style.marginTop = ''),
                   (e.style.marginLeft = ''),
-                  'auto' !== t.dropDownPosition)
+                  t.dropDownPosition !== 'auto')
                 )
                   return;
                 const n =
-                    1 === window.devicePixelRatio
-                      ? document.documentElement.clientWidth
-                      : window.innerWidth,
-                  o =
-                    1 === window.devicePixelRatio
-                      ? document.documentElement.clientHeight
-                      : window.innerHeight,
-                  i = e.getBoundingClientRect(),
-                  r = n - i.left - e.offsetWidth,
-                  a = o - i.top - e.offsetHeight;
+                  window.devicePixelRatio === 1
+                    ? document.documentElement.clientWidth
+                    : window.innerWidth;
+                const o =
+                  window.devicePixelRatio === 1
+                    ? document.documentElement.clientHeight
+                    : window.innerHeight;
+                const i = e.getBoundingClientRect();
+                const r = n - i.left - e.offsetWidth;
+                const a = o - i.top - e.offsetHeight;
                 r < 10 && (e.style.marginLeft = Math.min(r - 10, -10) + 'px'),
                   a < 10 && (e.style.marginTop = Math.min(a - 10, -10) + 'px');
               }
+
               _changeScrollButtonsArrows() {
                 const e = this;
-                'horizontal' === e.mode
+                e.mode === 'horizontal'
                   ? (e.$.scrollButtonNear.setAttribute(
                       'aria-label',
                       'Scroll left'
@@ -8278,8 +8686,9 @@ License: https://htmlelements.com/license/ */
                     e.$arrowNear.addClass('smart-arrow-up'),
                     e.$arrowFar.addClass('smart-arrow-down'));
               }
+
               _changeToRadioButtonMode(e, t, n) {
-                if ('radioButton' === e) {
+                if (e === 'radioButton') {
                   const e = [];
                   for (let n = 0; n < t.childElementCount; n++) {
                     const o = t.children[n];
@@ -8288,45 +8697,47 @@ License: https://htmlelements.com/license/ */
                   this._validateRadioButtonSelection(n, n ? n.level + 1 : 1, e);
                 }
               }
+
               _checkContainersLength(e) {
                 const t = this;
-                0 === t._containers.length
+                t._containers.length === 0
                   ? (t.$mainContainer.addClass('simple'),
                     e ||
                       t._checkOverflow(
                         t.$.mainContainer,
-                        'horizontal' === t.mode,
+                        t.mode === 'horizontal',
                         [t.$.scrollButtonNear, t.$.scrollButtonFar]
                       ))
                   : e ||
                     (t.$mainContainer.removeClass('simple'),
-                    null === t.dropDownAppendTo &&
-                      'tree' !== t.mode &&
+                    t.dropDownAppendTo === null &&
+                      t.mode !== 'tree' &&
                       t.$mainContainer.removeClass(
                         'scroll-buttons-shown one-button-shown'
                       ));
               }
+
               _checkOverflow(e, t, n) {
-                const o = this,
-                  i = o.$.mainContainer,
-                  r = e === i ? o.overflow : 'auto';
+                const o = this;
+                const i = o.$.mainContainer;
+                const r = e === i ? o.overflow : 'auto';
                 if (
                   o._minimized ||
-                  'hidden' === r ||
-                  (null === o.dropDownAppendTo &&
-                    'tree' !== o.mode &&
+                  r === 'hidden' ||
+                  (o.dropDownAppendTo === null &&
+                    o.mode !== 'tree' &&
                     e === i &&
                     !i.classList.contains('simple'))
                 )
                   return;
-                if ('dropDown' === o.mode && !o.opened)
+                if (o.mode === 'dropDown' && !o.opened)
                   return void (o._checkOverflowOnOpen = !0);
-                const a = e.scrollLeft,
-                  s = a / (e.scrollWidth - e.offsetWidth),
-                  l = e.scrollTop,
-                  d = l / (e.scrollHeight - e.offsetHeight);
+                const a = e.scrollLeft;
+                const s = a / (e.scrollWidth - e.offsetWidth);
+                const l = e.scrollTop;
+                const d = l / (e.scrollHeight - e.offsetHeight);
                 let m, c, u;
-                'auto' === r &&
+                r === 'auto' &&
                   (e.classList.remove('scroll-buttons-shown'),
                   e.classList.remove('one-button-shown'),
                   n[0].$.addClass('smart-hidden'),
@@ -8342,7 +8753,7 @@ License: https://htmlelements.com/license/ */
                       (c = d > 0),
                       (u = d < 1)),
                   m
-                    ? 'auto' === r
+                    ? r === 'auto'
                       ? (e.classList.add('scroll-buttons-shown'),
                         c && n[0].$.removeClass('smart-hidden'),
                         u && n[1].$.removeClass('smart-hidden'),
@@ -8356,20 +8767,21 @@ License: https://htmlelements.com/license/ */
                         o.disabled
                           ? ((n[0].disabled = !0), (n[1].disabled = !0))
                           : ((n[0].disabled = !c), (n[1].disabled = !u)))
-                    : 'scroll' === r &&
+                    : r === 'scroll' &&
                       ((n[0].disabled = !0), (n[1].disabled = !0)),
-                  e === i && 'tree' !== o.mode && o._close(),
+                  e === i && o.mode !== 'tree' && o._close(),
                   o._scrollInfo.set(e, {
                     left: e.scrollLeft,
                     top: e.scrollTop,
                   });
               }
+
               _checkOverflowAddRemove(e, t) {
                 const n = this;
-                (1 === e && null !== n.dropDownAppendTo) || 'tree' === n.mode
+                (e === 1 && n.dropDownAppendTo !== null) || n.mode === 'tree'
                   ? n._checkOverflow(
                       n.$.mainContainer,
-                      'horizontal' === n.mode,
+                      n.mode === 'horizontal',
                       [n.$.scrollButtonNear, n.$.scrollButtonFar]
                     )
                   : e > 1 &&
@@ -8381,6 +8793,7 @@ License: https://htmlelements.com/license/ */
                         ])
                       : (t.checkOverflow = !0));
               }
+
               _close() {
                 const e = this;
                 e._positionDetection.removeOverlay(),
@@ -8397,15 +8810,17 @@ License: https://htmlelements.com/license/ */
                     e.$.hamburgerIcon.setAttribute('aria-expanded', !1),
                     (e._minimizedDropDownOpened = !1));
               }
+
               _closeSubContainers(e, t, n, o) {
                 const i = this;
-                'tree' === i.mode || i._minimized
+                i.mode === 'tree' || i._minimized
                   ? i._closeSubContainersTreeMode(e, t, n, o)
                   : i._closeSubContainersDefaultMode(e, t, n);
               }
+
               _closeSubContainersDefaultMode(e, t, n) {
-                const o = this,
-                  i = o._openedContainers;
+                const o = this;
+                const i = o._openedContainers;
                 function r(t) {
                   const r = i[t].menuItemsGroup;
                   (n && t === e) ||
@@ -8418,7 +8833,7 @@ License: https://htmlelements.com/license/ */
                     r.setAttribute('aria-expanded', !1),
                     i[t].$.addClass('smart-visibility-hidden'),
                     o._edgeMacFF &&
-                      2 === t &&
+                      t === 2 &&
                       !o.hasAnimation &&
                       ((i[t].style.left = ''),
                       (i[t].style.top = ''),
@@ -8436,6 +8851,7 @@ License: https://htmlelements.com/license/ */
                 }
                 for (let t = i.length - 1; t >= e; t--) void 0 !== i[t] && r(t);
               }
+
               _closeSubContainersTreeMode(e, t, n, o, i) {
                 const r = this;
                 if (o) {
@@ -8456,7 +8872,7 @@ License: https://htmlelements.com/license/ */
                 if (
                   (a.set('expanded', !1),
                   a.setAttribute('aria-expanded', !1),
-                  'menu' === r._element)
+                  r._element === 'menu')
                 )
                   if (n) {
                     const e = r.$.mainContainer.getElementsByClassName(
@@ -8496,8 +8912,9 @@ License: https://htmlelements.com/license/ */
                 }
                 if (!r._openedContainers[e]) return;
                 const s = r._openedContainers[e].indexOf(t);
-                -1 !== s && r._openedContainers[e].splice(s, 1);
+                s !== -1 && r._openedContainers[e].splice(s, 1);
               }
+
               _collapseAll(e, t) {
                 const n = this;
                 for (
@@ -8520,25 +8937,26 @@ License: https://htmlelements.com/license/ */
                   ]);
                 for (let e = n._openedContainers.length - 1; e >= 2; e--) {
                   const t = n._openedContainers[e];
-                  if (void 0 !== t && 0 !== t.length) break;
+                  if (void 0 !== t && t.length !== 0) break;
                   n._openedContainers.splice(e, 1);
                 }
-                2 === n._openedContainers.length && (n._openedContainers = []);
+                n._openedContainers.length === 2 && (n._openedContainers = []);
               }
+
               _collapseSection(e) {
-                const t = this,
-                  n = e.scrollHeight + 'px';
+                const t = this;
+                const n = e.scrollHeight + 'px';
                 (t._treeAnimationInProgress = e),
                   (e.style.transition = 'none'),
                   requestAnimationFrame(function () {
-                    'tree' === t.mode || t._minimized
+                    t.mode === 'tree' || t._minimized
                       ? ((e.style.height = n),
                         (e.style.transition = ''),
                         requestAnimationFrame(function () {
                           (e.style.height = '0px'),
-                            'smart-tree' === t.tagName.toLowerCase() &&
+                            t.tagName.toLowerCase() === 'smart-tree' &&
                               e.$.addClass('smart-visibility-hidden'),
-                            '0px' === n &&
+                            n === '0px' &&
                               t._transitionendHandlerCollapse(t, e);
                         }))
                       : (e.style.transition = '');
@@ -8548,14 +8966,15 @@ License: https://htmlelements.com/license/ */
                     t._transitionendHandlerCollapse
                   );
               }
+
               _createElement() {
-                const e = this,
-                  t = e.mode;
+                const e = this;
+                const t = e.mode;
                 e.setAttribute('role', 'menu'),
                   (e.$.mainContainer.id = e.id + 'MainContainer'),
                   e.setAttribute(
                     'aria-orientation',
-                    'horizontal' === e.mode ? 'horizontal' : 'vertical'
+                    e.mode === 'horizontal' ? 'horizontal' : 'vertical'
                   ),
                   (e._positionDetection = new Smart.Utilities.PositionDetection(
                     e
@@ -8565,105 +8984,103 @@ License: https://htmlelements.com/license/ */
                   e.disabled &&
                     ((e.$.scrollButtonNear.disabled = !0),
                     (e.$.scrollButtonFar.disabled = !0)),
-                  null === e.dataSource &&
+                  e.dataSource === null &&
                     e.$.mainContainer.firstElementChild instanceof
                       HTMLUListElement &&
                     e._processUList();
                 const n = (e.shadowRoot || e).querySelectorAll(
-                    'smart-menu-item, smart-menu-items-group'
-                  ),
-                  o = function () {
-                    const n = e.animation;
-                    e._changeScrollButtonsArrows(),
-                      e._setFocusable(),
-                      'dropDown' === t &&
-                        !1 === e.opened &&
-                        (e.hasAnimation
-                          ? ((e.animation = 'none'),
-                            e.$.addClass('smart-visibility-hidden'),
-                            (e.animation = n))
-                          : e.$.addClass('smart-visibility-hidden')),
-                      (e._menuItems = {}),
-                      e.$.mainContainer.setAttribute('animation', n),
-                      null === e.dataSource
-                        ? e._processHTML(e.$.mainContainer, 1)
-                        : e._processDataSource(),
-                      e._checkContainersLength(!0),
-                      (null === e.dropDownAppendTo &&
-                        !e.$mainContainer.hasClass('simple') &&
-                        'tree' !== e.mode) ||
-                        'scroll' !== e.overflow ||
-                        (e.$mainContainer.addClass('scroll-buttons-shown'),
-                        e.$scrollButtonNear.removeClass('smart-hidden'),
-                        e.$scrollButtonFar.removeClass('smart-hidden'),
-                        e._updateScrollButtonVisibility(
+                  'smart-menu-item, smart-menu-items-group'
+                );
+                const o = function () {
+                  const n = e.animation;
+                  e._changeScrollButtonsArrows(),
+                    e._setFocusable(),
+                    t === 'dropDown' &&
+                      !1 === e.opened &&
+                      (e.hasAnimation
+                        ? ((e.animation = 'none'),
+                          e.$.addClass('smart-visibility-hidden'),
+                          (e.animation = n))
+                        : e.$.addClass('smart-visibility-hidden')),
+                    (e._menuItems = {}),
+                    e.$.mainContainer.setAttribute('animation', n),
+                    e.dataSource === null
+                      ? e._processHTML(e.$.mainContainer, 1)
+                      : e._processDataSource(),
+                    e._checkContainersLength(!0),
+                    (e.dropDownAppendTo === null &&
+                      !e.$mainContainer.hasClass('simple') &&
+                      e.mode !== 'tree') ||
+                      e.overflow !== 'scroll' ||
+                      (e.$mainContainer.addClass('scroll-buttons-shown'),
+                      e.$scrollButtonNear.removeClass('smart-hidden'),
+                      e.$scrollButtonFar.removeClass('smart-hidden'),
+                      e._updateScrollButtonVisibility(
+                        e.$.mainContainer,
+                        t === 'horizontal',
+                        [e.$.scrollButtonNear, e.$.scrollButtonFar]
+                      )),
+                    e._applyMinimizeIconTemplate(e.minimizeIconTemplate, null),
+                    t === 'tree' && e._applyTreeMode(),
+                    e.minimizeWidth !== null && e.offsetWidth <= e.minimizeWidth
+                      ? e.minimize()
+                      : e._checkOverflow(
                           e.$.mainContainer,
-                          'horizontal' === t,
+                          t === 'horizontal',
                           [e.$.scrollButtonNear, e.$.scrollButtonFar]
-                        )),
-                      e._applyMinimizeIconTemplate(
-                        e.minimizeIconTemplate,
-                        null
-                      ),
-                      'tree' === t && e._applyTreeMode(),
-                      null !== e.minimizeWidth &&
-                      e.offsetWidth <= e.minimizeWidth
-                        ? e.minimize()
-                        : e._checkOverflow(
-                            e.$.mainContainer,
-                            'horizontal' === t,
-                            [e.$.scrollButtonNear, e.$.scrollButtonFar]
-                          ),
-                      e._expandItemsByDefault(),
-                      e._refreshCheckableItems(),
-                      e.__onCompleted &&
-                        ((e._onCompleted = e.__onCompleted),
-                        (e.__onCompleted = null),
-                        e._onCompleted());
-                  };
-                0 === n.length || e.enableShadowDOM || e.isInShadowDOM
+                        ),
+                    e._expandItemsByDefault(),
+                    e._refreshCheckableItems(),
+                    e.__onCompleted &&
+                      ((e._onCompleted = e.__onCompleted),
+                      (e.__onCompleted = null),
+                      e._onCompleted());
+                };
+                n.length === 0 || e.enableShadowDOM || e.isInShadowDOM
                   ? o()
                   : (e._onCompleted &&
                       ((e.__onCompleted = e._onCompleted),
                       (e._onCompleted = null)),
                     e._ensureItemsReady(n, o));
               }
+
               _ensureItemsReady(e, t) {
-                const n = this,
-                  o = function () {
-                    const n = function (t) {
-                      for (let n = 0; n < e.length; n++)
-                        e[n].context = 'node' === t ? e[n] : document;
-                    };
-                    n('node'), t(), n();
+                const n = this;
+                const o = function () {
+                  const n = function (t) {
+                    for (let n = 0; n < e.length; n++)
+                      e[n].context = t === 'node' ? e[n] : document;
                   };
-                if (0 === e.length) o();
+                  n('node'), t(), n();
+                };
+                if (e.length === 0) o();
                 else {
                   n._nodesReadyListeners = 0;
                   for (let t = 0; t < e.length; t++) {
-                    const i = e[t],
-                      r = function () {
-                        const e = n.context;
-                        (n.context = n),
-                          n._nodesReadyListeners--,
-                          0 === n._nodesReadyListeners &&
-                            (o(), delete n._nodesReadyListeners),
-                          (n.context = e);
-                      }.bind(n);
+                    const i = e[t];
+                    const r = function () {
+                      const e = n.context;
+                      (n.context = n),
+                        n._nodesReadyListeners--,
+                        n._nodesReadyListeners === 0 &&
+                          (o(), delete n._nodesReadyListeners),
+                        (n.context = e);
+                    };
                     i.isCompleted ||
                       (n._nodesReadyListeners++,
                       (i.completeHandlers = []),
                       (i._onCompleted = r));
                   }
-                  0 === n._nodesReadyListeners && o();
+                  n._nodesReadyListeners === 0 && o();
                 }
               }
+
               _createItemHTMLStructure(e, t, n, o) {
-                const i = this,
-                  r = 'smart-' + i._element + '-item-label-container',
-                  a = 'smart-' + i._element + '-item-label-element',
-                  s = document.createDocumentFragment(),
-                  l = e.children;
+                const i = this;
+                const r = 'smart-' + i._element + '-item-label-container';
+                const a = 'smart-' + i._element + '-item-label-element';
+                const s = document.createDocumentFragment();
+                const l = e.children;
                 let d, m, c, u;
                 for (let e = 0; e < l.length; e++) {
                   const t = l[e];
@@ -8678,11 +9095,11 @@ License: https://htmlelements.com/license/ */
                 }
                 if (d) {
                   const t = d.querySelector('.' + a);
-                  if (null !== t) {
+                  if (t !== null) {
                     e.insertBefore(t.firstElementChild, e.children[0]);
-                    const n = 'smart-' + i._element + '-drop-down',
-                      o = 'smart-' + i._element + '-item-container',
-                      r = e.querySelector('.' + n);
+                    const n = 'smart-' + i._element + '-drop-down';
+                    const o = 'smart-' + i._element + '-item-container';
+                    const r = e.querySelector('.' + n);
                     if (r) {
                       const t = e.querySelector('.' + o);
                       for (; t.childNodes.length; ) e.appendChild(t.firstChild);
@@ -8694,7 +9111,7 @@ License: https://htmlelements.com/license/ */
                 m && m.remove(),
                   (d = document.createElement('div')),
                   (m = document.createElement('div'));
-                let p = document.createElement('span');
+                const p = document.createElement('span');
                 (e.menu = i),
                   t > 1
                     ? ((e.originalIndex = o),
@@ -8704,15 +9121,15 @@ License: https://htmlelements.com/license/ */
                     : ((e.originalIndex = o), (c = '' + o), (u = i)),
                   i.checkboxes &&
                     u.checkable &&
-                    ('checkbox' === u.checkMode
+                    (u.checkMode === 'checkbox'
                       ? e.setAttribute('role', 'menuitemcheckbox')
-                      : 'radioButton' === u.checkMode &&
+                      : u.checkMode === 'radioButton' &&
                         e.setAttribute('role', 'menuitemradio')),
                   (e.path = c),
                   (i._menuItems[c] = e),
                   (d.className = r),
                   (m.className = a),
-                  'tree' === i._element &&
+                  i._element === 'tree' &&
                     i._setIndentation(
                       d,
                       t,
@@ -8728,9 +9145,9 @@ License: https://htmlelements.com/license/ */
                     break;
                   p.appendChild(t);
                 }
-                if ('' === p.innerHTML.trim()) {
+                if (p.innerHTML.trim() === '') {
                   const t = e.label || e.getAttribute('label');
-                  t && '' !== t
+                  t && t !== ''
                     ? i._setLabel(t, p, e, !0)
                     : (e.set('label', 'Item ' + o),
                       (p.innerHTML = 'Item ' + o));
@@ -8766,11 +9183,12 @@ License: https://htmlelements.com/license/ */
                       'L' +
                       e.label.replace(/[^a-zA-Z0-9\-\_]/g, ''));
               }
+
               _createMenuItemsGroupContainer(e, t) {
-                const n = this,
-                  o = e.children,
-                  i = 'smart-' + n._element + '-drop-down',
-                  r = 'smart-' + n._element + '-item-container';
+                const n = this;
+                const o = e.children;
+                const i = 'smart-' + n._element + '-drop-down';
+                const r = 'smart-' + n._element + '-item-container';
                 let a, s;
                 for (let e = 0; e < o.length; e++) {
                   const t = o[e];
@@ -8793,13 +9211,13 @@ License: https://htmlelements.com/license/ */
                     n._element +
                     '-drop-down smart-visibility-hidden'),
                   n._edgeMacFF &&
-                    2 === t &&
-                    'tree' !== n.mode &&
+                    t === 2 &&
+                    n.mode !== 'tree' &&
                     (a.className += ' not-in-view'),
                   a.$ || (a.$ = Smart.Utilities.Extend(a)),
                   (a.level = t),
                   a.setAttribute('level', t),
-                  'menu' === n._element
+                  n._element === 'menu'
                     ? (e.setAttribute('aria-owns', a.id),
                       a.setAttribute('role', 'menu'))
                     : a.setAttribute('role', 'group'),
@@ -8813,14 +9231,14 @@ License: https://htmlelements.com/license/ */
                   s.setAttribute('role', 'presentation'),
                   (a.itemContainer = s),
                   a.contains(s) || a.appendChild(s),
-                  null !== e.dropDownHeight)
+                  e.dropDownHeight !== null)
                 ) {
                   let t = a.querySelector(
-                      '.smart-spin-button.smart-scroll-button-near'
-                    ),
-                    o = a.querySelector(
-                      '.smart-spin-button.smart-scroll-button-far'
-                    );
+                    '.smart-spin-button.smart-scroll-button-near'
+                  );
+                  let o = a.querySelector(
+                    '.smart-spin-button.smart-scroll-button-far'
+                  );
                   t || (t = document.createElement('smart-repeat-button')),
                     o || (o = document.createElement('smart-repeat-button')),
                     (t.className =
@@ -8850,6 +9268,7 @@ License: https://htmlelements.com/license/ */
                 }
                 return a;
               }
+
               _discardKeyboardHover(e) {
                 const t = this;
                 t._focusedViaKeyboard &&
@@ -8865,18 +9284,20 @@ License: https://htmlelements.com/license/ */
                     t._focusedViaKeyboard.removeAttribute('hover'),
                     (t._focusedViaKeyboard = void 0)));
               }
+
               _documentDownHandler(e) {
                 const t = this;
-                'down' === t.closeAction &&
+                t.closeAction === 'down' &&
                   t._closeOnDocumentInteraction(e.originalEvent);
               }
+
               _documentUpHandler(e) {
-                const t = this,
-                  n = e.originalEvent.target;
+                const t = this;
+                const n = e.originalEvent.target;
                 if (t.disabled || t.displayLoadingIndicator || !n.closest)
                   return;
                 const o =
-                  'up' === t.closeAction &&
+                  t.closeAction === 'up' &&
                   t._closeOnDocumentInteraction(e.originalEvent);
                 if (o) return;
                 let i, r;
@@ -8890,7 +9311,7 @@ License: https://htmlelements.com/license/ */
                         e.originalEvent.composedPath()[0]
                       )))
                     : ((i = document.activeElement), (r = t.contains(n))),
-                  !o && t !== i && null === i.closest('[template-applied]'))
+                  !o && t !== i && i.closest('[template-applied]') === null)
                 ) {
                   if (r || n.closest('.smart-list-menu-view') === t.$.view)
                     return void t.focus();
@@ -8898,16 +9319,17 @@ License: https://htmlelements.com/license/ */
                   e && e.ownerElement === t && t.focus();
                 }
               }
+
               _closeOnDocumentInteraction(e) {
-                const t = this,
-                  n = e.target;
+                const t = this;
+                const n = e.target;
                 let o, i;
                 if (
                   (t.isInShadowDOM
                     ? ((o = e.composedPath()[0]),
                       (i = t.$.container.contains(o)))
                     : (i = t.contains(n)),
-                  'dropDown' === t.mode && t.opened)
+                  t.mode === 'dropDown' && t.opened)
                 ) {
                   const e = n.closest('.smart-drop-down-repositioned');
                   if (!(i || (e && e.ownerElement === t)))
@@ -8922,54 +9344,55 @@ License: https://htmlelements.com/license/ */
                 const r = (o || n).closest('.smart-input-drop-down-menu');
                 return (
                   (!r || !t.contains(r.ownerElement)) &&
-                  ((!i && null === n.closest('.smart-menu-drop-down')) ||
+                  ((!i && n.closest('.smart-menu-drop-down') === null) ||
                   (o && o === t.$.mainContainer) ||
                   n === t.$.mainContainer
-                    ? ('tree' === t.mode || t._close(), !0)
+                    ? (t.mode === 'tree' || t._close(), !0)
                     : void 0)
                 );
               }
+
               _ensureVisible(e) {
                 const t = this;
                 if (t._minimized) return;
-                const n = t.mode,
-                  o = t.$.mainContainer;
+                const n = t.mode;
+                const o = t.$.mainContainer;
                 let i, r;
-                if ('tree' !== n && e.parentElement !== o) {
-                  if (null === e.dropDownHeight) return;
+                if (n !== 'tree' && e.parentElement !== o) {
+                  if (e.dropDownHeight === null) return;
                   (i = e.parentElement),
                     (r = [i.container.children[0], i.container.children[2]]);
                 } else
                   (i = o), (r = [t.$.scrollButtonNear, t.$.scrollButtonFar]);
                 if (
                   i === o &&
-                  ((null === t.dropDownAppendTo &&
-                    'tree' !== t.mode &&
+                  ((t.dropDownAppendTo === null &&
+                    t.mode !== 'tree' &&
                     !o.classList.contains('simple')) ||
                     (!i.$.hasClass('scroll-buttons-shown') &&
-                      'hidden' !== t.overflow))
+                      t.overflow !== 'hidden'))
                 )
                   return;
-                const a = i.getBoundingClientRect(),
-                  s = e.getBoundingClientRect();
+                const a = i.getBoundingClientRect();
+                const s = e.getBoundingClientRect();
                 function l(t, n, o) {
                   let r = e.firstElementChild[o] + t - i[o];
                   r < 0 && (r = t), (i['scroll' + n] = r);
                 }
                 function d(n, a) {
-                  let s = e['offset' + n],
-                    d = i[a];
-                  'Top' !== n ||
+                  let s = e['offset' + n];
+                  const d = i[a];
+                  n !== 'Top' ||
                     i === o ||
                     r[0].$.hasClass('smart-hidden') ||
                     (s -= r[0][a]),
                     l(s, n, a),
-                    t._updateScrollButtonVisibility(i, 'Left' === n, r),
+                    t._updateScrollButtonVisibility(i, n === 'Left', r),
                     d !== i[a] && l(s, n, a);
                 }
-                'tree' !== n
+                n !== 'tree'
                   ? (i === o &&
-                    'horizontal' === n &&
+                    n === 'horizontal' &&
                     (a.left > s.left || a.right < s.right)
                       ? d('Left', 'offsetWidth')
                       : (a.top > s.top || a.bottom < s.bottom) &&
@@ -8980,16 +9403,17 @@ License: https://htmlelements.com/license/ */
                     }))
                   : t._ensureVisibleTreeMode(e, s, i, a, 0);
               }
+
               _ensureVisibleTreeMode(e, t, n, o, i) {
                 const r = this;
                 if (
-                  ('menu' === r._element || 'scrollButtons' === r.scrollMode) &&
+                  (r._element === 'menu' || r.scrollMode === 'scrollButtons') &&
                   !n.$.hasClass('scroll-buttons-shown') &&
-                  'hidden' !== r.overflow
+                  r.overflow !== 'hidden'
                 )
                   return;
-                const a = n.offsetHeight,
-                  s = r.$scrollButtonNear.hasClass('smart-hidden');
+                const a = n.offsetHeight;
+                const s = r.$scrollButtonNear.hasClass('smart-hidden');
                 let l;
                 if (o.top > t.top) l = r._getOffsetTop(e);
                 else {
@@ -9001,7 +9425,7 @@ License: https://htmlelements.com/license/ */
                       )
                     : e.offsetHeight;
                   if (
-                    ('tree' === r._element &&
+                    (r._element === 'tree' &&
                       (n +=
                         parseFloat(
                           getComputedStyle(r).getPropertyValue(
@@ -9013,20 +9437,20 @@ License: https://htmlelements.com/license/ */
                     return;
                   l = r._getOffsetTop(e) - a + n + i;
                 }
-                'tree' === r._element &&
-                  '0' === e.path &&
+                r._element === 'tree' &&
+                  e.path === '0' &&
                   (l -= parseFloat(
                     getComputedStyle(r).getPropertyValue(
                       '--smart-tree-item-vertical-offset'
                     )
                   )),
                   (n.scrollTop = l),
-                  ('menu' !== r._element && 'scrollButtons' !== r.scrollMode) ||
+                  (r._element !== 'menu' && r.scrollMode !== 'scrollButtons') ||
                     r._updateScrollButtonVisibility(n, !1, [
                       r.$.scrollButtonNear,
                       r.$.scrollButtonFar,
                     ]),
-                  'auto' === r.overflow &&
+                  r.overflow === 'auto' &&
                     s &&
                     !r.$scrollButtonNear.hasClass('smart-hidden') &&
                     (n.scrollTop += a - n.offsetHeight),
@@ -9035,29 +9459,32 @@ License: https://htmlelements.com/license/ */
                     top: n.scrollTop,
                   });
               }
+
               _escapeHandler(e, t, n) {
                 e && (e.$.removeClass('focus'), e.removeAttribute('focus')),
                   this._closeSubContainers(t, void 0, void 0, !0),
                   this._hoverViaKeyboard(n.menuItemsGroup);
               }
+
               _expandItemsByDefault(e) {
                 const t = this;
                 if (
-                  (0 === t._menuItemsGroupsToExpand.length && !e) ||
-                  ('tree' !== t.mode && !t._minimized)
+                  (t._menuItemsGroupsToExpand.length === 0 && !e) ||
+                  (t.mode !== 'tree' && !t._minimized)
                 )
                   return;
-                const n = t.hasAnimation,
-                  o = t.animation;
+                const n = t.hasAnimation;
+                const o = t.animation;
                 n && (t.animation = 'none'), e && t._collapseAll(!1);
                 for (let e = 0; e < t._menuItemsGroupsToExpand.length; e++)
                   t.expandItem(t._menuItemsGroupsToExpand[e].path, void 0, !1);
                 n && (t.animation = o), (t._menuItemsGroupsToExpand = []);
               }
+
               _expandSection(e) {
-                const t = this,
-                  n = e.style.height,
-                  o = e.scrollHeight + 'px';
+                const t = this;
+                const n = e.style.height;
+                const o = e.scrollHeight + 'px';
                 (e.style.height = o),
                   (t._treeAnimationInProgress = e),
                   n !== o && (parseFloat(n) || parseFloat(o))
@@ -9067,6 +9494,7 @@ License: https://htmlelements.com/license/ */
                       )
                     : t._transitionendHandlerExpand(t, e);
               }
+
               _filterInputKeyupHandler() {
                 const e = this;
                 e._filterTimer && clearTimeout(e._filterTimer),
@@ -9078,16 +9506,17 @@ License: https://htmlelements.com/license/ */
                       (e.context = t);
                   }, 300));
               }
+
               _findItem(e, t) {
-                if ('' === t) return e;
+                if (t === '') return e;
                 const n = e[this.filterMember || 'label'];
-                if ('string' != typeof n) return null;
+                if (typeof n !== 'string') return null;
                 switch (this.filterMode) {
                   case 'startsWith':
-                    if (0 === n.indexOf(t)) return e;
+                    if (n.indexOf(t) === 0) return e;
                     break;
                   case 'startsWithIgnoreCase':
-                    if (0 === n.toLowerCase().indexOf(t.toLowerCase()))
+                    if (n.toLowerCase().indexOf(t.toLowerCase()) === 0)
                       return e;
                     break;
                   case 'doesNotContain':
@@ -9103,10 +9532,10 @@ License: https://htmlelements.com/license/ */
                     if (n.toLowerCase().indexOf(t.toLowerCase()) > -1) return e;
                     break;
                   case 'equals':
-                    if (0 === n.localeCompare(t)) return e;
+                    if (n.localeCompare(t) === 0) return e;
                     break;
                   case 'equalsIgnoreCase':
-                    if (0 === n.toLowerCase().localeCompare(t.toLowerCase()))
+                    if (n.toLowerCase().localeCompare(t.toLowerCase()) === 0)
                       return e;
                     break;
                   case 'endsWith':
@@ -9117,16 +9546,19 @@ License: https://htmlelements.com/license/ */
                 }
                 return null;
               }
+
               _getFirstEnabledChild(e) {
                 const t = e.children;
                 for (let e = 0; e < t.length; e++)
                   if (this._isChildEnabled(t[e])) return t[e];
               }
+
               _getLastEnabledChild(e) {
                 const t = e.children;
                 for (let e = t.length - 1; e >= 0; e--)
                   if (this._isChildEnabled(t[e])) return t[e];
               }
+
               _getNextEnabledChild(e) {
                 if (e)
                   for (; e.nextElementSibling; ) {
@@ -9135,6 +9567,7 @@ License: https://htmlelements.com/license/ */
                     e = t;
                   }
               }
+
               _getOffsetTop(e) {
                 if (!e) return 0;
                 let t = e.offsetTop;
@@ -9144,6 +9577,7 @@ License: https://htmlelements.com/license/ */
                 }
                 return t;
               }
+
               _getPreviousEnabledChild(e) {
                 if (e)
                   for (; e.previousElementSibling; ) {
@@ -9152,6 +9586,7 @@ License: https://htmlelements.com/license/ */
                     e = t;
                   }
               }
+
               _hamburgerIconClickHandler(e, t) {
                 e && e.stopPropagation();
                 const n = this;
@@ -9167,27 +9602,27 @@ License: https://htmlelements.com/license/ */
                   else {
                     if (
                       (n._positionDetection.placeOverlay(),
-                      null !== n.dropDownAppendTo)
+                      n.dropDownAppendTo !== null)
                     ) {
-                      const e = n.dropDownPosition,
-                        o = n.getBoundingClientRect(),
-                        i = n._positionDetection.getDropDownOffset();
-                      -1 !== e.indexOf('right') || 'auto' === e
+                      const e = n.dropDownPosition;
+                      const o = n.getBoundingClientRect();
+                      const i = n._positionDetection.getDropDownOffset();
+                      e.indexOf('right') !== -1 || e === 'auto'
                         ? n.rightToLeft
                           ? ((t.style.right = 'initial'),
                             (t.style.left =
                               o.left + o.width - t.offsetWidth - i.x + 'px'))
                           : ((t.style.left = o.left + i.x + 'px'),
                             (t.style.right = 'initial'))
-                        : -1 !== e.indexOf('left') &&
+                        : e.indexOf('left') !== -1 &&
                           ((t.style.left =
                             o.right - t.offsetWidth + i.x + 'px'),
                           (t.style.right = 'initial')),
-                        -1 !== e.indexOf('bottom') ||
-                        -1 !== e.indexOf('overlay') ||
-                        'auto' === e
+                        e.indexOf('bottom') !== -1 ||
+                        e.indexOf('overlay') !== -1 ||
+                        e === 'auto'
                           ? (t.style.top = o.bottom + i.y + 'px')
-                          : -1 !== e.indexOf('top') &&
+                          : e.indexOf('top') !== -1 &&
                             (t.style.top = o.top + i.y + 'px');
                     } else t.style.right = '';
                     n._edgeMacFF && t.$.removeClass('not-in-view'),
@@ -9198,29 +9633,30 @@ License: https://htmlelements.com/license/ */
                       n._browserBoundsDetection(t);
                   }
               }
+
               _handleOverflowChange() {
-                const e = this,
-                  t = e.$.mainContainer;
+                const e = this;
+                const t = e.$.mainContainer;
                 if (
                   (e._minimized ||
-                    (null === e.dropDownAppendTo &&
+                    (e.dropDownAppendTo === null &&
                       !t.classList.contains('simple') &&
-                      'tree' !== e.mode)) &&
+                      e.mode !== 'tree')) &&
                   !(Smart.ListMenu && e instanceof Smart.ListMenu)
                 )
                   return;
                 const n = e.overflow;
                 let o;
-                'horizontal' === e.mode
+                e.mode === 'horizontal'
                   ? ((o = !0), (t.scrollLeft = 0))
                   : ((o = !1), (t.scrollTop = 0)),
-                  'hidden' === n
+                  n === 'hidden'
                     ? (t.classList.remove('scroll-buttons-shown'),
                       e.$scrollButtonNear.addClass('smart-hidden'),
                       e.$scrollButtonFar.addClass('smart-hidden'))
                     : ((e.$.scrollButtonNear.disabled = e.disabled),
                       (e.$.scrollButtonFar.disabled = e.disabled),
-                      'auto' === n
+                      n === 'auto'
                         ? (e.$scrollButtonNear.addClass('smart-hidden'),
                           e.$scrollButtonFar.addClass('smart-hidden'),
                           e._checkOverflow(t, o, [
@@ -9240,6 +9676,7 @@ License: https://htmlelements.com/license/ */
                     top: t.scrollTop,
                   });
               }
+
               _hideMainContainerScrollButtons() {
                 const e = this;
                 e.$scrollButtonNear.addClass('smart-hidden'),
@@ -9247,6 +9684,7 @@ License: https://htmlelements.com/license/ */
                   e.$mainContainer.removeClass('scroll-buttons-shown'),
                   e.$mainContainer.removeClass('one-button-shown');
               }
+
               _hoverViaKeyboard(e) {
                 e &&
                   (e.$.addClass('focus'),
@@ -9254,60 +9692,63 @@ License: https://htmlelements.com/license/ */
                   (this._focusedViaKeyboard = e),
                   this._ensureVisible(e));
               }
+
               _isBranchExpanded(e) {
-                if ('tree' !== this.mode) return !0;
+                if (this.mode !== 'tree') return !0;
                 let t = !0;
                 for (; e.parentItem; )
                   (t = t && e.parentItem.expanded), (e = e.parentItem);
                 return t;
               }
+
               _isChildEnabled(e) {
                 return !(
                   e.disabled ||
                   e.templateApplied ||
                   e.hidden ||
                   e instanceof HTMLDivElement ||
-                  0 === e.offsetHeight
+                  e.offsetHeight === 0
                 );
               }
+
               _isContainerOpened(e, t) {
                 const n = this;
-                return 'tree' === n.mode || n._minimized
+                return n.mode === 'tree' || n._minimized
                   ? (n._openedContainers[e] || (n._openedContainers[e] = []),
-                    -1 !== n._openedContainers[e].indexOf(t))
+                    n._openedContainers[e].indexOf(t) !== -1)
                   : n._openedContainers[e] === t;
               }
+
               _keydownHandler(e) {
                 const t = this;
                 let n = e.key;
                 if (
                   t.getRootNode().activeElement !== t ||
-                  -1 ===
-                    [
-                      'ArrowDown',
-                      'ArrowLeft',
-                      'ArrowRight',
-                      'ArrowUp',
-                      'End',
-                      'Enter',
-                      'Escape',
-                      'Home',
-                      ' ',
-                    ].indexOf(n) ||
+                  [
+                    'ArrowDown',
+                    'ArrowLeft',
+                    'ArrowRight',
+                    'ArrowUp',
+                    'End',
+                    'Enter',
+                    'Escape',
+                    'Home',
+                    ' ',
+                  ].indexOf(n) === -1 ||
                   t.disabled
                 )
                   return;
                 e.preventDefault();
                 const o = t.mode;
-                if ('tree' === o || t._minimized)
+                if (o === 'tree' || t._minimized)
                   return void t._keydownHandlerTreeMode(n);
-                const i = t.dropDownPosition,
-                  r = -1 !== i.indexOf('left'),
-                  a = 'top-left' === i || 'top-right' === i,
-                  s = t._openedContainers;
-                let l,
-                  d = t.$.mainContainer,
-                  m = 1;
+                const i = t.dropDownPosition;
+                const r = i.indexOf('left') !== -1;
+                const a = i === 'top-left' || i === 'top-right';
+                const s = t._openedContainers;
+                let l;
+                let d = t.$.mainContainer;
+                let m = 1;
                 for (let e = s.length - 1; e >= 0; e--)
                   if (void 0 !== s[e]) {
                     (d = s[e]), (m = d.level), (d = d.itemContainer);
@@ -9316,23 +9757,23 @@ License: https://htmlelements.com/license/ */
                 switch (
                   ((l = d.querySelector('[focus][level="' + m + '"]')),
                   t.rightToLeft &&
-                    ('ArrowLeft' === n
+                    (n === 'ArrowLeft'
                       ? (n = 'ArrowRight')
-                      : 'ArrowRight' === n && (n = 'ArrowLeft')),
+                      : n === 'ArrowRight' && (n = 'ArrowLeft')),
                   n)
                 ) {
                   case 'ArrowDown':
-                    1 === m
-                      ? 'horizontal' !== o || a
-                        ? 'horizontal' !== o &&
+                    m === 1
+                      ? o !== 'horizontal' || a
+                        ? o !== 'horizontal' &&
                           t._levelOneNavigate('_getFirstEnabledChild', l, d)
                         : t._levelOneOpenDropDown(l)
                       : t._navigate('_getNextEnabledChild', l, d);
                     break;
                   case 'ArrowLeft':
                     r
-                      ? 1 === m
-                        ? 'horizontal' === o
+                      ? m === 1
+                        ? o === 'horizontal'
                           ? t._levelOneNavigate('_getLastEnabledChild', l, d)
                           : t._levelOneOpenDropDown(l)
                         : l instanceof Smart.MenuItemsGroup
@@ -9345,10 +9786,10 @@ License: https://htmlelements.com/license/ */
                     break;
                   case 'ArrowRight':
                     r
-                      ? 1 === m
-                        ? 'horizontal' === o &&
+                      ? m === 1
+                        ? o === 'horizontal' &&
                           t._levelOneNavigate('_getFirstEnabledChild', l, d)
-                        : 2 === m
+                        : m === 2
                         ? t._levelOneNavigateFromLowerLevel(
                             '_getNextEnabledChild',
                             l
@@ -9357,17 +9798,17 @@ License: https://htmlelements.com/license/ */
                       : t._arrowRightHandler(m, o, l, d);
                     break;
                   case 'ArrowUp':
-                    1 === m
-                      ? 'horizontal' === o && a
+                    m === 1
+                      ? o === 'horizontal' && a
                         ? t._levelOneOpenDropDown(l)
-                        : 'horizontal' !== o &&
+                        : o !== 'horizontal' &&
                           t._levelOneNavigate('_getLastEnabledChild', l, d)
                       : t._navigate('_getPreviousEnabledChild', l, d);
                     break;
                   case 'End':
                   case 'Home': {
                     const e =
-                      'End' === n
+                      n === 'End'
                         ? t._getLastEnabledChild(d)
                         : t._getFirstEnabledChild(d);
                     if (!e || l === e) return;
@@ -9380,9 +9821,9 @@ License: https://htmlelements.com/license/ */
                     break;
                   case 'Escape':
                     m > 1
-                      ? (2 === m && t._positionDetection.removeOverlay(),
+                      ? (m === 2 && t._positionDetection.removeOverlay(),
                         t._escapeHandler(l, m, d))
-                      : 'dropDown' === o &&
+                      : o === 'dropDown' &&
                         t.opened &&
                         t.close({ trigger: 'interaction', target: 'Escape' });
                     break;
@@ -9390,20 +9831,21 @@ License: https://htmlelements.com/license/ */
                     l && t._toggleItem(l);
                 }
               }
+
               _keydownHandlerTreeMode(e) {
-                const t = this,
-                  n = Array.from(
-                    t.$.mainContainer.querySelectorAll(
-                      'smart-menu-item, smart-menu-items-group'
-                    )
-                  ),
-                  o = t.$.mainContainer.getElementsByClassName('focus')[0];
+                const t = this;
+                const n = Array.from(
+                  t.$.mainContainer.querySelectorAll(
+                    'smart-menu-item, smart-menu-items-group'
+                  )
+                );
+                const o = t.$.mainContainer.getElementsByClassName('focus')[0];
                 function i(e) {
                   const n = e.level;
                   return (
                     !1 === e.disabled &&
                     !0 !== e.templateApplied &&
-                    (1 === n ||
+                    (n === 1 ||
                       (n > 1 &&
                         t._isContainerOpened(n, e.parentElement.container) &&
                         e.getBoundingClientRect().height > 0))
@@ -9499,6 +9941,7 @@ License: https://htmlelements.com/license/ */
                     o && t._toggleItem(o);
                 }
               }
+
               _lazyInitItems() {
                 const e = this;
                 e._inLazyInit ||
@@ -9512,10 +9955,11 @@ License: https://htmlelements.com/license/ */
                   (e._inLazyInit = !1),
                   e.$.scrollViewer && e.$.scrollViewer.refresh());
               }
+
               _levelOneNavigate(e, t, n) {
                 const o = this;
                 if (t)
-                  '_getLastEnabledChild' === e
+                  e === '_getLastEnabledChild'
                     ? o._navigate('_getPreviousEnabledChild', t, n)
                     : o._navigate('_getNextEnabledChild', t, n);
                 else {
@@ -9523,9 +9967,10 @@ License: https://htmlelements.com/license/ */
                   t && o._hoverViaKeyboard(t);
                 }
               }
+
               _levelOneNavigateFromLowerLevel(e, t) {
-                const n = this,
-                  o = n[e](n._openedContainers[2].menuItemsGroup);
+                const n = this;
+                const o = n[e](n._openedContainers[2].menuItemsGroup);
                 o &&
                   (t && (t.$.removeClass('focus'), t.removeAttribute('focus')),
                   n._closeSubContainers(2),
@@ -9533,14 +9978,16 @@ License: https://htmlelements.com/license/ */
                     ? n._selectionHandler({ target: o, isTrusted: !0 })
                     : n._hoverViaKeyboard(o));
               }
+
               _levelOneOpenDropDown(e) {
                 e &&
                   e instanceof Smart.MenuItemsGroup &&
                   this._selectionHandler({ target: e, isTrusted: !0 });
               }
+
               _mainContainerHandler(e) {
                 const t = this;
-                if (t._minimized && null !== t.dropDownAppendTo)
+                if (t._minimized && t.dropDownAppendTo !== null)
                   switch (e.type) {
                     case 'click':
                       t._selectionHandler(e);
@@ -9553,19 +10000,20 @@ License: https://htmlelements.com/license/ */
                       t._mouseoutMouseoverHandler(e);
                   }
               }
+
               _menuItemSelectionHandler(e, t) {
                 const n = this;
                 function o() {
                   n.enableShadowDOM &&
                   (n.shadowRoot.activeElement || document.activeElement) !==
                     n &&
-                  null !== n.dropDownAppendTo &&
-                  'click' === t.type &&
+                  n.dropDownAppendTo !== null &&
+                  t.type === 'click' &&
                   !n.shadowRoot.contains(e)
                     ? n.focus()
                     : document.activeElement === n ||
-                      null === n.dropDownAppendTo ||
-                      'click' !== t.type ||
+                      n.dropDownAppendTo === null ||
+                      t.type !== 'click' ||
                       n.contains(e) ||
                       n.focus();
                 }
@@ -9578,14 +10026,14 @@ License: https://htmlelements.com/license/ */
                         label: e.label,
                         value: e.value,
                       }),
-                      t.target && 'A' !== t.target.nodeName)
+                      t.target && t.target.nodeName !== 'A')
                     ) {
                       const t = e.querySelector('a');
                       t && t.click();
                     }
                     if (
-                      'tree' !== n.mode &&
-                      (n._close(), 'dropDown' === n.mode)
+                      n.mode !== 'tree' &&
+                      (n._close(), n.mode === 'dropDown')
                     )
                       return (
                         n._ripple(e, t),
@@ -9595,31 +10043,32 @@ License: https://htmlelements.com/license/ */
                   n._ripple(e, t), o();
                 }
               }
+
               _menuItemsGroupSelectionHandler(e, t, n) {
-                const o = this,
-                  i = o.mode,
-                  r = e.container,
-                  a = r.level,
-                  s = 'tree' !== i && !o._minimized;
+                const o = this;
+                const i = o.mode;
+                const r = e.container;
+                const a = r.level;
+                const s = i !== 'tree' && !o._minimized;
                 if (o._treeAnimationInProgress === r) return;
                 if (
                   (o._discardKeyboardHover(),
                   o.getRootNode().activeElement === o ||
-                    null === o.dropDownAppendTo ||
-                    'click' !== t.type ||
+                    o.dropDownAppendTo === null ||
+                    t.type !== 'click' ||
                     o.contains(t.target) ||
                     o.focus(),
-                  'click' === t.type &&
+                  t.type === 'click' &&
                     ((!t.target.classList.contains(
                       'smart-' + o._element + '-items-group-arrow'
                     ) &&
                       o._toggleItem(e)) ||
-                      ('mouseenter' === o.selectionMode &&
-                        'tree' !== i &&
+                      (o.selectionMode === 'mouseenter' &&
+                        i !== 'tree' &&
                         !o._minimized)))
                 )
                   return;
-                let l = o.hasAnimation;
+                const l = o.hasAnimation;
                 if (o._isContainerOpened(a, r))
                   o._closeSubContainers(a, r, !0, !1 !== n),
                     s && e.hasAttribute('focus') && (o._focusedViaKeyboard = e);
@@ -9639,17 +10088,17 @@ License: https://htmlelements.com/license/ */
                     s && o._closeSubContainers(a),
                     l &&
                       !s &&
-                      ('expand' !== t.type &&
+                      (t.type !== 'expand' &&
                         (o._ensureVisibleOnTransitionend = e),
                       o._expandSection(r)),
                     o._edgeMacFF &&
-                      2 === a &&
+                      a === 2 &&
                       s &&
                       r.$.removeClass('not-in-view'),
                     r.$.removeClass('smart-visibility-hidden'),
-                    s || 'expand' !== t.type)
+                    s || t.type !== 'expand')
                   ) {
-                    if (s) 'keydown' === t.type && (o._focusedViaKeyboard = e);
+                    if (s) t.type === 'keydown' && (o._focusedViaKeyboard = e);
                     else {
                       const t = o.$.mainContainer.getElementsByClassName(
                         'focus'
@@ -9675,13 +10124,13 @@ License: https://htmlelements.com/license/ */
                       (o._ensureVisible(e),
                       e.level > 1 && e.parentElement.dropDownHeightSet)
                     ) {
-                      const t = o.dropDownPosition,
-                        n =
-                          e.getBoundingClientRect().top -
-                          e.parentElement.container.getBoundingClientRect().top;
-                      -1 !== t.indexOf('bottom') || 'auto' === t
+                      const t = o.dropDownPosition;
+                      const n =
+                        e.getBoundingClientRect().top -
+                        e.parentElement.container.getBoundingClientRect().top;
+                      t.indexOf('bottom') !== -1 || t === 'auto'
                         ? (r.style.top = n + 'px')
-                        : -1 !== t.indexOf('top')
+                        : t.indexOf('top') !== -1
                         ? (r.style.top = n + e.offsetHeight + 'px')
                         : (r.style.top = n + e.offsetHeight / 2 + 'px');
                     }
@@ -9694,7 +10143,7 @@ License: https://htmlelements.com/license/ */
                       delete r.itemContainer.checkOverflow);
                   }
                   o._positionExternalContainer(r, e),
-                    'tree' === i || o._minimized
+                    i === 'tree' || o._minimized
                       ? l || o._browserBoundsDetection(o.$.mainContainer)
                       : o._browserBoundsDetection(r),
                     void 0 === t.type &&
@@ -9712,28 +10161,30 @@ License: https://htmlelements.com/license/ */
                 }
                 s
                   ? o._ripple(e, t)
-                  : 'tree' !== i ||
+                  : i !== 'tree' ||
                     l ||
                     (o._checkOverflow(o.$.mainContainer, !1, [
                       o.$.scrollButtonNear,
                       o.$.scrollButtonFar,
                     ]),
-                    o._minimized || 'expand' === t.type || o._ensureVisible(e));
+                    o._minimized || t.type === 'expand' || o._ensureVisible(e));
               }
+
               _mouseenterHandler() {
                 const e = this;
                 e.autoFocusOnMouseenter &&
                   e.getRootNode().activeElement !== e &&
                   e.focus();
               }
+
               _mouseleaveHandler(e) {
                 const t = this;
                 if (
-                  'mouseenter' === t.selectionMode &&
-                  'tree' !== t.mode &&
+                  t.selectionMode === 'mouseenter' &&
+                  t.mode !== 'tree' &&
                   !t._minimized
                 ) {
-                  if (null !== t.dropDownAppendTo && e.relatedTarget)
+                  if (t.dropDownAppendTo !== null && e.relatedTarget)
                     if (t.contains(e.target)) {
                       const n = e.relatedTarget.closest(
                         '.smart-menu-drop-down'
@@ -9749,6 +10200,7 @@ License: https://htmlelements.com/license/ */
                     }, t.autoCloseDelay));
                 }
               }
+
               _mouseoutMouseoverHandler(e) {
                 const t = this;
                 if (t.disabled || t.displayLoadingIndicator) return;
@@ -9761,19 +10213,19 @@ License: https://htmlelements.com/license/ */
                       e.composedPath()[0].closest('smart-menu-item') ||
                       e.composedPath()[0].closest('smart-menu-items-group') ||
                       n),
-                  'mouseover' === e.type && (t._isElementHovered = !0),
-                  null !== n &&
+                  e.type === 'mouseover' && (t._isElementHovered = !0),
+                  n !== null &&
                     !n.disabled &&
                     !n.templateApplied &&
-                    (('tree' !== t.mode && !t._minimized) ||
+                    ((t.mode !== 'tree' && !t._minimized) ||
                       !n.hasAttribute('focus') ||
                       !e.relatedTarget ||
                       (e.target.parentElement !== e.relatedTarget &&
                         e.relatedTarget.parentElement !== e.target)))
                 )
-                  if ((t._discardKeyboardHover(!1), 'mouseover' === e.type)) {
-                    'mouseenter' !== t.selectionMode ||
-                      'tree' === t.mode ||
+                  if ((t._discardKeyboardHover(!1), e.type === 'mouseover')) {
+                    t.selectionMode !== 'mouseenter' ||
+                      t.mode === 'tree' ||
                       t._minimized ||
                       (n instanceof Smart.MenuItemsGroup &&
                       !n.hasAttribute('hover')
@@ -9787,9 +10239,9 @@ License: https://htmlelements.com/license/ */
                       t._discardKeyboardHover(!0));
                   } else {
                     if (
-                      'tree' !== t.mode &&
+                      t.mode !== 'tree' &&
                       !t._minimized &&
-                      ('mouseenter' === t.selectionMode &&
+                      (t.selectionMode === 'mouseenter' &&
                         e.relatedTarget === t.$.mainContainer &&
                         t._close(),
                       n instanceof Smart.MenuItemsGroup &&
@@ -9800,6 +10252,7 @@ License: https://htmlelements.com/license/ */
                     n.$.removeClass('hover'), n.removeAttribute('hover');
                   }
               }
+
               _moveDropDownsToExternalContainer() {
                 const e = this;
                 for (let t = 0; t < e._containersInBody.length; t++) {
@@ -9816,7 +10269,7 @@ License: https://htmlelements.com/license/ */
                 for (let t = 0; t < e._containers.length; t++) {
                   const n = e._containers[t];
                   (n.ownerElement = e),
-                    '' !== e.theme && n.classList.add(e.theme),
+                    e.theme !== '' && n.classList.add(e.theme),
                     e.rightToLeft && n.setAttribute('right-to-left', ''),
                     n.classList.add('smart-drop-down-repositioned'),
                     n.setAttribute('mode', e.mode),
@@ -9824,6 +10277,7 @@ License: https://htmlelements.com/license/ */
                     e.checkboxes && n.setAttribute('checkboxes', '');
                 }
               }
+
               _moveDropDownsToMenu() {
                 const e = this;
                 for (let t = 0; t < e._containersInBody.length; t++) {
@@ -9841,7 +10295,7 @@ License: https://htmlelements.com/license/ */
                 }
                 for (let t = 0; t < e._containers.length; t++) {
                   const n = e._containers[t];
-                  '' !== e.theme && n.classList.remove(e.theme),
+                  e.theme !== '' && n.classList.remove(e.theme),
                     n.classList.remove('smart-drop-down-repositioned'),
                     n.removeAttribute('mode'),
                     n.removeAttribute('drop-down-position'),
@@ -9849,10 +10303,11 @@ License: https://htmlelements.com/license/ */
                     n.removeAttribute('right-to-left');
                 }
               }
+
               _navigate(e, t, n) {
                 const o = this;
                 if (!t)
-                  return void ('_getNextEnabledChild' === e
+                  return void (e === '_getNextEnabledChild'
                     ? o._hoverViaKeyboard(o._getFirstEnabledChild(n))
                     : o._hoverViaKeyboard(o._getLastEnabledChild(n)));
                 const i = o[e](t);
@@ -9861,27 +10316,28 @@ License: https://htmlelements.com/license/ */
                   t.removeAttribute('focus'),
                   o._hoverViaKeyboard(i));
               }
+
               _positionExternalContainer(e, t) {
                 const n = this;
-                if (null === n.dropDownAppendTo || 2 !== e.level) return;
-                const o = n.dropDownPosition,
-                  i = n.mode,
-                  r = t.getBoundingClientRect(),
-                  a = n._positionDetection.getDropDownOffset(),
-                  s = r.top + a.y,
-                  l = r.bottom + a.y;
-                let d = r.left + a.x,
-                  m = r.right + a.x;
+                if (n.dropDownAppendTo === null || e.level !== 2) return;
+                const o = n.dropDownPosition;
+                const i = n.mode;
+                const r = t.getBoundingClientRect();
+                const a = n._positionDetection.getDropDownOffset();
+                const s = r.top + a.y;
+                const l = r.bottom + a.y;
+                let d = r.left + a.x;
+                const m = r.right + a.x;
                 switch (
                   ((e.style.top = e.style.left = e.style.right = ''),
                   n.rightToLeft && (e.style.right = 'initial'),
-                  -1 !== o.indexOf('left')
+                  o.indexOf('left') !== -1
                     ? ((d -= e.offsetWidth),
-                      ('horizontal' !== i && 'overlay-left' !== o) ||
+                      (i !== 'horizontal' && o !== 'overlay-left') ||
                         (d += r.width),
                       (e.style.left = d + 'px'),
                       (e.style.right = 'initial'))
-                    : 'horizontal' === i || 'overlay-right' === o
+                    : i === 'horizontal' || o === 'overlay-right'
                     ? (e.style.left = d + 'px')
                     : n.rightToLeft
                     ? (e.style.left = m - e.offsetWidth + 'px')
@@ -9891,12 +10347,12 @@ License: https://htmlelements.com/license/ */
                   case 'bottom-right':
                   case 'bottom-left':
                   case 'auto':
-                    e.style.top = 'horizontal' === i ? l + 'px' : s + 'px';
+                    e.style.top = i === 'horizontal' ? l + 'px' : s + 'px';
                     break;
                   case 'top-right':
                   case 'top-left':
                     e.style.top =
-                      'horizontal' === i
+                      i === 'horizontal'
                         ? s - e.offsetHeight + 'px'
                         : l - e.offsetHeight + 'px';
                     break;
@@ -9905,14 +10361,15 @@ License: https://htmlelements.com/license/ */
                     e.style.top = s + r.height / 2 + 'px';
                 }
               }
+
               _processDataSource() {
-                const e = this,
-                  t = e.dataSource,
-                  n = e.displayMember,
-                  o = e.itemsMember,
-                  i = e.valueMember,
-                  r = e.$.mainContainer,
-                  a = document.createDocumentFragment();
+                const e = this;
+                const t = e.dataSource;
+                const n = e.displayMember;
+                const o = e.itemsMember;
+                const i = e.valueMember;
+                const r = e.$.mainContainer;
+                const a = document.createDocumentFragment();
                 function s(t, r) {
                   let a;
                   if (Array.isArray(t[o]) && t[o].length > 0) {
@@ -9920,12 +10377,12 @@ License: https://htmlelements.com/license/ */
                       'smart-' + e._element + '-items-group'
                     )),
                       !0 === t.checkable && a.set('checkable', !0),
-                      'string' == typeof t.checkMode &&
+                      typeof t.checkMode === 'string' &&
                         a.set('checkMode', t.checkMode),
                       t.dropDownHeight &&
                         a.set('dropDownHeight', t.dropDownHeight),
                       !0 === t.expanded &&
-                        'tree' === e.mode &&
+                        e.mode === 'tree' &&
                         (a.set('expanded', !0),
                         a.setAttribute('aria-expanded', !0));
                     for (let e = 0; e < t[o].length; e++) s(t[o][e], a);
@@ -9946,7 +10403,7 @@ License: https://htmlelements.com/license/ */
                     !0 === t.disabled && a.set('disabled', !0),
                     void 0 !== t[n]
                       ? a.set('label', t[n])
-                      : 'string' == typeof t[o] && a.set('label', t[o]),
+                      : typeof t[o] === 'string' && a.set('label', t[o]),
                     !0 === t.selected && a.set('selected', !0),
                     !0 === t.separator && a.set('separator', !0),
                     void 0 !== t[i] && a.set('value', t[i]),
@@ -9958,6 +10415,7 @@ License: https://htmlelements.com/license/ */
                 e.$.mainContainer.appendChild(a),
                   e._processHTML(e.$.mainContainer, 1);
               }
+
               _processHTML(e, t, n) {
                 const o = this;
                 let i, r;
@@ -9965,17 +10423,17 @@ License: https://htmlelements.com/license/ */
                   ((i = o._createMenuItemsGroupContainer(e, t)),
                   (r = i.itemContainer),
                   (e.expanded || e.hasAttribute('expanded')) &&
-                  'tree' === o.mode
+                  o.mode === 'tree'
                     ? o._menuItemsGroupsToExpand.push(e)
                     : (e.set('expanded', !1),
                       e.removeAttribute('expanded'),
                       e.setAttribute('aria-expanded', !1)));
-                const a = Array.from(e.children),
-                  s = [],
-                  l = document.createDocumentFragment();
+                const a = Array.from(e.children);
+                const s = [];
+                const l = document.createDocumentFragment();
                 let d = 0;
                 for (let n = 0; n < a.length; n++) {
-                  if (t > 1 && 0 === n) {
+                  if (t > 1 && n === 0) {
                     d++;
                     continue;
                   }
@@ -10006,7 +10464,7 @@ License: https://htmlelements.com/license/ */
                     const n = document.createElement('div');
                     (n.className =
                       'smart-' + o._element + '-items-group-arrow'),
-                      'menu' === o._element
+                      o._element === 'menu'
                         ? n.setAttribute('role', 'presentation')
                         : (n.setAttribute('role', 'button'),
                           n.setAttribute('aria-label', 'Toggle')),
@@ -10014,7 +10472,7 @@ License: https://htmlelements.com/license/ */
                       e.firstElementChild.appendChild(n);
                   }
                   o._containers.push(i),
-                    2 === t &&
+                    t === 2 &&
                       (o._containersInBody.push(i),
                       o._edgeMacFF &&
                         i.addEventListener('transitionend', function (e) {
@@ -10024,8 +10482,8 @@ License: https://htmlelements.com/license/ */
                             (this.style.top = ''),
                             this.$.addClass('not-in-view'));
                         })),
-                    null === o.dropDownAppendTo ||
-                    'tree' === o.mode ||
+                    o.dropDownAppendTo === null ||
+                    o.mode === 'tree' ||
                     o._minimized
                       ? e.appendChild(i)
                       : ((i.ownerElement = o),
@@ -10039,9 +10497,9 @@ License: https://htmlelements.com/license/ */
                           o.dropDownPosition
                         ),
                         o.checkboxes && i.setAttribute('checkboxes', ''),
-                        '' !== o.theme && i.$.addClass(o.theme),
+                        o.theme !== '' && i.$.addClass(o.theme),
                         i.setAttribute('animation', o.animation),
-                        2 === t
+                        t === 2
                           ? (o._dropDownParent.appendChild(i),
                             i.$.listen('click', o._selectionHandler.bind(o)),
                             i.$.listen(
@@ -10061,10 +10519,11 @@ License: https://htmlelements.com/license/ */
                 o._validateRadioButtonSelection(e, t, s),
                   o._sortItems && !1 !== n && o._sortItems(e);
               }
+
               _processUList() {
-                const e = this,
-                  t = new RegExp(/<li>(.(?!<\/li>)|\n)*?<ul>/),
-                  n = new RegExp(/<\/ul>(.|\n)*?<\/li>/);
+                const e = this;
+                const t = new RegExp(/<li>(.(?!<\/li>)|\n)*?<ul>/);
+                const n = new RegExp(/<\/ul>(.|\n)*?<\/li>/);
                 let o = e.$.mainContainer.firstElementChild.innerHTML;
                 for (
                   o = o.replace(/\r?\n|\r/g, ''),
@@ -10074,22 +10533,23 @@ License: https://htmlelements.com/license/ */
                   t.test(o);
 
                 ) {
-                  const n = t.exec(o),
-                    i =
-                      '<smart-' +
-                      e._element +
-                      '-items-group>' +
-                      n[0].slice(4, n[0].length - 4);
+                  const n = t.exec(o);
+                  const i =
+                    '<smart-' +
+                    e._element +
+                    '-items-group>' +
+                    n[0].slice(4, n[0].length - 4);
                   o = o.replace(n[0], i);
                 }
                 for (; n.test(o); ) {
-                  const t = n.exec(o),
-                    i = '</smart-' + e._element + '-items-group>';
+                  const t = n.exec(o);
+                  const i = '</smart-' + e._element + '-items-group>';
                   o = o.replace(t[0], i);
                 }
                 (o = o.replace(/li>/g, 'smart-' + e._element + '-item>')),
                   (e.$.mainContainer.innerHTML = o);
               }
+
               _refreshContainersArrays() {
                 const e = this;
                 for (let t = e._containers.length - 1; t >= 0; t--) {
@@ -10104,6 +10564,7 @@ License: https://htmlelements.com/license/ */
                 }
                 e._checkContainersLength();
               }
+
               _refreshItemPaths(e, t, n, o) {
                 const i = this;
                 let r;
@@ -10120,6 +10581,7 @@ License: https://htmlelements.com/license/ */
                       i._refreshItemPaths(s, void 0, n, o);
                 }
               }
+
               _removeContainerFixedHeight() {
                 const e = this;
                 for (let t = 0; t < e._containersFixedHeight.length; t++) {
@@ -10132,21 +10594,23 @@ License: https://htmlelements.com/license/ */
                     (n.itemContainer.checkOverflow = !0);
                 }
               }
+
               _removeContainersInBody() {
                 const e = this;
-                if (null !== e.dropDownAppendTo && !e._minimized)
+                if (e.dropDownAppendTo !== null && !e._minimized)
                   for (let t = 0; t < e._containersInBody.length; t++)
                     e._containersInBody[t].remove();
               }
+
               _reparentMenu(e, t) {
                 const n = this;
                 if (
-                  'dropDown' === n.mode &&
-                  (null !== n._dropDownParent || e) &&
+                  n.mode === 'dropDown' &&
+                  (n._dropDownParent !== null || e) &&
                   n._dropDownParent !== n.parentElement
                 ) {
-                  if (e && null !== t) {
-                    if (null === n._dropDownParent)
+                  if (e && t !== null) {
+                    if (n._dropDownParent === null)
                       return (
                         n._positionRelativeTo.appendChild(n),
                         void (n._positionRelativeTo = null)
@@ -10155,30 +10619,33 @@ License: https://htmlelements.com/license/ */
                   n._dropDownParent.appendChild(n);
                 }
               }
+
               refresh() {
                 const e = this;
                 if (e._suppressResizeHandler)
                   return void delete e._suppressResizeHandler;
-                const t = e.minimizeWidth,
-                  n = e.mode;
-                if (null !== t && 'dropDown' !== n) {
+                const t = e.minimizeWidth;
+                const n = e.mode;
+                if (t !== null && n !== 'dropDown') {
                   if (e.offsetWidth <= t && !e._minimized)
                     return void e.minimize();
                   e.offsetWidth > t && e.maximize();
                 }
-                (null !== e.dropDownAppendTo ||
-                  'tree' === n ||
+                (e.dropDownAppendTo !== null ||
+                  n === 'tree' ||
                   e.$mainContainer.hasClass('simple')) &&
-                  e._checkOverflow(e.$.mainContainer, 'horizontal' === n, [
+                  e._checkOverflow(e.$.mainContainer, n === 'horizontal', [
                     e.$.scrollButtonNear,
                     e.$.scrollButtonFar,
                   ]);
               }
+
               _resizeHandler() {
                 this.refresh();
               }
+
               _ripple(e, t) {
-                if (this.hasRippleAnimation && 'click' === t.type)
+                if (this.hasRippleAnimation && t.type === 'click')
                   return (
                     Smart.Utilities.Animation.Ripple.animate(
                       e,
@@ -10188,17 +10655,20 @@ License: https://htmlelements.com/license/ */
                     !0
                   );
               }
+
               _scroll(e) {
                 if (e.closest('[template-applied]')) return;
-                const t = this,
-                  n = t.$.mainContainer,
-                  o = t.mode,
-                  i = e.classList.contains('smart-scroll-button-near') ? -1 : 1;
+                const t = this;
+                const n = t.$.mainContainer;
+                const o = t.mode;
+                const i = e.classList.contains('smart-scroll-button-near')
+                  ? -1
+                  : 1;
                 let r;
                 if (e.parentElement === t.$.container)
                   (r = n),
-                    'tree' !== o && t._closeSubContainers(2),
-                    'horizontal' === t.mode
+                    o !== 'tree' && t._closeSubContainers(2),
+                    t.mode === 'horizontal'
                       ? ((n.scrollLeft = n.scrollLeft + 10 * i),
                         t._updateScrollButtonVisibility(n, !0, [
                           t.$.scrollButtonNear,
@@ -10210,8 +10680,8 @@ License: https://htmlelements.com/license/ */
                           t.$.scrollButtonFar,
                         ]));
                 else {
-                  const n = e.parentElement,
-                    o = n.itemContainer;
+                  const n = e.parentElement;
+                  const o = n.itemContainer;
                   (r = o),
                     t._closeSubContainers(n.level + 1),
                     (o.scrollTop = o.scrollTop + 10 * i),
@@ -10222,15 +10692,16 @@ License: https://htmlelements.com/license/ */
                 }
                 t._scrollInfo.set(r, { left: r.scrollLeft, top: r.scrollTop });
               }
+
               _selectionHandler(e, t) {
-                const n = this,
-                  o = e.target;
+                const n = this;
+                const o = e.target;
                 if (
                   (o.closest('[template-applied]') && e.stopPropagation(),
                   !n.disabled && !n.displayLoadingIndicator)
                 ) {
                   if (void 0 === t) {
-                    if ('click' === e.type) {
+                    if (e.type === 'click') {
                       const t = o.closest('smart-repeat-button');
                       if (t) return void n._scroll(t, e);
                     }
@@ -10246,17 +10717,18 @@ License: https://htmlelements.com/license/ */
                   t && !t.disabled && n._menuItemsGroupSelectionHandler(t, e);
                 }
               }
+
               _setArrowDirection(e, t) {
-                const n = this,
-                  o = n.mode;
-                'tree' === o || n._minimized
+                const n = this;
+                const o = n.mode;
+                o === 'tree' || n._minimized
                   ? (e.className =
                       'smart-' +
                       n._element +
                       '-items-group-arrow down smart-arrow-down')
-                  : 'overlay' !== n.dropDownPosition.slice(0, 7)
-                  ? 2 === t && 'horizontal' === o
-                    ? 'top' !== n.dropDownPosition.slice(0, 3)
+                  : n.dropDownPosition.slice(0, 7) !== 'overlay'
+                  ? t === 2 && o === 'horizontal'
+                    ? n.dropDownPosition.slice(0, 3) !== 'top'
                       ? (e.className =
                           'smart-menu-items-group-arrow down smart-arrow-down')
                       : (e.className =
@@ -10268,28 +10740,33 @@ License: https://htmlelements.com/license/ */
                           : 'right smart-arrow-right'))
                   : (e.className = 'smart-menu-items-group-arrow minus');
               }
+
               _setFocusable() {
                 const e = this;
                 if (e.disabled || e.unfocusable)
                   return void e.removeAttribute('tabindex');
                 const t = e.getAttribute('tabindex');
-                (null === t || t < 0) && e.setAttribute('tabindex', 0);
+                (t === null || t < 0) && e.setAttribute('tabindex', 0);
               }
+
               _setItemLabel(e, t) {
-                const n = this,
-                  o = n.context,
-                  i = e.querySelector('.smart-menu-item-label-element>span');
+                const n = this;
+                const o = n.context;
+                const i = e.querySelector(
+                  '.smart-menu-item-label-element>span'
+                );
                 (n.context = n),
                   n._setLabel(t, i, e, !0),
-                  n._checkOverflow(n.$.mainContainer, 'horizontal' === n.mode, [
+                  n._checkOverflow(n.$.mainContainer, n.mode === 'horizontal', [
                     n.$.scrollButtonNear,
                     n.$.scrollButtonFar,
                   ]),
                   (n.context = o);
               }
+
               _setLabel(e, t, n, o) {
                 const i = document.getElementById(e);
-                if (null !== i && 'template' === i.tagName.toLowerCase()) {
+                if (i !== null && i.tagName.toLowerCase() === 'template') {
                   const r = document.importNode(i.content, !0);
                   if (n instanceof Smart.MenuItem)
                     t.appendChild(r),
@@ -10320,16 +10797,17 @@ License: https://htmlelements.com/license/ */
                   (t.innerHTML = e),
                     n instanceof Smart.MenuItemsGroup && (n.titleLabel = e);
               }
+
               _toggleItem(e) {
                 const t = this;
                 if (t.checkboxes) {
-                  const n = 1 === e.level ? t : e.parentItem;
+                  const n = e.level === 1 ? t : e.parentItem;
                   if (n.checkable) {
                     const o = t._getItemCheckableInfo(e, n);
                     let i = !1;
                     return (
-                      'none' !== o.checkMode &&
-                      ('checkbox' === o.checkMode
+                      o.checkMode !== 'none' &&
+                      (o.checkMode === 'checkbox'
                         ? ((i = !0),
                           e.set('checked', !e.checked),
                           e.checked
@@ -10341,7 +10819,7 @@ License: https://htmlelements.com/license/ */
                             value: e.value,
                             checked: e.checked,
                           }))
-                        : 'radioButton' !== o.checkMode ||
+                        : o.checkMode !== 'radioButton' ||
                           e.checked ||
                           ((i = !0),
                           e.set('checked', !0),
@@ -10360,8 +10838,8 @@ License: https://htmlelements.com/license/ */
                           label: e.label,
                           value: e.value,
                         }),
-                      'tree' === t.mode ||
-                        'ListMenu' === t.elementName ||
+                      t.mode === 'tree' ||
+                        t.elementName === 'ListMenu' ||
                         t.preventCloseOnCheck ||
                         (t._close(), t.close()),
                       !0)
@@ -10370,14 +10848,15 @@ License: https://htmlelements.com/license/ */
                 }
                 return !1;
               }
+
               _getItemCheckableInfo(e, t) {
-                const n = Array.from(e.parentElement.children),
-                  o = t.checkMode.replace(/\s/g, '').split(',');
+                const n = Array.from(e.parentElement.children);
+                const o = t.checkMode.replace(/\s/g, '').split(',');
                 let i, r;
-                if (1 === o.length) (i = o[0]), (r = n);
+                if (o.length === 1) (i = o[0]), (r = n);
                 else {
-                  let t = 0,
-                    a = !1;
+                  let t = 0;
+                  let a = !1;
                   r = [];
                   for (let o = 0; o < n.length; o++) {
                     const i = n[o];
@@ -10390,9 +10869,10 @@ License: https://htmlelements.com/license/ */
                 }
                 return { checkMode: i, siblings: r };
               }
+
               _refreshCheckableItems(e) {
-                const t = this,
-                  n = !t.checkboxes;
+                const t = this;
+                const n = !t.checkboxes;
                 (e
                   ? [e]
                   : [t].concat(t._containers.map((e) => e.menuItemsGroup))
@@ -10401,30 +10881,30 @@ License: https://htmlelements.com/license/ */
                     (e === t ? t.$.mainContainer : e.itemContainer).children
                   );
                   let i = e.checkMode.replace(/\s/g, '').split(',');
-                  if (n || !e.checkable || 1 === i.length)
+                  if (n || !e.checkable || i.length === 1)
                     return void o.forEach((e) =>
                       e.removeAttribute('check-type')
                     );
                   let r = 0;
                   i = i.map((e) =>
-                    -1 === ['checkbox', 'radioButton', 'none'].indexOf(e)
+                    ['checkbox', 'radioButton', 'none'].indexOf(e) === -1
                       ? 'none'
                       : e
                   );
-                  let a = [],
-                    s = [];
+                  let a = [];
+                  let s = [];
                   for (let e = 0; e < o.length; e++) {
                     const n = o[e];
                     let l = i[r];
                     if (
                       (void 0 === l && (l = i[r] = 'none'),
-                      ('none' !== l && t._isChildEnabled(n)) ||
+                      (l !== 'none' && t._isChildEnabled(n)) ||
                         ((n.checked = !1), n.removeAttribute('aria-checked')),
-                      'none' === l
+                      l === 'none'
                         ? n.setAttribute('role', 'menuitem')
-                        : 'checkbox' === l
+                        : l === 'checkbox'
                         ? n.setAttribute('role', 'menuitemcheckbox')
-                        : 'radioButton' === l &&
+                        : l === 'radioButton' &&
                           (n.setAttribute('role', 'menuitemradio'),
                           a.push(n),
                           n.checked && s.push(n)),
@@ -10435,7 +10915,7 @@ License: https://htmlelements.com/license/ */
                         if (s.length > 1)
                           for (let e = 0; e < s.length - 1; e++)
                             s[e].checked = !1;
-                        else if (0 === s.length)
+                        else if (s.length === 0)
                           for (let e = 0; e < a.length; e++)
                             if (t._isChildEnabled(a[e])) {
                               a[e].checked = !0;
@@ -10447,12 +10927,13 @@ License: https://htmlelements.com/license/ */
                   e.checkMode = i.join(', ');
                 });
               }
+
               _transitionendHandler(e) {
                 const t = this;
-                'dropDown' === t.mode &&
+                t.mode === 'dropDown' &&
                   t.opened &&
                   e.target === t &&
-                  'opacity' === e.propertyName &&
+                  e.propertyName === 'opacity' &&
                   (t._checkOverflowOnOpen &&
                     (t._checkOverflow(t.$.mainContainer, !1, [
                       t.$.scrollButtonNear,
@@ -10463,10 +10944,11 @@ License: https://htmlelements.com/license/ */
                     t._noAutoFocus ||
                     t.focus());
               }
+
               _transitionendHandlerCollapse() {
                 let e, t;
-                if (1 === arguments.length) {
-                  if ('visibility' === arguments[0].propertyName) return;
+                if (arguments.length === 1) {
+                  if (arguments[0].propertyName === 'visibility') return;
                   (t = this), (e = t.menuItemsGroup.menu);
                 } else (e = arguments[0]), (t = arguments[1]);
                 t.menuItemsGroup.$.removeClass(
@@ -10486,10 +10968,11 @@ License: https://htmlelements.com/license/ */
                   e._minimized && e._browserBoundsDetection(e.$.mainContainer),
                   delete e._treeAnimationInProgress;
               }
+
               _transitionendHandlerExpand() {
                 let e, t;
-                if (1 === arguments.length) {
-                  if ('visibility' === arguments[0].propertyName) return;
+                if (arguments.length === 1) {
+                  if (arguments[0].propertyName === 'visibility') return;
                   (t = this), (e = t.menuItemsGroup.menu);
                 } else (e = arguments[0]), (t = arguments[1]);
                 t.removeEventListener(
@@ -10507,6 +10990,7 @@ License: https://htmlelements.com/license/ */
                     delete e._ensureVisibleOnTransitionend),
                   delete e._treeAnimationInProgress;
               }
+
               _uncheckSiblings(e, t) {
                 for (let n = 0; n < t.length; n++) {
                   const o = t[n];
@@ -10522,11 +11006,12 @@ License: https://htmlelements.com/license/ */
                     }));
                 }
               }
+
               _unsortItems(e, t) {
                 const n = this;
-                let o,
-                  i,
-                  r = [];
+                let o;
+                let i;
+                const r = [];
                 e === n.$.mainContainer
                   ? ((i = e), (o = e.children))
                   : ((i = e.container.firstElementChild), (o = i.children));
@@ -10540,16 +11025,17 @@ License: https://htmlelements.com/license/ */
                 if (!(r.length < 2))
                   for (let e = 0; e < r.length; e++) i.appendChild(r[e]);
               }
+
               _updateItemRoles(e) {
                 const t = this;
-                for (let n in t._menuItems) {
-                  const o = t._menuItems[n],
-                    i = o.parentItem || t;
+                for (const n in t._menuItems) {
+                  const o = t._menuItems[n];
+                  const i = o.parentItem || t;
                   (e && i !== e) ||
                     (t.checkboxes && i.checkable
                       ? o.setAttribute(
                           'role',
-                          'checkbox' === i.checkMode
+                          i.checkMode === 'checkbox'
                             ? 'menuitemcheckbox'
                             : 'menuitemradio'
                         )
@@ -10557,16 +11043,17 @@ License: https://htmlelements.com/license/ */
                 }
                 t._refreshCheckableItems(e);
               }
+
               _updateScrollButtonVisibility(e, t, n) {
-                const o = this,
-                  i = o.overflow,
-                  r = e === o.$.mainContainer;
-                if (r && 'hidden' === i) return;
-                let a,
-                  s,
-                  l,
-                  d = !0,
-                  m = !0;
+                const o = this;
+                const i = o.overflow;
+                const r = e === o.$.mainContainer;
+                if (r && i === 'hidden') return;
+                let a;
+                let s;
+                let l;
+                let d = !0;
+                let m = !0;
                 if (
                   (t
                     ? ((a = 'scrollLeft'),
@@ -10575,11 +11062,11 @@ License: https://htmlelements.com/license/ */
                     : ((a = 'scrollTop'),
                       (s = 'offsetHeight'),
                       (l = 'scrollHeight')),
-                  0 === Math.round(e[a]) && (d = !1),
+                  Math.round(e[a]) === 0 && (d = !1),
                   Math.round(e[s] + e[a]) >= Math.round(e[l]) && (m = !1),
-                  r && 'auto' !== i)
+                  r && i !== 'auto')
                 )
-                  'scroll' !== i ||
+                  i !== 'scroll' ||
                     o.disabled ||
                     ((n[0].disabled = !d), (n[1].disabled = !m));
                 else {
@@ -10598,21 +11085,22 @@ License: https://htmlelements.com/license/ */
                     e.classList.add('one-button-shown');
                 }
               }
+
               _validateRadioButtonSelection(e, t, n) {
                 const o = this;
                 if (o.checkboxes) {
                   let i, r;
                   if (
-                    (1 === t
+                    (t === 1
                       ? ((i = o), (r = o.$.mainContainer))
                       : ((i = e), (r = e.itemContainer)),
-                    'radioButton' === i.checkMode && i.checkable)
+                    i.checkMode === 'radioButton' && i.checkable)
                   )
                     if (n.length > 1)
                       for (let e = n.length - 2; e >= 0; e--)
                         n[e].set('checked', !1),
                           n[e].removeAttribute('aria-checked');
-                    else if (0 === n.length) {
+                    else if (n.length === 0) {
                       const e = o._getFirstEnabledChild(r);
                       e &&
                         !o.disableAutoCheck &&
@@ -10647,9 +11135,11 @@ License: https://htmlelements.com/license/ */
                 groupName: { value: '', type: 'string' },
               };
             }
+
             template() {
               return "<div  id='container' class='smart-container'>\n                 <div class ='smart-overlay'></div>\n                 <span id='radioButtonInput' class ='smart-input'></span>\n                 <span id='radioButtonLabel' inner-h-t-m-l='[[innerHTML]]' class ='smart-label'><content></content></span>\n                 <input id='hiddenInput' class ='smart-hidden-input' type='hidden'>\n               </div>";
             }
+
             static get listeners() {
               return {
                 down: '_downHandler',
@@ -10661,27 +11151,35 @@ License: https://htmlelements.com/license/ */
                 blur: '_blurHandler',
               };
             }
+
             static get styleUrls() {
               return ['smart.toggle.css'];
             }
+
             _radioMouseEnterHandler() {
               this.$.setAttributeValue('hover', !0);
             }
+
             _radioMouseLeaveHandler() {
               this.$.setAttributeValue('hover', !1);
             }
+
             _focusHandler() {
               this.$.setAttributeValue('focus', !0);
             }
+
             _blurHandler() {
               this.$.setAttributeValue('focus', !1);
             }
+
             _mouseEnterHandler() {
               this.$.setAttributeValue('hover', !0);
             }
+
             _mouseLeaveHandler() {
               this.$.setAttributeValue('hover', !1);
             }
+
             ready() {
               const e = this;
               super.ready(),
@@ -10690,25 +11188,26 @@ License: https://htmlelements.com/license/ */
                 e._updateHidenInputNameAndValue(),
                 e._updateGroupValue();
             }
+
             _downHandler(e) {
-              const t = this,
-                a = t.enableShadowDOM
-                  ? e.originalEvent.composedPath()[0]
-                  : e.originalEvent.target;
+              const t = this;
+              const a = t.enableShadowDOM
+                ? e.originalEvent.composedPath()[0]
+                : e.originalEvent.target;
               if (
                 !(
                   t.disabled ||
                   t.readonly ||
-                  ('input' === t.checkMode && a !== t.$.radioButtonInput) ||
-                  ('label' === t.checkMode && a !== t.$.radioButtonLabel)
+                  (t.checkMode === 'input' && a !== t.$.radioButtonInput) ||
+                  (t.checkMode === 'label' && a !== t.$.radioButtonLabel)
                 )
               ) {
                 if (
                   (t.$.setAttributeValue('active', !0), t.hasRippleAnimation)
                 ) {
-                  const e = t.$.radioButtonInput.getBoundingClientRect(),
-                    a = window.scrollX || window.pageXOffset,
-                    n = window.scrollY || window.pageYOffset;
+                  const e = t.$.radioButtonInput.getBoundingClientRect();
+                  const a = window.scrollX || window.pageXOffset;
+                  const n = window.scrollY || window.pageYOffset;
                   Smart.Utilities.Animation.Ripple.animate(
                     t.$.radioButtonInput,
                     e.left + e.width / 2 + a,
@@ -10717,13 +11216,13 @@ License: https://htmlelements.com/license/ */
                 }
                 t._preventAction
                   ? (t._preventAction = !1)
-                  : (('release' !== t.clickMode &&
-                      'pressAndRelease' !== t.clickMode) ||
+                  : ((t.clickMode !== 'release' &&
+                      t.clickMode !== 'pressAndRelease') ||
                       (t._pressed = !0),
-                    ('press' !== t.clickMode &&
-                      'pressAndRelease' !== t.clickMode) ||
-                      ('pressAndRelease' === t.clickMode &&
-                        ('' === t.groupName
+                    (t.clickMode !== 'press' &&
+                      t.clickMode !== 'pressAndRelease') ||
+                      (t.clickMode === 'pressAndRelease' &&
+                        (t.groupName === ''
                           ? (t._checkedBeforeChange = t.parentNode.querySelector(
                               'smart-radio-button[checked]'
                             ))
@@ -10735,27 +11234,29 @@ License: https://htmlelements.com/license/ */
                       t._handleMouseInteraction()));
               }
             }
+
             _elementMouseEnterHandler() {
               const e = this;
-              'hover' !== e.clickMode ||
+              e.clickMode !== 'hover' ||
                 e.disabled ||
                 e.readonly ||
                 e._handleMouseInteraction();
             }
+
             _documentUpHandler(e) {
-              const t = this,
-                a = t.enableShadowDOM
-                  ? e.originalEvent.composedPath()[0]
-                  : e.originalEvent.target;
+              const t = this;
+              const a = t.enableShadowDOM
+                ? e.originalEvent.composedPath()[0]
+                : e.originalEvent.target;
               !t._pressed ||
                 t.disabled ||
                 t.readonly ||
-                ('input' === t.checkMode && a !== t.$.radioButtonInput) ||
-                ('label' === t.checkMode && a !== t.$.radioButtonLabel) ||
-                'pointercancel' === e.originalEvent.type ||
-                ('release' === t.clickMode
+                (t.checkMode === 'input' && a !== t.$.radioButtonInput) ||
+                (t.checkMode === 'label' && a !== t.$.radioButtonLabel) ||
+                e.originalEvent.type === 'pointercancel' ||
+                (t.clickMode === 'release'
                   ? t._handleMouseInteraction()
-                  : (null === t._checkedBeforeChange
+                  : (t._checkedBeforeChange === null
                       ? (t.$.fireEvent('change', {
                           value: !1,
                           oldValue: !0,
@@ -10771,6 +11272,7 @@ License: https://htmlelements.com/license/ */
                 t.$.setAttributeValue('active', !1),
                 (t._pressed = !1));
             }
+
             _handleMouseInteraction() {
               const e = this;
               e._handleTextSelection(),
@@ -10778,35 +11280,37 @@ License: https://htmlelements.com/license/ */
                 e.focus(),
                 e._updateHidenInputNameAndValue();
             }
+
             _handleMultipleCheckedInstances() {
               const e = Array.from(
-                  document.querySelectorAll(
-                    'smart-radio-button[group-name="' +
-                      this.groupName +
-                      '"][checked]'
-                  )
-                ),
-                t = Array.from(
-                  document.querySelectorAll(
-                    'smart-ui-radio-button[group-name="' +
-                      this.groupName +
-                      '"][checked]'
-                  )
-                ),
-                a = e.length + t.length;
+                document.querySelectorAll(
+                  'smart-radio-button[group-name="' +
+                    this.groupName +
+                    '"][checked]'
+                )
+              );
+              const t = Array.from(
+                document.querySelectorAll(
+                  'smart-ui-radio-button[group-name="' +
+                    this.groupName +
+                    '"][checked]'
+                )
+              );
+              const a = e.length + t.length;
               a < 2 ||
                 e.concat(...t).forEach((e, t) => t < a - 1 && (e.checked = !1));
             }
+
             _changeCheckState(e) {
               const t = this;
               let a = document.querySelectorAll(
-                  'smart-radio-button[group-name="' + t.groupName + '"]'
-                ),
-                n = document.querySelectorAll(
-                  'smart-ui-radio-button[group-name="' + t.groupName + '"]'
-                ),
-                o = Array.from(a).concat(...n);
-              if ((!0 === t.checked && 'api' === e) || !1 === t.checked)
+                'smart-radio-button[group-name="' + t.groupName + '"]'
+              );
+              let n = document.querySelectorAll(
+                'smart-ui-radio-button[group-name="' + t.groupName + '"]'
+              );
+              let o = Array.from(a).concat(...n);
+              if ((!0 === t.checked && e === 'api') || !1 === t.checked)
                 if (o.length > 0) t._changeCheckStateInGroup(o, e);
                 else {
                   let r = t.parentNode;
@@ -10825,17 +11329,18 @@ License: https://htmlelements.com/license/ */
                     t._changeCheckStateInGroup(o, e);
                 }
             }
+
             _updateGroupValue() {
               const e = this;
               if (e.dataset.target) {
                 const t = document.querySelector(e.dataset.target);
                 if (t && e.checked) {
-                  const a = e.dataset.property,
-                    n = e.dataset.value;
+                  const a = e.dataset.property;
+                  const n = e.dataset.value;
                   if (a && void 0 !== t[a]) {
                     let e = n;
-                    'true' === e && (e = !0),
-                      'false' === e && (e = !1),
+                    e === 'true' && (e = !0),
+                      e === 'false' && (e = !1),
                       (t[a] = e);
                   } else
                     e.name
@@ -10850,9 +11355,10 @@ License: https://htmlelements.com/license/ */
                 }
               }
             }
+
             _changeCheckStateInGroup(e, t) {
-              const a = this,
-                n = a.getRootNode().host ? a.getRootNode().host : a;
+              const a = this;
+              const n = a.getRootNode().host ? a.getRootNode().host : a;
               for (let t = 0; t < e.length; t++)
                 (e[t]._isUpdating = !0),
                   e[t] === n
@@ -10874,6 +11380,7 @@ License: https://htmlelements.com/license/ */
                   n.$.fireEvent('checkValue', { changeType: t })),
                 a._updateGroupValue();
             }
+
             propertyChangedHandler(e, t, a) {
               const n = this;
               switch (e) {
@@ -10930,12 +11437,15 @@ License: https://htmlelements.com/license/ */
                 value: { type: 'integer', value: 0 },
               };
             }
+
             static get styleUrls() {
               return ['smart.scrollbar.css'];
             }
+
             template() {
               return '<div id="container" class="smart-container" role="presentation">\n                    <div id="nearButton" class="smart-scroll-button smart-arrow-left" role="presentation" aria-hidden="true"></div>\n                    <div  id="track" class="smart-track" role="presentation">\n                        <div id="thumb" class="smart-thumb" role="presentation"></div>\n                    </div>\n                    <div id="farButton" class="smart-scroll-button smart-arrow-right" role="presentation" aria-hidden="true"></div>\n            </div>';
             }
+
             static get listeners() {
               return {
                 'nearButton.click': '_nearButtonClickHandler',
@@ -10959,14 +11469,16 @@ License: https://htmlelements.com/license/ */
                 resize: '_resizeHandler',
               };
             }
+
             _updateInBoundsFlag(t) {
-              const e = this,
-                a = t.target;
+              const e = this;
+              const a = t.target;
               (a._isPointerInBounds = !0),
-                -1 !== t.type.indexOf('leave') && (a._isPointerInBounds = !1),
-                1 !== ('buttons' in t ? t.buttons : t.which) &&
+                t.type.indexOf('leave') !== -1 && (a._isPointerInBounds = !1),
+                ('buttons' in t ? t.buttons : t.which) !== 1 &&
                   e._stopRepeat(t);
             }
+
             _startRepeat(t) {
               const e = this;
               if (e.disabled) return;
@@ -10989,6 +11501,7 @@ License: https://htmlelements.com/license/ */
                   }, e.clickRepeatDelay);
                 }, 3 * e.clickRepeatDelay));
             }
+
             _stopRepeat(t) {
               if (this.disabled) return;
               const e = t.target;
@@ -10997,13 +11510,14 @@ License: https://htmlelements.com/license/ */
                 e._initialTimer &&
                   (clearTimeout(e._initialTimer), (e._initialTimer = null));
             }
+
             _calculateThumbSize(t) {
-              const e = this,
-                a = e.max - e.min,
-                r =
-                  'horizontal' === e.orientation
-                    ? e.$.track.offsetWidth > 10
-                    : e.$.track.offsetHeight > 10;
+              const e = this;
+              const a = e.max - e.min;
+              const r =
+                e.orientation === 'horizontal'
+                  ? e.$.track.offsetWidth > 10
+                  : e.$.track.offsetHeight > 10;
               let n = 0;
               return (
                 a >= 1 && r
@@ -11014,6 +11528,7 @@ License: https://htmlelements.com/license/ */
                 Math.max(10, Math.min(n, t))
               );
             }
+
             _dragStartHandler(t) {
               const e = this;
               e.disabled ||
@@ -11024,17 +11539,18 @@ License: https://htmlelements.com/license/ */
                 t.stopPropagation(),
                 t.preventDefault());
             }
+
             _dragHandler(t) {
               const e = this;
               if (!0 !== e.thumbCapture) return;
               e._isThumbDragged = !0;
-              const a = (e.max - e.min) / (e.scrollBarSize - e.thumbSize),
-                r =
-                  'horizontal' === e.orientation
-                    ? (t.clientX - e.dragStartX) * a
-                    : (t.clientY - e.dragStartY) * a;
+              const a = (e.max - e.min) / (e.scrollBarSize - e.thumbSize);
+              const r =
+                e.orientation === 'horizontal'
+                  ? (t.clientX - e.dragStartX) * a
+                  : (t.clientY - e.dragStartY) * a;
               let n = r;
-              e.rightToLeft && 'horizontal' === e.orientation && (n = -r),
+              e.rightToLeft && e.orientation === 'horizontal' && (n = -r),
                 e._updateValue(e.dragStartValue + n),
                 t.stopPropagation(),
                 t.preventDefault(),
@@ -11042,6 +11558,7 @@ License: https://htmlelements.com/license/ */
                   (t.originalEvent.stopPropagation(),
                   t.originalEvent.preventDefault());
             }
+
             _dragEndHandler(t) {
               const e = this;
               e._trackDownTimer &&
@@ -11049,39 +11566,42 @@ License: https://htmlelements.com/license/ */
                 e.thumbCapture &&
                   ((e.thumbCapture = !1),
                   (e._isThumbDragged = !1),
-                  'switchWhenReleased' === e.mechanicalAction
+                  e.mechanicalAction === 'switchWhenReleased'
                     ? e._updateValue(e.dragStartValue, e.value)
-                    : 'switchUntilReleased' === this.mechanicalAction &&
+                    : this.mechanicalAction === 'switchUntilReleased' &&
                       e._updateValue(e.dragStartValue),
                   t.preventDefault(),
                   t.stopPropagation(),
                   t.originalEvent.preventDefault(),
                   t.originalEvent.stopPropagation());
             }
+
             _farButtonClickHandler() {
               const t = this;
               if (t.disabled) return;
               const e = t.value;
               t._updateValue(
                 t.value +
-                  ('horizontal' === t.orientation && t.rightToLeft ? -1 : 1) *
+                  (t.orientation === 'horizontal' && t.rightToLeft ? -1 : 1) *
                     t.step
               ),
-                'switchUntilReleased' === t.mechanicalAction &&
+                t.mechanicalAction === 'switchUntilReleased' &&
                   t._updateValue(e);
             }
+
             _nearButtonClickHandler() {
               const t = this;
               if (t.disabled) return;
               const e = t.value;
               t._updateValue(
                 t.value -
-                  ('horizontal' === t.orientation && t.rightToLeft ? -1 : 1) *
+                  (t.orientation === 'horizontal' && t.rightToLeft ? -1 : 1) *
                     t.step
               ),
-                'switchUntilReleased' === t.mechanicalAction &&
+                t.mechanicalAction === 'switchUntilReleased' &&
                   t._updateValue(e);
             }
+
             propertyChangedHandler(t, e, a) {
               super.propertyChangedHandler(t, e, a);
               const r = this;
@@ -11091,11 +11611,11 @@ License: https://htmlelements.com/license/ */
                 case 'orientation':
                 case 'showButtons':
                   r._layout(),
-                    'min' === t
+                    t === 'min'
                       ? r.setAttribute('aria-valuemin', a)
-                      : 'max' === t
+                      : t === 'max'
                       ? r.setAttribute('aria-valuemax', a)
-                      : 'orientation' === t &&
+                      : t === 'orientation' &&
                         r.setAttribute('aria-orientation', a);
                   break;
                 case 'value':
@@ -11105,6 +11625,7 @@ License: https://htmlelements.com/license/ */
                   r._layout();
               }
             }
+
             render() {
               const t = this;
               t.setAttribute('role', 'scrollbar'),
@@ -11115,37 +11636,43 @@ License: https://htmlelements.com/license/ */
                 t._layout(),
                 super.render();
             }
+
             _resizeHandler() {
               this._layout();
             }
+
             refresh() {
               this._layout();
             }
+
             beginUpdate() {
               this._isUpdating = !0;
             }
+
             endUpdate() {
               (this._isUpdating = !1), this.refreshValue();
             }
+
             refreshValue() {
               const t = this;
               t._layout(), t._updateValue(t.value);
             }
+
             _layout() {
               const t = this;
               t._isUpdating ||
                 ((t.scrollBarSize =
-                  'horizontal' === t.orientation
+                  t.orientation === 'horizontal'
                     ? t.$.track.offsetWidth
                     : t.$.track.offsetHeight),
                 (t.thumbSize = t._calculateThumbSize(t.scrollBarSize)),
-                'horizontal' === t.orientation &&
+                t.orientation === 'horizontal' &&
                 t.$.thumb.style.width !== t.thumbSize + 'px'
                   ? (t.$.thumb.style.width = t.thumbSize + 'px')
-                  : 'vertical' === t.orientation &&
+                  : t.orientation === 'vertical' &&
                     t.$.thumb.style.height !== t.thumbSize + 'px' &&
                     (t.$.thumb.style.height = t.thumbSize + 'px'),
-                'horizontal' === t.orientation
+                t.orientation === 'horizontal'
                   ? (t.$.nearButton.classList.contains('smart-arrow-up') &&
                       t.$.nearButton.classList.remove('smart-arrow-up'),
                     t.$.farButton.classList.contains('smart-arrow-down') &&
@@ -11166,9 +11693,11 @@ License: https://htmlelements.com/license/ */
                 (t.value > t.max || t.value < t.min) &&
                   t._updateValue(t.value, t.value > t.max ? t.max : t.min));
             }
+
             _selectStartHandler(t) {
               this.thumbCapture && t.preventDefault();
             }
+
             _trackDownHandler(t) {
               const e = this;
               t.target === e.$.track &&
@@ -11180,6 +11709,7 @@ License: https://htmlelements.com/license/ */
                   t.stopPropagation(),
                   t.preventDefault()));
             }
+
             _trackClickHandler(t) {
               const e = this;
               if (e.disabled) return;
@@ -11188,11 +11718,11 @@ License: https://htmlelements.com/license/ */
                   clearInterval(e._trackDownTimer),
                   void (e._trackDownTimer = null)
                 );
-              const a = e.$.thumb.getBoundingClientRect(),
-                r = t.pageX - window.pageXOffset,
-                n = t.pageY - window.pageYOffset,
-                i = (e.rightToLeft ? -1 : 1) * e.value;
-              'horizontal' === e.orientation
+              const a = e.$.thumb.getBoundingClientRect();
+              const r = t.pageX - window.pageXOffset;
+              const n = t.pageY - window.pageYOffset;
+              const i = (e.rightToLeft ? -1 : 1) * e.value;
+              e.orientation === 'horizontal'
                 ? r > (e._isThumbDragged ? e.dragStartX : a.right)
                   ? e._updateValue(
                       e.value + (e.rightToLeft ? -1 : 1) * e.largeStep
@@ -11205,18 +11735,20 @@ License: https://htmlelements.com/license/ */
                 ? e._updateValue(e.value + e.largeStep)
                 : n < (e._isThumbDragged ? e.dragStartY : a.top) &&
                   e._updateValue(e.value - e.largeStep),
-                'switchUntilReleased' === e.mechanicalAction &&
+                e.mechanicalAction === 'switchUntilReleased' &&
                   e._updateValue(i);
             }
+
             _trackMoveHandler(t) {
-              'touchmove' === t.originalEvent.type &&
+              t.originalEvent.type === 'touchmove' &&
                 t.originalEvent.preventDefault();
             }
+
             _updateValue(t, e) {
               const a = this;
               if (
                 !a._isUpdating &&
-                (1 === arguments.length && ((e = t), (t = a.value)),
+                (arguments.length === 1 && ((e = t), (t = a.value)),
                 (void 0 === e || isNaN(e)) && (e = a.min),
                 e > a.max && (e = a.max),
                 e < a.min && (e = a.min),
@@ -11226,7 +11758,7 @@ License: https://htmlelements.com/license/ */
                 if (
                   (a.setAttribute('aria-valuenow', e),
                   a._updateThumbPosition(),
-                  a.thumbCapture && 'switchWhenReleased' === a.mechanicalAction)
+                  a.thumbCapture && a.mechanicalAction === 'switchWhenReleased')
                 )
                   return;
                 if (a.onChange)
@@ -11245,22 +11777,23 @@ License: https://htmlelements.com/license/ */
                 });
               }
             }
+
             _updateThumbPosition() {
-              const t = this,
-                e =
-                  'horizontal' === t.orientation
-                    ? t.$.track.offsetWidth
-                    : t.$.track.offsetHeight,
-                a = t._calculateThumbSize(e),
-                r = e - a;
+              const t = this;
+              const e =
+                t.orientation === 'horizontal'
+                  ? t.$.track.offsetWidth
+                  : t.$.track.offsetHeight;
+              const a = t._calculateThumbSize(e);
+              const r = e - a;
               let n = ((e - a) / (t.max - t.min)) * (t.value - t.min);
               t.rightToLeft &&
-                'horizontal' === t.orientation &&
+                t.orientation === 'horizontal' &&
                 (n = ((e - a) / (t.max - t.min)) * (t.max - t.value - t.min)),
                 (n = Math.min(r, Math.max(0, n))),
-                'vertical' === t.orientation && t.$.thumb.style.top !== n + 'px'
+                t.orientation === 'vertical' && t.$.thumb.style.top !== n + 'px'
                   ? (t.$.thumb.style.top = n + 'px')
-                  : 'horizontal' === t.orientation &&
+                  : t.orientation === 'horizontal' &&
                     t.$.thumb.style.left !== n + 'px' &&
                     (t.$.thumb.style.left = n + 'px');
             }
@@ -11277,6 +11810,7 @@ License: https://htmlelements.com/license/ */
             static get properties() {
               return { selected: { value: !1, type: 'boolean' } };
             }
+
             ready() {
               const e = this;
               Object.defineProperty(e, 'hasStyleObserver', {
@@ -11288,12 +11822,13 @@ License: https://htmlelements.com/license/ */
                 e.setAttribute('role', 'treeitem'),
                 e.setAttribute('aria-label', e.label);
             }
+
             propertyChangedHandler(e, t, r) {
-              const n = this,
-                o = n.menu;
-              if ((super.propertyChangedHandler(e, t, r), 'level' === e))
+              const n = this;
+              const o = n.menu;
+              if ((super.propertyChangedHandler(e, t, r), e === 'level'))
                 return void (n.level = t);
-              if ('disabled' === e || 'separator' === e || !o) return;
+              if (e === 'disabled' || e === 'separator' || !o) return;
               const l = o.context;
               switch (((o.context = o), e)) {
                 case 'label': {
@@ -11323,6 +11858,7 @@ License: https://htmlelements.com/license/ */
               }
               o.context = l;
             }
+
             _setId() {}
           }
         ),
@@ -11332,6 +11868,7 @@ License: https://htmlelements.com/license/ */
               static get properties() {
                 return { selected: { value: !1, type: 'boolean' } };
               }
+
               ready() {
                 const e = this;
                 Object.defineProperty(e, 'hasStyleObserver', {
@@ -11344,12 +11881,13 @@ License: https://htmlelements.com/license/ */
                   e.removeAttribute('aria-haspopup'),
                   e.setAttribute('aria-label', e.label);
               }
+
               propertyChangedHandler(e, t, r) {
-                const n = this,
-                  o = n.menu;
-                if ((super.propertyChangedHandler(e, t, r), 'level' === e))
+                const n = this;
+                const o = n.menu;
+                if ((super.propertyChangedHandler(e, t, r), e === 'level'))
                   return void (n.level = t);
-                if ('disabled' === e || 'separator' === e || !o) return;
+                if (e === 'disabled' || e === 'separator' || !o) return;
                 const l = o.context;
                 switch (((o.context = o), e)) {
                   case 'expanded':
@@ -11373,6 +11911,7 @@ License: https://htmlelements.com/license/ */
                 }
                 o.context = l;
               }
+
               _setId() {}
             }
           ),
@@ -11511,6 +12050,7 @@ License: https://htmlelements.com/license/ */
                   },
                 };
               }
+
               static get listeners() {
                 return {
                   blur: '_blurHandler',
@@ -11545,9 +12085,11 @@ License: https://htmlelements.com/license/ */
                   'document.up': '_documentUpHandler',
                 };
               }
+
               static get requires() {
                 return { 'Smart.ScrollBar': 'smart.scrollbar.js' };
               }
+
               static get styleUrls() {
                 return [
                   'smart.scrollbar.css',
@@ -11555,15 +12097,17 @@ License: https://htmlelements.com/license/ */
                   'smart.tree.css',
                 ];
               }
+
               template() {
                 return '<div id="container" role="presentation">\n                    <div class="smart-tree-filter-input-container" role="presentation"><input id="filterInput" class="smart-filter-input" disabled="[[disabled]]" placeholder="[[filterInputPlaceholder]]" type="text" role="searchbox" aria-label="[[filterInputPlaceholder]]" /></div>\n                    <smart-repeat-button id="scrollButtonNear" class="smart-tree-scroll-button smart-spin-button smart-scroll-button-near smart-hidden" animation="[[animation]]" unfocusable aria-label="Scroll up">\n                        <div id="arrowNear" class="smart-arrow smart-arrow-up"></div>\n                    </smart-repeat-button>\n                    <smart-scroll-viewer id="scrollViewer" animation="[[animation]]" horizontal-scroll-bar-visibility="hidden" right-to-left="[[rightToLeft]]">\n                        <div id="mainContainer" inner-h-t-m-l=\'[[innerHTML]]\' class="smart-tree-main-container" role="presentation">\n                            <content></content>\n                        </div>\n                        <input type="text" id="editInput" class="smart-tree-edit-input smart-hidden" />\n                    </smart-scroll-viewer>\n                    <smart-repeat-button id="scrollButtonFar" class="smart-tree-scroll-button smart-spin-button smart-scroll-button-far smart-hidden" animation="[[animation]]" unfocusable aria-label="Scroll down">\n                        <div id="arrowFar" class="smart-arrow smart-arrow-down"></div>\n                    </smart-repeat-button>\n                    <div id="loadingIndicatorContainer" class="smart-loader-container smart-hidden" role="presentation">\n                        <span id="loadingIndicator" class="smart-loader" role="img" aria-label="[[loadingIndicatorPlaceholder]]"></span>\n                        <span id="loadingIndicatorPlaceHolder" class="smart-loader-label smart-hidden">[[loadingIndicatorPlaceholder]]</span>\n                    </div>\n                </div>';
               }
+
               detached() {
-                const e = this,
-                  t = e._dragDetails;
+                const e = this;
+                const t = e._dragDetails;
                 if ((super.detached(), !t)) return;
-                const r = Smart.Tree.hoveredTree,
-                  n = Smart.Tree.hoveredItem;
+                const r = Smart.Tree.hoveredTree;
+                const n = Smart.Tree.hoveredItem;
                 delete e._dragDetails,
                   delete Smart.Tree.treeItemDragged,
                   delete Smart.Tree.hoveredTree,
@@ -11575,14 +12119,17 @@ License: https://htmlelements.com/license/ */
                     t.Feedback.remove(),
                     r && clearInterval(r._dragInterval));
               }
+
               addAfter(e, t) {
                 void 0 !== (t = this.getItem(t)) &&
                   this.addTo(e, t.parentItem, t, !0);
               }
+
               addBefore(e, t) {
                 void 0 !== (t = this.getItem(t)) &&
                   this.addTo(e, t.parentItem, t);
               }
+
               addTo(e, t) {
                 const r = this;
                 if (
@@ -11591,7 +12138,7 @@ License: https://htmlelements.com/license/ */
                     e instanceof Smart.TreeItemsGroup
                   )
                 )
-                  if ('string' == typeof e) {
+                  if (typeof e === 'string') {
                     const t = document.createElement('smart-tree-item');
                     (t.label = e), (e = t);
                   } else {
@@ -11617,9 +12164,9 @@ License: https://htmlelements.com/license/ */
                   (n = t.level + 1), (o = t.itemContainer);
                 }
                 r._createItemHTMLStructure(e, n, t, o.childElementCount, 0);
-                const l = r.sorted && r.autoSort,
-                  a = r._state.filter,
-                  s = r.selectedIndexes.slice(0);
+                const l = r.sorted && r.autoSort;
+                const a = r._state.filter;
+                const s = r.selectedIndexes.slice(0);
                 l && r._unsortItems(r.$.mainContainer),
                   e instanceof Smart.TreeItemsGroup &&
                     (Array.from(
@@ -11647,29 +12194,33 @@ License: https://htmlelements.com/license/ */
                   (r.selectedIndexes = []),
                   r._applySelection(!0, s);
               }
+
               _offsetTop(e) {
                 return e ? e.offsetTop + this._offsetTop(e.offsetParent) : 0;
               }
+
               _offsetLeft(e) {
                 return e ? e.offsetLeft + this._offsetLeft(e.offsetParent) : 0;
               }
+
               offset(e) {
                 return { left: this._offsetLeft(e), top: this._offsetTop(e) };
               }
+
               openDropDown() {
                 const e = this;
                 if (!e.dropDownMode) return;
                 if (!e.$.dropDownPopup) return;
-                const t = e.$.dropDownPopup,
-                  r = e.$.dropDownElement;
+                const t = e.$.dropDownPopup;
+                const r = e.$.dropDownElement;
                 r.setAttribute('active', ''),
                   r
                     .querySelector('.smart-drop-down-button')
                     .setAttribute('active', ''),
                   (e._isOpened = !0),
                   (() => {
-                    const n = 0,
-                      o = 0;
+                    const n = 0;
+                    const o = 0;
                     if (window.screen.availWidth < 400)
                       return (
                         t.open('left', 'top'),
@@ -11682,22 +12233,23 @@ License: https://htmlelements.com/license/ */
                         height: e.dropDownHeight,
                       };
                       (t.style.width =
-                        'auto' === r.width ? r.width : r.width + 'px'),
+                        r.width === 'auto' ? r.width : r.width + 'px'),
                         (t.style.height =
-                          'auto' === r.height ? r.height : r.height + 'px');
+                          r.height === 'auto' ? r.height : r.height + 'px');
                     }
                     const l = r;
                     if (l) {
-                      const r = e.offset(l),
-                        a = r.left - n,
-                        s = n,
-                        i = Math.max(s, a);
+                      const r = e.offset(l);
+                      const a = r.left - n;
+                      const s = n;
+                      const i = Math.max(s, a);
                       t.open(i, r.top + l.offsetHeight - o);
                     } else
                       t.classList.add('center'), t.open('center', 'center');
                     e.style.display = '';
                   })();
               }
+
               closeDropDown() {
                 const e = this;
                 e.dropDownMode &&
@@ -11709,9 +12261,10 @@ License: https://htmlelements.com/license/ */
                     .removeAttribute('active'),
                   e.$.dropDownPopup.close());
               }
+
               _createPopup(e) {
                 const t = this;
-                let r = document.createElement('div');
+                const r = document.createElement('div');
                 return (
                   r.setAttribute('animation', 'none'),
                   r.classList.add('smart-window', 'smart-tree-popup'),
@@ -11723,14 +12276,14 @@ License: https://htmlelements.com/license/ */
                       top: 'center',
                     }),
                   (r.style.width =
-                    'auto' === e.width ? e.width : e.width + 'px'),
+                    e.width === 'auto' ? e.width : e.width + 'px'),
                   (r.style.height =
-                    'auto' === e.height ? e.height : e.height + 'px'),
+                    e.height === 'auto' ? e.height : e.height + 'px'),
                   e.width &&
-                    'string' == typeof e.width &&
+                    typeof e.width === 'string' &&
                     (r.style.width = e.width),
                   e.height &&
-                    'string' == typeof e.height &&
+                    typeof e.height === 'string' &&
                     (r.style.height = e.height),
                   (r.style.left = ''),
                   (r.style.top = ''),
@@ -11762,8 +12315,8 @@ License: https://htmlelements.com/license/ */
                           switch (
                             ((t.dropDownMode || r.dropDownMode) &&
                               (o = { left: 0, top: 0 }),
-                            'center' === e &&
-                              'horizontal' === n &&
+                            e === 'center' &&
+                              n === 'horizontal' &&
                               (e = 'middle'),
                             e)
                           ) {
@@ -11788,11 +12341,11 @@ License: https://htmlelements.com/license/ */
                             case 'right':
                               return o.left + t.offsetWidth - r.offsetWidth;
                           }
-                          return 'horizontal' === n
+                          return n === 'horizontal'
                             ? parseInt(e) + o.left
-                            : 'vertical' === n
+                            : n === 'vertical'
                             ? parseInt(e) + o.top
-                            : 'number' == typeof e
+                            : typeof e === 'number'
                             ? e
                             : parseInt(e);
                         };
@@ -11803,13 +12356,13 @@ License: https://htmlelements.com/license/ */
                               ? (r.style.left = e(t, 'horizontal') + 'px')
                               : (r.style.top = e(t, 'vertical') + 'px');
                           }),
-                          'center' === n &&
+                          n === 'center' &&
                             parseInt(r.style.left) < 0 &&
                             ((r.style.left = '5%'), (r.style.maxWidth = '90%')),
-                          'screenMiddle' === n &&
+                          n === 'screenMiddle' &&
                             (r.style.left =
                               'calc(50% - ' + r.offsetWidth / 2 + 'px)'),
-                          'screenCenter' === o &&
+                          o === 'screenCenter' &&
                             (r.style.top =
                               'calc(50% - ' + r.offsetHeight / 2 + 'px)');
                       }),
@@ -11818,6 +12371,7 @@ License: https://htmlelements.com/license/ */
                   r
                 );
               }
+
               _renderInDropDown() {
                 const e = this;
                 if (
@@ -11826,8 +12380,8 @@ License: https://htmlelements.com/license/ */
                   e.dropDownMode && void 0 === e._dropDownMode)
                 ) {
                   e._dropDownMode = !0;
-                  const t = document.createElement('div'),
-                    r = e._createPopup();
+                  const t = document.createElement('div');
+                  const r = e._createPopup();
                   if (
                     ((r.allowDrag = !1),
                     r.classList.add('smart-tree-drop-down-popup'),
@@ -11861,9 +12415,9 @@ License: https://htmlelements.com/license/ */
                   ) {
                     (e._popupDropDown = r),
                       (r._refreshPosition = () => {
-                        const n = e.offset(t),
-                          o = t.offsetHeight,
-                          l = e.offset(e);
+                        const n = e.offset(t);
+                        const o = t.offsetHeight;
+                        const l = e.offset(e);
                         if (
                           ((r.style.maxHeight = ''),
                           (r.style.minHeight = ''),
@@ -11903,14 +12457,15 @@ License: https://htmlelements.com/license/ */
                           e.$.fireEvent('close');
                       }),
                       (r.onkeydown = function (e) {
-                        'Escape' === e.key && ((r.result = !1), r.close());
+                        e.key === 'Escape' && ((r.result = !1), r.close());
                       });
                   }
                 }
               }
+
               getSelectedValues() {
-                const e = this,
-                  t = [];
+                const e = this;
+                const t = [];
                 for (let r = 0; r < e.selectedIndexes.length; r++) {
                   const n = e._menuItems[e.selectedIndexes[r]];
                   n.hasAttribute('value')
@@ -11920,6 +12475,7 @@ License: https://htmlelements.com/license/ */
                 }
                 return t;
               }
+
               unselectValues(e) {
                 const t = this;
                 e &&
@@ -11930,11 +12486,12 @@ License: https://htmlelements.com/license/ */
                       ? (o = n.getAttribute('value'))
                       : n.hasAttribute('label') &&
                         (o = n.getAttribute('label')),
-                      'string' == typeof e
+                      typeof e === 'string'
                         ? e === o && t.unselect(r)
                         : e.indexOf(o) >= 0 && t.unselect(r);
                   });
               }
+
               setSelectedValues(e) {
                 const t = this;
                 e &&
@@ -11945,7 +12502,7 @@ License: https://htmlelements.com/license/ */
                       ? (o = n.getAttribute('value'))
                       : n.hasAttribute('label') &&
                         (o = n.getAttribute('label')),
-                      'string' == typeof e
+                      typeof e === 'string'
                         ? e === o &&
                           t._canItemBeSelected(n) &&
                           t._handleSelection(n, { type: 'programmatic' })
@@ -11954,19 +12511,22 @@ License: https://htmlelements.com/license/ */
                           t._handleSelection(n, { type: 'programmatic' });
                   });
               }
+
               clearSelection() {
-                const e = this,
-                  t = e.selectedIndexes.slice(0);
+                const e = this;
+                const t = e.selectedIndexes.slice(0);
                 (e.selectedIndexes = []), e._applySelection(!1, t);
               }
+
               collapseAll(e) {
-                const t = this,
-                  r = t.animation,
-                  n = !1 === e && t.hasAnimation;
+                const t = this;
+                const r = t.animation;
+                const n = !1 === e && t.hasAnimation;
                 n && (t.animation = 'none'),
                   t._collapseAll(!0),
                   n && (t.animation = r);
               }
+
               ensureVisible(e) {
                 const t = this;
                 if (void 0 === (e = t.getItem(e)) || e.hidden) return;
@@ -11978,14 +12538,15 @@ License: https://htmlelements.com/license/ */
                   r && (t._ensureVisibleOnTransitionend = e)),
                   r || t._ensureVisible(e);
               }
+
               expandAll(e) {
-                const t = this,
-                  r = t.animation,
-                  n = !1 === e && t.hasAnimation;
-                let o = 1,
-                  l = (t.enableShadowDOM ? t.shadowRoot : t).querySelectorAll(
-                    'smart-tree-items-group[level="1"]'
-                  );
+                const t = this;
+                const r = t.animation;
+                const n = !1 === e && t.hasAnimation;
+                let o = 1;
+                let l = (t.enableShadowDOM ? t.shadowRoot : t).querySelectorAll(
+                  'smart-tree-items-group[level="1"]'
+                );
                 for (n && (t.animation = 'none'); l.length > 0; ) {
                   for (let e = 0; e < l.length; e++) {
                     const r = l[e];
@@ -12005,6 +12566,7 @@ License: https://htmlelements.com/license/ */
                 }
                 n && (t.animation = r);
               }
+
               expandItem(e, t) {
                 const r = this;
                 if (
@@ -12016,8 +12578,8 @@ License: https://htmlelements.com/license/ */
                 )
                   return;
                 void 0 !== Smart.Menu.processTimer && r._lazyInitItems();
-                const n = !1 === t && r.hasAnimation,
-                  o = r.animation;
+                const n = !1 === t && r.hasAnimation;
+                const o = r.animation;
                 n && (r.animation = 'none'),
                   r._discardKeyboardHover(),
                   r._menuItemsGroupSelectionHandler(
@@ -12027,14 +12589,17 @@ License: https://htmlelements.com/license/ */
                   ),
                   n && (r.animation = o);
               }
+
               filter(e) {
                 const t = this;
                 t.filterable &&
                   (t._applyFilter(e), (t.$.filterInput.value = e));
               }
+
               getState() {
                 return JSON.parse(JSON.stringify(this._state));
               }
+
               insert(e, t) {
                 const r = this;
                 let n;
@@ -12045,15 +12610,14 @@ License: https://htmlelements.com/license/ */
                   if (r.contains(e)) return;
                   (e.isDirty = !1), (n = e);
                 } else {
-                  if ('object' != typeof e || e.constructor !== Object) return;
+                  if (typeof e !== 'object' || e.constructor !== Object) return;
                   n = (function e(t) {
-                    const n = t[r.itemsMember],
-                      o =
-                        'smart-tree-items-group' === t.tagName ||
-                        Array.isArray(n)
-                          ? 'smart-tree-items-group'
-                          : 'smart-tree-item',
-                      l = document.createElement(o);
+                    const n = t[r.itemsMember];
+                    const o =
+                      t.tagName === 'smart-tree-items-group' || Array.isArray(n)
+                        ? 'smart-tree-items-group'
+                        : 'smart-tree-item';
+                    const l = document.createElement(o);
                     if (
                       ((l.isDirty = !1),
                       t.disabled && (l.disabled = !0),
@@ -12061,7 +12625,7 @@ License: https://htmlelements.com/license/ */
                       t.selected && (l.selected = !0),
                       t.separator && (l.separator = !0),
                       t[r.valueMember] && (l.value = t[r.valueMember]),
-                      'smart-tree-items-group' === o)
+                      o === 'smart-tree-items-group')
                     ) {
                       if ((t.expanded && (l.expanded = !0), n))
                         for (let t = 0; t < n.length; t++)
@@ -12071,17 +12635,17 @@ License: https://htmlelements.com/license/ */
                   })(e);
                 }
                 if (void 0 === t) return void r.addTo(n);
-                if ('number' == typeof t) t = t.toString();
+                if (typeof t === 'number') t = t.toString();
                 else if (
                   t instanceof Smart.TreeItem ||
                   t instanceof Smart.TreeItemsGroup
                 ) {
                   if (!r.contains(t)) return;
                   t = t.path;
-                } else if ('string' != typeof t) return;
+                } else if (typeof t !== 'string') return;
                 const o = t.split('.');
                 let l, a;
-                1 === o.length
+                o.length === 1
                   ? ((a = r._menuItems[o[0]]),
                     a ? r.addBefore(n, a) : r.addTo(n))
                   : ((a = r._menuItems[t]),
@@ -12092,18 +12656,19 @@ License: https://htmlelements.com/license/ */
                         l instanceof Smart.TreeItemsGroup &&
                         r.addTo(n, l));
               }
+
               loadState(e) {
-                const t = this,
-                  r = t.selectedIndexes.slice(0),
-                  n = [];
+                const t = this;
+                const r = t.selectedIndexes.slice(0);
+                const n = [];
                 if (!e) {
                   if (!t.id) return void t.warn(t.localize('noId'));
                   if (!(e = window.localStorage.getItem('smartTree' + t.id)))
                     return;
                 }
-                'string' == typeof e && (e = JSON.parse(e)),
+                typeof e === 'string' && (e = JSON.parse(e)),
                   e.filter && !t.filterable && (e.filter = '');
-                let o = e.filter !== t._state.filter;
+                const o = e.filter !== t._state.filter;
                 e.sorted !== t.sorted
                   ? ((t.sorted = e.sorted),
                     t._updateState('sorted', t.sorted),
@@ -12128,9 +12693,10 @@ License: https://htmlelements.com/license/ */
                 }
                 (t.selectedIndexes = n), t._applySelection(!1, r);
               }
+
               moveDown(e) {
-                const t = this,
-                  r = (e = t.getItem(e)).nextElementSibling;
+                const t = this;
+                const r = (e = t.getItem(e)).nextElementSibling;
                 void 0 !== e &&
                   r &&
                   !t.sorted &&
@@ -12139,9 +12705,10 @@ License: https://htmlelements.com/license/ */
                     t._state.filter &&
                     t._applyFilter(t._state.filter));
               }
+
               moveUp(e) {
-                const t = this,
-                  r = (e = t.getItem(e)).previousElementSibling;
+                const t = this;
+                const r = (e = t.getItem(e)).previousElementSibling;
                 void 0 !== e &&
                   r &&
                   !t.sorted &&
@@ -12150,9 +12717,11 @@ License: https://htmlelements.com/license/ */
                     t._state.filter &&
                     t._applyFilter(t._state.filter));
               }
+
               refresh() {
                 this._checkOverflow();
               }
+
               removeItem(e) {
                 const t = this;
                 if (void 0 === (e = t.getItem(e))) return;
@@ -12173,8 +12742,8 @@ License: https://htmlelements.com/license/ */
                     t.sorted && !t.autoSort
                   ),
                   r && t._applyGrouping(t.$.mainContainer);
-                const o = t._state.filter,
-                  l = t.selectedIndexes.slice(0);
+                const o = t._state.filter;
+                const l = t.selectedIndexes.slice(0);
                 if (
                   (o && t._applyFilter(o),
                   t._checkOverflow(),
@@ -12191,6 +12760,7 @@ License: https://htmlelements.com/license/ */
                   );
                 }
               }
+
               saveState() {
                 const e = this;
                 return (
@@ -12203,6 +12773,7 @@ License: https://htmlelements.com/license/ */
                   JSON.parse(JSON.stringify(e._state))
                 );
               }
+
               select(e) {
                 const t = this;
                 void 0 !== (e = t.getItem(e)) &&
@@ -12210,20 +12781,21 @@ License: https://htmlelements.com/license/ */
                   t._canItemBeSelected(e) &&
                   t._handleSelection(e, { type: 'programmatic' });
               }
+
               unselect(e) {
                 void 0 !== (e = this.getItem(e)) &&
                   e.selected &&
                   !e.templateApplied &&
                   this._handleSelection(e, { type: 'programmatic' });
               }
+
               updateItem(e, t) {
                 if (void 0 === (e = this.getItem(e)) || void 0 === t) return;
                 const r = e instanceof Smart.TreeItem;
-                for (let n in t)
+                for (const n in t)
                   if (Object.prototype.hasOwnProperty.call(t, n)) {
                     if (r) {
                       if (
-                        -1 ===
                         [
                           'disabled',
                           'label',
@@ -12232,11 +12804,10 @@ License: https://htmlelements.com/license/ */
                           'separator',
                           'shortcut',
                           'value',
-                        ].indexOf(n)
+                        ].indexOf(n) === -1
                       )
                         continue;
                     } else if (
-                      -1 ===
                       [
                         'disabled',
                         'expanded',
@@ -12245,12 +12816,13 @@ License: https://htmlelements.com/license/ */
                         'selected',
                         'separator',
                         'value',
-                      ].indexOf(n)
+                      ].indexOf(n) === -1
                     )
                       continue;
                     e[n] = t[n];
                   }
               }
+
               propertyChangedHandler(e, t, r) {
                 const n = this;
                 switch ((super.propertyChangedHandler(e, t, r), e)) {
@@ -12310,14 +12882,14 @@ License: https://htmlelements.com/license/ */
                       : n.$loadingIndicatorContainer.addClass('smart-hidden');
                     break;
                   case 'expandMode':
-                    if ('single' === r) {
+                    if (r === 'single') {
                       const e = n._state.expanded.map((e) =>
-                          Object.values(n._menuItems).find((t) => t.id === e)
-                        ),
-                        t = {};
+                        Object.values(n._menuItems).find((t) => t.id === e)
+                      );
+                      const t = {};
                       for (let r = 0; r < e.length; r++) {
-                        const o = e[r],
-                          l = o.parentItem;
+                        const o = e[r];
+                        const l = o.parentItem;
                         if (t[l]) continue;
                         t[l] = !0;
                         const a = e.filter(
@@ -12338,7 +12910,7 @@ License: https://htmlelements.com/license/ */
                       n._applyFilter(n._state.filter);
                     break;
                   case 'hasThreeStates':
-                    if ('checkBox' !== n.selectionMode) return;
+                    if (n.selectionMode !== 'checkBox') return;
                     if (r) n._applySelection(!1);
                     else {
                       const e = (n.enableShadowDOM
@@ -12353,16 +12925,16 @@ License: https://htmlelements.com/license/ */
                     (n.$.mainContainer.innerHTML = r), n._lazyInitItems();
                     break;
                   case 'loadingIndicatorPosition':
-                    'center' === r
+                    r === 'center'
                       ? n.$loadingIndicatorPlaceHolder.addClass('smart-hidden')
                       : n.$loadingIndicatorPlaceHolder.removeClass(
                           'smart-hidden'
                         );
                     break;
                   case 'overflow':
-                    if ('scrollbar' === n.scrollMode)
+                    if (n.scrollMode === 'scrollbar')
                       return (
-                        'hidden' === r
+                        r === 'hidden'
                           ? n.$.scrollViewer.$.verticalScrollBar.setAttribute(
                               'aria-hidden',
                               !0
@@ -12371,16 +12943,16 @@ License: https://htmlelements.com/license/ */
                               'aria-hidden'
                             ),
                         void (n.$.scrollViewer.verticalScrollBarVisibility =
-                          'scroll' === r ? 'visible' : 'auto')
+                          r === 'scroll' ? 'visible' : 'auto')
                       );
                     (n.$.scrollViewer.scrollTop = 0),
-                      'hidden' === r
+                      r === 'hidden'
                         ? (n.$scrollViewer.removeClass('scroll-buttons-shown'),
                           n.$scrollButtonNear.addClass('smart-hidden'),
                           n.$scrollButtonFar.addClass('smart-hidden'))
                         : ((n.$.scrollButtonNear.disabled = n.disabled),
                           (n.$.scrollButtonFar.disabled = n.disabled),
-                          'auto' === r
+                          r === 'auto'
                             ? (n.$scrollButtonNear.addClass('smart-hidden'),
                               n.$scrollButtonFar.addClass('smart-hidden'),
                               n._checkOverflow())
@@ -12396,23 +12968,23 @@ License: https://htmlelements.com/license/ */
                     r
                       ? ((e = 'paddingLeft'), (t = 'paddingRight'))
                       : ((e = 'paddingRight'), (t = 'paddingLeft'));
-                    for (let r in n._menuItems)
+                    for (const r in n._menuItems)
                       if (
                         Object.prototype.hasOwnProperty.call(n._menuItems, r)
                       ) {
-                        const o = n._menuItems[r],
-                          l = o.firstElementChild;
+                        const o = n._menuItems[r];
+                        const l = o.firstElementChild;
                         (l.style[e] = ''), n._setIndentation(l, o.level, t);
                       }
                     break;
                   }
                   case 'scrollMode':
-                    if ('hidden' === n.overflow) return;
+                    if (n.overflow === 'hidden') return;
                     if (
-                      ((n.$.scrollViewer.scrollTop = 0), 'scrollButtons' === r)
+                      ((n.$.scrollViewer.scrollTop = 0), r === 'scrollButtons')
                     )
                       return (
-                        'scroll' === n.overflow &&
+                        n.overflow === 'scroll' &&
                           (n.$scrollViewer.addClass('scroll-buttons-shown'),
                           n.$scrollButtonNear.removeClass('smart-hidden'),
                           n.$scrollButtonFar.removeClass('smart-hidden')),
@@ -12430,7 +13002,7 @@ License: https://htmlelements.com/license/ */
                       n.$scrollViewer.removeClass('one-button-shown'),
                       n.$scrollButtonNear.addClass('smart-hidden'),
                       n.$scrollButtonFar.addClass('smart-hidden'),
-                      'auto' === n.overflow
+                      n.overflow === 'auto'
                         ? (n.$.scrollViewer.verticalScrollBarVisibility =
                             'auto')
                         : (n.$.scrollViewer.verticalScrollBarVisibility =
@@ -12443,43 +13015,42 @@ License: https://htmlelements.com/license/ */
                     if (
                       (n.setAttribute(
                         'aria-multiselectable',
-                        -1 !==
-                          [
-                            'oneOrManyExtended',
-                            'zeroOrMany',
-                            'oneOrMany',
-                            'checkBox',
-                            'radioButton',
-                          ].indexOf(r)
+                        [
+                          'oneOrManyExtended',
+                          'zeroOrMany',
+                          'oneOrMany',
+                          'checkBox',
+                          'radioButton',
+                        ].indexOf(r) !== -1
                       ),
                       void 0 === n._menuItems[0])
                     )
                       return;
                     if (
-                      ('one' === t &&
-                        'none' !== r &&
-                        'checkBox' !== r &&
-                        'radioButton' !== r) ||
-                      (-1 !== t.indexOf('oneOrMany') &&
-                        -1 !== r.indexOf('oneOrMany')) ||
-                      ('none' === t &&
-                        (-1 !== r.indexOf('zero') || 'checkBox' === r)) ||
-                      ('zeroOrMany' === r && 'checkBox' !== t) ||
-                      ('radioButton' === t && -1 !== r.indexOf('Many')) ||
+                      (t === 'one' &&
+                        r !== 'none' &&
+                        r !== 'checkBox' &&
+                        r !== 'radioButton') ||
+                      (t.indexOf('oneOrMany') !== -1 &&
+                        r.indexOf('oneOrMany') !== -1) ||
+                      (t === 'none' &&
+                        (r.indexOf('zero') !== -1 || r === 'checkBox')) ||
+                      (r === 'zeroOrMany' && t !== 'checkBox') ||
+                      (t === 'radioButton' && r.indexOf('Many') !== -1) ||
                       (!n.hasThreeStates &&
-                        ('checkBox' === r ||
-                          ('checkBox' === t && 'zeroOrMany' === r)))
+                        (r === 'checkBox' ||
+                          (t === 'checkBox' && r === 'zeroOrMany')))
                     )
                       return (
                         (n._lastSelectedItem =
-                          'one' === r || 'oneOrManyExtended' === r
+                          r === 'one' || r === 'oneOrManyExtended'
                             ? n._menuItems[
                                 n.selectedIndexes[n.selectedIndexes.length - 1]
                               ]
                             : void 0),
                         void n._applyAriaSelected()
                       );
-                    if (n.hasThreeStates && 'checkBox' === t) {
+                    if (n.hasThreeStates && t === 'checkBox') {
                       const e = (n.enableShadowDOM
                         ? n.shadowRoot
                         : n
@@ -12518,9 +13089,10 @@ License: https://htmlelements.com/license/ */
                     n._setFocusable();
                 }
               }
+
               _addDragFeedback() {
-                const e = this,
-                  t = document.createElement('div');
+                const e = this;
+                const t = document.createElement('div');
                 return (
                   (t.className = 'smart-tree-item-feedback'),
                   t.setAttribute('parent-tree-id', e.id),
@@ -12529,13 +13101,14 @@ License: https://htmlelements.com/license/ */
                     ? (t.innerHTML = e.dragFeedbackFormatFunction(
                         e._dragDetails.Items
                       ))
-                    : 1 === e._dragDetails.Items.length
+                    : e._dragDetails.Items.length === 1
                     ? (t.innerHTML = e._dragDetails.Item.label)
                     : (t.classList.add('multiple'), (t.innerHTML = '&#xf0c5;')),
                   document.body.appendChild(t),
                   t
                 );
               }
+
               _applyFilter(e) {
                 const t = this;
                 function r(e, t) {
@@ -12545,7 +13118,7 @@ License: https://htmlelements.com/license/ */
                     : (t.hidden || t.$.addClass('smart-hidden'),
                       (t.hidden = !0));
                 }
-                if ('' === e && !t.hasAttribute('filter-applied')) return;
+                if (e === '' && !t.hasAttribute('filter-applied')) return;
                 const n = Array.from(
                   t.$.mainContainer.getElementsByClassName(
                     'last-filtered-child'
@@ -12554,9 +13127,9 @@ License: https://htmlelements.com/license/ */
                 for (let e = 0; e < n.length; e++)
                   n[e].$.removeClass('last-filtered-child');
                 !(function n(o, l) {
-                  let a,
-                    s = !1,
-                    i = 0;
+                  let a;
+                  let s = !1;
+                  let i = 0;
                   l = Array.from(l);
                   for (let o = 0; o < l.length; o++) {
                     const d = l[o];
@@ -12569,7 +13142,7 @@ License: https://htmlelements.com/license/ */
                   if (o !== t.$.mainContainer) {
                     const n = t._findItem(o, e);
                     r(s || n, o),
-                      s && null === n
+                      s && n === null
                         ? o.$.addClass('filtered-child')
                         : o.$.removeClass('filtered-child'),
                       !s && l.length > 0
@@ -12579,20 +13152,21 @@ License: https://htmlelements.com/license/ */
                         : ((o.hiddenChildren = !1),
                           o.$.removeClass('hidden-children'));
                   }
-                  '' !== e && i > 0 && a.$.addClass('last-filtered-child');
+                  e !== '' && i > 0 && a.$.addClass('last-filtered-child');
                 })(t.$.mainContainer, t.$.mainContainer.children),
-                  '' !== e
+                  e !== ''
                     ? t.setAttribute('filter-applied', '')
                     : t.removeAttribute('filter-applied'),
                   t._updateState('filter', e),
                   t._checkOverflow();
               }
+
               _applyHierarchicalSelection(e, t) {
-                const r = this,
-                  n = e !== r.$.mainContainer,
-                  o = n ? e.itemContainer.children : e.children;
-                let l = 0,
-                  a = 0;
+                const r = this;
+                const n = e !== r.$.mainContainer;
+                const o = n ? e.itemContainer.children : e.children;
+                let l = 0;
+                let a = 0;
                 for (let s = 0; s < o.length; s++) {
                   const i = o[s];
                   e.selected && i.set('selected', !0),
@@ -12608,25 +13182,27 @@ License: https://htmlelements.com/license/ */
                   (r._setThreeStateCheckbox(e, l, a),
                   e.selected && t.push(e.path));
               }
+
               _applyRadioButtonSelection(e, t, r) {
-                const n = this,
-                  o =
-                    e !== n.$.mainContainer
-                      ? e.itemContainer.children
-                      : e.children,
-                  l = [];
+                const n = this;
+                const o =
+                  e !== n.$.mainContainer
+                    ? e.itemContainer.children
+                    : e.children;
+                const l = [];
                 let a;
                 for (let e = 0; e < o.length; e++) {
                   const a = o[e];
                   a instanceof Smart.TreeItemsGroup &&
                     n._applyRadioButtonSelection(a, t, r),
                     a.set('selected', !1),
-                    -1 !== t.indexOf(a.path) && l.push(a);
+                    t.indexOf(a.path) !== -1 && l.push(a);
                 }
-                (a = 0 === l.length ? o[0] : l[l.length - 1]),
+                (a = l.length === 0 ? o[0] : l[l.length - 1]),
                   a.set('selected', !0),
                   r.push(a.path);
               }
+
               _applySelection(e, t) {
                 const r = this;
                 let n = r.selectedIndexes.slice(0);
@@ -12634,7 +13210,7 @@ License: https://htmlelements.com/license/ */
                   const t = Object.values(r._menuItems).filter(
                     (t) => t.level === e
                   );
-                  if (0 !== t.length) {
+                  if (t.length !== 0) {
                     for (let e = 0; e < t.length; e++)
                       if (r._canItemBeSelected(t[e])) return t[e].path;
                     return o(e + 1);
@@ -12655,12 +13231,12 @@ License: https://htmlelements.com/license/ */
                       })
                     )
                   );
-                const l = r.selectionMode,
-                  a = Array.from(
-                    (r.shadowRoot || r).querySelectorAll(
-                      'smart-tree-item[selected], smart-tree-items-group[selected]'
-                    )
-                  );
+                const l = r.selectionMode;
+                const a = Array.from(
+                  (r.shadowRoot || r).querySelectorAll(
+                    'smart-tree-item[selected], smart-tree-items-group[selected]'
+                  )
+                );
                 for (let e = n.length - 1; e >= 0; e--) {
                   const t = r._menuItems[n[e]];
                   (void 0 !== t && r._canItemBeSelected(t)) || n.splice(e, 1);
@@ -12668,7 +13244,7 @@ License: https://htmlelements.com/license/ */
                 if (e)
                   for (let e = 0; e < a.length; e++)
                     r._canItemBeSelected(a[e])
-                      ? -1 === n.indexOf(a[e].path) && n.push(a[e].path)
+                      ? n.indexOf(a[e].path) === -1 && n.push(a[e].path)
                       : a[e].set('selected', !1);
                 else {
                   for (let e = 0; e < a.length; e++) a[e].set('selected', !1);
@@ -12682,19 +13258,19 @@ License: https://htmlelements.com/license/ */
                   case 'one':
                   case 'zeroAndOne':
                   case 'zeroOrOne':
-                    'one' === l && 0 === n.length && n.push(o(1));
+                    l === 'one' && n.length === 0 && n.push(o(1));
                     for (let e = 0; e < n.length; e++) {
                       const t = r._menuItems[n[e]];
                       if (e === n.length - 1) {
                         t.set('selected', !0), (n = [n[e]]);
                         break;
                       }
-                      -1 !== a.indexOf(t) && t.set('selected', !1);
+                      a.indexOf(t) !== -1 && t.set('selected', !1);
                     }
                     break;
                   case 'oneOrMany':
                   case 'oneOrManyExtended':
-                    0 === n.length && n.push(o(1));
+                    n.length === 0 && n.push(o(1));
                     for (let e = 0; e < n.length; e++)
                       r._menuItems[n[e]].set('selected', !0);
                     break;
@@ -12702,7 +13278,7 @@ License: https://htmlelements.com/license/ */
                   case 'checkBox':
                     for (let e = 0; e < n.length; e++)
                       r._menuItems[n[e]].set('selected', !0);
-                    if ('checkBox' === l && r.hasThreeStates) {
+                    if (l === 'checkBox' && r.hasThreeStates) {
                       const e = [];
                       r._applyHierarchicalSelection(r.$.mainContainer, e),
                         r._sortPathCollection(e),
@@ -12720,7 +13296,7 @@ License: https://htmlelements.com/license/ */
                 (r.selectedIndexes = n),
                   r._updateState('selected'),
                   (r._lastSelectedItem =
-                    'one' === l || 'oneOrManyExtended' === l
+                    l === 'one' || l === 'oneOrManyExtended'
                       ? r._menuItems[n[n.length - 1]]
                       : void 0),
                   r.isRendered &&
@@ -12732,29 +13308,30 @@ License: https://htmlelements.com/license/ */
                     }),
                   r._applyAriaSelected();
               }
+
               _applyAriaSelected() {
-                const e = this,
-                  t = e.selectionMode;
-                for (let r in e._menuItems) {
+                const e = this;
+                const t = e.selectionMode;
+                for (const r in e._menuItems) {
                   const n = e._menuItems[r];
                   n.selected
                     ? n.setAttribute('aria-selected', !0)
                     : e._canItemBeSelected(n) &&
-                      -1 !==
-                        [
-                          'oneOrManyExtended',
-                          'zeroOrMany',
-                          'oneOrMany',
-                          'checkBox',
-                          'radioButton',
-                        ].indexOf(t)
+                      [
+                        'oneOrManyExtended',
+                        'zeroOrMany',
+                        'oneOrMany',
+                        'checkBox',
+                        'radioButton',
+                      ].indexOf(t) !== -1
                     ? n.setAttribute('aria-selected', !1)
                     : n.removeAttribute('aria-selected');
                 }
               }
+
               _autoLoadState(e) {
-                const t = this,
-                  r = [];
+                const t = this;
+                const r = [];
                 for (let e = 0; e < t._menuItemsGroupsToExpand.length; e++)
                   t._menuItemsGroupsToExpand[e].set('expanded', !1);
                 t._menuItemsGroupsToExpand = [];
@@ -12772,55 +13349,58 @@ License: https://htmlelements.com/license/ */
                 }
                 t.selectedIndexes = r;
               }
+
               _blurHandler() {
                 this._discardKeyboardHover(!0);
               }
+
               _canItemBeHovered(e) {
                 const t = e.level;
                 return (
                   !1 === e.disabled &&
                   !0 !== e.templateApplied &&
                   !0 !== e.hidden &&
-                  (1 === t ||
+                  (t === 1 ||
                     (t > 1 &&
                       this._isContainerOpened(t, e.parentElement.container) &&
                       e.getBoundingClientRect().height > 0))
                 );
               }
+
               _canItemBeSelected(e, t) {
                 return (
                   !(
                     !0 !== t &&
-                    'leaf' === this.selectionTarget &&
+                    this.selectionTarget === 'leaf' &&
                     e instanceof Smart.TreeItemsGroup
                   ) &&
                   !1 === e.disabled &&
                   !0 !== e.templateApplied
                 );
               }
+
               _checkOverflow() {
-                const e = this,
-                  t = e.$.scrollViewer,
-                  r = e.overflow;
-                if ('scrollbar' === e.scrollMode || 'hidden' === r)
+                const e = this;
+                const t = e.$.scrollViewer;
+                const r = e.overflow;
+                if (e.scrollMode === 'scrollbar' || r === 'hidden')
                   return void t.refresh();
                 const n = t.scrollTop;
-                'auto' === r &&
+                r === 'auto' &&
                   (t.$.removeClass('scroll-buttons-shown'),
                   t.$.removeClass('one-button-shown'),
                   e.$scrollButtonNear.addClass('smart-hidden'),
                   e.$scrollButtonFar.addClass('smart-hidden'));
                 const o =
-                    Math.round(t.$.scrollViewerContentContainer.offsetHeight) >
-                    Math.round(t.$.scrollViewerContainer.offsetHeight),
-                  l = Math.round(t.scrollTop) > 0,
-                  a =
-                    Math.round(
-                      t.$.scrollViewerContainer.offsetHeight + t.scrollTop
-                    ) <
-                    Math.round(t.$.scrollViewerContentContainer.offsetHeight);
+                  Math.round(t.$.scrollViewerContentContainer.offsetHeight) >
+                  Math.round(t.$.scrollViewerContainer.offsetHeight);
+                const l = Math.round(t.scrollTop) > 0;
+                const a =
+                  Math.round(
+                    t.$.scrollViewerContainer.offsetHeight + t.scrollTop
+                  ) < Math.round(t.$.scrollViewerContentContainer.offsetHeight);
                 o
-                  ? 'auto' === r
+                  ? r === 'auto'
                     ? (t.$.addClass('scroll-buttons-shown'),
                       l && e.$scrollButtonNear.removeClass('smart-hidden'),
                       a && e.$scrollButtonFar.removeClass('smart-hidden'),
@@ -12836,26 +13416,26 @@ License: https://htmlelements.com/license/ */
                           (e.$.scrollButtonFar.disabled = !0))
                         : ((e.$.scrollButtonNear.disabled = !l),
                           (e.$.scrollButtonFar.disabled = !a)))
-                  : 'scroll' === r &&
+                  : r === 'scroll' &&
                     ((e.$.scrollButtonNear.disabled = !0),
                     (e.$.scrollButtonFar.disabled = !0)),
                   t.refresh();
               }
+
               _createElement() {
-                const e = this,
-                  t = window.getComputedStyle(e.$.scrollViewer);
+                const e = this;
+                const t = window.getComputedStyle(e.$.scrollViewer);
                 if (
                   (e.setAttribute('role', 'tree'),
                   e.setAttribute(
                     'aria-multiselectable',
-                    -1 !==
-                      [
-                        'oneOrManyExtended',
-                        'zeroOrMany',
-                        'oneOrMany',
-                        'checkBox',
-                        'radioButton',
-                      ].indexOf(e.selectionMode)
+                    [
+                      'oneOrManyExtended',
+                      'zeroOrMany',
+                      'oneOrMany',
+                      'checkBox',
+                      'radioButton',
+                    ].indexOf(e.selectionMode) !== -1
                   ),
                   e.setAttribute('aria-orientation', 'vertical'),
                   (e.$.scrollViewer.onVerticalChange =
@@ -12897,10 +13477,10 @@ License: https://htmlelements.com/license/ */
                   e.disabled &&
                     ((e.$.scrollButtonNear.disabled = !0),
                     (e.$.scrollButtonFar.disabled = !0)),
-                  'scrollbar' === e.scrollMode &&
-                    'scroll' === e.overflow &&
+                  e.scrollMode === 'scrollbar' &&
+                    e.overflow === 'scroll' &&
                     (e.$.scrollViewer.verticalScrollBarVisibility = 'visible'),
-                  null === e.dataSource &&
+                  e.dataSource === null &&
                     e.$.mainContainer.firstElementChild instanceof
                       HTMLUListElement &&
                     e._processUList(),
@@ -12908,60 +13488,59 @@ License: https://htmlelements.com/license/ */
                 )
                   return (
                     (e._menuItems = {}),
-                    void (null === e.dataSource
+                    void (e.dataSource === null
                       ? e._processHTML(e.$.mainContainer, 1)
                       : e._processDataSource())
                   );
                 const r = (e.shadowRoot || e).querySelectorAll(
-                    'smart-tree-item, smart-tree-items-group'
-                  ),
-                  n = function () {
-                    let t;
-                    e.autoLoadState &&
-                      ((t = window.localStorage.getItem('smartTree' + e.id)),
-                      t && ((t = JSON.parse(t)), (e.sorted = t.sorted))),
-                      e._setFocusable(),
-                      (e._menuItems = {}),
-                      null === e.dataSource
-                        ? e._processHTML(e.$.mainContainer, 1)
-                        : e._processDataSource(),
-                      ('scrollButtons' !== e.scrollMode &&
-                        'hidden' !== e.overflow) ||
-                        e.$.scrollViewer.$.verticalScrollBar.setAttribute(
-                          'aria-hidden',
-                          !0
-                        ),
-                      'scrollButtons' === e.scrollMode &&
-                        'scroll' === e.overflow &&
-                        (e.$scrollViewer.addClass('scroll-buttons-shown'),
-                        e.$scrollButtonNear.removeClass('smart-hidden'),
-                        e.$scrollButtonFar.removeClass('smart-hidden'),
-                        e._updateScrollButtonVisibility()),
-                      e._checkOverflow(),
-                      t && e._autoLoadState(t),
-                      e._expandItemsByDefault(),
-                      e._applySelection(!0),
-                      e._updateState('sorted', e.sorted),
-                      e.displayLoadingIndicator &&
-                        e.$loadingIndicatorContainer.removeClass(
-                          'smart-hidden'
-                        ),
-                      'center' !== e.loadingIndicatorPosition &&
-                        e.$loadingIndicatorPlaceHolder.removeClass(
-                          'smart-hidden'
-                        ),
-                      e.__onCompleted &&
-                        ((e._onCompleted = e.__onCompleted),
-                        (e.__onCompleted = null),
-                        e._onCompleted());
-                  };
-                0 === r.length || e.enableShadowDOM || e.isInShadowDOM
+                  'smart-tree-item, smart-tree-items-group'
+                );
+                const n = function () {
+                  let t;
+                  e.autoLoadState &&
+                    ((t = window.localStorage.getItem('smartTree' + e.id)),
+                    t && ((t = JSON.parse(t)), (e.sorted = t.sorted))),
+                    e._setFocusable(),
+                    (e._menuItems = {}),
+                    e.dataSource === null
+                      ? e._processHTML(e.$.mainContainer, 1)
+                      : e._processDataSource(),
+                    (e.scrollMode !== 'scrollButtons' &&
+                      e.overflow !== 'hidden') ||
+                      e.$.scrollViewer.$.verticalScrollBar.setAttribute(
+                        'aria-hidden',
+                        !0
+                      ),
+                    e.scrollMode === 'scrollButtons' &&
+                      e.overflow === 'scroll' &&
+                      (e.$scrollViewer.addClass('scroll-buttons-shown'),
+                      e.$scrollButtonNear.removeClass('smart-hidden'),
+                      e.$scrollButtonFar.removeClass('smart-hidden'),
+                      e._updateScrollButtonVisibility()),
+                    e._checkOverflow(),
+                    t && e._autoLoadState(t),
+                    e._expandItemsByDefault(),
+                    e._applySelection(!0),
+                    e._updateState('sorted', e.sorted),
+                    e.displayLoadingIndicator &&
+                      e.$loadingIndicatorContainer.removeClass('smart-hidden'),
+                    e.loadingIndicatorPosition !== 'center' &&
+                      e.$loadingIndicatorPlaceHolder.removeClass(
+                        'smart-hidden'
+                      ),
+                    e.__onCompleted &&
+                      ((e._onCompleted = e.__onCompleted),
+                      (e.__onCompleted = null),
+                      e._onCompleted());
+                };
+                r.length === 0 || e.enableShadowDOM || e.isInShadowDOM
                   ? n()
                   : (e._onCompleted &&
                       ((e.__onCompleted = e._onCompleted),
                       (e._onCompleted = null)),
                     e._ensureItemsReady(r, n));
               }
+
               appendChild(e) {
                 const t = this;
                 if (!t.isCompleted) {
@@ -12973,12 +13552,14 @@ License: https://htmlelements.com/license/ */
                 }
                 t.$.mainContainer && t.$.mainContainer.appendChild(e);
               }
+
               _dblclickHandler(e, t, r) {
-                'dblclick' !== this.toggleMode ||
+                this.toggleMode !== 'dblclick' ||
                   e instanceof Smart.TreeItem ||
                   t ||
                   this._menuItemsGroupSelectionHandler(e, r);
               }
+
               _discardKeyboardHover(e, t) {
                 const r = this;
                 !t &&
@@ -12992,11 +13573,12 @@ License: https://htmlelements.com/license/ */
                     (r._hoveredViaKeyboard.removeAttribute('focus'),
                     (r._hoveredViaKeyboard = void 0)));
               }
+
               _documentUpHandler(e) {
-                if ('pointercancel' === e.originalEvent.type) return;
-                const t = this,
-                  r = t._downTimeoutInfo,
-                  n = t._dragDetails;
+                if (e.originalEvent.type === 'pointercancel') return;
+                const t = this;
+                const r = t._downTimeoutInfo;
+                const n = t._dragDetails;
                 !r ||
                   (n && n.FeedbackShown) ||
                   (clearTimeout(r.timeout),
@@ -13004,10 +13586,10 @@ License: https://htmlelements.com/license/ */
                     t.getBoundingClientRect().top === r.top) ||
                     t._continueSelection(r.target, r.event)),
                   delete t._downTimeoutInfo;
-                const o = t._downItem,
-                  l = t.isInShadowDOM
-                    ? e.originalEvent.composedPath()[0]
-                    : e.originalEvent.target;
+                const o = t._downItem;
+                const l = t.isInShadowDOM
+                  ? e.originalEvent.composedPath()[0]
+                  : e.originalEvent.target;
                 if (
                   (delete t._downItem,
                   t._editedItem &&
@@ -13048,8 +13630,8 @@ License: https://htmlelements.com/license/ */
                     void e.stopPropagation()
                   );
                 if (!n) return;
-                const a = Smart.Tree.hoveredTree,
-                  s = Smart.Tree.hoveredItem;
+                const a = Smart.Tree.hoveredTree;
+                const s = Smart.Tree.hoveredItem;
                 if (
                   (delete t._dragDetails,
                   delete Smart.Tree.treeItemDragged,
@@ -13065,9 +13647,9 @@ License: https://htmlelements.com/license/ */
                 document.body.classList.remove('smart-dragging'),
                   document.body.removeChild(n.Feedback),
                   a && clearInterval(a._dragInterval);
-                const c = n.Item,
-                  m = n.Items,
-                  u = n.ValidItems;
+                const c = n.Item;
+                const m = n.Items;
+                const u = n.ValidItems;
                 if (!i) return;
                 if (!s || c.contains(s))
                   return void t.$.fireEvent('dragEnd', {
@@ -13116,12 +13698,14 @@ License: https://htmlelements.com/license/ */
                       a._applyFilter(a._state.filter);
                 }
               }
+
               _editInputBlurHandler() {
                 this._endEditing();
               }
+
               _endEditing(e) {
-                const t = this,
-                  r = t._editedItem;
+                const t = this;
+                const r = t._editedItem;
                 if (!r) return;
                 if (
                   (delete t._editedItem,
@@ -13130,9 +13714,9 @@ License: https://htmlelements.com/license/ */
                   e)
                 )
                   return;
-                const n = t.$.editInput.value,
-                  o = t.sorted && t.autoSort,
-                  l = t._state.filter;
+                const n = t.$.editInput.value;
+                const o = t.sorted && t.autoSort;
+                const l = t._state.filter;
                 n !== r.label &&
                   (r.set('label', n),
                   r.setAttribute('aria-label', n),
@@ -13142,6 +13726,7 @@ License: https://htmlelements.com/license/ */
                     t._applyGrouping(t.$.mainContainer)),
                   l && t._applyFilter(l));
               }
+
               _ensureVisible(e) {
                 const t = this;
                 t._ensureVisibleTreeMode(
@@ -13153,6 +13738,7 @@ License: https://htmlelements.com/license/ */
                 ),
                   t._ensureVisibleCallback && t._ensureVisibleCallback(e);
               }
+
               _pointeroverHandler(e) {
                 const t = (this.isInShadowDOM
                   ? e.composedPath()[0]
@@ -13165,16 +13751,18 @@ License: https://htmlelements.com/license/ */
                   t.scrollWidth > t.offsetWidth &&
                     (t.classList.add('tooltip'), (t.title = t.innerText));
               }
+
               getFilter() {
                 return this.$.filterInput.value;
               }
+
               _filterInputKeyupHandler(e) {
                 const t = this;
                 if (
                   (t._filterTimer && clearTimeout(t._filterTimer),
                   t.filterOnEnter)
                 ) {
-                  if ('Enter' !== e.key) return;
+                  if (e.key !== 'Enter') return;
                   {
                     const e = t.context;
                     (t.context = t),
@@ -13197,10 +13785,11 @@ License: https://htmlelements.com/license/ */
                     (t.context = e);
                 }, 300);
               }
+
               _filterInputKeydownHandler(e) {
-                if ('PageDown' !== e.key)
+                if (e.key !== 'PageDown')
                   return void (
-                    'PageUp' === e.key &&
+                    e.key === 'PageUp' &&
                     (e.preventDefault(), e.stopPropagation())
                   );
                 const t = this;
@@ -13216,8 +13805,8 @@ License: https://htmlelements.com/license/ */
                     t._menuItems[
                       t.selectedIndexes[t.selectedIndexes.length - 1]
                     ]),
-                    'checkBox' !== t.selectionMode &&
-                      'radioButton' !== t.selectionMode &&
+                    t.selectionMode !== 'checkBox' &&
+                      t.selectionMode !== 'radioButton' &&
                       ((t.selectedIndexes = [r.path]),
                       t._applySelection(!1, e)),
                     t.focus();
@@ -13227,6 +13816,7 @@ License: https://htmlelements.com/license/ */
                     r && t._hoverViaKeyboard(r);
                 t._ensureVisible(r);
               }
+
               _focusHandler() {
                 const e = this;
                 e.selectedIndexes.length > 0 &&
@@ -13242,17 +13832,18 @@ License: https://htmlelements.com/license/ */
                         !1
                       ));
               }
+
               _getDataSource() {
                 const e = [];
                 return (
                   (function e(t, r) {
                     for (let n = 0; n < t.length; n++) {
-                      const o = t[n],
-                        l = { label: o.label };
+                      const o = t[n];
+                      const l = { label: o.label };
                       o.disabled && (l.disabled = !0),
                         o.selected && (l.selected = !0),
                         o.separator && (l.separator = !0),
-                        null !== o.value && (l.value = o.value),
+                        o.value !== null && (l.value = o.value),
                         o instanceof Smart.TreeItem
                           ? o.shortcut && (l.shortcut = o.shortcut)
                           : (o.expanded && (l.expanded = !0),
@@ -13266,6 +13857,7 @@ License: https://htmlelements.com/license/ */
                   e
                 );
               }
+
               _handleHierarchicalSelection(e, t) {
                 const r = this;
                 let n = e;
@@ -13279,10 +13871,10 @@ License: https://htmlelements.com/license/ */
                   n.parentItem;
 
                 ) {
-                  const e = n.parentItem,
-                    t = e.itemContainer.children;
-                  let o = 0,
-                    l = 0;
+                  const e = n.parentItem;
+                  const t = e.itemContainer.children;
+                  let o = 0;
+                  let l = 0;
                   for (let e = 0; e < t.length; e++)
                     t[e].selected
                       ? o++
@@ -13309,16 +13901,17 @@ License: https://htmlelements.com/license/ */
                 for (let e = 0; e < o.length; e++) t.push(o[e].path);
                 r._sortPathCollection(t);
               }
+
               _handleSelection(e, t) {
-                const r = this,
-                  n = r.selectionMode;
+                const r = this;
+                const n = r.selectionMode;
                 if (
-                  'none' === n ||
-                  ('programmatic' !== t.type && !r._canItemBeSelected(e))
+                  n === 'none' ||
+                  (t.type !== 'programmatic' && !r._canItemBeSelected(e))
                 )
                   return;
                 const o = e.selected;
-                if (o && 'down' === t.type) return;
+                if (o && t.type === 'down') return;
                 const l = r.selectedIndexes.slice(0);
                 let a = l.slice(0);
                 switch (n) {
@@ -13348,7 +13941,7 @@ License: https://htmlelements.com/license/ */
                   case 'oneOrMany':
                   case 'zeroOrMany':
                     if (o) {
-                      if (1 === a.length && 'zeroOrMany' !== n) return;
+                      if (a.length === 1 && n !== 'zeroOrMany') return;
                       a.splice(a.indexOf(e.path), 1),
                         e.set('selected', !1),
                         e.setAttribute('aria-selected', !1);
@@ -13360,8 +13953,8 @@ License: https://htmlelements.com/license/ */
                     r.selectedIndexes = a;
                     break;
                   case 'oneOrManyExtended': {
-                    const n = t.ctrlKey || t.metaKey,
-                      o = t.shiftKey;
+                    const n = t.ctrlKey || t.metaKey;
+                    const o = t.shiftKey;
                     if ((!n && !o) || (o && e === r._lastSelectedItem)) {
                       for (let e = 0; e < a.length; e++)
                         r._menuItems[a[e]].set('selected', !1),
@@ -13444,6 +14037,7 @@ License: https://htmlelements.com/license/ */
                   });
                 }
               }
+
               _hoverViaKeyboard(e, t, r, n) {
                 if (!e) return;
                 const o = this;
@@ -13453,45 +14047,45 @@ License: https://htmlelements.com/license/ */
                   t && o._handleSelection(e, r),
                   o._hoverViaKeyboardCallback && o._hoverViaKeyboardCallback(e);
               }
+
               _keydownHandler(e) {
-                const t = this,
-                  r = e.key;
+                const t = this;
+                const r = e.key;
                 if (t._editedItem)
-                  return void ('Enter' === r
+                  return void (r === 'Enter'
                     ? t._endEditing()
-                    : 'Escape' === r && t._endEditing(!0));
+                    : r === 'Escape' && t._endEditing(!0));
                 if (
                   t.getRootNode().activeElement !== t ||
-                  -1 ===
-                    [
-                      'ArrowDown',
-                      'ArrowLeft',
-                      'ArrowRight',
-                      'ArrowUp',
-                      'End',
-                      'Enter',
-                      'F2',
-                      'Home',
-                      'PageDown',
-                      'PageUp',
-                      ' ',
-                    ].indexOf(r) ||
+                  [
+                    'ArrowDown',
+                    'ArrowLeft',
+                    'ArrowRight',
+                    'ArrowUp',
+                    'End',
+                    'Enter',
+                    'F2',
+                    'Home',
+                    'PageDown',
+                    'PageUp',
+                    ' ',
+                  ].indexOf(r) === -1 ||
                   t.disabled ||
                   t.displayLoadingIndicator
                 )
                   return;
-                'Enter' !== r && e.preventDefault();
+                r !== 'Enter' && e.preventDefault();
                 const n = Array.from(
-                    t.$.mainContainer.querySelectorAll(
-                      'smart-tree-item, smart-tree-items-group'
-                    )
-                  ),
-                  o =
-                    'one' === t.selectionMode ||
-                    ('oneOrManyExtended' === t.selectionMode &&
-                      !e.ctrlKey &&
-                      !e.metaKey),
-                  l = t.$.mainContainer.querySelector('[focus]');
+                  t.$.mainContainer.querySelectorAll(
+                    'smart-tree-item, smart-tree-items-group'
+                  )
+                );
+                const o =
+                  t.selectionMode === 'one' ||
+                  (t.selectionMode === 'oneOrManyExtended' &&
+                    !e.ctrlKey &&
+                    !e.metaKey);
+                const l = t.$.mainContainer.querySelector('[focus]');
                 function a(r) {
                   for (let a = r; a < n.length; a++) {
                     const r = n[a];
@@ -13586,38 +14180,40 @@ License: https://htmlelements.com/license/ */
                     l && t._handleSelection(l, e);
                 }
               }
+
               _mainContainerSwipeHandler(e) {
                 Smart.Tree.treeItemDragged && e.stopPropagation();
               }
+
               _menuItemsGroupSelectionHandler(e, t, r) {
-                const n = this,
-                  o = n.toggleMode,
-                  l =
-                    !!t.originalEvent &&
-                    t.originalEvent.target.classList.contains(
-                      'smart-tree-items-group-arrow'
-                    ),
-                  a = e.container;
+                const n = this;
+                const o = n.toggleMode;
+                const l =
+                  !!t.originalEvent &&
+                  t.originalEvent.target.classList.contains(
+                    'smart-tree-items-group-arrow'
+                  );
+                const a = e.container;
                 if (n._waitAnimation && n._treeAnimationInProgress) return;
                 if (
-                  ('down' !== t.type ||
+                  (t.type !== 'down' ||
                     l ||
-                    ('dblclick' === o &&
-                      1 !== n._dblclickObject.numberOfClicks) ||
+                    (o === 'dblclick' &&
+                      n._dblclickObject.numberOfClicks !== 1) ||
                     n._handleSelection(e, t),
-                  ('down' === t.type &&
+                  (t.type === 'down' &&
                     !l &&
-                    (('dblclick' === o &&
-                      2 !== n._dblclickObject.numberOfClicks) ||
-                      ('click' === o && n._dblclickObject.numberOfClicks > 1) ||
-                      'arrow' === o)) ||
+                    ((o === 'dblclick' &&
+                      n._dblclickObject.numberOfClicks !== 2) ||
+                      (o === 'click' && n._dblclickObject.numberOfClicks > 1) ||
+                      o === 'arrow')) ||
                     e.hiddenChildren)
                 )
                   return;
                 const s = a.level;
-                let i = n.hasAnimation;
+                const i = n.hasAnimation;
                 if (
-                  ('keydown' === t.type && n._discardKeyboardHover(),
+                  (t.type === 'keydown' && n._discardKeyboardHover(),
                   n._treeAnimationInProgress &&
                     (a.removeEventListener(
                       'transitionend',
@@ -13644,11 +14240,11 @@ License: https://htmlelements.com/license/ */
                   if (
                     (n._handleSingleExpandMode(e),
                     i &&
-                      ('expand' !== t.type &&
+                      (t.type !== 'expand' &&
                         (n._ensureVisibleOnTransitionend = e),
                       n._expandSection(a)),
                     a.$.removeClass('smart-visibility-hidden'),
-                    'keydown' === t.type &&
+                    t.type === 'keydown' &&
                       (e.setAttribute('focus', ''),
                       (n._hoveredViaKeyboard = e)),
                     e.$.addClass('smart-tree-items-group-opened'),
@@ -13674,19 +14270,21 @@ License: https://htmlelements.com/license/ */
                 }
                 i ||
                   (n._checkOverflow(),
-                  'expand' !== t.type && n._ensureVisible(e));
+                  t.type !== 'expand' && n._ensureVisible(e));
               }
+
               _handleSingleExpandMode(e) {
                 const t = this;
-                if ('single' !== t.expandMode) return;
-                const r = e.parentItem,
-                  n = t._state.expanded
-                    .map((e) =>
-                      Object.values(t._menuItems).find((t) => t.id === e)
-                    )
-                    .filter((e) => e.parentItem === r);
+                if (t.expandMode !== 'single') return;
+                const r = e.parentItem;
+                const n = t._state.expanded
+                  .map((e) =>
+                    Object.values(t._menuItems).find((t) => t.id === e)
+                  )
+                  .filter((e) => e.parentItem === r);
                 n.length > 0 && n.forEach((e) => t.collapseItem(e));
               }
+
               _mouseenterHandler() {
                 const e = this;
                 e.autoHideToggleElement &&
@@ -13696,6 +14294,7 @@ License: https://htmlelements.com/license/ */
                     !e.disabled &&
                     (Smart.Tree.hoveredTree = e);
               }
+
               _mouseleaveHandler() {
                 const e = this;
                 if (
@@ -13714,9 +14313,10 @@ License: https://htmlelements.com/license/ */
                     delete Smart.Tree.hoveredItem);
                 }
               }
+
               _moveHandler(e) {
-                const t = this,
-                  r = t._dragDetails;
+                const t = this;
+                const r = t._dragDetails;
                 if (!r) return;
                 if (!r.FeedbackShown) {
                   if (
@@ -13794,13 +14394,13 @@ License: https://htmlelements.com/license/ */
                       ? e.clientY >= r.top + s && e.clientY <= r.top + 20 + s
                         ? ((o.$.scrollViewer.scrollTop -=
                             t._autoScrollCoefficient),
-                          'scrollButtons' === o.scrollMode &&
+                          o.scrollMode === 'scrollButtons' &&
                             o._updateScrollButtonVisibility())
                         : e.clientY >= r.top + r.height - 20 &&
                           e.clientY <= r.top + r.height
                         ? ((o.$.scrollViewer.scrollTop +=
                             t._autoScrollCoefficient),
-                          'scrollButtons' === o.scrollMode &&
+                          o.scrollMode === 'scrollButtons' &&
                             o._updateScrollButtonVisibility())
                         : clearInterval(o._dragInterval)
                       : clearInterval(o._dragInterval);
@@ -13846,8 +14446,8 @@ License: https://htmlelements.com/license/ */
                   l === o.$.scrollViewer.$.scrollViewerContainer)
                 )
                   if (o._menuItems[0]) {
-                    let e = o.$.mainContainer.lastElementChild,
-                      t = o.$.mainContainer.childElementCount - 1;
+                    let e = o.$.mainContainer.lastElementChild;
+                    let t = o.$.mainContainer.childElementCount - 1;
                     for (
                       ;
                       e.hidden && (t--, (e = o.$.mainContainer.children[t]), e);
@@ -13864,6 +14464,7 @@ License: https://htmlelements.com/license/ */
                       Smart.Tree.hoveredItem.classList.add('drop-target');
                 else delete Smart.Tree.hoveredItem;
               }
+
               _moveSubItems(e, t, r) {
                 const n = this;
                 for (let o = 0; o < e.length; o++) {
@@ -13887,15 +14488,16 @@ License: https://htmlelements.com/license/ */
                         n._updateState('expanded', l.id, !1)));
                 }
               }
+
               _moveTreeItem(e, t, r, n) {
-                const o = this,
-                  l = e.level;
-                if (0 === r) {
+                const o = this;
+                const l = e.level;
+                if (r === 0) {
                   if (t.previousElementSibling === e) return;
                   t.parentElement.insertBefore(e, t),
                     e.set('level', t.level),
                     (e.parentItem = t.parentItem);
-                } else if (2 === r) {
+                } else if (r === 2) {
                   if (t.nextElementSibling === e) return;
                   t.parentElement.insertBefore(e, t.nextElementSibling || null),
                     e.set('level', t.level),
@@ -13928,14 +14530,14 @@ License: https://htmlelements.com/license/ */
                     e.expanded))
                 ) {
                   const t = o._openedContainers[l + 1].indexOf(e.container);
-                  -1 !== t && o._openedContainers[l + 1].splice(t, 1),
+                  t !== -1 && o._openedContainers[l + 1].splice(t, 1),
                     n[0]._menuItemsGroupsToExpand.push(e),
-                    2 === n.length && o._updateState('expanded', e.id, !1);
+                    n.length === 2 && o._updateState('expanded', e.id, !1);
                 }
                 for (let e = 0; e < n.length; e++) {
-                  const t = n[e],
-                    r = t.context,
-                    o = t.selectedIndexes.slice(0);
+                  const t = n[e];
+                  const r = t.context;
+                  const o = t.selectedIndexes.slice(0);
                   (t.context = t),
                     (t._menuItems = {}),
                     t._refreshItemPaths(
@@ -13951,10 +14553,11 @@ License: https://htmlelements.com/license/ */
                 }
                 n[0]._expandItemsByDefault();
               }
+
               _overriddenMenuHandler() {}
               _pageDownHandler(e, t, r, n) {
-                const o = this,
-                  l = o.$.scrollViewer;
+                const o = this;
+                const l = o.$.scrollViewer;
                 function a() {
                   for (let t = e.length - 1; t >= 0; t--) {
                     const r = e[t];
@@ -13975,15 +14578,16 @@ License: https://htmlelements.com/license/ */
                         l.$.scrollViewerContentContainer.offsetHeight &&
                       ((o.$.scrollViewer.scrollTop +=
                         l.$.container.offsetHeight),
-                      'scrollButtons' === o.scrollMode &&
+                      o.scrollMode === 'scrollButtons' &&
                         o._updateScrollButtonVisibility(),
                       (s = a()),
                       t.removeAttribute('focus'),
                       o._hoverViaKeyboard(s, r, n)));
               }
+
               _pageUpHandler(e, t, r, n) {
-                const o = this,
-                  l = o.$.scrollViewer;
+                const o = this;
+                const l = o.$.scrollViewer;
                 function a() {
                   for (let t = 0; t < e.length; t++) {
                     const r = e[t];
@@ -13999,24 +14603,26 @@ License: https://htmlelements.com/license/ */
                 s &&
                   (t !== s
                     ? (t.removeAttribute('focus'), o._hoverViaKeyboard(s, r, n))
-                    : 0 !== l.scrollTop
+                    : l.scrollTop !== 0
                     ? ((o.$.scrollViewer.scrollTop -=
                         l.$.container.offsetHeight),
-                      'scrollButtons' === o.scrollMode &&
+                      o.scrollMode === 'scrollButtons' &&
                         o._updateScrollButtonVisibility(),
                       (s = a()),
                       t.removeAttribute('focus'),
                       o._hoverViaKeyboard(s, r, n))
                     : o.filterable && o.$.filterInput.focus());
               }
+
               _refreshItemPathsAndSelection() {
-                const e = this,
-                  t = e.selectedIndexes.slice(0);
+                const e = this;
+                const t = e.selectedIndexes.slice(0);
                 (e._menuItems = {}),
                   e._refreshItemPaths(e.$.mainContainer, !0),
                   (e.selectedIndexes = []),
                   e._applySelection(!0, t);
               }
+
               _refreshSorting() {
                 const e = this;
                 e._unsortItems(e.$.mainContainer),
@@ -14024,6 +14630,7 @@ License: https://htmlelements.com/license/ */
                 const t = e._state.filter;
                 t && e._applyFilter(t), e._checkOverflow();
               }
+
               _scroll(e) {
                 const t = this;
                 (t.$.scrollViewer.scrollTop =
@@ -14031,38 +14638,41 @@ License: https://htmlelements.com/license/ */
                   t._updateScrollButtonVisibility(),
                   t.focus();
               }
+
               _scrollButtonFarClickHandler() {
                 this.$.scrollButtonFar.disabled || this._scroll(1);
               }
+
               _scrollButtonNearClickHandler() {
                 this.$.scrollButtonNear.disabled || this._scroll(-1);
               }
+
               _scrollViewerDownHandler(e) {
                 const t = this;
                 if (
                   e.target !== t.$.scrollViewer ||
                   t.disabled ||
                   t.displayLoadingIndicator ||
-                  (!t._isMobile && 1 !== e.which)
+                  (!t._isMobile && e.which !== 1)
                 )
                   return;
                 const r = e.originalEvent.target;
                 if (r !== t.$.editInput)
                   if (t._isMobile) {
-                    const n = t.$.scrollViewer.scrollTop,
-                      o = t.getBoundingClientRect().top,
-                      l = setTimeout(function () {
-                        if (
-                          !t._dragDetails &&
-                          t.$.scrollViewer.scrollTop === n &&
-                          t.getBoundingClientRect().top === o
-                        ) {
-                          const n = t.context;
-                          (t.context = t),
-                            t._continueSelection(r, e),
-                            (t.context = n);
-                        }
-                      }, 250);
+                    const n = t.$.scrollViewer.scrollTop;
+                    const o = t.getBoundingClientRect().top;
+                    const l = setTimeout(function () {
+                      if (
+                        !t._dragDetails &&
+                        t.$.scrollViewer.scrollTop === n &&
+                        t.getBoundingClientRect().top === o
+                      ) {
+                        const n = t.context;
+                        (t.context = t),
+                          t._continueSelection(r, e),
+                          (t.context = n);
+                      }
+                    }, 250);
                     t._downTimeoutInfo = {
                       target: r,
                       event: e,
@@ -14073,11 +14683,12 @@ License: https://htmlelements.com/license/ */
                   } else t._continueSelection(r, e);
                 else t._editInputDown = !0;
               }
+
               _continueSelection(e, t) {
-                const r = this,
-                  n =
-                    e.closest('smart-tree-item') ||
-                    e.closest('smart-tree-items-group');
+                const r = this;
+                const n =
+                  e.closest('smart-tree-item') ||
+                  e.closest('smart-tree-items-group');
                 if (!(n && n.parentElement && r._canItemBeSelected(n, !0)))
                   return;
                 const o = e.closest('.smart-tree-items-group-arrow');
@@ -14097,7 +14708,7 @@ License: https://htmlelements.com/license/ */
                   (r._dblclickTimeout = setTimeout(function () {
                     r._dblclickObject.numberOfClicks = 0;
                   }, 300)),
-                  2 === r._dblclickObject.numberOfClicks)
+                  r._dblclickObject.numberOfClicks === 2)
                 ) {
                   if (r.editable) return void r._startEditing(n);
                   r._dblclickHandler(n, o, t),
@@ -14109,27 +14720,30 @@ License: https://htmlelements.com/license/ */
                   r._hoverViaKeyboard(n, !1, void 0, !1),
                   o || r._startDragging(n, t);
               }
+
               _scrollViewerTouchmoveHandler(e) {
                 this._dragDetails &&
                   e.cancelable &&
                   (e.preventDefault(), e.stopPropagation());
               }
+
               _scrollViewerWheelHandler() {
                 const e = this;
-                'scrollButtons' === e.scrollMode &&
-                  'hidden' !== e.overflow &&
+                e.scrollMode === 'scrollButtons' &&
+                  e.overflow !== 'hidden' &&
                   e._updateScrollButtonVisibility();
               }
+
               _selectItemRange(e, t) {
-                const r = this,
-                  n = Array.from(
-                    r.$.mainContainer.querySelectorAll(
-                      'smart-tree-item, smart-tree-items-group'
-                    )
-                  ),
-                  o = n.indexOf(e),
-                  l = n.indexOf(t),
-                  a = [];
+                const r = this;
+                const n = Array.from(
+                  r.$.mainContainer.querySelectorAll(
+                    'smart-tree-item, smart-tree-items-group'
+                  )
+                );
+                const o = n.indexOf(e);
+                const l = n.indexOf(t);
+                const a = [];
                 for (let e = Math.min(o, l); e <= Math.max(o, l); e++) {
                   const t = n[e];
                   r._canItemBeHovered(t) &&
@@ -14137,9 +14751,11 @@ License: https://htmlelements.com/license/ */
                 }
                 return a;
               }
+
               _selectstartHandler(e) {
                 this._dragDetails && e.preventDefault();
               }
+
               _setFocusable() {
                 super._setFocusable();
                 const e = this;
@@ -14147,6 +14763,7 @@ License: https://htmlelements.com/license/ */
                   ? (e.$.filterInput.tabIndex = -1)
                   : e.$.filterInput.removeAttribute('tabindex');
               }
+
               _setIndentation(e, t, r) {
                 const n = this;
                 let o = n._paddingSize;
@@ -14158,12 +14775,13 @@ License: https://htmlelements.com/license/ */
                   (n._paddingSize = o)),
                   (e.style[r] = t * o - o / 2 + 'px');
               }
+
               _setThreeStateCheckbox(e, t, r) {
                 t === e.itemContainer.childElementCount && t > 0
                   ? (e.removeAttribute('indeterminate'),
                     e.set('selected', !0),
                     e.setAttribute('aria-selected', !0))
-                  : 0 === t && 0 === r
+                  : t === 0 && r === 0
                   ? (e.removeAttribute('indeterminate'),
                     e.set('selected', !1),
                     e.setAttribute('aria-selected', !1))
@@ -14171,6 +14789,7 @@ License: https://htmlelements.com/license/ */
                     e.set('selected', !1),
                     e.setAttribute('aria-selected', !1));
               }
+
               _sortItems(e) {
                 const t = this;
                 if (!t.sorted) return;
@@ -14183,7 +14802,7 @@ License: https://htmlelements.com/license/ */
                   const r = t.sort(n, e);
                   Array.isArray(r) && (n = r);
                 } else
-                  'asc' === t.sortDirection
+                  t.sortDirection === 'asc'
                     ? n.sort(function (e, t) {
                         return e.label.localeCompare(t.label);
                       })
@@ -14193,14 +14812,15 @@ License: https://htmlelements.com/license/ */
                 for (let e = n.length - 1; e >= 0; e--)
                   r.insertBefore(n[e], r.firstElementChild);
               }
+
               _sortPathCollection(e) {
                 e.sort(function (e, t) {
-                  const r = e.split('.'),
-                    n = t.split('.'),
-                    o = Math.max(r.length, n.length);
+                  const r = e.split('.');
+                  const n = t.split('.');
+                  const o = Math.max(r.length, n.length);
                   for (let e = 0; e < o; e++) {
-                    const t = parseFloat(r[e]),
-                      o = parseFloat(n[e]);
+                    const t = parseFloat(r[e]);
+                    const o = parseFloat(n[e]);
                     if (isNaN(t)) return -1;
                     if (isNaN(o)) return 1;
                     if (t < o) return -1;
@@ -14208,22 +14828,22 @@ License: https://htmlelements.com/license/ */
                   }
                 });
               }
+
               _startDragging(e, t) {
-                const r = this,
-                  n = r.selectionMode;
-                if (!r.allowDrag || r._editedItem || 'none' === n) return;
-                const o = [],
-                  l = [];
+                const r = this;
+                const n = r.selectionMode;
+                if (!r.allowDrag || r._editedItem || n === 'none') return;
+                const o = [];
+                const l = [];
                 let a;
                 if (
-                  -1 !==
                   [
                     'one',
                     'zeroAndOne',
                     'zeroOrOne',
                     'checkBox',
                     'radioButton',
-                  ].indexOf(n)
+                  ].indexOf(n) !== -1
                 )
                   (a = !1), o.push(e), l.push(e);
                 else {
@@ -14232,7 +14852,7 @@ License: https://htmlelements.com/license/ */
                     o.push(r._menuItems[r.selectedIndexes[e]]), l.push(o[e]);
                   for (let e = 0; e < o.length; e++) {
                     const t = o[e];
-                    if (-1 !== l.indexOf(t))
+                    if (l.indexOf(t) !== -1)
                       for (let e = l.length - 1; e >= 0; e--) {
                         const r = l[e];
                         if (r === t) break;
@@ -14257,13 +14877,14 @@ License: https://htmlelements.com/license/ */
                     ((Smart.Tree.hoveredTree = r),
                     (Smart.Tree.hoveredItem = e));
               }
+
               _startEditing(e) {
-                const t = this,
-                  r = t.$.editInput;
+                const t = this;
+                const r = t.$.editInput;
                 let n, o;
                 if (!t._canItemBeSelected(e, !0)) return;
-                const l = e.firstElementChild,
-                  a = l.firstElementChild;
+                const l = e.firstElementChild;
+                const a = l.firstElementChild;
                 t.rightToLeft
                   ? ((n = function () {
                       return l.offsetWidth - a.offsetLeft - a.offsetWidth;
@@ -14308,19 +14929,21 @@ License: https://htmlelements.com/license/ */
                     r.focus();
                   }, 0);
               }
+
               _styleChangedHandler(e) {
                 e.detail.styleProperties &&
                   e.detail.styleProperties['font-size'] &&
                   this._checkOverflow();
               }
+
               _updateScrollButtonVisibility() {
-                const e = this,
-                  t = e.overflow;
-                if ('scrollbar' === e.scrollMode || 'hidden' === t) return;
-                let r = !0,
-                  n = !0;
+                const e = this;
+                const t = e.overflow;
+                if (e.scrollMode === 'scrollbar' || t === 'hidden') return;
+                let r = !0;
+                let n = !0;
                 if (
-                  (0 === Math.round(e.$.scrollViewer.scrollTop) && (r = !1),
+                  (Math.round(e.$.scrollViewer.scrollTop) === 0 && (r = !1),
                   Math.round(
                     e.$.scrollViewer.$.scrollViewerContainer.offsetHeight +
                       e.$.scrollViewer.scrollTop
@@ -14329,7 +14952,7 @@ License: https://htmlelements.com/license/ */
                       e.$.scrollViewer.$.scrollViewerContentContainer
                         .offsetHeight
                     ) && (n = !1),
-                  'auto' === t)
+                  t === 'auto')
                 ) {
                   if (r && n)
                     return (
@@ -14347,19 +14970,20 @@ License: https://htmlelements.com/license/ */
                     e.$scrollViewer.addClass('one-button-shown'),
                     e.$.scrollViewer.refresh();
                 } else
-                  'scroll' !== t ||
+                  t !== 'scroll' ||
                     e.disabled ||
                     ((e.$.scrollButtonNear.disabled = !r),
                     (e.$.scrollButtonFar.disabled = !n));
               }
+
               _updateState(e, t, r) {
                 const n = this;
                 switch (e) {
                   case 'expanded': {
                     const e = n._state.expanded.indexOf(t);
-                    if (r && -1 === e) n._state.expanded.push(t);
+                    if (r && e === -1) n._state.expanded.push(t);
                     else {
-                      if (r || -1 === e) return;
+                      if (r || e === -1) return;
                       n._state.expanded.splice(e, 1);
                     }
                     break;
@@ -14383,10 +15007,11 @@ License: https://htmlelements.com/license/ */
                     JSON.stringify(n._state)
                   );
               }
+
               _verticalScrollbarHandler() {
-                const e = this,
-                  t = e.$.verticalScrollBar,
-                  r = t.value;
+                const e = this;
+                const t = e.$.verticalScrollBar;
+                const r = t.value;
                 e.disabled ||
                   (t.max !== r
                     ? t.min !== r
@@ -14409,16 +15034,16 @@ License: https://htmlelements.com/license/ */
       /******/
     }; // The module cache
     /************************************************************************/
-    /******/ /******/ var __webpack_module_cache__ = {}; // The require function
+    /******/ /******/ const __webpack_module_cache__ = {}; // The require function
     /******/
     /******/ /******/ function __webpack_require__(moduleId) {
       /******/ // Check if module is in cache
-      /******/ var cachedModule = __webpack_module_cache__[moduleId];
+      /******/ const cachedModule = __webpack_module_cache__[moduleId];
       /******/ if (cachedModule !== undefined) {
         /******/ return cachedModule.exports;
         /******/
       } // Create a new module (and put it into the cache)
-      /******/ /******/ var module = (__webpack_module_cache__[moduleId] = {
+      /******/ /******/ const module = (__webpack_module_cache__[moduleId] = {
         /******/ // no module.id needed
         /******/ // no module.loaded needed
         /******/ exports: {},
@@ -14439,9 +15064,9 @@ License: https://htmlelements.com/license/ */
     /******/ /******/ (() => {
       /******/ // getDefaultExport function for compatibility with non-harmony modules
       /******/ __webpack_require__.n = (module) => {
-        /******/ var getter =
+        /******/ const getter =
           module && module.__esModule
-            ? /******/ () => module['default']
+            ? /******/ () => module.default
             : /******/ () => module;
         /******/ __webpack_require__.d(getter, { a: getter });
         /******/ return getter;
@@ -14453,7 +15078,7 @@ License: https://htmlelements.com/license/ */
     /******/ /******/ (() => {
       /******/ // define getter functions for harmony exports
       /******/ __webpack_require__.d = (exports, definition) => {
-        /******/ for (var key in definition) {
+        /******/ for (const key in definition) {
           /******/ if (
             __webpack_require__.o(definition, key) &&
             !__webpack_require__.o(exports, key)
@@ -14478,51 +15103,51 @@ License: https://htmlelements.com/license/ */
     })();
     /******/
     /************************************************************************/
-    var __webpack_exports__ = {};
+    const __webpack_exports__ = {};
     // This entry need to be wrapped in an IIFE because it need to be in strict mode.
     (() => {
       'use strict';
       /* unused harmony export smartTree */
-      /* harmony import */ var _smart_element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(
+      /* harmony import */ const _smart_element_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(
         6321
       );
-      /* harmony import */ var _smart_element_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_element_js__WEBPACK_IMPORTED_MODULE_0___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_element_js__WEBPACK_IMPORTED_MODULE_0__
       );
-      /* harmony import */ var _smart_button_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(
+      /* harmony import */ const _smart_button_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(
         2612
       );
-      /* harmony import */ var _smart_button_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_button_js__WEBPACK_IMPORTED_MODULE_1___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_button_js__WEBPACK_IMPORTED_MODULE_1__
       );
-      /* harmony import */ var _smart_radiobutton_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(
+      /* harmony import */ const _smart_radiobutton_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(
         8649
       );
-      /* harmony import */ var _smart_radiobutton_js__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_radiobutton_js__WEBPACK_IMPORTED_MODULE_2___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_radiobutton_js__WEBPACK_IMPORTED_MODULE_2__
       );
-      /* harmony import */ var _smart_checkbox_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(
+      /* harmony import */ const _smart_checkbox_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(
         9097
       );
-      /* harmony import */ var _smart_checkbox_js__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_checkbox_js__WEBPACK_IMPORTED_MODULE_3___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_checkbox_js__WEBPACK_IMPORTED_MODULE_3__
       );
-      /* harmony import */ var _smart_scrollbar_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(
+      /* harmony import */ const _smart_scrollbar_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(
         9135
       );
-      /* harmony import */ var _smart_scrollbar_js__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_scrollbar_js__WEBPACK_IMPORTED_MODULE_4___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_scrollbar_js__WEBPACK_IMPORTED_MODULE_4__
       );
-      /* harmony import */ var _smart_menu_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(
+      /* harmony import */ const _smart_menu_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(
         3661
       );
-      /* harmony import */ var _smart_menu_js__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_menu_js__WEBPACK_IMPORTED_MODULE_5___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_menu_js__WEBPACK_IMPORTED_MODULE_5__
       );
-      /* harmony import */ var _smart_tree_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(
+      /* harmony import */ const _smart_tree_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(
         5482
       );
-      /* harmony import */ var _smart_tree_js__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/ __webpack_require__.n(
+      /* harmony import */ const _smart_tree_js__WEBPACK_IMPORTED_MODULE_6___default = /* #__PURE__ */ __webpack_require__.n(
         _smart_tree_js__WEBPACK_IMPORTED_MODULE_6__
       ); //
 
