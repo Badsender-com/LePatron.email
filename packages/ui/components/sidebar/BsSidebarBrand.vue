@@ -1,11 +1,7 @@
 <template>
   <div class="bs-sidebar-brand">
-    <div class="bs-sidebar-brand__logo">
-      <img
-        src="/logo_lepatron.png"
-        alt="LePatron"
-        class="bs-sidebar-brand__icon"
-      >
+    <div class="bs-sidebar-brand__mark">
+      LP
     </div>
     <span v-if="!collapsed" class="bs-sidebar-brand__name">LePatron</span>
   </div>
@@ -27,32 +23,33 @@ export default {
 .bs-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   height: 56px;
-  padding: 0 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid #e0e0e0;
   position: relative;
 }
 
-.bs-sidebar-brand__logo {
-  display: flex;
+.bs-sidebar-brand__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--v-primary-base, #093040);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
   flex-shrink: 0;
 }
 
-.bs-sidebar-brand__icon {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
 .bs-sidebar-brand__name {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--v-primary-base, #093040);
+  color: var(--gray-900, #212121);
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

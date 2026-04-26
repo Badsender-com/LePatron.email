@@ -4,7 +4,6 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsGroupColorsTab from '~/components/group/colors-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -12,7 +11,6 @@ import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'BsPageSettingsColors',
   components: {
-    BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
     BsGroupColorsTab,
   },
@@ -85,10 +83,7 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
+  <v-container fluid>
     <div class="settings-content">
       <bs-group-settings-page-header
         :title="$t('settingsNav.colors')"
@@ -101,11 +96,5 @@ export default {
         @save="updateGroup"
       />
     </div>
-  </bs-layout-left-menu>
+  </v-container>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

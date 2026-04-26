@@ -116,12 +116,26 @@ export default {
       isAdmin: IS_ADMIN,
     }),
   },
+  watch: {
+    '$route.query.dashboardId': {
+      immediate: true,
+      handler(dashboardId) {
+        if (dashboardId && this.isEnabled) {
+          const dashboard = this.dashboards.find((d) => d.id === dashboardId);
+          if (dashboard) {
+            this.selectDashboard(dashboard);
+          }
+        }
+      },
+    },
+  },
   mounted() {
-    // Auto-select first dashboard if available
+    // Auto-select first dashboard if available and no dashboardId in URL
     if (
       this.isEnabled &&
       this.dashboards.length > 0 &&
-      !this.selectedDashboard
+      !this.selectedDashboard &&
+      !this.$route.query.dashboardId
     ) {
       this.selectDashboard(this.dashboards[0]);
     }
@@ -250,17 +264,8 @@ export default {
     />
   </div>
 
-  <!-- Multiple dashboards: use sidebar layout -->
-  <bs-layout-left-menu v-else>
-    <template #menu>
-      <dashboard-list
-        :dashboards="dashboards"
-        :selected="selectedDashboard"
-        @select="selectDashboard"
-      />
-    </template>
-
-    <!-- Main Content Area -->
+  <!-- Multiple dashboards: dashboard list is in BsSidebar -->
+  <v-container v-else fluid class="fill-height pa-0">
     <v-card flat tile class="fill-height">
       <dashboard-viewer
         v-if="selectedDashboard"
@@ -280,7 +285,7 @@ export default {
         </v-card>
       </div>
     </v-card>
-  </bs-layout-left-menu>
+  </v-container>
 </template>
 
 <style scoped>

@@ -8,7 +8,6 @@ import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
 import { Plus } from 'lucide-vue';
-import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
@@ -29,7 +28,6 @@ import EmailBuilderPlaceholder from '~/routes/mailings/__partials/email-builder-
 export default {
   name: 'PageMailings',
   components: {
-    WorkspaceTree,
     MailingsTable,
     MailingsFilters,
     MailingsSelectionActions,
@@ -194,7 +192,9 @@ export default {
       });
     },
     async refreshLeftMenuData() {
-      await this.$refs.workspaceTree.fetchData();
+      // Workspace tree is now in the sidebar, refetch via Vuex
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
     },
   },
 };
@@ -205,10 +205,7 @@ export default {
   <email-builder-placeholder v-if="!isEmailBuilderEnabled" />
 
   <!-- Email Builder enabled: show normal UI -->
-  <bs-layout-left-menu v-else>
-    <template #menu>
-      <workspace-tree ref="workspaceTree" />
-    </template>
+  <v-container v-else fluid>
     <v-card flat tile>
       <client-only>
         <v-skeleton-loader
@@ -265,5 +262,5 @@ export default {
       :loading-parent="loading"
       @create-new-mail="handleCreateNewMail"
     />
-  </bs-layout-left-menu>
+  </v-container>
 </template>

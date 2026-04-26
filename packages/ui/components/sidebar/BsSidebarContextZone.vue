@@ -12,6 +12,12 @@
       :collapsed="collapsed"
     />
 
+    <!-- Settings context: Settings navigation -->
+    <bs-sidebar-settings-list
+      v-else-if="activeModule === 'settings'"
+      :collapsed="collapsed"
+    />
+
     <!-- Empty state when no module is active -->
     <div v-else class="bs-sidebar-context-zone__empty">
       <p v-if="!collapsed" class="text-body-2 grey--text text-center pa-4">
@@ -24,12 +30,14 @@
 <script>
 import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
 import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
+import BsSidebarSettingsList from './context/BsSidebarSettingsList.vue';
 
 export default {
   name: 'BsSidebarContextZone',
   components: {
     BsSidebarWorkspaceTree,
     BsSidebarDashboardList,
+    BsSidebarSettingsList,
   },
   props: {
     activeModule: {
@@ -39,6 +47,14 @@ export default {
     collapsed: {
       type: Boolean,
       default: false,
+    },
+  },
+  watch: {
+    activeModule: {
+      immediate: true,
+      handler(val) {
+        console.log('[BsSidebarContextZone] activeModule prop:', val);
+      },
     },
   },
 };

@@ -3,7 +3,6 @@ import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -11,7 +10,6 @@ import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 export default {
   name: 'BsPageSettingsVariables',
   components: {
-    BsGroupSettingsNav,
     BsGroupSettingsPageHeader,
     GroupPersonalizedVariableTab,
   },
@@ -47,10 +45,7 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
+  <v-container fluid>
     <div class="settings-content">
       <bs-group-settings-page-header
         :title="$t('global.variables')"
@@ -58,11 +53,5 @@ export default {
       />
       <group-personalized-variable-tab />
     </div>
-  </bs-layout-left-menu>
+  </v-container>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

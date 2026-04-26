@@ -14,6 +14,7 @@ export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
 export const SESSION_ACL = 'SESSION_ACL';
 export const USER_SET_HAS_FTP_ACCESS = 'USER_SET_HAS_FTP_ACCESS';
 export const HAS_FTP_ACCESS = 'HAS_FTP_ACCESS';
+export const GROUP = 'GROUP';
 
 export const getters = {
   [IS_CONNECTED](state) {
@@ -30,6 +31,9 @@ export const getters = {
   },
   [HAS_FTP_ACCESS]() {
     return state.hasFtpAccess;
+  },
+  [GROUP](state) {
+    return state.info != null && state.info.group ? state.info.group : null;
   },
   [SESSION_ACL](state) {
     const hasSession = state.info != null;

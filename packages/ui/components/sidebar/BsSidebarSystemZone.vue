@@ -1,10 +1,13 @@
 <template>
-  <nav class="bs-sidebar-system-zone">
+  <nav
+    class="bs-sidebar-system-zone"
+    :class="{ 'bs-sidebar-system-zone--collapsed': collapsed }"
+  >
     <v-tooltip
       v-for="item in systemItems"
       :key="item.id"
       :disabled="!collapsed"
-      right
+      top
     >
       <template #activator="{ on }">
         <button
@@ -13,10 +16,7 @@
           v-on="on"
           @click="handleClick(item)"
         >
-          <component :is="getIconComponent(item.icon)" :size="20" />
-          <span v-if="!collapsed" class="bs-sidebar-system-item__label">
-            {{ $t(item.labelKey) }}
-          </span>
+          <component :is="getIconComponent(item.icon)" :size="16" />
         </button>
       </template>
       <span>{{ $t(item.labelKey) }}</span>
@@ -26,9 +26,9 @@
 
 <script>
 import { Settings, HelpCircle, LogOut } from 'lucide-vue';
-import { mapActions, mapGetters } from 'vuex';
+import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import { USER, LOGOUT } from '~/store/user';
+import { USER } from '~/store/user';
 
 const ICON_MAP = {
   Settings,
@@ -51,7 +51,7 @@ export default {
   },
   computed: {
     ...mapGetters(USER, {
-      userGroup: 'group',
+      userGroup: 'GROUP',
     }),
 
     systemItems() {
@@ -63,10 +63,6 @@ export default {
     },
   },
   methods: {
-    ...mapActions(USER, {
-      logout: LOGOUT,
-    }),
-
     getIconComponent(iconName) {
       return ICON_MAP[iconName];
     },
@@ -75,7 +71,7 @@ export default {
       if (item.id === 'settings') {
         return (
           this.$route.path.startsWith('/groups/') &&
-          this.$route.path.includes('/edit')
+          this.$route.path.includes('/settings')
         );
       }
       return false;
@@ -85,13 +81,13 @@ export default {
       if (item.route) {
         const route =
           item.route === '/groups'
-            ? `/groups/${this.groupId}/edit`
+            ? `/groups/${this.groupId}/settings/general`
             : item.route;
         this.$router.push(route);
       } else if (item.action === 'openHelp') {
         this.$emit('open-help');
       } else if (item.action === 'logout') {
-        this.logout();
+        window.location.href = '/account/logout';
       }
     },
   },
@@ -101,39 +97,44 @@ export default {
 <style scoped>
 .bs-sidebar-system-zone {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 4px;
-  padding: 8px;
+  padding: 8px 12px;
   border-top: 1px solid #e0e0e0;
-  margin-top: auto;
+  align-items: center;
+}
+
+.bs-sidebar-system-zone--collapsed {
+  flex-direction: column;
+  padding: 8px;
 }
 
 .bs-sidebar-system-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 4px;
+  flex: 1;
+  height: 32px;
   background: transparent;
   border: none;
+  border-radius: 4px;
+  color: #757575;
   cursor: pointer;
-  transition: background-color 200ms;
-  color: var(--v-primary-base, #093040);
-  width: 100%;
-  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.bs-sidebar-system-zone--collapsed .bs-sidebar-system-item {
+  flex: none;
+  width: 32px;
 }
 
 .bs-sidebar-system-item:hover {
   background: #f5f5f5;
+  color: #212121;
 }
 
 .bs-sidebar-system-item--active {
   background: rgba(0, 172, 220, 0.1);
-  color: var(--v-accent-base, #00acdc);
-}
-
-.bs-sidebar-system-item__label {
-  font-size: 14px;
-  font-weight: 400;
+  color: var(--v-primary-base, #093040);
 }
 </style>
