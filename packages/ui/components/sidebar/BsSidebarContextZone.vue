@@ -23,13 +23,13 @@
 
 <script>
 import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
-// import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
+import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
 
 export default {
   name: 'BsSidebarContextZone',
   components: {
     BsSidebarWorkspaceTree,
-    // BsSidebarDashboardList,
+    BsSidebarDashboardList,
   },
   props: {
     activeModule: {
