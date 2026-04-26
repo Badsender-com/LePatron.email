@@ -40,7 +40,7 @@ export default {
     LucidePlus: Plus,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
-  meta: { acl: ACL_USER },
+  meta: { acl: ACL_USER, sidebarModule: 'email-builder' },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
       redirect('/groups');

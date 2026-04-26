@@ -3,20 +3,14 @@ import { mapState, mapGetters } from 'vuex';
 import { PAGE } from '~/store/page.js';
 import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
-import BsModuleSidebar from '~/components/module-sidebar.vue';
-import {
-  Mail,
-  LineChart,
-  HelpCircle,
-  LogOut,
-  Settings,
-} from 'lucide-vue';
+import BsSidebar from '~/components/sidebar/BsSidebar.vue';
+import { Mail, LineChart, HelpCircle, LogOut, Settings } from 'lucide-vue';
 
 export default {
   name: 'BsLayoutDefault',
   components: {
     BsSnackBar,
-    BsModuleSidebar,
+    BsSidebar,
     LucideMail: Mail,
     LucideLineChart: LineChart,
     LucideHelpCircle: HelpCircle,
@@ -46,6 +40,11 @@ export default {
       }
       const groupId = this.$store.state.user?.info?.group?.id;
       return groupId ? `/groups/${groupId}` : '/mailings';
+    },
+    mainStyle() {
+      if (!this.isConnected) return {};
+      const sidebarWidth = this.$store.state.sidebar?.collapsed ? 60 : 240;
+      return { marginLeft: `${sidebarWidth}px` };
     },
   },
   methods: {
@@ -178,8 +177,8 @@ export default {
       <v-spacer />
     </v-app-bar>
 
-    <!-- Module Sidebar (desktop) -->
-    <bs-module-sidebar />
+    <!-- Unified Sidebar (desktop) -->
+    <bs-sidebar v-if="isConnected" />
 
     <!-- Mobile Navigation Drawer -->
     <v-navigation-drawer
@@ -197,7 +196,11 @@ export default {
             <lucide-mail :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>{{ $t('modules.emailBuilder') }}</v-list-item-title>
+            <v-list-item-title>
+              {{
+                $t('modules.emailBuilder')
+              }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
 
@@ -206,7 +209,11 @@ export default {
             <lucide-line-chart :size="20" />
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>{{ $t('modules.crmIntelligence') }}</v-list-item-title>
+            <v-list-item-title>
+              {{
+                $t('modules.crmIntelligence')
+              }}
+            </v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -253,7 +260,7 @@ export default {
       </v-list>
     </v-navigation-drawer>
 
-    <v-main :class="{ 'with-module-sidebar': isConnected }">
+    <v-main :style="mainStyle">
       <nuxt />
     </v-main>
 
@@ -266,10 +273,5 @@ export default {
   font-size: 1rem;
 }
 
-/* Adjust main content when module sidebar is visible (desktop only) */
-@media (min-width: 961px) {
-  .with-module-sidebar {
-    padding-left: 56px !important;
-  }
-}
+/* v-main padding is controlled by mainStyle computed property */
 </style>
