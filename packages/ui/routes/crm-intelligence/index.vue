@@ -265,27 +265,25 @@ export default {
   </div>
 
   <!-- Multiple dashboards: dashboard list is in BsSidebar -->
-  <v-container v-else fluid class="fill-height pa-0">
-    <v-card flat tile class="fill-height">
-      <dashboard-viewer
-        v-if="selectedDashboard"
-        :embed-url="embedUrl"
-        :loading="loadingEmbed"
-        :dashboard-name="selectedDashboard.name"
-      />
-      <div
-        v-else
-        class="d-flex align-center justify-center fill-height grey lighten-4"
-      >
-        <v-card flat max-width="400" class="text-center pa-8 transparent">
-          <lucide-line-chart :size="64" style="color: #9e9e9e" />
-          <p class="text-body-1 mt-4 grey--text">
-            {{ $t('crmIntelligence.selectDashboard') }}
-          </p>
-        </v-card>
-      </div>
-    </v-card>
-  </v-container>
+  <div v-else class="crm-dashboard-container">
+    <dashboard-viewer
+      v-if="selectedDashboard"
+      :embed-url="embedUrl"
+      :loading="loadingEmbed"
+      :dashboard-name="selectedDashboard.name"
+    />
+    <div
+      v-else
+      class="d-flex align-center justify-center fill-height grey lighten-4"
+    >
+      <v-card flat max-width="400" class="text-center pa-8 transparent">
+        <lucide-line-chart :size="64" style="color: #9e9e9e" />
+        <p class="text-body-1 mt-4 grey--text">
+          {{ $t('crmIntelligence.selectDashboard') }}
+        </p>
+      </v-card>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -333,10 +331,14 @@ export default {
 }
 
 /* Dashboard views */
-.crm-fullwidth {
-  margin-left: 56px;
-  height: calc(100vh - 64px);
-  width: calc(100% - 56px);
+.crm-fullwidth,
+.crm-dashboard-container {
+  position: fixed;
+  top: 64px; /* App bar height */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 960px) {
@@ -358,7 +360,8 @@ export default {
     max-width: 280px;
   }
 
-  .crm-fullwidth {
+  .crm-fullwidth,
+  .crm-dashboard-container {
     margin-left: 0;
     width: 100%;
   }
