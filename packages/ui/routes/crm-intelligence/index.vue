@@ -347,8 +347,22 @@ export default {
   position: fixed;
   top: 64px; /* App bar height */
   bottom: 0;
+  right: 0;
   overflow: hidden;
   transition: margin-left 200ms ease, width 200ms ease;
+}
+
+/* Ensure dashboard viewer fills container */
+.crm-fullwidth >>> .dashboard-viewer,
+.crm-dashboard-container >>> .dashboard-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.crm-fullwidth >>> .dashboard-iframe,
+.crm-dashboard-container >>> .dashboard-iframe {
+  width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 960px) {
