@@ -205,8 +205,11 @@ export default {
   <email-builder-placeholder v-if="!isEmailBuilderEnabled" />
 
   <!-- Email Builder enabled: show normal UI -->
-  <v-container v-else fluid>
-    <v-card flat tile>
+  <bs-layout-left-menu v-else>
+    <template #menu>
+      <workspace-tree ref="workspaceTree" />
+    </template>
+    <div class="settings-content">
       <client-only>
         <v-skeleton-loader
           :loading="
@@ -256,7 +259,7 @@ export default {
         </v-skeleton-loader>
         <bs-group-loading slot="placeholder" />
       </client-only>
-    </v-card>
+    </div>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
       :loading-parent="loading"
@@ -264,3 +267,9 @@ export default {
     />
   </v-container>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>

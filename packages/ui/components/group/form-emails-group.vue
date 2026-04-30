@@ -59,9 +59,6 @@ export default {
       if (this.$v.$invalid) return;
       this.$emit('submit', this.emailsGroup);
     },
-    onCancel() {
-      this.$emit('cancel');
-    },
   },
 };
 </script>
@@ -119,9 +116,6 @@ export default {
       <!-- Form Actions -->
       <v-divider class="mt-4" />
       <div class="form-actions">
-        <v-btn text color="primary" :disabled="loading" @click="onCancel">
-          {{ $t('global.cancel') }}
-        </v-btn>
         <v-btn
           type="submit"
           color="accent"
@@ -137,10 +131,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.emails-group-form {
-  max-width: 800px;
-}
-
 .form-actions {
   display: flex;
   align-items: center;

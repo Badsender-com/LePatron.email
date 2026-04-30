@@ -633,7 +633,7 @@ export default {
         @click:row="handleRowClick"
       >
         <template #item.name="{ item }">
-          <span class="font-weight-medium">{{ item.name }}</span>
+          <span class="mailing-name font-weight-medium">{{ item.name }}</span>
         </template>
         <template #item.userName="{ item }">
           <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
@@ -723,7 +723,7 @@ export default {
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 /* =========================================================================
    BsDataTable — LePatron Design System v1.0
    Standardized table pattern for Mailings (reference implementation)
@@ -762,6 +762,15 @@ export default {
 
   .v-data-table tbody tr:last-child td {
     border-bottom: none !important;
+  }
+
+  /* -------- Name cell link ------------------------------------------------- */
+  .clickable-rows tbody tr .mailing-name {
+    cursor: pointer;
+  }
+
+  .clickable-rows tbody tr:hover .mailing-name {
+    text-decoration: underline;
   }
 
   /* -------- Row states ---------------------------------------------------- */

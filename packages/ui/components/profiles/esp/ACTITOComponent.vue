@@ -166,9 +166,6 @@ export default {
       }
       this.$emit('submit', this.profile);
     },
-    onCancel() {
-      this.$emit('cancel');
-    },
     async fetchTargetTables(entity, apiKey) {
       try {
         const { $axios } = this;
@@ -395,9 +392,6 @@ export default {
 
     <!-- Form Actions -->
     <div class="form-actions">
-      <v-btn text color="primary" :disabled="isLoading" @click="onCancel">
-        {{ $t('global.cancel') }}
-      </v-btn>
       <v-btn
         color="accent"
         elevation="0"

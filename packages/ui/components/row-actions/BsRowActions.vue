@@ -162,9 +162,13 @@ export default {
     outline-offset: 1px;
   }
 
-  &--danger:hover {
-    background: rgba(240, 78, 35, 0.08);
+  &--danger {
     color: #f04e23; // --color-error
+
+    &:hover {
+      background: rgba(240, 78, 35, 0.08);
+      color: #f04e23;
+    }
   }
 }
 

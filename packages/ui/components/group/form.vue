@@ -227,7 +227,10 @@ export default {
                 <div class="module-card__description">
                   {{ $t('groups.modules.crmIntelligence.description') }}
                 </div>
-                <div v-if="localModel.enableCrmIntelligence" class="module-card__hint">
+                <div
+                  v-if="localModel.enableCrmIntelligence"
+                  class="module-card__hint"
+                >
                   <lucide-arrow-right :size="14" color="#9e9e9e" />
                   {{ $t('groups.modules.crmIntelligence.configHint') }}
                 </div>
@@ -300,19 +303,21 @@ export default {
         </div>
       </v-card-text>
 
-      <v-divider />
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          elevation="0"
-          color="accent"
-          :loading="loading"
-          :disabled="disabled || loading"
-          @click="onSubmit"
-        >
-          {{ $t('global.save') }}
-        </v-btn>
-      </v-card-actions>
+      <template v-if="isAdmin">
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            elevation="0"
+            color="accent"
+            :loading="loading"
+            :disabled="disabled || loading"
+            @click="onSubmit"
+          >
+            {{ $t('global.save') }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
 
     <!-- ==================== DANGER ZONE ==================== -->

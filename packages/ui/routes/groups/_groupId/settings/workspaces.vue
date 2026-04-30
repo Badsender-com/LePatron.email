@@ -58,7 +58,7 @@ export default {
       >
         <template #actions>
           <v-btn color="accent" elevation="0" @click="goToNewWorkspace">
-            <lucide-plus :size="20" class="mr-2" />
+            <lucide-plus :size="18" class="mr-2" />
             {{ $t('global.add') }}
           </v-btn>
         </template>

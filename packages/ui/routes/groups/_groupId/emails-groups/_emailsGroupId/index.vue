@@ -90,9 +90,6 @@ export default {
         this.isLoading = false;
       }
     },
-    onCancel() {
-      this.$router.push(`/groups/${this.groupId}/settings/emails-groups`);
-    },
   },
 };
 </script>
@@ -111,7 +108,6 @@ export default {
         v-model="emailsGroup"
         :loading="isLoading"
         @submit="updateEmailsGroup"
-        @cancel="onCancel"
       />
     </div>
   </bs-layout-left-menu>

@@ -8,10 +8,11 @@ import BsGroupLoading from '~/components/loadingBar';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsCompaniesNav from '~/components/group/companies-nav.vue';
 import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import { IS_ADMIN, USER } from '~/store/user';
-import { Building2, Pencil, Check } from 'lucide-vue';
 import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import { IS_ADMIN, USER } from '~/store/user';
+import { Building2, Plus, Pencil, Check, XCircle, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'PageGroups',
@@ -20,12 +21,14 @@ export default {
     BsGroupSettingsPageHeader,
     BsCompaniesNav,
     BsModalCreateGroup,
+    BsModalConfirmForm,
     BsDataTable,
     BsRowActions,
-    // Used via $options.components.LucideBuilding2 in template
     // eslint-disable-next-line vue/no-unused-components
     LucideBuilding2: Building2,
+    LucidePlus: Plus,
     LucideCheck: Check,
+    LucideXCircle: XCircle,
   },
   mixins: [mixinPageTitle],
   meta: {
@@ -46,6 +49,7 @@ export default {
       groups: [],
       modalLoading: false,
       loading: false,
+      deletingGroup: null,
     };
   },
   head() {
@@ -73,26 +77,40 @@ export default {
           text: this.$t('tableHeaders.groups.status'),
           align: 'center',
           value: 'status',
-        },
-        {
-          text: this.$t('tableHeaders.groups.downloadWithoutEnclosingFolder'),
-          align: 'center',
-          value: 'downloadMailingWithoutEnclosingFolder',
+          width: '90px',
         },
         {
           text: this.$t('tableHeaders.groups.cdnDownload'),
           align: 'center',
           value: 'downloadMailingWithCdnImages',
+          sortable: false,
+          width: '60px',
         },
         {
           text: this.$t('tableHeaders.groups.ftpDownload'),
           align: 'center',
           value: 'downloadMailingWithFtpImages',
+          sortable: false,
+          width: '60px',
+        },
+        {
+          text: this.$t('tableHeaders.groups.esp'),
+          align: 'center',
+          value: 'hasProfiles',
+          sortable: false,
+          width: '60px',
+        },
+        {
+          text: this.$t('tableHeaders.groups.ai'),
+          align: 'center',
+          value: 'enableCrmIntelligence',
+          sortable: false,
+          width: '60px',
         },
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -116,10 +134,6 @@ export default {
     goToGroup(group) {
       this.$router.push(`/groups/${group.id}/settings/general`);
     },
-    /**
-     * Build quick actions for a group row
-     * Design System: Only Edit action
-     */
     buildQuickActions(item) {
       return [
         {
@@ -128,7 +142,37 @@ export default {
           text: 'global.edit',
           onClick: () => this.goToGroup(item),
         },
+        {
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.confirmDelete(item),
+        },
       ];
+    },
+    confirmDelete(group) {
+      this.deletingGroup = group;
+      this.$refs.deleteDialog.open({ name: group.name, id: group.id });
+    },
+    async deleteGroup({ id }) {
+      try {
+        this.loading = true;
+        await this.$axios.$delete(apiRoutes.groupsItem({ groupId: id }));
+        this.groups = this.groups.filter((g) => g.id !== id);
+        this.showSnackbar({
+          text: this.$t('snackbars.deleted'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
+        this.deletingGroup = null;
+      }
     },
     async createGroup(group) {
       try {
@@ -139,7 +183,6 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        // Navigate to the new group's settings
         this.$router.push(`/groups/${createdGroup.id}/settings/general`);
       } catch (error) {
         this.showSnackbar({
@@ -151,11 +194,7 @@ export default {
       }
     },
     getStatusColor(status) {
-      const colors = {
-        active: 'success',
-        demo: 'info',
-        inactive: 'grey',
-      };
+      const colors = { active: 'success', demo: 'info', inactive: 'grey' };
       return colors[status] || 'grey';
     },
   },
@@ -172,72 +211,121 @@ export default {
         <bs-group-settings-page-header :title="$t('settingsNav.companiesList')">
           <template #actions>
             <v-btn color="accent" elevation="0" @click="openCreateModal">
-              <v-icon left>
-                mdi-plus
-              </v-icon>
+              <lucide-plus :size="18" class="mr-2" />
               {{ $t('global.add') }}
             </v-btn>
           </template>
         </bs-group-settings-page-header>
 
-        <v-card elevation="0" class="pa-4">
-          <bs-data-table
-            :headers="tableHeaders"
-            :items="groups"
-            :loading="loading"
-            :empty-icon="$options.components.LucideBuilding2"
-            :empty-message="$t('settingsNav.companiesEmpty')"
-            clickable
-            @click:row="goToGroup"
-          >
-            <template #item.name="{ item }">
-              <span class="font-weight-medium">{{ item.name }}</span>
-            </template>
+        <bs-data-table
+          :headers="tableHeaders"
+          :items="groups"
+          :loading="loading"
+          :empty-icon="$options.components.LucideBuilding2"
+          :empty-message="$t('settingsNav.companiesEmpty')"
+          clickable
+          @click:row="goToGroup"
+        >
+          <template #item.name="{ item }">
+            <span class="font-weight-medium">{{ item.name }}</span>
+          </template>
 
-            <template #item.createdAt="{ item }">
-              <span>{{ item.createdAt | preciseDateTime }}</span>
-            </template>
+          <template #item.createdAt="{ item }">
+            <span class="text--secondary">{{
+              item.createdAt | preciseDateTime
+            }}</span>
+          </template>
 
-            <template #item.status="{ item }">
-              <v-chip
-                small
-                :color="getStatusColor(item.status)"
-                :outlined="item.status !== 'active'"
-                :dark="item.status === 'active'"
-              >
-                {{ item.status }}
-              </v-chip>
-            </template>
+          <template #item.status="{ item }">
+            <v-chip
+              small
+              :color="getStatusColor(item.status)"
+              :outlined="item.status !== 'active'"
+              :dark="item.status === 'active'"
+            >
+              {{ item.status }}
+            </v-chip>
+          </template>
 
-            <template #item.downloadMailingWithoutEnclosingFolder="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithoutEnclosingFolder"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.downloadMailingWithCdnImages="{ item }">
+            <lucide-check
+              v-if="item.downloadMailingWithCdnImages"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.downloadMailingWithCdnImages="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithCdnImages"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.downloadMailingWithFtpImages="{ item }">
+            <lucide-check
+              v-if="item.downloadMailingWithFtpImages"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.downloadMailingWithFtpImages="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithFtpImages"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.hasProfiles="{ item }">
+            <lucide-check
+              v-if="item.hasProfiles"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.actions="{ item }">
-              <bs-row-actions :quick-actions="buildQuickActions(item)" />
-            </template>
-          </bs-data-table>
-        </v-card>
+          <template #item.enableCrmIntelligence="{ item }">
+            <lucide-check
+              v-if="item.enableCrmIntelligence"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
+
+          <template #item.actions="{ item }">
+            <bs-row-actions :quick-actions="buildQuickActions(item)" />
+          </template>
+        </bs-data-table>
+
+        <bs-modal-confirm-form
+          ref="deleteDialog"
+          :title="$t('forms.group.dangerZone.deleteTitle')"
+          :action-label="$t('global.delete')"
+          :confirmation-input-label="$t('groups.delete.confirmationField')"
+          :confirm-check-box="true"
+          :confirm-check-box-message="$t('groups.delete.deleteNotice')"
+          @confirm="deleteGroup"
+        >
+          <p
+            class="black--text"
+            v-html="
+              $t('groups.delete.deleteWarningMessage', {
+                name: deletingGroup && deletingGroup.name,
+              })
+            "
+          />
+        </bs-modal-confirm-form>
       </div>
       <bs-group-loading slot="placeholder" />
     </client-only>
@@ -253,117 +341,5 @@ export default {
 <style lang="scss" scoped>
 .settings-content {
   padding: 0;
-}
-
-/* =========================================================================
-   BsDataTable Styles — LePatron Design System v1.0
-   Based on: /tmp/lepatron-design-latest/preview/components-data-table.html
-   ========================================================================= */
-
-/* Headers */
-::v-deep .v-data-table thead th {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  color: rgba(0, 0, 0, 0.6) !important; // --gray-600
-  padding: 10px 16px !important;
-  background: rgba(0, 0, 0, 0.02) !important; // --gray-50
-  height: 40px !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
-  white-space: nowrap;
-  user-select: none;
-}
-
-/* Rows */
-::v-deep .v-data-table tbody tr {
-  height: 40px !important;
-  cursor: pointer;
-  transition: background 0.15s ease-out;
-}
-
-::v-deep .v-data-table tbody td {
-  padding: 10px 16px !important;
-  font-size: 13px !important;
-  color: rgba(0, 0, 0, 0.87) !important; // --gray-900
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; // --gray-200
-  height: 40px !important;
-  vertical-align: middle;
-}
-
-::v-deep .v-data-table tbody tr:last-child td {
-  border-bottom: none !important;
-}
-
-/* Row states */
-::v-deep .v-data-table tbody tr:hover {
-  background: rgba(0, 0, 0, 0.02) !important; // --gray-50
-}
-
-::v-deep .v-data-table tbody tr.v-data-table__selected {
-  background: rgba(0, 172, 220, 0.06) !important;
-}
-
-::v-deep .v-data-table tbody tr.v-data-table__selected:hover {
-  background: rgba(0, 172, 220, 0.1) !important;
-}
-
-/* Empty state */
-::v-deep .v-data-table__empty-wrapper {
-  padding: 48px 24px !important;
-  text-align: center;
-  color: rgba(0, 0, 0, 0.87) !important; // --gray-900
-  font-size: 14px !important;
-  font-weight: 600 !important;
-}
-
-/* ========================================================================= */
-/* Groups table specific styles */
-/* ========================================================================= */
-
-/* Name column (primary identifier) */
-::v-deep .v-data-table tbody td:nth-child(1) {
-  font-weight: 500 !important;
-  color: var(--v-primary-base) !important;
-}
-
-/* CreatedAt column (date) */
-::v-deep .v-data-table tbody td:nth-child(2) {
-  color: rgba(0, 0, 0, 0.7) !important; // --gray-700
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* Status column (chip) */
-::v-deep .v-data-table tbody td:nth-child(3) {
-  text-align: center;
-}
-
-/* Status chip styling */
-::v-deep .v-chip {
-  font-size: 11px !important;
-  height: 20px !important;
-  padding: 0 8px !important;
-  font-weight: 500 !important;
-}
-
-/* Boolean columns (checkmarks) - columns 4, 5, 6 */
-::v-deep .v-data-table tbody td:nth-child(4),
-::v-deep .v-data-table tbody td:nth-child(5),
-::v-deep .v-data-table tbody td:nth-child(6) {
-  text-align: center;
-  color: rgba(0, 0, 0, 0.54) !important;
-}
-
-/* Actions column */
-::v-deep .v-data-table tbody td:last-child {
-  text-align: right !important;
-  width: 1%;
-  white-space: nowrap;
-}
-
-::v-deep .v-data-table thead th:last-child {
-  text-align: right !important;
-  width: 1%;
 }
 </style>
