@@ -9,6 +9,7 @@ import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.v
 import BsGroupUsersTab from '~/components/group/users-tab.vue';
 import BsModalCreateUser from '~/components/group/modal-create-user.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsUsers',
@@ -17,6 +18,7 @@ export default {
     BsGroupSettingsPageHeader,
     BsGroupUsersTab,
     BsModalCreateUser,
+    LucidePlus: Plus,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -67,7 +69,9 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        this.$router.push(`/groups/${this.groupId}/settings/users/${createdUser.id}`);
+        this.$router.push(
+          `/groups/${this.groupId}/settings/users/${createdUser.id}`
+        );
       } catch (error) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -87,12 +91,13 @@ export default {
       <bs-group-settings-nav :group="group" />
     </template>
     <div class="settings-content">
-      <bs-group-settings-page-header :title="$tc('global.user', 2)" :group-name="group.name">
+      <bs-group-settings-page-header
+        :title="$tc('global.user', 2)"
+        :group-name="group.name"
+      >
         <template #actions>
           <v-btn color="accent" elevation="0" @click="openCreateModal">
-            <v-icon left>
-              mdi-plus
-            </v-icon>
+            <lucide-plus :size="18" class="mr-2" />
             {{ $t('global.add') }}
           </v-btn>
         </template>

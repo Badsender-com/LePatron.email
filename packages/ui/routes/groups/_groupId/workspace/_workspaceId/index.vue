@@ -89,9 +89,6 @@ export default {
         this.isLoading = false;
       }
     },
-    onCancel() {
-      this.$router.push(`/groups/${this.groupId}/settings/workspaces`);
-    },
   },
 };
 </script>
@@ -112,7 +109,6 @@ export default {
         :is-loading="isLoading"
         is-edit
         @submit="updateWorkspace"
-        @cancel="onCancel"
       />
     </div>
   </bs-layout-left-menu>

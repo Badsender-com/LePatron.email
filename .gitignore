@@ -147,3 +147,9 @@ dist
 
 
 .clever.json
+
+# Local dev data & scripts
+docker/data/
+start-local.sh
+seed-local.js
+seed-mailings.js

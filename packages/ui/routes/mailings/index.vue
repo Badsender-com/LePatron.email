@@ -209,7 +209,7 @@ export default {
     <template #menu>
       <workspace-tree ref="workspaceTree" />
     </template>
-    <v-card flat tile>
+    <div class="settings-content">
       <client-only>
         <v-skeleton-loader
           :loading="
@@ -259,7 +259,7 @@ export default {
         </v-skeleton-loader>
         <bs-group-loading slot="placeholder" />
       </client-only>
-    </v-card>
+    </div>
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
       :loading-parent="loading"
@@ -267,3 +267,9 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>

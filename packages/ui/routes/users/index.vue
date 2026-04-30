@@ -3,10 +3,12 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsUsersTable from '~/components/users/table.vue';
+import BsCompaniesNav from '~/components/group/companies-nav.vue';
+import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 
 export default {
   name: 'PageUsers',
-  components: { BsUsersTable },
+  components: { BsUsersTable, BsCompaniesNav, BsGroupSettingsPageHeader },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -46,15 +48,23 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <bs-users-table
-          v-model="loading"
-          :users="users"
-          @update="updateUserFromActions"
-        />
-      </v-col>
-    </v-row>
-  </v-container>
+  <bs-layout-left-menu>
+    <template #menu>
+      <bs-companies-nav />
+    </template>
+    <div class="settings-content">
+      <bs-group-settings-page-header :title="$tc('global.user', 2)" />
+      <bs-users-table
+        v-model="loading"
+        :users="users"
+        @update="updateUserFromActions"
+      />
+    </div>
+  </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>
