@@ -1,35 +1,46 @@
 <template>
   <aside
     class="bs-sidebar"
-    :class="{ 'bs-sidebar--collapsed': collapsed }"
-    :style="sidebarStyle"
+    :class="{
+      'bs-sidebar--collapsed': collapsed && !isMobileDrawer,
+      'bs-sidebar--mobile': isMobileDrawer,
+    }"
+    :style="!isMobileDrawer ? sidebarStyle : {}"
   >
     <!-- Zone 0: Brand -->
     <div class="bs-sidebar__brand-wrapper">
-      <bs-sidebar-brand :collapsed="collapsed" />
-      <bs-sidebar-toggle :collapsed="collapsed" @toggle="handleToggle" />
+      <bs-sidebar-brand :collapsed="collapsed && !isMobileDrawer" />
+      <!-- Toggle only on desktop -->
+      <bs-sidebar-toggle
+        v-if="!isMobileDrawer"
+        :collapsed="collapsed"
+        @toggle="handleToggle"
+      />
     </div>
 
     <!-- Zone 1: Modules -->
     <bs-sidebar-module-list
       :modules="modules"
       :active-module="activeModule"
-      :collapsed="collapsed"
+      :collapsed="collapsed && !isMobileDrawer"
       @select="handleModuleSelect"
     />
 
     <!-- Zone 2: Contextual -->
     <bs-sidebar-context-zone
       :active-module="activeModule"
-      :collapsed="collapsed"
+      :collapsed="collapsed && !isMobileDrawer"
     />
 
     <!-- Zone 3: System -->
-    <bs-sidebar-system-zone :collapsed="collapsed" @open-help="handleHelp" />
+    <bs-sidebar-system-zone
+      :collapsed="collapsed && !isMobileDrawer"
+      @open-help="handleHelp"
+    />
 
-    <!-- Resize Handle -->
+    <!-- Resize Handle (desktop only) -->
     <div
-      v-if="!collapsed"
+      v-if="!collapsed && !isMobileDrawer"
       class="bs-sidebar__resize-handle"
       @mousedown="startResize"
     />
@@ -65,6 +76,13 @@ export default {
     BsSidebarSystemZone,
     BsSidebarToggle,
     BsUpgradeModal,
+  },
+  props: {
+    // When true, sidebar is rendered inside mobile drawer (no resize handle, no toggle)
+    isMobileDrawer: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     showUpgradeModal: false,

@@ -2,14 +2,14 @@
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsWorkspaces',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsGroupWorkspacesTab,
     LucidePlus: Plus,
   },
@@ -40,6 +40,9 @@ export default {
     groupId() {
       return this.$route.params.groupId;
     },
+    showGroupBadge() {
+      return this.group.name;
+    },
   },
   methods: {
     goToNewWorkspace() {
@@ -50,20 +53,30 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$tc('global.teams', 2)"
-        :group-name="group.name"
-      >
-        <template #actions>
-          <v-btn color="accent" elevation="0" @click="goToNewWorkspace">
-            <lucide-plus :size="18" class="mr-2" />
-            {{ $t('global.add') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-      <bs-group-workspaces-tab ref="workspacesTab" />
-    </div>
-  </v-container>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $tc('global.teams', 2) }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+      <template #actions>
+        <v-btn color="accent" elevation="0" @click="goToNewWorkspace">
+          <lucide-plus :size="18" class="mr-2" />
+          {{ $t('global.add') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <bs-group-workspaces-tab ref="workspacesTab" />
+      </div>
+    </v-container>
+  </div>
 </template>

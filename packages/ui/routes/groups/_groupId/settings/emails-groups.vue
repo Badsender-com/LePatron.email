@@ -5,7 +5,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getEmailsGroups } from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsModalCreateEmailsGroup from '~/components/group/modal-create-emails-group.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
@@ -14,7 +14,7 @@ import { Plus } from 'lucide-vue';
 export default {
   name: 'BsPageSettingsEmailsGroups',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsEmailsGroupsTab,
     BsModalCreateEmailsGroup,
     LucidePlus: Plus,
@@ -47,6 +47,9 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -87,26 +90,36 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$tc('global.emailsGroups', 2)"
-        :group-name="group.name"
-      >
-        <template #actions>
-          <v-btn color="accent" elevation="0" @click="openCreateModal">
-            <lucide-plus :size="18" class="mr-2" />
-            {{ $t('global.add') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-      <bs-emails-groups-tab ref="emailsGroupsTab" />
-    </div>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $tc('global.emailsGroups', 2) }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+      <template #actions>
+        <v-btn color="accent" elevation="0" @click="openCreateModal">
+          <lucide-plus :size="18" class="mr-2" />
+          {{ $t('global.add') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <bs-emails-groups-tab ref="emailsGroupsTab" />
+      </div>
 
-    <bs-modal-create-emails-group
-      ref="createModal"
-      :loading="modalLoading"
-      @submit="createEmailsGroup"
-    />
-  </v-container>
+      <bs-modal-create-emails-group
+        ref="createModal"
+        :loading="modalLoading"
+        @submit="createEmailsGroup"
+      />
+    </v-container>
+  </div>
 </template>

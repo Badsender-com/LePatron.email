@@ -3,14 +3,14 @@ import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsGroupAiFeaturesTab from '~/components/group/ai-features-tab.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsPageSettingsAiFeatures',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsGroupAiFeaturesTab,
   },
   mixins: [mixinSettingsTitle],
@@ -40,18 +40,32 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
+    },
   },
 };
 </script>
 
 <template>
-  <v-container fluid>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$t('aiFeatures.title')"
-        :group-name="group.name"
-      />
-      <bs-group-ai-features-tab :active="true" />
-    </div>
-  </v-container>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('aiFeatures.title') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <bs-group-ai-features-tab :active="true" />
+      </div>
+    </v-container>
+  </div>
 </template>

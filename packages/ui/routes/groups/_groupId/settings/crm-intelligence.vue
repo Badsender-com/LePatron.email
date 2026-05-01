@@ -4,13 +4,13 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
 
 export default {
   name: 'BsPageSettingsCrmIntelligence',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsCrmIntelligenceTab,
   },
   mixins: [mixinSettingsTitle],
@@ -34,6 +34,11 @@ export default {
   },
   head() {
     return { title: this.settingsTitle };
+  },
+  computed: {
+    showGroupBadge() {
+      return this.group.name;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -67,18 +72,29 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$t('crmIntelligence.dashboards')"
-        :group-name="group.name"
-      />
-      <bs-crm-intelligence-tab
-        :group="group"
-        :active="true"
-        @update="refreshGroup"
-        @change-tab="changeTab"
-      />
-    </div>
-  </v-container>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('crmIntelligence.dashboards') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <bs-crm-intelligence-tab
+          :group="group"
+          :active="true"
+          @update="refreshGroup"
+          @change-tab="changeTab"
+        />
+      </div>
+    </v-container>
+  </div>
 </template>
