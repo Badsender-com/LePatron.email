@@ -4,7 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -16,7 +16,7 @@ import { required, email } from 'vuelidate/lib/validators';
 export default {
   name: 'BsPageSettingsUserEdit',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsUserActions,
     BsMailingsAdminTable,
     BsDataTable,
@@ -174,6 +174,9 @@ export default {
       };
       return descriptions[this.user.status] || '';
     },
+    showGroupBadge() {
+      return this.group.name;
+    },
   },
   watch: {
     'pagination.page': 'loadMailings',
@@ -288,228 +291,238 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$t('global.editUser')"
-        :group-name="group.name"
-      />
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('global.editUser') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <!-- User form -->
+        <v-card flat tile :loading="loading" :disabled="loading">
+          <v-card-text>
+            <!-- Section: Informations -->
+            <div class="form-section">
+              <h3 class="form-section__title">
+                {{ $t('users.details') }}
+              </h3>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.email"
+                    :label="$t('users.email')"
+                    type="email"
+                    required
+                    :error-messages="emailErrors"
+                    @blur="$v.user.email.$touch()"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.name"
+                    :label="$t('forms.user.name')"
+                    required
+                    :error-messages="nameErrors"
+                    @blur="$v.user.name.$touch()"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.externalUsername"
+                    :label="
+                      $t('forms.user.externalUsername') +
+                        $t('forms.user.optional')
+                    "
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-select
+                    v-model="user.lang"
+                    :label="$t('users.lang')"
+                    :items="$options.supportedLanguages"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-select
+                    v-model="user.role"
+                    :label="$t('users.role')"
+                    :items="$options.roles"
+                  />
+                </v-col>
+              </v-row>
+            </div>
 
-      <!-- User form -->
-      <v-card flat tile :loading="loading" :disabled="loading">
-        <v-card-text>
-          <!-- Section: Informations -->
-          <div class="form-section">
-            <h3 class="form-section__title">
-              {{ $t('users.details') }}
-            </h3>
-            <v-row>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.email"
-                  :label="$t('users.email')"
-                  type="email"
-                  required
-                  :error-messages="emailErrors"
-                  @blur="$v.user.email.$touch()"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.name"
-                  :label="$t('forms.user.name')"
-                  required
-                  :error-messages="nameErrors"
-                  @blur="$v.user.name.$touch()"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.externalUsername"
-                  :label="
-                    $t('forms.user.externalUsername') +
-                    $t('forms.user.optional')
-                  "
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-select
-                  v-model="user.lang"
-                  :label="$t('users.lang')"
-                  :items="$options.supportedLanguages"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-select
-                  v-model="user.role"
-                  :label="$t('users.role')"
-                  :items="$options.roles"
-                />
-              </v-col>
-            </v-row>
-          </div>
-
-          <!-- Section: Statut & Sécurité -->
-          <div class="form-section">
-            <h3 class="form-section__title">
-              {{ $t('users.sections.statusSecurity') }}
-            </h3>
-            <p class="form-section__description">
-              {{ $t('users.sections.statusSecurityDescription') }}
-            </p>
-
-            <!-- Status display -->
-            <div class="status-display mb-4">
-              <div class="d-flex align-center">
-                <span class="text-body-2 mr-3"
-                  >{{ $t('global.status') }} :</span
-                >
-                <v-chip
-                  small
-                  :color="statusColor"
-                  :outlined="!isActiveStatus"
-                  :dark="isActiveStatus"
-                >
-                  {{ statusLabel }}
-                </v-chip>
-              </div>
-              <p
-                v-if="statusDescription"
-                class="text-caption text--secondary mt-2 mb-0"
-              >
-                {{ statusDescription }}
+            <!-- Section: Statut & Sécurité -->
+            <div class="form-section">
+              <h3 class="form-section__title">
+                {{ $t('users.sections.statusSecurity') }}
+              </h3>
+              <p class="form-section__description">
+                {{ $t('users.sections.statusSecurityDescription') }}
               </p>
+
+              <!-- Status display -->
+              <div class="status-display mb-4">
+                <div class="d-flex align-center">
+                  <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
+                  <v-chip
+                    small
+                    :color="statusColor"
+                    :outlined="!isActiveStatus"
+                    :dark="isActiveStatus"
+                  >
+                    {{ statusLabel }}
+                  </v-chip>
+                </div>
+                <p
+                  v-if="statusDescription"
+                  class="text-caption text--secondary mt-2 mb-0"
+                >
+                  {{ statusDescription }}
+                </p>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="status-actions">
+                <!-- Activate (when deactivated) -->
+                <v-btn
+                  v-if="isDeactivated"
+                  outlined
+                  color="success"
+                  :disabled="loading"
+                  @click="activateUser"
+                >
+                  {{ $t('users.actions.activate') }}
+                </v-btn>
+
+                <!-- Actions for active users (non-SAML) -->
+                <template v-if="!isDeactivated && !isSamlUser">
+                  <!-- Send password (to-be-initialized) -->
+                  <v-btn
+                    v-if="canSendPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="sendPassword"
+                  >
+                    {{ $t('users.actions.sendPassword') }}
+                  </v-btn>
+
+                  <!-- Resend password (password-mail-sent) -->
+                  <v-btn
+                    v-if="canResendPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="resendPassword"
+                  >
+                    {{ $t('users.actions.resendPassword') }}
+                  </v-btn>
+
+                  <!-- Reset password (confirmed) -->
+                  <v-btn
+                    v-if="canResetPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="resetPassword"
+                  >
+                    {{ $t('users.actions.resetPassword') }}
+                  </v-btn>
+
+                  <!-- Deactivate -->
+                  <v-btn
+                    text
+                    color="error"
+                    :disabled="loading"
+                    @click="deactivateUser"
+                  >
+                    {{ $t('users.actions.deactivate') }}
+                  </v-btn>
+                </template>
+              </div>
             </div>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              color="accent"
+              elevation="0"
+              :loading="loading"
+              @click="updateUser"
+            >
+              {{ $t('global.save') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
 
-            <!-- Action buttons -->
-            <div class="status-actions">
-              <!-- Activate (when deactivated) -->
-              <v-btn
-                v-if="isDeactivated"
-                outlined
-                color="success"
-                :disabled="loading"
-                @click="activateUser"
-              >
-                {{ $t('users.actions.activate') }}
-              </v-btn>
+        <!-- Workspace assignments -->
+        <v-card flat tile class="mt-4">
+          <v-card-title class="px-0">
+            {{ $tc('global.teams', 2) }}
+          </v-card-title>
+          <bs-data-table :headers="workspaceHeaders" :items="workspaces">
+            <template #item.name="{ item }">
+              <span class="font-weight-medium">{{ item.name }}</span>
+            </template>
+            <template #item.assigned="{ item }">
+              <v-switch
+                :input-value="isUserInWorkspace(item)"
+                :loading="savingWorkspaces.has(item.id)"
+                :disabled="savingWorkspaces.has(item.id)"
+                dense
+                hide-details
+                class="mt-0 d-inline-flex"
+                @change="toggleWorkspace(item)"
+              />
+            </template>
+          </bs-data-table>
+        </v-card>
 
-              <!-- Actions for active users (non-SAML) -->
-              <template v-if="!isDeactivated && !isSamlUser">
-                <!-- Send password (to-be-initialized) -->
-                <v-btn
-                  v-if="canSendPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="sendPassword"
-                >
-                  {{ $t('users.actions.sendPassword') }}
-                </v-btn>
-
-                <!-- Resend password (password-mail-sent) -->
-                <v-btn
-                  v-if="canResendPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="resendPassword"
-                >
-                  {{ $t('users.actions.resendPassword') }}
-                </v-btn>
-
-                <!-- Reset password (confirmed) -->
-                <v-btn
-                  v-if="canResetPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="resetPassword"
-                >
-                  {{ $t('users.actions.resetPassword') }}
-                </v-btn>
-
-                <!-- Deactivate -->
-                <v-btn
-                  text
-                  color="error"
-                  :disabled="loading"
-                  @click="deactivateUser"
-                >
-                  {{ $t('users.actions.deactivate') }}
-                </v-btn>
-              </template>
-            </div>
-          </div>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="accent"
-            elevation="0"
-            :loading="loading"
-            @click="updateUser"
-          >
-            {{ $t('global.save') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-
-      <!-- Workspace assignments -->
-      <v-card flat tile class="mt-4">
-        <v-card-title class="px-0">
-          {{ $tc('global.teams', 2) }}
-        </v-card-title>
-        <bs-data-table :headers="workspaceHeaders" :items="workspaces">
-          <template #item.name="{ item }">
-            <span class="font-weight-medium">{{ item.name }}</span>
-          </template>
-          <template #item.assigned="{ item }">
-            <v-switch
-              :input-value="isUserInWorkspace(item)"
-              :loading="savingWorkspaces.has(item.id)"
-              :disabled="savingWorkspaces.has(item.id)"
-              dense
-              hide-details
-              class="mt-0 d-inline-flex"
-              @change="toggleWorkspace(item)"
-            />
-          </template>
-        </bs-data-table>
-      </v-card>
-
-      <!-- User mailings -->
-      <v-card flat tile class="mt-4">
-        <v-card-title class="px-0">
-          {{ $tc('global.mailing', 2) }}
-        </v-card-title>
-        <bs-mailings-admin-table
-          :mailings="mailings"
-          :loading="isLoadingMailings"
-          :hidden-cols="['userName', 'actions']"
-        />
-        <div
-          v-if="pagination && pagination.itemsLength > pagination.itemsPerPage"
-          class="d-flex align-center justify-center"
-        >
-          <v-pagination
-            v-model="pagination.page"
-            :circle="true"
-            class="my-4"
-            :length="pagination.pageCount"
+        <!-- User mailings -->
+        <v-card flat tile class="mt-4">
+          <v-card-title class="px-0">
+            {{ $tc('global.mailing', 2) }}
+          </v-card-title>
+          <bs-mailings-admin-table
+            :mailings="mailings"
+            :loading="isLoadingMailings"
+            :hidden-cols="['userName', 'actions']"
           />
-        </div>
-      </v-card>
-    </div>
+          <div
+            v-if="
+              pagination && pagination.itemsLength > pagination.itemsPerPage
+            "
+            class="d-flex align-center justify-center"
+          >
+            <v-pagination
+              v-model="pagination.page"
+              :circle="true"
+              class="my-4"
+              :length="pagination.pageCount"
+            />
+          </div>
+        </v-card>
+      </div>
 
-    <bs-user-actions
-      ref="userActions"
-      v-model="loading"
-      :user="user"
-      @update="updateUserFromActions"
-    />
-  </v-container>
+      <bs-user-actions
+        ref="userActions"
+        v-model="loading"
+        :user="user"
+        @update="updateUserFromActions"
+      />
+    </v-container>
+  </div>
 </template>
 
 <style lang="scss" scoped>

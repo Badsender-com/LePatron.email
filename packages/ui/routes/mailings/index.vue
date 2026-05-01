@@ -10,8 +10,9 @@ import * as mailingsHelpers from '~/helpers/mailings.js';
 import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
-import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
+import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import {
   FOLDER,
@@ -32,7 +33,8 @@ export default {
     MailingsFilters,
     MailingsSelectionActions,
     BsMailingsModalNew,
-    MailingsHeader,
+    MailingsBreadcrumbs,
+    BsPageHeader,
     BsGroupLoading,
     EmailBuilderPlaceholder,
     LucidePlus: Plus,
@@ -205,62 +207,72 @@ export default {
   <email-builder-placeholder v-if="!isEmailBuilderEnabled" />
 
   <!-- Email Builder enabled: show normal UI -->
-  <v-container v-else fluid>
-    <v-card flat tile>
-      <client-only>
-        <v-skeleton-loader
-          :loading="
-            isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
-          "
-          type="table"
+  <div v-else>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #breadcrumb>
+        <mailings-breadcrumbs />
+      </template>
+      <template #actions>
+        <v-btn
+          color="accent"
+          elevation="0"
+          :disabled="!hasAccess"
+          @click="openNewMailModal"
         >
-          <mailings-header @on-refresh="refreshLeftMenuData">
-            <template #actions>
-              <v-btn
-                color="accent"
-                elevation="0"
-                :disabled="!hasAccess"
-                @click="openNewMailModal"
-              >
-                <lucide-plus :size="18" class="mr-1" />
-                {{ $t('global.newMail') }}
-              </v-btn>
-            </template>
-          </mailings-header>
-          <mailings-filters
-            :tags="tags"
-            @on-refresh="fetchMailListingForFilterUpdate"
-          />
-          <mailings-selection-actions
-            ref="mailingSelectionActions"
-            :mailings-selection="mailingsSelection"
-            :tags="tags"
-            :has-ftp-access="hasFtpAccess"
-            @createTag="onTagCreate"
-            @updateTags="onMailSelectionTagsUpdate"
-            @on-refetch="fetchMailListingForFilterUpdate"
-            @clear-selection="resetMailingsSelection"
-          />
-          <mailings-table
-            v-model="mailingsSelection"
-            :mailings="filteredMailings"
-            :has-ftp-access="hasFtpAccess"
-            :tags="tags"
-            :current-page="currentPage"
-            :items-length="itemsLength"
-            @on-single-mail-download="handleDownloadSingleMail"
-            @on-refetch="fetchMailListingForFilterUpdate"
-            @update-tags="onMailTableTagsUpdate"
-            @update:page="currentPage = $event"
-          />
-        </v-skeleton-loader>
-        <bs-group-loading slot="placeholder" />
-      </client-only>
-    </v-card>
+          <lucide-plus :size="18" class="mr-1" />
+          {{ $t('global.newMail') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+
+    <v-container fluid>
+      <v-card flat tile>
+        <client-only>
+          <v-skeleton-loader
+            :loading="
+              isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+            "
+            type="table"
+          >
+            <mailings-filters
+              :tags="tags"
+              @on-refresh="fetchMailListingForFilterUpdate"
+            />
+            <mailings-selection-actions
+              ref="mailingSelectionActions"
+              :mailings-selection="mailingsSelection"
+              :tags="tags"
+              :has-ftp-access="hasFtpAccess"
+              @createTag="onTagCreate"
+              @updateTags="onMailSelectionTagsUpdate"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @clear-selection="resetMailingsSelection"
+            />
+            <mailings-table
+              v-model="mailingsSelection"
+              :mailings="filteredMailings"
+              :has-ftp-access="hasFtpAccess"
+              :tags="tags"
+              :current-page="currentPage"
+              :items-length="itemsLength"
+              @on-single-mail-download="handleDownloadSingleMail"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @update-tags="onMailTableTagsUpdate"
+              @update:page="currentPage = $event"
+            />
+          </v-skeleton-loader>
+          <bs-group-loading slot="placeholder" />
+        </client-only>
+      </v-card>
+    </v-container>
+
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
       :loading-parent="loading"
       @create-new-mail="handleCreateNewMail"
     />
-  </v-container>
+  </div>
 </template>

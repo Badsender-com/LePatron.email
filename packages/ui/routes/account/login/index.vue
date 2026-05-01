@@ -11,12 +11,12 @@ import { USER, M_USER_SET } from '~/store/user';
 export default {
   name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
-  layout: 'centered',
   components: {
     LucideArrowLeft: ArrowLeft,
     LucideEye: Eye,
     LucideEyeOff: EyeOff,
   },
+  layout: 'centered',
   data() {
     return {
       username: '',
@@ -121,7 +121,12 @@ export default {
             isAdmin: user.isAdmin,
           });
 
-          $router.go();
+          // Redirect to home page, which will handle routing to the first enabled module
+          if (user.isAdmin) {
+            await $router.push('/groups');
+          } else {
+            await $router.push('/');
+          }
         } catch (err) {
           this.isLoading = false;
           const errorMessage = this.$t(

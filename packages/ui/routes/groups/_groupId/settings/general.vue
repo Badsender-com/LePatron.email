@@ -4,14 +4,14 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsGroupForm from '~/components/group/form.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsPageSettingsGeneral',
   components: {
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsGroupForm,
   },
   mixins: [mixinSettingsTitle],
@@ -42,6 +42,9 @@ export default {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
     }),
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -83,18 +86,30 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <bs-group-settings-page-header
-      :title="$t('groups.tabs.general')"
-      :group-name="group.name"
-    />
-    <bs-group-form
-      v-model="group"
-      :is-edit="true"
-      elevation="0"
-      :disabled="loading"
-      :loading="loading"
-      @submit="updateGroup"
-    />
-  </v-container>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('groups.tabs.general') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+
+    <v-container fluid>
+      <bs-group-form
+        v-model="group"
+        :is-edit="true"
+        elevation="0"
+        :disabled="loading"
+        :loading="loading"
+        @submit="updateGroup"
+      />
+    </v-container>
+  </div>
 </template>

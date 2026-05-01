@@ -1,9 +1,20 @@
 <template>
   <div class="bs-sidebar-brand">
-    <div class="bs-sidebar-brand__mark">
-      LP
-    </div>
-    <span v-if="!collapsed" class="bs-sidebar-brand__name">LePatron</span>
+    <!-- Collapsed: show mark only -->
+    <img
+      v-if="collapsed"
+      src="/pique_aiguille.svg"
+      alt="LePatron"
+      class="bs-sidebar-brand__mark"
+    >
+
+    <!-- Expanded: show full logo -->
+    <img
+      v-else
+      src="/logo_lepatron_black.svg"
+      alt="LePatron"
+      class="bs-sidebar-brand__logo"
+    >
   </div>
 </template>
 
@@ -23,35 +34,24 @@ export default {
 .bs-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   height: 56px;
   padding: 14px 18px;
   border-bottom: 1px solid #e0e0e0;
   position: relative;
 }
 
-.bs-sidebar-brand__mark {
-  width: 28px;
+/* Full logo when expanded */
+.bs-sidebar-brand__logo {
   height: 28px;
-  border-radius: 6px;
-  background: var(--v-primary-base, #093040);
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: -0.02em;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: auto;
   flex-shrink: 0;
 }
 
-.bs-sidebar-brand__name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--gray-900, #212121);
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Mark only when collapsed */
+.bs-sidebar-brand__mark {
+  height: 28px;
+  width: auto;
+  flex-shrink: 0;
 }
 </style>
