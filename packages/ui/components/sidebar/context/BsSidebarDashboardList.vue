@@ -78,7 +78,18 @@ export default {
     },
 
     isActive(dashboardId) {
-      return this.$route.query.dashboardId === dashboardId;
+      // If there's a dashboardId in the query, use it
+      if (this.$route.query.dashboardId) {
+        return this.$route.query.dashboardId === dashboardId;
+      }
+
+      // If no dashboardId in query but we have dashboards,
+      // mark the first one as active (auto-selected)
+      if (this.dashboards.length > 0) {
+        return dashboardId === this.dashboards[0].id;
+      }
+
+      return false;
     },
   },
 };
