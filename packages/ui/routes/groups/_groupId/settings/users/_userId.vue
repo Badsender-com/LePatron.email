@@ -7,6 +7,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { validationMixin } from 'vuelidate';
@@ -18,6 +19,7 @@ export default {
     BsGroupSettingsPageHeader,
     BsUserActions,
     BsMailingsAdminTable,
+    BsDataTable,
     BsTextField,
     BsSelect,
   },
@@ -36,20 +38,31 @@ export default {
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const [groupResponse, userResponse] = await Promise.all([
+      const [
+        groupResponse,
+        userResponse,
+        workspacesResponse,
+      ] = await Promise.all([
         $axios.$get(apiRoutes.groupsItem(params)),
         $axios.$get(apiRoutes.usersItem(params)),
+        $axios.$get(apiRoutes.groupsWorkspaces(params)),
       ]);
-      return { group: groupResponse, user: userResponse };
+      return {
+        group: groupResponse,
+        user: userResponse,
+        workspaces: workspacesResponse.items,
+      };
     } catch (error) {
       console.error(error);
-      return { group: {}, user: {} };
+      return { group: {}, user: {}, workspaces: [] };
     }
   },
   data() {
     return {
       group: {},
       user: {},
+      workspaces: [],
+      savingWorkspaces: new Set(),
       mailings: [],
       loading: false,
       isLoadingMailings: false,
@@ -78,6 +91,18 @@ export default {
   computed: {
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
+    },
+    workspaceHeaders() {
+      return [
+        { text: this.$t('global.name'), value: 'name', align: 'left' },
+        {
+          text: this.$t('tableHeaders.workspaces.assigned'),
+          value: 'assigned',
+          align: 'center',
+          sortable: false,
+          width: '120px',
+        },
+      ];
     },
     emailErrors() {
       const errors = [];
@@ -159,6 +184,39 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUserInWorkspace(workspace) {
+      return (workspace._users || []).some(
+        (id) => String(id) === String(this.user.id)
+      );
+    },
+    async toggleWorkspace(workspace) {
+      const userId = String(this.user.id);
+      const currentUsers = (workspace._users || []).map(String);
+      const isAssigned = currentUsers.includes(userId);
+      const newUsers = isAssigned
+        ? currentUsers.filter((id) => id !== userId)
+        : [...currentUsers, userId];
+
+      this.savingWorkspaces = new Set([...this.savingWorkspaces, workspace.id]);
+      try {
+        await this.$axios.$put(apiRoutes.getWorkspace(workspace.id), {
+          selectedUsers: newUsers.map((id) => ({ id })),
+        });
+        const idx = this.workspaces.findIndex((w) => w.id === workspace.id);
+        if (idx !== -1) {
+          this.$set(this.workspaces[idx], '_users', newUsers);
+        }
+      } catch {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        const next = new Set(this.savingWorkspaces);
+        next.delete(workspace.id);
+        this.savingWorkspaces = next;
+      }
+    },
     async loadMailings() {
       this.isLoadingMailings = true;
       try {
@@ -225,9 +283,6 @@ export default {
     updateUserFromActions(updatedUser) {
       this.user = updatedUser;
     },
-    onCancel() {
-      this.$router.push(`/groups/${this.group.id}/settings/users`);
-    },
   },
 };
 </script>
@@ -273,7 +328,7 @@ export default {
                   v-model="user.externalUsername"
                   :label="
                     $t('forms.user.externalUsername') +
-                      $t('forms.user.optional')
+                    $t('forms.user.optional')
                   "
                 />
               </v-col>
@@ -306,7 +361,9 @@ export default {
             <!-- Status display -->
             <div class="status-display mb-4">
               <div class="d-flex align-center">
-                <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
+                <span class="text-body-2 mr-3"
+                  >{{ $t('global.status') }} :</span
+                >
                 <v-chip
                   small
                   :color="statusColor"
@@ -388,9 +445,6 @@ export default {
         <v-divider />
         <v-card-actions>
           <v-spacer />
-          <v-btn text color="primary" :disabled="loading" @click="onCancel">
-            {{ $t('global.cancel') }}
-          </v-btn>
           <v-btn
             color="accent"
             elevation="0"
@@ -402,31 +456,50 @@ export default {
         </v-card-actions>
       </v-card>
 
+      <!-- Workspace assignments -->
+      <v-card flat tile class="mt-4">
+        <v-card-title class="px-0">
+          {{ $tc('global.teams', 2) }}
+        </v-card-title>
+        <bs-data-table :headers="workspaceHeaders" :items="workspaces">
+          <template #item.name="{ item }">
+            <span class="font-weight-medium">{{ item.name }}</span>
+          </template>
+          <template #item.assigned="{ item }">
+            <v-switch
+              :input-value="isUserInWorkspace(item)"
+              :loading="savingWorkspaces.has(item.id)"
+              :disabled="savingWorkspaces.has(item.id)"
+              dense
+              hide-details
+              class="mt-0 d-inline-flex"
+              @change="toggleWorkspace(item)"
+            />
+          </template>
+        </bs-data-table>
+      </v-card>
+
       <!-- User mailings -->
       <v-card flat tile class="mt-4">
-        <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
-        <v-card-text>
-          <bs-mailings-admin-table
-            :mailings="mailings"
-            :loading="isLoadingMailings"
-            :hidden-cols="['userName', 'actions']"
+        <v-card-title class="px-0">
+          {{ $tc('global.mailing', 2) }}
+        </v-card-title>
+        <bs-mailings-admin-table
+          :mailings="mailings"
+          :loading="isLoadingMailings"
+          :hidden-cols="['userName', 'actions']"
+        />
+        <div
+          v-if="pagination && pagination.itemsLength > pagination.itemsPerPage"
+          class="d-flex align-center justify-center"
+        >
+          <v-pagination
+            v-model="pagination.page"
+            :circle="true"
+            class="my-4"
+            :length="pagination.pageCount"
           />
-          <v-card
-            v-if="
-              pagination && pagination.itemsLength > pagination.itemsPerPage
-            "
-            flat
-            class="d-flex align-center justify-center mx-auto"
-            max-width="22rem"
-          >
-            <v-pagination
-              v-model="pagination.page"
-              :circle="true"
-              class="my-4"
-              :length="pagination.pageCount"
-            />
-          </v-card>
-        </v-card-text>
+        </div>
       </v-card>
     </div>
 

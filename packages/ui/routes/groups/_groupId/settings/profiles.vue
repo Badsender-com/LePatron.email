@@ -6,12 +6,14 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import BsGroupProfilesTab from '~/components/group/profile-tab.vue';
+import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsProfiles',
   components: {
     BsGroupSettingsPageHeader,
     BsGroupProfilesTab,
+    LucidePlus: Plus,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -55,9 +57,7 @@ export default {
       >
         <template #actions>
           <v-btn color="accent" elevation="0" nuxt :to="newProfileHref">
-            <v-icon left>
-              mdi-plus
-            </v-icon>
+            <lucide-plus :size="18" class="mr-2" />
             {{ $t('global.add') }}
           </v-btn>
         </template>

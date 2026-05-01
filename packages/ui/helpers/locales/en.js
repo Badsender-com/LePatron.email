@@ -549,20 +549,26 @@ export default {
   },
   tableHeaders: {
     groups: {
-      downloadWithoutEnclosingFolder: 'Download without parent folder',
-      cdnDownload: 'CDN download',
-      ftpDownload: 'FTP download',
+      cdnDownload: 'CDN',
+      ftpDownload: 'FTP',
       status: 'Status',
+      esp: 'ESP',
+      ai: 'AI',
     },
     users: {
       passwordMail: 'Password\' email',
     },
     templates: {
       markup: 'Markup?',
+      coverImage: 'Preview?',
+      imageCount: 'Images',
     },
     mailings: {
       rename: 'Rename',
       transfer: 'Transfer',
+    },
+    workspaces: {
+      assigned: 'Access',
     },
   },
   personalizedVariables: {

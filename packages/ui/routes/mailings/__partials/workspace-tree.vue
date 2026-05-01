@@ -677,7 +677,10 @@ export default {
         </template>
       </template>
       <template #label="{ item, active }">
-        <div @click="active ? $event.stopPropagation() : null">
+        <div
+          :class="{ 'tree-label--no-access': !item.hasAccess }"
+          @click="active ? $event.stopPropagation() : null"
+        >
           {{ item.name }}
         </div>
       </template>
@@ -735,6 +738,11 @@ export default {
   &--disabled {
     color: rgba(0, 0, 0, 0.26);
   }
+}
+
+/* Non-assigned workspace/folder label */
+.tree-label--no-access {
+  color: rgba(0, 0, 0, 0.5);
 }
 
 .v-treeview-node--active,

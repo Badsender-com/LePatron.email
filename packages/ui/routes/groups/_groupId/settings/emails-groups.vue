@@ -9,6 +9,7 @@ import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.v
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsModalCreateEmailsGroup from '~/components/group/modal-create-emails-group.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsEmailsGroups',
@@ -16,6 +17,7 @@ export default {
     BsGroupSettingsPageHeader,
     BsEmailsGroupsTab,
     BsModalCreateEmailsGroup,
+    LucidePlus: Plus,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -93,9 +95,7 @@ export default {
       >
         <template #actions>
           <v-btn color="accent" elevation="0" @click="openCreateModal">
-            <v-icon left>
-              mdi-plus
-            </v-icon>
+            <lucide-plus :size="18" class="mr-2" />
             {{ $t('global.add') }}
           </v-btn>
         </template>

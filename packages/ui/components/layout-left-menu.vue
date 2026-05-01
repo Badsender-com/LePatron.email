@@ -8,9 +8,7 @@ export default {
   <v-container fluid class="pa-0 fill-height">
     <v-row no-gutters class="fill-height">
       <v-col cols="3" class="navigation-drawer-container">
-        <v-navigation-drawer class="fill-height" permanent>
-          <slot name="menu" />
-        </v-navigation-drawer>
+        <slot name="menu" />
       </v-col>
       <v-col cols="9">
         <v-container fluid>
@@ -22,10 +20,8 @@ export default {
 </template>
 
 <style scoped>
-.v-navigation-drawer {
-  width: 100% !important;
-}
 .navigation-drawer-container {
-  max-height: calc(100vh - 4rem);
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  min-height: calc(100vh - 4rem);
 }
 </style>

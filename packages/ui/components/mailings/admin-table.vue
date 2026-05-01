@@ -1,26 +1,30 @@
 <script>
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
+import { mapGetters } from 'vuex';
 import { Mail, Pencil } from 'lucide-vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsMailingsAdminTable',
   components: {
+    BsDataTable,
     LucideMail: Mail,
     LucidePencil: Pencil,
   },
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   props: {
     mailings: { type: Array, default: () => [] },
     hiddenCols: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     pagination: { type: Object, default: () => ({}) },
-    clickable: { type: Boolean, default: true },
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
+    canAccessUsers() {
+      return this.isAdmin || this.isGroupAdmin;
+    },
     tableHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
@@ -41,55 +45,58 @@ export default {
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    tableClasses() {
-      return {
-        'mailings-table': true,
-        'mailings-table--clickable': this.clickable,
-      };
-    },
   },
   methods: {
-    handleItemsPerPageChange(itemsPerPage) {
-      this.$emit('update:items-per-page', itemsPerPage);
-    },
     openMailing(item) {
-      // Mailings live outside the Nuxt application (in /editor)
       window.location.href = `/editor/${item.id}`;
     },
-    handleRowClick(item) {
-      if (this.clickable) {
-        this.openMailing(item);
-      }
+    goToUser(item) {
+      if (!item.userId) return;
+      const groupId = this.$route.params.groupId;
+      const path = groupId
+        ? `/groups/${groupId}/settings/users/${item.userId}`
+        : `/users/${item.userId}`;
+      this.$router.push(path);
+    },
+    goToTemplate(item) {
+      if (!item.templateId) return;
+      this.$router.push(`/templates/${item.templateId}`);
     },
   },
 };
 </script>
 
 <template>
-  <v-data-table
+  <bs-data-table
     :headers="tableHeaders"
     :items="mailings"
     :loading="loading"
-    :items-per-page="25"
-    :hide-default-footer="
-      mailings.length <= $options.TABLE_PAGINATION_THRESHOLD
-    "
-    :footer-props="$options.TABLE_FOOTER_PROPS"
-    :class="tableClasses"
     v-bind="$attrs"
-    @update:items-per-page="handleItemsPerPageChange"
-    @click:row="handleRowClick"
+    v-on="$listeners"
   >
     <template #item.name="{ item }">
-      <span class="font-weight-medium">{{ item.name }}</span>
+      <span
+        class="cell-link font-weight-medium"
+        @click.stop="openMailing(item)"
+      >{{ item.name }}</span>
     </template>
 
     <template #item.userName="{ item }">
-      <span class="text--secondary">{{ item.userName }}</span>
+      <span
+        v-if="canAccessUsers && item.userId"
+        class="cell-link text--secondary"
+        @click.stop="goToUser(item)"
+      >{{ item.userName }}</span>
+      <span v-else class="text--secondary">{{ item.userName }}</span>
     </template>
 
     <template #item.templateName="{ item }">
-      <span class="text--secondary">{{ item.templateName }}</span>
+      <span
+        v-if="item.templateId"
+        class="cell-link text--secondary"
+        @click.stop="goToTemplate(item)"
+      >{{ item.templateName }}</span>
+      <span v-else class="text--secondary">{{ item.templateName }}</span>
     </template>
 
     <template #item.createdAt="{ item }">
@@ -121,7 +128,7 @@ export default {
       </v-tooltip>
     </template>
 
-    <template #no-data>
+    <template #empty>
       <div class="text-center pa-6">
         <lucide-mail :size="48" class="grey--text text--lighten-1" />
         <p class="text-body-1 grey--text mt-4">
@@ -129,104 +136,17 @@ export default {
         </p>
       </div>
     </template>
-  </v-data-table>
+  </bs-data-table>
 </template>
 
-<style lang="scss" scoped>
-/* =========================================================================
-   BsDataTable Styles — LePatron Design System v1.0
-   ========================================================================= */
-
-::v-deep .v-data-table thead th {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  color: rgba(0, 0, 0, 0.6) !important;
-  padding: 10px 16px !important;
-  background: rgba(0, 0, 0, 0.02) !important;
-  height: 40px !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
-  white-space: nowrap;
-  user-select: none;
-}
-
-::v-deep .v-data-table tbody tr {
-  height: 40px !important;
+<style scoped>
+.cell-link {
   cursor: pointer;
-  transition: background 0.15s ease-out;
+  border-radius: 2px;
 }
 
-::v-deep .v-data-table tbody td {
-  padding: 10px 16px !important;
-  font-size: 13px !important;
-  color: rgba(0, 0, 0, 0.87) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-  height: 40px !important;
-  vertical-align: middle;
-}
-
-::v-deep .v-data-table tbody tr:last-child td {
-  border-bottom: none !important;
-}
-
-::v-deep .v-data-table tbody tr:hover {
-  background: rgba(0, 0, 0, 0.02) !important;
-}
-
-::v-deep .v-data-table tbody tr.v-data-table__selected {
-  background: rgba(0, 172, 220, 0.06) !important;
-}
-
-::v-deep .v-data-table tbody tr.v-data-table__selected:hover {
-  background: rgba(0, 172, 220, 0.1) !important;
-}
-
-::v-deep .v-data-table__empty-wrapper {
-  padding: 48px 24px !important;
-  text-align: center;
-  color: rgba(0, 0, 0, 0.87) !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-}
-
-/* Name column - primary color */
-::v-deep .v-data-table tbody td:nth-child(1) {
-  font-weight: 500 !important;
-  color: var(--v-primary-base) !important;
-}
-
-/* Author, Template columns - metadata */
-::v-deep .v-data-table tbody td:nth-child(2),
-::v-deep .v-data-table tbody td:nth-child(3) {
-  color: rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Date columns - tabular nums */
-::v-deep .v-data-table tbody td:nth-child(4),
-::v-deep .v-data-table tbody td:nth-child(5) {
-  color: rgba(0, 0, 0, 0.7) !important;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* Actions column - right aligned */
-::v-deep .v-data-table tbody td:last-child {
-  text-align: right !important;
-  width: 1%;
-  white-space: nowrap;
-}
-
-::v-deep .v-data-table thead th:last-child {
-  text-align: right !important;
-  width: 1%;
-}
-
-.mailings-table {
-  &--clickable {
-    ::v-deep tbody tr {
-      cursor: pointer;
-    }
-  }
+.cell-link:hover {
+  text-decoration: underline;
+  color: var(--v-primary-base);
 }
 </style>

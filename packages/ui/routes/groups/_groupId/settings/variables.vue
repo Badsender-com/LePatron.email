@@ -6,12 +6,14 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsVariables',
   components: {
     BsGroupSettingsPageHeader,
     GroupPersonalizedVariableTab,
+    LucidePlus: Plus,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -50,8 +52,19 @@ export default {
       <bs-group-settings-page-header
         :title="$t('global.variables')"
         :group-name="group.name"
-      />
-      <group-personalized-variable-tab />
+      >
+        <template #actions>
+          <v-btn
+            color="accent"
+            elevation="0"
+            @click="$refs.variablesTab.addRow()"
+          >
+            <lucide-plus :size="18" class="mr-2" />
+            {{ $t('global.add') }}
+          </v-btn>
+        </template>
+      </bs-group-settings-page-header>
+      <group-personalized-variable-tab ref="variablesTab" />
     </div>
   </v-container>
 </template>
