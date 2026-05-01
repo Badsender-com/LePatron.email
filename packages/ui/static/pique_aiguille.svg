@@ -1,14 +1,14 @@
 <svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M13.6857 16.3754L17.1449 6.40723" stroke="white" stroke-linecap="round"></path>
+<path d="M13.6857 16.3754L17.1449 6.40723" stroke="#1a1a1a" stroke-linecap="round"></path>
 <ellipse cx="1.78647" cy="1.79195" rx="1.78647" ry="1.79195" transform="matrix(0.829295 0.558811 -0.552652 0.833412 16.6531 3.91528)" fill="#F04E23"></ellipse>
-<path d="M13.8458 18.9558L20.6216 10.9016" stroke="white" stroke-linecap="round"></path>
+<path d="M13.8458 18.9558L20.6216 10.9016" stroke="#1a1a1a" stroke-linecap="round"></path>
 <ellipse cx="1.79161" cy="1.78681" rx="1.79161" ry="1.78681" transform="matrix(0.573641 0.819107 -0.81475 0.579812 21.0493 8.39795)" fill="#00ACDC"></ellipse>
 <path d="M21.7649 21.0943C21.7649 26.4455 21.5266 27.4488 11.0205 27.4488C1.66699 27.4488 0.513445 26.4455 0.513445 21.0943C0.513445 15.743 5.08652 11.405 11.0205 11.405C16.9544 11.405 21.7649 15.743 21.7649 21.0943Z" fill="#F04E23"></path>
-<path d="M8.93843 14.1636L6.8869 6.15894" stroke="white" stroke-linecap="round"></path>
+<path d="M8.93843 14.1636L6.8869 6.15894" stroke="#1a1a1a" stroke-linecap="round"></path>
 <ellipse cx="6.88658" cy="6.15905" rx="1.96671" ry="1.98254" fill="#FFB400"></ellipse>
-<path d="M6.62035 16.4485L2.71664 11.9927" stroke="white" stroke-linecap="round"></path>
+<path d="M6.62035 16.4485L2.71664 11.9927" stroke="#1a1a1a" stroke-linecap="round"></path>
 <ellipse cx="1.96895" cy="1.9803" rx="1.96895" ry="1.9803" transform="matrix(0.925494 -0.378763 0.373585 0.927596 0.154034 10.9016)" fill="#00ACDC"></ellipse>
-<path d="M11.5081 12.814L12.5904 2.31006" stroke="white" stroke-linecap="round"></path>
+<path d="M11.5081 12.814L12.5904 2.31006" stroke="#1a1a1a" stroke-linecap="round"></path>
 <ellipse cx="1.78378" cy="1.79463" rx="1.78378" ry="1.79463" transform="matrix(0.936301 0.351198 -0.346286 0.938129 11.5414 0)" fill="#00ACDC"></ellipse>
 <rect y="25.3181" width="22.0413" height="5.85831" rx="1" fill="#FFB400"></rect>
 </svg>
