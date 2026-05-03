@@ -85,10 +85,14 @@ export const actions = {
         console.error('[user store] Failed to fetch group:', error.message);
       }
     }
-    commit(
-      USER_SET_HAS_FTP_ACCESS,
-      !!(group && group.downloadMailingWithFtpImages)
-    );
+
+    // Update user info with complete group data (includes enableEmailBuilder, enableCrmIntelligence, etc.)
+    if (group) {
+      commit(M_USER_SET, { group });
+      commit(USER_SET_HAS_FTP_ACCESS, !!group.downloadMailingWithFtpImages);
+    } else {
+      commit(USER_SET_HAS_FTP_ACCESS, false);
+    }
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return
