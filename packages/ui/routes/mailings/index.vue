@@ -210,7 +210,7 @@ export default {
   <div v-else>
     <bs-page-header
       :show-mobile-menu="true"
-      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
     >
       <template #breadcrumb>
         <mailings-breadcrumbs />

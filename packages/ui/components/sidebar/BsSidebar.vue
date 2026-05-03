@@ -2,17 +2,27 @@
   <aside
     class="bs-sidebar"
     :class="{
-      'bs-sidebar--collapsed': collapsed && !isMobileDrawer,
-      'bs-sidebar--mobile': isMobileDrawer,
+      'bs-sidebar--collapsed': collapsed && !isMobile,
     }"
-    :style="!isMobileDrawer ? sidebarStyle : {}"
+    :style="sidebarStyle"
   >
     <!-- Zone 0: Brand -->
     <div class="bs-sidebar__brand-wrapper">
-      <bs-sidebar-brand :collapsed="collapsed && !isMobileDrawer" />
+      <!-- Mobile close button (X icon) -->
+      <button
+        v-if="isMobile"
+        class="bs-sidebar__mobile-close"
+        aria-label="Close navigation"
+        @click="handleMobileClose"
+      >
+        <lucide-x :size="20" />
+      </button>
+
+      <bs-sidebar-brand :collapsed="collapsed && !isMobile" />
+
       <!-- Toggle only on desktop -->
       <bs-sidebar-toggle
-        v-if="!isMobileDrawer"
+        v-if="!isMobile"
         :collapsed="collapsed"
         @toggle="handleToggle"
       />
@@ -22,25 +32,25 @@
     <bs-sidebar-module-list
       :modules="modules"
       :active-module="activeModule"
-      :collapsed="collapsed && !isMobileDrawer"
+      :collapsed="collapsed && !isMobile"
       @select="handleModuleSelect"
     />
 
     <!-- Zone 2: Contextual -->
     <bs-sidebar-context-zone
       :active-module="activeModule"
-      :collapsed="collapsed && !isMobileDrawer"
+      :collapsed="collapsed && !isMobile"
     />
 
     <!-- Zone 3: System -->
     <bs-sidebar-system-zone
-      :collapsed="collapsed && !isMobileDrawer"
+      :collapsed="collapsed && !isMobile"
       @open-help="handleHelp"
     />
 
     <!-- Resize Handle (desktop only) -->
     <div
-      v-if="!collapsed && !isMobileDrawer"
+      v-if="!collapsed"
       class="bs-sidebar__resize-handle"
       @mousedown="startResize"
     />
@@ -52,6 +62,7 @@
 
 <script>
 import { mapState, mapMutations, mapGetters } from 'vuex';
+import { X } from 'lucide-vue';
 import BsSidebarBrand from './BsSidebarBrand.vue';
 import BsSidebarModuleList from './BsSidebarModuleList.vue';
 import BsSidebarContextZone from './BsSidebarContextZone.vue';
@@ -76,13 +87,7 @@ export default {
     BsSidebarSystemZone,
     BsSidebarToggle,
     BsUpgradeModal,
-  },
-  props: {
-    // When true, sidebar is rendered inside mobile drawer (no resize handle, no toggle)
-    isMobileDrawer: {
-      type: Boolean,
-      default: false,
-    },
+    LucideX: X,
   },
   data: () => ({
     showUpgradeModal: false,
@@ -125,6 +130,10 @@ export default {
         width: `${this.sidebarWidth}px`,
       };
     },
+
+    isMobile() {
+      return this.$vuetify?.breakpoint?.smAndDown || false;
+    },
   },
   watch: {
     detectedModule: {
@@ -162,6 +171,11 @@ export default {
 
     handleToggle() {
       this.setCollapsed(!this.collapsed);
+    },
+
+    handleMobileClose() {
+      // Emit event to close mobile sidebar
+      this.$root.$emit('toggle-mobile-menu');
     },
 
     handleModuleSelect(module) {
@@ -221,6 +235,30 @@ export default {
   position: relative;
 }
 
+.bs-sidebar__mobile-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--gray-700);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--t-fast), color var(--t-fast);
+  z-index: 10;
+}
+
+.bs-sidebar__mobile-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
 .bs-sidebar__resize-handle {
   position: absolute;
   top: 0;
@@ -241,8 +279,9 @@ export default {
   background-color: rgba(0, 172, 220, 0.5);
 }
 
+/* Mobile: hide resize handle */
 @media (max-width: 960px) {
-  .bs-sidebar {
+  .bs-sidebar__resize-handle {
     display: none;
   }
 }

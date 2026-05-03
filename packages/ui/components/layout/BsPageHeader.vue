@@ -27,7 +27,8 @@ export default {
       return typeof this.back === 'object' ? this.back.to : null;
     },
     isMobile() {
-      return this.$vuetify?.breakpoint?.mobile || false;
+      // Use smAndDown (< 960px) to match the CSS media query
+      return this.$vuetify?.breakpoint?.smAndDown || false;
     },
   },
   methods: {
@@ -110,6 +111,8 @@ export default {
   box-sizing: border-box;
   font-family: inherit;
   margin-bottom: 24px;
+  position: relative;
+  z-index: 5;
 }
 
 /* Left zone — title or breadcrumb + optional back/badge */
@@ -154,6 +157,8 @@ export default {
   justify-content: center;
   flex-shrink: 0;
   transition: background var(--t-fast), color var(--t-fast);
+  position: relative;
+  z-index: 10;
 }
 
 .bsph__menu:hover {
