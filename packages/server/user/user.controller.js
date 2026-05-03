@@ -401,6 +401,9 @@ async function login(req, res, next) {
       // Update session tracking
       await updateSessionTracking(req, user);
 
+      // Fetch complete user data with populated group (includes module flags)
+      const completeUser = await Users.findOneForApi({ _id: user._id });
+
       // Force session save before sending response
       req.session.save((saveErr) => {
         if (saveErr) {
@@ -408,7 +411,7 @@ async function login(req, res, next) {
           return next(new createError.InternalServerError(saveErr));
         }
 
-        return res.json({ isAdmin: user.isAdmin });
+        return res.json(completeUser);
       });
     });
   })(req, res);
