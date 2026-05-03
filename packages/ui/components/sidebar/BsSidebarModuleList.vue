@@ -127,8 +127,9 @@ export default {
 
 .bs-sidebar-module__lock {
   position: absolute;
-  top: 8px;
+  top: 50%;
   right: 8px;
+  transform: translateY(-50%);
   color: #9e9e9e;
 }
 </style>
