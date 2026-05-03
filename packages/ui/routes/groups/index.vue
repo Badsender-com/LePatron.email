@@ -5,8 +5,7 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupLoading from '~/components/loadingBar';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsCompaniesNav from '~/components/group/companies-nav.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -18,8 +17,7 @@ export default {
   name: 'PageGroups',
   components: {
     BsGroupLoading,
-    BsGroupSettingsPageHeader,
-    BsCompaniesNav,
+    BsPageHeader,
     BsModalCreateGroup,
     BsModalConfirmForm,
     BsDataTable,
@@ -33,6 +31,7 @@ export default {
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+    sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
@@ -202,21 +201,24 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-companies-nav />
-    </template>
-    <client-only>
-      <div class="settings-content">
-        <bs-group-settings-page-header :title="$t('settingsNav.companiesList')">
-          <template #actions>
-            <v-btn color="accent" elevation="0" @click="openCreateModal">
-              <lucide-plus :size="18" class="mr-2" />
-              {{ $t('global.add') }}
-            </v-btn>
-          </template>
-        </bs-group-settings-page-header>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('settingsNav.companiesList') }}
+      </template>
+      <template #actions>
+        <v-btn color="accent" elevation="0" @click="openCreateModal">
+          <lucide-plus :size="18" class="mr-2" />
+          {{ $t('global.add') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
 
+    <v-container fluid>
+      <client-only>
         <bs-data-table
           :headers="tableHeaders"
           :items="groups"
@@ -326,20 +328,15 @@ export default {
             "
           />
         </bs-modal-confirm-form>
-      </div>
-      <bs-group-loading slot="placeholder" />
-    </client-only>
+
+        <bs-group-loading slot="placeholder" />
+      </client-only>
+    </v-container>
 
     <bs-modal-create-group
       ref="createGroupModal"
       :loading="modalLoading"
       @submit="createGroup"
     />
-  </bs-layout-left-menu>
+  </div>
 </template>
-
-<style lang="scss" scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

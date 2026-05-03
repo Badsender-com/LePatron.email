@@ -80,9 +80,8 @@ export default {
         </h1>
 
         <!-- Badge slot (optional, used with title) -->
-        <span v-if="$slots.badge" class="bsph__badge">
-          <slot name="badge" />
-        </span>
+        <!-- No wrapper: let the slot content define its own styles -->
+        <slot v-if="$slots.badge" name="badge" />
       </div>
     </div>
 
@@ -183,20 +182,6 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.bsph__badge {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  background: rgba(0, 172, 220, 0.1);
-  color: var(--v-primary-base);
-  border-radius: var(--r-pill);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  flex-shrink: 0;
 }
 
 /* Right zone — actions slot */
