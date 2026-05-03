@@ -53,7 +53,7 @@ export default {
   <div>
     <bs-page-header
       :show-mobile-menu="true"
-      @toggle-mobile-menu="$emit('toggle-mobile-menu')"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
     >
       <template #title>
         {{ $t('global.variables') }}
