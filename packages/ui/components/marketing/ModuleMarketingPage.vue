@@ -143,7 +143,14 @@ export default {
           <lucide-mail :size="20" class="mr-2" />
           {{ ctaPrimary }}
         </v-btn>
-        <v-btn outlined x-large color="primary" :href="infoUrl" target="_blank">
+        <v-btn
+          v-if="ctaSecondary"
+          outlined
+          x-large
+          color="primary"
+          :href="infoUrl"
+          target="_blank"
+        >
           {{ ctaSecondary }}
           <lucide-external-link :size="20" class="ml-2" />
         </v-btn>
@@ -213,7 +220,14 @@ export default {
           <lucide-mail :size="20" class="mr-2" />
           {{ ctaPrimary }}
         </v-btn>
-        <v-btn outlined large color="primary" :href="infoUrl" target="_blank">
+        <v-btn
+          v-if="ctaSecondary"
+          outlined
+          large
+          color="primary"
+          :href="infoUrl"
+          target="_blank"
+        >
           {{ ctaSecondary }}
           <lucide-external-link :size="20" class="ml-2" />
         </v-btn>
