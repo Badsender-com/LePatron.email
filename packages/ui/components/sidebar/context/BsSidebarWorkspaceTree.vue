@@ -692,12 +692,12 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .workspace-tree-header {
   padding: 12px 16px 8px;
   border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
 
   &__label {
     font-size: 11px;
@@ -727,8 +727,13 @@ export default {
   cursor: pointer;
 }
 
-.v-treeview {
+.v-skeleton-loader {
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
+}
+
+.v-treeview {
   font-size: 13px;
   padding: 4px 8px;
 

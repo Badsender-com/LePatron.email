@@ -1,10 +1,12 @@
 <script>
+import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsGroupWorkspacesTab from '~/components/group/workspaces-tab.vue';
 import { Plus } from 'lucide-vue';
+import { IS_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsPageSettingsWorkspaces',
@@ -37,11 +39,14 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+    }),
     groupId() {
       return this.$route.params.groupId;
     },
     showGroupBadge() {
-      return this.group.name;
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
