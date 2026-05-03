@@ -17,7 +17,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn text @click="visible = false">
-          {{ $t('common.close') }}
+          {{ $t('global.cancel') }}
         </v-btn>
         <v-btn color="accent" :href="contactUrl" target="_blank" elevation="0">
           {{ $t('sidebar.contactBadsender') }}
