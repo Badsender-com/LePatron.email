@@ -6,7 +6,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
-import { USER, M_USER_SET } from '~/store/user';
+import { USER, USER_SET } from '~/store/user';
 
 export default {
   name: 'BsPageLogin',
@@ -117,9 +117,8 @@ export default {
             password,
           });
 
-          this.$store.commit(`${USER}/${M_USER_SET}`, {
-            isAdmin: user.isAdmin,
-          });
+          // Use action to fetch complete group data with module flags
+          await this.$store.dispatch(`${USER}/${USER_SET}`, user);
 
           // Redirect to home page, which will handle routing to the first enabled module
           if (user.isAdmin) {
