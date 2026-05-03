@@ -95,12 +95,26 @@ export default {
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
-      return SIDEBAR_MODULES.map((module) => ({
-        ...module,
-        locked: module.enabledFlag
+      const result = SIDEBAR_MODULES.map((module) => {
+        const locked = module.enabledFlag
           ? !this.userGroup?.[module.enabledFlag]
-          : false,
-      }));
+          : false;
+        console.log(
+          '[BsSidebar] Module:',
+          module.id,
+          'enabledFlag:',
+          module.enabledFlag,
+          'userGroup value:',
+          this.userGroup?.[module.enabledFlag],
+          'locked:',
+          locked
+        );
+        return {
+          ...module,
+          locked,
+        };
+      });
+      return result;
     },
 
     // Detect active module from route path
@@ -172,10 +186,20 @@ export default {
     },
 
     handleModuleSelect(module) {
+      console.log(
+        '[BsSidebar] Module selected:',
+        module.id,
+        'locked:',
+        module.locked
+      );
+
       if (module.locked) {
         // Navigate to marketing page for locked modules
-        this.$router.push(`/module-unavailable/${module.id}`);
+        const route = `/module-unavailable/${module.id}`;
+        console.log('[BsSidebar] Navigating to marketing page:', route);
+        this.$router.push(route);
       } else {
+        console.log('[BsSidebar] Navigating to module route:', module.route);
         this.$router.push(module.route);
       }
     },
