@@ -54,9 +54,6 @@
       class="bs-sidebar__resize-handle"
       @mousedown="startResize"
     />
-
-    <!-- Upgrade Modal -->
-    <bs-upgrade-modal v-model="showUpgradeModal" :module="selectedModule" />
   </aside>
 </template>
 
@@ -68,7 +65,6 @@ import BsSidebarModuleList from './BsSidebarModuleList.vue';
 import BsSidebarContextZone from './BsSidebarContextZone.vue';
 import BsSidebarSystemZone from './BsSidebarSystemZone.vue';
 import BsSidebarToggle from './BsSidebarToggle.vue';
-import BsUpgradeModal from './BsUpgradeModal.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
 import {
   SET_COLLAPSED,
@@ -86,12 +82,9 @@ export default {
     BsSidebarContextZone,
     BsSidebarSystemZone,
     BsSidebarToggle,
-    BsUpgradeModal,
     LucideX: X,
   },
   data: () => ({
-    showUpgradeModal: false,
-    selectedModule: null,
     isResizing: false,
   }),
   computed: {
@@ -180,8 +173,8 @@ export default {
 
     handleModuleSelect(module) {
       if (module.locked) {
-        this.selectedModule = module;
-        this.showUpgradeModal = true;
+        // Navigate to marketing page for locked modules
+        this.$router.push(`/module-unavailable/${module.id}`);
       } else {
         this.$router.push(module.route);
       }
