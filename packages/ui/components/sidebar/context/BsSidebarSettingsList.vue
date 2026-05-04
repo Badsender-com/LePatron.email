@@ -180,7 +180,10 @@ export default {
         );
       }
 
-      if (emailBuilderItems.length > 0) {
+      if (
+        emailBuilderItems.length > 0 &&
+        this.group?.enableEmailBuilder !== false
+      ) {
         categories.push({
           category: 'emailBuilder',
           label: this.$t('settingsNav.categories.emailBuilder'),
