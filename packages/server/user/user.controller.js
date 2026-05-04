@@ -405,8 +405,12 @@ async function login(req, res, next) {
       // Update session tracking
       await updateSessionTracking(req, user);
 
-      // Fetch complete user data with populated group (includes module flags)
-      const completeUser = await Users.findOneForApi({ _id: user._id });
+      // For super admin, return the user object directly (not in database)
+      // For regular users, fetch complete user data with populated group (includes module flags)
+      let completeUser = user;
+      if (user._id !== config.admin.id && user.id !== config.admin.id) {
+        completeUser = await Users.findOneForApi({ _id: user._id });
+      }
 
       // Force session save before sending response
       req.session.save((saveErr) => {
