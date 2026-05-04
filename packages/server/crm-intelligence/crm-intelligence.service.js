@@ -138,11 +138,32 @@ async function getEmbedUrl(groupId, dashboardId) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Validate that apiKey is properly decrypted (not still encrypted or malformed)
-  // Encrypted values typically contain ':' separator or are base64-encoded gibberish
+  // Validate that apiKey is properly decrypted and meets security requirements
+  // Metabase JWT secrets should be at least 32 characters
   const apiKey = integration.apiKey;
-  if (!apiKey || apiKey.includes(':iv:') || apiKey.length < 10) {
+  if (!apiKey) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
+  // Check if key is still encrypted (contains encryption marker)
+  if (apiKey.includes(':iv:')) {
+    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
+  // Validate minimum length (Metabase recommendation: 32+ characters)
+  if (apiKey.length < 32) {
+    throw createError(
+      500,
+      'JWT secret key is too short. Metabase requires at least 32 characters.'
+    );
+  }
+
+  // Validate key format (should be alphanumeric, allowing common safe characters)
+  if (!/^[A-Za-z0-9_\-+=]+$/.test(apiKey)) {
+    throw createError(
+      500,
+      'JWT secret key contains invalid characters. Only alphanumeric and _-+= are allowed.'
+    );
   }
 
   // Build JWT payload for Metabase

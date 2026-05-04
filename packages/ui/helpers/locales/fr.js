@@ -120,6 +120,7 @@ export default {
     update: 'Mettre à jour',
     delete: 'Supprimer',
     reset: 'Réinitialiser',
+    clear: 'Effacer',
     duplicate: 'Dupliquer',
     apply: 'Appliquer',
     confirm: 'Confirmer',
@@ -146,10 +147,12 @@ export default {
     comments: 'Commentaires',
     edit: 'Modifier',
     move: 'Déplacer',
+    moveTo: 'Déplacer vers…',
     emailsGroups: 'Listes de test',
     variables: 'Variables',
     emailsGroupsEmpty: 'Aucune liste de test disponible',
     continue: 'Continuer',
+    all: 'Tout',
     downloadFtp: 'Télécharger FTP',
     noData: 'Aucune donnée disponible',
   },
@@ -380,9 +383,11 @@ export default {
     subErrorPreview: 'L\'aperçu sera généré lors de l\'ouverture dans l\'éditeur',
     rename: 'Renommer l\'email',
     selectedCount: '{count} email sélectionné | {count} emails sélectionnés',
+    selectedMailings: 'email sélectionné | emails sélectionnés',
     selectedShortCount: '{count} email | {count} emails',
     deleteCount: 'Supprimer {count} email | Supprimer {count} emails',
     downloadCount: 'Télécharger {count} email | Télécharger {count} emails',
+    downloadFtp: 'Télécharger FTP',
     downloadFtpCount:
       'Télécharger en FTP {count} email | Télécharger en FTP {count} emails',
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
@@ -441,6 +446,7 @@ export default {
     list: 'Liste des labels',
     new: 'Nouveau label',
     handle: 'Gérer les labels',
+    tag: 'Label',
   },
   users: {
     actions: {
@@ -551,20 +557,26 @@ export default {
   },
   tableHeaders: {
     groups: {
-      downloadWithoutEnclosingFolder: 'Télécharger sans dossier parent',
-      cdnDownload: 'Téléchargement CDN',
-      ftpDownload: 'Téléchargement FTP',
+      cdnDownload: 'CDN',
+      ftpDownload: 'FTP',
       status: 'Statut',
+      esp: 'ESP',
+      ai: 'IA',
     },
     users: {
       passwordMail: 'Email de mot de passe',
     },
     templates: {
       markup: 'Markup?',
+      coverImage: 'Aperçu?',
+      imageCount: 'Images',
     },
     mailings: {
       rename: 'Renommer',
       transfer: 'Transférer',
+    },
+    workspaces: {
+      assigned: 'Accès',
     },
   },
   personalizedVariables: {
@@ -621,6 +633,7 @@ export default {
       title: 'CRM Intelligence',
       subtitle: 'Centralisez vos KPIs CRM et Marketing dans LePatron. Visualisez vos performances en temps réel.',
       ctaPrimary: 'Demander une démo',
+      ctaSecondary: 'En savoir plus',
       featuresTitle: 'Pilotez votre stratégie data-driven',
       features: [
         {
@@ -774,10 +787,26 @@ export default {
     },
   },
   sidebar: {
-    modules: 'Modules',
+    modules: {
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+      deliverability: 'Délivrabilité',
+      designSystem: 'Design System',
+      aiStudio: 'AI Studio',
+    },
+    system: {
+      settings: 'Paramètres',
+      help: 'Aide',
+      logout: 'Se déconnecter',
+    },
     utilities: 'Utilitaires',
-    help: 'Aide',
-    logout: 'Déconnexion',
+    collapse: 'Réduire la barre latérale',
+    expand: 'Développer la barre latérale',
+    selectModule: 'Sélectionnez un module pour commencer',
+    upgradeRequired: 'Mise à niveau requise',
+    upgradeMessage: 'Le module {module} n\'est pas inclus dans votre plan actuel.',
+    contactAdmin: 'Veuillez contacter votre administrateur ou Badsender pour activer cette fonctionnalité.',
+    contactBadsender: 'Contacter Badsender',
   },
   integrations: {
     title: 'Intégrations',

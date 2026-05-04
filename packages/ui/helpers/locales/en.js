@@ -119,6 +119,7 @@ export default {
     update: 'Update',
     delete: 'Delete',
     reset: 'Reset',
+    clear: 'Clear',
     duplicate: 'Duplicate',
     apply: 'Apply',
     confirm: 'Confirm',
@@ -146,10 +147,12 @@ export default {
     comments: 'Comments',
     edit: 'Edit',
     move: 'Move',
+    moveTo: 'Move to…',
     emailsGroups: 'Test lists',
     variables: 'Variables',
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
+    all: 'All',
     downloadFtp: 'Download FTP',
     noData: 'No data available',
   },
@@ -375,9 +378,11 @@ export default {
       'A preview will be generated when opening the email editor',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
+    selectedMailings: 'email selected | emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
     downloadCount: 'Download {count} email | Download {count} emails',
+    downloadFtp: 'Download FTP',
     downloadFtpCount:
       'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
@@ -436,6 +441,7 @@ export default {
     list: 'Tags\' list',
     new: 'New tag',
     handle: 'Handle tags',
+    tag: 'Tag',
   },
   users: {
     actions: {
@@ -543,20 +549,26 @@ export default {
   },
   tableHeaders: {
     groups: {
-      downloadWithoutEnclosingFolder: 'Download without parent folder',
-      cdnDownload: 'CDN download',
-      ftpDownload: 'FTP download',
+      cdnDownload: 'CDN',
+      ftpDownload: 'FTP',
       status: 'Status',
+      esp: 'ESP',
+      ai: 'AI',
     },
     users: {
       passwordMail: 'Password\' email',
     },
     templates: {
       markup: 'Markup?',
+      coverImage: 'Preview?',
+      imageCount: 'Images',
     },
     mailings: {
       rename: 'Rename',
       transfer: 'Transfer',
+    },
+    workspaces: {
+      assigned: 'Access',
     },
   },
   personalizedVariables: {
@@ -612,6 +624,7 @@ export default {
       title: 'CRM Intelligence',
       subtitle: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your performance in real-time.',
       ctaPrimary: 'Request a demo',
+      ctaSecondary: 'Learn more',
       featuresTitle: 'Drive your data-driven strategy',
       features: [
         {
@@ -765,10 +778,26 @@ export default {
     },
   },
   sidebar: {
-    modules: 'Modules',
+    modules: {
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+      deliverability: 'Deliverability',
+      designSystem: 'Design System',
+      aiStudio: 'AI Studio',
+    },
+    system: {
+      settings: 'Settings',
+      help: 'Help',
+      logout: 'Sign out',
+    },
     utilities: 'Utilities',
-    help: 'Help',
-    logout: 'Logout',
+    collapse: 'Collapse sidebar',
+    expand: 'Expand sidebar',
+    selectModule: 'Select a module to get started',
+    upgradeRequired: 'Upgrade required',
+    upgradeMessage: 'The {module} module is not included in your current plan.',
+    contactAdmin: 'Please contact your administrator or reach out to Badsender to enable this feature.',
+    contactBadsender: 'Contact Badsender',
   },
   integrations: {
     title: 'Integrations',

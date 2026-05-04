@@ -4,10 +4,10 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { validationMixin } from 'vuelidate';
@@ -16,10 +16,10 @@ import { required, email } from 'vuelidate/lib/validators';
 export default {
   name: 'BsPageSettingsUserEdit',
   components: {
-    BsGroupSettingsNav,
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsUserActions,
     BsMailingsAdminTable,
+    BsDataTable,
     BsTextField,
     BsSelect,
   },
@@ -38,20 +38,31 @@ export default {
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const [groupResponse, userResponse] = await Promise.all([
+      const [
+        groupResponse,
+        userResponse,
+        workspacesResponse,
+      ] = await Promise.all([
         $axios.$get(apiRoutes.groupsItem(params)),
         $axios.$get(apiRoutes.usersItem(params)),
+        $axios.$get(apiRoutes.groupsWorkspaces(params)),
       ]);
-      return { group: groupResponse, user: userResponse };
+      return {
+        group: groupResponse,
+        user: userResponse,
+        workspaces: workspacesResponse.items,
+      };
     } catch (error) {
       console.error(error);
-      return { group: {}, user: {} };
+      return { group: {}, user: {}, workspaces: [] };
     }
   },
   data() {
     return {
       group: {},
       user: {},
+      workspaces: [],
+      savingWorkspaces: new Set(),
       mailings: [],
       loading: false,
       isLoadingMailings: false,
@@ -80,6 +91,18 @@ export default {
   computed: {
     pageTitle() {
       return `${this.$tc('global.user', 1)} – ${this.user.name || ''}`;
+    },
+    workspaceHeaders() {
+      return [
+        { text: this.$t('global.name'), value: 'name', align: 'left' },
+        {
+          text: this.$t('tableHeaders.workspaces.assigned'),
+          value: 'assigned',
+          align: 'center',
+          sortable: false,
+          width: '120px',
+        },
+      ];
     },
     emailErrors() {
       const errors = [];
@@ -151,6 +174,9 @@ export default {
       };
       return descriptions[this.user.status] || '';
     },
+    showGroupBadge() {
+      return this.group.name;
+    },
   },
   watch: {
     'pagination.page': 'loadMailings',
@@ -161,6 +187,39 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUserInWorkspace(workspace) {
+      return (workspace._users || []).some(
+        (id) => String(id) === String(this.user.id)
+      );
+    },
+    async toggleWorkspace(workspace) {
+      const userId = String(this.user.id);
+      const currentUsers = (workspace._users || []).map(String);
+      const isAssigned = currentUsers.includes(userId);
+      const newUsers = isAssigned
+        ? currentUsers.filter((id) => id !== userId)
+        : [...currentUsers, userId];
+
+      this.savingWorkspaces = new Set([...this.savingWorkspaces, workspace.id]);
+      try {
+        await this.$axios.$put(apiRoutes.getWorkspace(workspace.id), {
+          selectedUsers: newUsers.map((id) => ({ id })),
+        });
+        const idx = this.workspaces.findIndex((w) => w.id === workspace.id);
+        if (idx !== -1) {
+          this.$set(this.workspaces[idx], '_users', newUsers);
+        }
+      } catch {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        const next = new Set(this.savingWorkspaces);
+        next.delete(workspace.id);
+        this.savingWorkspaces = next;
+      }
+    },
     async loadMailings() {
       this.isLoadingMailings = true;
       try {
@@ -227,194 +286,226 @@ export default {
     updateUserFromActions(updatedUser) {
       this.user = updatedUser;
     },
-    onCancel() {
-      this.$router.push(`/groups/${this.group.id}/settings/users`);
-    },
   },
 };
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$t('global.editUser')"
-        :group-name="group.name"
-      />
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('global.editUser') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <!-- User form -->
+        <v-card flat tile :loading="loading" :disabled="loading">
+          <v-card-text>
+            <!-- Section: Informations -->
+            <div class="form-section">
+              <h3 class="form-section__title">
+                {{ $t('users.details') }}
+              </h3>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.email"
+                    :label="$t('users.email')"
+                    type="email"
+                    required
+                    :error-messages="emailErrors"
+                    @blur="$v.user.email.$touch()"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.name"
+                    :label="$t('forms.user.name')"
+                    required
+                    :error-messages="nameErrors"
+                    @blur="$v.user.name.$touch()"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-text-field
+                    v-model="user.externalUsername"
+                    :label="
+                      $t('forms.user.externalUsername') +
+                      $t('forms.user.optional')
+                    "
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-select
+                    v-model="user.lang"
+                    :label="$t('users.lang')"
+                    :items="$options.supportedLanguages"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <bs-select
+                    v-model="user.role"
+                    :label="$t('users.role')"
+                    :items="$options.roles"
+                  />
+                </v-col>
+              </v-row>
+            </div>
 
-      <!-- User form -->
-      <v-card flat tile :loading="loading" :disabled="loading">
-        <v-card-text>
-          <!-- Section: Informations -->
-          <div class="form-section">
-            <h3 class="form-section__title">
-              {{ $t('users.details') }}
-            </h3>
-            <v-row>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.email"
-                  :label="$t('users.email')"
-                  type="email"
-                  required
-                  :error-messages="emailErrors"
-                  @blur="$v.user.email.$touch()"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.name"
-                  :label="$t('forms.user.name')"
-                  required
-                  :error-messages="nameErrors"
-                  @blur="$v.user.name.$touch()"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-text-field
-                  v-model="user.externalUsername"
-                  :label="$t('forms.user.externalUsername') + $t('forms.user.optional')"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-select
-                  v-model="user.lang"
-                  :label="$t('users.lang')"
-                  :items="$options.supportedLanguages"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <bs-select
-                  v-model="user.role"
-                  :label="$t('users.role')"
-                  :items="$options.roles"
-                />
-              </v-col>
-            </v-row>
-          </div>
-
-          <!-- Section: Statut & Sécurité -->
-          <div class="form-section">
-            <h3 class="form-section__title">
-              {{ $t('users.sections.statusSecurity') }}
-            </h3>
-            <p class="form-section__description">
-              {{ $t('users.sections.statusSecurityDescription') }}
-            </p>
-
-            <!-- Status display -->
-            <div class="status-display mb-4">
-              <div class="d-flex align-center">
-                <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
-                <v-chip
-                  small
-                  :color="statusColor"
-                  :outlined="!isActiveStatus"
-                  :dark="isActiveStatus"
-                >
-                  {{ statusLabel }}
-                </v-chip>
-              </div>
-              <p v-if="statusDescription" class="text-caption text--secondary mt-2 mb-0">
-                {{ statusDescription }}
+            <!-- Section: Statut & Sécurité -->
+            <div class="form-section">
+              <h3 class="form-section__title">
+                {{ $t('users.sections.statusSecurity') }}
+              </h3>
+              <p class="form-section__description">
+                {{ $t('users.sections.statusSecurityDescription') }}
               </p>
+
+              <!-- Status display -->
+              <div class="status-display mb-4">
+                <div class="d-flex align-center">
+                  <span class="text-body-2 mr-3"
+                    >{{ $t('global.status') }} :</span
+                  >
+                  <v-chip
+                    small
+                    :color="statusColor"
+                    :outlined="!isActiveStatus"
+                    :dark="isActiveStatus"
+                  >
+                    {{ statusLabel }}
+                  </v-chip>
+                </div>
+                <p
+                  v-if="statusDescription"
+                  class="text-caption text--secondary mt-2 mb-0"
+                >
+                  {{ statusDescription }}
+                </p>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="status-actions">
+                <!-- Activate (when deactivated) -->
+                <v-btn
+                  v-if="isDeactivated"
+                  outlined
+                  color="success"
+                  :disabled="loading"
+                  @click="activateUser"
+                >
+                  {{ $t('users.actions.activate') }}
+                </v-btn>
+
+                <!-- Actions for active users (non-SAML) -->
+                <template v-if="!isDeactivated && !isSamlUser">
+                  <!-- Send password (to-be-initialized) -->
+                  <v-btn
+                    v-if="canSendPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="sendPassword"
+                  >
+                    {{ $t('users.actions.sendPassword') }}
+                  </v-btn>
+
+                  <!-- Resend password (password-mail-sent) -->
+                  <v-btn
+                    v-if="canResendPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="resendPassword"
+                  >
+                    {{ $t('users.actions.resendPassword') }}
+                  </v-btn>
+
+                  <!-- Reset password (confirmed) -->
+                  <v-btn
+                    v-if="canResetPassword"
+                    outlined
+                    color="accent"
+                    :disabled="loading"
+                    @click="resetPassword"
+                  >
+                    {{ $t('users.actions.resetPassword') }}
+                  </v-btn>
+
+                  <!-- Deactivate -->
+                  <v-btn
+                    text
+                    color="error"
+                    :disabled="loading"
+                    @click="deactivateUser"
+                  >
+                    {{ $t('users.actions.deactivate') }}
+                  </v-btn>
+                </template>
+              </div>
             </div>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              color="accent"
+              elevation="0"
+              :loading="loading"
+              @click="updateUser"
+            >
+              {{ $t('global.save') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
 
-            <!-- Action buttons -->
-            <div class="status-actions">
-              <!-- Activate (when deactivated) -->
-              <v-btn
-                v-if="isDeactivated"
-                outlined
-                color="success"
-                :disabled="loading"
-                @click="activateUser"
-              >
-                {{ $t('users.actions.activate') }}
-              </v-btn>
+        <!-- Workspace assignments -->
+        <v-card flat tile class="mt-4">
+          <v-card-title class="px-0">
+            {{ $tc('global.teams', 2) }}
+          </v-card-title>
+          <bs-data-table :headers="workspaceHeaders" :items="workspaces">
+            <template #item.name="{ item }">
+              <span class="font-weight-medium">{{ item.name }}</span>
+            </template>
+            <template #item.assigned="{ item }">
+              <v-switch
+                :input-value="isUserInWorkspace(item)"
+                :loading="savingWorkspaces.has(item.id)"
+                :disabled="savingWorkspaces.has(item.id)"
+                dense
+                hide-details
+                class="mt-0 d-inline-flex"
+                @change="toggleWorkspace(item)"
+              />
+            </template>
+          </bs-data-table>
+        </v-card>
 
-              <!-- Actions for active users (non-SAML) -->
-              <template v-if="!isDeactivated && !isSamlUser">
-                <!-- Send password (to-be-initialized) -->
-                <v-btn
-                  v-if="canSendPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="sendPassword"
-                >
-                  {{ $t('users.actions.sendPassword') }}
-                </v-btn>
-
-                <!-- Resend password (password-mail-sent) -->
-                <v-btn
-                  v-if="canResendPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="resendPassword"
-                >
-                  {{ $t('users.actions.resendPassword') }}
-                </v-btn>
-
-                <!-- Reset password (confirmed) -->
-                <v-btn
-                  v-if="canResetPassword"
-                  outlined
-                  color="accent"
-                  :disabled="loading"
-                  @click="resetPassword"
-                >
-                  {{ $t('users.actions.resetPassword') }}
-                </v-btn>
-
-                <!-- Deactivate -->
-                <v-btn
-                  text
-                  color="error"
-                  :disabled="loading"
-                  @click="deactivateUser"
-                >
-                  {{ $t('users.actions.deactivate') }}
-                </v-btn>
-              </template>
-            </div>
-          </div>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text color="primary" :disabled="loading" @click="onCancel">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn
-            color="accent"
-            elevation="0"
-            :loading="loading"
-            @click="updateUser"
-          >
-            {{ $t('global.save') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-
-      <!-- User mailings -->
-      <v-card flat tile class="mt-4">
-        <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
-        <v-card-text>
+        <!-- User mailings -->
+        <v-card flat tile class="mt-4">
+          <v-card-title class="px-0">
+            {{ $tc('global.mailing', 2) }}
+          </v-card-title>
           <bs-mailings-admin-table
             :mailings="mailings"
             :loading="isLoadingMailings"
             :hidden-cols="['userName', 'actions']"
           />
-          <v-card
-            v-if="pagination && pagination.itemsLength > pagination.itemsPerPage"
-            flat
-            class="d-flex align-center justify-center mx-auto"
-            max-width="22rem"
+          <div
+            v-if="
+              pagination && pagination.itemsLength > pagination.itemsPerPage
+            "
+            class="d-flex align-center justify-center"
           >
             <v-pagination
               v-model="pagination.page"
@@ -422,18 +513,18 @@ export default {
               class="my-4"
               :length="pagination.pageCount"
             />
-          </v-card>
-        </v-card-text>
-      </v-card>
-    </div>
+          </div>
+        </v-card>
+      </div>
 
-    <bs-user-actions
-      ref="userActions"
-      v-model="loading"
-      :user="user"
-      @update="updateUserFromActions"
-    />
-  </bs-layout-left-menu>
+      <bs-user-actions
+        ref="userActions"
+        v-model="loading"
+        :user="user"
+        @update="updateUserFromActions"
+      />
+    </v-container>
+  </div>
 </template>
 
 <style lang="scss" scoped>

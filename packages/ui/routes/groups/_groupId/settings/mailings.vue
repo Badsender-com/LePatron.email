@@ -2,15 +2,13 @@
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsGroupMailingsTab from '~/components/group/mailings-tab.vue';
 
 export default {
   name: 'BsPageSettingsMailings',
   components: {
-    BsGroupSettingsNav,
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsGroupMailingsTab,
   },
   mixins: [mixinSettingsTitle],
@@ -35,26 +33,33 @@ export default {
   head() {
     return { title: this.settingsTitle };
   },
+  computed: {
+    showGroupBadge() {
+      return this.group.name;
+    },
+  },
 };
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="$tc('global.mailing', 2)"
-        :group-name="group.name"
-      />
-      <bs-group-mailings-tab />
-    </div>
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $tc('global.mailing', 2) }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <div class="settings-content">
+        <bs-group-mailings-tab />
+      </div>
+    </v-container>
+  </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

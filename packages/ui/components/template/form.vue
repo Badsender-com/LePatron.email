@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   X,
   Check,
-  RefreshCw,
   Download,
   ExternalLink,
   Trash2,
@@ -32,7 +31,6 @@ export default {
     LucideImage: ImageIcon,
     LucideX: X,
     LucideCheck: Check,
-    LucideRefreshCw: RefreshCw,
     LucideDownload: Download,
     LucideExternalLink: ExternalLink,
     LucideTrash2: Trash2,
@@ -175,7 +173,6 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
 
-    // Form submission
     onSubmit() {
       this.$v.$touch();
       if (this.$v.$invalid) return;
@@ -199,10 +196,6 @@ export default {
       }
 
       this.$emit('submit', formData);
-    },
-
-    onCancel() {
-      this.$emit('cancel');
     },
 
     // Delete confirmation
@@ -286,10 +279,6 @@ export default {
     },
 
     // Actions
-    generatePreviews() {
-      this.$emit('generatePreviews');
-    },
-
     deleteImages() {
       this.$emit('deleteImages');
     },
@@ -383,9 +372,7 @@ export default {
         <div class="file-upload-field">
           <label class="file-upload-field__label">
             {{ $t('templates.markup') }}
-            <span v-if="!isEditMode" class="file-upload-field__required"
-              >*</span
-            >
+            <span v-if="!isEditMode" class="file-upload-field__required">*</span>
           </label>
 
           <!-- Show existing markup info if in edit mode -->
@@ -460,7 +447,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onMarkupFileChange"
-            />
+            >
           </div>
         </div>
 
@@ -498,7 +485,7 @@ export default {
                   :alt="image.originalName"
                   loading="lazy"
                   class="images-existing__thumb"
-                />
+                >
                 <span class="images-existing__name">{{
                   image.originalName
                 }}</span>
@@ -557,7 +544,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onImagesFileChange"
-            />
+            >
           </div>
         </div>
       </div>
@@ -597,28 +584,13 @@ export default {
             :src="coverSrc"
             alt="Template preview"
             class="template-preview__image"
-          />
-        </div>
-        <div class="template-preview__actions">
-          <v-btn
-            small
-            outlined
-            color="primary"
-            :disabled="disabled"
-            @click="generatePreviews"
           >
-            <lucide-refresh-cw :size="16" class="mr-2" />
-            {{ $t('templates.regeneratePreview') }}
-          </v-btn>
         </div>
       </div>
     </div>
 
     <!-- Form Actions -->
     <div class="form-actions">
-      <v-btn text color="primary" :disabled="disabled" @click="onCancel">
-        {{ $t('global.cancel') }}
-      </v-btn>
       <v-btn
         type="submit"
         color="accent"
@@ -960,20 +932,17 @@ export default {
 
 // Template preview
 .template-preview {
+  width: 560px;
+  height: 380px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   overflow: hidden;
-  max-height: 400px;
-  overflow-y: auto;
 
   &__image {
-    width: 100%;
-    height: auto;
+    width: 560px;
+    height: 380px;
+    object-fit: cover;
     display: block;
-  }
-
-  &__actions {
-    margin-top: 1rem;
   }
 }
 

@@ -38,7 +38,7 @@ export default {
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           sortable: false,
         },
       ];

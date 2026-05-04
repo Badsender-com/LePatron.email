@@ -83,7 +83,7 @@ const PersonalizedBlocksListComponent = Vue.component(
     template: `
     <div id="personalized-blocks-list">
       <!-- Input field with style and search icon -->
-      <div class="input-field search-container">
+      <div class="bs-form-field search-container">
         <input type="text"
          v-model="searchTerm"
          @input="handleSearch"

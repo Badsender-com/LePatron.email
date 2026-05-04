@@ -84,9 +84,6 @@ export default {
     handleSubmit(newProfile) {
       this.$emit('submit', newProfile);
     },
-    handleCancel() {
-      this.$emit('cancel');
-    },
   },
 };
 </script>
@@ -140,7 +137,6 @@ export default {
         :is-loading="isLoading"
         :is-edit="isEdit"
         @submit="handleSubmit"
-        @cancel="handleCancel"
       />
     </client-only>
   </form>

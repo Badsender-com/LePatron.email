@@ -161,11 +161,6 @@ export default {
       }
     },
 
-    // Cancel action
-    onCancel() {
-      this.$router.push(this.backRoute);
-    },
-
     // Delete template
     async onDelete() {
       const { $axios, $route } = this;
@@ -186,23 +181,6 @@ export default {
         console.error(error);
       } finally {
         this.loading = false;
-      }
-    },
-
-    // Generate previews
-    async onGeneratePreviews() {
-      const { $axios, $route } = this;
-      const { params } = $route;
-      try {
-        this.loading = true;
-        await $axios.$post(apiRoutes.templatesItemPreview(params));
-      } catch (error) {
-        this.showSnackbar({
-          text: this.$t('global.errors.errorOccured'),
-          color: 'error',
-        });
-        this.loading = false;
-        console.error(error);
       }
     },
 
@@ -266,9 +244,7 @@ export default {
         :is-edit-mode="true"
         :disabled="loading"
         @submit="onSubmit"
-        @cancel="onCancel"
         @delete="onDelete"
-        @generatePreviews="onGeneratePreviews"
         @deleteImages="onDeleteImages"
       />
     </div>

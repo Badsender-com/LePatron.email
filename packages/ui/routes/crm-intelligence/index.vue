@@ -29,9 +29,9 @@ const FEATURE_ICON_MAP = {
   'mail-check': MailCheck,
   'heart-handshake': HeartHandshake,
   'dollar-sign': DollarSign,
-  'euro': Euro,
+  euro: Euro,
   'layout-dashboard': LayoutDashboard,
-  'database': Database,
+  database: Database,
 };
 
 export default {
@@ -50,13 +50,13 @@ export default {
     LucideDatabase: Database,
   },
   mixins: [mixinPageTitle],
-  meta: { acl: ACL_USER },
+  meta: { acl: ACL_USER, sidebarModule: 'crm-intelligence' },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
       redirect('/groups');
     }
   },
-  async asyncData({ $axios, error }) {
+  async asyncData({ $axios }) {
     try {
       const status = await $axios.$get(getCrmIntelligenceStatus());
       let dashboards = [];
@@ -72,8 +72,9 @@ export default {
         embedUrl: null,
         loadingEmbed: false,
       };
-    } catch (err) {
-      console.error('[CrmIntelligence] Error fetching status:', err);
+    } catch (_err) {
+      // AsyncData runs on server-side, so we can't use snackbar here
+      // Just return safe defaults and let the UI handle the empty state
       return {
         status: { enabled: false, configured: false },
         dashboards: [],
@@ -90,18 +91,19 @@ export default {
     embedUrl: null,
     loadingEmbed: false,
   }),
-  mounted() {
-    // Auto-select first dashboard if available
-    if (this.isEnabled && this.dashboards.length > 0 && !this.selectedDashboard) {
-      this.selectDashboard(this.dashboards[0]);
-    }
-  },
   computed: {
     title() {
       return this.$t('crmIntelligence.title');
     },
     isEnabled() {
       return this.status.enabled && this.status.configured;
+    },
+    dashboardContainerStyle() {
+      const sidebarWidth = this.$store.getters['sidebar/sidebarWidth'] || 320;
+      return {
+        marginLeft: `${sidebarWidth}px`,
+        width: `calc(100% - ${sidebarWidth}px)`,
+      };
     },
     hasMultipleDashboards() {
       return this.dashboards.length > 1;
@@ -120,6 +122,30 @@ export default {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
     }),
+  },
+  watch: {
+    '$route.query.dashboardId': {
+      immediate: true,
+      handler(dashboardId) {
+        if (dashboardId && this.isEnabled) {
+          const dashboard = this.dashboards.find((d) => d.id === dashboardId);
+          if (dashboard) {
+            this.selectDashboard(dashboard);
+          }
+        }
+      },
+    },
+  },
+  mounted() {
+    // Auto-select first dashboard if available and no dashboardId in URL
+    if (
+      this.isEnabled &&
+      this.dashboards.length > 0 &&
+      !this.selectedDashboard &&
+      !this.$route.query.dashboardId
+    ) {
+      this.selectDashboard(this.dashboards[0]);
+    }
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -141,7 +167,6 @@ export default {
         );
         this.embedUrl = result.embedUrl;
       } catch (err) {
-        console.error('[CrmIntelligence] Error fetching embed URL:', err);
         this.showSnackbar({
           text: this.$t('crmIntelligence.errors.embedFailed'),
           color: 'error',
@@ -240,6 +265,7 @@ export default {
   <div
     v-else-if="isEnabled && !hasMultipleDashboards"
     class="crm-fullwidth"
+    :style="dashboardContainerStyle"
   >
     <dashboard-viewer
       v-if="selectedDashboard"
@@ -249,37 +275,26 @@ export default {
     />
   </div>
 
-  <!-- Multiple dashboards: use sidebar layout -->
-  <bs-layout-left-menu v-else>
-    <template #menu>
-      <dashboard-list
-        :dashboards="dashboards"
-        :selected="selectedDashboard"
-        @select="selectDashboard"
-      />
-    </template>
-
-    <!-- Main Content Area -->
-    <v-card flat tile class="fill-height">
-      <dashboard-viewer
-        v-if="selectedDashboard"
-        :embed-url="embedUrl"
-        :loading="loadingEmbed"
-        :dashboard-name="selectedDashboard.name"
-      />
-      <div
-        v-else
-        class="d-flex align-center justify-center fill-height grey lighten-4"
-      >
-        <v-card flat max-width="400" class="text-center pa-8 transparent">
-          <lucide-line-chart :size="64" style="color: #9e9e9e" />
-          <p class="text-body-1 mt-4 grey--text">
-            {{ $t('crmIntelligence.selectDashboard') }}
-          </p>
-        </v-card>
-      </div>
-    </v-card>
-  </bs-layout-left-menu>
+  <!-- Multiple dashboards: dashboard list is in BsSidebar -->
+  <div v-else class="crm-dashboard-container" :style="dashboardContainerStyle">
+    <dashboard-viewer
+      v-if="selectedDashboard"
+      :embed-url="embedUrl"
+      :loading="loadingEmbed"
+      :dashboard-name="selectedDashboard.name"
+    />
+    <div
+      v-else
+      class="d-flex align-center justify-center fill-height grey lighten-4"
+    >
+      <v-card flat max-width="400" class="text-center pa-8 transparent">
+        <lucide-line-chart :size="64" style="color: #9e9e9e" />
+        <p class="text-body-1 mt-4 grey--text">
+          {{ $t('crmIntelligence.selectDashboard') }}
+        </p>
+      </v-card>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -327,10 +342,27 @@ export default {
 }
 
 /* Dashboard views */
-.crm-fullwidth {
-  margin-left: 56px;
-  height: calc(100vh - 64px);
-  width: calc(100% - 56px);
+.crm-fullwidth,
+.crm-dashboard-container {
+  position: fixed;
+  top: 64px; /* App bar height */
+  bottom: 0;
+  right: 0;
+  overflow: hidden;
+  transition: margin-left 200ms ease, width 200ms ease;
+}
+
+/* Ensure dashboard viewer fills container */
+.crm-fullwidth >>> .dashboard-viewer,
+.crm-dashboard-container >>> .dashboard-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.crm-fullwidth >>> .dashboard-iframe,
+.crm-dashboard-container >>> .dashboard-iframe {
+  width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 960px) {
@@ -352,7 +384,8 @@ export default {
     max-width: 280px;
   }
 
-  .crm-fullwidth {
+  .crm-fullwidth,
+  .crm-dashboard-container {
     margin-left: 0;
     width: 100%;
   }

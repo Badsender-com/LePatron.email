@@ -165,6 +165,10 @@
     z-index: 2;
     max-height: calc(90vh - 120px); // Max height to ensure scrollability (90vh - header estimate)
 
+    // Import design system form field styles
+    // Normal import (not reference) so styles actually apply
+    @import 'badsender-form-field.less';
+
     // Title styling
     h5 {
       font-size: 1.25rem;
@@ -190,126 +194,16 @@
       padding-right: 12px;
     }
 
-    // Form fields - Design system style with label above input
-    // Materialize places label AFTER input in DOM, so we use flexbox to reverse
-    // Using !important to override Materialize's high specificity styles
-    .input-field {
-      display: flex !important;
-      flex-direction: column-reverse !important; // Puts label visually above input
-      margin-top: 0 !important;
-      margin-bottom: 16px !important;
-      position: relative !important;
-      padding-top: 0 !important;
-
-      // Label above input - override Materialize completely
-      label {
-        display: block !important;
-        font-size: 0.75rem !important;
-        font-weight: 500 !important;
-        color: rgba(0, 0, 0, 0.6) !important;
-        margin-bottom: 6px !important;
-        margin-top: 0 !important;
-        position: static !important;
-        transform: none !important;
-        pointer-events: auto !important;
-        order: 2 !important;
-        top: auto !important;
-        left: auto !important;
-        line-height: 1.4 !important;
-
-        &.active {
-          color: rgba(0, 0, 0, 0.6) !important;
-          transform: none !important;
-          font-size: 0.75rem !important;
-        }
-      }
-
-      // Input with full border (not underline)
-      input[type='text'],
-      input[type='email'],
-      input[type='number'],
-      input[type='url'],
-      textarea {
-        width: 100% !important;
-        padding: 8px 12px !important;
-        border: 1px solid rgba(0, 0, 0, 0.2) !important;
-        border-radius: 4px !important;
-        background: #ffffff !important;
-        font-size: 0.875rem !important;
-        color: rgba(0, 0, 0, 0.87) !important;
-        outline: none !important;
-        transition: border-color 0.2s ease !important;
-        box-sizing: border-box !important;
-        margin: 0 !important;
-        height: 40px !important;
-        order: 1 !important;
-        box-shadow: none !important;
-
-        &:hover {
-          border-color: rgba(0, 0, 0, 0.4) !important;
-        }
-
-        &:focus {
-          border-color: var(--v-accent-base, #00acdc) !important;
-          border-width: 2px !important;
-          box-shadow: none !important;
-        }
-
-        &.invalid {
-          border-color: #f04e23 !important;
-        }
-
-        &.valid {
-          border-color: rgba(0, 0, 0, 0.2) !important;
-        }
-
-        &::placeholder {
-          color: rgba(0, 0, 0, 0.38) !important;
-        }
-
-        // Disabled state
-        &:disabled {
-          background-color: rgba(0, 0, 0, 0.04) !important;
-          color: rgba(0, 0, 0, 0.6) !important;
-          border-color: rgba(0, 0, 0, 0.1) !important;
-          cursor: not-allowed !important;
-        }
-      }
-
-      .helper-text {
-        font-size: 0.75rem !important;
-        color: rgba(0, 0, 0, 0.5) !important;
-        margin-top: 4px !important;
-        display: block !important;
-        min-height: 0 !important;
-        order: 0 !important;
-        position: static !important;
-
-        &[data-error] {
-          color: #f04e23 !important;
-        }
-      }
-
-      // Show error text when input is invalid
-      input.invalid ~ .helper-text::after {
-        content: attr(data-error);
-        color: #f04e23 !important;
-      }
-
-      // Error state - label color change
-      &:has(input.invalid) label,
-      &:has(input:invalid) label {
-        color: #f04e23 !important;
-      }
-    }
+    // Form field styles are now imported from badsender-form-field.less
+    // This provides a common design system for both admin and editor
 
     // Disabled fields styling (for ESP modals)
     input:disabled,
     input[disabled] {
-      background-color: rgba(0, 0, 0, 0.04) !important;
-      color: rgba(0, 0, 0, 0.6) !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      cursor: not-allowed !important;
+      background-color: rgba(0, 0, 0, 0.04);
+      color: rgba(0, 0, 0, 0.6);
+      border-color: rgba(0, 0, 0, 0.1);
+      cursor: not-allowed;
     }
 
     // ==========================================================================

@@ -41,14 +41,10 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <bs-users-table
-        :users="users"
-        :loading="loading"
-        :hidden-cols="hiddenCols"
-        @update="updateUser"
-      />
-    </v-card-text>
-  </v-card>
+  <bs-users-table
+    :users="users"
+    :loading="loading"
+    :hidden-cols="hiddenCols"
+    @update="updateUser"
+  />
 </template>

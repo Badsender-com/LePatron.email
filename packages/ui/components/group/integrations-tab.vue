@@ -3,14 +3,11 @@ import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
-import {
   getProviderLabel,
   getProviderCategory,
 } from '~/components/integrations/provider-configs';
 import BsIntegrationForm from '~/components/integrations/integration-form.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import {
   Puzzle,
   Cable,
@@ -32,6 +29,7 @@ const CATEGORY_ICON_MAP = {
 export default {
   name: 'BsGroupIntegrationsTab',
   components: {
+    BsDataTable,
     BsIntegrationForm,
     LucidePuzzle: Puzzle,
     LucideCable: Cable,
@@ -41,8 +39,6 @@ export default {
     LucideBot: Bot,
     LucideLanguages: Languages,
   },
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   data() {
     return {
       loading: false,
@@ -64,7 +60,12 @@ export default {
         { text: this.$t('integrations.provider'), value: 'provider' },
         { text: this.$t('integrations.status'), value: 'validationStatus' },
         { text: this.$t('integrations.active'), value: 'isActive' },
-        { text: this.$t('global.actions'), value: 'actions', sortable: false },
+        {
+          text: this.$t('global.actions'),
+          value: 'actions',
+          sortable: false,
+          align: 'right',
+        },
       ];
     },
     groupId() {
@@ -250,190 +251,170 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <v-skeleton-loader v-if="loading && !integrations.length" type="table" />
+  <div>
+    <bs-data-table
+      :headers="tableHeaders"
+      :items="integrations"
+      :loading="loading"
+      clickable
+      @click:row="openEditForm"
+    >
+      <template #item.name="{ item }">
+        <span class="font-weight-medium">{{ item.name }}</span>
+      </template>
 
-      <v-data-table
-        v-show="!loading || integrations.length"
+      <template #item.provider="{ item }">
+        <div class="d-flex align-center">
+          <component
+            :is="getCategoryIconComponent(item.provider)"
+            :size="16"
+            class="mr-2 text--secondary"
+          />
+          <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
+          <v-chip x-small outlined color="grey">
+            {{ getCategoryLabel(item.provider) }}
+          </v-chip>
+        </div>
+      </template>
+
+      <template #item.validationStatus="{ item }">
+        <v-chip
+          small
+          :color="getStatusColor(item.validationStatus)"
+          :outlined="item.validationStatus !== 'valid'"
+          :dark="item.validationStatus === 'valid'"
+        >
+          {{ getStatusLabel(item.validationStatus) }}
+        </v-chip>
+      </template>
+
+      <template #item.isActive="{ item }">
+        <v-chip
+          small
+          :color="item.isActive ? 'success' : 'grey'"
+          :outlined="!item.isActive"
+          :dark="item.isActive"
+        >
+          {{ item.isActive ? $t('global.enabled') : $t('global.disabled') }}
+        </v-chip>
+      </template>
+
+      <template #item.actions="{ item }">
+        <div class="d-flex align-center">
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                :loading="validating[item._id]"
+                v-bind="attrs"
+                v-on="on"
+                @click.stop="validateIntegration(item)"
+              >
+                <lucide-cable :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('integrations.validate') }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                v-bind="attrs"
+                v-on="on"
+                @click.stop="openEditForm(item)"
+              >
+                <lucide-pencil :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.edit') }}</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                small
+                v-bind="attrs"
+                v-on="on"
+                @click.stop="confirmDelete(item)"
+              >
+                <lucide-trash2 :size="18" class="error--text" />
+              </v-btn>
+            </template>
+            <span>{{ $t('global.delete') }}</span>
+          </v-tooltip>
+        </div>
+      </template>
+
+      <template #no-data>
+        <div class="text-center pa-6">
+          <lucide-puzzle :size="48" class="grey--text text--lighten-1" />
+          <p class="text-body-1 grey--text mt-4">
+            {{ $t('integrations.noIntegrations') }}
+          </p>
+        </div>
+      </template>
+    </bs-data-table>
+
+    <!-- Form Dialog -->
+    <v-dialog v-model="showForm" max-width="600" persistent>
+      <bs-integration-form
+        :integration="editingIntegration"
+        :providers="providers"
         :loading="loading"
-        :headers="tableHeaders"
-        :items="integrations"
-        :items-per-page="25"
-        :hide-default-footer="
-          integrations.length <= $options.TABLE_PAGINATION_THRESHOLD
-        "
-        :footer-props="$options.TABLE_FOOTER_PROPS"
-        class="integrations-table"
-        @click:row="openEditForm"
-      >
-        <template #item.name="{ item }">
-          <span class="font-weight-medium">{{ item.name }}</span>
-        </template>
+        @save="saveIntegration"
+        @cancel="closeForm"
+      />
+    </v-dialog>
 
-        <template #item.provider="{ item }">
-          <div class="d-flex align-center">
-            <component
-              :is="getCategoryIconComponent(item.provider)"
-              :size="16"
-              class="mr-2 text--secondary"
-            />
-            <span class="mr-2">{{ getProviderLabel(item.provider) }}</span>
-            <v-chip x-small outlined color="grey">
-              {{ getCategoryLabel(item.provider) }}
-            </v-chip>
-          </div>
-        </template>
-
-        <template #item.validationStatus="{ item }">
-          <v-chip
-            small
-            :color="getStatusColor(item.validationStatus)"
-            :outlined="item.validationStatus !== 'valid'"
-            :dark="item.validationStatus === 'valid'"
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500">
+      <v-card>
+        <v-card-title>
+          {{ $t('integrations.deleteConfirmTitle') }}
+        </v-card-title>
+        <v-card-text>
+          <p>
+            {{
+              $t('integrations.deleteConfirmMessage', {
+                name: deletingIntegration && deletingIntegration.name,
+              })
+            }}
+          </p>
+          <v-alert
+            v-if="deletingDashboardCount > 0"
+            type="warning"
+            dense
+            class="mt-4"
           >
-            {{ getStatusLabel(item.validationStatus) }}
-          </v-chip>
-        </template>
-
-        <template #item.isActive="{ item }">
-          <v-chip
-            small
-            :color="item.isActive ? 'success' : 'grey'"
-            :outlined="!item.isActive"
-            :dark="item.isActive"
+            <strong>{{
+              $t('integrations.deleteWarningDashboards', {
+                count: deletingDashboardCount,
+              })
+            }}</strong>
+          </v-alert>
+        </v-card-text>
+        <v-divider />
+        <div class="modal-actions">
+          <v-btn text color="primary" @click="showDeleteDialog = false">
+            {{ $t('global.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            elevation="0"
+            :loading="loading"
+            @click="deleteIntegration"
           >
-            {{ item.isActive ? $t('global.enabled') : $t('global.disabled') }}
-          </v-chip>
-        </template>
-
-        <template #item.actions="{ item }">
-          <div class="d-flex align-center">
-            <v-tooltip bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :loading="validating[item._id]"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="validateIntegration(item)"
-                >
-                  <lucide-cable :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t('integrations.validate') }}</span>
-            </v-tooltip>
-            <v-tooltip bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="openEditForm(item)"
-                >
-                  <lucide-pencil :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t('global.edit') }}</span>
-            </v-tooltip>
-            <v-tooltip bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="confirmDelete(item)"
-                >
-                  <lucide-trash2 :size="18" class="error--text" />
-                </v-btn>
-              </template>
-              <span>{{ $t('global.delete') }}</span>
-            </v-tooltip>
-          </div>
-        </template>
-
-        <template #no-data>
-          <div class="text-center pa-6">
-            <lucide-puzzle :size="48" class="grey--text text--lighten-1" />
-            <p class="text-body-1 grey--text mt-4">
-              {{ $t('integrations.noIntegrations') }}
-            </p>
-          </div>
-        </template>
-      </v-data-table>
-
-      <!-- Form Dialog -->
-      <v-dialog v-model="showForm" max-width="600" persistent>
-        <bs-integration-form
-          :integration="editingIntegration"
-          :providers="providers"
-          :loading="loading"
-          @save="saveIntegration"
-          @cancel="closeForm"
-        />
-      </v-dialog>
-
-      <!-- Delete Confirmation Dialog -->
-      <v-dialog v-model="showDeleteDialog" max-width="500">
-        <v-card>
-          <v-card-title>
-            {{ $t('integrations.deleteConfirmTitle') }}
-          </v-card-title>
-          <v-card-text>
-            <p>
-              {{
-                $t('integrations.deleteConfirmMessage', {
-                  name: deletingIntegration && deletingIntegration.name,
-                })
-              }}
-            </p>
-            <v-alert
-              v-if="deletingDashboardCount > 0"
-              type="warning"
-              dense
-              class="mt-4"
-            >
-              <strong>{{
-                $t('integrations.deleteWarningDashboards', {
-                  count: deletingDashboardCount,
-                })
-              }}</strong>
-            </v-alert>
-          </v-card-text>
-          <v-divider />
-          <div class="modal-actions">
-            <v-btn text color="primary" @click="showDeleteDialog = false">
-              {{ $t('global.cancel') }}
-            </v-btn>
-            <v-btn
-              color="error"
-              elevation="0"
-              :loading="loading"
-              @click="deleteIntegration"
-            >
-              {{ $t('global.delete') }}
-            </v-btn>
-          </div>
-        </v-card>
-      </v-dialog>
-    </v-card-text>
-  </v-card>
+            {{ $t('global.delete') }}
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.integrations-table {
-  ::v-deep tbody tr {
-    cursor: pointer;
-
-    &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
-    }
-  }
-}
-
 .modal-actions {
   display: flex;
   align-items: center;

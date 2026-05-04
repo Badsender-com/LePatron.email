@@ -6,15 +6,14 @@ import {
 import { mapState } from 'vuex';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { FOLDER } from '~/store/folder';
-import { ChevronRight } from 'lucide-vue';
+import BsBreadcrumb from '~/components/layout/BsBreadcrumb.vue';
 
 export default {
   name: 'MailingsBreadcrumbs',
   components: {
-    LucideChevronRight: ChevronRight,
+    BsBreadcrumb,
   },
   props: {
-    large: { type: Boolean, default: false },
     workspaceOrFolderItem: { type: Object, default: null },
   },
   computed: {
@@ -35,6 +34,21 @@ export default {
         this.workspaceOrFolderItem ?? this.selectedLocation
       );
     },
+    // Convert to BsBreadcrumb format: { text, to }
+    breadcrumbItems() {
+      return this.breadcrumbsData.map((item, index) => {
+        const isLast = index === this.breadcrumbsData.length - 1;
+        return {
+          text: item.text,
+          to: isLast
+            ? null
+            : {
+                path: '/mailings',
+                query: this.queryParamsBasedOnItemType(item),
+              },
+        };
+      });
+    },
   },
   methods: {
     queryParamsBasedOnItemType(item) {
@@ -48,17 +62,5 @@ export default {
 };
 </script>
 <template>
-  <v-breadcrumbs class="pl-0" :large="large" :items="breadcrumbsData">
-    <template #divider>
-      <lucide-chevron-right :size="16" />
-    </template>
-    <template #item="{ item }">
-      <v-breadcrumbs-item
-        :to="{ path: '/', query: queryParamsBasedOnItemType(item) }"
-        :disabled="item.disabled"
-      >
-        {{ item.text }}
-      </v-breadcrumbs-item>
-    </template>
-  </v-breadcrumbs>
+  <bs-breadcrumb :items="breadcrumbItems" />
 </template>

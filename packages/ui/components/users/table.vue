@@ -2,32 +2,18 @@
 import * as userStatusHelpers from '~/helpers/user-status.js';
 import BsUserActions from '~/components/user/actions.vue';
 import { Roles } from '~/helpers/constants/roles';
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
-import {
-  Users,
-  Pencil,
-  Send,
-  UserCheck,
-  UserX,
-  RotateCcw,
-} from 'lucide-vue';
+import { Users, Pencil, Send, UserCheck, UserX, RotateCcw } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 
 export default {
   name: 'BsUsersTable',
   components: {
+    BsDataTable,
     BsUserActions,
+    BsRowActions,
     LucideUsers: Users,
-    LucidePencil: Pencil,
-    LucideSend: Send,
-    LucideUserCheck: UserCheck,
-    LucideUserX: UserX,
-    LucideRotateCcw: RotateCcw,
   },
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   model: { prop: 'loading', event: 'update' },
   props: {
     users: { type: Array, default: () => [] },
@@ -52,18 +38,14 @@ export default {
           value: 'group',
           sort: (a, b) => String(b.name).localeCompare(a.name),
         },
-        {
-          text: this.$t('global.status'),
-          value: 'status',
-          align: 'center',
-        },
+        { text: this.$t('global.status'), value: 'status', align: 'center' },
         { text: this.$t('users.lang'), value: 'lang', align: 'center' },
         { text: this.$t('global.createdAt'), value: 'createdAt' },
         {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
-          align: 'center',
+          align: 'right',
           width: '140px',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
@@ -128,12 +110,10 @@ export default {
       this.$emit('update', user);
     },
     navigateToUser(user) {
-      // Navigate to user edit page within the group settings structure
       const groupId = user.group?.id || this.$route.params.groupId;
       if (groupId) {
         this.$router.push(`/groups/${groupId}/settings/users/${user.id}`);
       } else {
-        // Fallback for legacy route
         this.$router.push(`/users/${user.id}`);
       }
     },
@@ -141,7 +121,8 @@ export default {
       const actions = this.getStatusActions(status);
       if (actions.resetPassword) return this.$t('users.passwordTooltip.reset');
       if (actions.sendPassword) return this.$t('users.passwordTooltip.send');
-      if (actions.reSendPassword) return this.$t('users.passwordTooltip.resend');
+      if (actions.reSendPassword)
+        return this.$t('users.passwordTooltip.resend');
       return '';
     },
     handleMailAction(user) {
@@ -153,10 +134,47 @@ export default {
     showMailAction(status) {
       const actions = this.getStatusActions(status);
       return (
-        actions.resetPassword ||
-        actions.sendPassword ||
-        actions.reSendPassword
+        actions.resetPassword || actions.sendPassword || actions.reSendPassword
       );
+    },
+    buildQuickActions(item) {
+      const actions = [];
+      const statusActions = this.getStatusActions(item.status);
+
+      if (statusActions.activate) {
+        actions.push({
+          key: 'activate',
+          icon: UserCheck,
+          text: 'global.enable',
+          onClick: () => this.activate(item),
+        });
+      } else if (item.status !== 'to-be-initialized') {
+        actions.push({
+          key: 'deactivate',
+          icon: UserX,
+          text: 'global.disable',
+          onClick: () => this.deactivate(item),
+        });
+      }
+
+      if (this.showMailAction(item.status)) {
+        const isReset = statusActions.resetPassword;
+        actions.push({
+          key: 'mail-action',
+          icon: isReset ? RotateCcw : Send,
+          text: this.getMailActionTooltip(item.status),
+          onClick: () => this.handleMailAction(item),
+        });
+      }
+
+      actions.push({
+        key: 'edit',
+        icon: Pencil,
+        text: 'global.edit',
+        onClick: () => this.navigateToUser(item),
+      });
+
+      return actions;
     },
   },
 };
@@ -165,13 +183,11 @@ export default {
 <template>
   <!-- eslint-disable vue/valid-v-slot  -->
   <div class="bs-users-table">
-    <v-data-table
+    <bs-data-table
       :headers="tableHeaders"
       :items="users"
       :loading="loading"
-      :items-per-page="25"
-      :hide-default-footer="users.length <= $options.TABLE_PAGINATION_THRESHOLD"
-      :footer-props="$options.TABLE_FOOTER_PROPS"
+      clickable
       class="users-table"
       @click:row="navigateToUser"
     >
@@ -214,83 +230,16 @@ export default {
       </template>
 
       <template #item.createdAt="{ item }">
-        <span class="text--secondary">{{ item.createdAt | preciseDateTime }}</span>
+        <span class="text--secondary">{{
+          item.createdAt | preciseDateTime
+        }}</span>
       </template>
 
       <template #item.actions="{ item }">
-        <div class="d-flex align-center justify-center">
-          <!-- Activation/Deactivation toggle -->
-          <v-tooltip v-if="getStatusActions(item.status).activate" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="activate(item)"
-              >
-                <lucide-user-check :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.enable') }}</span>
-          </v-tooltip>
-          <v-tooltip v-else-if="item.status !== 'to-be-initialized'" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="deactivate(item)"
-              >
-                <lucide-user-x :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.disable') }}</span>
-          </v-tooltip>
-
-          <!-- Password/Mail actions -->
-          <v-tooltip v-if="showMailAction(item.status)" bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                :disabled="loading"
-                v-on="on"
-                @click.stop="handleMailAction(item)"
-              >
-                <lucide-send
-                  v-if="!getStatusActions(item.status).resetPassword"
-                  :size="18"
-                />
-                <lucide-rotate-ccw v-else :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ getMailActionTooltip(item.status) }}</span>
-          </v-tooltip>
-
-          <!-- Edit action -->
-          <v-tooltip bottom>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                icon
-                small
-                v-bind="attrs"
-                v-on="on"
-                @click.stop="navigateToUser(item)"
-              >
-                <lucide-pencil :size="18" />
-              </v-btn>
-            </template>
-            <span>{{ $t('global.edit') }}</span>
-          </v-tooltip>
-        </div>
+        <bs-row-actions :quick-actions="buildQuickActions(item)" />
       </template>
 
-      <template #no-data>
+      <template #empty>
         <div class="text-center pa-6">
           <lucide-users :size="48" class="grey--text text--lighten-1" />
           <p class="text-body-1 grey--text mt-4">
@@ -298,7 +247,7 @@ export default {
           </p>
         </div>
       </template>
-    </v-data-table>
+    </bs-data-table>
     <bs-user-actions
       ref="userActions"
       v-model="localLoading"
@@ -309,13 +258,57 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.users-table {
-  ::v-deep tbody tr {
-    cursor: pointer;
+.bs-users-table {
+  /* Email column */
+  ::v-deep .v-data-table tbody td:nth-child(2) {
+    font-family: var(--font-mono);
+    font-size: 12px !important;
+  }
 
-    &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
+  /* Role column */
+  ::v-deep .v-data-table tbody td:nth-child(3) {
+    text-align: center;
+
+    .v-chip {
+      font-size: 10px !important;
+      height: 18px !important;
+      padding: 0 6px !important;
+      font-weight: 600 !important;
     }
+  }
+
+  /* Status column */
+  ::v-deep .v-data-table tbody td:nth-child(5) {
+    text-align: center;
+
+    .v-chip {
+      font-size: 11px !important;
+      height: 20px !important;
+      padding: 0 8px !important;
+      font-weight: 500 !important;
+    }
+  }
+
+  /* Lang column */
+  ::v-deep .v-data-table tbody td:nth-child(6) {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.54) !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+  }
+
+  /* CreatedAt column */
+  ::v-deep .v-data-table tbody td:nth-child(7) {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Actions column */
+  ::v-deep .v-data-table tbody td:last-child,
+  ::v-deep .v-data-table thead th:last-child {
+    text-align: right !important;
+    width: 140px;
+    white-space: nowrap;
   }
 }
 </style>

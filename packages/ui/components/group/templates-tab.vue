@@ -4,7 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
-import { FileText, Pencil, Trash2, Check } from 'lucide-vue';
+import { FileText, Pencil, Trash2, Check, Image, XCircle } from 'lucide-vue';
 
 export default {
   name: 'BsGroupTemplatesTab',
@@ -14,6 +14,8 @@ export default {
     LucidePencil: Pencil,
     LucideTrash2: Trash2,
     LucideCheck: Check,
+    LucideImage: Image,
+    LucideXCircle: XCircle,
   },
   // FileText is used via $options.components for BsDataTable emptyIcon
   FileText,
@@ -32,12 +34,26 @@ export default {
           text: this.$t('tableHeaders.templates.markup'),
           value: 'hasMarkup',
           align: 'center',
-          class: 'table-column-action',
+          sortable: false,
+          width: '80px',
+        },
+        {
+          text: this.$t('tableHeaders.templates.coverImage'),
+          value: 'coverImage',
+          align: 'center',
+          sortable: false,
+          width: '80px',
+        },
+        {
+          text: this.$t('tableHeaders.templates.imageCount'),
+          value: 'imageCount',
+          align: 'center',
+          width: '80px',
         },
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -80,7 +96,9 @@ export default {
 
     async deleteTemplate(template) {
       try {
-        await this.$axios.$delete(apiRoutes.templatesItem({ templateId: template.id }));
+        await this.$axios.$delete(
+          apiRoutes.templatesItem({ templateId: template.id })
+        );
         await this.fetchData();
         this.showSnackbar({
           text: this.$t('snackbars.deleted'),
@@ -107,7 +125,11 @@ export default {
       @confirm="deleteTemplate"
     >
       <p class="black--text">
-        {{ $t('templates.deleteWarningMessage', { name: selectedTemplate && selectedTemplate.name }) }}
+        {{
+          $t('templates.deleteWarningMessage', {
+            name: selectedTemplate && selectedTemplate.name,
+          })
+        }}
       </p>
     </bs-modal-confirm-form>
 
@@ -126,6 +148,23 @@ export default {
 
       <template #item.hasMarkup="{ item }">
         <lucide-check v-if="item.hasMarkup" :size="18" class="accent--text" />
+        <lucide-x-circle v-else :size="18" class="error--text" />
+      </template>
+
+      <template #item.coverImage="{ item }">
+        <lucide-check v-if="item.coverImage" :size="18" class="accent--text" />
+        <lucide-x-circle v-else :size="18" class="error--text" />
+      </template>
+
+      <template #item.imageCount="{ item }">
+        <div
+          v-if="item.imageCount > 0"
+          class="d-flex align-center justify-center"
+        >
+          <lucide-image :size="14" class="mr-1 text--secondary" />
+          <span class="text--secondary">{{ item.imageCount }}</span>
+        </div>
+        <span v-else class="text--disabled">—</span>
       </template>
 
       <template #item.actions="{ item }">

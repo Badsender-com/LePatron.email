@@ -7,13 +7,20 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsUserMenu from '~/components/user/menu.vue';
 import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
 
 export default {
   name: 'BsPageUser',
-  components: { BsUserMenu, BsUserForm, BsMailingsAdminTable, BsUserActions },
+  components: {
+    BsUserMenu,
+    BsUserForm,
+    BsMailingsAdminTable,
+    BsDataTable,
+    BsUserActions,
+  },
   mixins: [mixinPageTitle],
   TABLE_ITEMS_PER_PAGE_OPTIONS,
   meta: {
@@ -23,14 +30,21 @@ export default {
     const { $axios, params } = nuxtContext;
     try {
       const userResponse = await $axios.$get(apiRoutes.usersItem(params));
-      return { user: userResponse };
+      const groupId = userResponse.group?.id;
+      const workspacesResponse = groupId
+        ? await $axios.$get(apiRoutes.groupsWorkspaces({ groupId }))
+        : { items: [] };
+      return { user: userResponse, workspaces: workspacesResponse.items };
     } catch (error) {
       console.log(error);
+      return { user: {}, workspaces: [] };
     }
   },
   data() {
     return {
       user: {},
+      workspaces: [],
+      savingWorkspaces: new Set(),
       mailings: [],
       loading: false,
       isLoadingMailings: false,
@@ -51,6 +65,18 @@ export default {
     title() {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
     },
+    workspaceHeaders() {
+      return [
+        { text: this.$t('global.name'), value: 'name', align: 'left' },
+        {
+          text: this.$t('tableHeaders.workspaces.assigned'),
+          value: 'assigned',
+          align: 'center',
+          sortable: false,
+          width: '120px',
+        },
+      ];
+    },
   },
   watch: {
     'pagination.page': 'loadMailings',
@@ -61,6 +87,39 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    isUserInWorkspace(workspace) {
+      return (workspace._users || []).some(
+        (id) => String(id) === String(this.user.id)
+      );
+    },
+    async toggleWorkspace(workspace) {
+      const userId = String(this.user.id);
+      const currentUsers = (workspace._users || []).map(String);
+      const isAssigned = currentUsers.includes(userId);
+      const newUsers = isAssigned
+        ? currentUsers.filter((id) => id !== userId)
+        : [...currentUsers, userId];
+
+      this.savingWorkspaces = new Set([...this.savingWorkspaces, workspace.id]);
+      try {
+        await this.$axios.$put(apiRoutes.getWorkspace(workspace.id), {
+          selectedUsers: newUsers.map((id) => ({ id })),
+        });
+        const idx = this.workspaces.findIndex((w) => w.id === workspace.id);
+        if (idx !== -1) {
+          this.$set(this.workspaces[idx], '_users', newUsers);
+        }
+      } catch {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        const next = new Set(this.savingWorkspaces);
+        next.delete(workspace.id);
+        this.savingWorkspaces = next;
+      }
+    },
     async loadMailings() {
       this.isLoadingMailings = true;
       try {
@@ -151,15 +210,40 @@ export default {
         @resendPassword="reSendPassword"
       />
     </template>
-    <bs-user-form
-      v-model="user"
-      :title="$t('users.details')"
-      :loading="loading"
-      @submit="updateUser"
-    />
-    <v-card flat tile>
-      <v-card-title>{{ $tc('global.mailing', 2) }}</v-card-title>
-      <v-card-text>
+    <div class="settings-content">
+      <bs-user-form
+        v-model="user"
+        :title="$t('users.details')"
+        :loading="loading"
+        @submit="updateUser"
+      />
+      <!-- Workspace assignments -->
+      <v-card flat tile class="mt-4">
+        <v-card-title class="px-0">
+          {{ $tc('global.teams', 2) }}
+        </v-card-title>
+        <bs-data-table :headers="workspaceHeaders" :items="workspaces">
+          <template #item.name="{ item }">
+            <span class="font-weight-medium">{{ item.name }}</span>
+          </template>
+          <template #item.assigned="{ item }">
+            <v-switch
+              :input-value="isUserInWorkspace(item)"
+              :loading="savingWorkspaces.has(item.id)"
+              :disabled="savingWorkspaces.has(item.id)"
+              dense
+              hide-details
+              class="mt-0 d-inline-flex"
+              @change="toggleWorkspace(item)"
+            />
+          </template>
+        </bs-data-table>
+      </v-card>
+
+      <v-card flat tile class="mt-4">
+        <v-card-title class="px-0">
+          {{ $tc('global.mailing', 2) }}
+        </v-card-title>
         <bs-mailings-admin-table
           :mailings="mailings"
           :loading="isLoadingMailings"
@@ -175,11 +259,7 @@ export default {
           }"
           @update:items-per-page="handleItemsPerPageChange"
         />
-        <v-card
-          flat
-          class="d-flex align-center justify-center mx-auto"
-          max-width="22rem"
-        >
+        <div class="d-flex align-center justify-center">
           <v-pagination
             v-if="pagination && pagination.itemsLength > 0"
             v-model="pagination.page"
@@ -187,9 +267,9 @@ export default {
             class="my-4 pagination-custom-style"
             :length="pagination.pageCount"
           />
-        </v-card>
-      </v-card-text>
-    </v-card>
+        </div>
+      </v-card>
+    </div>
     <bs-user-actions
       ref="userActions"
       v-model="loading"
@@ -198,3 +278,9 @@ export default {
     />
   </bs-layout-left-menu>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>

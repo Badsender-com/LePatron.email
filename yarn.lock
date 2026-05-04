@@ -15303,11 +15303,6 @@ material-design-icons-iconfont@5.0.1:
   resolved "https://registry.npmjs.org/material-design-icons-iconfont/-/material-design-icons-iconfont-5.0.1.tgz"
   integrity sha512-Xg6rIdGrfySTqiTZ6d+nQbcFepS6R4uKbJP0oAqyeZXJY/bX6mZDnOmmUJusqLXfhIwirs0c++a6JpqVa8RFvA==
 
-materialize-css@1.0.0-rc.2:
-  version "1.0.0-rc.2"
-  resolved "https://registry.npmjs.org/materialize-css/-/materialize-css-1.0.0-rc.2.tgz"
-  integrity sha512-FuQmSyq4Qv0ov7A2qXw0E6/jbQzSWx2P1pg2/XQDYTkkSc/GyiFAxu3fw9zgShwuTvyumEiw5jkxQWT9siqMBQ==
-
 math-interval-parser@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/math-interval-parser/-/math-interval-parser-1.1.0.tgz"

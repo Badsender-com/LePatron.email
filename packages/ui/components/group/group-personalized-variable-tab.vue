@@ -12,7 +12,7 @@ import {
   postPersonalizedVariables,
 } from '~/helpers/api-routes';
 
-import { Braces, Plus, Trash2 } from 'lucide-vue';
+import { Braces, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'GroupPersonalizedVariableTab',
@@ -20,7 +20,6 @@ export default {
     BsModalConfirm,
     BsTextField,
     LucideBraces: Braces,
-    LucidePlus: Plus,
     LucideTrash2: Trash2,
   },
   mixins: [validationMixin],
@@ -287,12 +286,8 @@ export default {
     </div>
 
     <!-- Actions -->
+    <v-divider />
     <div class="form-actions">
-      <v-btn text color="primary" :disabled="loading" @click="addRow">
-        <lucide-plus :size="16" class="mr-1" />
-        {{ $t('personalizedVariables.addRow') }}
-      </v-btn>
-      <v-spacer />
       <v-btn
         color="accent"
         elevation="0"
@@ -325,34 +320,31 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.personalized-variables {
-  max-width: 900px;
-}
-
 .variables-table {
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 
   &__header {
     display: flex;
     align-items: center;
-    background: #fafafa;
+    background: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
+    padding: 0 16px;
+    height: 40px;
+    font-size: 11px;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04em;
   }
 
   &__row {
     display: flex;
     align-items: flex-start;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 4px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 
     &:last-child {
       border-bottom: none;
@@ -365,41 +357,39 @@ export default {
 
   &__col {
     &--status {
-      width: 2rem;
+      width: 32px;
       flex-shrink: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
-      padding-top: 0.5rem;
+      padding-top: 8px; // (36px input - 20px icon) / 2
     }
 
     &--label {
       flex: 1;
-      padding-right: 1rem;
+      padding-right: 16px;
     }
 
     &--variable {
       flex: 1;
-      padding-right: 1rem;
+      padding-right: 16px;
     }
 
     &--actions {
-      width: 4rem;
+      width: 64px;
       flex-shrink: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
-      padding-top: 0.25rem;
+      padding-top: 4px; // (36px input - 28px btn) / 2
     }
   }
 
   &__status {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
+    font-size: 14px;
     font-weight: 600;
     border-radius: 50%;
 
@@ -438,6 +428,7 @@ export default {
 .form-actions {
   display: flex;
   align-items: center;
-  padding-top: 0.5rem;
+  justify-content: flex-end;
+  padding: 12px 0;
 }
 </style>

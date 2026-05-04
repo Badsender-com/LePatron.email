@@ -1,12 +1,10 @@
 <script>
 import * as apiRoutes from '~/helpers/api-routes.js';
-import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 
 export default {
   name: 'BsGroupMailingsTab',
   components: { BsMailingsAdminTable },
-  TABLE_ITEMS_PER_PAGE_OPTIONS,
   data() {
     return {
       mailings: [],
@@ -29,6 +27,9 @@ export default {
     this.fetchMailings();
   },
   methods: {
+    handlePageChange(page) {
+      this.pagination.page = page;
+    },
     async fetchMailings() {
       const {
         $axios,
@@ -66,35 +67,12 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <bs-mailings-admin-table
-        :mailings="mailings"
-        :loading="loading"
-        :options="pagination || {}"
-        :footer-props="{
-          pagination,
-          disablePagination: true,
-          prevIcon: 'none',
-          nextIcon: 'none',
-          itemsPerPageOptions: $options.TABLE_ITEMS_PER_PAGE_OPTIONS,
-          itemsPerPageAllText: 'Tout',
-        }"
-        @update:items-per-page="handleItemsPerPageChange"
-      />
-      <v-card
-        flat
-        class="d-flex align-center justify-center mx-auto"
-        max-width="22rem"
-      >
-        <v-pagination
-          v-if="pagination.itemsLength > 0"
-          v-model="pagination.page"
-          :circle="true"
-          class="my-4 pagination-custom-style"
-          :length="pagination.pageCount"
-        />
-      </v-card>
-    </v-card-text>
-  </v-card>
+  <bs-mailings-admin-table
+    :mailings="mailings"
+    :loading="loading"
+    :total-items="pagination.itemsLength"
+    :server-items-length="pagination.itemsLength"
+    @update:page="handlePageChange"
+    @update:items-per-page="handleItemsPerPageChange"
+  />
 </template>

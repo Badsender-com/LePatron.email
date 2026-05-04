@@ -4,119 +4,32 @@ import {
   TABLE_PAGINATION_THRESHOLD,
 } from '~/helpers/constants/table-config.js';
 
-/**
- * BsDataTable - Standardized data table component
- *
- * A wrapper around v-data-table that provides consistent styling and behavior
- * across the application. Features include:
- * - Standardized pagination options (25, 50, 100, All)
- * - Auto-hide footer when items <= threshold
- * - Clickable rows with hover effect (optional)
- * - Consistent empty state styling
- * - Loading skeleton
- *
- * @example Basic usage
- * <bs-data-table
- *   :headers="headers"
- *   :items="items"
- *   :loading="loading"
- * />
- *
- * @example With clickable rows
- * <bs-data-table
- *   :headers="headers"
- *   :items="items"
- *   clickable
- *   @click:row="handleRowClick"
- * />
- *
- * @example With custom empty state
- * <bs-data-table :headers="headers" :items="items">
- *   <template #empty>
- *     <my-custom-empty-state />
- *   </template>
- * </bs-data-table>
- */
 export default {
   name: 'BsDataTable',
+  inheritAttrs: false,
   props: {
-    /**
-     * Array of header objects defining table columns
-     * @type {Array<{text: string, value: string, align?: string, sortable?: boolean}>}
-     */
     headers: { type: Array, required: true },
-
-    /**
-     * Array of items to display in the table
-     */
     items: { type: Array, default: () => [] },
-
-    /**
-     * Loading state - shows skeleton loader when true
-     */
     loading: { type: Boolean, default: false },
-
-    /**
-     * Makes rows clickable with hover effect
-     */
     clickable: { type: Boolean, default: false },
-
-    /**
-     * Show row selection checkboxes
-     */
     showSelect: { type: Boolean, default: false },
-
-    /**
-     * Selected items (for v-model with show-select)
-     */
     value: { type: Array, default: () => [] },
-
-    /**
-     * Unique key for each item
-     */
     itemKey: { type: String, default: 'id' },
-
-    /**
-     * Custom threshold for hiding footer (defaults to TABLE_PAGINATION_THRESHOLD)
-     */
     paginationThreshold: { type: Number, default: TABLE_PAGINATION_THRESHOLD },
-
-    /**
-     * Icon component for empty state
-     */
     emptyIcon: { type: [Object, Function], default: null },
-
-    /**
-     * Message to show when table is empty
-     */
     emptyMessage: { type: String, default: '' },
-
-    /**
-     * Force show footer even when items <= threshold
-     */
     alwaysShowFooter: { type: Boolean, default: false },
-
-    /**
-     * Must sort - requires at least one column to be sorted
-     */
     mustSort: { type: Boolean, default: false },
-
-    /**
-     * Custom sort-by value
-     */
     sortBy: { type: [String, Array], default: undefined },
-
-    /**
-     * Sort descending
-     */
     sortDesc: { type: [Boolean, Array], default: undefined },
   },
-  data() {
-    return {
-      TABLE_FOOTER_PROPS,
-    };
-  },
   computed: {
+    footerProps() {
+      return {
+        ...TABLE_FOOTER_PROPS,
+        'items-per-page-all-text': this.$t('global.all'),
+      };
+    },
     selectedItems: {
       get() {
         return this.value;
@@ -127,7 +40,9 @@ export default {
     },
     hideFooter() {
       if (this.alwaysShowFooter) return false;
-      return this.items.length <= this.paginationThreshold;
+      const serverTotal = this.$attrs['server-items-length'];
+      const count = serverTotal !== undefined ? serverTotal : this.items.length;
+      return count <= this.paginationThreshold;
     },
     tableClasses() {
       return {
@@ -137,6 +52,12 @@ export default {
     },
     defaultEmptyMessage() {
       return this.emptyMessage || this.$t('global.noData');
+    },
+    tableListeners() {
+      return {
+        ...this.$listeners,
+        'click:row': this.handleRowClick,
+      };
     },
   },
   methods: {
@@ -156,17 +77,18 @@ export default {
     <v-data-table
       v-else
       v-model="selectedItems"
+      v-bind="$attrs"
       :headers="headers"
       :items="items"
       :item-key="itemKey"
       :hide-default-footer="hideFooter"
-      :footer-props="TABLE_FOOTER_PROPS"
+      :footer-props="footerProps"
       :show-select="showSelect"
       :must-sort="mustSort"
       :sort-by="sortBy"
       :sort-desc="sortDesc"
       :class="tableClasses"
-      @click:row="handleRowClick"
+      v-on="tableListeners"
     >
       <!-- Pass through all slots -->
       <template v-for="(_, slot) in $scopedSlots" #[slot]="scope">
@@ -196,7 +118,57 @@ export default {
 <style lang="scss">
 .bs-data-table-wrapper {
   .bs-data-table {
-    // Clickable rows
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    overflow: hidden;
+
+    // ── Headers ────────────────────────────────────────────────────────────
+    thead th {
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.04em !important;
+      text-transform: uppercase !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      padding: 10px 16px !important;
+      background: rgba(0, 0, 0, 0.02) !important;
+      height: 40px !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    // ── Rows ───────────────────────────────────────────────────────────────
+    tbody tr {
+      height: 40px !important;
+      transition: background 0.15s ease-out;
+    }
+
+    tbody td {
+      padding: 10px 16px !important;
+      font-size: 13px !important;
+      color: rgba(0, 0, 0, 0.87) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+      height: 40px !important;
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    tbody tr:hover {
+      background: rgba(0, 0, 0, 0.02) !important;
+    }
+
+    tbody tr.v-data-table__selected {
+      background: rgba(0, 172, 220, 0.06) !important;
+    }
+
+    tbody tr.v-data-table__selected:hover {
+      background: rgba(0, 172, 220, 0.1) !important;
+    }
+
+    // ── Clickable rows ─────────────────────────────────────────────────────
     &--clickable {
       tbody tr {
         cursor: pointer;
@@ -207,7 +179,7 @@ export default {
       }
     }
 
-    // Empty state
+    // ── Empty state ────────────────────────────────────────────────────────
     &__empty {
       text-align: center;
       padding: 3rem 1.5rem;

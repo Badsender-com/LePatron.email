@@ -5,28 +5,33 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupLoading from '~/components/loadingBar';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
-import BsCompaniesNav from '~/components/group/companies-nav.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
+import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 import { IS_ADMIN, USER } from '~/store/user';
-import { Building2, Pencil, Check } from 'lucide-vue';
+import { Building2, Plus, Pencil, Check, XCircle, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'PageGroups',
   components: {
     BsGroupLoading,
-    BsGroupSettingsPageHeader,
-    BsCompaniesNav,
+    BsPageHeader,
     BsModalCreateGroup,
+    BsModalConfirmForm,
     BsDataTable,
+    BsRowActions,
+    // eslint-disable-next-line vue/no-unused-components
     LucideBuilding2: Building2,
-    LucidePencil: Pencil,
+    LucidePlus: Plus,
     LucideCheck: Check,
+    LucideXCircle: XCircle,
   },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
+    sidebarModule: 'settings',
   },
   async asyncData(nuxtContext) {
     const { $axios } = nuxtContext;
@@ -43,6 +48,7 @@ export default {
       groups: [],
       modalLoading: false,
       loading: false,
+      deletingGroup: null,
     };
   },
   head() {
@@ -61,31 +67,49 @@ export default {
     tableHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
-        { text: this.$t('global.createdAt'), align: 'left', value: 'createdAt' },
+        {
+          text: this.$t('global.createdAt'),
+          align: 'left',
+          value: 'createdAt',
+        },
         {
           text: this.$t('tableHeaders.groups.status'),
           align: 'center',
           value: 'status',
-        },
-        {
-          text: this.$t('tableHeaders.groups.downloadWithoutEnclosingFolder'),
-          align: 'center',
-          value: 'downloadMailingWithoutEnclosingFolder',
+          width: '90px',
         },
         {
           text: this.$t('tableHeaders.groups.cdnDownload'),
           align: 'center',
           value: 'downloadMailingWithCdnImages',
+          sortable: false,
+          width: '60px',
         },
         {
           text: this.$t('tableHeaders.groups.ftpDownload'),
           align: 'center',
           value: 'downloadMailingWithFtpImages',
+          sortable: false,
+          width: '60px',
+        },
+        {
+          text: this.$t('tableHeaders.groups.esp'),
+          align: 'center',
+          value: 'hasProfiles',
+          sortable: false,
+          width: '60px',
+        },
+        {
+          text: this.$t('tableHeaders.groups.ai'),
+          align: 'center',
+          value: 'enableCrmIntelligence',
+          sortable: false,
+          width: '60px',
         },
         {
           text: this.$t('global.actions'),
           value: 'actions',
-          align: 'center',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -109,6 +133,46 @@ export default {
     goToGroup(group) {
       this.$router.push(`/groups/${group.id}/settings/general`);
     },
+    buildQuickActions(item) {
+      return [
+        {
+          key: 'edit',
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.goToGroup(item),
+        },
+        {
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.confirmDelete(item),
+        },
+      ];
+    },
+    confirmDelete(group) {
+      this.deletingGroup = group;
+      this.$refs.deleteDialog.open({ name: group.name, id: group.id });
+    },
+    async deleteGroup({ id }) {
+      try {
+        this.loading = true;
+        await this.$axios.$delete(apiRoutes.groupsItem({ groupId: id }));
+        this.groups = this.groups.filter((g) => g.id !== id);
+        this.showSnackbar({
+          text: this.$t('snackbars.deleted'),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      } finally {
+        this.loading = false;
+        this.deletingGroup = null;
+      }
+    },
     async createGroup(group) {
       try {
         this.modalLoading = true;
@@ -118,7 +182,6 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        // Navigate to the new group's settings
         this.$router.push(`/groups/${createdGroup.id}/settings/general`);
       } catch (error) {
         this.showSnackbar({
@@ -130,11 +193,7 @@ export default {
       }
     },
     getStatusColor(status) {
-      const colors = {
-        active: 'success',
-        demo: 'info',
-        inactive: 'grey',
-      };
+      const colors = { active: 'success', demo: 'info', inactive: 'grey' };
       return colors[status] || 'grey';
     },
   },
@@ -142,108 +201,142 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-companies-nav />
-    </template>
-    <client-only>
-      <div class="settings-content">
-        <bs-group-settings-page-header :title="$t('settingsNav.companiesList')">
-          <template #actions>
-            <v-btn color="accent" elevation="0" @click="openCreateModal">
-              <v-icon left>
-                mdi-plus
-              </v-icon>
-              {{ $t('global.add') }}
-            </v-btn>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('settingsNav.companiesList') }}
+      </template>
+      <template #actions>
+        <v-btn color="accent" elevation="0" @click="openCreateModal">
+          <lucide-plus :size="18" class="mr-2" />
+          {{ $t('global.add') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+
+    <v-container fluid>
+      <client-only>
+        <bs-data-table
+          :headers="tableHeaders"
+          :items="groups"
+          :loading="loading"
+          :empty-icon="$options.components.LucideBuilding2"
+          :empty-message="$t('settingsNav.companiesEmpty')"
+          clickable
+          @click:row="goToGroup"
+        >
+          <template #item.name="{ item }">
+            <span class="font-weight-medium">{{ item.name }}</span>
           </template>
-        </bs-group-settings-page-header>
 
-        <v-card elevation="0" class="pa-4">
-          <bs-data-table
-            :headers="tableHeaders"
-            :items="groups"
-            :loading="loading"
-            :empty-icon="$options.components.LucideBuilding2"
-            :empty-message="$t('settingsNav.companiesEmpty')"
-            clickable
-            @click:row="goToGroup"
-          >
-            <template #item.name="{ item }">
-              <span class="font-weight-medium">{{ item.name }}</span>
-            </template>
+          <template #item.createdAt="{ item }">
+            <span class="text--secondary">{{
+              item.createdAt | preciseDateTime
+            }}</span>
+          </template>
 
-            <template #item.createdAt="{ item }">
-              <span>{{ item.createdAt | preciseDateTime }}</span>
-            </template>
+          <template #item.status="{ item }">
+            <v-chip
+              small
+              :color="getStatusColor(item.status)"
+              :outlined="item.status !== 'active'"
+              :dark="item.status === 'active'"
+            >
+              {{ item.status }}
+            </v-chip>
+          </template>
 
-            <template #item.status="{ item }">
-              <v-chip
-                small
-                :color="getStatusColor(item.status)"
-                :outlined="item.status !== 'active'"
-                :dark="item.status === 'active'"
-              >
-                {{ item.status }}
-              </v-chip>
-            </template>
+          <template #item.downloadMailingWithCdnImages="{ item }">
+            <lucide-check
+              v-if="item.downloadMailingWithCdnImages"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.downloadMailingWithoutEnclosingFolder="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithoutEnclosingFolder"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.downloadMailingWithFtpImages="{ item }">
+            <lucide-check
+              v-if="item.downloadMailingWithFtpImages"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.downloadMailingWithCdnImages="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithCdnImages"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.hasProfiles="{ item }">
+            <lucide-check
+              v-if="item.hasProfiles"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.downloadMailingWithFtpImages="{ item }">
-              <lucide-check
-                v-if="item.downloadMailingWithFtpImages"
-                :size="18"
-                class="accent--text"
-              />
-            </template>
+          <template #item.enableCrmIntelligence="{ item }">
+            <lucide-check
+              v-if="item.enableCrmIntelligence"
+              :size="16"
+              class="accent--text"
+            />
+            <lucide-x-circle
+              v-else
+              :size="16"
+              class="error--text"
+              style="opacity: 0.35"
+            />
+          </template>
 
-            <template #item.actions="{ item }">
-              <v-tooltip bottom>
-                <template #activator="{ on, attrs }">
-                  <v-btn
-                    icon
-                    small
-                    v-bind="attrs"
-                    v-on="on"
-                    @click.stop="goToGroup(item)"
-                  >
-                    <lucide-pencil :size="18" />
-                  </v-btn>
-                </template>
-                <span>{{ $t('global.edit') }}</span>
-              </v-tooltip>
-            </template>
-          </bs-data-table>
-        </v-card>
-      </div>
-      <bs-group-loading slot="placeholder" />
-    </client-only>
+          <template #item.actions="{ item }">
+            <bs-row-actions :quick-actions="buildQuickActions(item)" />
+          </template>
+        </bs-data-table>
+
+        <bs-modal-confirm-form
+          ref="deleteDialog"
+          :title="$t('forms.group.dangerZone.deleteTitle')"
+          :action-label="$t('global.delete')"
+          :confirmation-input-label="$t('groups.delete.confirmationField')"
+          :confirm-check-box="true"
+          :confirm-check-box-message="$t('groups.delete.deleteNotice')"
+          @confirm="deleteGroup"
+        >
+          <p
+            class="black--text"
+            v-html="
+              $t('groups.delete.deleteWarningMessage', {
+                name: deletingGroup && deletingGroup.name,
+              })
+            "
+          />
+        </bs-modal-confirm-form>
+
+        <bs-group-loading slot="placeholder" />
+      </client-only>
+    </v-container>
 
     <bs-modal-create-group
       ref="createGroupModal"
       :loading="modalLoading"
       @submit="createGroup"
     />
-  </bs-layout-left-menu>
+  </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

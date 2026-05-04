@@ -49,25 +49,13 @@ export default {
 <template>
   <div class="settings-page-header">
     <div class="settings-page-header__title">
-      <v-btn
-        v-if="showBackButton"
-        icon
-        small
-        class="mr-2"
-        @click="goBack"
-      >
+      <v-btn v-if="showBackButton" icon small class="mr-2" @click="goBack">
         <lucide-arrow-left :size="20" />
       </v-btn>
       <h1 class="text-h5 font-weight-medium">
         {{ title }}
       </h1>
-      <v-chip
-        v-if="showGroupBadge"
-        small
-        outlined
-        color="accent"
-        class="ml-3"
-      >
+      <v-chip v-if="showGroupBadge" small outlined color="accent" class="ml-3">
         {{ groupName }}
       </v-chip>
     </div>
@@ -82,7 +70,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }

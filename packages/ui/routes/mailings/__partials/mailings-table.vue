@@ -19,12 +19,24 @@ import {
 } from '~/helpers/constants/table-config.js';
 import BsMailingsModalRename from '~/components/mailings/modal-rename.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
-import BsMailingsActionsDropdown from './mailings-actions-dropdown';
-import BsMailingsActionsDropdownItem from './mailings-actions-dropdown-item';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
-import { MessageCircle, TextCursor, Copy, Trash2, Mail } from 'lucide-vue';
+import {
+  MessageCircle,
+  TextCursor,
+  Copy,
+  Trash2,
+  Mail,
+  Tag,
+  Maximize2,
+  Eye,
+  ArrowRight,
+  Languages,
+  Download,
+  Server,
+} from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 
 const COLUMN_USERNAME = 'userName';
 const TABLE_HIDDEN_COLUMNS_ADMIN = [COLUMN_USERNAME, ACTIONS.COPY_MAIL];
@@ -58,18 +70,15 @@ export default {
     BsMailingsModalRename,
     BsModalConfirmForm,
     MailingsCopyModal,
-    BsMailingsActionsDropdown,
-    BsMailingsActionsDropdownItem,
+    BsRowActions,
     MailingsTagsMenu,
     MailingsMoveModal,
     MailingsPreviewModal,
     BsMailingModalDuplicateTranslate,
     BsMailingModalTranslationWarning,
-    LucideMessageCircle: MessageCircle,
-    LucideTextCursor: TextCursor,
-    LucideCopy: Copy,
-    LucideTrash2: Trash2,
     LucideMail: Mail,
+    // Lucide icons for BsRowActions are imported at top but passed as strings
+    // They're resolved dynamically by BsRowActions component
   },
   mixins: [mixinCurrentLocation],
   model: { prop: 'mailingsSelection', event: 'input' },
@@ -179,6 +188,152 @@ export default {
       if (this.hasAccess) {
         window.location.href = `/editor/${item.id}`;
       }
+    },
+    /**
+     * Build quick actions (always visible) for a mailing row
+     * Design System: Comment, Rename, Copy, Delete
+     */
+    buildQuickActions(item) {
+      const actions = [];
+
+      // 1. Comment (with unresolved badge)
+      if (this.hasAccess) {
+        actions.push({
+          key: 'comment',
+          icon: MessageCircle,
+          text: 'mailings.openComments',
+          badge:
+            item.unresolvedCommentsCount > 0
+              ? item.unresolvedCommentsCount
+              : null,
+          onClick: () => {
+            window.location.href = `/editor/${item.id}?comments=1`;
+          },
+        });
+      }
+
+      // 2. Rename
+      if (this.filteredActions.includes(this.actions.RENAME)) {
+        actions.push({
+          key: 'rename',
+          icon: TextCursor,
+          text: this.actionsDetails[this.actions.RENAME].text,
+          onClick: () => this.openRenameModal(item),
+        });
+      }
+
+      // 3. Copy
+      if (this.filteredActions.includes(this.actions.COPY_MAIL)) {
+        actions.push({
+          key: 'copy',
+          icon: Copy,
+          text: this.actionsDetails[this.actions.COPY_MAIL].text,
+          onClick: () => this.openCopyMail(item),
+        });
+      }
+
+      // 4. Delete
+      if (this.filteredActions.includes(this.actions.DELETE)) {
+        actions.push({
+          key: 'delete',
+          icon: Trash2,
+          text: this.actionsDetails[this.actions.DELETE].text,
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
+
+      return actions;
+    },
+    /**
+     * Build menu actions (behind kebab) for a mailing row
+     * Design System: Tags, Transfer, Preview, Move, Duplicate+Translate | Download, FTP | Delete
+     */
+    buildMenuActions(item) {
+      const actions = [];
+
+      // Main actions group
+      if (this.filteredActions.includes(this.actions.ADD_TAGS)) {
+        actions.push({
+          key: 'tags',
+          icon: Tag,
+          text: this.actionsDetails[this.actions.ADD_TAGS].text,
+          count: item.tags?.length || null,
+          onClick: () => this.openTagsMenu(item),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.TRANSFER)) {
+        actions.push({
+          key: 'transfer',
+          icon: Maximize2,
+          text: this.actionsDetails[this.actions.TRANSFER].text,
+          onClick: () => this.transferMailing(item),
+        });
+      }
+
+      actions.push({
+        key: 'preview',
+        icon: Eye,
+        text: this.actionsDetails[this.actions.PREVIEW].text,
+        onClick: () => this.openPreviewMail(item),
+      });
+
+      if (this.filteredActions.includes(this.actions.MOVE_MAIL)) {
+        actions.push({
+          key: 'move',
+          icon: ArrowRight,
+          text: this.actionsDetails[this.actions.MOVE_MAIL].text,
+          onClick: () => this.openMoveMail(item),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.DUPLICATE_TRANSLATE)) {
+        actions.push({
+          key: 'duplicate-translate',
+          icon: Languages,
+          text: this.actionsDetails[this.actions.DUPLICATE_TRANSLATE].text,
+          onClick: () => this.openDuplicateTranslateModal(item),
+        });
+      }
+
+      // Export group (separated by divider)
+      actions.push({ type: 'divider' });
+
+      if (this.filteredActions.includes(this.actions.DOWNLOAD)) {
+        actions.push({
+          key: 'download',
+          icon: Download,
+          text: this.actionsDetails[this.actions.DOWNLOAD].text,
+          onClick: () =>
+            this.handleDownloadMail({ mailing: item, isWithFtp: false }),
+        });
+      }
+
+      if (this.filteredActions.includes(this.actions.DOWNLOAD_FTP)) {
+        actions.push({
+          key: 'ftp',
+          icon: Server,
+          text: this.actionsDetails[this.actions.DOWNLOAD_FTP].text,
+          disabled: !this.hasFtpAccess,
+          onClick: () =>
+            this.handleDownloadMail({ mailing: item, isWithFtp: true }),
+        });
+      }
+
+      // Destructive action (Delete) - isolated by divider
+      if (this.filteredActions.includes(this.actions.DELETE)) {
+        actions.push({ type: 'divider' });
+        actions.push({
+          key: 'delete-menu',
+          icon: Trash2,
+          text: this.actionsDetails[this.actions.DELETE].text,
+          variant: 'danger',
+          onClick: () => this.displayDeleteModal(item),
+        });
+      }
+
+      return actions;
     },
     openRenameModal(mailing) {
       this.$refs.renameDialog.open({
@@ -448,7 +603,7 @@ export default {
         @click:row="handleRowClick"
       >
         <template #item.name="{ item }">
-          <span class="font-weight-medium">{{ item.name }}</span>
+          <span class="mailing-name font-weight-medium">{{ item.name }}</span>
         </template>
         <template #item.userName="{ item }">
           <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
@@ -474,144 +629,10 @@ export default {
           <span>{{ item.updatedAt | preciseDateTime }}</span>
         </template>
         <template #item.actions="{ item }">
-          <div class="actions-cell">
-            <!-- Quick action icons -->
-            <v-tooltip v-if="hasAccess" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :href="`/editor/${item.id}?comments=1`"
-                  :aria-label="$t('mailings.openComments')"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop
-                >
-                  <span class="comment-icon-wrapper">
-                    <lucide-message-circle :size="18" />
-                    <span
-                      v-if="item.unresolvedCommentsCount > 0"
-                      class="comment-badge"
-                    >
-                      {{
-                        item.unresolvedCommentsCount > 99
-                          ? '99+'
-                          : item.unresolvedCommentsCount
-                      }}
-                    </span>
-                  </span>
-                </v-btn>
-              </template>
-              <span>{{ $t('mailings.openComments') }}</span>
-            </v-tooltip>
-            <v-tooltip v-if="filteredActions.includes(actions.RENAME)" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :aria-label="$t(actionsDetails[actions.RENAME].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="openRenameModal(item)"
-                >
-                  <lucide-text-cursor :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.RENAME].text) }}</span>
-            </v-tooltip>
-            <v-tooltip
-              v-if="filteredActions.includes(actions.COPY_MAIL)"
-              bottom
-            >
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  :aria-label="$t(actionsDetails[actions.COPY_MAIL].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="openCopyMail(item)"
-                >
-                  <lucide-copy :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.COPY_MAIL].text) }}</span>
-            </v-tooltip>
-            <v-tooltip v-if="filteredActions.includes(actions.DELETE)" bottom>
-              <template #activator="{ on, attrs }">
-                <v-btn
-                  icon
-                  small
-                  class="error--text"
-                  :aria-label="$t(actionsDetails[actions.DELETE].text)"
-                  v-bind="attrs"
-                  v-on="on"
-                  @click.stop="displayDeleteModal(item)"
-                >
-                  <lucide-trash2 :size="18" />
-                </v-btn>
-              </template>
-              <span>{{ $t(actionsDetails[actions.DELETE].text) }}</span>
-            </v-tooltip>
-
-            <!-- More actions menu -->
-            <bs-mailings-actions-dropdown @click.native.stop>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.ADD_TAGS)"
-                :icon="actionsDetails[actions.ADD_TAGS].icon"
-                :on-click="() => openTagsMenu(item)"
-              >
-                {{ $t(actionsDetails[actions.ADD_TAGS].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.TRANSFER)"
-                :icon="actionsDetails[actions.TRANSFER].icon"
-                :on-click="() => transferMailing(item)"
-              >
-                {{ $t(actionsDetails[actions.TRANSFER].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                :icon="actionsDetails[actions.PREVIEW].icon"
-                :on-click="() => openPreviewMail(item)"
-              >
-                {{ $t(actionsDetails[actions.PREVIEW].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.MOVE_MAIL)"
-                :icon="actionsDetails[actions.MOVE_MAIL].icon"
-                :on-click="() => openMoveMail(item)"
-              >
-                {{ $t(actionsDetails[actions.MOVE_MAIL].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.DUPLICATE_TRANSLATE)"
-                :icon="actionsDetails[actions.DUPLICATE_TRANSLATE].icon"
-                :on-click="() => openDuplicateTranslateModal(item)"
-              >
-                {{ $t(actionsDetails[actions.DUPLICATE_TRANSLATE].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="filteredActions.includes(actions.DOWNLOAD)"
-                :icon="actionsDetails[actions.DOWNLOAD].icon"
-                :on-click="
-                  () => handleDownloadMail({ mailing: item, isWithFtp: false })
-                "
-              >
-                {{ $t(actionsDetails[actions.DOWNLOAD].text) }}
-              </bs-mailings-actions-dropdown-item>
-              <bs-mailings-actions-dropdown-item
-                v-if="
-                  filteredActions.includes(actions.DOWNLOAD_FTP) && hasFtpAccess
-                "
-                :icon="actionsDetails[actions.DOWNLOAD_FTP].icon"
-                :on-click="
-                  () => handleDownloadMail({ mailing: item, isWithFtp: true })
-                "
-              >
-                {{ $t(actionsDetails[actions.DOWNLOAD_FTP].text) }}
-              </bs-mailings-actions-dropdown-item>
-            </bs-mailings-actions-dropdown>
-          </div>
+          <bs-row-actions
+            :quick-actions="buildQuickActions(item)"
+            :menu-actions="buildMenuActions(item)"
+          />
         </template>
 
         <template #no-data>
@@ -672,19 +693,118 @@ export default {
   </div>
 </template>
 
-<style lang="scss">
-/* Table styling - NOT scoped to ensure Vuetify overrides work */
+<style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable — LePatron Design System v1.0
+   Standardized table pattern for Mailings (reference implementation)
+   Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
+   ========================================================================= */
+
 .mailings-table-wrapper {
-  // Clickable rows - aligned with BsDataTable
+  /* Shell - already handled by v-data-table but ensure borders */
+  .v-data-table {
+    border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+    border-radius: 10px; // --r-md
+    overflow: hidden;
+  }
+
+  /* -------- Table headers (BsDataTable spec) ----------------------------- */
+  .v-data-table thead th {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+    padding: 10px 16px !important;
+    background: rgba(0, 0, 0, 0.02) !important; // --gray-50
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
+    height: 40px !important;
+  }
+
+  /* -------- Table rows (BsDataTable spec) -------------------------------- */
+  .v-data-table tbody td {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important; // --gray-200
+    height: 40px !important;
+  }
+
+  .v-data-table tbody tr:last-child td {
+    border-bottom: none !important;
+  }
+
+  /* -------- Name cell link ------------------------------------------------- */
+  .clickable-rows tbody tr .mailing-name {
+    cursor: pointer;
+  }
+
+  .clickable-rows tbody tr:hover .mailing-name {
+    text-decoration: underline;
+  }
+
+  /* -------- Row states ---------------------------------------------------- */
   .clickable-rows tbody tr {
     cursor: pointer;
+    transition: background 0.15s ease-out;
 
     &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
+      background: rgba(0, 0, 0, 0.02) !important; // --gray-50
     }
   }
 
-  // Comment icon with badge
+  .v-data-table tbody tr.v-data-table__selected {
+    background: rgba(
+      0,
+      172,
+      220,
+      0.06
+    ) !important; // Design system selected state
+  }
+
+  .v-data-table tbody tr.v-data-table__selected:hover {
+    background: rgba(
+      0,
+      172,
+      220,
+      0.1
+    ) !important; // Design system selected + hover
+  }
+
+  /* -------- Name cell (primary identifier) ------------------------------- */
+  .v-data-table tbody td:has(.font-weight-medium) {
+    font-weight: 500 !important;
+    color: var(--v-primary-base) !important;
+  }
+
+  /* -------- Muted cells (author, template) ------------------------------- */
+  .v-data-table tbody td:has(a),
+  .v-data-table tbody td:has(span:not(.tags):not(.font-weight-medium)) {
+    color: rgba(0, 0, 0, 0.6) !important; // --gray-600
+  }
+
+  /* -------- Date cells ---------------------------------------------------- */
+  .v-data-table tbody td:has(span[data-v-]) {
+    color: rgba(0, 0, 0, 0.54) !important; // --gray-700
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* -------- Actions column ------------------------------------------------ */
+  .v-data-table thead th:last-child,
+  .v-data-table tbody td:last-child {
+    text-align: right !important;
+    width: 1% !important;
+    white-space: nowrap !important;
+  }
+
+  /* -------- Checkbox column ----------------------------------------------- */
+  .v-data-table thead th:first-child,
+  .v-data-table tbody td:first-child {
+    width: 36px !important;
+    padding-right: 0 !important;
+  }
+
+  /* Comment icon with badge (unchanged, already correct) */
   .comment-icon-wrapper {
     position: relative;
     display: inline-flex;
@@ -716,44 +836,39 @@ export default {
   cursor: pointer;
 }
 
-/* Actions cell with quick icons */
-.actions-cell {
+/* -------- Tags (BsDataTable spec) -------------------------------------- */
+.tags {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-/* Tags styling */
-.tags {
-  display: inline-block;
-  padding: 2px 8px;
-  margin: 2px 4px 2px 0;
-  background: rgba(0, 172, 220, 0.1);
-  color: var(--v-primary-base);
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 1px 8px;
+  margin-right: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
+  border-radius: 9999px; // --r-pill
+  font-size: 11px;
   font-weight: 500;
+  color: rgba(0, 0, 0, 0.54); // --gray-700
+  background: #fff;
 }
 
-/* Empty state styling */
+/* -------- Empty state (BsDataTable spec) ------------------------------- */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
-  color: rgba(0, 0, 0, 0.38);
+  padding: 48px 24px;
+  text-align: center;
 
   &__icon {
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    color: rgba(0, 0, 0, 0.26); // --gray-500
+    margin-bottom: 12px;
   }
 
   &__text {
-    margin: 0;
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.87); // --gray-900
   }
 }
 </style>

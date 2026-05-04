@@ -219,10 +219,6 @@ export default {
           });
       }
     },
-
-    onCancel() {
-      this.$router.push(`/groups/${this.groupId}/settings/profiles`);
-    },
   },
 };
 </script>
@@ -242,7 +238,6 @@ export default {
         :is-loading="isLoading"
         :is-edit="true"
         @submit="updateProfile"
-        @cancel="onCancel"
       />
     </div>
   </bs-layout-left-menu>

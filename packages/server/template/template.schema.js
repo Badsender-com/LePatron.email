@@ -128,10 +128,13 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
 
   const finalTemplates = templates.map(({ assets, ...template }) => {
     let coverImage = null;
+    let imageCount = 0;
     if (assets) {
       try {
         const parsedAssets = JSON.parse(assets);
         coverImage = parsedAssets?.['_full.png'] || null;
+        imageCount = Object.keys(parsedAssets).filter((k) => k !== '_full.png')
+          .length;
       } catch (e) {
         coverImage = null;
       }
@@ -141,6 +144,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
       id: template._id,
       hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
       coverImage,
+      imageCount,
     };
   });
   return finalTemplates;

@@ -6,14 +6,15 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getGroupEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import { Trash2 } from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import { Pencil, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsEmailGroupTab',
   components: {
     BsModalConfirm,
     BsDataTable,
-    LucideTrash2: Trash2,
+    BsRowActions,
   },
   data() {
     return {
@@ -32,9 +33,9 @@ export default {
           value: 'createdAt',
         },
         {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
-          align: 'center',
+          text: this.$t('global.actions'),
+          value: 'actions',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -73,6 +74,23 @@ export default {
     goToEmailsGroup(item) {
       const { groupId } = this.$route.params;
       this.$router.push(`/groups/${groupId}/emails-groups/${item.id}`);
+    },
+    buildQuickActions(item) {
+      return [
+        {
+          key: 'edit',
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.goToEmailsGroup(item),
+        },
+        {
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.deleteItem(item),
+        },
+      ];
     },
     deleteItem(item) {
       this.selectedEmailsGroup = item;
@@ -119,10 +137,9 @@ export default {
       <template #item.name="{ item }">
         <span class="font-weight-medium">{{ item.name }}</span>
       </template>
-      <template #item.actionDelete="{ item }">
-        <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-          <lucide-trash2 :size="18" />
-        </v-btn>
+
+      <template #item.actions="{ item }">
+        <bs-row-actions :quick-actions="buildQuickActions(item)" />
       </template>
     </bs-data-table>
 

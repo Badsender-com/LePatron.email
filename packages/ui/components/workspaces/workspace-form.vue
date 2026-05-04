@@ -1,21 +1,17 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
 import BsTextField from '~/components/form/bs-text-field';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { Users } from 'lucide-vue';
 
 export default {
   name: 'WorkspaceForm',
   components: {
+    BsDataTable,
     BsTextField,
     LucideUsers: Users,
   },
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   mixins: [validationMixin],
   props: {
     workspace: { type: Object, default: () => ({}) },
@@ -88,9 +84,6 @@ export default {
       }
       this.$emit('submit', this.formData);
     },
-    onCancel() {
-      this.$emit('cancel');
-    },
     toggleUserSelection(user) {
       // Group admins are always selected and can't be toggled
       if (user.isGroupAdmin) return;
@@ -138,66 +131,61 @@ export default {
         </v-row>
       </div>
 
-      <!-- Section: Members -->
-      <div class="form-section">
+      <!-- Section: Members header -->
+      <div class="members-header">
         <h3 class="form-section__title">
           {{ $t('workspaces.members') }}
         </h3>
-        <p class="form-section__description">
+        <p class="form-section__description mb-0">
           {{ $t('workspaces.membersDescription') }}
         </p>
-
-        <v-data-table
-          v-model="formData.selectedUsers"
-          :headers="headers"
-          :items="groupUsers"
-          item-key="id"
-          show-select
-          :items-per-page="25"
-          :hide-default-footer="groupUsers.length <= $options.TABLE_PAGINATION_THRESHOLD"
-          :footer-props="$options.TABLE_FOOTER_PROPS"
-          class="users-table"
-          @click:row="toggleUserSelection"
-        >
-          <template #item.data-table-select="{ item, isSelected, select }">
-            <v-tooltip left :disabled="!item.isGroupAdmin">
-              <template #activator="{ on }">
-                <v-simple-checkbox
-                  :value="isSelected || item.isGroupAdmin"
-                  :readonly="item.isGroupAdmin"
-                  :disabled="item.isGroupAdmin"
-                  v-on="on"
-                  @input="select($event)"
-                />
-              </template>
-              <span>{{ $t('workspaces.userIsGroupAdmin') }}</span>
-            </v-tooltip>
-          </template>
-
-          <template #item.name="{ item }">
-            <span :class="{ 'font-weight-medium': isUserSelected(item) }">
-              {{ item.name }}
-            </span>
-          </template>
-
-          <template #no-data>
-            <div class="text-center pa-6">
-              <lucide-users :size="48" class="grey--text text--lighten-1" />
-              <p class="text-body-1 grey--text mt-4">
-                {{ $t('workspaces.noUsersAvailable') }}
-              </p>
-            </div>
-          </template>
-        </v-data-table>
       </div>
     </v-card-text>
+
+    <!-- Members table: outside v-card-text for full-width flush rendering -->
+    <bs-data-table
+      v-model="formData.selectedUsers"
+      :headers="headers"
+      :items="groupUsers"
+      item-key="id"
+      show-select
+      class="mb-4"
+      @click:row="toggleUserSelection"
+    >
+      <template #item.data-table-select="{ item, isSelected, select }">
+        <v-tooltip left :disabled="!item.isGroupAdmin">
+          <template #activator="{ on }">
+            <v-simple-checkbox
+              :value="isSelected || item.isGroupAdmin"
+              :readonly="item.isGroupAdmin"
+              :disabled="item.isGroupAdmin"
+              v-on="on"
+              @input="select($event)"
+            />
+          </template>
+          <span>{{ $t('workspaces.userIsGroupAdmin') }}</span>
+        </v-tooltip>
+      </template>
+
+      <template #item.name="{ item }">
+        <span :class="{ 'font-weight-medium': isUserSelected(item) }">
+          {{ item.name }}
+        </span>
+      </template>
+
+      <template #no-data>
+        <div class="text-center pa-6">
+          <lucide-users :size="48" class="grey--text text--lighten-1" />
+          <p class="text-body-1 grey--text mt-4">
+            {{ $t('workspaces.noUsersAvailable') }}
+          </p>
+        </div>
+      </template>
+    </bs-data-table>
 
     <v-divider />
     <v-card-actions>
       <v-spacer />
-      <v-btn text color="primary" :disabled="isLoading" @click="onCancel">
-        {{ $t('global.cancel') }}
-      </v-btn>
       <v-btn
         :loading="isLoading"
         color="accent"
@@ -235,21 +223,7 @@ export default {
   }
 }
 
-.users-table {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-
-  ::v-deep tbody tr {
-    cursor: pointer;
-
-    &:hover {
-      background-color: rgba(0, 172, 220, 0.05) !important;
-    }
-  }
-
-  // Disabled row for group admins (always selected)
-  ::v-deep tbody tr.v-data-table__selected {
-    background-color: rgba(0, 172, 220, 0.08) !important;
-  }
+.members-header {
+  margin-bottom: 1rem;
 }
 </style>

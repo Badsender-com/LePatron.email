@@ -1,26 +1,30 @@
 <script>
-import {
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
-} from '~/helpers/constants/table-config.js';
+import { mapGetters } from 'vuex';
 import { Mail, Pencil } from 'lucide-vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 
 export default {
   name: 'BsMailingsAdminTable',
   components: {
+    BsDataTable,
     LucideMail: Mail,
     LucidePencil: Pencil,
   },
-  TABLE_FOOTER_PROPS,
-  TABLE_PAGINATION_THRESHOLD,
   props: {
     mailings: { type: Array, default: () => [] },
     hiddenCols: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     pagination: { type: Object, default: () => ({}) },
-    clickable: { type: Boolean, default: true },
   },
   computed: {
+    ...mapGetters(USER, {
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
+    canAccessUsers() {
+      return this.isAdmin || this.isGroupAdmin;
+    },
     tableHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
@@ -36,66 +40,75 @@ export default {
           text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
-          align: 'center',
+          align: 'right',
           width: '80px',
         },
       ].filter((column) => !this.hiddenCols.includes(column.value));
     },
-    tableClasses() {
-      return {
-        'mailings-table': true,
-        'mailings-table--clickable': this.clickable,
-      };
-    },
   },
   methods: {
-    handleItemsPerPageChange(itemsPerPage) {
-      this.$emit('update:items-per-page', itemsPerPage);
-    },
     openMailing(item) {
-      // Mailings live outside the Nuxt application (in /editor)
       window.location.href = `/editor/${item.id}`;
     },
-    handleRowClick(item) {
-      if (this.clickable) {
-        this.openMailing(item);
-      }
+    goToUser(item) {
+      if (!item.userId) return;
+      const groupId = this.$route.params.groupId;
+      const path = groupId
+        ? `/groups/${groupId}/settings/users/${item.userId}`
+        : `/users/${item.userId}`;
+      this.$router.push(path);
+    },
+    goToTemplate(item) {
+      if (!item.templateId) return;
+      this.$router.push(`/templates/${item.templateId}`);
     },
   },
 };
 </script>
 
 <template>
-  <v-data-table
+  <bs-data-table
     :headers="tableHeaders"
     :items="mailings"
     :loading="loading"
-    :items-per-page="25"
-    :hide-default-footer="mailings.length <= $options.TABLE_PAGINATION_THRESHOLD"
-    :footer-props="$options.TABLE_FOOTER_PROPS"
-    :class="tableClasses"
     v-bind="$attrs"
-    @update:items-per-page="handleItemsPerPageChange"
-    @click:row="handleRowClick"
+    v-on="$listeners"
   >
     <template #item.name="{ item }">
-      <span class="font-weight-medium">{{ item.name }}</span>
+      <span
+        class="cell-link font-weight-medium"
+        @click.stop="openMailing(item)"
+      >{{ item.name }}</span>
     </template>
 
     <template #item.userName="{ item }">
-      <span class="text--secondary">{{ item.userName }}</span>
+      <span
+        v-if="canAccessUsers && item.userId"
+        class="cell-link text--secondary"
+        @click.stop="goToUser(item)"
+      >{{ item.userName }}</span>
+      <span v-else class="text--secondary">{{ item.userName }}</span>
     </template>
 
     <template #item.templateName="{ item }">
-      <span class="text--secondary">{{ item.templateName }}</span>
+      <span
+        v-if="item.templateId"
+        class="cell-link text--secondary"
+        @click.stop="goToTemplate(item)"
+      >{{ item.templateName }}</span>
+      <span v-else class="text--secondary">{{ item.templateName }}</span>
     </template>
 
     <template #item.createdAt="{ item }">
-      <span class="text--secondary">{{ item.createdAt | preciseDateTime }}</span>
+      <span class="text--secondary">{{
+        item.createdAt | preciseDateTime
+      }}</span>
     </template>
 
     <template #item.updatedAt="{ item }">
-      <span class="text--secondary">{{ item.updatedAt | preciseDateTime }}</span>
+      <span class="text--secondary">{{
+        item.updatedAt | preciseDateTime
+      }}</span>
     </template>
 
     <template #item.actions="{ item }">
@@ -115,7 +128,7 @@ export default {
       </v-tooltip>
     </template>
 
-    <template #no-data>
+    <template #empty>
       <div class="text-center pa-6">
         <lucide-mail :size="48" class="grey--text text--lighten-1" />
         <p class="text-body-1 grey--text mt-4">
@@ -123,19 +136,17 @@ export default {
         </p>
       </div>
     </template>
-  </v-data-table>
+  </bs-data-table>
 </template>
 
-<style lang="scss" scoped>
-.mailings-table {
-  &--clickable {
-    ::v-deep tbody tr {
-      cursor: pointer;
+<style scoped>
+.cell-link {
+  cursor: pointer;
+  border-radius: 2px;
+}
 
-      &:hover {
-        background-color: rgba(0, 172, 220, 0.05) !important;
-      }
-    }
-  }
+.cell-link:hover {
+  text-decoration: underline;
+  color: var(--v-primary-base);
 }
 </style>
