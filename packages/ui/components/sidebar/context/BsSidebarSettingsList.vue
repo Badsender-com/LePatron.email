@@ -180,10 +180,13 @@ export default {
         );
       }
 
-      if (
-        emailBuilderItems.length > 0 &&
-        this.group?.enableEmailBuilder !== false
-      ) {
+      // Email Builder category - visible if:
+      // - Super admin: always visible
+      // - Group admin: only if module enabled
+      const showEmailBuilder =
+        this.isAdmin || this.group?.enableEmailBuilder !== false;
+
+      if (emailBuilderItems.length > 0 && showEmailBuilder) {
         categories.push({
           category: 'emailBuilder',
           label: this.$t('settingsNav.categories.emailBuilder'),
@@ -191,20 +194,27 @@ export default {
         });
       }
 
-      // CRM Intelligence category
-      if (this.isAdmin && this.group?.enableCrmIntelligence) {
-        categories.push({
-          category: 'crmIntelligence',
-          label: this.$t('settingsNav.categories.crmIntelligence'),
-          items: [
-            {
-              id: 'crm-intelligence',
-              label: this.$t('crmIntelligence.dashboards'),
-              icon: 'mdi-chart-line',
-              route: `${this.settingsBasePath}/crm-intelligence`,
-            },
-          ],
-        });
+      // CRM Intelligence category - visible if:
+      // - Super admin: always visible
+      // - Group admin: only if module enabled
+      const showCrmIntelligence =
+        this.isAdmin || this.group?.enableCrmIntelligence === true;
+
+      if (this.isAdmin || this.isGroupAdmin) {
+        if (showCrmIntelligence) {
+          categories.push({
+            category: 'crmIntelligence',
+            label: this.$t('settingsNav.categories.crmIntelligence'),
+            items: [
+              {
+                id: 'crm-intelligence',
+                label: this.$t('crmIntelligence.dashboards'),
+                icon: 'mdi-chart-line',
+                route: `${this.settingsBasePath}/crm-intelligence`,
+              },
+            ],
+          });
+        }
       }
 
       return categories;
