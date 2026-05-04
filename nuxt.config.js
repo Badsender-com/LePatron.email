@@ -104,6 +104,7 @@ module.exports = {
     APP_VERSION: pkg.version,
     ADMIN_USERNAME: config.admin.username,
     API_PREFIX: config.nuxt.API_PREFIX,
+    HELP_URL: config.helpUrl,
     // API_BASE_URL: config.apiBaseURL,
     // // used for dev to call the "stateless" prevision API: /ext/v1
     // EXT_TOKEN: config.extToken,

@@ -8,6 +8,7 @@
         <button
           class="bs-sidebar-system-item"
           :class="{ 'bs-sidebar-system-item--active': isActive(item) }"
+          :aria-label="$t(item.labelKey)"
           v-on="on"
           @click="handleClick(item)"
         >

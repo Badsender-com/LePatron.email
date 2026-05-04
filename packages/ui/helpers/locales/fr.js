@@ -10,6 +10,7 @@ export default {
     errors: {
       typeCampagneRequired: 'Le type de campagne est requis.',
       errorOccured: 'Oups ! Une erreur est survenue :(',
+      createMailingFailed: 'Une erreur est survenue lors de la création du mailing',
       required: 'Ce champ est obligatoire',
       userRequired: 'Veuillez saisir un utilisateur',
       nameRequired: 'Veuillez saisir un nom',
@@ -802,7 +803,10 @@ export default {
     utilities: 'Utilitaires',
     collapse: 'Réduire la barre latérale',
     expand: 'Développer la barre latérale',
+    resizeHandle:
+      'Redimensionner la barre latérale (utilisez les flèches, Shift pour de plus grands pas, Début/Fin pour min/max)',
     selectModule: 'Sélectionnez un module pour commencer',
+    moduleLockedLabel: '{module} (verrouillé - mise à niveau requise)',
     upgradeRequired: 'Mise à niveau requise',
     upgradeMessage: 'Le module {module} n\'est pas inclus dans votre plan actuel.',
     contactAdmin: 'Veuillez contacter votre administrateur ou Badsender pour activer cette fonctionnalité.',

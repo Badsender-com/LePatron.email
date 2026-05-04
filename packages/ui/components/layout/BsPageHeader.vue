@@ -32,9 +32,16 @@ export default {
     },
   },
   methods: {
-    handleBackClick() {
+    async handleBackClick() {
       if (this.backRoute) {
-        this.$router.push(this.backRoute);
+        try {
+          await this.$router.push(this.backRoute);
+        } catch (error) {
+          // Ignore navigation duplicated errors (user clicking back multiple times)
+          if (error.name !== 'NavigationDuplicated') {
+            console.error('[BsPageHeader] Navigation error:', error);
+          }
+        }
       } else {
         this.$emit('back');
       }

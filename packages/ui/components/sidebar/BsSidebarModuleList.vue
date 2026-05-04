@@ -13,6 +13,13 @@
             'bs-sidebar-module--active': module.id === activeModule,
             'bs-sidebar-module--locked': module.locked,
           }"
+          :aria-label="
+            module.locked
+              ? $t('sidebar.moduleLockedLabel', { module: $t(module.labelKey) })
+              : $t(module.labelKey)
+          "
+          :aria-current="module.id === activeModule ? 'page' : null"
+          :aria-disabled="module.locked ? 'true' : null"
           v-on="on"
           @click="$emit('select', module)"
         >
