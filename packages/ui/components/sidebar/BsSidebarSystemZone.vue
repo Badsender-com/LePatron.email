@@ -28,7 +28,7 @@
 import { Settings, HelpCircle, LogOut } from 'lucide-vue';
 import { mapGetters } from 'vuex';
 import { SYSTEM_ITEMS } from './sidebar-config.js';
-import { USER } from '~/store/user';
+import { USER, IS_ADMIN, IS_GROUP_ADMIN, GROUP } from '~/store/user';
 
 const ICON_MAP = {
   Settings,
@@ -51,11 +51,23 @@ export default {
   },
   computed: {
     ...mapGetters(USER, {
-      userGroup: 'GROUP',
+      userGroup: GROUP,
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
     }),
 
     systemItems() {
-      return SYSTEM_ITEMS;
+      // Filter items based on user role
+      const canAccessSettings = this.isAdmin || this.isGroupAdmin;
+
+      return SYSTEM_ITEMS.filter((item) => {
+        // Settings is only for admins and group admins
+        if (item.id === 'settings') {
+          return canAccessSettings;
+        }
+        // All other items (help, logout) are for everyone
+        return true;
+      });
     },
 
     groupId() {
