@@ -194,27 +194,20 @@ export default {
         });
       }
 
-      // CRM Intelligence category - visible if:
-      // - Super admin: always visible
-      // - Group admin: only if module enabled
-      const showCrmIntelligence =
-        this.isAdmin || this.group?.enableCrmIntelligence === true;
-
-      if (this.isAdmin || this.isGroupAdmin) {
-        if (showCrmIntelligence) {
-          categories.push({
-            category: 'crmIntelligence',
-            label: this.$t('settingsNav.categories.crmIntelligence'),
-            items: [
-              {
-                id: 'crm-intelligence',
-                label: this.$t('crmIntelligence.dashboards'),
-                icon: 'mdi-chart-line',
-                route: `${this.settingsBasePath}/crm-intelligence`,
-              },
-            ],
-          });
-        }
+      // CRM Intelligence category - visible only for super admin
+      if (this.isAdmin) {
+        categories.push({
+          category: 'crmIntelligence',
+          label: this.$t('settingsNav.categories.crmIntelligence'),
+          items: [
+            {
+              id: 'crm-intelligence',
+              label: this.$t('crmIntelligence.dashboards'),
+              icon: 'mdi-chart-line',
+              route: `${this.settingsBasePath}/crm-intelligence`,
+            },
+          ],
+        });
       }
 
       return categories;
