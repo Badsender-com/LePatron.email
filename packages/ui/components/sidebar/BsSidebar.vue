@@ -285,7 +285,7 @@ export default {
   cursor: ew-resize;
   background: transparent;
   transition: background-color 150ms ease;
-  z-index: 101;
+  z-index: 5;
 }
 
 .bs-sidebar__resize-handle:hover {
