@@ -86,8 +86,7 @@ export default {
       return this.$t(`${this.moduleKey}.marketing.ctaPrimary`);
     },
     ctaSecondary() {
-      const key = `${this.moduleKey}.marketing.ctaSecondary`;
-      return this.$te(key) ? this.$t(key) : null;
+      return this.$t(`${this.moduleKey}.marketing.ctaSecondary`);
     },
     featuresTitle() {
       return this.$t(`${this.moduleKey}.marketing.featuresTitle`);
