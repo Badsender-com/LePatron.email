@@ -3,12 +3,7 @@
     class="bs-sidebar-system-zone"
     :class="{ 'bs-sidebar-system-zone--collapsed': collapsed }"
   >
-    <v-tooltip
-      v-for="item in systemItems"
-      :key="item.id"
-      :disabled="!collapsed"
-      top
-    >
+    <v-tooltip v-for="item in systemItems" :key="item.id" top>
       <template #activator="{ on }">
         <button
           class="bs-sidebar-system-item"
