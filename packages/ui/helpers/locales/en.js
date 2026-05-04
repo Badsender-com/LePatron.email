@@ -624,6 +624,7 @@ export default {
       title: 'CRM Intelligence',
       subtitle: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your performance in real-time.',
       ctaPrimary: 'Request a demo',
+      ctaSecondary: 'Learn more',
       featuresTitle: 'Drive your data-driven strategy',
       features: [
         {
