@@ -10,6 +10,7 @@ export default {
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
+      createMailingFailed: 'An error has occurred while creating the mailing',
       required: 'This field is required',
       userRequired: 'A user is required',
       entityRequired: 'An entity is required',
@@ -793,7 +794,10 @@ export default {
     utilities: 'Utilities',
     collapse: 'Collapse sidebar',
     expand: 'Expand sidebar',
+    resizeHandle:
+      'Resize sidebar (use arrow keys, Shift for larger steps, Home/End for min/max)',
     selectModule: 'Select a module to get started',
+    moduleLockedLabel: '{module} (locked - upgrade required)',
     upgradeRequired: 'Upgrade required',
     upgradeMessage: 'The {module} module is not included in your current plan.',
     contactAdmin: 'Please contact your administrator or reach out to Badsender to enable this feature.',

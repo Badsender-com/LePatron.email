@@ -149,47 +149,60 @@ export default {
       return result;
     },
     async initializeTreeState() {
-      this.isInitializing = true;
-
-      await this.hydrateBrowserFromDbIfEmpty();
-
-      let nodesToOpen = [];
-
-      try {
-        if (typeof localStorage !== 'undefined') {
-          const saved = localStorage.getItem(this.storageKey);
-
-          if (saved) {
-            const savedIds = JSON.parse(saved);
-            nodesToOpen = this.findNodesByIds(
-              savedIds,
-              this.treeviewWorkspaces
-            );
-          } else {
-            nodesToOpen = [];
-            this.saveTreeState([]);
-          }
-        } else {
-          nodesToOpen = [];
-        }
-      } catch (error) {
-        console.error(
-          '[BsSidebarWorkspaceTree] Error initializing tree state:',
-          error
-        );
-        nodesToOpen = [];
+      // Guard against concurrent initialization (race condition fix)
+      if (this.isInitializing) {
+        return;
       }
 
-      this.treeKey++;
+      this.isInitializing = true;
 
-      this.$nextTick(() => {
-        this.openNodes = nodesToOpen;
-        this.restoreSelectedNode();
+      try {
+        await this.hydrateBrowserFromDbIfEmpty();
 
-        setTimeout(() => {
-          this.isInitializing = false;
-        }, 100);
-      });
+        let nodesToOpen = [];
+
+        try {
+          if (typeof localStorage !== 'undefined') {
+            const saved = localStorage.getItem(this.storageKey);
+
+            if (saved) {
+              const savedIds = JSON.parse(saved);
+              nodesToOpen = this.findNodesByIds(
+                savedIds,
+                this.treeviewWorkspaces
+              );
+            } else {
+              nodesToOpen = [];
+              this.saveTreeState([]);
+            }
+          } else {
+            nodesToOpen = [];
+          }
+        } catch (error) {
+          console.error(
+            '[BsSidebarWorkspaceTree] Error initializing tree state:',
+            error
+          );
+          nodesToOpen = [];
+        }
+
+        this.treeKey++;
+
+        this.$nextTick(() => {
+          this.openNodes = nodesToOpen;
+          this.restoreSelectedNode();
+
+          setTimeout(() => {
+            this.isInitializing = false;
+          }, 100);
+        });
+      } catch (error) {
+        console.error(
+          '[BsSidebarWorkspaceTree] Fatal error during initialization:',
+          error
+        );
+        this.isInitializing = false;
+      }
     },
     restoreSelectedNode() {
       if (typeof localStorage === 'undefined') return;

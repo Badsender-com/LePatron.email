@@ -46,7 +46,10 @@ export default {
         const { origin } = window.location;
         window.location = `${origin}/editor/${newMailing.id}`;
       } catch (error) {
-        this.showSnackbar({ text: 'an error as occurred', color: 'error' });
+        this.showSnackbar({
+          text: this.$t('global.errors.createMailingFailed'),
+          color: 'error',
+        });
       } finally {
         this[loadingKey] = false;
       }

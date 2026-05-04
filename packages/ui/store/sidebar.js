@@ -19,6 +19,7 @@ export const state = () => ({
           10
         )
       : DEFAULT_WIDTH,
+  mobileOpen: false, // Mobile sidebar drawer state
 });
 
 // Mutations
@@ -41,6 +42,14 @@ export const mutations = {
       localStorage.setItem('lepatron_sidebar_width', clampedWidth);
     }
   },
+
+  SET_MOBILE_OPEN(state, value) {
+    state.mobileOpen = value;
+  },
+
+  TOGGLE_MOBILE_OPEN(state) {
+    state.mobileOpen = !state.mobileOpen;
+  },
 };
 
 // Getters
@@ -54,6 +63,8 @@ export const getters = {
 export const SET_COLLAPSED = 'SET_COLLAPSED';
 export const SET_ACTIVE_MODULE = 'SET_ACTIVE_MODULE';
 export const SET_WIDTH = 'SET_WIDTH';
+export const SET_MOBILE_OPEN = 'SET_MOBILE_OPEN';
+export const TOGGLE_MOBILE_OPEN = 'TOGGLE_MOBILE_OPEN';
 
 // Constants (for imports)
 export const SIDEBAR_MIN_WIDTH = MIN_WIDTH;

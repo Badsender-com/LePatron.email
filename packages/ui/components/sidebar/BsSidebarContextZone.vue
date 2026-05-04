@@ -49,14 +49,6 @@ export default {
       default: false,
     },
   },
-  watch: {
-    activeModule: {
-      immediate: true,
-      handler(val) {
-        console.log('[BsSidebarContextZone] activeModule prop:', val);
-      },
-    },
-  },
 };
 </script>
 
