@@ -52,7 +52,14 @@
     <div
       v-if="!collapsed"
       class="bs-sidebar__resize-handle"
+      tabindex="0"
+      role="slider"
+      :aria-label="$t('sidebar.resizeHandle')"
+      :aria-valuemin="SIDEBAR_MIN_WIDTH"
+      :aria-valuemax="SIDEBAR_MAX_WIDTH"
+      :aria-valuenow="width"
       @mousedown="startResize"
+      @keydown="handleResizeKeydown"
     />
   </aside>
 </template>
@@ -86,6 +93,8 @@ export default {
   },
   data: () => ({
     isResizing: false,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_MAX_WIDTH,
   }),
   computed: {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
@@ -95,26 +104,15 @@ export default {
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
-      const result = SIDEBAR_MODULES.map((module) => {
+      return SIDEBAR_MODULES.map((module) => {
         const locked = module.enabledFlag
           ? !this.userGroup?.[module.enabledFlag]
           : false;
-        console.log(
-          '[BsSidebar] Module:',
-          module.id,
-          'enabledFlag:',
-          module.enabledFlag,
-          'userGroup value:',
-          this.userGroup?.[module.enabledFlag],
-          'locked:',
-          locked
-        );
         return {
           ...module,
           locked,
         };
       });
-      return result;
     },
 
     // Detect active module from route path
@@ -146,16 +144,9 @@ export default {
     detectedModule: {
       immediate: true,
       handler(moduleId) {
-        console.log('[BsSidebar] Detected module from path:', moduleId);
         if (moduleId) {
           this.setActiveModule(moduleId);
         }
-      },
-    },
-    activeModule: {
-      immediate: true,
-      handler(val) {
-        console.log('[BsSidebar] activeModule changed:', val);
       },
     },
   },
@@ -186,27 +177,28 @@ export default {
     },
 
     handleModuleSelect(module) {
-      console.log(
-        '[BsSidebar] Module selected:',
-        module.id,
-        'locked:',
-        module.locked
-      );
-
       if (module.locked) {
         // Navigate to marketing page for locked modules
-        const route = `/module-unavailable/${module.id}`;
-        console.log('[BsSidebar] Navigating to marketing page:', route);
-        this.$router.push(route);
+        this.$router.push(`/module-unavailable/${module.id}`);
       } else {
-        console.log('[BsSidebar] Navigating to module route:', module.route);
         this.$router.push(module.route);
       }
     },
 
     handleHelp() {
-      // TODO: Implement help modal or redirect to documentation
-      window.open('https://docs.lepatron.email', '_blank');
+      const helpUrl = process.env.HELP_URL || 'https://docs.lepatron.email';
+      try {
+        const newWindow = window.open(helpUrl, '_blank');
+        if (!newWindow) {
+          // Popup blocked - fallback to same window
+          console.warn('[BsSidebar] Popup blocked, opening in same window');
+          window.location.href = helpUrl;
+        }
+      } catch (error) {
+        console.error('[BsSidebar] Failed to open help URL:', error);
+        // Fallback: try to navigate in the same window
+        window.location.href = helpUrl;
+      }
     },
 
     startResize(e) {
@@ -225,6 +217,38 @@ export default {
 
     stopResize() {
       this.isResizing = false;
+    },
+
+    handleResizeKeydown(e) {
+      const SMALL_STEP = 10;
+      const LARGE_STEP = 50;
+      let newWidth = this.width;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          newWidth = this.width - (e.shiftKey ? LARGE_STEP : SMALL_STEP);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          newWidth = this.width + (e.shiftKey ? LARGE_STEP : SMALL_STEP);
+          break;
+        case 'Home':
+          e.preventDefault();
+          newWidth = SIDEBAR_MIN_WIDTH;
+          break;
+        case 'End':
+          e.preventDefault();
+          newWidth = SIDEBAR_MAX_WIDTH;
+          break;
+        default:
+          return; // Don't handle other keys
+      }
+
+      // Clamp value within min/max bounds
+      if (newWidth >= SIDEBAR_MIN_WIDTH && newWidth <= SIDEBAR_MAX_WIDTH) {
+        this.setWidth(newWidth);
+      }
     },
   },
 };

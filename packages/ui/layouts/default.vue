@@ -10,16 +10,11 @@ export default {
     BsSnackBar,
     BsSidebar,
   },
-  data() {
-    return {
-      mobileOpen: false,
-    };
-  },
   computed: {
     ...mapGetters(USER, {
       isConnected: IS_CONNECTED,
     }),
-    ...mapState('sidebar', ['collapsed', 'width']),
+    ...mapState('sidebar', ['collapsed', 'width', 'mobileOpen']),
     mainStyle() {
       if (!this.isConnected) return {};
 
@@ -50,19 +45,20 @@ export default {
     },
   },
   mounted() {
-    // Listen for toggle-mobile-menu events from child pages
-    this.$root.$on('toggle-mobile-menu', this.toggleMobileSidebar);
+    // Listen for toggle-mobile-menu events from child pages and update Vuex
+    this.$root.$on('toggle-mobile-menu', this.handleToggleMobileSidebar);
   },
   beforeDestroy() {
-    // Clean up event listener
-    this.$root.$off('toggle-mobile-menu', this.toggleMobileSidebar);
+    // Clean up event listener to prevent memory leaks
+    this.$root.$off('toggle-mobile-menu', this.handleToggleMobileSidebar);
   },
   methods: {
-    toggleMobileSidebar() {
-      this.mobileOpen = !this.mobileOpen;
+    handleToggleMobileSidebar() {
+      // Use Vuex mutation instead of local state
+      this.$store.commit('sidebar/TOGGLE_MOBILE_OPEN');
     },
     closeMobileSidebar() {
-      this.mobileOpen = false;
+      this.$store.commit('sidebar/SET_MOBILE_OPEN', false);
     },
   },
 };
@@ -71,9 +67,10 @@ export default {
 <template>
   <v-app class="fontClass app-shell">
     <!-- Mobile backdrop (only visible when sidebar is open on mobile) -->
-    <div
-      v-if="isConnected && mobileOpen"
-      class="mobile-backdrop d-md-none"
+    <v-overlay
+      :value="isConnected && mobileOpen"
+      :z-index="99"
+      class="d-md-none"
       @click="closeMobileSidebar"
     />
 
@@ -116,27 +113,6 @@ export default {
 /* Sidebar - Desktop: always visible, Mobile: overlay when toggled */
 .app-sidebar {
   /* Desktop styles applied by BsSidebar component */
-}
-
-/* Mobile backdrop */
-.mobile-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 99; /* Below sidebar (z-index: 100) */
-  animation: fadeIn 200ms ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 /* Mobile sidebar behavior */
