@@ -1,7 +1,7 @@
 <script>
-import { validationMixin } from 'vuelidate';
-import { required } from 'vuelidate/lib/validators';
-import { Tag, X, Square, CheckSquare, MinusSquare } from 'lucide-vue';
+import BsModalConfirm from '~/components/modal-confirm';
+import BsModalTagsForm from '~/components/mailings/modal-tags-form';
+import { Tag, Square, CheckSquare, MinusSquare } from 'lucide-vue';
 
 const CHECKBOX_UNCHECKED = 'unchecked';
 const CHECKBOX_CHECKED = 'checked';
@@ -10,51 +10,25 @@ const CHECKBOX_INDETERMINATE = 'indeterminate';
 export default {
   name: 'BsMailingsTagsMenu',
   components: {
+    BsModalConfirm,
+    BsModalTagsForm,
     LucideTag: Tag,
-    LucideX: X,
     LucideSquare: Square,
     LucideCheckSquare: CheckSquare,
     LucideMinusSquare: MinusSquare,
   },
-  mixins: [validationMixin],
   props: {
     mailingsSelection: { type: Array, default: () => [] },
     tags: { type: Array, default: () => [] },
   },
   data() {
     return {
-      showMenu: false,
-      newTagDialog: false,
-      newTagName: '',
       addedTags: [],
       removedTags: [],
-    };
-  },
-  validations() {
-    return {
-      newTagName: { required },
+      newTags: [],
     };
   },
   computed: {
-    vShowTagMenu: {
-      get() {
-        return this.showMenu;
-      },
-      set(newMenuValue) {
-        if (newMenuValue === false) {
-          this.addedTags = [];
-          this.removedTags = [];
-        }
-        this.showMenu = newMenuValue;
-      },
-    },
-    tagNameErrors() {
-      const errors = [];
-      if (!this.$v.newTagName.$dirty) return errors;
-      !this.$v.newTagName.required &&
-        errors.push(this.$t('global.errors.nameRequired'));
-      return errors;
-    },
     mailingsTags() {
       return this.mailingsSelection.reduce(
         (allTags, mailing) => [...allTags, ...mailing.tags],
@@ -71,19 +45,28 @@ export default {
       return countByTags;
     },
     tagsCheckboxList() {
+      // Defensive merge: include tags actually applied on the selection AND
+      // any user-created tags from the inline "New label" flow, even when
+      // the company-wide list (`tags` prop) hasn't loaded yet.
+      const allTags = Array.from(
+        new Set([...(this.tags || []), ...this.mailingsTags, ...this.newTags])
+      );
       const mailingSelectionCount = this.mailingsSelection.length;
-      return this.tags.map((tagName) => {
+      return allTags.map((tagName) => {
         if (this.addedTags.includes(tagName)) {
           return { name: tagName, checkIcon: CHECKBOX_CHECKED };
         }
         if (this.removedTags.includes(tagName)) {
           return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
         }
-        const mailingsTagCount = this.countByTags[tagName];
-        if (mailingsTagCount === mailingSelectionCount) {
+        const mailingsTagCount = this.countByTags[tagName] || 0;
+        if (
+          mailingsTagCount === mailingSelectionCount &&
+          mailingsTagCount > 0
+        ) {
           return { name: tagName, checkIcon: CHECKBOX_CHECKED };
         }
-        if (mailingsTagCount) {
+        if (mailingsTagCount > 0) {
           return { name: tagName, checkIcon: CHECKBOX_INDETERMINATE };
         }
         return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
@@ -91,37 +74,43 @@ export default {
     },
   },
   methods: {
+    openMenu() {
+      this.addedTags = [];
+      this.removedTags = [];
+      this.newTags = [];
+      this.$refs.tagsDialog.open();
+    },
     closeMenu() {
-      this.vShowTagMenu = false;
+      this.$refs.tagsDialog?.close();
     },
     openNewTagDialog() {
-      this.newTagDialog = true;
+      this.$refs.createTags.open();
     },
-    closeNewTagDialog() {
-      this.newTagName = '';
-      this.$v.$reset();
-      this.newTagDialog = false;
-    },
-    onCreateNewTag() {
-      this.$v.$touch();
-      if (this.$v.$invalid) return;
-      const { newTagName } = this;
-      this.$emit('create', newTagName);
-      this.addedTags.push(newTagName);
-      this.closeNewTagDialog();
+    createNewTag(text) {
+      const trimmed = (text || '').trim();
+      if (!trimmed) return;
+      if (
+        ![...this.tags, ...this.newTags, ...this.mailingsTags].includes(trimmed)
+      ) {
+        this.newTags.push(trimmed);
+      }
+      this.addedTags.push(trimmed);
+      this.$emit('create', trimmed);
     },
     toggleTag(tagCheckbox) {
       const { checkIcon: tagStatus, name: tagName } = tagCheckbox;
       if (tagStatus === CHECKBOX_INDETERMINATE) {
-        return this.addedTags.push(tagName);
+        this.addedTags.push(tagName);
+        return;
       }
       if (tagStatus === CHECKBOX_UNCHECKED) {
         this.removedTags = this.removedTags.filter((tag) => tag !== tagName);
-        return this.addedTags.push(tagName);
+        this.addedTags.push(tagName);
+        return;
       }
       if (tagStatus === CHECKBOX_CHECKED) {
         this.addedTags = this.addedTags.filter((tag) => tag !== tagName);
-        return this.removedTags.push(tagName);
+        this.removedTags.push(tagName);
       }
     },
     updateMailingsTags() {
@@ -132,7 +121,6 @@ export default {
         added: [...this.addedTags],
         removed: [...this.removedTags],
       });
-      // closing will reinitialize tags selection
       this.closeMenu();
     },
   },
@@ -140,47 +128,37 @@ export default {
 </script>
 
 <template>
-  <!-- pile up menu & tooltip -->
-  <!-- https://stackoverflow.com/a/58077496 -->
-  <v-menu
-    v-model="vShowTagMenu"
-    :close-on-content-click="false"
-    :nudge-width="300"
-  >
-    <template #activator="{ on: onMenu }">
-      <v-tooltip bottom :disabled="vShowTagMenu">
-        <template #activator="{ on: onTooltip }">
-          <button class="bsdt-bulkbar__btn" v-on="{ ...onMenu, ...onTooltip }">
-            <lucide-tag :size="13" />
-            {{ $t('tags.tag') }}
-          </button>
-        </template>
-        <span>{{ $t('tags.handle') }}</span>
-      </v-tooltip>
-    </template>
-    <v-card flat tile>
-      <v-list>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title class="title">
-              {{ $t('tags.list') }}
-            </v-list-item-title>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-btn icon @click="closeMenu">
-              <lucide-x :size="20" />
-            </v-btn>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
-      <v-divider />
-      <v-list>
-        <v-list-item
+  <div class="bs-mailings-tags-menu">
+    <v-tooltip bottom>
+      <template #activator="{ on }">
+        <button class="bsdt-bulkbar__btn" v-on="on" @click="openMenu">
+          <lucide-tag :size="13" />
+          {{ $t('tags.tag') }}
+        </button>
+      </template>
+      <span>{{ $t('tags.handle') }}</span>
+    </v-tooltip>
+
+    <bs-modal-confirm
+      ref="tagsDialog"
+      :title="$t('tags.list')"
+      :is-form="true"
+      modal-width="500"
+      @click-outside="closeMenu"
+    >
+      <template #titlePrefix>
+        <lucide-tag :size="20" />
+      </template>
+
+      <div class="labels-list">
+        <button
           v-for="tagCheckbox in tagsCheckboxList"
           :key="tagCheckbox.name"
+          type="button"
+          class="labels-list__item"
           @click="toggleTag(tagCheckbox)"
         >
-          <v-list-item-action>
+          <span class="labels-list__check">
             <lucide-check-square
               v-if="tagCheckbox.checkIcon === 'checked'"
               :size="20"
@@ -190,47 +168,33 @@ export default {
               :size="20"
             />
             <lucide-square v-else :size="20" />
-          </v-list-item-action>
-          <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
+          </span>
+          <span class="labels-list__label">{{ tagCheckbox.name }}</span>
+        </button>
+      </div>
+
+      <v-divider />
       <v-card-actions>
-        <v-spacer />
         <v-btn color="primary" text @click="openNewTagDialog">
           {{ $t('tags.new') }}
         </v-btn>
-        <v-btn elevation="0" color="accent" @click="updateMailingsTags">
+        <v-spacer />
+        <v-btn text @click="closeMenu">
+          {{ $t('global.cancel') }}
+        </v-btn>
+        <v-btn color="accent" elevation="0" @click="updateMailingsTags">
           {{ $t('global.apply') }}
         </v-btn>
       </v-card-actions>
-    </v-card>
-    <v-dialog v-model="newTagDialog" width="500">
-      <v-card flat tile>
-        <v-card-title>
-          {{ $t('tags.new') }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="newTagName"
-            :label="$t('global.name')"
-            :error-messages="tagNameErrors"
-            @input="$v.newTagName.$touch()"
-            @blur="$v.newTagName.$touch()"
-          />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text @click="closeNewTagDialog">
-            {{ $t('global.cancel') }}
-          </v-btn>
-          <v-btn elevation="0" color="accent" @click="onCreateNewTag">
-            {{ $t('global.createTag') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-menu>
+    </bs-modal-confirm>
+
+    <bs-modal-tags-form
+      ref="createTags"
+      width="500"
+      :input-label="$t('global.name')"
+      @confirm="createNewTag"
+    />
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -254,5 +218,49 @@ export default {
     background: rgba(0, 0, 0, 0.04); // --gray-100
     border-color: rgba(0, 0, 0, 0.2); // --gray-400
   }
+}
+
+/* Same border + scroll container pattern as the move/copy/translate modals'
+   destination tree, applied to the labels checkbox list. Mirrors
+   routes/mailings/__partials/mailings-tags-menu.vue. */
+.labels-list {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.labels-list__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.87);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.labels-list__check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.labels-list__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

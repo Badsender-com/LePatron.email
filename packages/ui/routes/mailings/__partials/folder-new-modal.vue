@@ -3,12 +3,14 @@ import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrum
 import BsModalConfirm from '~/components/modal-confirm';
 import { FOLDER_NAME_MAX_LENGTH } from '~/helpers/constants/folders.js';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { FolderPlus } from 'lucide-vue';
 
 export default {
   name: 'FolderNewModal',
   components: {
     BsModalConfirm,
     MailingsBreadcrumbs,
+    LucideFolderPlus: FolderPlus,
   },
   props: {
     conflictError: { type: Boolean, default: false },
@@ -78,6 +80,9 @@ export default {
     :is-form="true"
     @click:outside="close"
   >
+    <template #titlePrefix>
+      <lucide-folder-plus :size="20" />
+    </template>
     <v-form ref="form" @submit.prevent="submit">
       <div class="d-flex align-center mb-2">
         <div class="font-weight-bold">

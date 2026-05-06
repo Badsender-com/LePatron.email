@@ -1,21 +1,20 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { IS_ADMIN, USER } from '~/store/user';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import ProfileForm from '~/components/profiles/profile-form';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 
 export default {
   name: 'PageEditProfile',
   components: {
     ProfileForm,
-    BsGroupSettingsNav,
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -143,11 +142,15 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     groupId() {
       return this.$route.params.groupId;
     },
     pageTitle() {
       return this.profile.name || this.$tc('global.profile', 1);
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
@@ -224,27 +227,27 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
-    <div class="settings-content">
-      <bs-group-settings-page-header
-        :title="pageTitle"
-        :group-name="group.name"
-      />
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ pageTitle }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
       <profile-form
         :profile="profile"
         :is-loading="isLoading"
         :is-edit="true"
         @submit="updateProfile"
       />
-    </div>
-  </bs-layout-left-menu>
+    </v-container>
+  </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

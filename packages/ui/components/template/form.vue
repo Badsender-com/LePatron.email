@@ -7,6 +7,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
 import {
   FileText,
   Upload,
@@ -26,6 +27,7 @@ export default {
     BsTextField,
     BsSelect,
     BsModalConfirmForm,
+    BsFormSection,
     LucideFileText: FileText,
     LucideUpload: Upload,
     LucideImage: ImageIcon,
@@ -287,21 +289,19 @@ export default {
 </script>
 
 <template>
-  <form class="template-form" @submit.prevent="onSubmit">
-    <!-- General Information Section -->
-    <div class="form-section">
-      <div class="form-section__header">
-        <lucide-file-text :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('templates.generalInfo') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('templates.generalInfoDescription') }}
-          </p>
-        </div>
-      </div>
-      <div class="form-section__content">
+  <v-card flat tile tag="form" class="template-form" @submit.prevent="onSubmit">
+    <v-card-text>
+      <!-- General Information Section -->
+      <bs-form-section>
+        <template #icon>
+          <lucide-file-text :size="20" />
+        </template>
+        <template #title>
+          {{ $t('templates.generalInfo') }}
+        </template>
+        <template #description>
+          {{ $t('templates.generalInfoDescription') }}
+        </template>
         <bs-text-field
           v-model="localTemplate.name"
           :label="$t('global.name')"
@@ -351,23 +351,19 @@ export default {
             {{ displayedGroupName }}
           </nuxt-link>
         </div>
-      </div>
-    </div>
+      </bs-form-section>
 
-    <!-- Template Files Section (only in edit mode) -->
-    <div v-if="isEditMode" class="form-section">
-      <div class="form-section__header">
-        <lucide-upload :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('templates.templateFiles') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('templates.templateFilesDescription') }}
-          </p>
-        </div>
-      </div>
-      <div class="form-section__content">
+      <!-- Template Files Section (only in edit mode) -->
+      <bs-form-section v-if="isEditMode">
+        <template #icon>
+          <lucide-upload :size="20" />
+        </template>
+        <template #title>
+          {{ $t('templates.templateFiles') }}
+        </template>
+        <template #description>
+          {{ $t('templates.templateFilesDescription') }}
+        </template>
         <!-- Markup Upload -->
         <div class="file-upload-field">
           <label class="file-upload-field__label">
@@ -549,38 +545,32 @@ export default {
             />
           </div>
         </div>
-      </div>
-    </div>
+      </bs-form-section>
 
-    <!-- Info message in create mode about files -->
-    <div v-if="!isEditMode" class="form-section form-section--info">
-      <div class="form-section__header">
-        <lucide-upload :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('templates.templateFiles') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('templates.filesAvailableAfterCreation') }}
-          </p>
-        </div>
-      </div>
-    </div>
+      <!-- Info message in create mode about files -->
+      <bs-form-section v-if="!isEditMode" last>
+        <template #icon>
+          <lucide-upload :size="20" />
+        </template>
+        <template #title>
+          {{ $t('templates.templateFiles') }}
+        </template>
+        <template #description>
+          {{ $t('templates.filesAvailableAfterCreation') }}
+        </template>
+      </bs-form-section>
 
-    <!-- Preview Section (only in edit mode with markup) -->
-    <div v-if="isEditMode && hasCover" class="form-section">
-      <div class="form-section__header">
-        <lucide-image :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('global.preview') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('templates.previewDescription') }}
-          </p>
-        </div>
-      </div>
-      <div class="form-section__content">
+      <!-- Preview Section (only in edit mode with markup) -->
+      <bs-form-section v-if="isEditMode && hasCover">
+        <template #icon>
+          <lucide-image :size="20" />
+        </template>
+        <template #title>
+          {{ $t('global.preview') }}
+        </template>
+        <template #description>
+          {{ $t('templates.previewDescription') }}
+        </template>
         <div class="template-preview">
           <img
             :src="coverSrc"
@@ -588,11 +578,12 @@ export default {
             class="template-preview__image"
           />
         </div>
-      </div>
-    </div>
+      </bs-form-section>
+    </v-card-text>
 
-    <!-- Form Actions -->
-    <div class="form-actions">
+    <v-divider />
+    <v-card-actions>
+      <v-spacer />
       <v-btn
         type="submit"
         color="accent"
@@ -602,7 +593,7 @@ export default {
       >
         {{ submitLabel }}
       </v-btn>
-    </div>
+    </v-card-actions>
 
     <!-- Delete Confirmation Modal -->
     <bs-modal-confirm-form
@@ -617,54 +608,10 @@ export default {
         {{ $t('templates.deleteWarningMessage', { name: localTemplate.name }) }}
       </p>
     </bs-modal-confirm-form>
-  </form>
+  </v-card>
 </template>
 
 <style lang="scss" scoped>
-.template-form {
-  max-width: 800px;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-
-  &:last-of-type {
-    border-bottom: none;
-  }
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__icon {
-    color: var(--v-accent-base);
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
-
-  &__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.87);
-    margin: 0 0 0.25rem 0;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin: 0;
-  }
-
-  &__content {
-    padding-left: 2rem;
-  }
-}
-
 // Textarea styling (matches design system)
 .bs-textarea {
   margin-bottom: 1rem;
@@ -946,15 +893,5 @@ export default {
     object-fit: cover;
     display: block;
   }
-}
-
-// Form actions
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 1rem;
-  margin-top: 1rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 </style>

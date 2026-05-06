@@ -5,6 +5,7 @@ import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
 import { Settings, Mail } from 'lucide-vue';
 
 export default {
@@ -12,6 +13,7 @@ export default {
   components: {
     BsTextField,
     BsSelect,
+    BsFormSection,
     LucideSettings: Settings,
     LucideMail: Mail,
   },
@@ -112,21 +114,19 @@ export default {
 </script>
 
 <template>
-  <div class="esp-form">
-    <!-- API Configuration Section -->
-    <div class="form-section">
-      <div class="form-section__header">
-        <lucide-settings :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('profiles.apiConfiguration') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('profiles.apiConfigurationDescription') }}
-          </p>
-        </div>
-      </div>
-      <div class="form-section__content">
+  <v-card flat tile class="esp-form">
+    <v-card-text>
+      <!-- API Configuration Section -->
+      <bs-form-section>
+        <template #icon>
+          <lucide-settings :size="20" />
+        </template>
+        <template #title>
+          {{ $t('profiles.apiConfiguration') }}
+        </template>
+        <template #description>
+          {{ $t('profiles.apiConfigurationDescription') }}
+        </template>
         <v-row>
           <v-col cols="12" md="6">
             <bs-text-field
@@ -159,23 +159,19 @@ export default {
             />
           </v-col>
         </v-row>
-      </div>
-    </div>
+      </bs-form-section>
 
-    <!-- Sender Configuration Section -->
-    <div class="form-section">
-      <div class="form-section__header">
-        <lucide-mail :size="20" class="form-section__icon" />
-        <div>
-          <h3 class="form-section__title">
-            {{ $t('profiles.senderConfiguration') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('profiles.senderConfigurationDescription') }}
-          </p>
-        </div>
-      </div>
-      <div class="form-section__content">
+      <!-- Sender Configuration Section -->
+      <bs-form-section last>
+        <template #icon>
+          <lucide-mail :size="20" />
+        </template>
+        <template #title>
+          {{ $t('profiles.senderConfiguration') }}
+        </template>
+        <template #description>
+          {{ $t('profiles.senderConfigurationDescription') }}
+        </template>
         <v-row>
           <v-col cols="12" md="6">
             <bs-text-field
@@ -209,11 +205,14 @@ export default {
             />
           </v-col>
         </v-row>
-      </div>
-    </div>
+      </bs-form-section>
+    </v-card-text>
 
-    <!-- Form Actions -->
-    <div class="form-actions">
+    <v-divider />
+
+    <v-card-actions>
+      <v-spacer />
+
       <v-btn
         color="accent"
         elevation="0"
@@ -223,61 +222,12 @@ export default {
       >
         {{ submitLabel }}
       </v-btn>
-    </div>
-  </div>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <style lang="scss" scoped>
 .esp-form {
   margin-top: 1rem;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-
-  &:last-of-type {
-    border-bottom: none;
-  }
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__icon {
-    color: var(--v-accent-base);
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
-
-  &__title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.87);
-    margin: 0 0 0.25rem 0;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin: 0;
-  }
-
-  &__content {
-    padding-left: 2rem;
-  }
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 1rem;
-  margin-top: 1rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
 </style>

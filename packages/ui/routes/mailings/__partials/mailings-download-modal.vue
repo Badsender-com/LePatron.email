@@ -1,12 +1,13 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
-import { AlertTriangle } from 'lucide-vue';
+import { AlertTriangle, Download } from 'lucide-vue';
 
 export default {
   name: 'MailingsDownloadModal',
   components: {
     BsModalConfirm,
     LucideAlertTriangle: AlertTriangle,
+    LucideDownload: Download,
   },
   data: () => ({
     isDownloadFtp: false,
@@ -81,6 +82,9 @@ export default {
     @click-outside="close"
     @confirm="submit"
   >
+    <template #titlePrefix>
+      <lucide-download :size="20" />
+    </template>
     <v-card class="d-flex flex-row align-center mb-3" flat tile>
       <lucide-alert-triangle :size="24" class="warning-icon" />
       <p class="mb-0 ml-3">

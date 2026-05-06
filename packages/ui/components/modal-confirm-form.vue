@@ -70,11 +70,10 @@ export default {
 </script>
 
 <template>
-  <bs-modal-confirm
-    ref="deleteDialog"
-    :title="modalTitle"
-    :is-form="true"
-  >
+  <bs-modal-confirm ref="deleteDialog" :title="modalTitle" :is-form="true">
+    <template v-if="$slots.titlePrefix" #titlePrefix>
+      <slot name="titlePrefix" />
+    </template>
     <form @submit.prevent="submit">
       <slot />
 
@@ -99,12 +98,7 @@ export default {
         <v-btn text color="primary" @click="close">
           {{ $t('global.cancel') }}
         </v-btn>
-        <v-btn
-          type="submit"
-          color="error"
-          elevation="0"
-          :disabled="!isValid"
-        >
+        <v-btn type="submit" color="error" elevation="0" :disabled="!isValid">
           {{ buttonLabel }}
         </v-btn>
       </div>

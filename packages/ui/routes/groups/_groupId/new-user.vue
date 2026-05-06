@@ -1,15 +1,16 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { IS_ADMIN, USER } from '~/store/user';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
 import BsUserForm from '~/components/users/form.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 
 export default {
   name: 'BsPageGroupNewUser',
-  components: { BsGroupSettingsNav, BsUserForm },
+  components: { BsUserForm, BsPageHeader },
   mixins: [mixinSettingsTitle],
   meta: {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
@@ -40,8 +41,12 @@ export default {
     return { title: this.settingsTitle };
   },
   computed: {
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     groupId() {
       return this.$route.params.groupId;
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
@@ -74,15 +79,22 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
-    <bs-user-form
-      v-model="newUser"
-      :title="$t('global.newUser')"
-      :loading="loading"
-      @submit="createUser"
-    />
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('global.newUser') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <bs-user-form v-model="newUser" :loading="loading" @submit="createUser" />
+    </v-container>
+  </div>
 </template>

@@ -598,7 +598,10 @@ export default {
         :show-select="hasAccess"
         :hide-default-footer="hideFooter"
         :footer-props="$options.TABLE_FOOTER_PROPS"
-        :class="{ 'clickable-rows': hasAccess }"
+        :class="{
+          'clickable-rows': hasAccess,
+          'has-select': hasAccess,
+        }"
         @update:options="handleOptionsChange"
         @click:row="handleRowClick"
       >
@@ -700,7 +703,11 @@ export default {
    Based on: /tmp/lepatron-design-v2/project/preview/components-data-table.html
    ========================================================================= */
 
-.mailings-table-wrapper {
+/* `::v-deep` is required because Vuetify's `<v-data-table>` renders <thead>,
+   <tbody>, <th>, <td> internally — they don't carry this component's
+   data-v-X attribute, so a plain scoped `.v-data-table thead th` selector
+   would never match. */
+.mailings-table-wrapper ::v-deep {
   /* Shell - already handled by v-data-table but ensure borders */
   .v-data-table {
     border: 1px solid rgba(0, 0, 0, 0.12); // --gray-300
@@ -797,9 +804,12 @@ export default {
     white-space: nowrap !important;
   }
 
-  /* -------- Checkbox column ----------------------------------------------- */
-  .v-data-table thead th:first-child,
-  .v-data-table tbody td:first-child {
+  /* -------- Checkbox column -----------------------------------------------
+     Scoped to `.has-select`: without this guard, the rule bites the NAME
+     column whenever `show-select` is off (e.g. read-only workspaces),
+     forcing it to 36px and wrapping the title onto 3 lines. */
+  .v-data-table.has-select thead th:first-child,
+  .v-data-table.has-select tbody td:first-child {
     width: 36px !important;
     padding-right: 0 !important;
   }

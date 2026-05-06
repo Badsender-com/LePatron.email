@@ -1,11 +1,13 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import { FOLDER_NAME_MAX_LENGTH } from '~/helpers/constants/folders.js';
+import { Pencil } from 'lucide-vue';
 
 export default {
   name: 'FolderRenameModal',
   components: {
     BsModalConfirm,
+    LucidePencil: Pencil,
   },
   props: {
     conflictError: { type: Boolean, default: false },
@@ -65,6 +67,9 @@ export default {
     :title="titleRenameModal"
     :is-form="true"
   >
+    <template #titlePrefix>
+      <lucide-pencil :size="20" />
+    </template>
     <v-form ref="form" @submit.prevent="submit">
       <p v-if="conflictError" class="red--text">
         {{ $t('folders.conflict') }}

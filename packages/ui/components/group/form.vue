@@ -9,7 +9,17 @@ import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import { Palette, LineChart, ArrowRight, AlertTriangle } from 'lucide-vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
+import {
+  Palette,
+  LineChart,
+  ArrowRight,
+  AlertTriangle,
+  Building2,
+  Boxes,
+  Shield,
+  KeyRound,
+} from 'lucide-vue';
 
 export default {
   name: 'BsGroupForm',
@@ -17,10 +27,15 @@ export default {
     BsModalConfirmForm,
     BsTextField,
     BsSelect,
+    BsFormSection,
     LucidePalette: Palette,
     LucideLineChart: LineChart,
     LucideArrowRight: ArrowRight,
     LucideAlertTriangle: AlertTriangle,
+    LucideBuilding2: Building2,
+    LucideBoxes: Boxes,
+    LucideShield: Shield,
+    LucideKeyRound: KeyRound,
   },
   mixins: [validationMixin],
   model: { prop: 'group', event: 'update' },
@@ -141,13 +156,16 @@ export default {
     <v-card flat tile tag="form">
       <v-card-text>
         <!-- ==================== SECTION 1: COMPANY INFORMATION ==================== -->
-        <div class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section>
+          <template #icon>
+            <lucide-building2 :size="20" />
+          </template>
+          <template #title>
             {{ $t('forms.group.sections.companyInfo') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('forms.group.sections.companyInfoDescription') }}
-          </p>
+          </template>
           <v-row>
             <v-col cols="12" md="6">
               <bs-text-field
@@ -180,16 +198,19 @@ export default {
               />
             </v-col>
           </v-row>
-        </div>
+        </bs-form-section>
 
         <!-- ==================== SECTION 2: MODULES ==================== -->
-        <div v-if="isAdmin" class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section v-if="isAdmin">
+          <template #icon>
+            <lucide-boxes :size="20" />
+          </template>
+          <template #title>
             {{ $t('groups.modules.title') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('groups.modules.description') }}
-          </p>
+          </template>
 
           <!-- Email Builder Module -->
           <div class="module-card">
@@ -243,32 +264,38 @@ export default {
               class="module-card__switch"
             />
           </div>
-        </div>
+        </bs-form-section>
 
         <!-- ==================== SECTION 3: PERMISSIONS ==================== -->
-        <div v-if="isAdmin" class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section v-if="isAdmin">
+          <template #icon>
+            <lucide-shield :size="20" />
+          </template>
+          <template #title>
             {{ $t('forms.group.sections.permissions') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('forms.group.sections.permissionsDescription') }}
-          </p>
+          </template>
           <v-switch
             v-model="localModel.userHasAccessToAllWorkspaces"
             :label="$t('forms.group.userHasAccessToAllWorkspaces')"
             hide-details
             :disabled="disabled"
           />
-        </div>
+        </bs-form-section>
 
         <!-- ==================== SECTION 4: SAML AUTHENTICATION ==================== -->
-        <div v-if="isAdmin" class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section v-if="isAdmin" last>
+          <template #icon>
+            <lucide-key-round :size="20" />
+          </template>
+          <template #title>
             {{ $t('forms.group.sections.authentication') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('forms.group.sections.authenticationDescription') }}
-          </p>
+          </template>
 
           <v-switch
             v-model="useSamlAuthentication"
@@ -300,7 +327,7 @@ export default {
               </v-row>
             </div>
           </v-expand-transition>
-        </div>
+        </bs-form-section>
       </v-card-text>
 
       <template v-if="isAdmin">
@@ -322,7 +349,7 @@ export default {
 
     <!-- ==================== DANGER ZONE ==================== -->
     <v-card v-if="isAdmin && isEdit" flat tile class="danger-zone mt-6 mb-6">
-      <v-card-text class="pa-6">
+      <div class="danger-zone__content">
         <div class="danger-zone__header">
           <lucide-alert-triangle :size="20" color="#F04E23" />
           <h3 class="danger-zone__title">
@@ -340,7 +367,7 @@ export default {
         >
           {{ $t('forms.group.dangerZone.deleteCompany') }}
         </v-btn>
-      </v-card-text>
+      </div>
     </v-card>
 
     <bs-modal-confirm-form
@@ -365,30 +392,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 1rem;
-  }
-}
-
 .module-card {
   display: flex;
   align-items: center;
@@ -459,6 +462,10 @@ export default {
 .danger-zone {
   border: 1px solid rgba(240, 78, 35, 0.3);
   background-color: rgba(240, 78, 35, 0.02);
+
+  &__content {
+    padding: 24px;
+  }
 
   &__header {
     display: flex;

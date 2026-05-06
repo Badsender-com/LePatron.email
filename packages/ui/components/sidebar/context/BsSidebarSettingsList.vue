@@ -5,6 +5,26 @@
       <span class="settings-list-header__label">SETTINGS</span>
     </div>
 
+    <!-- Super-admin company switcher: jump straight into any company's
+         settings without going through the companies list page. -->
+    <div v-if="isAdmin" class="settings-company-switcher">
+      <v-autocomplete
+        :value="groupId"
+        :items="companyOptions"
+        :placeholder="$t('settingsNav.switchCompany')"
+        :loading="loadingCompanies"
+        item-text="label"
+        item-value="value"
+        dense
+        solo
+        flat
+        hide-details
+        prepend-inner-icon="mdi-domain"
+        class="settings-company-switcher__select"
+        @change="onCompanyChange"
+      />
+    </div>
+
     <!-- Settings nav items -->
     <nav class="settings-nav">
       <template v-for="category in visibleCategories">
@@ -19,7 +39,7 @@
           :key="item.id"
           :to="item.route"
           class="settings-item"
-          :class="{ 'settings-item--active': isActive(item.route) }"
+          :class="{ 'settings-item--active': isActive(item) }"
         >
           <v-icon small class="settings-item__icon">
             {{ item.icon }}
@@ -34,6 +54,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
+import * as apiRoutes from '~/helpers/api-routes';
 
 export default {
   name: 'BsSidebarSettingsList',
@@ -43,23 +64,46 @@ export default {
       default: false,
     },
   },
+  data() {
+    return {
+      companies: [],
+      loadingCompanies: false,
+    };
+  },
   computed: {
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
       group: GROUP,
     }),
+    ...mapGetters('sidebar', {
+      lastGroupId: 'lastGroupId',
+    }),
+
+    companyOptions() {
+      return this.companies.map((c) => ({
+        label: c.name,
+        value: c.id || c._id,
+      }));
+    },
 
     groupId() {
-      return this.group?._id || this.group?.id || this.$route.params.groupId;
+      return (
+        this.$route.params.groupId ||
+        this.lastGroupId ||
+        this.group?._id ||
+        this.group?.id ||
+        null
+      );
     },
 
     settingsBasePath() {
-      return `/groups/${this.groupId}/settings`;
+      return this.groupId ? `/groups/${this.groupId}/settings` : null;
     },
 
     visibleCategories() {
       const canAccessGroupAdmin = this.isGroupAdmin || this.isAdmin;
+      const hasGroupContext = !!this.settingsBasePath;
 
       const categories = [];
 
@@ -74,9 +118,18 @@ export default {
               label: this.$t('settingsNav.companiesList'),
               icon: 'mdi-domain',
               route: '/groups',
+              // Exact match: don't highlight when navigating into a specific group
+              exact: true,
             },
           ],
         });
+      }
+
+      // Group-scoped categories (general / email builder / crm intelligence)
+      // require a resolvable groupId; without it any link would point to
+      // /groups/undefined/... and trigger a backend ObjectId cast error.
+      if (!hasGroupContext) {
+        return categories;
       }
 
       // General category
@@ -96,6 +149,11 @@ export default {
             label: this.$tc('global.teams', 2),
             icon: 'mdi-account-group-outline',
             route: `${this.settingsBasePath}/workspaces`,
+            activePatterns: [
+              `${this.settingsBasePath}/workspaces`,
+              `/groups/${this.groupId}/workspace`,
+              `/groups/${this.groupId}/new-workspace`,
+            ],
           },
           {
             id: 'integrations',
@@ -117,6 +175,10 @@ export default {
         label: this.$tc('global.user', 2),
         icon: 'mdi-account-outline',
         route: `${this.settingsBasePath}/users`,
+        activePatterns: [
+          `${this.settingsBasePath}/users`,
+          `/groups/${this.groupId}/new-user`,
+        ],
       });
 
       categories.push({
@@ -141,6 +203,11 @@ export default {
             label: this.$tc('global.template', 2),
             icon: 'mdi-file-document-outline',
             route: `${this.settingsBasePath}/templates`,
+            activePatterns: [
+              `${this.settingsBasePath}/templates`,
+              `/groups/${this.groupId}/new-template`,
+              '/templates',
+            ],
           },
           {
             id: 'mailings',
@@ -153,6 +220,11 @@ export default {
             label: this.$tc('global.profile', 2),
             icon: 'mdi-send-outline',
             route: `${this.settingsBasePath}/profiles`,
+            activePatterns: [
+              `${this.settingsBasePath}/profiles`,
+              `/groups/${this.groupId}/profiles`,
+              `/groups/${this.groupId}/new-profile`,
+            ],
           }
         );
       }
@@ -170,6 +242,11 @@ export default {
             label: this.$tc('global.emailsGroups', 2),
             icon: 'mdi-email-multiple-outline',
             route: `${this.settingsBasePath}/emails-groups`,
+            activePatterns: [
+              `${this.settingsBasePath}/emails-groups`,
+              `/groups/${this.groupId}/emails-groups`,
+              `/groups/${this.groupId}/new-emails-group`,
+            ],
           },
           {
             id: 'variables',
@@ -213,11 +290,45 @@ export default {
       return categories;
     },
   },
+  watch: {
+    isAdmin: {
+      immediate: true,
+      handler(value) {
+        if (value && this.companies.length === 0) {
+          this.fetchCompanies();
+        }
+      },
+    },
+  },
   methods: {
-    isActive(route) {
-      return (
-        this.$route.path === route || this.$route.path.startsWith(route + '/')
-      );
+    isActive(item) {
+      const path = this.$route.path;
+
+      if (item.exact) {
+        return path === item.route;
+      }
+
+      const patterns = item.activePatterns || [item.route];
+      return patterns.some((p) => path === p || path.startsWith(p + '/'));
+    },
+    async fetchCompanies() {
+      this.loadingCompanies = true;
+      try {
+        const response = await this.$axios.$get(apiRoutes.groups());
+        // Normalize: API can return either an array or { items: [...] }.
+        const list = Array.isArray(response) ? response : response?.items || [];
+        this.companies = list;
+      } catch (error) {
+        console.error('[Sidebar] Failed to load companies:', error);
+        this.companies = [];
+      } finally {
+        this.loadingCompanies = false;
+      }
+    },
+    onCompanyChange(companyId) {
+      if (!companyId || companyId === this.groupId) return;
+      this.$store.commit('sidebar/SET_LAST_GROUP_ID', companyId);
+      this.$router.push(`/groups/${companyId}/settings/general`);
     },
   },
 };
@@ -242,6 +353,33 @@ export default {
   letter-spacing: 0.5px;
   color: rgba(0, 0, 0, 0.6);
   text-transform: uppercase;
+}
+
+.settings-company-switcher {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.settings-company-switcher__select ::v-deep .v-input__slot {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: #fff !important;
+  min-height: 32px !important;
+  padding: 0 8px !important;
+}
+
+.settings-company-switcher__select ::v-deep input {
+  font-size: 13px;
+}
+
+.settings-company-switcher__select ::v-deep .v-input__prepend-inner {
+  margin-top: 6px;
+  margin-right: 4px;
+}
+
+.settings-company-switcher__select ::v-deep .v-icon {
+  font-size: 18px;
+  color: rgba(0, 0, 0, 0.54);
 }
 
 .settings-nav {

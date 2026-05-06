@@ -82,8 +82,12 @@ export default {
 
     <!-- Main content area -->
     <v-main class="app-main" :style="mainStyle">
-      <!-- Each page renders its own BsPageHeader -->
-      <nuxt />
+      <!-- Single source of truth for page lateral margins (32px / 16px mobile).
+           Children drop their own horizontal padding via the deep rules below. -->
+      <div class="app-main__page">
+        <!-- Each page renders its own BsPageHeader -->
+        <nuxt />
+      </div>
     </v-main>
 
     <bs-snack-bar />
@@ -108,6 +112,50 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: auto; /* scroll lives here, not on body */
+}
+
+/* Single source of truth for page lateral margins. Page children drop their
+   own horizontal padding via the deep rules below so everything aligns
+   strictly at this 32px (or 16px on mobile). */
+.app-main__page {
+  padding-left: 32px;
+  padding-right: 32px;
+  padding-bottom: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 960px) {
+  .app-main__page {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 16px;
+  }
+}
+
+/* Zero out padding from common Vuetify wrappers used inside pages — both
+   horizontal AND vertical. These wrappers stack their own paddings (12px on
+   `.container`, 16px on `.v-card__text`) which compounds with BsPageHeader's
+   margin-bottom and BsFormSection's spacing. Lateral margins live on
+   `.app-main__page`; vertical rhythm comes from BsPageHeader margin-bottom
+   and BsFormSection's own padding/margin.
+   `!important` is needed to beat Vuetify's selectors which load later in the
+   cascade. NOTE: Vuetify uses `.container` / `.container--fluid` (not
+   `.v-container`). */
+.app-main__page ::v-deep .container,
+.app-main__page ::v-deep .container--fluid {
+  padding: 0 !important;
+}
+
+.app-main__page ::v-deep .v-card__text {
+  padding: 0 !important;
+}
+
+/* v-card__actions: vertical padding bumped to 16px so the save button has
+   real breathing room from the divider above (Vuetify default is 8px).
+   Horizontal padding stripped. */
+.app-main__page ::v-deep .v-card__actions {
+  padding: 16px 0 !important;
 }
 
 /* Sidebar - Desktop: always visible, Mobile: overlay when toggled */

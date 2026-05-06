@@ -2,11 +2,15 @@
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field.vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
+import { Mail } from 'lucide-vue';
 
 export default {
   name: 'FormEmailGroup',
   components: {
     BsTextField,
+    BsFormSection,
+    LucideMail: Mail,
   },
   mixins: [validationMixin],
   model: { prop: 'emailsGroup', event: 'update' },
@@ -64,81 +68,84 @@ export default {
 </script>
 
 <template>
-  <div class="emails-group-form">
-    <v-form @submit.prevent="onSubmit">
-      <v-row>
-        <v-col cols="12" md="6">
-          <bs-text-field
-            v-model="localModel.name"
-            :label="$t('global.name')"
-            :error-messages="nameErrors"
-            :disabled="loading"
-            required
-            @blur="$v.emailsGroup.name.$touch()"
-          />
-        </v-col>
-      </v-row>
+  <v-card flat tile tag="form" @submit.prevent="onSubmit">
+    <v-card-text>
+      <bs-form-section last>
+        <template #icon>
+          <lucide-mail :size="20" />
+        </template>
+        <template #title>
+          {{ $t('forms.emailsGroup.configuration') }}
+        </template>
+        <template #description>
+          {{ $t('forms.emailsGroup.configurationDescription') }}
+        </template>
 
-      <v-row>
-        <v-col cols="12">
-          <div
-            class="bs-textarea"
-            :class="{ 'bs-textarea--error': emailsErrors.length > 0 }"
-          >
-            <label class="bs-textarea__label">
-              {{ $t('forms.emailsGroup.emails') }}
-              <span class="bs-textarea__required">*</span>
-            </label>
-            <v-textarea
-              v-model="localModel.emails"
-              :placeholder="$t('forms.emailsGroup.emailsPlaceholder')"
+        <v-row>
+          <v-col cols="12" md="6">
+            <bs-text-field
+              v-model="localModel.name"
+              :label="$t('global.name')"
+              :error-messages="nameErrors"
               :disabled="loading"
-              rows="4"
-              solo
-              flat
-              hide-details
-              class="bs-textarea__input"
-              @input="$v.emailsGroup.emails.$touch()"
-              @blur="$v.emailsGroup.emails.$touch()"
+              required
+              @blur="$v.emailsGroup.name.$touch()"
             />
-            <div v-if="emailsErrors.length > 0" class="bs-textarea__errors">
-              <span v-for="(error, index) in emailsErrors" :key="index">{{
-                error
-              }}</span>
-            </div>
-            <p class="bs-textarea__hint">
-              {{ $t('forms.emailsGroup.emailsHint') }}
-            </p>
-          </div>
-        </v-col>
-      </v-row>
+          </v-col>
+        </v-row>
 
-      <!-- Form Actions -->
-      <v-divider class="mt-4" />
-      <div class="form-actions">
-        <v-btn
-          type="submit"
-          color="accent"
-          elevation="0"
-          :loading="loading"
-          :disabled="loading"
-        >
-          {{ $t('global.save') }}
-        </v-btn>
-      </div>
-    </v-form>
-  </div>
+        <v-row>
+          <v-col cols="12">
+            <div
+              class="bs-textarea"
+              :class="{ 'bs-textarea--error': emailsErrors.length > 0 }"
+            >
+              <label class="bs-textarea__label">
+                {{ $t('forms.emailsGroup.emails') }}
+                <span class="bs-textarea__required">*</span>
+              </label>
+              <v-textarea
+                v-model="localModel.emails"
+                :placeholder="$t('forms.emailsGroup.emailsPlaceholder')"
+                :disabled="loading"
+                rows="4"
+                solo
+                flat
+                hide-details
+                class="bs-textarea__input"
+                @input="$v.emailsGroup.emails.$touch()"
+                @blur="$v.emailsGroup.emails.$touch()"
+              />
+              <div v-if="emailsErrors.length > 0" class="bs-textarea__errors">
+                <span v-for="(error, index) in emailsErrors" :key="index">{{
+                  error
+                }}</span>
+              </div>
+              <p class="bs-textarea__hint">
+                {{ $t('forms.emailsGroup.emailsHint') }}
+              </p>
+            </div>
+          </v-col>
+        </v-row>
+      </bs-form-section>
+    </v-card-text>
+    <v-divider />
+    <v-card-actions>
+      <v-spacer />
+      <v-btn
+        type="submit"
+        color="accent"
+        elevation="0"
+        :loading="loading"
+        :disabled="loading"
+      >
+        {{ $t('global.save') }}
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <style lang="scss" scoped>
-.form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0;
-}
-
 .bs-textarea {
   margin-bottom: 0.5rem;
 

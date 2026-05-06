@@ -27,9 +27,12 @@
           <span v-if="!collapsed" class="bs-sidebar-module__label">
             {{ $t(module.labelKey) }}
           </span>
+          <!-- Lock icon hidden in collapsed mode: it would overlap the main
+               icon since the label disappears and the absolute-positioned
+               lock has no room. -->
           <component
             :is="getIconComponent('Lock')"
-            v-if="module.locked"
+            v-if="module.locked && !collapsed"
             :size="14"
             class="bs-sidebar-module__lock"
           />
