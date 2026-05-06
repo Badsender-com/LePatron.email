@@ -606,7 +606,19 @@ export default {
         @click:row="handleRowClick"
       >
         <template #item.name="{ item }">
-          <span class="mailing-name font-weight-medium">{{ item.name }}</span>
+          <!-- /editor lives outside the Nuxt SPA, so a real <a href> + full
+               reload, not <nuxt-link>. Middle-click opens in a new tab. -->
+          <a
+            v-if="hasAccess"
+            :href="`/editor/${item.id}`"
+            class="mailing-name font-weight-medium"
+            @click.stop
+          >
+            {{ item.name }}
+          </a>
+          <span v-else class="mailing-name font-weight-medium">
+            {{ item.name }}
+          </span>
         </template>
         <template #item.userName="{ item }">
           <nuxt-link v-if="isAdmin" :to="`/users/${item.userId}`">
@@ -743,14 +755,15 @@ export default {
 
   /* -------- Name cell link -------------------------------------------------
      Match the admin BsDataTable pattern: dark default text, underline +
-     primary tint on hover. Avoid the always-navy color that made the
-     builder table stand out from the rest. */
+     primary tint on hover. The cell is now a real <a href> so reset the
+     default browser link color/underline. */
   .v-data-table tbody td .mailing-name {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
+    text-decoration: none;
   }
 
-  .clickable-rows tbody tr .mailing-name {
+  .clickable-rows tbody tr a.mailing-name {
     cursor: pointer;
   }
 

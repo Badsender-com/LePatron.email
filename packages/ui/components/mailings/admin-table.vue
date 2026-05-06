@@ -25,6 +25,9 @@ export default {
     canAccessUsers() {
       return this.isAdmin || this.isGroupAdmin;
     },
+    routeGroupId() {
+      return this.$route.params.groupId;
+    },
     tableHeaders() {
       return [
         { text: this.$t('global.name'), align: 'left', value: 'name' },
@@ -47,20 +50,17 @@ export default {
     },
   },
   methods: {
+    userPath(item) {
+      if (!item.userId) return null;
+      return this.routeGroupId
+        ? `/groups/${this.routeGroupId}/settings/users/${item.userId}`
+        : `/users/${item.userId}`;
+    },
+    templatePath(item) {
+      return item.templateId ? `/templates/${item.templateId}` : null;
+    },
     openMailing(item) {
       window.location.href = `/editor/${item.id}`;
-    },
-    goToUser(item) {
-      if (!item.userId) return;
-      const groupId = this.$route.params.groupId;
-      const path = groupId
-        ? `/groups/${groupId}/settings/users/${item.userId}`
-        : `/users/${item.userId}`;
-      this.$router.push(path);
-    },
-    goToTemplate(item) {
-      if (!item.templateId) return;
-      this.$router.push(`/templates/${item.templateId}`);
     },
   },
 };
@@ -75,27 +75,38 @@ export default {
     v-on="$listeners"
   >
     <template #item.name="{ item }">
-      <span
+      <!-- /editor lives outside the Nuxt SPA, so a real <a href> + full
+           reload, not <nuxt-link>. Middle-click opens in a new tab. -->
+      <a
+        :href="`/editor/${item.id}`"
         class="cell-link font-weight-medium"
-        @click.stop="openMailing(item)"
-      >{{ item.name }}</span>
+        @click.stop
+      >
+        {{ item.name }}
+      </a>
     </template>
 
     <template #item.userName="{ item }">
-      <span
+      <nuxt-link
         v-if="canAccessUsers && item.userId"
+        :to="userPath(item)"
         class="cell-link text--secondary"
-        @click.stop="goToUser(item)"
-      >{{ item.userName }}</span>
+        @click.native.stop
+      >
+        {{ item.userName }}
+      </nuxt-link>
       <span v-else class="text--secondary">{{ item.userName }}</span>
     </template>
 
     <template #item.templateName="{ item }">
-      <span
+      <nuxt-link
         v-if="item.templateId"
+        :to="templatePath(item)"
         class="cell-link text--secondary"
-        @click.stop="goToTemplate(item)"
-      >{{ item.templateName }}</span>
+        @click.native.stop
+      >
+        {{ item.templateName }}
+      </nuxt-link>
       <span v-else class="text--secondary">{{ item.templateName }}</span>
     </template>
 
@@ -115,11 +126,12 @@ export default {
       <v-tooltip bottom>
         <template #activator="{ on, attrs }">
           <v-btn
+            :href="`/editor/${item.id}`"
             icon
             small
             v-bind="attrs"
             v-on="on"
-            @click.stop="openMailing(item)"
+            @click.stop
           >
             <lucide-pencil :size="18" />
           </v-btn>
@@ -141,6 +153,8 @@ export default {
 
 <style scoped>
 .cell-link {
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
   border-radius: 2px;
 }

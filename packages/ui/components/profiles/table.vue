@@ -79,7 +79,13 @@ export default {
       @click:row="goToProfile"
     >
       <template #item.name="{ item }">
-        <span class="font-weight-medium">{{ item.name }}</span>
+        <nuxt-link
+          :to="`/groups/${groupId}/profiles/${item.id}`"
+          class="cell-link font-weight-medium"
+          @click.native.stop
+        >
+          {{ item.name }}
+        </nuxt-link>
       </template>
 
       <template #item.type="{ item }">
@@ -149,6 +155,19 @@ export default {
 /* =========================================================================
    BsDataTable Styles — LePatron Design System v1.0
    ========================================================================= */
+
+/* Real <nuxt-link> on the name cell so middle-click opens in a new tab. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
 
 ::v-deep .v-data-table thead th {
   font-size: 11px !important;
