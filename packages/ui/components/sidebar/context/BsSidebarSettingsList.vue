@@ -5,26 +5,6 @@
       <span class="settings-list-header__label">SETTINGS</span>
     </div>
 
-    <!-- Super-admin company switcher: jump straight into any company's
-         settings without going through the companies list page. -->
-    <div v-if="isAdmin" class="settings-company-switcher">
-      <v-autocomplete
-        :value="groupId"
-        :items="companyOptions"
-        :placeholder="$t('settingsNav.switchCompany')"
-        :loading="loadingCompanies"
-        item-text="label"
-        item-value="value"
-        dense
-        solo
-        flat
-        hide-details
-        prepend-inner-icon="mdi-domain"
-        class="settings-company-switcher__select"
-        @change="onCompanyChange"
-      />
-    </div>
-
     <!-- Settings nav items -->
     <nav class="settings-nav">
       <template v-for="category in visibleCategories">
@@ -45,6 +25,14 @@
             {{ item.icon }}
           </v-icon>
           <span class="settings-item__label">{{ item.label }}</span>
+          <v-tooltip v-if="item.superAdminOnly" right>
+            <template #activator="{ on, attrs }">
+              <span class="settings-item__super-admin" v-bind="attrs" v-on="on">
+                <lucide-shield :size="14" />
+              </span>
+            </template>
+            <span>{{ $t('settingsNav.superAdminOnly') }}</span>
+          </v-tooltip>
         </nuxt-link>
       </template>
     </nav>
@@ -54,21 +42,18 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import * as apiRoutes from '~/helpers/api-routes';
+import { Shield } from 'lucide-vue';
 
 export default {
   name: 'BsSidebarSettingsList',
+  components: {
+    LucideShield: Shield,
+  },
   props: {
     collapsed: {
       type: Boolean,
       default: false,
     },
-  },
-  data() {
-    return {
-      companies: [],
-      loadingCompanies: false,
-    };
   },
   computed: {
     ...mapGetters(USER, {
@@ -79,13 +64,6 @@ export default {
     ...mapGetters('sidebar', {
       lastGroupId: 'lastGroupId',
     }),
-
-    companyOptions() {
-      return this.companies.map((c) => ({
-        label: c.name,
-        value: c.id || c._id,
-      }));
-    },
 
     groupId() {
       return (
@@ -120,6 +98,7 @@ export default {
               route: '/groups',
               // Exact match: don't highlight when navigating into a specific group
               exact: true,
+              superAdminOnly: true,
             },
           ],
         });
@@ -197,12 +176,14 @@ export default {
             label: this.$t('exportOptions.title'),
             icon: 'mdi-package-down',
             route: `${this.settingsBasePath}/export-options`,
+            superAdminOnly: true,
           },
           {
             id: 'templates',
             label: this.$tc('global.template', 2),
             icon: 'mdi-file-document-outline',
             route: `${this.settingsBasePath}/templates`,
+            superAdminOnly: true,
             activePatterns: [
               `${this.settingsBasePath}/templates`,
               `/groups/${this.groupId}/new-template`,
@@ -214,12 +195,14 @@ export default {
             label: this.$tc('global.mailing', 2),
             icon: 'mdi-email-outline',
             route: `${this.settingsBasePath}/mailings`,
+            superAdminOnly: true,
           },
           {
             id: 'profiles',
             label: this.$tc('global.profile', 2),
             icon: 'mdi-send-outline',
             route: `${this.settingsBasePath}/profiles`,
+            superAdminOnly: true,
             activePatterns: [
               `${this.settingsBasePath}/profiles`,
               `/groups/${this.groupId}/profiles`,
@@ -282,22 +265,13 @@ export default {
               label: this.$t('crmIntelligence.dashboards'),
               icon: 'mdi-chart-line',
               route: `${this.settingsBasePath}/crm-intelligence`,
+              superAdminOnly: true,
             },
           ],
         });
       }
 
       return categories;
-    },
-  },
-  watch: {
-    isAdmin: {
-      immediate: true,
-      handler(value) {
-        if (value && this.companies.length === 0) {
-          this.fetchCompanies();
-        }
-      },
     },
   },
   methods: {
@@ -310,25 +284,6 @@ export default {
 
       const patterns = item.activePatterns || [item.route];
       return patterns.some((p) => path === p || path.startsWith(p + '/'));
-    },
-    async fetchCompanies() {
-      this.loadingCompanies = true;
-      try {
-        const response = await this.$axios.$get(apiRoutes.groups());
-        // Normalize: API can return either an array or { items: [...] }.
-        const list = Array.isArray(response) ? response : response?.items || [];
-        this.companies = list;
-      } catch (error) {
-        console.error('[Sidebar] Failed to load companies:', error);
-        this.companies = [];
-      } finally {
-        this.loadingCompanies = false;
-      }
-    },
-    onCompanyChange(companyId) {
-      if (!companyId || companyId === this.groupId) return;
-      this.$store.commit('sidebar/SET_LAST_GROUP_ID', companyId);
-      this.$router.push(`/groups/${companyId}/settings/general`);
     },
   },
 };
@@ -353,33 +308,6 @@ export default {
   letter-spacing: 0.5px;
   color: rgba(0, 0, 0, 0.6);
   text-transform: uppercase;
-}
-
-.settings-company-switcher {
-  padding: 8px 12px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.settings-company-switcher__select ::v-deep .v-input__slot {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-  background: #fff !important;
-  min-height: 32px !important;
-  padding: 0 8px !important;
-}
-
-.settings-company-switcher__select ::v-deep input {
-  font-size: 13px;
-}
-
-.settings-company-switcher__select ::v-deep .v-input__prepend-inner {
-  margin-top: 6px;
-  margin-right: 4px;
-}
-
-.settings-company-switcher__select ::v-deep .v-icon {
-  font-size: 18px;
-  color: rgba(0, 0, 0, 0.54);
 }
 
 .settings-nav {
@@ -429,5 +357,18 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Right-aligned shield indicator on super-admin-only entries — matches the
+   legacy BsGroupSettingsNav indicator. */
+.settings-item__super-admin {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--v-accent-base);
+}
+
+.settings-item--active .settings-item__super-admin {
+  color: var(--v-accent-base);
 }
 </style>

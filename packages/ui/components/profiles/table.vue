@@ -184,7 +184,7 @@ export default {
 }
 
 ::v-deep .v-data-table tbody tr:hover {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: rgba(0, 172, 220, 0.05) !important;
 }
 
 ::v-deep .v-data-table tbody tr.v-data-table__selected {
@@ -203,10 +203,10 @@ export default {
   font-weight: 600 !important;
 }
 
-/* Name column - primary color */
+/* Name column - bold but inherits the default cell color so it stays
+   consistent with every other admin listing. */
 ::v-deep .v-data-table tbody td:nth-child(1) {
   font-weight: 500 !important;
-  color: var(--v-primary-base) !important;
 }
 
 /* Date column - tabular nums */

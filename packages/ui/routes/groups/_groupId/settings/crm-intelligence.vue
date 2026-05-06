@@ -6,12 +6,14 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsCrmIntelligenceTab from '~/components/group/crm-intelligence-tab.vue';
+import { Plus } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsCrmIntelligence',
   components: {
     BsPageHeader,
     BsCrmIntelligenceTab,
+    LucidePlus: Plus,
   },
   mixins: [mixinSettingsTitle],
   meta: {
@@ -67,6 +69,9 @@ export default {
         );
       }
     },
+    openAddDashboardForm() {
+      this.$refs.crmTab?.openAddDashboardForm();
+    },
   },
 };
 </script>
@@ -85,10 +90,17 @@ export default {
           {{ group.name }}
         </v-chip>
       </template>
+      <template #actions>
+        <v-btn color="accent" elevation="0" @click="openAddDashboardForm">
+          <lucide-plus :size="18" class="mr-2" />
+          {{ $t('global.add') }}
+        </v-btn>
+      </template>
     </bs-page-header>
     <v-container fluid>
       <div class="settings-content">
         <bs-crm-intelligence-tab
+          ref="crmTab"
           :group="group"
           :active="true"
           @update="refreshGroup"

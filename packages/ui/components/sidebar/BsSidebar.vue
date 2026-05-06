@@ -42,6 +42,10 @@
       :collapsed="collapsed && !isMobile"
     />
 
+    <!-- Super-admin company switcher: pinned just above the system zone so
+         it stays reachable in any context (Email Builder, CRM, Settings). -->
+    <bs-sidebar-company-switcher :collapsed="collapsed && !isMobile" />
+
     <!-- Zone 3: System -->
     <bs-sidebar-system-zone
       :collapsed="collapsed && !isMobile"
@@ -70,6 +74,7 @@ import { X } from 'lucide-vue';
 import BsSidebarBrand from './BsSidebarBrand.vue';
 import BsSidebarModuleList from './BsSidebarModuleList.vue';
 import BsSidebarContextZone from './BsSidebarContextZone.vue';
+import BsSidebarCompanySwitcher from './BsSidebarCompanySwitcher.vue';
 import BsSidebarSystemZone from './BsSidebarSystemZone.vue';
 import BsSidebarToggle from './BsSidebarToggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
@@ -88,6 +93,7 @@ export default {
     BsSidebarBrand,
     BsSidebarModuleList,
     BsSidebarContextZone,
+    BsSidebarCompanySwitcher,
     BsSidebarSystemZone,
     BsSidebarToggle,
     LucideX: X,
@@ -107,17 +113,16 @@ export default {
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
-      // Super admins administer all groups — they don't consume the modules
-      // themselves and the lock indicator would be misleading. Hide the
-      // module list entirely for them. Group admins and regular users keep
-      // the standard subscription-based lock semantics.
-      if (this.isAdmin) {
-        return [];
-      }
+      // Super admins see the modules but never see them as locked: their
+      // user record has no `enableEmailBuilder` / `enableCrmIntelligence`
+      // flags, so the regular check would always lock them which is
+      // misleading. Group admins and regular users keep the standard
+      // subscription-based lock semantics.
       return SIDEBAR_MODULES.map((module) => {
-        const locked = module.enabledFlag
-          ? !this.userGroup?.[module.enabledFlag]
-          : false;
+        const locked =
+          !this.isAdmin && module.enabledFlag
+            ? !this.userGroup?.[module.enabledFlag]
+            : false;
         return {
           ...module,
           locked,

@@ -16,7 +16,6 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import {
   ArrowRight,
-  Plus,
   LayoutDashboard,
   ArrowUp,
   ArrowDown,
@@ -34,7 +33,6 @@ export default {
     BsTextField,
     BsSelect,
     LucideArrowRight: ArrowRight,
-    LucidePlus: Plus,
     LucideLayoutDashboard: LayoutDashboard,
     LucideArrowUp: ArrowUp,
     LucideArrowDown: ArrowDown,
@@ -508,18 +506,8 @@ export default {
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="form-actions">
-      <v-btn
-        text
-        color="primary"
-        :disabled="!hasIntegrations || loading"
-        @click="openAddDashboardForm"
-      >
-        <lucide-plus :size="16" class="mr-1" />
-        {{ $t('crmIntelligence.admin.addDashboard') }}
-      </v-btn>
-    </div>
+    <!-- Add-dashboard CTA lives at the page level (BsPageHeader actions slot)
+         to match the other settings pages — no inline button here. -->
 
     <!-- ==================== -->
     <!-- Dashboard Form Dialog -->
@@ -669,7 +657,7 @@ export default {
     }
 
     &:hover {
-      background: rgba(0, 0, 0, 0.02);
+      background: rgba(0, 172, 220, 0.05);
     }
   }
 
@@ -732,7 +720,7 @@ export default {
   &__name {
     font-size: 13px;
     font-weight: 500;
-    color: var(--v-primary-base);
+    color: rgba(0, 0, 0, 0.87);
   }
 
   &__desc {
