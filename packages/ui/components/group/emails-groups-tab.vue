@@ -135,7 +135,13 @@ export default {
       @click:row="goToEmailsGroup"
     >
       <template #item.name="{ item }">
-        <span class="font-weight-medium">{{ item.name }}</span>
+        <nuxt-link
+          :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
+          class="cell-link font-weight-medium"
+          @click.native.stop
+        >
+          {{ item.name }}
+        </nuxt-link>
       </template>
 
       <template #item.actions="{ item }">
@@ -155,3 +161,18 @@ export default {
     </bs-modal-confirm>
   </div>
 </template>
+
+<style lang="scss" scoped>
+/* Real <nuxt-link> on the name cell so middle-click opens in a new tab. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
+</style>

@@ -60,6 +60,12 @@ export default {
     },
   },
   methods: {
+    userPath(user) {
+      const groupId = user.group?.id || this.$route.params.groupId;
+      return groupId
+        ? `/groups/${groupId}/settings/users/${user.id}`
+        : `/users/${user.id}`;
+    },
     getStatusActions(status) {
       return userStatusHelpers.getStatusActions(status);
     },
@@ -192,7 +198,13 @@ export default {
       @click:row="navigateToUser"
     >
       <template #item.name="{ item }">
-        <span class="font-weight-medium">{{ item.name }}</span>
+        <nuxt-link
+          :to="userPath(item)"
+          class="cell-link font-weight-medium"
+          @click.native.stop
+        >
+          {{ item.name }}
+        </nuxt-link>
       </template>
 
       <template #item.email="{ item }">
@@ -258,6 +270,20 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+/* Real <a>/<nuxt-link> on the name cell so middle-click opens in a new
+   tab. Style has to mimic a plain text cell. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
+
 .bs-users-table {
   /* Email column */
   ::v-deep .v-data-table tbody td:nth-child(2) {

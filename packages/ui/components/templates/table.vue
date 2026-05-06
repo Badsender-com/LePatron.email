@@ -87,11 +87,21 @@ export default {
     @click:row="goToTemplate"
   >
     <template #item.name="{ item }">
-      <span class="font-weight-medium">{{ item.name }}</span>
+      <nuxt-link
+        :to="`/templates/${item.id}`"
+        class="cell-link font-weight-medium"
+        @click.native.stop
+      >
+        {{ item.name }}
+      </nuxt-link>
     </template>
 
     <template #item.group="{ item }">
-      <nuxt-link :to="`/groups/${item.group.id}`" @click.stop>
+      <nuxt-link
+        :to="`/groups/${item.group.id}`"
+        class="cell-link"
+        @click.native.stop
+      >
         {{ item.group.name }}
       </nuxt-link>
     </template>
@@ -111,6 +121,20 @@ export default {
    BsDataTable Styles — LePatron Design System v1.0
    Based on: /tmp/lepatron-design-latest/preview/components-data-table.html
    ========================================================================= */
+
+/* Real <a>/<nuxt-link> on the name + group cells so middle-click opens
+   in a new tab. Style has to mimic a plain text cell. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
 
 /* Headers */
 ::v-deep .v-data-table thead th {
