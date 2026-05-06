@@ -771,23 +771,40 @@ export default {
     border-bottom: none !important;
   }
 
-  /* -------- Name cell link ------------------------------------------------- */
+  /* -------- Name cell link -------------------------------------------------
+     Match the admin BsDataTable pattern: dark default text, underline +
+     primary tint on hover. Avoid the always-navy color that made the
+     builder table stand out from the rest. */
+  .v-data-table tbody td .mailing-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
   .clickable-rows tbody tr .mailing-name {
     cursor: pointer;
   }
 
   .clickable-rows tbody tr:hover .mailing-name {
     text-decoration: underline;
+    color: var(--v-primary-base);
   }
 
   /* -------- Row states ---------------------------------------------------- */
-  .clickable-rows tbody tr {
-    cursor: pointer;
+  .v-data-table tbody tr {
     transition: background 0.15s ease-out;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.02) !important; // --gray-50
+      background: rgba(
+        0,
+        172,
+        220,
+        0.05
+      ) !important; // accent blue (BsDataTable spec)
     }
+  }
+
+  .clickable-rows tbody tr {
+    cursor: pointer;
   }
 
   .v-data-table tbody tr.v-data-table__selected {
@@ -808,21 +825,17 @@ export default {
     ) !important; // Design system selected + hover
   }
 
-  /* -------- Name cell (primary identifier) ------------------------------- */
-  .v-data-table tbody td:has(.font-weight-medium) {
-    font-weight: 500 !important;
-    color: var(--v-primary-base) !important;
-  }
-
-  /* -------- Muted cells (author, template) ------------------------------- */
+  /* -------- Muted cells (author, template, dates) ------------------------
+     Mirror the admin BsDataTable: secondary info in lighter gray, the
+     name keeps the default 87% color via .mailing-name above. */
   .v-data-table tbody td:has(a),
-  .v-data-table tbody td:has(span:not(.tags):not(.font-weight-medium)) {
+  .v-data-table tbody td:has(span:not(.tags):not(.mailing-name)) {
     color: rgba(0, 0, 0, 0.6) !important; // --gray-600
   }
 
-  /* -------- Date cells ---------------------------------------------------- */
+  /* Tabular alignment for dates only — pick them up via the
+     `font-variant-numeric: tabular-nums` rule on cells with date spans. */
   .v-data-table tbody td:has(span[data-v-]) {
-    color: rgba(0, 0, 0, 0.54) !important; // --gray-700
     font-variant-numeric: tabular-nums;
   }
 

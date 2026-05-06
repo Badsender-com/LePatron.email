@@ -156,8 +156,10 @@ export default {
       border-bottom: none !important;
     }
 
+    // Unified hover: light accent blue across every BsDataTable, whether
+    // the row is clickable or not (matches the design system reference).
     tbody tr:hover {
-      background: rgba(0, 0, 0, 0.02) !important;
+      background: rgba(0, 172, 220, 0.05) !important;
     }
 
     tbody tr.v-data-table__selected {
@@ -169,14 +171,8 @@ export default {
     }
 
     // ── Clickable rows ─────────────────────────────────────────────────────
-    &--clickable {
-      tbody tr {
-        cursor: pointer;
-
-        &:hover {
-          background-color: rgba(0, 172, 220, 0.05) !important;
-        }
-      }
+    &--clickable tbody tr {
+      cursor: pointer;
     }
 
     // ── Empty state ────────────────────────────────────────────────────────

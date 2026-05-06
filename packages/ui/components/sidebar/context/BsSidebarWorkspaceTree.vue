@@ -654,7 +654,10 @@ export default {
           </template>
         </template>
         <template #label="{ item, active }">
-          <div @click="active ? $event.stopPropagation() : null">
+          <div
+            :class="['tree-label', { 'tree-label--disabled': !item.hasAccess }]"
+            @click="active ? $event.stopPropagation() : null"
+          >
             {{ item.name }}
           </div>
         </template>
@@ -732,6 +735,17 @@ export default {
 
   &--disabled {
     color: rgba(0, 0, 0, 0.26);
+  }
+}
+
+/* Workspace / folder label: muted contrast when the user doesn't have
+   access to it — keeps the entry visible (so the user knows it exists)
+   without making it look interactive. */
+.tree-label {
+  color: rgba(0, 0, 0, 0.87);
+
+  &--disabled {
+    color: rgba(0, 0, 0, 0.5);
   }
 }
 
