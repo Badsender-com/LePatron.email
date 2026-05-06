@@ -1,13 +1,14 @@
 <script>
 import { imageFromPreviews } from '~/helpers/api-routes';
 import BsModalConfirm from '~/components/modal-confirm';
-import { AlertCircle } from 'lucide-vue';
+import { AlertCircle, Eye } from 'lucide-vue';
 
 export default {
   name: 'MailingsPreviewModal',
   components: {
     BsModalConfirm,
     LucideAlertCircle: AlertCircle,
+    LucideEye: Eye,
   },
   data() {
     return {
@@ -61,6 +62,9 @@ export default {
     :is-form="true"
     @click-outside="clickOutside"
   >
+    <template #titlePrefix>
+      <lucide-eye :size="20" />
+    </template>
     <div class="pb-8">
       <div class="px-1 max_height_img_container">
         <div v-if="errorPreview">

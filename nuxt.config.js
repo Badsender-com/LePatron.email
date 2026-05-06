@@ -50,7 +50,6 @@ module.exports = {
   },
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },
-    { src: '~/plugins/badsender-global-components.js', ssr: true },
     { src: '~/plugins/lucide-icons.js', ssr: true },
     { src: '~/plugins/vue-i18n.js', ssr: true },
     { src: '~/plugins/detect-browser-locale.js', ssr: false },

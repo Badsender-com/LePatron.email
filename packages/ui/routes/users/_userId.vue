@@ -1,25 +1,30 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
+import { MoreVertical } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { IS_ADMIN, USER } from '~/store/user';
+import { SET_ACTIVE_MODULE, SET_LAST_GROUP_ID } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import * as userStatusHelpers from '~/helpers/user-status.js';
 import { TABLE_ITEMS_PER_PAGE_OPTIONS } from '~/helpers/constants/table-config.js';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsUserMenu from '~/components/user/menu.vue';
 import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 
 export default {
   name: 'BsPageUser',
   components: {
-    BsUserMenu,
     BsUserForm,
     BsMailingsAdminTable,
     BsDataTable,
     BsUserActions,
+    BsPageHeader,
+    LucideMoreVertical: MoreVertical,
   },
   mixins: [mixinPageTitle],
   TABLE_ITEMS_PER_PAGE_OPTIONS,
@@ -62,8 +67,27 @@ export default {
     return { title: this.title };
   },
   computed: {
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     title() {
       return `${this.$tc('global.user', 1)} – ${this.user.name}`;
+    },
+    pageTitle() {
+      return this.user.name || this.$tc('global.user', 1);
+    },
+    groupName() {
+      return this.user.group?.name || '';
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.groupName;
+    },
+    statusIcon() {
+      return userStatusHelpers.getStatusIcon(this.user.status);
+    },
+    statusLabel() {
+      return this.$options.filters.userStatus(this.user);
+    },
+    actionDisplay() {
+      return userStatusHelpers.getStatusActions(this.user.status);
     },
     workspaceHeaders() {
       return [
@@ -83,6 +107,12 @@ export default {
     'pagination.itemsPerPage': 'loadMailings',
   },
   mounted() {
+    // Sidebar lives outside this page; tell it which group context applies
+    // and force the SETTINGS module so navigation stays coherent on /users/:id.
+    this.$store.commit(`sidebar/${SET_ACTIVE_MODULE}`, 'settings');
+    if (this.user?.group?.id) {
+      this.$store.commit(`sidebar/${SET_LAST_GROUP_ID}`, this.user.group.id);
+    }
     this.loadMailings();
   },
   methods: {
@@ -198,26 +228,102 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-user-menu
-        :user="user"
-        :loading="loading"
-        @activate="activateUser"
-        @deactivate="deactivateUser"
-        @resetPassword="resetPassword"
-        @sendPassword="sendPassword"
-        @resendPassword="reSendPassword"
-      />
-    </template>
-    <div class="settings-content">
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ pageTitle }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ groupName }}
+        </v-chip>
+      </template>
+      <template #actions>
+        <v-chip small outlined>
+          <v-icon v-if="statusIcon" left small>
+            {{ statusIcon }}
+          </v-icon>
+          {{ statusLabel }}
+        </v-chip>
+        <v-menu offset-y left>
+          <template #activator="{ on, attrs }">
+            <v-btn icon :disabled="loading" v-bind="attrs" v-on="on">
+              <lucide-more-vertical :size="20" />
+            </v-btn>
+          </template>
+          <v-list dense>
+            <v-list-item
+              v-if="actionDisplay.activate"
+              link
+              @click="activateUser"
+            >
+              <v-list-item-icon class="mr-3">
+                <v-icon color="accent"> accessibility </v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>{{ $t('global.enable') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="actionDisplay.sendPassword"
+              link
+              @click="sendPassword"
+            >
+              <v-list-item-icon class="mr-3">
+                <v-icon color="accent"> vpn_key </v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>
+                {{ $t('users.passwordTooltip.send') }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="actionDisplay.reSendPassword"
+              link
+              @click="reSendPassword"
+            >
+              <v-list-item-icon class="mr-3">
+                <v-icon color="accent"> vpn_key </v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>
+                {{ $t('users.passwordTooltip.resend') }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="actionDisplay.resetPassword"
+              link
+              @click="resetPassword"
+            >
+              <v-list-item-icon class="mr-3">
+                <v-icon color="accent"> vpn_key </v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>
+                {{ $t('users.passwordTooltip.reset') }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-if="!user.isDeactivated"
+              link
+              @click="deactivateUser"
+            >
+              <v-list-item-icon class="mr-3">
+                <v-icon color="accent"> airline_seat_individual_suite </v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>{{ $t('global.disable') }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+    </bs-page-header>
+
+    <v-container fluid>
       <bs-user-form
         v-model="user"
         :title="$t('users.details')"
         :loading="loading"
         @submit="updateUser"
       />
-      <!-- Workspace assignments -->
+
       <v-card flat tile class="mt-4">
         <v-card-title class="px-0">
           {{ $tc('global.teams', 2) }}
@@ -269,18 +375,13 @@ export default {
           />
         </div>
       </v-card>
-    </div>
-    <bs-user-actions
-      ref="userActions"
-      v-model="loading"
-      :user="user"
-      @update="updateUserFromActions"
-    />
-  </bs-layout-left-menu>
-</template>
 
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>
+      <bs-user-actions
+        ref="userActions"
+        v-model="loading"
+        :user="user"
+        @update="updateUserFromActions"
+      />
+    </v-container>
+  </div>
+</template>

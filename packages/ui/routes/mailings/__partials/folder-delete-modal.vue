@@ -1,10 +1,12 @@
 <script>
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Trash2 } from 'lucide-vue';
 
 export default {
   name: 'FolderDeleteModal',
   components: {
     BsModalConfirmForm,
+    LucideTrash2: Trash2,
   },
   props: {
     loadingParent: { type: Boolean, default: false },
@@ -39,6 +41,9 @@ export default {
     :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
     @confirm="submit"
   >
+    <template #titlePrefix>
+      <lucide-trash2 :size="20" />
+    </template>
     <p
       class="black--text"
       v-html="

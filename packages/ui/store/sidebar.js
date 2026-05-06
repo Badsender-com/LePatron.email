@@ -20,6 +20,10 @@ export const state = () => ({
         )
       : DEFAULT_WIDTH,
   mobileOpen: false, // Mobile sidebar drawer state
+  // Last seen groupId — used by SettingsList to keep linking to the
+  // current customer group when the route doesn't expose it (e.g. on
+  // /templates/<id> reached from /groups/<id>/settings/templates).
+  lastGroupId: null,
 });
 
 // Mutations
@@ -50,6 +54,10 @@ export const mutations = {
   TOGGLE_MOBILE_OPEN(state) {
     state.mobileOpen = !state.mobileOpen;
   },
+
+  SET_LAST_GROUP_ID(state, groupId) {
+    state.lastGroupId = groupId || null;
+  },
 };
 
 // Getters
@@ -57,6 +65,7 @@ export const getters = {
   isCollapsed: (state) => state.collapsed,
   activeModule: (state) => state.activeModule,
   sidebarWidth: (state) => (state.collapsed ? COLLAPSED_WIDTH : state.width),
+  lastGroupId: (state) => state.lastGroupId,
 };
 
 // Mutation types (for imports)
@@ -65,6 +74,7 @@ export const SET_ACTIVE_MODULE = 'SET_ACTIVE_MODULE';
 export const SET_WIDTH = 'SET_WIDTH';
 export const SET_MOBILE_OPEN = 'SET_MOBILE_OPEN';
 export const TOGGLE_MOBILE_OPEN = 'TOGGLE_MOBILE_OPEN';
+export const SET_LAST_GROUP_ID = 'SET_LAST_GROUP_ID';
 
 // Constants (for imports)
 export const SIDEBAR_MIN_WIDTH = MIN_WIDTH;

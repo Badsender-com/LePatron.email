@@ -43,7 +43,10 @@ export default {
     @click:outside="onClickOutside"
   >
     <v-card flat tile>
-      <v-card-title>
+      <v-card-title class="bs-modal-confirm__title">
+        <span v-if="$slots.titlePrefix" class="bs-modal-confirm__title-icon">
+          <slot name="titlePrefix" />
+        </span>
         <p v-html="title" />
       </v-card-title>
       <v-card-text>
@@ -73,5 +76,30 @@ export default {
 <style>
 .v-card__text {
   padding-bottom: 0 !important;
+}
+
+/* Modal title alignment with optional icon prefix (harmonized layout). */
+.bs-modal-confirm__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.bs-modal-confirm__title-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--v-primary-base);
+  flex-shrink: 0;
+}
+
+/* The title <p> must shrink and wrap inline; without `min-width: 0` the flex
+   item refuses to shrink below its content width, which pushes the icon onto
+   its own row when the title is long. */
+.bs-modal-confirm__title p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  word-break: break-word;
 }
 </style>

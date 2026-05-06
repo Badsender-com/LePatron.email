@@ -5,7 +5,8 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
-import { Languages, FileText, BadgeCheck } from 'lucide-vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
+import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
@@ -25,9 +26,11 @@ export default {
   name: 'BsGroupAiFeaturesTab',
   components: {
     BsSelect,
+    BsFormSection,
     LucideLanguages: Languages,
     LucideFileText: FileText,
     LucideBadgeCheck: BadgeCheck,
+    LucideSparkles: Sparkles,
   },
   props: {
     active: {
@@ -256,18 +259,16 @@ export default {
         </v-alert>
 
         <!-- Section: Translation Feature -->
-        <div class="form-section">
-          <div class="form-section__header">
-            <div>
-              <h3 class="form-section__title">
-                <lucide-languages :size="20" class="mr-2" />
-                {{ $t('aiFeatures.translation.title') }}
-              </h3>
-              <p class="form-section__description">
-                {{ $t('aiFeatures.translation.description') }}
-              </p>
-            </div>
-          </div>
+        <bs-form-section>
+          <template #icon>
+            <lucide-languages :size="20" />
+          </template>
+          <template #title>
+            {{ $t('aiFeatures.translation.title') }}
+          </template>
+          <template #description>
+            {{ $t('aiFeatures.translation.description') }}
+          </template>
 
           <!-- Activation switch -->
           <div class="activation-row mb-4">
@@ -303,7 +304,14 @@ export default {
               />
             </v-col>
 
-            <v-col v-if="supportsModelSelection && (modelOptions.length > 0 || loadingModels)" cols="12" md="6">
+            <v-col
+              v-if="
+                supportsModelSelection &&
+                  (modelOptions.length > 0 || loadingModels)
+              "
+              cols="12"
+              md="6"
+            >
               <bs-select
                 v-model="selectedModel"
                 :items="modelOptions"
@@ -335,16 +343,19 @@ export default {
               />
             </v-col>
           </v-row>
-        </div>
+        </bs-form-section>
 
         <!-- Section: Coming Soon Features -->
-        <div class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section last>
+          <template #icon>
+            <lucide-sparkles :size="20" />
+          </template>
+          <template #title>
             {{ $t('aiFeatures.upcomingFeatures') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('aiFeatures.upcomingFeaturesDescription') }}
-          </p>
+          </template>
 
           <div class="upcoming-features">
             <div class="upcoming-feature">
@@ -377,43 +388,13 @@ export default {
               </v-chip>
             </div>
           </div>
-        </div>
+        </bs-form-section>
       </template>
     </v-card-text>
   </v-card>
 </template>
 
 <style lang="scss" scoped>
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  &__header {
-    margin-bottom: 1rem;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 0;
-  }
-}
-
 .activation-row {
   display: flex;
   align-items: center;

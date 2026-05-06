@@ -3,14 +3,17 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import { Users } from 'lucide-vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
+import { Users, Info } from 'lucide-vue';
 
 export default {
   name: 'WorkspaceForm',
   components: {
     BsDataTable,
     BsTextField,
+    BsFormSection,
     LucideUsers: Users,
+    LucideInfo: Info,
   },
   mixins: [validationMixin],
   props: {
@@ -111,13 +114,16 @@ export default {
   <v-card flat tile tag="form" :loading="isLoading" :disabled="isLoading">
     <v-card-text>
       <!-- Section: Workspace Info -->
-      <div class="form-section">
-        <h3 class="form-section__title">
+      <bs-form-section>
+        <template #icon>
+          <lucide-info :size="20" />
+        </template>
+        <template #title>
           {{ $t('workspaces.sections.info') }}
-        </h3>
-        <p class="form-section__description">
+        </template>
+        <template #description>
           {{ $t('workspaces.sections.infoDescription') }}
-        </p>
+        </template>
         <v-row>
           <v-col cols="12" md="6">
             <bs-text-field
@@ -129,17 +135,20 @@ export default {
             />
           </v-col>
         </v-row>
-      </div>
+      </bs-form-section>
 
-      <!-- Section: Members header -->
-      <div class="members-header">
-        <h3 class="form-section__title">
+      <!-- Section: Members (header only — table lives below for flush width) -->
+      <bs-form-section last>
+        <template #icon>
+          <lucide-users :size="20" />
+        </template>
+        <template #title>
           {{ $t('workspaces.members') }}
-        </h3>
-        <p class="form-section__description mb-0">
+        </template>
+        <template #description>
           {{ $t('workspaces.membersDescription') }}
-        </p>
-      </div>
+        </template>
+      </bs-form-section>
     </v-card-text>
 
     <!-- Members table: outside v-card-text for full-width flush rendering -->
@@ -199,30 +208,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 1rem;
-  }
-}
-
 .members-header {
   margin-bottom: 1rem;
 }

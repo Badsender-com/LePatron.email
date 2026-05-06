@@ -1,11 +1,13 @@
 <script>
 import BsColorScheme from '~/components/group/color-scheme';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
 import { Palette } from 'lucide-vue';
 
 export default {
   name: 'BsGroupColorsTab',
   components: {
     BsColorScheme,
+    BsFormSection,
     LucidePalette: Palette,
   },
   props: {
@@ -46,16 +48,16 @@ export default {
 <template>
   <v-card flat tile>
     <v-card-text>
-      <div class="form-section">
-        <div class="form-section__header">
-          <h3 class="form-section__title">
-            <lucide-palette :size="20" class="mr-2" />
-            {{ $t('colors.palette') }}
-          </h3>
-          <p class="form-section__description">
-            {{ $t('colors.paletteDescription') }}
-          </p>
-        </div>
+      <bs-form-section last>
+        <template #icon>
+          <lucide-palette :size="20" />
+        </template>
+        <template #title>
+          {{ $t('colors.palette') }}
+        </template>
+        <template #description>
+          {{ $t('colors.paletteDescription') }}
+        </template>
 
         <bs-color-scheme v-model="colorScheme" :disabled="disabled" />
 
@@ -63,7 +65,7 @@ export default {
           <span class="colors-hint__icon">ⓘ</span>
           {{ $t('colors.hint', { count: colorCount, max: 21 }) }}
         </p>
-      </div>
+      </bs-form-section>
     </v-card-text>
     <v-divider />
     <v-card-actions>
@@ -82,27 +84,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.form-section {
-  &__header {
-    margin-bottom: 1.5rem;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 0;
-  }
-}
-
 .colors-hint {
   display: flex;
   align-items: center;

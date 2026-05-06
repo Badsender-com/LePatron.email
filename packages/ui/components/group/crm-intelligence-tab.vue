@@ -632,7 +632,7 @@ export default {
    ========================================================================= */
 
 .crm-intelligence {
-  max-width: 900px;
+  width: 100%;
 }
 
 .dashboards-table {

@@ -394,8 +394,12 @@ export default {
     moveCount: 'Déplacer {count} email | Déplacer {count} emails',
     deleteNotice: 'Cela supprimera définitivement :',
     copyMailConfirmationMessage: 'Veuillez choisir l\'emplacement de la copie :',
+    copyMailConfirmationMessageWithName:
+      'Veuillez choisir l\'emplacement de la copie de l\'email <strong>{name}</strong> :',
     copyMailSuccessful: 'L\'email a bien été copié',
     moveMailConfirmationMessage: 'Veuillez choisir la destination :',
+    moveMailConfirmationMessageWithName:
+      'Veuillez choisir la destination de l\'email <strong>{name}</strong> :',
     moveMailSuccessful: 'L\'email a bien été déplacé',
     downloadManySuccessful: 'Les emails ont bien été téléchargés',
     downloadMailSuccessful: 'L\'email a bien été téléchargé',
@@ -554,6 +558,8 @@ export default {
     hasChildren:
       'Ce dossier contient des sous-dossiers et ne peut pas être déplacé vers un autre dossier',
     moveFolderConfirmationMessage: 'Veuillez choisir la destination :',
+    moveFolderConfirmationMessageWithName:
+      'Veuillez choisir la destination du dossier <strong>{name}</strong> :',
     moveFolderSuccessful: 'Le dossier a bien été déplacé',
   },
   tableHeaders: {
@@ -922,6 +928,7 @@ export default {
     companiesList: 'Liste des companies',
     companiesEmpty: 'Aucune company pour le moment',
     superAdminOnly: 'Super admin uniquement',
+    switchCompany: 'Choisir une company…',
     colors: 'Couleurs',
   },
   colors: {

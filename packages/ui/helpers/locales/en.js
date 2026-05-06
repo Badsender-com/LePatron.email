@@ -389,8 +389,12 @@ export default {
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the copy:',
+    copyMailConfirmationMessageWithName:
+      'Please choose the location of the copy of email <strong>{name}</strong>:',
     copyMailSuccessful: 'Mail copied',
     moveMailConfirmationMessage: 'Please choose the destination:',
+    moveMailConfirmationMessageWithName:
+      'Please choose the destination of email <strong>{name}</strong>:',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
     downloadManySuccessful: 'Emails download complete',
@@ -546,6 +550,8 @@ export default {
     conflict: 'Folder already exists',
     hasChildren: 'This folder contains subfolders and cannot be moved to another folder',
     moveFolderConfirmationMessage: 'Please choose the destination:',
+    moveFolderConfirmationMessageWithName:
+      'Please choose the destination of folder <strong>{name}</strong>:',
     moveFolderSuccessful: 'Folder moved',
   },
   tableHeaders: {
@@ -875,6 +881,7 @@ export default {
     companiesList: 'Companies list',
     companiesEmpty: 'No companies yet',
     superAdminOnly: 'Super admin only',
+    switchCompany: 'Pick a company…',
     colors: 'Colors',
   },
   aiFeatures: {

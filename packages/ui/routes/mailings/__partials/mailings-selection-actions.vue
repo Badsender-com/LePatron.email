@@ -314,6 +314,9 @@ export default {
       action-button-color="error"
       @confirm="handleMultipleDelete"
     >
+      <template #titlePrefix>
+        <lucide-trash2 :size="20" />
+      </template>
       <p
         class="black--text"
         v-html="$t('mailings.deleteConfirmationMessage')"

@@ -8,6 +8,8 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
+import { Package, Server, Cloud } from 'lucide-vue';
 
 export default {
   name: 'BsExportOptionsTab',
@@ -15,6 +17,10 @@ export default {
     BsFtpSettings,
     BsTextField,
     BsSelect,
+    BsFormSection,
+    LucidePackage: Package,
+    LucideServer: Server,
+    LucideCloud: Cloud,
   },
   mixins: [validationMixin],
   httpOptions: ['http://', 'https://'],
@@ -79,7 +85,10 @@ export default {
       this.$v.$touch();
       // Validate FTP settings component if FTP is enabled
       let ftpValid = true;
-      if (this.localGroup.downloadMailingWithFtpImages && this.$refs.ftpSettings) {
+      if (
+        this.localGroup.downloadMailingWithFtpImages &&
+        this.$refs.ftpSettings
+      ) {
         ftpValid = this.$refs.ftpSettings.validate();
       }
       if (this.$v.$invalid || !ftpValid) return;
@@ -113,13 +122,16 @@ export default {
     <v-card flat tile tag="form">
       <v-card-text>
         <!-- ==================== SECTION 1: ZIP FORMAT ==================== -->
-        <div class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section>
+          <template #icon>
+            <lucide-package :size="20" />
+          </template>
+          <template #title>
             {{ $t('exportOptions.sections.zipFormat') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('exportOptions.sections.zipFormatDescription') }}
-          </p>
+          </template>
           <v-row>
             <v-col cols="12" md="6">
               <bs-select
@@ -129,16 +141,19 @@ export default {
               />
             </v-col>
           </v-row>
-        </div>
+        </bs-form-section>
 
         <!-- ==================== SECTION 2: FTP/SFTP ==================== -->
-        <div class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section>
+          <template #icon>
+            <lucide-server :size="20" />
+          </template>
+          <template #title>
             {{ $t('exportOptions.sections.ftpHosting') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('exportOptions.sections.ftpHostingDescription') }}
-          </p>
+          </template>
 
           <v-switch
             v-model="localGroup.downloadMailingWithFtpImages"
@@ -157,16 +172,19 @@ export default {
               />
             </div>
           </v-expand-transition>
-        </div>
+        </bs-form-section>
 
         <!-- ==================== SECTION 3: CDN ==================== -->
-        <div class="form-section">
-          <h3 class="form-section__title">
+        <bs-form-section last>
+          <template #icon>
+            <lucide-cloud :size="20" />
+          </template>
+          <template #title>
             {{ $t('exportOptions.sections.cdnHosting') }}
-          </h3>
-          <p class="form-section__description">
+          </template>
+          <template #description>
             {{ $t('exportOptions.sections.cdnHostingDescription') }}
-          </p>
+          </template>
 
           <v-switch
             v-model="localGroup.downloadMailingWithCdnImages"
@@ -208,7 +226,7 @@ export default {
               </v-row>
             </div>
           </v-expand-transition>
-        </div>
+        </bs-form-section>
       </v-card-text>
 
       <v-divider />
@@ -228,28 +246,4 @@ export default {
   </div>
 </template>
 
-<style lang="scss" scoped>
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 1rem;
-  }
-}
-</style>
+<style lang="scss" scoped></style>

@@ -112,7 +112,8 @@ export default {
   gap: 16px;
   background: var(--page-header-bg);
   border-bottom: var(--page-header-border);
-  padding: 24px 32px 20px 32px;
+  /* Horizontal padding lives on .app-main (single source of truth). */
+  padding: 24px 0 20px 0;
   min-height: var(--page-header-min-height);
   box-sizing: border-box;
   font-family: inherit;
@@ -202,7 +203,7 @@ export default {
 /* Mobile adjustments */
 @media (max-width: 960px) {
   .bsph {
-    padding: 18px 16px;
+    padding: 18px 0;
     min-height: 64px;
     margin-bottom: 16px;
   }

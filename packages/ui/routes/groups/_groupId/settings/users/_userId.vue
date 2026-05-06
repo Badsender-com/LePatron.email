@@ -5,6 +5,7 @@ import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsFormSection from '~/components/layout/BsFormSection.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -12,16 +13,22 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
+import { User, Shield, Users, Mail } from 'lucide-vue';
 
 export default {
   name: 'BsPageSettingsUserEdit',
   components: {
     BsPageHeader,
+    BsFormSection,
     BsUserActions,
     BsMailingsAdminTable,
     BsDataTable,
     BsTextField,
     BsSelect,
+    LucideUser: User,
+    LucideShield: Shield,
+    LucideUsers: Users,
+    LucideMail: Mail,
   },
   mixins: [mixinSettingsTitle, validationMixin],
   supportedLanguages: [
@@ -311,10 +318,13 @@ export default {
         <v-card flat tile :loading="loading" :disabled="loading">
           <v-card-text>
             <!-- Section: Informations -->
-            <div class="form-section">
-              <h3 class="form-section__title">
+            <bs-form-section>
+              <template #icon>
+                <lucide-user :size="20" />
+              </template>
+              <template #title>
                 {{ $t('users.details') }}
-              </h3>
+              </template>
               <v-row>
                 <v-col cols="12" md="6">
                   <bs-text-field
@@ -340,7 +350,7 @@ export default {
                     v-model="user.externalUsername"
                     :label="
                       $t('forms.user.externalUsername') +
-                        $t('forms.user.optional')
+                      $t('forms.user.optional')
                     "
                   />
                 </v-col>
@@ -359,21 +369,26 @@ export default {
                   />
                 </v-col>
               </v-row>
-            </div>
+            </bs-form-section>
 
             <!-- Section: Statut & Sécurité -->
-            <div class="form-section">
-              <h3 class="form-section__title">
+            <bs-form-section last>
+              <template #icon>
+                <lucide-shield :size="20" />
+              </template>
+              <template #title>
                 {{ $t('users.sections.statusSecurity') }}
-              </h3>
-              <p class="form-section__description">
+              </template>
+              <template #description>
                 {{ $t('users.sections.statusSecurityDescription') }}
-              </p>
+              </template>
 
               <!-- Status display -->
               <div class="status-display mb-4">
                 <div class="d-flex align-center">
-                  <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
+                  <span class="text-body-2 mr-3"
+                    >{{ $t('global.status') }} :</span
+                  >
                   <v-chip
                     small
                     :color="statusColor"
@@ -450,7 +465,7 @@ export default {
                   </v-btn>
                 </template>
               </div>
-            </div>
+            </bs-form-section>
           </v-card-text>
           <v-divider />
           <v-card-actions>
@@ -468,50 +483,64 @@ export default {
 
         <!-- Workspace assignments -->
         <v-card flat tile class="mt-4">
-          <v-card-title class="px-0">
-            {{ $tc('global.teams', 2) }}
-          </v-card-title>
-          <bs-data-table :headers="workspaceHeaders" :items="workspaces">
-            <template #item.name="{ item }">
-              <span class="font-weight-medium">{{ item.name }}</span>
-            </template>
-            <template #item.assigned="{ item }">
-              <v-switch
-                :input-value="isUserInWorkspace(item)"
-                :loading="savingWorkspaces.has(item.id)"
-                :disabled="savingWorkspaces.has(item.id)"
-                dense
-                hide-details
-                class="mt-0 d-inline-flex"
-                @change="toggleWorkspace(item)"
-              />
-            </template>
-          </bs-data-table>
+          <v-card-text>
+            <bs-form-section last flush>
+              <template #icon>
+                <lucide-users :size="20" />
+              </template>
+              <template #title>
+                {{ $tc('global.teams', 2) }}
+              </template>
+              <bs-data-table :headers="workspaceHeaders" :items="workspaces">
+                <template #item.name="{ item }">
+                  <span class="font-weight-medium">{{ item.name }}</span>
+                </template>
+                <template #item.assigned="{ item }">
+                  <v-switch
+                    :input-value="isUserInWorkspace(item)"
+                    :loading="savingWorkspaces.has(item.id)"
+                    :disabled="savingWorkspaces.has(item.id)"
+                    dense
+                    hide-details
+                    class="mt-0 d-inline-flex"
+                    @change="toggleWorkspace(item)"
+                  />
+                </template>
+              </bs-data-table>
+            </bs-form-section>
+          </v-card-text>
         </v-card>
 
         <!-- User mailings -->
         <v-card flat tile class="mt-4">
-          <v-card-title class="px-0">
-            {{ $tc('global.mailing', 2) }}
-          </v-card-title>
-          <bs-mailings-admin-table
-            :mailings="mailings"
-            :loading="isLoadingMailings"
-            :hidden-cols="['userName', 'actions']"
-          />
-          <div
-            v-if="
-              pagination && pagination.itemsLength > pagination.itemsPerPage
-            "
-            class="d-flex align-center justify-center"
-          >
-            <v-pagination
-              v-model="pagination.page"
-              :circle="true"
-              class="my-4"
-              :length="pagination.pageCount"
-            />
-          </div>
+          <v-card-text>
+            <bs-form-section last flush>
+              <template #icon>
+                <lucide-mail :size="20" />
+              </template>
+              <template #title>
+                {{ $tc('global.mailing', 2) }}
+              </template>
+              <bs-mailings-admin-table
+                :mailings="mailings"
+                :loading="isLoadingMailings"
+                :hidden-cols="['userName', 'actions']"
+              />
+              <div
+                v-if="
+                  pagination && pagination.itemsLength > pagination.itemsPerPage
+                "
+                class="d-flex align-center justify-center"
+              >
+                <v-pagination
+                  v-model="pagination.page"
+                  :circle="true"
+                  class="my-4"
+                  :length="pagination.pageCount"
+                />
+              </div>
+            </bs-form-section>
+          </v-card-text>
         </v-card>
       </div>
 
@@ -530,30 +559,6 @@ export default {
   padding: 0;
 }
 
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
-  &__title {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 0.25rem;
-  }
-
-  &__description {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 1rem;
-  }
-}
-
 .status-display {
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.02);
@@ -564,5 +569,6 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 </style>

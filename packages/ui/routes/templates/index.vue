@@ -3,12 +3,11 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTemplatesTable from '~/components/templates/table.vue';
-import BsCompaniesNav from '~/components/group/companies-nav.vue';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 
 export default {
   name: 'PageTemplates',
-  components: { BsTemplatesTable, BsCompaniesNav, BsGroupSettingsPageHeader },
+  components: { BsTemplatesTable, BsPageHeader },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -42,19 +41,17 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-companies-nav />
-    </template>
-    <div class="settings-content">
-      <bs-group-settings-page-header :title="$tc('global.template', 2)" />
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $tc('global.template', 2) }}
+      </template>
+    </bs-page-header>
+    <v-container fluid>
       <bs-templates-table :templates="templates" />
-    </div>
-  </bs-layout-left-menu>
+    </v-container>
+  </div>
 </template>
-
-<style scoped>
-.settings-content {
-  padding: 0;
-}
-</style>

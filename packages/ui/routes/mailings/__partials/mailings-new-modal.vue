@@ -5,6 +5,7 @@ import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrum
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import { TEMPLATE } from '~/store/template';
 import { mapState } from 'vuex';
+import { MailPlus } from 'lucide-vue';
 
 export default {
   name: 'MailingsModalNew',
@@ -12,6 +13,7 @@ export default {
     BsModalConfirm,
     MailingsBreadcrumbs,
     TemplateCard,
+    LucideMailPlus: MailPlus,
   },
   mixins: [mixinCreateMailing],
   props: {
@@ -79,6 +81,9 @@ export default {
     :title="$t('global.newMailing')"
     :is-form="true"
   >
+    <template #titlePrefix>
+      <lucide-mail-plus :size="20" />
+    </template>
     <v-form ref="form" @submit.prevent="submit">
       <div class="d-flex align-center mb-2">
         <div class="font-weight-bold">

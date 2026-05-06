@@ -77,6 +77,7 @@ import {
   SET_COLLAPSED,
   SET_ACTIVE_MODULE,
   SET_WIDTH,
+  SET_LAST_GROUP_ID,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from '~/store/sidebar';
@@ -100,10 +101,19 @@ export default {
     ...mapState('sidebar', ['collapsed', 'activeModule', 'width']),
     ...mapGetters('user', {
       userGroup: 'GROUP',
+      isAdmin: 'IS_ADMIN',
+      isGroupAdmin: 'IS_GROUP_ADMIN',
     }),
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
+      // Super admins administer all groups — they don't consume the modules
+      // themselves and the lock indicator would be misleading. Hide the
+      // module list entirely for them. Group admins and regular users keep
+      // the standard subscription-based lock semantics.
+      if (this.isAdmin) {
+        return [];
+      }
       return SIDEBAR_MODULES.map((module) => {
         const locked = module.enabledFlag
           ? !this.userGroup?.[module.enabledFlag]
@@ -118,7 +128,7 @@ export default {
     // Detect active module from route path
     detectedModule() {
       const path = this.$route.path;
-      if (path.startsWith('/mailings') || path.startsWith('/templates')) {
+      if (path.startsWith('/mailings')) {
         return 'email-builder';
       }
       if (path.startsWith('/crm-intelligence')) {
@@ -149,6 +159,14 @@ export default {
         }
       },
     },
+    '$route.params.groupId': {
+      immediate: true,
+      handler(groupId) {
+        if (groupId) {
+          this.setLastGroupId(groupId);
+        }
+      },
+    },
   },
   mounted() {
     // Add event listeners for resize
@@ -165,6 +183,7 @@ export default {
       setCollapsed: SET_COLLAPSED,
       setActiveModule: SET_ACTIVE_MODULE,
       setWidth: SET_WIDTH,
+      setLastGroupId: SET_LAST_GROUP_ID,
     }),
 
     handleToggle() {

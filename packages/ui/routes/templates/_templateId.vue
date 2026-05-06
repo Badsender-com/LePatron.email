@@ -1,12 +1,13 @@
 <script>
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
+import { IS_ADMIN, USER } from '~/store/user';
+import { SET_ACTIVE_MODULE, SET_LAST_GROUP_ID } from '~/store/sidebar';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
-import BsGroupSettingsNav from '~/components/group/settings-nav.vue';
-import BsGroupSettingsPageHeader from '~/components/group/settings-page-header.vue';
+import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import BsTemplateForm from '~/components/template/form.vue';
 import { Trash2 } from 'lucide-vue';
 
@@ -17,8 +18,7 @@ const UPDATE_AXIOS_CONFIG = Object.freeze({
 export default {
   name: 'BsPageTemplate',
   components: {
-    BsGroupSettingsNav,
-    BsGroupSettingsPageHeader,
+    BsPageHeader,
     BsTemplateForm,
     LucideTrash2: Trash2,
   },
@@ -63,6 +63,7 @@ export default {
     return { title: this.title };
   },
   computed: {
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     title() {
       return `${this.$tc('global.template', 1)} – ${this.template.name}`;
     },
@@ -72,6 +73,9 @@ export default {
     groupName() {
       return this.group.name || '';
     },
+    showGroupBadge() {
+      return this.isAdmin && this.groupName;
+    },
     backRoute() {
       if (this.group.id) {
         return `/groups/${this.group.id}/settings/templates`;
@@ -80,6 +84,12 @@ export default {
     },
   },
   mounted() {
+    // Sidebar lives outside this page; tell it which group context applies
+    // and force the SETTINGS module so navigation stays coherent on /templates/:id.
+    this.$store.commit(`sidebar/${SET_ACTIVE_MODULE}`, 'settings');
+    if (this.group?.id) {
+      this.$store.commit(`sidebar/${SET_LAST_GROUP_ID}`, this.group.id);
+    }
     if (this.template.id) {
       this.listenTemplateEvents();
     }
@@ -218,25 +228,32 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-settings-nav :group="group" />
-    </template>
-    <div class="settings-content">
-      <bs-group-settings-page-header :title="pageTitle" :group-name="groupName">
-        <template #actions>
-          <v-btn
-            outlined
-            color="error"
-            :disabled="loading"
-            @click="confirmDelete"
-          >
-            <lucide-trash2 :size="18" class="mr-2" />
-            {{ $t('global.delete') }}
-          </v-btn>
-        </template>
-      </bs-group-settings-page-header>
-
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ pageTitle }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ groupName }}
+        </v-chip>
+      </template>
+      <template #actions>
+        <v-btn
+          outlined
+          color="error"
+          :disabled="loading"
+          @click="confirmDelete"
+        >
+          <lucide-trash2 :size="18" class="mr-2" />
+          {{ $t('global.delete') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
       <bs-template-form
         ref="templateForm"
         :template="template"
@@ -247,8 +264,8 @@ export default {
         @delete="onDelete"
         @deleteImages="onDeleteImages"
       />
-    </div>
-  </bs-layout-left-menu>
+    </v-container>
+  </div>
 </template>
 
 <style scoped>

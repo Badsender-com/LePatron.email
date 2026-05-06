@@ -1,11 +1,15 @@
 <script>
+import BsModalConfirm from '~/components/modal-confirm';
 import BsModalTagsForm from '~/components/mailings/modal-tags-form';
+import { Tag } from 'lucide-vue';
 const CHECKBOX_UNCHECKED = 'check_box_outline_blank';
 const CHECKBOX_CHECKED = 'check_box';
 export default {
   name: 'BsMailingsTagsMenu',
   components: {
+    BsModalConfirm,
     BsModalTagsForm,
+    LucideTag: Tag,
   },
 
   props: {
@@ -22,12 +26,20 @@ export default {
   },
   computed: {
     tagsCheckboxList() {
-      return [...this.tags, ...this.newTags].map((tagName) => {
+      // Defensive merge: the email's own tags must always appear in the list,
+      // even if the company-wide tag list (`tags` prop) hasn't loaded yet
+      // (e.g. dropped meta on a refresh). Otherwise a mailing's existing
+      // labels would be invisible despite being applied.
+      const allTags = Array.from(
+        new Set([
+          ...(this.tags || []),
+          ...(this.selectedMailTags || []),
+          ...this.newTags,
+        ])
+      );
+      return allTags.map((tagName) => {
         if (this.addedTags.includes(tagName)) {
           return { name: tagName, checkIcon: CHECKBOX_CHECKED };
-        }
-        if (this.removedTags.includes(tagName)) {
-          return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
         }
         return { name: tagName, checkIcon: CHECKBOX_UNCHECKED };
       });
@@ -51,9 +63,11 @@ export default {
   methods: {
     closeMenu() {
       this.showTagMenu = false;
+      this.$refs.tagsDialog?.close();
     },
     openMenu() {
       this.showTagMenu = true;
+      this.$refs.tagsDialog?.open();
     },
     closeNewTagDialog() {
       this.$refs.createTags.close();
@@ -80,7 +94,7 @@ export default {
       }
     },
     updateMailingsTags() {
-      this.showTagMenu = false;
+      this.closeMenu();
       this.$emit('update-tags', {
         added: [...this.addedTags],
         removed: [...this.removedTags],
@@ -92,50 +106,46 @@ export default {
 
 <template>
   <div>
-    <v-dialog
-      v-model="showTagMenu"
-      :close-on-content-click="false"
-      :width="300"
+    <bs-modal-confirm
+      ref="tagsDialog"
+      :title="$t('tags.list')"
+      :is-form="true"
+      modal-width="500"
+      @click-outside="closeMenu"
     >
-      <v-card flat tile>
-        <v-list>
-          <v-list-item>
-            <v-list-item-content>
-              <v-list-item-title class="title">
-                {{ $t(`tags.list`) }}
-              </v-list-item-title>
-            </v-list-item-content>
-            <v-list-item-action>
-              <v-btn icon @click="closeMenu">
-                <v-icon>close</v-icon>
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </v-list>
-        <v-divider />
-        <v-list>
-          <v-list-item
-            v-for="tagCheckbox in tagsCheckboxList"
-            :key="tagCheckbox.name"
-            @click="toggleTag(tagCheckbox)"
-          >
-            <v-list-item-action>
-              <v-icon>{{ tagCheckbox.checkIcon }}</v-icon>
-            </v-list-item-action>
-            <v-list-item-title>{{ tagCheckbox.name }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="primary" text @click="openNewTagDialog">
-            {{ $t('tags.new') }}
-          </v-btn>
-          <v-btn color="accent" elevation="0" @click="updateMailingsTags">
-            {{ $t(`global.apply`) }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template #titlePrefix>
+        <lucide-tag :size="20" />
+      </template>
+
+      <div class="labels-list">
+        <button
+          v-for="tagCheckbox in tagsCheckboxList"
+          :key="tagCheckbox.name"
+          type="button"
+          class="labels-list__item"
+          @click="toggleTag(tagCheckbox)"
+        >
+          <v-icon class="labels-list__check">
+            {{ tagCheckbox.checkIcon }}
+          </v-icon>
+          <span class="labels-list__label">{{ tagCheckbox.name }}</span>
+        </button>
+      </div>
+
+      <v-divider />
+      <v-card-actions>
+        <v-btn color="primary" text @click="openNewTagDialog">
+          {{ $t('tags.new') }}
+        </v-btn>
+        <v-spacer />
+        <v-btn text @click="closeMenu">
+          {{ $t('global.cancel') }}
+        </v-btn>
+        <v-btn color="accent" elevation="0" @click="updateMailingsTags">
+          {{ $t(`global.apply`) }}
+        </v-btn>
+      </v-card-actions>
+    </bs-modal-confirm>
     <bs-modal-tags-form
       ref="createTags"
       width="500"
@@ -145,3 +155,47 @@ export default {
     />
   </div>
 </template>
+
+<style lang="scss" scoped>
+/* Same border + scroll container pattern as the move/copy/translate modals'
+   destination tree, applied to the labels checkbox list. */
+.labels-list {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.labels-list__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.87);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.labels-list__check {
+  flex-shrink: 0;
+  font-size: 20px !important;
+  color: rgba(0, 0, 0, 0.54) !important;
+}
+
+.labels-list__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>
