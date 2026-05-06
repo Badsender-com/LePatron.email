@@ -309,6 +309,22 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   // block-wysiwyg.tmpl.html
+  viewModel.translateBlock = function (blockData, parent, index) {
+    const unwrappedBlock = recursivelyUnwrapObservable(blockData);
+    const blockIndex = ko.utils.unwrapObservable(index);
+
+    viewModel.toggleTranslateBlockModal(true, {
+      block: unwrappedBlock,
+      blockObservable: blockData, // Keep reference to observable for updates
+      parent: parent,
+      index: blockIndex,
+    });
+  };
+
+  // toggleTranslateBlockModal will be set by the Vue component
+  viewModel.toggleTranslateBlockModal = ko.observable(null);
+
+  // block-wysiwyg.tmpl.html
   viewModel.moveBlock = function (index, parent, up) {
     var idx = ko.utils.unwrapObservable(index);
     var parentBlocks = ko.utils.unwrapObservable(parent.blocks);

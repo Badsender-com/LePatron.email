@@ -257,9 +257,7 @@ export default {
         fill="#FFB400"
       />
     </svg>
-    <p style="color: white; font-size: 0.875rem">
-      Email Builder by Badsender
-    </p>
+    <p style="color: white; font-size: 0.875rem">Email Builder by Badsender</p>
     <v-card class="elevation-24">
       <v-toolbar flat>
         <v-btn

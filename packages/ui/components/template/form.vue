@@ -368,9 +368,7 @@ export default {
         <div class="file-upload-field">
           <label class="file-upload-field__label">
             {{ $t('templates.markup') }}
-            <span v-if="!isEditMode" class="file-upload-field__required"
-              >*</span
-            >
+            <span v-if="!isEditMode" class="file-upload-field__required">*</span>
           </label>
 
           <!-- Show existing markup info if in edit mode -->
@@ -445,7 +443,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onMarkupFileChange"
-            />
+            >
           </div>
         </div>
 
@@ -483,7 +481,7 @@ export default {
                   :alt="image.originalName"
                   loading="lazy"
                   class="images-existing__thumb"
-                />
+                >
                 <span class="images-existing__name">{{
                   image.originalName
                 }}</span>
@@ -542,7 +540,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onImagesFileChange"
-            />
+            >
           </div>
         </div>
       </bs-form-section>
@@ -576,7 +574,7 @@ export default {
             :src="coverSrc"
             alt="Template preview"
             class="template-preview__image"
-          />
+          >
         </div>
       </bs-form-section>
     </v-card-text>
