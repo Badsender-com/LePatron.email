@@ -16,11 +16,10 @@
   // Old: .propEditor .propInput .checkbox-replacer { padding: 4px 2px; font-size: 1.2em; }
   .objLabel.level0,
   .pane-title {
-    font-size: 1.2em;
+    font-size: 1em;
   }
-  .objLabel.level1 {
-    font-size: 1.2em;
-  }
+  // .objLabel.level1 size is controlled in the consolidated rule below
+  // (look for "Level 1: subsection header") — do not redefine here.
   .noSelectedBlock,
   .customStyleHelp,
   .objEmpty,
@@ -151,35 +150,37 @@
     }
   }
 
+  // Option row — flex left-align (single source of truth, see style_variables.less)
+  // flex-basis: 0 on .propInput stops native widget intrinsic size from triggering
+  // unwanted line-wraps; widgets shrink to fit the remaining 40% column.
   .propEditor {
-    display: table;
+    display: flex;
+    align-items: center;
+    gap: @panel-label-gap;
     width: 100%;
+    margin-bottom: @panel-row-gap;
   }
 
-  // Modern labels - Design System aligned
   .propLabel {
-    padding: 8px 8px;
-    padding-left: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 45%;
-    float: left;
-    text-align: right;
+    flex: 0 0 @panel-label-min-w;  // fixed 60% — does not shrink
+    min-width: 0;
+    text-align: left;
     color: #757575;  // gray-600 - secondary text
     font-size: 13px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     // "?" for tooltips
-    &[title]:before {
-      float: right;
-      position: initial;
+    &[title]:after {
       color: #9e9e9e;  // gray-500 - muted
       content: '';
       display: inline-block;
       width: 1em;
       height: 1em;
       background-color: currentColor;
+      vertical-align: middle;
       -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
       mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
       -webkit-mask-repeat: no-repeat;
@@ -192,50 +193,44 @@
       transition: color 0.15s ease;
     }
 
-    &[title]:hover:before {
+    &[title]:hover:after {
       color: var(--v-accent-base, #00acdc);
     }
   }
 
   .propInput {
-    width: 55%;
-    float: left;
+    flex: 1 1 0;       // basis 0 → ignore widget intrinsic size, stretch to fill
+    min-width: 0;
     input,
     select {
       width: 100%;
+      max-width: 100%;
     }
   }
 
-  .notnull.propEditor.checkboxes .propInput {
-    width: 50%;
-  }
-
+  // .propCheck sits BETWEEN .propLabel and .propInput visually (uses flex order)
+  // so the reset icon is read as "label → reset → input" rather than trailing
+  // off the row.
   .propCheck {
-    width: 5%;
-    float: left;
-    padding: 5px;
+    flex: 0 0 auto;
+    padding: 0;
+    order: 2;  // between label (1) and input (3)
     display: none;
   }
+  .propLabel { order: 1; }
+  .propInput { order: 3; }
   .notnull .propCheck {
     display: block;
   }
-
-  .propLabel:after,
-  .propInput:after,
-  .objEdit:after {
-    content: '';
-    display: table;
+  // When the reset icon is visible, shrink the label from 60% → 50% so the
+  // reset icon + input fit without truncating select values.
+  .propEditor.notnull > .propLabel {
+    flex-basis: 50%;
   }
 
   .objEdit {
     display: block;
     width: 100%;
-    /* background-color: rgba(0,0,0,0.02); */
-    &.level1 {
-      /* border-bottom: 2px solid #f1eee6; */
-      background-color: @mosaico-background-color;
-      padding: 2px;
-    }
   }
 
   .label.notused {
@@ -264,33 +259,7 @@
     display: none;
   }
 
-  // Level 1 container: card-like grouping for subsections
-  .objEdit.level1 {
-    padding-top: 0;
-    padding-bottom: 8px;
-    margin-bottom: 4px;
-    margin-top: 16px;  // Space before each subsection group
-  }
-
-  // Level 1: Subsection header (Section, Image, Title, Button, etc.)
-  // Stronger differentiation from field labels
-  .objLabel.level1 {
-    display: block;
-    color: rgba(0, 0, 0, 0.75);  // Darker than before for better visibility
-    font-size: 0.8125rem;  // 13px
-    font-weight: 600;  // Bolder than labels (500)
-    padding: 4px 0 8px 0;
-    margin: 0 0 8px;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);  // Very subtle separator
-    text-transform: uppercase;  // Uppercase for clear differentiation
-    letter-spacing: 0.03em;  // Slight letter spacing for uppercase
-  }
-
-  // Note: padding-left for objPreview circles removed - not used in current UI
-
-  // Modern section headers - Design System aligned
-  // Base style for all section labels - minimal, no borders
+  // Base section label - minimal, no borders
   .objLabel {
     display: block;
     color: #424242;  // gray-800 - primary text
@@ -298,48 +267,104 @@
     font-weight: 500;
     margin: 0 0 8px;
     padding: 8px 0;
-    border: none;  // No borders by default - reduce visual noise
+    border: none;
   }
 
+  // Level 0: main section header (Cover, Template Options, ...)
+  // Stretched edge-to-edge — relies on parent container having no horizontal padding.
   .objEdit.level0 {
-    padding: 0px 1px;
     margin-top: 20px;
   }
-
-  // Level 0: Main section header (Cover, Template Options, etc.)
-  // Strong visual hierarchy with accent left border
+  // Level 0 header — full-width since .ui-tabs-panel has no horizontal padding.
   .objLabel.level0 {
     display: block;
-    color: rgba(0, 0, 0, 0.87);  // primary text
-    background-color: #f5f5f5;  // gray-100 - visible background
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #f5f5f5;
     font-weight: 600;
-    font-size: 0.9375rem;  // 15px
+    font-size: 0.9375rem;
     border: none;
-    border-left: 3px solid var(--v-accent-base, #00acdc);  // Accent left border
+    border-left: 3px solid var(--v-accent-base, #00acdc);
     border-radius: 0;
     padding: 10px 12px;
-    margin: 0 -7px 12px -7px;
+    margin: 0 0 12px;
     text-transform: none;
     letter-spacing: 0.01em;
   }
-  .supportsCustomStyles .objLabel.level0 {
-    margin-right: 70px;
+
+  // Level 1: subsection card (Button, Image, Tracking, ...)
+  .objEdit.level1 {
+    background-color: white;
+    padding: @panel-section-pad;
+    border-radius: 4px;
+    margin-top: @panel-section-gap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    position: relative;
+  }
+  // First level1 right after a level0 header sits flush (level0 already provides separation)
+  .objEdit.level0 + .objEdit.level1,
+  .objLabel.level0 + .objEdit.level1 {
+    margin-top: 0;
   }
 
+  // Level 1: subsection header
+  .objLabel.level1 {
+    display: block;
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 4px 0 8px 0;
+    margin: 0 0 8px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  // Scrollable container for the whole panel (Style/Theme tabs).
+  // No horizontal padding so the level0 header break-out (-0.7em) reaches
+  // the panel edges consistently, like in the Content tab.
   .objEdit.level-1 {
-    padding: 0 15px;
+    padding: 0;
     overflow: auto;
     height: 95%;
     background-color: @mosaico-background-color;
     border-radius: 6px;
   }
 
-  .objEdit {
-    position: relative;
+  // Top-level option rows (direct children of .objEdit.level0, NOT inside a
+  // .objEdit.level1 card) need the same horizontal inset as level1 card
+  // content (16px), so spacing feels consistent across the whole panel.
+  .objEdit.level0 > .propEditor {
+    padding-left: 16px;
+    padding-right: 16px;
   }
-  .objEdit.level1 {
-    margin-top: 15px;
+
+  // Long text/URL/email inputs (Lien, Alt text, Preheader, Mirror Link, ...)
+  // get a stacked layout: label above, input full-width below.
+  //
+  // editor.js wraps every generated input in <label class="data-{widget}">
+  // (see _propInput in packages/editor/src/js/converter/editor.js:70-77).
+  // We target only the wide-input widgets and skip narrow ones (color, select,
+  // font, integer, boolean). The Vue tracking section uses a different markup
+  // (input direct child of .propInput, no <label>) so it is naturally excluded.
+  .propEditor:has(> .propInput > label.data-url),
+  .propEditor:has(> .propInput > label.data-text),
+  .propEditor:has(> .propInput > label.data-string),
+  .propEditor:has(> .propInput > label.data-email) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+
+    > .propLabel {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+    > .propInput {
+      flex: 1 1 auto;
+      width: 100%;
+    }
   }
+
   .objPreview {
     width: 50px;
     height: 50px;
@@ -357,21 +382,10 @@
     left: 20%;
   }
 
-  .propEditor {
-    /* border-bottom: 2px solid #CCC; */
-    padding: 2px;
+  // Last row in a level1 card has no bottom margin (the card padding handles it)
+  .objEdit.level1 > .propEditor:last-child {
+    margin-bottom: 0;
   }
-  .objEdit .propEditor {
-    padding: 2px 0;
-    border: 0;
-  }
-
-  /* questo renderebbe grigini i dati default
-  .propInput.default input,
-  .propInput.default select {
-    color: #CCC;
-  }
-  */
 
   .propEditor.notnull {
     font-weight: bold;
@@ -576,20 +590,51 @@
     }
   }
 
+  // .propCheck checkbox is a "revert to theme default" toggle (visible only when
+  // .notnull, i.e. the style differs from the theme). Rendered as a small
+  // circular-arrow button using the same visual language as the block-action
+  // toolbar (.tool buttons): primary-color icon, cyan-tinted hover bg.
   .propCheck input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      content: '';
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
-      font-size: 14px;
-      opacity: 1;
-    }
-    & + .checkbox-replacer:before {
-      content: '';
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z'/%3E%3Cpath d='m7 16.5-4.74-2.85'/%3E%3Cpath d='m7 16.5 5-3'/%3E%3Cpath d='M7 16.5v5.17'/%3E%3Cpath d='M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z'/%3E%3Cpath d='m17 16.5-5-3'/%3E%3Cpath d='m17 16.5 4.74-2.85'/%3E%3Cpath d='M17 16.5v5.17'/%3E%3Cpath d='M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z'/%3E%3Cpath d='M12 8 7.26 5.15'/%3E%3Cpath d='m12 8 4.74-2.85'/%3E%3Cpath d='M12 13.5V8'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z'/%3E%3Cpath d='m7 16.5-4.74-2.85'/%3E%3Cpath d='m7 16.5 5-3'/%3E%3Cpath d='M7 16.5v5.17'/%3E%3Cpath d='M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z'/%3E%3Cpath d='m17 16.5-5-3'/%3E%3Cpath d='m17 16.5 4.74-2.85'/%3E%3Cpath d='M17 16.5v5.17'/%3E%3Cpath d='M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z'/%3E%3Cpath d='M12 8 7.26 5.15'/%3E%3Cpath d='m12 8 4.74-2.85'/%3E%3Cpath d='M12 13.5V8'/%3E%3C/svg%3E");
-      font-size: 14px;
-      opacity: 0.8;
+    display: none;
+
+    & + .checkbox-replacer {
+      position: relative;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      margin: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      color: var(--v-primary-base, #093040);
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: currentColor;
+        -webkit-mask-image: @lucide-rotate-ccw;
+        mask-image: @lucide-rotate-ccw;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        opacity: 1;
+      }
+
+      &::after {
+        content: none;
+      }
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.1);
+      }
     }
   }
 
@@ -795,21 +840,33 @@
     position: relative;
   }
 
+  // Custom-block card: light gray surface so it stands out from the white
+  // sidebar background — template-block cards keep the white surface from
+  // .draggable-item since they have their own image preview that fills it.
   .block-custom {
     min-height: 5rem;
-    margin-bottom: 5px;
-    background-color: #F3F3F3;
-    padding-top: 35px;
+    background: #fafafa;
+    padding: 36px 12px 12px 12px;  // top room for the .block-name pill
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
   }
 
   .block-content-custom {
-    margin-left: 10px;
+    margin: 0;
+    padding: 4px 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.4;
 
     .block-content-custom-text {
-      margin-top: 25px;
+      margin: 0;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    & + .block-content-custom {
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
   }
 
@@ -857,7 +914,7 @@
     }
     .ui-tabs-panel {
       margin: 0;
-      padding: 0.7em;
+      padding: 0;  // No outer padding — option panels manage their own horizontal inset
       position: absolute;
       bottom: @ui-tabs-panel-padding;
       left: @ui-tabs-panel-padding;
@@ -892,18 +949,27 @@
       // outline: 1px solid green;
     }
   }
+  // Modern block-preview card: white surface, rounded, soft shadow that lifts
+  // on hover. Replaces the legacy "scale(1.05) + heavy shadow" effect.
   .draggable-item {
     position: relative;
+    margin-left: 15px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 
     .addblockbutton {
       z-index: 1000;
       position: absolute;
-      bottom: 10px;
-      right: 5px;
+      bottom: 8px;
+      right: 8px;
       display: none;
 
       &.custom {
-        right: 10px;
+        right: 8px;
       }
 
       .buttons-container {
@@ -915,40 +981,69 @@
 
     .image,
     .block img {
-      box-shadow: 0 0 1px @mosaico-shadow-color;
-      margin: 3px 0;
+      display: block;
+      width: 100%;
+      box-shadow: none;
+      margin: 0;
     }
   }
 
-  .input-field.search-container {
+  // Modern search field for the custom-blocks list — markup is
+  // <div class="bs-form-field search-container">
+  //   <input class="search-input" />
+  //   <label><i class="fa fa-search search-icon"></i></label>
+  // </div>
+  .search-container {
     position: relative;
-    margin-bottom: 1rem;
+    margin: 0 15px 12px 15px;
+    display: block !important;          // override .bs-form-field column-reverse
+    flex-direction: row !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 
     .search-input {
-      width: 100%;
-      height: 2.3rem;
-      border: 2px solid #ccc; // Border color when not focused
-      border-radius: 4px; // Rounded corners
-      padding: 0.25rem 0.5rem; // Some padding for better appearance
-      transition: border-color 0.3s ease; // Transition effect for smooth change
+      width: 100% !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      padding: 0 12px 0 36px !important;  // left: room for search icon
+      border: 1px solid rgba(0, 0, 0, 0.15) !important;
+      border-radius: 4px !important;
+      background: white !important;
+      font-size: 13px !important;
+      color: rgba(0, 0, 0, 0.87) !important;
+      box-shadow: none !important;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 
+      &::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+      }
+
+      &:hover:not(:focus) {
+        border-color: rgba(0, 0, 0, 0.3) !important;
+      }
       &:focus {
-        border-width: 2px;
-        border-color: #26a69a; // Border color when focused
-        outline: none; // Remove default outline
+        border-color: var(--v-accent-base, #00acdc) !important;
+        box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.12) !important;
+        outline: none !important;
       }
     }
 
-    label {
-      position: absolute;
-      right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
+    > label {
+      position: absolute !important;
+      left: 10px !important;
+      right: auto !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      pointer-events: none;
+      color: rgba(0, 0, 0, 0.4) !important;
+      font-size: 14px !important;
     }
 
     .search-icon {
-      cursor: pointer;
+      cursor: text;
+      color: inherit;
     }
   }
 
@@ -959,22 +1054,12 @@
   }
 
   .draggable-item:hover {
-    transform: scale(1.05, 1.05);
     z-index: 10;
-    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+    transform: translateY(-1px);
 
     .addblockbutton {
       display: block;
-    }
-
-    .image {
-      box-shadow: 0 0 15px @mosaico-shadow-color;
-    }
-    .block {
-      // outline: 2px solid red;
-      img {
-        box-shadow: 0 0 15px @mosaico-shadow-color;
-      }
     }
   }
 
@@ -1076,10 +1161,10 @@
   .block-list {
     position: absolute;
     inset: 0;
-    top: 3rem;
-    padding: 0.7em;
+    top: 4rem;
+    padding: 0;
     // suppongo che le immagini siano create per i 340px
-    max-width: 346px;
+    max-width: 370px;
   }
 
   // mette i blocchi al 100%
@@ -1088,8 +1173,18 @@
     width: 100%;
   }
 
+  // Selectable level1 sections still emit a click handler (synced with canvas
+  // selection) but no visual feedback — the canvas already shows the active
+  // selection, and the heavy outline was misleading.
   .objEdit.level1.selectable {
     .makeSelectable(5px, ~'.selecteditem', 0);
+
+    &:after,
+    &:hover:after,
+    &.selecteditem:after,
+    &.selecteditem:hover:after {
+      outline: none;
+    }
   }
 
   .blockCheck {

@@ -242,6 +242,12 @@ var undoManager = function (model, options) {
     push: _push,
     undoCommand: _xdoCommand(options.undoLabel, STATE_UNDOING, undoStack),
     redoCommand: _xdoCommand(options.redoLabel, STATE_REDOING, redoStack),
+    undoCount: ko.computed(function () {
+      return undoStack().length;
+    }),
+    redoCount: ko.computed(function () {
+      return redoStack().length;
+    }),
     reset: function () {
       undoStack.removeAll();
       redoStack.removeAll();

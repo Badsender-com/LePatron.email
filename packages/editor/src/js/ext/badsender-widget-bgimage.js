@@ -26,7 +26,7 @@ function html(propAccessor, onfocusbinding, parameters) {
     <input size="7" value="nothing" type="hidden" id="${propAccessor}" data-bind="value: ${propAccessor}, ${onfocusbinding}" />
     <div class="bgimage-button-group">
       <button class="bgimage-button-primary" data-bind="button: { css: { disabledButton: $root.hasImageByProp('${propAccessor}') }, disabled: $root.hasImageByProp('${propAccessor}'), icons: {primary: 'lucide lucide-image'} }, text: $root.t('widget-bgimage-button'), click: function(element, evt) { $root.openDialogGallery('${propAccessor}', '${parameters}', element); }">pick an image</button>
-      <button class="bgimage-button-reset" data-bind="button: { css: { disabledButton: !$root.hasImageByProp('${propAccessor}') }, disabled: !$root.hasImageByProp('${propAccessor}'), icons: {primary: 'lucide lucide-x'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
+      <button class="bgimage-button-reset" data-bind="button: { css: { disabledButton: !$root.hasImageByProp('${propAccessor}') }, disabled: !$root.hasImageByProp('${propAccessor}'), icons: {primary: 'lucide lucide-trash-2'}, text: false, label: $root.t('widget-bgimage-reset') }, click: $root.resetBgimage.bind($element, '${propAccessor}', '${parameters}');"></button>
     </div>
   `;
 }

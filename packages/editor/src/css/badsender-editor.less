@@ -234,22 +234,108 @@ body {
   background: white;
 }
 
-.addblockbutton {
-  box-shadow: none;
+// Hover-revealed "Add" button on TEMPLATE-block preview cards (cyan accent
+// pill). Custom blocks use a different layout (icons + add button) — see
+// .addblockbutton.custom below.
+.addblockbutton:not(.custom) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  background: var(--v-accent-base, #00acdc) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  text-transform: none !important;
+
+  &:hover {
+    background: var(--v-accent-darken1, #0097c4) !important;
+  }
+
+  .ui-button-text {
+    padding: 0 !important;
+    color: inherit !important;
+  }
 }
 
+// Custom-block actions row — transparent parent, individual button styles:
+// trash uses the destructive red-on-hover pattern, edit is neutral, add is
+// cyan accent (compact). Toned down to reduce overall blue presence.
+.addblockbutton.custom {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border: none !important;
+
+  .buttons-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    .ui-button {
+      background: transparent !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      box-shadow: none !important;
+      border: none !important;
+      padding: 6px !important;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 4px !important;
+      font-size: 12px !important;
+      font-weight: 500 !important;
+      text-transform: none !important;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.06) !important;
+        color: rgba(0, 0, 0, 0.87) !important;
+      }
+    }
+
+    // First button (delete) — destructive red-on-hover (matches .tool.delete)
+    > div:first-child .ui-button:hover {
+      background: rgba(240, 78, 35, 0.10) !important;
+      color: var(--v-error-base, #f04e23) !important;
+    }
+
+    // Last button (Add) — accent cyan, compact pill
+    > a:last-child {
+      background: var(--v-accent-base, #00acdc) !important;
+      color: white !important;
+      padding: 6px 12px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em;
+
+      &:hover {
+        background: var(--v-accent-darken1, #0097c4) !important;
+        color: white !important;
+      }
+
+      .ui-button-text { color: inherit !important; }
+    }
+  }
+}
+
+// Block name pill — subtle tag overlaid on the preview image, matching the
+// modern card style (light translucent bg + dark readable text).
 .block-name {
   display: inline-block;
-  padding: .25em 1em;
-  color: white;
-  background-color: var(--v-primary-base);
+  padding: 3px 8px;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(2px);
+  border-radius: 3px;
   position: absolute;
-  top: 3px;
-  left: 0;
-  max-width: 100%;
+  top: 6px;
+  left: 6px;
+  max-width: calc(100% - 12px);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  z-index: 2;
 }
 
 .mo {
@@ -310,9 +396,9 @@ body {
 // OTHER THINGS
 ////////
 
-.mo .objEdit input[type='checkbox'] + .checkbox-replacer:before {
-  color: @button-background-color;
-}
+// (removed legacy rule that forced @button-background-color on every
+//  .checkbox-replacer:before — it tinted the propCheck reset icon red,
+//  which conflicts with the new "neutral block-action" styling.)
 
 .mo .propInput .data-select select {
   border-top-right-radius: 0;
@@ -420,100 +506,27 @@ body {
 }
 
 // =============================================================================
-// SECTION HEADERS - Hierarchical styling
+// SECTION HEADERS — overrides removed
+// All level0/level1 layout & spacing rules have been consolidated in
+// style_mosaico_tools.less using @panel-* tokens (style_variables.less).
+// Do not re-add overrides here without updating those tokens.
 // =============================================================================
-
-// Level 1 subsection labels - minimal, no borders
-#main-toolbox .objLabel.level1 {
-  font-weight: 500;
-  border: none;  // Remove all borders for cleaner look
-}
 
 .mo .objPreview {
   border-width: 0;
   box-shadow: 1px 1px 3px @shadow-color;
 }
 
-// Base objLabel - clean defaults
-.mo .objLabel {
-  font-weight: 500;
-  border: none;
-}
-
-// Level 1 container - NO top border, use spacing instead
-.mo .objEdit.level1 {
-  border: none;  // Remove border separators
-}
-
-// Level 1 headers - stronger differentiation from field labels
-#main-toolbox .objLabel.level1 {
-  font-size: 0.75rem;  // 12px - compact uppercase
-  font-weight: 600;
-  padding-top: 4px;
-  color: rgba(0, 0, 0, 0.65);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-// Level 0 - main section header with accent left border
-.mo .objLabel.level0 {
-  border: none;
-  border-left: 3px solid var(--v-accent-base, #00acdc);
-}
-
-// Fix Level 0 background not reaching edges in Style tab
-.mo #toolstyles .objLabel.level0,
-.mo #tooltheme .objLabel.level0 {
-  margin-left: -15px;
-  margin-right: -15px;
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
-// Level 1 alignment - uniform across all tabs (objPreview not used)
-
 .input-style() {
   box-shadow: none;
 }
 & when(true) {
-  // Level 1 edit containers - card-like grouping
-  .mo .objEdit.level1 {
-    background-color: white;
-    padding: 12px 16px 16px 16px;
-    border-radius: 4px;
-    margin-top: 12px;
-    border: none;  // No borders - use spacing and background
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);  // Very subtle shadow for depth
-  }
-
-  // First level1 after level0 needs less top margin
-  .mo .objEdit.level0 + .objEdit.level1,
-  .mo .objLabel.level0 + .objEdit.level1 {
-    margin-top: 0;
-  }
-
-  // Toolstyles and tooltheme specific adjustments
-  .mo #toolstyles,
-  .mo #tooltheme {
-    .objEdit.level1 {
-      border-top-left-radius: 0;
-      .objLabel.level1 {
-        padding-bottom: 4px;
-        padding-top: 8px;
-      }
-    }
-  }
-
   .mo .objPreview {
     border-width: 0;
     box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.3);
     top: 4px;
     left: 4px;
   }
-
-  // Note: padding-left for Style/Theme tab Level 1 labels is set in style_mosaico_tools.less
-  // to accommodate the preview circle. Content tab has padding-left: 0 set above.
 
   // Modern form fields - Design System aligned
   // Full border box instead of underline-only
@@ -736,16 +749,19 @@ body {
     margin-bottom: 8px;
   }
 
-  .tracking-param-editor {
-    display: flex;
-    align-items: center;
+  // .propEditor is already flex via style_mosaico_tools; tighten the gap for key=value pairs
+  .tracking-param-editor.propEditor {
     gap: 8px;
+    margin-bottom: 0;  // outer .tracking-param-row handles spacing
+
+    // Cancel the global flex-order trick (label→reset→input) used elsewhere —
+    // the tracking row has its own DOM order: key, =, value, [×]
+    > * { order: 0; }
   }
 
   .tracking-input {
-    flex: 1;
-    width: auto !important;
-    float: none !important;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .tracking-equals {
@@ -1217,6 +1233,27 @@ body {
   align-items: center;
   gap: 8px;
   margin: 0;
+  max-width: 100%;
+
+  // Visually place the trash icon BEFORE "Choisir image" — matches the reset
+  // icon convention (action icon left of the action input).
+  .bgimage-button-reset { order: 1; }
+  .bgimage-button-primary { order: 2; }
+}
+
+// Image-picker rows: keep the standard 60/40 grid (label aligned with other
+// rows) and right-align the button group inside .propInput so the trash icon
+// sits at the same vertical line as select chevrons.
+.mo .propEditor:has(.bgimage-button-group) > .propInput {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+// Compact primary button so "Choisir image" + trash fit the 40% column.
+.mo .bgimage-button-primary.ui-button {
+  padding: 0 10px;
+  font-size: 0.75rem;
 }
 
 // Primary button (Choisir image) - Accent color with icon + text
@@ -1276,7 +1313,8 @@ body {
   }
 }
 
-// Reset button - Icon only, neutral style
+// Reset button — same "trash" pattern as block delete (.tool.delete):
+// neutral icon, red tint + light red background on hover.
 .bgimage-button-reset.ui-button {
   display: inline-flex !important;
   align-items: center;
@@ -1286,21 +1324,20 @@ body {
   min-width: 32px;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   background-color: transparent;
   color: rgba(0, 0, 0, 0.6);
   margin: 0;
 
   &:hover:not(.ui-button-disabled):not(.ui-state-disabled) {
-    background-color: rgba(0, 0, 0, 0.04);
-    color: rgba(0, 0, 0, 0.87);
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
   }
 
   &:focus {
     outline: none;
-    background-color: rgba(0, 0, 0, 0.08);
   }
 
   &.ui-button-disabled,
@@ -1310,7 +1347,7 @@ body {
     cursor: not-allowed;
   }
 
-  // Lucide icon - force display in all states including disabled
+  // Lucide icon - inherits color from button so hover turns it red
   .ui-icon.lucide {
     display: inline-flex !important;
     align-items: center;
@@ -1322,14 +1359,14 @@ body {
     height: auto !important;
     text-indent: 0 !important;
     overflow: visible !important;
-    visibility: visible !important; // Force visibility
-    color: rgba(0, 0, 0, 0.6); // Default dark color for icon
+    visibility: visible !important;
+    color: inherit;
 
     &::before {
       display: inline-block !important;
       color: inherit;
       content: '' !important;
-      visibility: visible !important; // Force visibility
+      visibility: visible !important;
     }
   }
 
