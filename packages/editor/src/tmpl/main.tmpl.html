@@ -52,9 +52,19 @@
       <!-- /ko -->
     </span>
     <!-- ko if: typeof $root.undo != 'undefined' -->
-    <span data-bind="buttonset: { }" class="leftButtons">
-      <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'lucide lucide-undo' }, label: $root.undo.name, text: true }">UNDO</a>
-      <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'lucide lucide-redo' }, label: $root.redo.name, text: true }">REDO</a>
+    <span class="leftButtons">
+      <span class="undo-button-wrapper">
+        <a title="Undo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Undo last operation') }, click: $root.undo.execute, clickBubble: false, button: { disabled: !$root.undo.enabled(), icons: { primary: 'lucide lucide-undo' }, label: $root.undo.name, text: false}">UNDO</a>
+        <!-- ko if: $root.undoCount && $root.undoCount() > 0 -->
+        <span class="undo-count-badge" data-bind="text: $root.undoCount()"></span>
+        <!-- /ko -->
+      </span>
+      <span class="undo-button-wrapper">
+        <a title="Redo last operation" href="javascript:void(0)" data-bind="attr: { title: $root.t('Redo last operation') }, click: $root.redo.execute, clickBubble: false, button: { disabled: !$root.redo.enabled(), icons: { primary: 'lucide lucide-redo' }, label: $root.redo.name, text: false}">REDO</a>
+        <!-- ko if: $root.redoCount && $root.redoCount() > 0 -->
+        <span class="undo-count-badge" data-bind="text: $root.redoCount()"></span>
+        <!-- /ko -->
+      </span>
     </span>
     <!-- ko if: $root.debug -->
     <a href="javascript:void(0)" data-bind="click: $root.undoReset, clickBubble: false, button: { disabled: !$root.undo.enabled() && !$root.redo.enabled(), label: 'reset', text: true }">RESET</a>

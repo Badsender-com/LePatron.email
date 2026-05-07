@@ -9,11 +9,56 @@
     margin-left: 0;
     margin-right: 0;
   }
+  // Inner upload zone — subtle dotted inset matching the modern dropzone.
   .mo-uploadzone {
     position: relative;
-    padding: 2em;
-    border: 2px dotted #808080;
+    padding: 1.5em;
+    border: 1px dotted rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background: #ffffff;
+    color: rgba(0, 0, 0, 0.6);
   }
+}
+
+// =============================================================================
+// IMAGE DROPZONE — shared between sidebar gallery (#toolimages) and modal
+// dialog (#dialogGallery). Outer dashed frame + inner dotted zone, accent
+// cyan on hover/draghover.
+// =============================================================================
+.img-dropzone {
+  position: relative;
+  margin: 0 0 16px 0;
+  flex-grow: 0;
+  flex-shrink: 0;
+  background-color: rgba(0, 0, 0, 0.02);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 12px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--v-accent-base, #00acdc);
+    background-color: rgba(0, 172, 220, 0.04);
+  }
+
+  &.ui-state-highlight:before {
+    .makeDroppable();
+    line-height: 45px;
+    height: auto;
+    top: -10px;
+    bottom: -10px;
+  }
+
+  &.ui-state-draghover,
+  &.ui-state-draghover:before {
+    background-color: rgba(0, 172, 220, 0.1);
+    border-color: var(--v-accent-base, #00acdc);
+    animation: none;
+  }
+}
+
+// Re-open .gallery-panel for the rest of the rules (kept short for context)
+.gallery-panel {
   .fileupload {
     z-index: 10;
     position: absolute;
@@ -293,38 +338,9 @@
     border-radius: 0 0 @dialog-border-radius @dialog-border-radius;
   }
 
-  // Upload dropzone - modern dashed border
-  .img-dropzone {
-    position: relative;
-    margin: 0 0 16px 0;
-    flex-grow: 0;
-    flex-shrink: 0;
-    background-color: rgba(0, 0, 0, 0.02);
-    border: 2px dashed rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 16px;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-
-    &:hover {
-      border-color: var(--v-accent-base);
-      background-color: rgba(0, 172, 220, 0.04);
-    }
-
-    &.ui-state-highlight:before {
-      .makeDroppable();
-      line-height: 45px;
-      height: auto;
-      top: -10px;
-      bottom: -10px;
-    }
-
-    &.ui-state-draghover,
-    &.ui-state-draghover:before {
-      background-color: rgba(0, 172, 220, 0.1);
-      border-color: var(--v-accent-base);
-      animation: none;
-    }
-  }
+  // .img-dropzone style is now lifted to the global scope (top of this file)
+  // so it applies to both the modal gallery (#dialogGallery) and the sidebar
+  // gallery (#toolimages).
 
   .uploadzone {
     font-size: 0.875rem;

@@ -45,13 +45,15 @@
     mask-size: contain;
   }
 
-  .draggable-item {
+  // Scoped to #toolimages: the 3-column gallery layout. Without this scope
+  // the rule was bleeding into the block list and overriding its margin.
+  #toolimages .draggable-item {
     margin-left: @gallery-gutter;
     margin-right: @gallery-gutter;
     // // http://stackoverflow.com/questions/28200574/make-math-happen-inside-css-calc-with-less#answer-28210969
     width: calc(33% ~'-' (@gallery-gutter*2));
   }
-  .draggable-item:nth-child(3) ~ .draggable-item {
+  #toolimages .draggable-item:nth-child(3) ~ .draggable-item {
     margin-top: @gallery-gutter;
   }
   .draggable.image {
@@ -136,10 +138,8 @@
       width: auto;
     }
   }
-  // .ool
-  .objEdit.level1.selectable.selecteditem:after {
-    border-color: var(--v-accent-base);
-  }
+  // Note: .objEdit.level1.selectable visual state is handled in style_mosaico_tools.less
+  // (subtle box-shadow elevation, no accent border).
 
   // ==========================================================================
   // TOGGLE SWITCHES - Vuetify v-switch Style

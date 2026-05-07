@@ -7,6 +7,34 @@
     border-right: 1px solid var(--v-primary-lighten2);
     border-left: 1px solid var(--v-primary-lighten2);
   }
+
+  // Undo / Redo count indicator — overlaid on the top-right corner of the
+  // arrow icon so it reads as part of the button, not a sibling element.
+  // Discreet neutral fill (no warning semantics).
+  .undo-button-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+  .undo-count-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
+  }
   .rightButtons {
     display: flex;
   }
