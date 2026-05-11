@@ -59,6 +59,7 @@
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
+          icons: { primary: 'lucide lucide-fw lucide-download' },
           label: $root.t('dl-btn-regular'),
         }
       "
@@ -74,6 +75,7 @@
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
+          icons: { primary: 'lucide lucide-fw lucide-cloud' },
           label: $root.cdnButtonLabel,
         }"
     >
@@ -89,6 +91,7 @@
         clickBubble: false,
         button: {
           disabled: !$root.download.enabled(),
+          icons: { primary: 'lucide lucide-fw lucide-server' },
           label: $root.ftpButtonLabel,
         }"
     >
@@ -97,12 +100,14 @@
     <!-- /ko -->
 
     <!-- ko if: $root.downloadFtp || $root.hasAdobeProfile -->
+    <hr class="download-form__menu-divider" />
     <div data-bind="foreach: profiles">
       <!-- ko if: $root.downloadFtp || type === 'ADOBE' -->
         <a href="javascript:void(0)" data-bind="
           click: $root.setSelectedProfile.bind($index()),
           button: {
           disabled: !$root.download.enabled(),
+          icons: { primary: 'lucide lucide-fw lucide-cable' },
           label: name,
         }">
           Link

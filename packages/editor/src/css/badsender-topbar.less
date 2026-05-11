@@ -123,27 +123,103 @@
 }
 .download-form {
   position: relative;
+
+  // Transparent bridge below the button — absolutely positioned so it doesn't
+  // affect flex layout, but keeps .download-form:hover true while the mouse
+  // crosses the gap to reach the dropdown.
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+  }
 }
 .download-form__menu {
   opacity: 0;
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: (@topbar-height);
-  box-shadow: 0 1px 10px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 0.5s;
+  top: calc(@topbar-height + 4px);
+  width: max-content;
+  min-width: 180px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: opacity 0.2s ease;
   margin: 0;
   max-height: 500px;
   overflow-y: auto;
   overflow-x: hidden;
-  
-  .ui-button {
-    display: block;
-    margin: 0;
-    text-transform: none;
-    border-radius: 0;
+  padding: 4px;
+  z-index: 200;
+
+  // Transparent bridge that fills the gap between trigger button and menu,
+  // keeping .download-form__menu:hover true while crossing the gap.
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 0;
+    right: 0;
+    height: 8px;
   }
 }
+
+// Override all topbar .ui-button styles inside the dropdown
+#toolbar .download-form__menu .ui-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
+  margin: 0;
+  padding: 8px 12px;
+  text-transform: none;
+  border-radius: 6px;
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: none !important;
+  color: var(--v-primary-base, #093040) !important;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &.pressed,
+  &.ui-state-hover {
+    background-color: rgba(0, 172, 220, 0.1) !important;
+    border-bottom: none !important;
+    color: var(--v-primary-base, #093040) !important;
+  }
+
+  .ui-icon.lucide {
+    margin-right: 10px;
+    flex-shrink: 0;
+    font-size: 15px;
+  }
+
+  .ui-button-text {
+    flex: 1;
+    text-align: left;
+  }
+
+  &.ui-button-disabled {
+    opacity: 0.45;
+  }
+}
+
+.download-form__menu-divider {
+  border: none !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+  margin: 4px 8px;
+}
+
 .download-form:hover .download-form__menu,
 .download-form__menu:hover {
   opacity: 1;
