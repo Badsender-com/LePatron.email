@@ -178,10 +178,14 @@
       line-height: 1.4;
     }
 
-    // Row and column reset for Materialize grid
+    // Materialize CSS n'est pas chargé : les classes .row/.col n'ont aucune
+    // largeur ni gouttière intrinsèque, mais leurs marges/paddings hérités
+    // du reset créaient une indentation cumulée à chaque imbrication (titre
+    // = 1 col, inputs = 2 cols → 12 px de décalage). On les met à plat pour
+    // que tous les contenus s'alignent sur le padding du .modal-content.
     .row {
-      margin-left: -12px;
-      margin-right: -12px;
+      margin-left: 0;
+      margin-right: 0;
       margin-bottom: 16px;
 
       &:last-child {
@@ -190,8 +194,8 @@
     }
 
     .col {
-      padding-left: 12px;
-      padding-right: 12px;
+      padding-left: 0;
+      padding-right: 0;
     }
 
     // Form field styles are now imported from badsender-form-field.less
@@ -479,14 +483,10 @@
     margin-bottom: 8px !important;
   }
 
-  // Override Materialize .row negative margins that break flexbox layout
+  // Adobe modal : le layout 2 colonnes utilise un flex container inline
+  // <div style="display: flex; gap: 24px;"> qu'on doit normaliser et dont
+  // on neutralise les .col enfants (sinon largeur 100% forcée).
   .modal-content {
-    .row {
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-    }
-
-    // Allow the flex container to work properly
     div[style*="display: flex"] {
       display: flex !important;
       gap: 24px !important;

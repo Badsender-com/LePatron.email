@@ -415,19 +415,27 @@ a[disabledhref]:-moz-read-write {
 }
 
 body > .ui-tooltip {
-  .win();
-
   .resetFont();
-  // font-family: @font-family;
-  // font-size: 1em;
   font-size: 14px;
-
-  border-width: 0px;
-  padding: 8px;
+  line-height: 22px;
+  font-weight: 400;
+  background-color: rgba(97, 97, 97, 0.9);
+  color: #ffffff;
+  border: 0;
+  border-radius: 4px;
+  padding: 5px 16px;
   position: absolute;
   z-index: 9999;
   max-width: 300px;
-  box-shadow: 0px 0px 5px #aaa;
+  box-shadow: none;
+  pointer-events: none;
+  overflow: hidden;
+
+  &::before,
+  &::after,
+  .ui-tooltip-pointer {
+    display: none !important;
+  }
 }
 
 .ui-helper-hidden-accessible {
