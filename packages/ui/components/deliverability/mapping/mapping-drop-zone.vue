@@ -58,7 +58,7 @@
       <draggable
         v-if="!single || resolvedItems.length === 0"
         :list="buffer"
-        :group="{ name: dragGroup, pull: false, put: true }"
+        :group="{ name: dragGroup, pull: false, put: [dragGroup] }"
         class="drop-zone__target"
         :class="{
           'drop-zone__target--empty':
