@@ -31,7 +31,7 @@
         <nuxt-link
           :to="`/deliverability/${audit.id}`"
           class="audit-item"
-          :class="{ 'audit-item--active': isActiveAudit(audit.id) }"
+          :class="{ 'audit-item--active': isAuditRoot(audit.id) }"
         >
           <span
             class="audit-item__dot"
@@ -98,6 +98,12 @@ export default {
     ...mapActions(DELIVERABILITY, { fetchAudits: FETCH_AUDITS }),
     isActiveAudit(auditId) {
       return this.$route.params.auditId === auditId;
+    },
+    isAuditRoot(auditId) {
+      return (
+        this.$route.params.auditId === auditId &&
+        this.$route.name === 'deliverability-auditId'
+      );
     },
   },
 };
