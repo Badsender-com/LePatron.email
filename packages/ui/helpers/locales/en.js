@@ -349,13 +349,14 @@ export default {
       saveAndContinue: 'Save & continue',
       complete: 'Complete inventory',
       saving: 'Saving...',
-      addHint: 'Separate multiple values with commas or line breaks. Ctrl+Enter for a new line.',
-      addHintWithDescription: 'Separate multiple values with commas or line breaks. Use "value: description" for an optional description. Ctrl+Enter for a new line.',
+      continue: 'Continue',
+      addHint: 'Separate multiple values with semicolons or line breaks. Ctrl+Enter for a new line.',
+      addHintWithDescription: 'Separate multiple values with semicolons or line breaks. Use "value: description" for an optional description. Ctrl+Enter for a new line.',
       steps: {
         platforms: {
           title: 'Sending platforms',
           description: 'List all Email Service Providers (ESP) you use to send emails',
-          placeholder: 'e.g., Brevo, Actito, Adobe Campaign',
+          placeholder: 'e.g., Brevo; Actito; Adobe Campaign',
         },
         usages: {
           title: 'Use cases',
@@ -365,7 +366,7 @@ export default {
         displayFromDomains: {
           title: 'Display-From domains',
           description: 'Enter the domains visible in the "From" field to recipients',
-          placeholder: 'e.g., company.com, newsletter.company.com',
+          placeholder: 'e.g., company.com; newsletter.company.com',
         },
         displayFromAddresses: {
           title: 'Display-From addresses',
@@ -390,7 +391,7 @@ export default {
         hostingDomains: {
           title: 'Hosting domains',
           description: 'Enter the domains where email images are hosted',
-          placeholder: 'e.g., images.company.com, cdn.company.com',
+          placeholder: 'e.g., images.company.com; cdn.company.com',
         },
         ips: {
           title: 'IP addresses',
@@ -400,7 +401,7 @@ export default {
         linkDestinationDomains: {
           title: 'Link destination domains',
           description: 'Enter the final destination domains that links resolve to after click tracking redirects',
-          placeholder: 'e.g., shop.company.com, blog.company.com',
+          placeholder: 'e.g., shop.company.com; blog.company.com',
         },
       },
     },

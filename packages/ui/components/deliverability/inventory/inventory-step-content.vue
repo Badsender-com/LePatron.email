@@ -59,26 +59,20 @@
         {{ $t('deliverability.inventory.previous') }}
       </button>
       <div class="step-actions__spacer" />
+      <span v-if="saving" class="saving-indicator">
+        <icon-refresh-cw :size="14" class="saving-indicator__icon" />
+        {{ $t('deliverability.inventory.saving') }}
+      </span>
       <button
         v-if="showComplete"
         class="btn btn--primary"
-        :disabled="saving"
-        @click="handleComplete"
+        @click="$emit('complete')"
       >
-        <span v-if="saving">{{ $t('deliverability.inventory.saving') }}</span>
-        <span v-else>{{ $t('deliverability.inventory.complete') }}</span>
+        {{ $t('deliverability.inventory.complete') }}
       </button>
-      <button
-        v-else
-        class="btn btn--primary"
-        :disabled="saving"
-        @click="handleSaveAndNext"
-      >
-        <span v-if="saving">{{ $t('deliverability.inventory.saving') }}</span>
-        <template v-else>
-          {{ $t('deliverability.inventory.saveAndContinue') }}
-          <icon-chevron-right :size="18" />
-        </template>
+      <button v-else class="btn btn--primary" @click="$emit('next')">
+        {{ $t('deliverability.inventory.continue') }}
+        <icon-chevron-right :size="18" />
       </button>
     </div>
   </div>
@@ -143,7 +137,7 @@ export default {
       if (!this.newItem.trim()) return;
 
       const parsed = this.newItem
-        .split(/[\n,]+/)
+        .split(/[\n;]+/)
         .map((raw) => {
           const colonIndex = raw.indexOf(':');
           if (colonIndex !== -1) {
@@ -162,38 +156,27 @@ export default {
         .forEach((item) => this.localItems.push(item));
 
       this.newItem = '';
+      this.autoSave();
     },
     removeItem(index) {
       this.localItems.splice(index, 1);
+      this.autoSave();
     },
-    async saveItems() {
+    async autoSave() {
       this.saving = true;
       try {
         await this.bulkUpsert({
           auditId: this.auditId,
           category: this.category,
           items: this.localItems,
+          updateProgress: true,
         });
-        this.$emit('save');
-        return true;
+        this.$emit('saved');
       } catch (error) {
         console.error('Error saving inventory:', error);
         this.$emit('error', error);
-        return false;
       } finally {
         this.saving = false;
-      }
-    },
-    async handleSaveAndNext() {
-      const success = await this.saveItems();
-      if (success) {
-        this.$emit('next');
-      }
-    },
-    async handleComplete() {
-      const success = await this.saveItems();
-      if (success) {
-        this.$emit('complete');
       }
     },
   },
@@ -352,6 +335,27 @@ export default {
 
 .step-actions__spacer {
   flex: 1;
+}
+
+.saving-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gray-400);
+}
+
+.saving-indicator__icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn {

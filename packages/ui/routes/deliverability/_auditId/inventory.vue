@@ -74,7 +74,7 @@
             :show-prev="currentStep > 1"
             :show-complete="currentStep === steps.length"
             :supports-description="!!currentStepData.supportsDescription"
-            @save="handleStepSave"
+            @saved="refreshAuditProgress"
             @prev="prevStep"
             @next="nextStep"
             @complete="handleComplete"
@@ -222,15 +222,8 @@ export default {
         this.currentStep--;
       }
     },
-    async handleStepSave() {
-      await Promise.all([
-        this.fetchAudit(this.auditId),
-        this.fetchInventoryItems(this.auditId),
-      ]);
-      this.$store.commit(`${PAGE}/${SHOW_SNACKBAR}`, {
-        message: this.$t('deliverability.inventory.saved'),
-        color: 'success',
-      });
+    async refreshAuditProgress() {
+      await this.fetchAudit(this.auditId);
     },
     handleComplete() {
       this.$store.commit(`${PAGE}/${SHOW_SNACKBAR}`, {

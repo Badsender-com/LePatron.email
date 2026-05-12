@@ -351,10 +351,11 @@ export default {
       noItems: 'Aucun élément ajouté',
       previous: 'Précédent',
       saveAndContinue: 'Enregistrer et continuer',
+      continue: 'Continuer',
       complete: 'Terminer l\'inventaire',
       saving: 'Enregistrement...',
-      addHint: 'Séparez les valeurs par des virgules ou des sauts de ligne. Ctrl+Entrée pour aller à la ligne.',
-      addHintWithDescription: 'Séparez les valeurs par des virgules ou des sauts de ligne. Utilisez "valeur : description" pour une description optionnelle. Ctrl+Entrée pour aller à la ligne.',
+      addHint: 'Séparez les valeurs par des points-virgules ou des sauts de ligne. Ctrl+Entrée pour aller à la ligne.',
+      addHintWithDescription: 'Séparez les valeurs par des points-virgules ou des sauts de ligne. Utilisez "valeur : description" pour une description optionnelle. Ctrl+Entrée pour aller à la ligne.',
       steps: {
         platforms: {
           title: 'Plateformes d\'envoi',
@@ -369,7 +370,7 @@ export default {
         displayFromDomains: {
           title: 'Domaines Display-From',
           description: 'Saisissez les domaines visibles dans le champ "De" pour les destinataires',
-          placeholder: 'ex: company.com, newsletter.company.com',
+          placeholder: 'ex: company.com; newsletter.company.com',
         },
         displayFromAddresses: {
           title: 'Adresses Display-From',
@@ -394,7 +395,7 @@ export default {
         hostingDomains: {
           title: 'Domaines d\'hébergement',
           description: 'Saisissez les domaines où les images des emails sont hébergées',
-          placeholder: 'ex: images.company.com, cdn.company.com',
+          placeholder: 'ex: images.company.com; cdn.company.com',
         },
         ips: {
           title: 'Adresses IP',
@@ -404,7 +405,7 @@ export default {
         linkDestinationDomains: {
           title: 'Domaines de destination des liens',
           description: 'Saisissez les domaines finaux vers lesquels pointent les liens après la redirection du tracking de clics',
-          placeholder: 'ex: boutique.company.com, blog.company.com',
+          placeholder: 'ex: boutique.company.com; blog.company.com',
         },
       },
     },

@@ -32,6 +32,7 @@ export const getters = {
 export const M_SET_AUDITS = 'M_SET_AUDITS';
 export const M_SET_CURRENT_AUDIT = 'M_SET_CURRENT_AUDIT';
 export const M_SET_INVENTORY_ITEMS = 'M_SET_INVENTORY_ITEMS';
+export const M_SET_INVENTORY_CATEGORY = 'M_SET_INVENTORY_CATEGORY';
 export const M_SET_LOADING = 'M_SET_LOADING';
 export const M_ADD_AUDIT = 'M_ADD_AUDIT';
 export const M_UPDATE_AUDIT = 'M_UPDATE_AUDIT';
@@ -46,6 +47,12 @@ export const mutations = {
   },
   [M_SET_INVENTORY_ITEMS](state, items) {
     state.inventoryItems = items;
+  },
+  [M_SET_INVENTORY_CATEGORY](state, { category, items }) {
+    state.inventoryItems = {
+      ...state.inventoryItems,
+      [category.toLowerCase()]: items,
+    };
   },
   [M_SET_LOADING](state, loading) {
     state.loading = loading;
@@ -188,18 +195,15 @@ export const actions = {
   },
 
   async [BULK_UPSERT_INVENTORY](
-    _context,
+    { commit },
     { auditId, category, items, updateProgress = true }
   ) {
     try {
       const response = await this.$axios.$post(
         `deliverability/audits/${auditId}/inventory/bulk`,
-        {
-          category,
-          items,
-          updateProgress,
-        }
+        { category, items, updateProgress }
       );
+      commit(M_SET_INVENTORY_CATEGORY, { category, items: response.items });
       return response.items;
     } catch (error) {
       console.error('Error upserting inventory items:', error);
