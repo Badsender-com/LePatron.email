@@ -356,6 +356,8 @@ export default {
       saving: 'Enregistrement...',
       addHint: 'Séparez les valeurs par des points-virgules ou des sauts de ligne. Ctrl+Entrée pour aller à la ligne.',
       addHintWithDescription: 'Séparez les valeurs par des points-virgules ou des sauts de ligne. Utilisez "valeur : description" pour une description optionnelle. Ctrl+Entrée pour aller à la ligne.',
+      editValuePlaceholder: 'Modifier la valeur...',
+      editDescriptionPlaceholder: 'Modifier la description (optionnelle)...',
       steps: {
         platforms: {
           title: 'Plateformes d\'envoi',

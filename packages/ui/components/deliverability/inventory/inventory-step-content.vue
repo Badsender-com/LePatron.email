@@ -33,16 +33,67 @@
         v-for="(item, index) in localItems"
         :key="item.id || index"
         class="item-row"
+        :class="{ 'item-row--editing': editingIndex === index }"
       >
-        <div class="item-row__content">
-          <span class="item-row__value">{{ item.value }}</span>
-          <span v-if="item.description" class="item-row__description">
-            {{ item.description }}
-          </span>
-        </div>
-        <button class="item-row__delete" @click="removeItem(index)">
-          <icon-trash2 :size="16" />
-        </button>
+        <!-- Edit mode -->
+        <template v-if="editingIndex === index">
+          <div class="item-row__edit">
+            <input
+              ref="editValueInput"
+              v-model="editValue"
+              class="item-row__edit-input"
+              :placeholder="$t('deliverability.inventory.editValuePlaceholder')"
+              @keydown.enter.prevent="confirmEdit"
+              @keydown.esc="cancelEdit"
+            >
+            <input
+              v-if="supportsDescription"
+              v-model="editDescription"
+              class="item-row__edit-input item-row__edit-input--description"
+              :placeholder="
+                $t('deliverability.inventory.editDescriptionPlaceholder')
+              "
+              @keydown.enter.prevent="confirmEdit"
+              @keydown.esc="cancelEdit"
+            >
+          </div>
+          <div class="item-row__edit-actions">
+            <button
+              class="item-row__action item-row__action--confirm"
+              :disabled="!editValue.trim()"
+              @click="confirmEdit"
+            >
+              <icon-check :size="16" />
+            </button>
+            <button
+              class="item-row__action item-row__action--cancel"
+              @click="cancelEdit"
+            >
+              <icon-x :size="16" />
+            </button>
+          </div>
+        </template>
+
+        <!-- Display mode -->
+        <template v-else>
+          <div class="item-row__content">
+            <span class="item-row__value">{{ item.value }}</span>
+            <span v-if="item.description" class="item-row__description">
+              {{ item.description }}
+            </span>
+          </div>
+          <div class="item-row__actions">
+            <button class="item-row__action" @click="startEdit(index)">
+              <icon-pencil :size="15" />
+            </button>
+            <button
+              class="item-row__action item-row__action--delete"
+              @click="removeItem(index)"
+            >
+              <icon-trash2 :size="15" />
+            </button>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -119,6 +170,9 @@ export default {
       localItems: [],
       newItem: '',
       saving: false,
+      editingIndex: null,
+      editValue: '',
+      editDescription: '',
     };
   },
   watch: {
@@ -161,6 +215,27 @@ export default {
     removeItem(index) {
       this.localItems.splice(index, 1);
       this.autoSave();
+    },
+    startEdit(index) {
+      this.editingIndex = index;
+      this.editValue = this.localItems[index].value;
+      this.editDescription = this.localItems[index].description || '';
+      this.$nextTick(() => {
+        if (this.$refs.editValueInput) {
+          this.$refs.editValueInput.focus();
+        }
+      });
+    },
+    confirmEdit() {
+      if (!this.editValue.trim()) return;
+      this.localItems[this.editingIndex].value = this.editValue.trim();
+      this.localItems[this.editingIndex].description =
+        this.editDescription.trim() || null;
+      this.editingIndex = null;
+      this.autoSave();
+    },
+    cancelEdit() {
+      this.editingIndex = null;
     },
     async autoSave() {
       this.saving = true;
@@ -261,7 +336,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: var(--gray-50);
   border-radius: var(--r-sm);
   transition: background var(--t-fast);
@@ -269,6 +344,16 @@ export default {
 
 .item-row:hover {
   background: var(--gray-100);
+}
+
+.item-row--editing {
+  background: var(--white);
+  border: 1px solid #00acdc;
+  box-shadow: 0 0 0 3px rgba(0, 172, 220, 0.1);
+}
+
+.item-row--editing:hover {
+  background: var(--white);
 }
 
 .item-row__content {
@@ -287,15 +372,63 @@ export default {
 
 .item-row__description {
   font-size: 13px;
+  color: var(--gray-500);
+}
+
+/* Edit mode */
+.item-row__edit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.item-row__edit-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color var(--t-fast);
+}
+
+.item-row__edit-input:focus {
+  border-color: #00acdc;
+}
+
+.item-row__edit-input--description {
+  font-size: 13px;
   color: var(--gray-600);
 }
 
-.item-row__delete {
+/* Action buttons */
+.item-row__actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.item-row:hover .item-row__actions {
+  opacity: 1;
+}
+
+.item-row__edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.item-row__action {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: transparent;
   color: var(--gray-400);
   border: none;
@@ -304,7 +437,27 @@ export default {
   transition: all var(--t-fast);
 }
 
-.item-row__delete:hover {
+.item-row__action:hover {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.item-row__action--delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.item-row__action--confirm:not(:disabled):hover {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.item-row__action--confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.item-row__action--cancel:hover {
   background: #fee2e2;
   color: #dc2626;
 }

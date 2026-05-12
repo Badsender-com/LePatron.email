@@ -352,6 +352,8 @@ export default {
       continue: 'Continue',
       addHint: 'Separate multiple values with semicolons or line breaks. Ctrl+Enter for a new line.',
       addHintWithDescription: 'Separate multiple values with semicolons or line breaks. Use "value: description" for an optional description. Ctrl+Enter for a new line.',
+      editValuePlaceholder: 'Edit value...',
+      editDescriptionPlaceholder: 'Edit description (optional)...',
       steps: {
         platforms: {
           title: 'Sending platforms',
