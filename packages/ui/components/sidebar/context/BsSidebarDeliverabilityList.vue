@@ -45,6 +45,7 @@
           <nuxt-link
             :to="`/deliverability/${audit.id}/inventory`"
             class="subnav-item"
+            :class="{ 'subnav-item--active': isSubPage(audit.id, 'inventory') }"
           >
             <icon-clipboard-list :size="13" />
             <span>{{ $t('deliverability.modules.inventory.title') }}</span>
@@ -52,6 +53,7 @@
           <nuxt-link
             :to="`/deliverability/${audit.id}/mapping`"
             class="subnav-item"
+            :class="{ 'subnav-item--active': isSubPage(audit.id, 'mapping') }"
           >
             <icon-network :size="13" />
             <span>{{ $t('deliverability.modules.mapping.title') }}</span>
@@ -103,6 +105,12 @@ export default {
       return (
         this.$route.params.auditId === auditId &&
         this.$route.name === 'deliverability-auditId'
+      );
+    },
+    isSubPage(auditId, subPage) {
+      return (
+        this.$route.params.auditId === auditId &&
+        this.$route.name === `deliverability-auditId-${subPage}`
       );
     },
   },
@@ -230,9 +238,10 @@ export default {
   color: rgba(0, 0, 0, 0.87);
 }
 
-.router-link-active.subnav-item {
+.subnav-item--active {
   color: #00acdc;
   font-weight: 500;
+  background: rgba(0, 172, 220, 0.08);
 }
 
 .subnav-item--disabled {
