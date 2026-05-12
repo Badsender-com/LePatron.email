@@ -47,6 +47,7 @@ const aiFeatureRouter = require('./ai-feature/ai-feature.routes');
 const translationRouter = require('./translation/translation.routes');
 const deliverabilityAuditRouter = require('./deliverability/audit.routes');
 const deliverabilityInventoryRouter = require('./deliverability/inventory-item.routes');
+const deliverabilityMappingRouter = require('./deliverability/mapping.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -295,6 +296,7 @@ if (cluster.isMaster) {
   app.use('/api/dashboards', dashboardRouter);
   app.use('/api/deliverability', deliverabilityAuditRouter);
   app.use('/api/deliverability', deliverabilityInventoryRouter);
+  app.use('/api/deliverability', deliverabilityMappingRouter);
 
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');

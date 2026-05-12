@@ -74,6 +74,13 @@ import {
   Image,
   Play,
   Pause,
+
+  // Mapping
+  GripVertical,
+  Star,
+  Server,
+  Tag,
+  Layers,
 } from 'lucide-vue';
 
 // Register all icons globally with 'Icon' prefix
@@ -150,6 +157,13 @@ const icons = {
   IconImage: Image,
   IconPlay: Play,
   IconPause: Pause,
+
+  // Mapping
+  IconGripVertical: GripVertical,
+  IconStar: Star,
+  IconServer: Server,
+  IconTag: Tag,
+  IconLayers: Layers,
 };
 
 // Register all icons as global components

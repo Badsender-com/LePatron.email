@@ -59,6 +59,8 @@ model Audit {
 
   // Relations
   inventoryItems InventoryItem[]
+  mappingGroups  MappingGroup[]
+  mappingEntries MappingEntry[]
 
   @@index([companyId, createdAt(sort: Desc)])
   @@index([companyId, status])
@@ -80,4 +82,66 @@ model InventoryItem {
   @@unique([auditId, category, value])
   @@index([auditId, category])
   @@map("inventory_items")
+}
+
+// Enum statut d'une ligne de mapping
+enum MappingEntryStatus {
+  EN_DISCUSSION
+  CONFIRMED
+  REJECTED
+}
+
+// Modèle MappingGroup - Groupe logique de lignes d'infrastructure
+model MappingGroup {
+  id          String   @id @default(uuid())
+  auditId     String   @map("audit_id")
+  name        String   @default("New Group")
+  sortOrder   Int      @default(0) @map("sort_order")
+  isCollapsed Boolean  @default(false) @map("is_collapsed")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  audit   Audit          @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  entries MappingEntry[]
+
+  @@index([auditId, sortOrder])
+  @@map("mapping_groups")
+}
+
+// Modèle MappingEntry - Ligne d'infrastructure email
+model MappingEntry {
+  id         String  @id @default(uuid())
+  auditId    String  @map("audit_id")
+  groupId    String? @map("group_id")
+  customName String? @map("custom_name")
+
+  // Champs single-value (référence vers InventoryItem par ID)
+  platformId String? @map("platform_id")
+  usageId    String? @map("usage_id")
+
+  // Champs multi-value (tableaux d'IDs InventoryItem)
+  fromDomainIds            String[] @default([]) @map("from_domain_ids")
+  ipIds                    String[] @default([]) @map("ip_ids")
+  mailFromIds              String[] @default([]) @map("mail_from_ids")
+  replyToIds               String[] @default([]) @map("reply_to_ids")
+  trackingDomainIds        String[] @default([]) @map("tracking_domain_ids")
+  hostingDomainIds         String[] @default([]) @map("hosting_domain_ids")
+  linkDestinationDomainIds String[] @default([]) @map("link_destination_domain_ids")
+
+  comments       String?
+  status         MappingEntryStatus @default(EN_DISCUSSION)
+  qualityScore   Int                @default(0) @map("quality_score")
+  strategicScore Int                @default(0) @map("strategic_score")
+  sortOrder      Int                @default(0) @map("sort_order")
+  usesSharedIps  Boolean            @default(false) @map("uses_shared_ips")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  audit Audit         @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  group MappingGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([auditId, sortOrder])
+  @@index([auditId, groupId])
+  @@map("mapping_entries")
 }

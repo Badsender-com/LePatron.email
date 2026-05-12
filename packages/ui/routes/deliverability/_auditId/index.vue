@@ -37,9 +37,7 @@
                   <icon-pencil :size="18" />
                 </v-list-item-icon>
                 <v-list-item-title>
-                  {{
-                    $t('deliverability.audits.card.edit')
-                  }}
+                  {{ $t('deliverability.audits.card.edit') }}
                 </v-list-item-title>
               </v-list-item>
               <v-divider />
@@ -88,8 +86,11 @@
         </nuxt-link>
 
         <!-- Infrastructure Mapping -->
-        <div class="module-card module-card--disabled">
-          <div class="module-card__icon module-card__icon--disabled">
+        <nuxt-link
+          :to="`/deliverability/${auditId}/mapping`"
+          class="module-card"
+        >
+          <div class="module-card__icon">
             <icon-globe :size="26" />
           </div>
           <div class="module-card__content">
@@ -99,13 +100,11 @@
             <p class="module-card__description">
               {{ $t('deliverability.modules.mapping.description') }}
             </p>
-            <div class="module-card__footer">
-              <span class="coming-soon-badge">{{
-                $t('deliverability.comingSoon')
-              }}</span>
-            </div>
           </div>
-        </div>
+          <div class="module-card__arrow">
+            <icon-chevron-right :size="20" />
+          </div>
+        </nuxt-link>
 
         <!-- DNS Analysis -->
         <div class="module-card module-card--disabled">
@@ -161,9 +160,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="closeEditDialog">
-            {{
-              $t('deliverability.audits.createDialog.cancel')
-            }}
+            {{ $t('deliverability.audits.createDialog.cancel') }}
           </v-btn>
           <v-btn
             color="primary"
@@ -181,9 +178,7 @@
     <v-dialog v-model="deleteDialog" max-width="500px" persistent>
       <v-card>
         <v-card-title class="text-h5">
-          {{
-            $t('deliverability.audits.card.deleteDialog.title')
-          }}
+          {{ $t('deliverability.audits.card.deleteDialog.title') }}
         </v-card-title>
         <v-card-text
           v-html="
@@ -195,9 +190,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="deleteDialog = false">
-            {{
-              $t('deliverability.audits.card.deleteDialog.cancel')
-            }}
+            {{ $t('deliverability.audits.card.deleteDialog.cancel') }}
           </v-btn>
           <v-btn color="error" :loading="deleting" @click="handleDelete">
             {{ $t('deliverability.audits.card.deleteDialog.confirm') }}
