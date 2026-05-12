@@ -1,5 +1,11 @@
 <template>
-  <div class="drop-zone" :class="{ 'drop-zone--active': isDragActive }">
+  <div
+    class="drop-zone"
+    :class="{
+      'drop-zone--active': isDragActive,
+      'drop-zone--highlighted': isHighlighted && !isDragActive,
+    }"
+  >
     <div class="drop-zone__header">
       <span class="drop-zone__icon"><slot name="icon" /></span>
       <span class="drop-zone__label">{{ label }}</span>
@@ -110,9 +116,18 @@ export default {
     return {
       buffer: [],
       isDragActive: false,
+      isHighlighted: false,
       isAddingManual: false,
       manualValue: '',
     };
+  },
+  mounted() {
+    this.$root.$on('mapping-drag-start', this.onGlobalDragStart);
+    this.$root.$on('mapping-drag-end', this.onGlobalDragEnd);
+  },
+  beforeDestroy() {
+    this.$root.$off('mapping-drag-start', this.onGlobalDragStart);
+    this.$root.$off('mapping-drag-end', this.onGlobalDragEnd);
   },
   methods: {
     onBufferChange(evt) {
@@ -149,6 +164,12 @@ export default {
       this.isAddingManual = false;
       this.manualValue = '';
     },
+    onGlobalDragStart(dragGroup) {
+      this.isHighlighted = dragGroup === this.dragGroup;
+    },
+    onGlobalDragEnd() {
+      this.isHighlighted = false;
+    },
   },
 };
 </script>
@@ -162,9 +183,16 @@ export default {
   transition: border-color var(--t-fast), background var(--t-fast);
 }
 
+.drop-zone--highlighted {
+  border-color: #00acdc;
+  border-style: dashed;
+  background: rgba(0, 172, 220, 0.04);
+}
+
 .drop-zone--active {
   border-color: #00acdc;
-  background: rgba(0, 172, 220, 0.04);
+  border-style: solid;
+  background: rgba(0, 172, 220, 0.1);
 }
 
 .drop-zone__header {

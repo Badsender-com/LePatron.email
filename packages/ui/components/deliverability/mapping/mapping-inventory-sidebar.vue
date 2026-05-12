@@ -50,6 +50,10 @@
             :clone="cloneItem"
             :sort="false"
             class="inv-section__items"
+            @start="
+              $root.$emit('mapping-drag-start', `inv-${section.category}`)
+            "
+            @end="$root.$emit('mapping-drag-end')"
           >
             <div
               v-for="item in sectionItems(section.category)"
