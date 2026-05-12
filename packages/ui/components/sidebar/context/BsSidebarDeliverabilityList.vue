@@ -49,10 +49,13 @@
             <icon-clipboard-list :size="13" />
             <span>{{ $t('deliverability.modules.inventory.title') }}</span>
           </nuxt-link>
-          <span class="subnav-item subnav-item--disabled">
+          <nuxt-link
+            :to="`/deliverability/${audit.id}/mapping`"
+            class="subnav-item"
+          >
             <icon-network :size="13" />
             <span>{{ $t('deliverability.modules.mapping.title') }}</span>
-          </span>
+          </nuxt-link>
           <span class="subnav-item subnav-item--disabled">
             <icon-search :size="13" />
             <span>{{ $t('deliverability.modules.dns.title') }}</span>

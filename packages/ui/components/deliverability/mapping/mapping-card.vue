@@ -89,48 +89,76 @@
 
     <!-- Body -->
     <div v-if="expanded" class="mapping-card__body">
-      <!-- Platform (single select) -->
-      <div class="card-field">
-        <label class="card-field__label">
+      <!-- Platform (drop zone + select fallback) -->
+      <mapping-drop-zone
+        :label="$t('deliverability.mapping.fields.platform')"
+        drag-group="inv-platform"
+        :resolved-items="
+          entry.platformId && inventoryMap[entry.platformId]
+            ? [inventoryMap[entry.platformId]]
+            : []
+        "
+        :single="true"
+        @add-item="update('platformId', $event)"
+        @remove-item="update('platformId', null)"
+      >
+        <template #icon>
           <icon-server :size="13" />
-          {{ $t('deliverability.mapping.fields.platform') }}
-        </label>
-        <select
-          class="card-field__select"
-          :value="entry.platformId || ''"
-          @change="update('platformId', $event.target.value || null)"
-        >
-          <option value="">
-            — {{ $t('deliverability.mapping.fields.selectPlatform') }} —
-          </option>
-          <option v-for="item in platformItems" :key="item.id" :value="item.id">
-            {{ item.value }}
-          </option>
-        </select>
-      </div>
+        </template>
+        <template #fallback>
+          <select
+            class="card-field__select card-field__select--inline"
+            :value="entry.platformId || ''"
+            @change="update('platformId', $event.target.value || null)"
+          >
+            <option value="">
+              — {{ $t('deliverability.mapping.fields.selectPlatform') }} —
+            </option>
+            <option
+              v-for="item in platformItems"
+              :key="item.id"
+              :value="item.id"
+            >
+              {{ item.value }}
+            </option>
+          </select>
+        </template>
+      </mapping-drop-zone>
 
-      <!-- Usage (single select) -->
-      <div class="card-field">
-        <label class="card-field__label">
+      <!-- Usage (drop zone + select fallback) -->
+      <mapping-drop-zone
+        :label="$t('deliverability.mapping.fields.usage')"
+        drag-group="inv-usage"
+        :resolved-items="
+          entry.usageId && inventoryMap[entry.usageId]
+            ? [inventoryMap[entry.usageId]]
+            : []
+        "
+        :single="true"
+        @add-item="update('usageId', $event)"
+        @remove-item="update('usageId', null)"
+      >
+        <template #icon>
           <icon-tag :size="13" />
-          {{ $t('deliverability.mapping.fields.usage') }}
-        </label>
-        <select
-          class="card-field__select"
-          :value="entry.usageId || ''"
-          @change="update('usageId', $event.target.value || null)"
-        >
-          <option value="">
-            — {{ $t('deliverability.mapping.fields.selectUsage') }} —
-          </option>
-          <option v-for="item in usageItems" :key="item.id" :value="item.id">
-            {{ item.value
-            }}<template v-if="item.description">
-              · {{ item.description }}
-            </template>
-          </option>
-        </select>
-      </div>
+        </template>
+        <template #fallback>
+          <select
+            class="card-field__select card-field__select--inline"
+            :value="entry.usageId || ''"
+            @change="update('usageId', $event.target.value || null)"
+          >
+            <option value="">
+              — {{ $t('deliverability.mapping.fields.selectUsage') }} —
+            </option>
+            <option v-for="item in usageItems" :key="item.id" :value="item.id">
+              {{ item.value
+              }}<template v-if="item.description">
+                · {{ item.description }}
+              </template>
+            </option>
+          </select>
+        </template>
+      </mapping-drop-zone>
 
       <!-- Array drop zones -->
       <div class="card-fields-grid">

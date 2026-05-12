@@ -80,6 +80,8 @@
 import draggable from 'vuedraggable';
 
 const SECTIONS = [
+  { category: 'platform', icon: 'icon-server', labelKey: 'platforms' },
+  { category: 'usage', icon: 'icon-tag', labelKey: 'usages' },
   {
     category: 'display_from_domain',
     icon: 'icon-globe',

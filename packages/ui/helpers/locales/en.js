@@ -383,6 +383,8 @@ export default {
       sidebar: {
         title: 'Inventory',
         hint: 'Drag items onto the lines to fill in the infrastructure fields.',
+        platforms: 'Sending platforms',
+        usages: 'Use cases',
         fromDomains: 'Display-From domains',
         ips: 'IPs',
         mailFrom: 'Mail-From domains',

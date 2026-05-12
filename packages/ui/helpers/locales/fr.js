@@ -387,6 +387,8 @@ export default {
       sidebar: {
         title: 'Inventaire',
         hint: 'Faites glisser les éléments sur les lignes pour renseigner les champs d\'infrastructure.',
+        platforms: 'Plateformes d\'envoi',
+        usages: 'Cas d\'usage',
         fromDomains: 'Domaines Display-From',
         ips: 'IPs',
         mailFrom: 'Domaines Mail-From',

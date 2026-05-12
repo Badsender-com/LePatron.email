@@ -21,8 +21,9 @@
         </button>
       </span>
 
-      <!-- Draggable target zone (invisible buffer) -->
+      <!-- Draggable target (hidden when single mode already has a value) -->
       <draggable
+        v-if="!single || resolvedItems.length === 0"
         :list="buffer"
         :group="{ name: dragGroup, pull: false, put: true }"
         class="drop-zone__target"
@@ -41,6 +42,14 @@
         </div>
       </draggable>
     </div>
+
+    <!-- Fallback slot (e.g. a <select>) shown when no item is set in single mode -->
+    <div
+      v-if="single && resolvedItems.length === 0 && $slots.fallback"
+      class="drop-zone__fallback"
+    >
+      <slot name="fallback" />
+    </div>
   </div>
 </template>
 
@@ -54,6 +63,7 @@ export default {
     label: { type: String, required: true },
     dragGroup: { type: String, required: true },
     resolvedItems: { type: Array, default: () => [] },
+    single: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -66,6 +76,9 @@ export default {
       if (evt.added) {
         const item = evt.added.element;
         if (item && item.id) {
+          if (this.single && this.resolvedItems.length > 0) {
+            this.$emit('remove-item', this.resolvedItems[0].id);
+          }
           this.$emit('add-item', item.id);
         }
         this.$nextTick(() => {
@@ -168,5 +181,13 @@ export default {
 
 .drop-zone__ghost {
   opacity: 0;
+}
+
+.drop-zone__fallback {
+  margin-top: 6px;
+}
+
+.card-field__select--inline {
+  width: 100%;
 }
 </style>
