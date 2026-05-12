@@ -221,9 +221,10 @@ export default {
       this.editValue = this.localItems[index].value;
       this.editDescription = this.localItems[index].description || '';
       this.$nextTick(() => {
-        if (this.$refs.editValueInput) {
-          this.$refs.editValueInput.focus();
-        }
+        const input = Array.isArray(this.$refs.editValueInput)
+          ? this.$refs.editValueInput[0]
+          : this.$refs.editValueInput;
+        if (input) input.focus();
       });
     },
     confirmEdit() {
