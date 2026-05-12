@@ -350,6 +350,8 @@ export default {
       addEntryToGroup: 'Ajouter une ligne',
       saveError: 'Erreur lors de la sauvegarde. Veuillez réessayer.',
       dropHere: 'Déposer ici…',
+      addManual: 'Ajouter à l\'inventaire',
+      addManualPlaceholder: 'Nouvelle valeur…',
       status: {
         en_discussion: 'En discussion',
         confirmed: 'Confirmé',

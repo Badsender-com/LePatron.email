@@ -346,6 +346,8 @@ export default {
       addEntryToGroup: 'Add line',
       saveError: 'Failed to save. Please try again.',
       dropHere: 'Drop here…',
+      addManual: 'Add to inventory',
+      addManualPlaceholder: 'New value…',
       status: {
         en_discussion: 'In discussion',
         confirmed: 'Confirmed',

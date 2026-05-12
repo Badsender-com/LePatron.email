@@ -16,7 +16,7 @@
             @keydown.enter.prevent="confirmName"
             @keydown.esc="cancelName"
             @blur="confirmName"
-          >
+          />
         </template>
         <template v-else>
           <span class="mapping-card__name-text">{{ displayTitle }}</span>
@@ -101,6 +101,7 @@
         :single="true"
         @add-item="update('platformId', $event)"
         @remove-item="update('platformId', null)"
+        @add-manual="addManualSingle('platformId', 'platform', $event)"
       >
         <template #icon>
           <icon-server :size="13" />
@@ -137,6 +138,7 @@
         :single="true"
         @add-item="update('usageId', $event)"
         @remove-item="update('usageId', null)"
+        @add-manual="addManualSingle('usageId', 'usage', $event)"
       >
         <template #icon>
           <icon-tag :size="13" />
@@ -170,6 +172,7 @@
           :resolved-items="resolveItems(entry[field.key])"
           @add-item="addItem(field.key, $event)"
           @remove-item="removeItem(field.key, $event)"
+          @add-manual="addManualArray(field.key, field.category, $event)"
         >
           <template #icon>
             <component :is="field.icon" :size="13" />
@@ -183,7 +186,7 @@
           type="checkbox"
           :checked="entry.usesSharedIps"
           @change="update('usesSharedIps', $event.target.checked)"
-        >
+        />
         {{ $t('deliverability.mapping.fields.sharedIps') }}
       </label>
 
@@ -206,8 +209,10 @@
 </template>
 
 <script>
+import { mapState, mapActions } from 'vuex';
 import MappingRatingStars from './mapping-rating-stars.vue';
 import MappingDropZone from './mapping-drop-zone.vue';
+import { DELIVERABILITY, BULK_UPSERT_INVENTORY } from '~/store/deliverability';
 
 const ARRAY_FIELDS = [
   {
@@ -268,6 +273,10 @@ export default {
     };
   },
   computed: {
+    ...mapState(DELIVERABILITY, ['currentAudit']),
+    auditId() {
+      return this.currentAudit && this.currentAudit.id;
+    },
     displayTitle() {
       if (this.entry.customName) return this.entry.customName;
       const parts = [];
@@ -300,6 +309,9 @@ export default {
     },
   },
   methods: {
+    ...mapActions(DELIVERABILITY, {
+      bulkUpsertInventory: BULK_UPSERT_INVENTORY,
+    }),
     update(field, value) {
       this.$emit('update', { field, value });
     },
@@ -343,6 +355,36 @@ export default {
       this.commentTimer = setTimeout(() => {
         this.update('comments', value || null);
       }, 600);
+    },
+    async addManualArray(field, category, value) {
+      if (!this.auditId || !value) return;
+      try {
+        const items = await this.bulkUpsertInventory({
+          auditId: this.auditId,
+          category,
+          items: [{ value }],
+          updateProgress: false,
+        });
+        const created = items.find((i) => i.value === value);
+        if (created) this.addItem(field, created.id);
+      } catch {
+        // silent — inventory endpoint already shows an error if needed
+      }
+    },
+    async addManualSingle(idField, category, value) {
+      if (!this.auditId || !value) return;
+      try {
+        const items = await this.bulkUpsertInventory({
+          auditId: this.auditId,
+          category,
+          items: [{ value }],
+          updateProgress: false,
+        });
+        const created = items.find((i) => i.value === value);
+        if (created) this.update(idField, created.id);
+      } catch {
+        // silent
+      }
     },
   },
 };
