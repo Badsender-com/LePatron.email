@@ -9,6 +9,13 @@
         {{ $t('deliverability.mapping.title') }}
       </template>
       <template #actions>
+        <button
+          class="toolbar-btn toolbar-btn--secondary"
+          @click="exportMarkdown"
+        >
+          <icon-copy :size="16" />
+          {{ $t('deliverability.mapping.exportMarkdown') }}
+        </button>
         <button class="toolbar-btn toolbar-btn--secondary" @click="addGroup">
           <icon-layers :size="16" />
           {{ $t('deliverability.mapping.addGroup') }}
@@ -50,30 +57,38 @@
 
         <template v-else>
           <!-- Groups -->
-          <mapping-group
-            v-for="group in localGroups"
-            :key="group.id"
-            :group="group"
-            :entries="group.entries"
-            :inventory-map="inventoryMap"
-            :inventory-items="inventoryItems"
-            class="mapping-canvas__item"
-            @update-group="onUpdateGroup"
-            @entries-changed="onGroupEntriesChanged"
-            @update-entry="onUpdateEntry"
-            @delete-entry="onDeleteEntry"
-            @delete="onDeleteGroup(group.id)"
+          <draggable
+            :list="localGroups"
+            handle=".mapping-group__drag-handle"
+            ghost-class="group-ghost"
+            :animation="150"
+            @end="saveGroupsOrder"
           >
-            <template #actions>
-              <button
-                class="toolbar-btn toolbar-btn--secondary toolbar-btn--sm"
-                @click="addEntry(group.id)"
-              >
-                <icon-plus :size="13" />
-                {{ $t('deliverability.mapping.addEntryToGroup') }}
-              </button>
-            </template>
-          </mapping-group>
+            <mapping-group
+              v-for="group in localGroups"
+              :key="group.id"
+              :group="group"
+              :entries="group.entries"
+              :inventory-map="inventoryMap"
+              :inventory-items="inventoryItems"
+              class="mapping-canvas__item"
+              @update-group="onUpdateGroup"
+              @entries-changed="onGroupEntriesChanged"
+              @update-entry="onUpdateEntry"
+              @delete-entry="onDeleteEntry"
+              @delete="onDeleteGroup(group.id)"
+            >
+              <template #actions>
+                <button
+                  class="toolbar-btn toolbar-btn--secondary toolbar-btn--sm"
+                  @click="addEntry(group.id)"
+                >
+                  <icon-plus :size="13" />
+                  {{ $t('deliverability.mapping.addEntryToGroup') }}
+                </button>
+              </template>
+            </mapping-group>
+          </draggable>
 
           <!-- Ungrouped entries -->
           <draggable
@@ -124,6 +139,7 @@ import {
   UPDATE_MAPPING_ENTRY,
   DELETE_MAPPING_ENTRY,
   REORDER_MAPPING_ENTRIES,
+  REORDER_MAPPING_GROUPS,
 } from '~/store/deliverability';
 import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import MappingInventorySidebar from '~/components/deliverability/mapping/mapping-inventory-sidebar.vue';
@@ -212,6 +228,7 @@ export default {
       updateEntry: UPDATE_MAPPING_ENTRY,
       deleteEntry: DELETE_MAPPING_ENTRY,
       reorderEntries: REORDER_MAPPING_ENTRIES,
+      reorderGroups: REORDER_MAPPING_GROUPS,
     }),
 
     rebuildLocal() {
@@ -340,6 +357,102 @@ export default {
         color: 'error',
       });
     },
+
+    async saveGroupsOrder() {
+      const updates = this.localGroups.map((g, i) => ({
+        id: g.id,
+        sortOrder: i,
+      }));
+      await this.reorderGroups({ auditId: this.auditId, updates });
+    },
+
+    exportMarkdown() {
+      const allEntries = [
+        ...this.localGroups.flatMap((g) => g.entries || []),
+        ...this.localUngrouped,
+      ];
+
+      const resolve = (id) => {
+        const item = this.inventoryMap[id];
+        return item ? item.value : '';
+      };
+
+      const resolveArray = (ids) =>
+        (ids || []).map(resolve).filter(Boolean).join(', ');
+
+      const headers = [
+        'Ligne',
+        'Plateforme',
+        'Usage',
+        'Domaines From',
+        'IPs',
+        'Mail-From',
+        'Reply-To',
+        'Tracking',
+        'Hébergement',
+        'Destinations',
+        'Qualité',
+        'Stratégie',
+        'Statut',
+      ];
+
+      const rows = allEntries.map((entry) => {
+        const platform = entry.platformId ? resolve(entry.platformId) : '';
+        const usage = entry.usageId ? resolve(entry.usageId) : '';
+        const name =
+          entry.customName ||
+          [
+            platform,
+            usage,
+            resolveArray(entry.fromDomainIds ? [entry.fromDomainIds[0]] : []),
+          ]
+            .filter(Boolean)
+            .join(' · ') ||
+          'Sans titre';
+        const statusMap = {
+          EN_DISCUSSION: 'En discussion',
+          CONFIRMED: 'Confirmé',
+          REJECTED: 'Rejeté',
+        };
+        return [
+          name,
+          platform,
+          usage,
+          resolveArray(entry.fromDomainIds),
+          resolveArray(entry.ipIds),
+          resolveArray(entry.mailFromIds),
+          resolveArray(entry.replyToIds),
+          resolveArray(entry.trackingDomainIds),
+          resolveArray(entry.hostingDomainIds),
+          resolveArray(entry.linkDestinationDomainIds),
+          entry.qualityScore || 0,
+          entry.strategicScore || 0,
+          statusMap[entry.status] || entry.status,
+        ];
+      });
+
+      const sep = headers.map(() => '---');
+      const tableRows = [headers, sep, ...rows]
+        .map((row) => `| ${row.join(' | ')} |`)
+        .join('\n');
+
+      navigator.clipboard
+        .writeText(tableRows)
+        .then(() => {
+          this.$store.commit(`${PAGE}/${SHOW_SNACKBAR}`, {
+            message: this.$t('deliverability.mapping.exportMarkdownSuccess'),
+            color: 'success',
+          });
+        })
+        .catch(() => {
+          const el = document.createElement('textarea');
+          el.value = tableRows;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        });
+    },
   },
 };
 </script>
@@ -450,6 +563,12 @@ export default {
 }
 
 .card-ghost {
+  opacity: 0.4;
+  background: rgba(0, 172, 220, 0.05);
+  border: 1px dashed #00acdc !important;
+}
+
+.group-ghost {
   opacity: 0.4;
   background: rgba(0, 172, 220, 0.05);
   border: 1px dashed #00acdc !important;

@@ -64,7 +64,7 @@ async function create(req, res) {
 
   const itemData = {
     auditId,
-    ...pick(body, ['category', 'value', 'description']),
+    ...pick(body, ['category', 'value', 'description', 'metadata']),
   };
 
   const item = await inventoryItemService.createItem(itemData);
@@ -135,7 +135,7 @@ async function update(req, res) {
     auditId: existingItem.auditId,
   });
 
-  const updateData = pick(body, ['value', 'description']);
+  const updateData = pick(body, ['value', 'description', 'metadata']);
 
   const item = await inventoryItemService.updateItem({
     itemId,

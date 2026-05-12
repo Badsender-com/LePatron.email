@@ -137,6 +137,8 @@ export const CREATE_MAPPING_ENTRY = 'CREATE_MAPPING_ENTRY';
 export const UPDATE_MAPPING_ENTRY = 'UPDATE_MAPPING_ENTRY';
 export const DELETE_MAPPING_ENTRY = 'DELETE_MAPPING_ENTRY';
 export const REORDER_MAPPING_ENTRIES = 'REORDER_MAPPING_ENTRIES';
+export const REORDER_MAPPING_GROUPS = 'REORDER_MAPPING_GROUPS';
+export const UPDATE_INVENTORY_PROGRESS = 'UPDATE_INVENTORY_PROGRESS';
 
 export const actions = {
   async [FETCH_AUDITS]({ commit, rootState }) {
@@ -355,6 +357,35 @@ export const actions = {
       );
     } catch (error) {
       console.error('Error reordering mapping entries:', error);
+      throw error;
+    }
+  },
+
+  async [REORDER_MAPPING_GROUPS](_ctx, { auditId, updates }) {
+    try {
+      await this.$axios.$post(
+        `deliverability/audits/${auditId}/mapping/reorder-groups`,
+        { updates }
+      );
+    } catch (error) {
+      console.error('Error reordering mapping groups:', error);
+      throw error;
+    }
+  },
+
+  async [UPDATE_INVENTORY_PROGRESS](
+    { commit },
+    { auditId, category, completed }
+  ) {
+    try {
+      const response = await this.$axios.$put(
+        `deliverability/audits/${auditId}/inventory/progress`,
+        { category, completed }
+      );
+      commit('M_SET_CURRENT_AUDIT', response.audit);
+      return response.audit;
+    } catch (error) {
+      console.error('Error updating inventory progress:', error);
       throw error;
     }
   },

@@ -2,6 +2,10 @@
   <div class="mapping-group">
     <!-- Group header -->
     <div class="mapping-group__header">
+      <span class="mapping-group__drag-handle">
+        <icon-grip-vertical :size="14" />
+      </span>
+
       <button
         class="mapping-group__collapse"
         @click="localCollapsed = !localCollapsed"
@@ -31,21 +35,42 @@
 
       <span class="mapping-group__count">{{ entries.length }}</span>
 
+      <slot name="actions" />
+
       <div class="mapping-group__actions">
-        <button
-          class="mapping-group__btn"
-          :title="$t('deliverability.mapping.group.rename')"
-          @click="startEditName"
-        >
-          <icon-pencil :size="13" />
-        </button>
-        <button
-          class="mapping-group__btn mapping-group__btn--delete"
-          :title="$t('deliverability.mapping.group.delete')"
-          @click="$emit('delete')"
-        >
-          <icon-trash2 :size="13" />
-        </button>
+        <template v-if="confirmingDelete">
+          <span class="mapping-group__confirm-text">{{
+            $t('deliverability.mapping.confirmDeleteGroup.title')
+          }}</span>
+          <button
+            class="mapping-group__btn mapping-group__btn--confirm-yes"
+            @click="
+              $emit('delete');
+              confirmingDelete = false;
+            "
+          >
+            {{ $t('deliverability.mapping.confirmDeleteGroup.confirm') }}
+          </button>
+          <button class="mapping-group__btn" @click="confirmingDelete = false">
+            {{ $t('deliverability.mapping.confirmDeleteGroup.cancel') }}
+          </button>
+        </template>
+        <template v-else>
+          <button
+            class="mapping-group__btn"
+            :title="$t('deliverability.mapping.group.rename')"
+            @click="startEditName"
+          >
+            <icon-pencil :size="13" />
+          </button>
+          <button
+            class="mapping-group__btn mapping-group__btn--delete"
+            :title="$t('deliverability.mapping.group.delete')"
+            @click="confirmingDelete = true"
+          >
+            <icon-trash2 :size="13" />
+          </button>
+        </template>
       </div>
     </div>
 
@@ -98,6 +123,7 @@ export default {
       localCollapsed: this.group.isCollapsed,
       editingName: false,
       nameValue: '',
+      confirmingDelete: false,
     };
   },
   watch: {
@@ -233,6 +259,42 @@ export default {
 .mapping-group__btn--delete:hover {
   background: #fee2e2;
   color: #dc2626;
+}
+
+.mapping-group__confirm-text {
+  font-size: 12px;
+  color: var(--gray-700);
+  white-space: nowrap;
+}
+
+.mapping-group__btn--confirm-yes {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 24px;
+  width: auto;
+}
+
+.mapping-group__btn--confirm-yes:hover {
+  background: #dc2626;
+  color: white;
+}
+
+.mapping-group__drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--gray-300);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.mapping-group__drag-handle:active {
+  cursor: grabbing;
 }
 
 .mapping-group__body {

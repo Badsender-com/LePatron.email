@@ -23,7 +23,7 @@ async function findByAudit({ auditId, category }) {
 /**
  * Create a single inventory item
  */
-async function createItem({ auditId, category, value, description }) {
+async function createItem({ auditId, category, value, description, metadata }) {
   // Check for duplicates (unique constraint on auditId + category + value)
   const existing = await prisma.inventoryItem.findFirst({
     where: {
@@ -43,6 +43,7 @@ async function createItem({ auditId, category, value, description }) {
       category: category.toUpperCase(),
       value,
       description,
+      metadata: metadata || null,
     },
   });
 }
@@ -73,6 +74,7 @@ async function bulkUpsertForCategory({ auditId, category, items }) {
             category: categoryUpper,
             value: item.value,
             description: item.description || null,
+            metadata: item.metadata || null,
           },
         })
       )

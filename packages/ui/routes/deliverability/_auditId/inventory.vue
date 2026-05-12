@@ -25,12 +25,20 @@
             class="step-btn"
             :class="{
               'step-btn--active': currentStep === index + 1,
-              'step-btn--completed': isStepCompleted(step.key),
+              'step-btn--completed': getStepStatus(step.key) === 'complete',
+              'step-btn--in-progress': getStepStatus(step.key) === 'inProgress',
             }"
             @click="goToStep(index + 1)"
           >
             <span class="step-btn__number">
-              <icon-check v-if="isStepCompleted(step.key)" :size="14" />
+              <icon-check
+                v-if="getStepStatus(step.key) === 'complete'"
+                :size="14"
+              />
+              <icon-minus
+                v-else-if="getStepStatus(step.key) === 'inProgress'"
+                :size="14"
+              />
               <span v-else>{{ index + 1 }}</span>
             </span>
             <span class="step-btn__label">{{
@@ -73,11 +81,12 @@
             "
             :show-prev="currentStep > 1"
             :show-complete="currentStep === steps.length"
-            :supports-description="!!currentStepData.supportsDescription"
+            :is-completed="isStepCompleted(currentStepData.key)"
             @saved="refreshAuditProgress"
             @prev="prevStep"
             @next="nextStep"
             @complete="handleComplete"
+            @toggle-complete="handleToggleComplete"
             @error="handleStepError"
           />
         </div>
@@ -96,6 +105,7 @@ import {
   DELIVERABILITY,
   FETCH_AUDIT,
   FETCH_INVENTORY_ITEMS,
+  UPDATE_INVENTORY_PROGRESS,
 } from '~/store/deliverability';
 import BsPageHeader from '~/components/layout/BsPageHeader.vue';
 import InventoryStepContent from '~/components/deliverability/inventory/inventory-step-content.vue';
@@ -139,7 +149,6 @@ export default {
           key: 'usages',
           category: 'USAGE',
           progressField: 'progressUsages',
-          supportsDescription: true,
         },
         {
           key: 'displayFromDomains',
@@ -193,11 +202,23 @@ export default {
       return this.steps.filter((step) => this.currentAudit[step.progressField])
         .length;
     },
+    getStepStatus() {
+      return (stepKey) => {
+        if (!this.currentAudit) return 'empty';
+        const step = this.steps.find((s) => s.key === stepKey);
+        if (!step) return 'empty';
+        const isCompleted = this.currentAudit[step.progressField];
+        if (isCompleted) return 'complete';
+        const items = this.getItemsForStep(step);
+        return items.length > 0 ? 'inProgress' : 'empty';
+      };
+    },
   },
   methods: {
     ...mapActions(DELIVERABILITY, {
       fetchAudit: FETCH_AUDIT,
       fetchInventoryItems: FETCH_INVENTORY_ITEMS,
+      updateInventoryProgress: UPDATE_INVENTORY_PROGRESS,
     }),
     isStepCompleted(stepKey) {
       if (!this.currentAudit) return false;
@@ -224,6 +245,14 @@ export default {
     },
     async refreshAuditProgress() {
       await this.fetchAudit(this.auditId);
+    },
+    async handleToggleComplete(completed) {
+      const step = this.currentStepData;
+      await this.updateInventoryProgress({
+        auditId: this.auditId,
+        category: step.category,
+        completed,
+      });
     },
     handleComplete() {
       this.$store.commit(`${PAGE}/${SHOW_SNACKBAR}`, {
@@ -311,6 +340,11 @@ export default {
 
 .step-btn--completed .step-btn__number {
   background: #10b981;
+  color: white;
+}
+
+.step-btn--in-progress .step-btn__number {
+  background: #f59e0b;
   color: white;
 }
 

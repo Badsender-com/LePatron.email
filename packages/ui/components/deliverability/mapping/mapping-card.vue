@@ -9,19 +9,33 @@
       <!-- Name (editable) -->
       <div class="mapping-card__name" @dblclick="startEditName">
         <template v-if="editingName">
-          <input
-            ref="nameInput"
-            v-model="nameValue"
-            class="mapping-card__name-input"
-            @keydown.enter.prevent="confirmName"
-            @keydown.esc="cancelName"
-            @blur="confirmName"
-          />
+          <div class="mapping-card__name-edit-wrap">
+            <input
+              ref="nameInput"
+              v-model="nameValue"
+              class="mapping-card__name-input"
+              @keydown.enter.prevent="confirmName"
+              @keydown.esc="cancelName"
+              @blur="confirmName"
+            >
+            <button
+              v-if="nameValue"
+              class="mapping-card__reset-name"
+              :title="$t('deliverability.mapping.resetName')"
+              @click="resetName"
+            >
+              <icon-x :size="12" />
+            </button>
+          </div>
         </template>
         <template v-else>
           <span class="mapping-card__name-text">{{ displayTitle }}</span>
         </template>
       </div>
+
+      <span v-if="entry.usesSharedIps" class="mapping-card__shared-badge">
+        {{ $t('deliverability.mapping.sharedIpsBadge') }}
+      </span>
 
       <!-- Scores -->
       <div class="mapping-card__scores">
@@ -78,10 +92,28 @@
           }"
         />
       </button>
+      <template v-if="confirmingDelete">
+        <button
+          class="mapping-card__confirm-btn mapping-card__confirm-btn--yes"
+          @click="
+            $emit('delete');
+            confirmingDelete = false;
+          "
+        >
+          {{ $t('deliverability.mapping.confirmDeleteEntry.confirm') }}
+        </button>
+        <button
+          class="mapping-card__confirm-btn"
+          @click="confirmingDelete = false"
+        >
+          {{ $t('deliverability.mapping.confirmDeleteEntry.cancel') }}
+        </button>
+      </template>
       <button
+        v-else
         class="mapping-card__action mapping-card__action--delete"
         :title="$t('deliverability.mapping.card.delete')"
-        @click="$emit('delete')"
+        @click="confirmingDelete = true"
       >
         <icon-trash2 :size="15" />
       </button>
@@ -186,7 +218,7 @@
           type="checkbox"
           :checked="entry.usesSharedIps"
           @change="update('usesSharedIps', $event.target.checked)"
-        />
+        >
         {{ $t('deliverability.mapping.fields.sharedIps') }}
       </label>
 
@@ -270,6 +302,7 @@ export default {
       nameValue: '',
       arrayFields: ARRAY_FIELDS,
       commentTimer: null,
+      confirmingDelete: false,
     };
   },
   computed: {
@@ -347,6 +380,10 @@ export default {
       this.editingName = false;
     },
     cancelName() {
+      this.editingName = false;
+    },
+    resetName() {
+      this.update('customName', null);
       this.editingName = false;
     },
     debouncedCommentUpdate(evt) {
@@ -454,8 +491,17 @@ export default {
   display: block;
 }
 
+.mapping-card__name-edit-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
 .mapping-card__name-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--gray-800);
@@ -464,6 +510,39 @@ export default {
   padding: 2px 6px;
   outline: none;
   background: white;
+}
+
+.mapping-card__reset-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--gray-100);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--gray-500);
+  flex-shrink: 0;
+}
+
+.mapping-card__reset-name:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.mapping-card__shared-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #d97706;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mapping-card__scores {
@@ -531,6 +610,33 @@ export default {
 .mapping-card__action--delete:hover {
   background: #fee2e2;
   color: #dc2626;
+}
+
+.mapping-card__confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  height: 26px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-sm);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mapping-card__confirm-btn--yes {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.mapping-card__confirm-btn--yes:hover {
+  background: #dc2626;
+  color: white;
 }
 
 /* Body */

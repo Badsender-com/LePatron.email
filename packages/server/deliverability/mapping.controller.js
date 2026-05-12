@@ -14,6 +14,7 @@ module.exports = {
   updateEntry: asyncHandler(updateEntry),
   deleteEntry: asyncHandler(deleteEntry),
   reorderEntries: asyncHandler(reorderEntries),
+  reorderGroups: asyncHandler(reorderGroups),
 };
 
 // Fields that callers are allowed to set when updating a group
@@ -227,4 +228,12 @@ async function reorderEntries(req, res) {
   });
 
   res.json({ entries });
+}
+
+async function reorderGroups(req, res) {
+  const { user, params, body } = req;
+  const { auditId } = params;
+  await auditService.checkIfUserIsAuthorizedToAccessAudit({ user, auditId });
+  await mappingService.reorderGroups({ auditId, updates: body.updates });
+  res.json({ ok: true });
 }

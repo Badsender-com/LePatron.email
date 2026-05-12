@@ -359,6 +359,7 @@ export default {
         strategicScore: 'Strategic importance (1–5)',
         toggleExpand: 'Expand / collapse',
         delete: 'Delete line',
+        sharedIps: 'Shared / mutualized IPs',
       },
       fields: {
         platform: 'Sending platform',
@@ -400,6 +401,22 @@ export default {
         title: 'No lines yet',
         description: 'Create infrastructure lines to document your email sending setup. Drag items from the inventory sidebar onto each line.',
       },
+      confirmDeleteEntry: {
+        title: 'Delete this line?',
+        message: 'This action cannot be undone.',
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+      confirmDeleteGroup: {
+        title: 'Delete this group?',
+        message: 'Lines in this group will be kept but ungrouped.',
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+      sharedIpsBadge: 'Shared IPs',
+      resetName: 'Reset name',
+      exportMarkdown: 'Copy as Markdown',
+      exportMarkdownSuccess: 'Table copied to clipboard',
     },
     inventory: {
       title: 'Technical Inventory',
@@ -467,6 +484,25 @@ export default {
           description: 'Enter the final destination domains that links resolve to after click tracking redirects',
           placeholder: 'e.g., shop.company.com; blog.company.com',
         },
+      },
+      markComplete: 'Mark as complete',
+      markIncomplete: 'Mark as incomplete',
+      stepStatus: {
+        empty: 'Empty',
+        inProgress: 'In progress',
+        complete: 'Complete',
+      },
+      validation: {
+        invalidIp: 'Invalid IP address format (e.g. 192.168.1.1 or 2001:db8::1)',
+        invalidEmail: 'Invalid email address format (@ is required)',
+        urlNormalized: 'URL detected — protocol stripped automatically',
+        emptyValue: 'Value cannot be empty',
+      },
+      dkimSelectors: {
+        label: 'DKIM Selectors',
+        placeholder: 'e.g. s1, google, brevo',
+        hint: 'Separate selectors with commas or spaces',
+        addSelector: 'Add selector',
       },
     },
     audits: {

@@ -13,6 +13,7 @@ module.exports = {
   read: asyncHandler(read),
   update: asyncHandler(update),
   delete: asyncHandler(deleteAudit),
+  toggleInventoryProgress: asyncHandler(toggleInventoryProgress),
 };
 
 /**
@@ -184,4 +185,17 @@ async function deleteAudit(req, res) {
   await auditService.deleteAudit({ auditId });
 
   res.json({ message: 'Audit deleted successfully' });
+}
+
+async function toggleInventoryProgress(req, res) {
+  const { user, params, body } = req;
+  const { auditId } = params;
+  const { category, completed } = body;
+  await auditService.checkIfUserIsAuthorizedToAccessAudit({ user, auditId });
+  const audit = await auditService.updateInventoryProgress({
+    auditId,
+    step: category,
+    completed: !!completed,
+  });
+  res.json({ audit });
 }

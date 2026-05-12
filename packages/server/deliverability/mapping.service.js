@@ -157,6 +157,22 @@ async function reorderEntries({ auditId, updates }) {
   );
 }
 
+/**
+ * Bulk-update sortOrder for multiple groups.
+ * Expects updates: [{ id, sortOrder }]
+ */
+async function reorderGroups({ auditId, updates }) {
+  if (!Array.isArray(updates) || updates.length === 0) return [];
+  return prisma.$transaction(
+    updates.map(({ id, sortOrder }) =>
+      prisma.mappingGroup.update({
+        where: { id, auditId },
+        data: { sortOrder },
+      })
+    )
+  );
+}
+
 module.exports = {
   findByAudit,
   createGroup,
@@ -166,4 +182,5 @@ module.exports = {
   updateEntry,
   deleteEntry,
   reorderEntries,
+  reorderGroups,
 };

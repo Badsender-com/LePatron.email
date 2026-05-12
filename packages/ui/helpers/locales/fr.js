@@ -363,6 +363,7 @@ export default {
         strategicScore: 'Importance stratégique (1–5)',
         toggleExpand: 'Développer / réduire',
         delete: 'Supprimer la ligne',
+        sharedIps: 'IPs partagées / mutualisées',
       },
       fields: {
         platform: 'Plateforme d\'envoi',
@@ -404,6 +405,22 @@ export default {
         title: 'Aucune ligne pour l\'instant',
         description: 'Créez des lignes d\'infrastructure pour documenter votre dispositif d\'envoi email. Faites glisser les éléments de l\'inventaire sur chaque ligne.',
       },
+      confirmDeleteEntry: {
+        title: 'Supprimer cette ligne ?',
+        message: 'Cette action est irréversible.',
+        confirm: 'Supprimer',
+        cancel: 'Annuler',
+      },
+      confirmDeleteGroup: {
+        title: 'Supprimer ce groupe ?',
+        message: 'Les lignes du groupe seront conservées mais non groupées.',
+        confirm: 'Supprimer',
+        cancel: 'Annuler',
+      },
+      sharedIpsBadge: 'IPs partagées',
+      resetName: 'Réinitialiser le nom',
+      exportMarkdown: 'Copier en Markdown',
+      exportMarkdownSuccess: 'Tableau copié dans le presse-papiers',
     },
     inventory: {
       title: 'Inventaire technique',
@@ -471,6 +488,25 @@ export default {
           description: 'Saisissez les domaines finaux vers lesquels pointent les liens après la redirection du tracking de clics',
           placeholder: 'ex: boutique.company.com; blog.company.com',
         },
+      },
+      markComplete: 'Marquer comme terminé',
+      markIncomplete: 'Marquer comme incomplet',
+      stepStatus: {
+        empty: 'Vide',
+        inProgress: 'En cours',
+        complete: 'Terminé',
+      },
+      validation: {
+        invalidIp: 'Format d\'adresse IP invalide (ex: 192.168.1.1 ou 2001:db8::1)',
+        invalidEmail: 'Format d\'adresse email invalide (le @ est requis)',
+        urlNormalized: 'URL détectée — le protocole a été supprimé automatiquement',
+        emptyValue: 'La valeur ne peut pas être vide',
+      },
+      dkimSelectors: {
+        label: 'Sélecteurs DKIM',
+        placeholder: 'ex: s1, google, brevo',
+        hint: 'Séparez les sélecteurs par des virgules ou des espaces',
+        addSelector: 'Ajouter un sélecteur',
       },
     },
     audits: {

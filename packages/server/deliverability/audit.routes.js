@@ -22,4 +22,11 @@ router.put('/audits/:auditId', GUARD_GROUP_ADMIN, audits.update);
 // Delete audit
 router.delete('/audits/:auditId', GUARD_GROUP_ADMIN, audits.delete);
 
+// Toggle inventory progress manually
+router.put(
+  '/audits/:auditId/inventory/progress',
+  GUARD_USER,
+  audits.toggleInventoryProgress
+);
+
 module.exports = router;

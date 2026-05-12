@@ -74,6 +74,7 @@ model InventoryItem {
   category    InventoryCategory
   value       String
   description String?
+  metadata    Json?
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @updatedAt @map("updated_at")
 

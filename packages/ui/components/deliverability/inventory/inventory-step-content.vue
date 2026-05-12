@@ -1,5 +1,16 @@
 <template>
   <div class="step-form">
+    <!-- Validation error banner -->
+    <div v-if="validationError" class="validation-banner">
+      <icon-alert-circle :size="14" />
+      {{ validationError }}
+    </div>
+    <!-- URL normalization notice -->
+    <div v-if="urlNormalized" class="validation-banner validation-banner--info">
+      <icon-info :size="14" />
+      {{ $t('deliverability.inventory.validation.urlNormalized') }}
+    </div>
+
     <!-- Add new item -->
     <div class="add-item">
       <div class="add-item__input-wrap">
@@ -19,11 +30,7 @@
         </button>
       </div>
       <p class="add-item__hint">
-        {{
-          supportsDescription
-            ? $t('deliverability.inventory.addHintWithDescription')
-            : $t('deliverability.inventory.addHint')
-        }}
+        {{ $t('deliverability.inventory.addHint') }}
       </p>
     </div>
 
@@ -47,7 +54,6 @@
               @keydown.esc="cancelEdit"
             >
             <input
-              v-if="supportsDescription"
               v-model="editDescription"
               class="item-row__edit-input item-row__edit-input--description"
               :placeholder="
@@ -56,6 +62,39 @@
               @keydown.enter.prevent="confirmEdit"
               @keydown.esc="cancelEdit"
             >
+            <!-- DKIM selectors (only for display_from_domain) -->
+            <div v-if="showDkimSelectors" class="dkim-selectors">
+              <label class="dkim-selectors__label">
+                {{ $t('deliverability.inventory.dkimSelectors.label') }}
+              </label>
+              <div class="dkim-selectors__tags">
+                <span
+                  v-for="(sel, si) in editDkimSelectors"
+                  :key="si"
+                  class="dkim-tag"
+                >
+                  {{ sel }}
+                  <button
+                    class="dkim-tag__remove"
+                    @click="removeDkimSelector(si)"
+                  >
+                    <icon-x :size="10" />
+                  </button>
+                </span>
+                <input
+                  v-model="dkimSelectorInput"
+                  class="dkim-selectors__input"
+                  :placeholder="
+                    $t('deliverability.inventory.dkimSelectors.placeholder')
+                  "
+                  @keydown.enter.prevent="addDkimSelector"
+                  @keydown.188.prevent="addDkimSelector"
+                >
+              </div>
+              <p class="dkim-selectors__hint">
+                {{ $t('deliverability.inventory.dkimSelectors.hint') }}
+              </p>
+            </div>
           </div>
           <div class="item-row__edit-actions">
             <button
@@ -81,6 +120,19 @@
             <span v-if="item.description" class="item-row__description">
               {{ item.description }}
             </span>
+            <!-- DKIM selectors display -->
+            <div
+              v-if="showDkimSelectors && getDkimSelectors(item).length > 0"
+              class="dkim-display"
+            >
+              <span
+                v-for="sel in getDkimSelectors(item)"
+                :key="sel"
+                class="dkim-badge"
+              >
+                DKIM: {{ sel }}
+              </span>
+            </div>
           </div>
           <div class="item-row__actions">
             <button class="item-row__action" @click="startEdit(index)">
@@ -114,6 +166,20 @@
         <icon-refresh-cw :size="14" class="saving-indicator__icon" />
         {{ $t('deliverability.inventory.saving') }}
       </span>
+      <!-- Mark complete toggle -->
+      <button
+        class="btn"
+        :class="isCompleted ? 'btn--complete-active' : 'btn--complete'"
+        @click="toggleComplete"
+      >
+        <icon-check v-if="isCompleted" :size="16" />
+        <icon-circle v-else :size="16" />
+        {{
+          isCompleted
+            ? $t('deliverability.inventory.markIncomplete')
+            : $t('deliverability.inventory.markComplete')
+        }}
+      </button>
       <button
         v-if="showComplete"
         class="btn btn--primary"
@@ -133,37 +199,45 @@
 import { mapActions } from 'vuex';
 import { DELIVERABILITY, BULK_UPSERT_INVENTORY } from '~/store/deliverability';
 
+// Domain-like categories that need URL normalization
+const DOMAIN_CATEGORIES = [
+  'display_from_domain',
+  'mail_from_domain',
+  'tracking_domain',
+  'hosting_domain',
+  'link_destination_domain',
+];
+
+// IPv4 and IPv6 regex
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
+const IPV6_RE = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]+|::(ffff(:0{1,4})?:)?((25[0-5]|(2[0-4]|1?\d)?\d)\.){3}(25[0-5]|(2[0-4]|1?\d)?\d)|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?\d)?\d)\.){3}(25[0-5]|(2[0-4]|1?\d)?\d))(\/\d{1,3})?$/;
+
+function isValidIp(value) {
+  return IPV4_RE.test(value) || IPV6_RE.test(value);
+}
+
+function isValidEmail(value) {
+  return value.includes('@');
+}
+
+function normalizeDomain(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+}
+
 export default {
   name: 'InventoryStepContent',
   props: {
-    auditId: {
-      type: String,
-      required: true,
-    },
-    items: {
-      type: Array,
-      default: () => [],
-    },
-    category: {
-      type: String,
-      required: true,
-    },
-    placeholder: {
-      type: String,
-      default: 'Enter a value...',
-    },
-    showPrev: {
-      type: Boolean,
-      default: false,
-    },
-    showComplete: {
-      type: Boolean,
-      default: false,
-    },
-    supportsDescription: {
-      type: Boolean,
-      default: false,
-    },
+    auditId: { type: String, required: true },
+    items: { type: Array, default: () => [] },
+    category: { type: String, required: true },
+    placeholder: { type: String, default: 'Enter a value...' },
+    showPrev: { type: Boolean, default: false },
+    showComplete: { type: Boolean, default: false },
+    isCompleted: { type: Boolean, default: false },
   },
   data() {
     return {
@@ -173,7 +247,19 @@ export default {
       editingIndex: null,
       editValue: '',
       editDescription: '',
+      editDkimSelectors: [],
+      dkimSelectorInput: '',
+      validationError: null,
+      urlNormalized: false,
     };
+  },
+  computed: {
+    showDkimSelectors() {
+      return this.category.toLowerCase() === 'display_from_domain';
+    },
+    categoryLower() {
+      return this.category.toLowerCase();
+    },
   },
   watch: {
     items: {
@@ -187,30 +273,110 @@ export default {
     ...mapActions(DELIVERABILITY, {
       bulkUpsert: BULK_UPSERT_INVENTORY,
     }),
+    getDkimSelectors(item) {
+      return item.metadata && Array.isArray(item.metadata.dkimSelectors)
+        ? item.metadata.dkimSelectors
+        : [];
+    },
+    normalizeAndValidate(raw) {
+      let value = raw.trim();
+      let wasNormalized = false;
+
+      if (DOMAIN_CATEGORIES.includes(this.categoryLower)) {
+        const normalized = normalizeDomain(value);
+        if (normalized !== value.toLowerCase()) wasNormalized = true;
+        value = normalized;
+      }
+
+      if (!value)
+        return {
+          value: null,
+          error: this.$t('deliverability.inventory.validation.emptyValue'),
+          wasNormalized,
+        };
+
+      if (this.categoryLower === 'ip') {
+        if (!isValidIp(value)) {
+          return {
+            value,
+            error: this.$t('deliverability.inventory.validation.invalidIp'),
+            wasNormalized,
+          };
+        }
+      }
+
+      if (
+        this.categoryLower === 'display_from_address' ||
+        this.categoryLower === 'reply_to'
+      ) {
+        if (!isValidEmail(value)) {
+          return {
+            value,
+            error: this.$t('deliverability.inventory.validation.invalidEmail'),
+            wasNormalized,
+          };
+        }
+      }
+
+      return { value, error: null, wasNormalized };
+    },
     addItem() {
       if (!this.newItem.trim()) return;
+      this.validationError = null;
+      this.urlNormalized = false;
 
-      const parsed = this.newItem
+      const raws = this.newItem
         .split(/[\n;]+/)
-        .map((raw) => {
-          const colonIndex = raw.indexOf(':');
-          if (colonIndex !== -1) {
-            return {
-              value: raw.slice(0, colonIndex).trim(),
-              description: raw.slice(colonIndex + 1).trim() || null,
-            };
-          }
-          return { value: raw.trim(), description: null };
-        })
-        .filter((item) => item.value.length > 0);
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const toAdd = [];
+      let firstError = null;
+      let anyNormalized = false;
 
-      const existing = new Set(this.localItems.map((i) => i.value));
-      parsed
-        .filter((item) => !existing.has(item.value))
-        .forEach((item) => this.localItems.push(item));
+      for (const raw of raws) {
+        const colonIndex = raw.indexOf(':');
+        let rawValue = raw;
+        let description = null;
+        // For non-email categories, colon might be part of IPv6 or domain — only split if category supports description and not IP
+        if (
+          colonIndex !== -1 &&
+          this.categoryLower !== 'ip' &&
+          this.categoryLower !== 'display_from_address' &&
+          this.categoryLower !== 'reply_to'
+        ) {
+          rawValue = raw.slice(0, colonIndex).trim();
+          description = raw.slice(colonIndex + 1).trim() || null;
+        }
 
-      this.newItem = '';
-      this.autoSave();
+        const { value, error, wasNormalized } = this.normalizeAndValidate(
+          rawValue
+        );
+        if (wasNormalized) anyNormalized = true;
+        if (error) {
+          firstError = error;
+          continue;
+        }
+
+        const existing = new Set(this.localItems.map((i) => i.value));
+        if (value && !existing.has(value)) {
+          toAdd.push({ value, description, metadata: null });
+        }
+      }
+
+      if (firstError) this.validationError = firstError;
+      if (anyNormalized) this.urlNormalized = true;
+      if (toAdd.length > 0) {
+        this.localItems.push(...toAdd);
+        this.newItem = '';
+        this.autoSave();
+      } else if (!firstError) {
+        this.newItem = '';
+      }
+      // Clear notices after delay
+      setTimeout(() => {
+        this.validationError = null;
+        this.urlNormalized = false;
+      }, 4000);
     },
     removeItem(index) {
       this.localItems.splice(index, 1);
@@ -220,6 +386,10 @@ export default {
       this.editingIndex = index;
       this.editValue = this.localItems[index].value;
       this.editDescription = this.localItems[index].description || '';
+      this.editDkimSelectors = this.getDkimSelectors(
+        this.localItems[index]
+      ).slice();
+      this.dkimSelectorInput = '';
       this.$nextTick(() => {
         const input = Array.isArray(this.$refs.editValueInput)
           ? this.$refs.editValueInput[0]
@@ -229,14 +399,38 @@ export default {
     },
     confirmEdit() {
       if (!this.editValue.trim()) return;
-      this.localItems[this.editingIndex].value = this.editValue.trim();
-      this.localItems[this.editingIndex].description =
-        this.editDescription.trim() || null;
+      const { value, error } = this.normalizeAndValidate(this.editValue);
+      if (error) {
+        this.validationError = error;
+        return;
+      }
+      const item = this.localItems[this.editingIndex];
+      item.value = value;
+      item.description = this.editDescription.trim() || null;
+      if (this.showDkimSelectors) {
+        item.metadata =
+          this.editDkimSelectors.length > 0
+            ? { dkimSelectors: this.editDkimSelectors }
+            : null;
+      }
       this.editingIndex = null;
       this.autoSave();
     },
     cancelEdit() {
       this.editingIndex = null;
+    },
+    addDkimSelector() {
+      const val = this.dkimSelectorInput.trim().replace(/,$/, '');
+      if (val && !this.editDkimSelectors.includes(val)) {
+        this.editDkimSelectors.push(val);
+      }
+      this.dkimSelectorInput = '';
+    },
+    removeDkimSelector(index) {
+      this.editDkimSelectors.splice(index, 1);
+    },
+    toggleComplete() {
+      this.$emit('toggle-complete', !this.isCompleted);
     },
     async autoSave() {
       this.saving = true;
@@ -249,7 +443,6 @@ export default {
         });
         this.$emit('saved');
       } catch (error) {
-        console.error('Error saving inventory:', error);
         this.$emit('error', error);
       } finally {
         this.saving = false;
@@ -264,6 +457,22 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.validation-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+}
+
+.validation-banner--info {
+  background: #fef3c7;
+  color: #d97706;
 }
 
 .add-item__input-wrap {
@@ -335,7 +544,7 @@ export default {
 
 .item-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
   background: var(--gray-50);
@@ -376,7 +585,6 @@ export default {
   color: var(--gray-500);
 }
 
-/* Edit mode */
 .item-row__edit {
   flex: 1;
   display: flex;
@@ -407,12 +615,12 @@ export default {
   color: var(--gray-600);
 }
 
-/* Action buttons */
 .item-row__actions {
   display: flex;
   gap: 4px;
   opacity: 0;
   transition: opacity var(--t-fast);
+  flex-shrink: 0;
 }
 
 .item-row:hover .item-row__actions {
@@ -422,6 +630,7 @@ export default {
 .item-row__edit-actions {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .item-row__action {
@@ -442,25 +651,113 @@ export default {
   background: var(--gray-200);
   color: var(--gray-700);
 }
-
 .item-row__action--delete:hover {
   background: #fee2e2;
   color: #dc2626;
 }
-
 .item-row__action--confirm:not(:disabled):hover {
   background: #dcfce7;
   color: #16a34a;
 }
-
 .item-row__action--confirm:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .item-row__action--cancel:hover {
   background: #fee2e2;
   color: #dc2626;
+}
+
+/* DKIM selectors */
+.dkim-selectors {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dkim-selectors__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+}
+
+.dkim-selectors__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  min-height: 34px;
+}
+
+.dkim-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dkim-tag__remove {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #0369a1;
+  opacity: 0.6;
+}
+
+.dkim-tag__remove:hover {
+  opacity: 1;
+}
+
+.dkim-selectors__input {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--gray-800);
+  flex: 1;
+  min-width: 80px;
+  background: transparent;
+}
+
+.dkim-selectors__hint {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin: 0;
+}
+
+.dkim-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.dkim-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .empty-state {
@@ -485,6 +782,7 @@ export default {
   padding-top: 24px;
   border-top: 1px solid var(--gray-100);
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 
 .step-actions__spacer {
@@ -516,10 +814,10 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
+  padding: 10px 16px;
+  font-size: 13px;
   font-weight: 600;
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
   cursor: pointer;
   transition: all var(--t-fast);
@@ -528,44 +826,56 @@ export default {
 .btn--primary {
   background: #00acdc;
   color: white;
+  border-color: #00acdc;
 }
-
 .btn--primary:hover:not(:disabled) {
   background: #0891b2;
-}
-
-.btn--primary:disabled {
-  background: var(--gray-200);
-  color: var(--gray-400);
-  cursor: not-allowed;
+  border-color: #0891b2;
 }
 
 .btn--secondary {
   background: var(--gray-100);
   color: var(--gray-700);
+  border-color: var(--gray-200);
 }
-
 .btn--secondary:hover {
   background: var(--gray-200);
+}
+
+.btn--complete {
+  background: white;
+  color: var(--gray-500);
+  border-color: var(--gray-200);
+}
+.btn--complete:hover {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.btn--complete-active {
+  background: #dcfce7;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+.btn--complete-active:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
 }
 
 @media (max-width: 640px) {
   .add-item__input-wrap {
     flex-direction: column;
   }
-
   .add-item__btn {
     width: 100%;
   }
-
   .step-actions {
     flex-direction: column;
   }
-
   .step-actions__spacer {
     display: none;
   }
-
   .btn {
     width: 100%;
     justify-content: center;

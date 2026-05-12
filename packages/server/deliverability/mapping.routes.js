@@ -55,4 +55,11 @@ router.post(
   mapping.reorderEntries
 );
 
+// Bulk reorder mapping groups
+router.post(
+  '/audits/:auditId/mapping/reorder-groups',
+  GUARD_USER,
+  mapping.reorderGroups
+);
+
 module.exports = router;
