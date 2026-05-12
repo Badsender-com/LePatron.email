@@ -1,3 +1,40 @@
+:root {
+  /* Colors - Grayscale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Base colors */
+  --white: #ffffff;
+  --black: #000000;
+
+  /* Border radius */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* Transitions */
+  --t-fast: 150ms;
+  --t-normal: 200ms;
+  --t-slow: 300ms;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* Page Header */
+  --page-header-bg: transparent;
+  --page-header-border: none;
+  --page-header-min-height: 72px;
+
+  /* Error color */
+  --color-error: #dc2626;
+}
+
 .v-application {
   font-family: 'Inter', sans-serif;
 }

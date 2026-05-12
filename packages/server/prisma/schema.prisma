@@ -1,0 +1,83 @@
+// Schema Prisma - Module Deliverability LePatron
+// Base de données PostgreSQL isolée du reste (MongoDB)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_DELIVERABILITY")
+}
+
+// Enums
+enum AuditStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum InventoryCategory {
+  PLATFORM
+  USAGE
+  DISPLAY_FROM_DOMAIN
+  DISPLAY_FROM_ADDRESS
+  REPLY_TO
+  MAIL_FROM_DOMAIN
+  TRACKING_DOMAIN
+  HOSTING_DOMAIN
+  IP
+  LINK_DESTINATION_DOMAIN
+}
+
+// Modèle Audit - Root entity pour chaque audit de délivrabilité
+model Audit {
+  id            String      @id @default(uuid())
+  name          String
+  companyId     String      @map("company_id")  // Référence MongoDB Group._id
+  userId        String      @map("user_id")     // Référence MongoDB User._id
+  status        AuditStatus @default(DRAFT)
+  workshopReady Boolean     @default(false) @map("workshop_ready")
+  organization  String      @default("Badsender")
+
+  // Progress tracking pour les 10 étapes du Technical Inventory
+  progressPlatforms                  Boolean @default(false) @map("progress_platforms")
+  progressUsages                     Boolean @default(false) @map("progress_usages")
+  progressDisplayFromDomains         Boolean @default(false) @map("progress_display_from_domains")
+  progressDisplayFromAddresses       Boolean @default(false) @map("progress_display_from_addresses")
+  progressReplyTos                   Boolean @default(false) @map("progress_reply_tos")
+  progressMailFromDomains            Boolean @default(false) @map("progress_mail_from_domains")
+  progressTrackingDomains            Boolean @default(false) @map("progress_tracking_domains")
+  progressHostingDomains             Boolean @default(false) @map("progress_hosting_domains")
+  progressIps                        Boolean @default(false) @map("progress_ips")
+  progressLinkDestinationDomains     Boolean @default(false) @map("progress_link_destination_domains")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  inventoryItems InventoryItem[]
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, status])
+  @@map("audits")
+}
+
+// Modèle InventoryItem - Items du Technical Inventory (9 catégories)
+model InventoryItem {
+  id          String            @id @default(uuid())
+  auditId     String            @map("audit_id")
+  category    InventoryCategory
+  value       String
+  description String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@unique([auditId, category, value])
+  @@index([auditId, category])
+  @@map("inventory_items")
+}

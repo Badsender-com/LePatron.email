@@ -264,6 +264,29 @@ export default {
               class="module-card__switch"
             />
           </div>
+
+          <!-- Deliverability Module -->
+          <div class="module-card">
+            <div class="module-card__content">
+              <div class="module-card__icon">
+                <lucide-shield :size="28" color="#00acdc" />
+              </div>
+              <div class="module-card__info">
+                <div class="module-card__name">
+                  {{ $t('groups.modules.deliverability.name') }}
+                </div>
+                <div class="module-card__description">
+                  {{ $t('groups.modules.deliverability.description') }}
+                </div>
+              </div>
+            </div>
+            <v-switch
+              v-model="localModel.enableDeliverability"
+              hide-details
+              :disabled="disabled"
+              class="module-card__switch"
+            />
+          </div>
         </bs-form-section>
 
         <!-- ==================== SECTION 3: PERMISSIONS ==================== -->

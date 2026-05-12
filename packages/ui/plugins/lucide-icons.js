@@ -44,6 +44,7 @@ import {
   // Content & Data
   Mail,
   MailPlus,
+  Inbox,
   User,
   Users,
   UserPlus,
@@ -66,6 +67,8 @@ import {
   Cable,
   Bot,
   BadgeCheck,
+  ClipboardList,
+  Network,
 
   // Media
   Image,
@@ -117,6 +120,7 @@ const icons = {
   // Content & Data
   IconMail: Mail,
   IconMailPlus: MailPlus,
+  IconInbox: Inbox,
   IconUser: User,
   IconUsers: Users,
   IconUserPlus: UserPlus,
@@ -139,6 +143,8 @@ const icons = {
   IconCable: Cable,
   IconBot: Bot,
   IconBadgeCheck: BadgeCheck,
+  IconClipboardList: ClipboardList,
+  IconNetwork: Network,
 
   // Media
   IconImage: Image,

@@ -133,6 +133,10 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    enableDeliverability: {
+      type: Boolean,
+      default: false,
+    },
     // Note: Metabase/dashboard configuration is now stored in the Integration collection
     // See packages/server/integration/integration.schema.js
   },

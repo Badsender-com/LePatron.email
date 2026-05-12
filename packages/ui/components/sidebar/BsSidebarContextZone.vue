@@ -18,6 +18,12 @@
       :collapsed="collapsed"
     />
 
+    <!-- Deliverability context: Audit list -->
+    <bs-sidebar-deliverability-list
+      v-else-if="activeModule === 'deliverability'"
+      :collapsed="collapsed"
+    />
+
     <!-- Empty state when no module is active -->
     <div v-else class="bs-sidebar-context-zone__empty">
       <p v-if="!collapsed" class="text-body-2 grey--text text-center pa-4">
@@ -31,6 +37,7 @@
 import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
 import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
 import BsSidebarSettingsList from './context/BsSidebarSettingsList.vue';
+import BsSidebarDeliverabilityList from './context/BsSidebarDeliverabilityList.vue';
 
 export default {
   name: 'BsSidebarContextZone',
@@ -38,6 +45,7 @@ export default {
     BsSidebarWorkspaceTree,
     BsSidebarDashboardList,
     BsSidebarSettingsList,
+    BsSidebarDeliverabilityList,
   },
   props: {
     activeModule: {

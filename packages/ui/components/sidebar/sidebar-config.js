@@ -16,14 +16,14 @@ export const SIDEBAR_MODULES = [
     route: '/crm-intelligence',
     enabledFlag: 'enableCrmIntelligence',
   },
+  {
+    id: 'deliverability',
+    icon: 'Shield',
+    labelKey: 'sidebar.modules.deliverability',
+    route: '/deliverability',
+    enabledFlag: 'enableDeliverability',
+  },
   // Future modules (commented out until implemented):
-  // {
-  //   id: 'deliverability',
-  //   icon: 'Shield',
-  //   labelKey: 'sidebar.modules.deliverability',
-  //   route: '/deliverability',
-  //   enabledFlag: 'enableDeliverability',
-  // },
   // {
   //   id: 'design-system',
   //   icon: 'Palette',
