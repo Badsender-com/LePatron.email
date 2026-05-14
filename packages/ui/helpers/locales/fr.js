@@ -507,6 +507,7 @@ export default {
         placeholder: 'ex: s1, google, brevo',
         hint: 'Séparez les sélecteurs par des virgules ou des espaces',
         addSelector: 'Ajouter un sélecteur',
+        quickAddHint: 'Syntaxe rapide : domaine.com:sélecteur1,sélecteur2',
       },
     },
     audits: {

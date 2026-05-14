@@ -32,6 +32,9 @@
       <p class="add-item__hint">
         {{ $t('deliverability.inventory.addHint') }}
       </p>
+      <p v-if="showDkimSelectors" class="add-item__hint add-item__hint--dkim">
+        {{ $t('deliverability.inventory.dkimSelectors.quickAddHint') }}
+      </p>
     </div>
 
     <!-- Items list -->
@@ -337,8 +340,19 @@ export default {
         const colonIndex = raw.indexOf(':');
         let rawValue = raw;
         let description = null;
-        // For non-email categories, colon might be part of IPv6 or domain — only split if category supports description and not IP
-        if (
+        let itemDkimSelectors = [];
+
+        if (this.showDkimSelectors && colonIndex !== -1) {
+          // display_from_domain: domain.com:selector1,selector2
+          rawValue = raw.slice(0, colonIndex).trim();
+          const selectorPart = raw.slice(colonIndex + 1).trim();
+          itemDkimSelectors = selectorPart
+            ? selectorPart
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [];
+        } else if (
           colonIndex !== -1 &&
           this.categoryLower !== 'ip' &&
           this.categoryLower !== 'display_from_address' &&
@@ -359,7 +373,14 @@ export default {
 
         const existing = new Set(this.localItems.map((i) => i.value));
         if (value && !existing.has(value)) {
-          toAdd.push({ value, description, metadata: null });
+          toAdd.push({
+            value,
+            description,
+            metadata:
+              itemDkimSelectors.length > 0
+                ? { dkimSelectors: itemDkimSelectors }
+                : null,
+          });
         }
       }
 
@@ -534,6 +555,11 @@ export default {
   margin: 6px 0 0 0;
   font-size: 12px;
   color: var(--gray-400);
+}
+
+.add-item__hint--dkim {
+  font-family: monospace;
+  color: #0369a1;
 }
 
 .items-list {

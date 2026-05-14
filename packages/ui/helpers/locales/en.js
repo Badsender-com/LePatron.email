@@ -503,6 +503,7 @@ export default {
         placeholder: 'e.g. s1, google, brevo',
         hint: 'Separate selectors with commas or spaces',
         addSelector: 'Add selector',
+        quickAddHint: 'Quick syntax: domain.com:selector1,selector2',
       },
     },
     audits: {
