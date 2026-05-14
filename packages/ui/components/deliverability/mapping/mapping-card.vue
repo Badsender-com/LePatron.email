@@ -17,7 +17,7 @@
               @keydown.enter.prevent="confirmName"
               @keydown.esc="cancelName"
               @blur="confirmName"
-            >
+            />
             <button
               v-if="nameValue"
               class="mapping-card__reset-name"
@@ -43,6 +43,9 @@
           class="mapping-card__score-item"
           :title="$t('deliverability.mapping.card.qualityScore')"
         >
+          <span class="mapping-card__score-label">{{
+            $t('deliverability.mapping.card.qualityScoreShort')
+          }}</span>
           <mapping-rating-stars
             :value="entry.qualityScore"
             @input="update('qualityScore', $event)"
@@ -53,6 +56,9 @@
           class="mapping-card__score-item"
           :title="$t('deliverability.mapping.card.strategicScore')"
         >
+          <span class="mapping-card__score-label">{{
+            $t('deliverability.mapping.card.strategicScoreShort')
+          }}</span>
           <mapping-rating-stars
             :value="entry.strategicScore"
             @input="update('strategicScore', $event)"
@@ -218,7 +224,7 @@
           type="checkbox"
           :checked="entry.usesSharedIps"
           @change="update('usesSharedIps', $event.target.checked)"
-        >
+        />
         {{ $t('deliverability.mapping.fields.sharedIps') }}
       </label>
 
@@ -550,6 +556,14 @@ export default {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.mapping-card__score-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-400);
 }
 
 .mapping-card__score-sep {

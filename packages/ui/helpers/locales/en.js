@@ -356,7 +356,9 @@ export default {
       card: {
         untitled: 'New line',
         qualityScore: 'Technical quality (1–5)',
+        qualityScoreShort: 'Quality',
         strategicScore: 'Strategic importance (1–5)',
+        strategicScoreShort: 'Strategy',
         toggleExpand: 'Expand / collapse',
         delete: 'Delete line',
         sharedIps: 'Shared / mutualized IPs',

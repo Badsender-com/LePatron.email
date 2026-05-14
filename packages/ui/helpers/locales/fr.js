@@ -360,7 +360,9 @@ export default {
       card: {
         untitled: 'Nouvelle ligne',
         qualityScore: 'Qualité technique (1–5)',
+        qualityScoreShort: 'Qualité',
         strategicScore: 'Importance stratégique (1–5)',
+        strategicScoreShort: 'Stratégie',
         toggleExpand: 'Développer / réduire',
         delete: 'Supprimer la ligne',
         sharedIps: 'IPs partagées / mutualisées',
