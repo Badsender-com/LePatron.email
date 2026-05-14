@@ -82,6 +82,7 @@
         handle=".drag-handle"
         ghost-class="card-ghost"
         :animation="150"
+        class="mapping-group__cards"
         @change="(evt) => $emit('entries-changed', { groupId: group.id, evt })"
       >
         <mapping-card
@@ -298,10 +299,13 @@ export default {
 }
 
 .mapping-group__body {
+  padding: 10px;
+}
+
+.mapping-group__cards {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px;
 }
 
 .mapping-group__empty {
