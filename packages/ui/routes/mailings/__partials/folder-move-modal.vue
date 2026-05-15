@@ -6,6 +6,7 @@ import { mapState } from 'vuex';
 import { FOLDER } from '~/store/folder';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { FolderOpen, Folder, Users, Move } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'FolderMoveModal',
@@ -43,6 +44,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     submit() {
       if (this.isValidToBeMoved) {
         const location = this.selectedLocation;
@@ -92,7 +94,7 @@ export default {
       class="black--text"
       v-html="
         $t('folders.moveFolderConfirmationMessageWithName', {
-          name: folderName,
+          name: escapeHtml(folderName),
         })
       "
     />

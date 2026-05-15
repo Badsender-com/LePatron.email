@@ -12,6 +12,7 @@ import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 import { IS_ADMIN, USER } from '~/store/user';
 import { Building2, Plus, Pencil, Check, XCircle, Trash2 } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'PageGroups',
@@ -127,6 +128,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     openCreateModal() {
       this.$refs.createGroupModal.open();
     },
@@ -323,7 +325,7 @@ export default {
             class="black--text"
             v-html="
               $t('groups.delete.deleteWarningMessage', {
-                name: deletingGroup && deletingGroup.name,
+                name: escapeHtml(deletingGroup && deletingGroup.name),
               })
             "
           />

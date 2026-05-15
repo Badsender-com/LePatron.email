@@ -27,6 +27,7 @@ import BsModalConfirmForm from '~/components/modal-confirm-form';
 import MailingsTagsMenu from './mailings-tags-menu';
 
 import { ACTIONS, ACTIONS_DETAILS } from '~/helpers/constants/mails';
+import { escapeHtml } from '~/helpers/escape-html';
 import {
   MessageCircle,
   TextCursor,
@@ -214,6 +215,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     handleRowClick(item) {
       if (this.hasAccess) {
         window.location.href = `/editor/${item.id}`;
@@ -706,7 +708,7 @@ export default {
           class="black--text"
           v-html="
             $t('groups.mailingTab.deleteWarningMessage', {
-              name: selectedMailing.name,
+              name: escapeHtml(selectedMailing.name),
             })
           "
         />

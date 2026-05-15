@@ -3,6 +3,7 @@ import BsModalConfirm from '~/components/modal-confirm';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { FolderOpen, Folder, Users, Move } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'MailingsMoveModal',
@@ -43,6 +44,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     submit() {
       if (this.isValidToBeMoved) {
         const location = this.selectedLocation;
@@ -91,7 +93,9 @@ export default {
       v-if="mailName"
       class="black--text"
       v-html="
-        $t('mailings.moveMailConfirmationMessageWithName', { name: mailName })
+        $t('mailings.moveMailConfirmationMessageWithName', {
+          name: escapeHtml(mailName),
+        })
       "
     />
     <slot v-else />
