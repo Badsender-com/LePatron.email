@@ -123,12 +123,14 @@ export default {
         this.$router.push(`/users/${user.id}`);
       }
     },
-    getMailActionTooltip(status) {
+    // Returns the i18n KEY, not the translated string: BsRowActions calls
+    // $t(action.text) on its side, so returning $t(...) here would translate
+    // twice and fall back to the literal string in every locale.
+    getMailActionTooltipKey(status) {
       const actions = this.getStatusActions(status);
-      if (actions.resetPassword) return this.$t('users.passwordTooltip.reset');
-      if (actions.sendPassword) return this.$t('users.passwordTooltip.send');
-      if (actions.reSendPassword)
-        return this.$t('users.passwordTooltip.resend');
+      if (actions.resetPassword) return 'users.passwordTooltip.reset';
+      if (actions.sendPassword) return 'users.passwordTooltip.send';
+      if (actions.reSendPassword) return 'users.passwordTooltip.resend';
       return '';
     },
     handleMailAction(user) {
@@ -168,7 +170,7 @@ export default {
         actions.push({
           key: 'mail-action',
           icon: isReset ? RotateCcw : Send,
-          text: this.getMailActionTooltip(item.status),
+          text: this.getMailActionTooltipKey(item.status),
           onClick: () => this.handleMailAction(item),
         });
       }

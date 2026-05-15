@@ -124,6 +124,11 @@ export default {
       return this.$t('translation.estimatedTime', { time });
     },
   },
+  beforeDestroy() {
+    // Otherwise the 2s polling interval keeps hitting the API after the user
+    // navigates away from a translation in progress.
+    this.stopPolling();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     escapeHtml,

@@ -301,9 +301,9 @@ export default {
       this.saveTreeState(openIds);
     },
     async checkIfNotData() {
-      if (!this.selectedItem?.id && this.workspaces?.length > 0) {
+      if (!this.selectedItem?.id && this.treeviewWorkspaces?.length > 0) {
         await this.$router.push({
-          query: { wid: this.workspaces[0]?._id },
+          query: { wid: this.treeviewWorkspaces[0]?.id },
         });
       }
     },
@@ -415,7 +415,7 @@ export default {
           this.clearSelection();
           await this.$router.replace({
             path: '/mailings',
-            query: { wid: this.workspaces[0]?._id },
+            query: { wid: this.treeviewWorkspaces[0]?.id },
           });
           this.$nextTick(() => {
             this.$refs.tree.updateActive([]);

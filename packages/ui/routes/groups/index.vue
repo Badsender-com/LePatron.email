@@ -198,6 +198,14 @@ export default {
       const colors = { active: 'success', demo: 'info', inactive: 'grey' };
       return colors[status] || 'grey';
     },
+    getStatusLabel(status) {
+      const labels = {
+        active: this.$t('forms.group.status.active'),
+        demo: this.$t('forms.group.status.demo'),
+        inactive: this.$t('forms.group.status.inactive'),
+      };
+      return labels[status] || status;
+    },
   },
 };
 </script>
@@ -247,7 +255,7 @@ export default {
               :outlined="item.status !== 'active'"
               :dark="item.status === 'active'"
             >
-              {{ item.status }}
+              {{ getStatusLabel(item.status) }}
             </v-chip>
           </template>
 
