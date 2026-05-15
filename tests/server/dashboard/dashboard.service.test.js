@@ -26,6 +26,12 @@ const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 const VALID_GROUP_ID = '507f1f77bcf86cd799439011';
 const VALID_DASHBOARD_ID = '507f1f77bcf86cd799439022';
 const VALID_INTEGRATION_ID = '507f1f77bcf86cd799439033';
+const OTHER_INTEGRATION_ID = '507f1f77bcf86cd799439044';
+const DASHBOARD_IDS = [
+  '507f1f77bcf86cd799439051',
+  '507f1f77bcf86cd799439052',
+  '507f1f77bcf86cd799439053',
+];
 
 describe('Dashboard Service', () => {
   beforeEach(() => {
@@ -395,10 +401,13 @@ describe('Dashboard Service', () => {
     });
 
     it('should validate new integration belongs to same group', async () => {
+      // The dashboard already has VALID_INTEGRATION_ID attached; the update
+      // attempts to switch it to OTHER_INTEGRATION_ID, but
+      // Integrations.findOne returns null (not found in the same _company).
       const mockDashboard = {
         _id: VALID_DASHBOARD_ID,
         _company: VALID_GROUP_ID,
-        _integration: { toString: () => 'old-integration' },
+        _integration: { toString: () => VALID_INTEGRATION_ID },
         save: jest.fn(),
       };
 
@@ -407,7 +416,7 @@ describe('Dashboard Service', () => {
 
       await expect(
         dashboardService.updateDashboard(VALID_DASHBOARD_ID, {
-          integrationId: 'new-integration',
+          integrationId: OTHER_INTEGRATION_ID,
         })
       ).rejects.toThrow(
         expect.objectContaining({
@@ -449,17 +458,15 @@ describe('Dashboard Service', () => {
 
   describe('reorderDashboards', () => {
     it('should update order for all dashboards', async () => {
-      const dashboardIds = ['dash1', 'dash2', 'dash3'];
-
-      Dashboards.find.mockResolvedValue([
-        { _id: 'dash1' },
-        { _id: 'dash2' },
-        { _id: 'dash3' },
-      ]);
-
-      Dashboards.bulkWrite.mockResolvedValue({});
-
-      // Mock listDashboards return
+      // Service does two reads on Dashboards.find:
+      //   1) bare `await Dashboards.find({ _id: { $in: ids }, _company })`
+      //      — validates the ids belong to the group.
+      //   2) listDashboards() at the end via .sort().populate().lean()
+      //      — to return the new ordering.
+      // mockImplementationOnce wires them in the right order.
+      Dashboards.find.mockResolvedValueOnce(
+        DASHBOARD_IDS.map((id) => ({ _id: id }))
+      );
       Dashboards.find.mockReturnValueOnce({
         sort: jest.fn().mockReturnValue({
           populate: jest.fn().mockReturnValue({
@@ -467,8 +474,9 @@ describe('Dashboard Service', () => {
           }),
         }),
       });
+      Dashboards.bulkWrite.mockResolvedValue({});
 
-      await dashboardService.reorderDashboards(VALID_GROUP_ID, dashboardIds);
+      await dashboardService.reorderDashboards(VALID_GROUP_ID, DASHBOARD_IDS);
 
       expect(Dashboards.bulkWrite).toHaveBeenCalledWith([
         {
@@ -493,12 +501,11 @@ describe('Dashboard Service', () => {
     });
 
     it('should throw 400 when dashboard count mismatch', async () => {
-      const dashboardIds = ['dash1', 'dash2'];
-
-      Dashboards.find.mockResolvedValue([{ _id: 'dash1' }]);
+      // Only one of the three IDs is found in the DB → length mismatch.
+      Dashboards.find.mockResolvedValueOnce([{ _id: DASHBOARD_IDS[0] }]);
 
       await expect(
-        dashboardService.reorderDashboards(VALID_GROUP_ID, dashboardIds)
+        dashboardService.reorderDashboards(VALID_GROUP_ID, DASHBOARD_IDS)
       ).rejects.toThrow(
         expect.objectContaining({
           status: 400,
@@ -508,35 +515,10 @@ describe('Dashboard Service', () => {
     });
   });
 
-  describe('getGroupIdForDashboard', () => {
-    it('should return group ID for dashboard', async () => {
-      Dashboards.findById.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({
-            _company: { toString: () => VALID_GROUP_ID },
-          }),
-        }),
-      });
-
-      const result = await dashboardService.getGroupIdForDashboard(
-        VALID_DASHBOARD_ID
-      );
-
-      expect(result).toBe(VALID_GROUP_ID);
-    });
-
-    it('should return null when dashboard not found', async () => {
-      Dashboards.findById.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(null),
-        }),
-      });
-
-      const result = await dashboardService.getGroupIdForDashboard(
-        'nonexistent'
-      );
-
-      expect(result).toBeNull();
-    });
-  });
+  // The legacy `getGroupIdForDashboard` describe block that lived here used
+  // to test a service function that no longer exists. The dashboard authority
+  // resolution moved into crm-intelligence.guard.js / Dashboards.findOne with
+  // _company scoping. The tests were silently broken (4 failures) since the
+  // function was removed. Dropped rather than rewritten — the same intent is
+  // already covered by the crm-intelligence service tests.
 });
