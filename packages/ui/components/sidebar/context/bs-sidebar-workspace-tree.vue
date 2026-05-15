@@ -192,9 +192,14 @@ export default {
           this.openNodes = nodesToOpen;
           this.restoreSelectedNode();
 
-          setTimeout(() => {
+          // Wait one more tick so the v-treeview has finished applying
+          // openNodes + activeNode reactively before we drop the
+          // isInitializing guard. Previously a setTimeout(100) was used as
+          // a "good enough" sleep; chaining $nextTick is the correct
+          // Vue-aware version of the same intent.
+          this.$nextTick(() => {
             this.isInitializing = false;
-          }, 100);
+          });
         });
       } catch (error) {
         console.error(

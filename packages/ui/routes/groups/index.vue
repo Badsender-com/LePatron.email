@@ -23,12 +23,15 @@ export default {
     BsModalConfirmForm,
     BsDataTable,
     BsRowActions,
-    // eslint-disable-next-line vue/no-unused-components
-    LucideBuilding2: Building2,
     LucidePlus: Plus,
     LucideCheck: Check,
     LucideXCircle: XCircle,
   },
+  // BsDataTable's :empty-icon prop accepts a component reference; we pass
+  // Building2 directly (frozen as a $options value, not reactive data) so
+  // we don't need a LucideBuilding2 local registration that the template
+  // never references as a tag.
+  emptyIconComponent: Building2,
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -40,7 +43,10 @@ export default {
       const groupsResponse = await $axios.$get(apiRoutes.groups());
       return { groups: groupsResponse.items };
     } catch (error) {
-      console.error('[Groups] Failed to load groups:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('[Groups] Failed to load groups:', error);
+      }
       return { groups: [] };
     }
   },
@@ -233,7 +239,7 @@ export default {
           :headers="tableHeaders"
           :items="groups"
           :loading="loading"
-          :empty-icon="$options.components.LucideBuilding2"
+          :empty-icon="$options.emptyIconComponent"
           :empty-message="$t('settingsNav.companiesEmpty')"
           clickable
           @click:row="goToGroup"

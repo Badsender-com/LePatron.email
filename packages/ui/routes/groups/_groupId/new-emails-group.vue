@@ -79,7 +79,10 @@ export default {
           ),
           color: 'error',
         });
-        console.log(error);
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[new-emails-group] submit failed', error);
+        }
       } finally {
         this.loading = false;
       }

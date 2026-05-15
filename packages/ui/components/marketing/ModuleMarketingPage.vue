@@ -21,6 +21,10 @@ import {
   LayoutDashboard,
   Database,
 } from 'lucide-vue';
+import {
+  BADSENDER_CONTACT_URLS,
+  LEPATRON_HOME_URL,
+} from '~/helpers/constants/external-urls';
 
 // Icon mapping from Lucide names to components
 const FEATURE_ICON_MAP = {
@@ -67,12 +71,12 @@ export default {
   },
   computed: {
     contactUrl() {
-      return this.$i18n.locale === 'fr'
-        ? 'https://www.badsender.com/contact/'
-        : 'https://www.badsender.com/en/contact/';
+      return (
+        BADSENDER_CONTACT_URLS[this.$i18n.locale] || BADSENDER_CONTACT_URLS.en
+      );
     },
     infoUrl() {
-      return 'https://www.lepatron.email/';
+      return LEPATRON_HOME_URL;
     },
     moduleKey() {
       // Convert module-id to camelCase for i18n keys
