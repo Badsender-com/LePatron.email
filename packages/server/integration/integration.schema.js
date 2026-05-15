@@ -5,7 +5,6 @@ const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
-const mongooseHidden = require('mongoose-hidden')();
 const encryptionPlugin = require('../utils/encryption-plugin.js');
 
 /**
@@ -81,10 +80,30 @@ const IntegrationSchema = Schema(
   }
 );
 
-// Hide sensitive fields from JSON output
-IntegrationSchema.plugin(mongooseHidden, {
-  hidden: { _id: true, __v: true, apiKey: true },
-});
+// Hide sensitive fields from JSON output.
+//
+// Two adjustments compared to the plugin defaults:
+//
+// 1. `defaultHidden: { __v: true }` — mongoose-hidden hides `_id` by default,
+//    but the UI references `integration._id` in 5 places (validate, dashboard
+//    count, edit, delete, loading state) and breaks silently with `undefined`
+//    in URLs when _id is dropped. We restore `_id` by overriding defaultHidden.
+//
+// 2. `autoHideObject: false` — without this, `apiKey` would also be stripped
+//    from `doc.toObject()`, which the ProviderFactory uses internally to build
+//    the provider instance. Stripping apiKey there breaks the actual
+//    /validate call (provider gets `apiKey: undefined` → 401 from upstream
+//    → validation reports false for every key). We only want apiKey hidden
+//    in the HTTP/JSON response, not in server-side internals.
+IntegrationSchema.plugin(
+  require('mongoose-hidden')({
+    defaultHidden: { __v: true },
+    autoHideObject: false,
+  }),
+  {
+    hidden: { apiKey: true },
+  }
+);
 
 // Apply encryption plugin for sensitive fields
 IntegrationSchema.plugin(encryptionPlugin, ['apiKey']);
