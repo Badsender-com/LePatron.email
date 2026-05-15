@@ -14,6 +14,12 @@ import {
   TrendingUp,
   Target,
   Zap,
+  AreaChart,
+  MailCheck,
+  HeartHandshake,
+  DollarSign,
+  LayoutDashboard,
+  Database,
 } from 'lucide-vue';
 
 // Icon mapping from Lucide names to components
@@ -30,6 +36,12 @@ const FEATURE_ICON_MAP = {
   'trending-up': TrendingUp,
   target: Target,
   zap: Zap,
+  'area-chart': AreaChart,
+  'mail-check': MailCheck,
+  'heart-handshake': HeartHandshake,
+  'dollar-sign': DollarSign,
+  'layout-dashboard': LayoutDashboard,
+  database: Database,
 };
 
 export default {
@@ -55,6 +67,11 @@ export default {
       type: String,
       required: true,
     },
+  },
+  data() {
+    return {
+      screenshotFailed: false,
+    };
   },
   computed: {
     contactUrl() {
@@ -103,6 +120,11 @@ export default {
         crmIntelligence: '/img/marketing/crm-intelligence-screenshot.png',
       };
       return screenshots[this.moduleKey];
+    },
+  },
+  watch: {
+    moduleId() {
+      this.screenshotFailed = false;
     },
   },
   methods: {
@@ -158,12 +180,13 @@ export default {
     </section>
 
     <!-- SCREENSHOT SECTION -->
-    <section v-if="screenshot" class="screenshot-section">
+    <section v-if="screenshot && !screenshotFailed" class="screenshot-section">
       <div class="screenshot-wrapper">
         <img
           :src="screenshot"
           :alt="`${title} Interface`"
           class="screenshot-image"
+          @error="screenshotFailed = true"
         >
       </div>
     </section>
