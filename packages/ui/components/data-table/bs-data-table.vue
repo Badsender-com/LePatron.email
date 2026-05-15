@@ -118,7 +118,7 @@ export default {
 <style lang="scss">
 .bs-data-table-wrapper {
   .bs-data-table {
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--gray-300);
     border-radius: 8px;
     overflow: hidden;
 
@@ -128,11 +128,11 @@ export default {
       font-weight: 600 !important;
       letter-spacing: 0.04em !important;
       text-transform: uppercase !important;
-      color: rgba(0, 0, 0, 0.6) !important;
+      color: var(--gray-700) !important;
       padding: 10px 16px !important;
-      background: rgba(0, 0, 0, 0.02) !important;
+      background: var(--surface-muted) !important;
       height: 40px !important;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+      border-bottom: 1px solid var(--gray-300) !important;
       white-space: nowrap;
       user-select: none;
     }
@@ -146,8 +146,8 @@ export default {
     tbody td {
       padding: 10px 16px !important;
       font-size: 13px !important;
-      color: rgba(0, 0, 0, 0.87) !important;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+      color: var(--gray-900) !important;
+      border-bottom: 1px solid var(--gray-200) !important;
       height: 40px !important;
       vertical-align: middle;
     }
@@ -159,15 +159,15 @@ export default {
     // Unified hover: light accent blue across every BsDataTable, whether
     // the row is clickable or not (matches the design system reference).
     tbody tr:hover {
-      background: rgba(0, 172, 220, 0.05) !important;
+      background: var(--accent-tint-hover) !important;
     }
 
     tbody tr.v-data-table__selected {
-      background: rgba(0, 172, 220, 0.06) !important;
+      background: var(--accent-tint-selected) !important;
     }
 
     tbody tr.v-data-table__selected:hover {
-      background: rgba(0, 172, 220, 0.1) !important;
+      background: var(--accent-tint-selected-hover) !important;
     }
 
     // ── Clickable rows ─────────────────────────────────────────────────────
@@ -182,12 +182,12 @@ export default {
     }
 
     &__empty-icon {
-      color: rgba(0, 0, 0, 0.26);
+      color: var(--gray-400);
       margin-bottom: 1rem;
     }
 
     &__empty-message {
-      color: rgba(0, 0, 0, 0.6);
+      color: var(--gray-700);
       font-size: 0.875rem;
       margin: 0;
     }

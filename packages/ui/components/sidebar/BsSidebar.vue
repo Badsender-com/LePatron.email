@@ -287,8 +287,8 @@ export default {
   left: 0;
   top: 0;
   height: 100vh;
-  background: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  background: var(--surface);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -340,11 +340,11 @@ export default {
 }
 
 .bs-sidebar__resize-handle:hover {
-  background-color: rgba(0, 172, 220, 0.3);
+  background-color: var(--accent-tint-resize);
 }
 
 .bs-sidebar__resize-handle:active {
-  background-color: rgba(0, 172, 220, 0.5);
+  background-color: var(--accent-tint-resize-active);
 }
 
 /* Mobile: hide resize handle */
