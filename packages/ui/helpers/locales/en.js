@@ -4,6 +4,7 @@ export default {
     created: 'Created',
     deleted: 'Deleted',
     usersFetchError: 'Unable to access users\' list :(',
+    groupFetchError: 'Unable to load company data :(',
     emailSent: 'An email was sent',
   },
   global: {

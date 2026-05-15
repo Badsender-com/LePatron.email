@@ -4,6 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import { IS_ADMIN, USER } from '~/store/user';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { safeFetchGroup } from '~/helpers/safe-fetch-group';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import BsUserForm from '~/components/users/form.vue';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
@@ -16,13 +17,7 @@ export default {
     acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
-    const { $axios, params } = nuxtContext;
-    try {
-      const groupResponse = await $axios.$get(apiRoutes.groupsItem(params));
-      return { group: groupResponse };
-    } catch (error) {
-      console.log(error);
-    }
+    return safeFetchGroup(nuxtContext);
   },
   data() {
     return {
@@ -69,7 +64,10 @@ export default {
           text: this.$t('global.errors.errorOccured'),
           color: 'error',
         });
-        console.log(error);
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[new-user] submit failed', error);
+        }
       } finally {
         this.loading = false;
       }

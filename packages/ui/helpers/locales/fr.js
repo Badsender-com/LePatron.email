@@ -4,6 +4,7 @@ export default {
     created: 'Créé',
     deleted: 'Supprimé',
     usersFetchError: 'Impossible d\'accéder à la liste des utilisateurs :(',
+    groupFetchError: 'Impossible de charger les données de l\'entreprise :(',
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
