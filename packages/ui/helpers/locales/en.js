@@ -798,6 +798,12 @@ export default {
       help: 'Help',
       logout: 'Sign out',
     },
+    aria: {
+      closeNavigation: 'Close navigation',
+      breadcrumb: 'Breadcrumb',
+      moreActions: 'More actions',
+    },
+    settingsHeader: 'Settings',
     utilities: 'Utilities',
     collapse: 'Collapse sidebar',
     expand: 'Expand sidebar',

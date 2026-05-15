@@ -39,7 +39,7 @@
         <button
           class="am-trigger"
           :class="{ 'am-trigger--open': value }"
-          aria-label="More actions"
+          :aria-label="$t('sidebar.aria.moreActions')"
           :aria-expanded="value"
           v-bind="attrs"
           v-on="on"

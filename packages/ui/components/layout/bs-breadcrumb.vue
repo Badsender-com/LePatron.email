@@ -30,7 +30,7 @@ export default {
 </script>
 
 <template>
-  <ol class="bsph__crumbs" aria-label="breadcrumb">
+  <ol class="bsph__crumbs" :aria-label="$t('sidebar.aria.breadcrumb')">
     <template v-for="(item, index) in visibleItems">
       <li
         :key="`crumb-${index}`"

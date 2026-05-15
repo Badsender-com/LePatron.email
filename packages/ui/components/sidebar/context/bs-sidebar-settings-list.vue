@@ -2,7 +2,9 @@
   <div v-if="!collapsed" class="bs-sidebar-settings-list">
     <!-- Section header -->
     <div class="settings-list-header">
-      <span class="settings-list-header__label">SETTINGS</span>
+      <span class="settings-list-header__label">{{
+        $t('sidebar.settingsHeader')
+      }}</span>
     </div>
 
     <!-- Settings nav items -->

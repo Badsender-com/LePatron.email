@@ -12,7 +12,7 @@
       <button
         v-if="isMobile"
         class="bs-sidebar__mobile-close"
-        aria-label="Close navigation"
+        :aria-label="$t('sidebar.aria.closeNavigation')"
         @click="handleMobileClose"
       >
         <lucide-x :size="20" />
