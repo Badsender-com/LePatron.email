@@ -74,6 +74,7 @@ module.exports = {
   getGroupByCompanyId,
   getMailNameAndCompanyByMailingIdAndUser,
   handleTrackingData,
+  updatePreviewHtml,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -1378,4 +1379,8 @@ function applyFilters(query) {
   }
 
   return workspaceOrFolderFilter;
+}
+
+async function updatePreviewHtml(mailingId, previewHtml) {
+  return Mailings.findByIdAndUpdate(mailingId, { previewHtml });
 }

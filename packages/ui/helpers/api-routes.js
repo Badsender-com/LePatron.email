@@ -382,7 +382,7 @@ export function getCrmIntelligenceEmbedUrl(dashboardId) {
 }
 
 /// ///
-// INTEGRATIONS
+// INTEGRATIONS (branch aliases)
 /// ///
 
 export function getIntegrations(groupId, type = null) {

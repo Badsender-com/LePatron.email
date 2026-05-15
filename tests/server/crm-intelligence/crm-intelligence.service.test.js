@@ -1,14 +1,9 @@
 'use strict';
 
 const jwt = require('jsonwebtoken');
-const crmIntelligenceService = require('./crm-intelligence.service');
-const GroupService = require('../group/group.service');
-const { Integrations, Dashboards } = require('../common/models.common');
-const ERROR_CODES = require('../constant/error-codes');
 
-// Mock dependencies
-jest.mock('../group/group.service');
-jest.mock('../common/models.common', () => ({
+// Mock dependencies — jest.mock calls are hoisted, string literals required
+jest.mock('../../../packages/server/common/models.common', () => ({
   Integrations: {
     find: jest.fn(),
   },
@@ -18,6 +13,13 @@ jest.mock('../common/models.common', () => ({
     countDocuments: jest.fn(),
   },
 }));
+
+const crmIntelligenceService = require('../../../packages/server/crm-intelligence/crm-intelligence.service');
+const {
+  Integrations,
+  Dashboards,
+} = require('../../../packages/server/common/models.common');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 // Valid MongoDB ObjectIds for testing
 const VALID_GROUP_ID = '507f1f77bcf86cd799439011';
@@ -31,12 +33,12 @@ describe('CRM Intelligence Service', () => {
 
   describe('getStatus', () => {
     it('should return enabled=false when CRM Intelligence is not enabled', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: false,
-      });
+      const group = { enableCrmIntelligence: false };
 
-      const result = await crmIntelligenceService.getStatus(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getStatus(
+        VALID_GROUP_ID,
+        group
+      );
 
       expect(result).toEqual({
         enabled: false,
@@ -49,10 +51,7 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should return enabled=true and configured=true when integrations and dashboards exist', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
+      const group = { enableCrmIntelligence: true };
 
       const mockIntegrations = [
         {
@@ -66,7 +65,10 @@ describe('CRM Intelligence Service', () => {
       });
       Dashboards.countDocuments.mockResolvedValue(3);
 
-      const result = await crmIntelligenceService.getStatus(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getStatus(
+        VALID_GROUP_ID,
+        group
+      );
 
       expect(result).toEqual({
         enabled: true,
@@ -83,17 +85,17 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should return configured=false when no integrations exist', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
+      const group = { enableCrmIntelligence: true };
 
       Integrations.find.mockReturnValue({
         sort: jest.fn().mockResolvedValue([]),
       });
       Dashboards.countDocuments.mockResolvedValue(0);
 
-      const result = await crmIntelligenceService.getStatus(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getStatus(
+        VALID_GROUP_ID,
+        group
+      );
 
       expect(result).toEqual({
         enabled: true,
@@ -104,50 +106,33 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should return configured=false when integrations exist but no dashboards', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
+      const group = { enableCrmIntelligence: true };
 
       Integrations.find.mockReturnValue({
-        sort: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              _id: VALID_INTEGRATION_ID,
-              name: 'Metabase',
-              provider: 'metabase',
-            },
-          ]),
+        sort: jest.fn().mockResolvedValue([
+          {
+            _id: VALID_INTEGRATION_ID,
+            name: 'Metabase',
+            provider: 'metabase',
+          },
+        ]),
       });
       Dashboards.countDocuments.mockResolvedValue(0);
 
-      const result = await crmIntelligenceService.getStatus(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getStatus(
+        VALID_GROUP_ID,
+        group
+      );
 
       expect(result.configured).toBe(false);
-    });
-
-    it('should throw 404 when group not found', async () => {
-      GroupService.findById.mockResolvedValue(null);
-
-      await expect(
-        crmIntelligenceService.getStatus('nonexistent')
-      ).rejects.toThrow(
-        expect.objectContaining({
-          status: 404,
-          message: ERROR_CODES.GROUP_NOT_FOUND,
-        })
-      );
     });
   });
 
   describe('getDashboards', () => {
-    it('should return dashboards with integration info', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
+    const enabledGroup = { enableCrmIntelligence: true };
+    const disabledGroup = { enableCrmIntelligence: false };
 
+    it('should return dashboards with integration info', async () => {
       const mockDashboards = [
         {
           _id: { toString: () => 'dash1' },
@@ -183,29 +168,34 @@ describe('CRM Intelligence Service', () => {
         }),
       });
 
-      const result = await crmIntelligenceService.getDashboards(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getDashboards(
+        VALID_GROUP_ID,
+        enabledGroup
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
         id: 'dash1',
-        integrationId: VALID_INTEGRATION_ID,
-        integrationName: 'Metabase Prod',
-        provider: 'metabase',
-        providerDashboardId: 42,
         name: 'Sales Dashboard',
         description: 'Sales metrics',
+        providerDashboardId: 42,
         order: 0,
+        isActive: undefined,
+        lockedParams: undefined,
+        integration: {
+          id: VALID_INTEGRATION_ID,
+          name: 'Metabase Prod',
+          provider: 'metabase',
+          apiHost: undefined,
+        },
+        createdAt: undefined,
+        updatedAt: undefined,
       });
     });
 
     it('should throw 403 when CRM Intelligence is not enabled', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: false,
-      });
-
       await expect(
-        crmIntelligenceService.getDashboards(VALID_GROUP_ID)
+        crmIntelligenceService.getDashboards(VALID_GROUP_ID, disabledGroup)
       ).rejects.toThrow(
         expect.objectContaining({
           status: 403,
@@ -214,25 +204,7 @@ describe('CRM Intelligence Service', () => {
       );
     });
 
-    it('should throw 404 when group not found', async () => {
-      GroupService.findById.mockResolvedValue(null);
-
-      await expect(
-        crmIntelligenceService.getDashboards('nonexistent')
-      ).rejects.toThrow(
-        expect.objectContaining({
-          status: 404,
-          message: ERROR_CODES.GROUP_NOT_FOUND,
-        })
-      );
-    });
-
     it('should return empty array when no dashboards configured', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
           populate: jest.fn().mockReturnValue({
@@ -241,13 +213,19 @@ describe('CRM Intelligence Service', () => {
         }),
       });
 
-      const result = await crmIntelligenceService.getDashboards(VALID_GROUP_ID);
+      const result = await crmIntelligenceService.getDashboards(
+        VALID_GROUP_ID,
+        enabledGroup
+      );
 
       expect(result).toEqual([]);
     });
   });
 
   describe('getEmbedUrl', () => {
+    const enabledGroup = { enableCrmIntelligence: true };
+    const disabledGroup = { enableCrmIntelligence: false };
+
     const mockIntegration = {
       _id: VALID_INTEGRATION_ID,
       name: 'Metabase Prod',
@@ -266,18 +244,14 @@ describe('CRM Intelligence Service', () => {
     };
 
     it('should generate valid embed URL with JWT', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(mockDashboard),
       });
 
       const result = await crmIntelligenceService.getEmbedUrl(
         VALID_GROUP_ID,
-        VALID_DASHBOARD_ID
+        VALID_DASHBOARD_ID,
+        enabledGroup
       );
 
       expect(result).toHaveProperty('embedUrl');
@@ -290,18 +264,14 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should create JWT with correct payload', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(mockDashboard),
       });
 
       const result = await crmIntelligenceService.getEmbedUrl(
         VALID_GROUP_ID,
-        VALID_DASHBOARD_ID
+        VALID_DASHBOARD_ID,
+        enabledGroup
       );
 
       // Extract and decode the JWT from the URL
@@ -319,17 +289,16 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 404 when dashboard not found', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(null),
       });
 
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, VALID_DASHBOARD_ID)
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          VALID_DASHBOARD_ID,
+          enabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 404,
@@ -339,11 +308,6 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 404 when integration not found', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue({
           ...mockDashboard,
@@ -352,7 +316,11 @@ describe('CRM Intelligence Service', () => {
       });
 
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, VALID_DASHBOARD_ID)
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          VALID_DASHBOARD_ID,
+          enabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 404,
@@ -362,11 +330,6 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 404 when integration is inactive', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue({
           ...mockDashboard,
@@ -375,7 +338,11 @@ describe('CRM Intelligence Service', () => {
       });
 
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, VALID_DASHBOARD_ID)
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          VALID_DASHBOARD_ID,
+          enabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 404,
@@ -385,11 +352,6 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 500 when integration config is missing', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       Dashboards.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue({
           ...mockDashboard,
@@ -398,7 +360,11 @@ describe('CRM Intelligence Service', () => {
       });
 
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, VALID_DASHBOARD_ID)
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          VALID_DASHBOARD_ID,
+          enabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 500,
@@ -408,13 +374,12 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 403 when CRM Intelligence is not enabled', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: false,
-      });
-
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, VALID_DASHBOARD_ID)
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          VALID_DASHBOARD_ID,
+          disabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 403,
@@ -424,13 +389,12 @@ describe('CRM Intelligence Service', () => {
     });
 
     it('should throw 400 for invalid dashboard ID format', async () => {
-      GroupService.findById.mockResolvedValue({
-        _id: VALID_GROUP_ID,
-        enableCrmIntelligence: true,
-      });
-
       await expect(
-        crmIntelligenceService.getEmbedUrl(VALID_GROUP_ID, 'invalid-id')
+        crmIntelligenceService.getEmbedUrl(
+          VALID_GROUP_ID,
+          'invalid-id',
+          enabledGroup
+        )
       ).rejects.toThrow(
         expect.objectContaining({
           status: 400,

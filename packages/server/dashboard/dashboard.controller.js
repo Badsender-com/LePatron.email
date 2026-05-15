@@ -8,6 +8,28 @@ const groupService = require('../group/group.service.js');
 const ERROR_CODES = require('../constant/error-codes.js');
 
 /**
+ * Sanitize lockedParams to only allow flat key/value pairs with safe types.
+ * Prevents injection of arbitrary objects into Metabase JWT payload.
+ */
+function sanitizeLockedParams(params) {
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return {};
+  }
+  const sanitized = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (
+      typeof key === 'string' &&
+      (typeof value === 'string' ||
+        typeof value === 'number' ||
+        typeof value === 'boolean')
+    ) {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
+/**
  * Check if user is authorized to access a dashboard
  * @param {Object} user - Current user
  * @param {string} dashboardId - Dashboard ID to check
@@ -15,18 +37,10 @@ const ERROR_CODES = require('../constant/error-codes.js');
  */
 async function getDashboardWithAuthCheck(user, dashboardId) {
   const dashboard = await dashboardService.getDashboard(dashboardId);
-
-  // getDashboard() returns a transformed object with 'groupId' property
-  const groupId = dashboard.groupId;
-
-  if (!groupId) {
-    throw createError(
-      500,
-      'Dashboard has no associated group. Data integrity issue.'
-    );
-  }
-
-  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({
+    user,
+    groupId: dashboard.groupId,
+  });
   return dashboard;
 }
 
@@ -36,6 +50,9 @@ async function getDashboardWithAuthCheck(user, dashboardId) {
  */
 async function listDashboards(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   const dashboards = await dashboardService.listDashboards(groupId);
 
@@ -61,6 +78,7 @@ async function readDashboard(req, res) {
  */
 async function createDashboard(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
   const {
     name,
     description,
@@ -68,6 +86,8 @@ async function createDashboard(req, res) {
     providerDashboardId,
     lockedParams,
   } = req.body;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   // Validate required fields
   if (!name) {
@@ -82,18 +102,19 @@ async function createDashboard(req, res) {
     throw createError(400, ERROR_CODES.DASHBOARD_ID_REQUIRED);
   }
 
-  // Validate that providerDashboardId is a valid positive integer
-  const dashboardIdInt = parseInt(providerDashboardId, 10);
-  if (isNaN(dashboardIdInt) || dashboardIdInt < 1) {
-    throw createError(400, 'Invalid dashboard ID: must be a positive integer');
+  const parsedDashboardId = parseInt(providerDashboardId, 10);
+  if (isNaN(parsedDashboardId)) {
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
   }
+
+  const sanitizedLockedParams = sanitizeLockedParams(lockedParams);
 
   const dashboard = await dashboardService.createDashboard(groupId, {
     name,
     description,
     integrationId,
-    providerDashboardId: dashboardIdInt,
-    lockedParams,
+    providerDashboardId: parsedDashboardId,
+    lockedParams: sanitizedLockedParams,
   });
 
   res.status(201).json(dashboard);
@@ -118,25 +139,23 @@ async function updateDashboard(req, res) {
   // Check authorization before update
   await getDashboardWithAuthCheck(user, dashboardId);
 
-  // Validate providerDashboardId if provided
-  let validatedProviderId;
-  if (providerDashboardId !== undefined) {
-    const dashboardIdInt = parseInt(providerDashboardId, 10);
-    if (isNaN(dashboardIdInt) || dashboardIdInt < 1) {
-      throw createError(
-        400,
-        'Invalid dashboard ID: must be a positive integer'
-      );
-    }
-    validatedProviderId = dashboardIdInt;
-  }
-
   const dashboard = await dashboardService.updateDashboard(dashboardId, {
     name,
     description,
     integrationId,
-    providerDashboardId: validatedProviderId,
-    lockedParams,
+    providerDashboardId:
+      providerDashboardId !== undefined
+        ? (() => {
+            const parsed = parseInt(providerDashboardId, 10);
+            if (isNaN(parsed))
+              throw createError(400, ERROR_CODES.INVALID_REQUEST);
+            return parsed;
+          })()
+        : undefined,
+    lockedParams:
+      lockedParams !== undefined
+        ? sanitizeLockedParams(lockedParams)
+        : undefined,
     isActive,
   });
 
@@ -165,7 +184,10 @@ async function deleteDashboard(req, res) {
  */
 async function reorderDashboards(req, res) {
   const { groupId } = req.params;
+  const { user } = req;
   const { dashboardIds } = req.body;
+
+  await groupService.checkIfUserIsAuthorizedToAccessGroup({ user, groupId });
 
   if (!Array.isArray(dashboardIds)) {
     throw createError(400, ERROR_CODES.INVALID_REQUEST);

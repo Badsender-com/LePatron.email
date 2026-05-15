@@ -1,6 +1,10 @@
 'use strict';
 
-const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
+const {
+  Integrations,
+  AIFeatureConfigs,
+  Dashboards,
+} = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -25,7 +29,6 @@ module.exports = {
   findActiveByGroupAndType,
   validateCredentials,
   checkIfUserIsAuthorizedToAccessIntegration,
-  updateDashboards,
   countDashboardsForIntegration,
 };
 
@@ -46,6 +49,21 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
+ * Validate that a URL uses http or https scheme
+ */
+function validateApiHost(apiHost) {
+  if (!apiHost) return;
+  try {
+    const parsed = new URL(apiHost);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+  } catch {
+    throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
+  }
+}
+
+/**
  * Create a new integration
  */
 async function createIntegration({
@@ -56,9 +74,10 @@ async function createIntegration({
   apiHost,
   productId,
   config,
-  dashboards,
   _company,
 }) {
+  validateApiHost(apiHost);
+
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
     throw new Conflict(ERROR_CODES.INTEGRATION_NAME_ALREADY_EXIST);
@@ -72,7 +91,6 @@ async function createIntegration({
     apiHost,
     productId,
     config: config || {},
-    dashboards: dashboards || [],
     _company,
     isActive: true,
     validationStatus: 'pending',
@@ -91,7 +109,6 @@ async function updateIntegration({
   apiHost,
   productId,
   config,
-  dashboards,
   isActive,
 }) {
   const integration = await findById(integrationId);
@@ -110,19 +127,17 @@ async function updateIntegration({
     }
   }
 
-  const updateData = Object.fromEntries(
-    Object.entries({
-      name,
-      type,
-      provider,
-      apiKey,
-      apiHost,
-      productId,
-      config,
-      dashboards,
-      isActive,
-    }).filter(([, value]) => value !== undefined)
-  );
+  validateApiHost(apiHost);
+
+  // Apply only fields explicitly provided in the request
+  if (name !== undefined) integration.name = name;
+  if (type !== undefined) integration.type = type;
+  if (provider !== undefined) integration.provider = provider;
+  if (apiKey !== undefined) integration.apiKey = apiKey;
+  if (apiHost !== undefined) integration.apiHost = apiHost;
+  if (productId !== undefined) integration.productId = productId;
+  if (config !== undefined) integration.config = config;
+  if (isActive !== undefined) integration.isActive = isActive;
 
   // Reset validation status if credentials changed
   if (
@@ -130,35 +145,18 @@ async function updateIntegration({
     apiHost !== undefined ||
     productId !== undefined
   ) {
-    updateData.validationStatus = 'pending';
-    updateData.lastValidatedAt = null;
+    integration.validationStatus = 'pending';
+    integration.lastValidatedAt = null;
   }
 
-  const updated = await Integrations.findByIdAndUpdate(
-    Types.ObjectId(integrationId),
-    updateData,
-    { new: true }
-  );
+  await integration.save();
 
   // When an integration is deactivated, disable all AI features using it
   if (isActive === false) {
     await deactivateFeaturesForIntegration(integrationId);
   }
 
-  return updated;
-}
-
-/**
- * Update dashboards for an integration
- */
-async function updateDashboards({ integrationId, dashboards }) {
-  await findById(integrationId);
-
-  return Integrations.findByIdAndUpdate(
-    Types.ObjectId(integrationId),
-    { dashboards },
-    { new: true }
-  );
+  return integration;
 }
 
 /**
@@ -271,15 +269,17 @@ async function deactivateFeaturesForIntegration(integrationId) {
     { $set: { 'features.$[feat].isActive': false } },
     { arrayFilters: [{ 'feat.integration': objectId, 'feat.isActive': true }] }
   );
-  if (result.nModified > 0) {
+  if (result.modifiedCount > 0) {
     logger.log(
-      `Deactivated AI features for integration ${integrationId} (${result.nModified} config(s) updated)`
+      `Deactivated AI features for integration ${integrationId} (${result.modifiedCount} config(s) updated)`
     );
   }
 }
 
 /**
- * Validate integration credentials using the provider factory
+ * Validate integration credentials
+ * - For dashboard providers: basic URL/key validation
+ * - For AI providers: uses ProviderFactory
  */
 async function validateCredentials({ integrationId, apiKey, apiHost }) {
   const integration = await findById(integrationId);
@@ -291,13 +291,17 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
     let siteUrl = apiHost ?? integration.apiHost;
     const secretKey = apiKey ?? integration.apiKey;
 
+    // Basic validation
     if (!siteUrl || !secretKey) {
       isValid = false;
     } else {
+      // URL format validation
       try {
+        // Normalize URL: remove trailing slash
         siteUrl = siteUrl.replace(/\/+$/, '');
-        new URL(siteUrl);
-        isValid = secretKey.length >= 32;
+        const parsed = new URL(siteUrl);
+        // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
+        isValid = !!parsed.hostname && secretKey.length >= 32;
       } catch {
         isValid = false;
       }
@@ -306,9 +310,7 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
     // AI providers use ProviderFactory
     try {
       const provider = ProviderFactory.createProvider(integration);
-      if (typeof provider.validateCredentials === 'function') {
-        isValid = await provider.validateCredentials({ apiKey, apiHost });
-      }
+      isValid = await provider.validateCredentials();
     } catch (error) {
       logger.error('Validation error:', error.message);
       isValid = false;

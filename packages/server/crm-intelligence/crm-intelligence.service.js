@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 const { Types } = require('mongoose');
 
-const GroupService = require('../group/group.service');
+const DashboardService = require('../dashboard/dashboard.service');
 const { Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
@@ -13,17 +13,11 @@ const JWT_EXPIRATION_SECONDS = 10 * 60; // 10 minutes
 
 /**
  * Get CRM Intelligence status for a group
- * Checks if there are active dashboard integrations and dashboards
  * @param {string} groupId - The group ID
+ * @param {Object} group - Pre-loaded group (from middleware)
  * @returns {Promise<Object>} Status object with enabled flag and dashboard count
  */
-async function getStatus(groupId) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
-  // Check if CRM Intelligence is enabled at group level
+async function getStatus(groupId, group) {
   const isEnabled = group.enableCrmIntelligence === true;
 
   if (!isEnabled) {
@@ -35,18 +29,17 @@ async function getStatus(groupId) {
     };
   }
 
-  // Find active dashboard integrations for this group
-  const integrations = await Integrations.find({
-    _company: Types.ObjectId(groupId),
-    type: IntegrationTypes.DASHBOARD,
-    isActive: true,
-  }).sort({ name: 1 });
-
-  // Count active dashboards for this group
-  const dashboardCount = await Dashboards.countDocuments({
-    _company: Types.ObjectId(groupId),
-    isActive: true,
-  });
+  const [integrations, dashboardCount] = await Promise.all([
+    Integrations.find({
+      _company: Types.ObjectId(groupId),
+      type: IntegrationTypes.DASHBOARD,
+      isActive: true,
+    }).sort({ name: 1 }),
+    Dashboards.countDocuments({
+      _company: Types.ObjectId(groupId),
+      isActive: true,
+    }),
+  ]);
 
   return {
     enabled: isEnabled,
@@ -63,61 +56,33 @@ async function getStatus(groupId) {
 /**
  * Get list of dashboards for a group (across all integrations)
  * @param {string} groupId - The group ID
+ * @param {Object} group - Pre-loaded group (from middleware)
  * @returns {Promise<Array>} Array of dashboard objects with integration context
  */
-async function getDashboards(groupId) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
+async function getDashboards(groupId, group) {
   if (!group.enableCrmIntelligence) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  // Find active dashboards for this group, ordered globally
-  const dashboards = await Dashboards.find({
-    _company: Types.ObjectId(groupId),
-    isActive: true,
-  })
-    .sort({ order: 1, createdAt: 1 })
-    .populate('_integration', 'name provider apiHost')
-    .lean();
-
-  return dashboards.map((dashboard) => ({
-    id: dashboard._id.toString(),
-    integrationId: dashboard._integration?._id.toString(),
-    integrationName: dashboard._integration?.name,
-    provider: dashboard._integration?.provider,
-    providerDashboardId: dashboard.providerDashboardId,
-    name: dashboard.name,
-    description: dashboard.description,
-    order: dashboard.order,
-  }));
+  return DashboardService.listDashboards(groupId, { activeOnly: true });
 }
 
 /**
  * Generate a signed embed URL for a Metabase dashboard
  * @param {string} groupId - The group ID
  * @param {string} dashboardId - The dashboard MongoDB ID
+ * @param {Object} group - Pre-loaded group (from middleware)
  * @returns {Promise<Object>} Object with embedUrl
  */
-async function getEmbedUrl(groupId, dashboardId) {
-  const group = await GroupService.findById(groupId);
-  if (!group) {
-    throw createError(404, ERROR_CODES.GROUP_NOT_FOUND);
-  }
-
+async function getEmbedUrl(groupId, dashboardId, group) {
   if (!group.enableCrmIntelligence) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
 
-  // Validate dashboard ID
   if (!Types.ObjectId.isValid(dashboardId)) {
     throw createError(400, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
-  // Find the dashboard with its integration
   const dashboard = await Dashboards.findOne({
     _id: Types.ObjectId(dashboardId),
     _company: Types.ObjectId(groupId),
@@ -138,51 +103,24 @@ async function getEmbedUrl(groupId, dashboardId) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Validate that apiKey is properly decrypted and meets security requirements
-  // Metabase JWT secrets should be at least 32 characters
   const apiKey = integration.apiKey;
-  if (!apiKey) {
+  if (!apiKey || apiKey.length < 10) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Check if key is still encrypted (contains encryption marker)
-  if (apiKey.includes(':iv:')) {
-    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
-  }
-
-  // Validate minimum length (Metabase recommendation: 32+ characters)
-  if (apiKey.length < 32) {
-    throw createError(
-      500,
-      'JWT secret key is too short. Metabase requires at least 32 characters.'
-    );
-  }
-
-  // Validate key format (should be alphanumeric, allowing common safe characters)
-  if (!/^[A-Za-z0-9_\-+=]+$/.test(apiKey)) {
-    throw createError(
-      500,
-      'JWT secret key contains invalid characters. Only alphanumeric and _-+= are allowed.'
-    );
-  }
-
-  // Build JWT payload for Metabase
   const payload = {
     resource: { dashboard: dashboard.providerDashboardId },
     params: dashboard.lockedParams || {},
     exp: Math.round(Date.now() / 1000) + JWT_EXPIRATION_SECONDS,
   };
 
-  // Sign the JWT with the integration's secret key
   let token;
   try {
-    token = jwt.sign(payload, apiKey);
+    token = jwt.sign(payload, apiKey, { algorithm: 'HS256' });
   } catch (err) {
-    // Log without exposing the key
-    throw createError(500, 'Failed to sign embed token');
+    throw createError(500, ERROR_CODES.EMBED_TOKEN_SIGN_FAILED);
   }
 
-  // Build the embed URL (normalize apiHost to remove trailing slash)
   const baseUrl = integration.apiHost.replace(/\/+$/, '');
   const embedUrl = `${baseUrl}/embed/dashboard/${token}#bordered=false&titled=true`;
 

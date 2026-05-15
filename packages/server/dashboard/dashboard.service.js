@@ -11,10 +11,12 @@ const ERROR_CODES = require('../constant/error-codes.js');
  * @param {string} groupId
  * @returns {Promise<Array>}
  */
-async function listDashboards(groupId) {
-  const dashboards = await Dashboards.find({
-    _company: Types.ObjectId(groupId),
-  })
+async function listDashboards(groupId, { activeOnly = false } = {}) {
+  const query = { _company: Types.ObjectId(groupId) };
+  if (activeOnly) {
+    query.isActive = true;
+  }
+  const dashboards = await Dashboards.find(query)
     .sort({ order: 1, createdAt: 1 })
     .populate('_integration', 'name provider apiHost')
     .lean();
@@ -83,8 +85,13 @@ async function getDashboard(dashboardId) {
  * @returns {Promise<Object>}
  */
 async function createDashboard(groupId, data) {
-  const { name, description, integrationId, providerDashboardId, lockedParams } =
-    data;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+  } = data;
 
   // Validate integration exists and belongs to the same group
   const integration = await Integrations.findOne({
@@ -141,8 +148,14 @@ async function updateDashboard(dashboardId, data) {
     throw createError(404, ERROR_CODES.DASHBOARD_NOT_FOUND);
   }
 
-  const { name, description, integrationId, providerDashboardId, lockedParams, isActive } =
-    data;
+  const {
+    name,
+    description,
+    integrationId,
+    providerDashboardId,
+    lockedParams,
+    isActive,
+  } = data;
 
   // If changing integration, validate it exists and belongs to the same group
   if (integrationId && integrationId !== dashboard._integration.toString()) {
@@ -152,9 +165,7 @@ async function updateDashboard(dashboardId, data) {
     });
 
     if (!integration) {
-      throw createError(400, 'Integration not found or does not belong to this group', {
-        code: ERROR_CODES.INVALID_INTEGRATION,
-      });
+      throw createError(400, ERROR_CODES.INVALID_INTEGRATION);
     }
 
     dashboard._integration = Types.ObjectId(integrationId);
@@ -194,6 +205,20 @@ async function deleteDashboard(dashboardId) {
  * @returns {Promise<Array>}
  */
 async function reorderDashboards(groupId, dashboardIds) {
+  // Validate array size, ObjectId format, and check for duplicates
+  if (dashboardIds.length > 100) {
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
+  }
+  const uniqueIds = new Set(dashboardIds);
+  if (uniqueIds.size !== dashboardIds.length) {
+    throw createError(400, ERROR_CODES.INVALID_REQUEST);
+  }
+  for (const id of dashboardIds) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw createError(400, ERROR_CODES.INVALID_REQUEST);
+    }
+  }
+
   // Validate all dashboard IDs belong to the group
   const dashboards = await Dashboards.find({
     _id: { $in: dashboardIds.map((id) => Types.ObjectId(id)) },
@@ -217,19 +242,6 @@ async function reorderDashboards(groupId, dashboardIds) {
   return listDashboards(groupId);
 }
 
-/**
- * Get the group ID for a dashboard (for authorization checks)
- * @param {string} dashboardId
- * @returns {Promise<string|null>}
- */
-async function getGroupIdForDashboard(dashboardId) {
-  const dashboard = await Dashboards.findById(dashboardId)
-    .select('_company')
-    .lean();
-
-  return dashboard ? dashboard._company.toString() : null;
-}
-
 module.exports = {
   listDashboards,
   getDashboard,
@@ -237,5 +249,4 @@ module.exports = {
   updateDashboard,
   deleteDashboard,
   reorderDashboards,
-  getGroupIdForDashboard,
 };

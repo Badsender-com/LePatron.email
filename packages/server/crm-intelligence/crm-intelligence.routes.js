@@ -6,6 +6,7 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const { GUARD_USER } = require('../account/auth.guard.js');
+const { guardCrmIntelligence } = require('./crm-intelligence.guard.js');
 const crmIntelligence = require('./crm-intelligence.controller.js');
 
 /**
@@ -13,14 +14,17 @@ const crmIntelligence = require('./crm-intelligence.controller.js');
  * Integration management routes are in integration.routes.js
  */
 
+// All routes require authenticated user + CRM group context
+router.use(GUARD_USER, guardCrmIntelligence);
+
 // Get CRM Intelligence status for current user's group
-router.get('/status', GUARD_USER, crmIntelligence.getStatus);
+router.get('/status', crmIntelligence.getStatus);
 
 // Get list of dashboards for current user's group (across all integrations)
-router.get('/dashboards', GUARD_USER, crmIntelligence.getDashboards);
+router.get('/dashboards', crmIntelligence.getDashboards);
 
 // Get signed embed URL for a specific dashboard
-router.get('/embed/:dashboardId', GUARD_USER, crmIntelligence.getEmbedUrl);
+router.get('/embed/:dashboardId', crmIntelligence.getEmbedUrl);
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

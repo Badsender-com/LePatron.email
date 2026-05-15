@@ -25,9 +25,9 @@ const PersonalizedBlockSchema = require('../personalized-blocks/personalized-blo
 const TagSchema = require('../tag/tag.schema.js');
 const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
+const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
-const DashboardSchema = require('../dashboard/dashboard.schema.js');
 
 /// ///
 // EXPORTS
@@ -71,6 +71,7 @@ const Integrations = mongoose.model(
   modelNames.IntegrationModel,
   IntegrationSchema
 );
+const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 const AIFeatureConfigs = mongoose.model(
   modelNames.AIFeatureConfigModel,
   AIFeatureConfigSchema
@@ -79,7 +80,6 @@ const TranslationJobs = mongoose.model(
   modelNames.TranslationJobModel,
   TranslationJobSchema
 );
-const Dashboards = mongoose.model(modelNames.DashboardModel, DashboardSchema);
 
 module.exports = {
   mongoose,
@@ -103,7 +103,7 @@ module.exports = {
   Tags,
   Comments,
   Integrations,
+  Dashboards,
   AIFeatureConfigs,
   TranslationJobs,
-  Dashboards,
 };
