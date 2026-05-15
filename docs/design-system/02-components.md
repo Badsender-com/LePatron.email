@@ -1,7 +1,6 @@
 # UI Components
 
-> **Source of truth**: This document + [preview/components.html](./preview/components.html)
-> **Tokens**: See [01-tokens.md](./01-tokens.md) for colors, typography, spacing.
+> **Source of truth**: This document + [preview/components.html](./preview/components.html) > **Tokens**: See [01-tokens.md](./01-tokens.md) for colors, typography, spacing.
 > **UX Patterns**: See [UX_GUIDELINES.md](../UX_GUIDELINES.md) for behavioral patterns.
 
 ---
@@ -30,24 +29,24 @@
 
 ### Variants
 
-| Variant | Background | Text | Border | Usage |
-|---------|------------|------|--------|-------|
-| **Accent** (primary action) | `--accent` | white | none | Save, Submit, Confirm |
-| **Primary** (secondary action) | `--primary` | white | none | Alternative actions |
-| **Text** | transparent | `--primary` | none | Cancel, Close |
-| **Outlined** | transparent | `--accent` | 1px `--accent` | Optional actions |
-| **Error** (destructive) | `--error` | white | none | Delete, Remove |
-| **Disabled** | any | any | any | `opacity: 0.5; cursor: not-allowed` |
+| Variant                        | Background  | Text        | Border         | Usage                               |
+| ------------------------------ | ----------- | ----------- | -------------- | ----------------------------------- |
+| **Accent** (primary action)    | `--accent`  | white       | none           | Save, Submit, Confirm               |
+| **Primary** (secondary action) | `--primary` | white       | none           | Alternative actions                 |
+| **Text**                       | transparent | `--primary` | none           | Cancel, Close                       |
+| **Outlined**                   | transparent | `--accent`  | 1px `--accent` | Optional actions                    |
+| **Error** (destructive)        | `--error`   | white       | none           | Delete, Remove                      |
+| **Disabled**                   | any         | any         | any            | `opacity: 0.5; cursor: not-allowed` |
 
 ### Hover States
 
 ```css
 .btn-accent:hover {
-  background: #0095c0;  /* Darkened accent */
+  background: #0095c0; /* Darkened accent */
 }
 
 .btn-primary:hover {
-  background: #072530;  /* Darkened primary */
+  background: #072530; /* Darkened primary */
 }
 
 .btn-text:hover {
@@ -55,7 +54,7 @@
 }
 
 .btn-error:hover {
-  background: #d32f2f;  /* Darkened error */
+  background: #d32f2f; /* Darkened error */
 }
 ```
 
@@ -227,11 +226,11 @@ Interactive pill-shaped elements for categories, filters, or status indicators.
 
 ### Semantic Variants (selected state)
 
-| Variant | Background |
-|---------|------------|
-| Info | `--info` (#2196F3) |
+| Variant | Background            |
+| ------- | --------------------- |
+| Info    | `--info` (#2196F3)    |
 | Warning | `--warning` (#fb8c00) |
-| Error | `--error` (#FF5252) |
+| Error   | `--error` (#FF5252)   |
 | Success | `--success` (#4caf50) |
 
 ### Chip Group
@@ -259,7 +258,7 @@ Pill-shaped badge with icon and count for status indicators.
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
-  color: white;  /* Always white text */
+  color: white; /* Always white text */
 }
 
 .status-badge .icon {
@@ -269,12 +268,12 @@ Pill-shaped badge with icon and count for status indicators.
 
 ### Variants
 
-| Status | Background | Icon |
-|--------|------------|------|
-| Pending | `--warning` (solid) | `schedule` / `mdi-clock-outline` |
-| Resolved | `--success` (solid) | `check` / `mdi-check` |
-| Error | `--error` (solid) | `error` / `mdi-alert` |
-| Info | `--info` (solid) | `info` / `mdi-information` |
+| Status   | Background          | Icon                             |
+| -------- | ------------------- | -------------------------------- |
+| Pending  | `--warning` (solid) | `schedule` / `mdi-clock-outline` |
+| Resolved | `--success` (solid) | `check` / `mdi-check`            |
+| Error    | `--error` (solid)   | `error` / `mdi-alert`            |
+| Info     | `--info` (solid)    | `info` / `mdi-information`       |
 
 > **Important**: Background is **solid** (100% opaque), not transparent/faded. Text is **always white**.
 
@@ -321,12 +320,12 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
 
 ### Common Actions
 
-| Action | Icon | Hover variant |
-|--------|------|---------------|
-| Reply | `reply` / `mdi-reply` | default |
-| Edit | `edit` / `mdi-pencil` | default |
-| Resolve | `check` / `mdi-check` | success |
-| Delete | `delete` / `mdi-delete` | danger |
+| Action  | Icon                    | Hover variant |
+| ------- | ----------------------- | ------------- |
+| Reply   | `reply` / `mdi-reply`   | default       |
+| Edit    | `edit` / `mdi-pencil`   | default       |
+| Resolve | `check` / `mdi-check`   | success       |
+| Delete  | `delete` / `mdi-delete` | danger        |
 
 ---
 
@@ -440,6 +439,139 @@ Header for sidebars and slide-out panels.
 
 ---
 
+## Module Sidebar
+
+Main navigation sidebar for switching between application modules.
+
+### Behavior
+
+- **Default state:** 56px width (icons only)
+- **On hover:** Expands to 200px with labels
+- **Transition:** `200ms cubic-bezier(0.4, 0, 0.2, 1)`
+- **Position:** Fixed left, overlay (doesn't push main content)
+- **Mobile:** Hidden below 960px, replaced by hamburger menu drawer
+
+### Structure
+
+```
+┌──────────────────────┐
+│  MODULES             │
+│  ├─ Email Builder    │
+│  └─ CRM Intelligence │
+├──────────────────────┤
+│  UTILITIES           │
+│  ├─ Help             │
+│  └─ Logout           │
+├──────────────────────┤
+│  SETTINGS            │
+│  └─ Parameters       │
+└──────────────────────┘
+```
+
+### Item States
+
+| State    | Icon Color          | Background   | Indicator               | Usage                |
+| -------- | ------------------- | ------------ | ----------------------- | -------------------- |
+| Default  | `grey darken-1`     | transparent  | none                    | Inactive module      |
+| Hover    | `accent`            | `#f5f5f5`    | none                    | Mouse over           |
+| Active   | `accent`            | `accent/12%` | **3px left bar accent** | Current module       |
+| Disabled | `grey`, 40% opacity | transparent  | none                    | Module not available |
+
+### Active Indicator
+
+The active state features a prominent **3px vertical bar** on the left side of the item, using the accent color. This provides clear visual feedback for the current module.
+
+```css
+.sidebar-item__indicator {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background-color: transparent;
+}
+
+.sidebar-item--active .sidebar-item__indicator {
+  background-color: #00acdc;
+}
+```
+
+### CSS
+
+```css
+.module-sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
+
+.module-sidebar--expanded {
+  width: 220px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-item {
+  height: 44px;
+  margin: 2px 4px;
+  border-radius: 8px;
+  transition: background-color 150ms ease;
+}
+
+.sidebar-item:hover {
+  background-color: #f5f5f5;
+}
+
+.sidebar-item--active {
+  background-color: rgba(0, 172, 220, 0.12);
+}
+
+/* Icon hover animation */
+.sidebar-item:hover .v-icon {
+  transform: scale(1.05);
+}
+
+/* Mobile: hide sidebar */
+@media (max-width: 960px) {
+  .module-sidebar {
+    display: none !important;
+  }
+}
+```
+
+### Icons
+
+Uses Material Design Icons (MDI) for consistency with the rest of the application:
+
+| Module           | Icon            | MDI Name                  |
+| ---------------- | --------------- | ------------------------- |
+| Email Builder    | Palette         | `mdi-palette`             |
+| CRM Intelligence | Line chart      | `mdi-chart-line`          |
+| Help             | Question circle | `mdi-help-circle-outline` |
+| Logout           | Exit door       | `mdi-logout`              |
+| Settings         | Gear            | `mdi-cog-outline`         |
+
+### Usage (Vue)
+
+```vue
+<bs-module-sidebar />
+```
+
+### Related Files
+
+| File                               | Purpose                      |
+| ---------------------------------- | ---------------------------- |
+| `ui/components/module-sidebar.vue` | Main sidebar component       |
+| `ui/components/sidebar-item.vue`   | Reusable item component      |
+| `ui/layouts/default.vue`           | Mobile drawer implementation |
+
+---
+
 ## Comment Card
 
 Card pattern for comments, discussions, and threaded content.
@@ -545,7 +677,7 @@ Highlighted @mention within text content.
 ```css
 .mention {
   background: rgba(0, 172, 220, 0.15);
-  color: #0088a8;  /* --accent darkened ~20% */
+  color: #0088a8; /* --accent darkened ~20% */
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 500;
@@ -593,10 +725,18 @@ Inline link with trailing or leading icon.
   color: white;
 }
 
-.snackbar.success { background: var(--success); }
-.snackbar.error { background: var(--error); }
-.snackbar.warning { background: var(--warning); }
-.snackbar.info { background: var(--info); }
+.snackbar.success {
+  background: var(--success);
+}
+.snackbar.error {
+  background: var(--error);
+}
+.snackbar.warning {
+  background: var(--warning);
+}
+.snackbar.info {
+  background: var(--info);
+}
 ```
 
 ---
@@ -738,10 +878,10 @@ Inline link with trailing or leading icon.
 
 ## Icons
 
-| Library | Usage |
-|---------|-------|
-| **Material Design Icons** | Primary (Vue App + Editor migration) |
-| **Font Awesome 4.7** | Legacy (Editor, progressive migration) |
+| Library                   | Usage                                  |
+| ------------------------- | -------------------------------------- |
+| **Material Design Icons** | Primary (Vue App + Editor migration)   |
+| **Font Awesome 4.7**      | Legacy (Editor, progressive migration) |
 
 Reference: [materialdesignicons.com](https://materialdesignicons.com/)
 
@@ -794,13 +934,15 @@ var(--v-accent-base)     /* Vuetify */
 
 ## Reusable Components Inventory
 
-| Component | File | Usage |
-|-----------|------|-------|
-| `modal-confirm` | `ui/components/modal-confirm.vue` | Confirmation dialogs |
-| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs |
-| `snackbar` | `ui/components/snackbar.vue` | Notifications |
-| `loadingBar` | `ui/components/loadingBar.vue` | Loading indicator |
+| Component            | File                                   | Usage                   |
+| -------------------- | -------------------------------------- | ----------------------- |
+| `modal-confirm`      | `ui/components/modal-confirm.vue`      | Confirmation dialogs    |
+| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs            |
+| `snackbar`           | `ui/components/snackbar.vue`           | Notifications           |
+| `loadingBar`         | `ui/components/loadingBar.vue`         | Loading indicator       |
+| `module-sidebar`     | `ui/components/module-sidebar.vue`     | Main navigation sidebar |
+| `sidebar-item`       | `ui/components/sidebar-item.vue`       | Sidebar navigation item |
 
 ---
 
-*Last updated: February 2026 (v2.1 - added hover states, form actions pattern, chip interaction notes)*
+_Last updated: March 2026 (v2.3 - Module Sidebar with MDI icons and active indicator bar)_

@@ -5,14 +5,15 @@ const { ObjectId } = Schema.Types;
 const { GroupModel } = require('../constant/model.names.js');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
+const mongooseHidden = require('mongoose-hidden')();
 const encryptionPlugin = require('../utils/encryption-plugin.js');
 
 /**
  * @apiDefine integration
  * @apiSuccess {String} id
  * @apiSuccess {String} name
- * @apiSuccess {String} type - Integration type (ai, data_feed, etc.)
- * @apiSuccess {String} provider - Provider identifier (openai, mistral, etc.)
+ * @apiSuccess {String} type - Integration type (ai, dashboard, etc.)
+ * @apiSuccess {String} provider - Provider identifier (metabase, openai, etc.)
  * @apiSuccess {String} _company - Reference to Group
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {String} validationStatus
@@ -20,11 +21,13 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiSuccess {Date} createdAt
  * @apiSuccess {Date} updatedAt
  */
+
 const IntegrationSchema = Schema(
   {
     name: {
       type: String,
       required: [true, 'Integration name is required'],
+      maxlength: [255, 'Name must be under 255 characters'],
     },
     type: {
       type: String,
@@ -42,22 +45,17 @@ const IntegrationSchema = Schema(
       alias: 'group',
       required: [true, 'Group is required'],
     },
-    // Encrypted credentials
+    // Encrypted credentials - API key or secret key
     apiKey: {
       type: String,
       required: [true, 'API key is required'],
     },
-    // Optional API host for self-hosted instances
+    // API host for the provider (e.g., Metabase site URL)
     apiHost: {
       type: String,
       required: false,
     },
-    // Product ID for Infomaniak AI Tools
-    productId: {
-      type: String,
-      required: false,
-    },
-    // Provider-specific configuration
+    // Provider-specific configuration (flexible schema)
     config: {
       type: Schema.Types.Mixed,
       default: {},
@@ -78,16 +76,15 @@ const IntegrationSchema = Schema(
   },
   {
     timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: function (doc, ret) {
-        if (ret.apiKey) ret.apiKey = '••••••••';
-        return ret;
-      },
-    },
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
+
+// Hide sensitive fields from JSON output
+IntegrationSchema.plugin(mongooseHidden, {
+  hidden: { _id: true, __v: true, apiKey: true },
+});
 
 // Apply encryption plugin for sensitive fields
 IntegrationSchema.plugin(encryptionPlugin, ['apiKey']);

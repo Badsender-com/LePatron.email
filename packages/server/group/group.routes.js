@@ -104,6 +104,9 @@ router.post(
   groups.testFtpConnection
 );
 
+// Note: CRM Intelligence configuration is now done through /api/integrations routes
+// See packages/server/integration/integration.routes.js
+
 // catch anything and forward to error handler
 router.use((req, res, next) => {
   next(new createError.NotImplemented());

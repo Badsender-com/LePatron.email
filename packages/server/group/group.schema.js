@@ -124,6 +124,17 @@ const GroupSchema = Schema(
       type: [String],
       default: [],
     },
+    // Module activation settings
+    enableEmailBuilder: {
+      type: Boolean,
+      default: true, // Enabled by default to not break existing groups
+    },
+    enableCrmIntelligence: {
+      type: Boolean,
+      default: false,
+    },
+    // Note: Metabase/dashboard configuration is now stored in the Integration collection
+    // See packages/server/integration/integration.schema.js
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );

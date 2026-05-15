@@ -1,0 +1,150 @@
+<script>
+import { mapGetters } from 'vuex';
+import { USER, IS_ADMIN, IS_GROUP_ADMIN, IS_CONNECTED } from '~/store/user.js';
+import BsSidebarItem from '~/components/sidebar-item.vue';
+
+export default {
+  name: 'BsModuleSidebar',
+  components: { BsSidebarItem },
+  computed: {
+    ...mapGetters(USER, {
+      isConnected: IS_CONNECTED,
+      isAdmin: IS_ADMIN,
+      isGroupAdmin: IS_GROUP_ADMIN,
+    }),
+    emailBuilderRoute() {
+      return '/mailings';
+    },
+    settingsRoute() {
+      if (this.isAdmin) {
+        return '/groups';
+      }
+      const groupId = this.$store.state.user?.info?.group?.id;
+      return groupId ? `/groups/${groupId}` : '/mailings';
+    },
+    isEmailModule() {
+      const path = this.$route.path;
+      return (
+        path.startsWith('/mailings') ||
+        path.startsWith('/templates') ||
+        path.startsWith('/editor')
+      );
+    },
+    isCrmModule() {
+      return this.$route.path.startsWith('/crm-intelligence');
+    },
+    isSettingsModule() {
+      const path = this.$route.path;
+      return (
+        path.startsWith('/groups') ||
+        path.startsWith('/users') ||
+        path.startsWith('/settings')
+      );
+    },
+  },
+};
+</script>
+
+<template>
+  <nav v-if="isConnected" class="module-sidebar">
+    <!-- MODULES -->
+    <div class="sidebar-section">
+      <bs-sidebar-item
+        :to="emailBuilderRoute"
+        icon="mdi-palette"
+        :label="$t('modules.emailBuilder')"
+        :active="isEmailModule"
+      />
+      <bs-sidebar-item
+        to="/crm-intelligence"
+        icon="mdi-chart-line"
+        :label="$t('modules.crmIntelligence')"
+        :active="isCrmModule"
+      />
+    </div>
+
+    <div class="sidebar-spacer" />
+
+    <!-- SETTINGS (admin only) -->
+    <template v-if="isAdmin || isGroupAdmin">
+      <div class="sidebar-divider" />
+      <div class="sidebar-section">
+        <bs-sidebar-item
+          :to="settingsRoute"
+          icon="mdi-cog-outline"
+          :label="$t('modules.settings')"
+          :active="isSettingsModule"
+        />
+      </div>
+    </template>
+
+    <div class="sidebar-divider" />
+
+    <!-- UTILITIES -->
+    <div class="sidebar-section">
+      <bs-sidebar-item
+        icon="mdi-help-circle-outline"
+        :label="$t('sidebar.help')"
+        href="https://www.lepatron.email/faq/"
+        target="_blank"
+      />
+      <bs-sidebar-item
+        icon="mdi-logout"
+        :label="$t('sidebar.logout')"
+        href="/account/logout"
+      />
+    </div>
+  </nav>
+</template>
+
+<style scoped>
+.module-sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  background: var(--v-background-base, #fff);
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.module-sidebar:hover {
+  width: 220px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide labels when sidebar is not hovered */
+.module-sidebar ::v-deep .sidebar-item__label {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.module-sidebar:hover ::v-deep .sidebar-item__label {
+  opacity: 1;
+}
+
+.sidebar-section {
+  padding: 8px 0;
+}
+
+.sidebar-spacer {
+  flex: 1;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.12);
+  margin: 0 12px;
+}
+
+@media (max-width: 960px) {
+  .module-sidebar {
+    display: none !important;
+  }
+}
+</style>
