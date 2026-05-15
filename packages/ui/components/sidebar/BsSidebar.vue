@@ -139,6 +139,9 @@ export default {
       if (path.startsWith('/crm-intelligence')) {
         return 'crm-intelligence';
       }
+      if (path.startsWith('/module-unavailable/')) {
+        return path.split('/')[2] || null;
+      }
       if (path.includes('/settings')) {
         return 'settings';
       }
