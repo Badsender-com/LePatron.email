@@ -75,6 +75,9 @@ export default {
         ? 'https://www.badsender.com/contact/'
         : 'https://www.badsender.com/en/contact/';
     },
+    features() {
+      return this.$t('crmIntelligence.marketing.features');
+    },
     ...mapState(USER, {
       userInfo: 'info',
     }),
