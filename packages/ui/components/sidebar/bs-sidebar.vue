@@ -78,6 +78,8 @@ import BsSidebarCompanySwitcher from './bs-sidebar-company-switcher.vue';
 import BsSidebarSystemZone from './bs-sidebar-system-zone.vue';
 import BsSidebarToggle from './bs-sidebar-toggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
+import { isModuleLocked } from '~/helpers/module-activation';
+import { HELP_DOCS_URL } from '~/helpers/constants/external-urls';
 import {
   SET_COLLAPSED,
   SET_ACTIVE_MODULE,
@@ -113,35 +115,29 @@ export default {
     ...mapGetters('sidebar', ['sidebarWidth']),
 
     modules() {
-      // Super admins see the modules but never see them as locked: their
-      // user record has no `enableEmailBuilder` / `enableCrmIntelligence`
-      // flags, so the regular check would always lock them which is
-      // misleading. Group admins and regular users keep the standard
-      // subscription-based lock semantics.
-      return SIDEBAR_MODULES.map((module) => {
-        const locked =
-          !this.isAdmin && module.enabledFlag
-            ? !this.userGroup?.[module.enabledFlag]
-            : false;
-        return {
-          ...module,
-          locked,
-        };
-      });
+      // Rules centralised in helpers/module-activation.js so the sidebar
+      // and the settings list can't drift apart.
+      const userLike = { isAdmin: this.isAdmin };
+      return SIDEBAR_MODULES.map((module) => ({
+        ...module,
+        locked: isModuleLocked(module, userLike, this.userGroup),
+      }));
     },
 
-    // Detect active module from route path
+    // Detect active module from the route path. Module → prefixes mapping
+    // lives in SIDEBAR_MODULES so adding a new module is a single-file edit.
     detectedModule() {
       const path = this.$route.path;
-      if (path.startsWith('/mailings')) {
-        return 'email-builder';
-      }
-      if (path.startsWith('/crm-intelligence')) {
-        return 'crm-intelligence';
-      }
+      const match = SIDEBAR_MODULES.find((m) =>
+        (m.pathPrefixes || []).some((prefix) => path.startsWith(prefix))
+      );
+      if (match) return match.id;
+      // /module-unavailable/<moduleId> ALWAYS resolves to that module's id
+      // (the validate() hook on the route already rejects unknown ids).
       if (path.startsWith('/module-unavailable/')) {
         return path.split('/')[2] || null;
       }
+      // Settings is part of SYSTEM_ITEMS, not SIDEBAR_MODULES.
       if (path.includes('/settings')) {
         return 'settings';
       }
@@ -213,18 +209,19 @@ export default {
     },
 
     handleHelp() {
-      const helpUrl = process.env.HELP_URL || 'https://docs.lepatron.email';
       try {
-        const newWindow = window.open(helpUrl, '_blank');
+        const newWindow = window.open(HELP_DOCS_URL, '_blank');
         if (!newWindow) {
           // Popup blocked - fallback to same window
+          // eslint-disable-next-line no-console
           console.warn('[BsSidebar] Popup blocked, opening in same window');
-          window.location.href = helpUrl;
+          window.location.href = HELP_DOCS_URL;
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[BsSidebar] Failed to open help URL:', error);
         // Fallback: try to navigate in the same window
-        window.location.href = helpUrl;
+        window.location.href = HELP_DOCS_URL;
       }
     },
 

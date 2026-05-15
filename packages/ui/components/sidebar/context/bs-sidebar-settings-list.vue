@@ -45,6 +45,7 @@
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
 import { Shield } from 'lucide-vue';
+import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
   name: 'BsSidebarSettingsList',
@@ -245,8 +246,11 @@ export default {
       // Email Builder category - visible if:
       // - Super admin: always visible
       // - Group admin: only if module enabled
-      const showEmailBuilder =
-        this.isAdmin || this.group?.enableEmailBuilder !== false;
+      const showEmailBuilder = isFlagEnabled(
+        'enableEmailBuilder',
+        { isAdmin: this.isAdmin },
+        this.group
+      );
 
       if (emailBuilderItems.length > 0 && showEmailBuilder) {
         categories.push({
