@@ -40,9 +40,14 @@ export default {
     },
     hideFooter() {
       if (this.alwaysShowFooter) return false;
-      const serverTotal = this.$attrs['server-items-length'];
-      const count = serverTotal !== undefined ? serverTotal : this.items.length;
-      return count <= this.paginationThreshold;
+      // In server-side pagination mode, the parent manages page/itemsPerPage
+      // through the v-data-table sync events; we must always render the footer
+      // so the user can change itemsPerPage and see the "X of Y" counter,
+      // regardless of how few items currently fit on the page. Applying the
+      // threshold there hid the footer entirely when server-items-length was
+      // ≤ paginationThreshold (default 10).
+      if (this.$attrs['server-items-length'] !== undefined) return false;
+      return this.items.length <= this.paginationThreshold;
     },
     tableClasses() {
       return {

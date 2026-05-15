@@ -4,7 +4,7 @@ import { required } from 'vuelidate/lib/validators';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import BsTextField from '~/components/form/bs-text-field.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Settings } from 'lucide-vue';
 
 export default {

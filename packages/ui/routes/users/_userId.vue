@@ -14,7 +14,7 @@ import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsUserForm from '~/components/users/form.vue';
 import BsUserActions from '~/components/user/actions.vue';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'BsPageUser',

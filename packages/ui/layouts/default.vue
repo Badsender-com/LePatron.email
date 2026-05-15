@@ -2,7 +2,7 @@
 import { mapGetters, mapState } from 'vuex';
 import { USER, IS_CONNECTED } from '~/store/user.js';
 import BsSnackBar from '~/components/snackbar.vue';
-import BsSidebar from '~/components/sidebar/BsSidebar.vue';
+import BsSidebar from '~/components/sidebar/bs-sidebar.vue';
 
 export default {
   name: 'BsLayoutDefault',

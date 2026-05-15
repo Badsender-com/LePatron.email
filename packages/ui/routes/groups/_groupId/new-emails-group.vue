@@ -7,7 +7,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getEmailsGroups } from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import FormEmailsGroup from '~/components/group/form-emails-group';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 const errors = {
   409: 'global.errors.emailsGroupExist',

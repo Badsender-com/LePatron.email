@@ -5,7 +5,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 const FORMALITY_OPTIONS = [

@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import GroupPersonalizedVariableTab from '~/components/group/group-personalized-variable-tab';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
 import { Plus } from 'lucide-vue';

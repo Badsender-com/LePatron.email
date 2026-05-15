@@ -71,12 +71,12 @@
 <script>
 import { mapState, mapMutations, mapGetters } from 'vuex';
 import { X } from 'lucide-vue';
-import BsSidebarBrand from './BsSidebarBrand.vue';
-import BsSidebarModuleList from './BsSidebarModuleList.vue';
-import BsSidebarContextZone from './BsSidebarContextZone.vue';
-import BsSidebarCompanySwitcher from './BsSidebarCompanySwitcher.vue';
-import BsSidebarSystemZone from './BsSidebarSystemZone.vue';
-import BsSidebarToggle from './BsSidebarToggle.vue';
+import BsSidebarBrand from './bs-sidebar-brand.vue';
+import BsSidebarModuleList from './bs-sidebar-module-list.vue';
+import BsSidebarContextZone from './bs-sidebar-context-zone.vue';
+import BsSidebarCompanySwitcher from './bs-sidebar-company-switcher.vue';
+import BsSidebarSystemZone from './bs-sidebar-system-zone.vue';
+import BsSidebarToggle from './bs-sidebar-toggle.vue';
 import { SIDEBAR_MODULES } from './sidebar-config.js';
 import {
   SET_COLLAPSED,

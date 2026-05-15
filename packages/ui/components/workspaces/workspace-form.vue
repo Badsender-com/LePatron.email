@@ -3,7 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Users, Info } from 'lucide-vue';
 
 export default {

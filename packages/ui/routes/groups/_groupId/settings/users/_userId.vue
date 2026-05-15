@@ -4,8 +4,8 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import BsUserActions from '~/components/user/actions.vue';
 import BsMailingsAdminTable from '~/components/mailings/admin-table.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
@@ -350,7 +350,7 @@ export default {
                     v-model="user.externalUsername"
                     :label="
                       $t('forms.user.externalUsername') +
-                      $t('forms.user.optional')
+                        $t('forms.user.optional')
                     "
                   />
                 </v-col>
@@ -386,9 +386,7 @@ export default {
               <!-- Status display -->
               <div class="status-display mb-4">
                 <div class="d-flex align-center">
-                  <span class="text-body-2 mr-3"
-                    >{{ $t('global.status') }} :</span
-                  >
+                  <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
                   <v-chip
                     small
                     :color="statusColor"

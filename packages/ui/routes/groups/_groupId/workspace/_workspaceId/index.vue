@@ -11,7 +11,7 @@ import {
 import * as acls from '~/helpers/pages-acls.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageUpdateWorkspace',

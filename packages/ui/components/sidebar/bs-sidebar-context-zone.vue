@@ -28,9 +28,9 @@
 </template>
 
 <script>
-import BsSidebarWorkspaceTree from './context/BsSidebarWorkspaceTree.vue';
-import BsSidebarDashboardList from './context/BsSidebarDashboardList.vue';
-import BsSidebarSettingsList from './context/BsSidebarSettingsList.vue';
+import BsSidebarWorkspaceTree from './context/bs-sidebar-workspace-tree.vue';
+import BsSidebarDashboardList from './context/bs-sidebar-dashboard-list.vue';
+import BsSidebarSettingsList from './context/bs-sidebar-settings-list.vue';
 
 export default {
   name: 'BsSidebarContextZone',

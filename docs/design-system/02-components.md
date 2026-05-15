@@ -977,15 +977,88 @@ var(--v-accent-base)     /* Vuetify */
 
 ## Reusable Components Inventory
 
-| Component            | File                                   | Usage                   |
-| -------------------- | -------------------------------------- | ----------------------- |
-| `modal-confirm`      | `ui/components/modal-confirm.vue`      | Confirmation dialogs    |
-| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs            |
-| `snackbar`           | `ui/components/snackbar.vue`           | Notifications           |
-| `loadingBar`         | `ui/components/loadingBar.vue`         | Loading indicator       |
-| `module-sidebar`     | `ui/components/module-sidebar.vue`     | Main navigation sidebar |
-| `sidebar-item`       | `ui/components/sidebar-item.vue`       | Sidebar navigation item |
+| Component            | File                                   | Usage                |
+| -------------------- | -------------------------------------- | -------------------- |
+| `modal-confirm`      | `ui/components/modal-confirm.vue`      | Confirmation dialogs |
+| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs         |
+| `snackbar`           | `ui/components/snackbar.vue`           | Notifications        |
+| `loadingBar`         | `ui/components/loadingBar.vue`         | Loading indicator    |
 
 ---
 
-_Last updated: April 2026 (v2.4 - Updated icon migration target: MDI → Lucide)_
+## Bs\* component family — two abstraction layers
+
+The `Bs*` prefix covers **two distinct kinds of components**, and the
+distinction is not just stylistic — it affects portability.
+
+### Primitives — pure, stateless, copy-paste safe
+
+These components are slot-forwarding wrappers around a Vuetify primitive. They
+take props in, emit events out, and have **no dependency on Vuex, Vue Router,
+vue-i18n or any application-level concern**. They can be extracted to a
+shared package or used in isolation in another app without modification.
+
+| Component         | File                                           | Wraps                              |
+| ----------------- | ---------------------------------------------- | ---------------------------------- |
+| `bs-data-table`   | `ui/components/data-table/bs-data-table.vue`   | `v-data-table` + design-system CSS |
+| `bs-text-field`   | `ui/components/form/bs-text-field.vue`         | `v-text-field` (label-above style) |
+| `bs-select`       | `ui/components/form/bs-select.vue`             | `v-select` (label-above style)     |
+| `bs-row-actions`  | `ui/components/row-actions/bs-row-actions.vue` | Quick action icons + kebab menu    |
+| `bs-breadcrumb`   | `ui/components/layout/bs-breadcrumb.vue`       | Breadcrumb trail                   |
+| `bs-page-header`  | `ui/components/layout/bs-page-header.vue`      | Page header shell + slots          |
+| `bs-form-section` | `ui/components/layout/bs-form-section.vue`     | Form section heading + content     |
+
+### Shells — feature-aware, app-coupled
+
+These components **consume Vuex, Vue Router, vue-i18n, Vuetify breakpoints or
+application state**. They are part of LePatron's application shell, not the
+design-system primitive layer. **They cannot be copy-pasted to another app or
+extracted to a shared package without bringing the matching stores, routes
+and i18n keys along.**
+
+If you ever extract the design-system to a separate package, **leave these
+behind** (or rename them under a different prefix, e.g. `AppSidebar*`).
+
+| Component                     | File                                                          | Dependencies                           |
+| ----------------------------- | ------------------------------------------------------------- | -------------------------------------- |
+| `bs-sidebar`                  | `ui/components/sidebar/bs-sidebar.vue`                        | Vuex (`sidebar`, `user`), router, i18n |
+| `bs-sidebar-brand`            | `ui/components/sidebar/bs-sidebar-brand.vue`                  | router, i18n                           |
+| `bs-sidebar-company-switcher` | `ui/components/sidebar/bs-sidebar-company-switcher.vue`       | Vuex `user`, router, i18n              |
+| `bs-sidebar-context-zone`     | `ui/components/sidebar/bs-sidebar-context-zone.vue`           | Vuex `sidebar`, router                 |
+| `bs-sidebar-module-list`      | `ui/components/sidebar/bs-sidebar-module-list.vue`            | Vuex `user`, router, i18n              |
+| `bs-sidebar-system-zone`      | `ui/components/sidebar/bs-sidebar-system-zone.vue`            | Vuex `user`, router, i18n              |
+| `bs-sidebar-toggle`           | `ui/components/sidebar/bs-sidebar-toggle.vue`                 | Vuex `sidebar`                         |
+| `bs-sidebar-dashboard-list`   | `ui/components/sidebar/context/bs-sidebar-dashboard-list.vue` | Vuex `user`, router, i18n              |
+| `bs-sidebar-settings-list`    | `ui/components/sidebar/context/bs-sidebar-settings-list.vue`  | Vuex `user`, router, i18n, ACL helpers |
+| `bs-sidebar-workspace-tree`   | `ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` | Vuex `folder`, router, localStorage    |
+
+### Modals — three patterns coexisting (debt)
+
+There are currently three modal wrappers in `ui/components/`:
+
+| Component            | File                                    | Consumers                 |
+| -------------------- | --------------------------------------- | ------------------------- |
+| `modal-confirm`      | `ui/components/modal-confirm.vue`       | 15+ — current default     |
+| `modal-confirm-form` | `ui/components/modal-confirm-form.vue`  | 2 (workspaces, templates) |
+| `bs-modal-form`      | `ui/components/modal/bs-modal-form.vue` | 1 (`modal-create-group`)  |
+
+`bs-modal-form` was introduced as the intended new design-system standard
+but only one consumer was migrated, so it currently looks more like an
+abandoned alternative than a real standard. **TODO**: pick one (probably
+`bs-modal-form` if it represents the design-system direction) and migrate
+the rest, or remove `bs-modal-form` until the migration can actually be
+done across the codebase. Tracked separately, not in scope of the review
+PR.
+
+---
+
+## File naming convention
+
+All `Bs*` design-system components live under `ui/components/` and use
+**kebab-case** file names (e.g. `bs-data-table.vue`, `bs-sidebar.vue`). This
+matches AGENTS.md and lets us spot stale PascalCase imports easily on a
+case-sensitive CI filesystem.
+
+---
+
+_Last updated: 2026-05-15 (v2.5 - Primitive/shell distinction documented; Bs\* renamed to kebab-case across the board)_

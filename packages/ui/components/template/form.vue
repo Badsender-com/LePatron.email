@@ -7,7 +7,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import {
   FileText,
   Upload,
@@ -368,7 +368,9 @@ export default {
         <div class="file-upload-field">
           <label class="file-upload-field__label">
             {{ $t('templates.markup') }}
-            <span v-if="!isEditMode" class="file-upload-field__required">*</span>
+            <span v-if="!isEditMode" class="file-upload-field__required"
+              >*</span
+            >
           </label>
 
           <!-- Show existing markup info if in edit mode -->
@@ -443,7 +445,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onMarkupFileChange"
-            >
+            />
           </div>
         </div>
 
@@ -481,7 +483,7 @@ export default {
                   :alt="image.originalName"
                   loading="lazy"
                   class="images-existing__thumb"
-                >
+                />
                 <span class="images-existing__name">{{
                   image.originalName
                 }}</span>
@@ -540,7 +542,7 @@ export default {
               class="file-dropzone__input"
               :disabled="disabled"
               @change="onImagesFileChange"
-            >
+            />
           </div>
         </div>
       </bs-form-section>
@@ -574,7 +576,7 @@ export default {
             :src="coverSrc"
             alt="Template preview"
             class="template-preview__image"
-          >
+          />
         </div>
       </bs-form-section>
     </v-card-text>

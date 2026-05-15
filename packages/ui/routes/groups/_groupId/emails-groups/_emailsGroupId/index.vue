@@ -8,7 +8,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import { getEmailsGroup } from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import EmailsGroupForm from '~/components/group/form-emails-group';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageEditEmailGroup',

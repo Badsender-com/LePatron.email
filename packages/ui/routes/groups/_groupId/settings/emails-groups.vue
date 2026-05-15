@@ -5,7 +5,7 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getEmailsGroups } from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsEmailsGroupsTab from '~/components/group/emails-groups-tab.vue';
 import BsModalCreateEmailsGroup from '~/components/group/modal-create-emails-group.vue';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';

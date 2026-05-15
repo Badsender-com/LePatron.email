@@ -5,7 +5,7 @@ import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Settings, Mail } from 'lucide-vue';
 
 export default {
