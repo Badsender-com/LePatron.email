@@ -376,10 +376,10 @@ export default {
           node.type === SPACE_TYPE.WORKSPACE
             ? { wid: node.id }
             : { fid: node.id };
-        this.$router.push({ query });
+        this.$router.push({ path: '/mailings', query });
       } else {
         this.clearSelection();
-        this.$router.replace({ query: {} });
+        this.$router.replace({ path: '/mailings', query: {} });
       }
     },
     displayDeleteModal(selected) {
@@ -414,6 +414,7 @@ export default {
         if (deletingCurrent || deletingParentOfCurrent) {
           this.clearSelection();
           await this.$router.replace({
+            path: '/mailings',
             query: { wid: this.workspaces[0]?._id },
           });
           this.$nextTick(() => {
@@ -484,6 +485,7 @@ export default {
         }
 
         await this.$router.push({
+          path: '/mailings',
           query: routerRedirectionParam,
         });
         this.showSnackbar({
