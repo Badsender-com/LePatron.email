@@ -1,25 +1,24 @@
 <template>
   <div class="bs-row-actions">
-    <!-- Quick action icons (always visible) -->
-    <v-tooltip v-for="action in quickActions" :key="action.key" bottom>
-      <template #activator="{ on, attrs }">
-        <button
-          class="qa-btn"
-          :class="{ 'qa-btn--danger': action.variant === 'danger' }"
-          :aria-label="$t(action.text)"
-          v-bind="attrs"
-          v-on="on"
-          @click.stop="action.onClick"
-        >
-          <span v-if="action.badge" class="qa-badge-wrap">
-            <component :is="action.icon" :size="18" />
-            <span class="qa-badge">{{ formatBadgeCount(action.badge) }}</span>
-          </span>
-          <component :is="action.icon" v-else :size="18" />
-        </button>
-      </template>
-      <span>{{ $t(action.text) }}</span>
-    </v-tooltip>
+    <!-- Quick action icons (always visible).
+         aria-label carries the meaning for screen readers and keyboard
+         users; we don't render a hover tooltip — the icons are standard
+         (Pencil/Trash2/Send/...) and the kebab menu already exposes
+         text labels for less-obvious actions. -->
+    <button
+      v-for="action in quickActions"
+      :key="action.key"
+      class="qa-btn"
+      :class="{ 'qa-btn--danger': action.variant === 'danger' }"
+      :aria-label="$t(action.text)"
+      @click.stop="action.onClick"
+    >
+      <span v-if="action.badge" class="qa-badge-wrap">
+        <component :is="action.icon" :size="18" />
+        <span class="qa-badge">{{ formatBadgeCount(action.badge) }}</span>
+      </span>
+      <component :is="action.icon" v-else :size="18" />
+    </button>
 
     <!-- Divider -->
     <span v-if="menuActions.length > 0" class="actions-cell__divider" />

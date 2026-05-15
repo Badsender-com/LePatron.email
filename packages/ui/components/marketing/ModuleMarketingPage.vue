@@ -46,21 +46,13 @@ const FEATURE_ICON_MAP = {
 
 export default {
   name: 'ModuleMarketingPage',
+  // Only Mail and ExternalLink are referenced as <lucide-mail> / <lucide-external-link>
+  // tags in the template. The rest of the lucide icons imported above are used
+  // dynamically through FEATURE_ICON_MAP / heroIcon via <component :is="...">,
+  // so they don't need to be registered as local components.
   components: {
     LucideMail: Mail,
     LucideExternalLink: ExternalLink,
-    LucideGripVertical: GripVertical,
-    LucideSmartphone: Smartphone,
-    LucidePuzzle: Puzzle,
-    LucidePalette: Palette,
-    LucideCloudUpload: CloudUpload,
-    LucideUsers: Users,
-    LucideLineChart: LineChart,
-    LucideBarChart: BarChart,
-    LucidePieChart: PieChart,
-    LucideTrendingUp: TrendingUp,
-    LucideTarget: Target,
-    LucideZap: Zap,
   },
   props: {
     moduleId: {
