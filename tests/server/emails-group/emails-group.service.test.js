@@ -1,9 +1,6 @@
 'use strict';
 
-const emailsGroupService = require('./emails-group.service');
-const ERROR_CODES = require('../constant/error-codes');
-
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   EmailsGroups: {
     exists: jest.fn(),
     create: jest.fn(),
@@ -14,9 +11,15 @@ jest.mock('../common/models.common', () => ({
     deleteOne: jest.fn(),
   },
 }));
-jest.mock('../utils/logger.js', () => ({ log: jest.fn() }));
+jest.mock('../../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+}));
 
-const { EmailsGroups } = require('../common/models.common');
+const emailsGroupService = require('../../../packages/server/emails-group/emails-group.service');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
+const {
+  EmailsGroups,
+} = require('../../../packages/server/common/models.common');
 
 const TENANT_A = '507f1f77bcf86cd799439001';
 const TENANT_B = '507f1f77bcf86cd799439002';

@@ -1,17 +1,17 @@
 'use strict';
 
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   Groups: {
     findById: jest.fn(),
   },
 }));
 
-const { Groups } = require('../common/models.common');
+const { Groups } = require('../../../packages/server/common/models.common');
 const {
   guardCrmIntelligence,
   guardCrmIntelligenceProbe,
-} = require('./crm-intelligence.guard');
-const ERROR_CODES = require('../constant/error-codes');
+} = require('../../../packages/server/crm-intelligence/crm-intelligence.guard');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
 

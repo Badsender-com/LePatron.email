@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken');
 
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   Integrations: {
     find: jest.fn(),
   },
@@ -12,14 +12,17 @@ jest.mock('../common/models.common', () => ({
     countDocuments: jest.fn(),
   },
 }));
-jest.mock('../dashboard/dashboard.service', () => ({
+jest.mock('../../../packages/server/dashboard/dashboard.service', () => ({
   listDashboards: jest.fn(),
 }));
 
-const crmIntelligenceService = require('./crm-intelligence.service');
-const DashboardService = require('../dashboard/dashboard.service');
-const { Integrations, Dashboards } = require('../common/models.common');
-const ERROR_CODES = require('../constant/error-codes');
+const crmIntelligenceService = require('../../../packages/server/crm-intelligence/crm-intelligence.service');
+const DashboardService = require('../../../packages/server/dashboard/dashboard.service');
+const {
+  Integrations,
+  Dashboards,
+} = require('../../../packages/server/common/models.common');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 const VALID_GROUP_ID = '507f1f77bcf86cd799439011';
 const VALID_DASHBOARD_ID = '507f1f77bcf86cd799439022';
@@ -72,15 +75,13 @@ describe('CRM Intelligence Service', () => {
 
     it('returns enabled=true and configured=true when integrations and dashboards exist', async () => {
       Integrations.find.mockReturnValue({
-        sort: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              _id: VALID_INTEGRATION_ID,
-              name: 'Metabase Prod',
-              provider: 'metabase',
-            },
-          ]),
+        sort: jest.fn().mockResolvedValue([
+          {
+            _id: VALID_INTEGRATION_ID,
+            name: 'Metabase Prod',
+            provider: 'metabase',
+          },
+        ]),
       });
       Dashboards.countDocuments.mockResolvedValue(3);
 
@@ -97,15 +98,13 @@ describe('CRM Intelligence Service', () => {
 
     it('returns configured=false when integrations exist but no dashboards', async () => {
       Integrations.find.mockReturnValue({
-        sort: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              _id: VALID_INTEGRATION_ID,
-              name: 'Metabase',
-              provider: 'metabase',
-            },
-          ]),
+        sort: jest.fn().mockResolvedValue([
+          {
+            _id: VALID_INTEGRATION_ID,
+            name: 'Metabase',
+            provider: 'metabase',
+          },
+        ]),
       });
       Dashboards.countDocuments.mockResolvedValue(0);
 

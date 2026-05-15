@@ -1,11 +1,7 @@
 'use strict';
 
-const dashboardService = require('./dashboard.service');
-const { Dashboards, Integrations } = require('../common/models.common');
-const ERROR_CODES = require('../constant/error-codes');
-
-// Mock dependencies
-jest.mock('../common/models.common', () => ({
+// Mock dependencies — hoisted; string literals required
+jest.mock('../../../packages/server/common/models.common', () => ({
   Dashboards: {
     find: jest.fn(),
     findById: jest.fn(),
@@ -18,6 +14,13 @@ jest.mock('../common/models.common', () => ({
     findOne: jest.fn(),
   },
 }));
+
+const dashboardService = require('../../../packages/server/dashboard/dashboard.service');
+const {
+  Dashboards,
+  Integrations,
+} = require('../../../packages/server/common/models.common');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 // Valid MongoDB ObjectIds for testing
 const VALID_GROUP_ID = '507f1f77bcf86cd799439011';
@@ -249,7 +252,10 @@ describe('Dashboard Service', () => {
         }),
       });
 
-      const result = await dashboardService.createDashboard(VALID_GROUP_ID, createData);
+      const result = await dashboardService.createDashboard(
+        VALID_GROUP_ID,
+        createData
+      );
 
       expect(Dashboards.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -465,9 +471,24 @@ describe('Dashboard Service', () => {
       await dashboardService.reorderDashboards(VALID_GROUP_ID, dashboardIds);
 
       expect(Dashboards.bulkWrite).toHaveBeenCalledWith([
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 0 } } } },
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 1 } } } },
-        { updateOne: { filter: expect.anything(), update: { $set: { order: 2 } } } },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 0 } },
+          },
+        },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 1 } },
+          },
+        },
+        {
+          updateOne: {
+            filter: expect.anything(),
+            update: { $set: { order: 2 } },
+          },
+        },
       ]);
     });
 
@@ -497,7 +518,9 @@ describe('Dashboard Service', () => {
         }),
       });
 
-      const result = await dashboardService.getGroupIdForDashboard(VALID_DASHBOARD_ID);
+      const result = await dashboardService.getGroupIdForDashboard(
+        VALID_DASHBOARD_ID
+      );
 
       expect(result).toBe(VALID_GROUP_ID);
     });
@@ -509,7 +532,9 @@ describe('Dashboard Service', () => {
         }),
       });
 
-      const result = await dashboardService.getGroupIdForDashboard('nonexistent');
+      const result = await dashboardService.getGroupIdForDashboard(
+        'nonexistent'
+      );
 
       expect(result).toBeNull();
     });

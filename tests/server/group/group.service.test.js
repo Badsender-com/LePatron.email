@@ -1,6 +1,6 @@
 'use strict';
 
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   Groups: { findById: jest.fn() },
   Users: { find: jest.fn() },
   Mailings: {},
@@ -8,11 +8,16 @@ jest.mock('../common/models.common', () => ({
   Folders: {},
   Profiles: {},
 }));
-jest.mock('../workspace/workspace.service.js', () => ({}));
-jest.mock('../utils/logger.js', () => ({ log: jest.fn() }));
+jest.mock(
+  '../../../packages/server/workspace/workspace.service.js',
+  () => ({})
+);
+jest.mock('../../../packages/server/utils/logger.js', () => ({
+  log: jest.fn(),
+}));
 
-const { Groups } = require('../common/models.common');
-const groupService = require('./group.service');
+const { Groups } = require('../../../packages/server/common/models.common');
+const groupService = require('../../../packages/server/group/group.service');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
 

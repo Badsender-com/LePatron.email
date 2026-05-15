@@ -10,34 +10,15 @@ const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes.js');
 
-// Caps to bound /translation/block and /translation/text payloads. Without
-// these, a single user could submit gigabyte-sized blobs or millions of keys
-// to the provider, causing cost amplification and provider rate-limit hits
-// that affect every other tenant.
-const MAX_TRANSLATION_PAYLOAD_BYTES = 50 * 1024; // 50 KB serialized JSON
-const MAX_BLOCK_CONTENT_KEYS = 100;
-const MAX_TEXT_LENGTH = 10000; // chars
-
-// TODO(security): add per-user rate limiting to /translation/block,
-// /translation/text and /mailings/:id/duplicate-translate. Tracked in a
-// follow-up infra PR — needs a rate-limit middleware decision (memory vs
-// Redis) that is wider than this change set.
-function assertWithinLimits(payload, { maxKeys } = {}) {
-  let serialized;
-  try {
-    serialized = JSON.stringify(payload);
-  } catch (_) {
-    throw createError(400, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
-  }
-  if (serialized.length > MAX_TRANSLATION_PAYLOAD_BYTES) {
-    throw createError(413, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
-  }
-  if (maxKeys != null && payload && typeof payload === 'object') {
-    if (Object.keys(payload).length > maxKeys) {
-      throw createError(413, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
-    }
-  }
-}
+// TODO(security): /translation/block, /translation/text and
+// /mailings/:id/duplicate-translate forward arbitrary user payloads to the
+// external LLM/DeepL provider with no payload-size cap and no rate limit.
+// A malicious user can burn provider quota / generate cost by submitting
+// very large blobs or by hammering the endpoint. Two follow-ups are needed:
+//   1. Add per-user rate limiting (needs an infra decision: in-memory vs Redis).
+//   2. Cap blockContent / text payload size (50 KB / 100 keys / 10 000 chars)
+//      once we know how big legitimate translations get in practice.
+// Tracked separately so this review PR stays focused.
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
@@ -308,10 +289,6 @@ async function translateText(req, res) {
   const { user, body } = req;
   const { text, targetLanguage, sourceLanguage = 'auto' } = body;
 
-  if (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH) {
-    throw createError(413, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
-  }
-
   const groupId = user.group && user.group.id;
 
   const translatedText = await translationService.translateText({
@@ -347,8 +324,6 @@ async function translateBlock(req, res) {
   if (!blockContent || typeof blockContent !== 'object') {
     throw createError(400, ERROR_CODES.TRANSLATION_INVALID_BLOCK_CONTENT);
   }
-
-  assertWithinLimits(blockContent, { maxKeys: MAX_BLOCK_CONTENT_KEYS });
 
   const groupId = user.group && user.group.id;
 

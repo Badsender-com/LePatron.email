@@ -1,6 +1,6 @@
 'use strict';
 
-const { escapeHtml } = require('./escape-html');
+const { escapeHtml } = require('../../../packages/ui/helpers/escape-html');
 
 describe('escapeHtml', () => {
   it('returns an empty string for null', () => {

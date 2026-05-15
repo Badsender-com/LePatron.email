@@ -1,6 +1,8 @@
 'use strict';
 
-const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard');
+const {
+  GUARD_CAN_ACCESS_GROUP,
+} = require('../../../packages/server/group/group.guard');
 
 const TENANT_A = '507f1f77bcf86cd799439001';
 const TENANT_B = '507f1f77bcf86cd799439002';

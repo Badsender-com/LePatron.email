@@ -1,14 +1,16 @@
 'use strict';
 
-jest.mock('../common/models.common', () => ({
+jest.mock('../../../packages/server/common/models.common', () => ({
   Groups: {
     findById: jest.fn(),
   },
 }));
 
-const { Groups } = require('../common/models.common');
-const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard');
-const ERROR_CODES = require('../constant/error-codes');
+const { Groups } = require('../../../packages/server/common/models.common');
+const {
+  GUARD_EMAIL_BUILDER,
+} = require('../../../packages/server/mailing/email-builder.guard');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 const GROUP_ID = '507f1f77bcf86cd799439001';
 
