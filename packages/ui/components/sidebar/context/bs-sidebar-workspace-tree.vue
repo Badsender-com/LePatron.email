@@ -534,23 +534,23 @@ export default {
       const hasSel = !!localStorage.getItem(this.selectedNodeStorageKey);
       if (hasTree && hasSel) return;
 
-      if (!hasTree) {
-        const remoteTree = await this.getRemoteLocalStorageKey(this.storageKey);
-        if (remoteTree) {
-          localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
-        }
-      }
+      // Both fetches are independent, so parallelize. Doing them serially
+      // added one round-trip of latency on every cold sidebar open.
+      const [remoteTree, remoteSel] = await Promise.all([
+        hasTree ? null : this.getRemoteLocalStorageKey(this.storageKey),
+        hasSel
+          ? null
+          : this.getRemoteLocalStorageKey(this.selectedNodeStorageKey),
+      ]);
 
-      if (!hasSel) {
-        const remoteSel = await this.getRemoteLocalStorageKey(
-          this.selectedNodeStorageKey
+      if (!hasTree && remoteTree) {
+        localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
+      }
+      if (!hasSel && remoteSel) {
+        localStorage.setItem(
+          this.selectedNodeStorageKey,
+          JSON.stringify(remoteSel)
         );
-        if (remoteSel) {
-          localStorage.setItem(
-            this.selectedNodeStorageKey,
-            JSON.stringify(remoteSel)
-          );
-        }
       }
     },
     buildFolderMenuActions(item) {

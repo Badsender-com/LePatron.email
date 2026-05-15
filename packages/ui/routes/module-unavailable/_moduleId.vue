@@ -3,7 +3,6 @@
 </template>
 
 <script>
-import ModuleMarketingPage from '~/components/marketing/ModuleMarketingPage.vue';
 import { ACL_USER } from '~/helpers/pages-acls';
 import { SIDEBAR_MODULES } from '~/components/sidebar/sidebar-config';
 
@@ -12,7 +11,14 @@ const KNOWN_MODULE_IDS = SIDEBAR_MODULES.map((m) => m.id);
 export default {
   name: 'ModuleUnavailablePage',
   components: {
-    ModuleMarketingPage,
+    // Lazy-loaded: this page is only reached by users who lack a module
+    // (rare), so we don't want the marketing screen + its lucide icon map
+    // to weigh on every other route's bundle.
+    ModuleMarketingPage: () =>
+      import(
+        /* webpackChunkName: "module-marketing-page" */
+        '~/components/marketing/ModuleMarketingPage.vue'
+      ),
   },
   meta: { acl: ACL_USER },
   // Reject unknown moduleId values so the marketing page can't be rendered

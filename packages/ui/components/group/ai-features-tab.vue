@@ -151,11 +151,11 @@ export default {
     },
   },
   watch: {
-    active(isActive) {
-      if (isActive) {
-        this.fetchData();
-      }
-    },
+    // Note: a watch on `active` would re-fetch when the tab is re-shown, but
+    // every current consumer binds :active="true" statically, so the watcher
+    // would never fire — keeping it would just be dead weight on every render.
+    // If real tab switching is introduced later, reinstate it with an
+    // immediate-skip flag so it doesn't double-fetch with mounted().
     selectedIntegrationId: {
       immediate: true,
       handler(newId) {
