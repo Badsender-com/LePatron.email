@@ -52,14 +52,14 @@ export default {
       return [
         { value: null, text: this.$t('aiFeatures.noIntegration') },
         ...this.integrations.map((i) => ({
-          value: i._id,
+          value: i.id,
           text: `${i.name} (${this.getProviderLabel(i.provider)})`,
         })),
       ];
     },
     selectedIntegrationId: {
       get() {
-        return this.translationFeature?.integration?._id || null;
+        return this.translationFeature?.integration?.id || null;
       },
       set(value) {
         this.updateFeature('translation', { integrationId: value });
@@ -168,7 +168,7 @@ export default {
         this.loading = true;
         const [configRes, integrationsRes] = await Promise.all([
           this.$axios.$get(apiRoutes.aiFeatures(this.groupId)),
-          this.$axios.$get(apiRoutes.integrations(this.groupId)),
+          this.$axios.$get(apiRoutes.integrations(this.groupId, 'ai')),
         ]);
         this.config = configRes;
         this.integrations = integrationsRes.items || [];
@@ -217,9 +217,12 @@ export default {
         this.dynamicModels = response.models || [];
         this.capabilities = response.capabilities || null;
       } catch (error) {
-        console.error('Failed to load models:', error);
         this.dynamicModels = [];
         this.capabilities = null;
+        this.showSnackbar({
+          text: this.$t('aiFeatures.errors.loadModelsFailed'),
+          color: 'error',
+        });
       } finally {
         this.loadingModels = false;
       }

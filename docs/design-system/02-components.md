@@ -440,6 +440,139 @@ Header for sidebars and slide-out panels.
 
 ---
 
+## Module Sidebar
+
+Main navigation sidebar for switching between application modules.
+
+### Behavior
+
+- **Default state:** 56px width (icons only)
+- **On hover:** Expands to 200px with labels
+- **Transition:** `200ms cubic-bezier(0.4, 0, 0.2, 1)`
+- **Position:** Fixed left, overlay (doesn't push main content)
+- **Mobile:** Hidden below 960px, replaced by hamburger menu drawer
+
+### Structure
+
+```
+┌──────────────────────┐
+│  MODULES             │
+│  ├─ Email Builder    │
+│  └─ CRM Intelligence │
+├──────────────────────┤
+│  UTILITIES           │
+│  ├─ Help             │
+│  └─ Logout           │
+├──────────────────────┤
+│  SETTINGS            │
+│  └─ Parameters       │
+└──────────────────────┘
+```
+
+### Item States
+
+| State | Icon Color | Background | Indicator | Usage |
+|-------|------------|------------|-----------|-------|
+| Default | `grey darken-1` | transparent | none | Inactive module |
+| Hover | `accent` | `#f5f5f5` | none | Mouse over |
+| Active | `accent` | `accent/12%` | **3px left bar accent** | Current module |
+| Disabled | `grey`, 40% opacity | transparent | none | Module not available |
+
+### Active Indicator
+
+The active state features a prominent **3px vertical bar** on the left side of the item, using the accent color. This provides clear visual feedback for the current module.
+
+```css
+.sidebar-item__indicator {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background-color: transparent;
+}
+
+.sidebar-item--active .sidebar-item__indicator {
+  background-color: #00acdc;
+}
+```
+
+### CSS
+
+```css
+.module-sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
+
+.module-sidebar--expanded {
+  width: 220px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-item {
+  height: 44px;
+  margin: 2px 4px;
+  border-radius: 8px;
+  transition: background-color 150ms ease;
+}
+
+.sidebar-item:hover {
+  background-color: #f5f5f5;
+}
+
+.sidebar-item--active {
+  background-color: rgba(0, 172, 220, 0.12);
+}
+
+/* Icon hover animation */
+.sidebar-item:hover .v-icon {
+  transform: scale(1.05);
+}
+
+/* Mobile: hide sidebar */
+@media (max-width: 960px) {
+  .module-sidebar {
+    display: none !important;
+  }
+}
+```
+
+### Icons
+
+Uses Material Design Icons (MDI) for consistency with the rest of the application:
+
+| Module | Icon | MDI Name |
+|--------|------|----------|
+| Email Builder | Palette | `mdi-palette` |
+| CRM Intelligence | Line chart | `mdi-chart-line` |
+| Help | Question circle | `mdi-help-circle-outline` |
+| Logout | Exit door | `mdi-logout` |
+| Settings | Gear | `mdi-cog-outline` |
+
+### Usage (Vue)
+
+```vue
+<bs-module-sidebar />
+```
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `ui/components/module-sidebar.vue` | Main sidebar component |
+| `ui/components/sidebar-item.vue` | Reusable item component |
+| `ui/layouts/default.vue` | Mobile drawer implementation |
+
+---
+
 ## Comment Card
 
 Card pattern for comments, discussions, and threaded content.
@@ -800,7 +933,9 @@ var(--v-accent-base)     /* Vuetify */
 | `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs |
 | `snackbar` | `ui/components/snackbar.vue` | Notifications |
 | `loadingBar` | `ui/components/loadingBar.vue` | Loading indicator |
+| `module-sidebar` | `ui/components/module-sidebar.vue` | Main navigation sidebar |
+| `sidebar-item` | `ui/components/sidebar-item.vue` | Sidebar navigation item |
 
 ---
 
-*Last updated: February 2026 (v2.1 - added hover states, form actions pattern, chip interaction notes)*
+*Last updated: March 2026 (v2.3 - Module Sidebar with MDI icons and active indicator bar)*
