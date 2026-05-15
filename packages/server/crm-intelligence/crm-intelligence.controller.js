@@ -42,7 +42,8 @@ const getEmbedUrl = asyncHandler(async (req, res) => {
   const result = await crmIntelligenceService.getEmbedUrl(
     req.user.group.id,
     req.params.dashboardId,
-    req.crmGroup
+    req.crmGroup,
+    req.user
   );
   res.json(result);
 });

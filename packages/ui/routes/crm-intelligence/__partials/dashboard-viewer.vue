@@ -46,7 +46,12 @@ export default {
       </p>
     </div>
 
-    <!-- Dashboard iframe -->
+    <!-- Dashboard iframe.
+         allow-same-origin is intentionally OMITTED: combined with allow-scripts
+         it would let the framed page reach window.parent and effectively escape
+         the sandbox into the LePatron origin. Metabase signed-URL embeds work
+         without it. Server-side validation (HTTPS-only apiHost) is in
+         crm-intelligence.service.js — see the matching M2/M3 fix. -->
     <iframe
       v-if="embedUrl"
       ref="dashboardFrame"
@@ -55,7 +60,7 @@ export default {
       class="dashboard-iframe"
       :class="{ 'iframe-hidden': loading || !iframeLoaded }"
       frameborder="0"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      sandbox="allow-scripts allow-popups allow-forms"
       allowfullscreen
       @load="onIframeLoad"
     />
