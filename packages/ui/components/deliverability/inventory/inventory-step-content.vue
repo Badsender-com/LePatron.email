@@ -35,6 +35,9 @@
       <p v-if="showDkimSelectors" class="add-item__hint add-item__hint--dkim">
         {{ $t('deliverability.inventory.dkimSelectors.quickAddHint') }}
       </p>
+      <p v-if="showIpType" class="add-item__hint add-item__hint--dkim">
+        {{ $t('deliverability.inventory.ipType.quickAddHint') }}
+      </p>
     </div>
 
     <!-- Items list -->
@@ -65,6 +68,26 @@
               @keydown.enter.prevent="confirmEdit"
               @keydown.esc="cancelEdit"
             >
+            <!-- IP type (only for ip category) -->
+            <div v-if="showIpType" class="ip-type">
+              <label class="ip-type__label">
+                {{ $t('deliverability.inventory.ipType.label') }}
+              </label>
+              <div class="ip-type__choices">
+                <label class="ip-type__choice">
+                  <input v-model="editIpType" type="radio" value="dedicated">
+                  <span>{{
+                    $t('deliverability.inventory.ipType.dedicated')
+                  }}</span>
+                </label>
+                <label class="ip-type__choice">
+                  <input v-model="editIpType" type="radio" value="shared">
+                  <span>{{
+                    $t('deliverability.inventory.ipType.shared')
+                  }}</span>
+                </label>
+              </div>
+            </div>
             <!-- DKIM selectors (only for display_from_domain) -->
             <div v-if="showDkimSelectors" class="dkim-selectors">
               <label class="dkim-selectors__label">
@@ -122,6 +145,13 @@
             <span class="item-row__value">{{ item.value }}</span>
             <span v-if="item.description" class="item-row__description">
               {{ item.description }}
+            </span>
+            <!-- IP type display -->
+            <span
+              v-if="showIpType && getIpType(item) === 'shared'"
+              class="ip-badge ip-badge--shared"
+            >
+              {{ $t('deliverability.inventory.ipType.sharedBadge') }}
             </span>
             <!-- DKIM selectors display -->
             <div
@@ -252,6 +282,7 @@ export default {
       editDescription: '',
       editDkimSelectors: [],
       dkimSelectorInput: '',
+      editIpType: 'dedicated',
       validationError: null,
       urlNormalized: false,
     };
@@ -259,6 +290,9 @@ export default {
   computed: {
     showDkimSelectors() {
       return this.category.toLowerCase() === 'display_from_domain';
+    },
+    showIpType() {
+      return this.category.toLowerCase() === 'ip';
     },
     categoryLower() {
       return this.category.toLowerCase();
@@ -280,6 +314,11 @@ export default {
       return item.metadata && Array.isArray(item.metadata.dkimSelectors)
         ? item.metadata.dkimSelectors
         : [];
+    },
+    getIpType(item) {
+      return item.metadata && item.metadata.ipType === 'shared'
+        ? 'shared'
+        : 'dedicated';
     },
     normalizeAndValidate(raw) {
       let value = raw.trim();
@@ -341,8 +380,20 @@ export default {
         let rawValue = raw;
         let description = null;
         let itemDkimSelectors = [];
+        let itemIpType = null;
 
-        if (this.showDkimSelectors && colonIndex !== -1) {
+        if (this.showIpType) {
+          // ip: "1.2.3.4 shared" / "1.2.3.4 s" / "1.2.3.4 dedicated" / "1.2.3.4"
+          const m = raw.match(
+            /^(.+?)\s+(shared|dedicated|s|d|mutualis[eé]e?|d[eé]di[eé]e?)$/i
+          );
+          if (m) {
+            rawValue = m[1].trim();
+            const kw = m[2].toLowerCase();
+            itemIpType =
+              kw.startsWith('s') || kw.startsWith('m') ? 'shared' : 'dedicated';
+          }
+        } else if (this.showDkimSelectors && colonIndex !== -1) {
           // display_from_domain: domain.com:selector1,selector2
           rawValue = raw.slice(0, colonIndex).trim();
           const selectorPart = raw.slice(colonIndex + 1).trim();
@@ -373,14 +424,13 @@ export default {
 
         const existing = new Set(this.localItems.map((i) => i.value));
         if (value && !existing.has(value)) {
-          toAdd.push({
-            value,
-            description,
-            metadata:
-              itemDkimSelectors.length > 0
-                ? { dkimSelectors: itemDkimSelectors }
-                : null,
-          });
+          let metadata = null;
+          if (itemDkimSelectors.length > 0) {
+            metadata = { dkimSelectors: itemDkimSelectors };
+          } else if (itemIpType === 'shared') {
+            metadata = { ipType: 'shared' };
+          }
+          toAdd.push({ value, description, metadata });
         }
       }
 
@@ -411,6 +461,7 @@ export default {
         this.localItems[index]
       ).slice();
       this.dkimSelectorInput = '';
+      this.editIpType = this.getIpType(this.localItems[index]);
       this.$nextTick(() => {
         const input = Array.isArray(this.$refs.editValueInput)
           ? this.$refs.editValueInput[0]
@@ -433,6 +484,9 @@ export default {
           this.editDkimSelectors.length > 0
             ? { dkimSelectors: this.editDkimSelectors }
             : null;
+      } else if (this.showIpType) {
+        item.metadata =
+          this.editIpType === 'shared' ? { ipType: 'shared' } : null;
       }
       this.editingIndex = null;
       this.autoSave();
@@ -784,6 +838,52 @@ export default {
   border-radius: 10px;
   font-size: 10px;
   font-weight: 600;
+}
+
+.ip-type {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ip-type__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-500);
+}
+
+.ip-type__choices {
+  display: flex;
+  gap: 12px;
+}
+
+.ip-type__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--gray-700);
+  cursor: pointer;
+}
+
+.ip-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+.ip-badge--shared {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #d97706;
 }
 
 .empty-state {

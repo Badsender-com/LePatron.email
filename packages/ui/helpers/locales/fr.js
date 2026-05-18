@@ -511,6 +511,13 @@ export default {
         addSelector: 'Ajouter un sélecteur',
         quickAddHint: 'Syntaxe rapide : domaine.com:sélecteur1,sélecteur2',
       },
+      ipType: {
+        label: 'Type',
+        dedicated: 'Dédiée',
+        shared: 'Mutualisée',
+        sharedBadge: 'Mutualisée',
+        quickAddHint: 'Syntaxe rapide : 1.2.3.4 shared (par défaut : dédiée)',
+      },
     },
     audits: {
       title: 'Audits de délivrabilité',

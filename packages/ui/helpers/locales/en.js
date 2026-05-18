@@ -507,6 +507,13 @@ export default {
         addSelector: 'Add selector',
         quickAddHint: 'Quick syntax: domain.com:selector1,selector2',
       },
+      ipType: {
+        label: 'Type',
+        dedicated: 'Dedicated',
+        shared: 'Shared',
+        sharedBadge: 'Shared',
+        quickAddHint: 'Quick syntax: 1.2.3.4 shared (default: dedicated)',
+      },
     },
     audits: {
       title: 'Deliverability audits',
