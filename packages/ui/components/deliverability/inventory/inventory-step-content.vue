@@ -58,7 +58,7 @@
               :placeholder="$t('deliverability.inventory.editValuePlaceholder')"
               @keydown.enter.prevent="confirmEdit"
               @keydown.esc="cancelEdit"
-            >
+            />
             <input
               v-model="editDescription"
               class="item-row__edit-input item-row__edit-input--description"
@@ -67,7 +67,7 @@
               "
               @keydown.enter.prevent="confirmEdit"
               @keydown.esc="cancelEdit"
-            >
+            />
             <!-- IP type (only for ip category) -->
             <div v-if="showIpType" class="ip-type">
               <label class="ip-type__label">
@@ -75,13 +75,13 @@
               </label>
               <div class="ip-type__choices">
                 <label class="ip-type__choice">
-                  <input v-model="editIpType" type="radio" value="dedicated">
+                  <input v-model="editIpType" type="radio" value="dedicated" />
                   <span>{{
                     $t('deliverability.inventory.ipType.dedicated')
                   }}</span>
                 </label>
                 <label class="ip-type__choice">
-                  <input v-model="editIpType" type="radio" value="shared">
+                  <input v-model="editIpType" type="radio" value="shared" />
                   <span>{{
                     $t('deliverability.inventory.ipType.shared')
                   }}</span>
@@ -115,7 +115,7 @@
                   "
                   @keydown.enter.prevent="addDkimSelector"
                   @keydown.188.prevent="addDkimSelector"
-                >
+                />
               </div>
               <p class="dkim-selectors__hint">
                 {{ $t('deliverability.inventory.dkimSelectors.hint') }}
@@ -471,6 +471,10 @@ export default {
     },
     confirmEdit() {
       if (!this.editValue.trim()) return;
+      // Flush pending DKIM selector input (user may have typed without pressing Enter/comma)
+      if (this.showDkimSelectors && this.dkimSelectorInput.trim()) {
+        this.addDkimSelector();
+      }
       const { value, error } = this.normalizeAndValidate(this.editValue);
       if (error) {
         this.validationError = error;
