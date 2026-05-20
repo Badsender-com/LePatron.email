@@ -239,7 +239,7 @@ export default {
           },
           {
             id: 'tracking',
-            label: this.$t('trackingConfig.title'),
+            label: this.$t('trackingConfig.sidebarLabel'),
             icon: 'mdi-link-variant',
             route: `${this.settingsBasePath}/tracking`,
           }
