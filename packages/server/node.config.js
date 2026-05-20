@@ -20,7 +20,7 @@ const config = rc('lepatron', {
     preventBuild: false,
     API_PREFIX: '/api',
   },
-  database: 'mongodb://localhost:27017/lepatron',
+  database: process.env.DATABASE_URL || 'mongodb://localhost:27017/lepatron',
   sessionSecret: '3MYdqy0lZZz2TXCr7YlxT9N6',
   emailTransport: {
     ...localEmail,
