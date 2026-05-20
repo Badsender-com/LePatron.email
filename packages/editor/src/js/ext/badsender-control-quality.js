@@ -175,20 +175,17 @@ function checkRequiredTrackingParams(viewModel) {
 
 /**
  * Display a blocking-style modal when required tracking params are missing.
- * Uses a jQuery-built overlay (Mosaico is a Knockout/jQuery editor, no Vue
- * mount point readily available here) styled to match the LePatron design
- * system: primary header, body with tint-error info block, footer with cta
- * button (cf. ui_kits/app/NewMailingDialog.jsx).
+ * Reuses the editor's existing modal framework (.bs-modal-overlay /
+ * .bs-modal-card / .modal-content / .modal-footer / .btn / .btn-flat) so the
+ * look-and-feel matches save-block-modal, delete-block-modal, etc.
  */
 function displayTrackingError(missingKeys, viewModel) {
-  // Remove any previous instance
-  $('.bs-tracking-modal-overlay').remove();
+  $('.bs-modal-overlay.tracking-modal').remove();
 
   const title = viewModel.t('trackingRequiredTitle');
   const description = viewModel.t('trackingRequiredDescription');
   const closeLabel = viewModel.t('trackingRequiredClose');
 
-  // Escape any user-controlled values before injecting into the DOM
   const escapeHtml = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({
       '&': '&amp;',
@@ -198,33 +195,31 @@ function displayTrackingError(missingKeys, viewModel) {
       "'": '&#39;',
     }[c]));
   const keysHtml = missingKeys
-    .map((k) => `<code class="bs-tracking-modal__key">${escapeHtml(k)}</code>`)
+    .map((k) => `<code class="tracking-modal__key">${escapeHtml(k)}</code>`)
     .join(' ');
 
-  // Inline Lucide "x" icon for the header close button (same SVG used elsewhere)
-  const xIcon =
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
-  // Inline Lucide "alert-circle" icon for the body tint block
+  // Lucide alert-circle, inlined to avoid asset dependencies
   const alertIcon =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
 
   const $overlay = $(`
-    <div class="bs-tracking-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bs-tracking-modal-title">
-      <div class="bs-tracking-modal">
-        <header class="bs-tracking-modal__header">
-          <span id="bs-tracking-modal-title" class="bs-tracking-modal__title">${escapeHtml(title)}</span>
-          <button type="button" class="bs-tracking-modal__icon-btn bs-tracking-modal__close-x" aria-label="${escapeHtml(closeLabel)}">${xIcon}</button>
-        </header>
-        <div class="bs-tracking-modal__body">
-          <div class="bs-tracking-modal__alert">
-            <span class="bs-tracking-modal__alert-icon">${alertIcon}</span>
-            <span class="bs-tracking-modal__alert-text">${escapeHtml(description)}</span>
+    <div class="bs-modal-overlay tracking-modal small-modal" role="dialog" aria-modal="true" aria-labelledby="tracking-modal-title">
+      <div class="bs-modal-container">
+        <div class="bs-modal-card">
+          <div class="bs-modal-content-wrapper">
+            <div class="modal-content">
+              <h5 id="tracking-modal-title">${escapeHtml(title)}</h5>
+              <div class="tracking-modal__alert">
+                <span class="tracking-modal__alert-icon">${alertIcon}</span>
+                <span>${escapeHtml(description)}</span>
+              </div>
+              <div class="tracking-modal__keys">${keysHtml}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn waves-effect waves-light tracking-modal__close">${escapeHtml(closeLabel)}</button>
+            </div>
           </div>
-          <div class="bs-tracking-modal__keys">${keysHtml}</div>
         </div>
-        <footer class="bs-tracking-modal__footer">
-          <button type="button" class="bs-tracking-modal__btn bs-tracking-modal__btn--cta">${escapeHtml(closeLabel)}</button>
-        </footer>
       </div>
     </div>
   `);
@@ -237,14 +232,13 @@ function displayTrackingError(missingKeys, viewModel) {
   $overlay.on('click', (evt) => {
     if (evt.target === $overlay[0]) close();
   });
-  $overlay.on('click', '.bs-tracking-modal__close-x, .bs-tracking-modal__btn--cta', close);
+  $overlay.on('click', '.tracking-modal__close', close);
   $(document).on('keydown.bsTrackingModal', (evt) => {
     if (evt.key === 'Escape') close();
   });
 
   $('body').append($overlay);
-  // Focus the cta button so Esc/Enter work right away
-  $overlay.find('.bs-tracking-modal__btn--cta').focus();
+  $overlay.find('.tracking-modal__close').focus();
 }
 
 module.exports = {
