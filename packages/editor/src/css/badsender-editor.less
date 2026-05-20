@@ -904,44 +904,91 @@ body {
   }
 }
 
-// Blocking modal shown when required tracking params are missing
+// Blocking modal shown when required tracking params are missing.
+// Follows the LePatron design system: primary header, body with tint-error
+// alert + key chips, footer with cta button. Matches NewMailingDialog.jsx.
 .bs-tracking-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(9, 48, 64, 0.55); // primary darkened, not pure black
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: bs-tracking-fade-in 0.15s ease-out;
+  animation: bs-tracking-fade-in 150ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .bs-tracking-modal {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  padding: 28px 32px 24px;
-  max-width: 540px;
-  width: 90%;
-  border-top: 4px solid #f04e23;
+  background: var(--white, #fff);
+  border-radius: var(--r-md, 7px);
+  box-shadow: var(--shadow-modal, 0 12px 32px rgba(13, 43, 62, 0.18));
+  width: 540px;
+  max-width: 90vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    background: var(--v-primary-base, #093040);
+    color: var(--white, #fff);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
 
   &__title {
-    margin: 0 0 12px 0;
-    color: #f04e23;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 600;
     line-height: 1.3;
   }
 
-  &__description {
-    margin: 0 0 16px 0;
-    color: rgba(0, 0, 0, 0.7);
-    font-size: 14px;
+  &__icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--white, #fff);
+    opacity: 0.8;
+    cursor: pointer;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-xs, 3px);
+    transition: opacity 150ms cubic-bezier(0.33, 1, 0.68, 1),
+      background 150ms cubic-bezier(0.33, 1, 0.68, 1);
+
+    &:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  &__body {
+    padding: 20px;
+  }
+
+  &__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--tint-error, rgba(240, 78, 35, 0.12));
+    border-radius: var(--r-sm, 5px);
+    margin-bottom: 16px;
+    font-size: 13px;
     line-height: 1.5;
+    color: var(--gray-800, #1f2937);
+  }
+
+  &__alert-icon {
+    color: var(--color-error, #f04e23);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: inline-flex;
   }
 
   &__keys {
-    margin-bottom: 24px;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -950,37 +997,49 @@ body {
   &__key {
     display: inline-block;
     padding: 4px 10px;
-    background: rgba(240, 78, 35, 0.1);
+    background: var(--tint-error, rgba(240, 78, 35, 0.12));
     border: 1px solid rgba(240, 78, 35, 0.3);
-    color: #c43d1c;
-    border-radius: 4px;
-    font-family: monospace;
+    color: var(--color-error, #c43d1c);
+    border-radius: var(--r-sm, 5px);
+    font-family: var(--font-mono, ui-monospace, 'SF Mono', Menlo, monospace);
     font-size: 13px;
+    font-weight: 500;
   }
 
-  &__actions {
+  &__footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--gray-200, #eef0f3);
     display: flex;
     justify-content: flex-end;
+    gap: 8px;
   }
 
-  &__close {
-    background: var(--v-accent-base, #00acdc);
-    color: #fff;
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 16px;
     border: none;
-    border-radius: 4px;
-    padding: 8px 20px;
+    border-radius: var(--r-sm, 5px);
     font-size: 14px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 150ms cubic-bezier(0.33, 1, 0.68, 1);
 
-    &:hover {
-      background: darken(#00acdc, 5%);
-    }
+    &--cta {
+      background: var(--v-accent-base, #00acdc);
+      color: #fff;
 
-    &:focus {
-      outline: 2px solid rgba(0, 172, 220, 0.4);
-      outline-offset: 2px;
+      &:hover {
+        background: var(--v-accent-darken1, #0091b8);
+      }
+
+      &:focus-visible {
+        outline: 2px solid rgba(0, 172, 220, 0.5);
+        outline-offset: 2px;
+      }
     }
   }
 }
@@ -988,7 +1047,7 @@ body {
 @keyframes bs-tracking-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
