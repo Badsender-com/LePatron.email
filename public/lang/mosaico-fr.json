@@ -104,5 +104,6 @@
   "needHelpText": "Besoin d'aide ?",
   "trackingRequiredTitle": "Paramètres de tracking obligatoires manquants",
   "trackingRequiredDescription": "Merci de renseigner ces paramètres avant de télécharger :",
-  "trackingRequiredClose": "Fermer"
+  "trackingRequiredClose": "Fermer",
+  "trackingGlobalParamLocked": "Paramètre de tracking global, vous ne pouvez pas le supprimer"
 }
