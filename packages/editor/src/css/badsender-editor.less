@@ -908,6 +908,12 @@ body {
 // (see badsender-modal.less). Only the inline alert and key chips inside
 // .modal-content are added here.
 .tracking-modal {
+  // The modal is appended to <body>, which has no explicit font-family — it
+  // would inherit the browser default (serif) instead of the editor's Inter
+  // applied on .mo. Force the editor font-family here.
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+
   .tracking-modal__alert {
     display: flex;
     align-items: flex-start;
