@@ -779,6 +779,11 @@ body {
     border-radius: 4px;
     transition: all 0.15s ease;
     flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       color: #f04e23;
@@ -788,6 +793,38 @@ body {
     .lucide {
       width: 16px;
       height: 16px;
+    }
+  }
+
+  // Invisible placeholder in managed rows to reserve the column width occupied
+  // by the remove (×) button in free-form rows. Keeps the "=" sign aligned
+  // across both kinds of rows.
+  .tracking-remove-placeholder {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+  }
+
+  .tracking-key-label {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+  }
+
+  .tracking-required {
+    display: inline-block;
+    margin-left: 4px;
+    color: #f04e23;
+    font-weight: 700;
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  .tracking-param-row--missing .propInput.tracking-input:not(.tracking-input--readonly) {
+    select,
+    input {
+      border-color: #f04e23;
+      box-shadow: 0 0 0 1px rgba(240, 78, 35, 0.3);
     }
   }
 

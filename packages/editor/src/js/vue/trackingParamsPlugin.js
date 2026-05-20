@@ -187,8 +187,12 @@ module.exports = {
             >
               <div class="propEditor tracking-param-editor">
                 <div class="propInput tracking-input tracking-input--readonly">
-                  <strong>{{ row.key }}</strong>
-                  <span v-if="row.required" class="tracking-required">*</span>
+                  <strong class="tracking-key-label">{{ row.key }}</strong>
+                  <span
+                    v-if="row.required"
+                    class="tracking-required"
+                    title="Champ obligatoire"
+                  >*</span>
                 </div>
                 <span class="tracking-equals">=</span>
                 <div class="propInput tracking-input">
@@ -219,6 +223,8 @@ module.exports = {
                     @input="setManagedValue(row.key, $event.target.value)"
                   />
                 </div>
+                <!-- spacer to align with free-form rows that have a remove button -->
+                <span class="tracking-remove-placeholder" aria-hidden="true"></span>
               </div>
             </div>
 
