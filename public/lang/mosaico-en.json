@@ -101,5 +101,8 @@
   "Picture with no link": "Picture with no link",
   "remove": "Remove",
   "addParamText": "Add param",
-  "needHelpText": "Need help?"
+  "needHelpText": "Need help?",
+  "trackingRequiredTitle": "Required tracking parameters are missing",
+  "trackingRequiredDescription": "Please fill in these parameters before downloading:",
+  "trackingRequiredClose": "Close"
 }

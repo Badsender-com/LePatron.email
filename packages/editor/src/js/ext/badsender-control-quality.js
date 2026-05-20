@@ -174,20 +174,60 @@ function checkRequiredTrackingParams(viewModel) {
 }
 
 /**
- * Display a blocking-style error in the editor when required tracking params
- * are missing. Inserts the message in the same area as other quality warnings
- * so the user sees it without leaving the builder.
+ * Display a blocking-style modal when required tracking params are missing.
+ * Uses a jQuery-built overlay (Mosaico is a Knockout/jQuery editor, no Vue
+ * mount point readily available here) styled to match the other editor modals.
  */
 function displayTrackingError(missingKeys, viewModel) {
-  $('.error-message').remove();
-  const title = viewModel.t('Required tracking parameters are missing');
-  const description = viewModel.t(
-    'Please fill in these parameters before downloading: '
-  ) + missingKeys.join(', ');
-  const $msg = $('<div class="error-message tracking-error-message"></div>');
-  $msg.append(`<h3>${title}</h3>`);
-  $msg.append(`<p>${description}</p>`);
-  $msg.insertBefore('replacedbody');
+  // Remove any previous instance
+  $('.bs-tracking-modal-overlay').remove();
+
+  const title = viewModel.t('trackingRequiredTitle');
+  const description = viewModel.t('trackingRequiredDescription');
+  const closeLabel = viewModel.t('trackingRequiredClose');
+
+  // Escape any user-controlled values before injecting into the DOM
+  const escapeHtml = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
+  const keysHtml = missingKeys
+    .map((k) => `<code class="bs-tracking-modal__key">${escapeHtml(k)}</code>`)
+    .join(' ');
+
+  const $overlay = $(`
+    <div class="bs-tracking-modal-overlay" role="dialog" aria-modal="true">
+      <div class="bs-tracking-modal">
+        <h3 class="bs-tracking-modal__title">${escapeHtml(title)}</h3>
+        <p class="bs-tracking-modal__description">${escapeHtml(description)}</p>
+        <div class="bs-tracking-modal__keys">${keysHtml}</div>
+        <div class="bs-tracking-modal__actions">
+          <button type="button" class="bs-tracking-modal__close">${escapeHtml(closeLabel)}</button>
+        </div>
+      </div>
+    </div>
+  `);
+
+  const close = () => {
+    $overlay.remove();
+    $(document).off('keydown.bsTrackingModal');
+  };
+
+  $overlay.on('click', (evt) => {
+    if (evt.target === $overlay[0]) close();
+  });
+  $overlay.on('click', '.bs-tracking-modal__close', close);
+  $(document).on('keydown.bsTrackingModal', (evt) => {
+    if (evt.key === 'Escape') close();
+  });
+
+  $('body').append($overlay);
+  // Focus the close button so Esc/Enter work right away
+  $overlay.find('.bs-tracking-modal__close').focus();
 }
 
 module.exports = {

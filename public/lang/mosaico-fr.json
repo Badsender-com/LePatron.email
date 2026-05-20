@@ -101,5 +101,8 @@
   "Picture with no link": "Image sans lien",
   "remove": "Supprimer",
   "addParamText": "Ajouter un paramètre",
-  "needHelpText": "Besoin d'aide ?"
+  "needHelpText": "Besoin d'aide ?",
+  "trackingRequiredTitle": "Paramètres de tracking obligatoires manquants",
+  "trackingRequiredDescription": "Merci de renseigner ces paramètres avant de télécharger :",
+  "trackingRequiredClose": "Fermer"
 }
