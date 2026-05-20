@@ -10,6 +10,9 @@ module.exports = {
       Array.isArray(groupConfig.params) &&
       groupConfig.params.length > 0
     );
+    // DEBUG: temporary, remove once tracking-config UI is validated
+    console.info('[tracking-config] vm.metadata.trackingConfig =', groupConfig);
+    console.info('[tracking-config] isManaged =', isManaged);
 
     Vue.component('TrackingParamsPlugin', {
       components: {},

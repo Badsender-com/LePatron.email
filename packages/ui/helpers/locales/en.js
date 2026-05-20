@@ -580,6 +580,7 @@ export default {
     },
   },
   trackingConfig: {
+    sidebarLabel: 'Tracking',
     title: 'Configurable tracking',
     description:
       'Define UTM parameters automatically applied to every email in the group. Values defined here override any existing values in template links.',

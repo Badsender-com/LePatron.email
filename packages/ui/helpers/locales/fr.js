@@ -588,6 +588,7 @@ export default {
     },
   },
   trackingConfig: {
+    sidebarLabel: 'Tracking',
     title: 'Tracking paramétrable',
     description:
       'Définissez les paramètres UTM appliqués automatiquement à tous les emails du groupe. Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
