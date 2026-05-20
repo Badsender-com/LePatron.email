@@ -400,7 +400,12 @@ async function update(req, res) {
   };
 
   if (user.isGroupAdmin) {
-    groupToUpdate = pick(groupToUpdate, ['name', 'id', 'colorScheme']);
+    groupToUpdate = pick(groupToUpdate, [
+      'name',
+      'id',
+      'colorScheme',
+      'trackingConfig',
+    ]);
   }
 
   await groupService.updateGroup(groupToUpdate);

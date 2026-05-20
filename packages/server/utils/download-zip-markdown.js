@@ -80,51 +80,74 @@ const hasUrlAlreadyParams = (url) => {
   return url.includes('?');
 };
 
-const getUrlWithTrackingParams = (link, tracking) => {
-  if (!tracking) {
+/**
+ * Replace (or insert) a query parameter in a URL.
+ * Uses regex-based replacement instead of URL API to keep relative paths,
+ * template placeholders ({{token}}), and unusual schemes intact.
+ */
+const upsertUrlParam = (link, key, value) => {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`([?&])${escapedKey}=[^&#]*`, 'g');
+  if (re.test(link)) {
+    return link.replace(re, `$1${key}=${value}`);
+  }
+  const sep = hasUrlAlreadyParams(link) ? '&' : '?';
+  return `${link}${sep}${key}=${value}`;
+};
+
+const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
+  if (!tracking && !groupTrackingConfig) {
     return link;
   }
 
-  let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
+  // Keys controlled by the group config — used to filter and to detect overrides
+  const groupKeys = new Set(
+    (groupTrackingConfig && groupTrackingConfig.enabled
+      ? groupTrackingConfig.params || []
+      : []
+    ).map((p) => p.key)
+  );
+  const restrictValues = Boolean(
+    groupTrackingConfig &&
+      groupTrackingConfig.enabled &&
+      groupTrackingConfig.restrictValues
+  );
 
-  if (tracking?.trackingUrls) {
+  let result = link;
+  const freeFormParams = [];
+
+  const handlePair = (key, value) => {
+    if (!key || !value) return;
+    if (restrictValues && !groupKeys.has(key)) return;
+    if (groupKeys.has(key)) {
+      // Group-controlled key: override the value in the link (or insert if missing)
+      result = upsertUrlParam(result, key, value);
+    } else if (!link.includes(key)) {
+      // Free-form param: legacy "skip if already present" behaviour
+      freeFormParams.push(`${key}=${value}`);
+    }
+  };
+
+  if (tracking && Array.isArray(tracking.trackingUrls)) {
     for (const trackingUrl of tracking.trackingUrls) {
-      const { key, value } = trackingUrl;
-      if (key?.length > 0 && value?.length > 0) {
-        if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
-          paramsToAdd += `${key}=${value}&`;
-        }
-      }
+      handlePair(
+        trackingUrl && trackingUrl.key,
+        trackingUrl && trackingUrl.value
+      );
     }
   }
 
-  if (tracking.hasGoogleAnalyticsUtm) {
-    if (
-      !link.includes(tracking.utmSourceKey) &&
-      tracking?.utmSourceKey?.length > 0 &&
-      tracking?.utmSourceValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmSourceKey}=${tracking.utmSourceValue}&`;
-    }
-
-    if (
-      !link.includes(tracking.utmMediumKey) &&
-      tracking?.utmMediumKey?.length > 0 &&
-      tracking?.utmMediumValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmMediumKey}=${tracking.utmMediumValue}&`;
-    }
-
-    if (
-      !link.includes(tracking.utmCampaignKey) &&
-      tracking?.utmCampaignKey?.length > 0 &&
-      tracking?.utmCampaignValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmCampaignKey}=${tracking.utmCampaignValue}&`;
-    }
+  if (tracking && tracking.hasGoogleAnalyticsUtm) {
+    handlePair(tracking.utmSourceKey, tracking.utmSourceValue);
+    handlePair(tracking.utmMediumKey, tracking.utmMediumValue);
+    handlePair(tracking.utmCampaignKey, tracking.utmCampaignValue);
   }
 
-  return `${link}${paramsToAdd.slice(0, -1)}`;
+  if (freeFormParams.length > 0) {
+    const sep = hasUrlAlreadyParams(result) ? '&' : '?';
+    result = `${result}${sep}${freeFormParams.join('&')}`;
+  }
+  return result;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
