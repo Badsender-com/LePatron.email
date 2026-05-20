@@ -23,6 +23,7 @@ const {
 const {
   handleTrackingData,
   getMailByMailingIdAndUser,
+  resolveMailingTrackingContext,
 } = require('../../mailing/mailing.service.js');
 const processMosaicoHtmlRender = require('../../utils/process-mosaico-html-render.js');
 
@@ -343,9 +344,14 @@ class AdobeProvider {
 
     const mailing = await getMailByMailingIdAndUser({ mailingId, user });
 
+    const {
+      tracking,
+      groupTrackingConfig,
+    } = await resolveMailingTrackingContext(mailing);
     const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
       html,
-      tracking: mailing?._doc?.data?.tracking,
+      tracking,
+      groupTrackingConfig,
     });
 
     await this.saveDeliveryTemplate({
@@ -357,10 +363,11 @@ class AdobeProvider {
     return name;
   }
 
-  async sendAndProcessImageIntoAdobe({ html, tracking }) {
+  async sendAndProcessImageIntoAdobe({ html, tracking, groupTrackingConfig }) {
     const { html: htmlWithTracking } = handleTrackingData({
       html,
       tracking,
+      groupTrackingConfig,
     });
     const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
 

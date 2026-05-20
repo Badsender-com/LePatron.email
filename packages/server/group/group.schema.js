@@ -124,6 +124,18 @@ const GroupSchema = Schema(
       type: [String],
       default: [],
     },
+    // Tracking parameters (UTM) configurable per group
+    trackingConfig: {
+      enabled: { type: Boolean, default: false },
+      restrictValues: { type: Boolean, default: false },
+      params: [
+        {
+          key: { type: String, required: true, set: trimString },
+          values: { type: [String], default: [] },
+          required: { type: Boolean, default: false },
+        },
+      ],
+    },
     // Module activation settings
     enableEmailBuilder: {
       type: Boolean,

@@ -27,6 +27,10 @@ const {
   createHtmlNotice,
   getUrlWithTrackingParams,
 } = require('../utils/download-zip-markdown');
+const {
+  resolveTrackingConfig,
+  validateRequiredTrackingParams,
+} = require('../utils/resolve-tracking-config');
 
 const IMAGES_FOLDER = 'images';
 
@@ -74,6 +78,7 @@ module.exports = {
   getGroupByCompanyId,
   getMailNameAndCompanyByMailingIdAndUser,
   handleTrackingData,
+  resolveMailingTrackingContext,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -339,9 +344,14 @@ async function processHtmlWithFTPOption({
     );
   }
 
+  const {
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  } = await resolveMailingTrackingContext(mailing);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
-    tracking: mailing?._doc?.data?.tracking,
+    tracking: trackingCtx,
+    groupTrackingConfig,
   });
 
   const {
@@ -403,9 +413,14 @@ async function downloadZip({
 
   console.log('download zip', name);
 
+  const {
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  } = await resolveMailingTrackingContext(mailing);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
-    tracking: mailing?._doc?.data?.tracking,
+    tracking: trackingCtx,
+    groupTrackingConfig,
   });
 
   const {
@@ -586,9 +601,14 @@ async function downloadMultipleZip({
       downloadOptions,
     });
 
+    const {
+      tracking: trackingCtx,
+      groupTrackingConfig,
+    } = await resolveMailingTrackingContext(mailing);
     const { html: htmlWithTracking } = handleTrackingData({
       html: mailing.previewHtml,
-      tracking: mailing?._doc?.data?.tracking,
+      tracking: trackingCtx,
+      groupTrackingConfig,
     });
 
     const {
@@ -970,12 +990,43 @@ async function handleRelativeOrFtpImages({
   return { relativesImagesNames, archive, html };
 }
 
+// Resolve the tracking context for a mailing: fetch group + template, build
+// the merged config, and verify required params are filled. Throws 422 with
+// the missing keys when required params are missing.
+async function resolveMailingTrackingContext(mailing) {
+  const tracking =
+    mailing && mailing._doc && mailing._doc.data
+      ? mailing._doc.data.tracking
+      : undefined;
+  const template = mailing && mailing._wireframe;
+  const groupId =
+    (template && template._company) || (mailing && mailing._company);
+  const group = groupId ? await Groups.findById(groupId).lean() : null;
+  const groupTrackingConfig = resolveTrackingConfig(group, template);
+  const missingParams = validateRequiredTrackingParams(
+    tracking,
+    groupTrackingConfig
+  );
+  if (missingParams.length > 0) {
+    const err = new UnprocessableEntity(
+      ERROR_CODES.TRACKING_REQUIRED_PARAMS_MISSING
+    );
+    err.missingParams = missingParams;
+    throw err;
+  }
+  return { tracking, groupTrackingConfig };
+}
+
 // This will add tracking information in links
-function handleTrackingData({ html, tracking }) {
+function handleTrackingData({ html, tracking, groupTrackingConfig }) {
   const linksRegex = /(<a .*?) *(https?:[^"]+)(")/g;
 
   const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
-    const urlWithTrackingParams = getUrlWithTrackingParams(p2, tracking);
+    const urlWithTrackingParams = getUrlWithTrackingParams(
+      p2,
+      tracking,
+      groupTrackingConfig
+    );
     return `${p1}${urlWithTrackingParams}${p3}`;
   });
 
