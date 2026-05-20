@@ -22,6 +22,7 @@ module.exports = {
   read: asyncHandler(read),
   readMarkup: asyncHandler(readMarkup),
   update: asyncHandler(update),
+  updateTrackingConfig: asyncHandler(updateTrackingConfig),
   destroy: asyncHandler(destroy),
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
@@ -184,6 +185,21 @@ async function update(req, res) {
     select: 'id name',
   });
   res.json(responseTemplate);
+}
+
+/**
+ * @api {put} /templates/:templateId/tracking-config update template tracking config
+ * @apiPermission admin
+ * @apiName UpdateTemplateTrackingConfig
+ * @apiGroup Templates
+ */
+async function updateTrackingConfig(req, res) {
+  const { templateId } = req.params;
+  const template = await Templates.findById(templateId);
+  if (!template) throw new createError.NotFound();
+  template.trackingConfig = req.body || {};
+  await template.save();
+  res.json(template);
 }
 
 /**

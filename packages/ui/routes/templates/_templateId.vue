@@ -9,6 +9,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import * as sseHelpers from '~/helpers/server-sent-events.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsTemplateForm from '~/components/template/form.vue';
+import TemplateTrackingTab from '~/components/template/template-tracking-tab.vue';
 import { Trash2 } from 'lucide-vue';
 
 const UPDATE_AXIOS_CONFIG = Object.freeze({
@@ -20,6 +21,7 @@ export default {
   components: {
     BsPageHeader,
     BsTemplateForm,
+    TemplateTrackingTab,
     LucideTrash2: Trash2,
   },
   mixins: [mixinPageTitle],
@@ -223,6 +225,18 @@ export default {
     confirmDelete() {
       this.$refs.templateForm.confirmDelete();
     },
+
+    async refreshTemplate() {
+      const { $axios, $route } = this;
+      try {
+        const template = await $axios.$get(
+          apiRoutes.templatesItem($route.params)
+        );
+        this.template = template;
+      } catch (error) {
+        console.error('Failed to refresh template:', error);
+      }
+    },
   },
 };
 </script>
@@ -264,6 +278,19 @@ export default {
         @delete="onDelete"
         @deleteImages="onDeleteImages"
       />
+
+      <v-card v-if="template.id" flat tile class="mt-6">
+        <v-card-title>
+          {{ $t('trackingConfig.title') }}
+        </v-card-title>
+        <v-card-text>
+          <template-tracking-tab
+            :template="template"
+            :group-tracking-config="group && group.trackingConfig"
+            @update="refreshTemplate"
+          />
+        </v-card-text>
+      </v-card>
     </v-container>
   </div>
 </template>

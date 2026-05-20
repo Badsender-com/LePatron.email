@@ -5,7 +5,12 @@ const console = require('console');
 const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
-const { getErrorsForControlQuality, displayErrors } = require('../ext/badsender-control-quality');
+const {
+  getErrorsForControlQuality,
+  displayErrors,
+  checkRequiredTrackingParams,
+  displayTrackingError,
+} = require('../ext/badsender-control-quality');
 
 function getData(viewModel) {
   // gather meta
@@ -90,6 +95,18 @@ function loader(opts) {
 
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
+      // ====================================
+      // Block download if required tracking params are missing
+      const missingTracking = checkRequiredTrackingParams(viewModel);
+      if (missingTracking.length > 0) {
+        displayTrackingError(missingTracking, viewModel);
+        document.getElementById('main-wysiwyg-area').scrollTo({
+          behavior: 'smooth',
+          top: 0,
+        });
+        return;
+      }
+
       // ====================================
       // Check for missing input values
       const errors = getErrorsForControlQuality(viewModel);

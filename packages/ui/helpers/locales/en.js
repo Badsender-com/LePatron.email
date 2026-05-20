@@ -579,6 +579,35 @@ export default {
       assigned: 'Access',
     },
   },
+  trackingConfig: {
+    title: 'Configurable tracking',
+    description:
+      'Define UTM parameters automatically applied to every email in the group. Values defined here override any existing values in template links.',
+    enabled: 'Enable configurable tracking',
+    restrictValues:
+      'Restrict to the parameters below (disable free-form input in the builder)',
+    addParam: 'Add a parameter',
+    key: 'Key',
+    values: 'Allowed values',
+    valuesHint: 'e.g. newsletter, promo (comma-separated)',
+    required: 'Required',
+    empty: 'No tracking parameter defined',
+    overrideGroupTracking: 'Use template-specific configuration',
+    inheritedFromGroup: 'Inherited from group',
+    validation: {
+      emptyKey: 'Key is required',
+      duplicateKey: 'This key is duplicated',
+    },
+    snackbars: {
+      updated: 'Tracking configuration saved.',
+      error: 'An error occurred while saving.',
+    },
+    builder: {
+      requiredMissing: 'Required tracking parameters are missing',
+      requiredMissingDescription:
+        'Please fill in these parameters before downloading: {keys}',
+    },
+  },
   personalizedVariables: {
     title: 'Custom variables',
     description:
