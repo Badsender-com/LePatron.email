@@ -79,6 +79,9 @@ module.exports = {
         getAddParamText() {
           return vm.t('addParamText');
         },
+        getLockedTooltip() {
+          return vm.t('trackingGlobalParamLocked');
+        },
         updateHasGoogleAnalyticsUtm(newHasGoogleAnalyticsUtm) {
           this.hasGoogleAnalyticsUtm = newHasGoogleAnalyticsUtm;
         },
@@ -223,8 +226,18 @@ module.exports = {
                     @input="setManagedValue(row.key, $event.target.value)"
                   />
                 </div>
-                <!-- spacer to align with free-form rows that have a remove button -->
-                <span class="tracking-remove-placeholder" aria-hidden="true"></span>
+                <!-- Disabled remove button: same footprint as free-form rows
+                     so columns align, but greyed out + tooltip explaining the
+                     param is locked by the group config -->
+                <span
+                  class="tracking-remove-btn tracking-remove-btn--locked"
+                  :title="getLockedTooltip()"
+                  :aria-label="getLockedTooltip()"
+                  aria-disabled="true"
+                  role="img"
+                >
+                  <span class="lucide lucide-x"></span>
+                </span>
               </div>
             </div>
 

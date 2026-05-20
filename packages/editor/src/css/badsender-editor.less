@@ -796,14 +796,20 @@ body {
     }
   }
 
-  // Invisible placeholder in managed rows to reserve the column width occupied
-  // by the remove (×) button in free-form rows. Keeps the "=" sign aligned
-  // across both kinds of rows.
-  .tracking-remove-placeholder {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    display: inline-block;
+  // Disabled remove button on managed rows: visually present (greyed X) so
+  // the row alignment matches free-form rows, but not clickable. Tooltip
+  // explains why on hover.
+  .tracking-remove-btn--locked {
+    cursor: not-allowed;
+    color: rgba(0, 0, 0, 0.18);
+    pointer-events: auto; // allow tooltip on hover
+    background: none !important;
+
+    &:hover {
+      // keep the disabled look even on hover (no red, no bg change)
+      color: rgba(0, 0, 0, 0.28);
+      background: none !important;
+    }
   }
 
   .tracking-key-label {
