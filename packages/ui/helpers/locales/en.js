@@ -580,10 +580,10 @@ export default {
   },
   trackingConfig: {
     sidebarLabel: 'Tracking',
-    title: 'Configurable tracking',
+    title: 'Global tracking',
     description:
       'Define UTM parameters automatically applied to every email (global configuration). Values defined here override any existing values in template links.',
-    enabled: 'Enable configurable tracking',
+    enabled: 'Enable global tracking',
     restrictValues:
       'Restrict to the parameters below (disable free-form input in the builder)',
     addParam: 'Add a parameter',
