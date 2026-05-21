@@ -19,6 +19,7 @@ const {
   getProfileDetail,
 } = require('../../../vue/utils/apis');
 const axios = require('axios');
+const ko = require('knockout');
 
 const EspComponent = Vue.component('EspForm', {
   components: {
@@ -219,6 +220,9 @@ const EspComponent = Vue.component('EspForm', {
           type: this.fetchedProfile.type,
           contentSentType: this.fetchedProfile.contentSentType,
           campaignId: this.campaignId,
+          // Live tracking state from the builder — used by the backend to
+          // validate / rewrite UTMs without requiring a prior Save.
+          tracking: ko.toJS(this.vm.content().tracking),
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
             adobe: {

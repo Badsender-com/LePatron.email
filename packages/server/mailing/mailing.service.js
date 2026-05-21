@@ -362,6 +362,7 @@ async function processHtmlWithFTPOption({
   html,
   user,
   doesWaitForFtp,
+  freshTracking,
 }) {
   logger.log('Calling processHtmlWithFTPOption');
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
@@ -391,7 +392,7 @@ async function processHtmlWithFTPOption({
   const {
     tracking: trackingCtx,
     groupTrackingConfig,
-  } = await resolveMailingTrackingContext(mailing);
+  } = await resolveMailingTrackingContext(mailing, freshTracking);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
     tracking: trackingCtx,
@@ -435,6 +436,7 @@ async function downloadZip({
   archive,
   user,
   downloadOptions,
+  freshTracking,
 }) {
   if (!archive) {
     throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
@@ -460,7 +462,7 @@ async function downloadZip({
   const {
     tracking: trackingCtx,
     groupTrackingConfig,
-  } = await resolveMailingTrackingContext(mailing);
+  } = await resolveMailingTrackingContext(mailing, freshTracking);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
     tracking: trackingCtx,
@@ -1037,11 +1039,21 @@ async function handleRelativeOrFtpImages({
 // Resolve the tracking context for a mailing: fetch group + template, build
 // the merged config, and verify required params are filled. Throws 422 with
 // the missing keys when required params are missing.
-async function resolveMailingTrackingContext(mailing) {
-  const tracking =
+//
+// `freshTracking` (optional) — when the caller has a more recent tracking
+// state than what's persisted in mailing.data.tracking (typically the values
+// just typed in the builder, not yet saved), pass it here. Otherwise we fall
+// back to the persisted value. This avoids forcing users to "Save" before
+// every Download / ESP send when they've just filled a required field.
+async function resolveMailingTrackingContext(mailing, freshTracking) {
+  const persistedTracking =
     mailing && mailing._doc && mailing._doc.data
       ? mailing._doc.data.tracking
       : undefined;
+  const tracking =
+    freshTracking !== undefined && freshTracking !== null
+      ? freshTracking
+      : persistedTracking;
   const template = mailing && mailing._wireframe;
   const groupId =
     (template && template._company) || (mailing && mailing._company);

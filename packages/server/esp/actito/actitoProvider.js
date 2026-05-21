@@ -344,7 +344,13 @@ class ActitoProvider {
     }
   }
 
-  async createCampaignMail({ campaignMailData, html, user, mailingId }) {
+  async createCampaignMail({
+    campaignMailData,
+    html,
+    user,
+    mailingId,
+    freshTracking,
+  }) {
     const headerAccess = await this.getHeaderAccess();
 
     // Routing entity for URL path (brand-specific sending configuration)
@@ -358,6 +364,7 @@ class ActitoProvider {
       user,
       mailingId,
       routingEntity,
+      freshTracking,
       mailCampaignApi: async (data) =>
         axios.post(
           `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/`,
@@ -377,6 +384,7 @@ class ActitoProvider {
     user,
     mailingId,
     campaignId,
+    freshTracking,
   }) {
     const headerAccess = await this.getHeaderAccess();
 
@@ -391,6 +399,7 @@ class ActitoProvider {
       user,
       mailingId,
       routingEntity,
+      freshTracking,
       mailCampaignApi: async (data) =>
         axios.put(
           `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}`,
@@ -410,6 +419,7 @@ class ActitoProvider {
     mailingId,
     routingEntity,
     mailCampaignApi,
+    freshTracking,
     isEdit = false,
   }) {
     let campaignId;
@@ -436,6 +446,7 @@ class ActitoProvider {
         html,
         user,
         mailingId,
+        freshTracking,
       });
 
       let mailCampaignApiData = {
@@ -510,7 +521,13 @@ class ActitoProvider {
     }
   }
 
-  async formatActitoData({ campaignMailData, user, html, mailingId }) {
+  async formatActitoData({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       const archive = archiver('zip');
       const downloadOptions = {
@@ -526,6 +543,7 @@ class ActitoProvider {
         archive,
         downloadOptions,
         mailingId,
+        freshTracking,
       });
 
       const {

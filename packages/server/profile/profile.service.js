@@ -44,13 +44,19 @@ module.exports = {
  * downloadZip (Brevo, Actito, DSC) or directly through resolveMailingTrackingContext
  * (Adobe) — that's defense in depth, the redundancy is intentional and cheap.
  */
-async function assertRequiredTrackingParamsFilled({ mailingId, user }) {
+async function assertRequiredTrackingParamsFilled({
+  mailingId,
+  user,
+  freshTracking,
+}) {
   const mailing = await mailingService.getMailByMailingIdAndUser({
     mailingId,
     user,
   });
-  // resolveMailingTrackingContext throws 422 itself when params are missing
-  await mailingService.resolveMailingTrackingContext(mailing);
+  // resolveMailingTrackingContext throws 422 itself when params are missing.
+  // Pass freshTracking when available so we validate the live builder state
+  // instead of the (possibly stale) persisted mailing.data.tracking.
+  await mailingService.resolveMailingTrackingContext(mailing, freshTracking);
 }
 
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
@@ -190,10 +196,11 @@ async function updateEspCampaign({
   mailingId,
   campaignId,
   type,
+  freshTracking,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user });
+  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 
   const {
@@ -274,10 +281,11 @@ async function sendEspCampaign({
   html,
   mailingId,
   type,
+  freshTracking,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
   // Block ESP export when required group/template tracking params are missing
-  await assertRequiredTrackingParamsFilled({ mailingId, user });
+  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 
   /*
