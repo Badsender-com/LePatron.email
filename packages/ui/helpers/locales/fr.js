@@ -615,6 +615,15 @@ export default {
       requiredMissingDescription:
         'Veuillez renseigner ces paramètres avant de télécharger : {keys}',
     },
+    templates: {
+      sectionTitle: 'Tracking spécifique par template',
+      sectionDescription:
+        'Vous pouvez surcharger ou compléter la configuration ci-dessus pour chaque template du groupe.',
+      empty: 'Aucun template dans ce groupe.',
+      statusInherits: 'Hérite de la configuration du groupe',
+      statusMerge: 'Configuration complémentaire au groupe',
+      statusOverride: 'Configuration spécifique (remplace le groupe)',
+    },
   },
   personalizedVariables: {
     title: 'Variables personnalisées',

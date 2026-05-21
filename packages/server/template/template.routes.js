@@ -5,7 +5,11 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
+} = require('../account/auth.guard.js');
 const templates = require('./template.controller.js');
 
 /// ///
@@ -18,9 +22,13 @@ router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
 router.get('/:templateId/events', GUARD_ADMIN, templates.previewEvents);
 router.delete('/:templateId/images', GUARD_ADMIN, templates.destroyImages);
 router.delete('/:templateId', GUARD_ADMIN, templates.destroy);
+// Tracking config is editable by group admins of the template's company
+// (not only super admins as for the rest of the template edition flow).
+// The controller enforces that constraint by checking req.user against
+// template._company.
 router.put(
   '/:templateId/tracking-config',
-  GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
   templates.updateTrackingConfig
 );
 router.put('/:templateId', GUARD_ADMIN, templates.update);

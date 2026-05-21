@@ -189,14 +189,24 @@ async function update(req, res) {
 
 /**
  * @api {put} /templates/:templateId/tracking-config update template tracking config
- * @apiPermission admin
+ * @apiPermission group-admin (own group only) or super-admin
  * @apiName UpdateTemplateTrackingConfig
  * @apiGroup Templates
  */
 async function updateTrackingConfig(req, res) {
   const { templateId } = req.params;
+  const { user } = req;
   const template = await Templates.findById(templateId);
   if (!template) throw new createError.NotFound();
+  // Group admins can only edit tracking config for templates of their own
+  // company. Super admins (isAdmin) can edit any template.
+  if (!user.isAdmin) {
+    const templateCompanyId = template._company && template._company.toString();
+    const userCompanyId = user.group && user.group.id;
+    if (!templateCompanyId || templateCompanyId !== userCompanyId) {
+      throw new createError.Forbidden();
+    }
+  }
   template.trackingConfig = req.body || {};
   await template.save();
   res.json(template);
