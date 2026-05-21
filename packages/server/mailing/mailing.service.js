@@ -345,7 +345,18 @@ async function createMailing(mailing) {
   return Mailings.create(mailing);
 }
 
-// Process html to the final result state based on ftp
+// Process html to the final result state based on ftp.
+//
+// IMPORTANT — central hub for HTML pre-processing on the export path:
+//   - Brevo / Sendinblue → sendinBlueProvider.formatSendinBlueData
+//   - DSC                → dscProvider.formatDscData
+// Both providers call this function (and so does `downloadZip` below, used by
+// the ZIP download AND by actitoProvider.formatActitoData). As a result, the
+// tracking pipeline (resolveMailingTrackingContext + handleTrackingData with
+// the groupTrackingConfig) is automatically applied to those ESPs as well —
+// no per-provider call is needed. Adobe is the exception: it bypasses this
+// function and applies handleTrackingData directly because it has to upload
+// images into Adobe Campaign (see adobeProvider.sendAndProcessImageIntoAdobe).
 async function processHtmlWithFTPOption({
   mailingId,
   html,

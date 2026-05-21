@@ -37,9 +37,12 @@ module.exports = {
 /**
  * Throws 422 (TRACKING_REQUIRED_PARAMS_MISSING + missingParams[]) when the
  * resolved tracking config of the mailing has required keys without a value.
- * Used as a gate before any ESP export entry point. The HTML transformation
- * itself is currently only applied by Adobe — other ESPs (Sendinblue, Actito,
- * DSC) send raw HTML; this gate prevents incomplete UTM data from leaking.
+ *
+ * Acts as an early upstream gate before any ESP export entry point so we fail
+ * BEFORE making any API call to the provider. The same validation also runs
+ * downstream when each provider goes through mailingService.processHtmlWithFTPOption /
+ * downloadZip (Brevo, Actito, DSC) or directly through resolveMailingTrackingContext
+ * (Adobe) — that's defense in depth, the redundancy is intentional and cheap.
  */
 async function assertRequiredTrackingParamsFilled({ mailingId, user }) {
   const mailing = await mailingService.getMailByMailingIdAndUser({
