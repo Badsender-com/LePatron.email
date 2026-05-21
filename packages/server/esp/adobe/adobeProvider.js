@@ -363,6 +363,15 @@ class AdobeProvider {
     return name;
   }
 
+  // Adobe pipeline diverges from the other ESPs: it does NOT call
+  // mailingService.processHtmlWithFTPOption (which is the hub where Brevo,
+  // DSC and Actito get their tracking applied). The reason is the image
+  // handling — Adobe Campaign requires each image to be uploaded via SOAP
+  // and the <img src> rewritten to internal Adobe references (see the
+  // upload/save/publish block below). So we apply handleTrackingData directly
+  // here. The `groupTrackingConfig` argument carries the resolved
+  // group→template merge so the UTM keys defined at the group level are
+  // injected (and override stale values already present in the link).
   async sendAndProcessImageIntoAdobe({ html, tracking, groupTrackingConfig }) {
     const { html: htmlWithTracking } = handleTrackingData({
       html,
