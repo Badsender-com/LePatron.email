@@ -1033,12 +1033,22 @@ function handleTrackingData({ html, tracking, groupTrackingConfig }) {
   const linksRegex = /(<a .*?) *(https?:[^"]+)(")/g;
 
   const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
-    const urlWithTrackingParams = getUrlWithTrackingParams(
-      p2,
+    // The browser's outerHTML serializer encodes `&` to `&amp;` inside
+    // attribute values. Without decoding, the regex-based upsert in
+    // getUrlWithTrackingParams cannot recognise existing `&key=` params
+    // (it sees `;key=` after the `&amp;` entity), so the param gets
+    // appended instead of replaced → duplicates like
+    // `?utm_medium=stale&...&utm_medium=email`. Decode before processing,
+    // re-encode after so the HTML stays valid until processMosaicoHtmlRender
+    // does its own decode pass.
+    const decoded = p2.replace(/&amp;/g, '&');
+    const processed = getUrlWithTrackingParams(
+      decoded,
       tracking,
       groupTrackingConfig
     );
-    return `${p1}${urlWithTrackingParams}${p3}`;
+    const reencoded = processed.replace(/&/g, '&amp;');
+    return `${p1}${reencoded}${p3}`;
   });
 
   return { html: htmlWithTracking };
