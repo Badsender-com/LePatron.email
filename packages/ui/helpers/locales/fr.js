@@ -589,10 +589,10 @@ export default {
   },
   trackingConfig: {
     sidebarLabel: 'Tracking',
-    title: 'Tracking paramétrable',
+    title: 'Tracking global',
     description:
       'Définissez les paramètres UTM appliqués automatiquement à tous les emails (configuration globale). Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
-    enabled: 'Activer le tracking paramétrable',
+    enabled: 'Activer le tracking global',
     restrictValues:
       'Limiter aux paramètres ci-dessous (désactiver la saisie libre dans le builder)',
     addParam: 'Ajouter un paramètre',
