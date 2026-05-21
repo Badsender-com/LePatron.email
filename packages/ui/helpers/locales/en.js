@@ -583,7 +583,7 @@ export default {
     sidebarLabel: 'Tracking',
     title: 'Configurable tracking',
     description:
-      'Define UTM parameters automatically applied to every email in the group. Values defined here override any existing values in template links.',
+      'Define UTM parameters automatically applied to every email (global configuration). Values defined here override any existing values in template links.',
     enabled: 'Enable configurable tracking',
     restrictValues:
       'Restrict to the parameters below (disable free-form input in the builder)',
@@ -593,18 +593,18 @@ export default {
     valuesHint: 'e.g. newsletter, promo (comma-separated)',
     required: 'Required',
     empty: 'No tracking parameter defined',
-    inheritedFromGroup: 'Inherited from group',
+    inheritedFromGroup: 'Inherited from the global configuration',
     cascade: {
       label: 'Tracking configuration for this template',
-      inherit: 'Inherit from the group configuration',
+      inherit: 'Inherit from the global configuration',
       inheritDescription:
-        'The parameters defined at the group level apply as-is.',
+        'The parameters defined at the global level apply as-is.',
       extend: 'Inherit and add template-specific parameters',
       extendDescription:
-        'Group parameters stay active; the ones added below extend them (or override on key conflict).',
-      replace: 'Fully replace with a template-specific configuration',
+        'Global parameters stay active; the ones added below extend them (or override on key conflict).',
+      replace: 'Replace the global configuration with a template-specific one',
       replaceDescription:
-        'Only the parameters defined below apply; the group configuration is ignored.',
+        'Only the parameters defined below apply; the global configuration is ignored.',
     },
     validation: {
       emptyKey: 'Key is required',
@@ -622,11 +622,11 @@ export default {
     templates: {
       sectionTitle: 'Per-template tracking overrides',
       sectionDescription:
-        'You can override or extend the configuration above for each template in this group.',
-      empty: 'No template in this group.',
-      statusInherits: 'Inherits from the group configuration',
-      statusMerge: 'Extends the group configuration',
-      statusOverride: 'Specific configuration (overrides the group)',
+        'You can override or extend the global configuration above for each template.',
+      empty: 'No template available.',
+      statusInherits: 'Inherits from the global configuration',
+      statusMerge: 'Extends the global configuration',
+      statusOverride: 'Specific configuration (overrides the global configuration)',
     },
   },
   personalizedVariables: {

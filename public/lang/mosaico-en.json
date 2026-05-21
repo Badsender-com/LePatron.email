@@ -106,5 +106,5 @@
   "trackingRequiredDescription": "Please fill in these parameters before downloading:",
   "trackingRequiredClose": "Close",
   "trackingGlobalParamLocked": "Global tracking parameter — cannot be removed",
-  "trackingOverrideBehavior": "Parameters defined by the group tracking config override any value already present in the links. Parameters added manually here are only inserted if the key is not already in the link."
+  "trackingOverrideBehavior": "Parameters defined by the global tracking configuration override any value already present in the links. Parameters added manually here are only inserted if the key is not already in the link."
 }

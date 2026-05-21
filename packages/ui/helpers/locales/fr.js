@@ -591,7 +591,7 @@ export default {
     sidebarLabel: 'Tracking',
     title: 'Tracking paramétrable',
     description:
-      'Définissez les paramètres UTM appliqués automatiquement à tous les emails du groupe. Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
+      'Définissez les paramètres UTM appliqués automatiquement à tous les emails (configuration globale). Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
     enabled: 'Activer le tracking paramétrable',
     restrictValues:
       'Limiter aux paramètres ci-dessous (désactiver la saisie libre dans le builder)',
@@ -601,18 +601,18 @@ export default {
     valuesHint: 'ex : newsletter, promo (séparés par des virgules)',
     required: 'Obligatoire',
     empty: 'Aucun paramètre de tracking défini',
-    inheritedFromGroup: 'Hérité du groupe',
+    inheritedFromGroup: 'Hérité de la configuration globale',
     cascade: {
       label: 'Configuration du tracking pour ce template',
-      inherit: 'Hériter de la configuration du groupe',
+      inherit: 'Hériter de la configuration globale',
       inheritDescription:
-        'Les paramètres définis au niveau du groupe s\'appliquent tels quels.',
+        'Les paramètres définis au niveau global s\'appliquent tels quels.',
       extend: 'Hériter et ajouter des paramètres spécifiques',
       extendDescription:
-        'Les paramètres du groupe restent actifs ; ceux ajoutés ci-dessous viennent les compléter (ou les remplacer pour une clé en conflit).',
-      replace: 'Remplacer entièrement par une configuration spécifique',
+        'Les paramètres globaux restent actifs ; ceux ajoutés ci-dessous viennent les compléter (ou les remplacer pour une clé en conflit).',
+      replace: 'Remplacer la configuration globale par une configuration spécifique',
       replaceDescription:
-        'Seuls les paramètres définis ci-dessous sont appliqués ; la configuration du groupe est ignorée.',
+        'Seuls les paramètres définis ci-dessous sont appliqués ; la configuration globale est ignorée.',
     },
     validation: {
       emptyKey: 'La clé est requise',
@@ -630,11 +630,11 @@ export default {
     templates: {
       sectionTitle: 'Tracking spécifique par template',
       sectionDescription:
-        'Vous pouvez surcharger ou compléter la configuration ci-dessus pour chaque template du groupe.',
-      empty: 'Aucun template dans ce groupe.',
-      statusInherits: 'Hérite de la configuration du groupe',
-      statusMerge: 'Configuration complémentaire au groupe',
-      statusOverride: 'Configuration spécifique (remplace le groupe)',
+        'Vous pouvez surcharger ou compléter la configuration globale ci-dessus pour chaque template.',
+      empty: 'Aucun template disponible.',
+      statusInherits: 'Hérite de la configuration globale',
+      statusMerge: 'Configuration complémentaire à la configuration globale',
+      statusOverride: 'Configuration spécifique (remplace la configuration globale)',
     },
   },
   personalizedVariables: {
