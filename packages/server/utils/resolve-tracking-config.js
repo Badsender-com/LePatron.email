@@ -17,9 +17,14 @@ function resolveTrackingConfig(group, template) {
   const groupCfg = normalize(group && group.trackingConfig);
   const wfCfg = normalize(template && template.trackingConfig);
 
-  // Template explicitly opts out of inheritance
+  // Template explicitly opts out of inheritance (mode "replace").
+  // We force restrictValues=true here because the semantics of "replace" is
+  // "only my params apply" — any stray free-form value previously saved
+  // (e.g. legacy utm_source/utm_medium from when the group config applied)
+  // would otherwise leak back into the builder as free-form params.
   if (wfCfg && wfCfg.overrideGroupTracking) {
-    return wfCfg.enabled ? toResolved(wfCfg) : null;
+    if (!wfCfg.enabled) return null;
+    return { ...toResolved(wfCfg), restrictValues: true };
   }
 
   // No group config or it's disabled → fall back to template (if enabled)

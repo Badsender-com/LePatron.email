@@ -74,6 +74,27 @@ describe('resolveTrackingConfig', () => {
       expect(result.params[0].key).toBe('utm_medium');
     });
 
+    it('forces restrictValues=true in "replace" mode to avoid stale free-form params', () => {
+      // Even if the template config has restrictValues=false explicitly,
+      // the resolver must return restrictValues=true so the builder filters
+      // out any leftover trackingUrls saved before the override was set.
+      const result = resolveTrackingConfig(
+        group({
+          enabled: true,
+          params: [{ key: 'utm_source' }, { key: 'utm_medium' }],
+        }),
+        template({
+          overrideGroupTracking: true,
+          enabled: true,
+          restrictValues: false,
+          params: [{ key: 'utm_template_only', required: true }],
+        })
+      );
+      expect(result.restrictValues).toBe(true);
+      expect(result.params).toHaveLength(1);
+      expect(result.params[0].key).toBe('utm_template_only');
+    });
+
     it('returns null when override is on but template is disabled', () => {
       const result = resolveTrackingConfig(
         group({
