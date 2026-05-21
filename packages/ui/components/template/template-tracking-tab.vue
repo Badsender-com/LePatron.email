@@ -384,7 +384,7 @@ export default {
     margin-top: 0;
     margin-bottom: 16px;
 
-    /deep/ legend.v-label {
+    ::v-deep legend.v-label {
       font-size: 11px;
       font-weight: 600;
       color: rgba(0, 0, 0, 0.6);
@@ -393,7 +393,7 @@ export default {
       margin-bottom: 8px;
     }
 
-    /deep/ .v-radio {
+    ::v-deep .v-radio {
       margin-bottom: 8px;
       align-items: flex-start;
     }
