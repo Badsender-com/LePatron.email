@@ -202,18 +202,11 @@ const EspComponent = Vue.component('EspForm', {
       if (!this.vm?.metadata?.url?.sendCampaignMail) {
         return;
       }
-
-      // Pre-flight: block when required group/template tracking params are
-      // empty. Reads the live KO state (vm.content().tracking().trackingUrls)
-      // so it works even if the user hasn't clicked "Save" since editing.
-      // The backend re-checks the same on its side (cf.
-      // profile.service.assertRequiredTrackingParamsFilled) — defense in depth.
-      const missingTracking = checkRequiredTrackingParams(this.vm);
-      if (missingTracking.length > 0) {
-        this.closeModal();
-        displayTrackingError(missingTracking, this.vm);
-        return;
-      }
+      // Tracking pre-check is done in handleProfileSelect, before this modal
+      // opens. The backend also re-validates (profile.service
+      // .assertRequiredTrackingParamsFilled). No need to re-check here: the
+      // tracking panel isn't accessible while this modal is open, so the
+      // state cannot have drifted.
 
       this.isLoadingExport = true;
       const unprocessedHtml = this.vm.exportHTML();
