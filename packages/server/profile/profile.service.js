@@ -34,6 +34,22 @@ module.exports = {
   getAdobeDeliveries,
 };
 
+/**
+ * Throws 422 (TRACKING_REQUIRED_PARAMS_MISSING + missingParams[]) when the
+ * resolved tracking config of the mailing has required keys without a value.
+ * Used as a gate before any ESP export entry point. The HTML transformation
+ * itself is currently only applied by Adobe — other ESPs (Sendinblue, Actito,
+ * DSC) send raw HTML; this gate prevents incomplete UTM data from leaking.
+ */
+async function assertRequiredTrackingParamsFilled({ mailingId, user }) {
+  const mailing = await mailingService.getMailByMailingIdAndUser({
+    mailingId,
+    user,
+  });
+  // resolveMailingTrackingContext throws 422 itself when params are missing
+  await mailingService.resolveMailingTrackingContext(mailing);
+}
+
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   const profile = await findOne(profileId);
   if (!user.isAdmin) {
@@ -173,6 +189,8 @@ async function updateEspCampaign({
   type,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
+  // Block ESP export when required group/template tracking params are missing
+  await assertRequiredTrackingParamsFilled({ mailingId, user });
   const profile = await findOne(profileId);
 
   const {
@@ -255,6 +273,8 @@ async function sendEspCampaign({
   type,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
+  // Block ESP export when required group/template tracking params are missing
+  await assertRequiredTrackingParamsFilled({ mailingId, user });
   const profile = await findOne(profileId);
 
   /*
