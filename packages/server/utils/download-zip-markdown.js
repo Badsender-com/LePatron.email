@@ -123,7 +123,16 @@ const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
       // Group-controlled key: override the value in the link (or insert if missing)
       result = upsertUrlParam(result, key, value);
     } else if (!link.includes(key)) {
-      // Free-form param: legacy "skip if already present" behaviour
+      // Free-form param: "skip if already present" — inherited from the
+      // original tracking implementation (PR #668, commit 3cc1c00a, Feb 2023).
+      // No tests, no comment in the original code documents this intent — it
+      // looks more like a defensive "don't duplicate" guard than a deliberate
+      // product decision. Result: a free-form key that already exists in the
+      // link is silently ignored on export, which can surprise users.
+      //
+      // TODO(product): confirm whether free-form params should also OVERRIDE
+      // existing values (like managed params do above) for consistency.
+      // Decision pending — see PO note in the tracking-per-company ticket.
       freeFormParams.push(`${key}=${value}`);
     }
   };
