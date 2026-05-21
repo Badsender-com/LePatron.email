@@ -40,7 +40,10 @@ async function downloadZip(req, res, next) {
 
   const { user, body } = req;
   const { mailingId } = req.params;
-  const { html, ...downloadOptions } = body;
+  // `tracking` carries the freshly-typed values from the builder, not yet
+  // persisted in mailing.data.tracking. We forward it to the service so the
+  // tracking validation/rewriting uses the latest state.
+  const { html, tracking, ...downloadOptions } = body;
   const archive = archiver('zip');
   archive.on('error', next);
 
@@ -54,6 +57,7 @@ async function downloadZip(req, res, next) {
       archive,
       downloadOptions,
       mailingId,
+      freshTracking: tracking,
     });
 
     archive.on('end', () => {

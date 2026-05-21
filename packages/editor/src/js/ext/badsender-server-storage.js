@@ -134,6 +134,10 @@ function loader(opts) {
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
+          // Send the live tracking state from the builder so the backend
+          // validates / rewrites against the latest values rather than the
+          // last saved snapshot in mailing.data.tracking.
+          tracking: ko.toJS(viewModel.content().tracking),
         }),
         xhrFields: { responseType: 'blob' },
         success: function(blob) {

@@ -333,13 +333,31 @@ class AdobeProvider {
     });
   }
 
-  async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async updateCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     // The logic to update and create is the same because the SOAP request that we do
     // for Adobe is an upsert
-    await this.createCampaignMail({ campaignMailData, user, html, mailingId });
+    await this.createCampaignMail({
+      campaignMailData,
+      user,
+      html,
+      mailingId,
+      freshTracking,
+    });
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     const { name, adobe } = campaignMailData;
 
     const mailing = await getMailByMailingIdAndUser({ mailingId, user });
@@ -347,7 +365,7 @@ class AdobeProvider {
     const {
       tracking,
       groupTrackingConfig,
-    } = await resolveMailingTrackingContext(mailing);
+    } = await resolveMailingTrackingContext(mailing, freshTracking);
     const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
       html,
       tracking,

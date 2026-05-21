@@ -288,6 +288,7 @@ async function sendCampaignMail(req, res) {
     type,
     actionType,
     campaignId,
+    tracking,
   } = body;
 
   if (actionType === MODE_TYPE.EDIT && !campaignId) {
@@ -304,6 +305,9 @@ async function sendCampaignMail(req, res) {
     html,
     mailingId,
     type,
+    // Live tracking state from the builder — bypasses mailing.data.tracking
+    // (which might be stale if the user hasn't clicked Save since editing).
+    freshTracking: tracking,
   };
 
   try {
