@@ -106,5 +106,5 @@
   "trackingRequiredDescription": "Merci de renseigner ces paramètres avant de télécharger :",
   "trackingRequiredClose": "Fermer",
   "trackingGlobalParamLocked": "Paramètre de tracking global, vous ne pouvez pas le supprimer",
-  "trackingOverrideBehavior": "Les paramètres définis par la configuration de tracking du groupe écrasent les valeurs déjà présentes dans les liens. Les paramètres ajoutés manuellement ici ne sont ajoutés que s'ils n'existent pas déjà dans le lien."
+  "trackingOverrideBehavior": "Les paramètres définis par la configuration globale du tracking écrasent les valeurs déjà présentes dans les liens. Les paramètres ajoutés manuellement ici ne sont ajoutés que s'ils n'existent pas déjà dans le lien."
 }
