@@ -74,10 +74,11 @@ describe('resolveTrackingConfig', () => {
       expect(result.params[0].key).toBe('utm_medium');
     });
 
-    it('forces restrictValues=true in "replace" mode to avoid stale free-form params', () => {
-      // Even if the template config has restrictValues=false explicitly,
-      // the resolver must return restrictValues=true so the builder filters
-      // out any leftover trackingUrls saved before the override was set.
+    it('preserves the template restrictValues choice in "replace" mode', () => {
+      // The two dimensions (override + restrictValues) are independent by
+      // design: legitimate workflows include "replace globally but still
+      // allow free-form additions". Historical trackingUrls residuals from
+      // a previous config are intentionally preserved (cf. resolver doc).
       const result = resolveTrackingConfig(
         group({
           enabled: true,
@@ -90,7 +91,7 @@ describe('resolveTrackingConfig', () => {
           params: [{ key: 'utm_template_only', required: true }],
         })
       );
-      expect(result.restrictValues).toBe(true);
+      expect(result.restrictValues).toBe(false);
       expect(result.params).toHaveLength(1);
       expect(result.params[0].key).toBe('utm_template_only');
     });

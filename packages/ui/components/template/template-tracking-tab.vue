@@ -237,11 +237,7 @@ export default {
       </v-radio>
     </v-radio-group>
 
-    <!-- In "replace" mode, restrictValues is implicit and forced server-side
-         to true (so stale free-form params from a previous global config can't
-         leak back into the builder). Hide the switch to avoid confusion. -->
     <v-switch
-      v-if="cascadeMode !== 'replace'"
       :input-value="localConfig.restrictValues"
       :label="$t('trackingConfig.restrictValues')"
       :disabled="!localConfig.enabled"
