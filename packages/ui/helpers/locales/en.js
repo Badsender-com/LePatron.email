@@ -608,6 +608,15 @@ export default {
       requiredMissingDescription:
         'Please fill in these parameters before downloading: {keys}',
     },
+    templates: {
+      sectionTitle: 'Per-template tracking overrides',
+      sectionDescription:
+        'You can override or extend the configuration above for each template in this group.',
+      empty: 'No template in this group.',
+      statusInherits: 'Inherits from the group configuration',
+      statusMerge: 'Extends the group configuration',
+      statusOverride: 'Specific configuration (overrides the group)',
+    },
   },
   personalizedVariables: {
     title: 'Custom variables',

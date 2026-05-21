@@ -123,6 +123,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     updatedAt: 1,
     _company: 1,
     assets: 1,
+    trackingConfig: 1,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })
