@@ -159,6 +159,16 @@ const EspComponent = Vue.component('EspForm', {
         });
     },
     handleProfileSelect(profile) {
+      // Pre-flight: block BEFORE the ESP form opens so the user doesn't fill
+      // in campaign details (subject, name, etc.) only to be told the tracking
+      // is incomplete. Reads the live KO state — works even if no save has
+      // happened since editing. Backend re-checks the same in
+      // profile.service.assertRequiredTrackingParamsFilled (defense in depth).
+      const missingTracking = checkRequiredTrackingParams(this.vm);
+      if (missingTracking.length > 0) {
+        displayTrackingError(missingTracking, this.vm);
+        return;
+      }
       this.selectedProfile = profile;
       this.fetchData().then(() => {
         this.checkIfAlreadySendMailWithProfile();
