@@ -555,6 +555,7 @@ export default {
         },
       ],
       footerCta: 'Prêt à piloter votre performance ?',
+      screenshotAlt: 'Aperçu CRM Intelligence',
     },
     errors: {
       loadFailed: 'Impossible de charger le tableau de bord.',
