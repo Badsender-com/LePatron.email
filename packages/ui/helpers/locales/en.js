@@ -550,6 +550,7 @@ export default {
         },
       ],
       footerCta: 'Ready to drive your performance?',
+      screenshotAlt: 'CRM Intelligence Preview',
     },
     errors: {
       loadFailed: 'Unable to load the dashboard.',

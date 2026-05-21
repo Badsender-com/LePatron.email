@@ -59,6 +59,7 @@ export default {
     selectedDashboard: null,
     embedUrl: null,
     loadingEmbed: false,
+    screenshotAvailable: true,
   }),
   computed: {
     title() {
@@ -97,6 +98,10 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
+    onScreenshotError() {
+      this.screenshotAvailable = false;
+    },
 
     async refreshEmbed() {
       if (this.selectedDashboard) {
@@ -141,7 +146,20 @@ export default {
     :cta-label="$t('crmIntelligence.marketing.ctaPrimary')"
     :cta-url="contactUrl"
     :footer-cta="$t('crmIntelligence.marketing.footerCta')"
-  />
+  >
+    <template v-if="screenshotAvailable" #extra-section>
+      <section class="screenshot-section">
+        <div class="screenshot-wrapper">
+          <img
+            src="/img/marketing/crm-intelligence-screenshot.png"
+            :alt="$t('crmIntelligence.marketing.screenshotAlt')"
+            class="screenshot-image"
+            @error="onScreenshotError"
+          >
+        </div>
+      </section>
+    </template>
+  </bs-marketing-landing-page>
 
   <!-- Single dashboard: full width, no module-specific sidebar -->
   <div v-else-if="isEnabled && !hasMultipleDashboards" class="crm-fullwidth">
@@ -191,6 +209,26 @@ export default {
 </template>
 
 <style scoped>
+.screenshot-section {
+  padding: 40px 24px;
+  background: var(--v-background-base, #fff);
+}
+
+.screenshot-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.screenshot-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* Dashboard views */
 .crm-fullwidth {
   margin-left: 56px;
