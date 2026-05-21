@@ -593,8 +593,19 @@ export default {
     valuesHint: 'e.g. newsletter, promo (comma-separated)',
     required: 'Required',
     empty: 'No tracking parameter defined',
-    overrideGroupTracking: 'Use template-specific configuration',
     inheritedFromGroup: 'Inherited from group',
+    cascade: {
+      label: 'Tracking configuration for this template',
+      inherit: 'Inherit from the group configuration',
+      inheritDescription:
+        'The parameters defined at the group level apply as-is.',
+      extend: 'Inherit and add template-specific parameters',
+      extendDescription:
+        'Group parameters stay active; the ones added below extend them (or override on key conflict).',
+      replace: 'Fully replace with a template-specific configuration',
+      replaceDescription:
+        'Only the parameters defined below apply; the group configuration is ignored.',
+    },
     validation: {
       emptyKey: 'Key is required',
       duplicateKey: 'This key is duplicated',

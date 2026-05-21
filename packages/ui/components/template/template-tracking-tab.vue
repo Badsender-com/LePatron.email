@@ -35,6 +35,29 @@ export default {
     };
   },
   computed: {
+    // Map the two persisted booleans (overrideGroupTracking + enabled) to a
+    // single 3-way mode: easier to reason about UX-side. Backend storage is
+    // unchanged; the setter writes both booleans according to the chosen mode.
+    cascadeMode: {
+      get() {
+        const cfg = this.localConfig || {};
+        if (cfg.enabled && cfg.overrideGroupTracking) return 'replace';
+        if (cfg.enabled) return 'extend';
+        return 'inherit';
+      },
+      set(mode) {
+        if (mode === 'inherit') {
+          this.localConfig.enabled = false;
+          this.localConfig.overrideGroupTracking = false;
+        } else if (mode === 'extend') {
+          this.localConfig.enabled = true;
+          this.localConfig.overrideGroupTracking = false;
+        } else if (mode === 'replace') {
+          this.localConfig.enabled = true;
+          this.localConfig.overrideGroupTracking = true;
+        }
+      },
+    },
     duplicateKeys() {
       const counts = {};
       (this.localConfig.params || []).forEach((p) => {
@@ -81,12 +104,6 @@ export default {
       this.valuesInputs = (this.localConfig.params || []).map((p) =>
         (p.values || []).join(', ')
       );
-    },
-    onOverrideChange(value) {
-      this.localConfig.overrideGroupTracking = Boolean(value);
-    },
-    onEnabledChange(value) {
-      this.localConfig.enabled = Boolean(value);
     },
     onRestrictValuesChange(value) {
       this.localConfig.restrictValues = Boolean(value);
@@ -176,24 +193,50 @@ export default {
       </div>
     </div>
 
-    <v-switch
-      :input-value="localConfig.overrideGroupTracking"
-      :label="$t('trackingConfig.overrideGroupTracking')"
-      color="accent"
-      inset
+    <v-radio-group
+      v-model="cascadeMode"
+      class="template-tracking__mode"
       hide-details
-      @change="onOverrideChange"
-    />
+      :label="$t('trackingConfig.cascade.label')"
+    >
+      <v-radio value="inherit" color="accent">
+        <template #label>
+          <div class="template-tracking__mode-option">
+            <span class="template-tracking__mode-title">
+              {{ $t('trackingConfig.cascade.inherit') }}
+            </span>
+            <span class="template-tracking__mode-description">
+              {{ $t('trackingConfig.cascade.inheritDescription') }}
+            </span>
+          </div>
+        </template>
+      </v-radio>
+      <v-radio value="extend" color="accent">
+        <template #label>
+          <div class="template-tracking__mode-option">
+            <span class="template-tracking__mode-title">
+              {{ $t('trackingConfig.cascade.extend') }}
+            </span>
+            <span class="template-tracking__mode-description">
+              {{ $t('trackingConfig.cascade.extendDescription') }}
+            </span>
+          </div>
+        </template>
+      </v-radio>
+      <v-radio value="replace" color="accent">
+        <template #label>
+          <div class="template-tracking__mode-option">
+            <span class="template-tracking__mode-title">
+              {{ $t('trackingConfig.cascade.replace') }}
+            </span>
+            <span class="template-tracking__mode-description">
+              {{ $t('trackingConfig.cascade.replaceDescription') }}
+            </span>
+          </div>
+        </template>
+      </v-radio>
+    </v-radio-group>
 
-    <v-switch
-      :input-value="localConfig.enabled"
-      :label="$t('trackingConfig.enabled')"
-      color="accent"
-      inset
-      hide-details
-      class="mt-2"
-      @change="onEnabledChange"
-    />
     <v-switch
       :input-value="localConfig.restrictValues"
       :label="$t('trackingConfig.restrictValues')"
@@ -335,6 +378,43 @@ export default {
       font-size: 12px;
       font-weight: 500;
     }
+  }
+
+  &__mode {
+    margin-top: 0;
+    margin-bottom: 16px;
+
+    /deep/ legend.v-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    /deep/ .v-radio {
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+  }
+
+  &__mode-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__mode-title {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.87);
+    line-height: 1.3;
+  }
+
+  &__mode-description {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.4;
   }
 }
 

@@ -601,8 +601,19 @@ export default {
     valuesHint: 'ex : newsletter, promo (séparés par des virgules)',
     required: 'Obligatoire',
     empty: 'Aucun paramètre de tracking défini',
-    overrideGroupTracking: 'Utiliser une configuration spécifique au template',
     inheritedFromGroup: 'Hérité du groupe',
+    cascade: {
+      label: 'Configuration du tracking pour ce template',
+      inherit: 'Hériter de la configuration du groupe',
+      inheritDescription:
+        'Les paramètres définis au niveau du groupe s\'appliquent tels quels.',
+      extend: 'Hériter et ajouter des paramètres spécifiques',
+      extendDescription:
+        'Les paramètres du groupe restent actifs ; ceux ajoutés ci-dessous viennent les compléter (ou les remplacer pour une clé en conflit).',
+      replace: 'Remplacer entièrement par une configuration spécifique',
+      replaceDescription:
+        'Seuls les paramètres définis ci-dessous sont appliqués ; la configuration du groupe est ignorée.',
+    },
     validation: {
       emptyKey: 'La clé est requise',
       duplicateKey: 'Cette clé est dupliquée',
