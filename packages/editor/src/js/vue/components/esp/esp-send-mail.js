@@ -10,6 +10,8 @@ const { ESP_TYPE } = require('../../constant/esp-type');
 const {
   getErrorsForControlQuality,
   displayErrors,
+  checkRequiredTrackingParams,
+  displayTrackingError,
 } = require('../../../ext/badsender-control-quality');
 
 const {
@@ -188,6 +190,18 @@ const EspComponent = Vue.component('EspForm', {
     },
     submitEsp(data) {
       if (!this.vm?.metadata?.url?.sendCampaignMail) {
+        return;
+      }
+
+      // Pre-flight: block when required group/template tracking params are
+      // empty. Reads the live KO state (vm.content().tracking().trackingUrls)
+      // so it works even if the user hasn't clicked "Save" since editing.
+      // The backend re-checks the same on its side (cf.
+      // profile.service.assertRequiredTrackingParamsFilled) — defense in depth.
+      const missingTracking = checkRequiredTrackingParams(this.vm);
+      if (missingTracking.length > 0) {
+        this.closeModal();
+        displayTrackingError(missingTracking, this.vm);
         return;
       }
 
