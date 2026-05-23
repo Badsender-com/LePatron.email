@@ -15,9 +15,7 @@ const LIST_PROJECTION = {
   startedAt: 1,
   completedAt: 1,
   latencyMs: 1,
-  'tokenUsage.promptTokens': 1,
-  'tokenUsage.completionTokens': 1,
-  'tokenUsage.cachedTokens': 1,
+  tokenUsage: 1,
   'error.code': 1,
   'error.message': 1,
 };
@@ -50,6 +48,7 @@ async function listInvocations({
       .sort({ startedAt: -1 })
       .skip(skip)
       .limit(limit)
+      .populate('_company', 'name')
       .lean(),
     AISkillInvocations.countDocuments(query),
   ]);

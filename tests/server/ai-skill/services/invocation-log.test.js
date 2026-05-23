@@ -20,6 +20,7 @@ function chain(value) {
     sort: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
+    populate: jest.fn().mockReturnThis(),
     lean: jest.fn().mockResolvedValue(value),
   };
 }
