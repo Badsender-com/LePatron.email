@@ -27,7 +27,16 @@ export default {
       loading: false,
       items: [],
       total: 0,
-      filters: { skillId: '', featureType: '', status: null, groupId: '' },
+      filters: {
+        skillId: '',
+        featureType: '',
+        status: null,
+        groupId: '',
+        startedFrom: null,
+        startedTo: null,
+      },
+      dateFromMenu: false,
+      dateToMenu: false,
       detail: null,
     };
   },
@@ -48,10 +57,16 @@ export default {
           align: 'center',
         },
         { text: this.$t('aiSkills.invocation.feature'), value: 'featureType' },
+        { text: this.$t('aiSkills.invocation.group'), value: 'group' },
         { text: this.$t('global.status'), value: 'status' },
         {
           text: this.$t('aiSkills.invocation.latency'),
           value: 'latencyMs',
+          align: 'right',
+        },
+        {
+          text: this.$t('aiSkills.invocation.tokens'),
+          value: 'tokens',
           align: 'right',
         },
         {
@@ -69,12 +84,32 @@ export default {
     statusLabel(value) {
       return value ? this.$t(`aiSkills.statuses.${value}`) : '';
     },
+    groupName(item) {
+      if (!item._company) return '—';
+      if (typeof item._company === 'object') return item._company.name || '—';
+      return String(item._company);
+    },
+    totalTokens(item) {
+      const u = item.tokenUsage || {};
+      const total = (u.promptTokens || 0) + (u.completionTokens || 0);
+      return total || null;
+    },
     async fetchData() {
       this.loading = true;
       try {
         const params = {};
         for (const [k, v] of Object.entries(this.filters)) {
-          if (v) params[k] = v;
+          if (!v) continue;
+          if (k === 'startedTo') {
+            // Include the whole "to" day, until 23:59:59.999.
+            const d = new Date(v);
+            d.setHours(23, 59, 59, 999);
+            params.startedTo = d.toISOString();
+          } else if (k === 'startedFrom') {
+            params.startedFrom = new Date(v).toISOString();
+          } else {
+            params[k] = v;
+          }
         }
         const res = await this.$axios.$get(api.aiInvocations(), { params });
         this.items = res.items || [];
@@ -159,6 +194,72 @@ export default {
         class="filter-field"
         @change="fetchData"
       />
+      <v-menu
+        v-model="dateFromMenu"
+        :close-on-content-click="false"
+        offset-y
+        min-width="auto"
+      >
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="filters.startedFrom"
+            :label="$t('aiSkills.invocation.dateFrom')"
+            dense
+            outlined
+            hide-details
+            clearable
+            readonly
+            class="filter-field"
+            v-bind="attrs"
+            v-on="on"
+            @click:clear="
+              filters.startedFrom = null;
+              fetchData();
+            "
+          />
+        </template>
+        <v-date-picker
+          v-model="filters.startedFrom"
+          no-title
+          @input="
+            dateFromMenu = false;
+            fetchData();
+          "
+        />
+      </v-menu>
+      <v-menu
+        v-model="dateToMenu"
+        :close-on-content-click="false"
+        offset-y
+        min-width="auto"
+      >
+        <template #activator="{ on, attrs }">
+          <v-text-field
+            v-model="filters.startedTo"
+            :label="$t('aiSkills.invocation.dateTo')"
+            dense
+            outlined
+            hide-details
+            clearable
+            readonly
+            class="filter-field"
+            v-bind="attrs"
+            v-on="on"
+            @click:clear="
+              filters.startedTo = null;
+              fetchData();
+            "
+          />
+        </template>
+        <v-date-picker
+          v-model="filters.startedTo"
+          no-title
+          @input="
+            dateToMenu = false;
+            fetchData();
+          "
+        />
+      </v-menu>
     </div>
 
     <bs-data-table
@@ -191,6 +292,15 @@ export default {
       <template #item.latencyMs="{ item }">
         <span v-if="item.latencyMs != null">{{ item.latencyMs }} ms</span>
       </template>
+      <template #item.group="{ item }">
+        <span class="text-caption">{{ groupName(item) }}</span>
+      </template>
+      <template #item.tokens="{ item }">
+        <span v-if="totalTokens(item)" class="text-caption">{{
+          totalTokens(item)
+        }}</span>
+        <span v-else class="text--disabled">—</span>
+      </template>
       <template #item.provider="{ item }">
         <span class="text-caption">
           {{ item.provider || '—' }}
@@ -200,8 +310,11 @@ export default {
       <template #no-data>
         <div class="text-center pa-6">
           <lucide-history :size="48" class="grey--text text--lighten-1" />
-          <p class="text-body-1 grey--text mt-4">
+          <p class="text-body-1 grey--text mt-4 mb-1">
             {{ $t('aiSkills.invocation.noInvocations') }}
+          </p>
+          <p class="text-caption text--secondary">
+            {{ $t('aiSkills.invocation.noInvocationsHint') }}
           </p>
         </div>
       </template>

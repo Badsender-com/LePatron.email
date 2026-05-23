@@ -3,6 +3,7 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsCombobox from '~/components/form/bs-combobox.vue';
 
 const CATEGORIES = [
   'redaction',
@@ -16,7 +17,7 @@ const CATEGORIES = [
 
 export default {
   name: 'BsAiSkillCreateModal',
-  components: { BsModalConfirm, BsTextField, BsSelect, BsTextarea },
+  components: { BsModalConfirm, BsTextField, BsSelect, BsTextarea, BsCombobox },
   props: {
     schemas: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
@@ -50,6 +51,7 @@ export default {
         category: 'redaction',
         inputSchemaId: '',
         outputSchemaId: '',
+        intendedUseCases: [],
       };
     },
     open() {
@@ -85,6 +87,7 @@ export default {
         v-model="skill.skillId"
         :label="$t('aiSkills.skill.id')"
         :hint="$t('aiSkills.skill.idHint')"
+        placeholder="redaction.cta"
         :disabled="loading"
         required
       />
@@ -118,6 +121,14 @@ export default {
         v-model="skill.outputSchemaId"
         :items="outputSchemas"
         :label="$t('aiSkills.skill.outputSchemaId')"
+        :disabled="loading"
+      />
+      <bs-combobox
+        v-model="skill.intendedUseCases"
+        :label="$t('aiSkills.skill.intendedUseCases')"
+        multiple
+        chips
+        small-chips
         :disabled="loading"
       />
       <v-divider class="mt-4" />

@@ -74,6 +74,7 @@ export default {
         v-model="expertise.expertiseId"
         :label="$t('aiSkills.expertise.id')"
         :hint="$t('aiSkills.expertise.idHint')"
+        placeholder="redaction.cta.principles"
         :disabled="loading"
         required
       />
