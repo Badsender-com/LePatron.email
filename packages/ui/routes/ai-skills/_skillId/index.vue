@@ -189,11 +189,9 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ skill.skillId }} · {{ categoryLabel(skill.category) }} ·
-      <span v-if="skill.activeVersion"
-        >{{ $t('aiSkills.skill.activeVersion') }} v{{
-          skill.activeVersion
-        }}</span
-      >
+      <span v-if="skill.activeVersion">{{ $t('aiSkills.skill.activeVersion') }} v{{
+        skill.activeVersion
+      }}</span>
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
@@ -235,6 +233,7 @@ export default {
             @create="$refs.versionModal.open()"
             @save="saveVersion"
             @activate="askActivate"
+            @duplicate="(v) => $refs.versionModal.openWith(v)"
           />
         </v-tab-item>
 

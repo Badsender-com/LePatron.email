@@ -4,7 +4,7 @@
 /* eslint-disable vue/no-mutating-props */
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
-import { Plus, CheckCircle2 } from 'lucide-vue';
+import { Plus, CheckCircle2, Copy } from 'lucide-vue';
 
 export default {
   name: 'BsAiExpertiseVersionsPanel',
@@ -13,6 +13,7 @@ export default {
     BsCombobox,
     LucidePlus: Plus,
     LucideCheckCircle2: CheckCircle2,
+    LucideCopy: Copy,
   },
   props: {
     expertise: { type: Object, required: true },
@@ -65,6 +66,21 @@ export default {
               <span class="text-caption text--secondary">
                 {{ formatDate(v.updatedAt || v.createdAt) }}
               </span>
+              <v-spacer />
+              <v-tooltip left>
+                <template #activator="{ on, attrs }">
+                  <v-btn
+                    icon
+                    small
+                    v-bind="attrs"
+                    v-on="on"
+                    @click.stop="$emit('duplicate', v)"
+                  >
+                    <lucide-copy :size="16" />
+                  </v-btn>
+                </template>
+                <span>{{ $t('aiSkills.version.duplicateHint') }}</span>
+              </v-tooltip>
             </div>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
