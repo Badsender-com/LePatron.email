@@ -62,6 +62,15 @@ export default {
     },
 
     async saveDetails() {
+      // Vuetify's v-combobox in multiple mode only commits a typed-but-
+      // unconfirmed tag on blur. When the user clicks "Save" without first
+      // pressing Enter/Tab, the click can race with the blur commit. Force
+      // a blur on the active element, then wait a tick so the v-model
+      // catches up before we read it.
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      await this.$nextTick();
       this.saving = true;
       try {
         const patch = {
@@ -104,17 +113,19 @@ export default {
         this.saving = false;
       }
     },
-    async saveVersion(version) {
+    async saveVersion({ version, changelog }) {
       this.saving = true;
       try {
+        const payload = {
+          systemPrompt: version.systemPrompt,
+          skillBody: version.skillBody,
+          inputTemplate: version.inputTemplate,
+          modelHints: version.modelHints,
+        };
+        if (changelog) payload.changelog = changelog;
         this.skill = await this.$axios.$patch(
           api.aiSkillVersion(this.skill.skillId, version.versionNumber),
-          {
-            systemPrompt: version.systemPrompt,
-            skillBody: version.skillBody,
-            inputTemplate: version.inputTemplate,
-            modelHints: version.modelHints,
-          }
+          payload
         );
         this.showSnackbar({
           text: this.$t('aiSkills.version.draftSaved'),

@@ -105,14 +105,31 @@ describe('skill.service', () => {
   });
 
   describe('updateVersion', () => {
-    it('rejects edits on activated versions', async () => {
+    it('rejects edits on activated versions without changelog', async () => {
       const doc = mockSkillDoc({
         versions: [{ versionNumber: 1, activatedAt: new Date() }],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await expect(
         skillService.updateVersion('a', 1, { skillBody: 'x' }, null)
-      ).rejects.toMatchObject({ status: 409 });
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('accepts edits on activated versions when a changelog is provided', async () => {
+      const doc = mockSkillDoc({
+        versions: [
+          { versionNumber: 1, skillBody: 'old', activatedAt: new Date() },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.updateVersion(
+        'a',
+        1,
+        { skillBody: 'new', changelog: 'tighten wording' },
+        null
+      );
+      expect(doc.versions[0].skillBody).toBe('new');
+      expect(doc.versions[0].changelog).toBe('tighten wording');
     });
 
     it('updates DRAFT version fields', async () => {
