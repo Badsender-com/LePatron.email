@@ -144,7 +144,7 @@ describe('ai-skill HTTP routes', () => {
     expect(skillInvocation.invoke).toHaveBeenCalledWith(
       expect.objectContaining({
         skillId: 'generic.text',
-        featureType: 'admin.test-runner',
+        featureType: 'admin-test',
       })
     );
     expect(res.body.budget.remaining).toBe(49);

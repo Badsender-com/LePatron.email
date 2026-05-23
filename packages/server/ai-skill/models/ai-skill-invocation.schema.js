@@ -58,6 +58,24 @@ const InvocationErrorSchema = new Schema(
   { _id: false }
 );
 
+/**
+ * Optional human-in-the-loop feedback on the invocation output. Populated
+ * later by the AI Playground (and possibly by features that surface a
+ * rating UI). The corrected output captured here is intended to seed a
+ * RAG layer with vetted examples in future iterations.
+ */
+const InvocationFeedbackSchema = new Schema(
+  {
+    rating: { type: String, enum: ['positive', 'negative', 'neutral'] },
+    score: { type: Number, min: 1, max: 5 },
+    ratedBy: { type: ObjectId, ref: UserModel },
+    ratedAt: { type: Date },
+    comment: { type: String },
+    correctedOutput: { type: Mixed },
+  },
+  { _id: false }
+);
+
 const AISkillInvocationSchema = new Schema(
   {
     _skill: { type: ObjectId, ref: LePatronSkillModel },
@@ -95,6 +113,7 @@ const AISkillInvocationSchema = new Schema(
       required: true,
     },
     error: { type: InvocationErrorSchema, default: null },
+    feedback: { type: InvocationFeedbackSchema, default: null },
   },
   {
     timestamps: true,

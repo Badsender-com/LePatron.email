@@ -1,5 +1,21 @@
 'use strict';
 
+/**
+ * featureType convention
+ * -----------------------
+ * Each AISkillInvocation log carries a `featureType` string that names the
+ * caller. Two values are reserved for non-production traffic and should be
+ * excluded from product analytics by default:
+ *
+ *   - 'admin-test'  → invocations triggered from the super-admin Test runner
+ *                     (page detail of a skill > Test tab).
+ *   - 'playground'  → invocations issued by the AI Playground module
+ *                     (work-in-progress, see future work).
+ *
+ * Any other value is a productive feature (e.g. 'translation', 'qc.subject',
+ * 'redaction.cta', …) declared by a skill manifest.
+ */
+
 const createError = require('http-errors');
 
 const ProviderFactory = require('../../integration-providers/provider-factory.js');

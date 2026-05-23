@@ -15,25 +15,39 @@ const { SkillStatuses } = require('../constant/skill-constants.js');
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
 async function findApplicable({ scope, emailType, language, category } = {}) {
-  const query = { status: SkillStatuses.ACTIVE };
+  // For each multi-valued filter, an empty array on the document means
+  // "applies to all values" — i.e. the document is always a match for that
+  // filter. We build $and / $or clauses so that the document matches when
+  // EITHER it lists the requested value, OR its own list is empty.
+  const and = [{ status: SkillStatuses.ACTIVE }];
 
   if (scope) {
-    query.scope = Array.isArray(scope) ? { $in: scope } : scope;
+    const scopes = Array.isArray(scope) ? scope : [scope];
+    and.push({
+      $or: [{ scope: { $in: scopes } }, { scope: { $size: 0 } }],
+    });
   }
   if (emailType) {
-    query.appliesToEmailTypes = emailType;
+    and.push({
+      $or: [
+        { appliesToEmailTypes: emailType },
+        { appliesToEmailTypes: { $size: 0 } },
+      ],
+    });
   }
   if (language) {
-    // Empty appliesToLanguages array means "all languages".
-    query.$or = [
-      { appliesToLanguages: language },
-      { appliesToLanguages: { $size: 0 } },
-    ];
+    and.push({
+      $or: [
+        { appliesToLanguages: language },
+        { appliesToLanguages: { $size: 0 } },
+      ],
+    });
   }
   if (category) {
-    query.category = category;
+    and.push({ category });
   }
 
+  const query = and.length === 1 ? and[0] : { $and: and };
   const docs = await Expertises.find(query).lean();
 
   return docs.map((doc) => projectActiveVersion(doc)).filter((d) => d !== null);

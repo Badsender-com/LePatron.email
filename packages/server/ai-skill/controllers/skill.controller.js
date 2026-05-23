@@ -109,7 +109,7 @@ module.exports = {
       input,
       groupId,
       userId: userIdOf(req),
-      featureType: 'admin.test-runner',
+      featureType: 'admin-test',
     });
     res.json({ ...result, budget });
   }),
