@@ -40,6 +40,43 @@ describe('expertise.service', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
+  describe('updateVersion', () => {
+    it('updates a DRAFT version without requiring a changelog', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [{ versionNumber: 1, body: 'old' }],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expertiseService.updateVersion('a', 1, { body: 'new' }, null);
+      expect(doc.versions[0].body).toBe('new');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('rejects edit on an activated version without changelog', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [{ versionNumber: 1, activatedAt: new Date() }],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expect(
+        expertiseService.updateVersion('a', 1, { body: 'x' }, null)
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('accepts edit on an activated version when a changelog is provided', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [{ versionNumber: 1, body: 'old', activatedAt: new Date() }],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expertiseService.updateVersion(
+        'a',
+        1,
+        { body: 'new', changelog: 'fix typo' },
+        null
+      );
+      expect(doc.versions[0].body).toBe('new');
+      expect(doc.versions[0].changelog).toBe('fix typo');
+    });
+  });
+
   it('createVersion increments versionNumber', async () => {
     const doc = mockExpertiseDoc({
       versions: [{ versionNumber: 1 }, { versionNumber: 2 }],
