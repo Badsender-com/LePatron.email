@@ -66,41 +66,54 @@ describe('expertise.repository', () => {
   });
 
   describe('findApplicable', () => {
-    it('filters by status ACTIVE only by default', async () => {
+    it('filters by status ACTIVE only when no filter is provided', async () => {
       mockReturnDocs([]);
       await findApplicable();
       expect(Expertises.find).toHaveBeenCalledWith({ status: 'ACTIVE' });
     });
 
-    it('passes scope as $in when array', async () => {
+    it('builds an $and with $or fallback to empty array for scope', async () => {
       mockReturnDocs([]);
       await findApplicable({ scope: ['cta', 'subject'] });
-      expect(Expertises.find).toHaveBeenCalledWith({
-        status: 'ACTIVE',
-        scope: { $in: ['cta', 'subject'] },
-      });
+      const query = Expertises.find.mock.calls[0][0];
+      expect(query.$and).toEqual([
+        { status: 'ACTIVE' },
+        {
+          $or: [
+            { scope: { $in: ['cta', 'subject'] } },
+            { scope: { $size: 0 } },
+          ],
+        },
+      ]);
     });
 
-    it('passes scope as scalar when string', async () => {
+    it('wraps a scalar scope into the same $or pattern', async () => {
       mockReturnDocs([]);
       await findApplicable({ scope: 'cta', emailType: 'promo' });
-      expect(Expertises.find).toHaveBeenCalledWith({
-        status: 'ACTIVE',
-        scope: 'cta',
-        appliesToEmailTypes: 'promo',
-      });
+      const query = Expertises.find.mock.calls[0][0];
+      expect(query.$and).toEqual([
+        { status: 'ACTIVE' },
+        {
+          $or: [{ scope: { $in: ['cta'] } }, { scope: { $size: 0 } }],
+        },
+        {
+          $or: [
+            { appliesToEmailTypes: 'promo' },
+            { appliesToEmailTypes: { $size: 0 } },
+          ],
+        },
+      ]);
     });
 
-    it('uses $or for language to include "all languages" docs', async () => {
+    it('combines all 3 multi-valued filters with $and', async () => {
       mockReturnDocs([]);
-      await findApplicable({ language: 'fr' });
-      expect(Expertises.find).toHaveBeenCalledWith({
-        status: 'ACTIVE',
-        $or: [
-          { appliesToLanguages: 'fr' },
-          { appliesToLanguages: { $size: 0 } },
-        ],
+      await findApplicable({
+        scope: 'cta',
+        emailType: 'promo',
+        language: 'fr',
       });
+      const query = Expertises.find.mock.calls[0][0];
+      expect(query.$and).toHaveLength(4);
     });
 
     it('drops docs without a matching active version', async () => {
