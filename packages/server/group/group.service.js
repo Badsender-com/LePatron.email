@@ -11,6 +11,7 @@ const {
   Profiles,
   Templates,
   EmailsGroups,
+  AISkillInvocations,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
@@ -161,6 +162,9 @@ async function deleteGroup(groupId) {
       _company: mongoose.Types.ObjectId(groupId),
     }),
     EmailsGroups.deleteMany({
+      _company: mongoose.Types.ObjectId(groupId),
+    }),
+    AISkillInvocations.deleteMany({
       _company: mongoose.Types.ObjectId(groupId),
     }),
     Groups.deleteOne({

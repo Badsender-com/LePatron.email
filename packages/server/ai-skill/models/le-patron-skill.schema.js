@@ -1,0 +1,135 @@
+'use strict';
+
+const { Schema } = require('mongoose');
+const { ObjectId, Mixed } = Schema.Types;
+const { UserModel } = require('../../constant/model.names.js');
+const { hasSchema } = require('../schemas');
+const {
+  SkillCategoryValues,
+  SkillStatuses,
+  SkillStatusValues,
+  SkillIdRegex,
+  MaxSkillIdLength,
+} = require('../constant/skill-constants.js');
+
+const INPUT_PLACEHOLDER_REGEX = /\{\{\s*input\b[^}]*\}\}/;
+
+const TestCaseSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    input: { type: Mixed, required: true },
+    expectedOutput: { type: Mixed },
+    notes: { type: String },
+  },
+  { _id: false }
+);
+
+const ModelHintsSchema = new Schema(
+  {
+    temperature: { type: Number },
+    maxTokens: { type: Number },
+    topP: { type: Number },
+  },
+  { _id: false }
+);
+
+const SkillVersionSchema = new Schema(
+  {
+    versionNumber: { type: Number, required: true, min: 1 },
+    systemPrompt: { type: String, default: '' },
+    skillBody: { type: String, default: '' },
+    inputTemplate: { type: String, default: '' },
+    modelHints: { type: ModelHintsSchema, default: () => ({}) },
+    changelog: { type: String, default: '' },
+    releaseNotes: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now },
+    createdBy: { type: ObjectId, ref: UserModel },
+    updatedAt: { type: Date, default: Date.now },
+    updatedBy: { type: ObjectId, ref: UserModel },
+    activatedAt: { type: Date, default: null },
+    testCases: { type: [TestCaseSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const LePatronSkillSchema = new Schema(
+  {
+    skillId: {
+      type: String,
+      required: [true, 'skillId is required'],
+      unique: true,
+      maxlength: MaxSkillIdLength,
+      match: [SkillIdRegex, 'skillId must match ^[a-z0-9._-]+$'],
+    },
+    title: { type: String, required: true },
+    description: { type: String, default: '' },
+    category: {
+      type: String,
+      enum: SkillCategoryValues,
+      required: true,
+    },
+    inputSchemaId: { type: String, required: true },
+    outputSchemaId: { type: String, required: true },
+    owner: { type: ObjectId, ref: UserModel },
+    intendedUseCases: { type: [String], default: [] },
+    status: {
+      type: String,
+      enum: SkillStatusValues,
+      default: SkillStatuses.DRAFT,
+    },
+    activeVersion: { type: Number, default: null },
+    versions: { type: [SkillVersionSchema], default: [] },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+LePatronSkillSchema.index({ category: 1 });
+LePatronSkillSchema.index({ status: 1 });
+
+/**
+ * Validation hook:
+ * - Ensure inputSchemaId / outputSchemaId exist in the zod registry.
+ * - Ensure `{{input.*}}` placeholders never appear outside `inputTemplate`
+ *   (prompt-injection guard — see PLAN §4.4).
+ */
+LePatronSkillSchema.pre('validate', function preValidate(next) {
+  if (!hasSchema(this.inputSchemaId)) {
+    return next(
+      new Error(
+        `Unknown inputSchemaId "${this.inputSchemaId}" (not in zod registry)`
+      )
+    );
+  }
+  if (!hasSchema(this.outputSchemaId)) {
+    return next(
+      new Error(
+        `Unknown outputSchemaId "${this.outputSchemaId}" (not in zod registry)`
+      )
+    );
+  }
+
+  for (const version of this.versions || []) {
+    if (INPUT_PLACEHOLDER_REGEX.test(version.systemPrompt || '')) {
+      return next(
+        new Error(
+          `Version ${version.versionNumber}: {{input.*}} placeholders are not allowed in systemPrompt`
+        )
+      );
+    }
+    if (INPUT_PLACEHOLDER_REGEX.test(version.skillBody || '')) {
+      return next(
+        new Error(
+          `Version ${version.versionNumber}: {{input.*}} placeholders are not allowed in skillBody`
+        )
+      );
+    }
+  }
+  next();
+});
+
+module.exports = LePatronSkillSchema;
+module.exports.INPUT_PLACEHOLDER_REGEX = INPUT_PLACEHOLDER_REGEX;

@@ -30,4 +30,8 @@ module.exports = Object.freeze({
   FeedMappingModel: 'FeedMapping',
   // Translation
   TranslationJobModel: 'TranslationJob',
+  // LePatron Skills IA
+  LePatronSkillModel: 'LePatronSkill',
+  ExpertiseModel: 'Expertise',
+  AISkillInvocationModel: 'AISkillInvocation',
 });

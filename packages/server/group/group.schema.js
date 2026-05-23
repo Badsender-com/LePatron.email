@@ -146,6 +146,17 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // LePatron Skills IA — log retention & RGPD switches
+    logRetentionDays: {
+      type: Number,
+      default: 30,
+      min: 7,
+      max: 365,
+    },
+    logSkillInvocationContent: {
+      type: Boolean,
+      default: true,
+    },
     // Note: Metabase/dashboard configuration is now stored in the Integration collection
     // See packages/server/integration/integration.schema.js
   },

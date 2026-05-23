@@ -23,7 +23,13 @@
           class="settings-item"
           :class="{ 'settings-item--active': isActive(item) }"
         >
-          <v-icon small class="settings-item__icon">
+          <component
+            :is="item.iconComponent"
+            v-if="item.iconComponent"
+            :size="18"
+            class="settings-item__icon settings-item__icon--lucide"
+          />
+          <v-icon v-else small class="settings-item__icon">
             {{ item.icon }}
           </v-icon>
           <span class="settings-item__label">{{ item.label }}</span>
@@ -46,11 +52,13 @@ import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
 import { Shield } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
+import { Shield, Sparkles } from 'lucide-vue';
 
 export default {
   name: 'BsSidebarSettingsList',
   components: {
     LucideShield: Shield,
+    LucideSparkles: Sparkles,
   },
   props: {
     collapsed: {
@@ -102,6 +110,14 @@ export default {
               // Exact match: don't highlight when navigating into a specific group
               exact: true,
               superAdminOnly: true,
+            },
+            {
+              id: 'ai-skills',
+              label: this.$t('aiSkills.pageTitle'),
+              iconComponent: 'LucideSparkles',
+              route: '/ai-skills',
+              superAdminOnly: true,
+              activePatterns: ['/ai-skills', '/ai-expertise'],
             },
           ],
         });
@@ -367,6 +383,11 @@ export default {
 .settings-item__icon {
   flex-shrink: 0;
   color: inherit !important;
+}
+
+.settings-item__icon--lucide {
+  width: 18px;
+  height: 18px;
 }
 
 .settings-item__label {
