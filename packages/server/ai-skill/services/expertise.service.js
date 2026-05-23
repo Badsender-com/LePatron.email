@@ -3,6 +3,14 @@
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+  maxMajor,
+  maxMinorFor,
+  assertDraft,
+  versionLabel,
+} = require('./version-helpers.js');
 
 const LIST_PROJECTION = {
   expertiseId: 1,
@@ -60,7 +68,7 @@ async function createExpertise(data, userId) {
     consumedBySkills: data.consumedBySkills || [],
     owner: userId,
     status: SkillStatuses.DRAFT,
-    activeVersion: null,
+    activeVersion: { major: null, minor: 0 },
     versions: [],
   };
   try {
@@ -95,41 +103,78 @@ async function updateExpertise(expertiseId, patch) {
   return exp;
 }
 
-async function createVersion(expertiseId, data, userId) {
+// ─── Versioning ────────────────────────────────────────────────────────────
+
+function blankVersionContent() {
+  return { body: '', examplesGood: [], examplesBad: [] };
+}
+
+function cloneVersionContent(source) {
+  if (!source) return blankVersionContent();
+  return {
+    body: source.body || '',
+    examplesGood: Array.isArray(source.examplesGood)
+      ? [...source.examplesGood]
+      : [],
+    examplesBad: Array.isArray(source.examplesBad)
+      ? [...source.examplesBad]
+      : [],
+  };
+}
+
+async function createMinorVersion(expertiseId, userId) {
   const exp = await getExpertise(expertiseId);
-  const nextVersionNumber =
-    (exp.versions || []).reduce(
-      (max, v) => (v.versionNumber > max ? v.versionNumber : max),
-      0
-    ) + 1;
+  const active = findActiveVersion(exp);
+  if (!active) {
+    throw createError(
+      400,
+      'Cannot create a minor version: no active version on this expertise'
+    );
+  }
+  const versionMajor = active.versionMajor;
+  const versionMinor = maxMinorFor(exp, versionMajor) + 1;
+  const now = new Date();
   exp.versions.push({
-    versionNumber: nextVersionNumber,
-    body: data.body || '',
-    examplesGood: data.examplesGood || [],
-    examplesBad: data.examplesBad || [],
+    versionMajor,
+    versionMinor,
+    status: 'DRAFT',
+    ...cloneVersionContent(active),
+    changelog: 'Correction mineure',
+    releaseNotes: 'Correction mineure sans changement de doctrine.',
     createdBy: userId,
-    createdAt: new Date(),
+    createdAt: now,
     updatedBy: userId,
-    updatedAt: new Date(),
+    updatedAt: now,
   });
   await exp.save();
   return exp;
 }
 
-async function updateVersion(expertiseId, versionNumber, patch, userId) {
+async function createMajorVersion(expertiseId, { source, userId } = {}) {
   const exp = await getExpertise(expertiseId);
-  const version = exp.versions.find(
-    (v) => v.versionNumber === Number(versionNumber)
-  );
-  if (!version) throw createError(404, `Version ${versionNumber} not found`);
-  // Activated versions remain editable (user feedback v1.1), but a
-  // changelog is required on every patch to keep an audit trail.
-  if (version.activatedAt && !patch.changelog) {
-    throw createError(
-      400,
-      'A changelog is required when editing an activated version'
-    );
-  }
+  const seed = source || findActiveVersion(exp);
+  const versionMajor = maxMajor(exp) + 1;
+  const now = new Date();
+  exp.versions.push({
+    versionMajor,
+    versionMinor: 0,
+    status: 'DRAFT',
+    ...cloneVersionContent(seed),
+    changelog: '',
+    releaseNotes: '',
+    createdBy: userId,
+    createdAt: now,
+    updatedBy: userId,
+    updatedAt: now,
+  });
+  await exp.save();
+  return exp;
+}
+
+async function updateVersion(expertiseId, { major, minor }, patch, userId) {
+  const exp = await getExpertise(expertiseId);
+  const version = findVersion(exp, major, minor);
+  assertDraft(version);
   for (const key of [
     'body',
     'examplesGood',
@@ -145,24 +190,49 @@ async function updateVersion(expertiseId, versionNumber, patch, userId) {
   return exp;
 }
 
-async function activateVersion(expertiseId, versionNumber, payload, userId) {
+async function deleteVersion(expertiseId, { major, minor }) {
   const exp = await getExpertise(expertiseId);
-  const version = exp.versions.find(
-    (v) => v.versionNumber === Number(versionNumber)
+  const version = findVersion(exp, major, minor);
+  assertDraft(version);
+  exp.versions = exp.versions.filter(
+    (v) => !(v.versionMajor === major && v.versionMinor === minor)
   );
-  if (!version) throw createError(404, `Version ${versionNumber} not found`);
-  if (!payload.changelog || !payload.releaseNotes) {
-    throw createError(
-      400,
-      'changelog and releaseNotes are required to activate a version'
-    );
+  await exp.save();
+  return exp;
+}
+
+async function activateVersion(expertiseId, { major, minor }, payload, userId) {
+  const exp = await getExpertise(expertiseId);
+  const version = findVersion(exp, major, minor);
+  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
+  if (version.status !== 'DRAFT') {
+    throw createError(409, 'Only DRAFT versions can be activated');
   }
-  version.changelog = payload.changelog;
-  version.releaseNotes = payload.releaseNotes;
+  const isMajor = version.versionMinor === 0;
+  if (isMajor) {
+    if (!payload.changelog || !payload.releaseNotes) {
+      throw createError(
+        400,
+        'changelog and releaseNotes are required to activate a major version'
+      );
+    }
+  }
+  if (payload.changelog) version.changelog = payload.changelog;
+  if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
+
+  const previousActive = findActiveVersion(exp);
+  if (previousActive && previousActive !== version) {
+    previousActive.status = 'ARCHIVED';
+  }
+
+  version.status = 'ACTIVE';
   version.activatedAt = new Date();
   version.updatedBy = userId;
   version.updatedAt = new Date();
-  exp.activeVersion = version.versionNumber;
+  exp.activeVersion = {
+    major: version.versionMajor,
+    minor: version.versionMinor,
+  };
   exp.status = SkillStatuses.ACTIVE;
   await exp.save();
   return exp;
@@ -180,8 +250,11 @@ module.exports = {
   getExpertise,
   createExpertise,
   updateExpertise,
-  createVersion,
+  createMinorVersion,
+  createMajorVersion,
   updateVersion,
+  deleteVersion,
   activateVersion,
   archiveExpertise,
+  versionLabel,
 };

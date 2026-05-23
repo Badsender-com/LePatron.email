@@ -16,10 +16,12 @@ skillsRouter.get('/', skill.listSkills);
 skillsRouter.post('/', skill.createSkill);
 skillsRouter.get('/:skillId', skill.getSkill);
 skillsRouter.patch('/:skillId', skill.updateSkill);
-skillsRouter.post('/:skillId/versions', skill.createVersion);
-skillsRouter.patch('/:skillId/versions/:versionNumber', skill.updateVersion);
+skillsRouter.post('/:skillId/versions/minor', skill.createMinorVersion);
+skillsRouter.post('/:skillId/versions/major', skill.createMajorVersion);
+skillsRouter.patch('/:skillId/versions/:version', skill.updateVersion);
+skillsRouter.delete('/:skillId/versions/:version', skill.deleteVersion);
 skillsRouter.post(
-  '/:skillId/versions/:versionNumber/activate',
+  '/:skillId/versions/:version/activate',
   skill.activateVersion
 );
 skillsRouter.post('/:skillId/archive', skill.archiveSkill);
@@ -31,13 +33,24 @@ expertiseRouter.get('/', expertise.listExpertise);
 expertiseRouter.post('/', expertise.createExpertise);
 expertiseRouter.get('/:expertiseId', expertise.getExpertise);
 expertiseRouter.patch('/:expertiseId', expertise.updateExpertise);
-expertiseRouter.post('/:expertiseId/versions', expertise.createVersion);
-expertiseRouter.patch(
-  '/:expertiseId/versions/:versionNumber',
-  expertise.updateVersion
+expertiseRouter.post(
+  '/:expertiseId/versions/minor',
+  expertise.createMinorVersion
 );
 expertiseRouter.post(
-  '/:expertiseId/versions/:versionNumber/activate',
+  '/:expertiseId/versions/major',
+  expertise.createMajorVersion
+);
+expertiseRouter.patch(
+  '/:expertiseId/versions/:version',
+  expertise.updateVersion
+);
+expertiseRouter.delete(
+  '/:expertiseId/versions/:version',
+  expertise.deleteVersion
+);
+expertiseRouter.post(
+  '/:expertiseId/versions/:version/activate',
   expertise.activateVersion
 );
 expertiseRouter.post('/:expertiseId/archive', expertise.archiveExpertise);

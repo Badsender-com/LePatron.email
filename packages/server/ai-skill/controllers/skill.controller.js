@@ -6,10 +6,18 @@ const createError = require('http-errors');
 const skillService = require('../services/skill.service.js');
 const skillInvocation = require('../services/skill-invocation.service.js');
 const testBudget = require('../services/test-budget.service.js');
+const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
 
 function userIdOf(req) {
   return req.user && !req.user.isAdmin ? req.user.id : null;
+}
+
+function versionFromParam(req) {
+  const parsed = parseVersionParam(req.params.version);
+  if (!parsed)
+    throw createError(400, 'Invalid version format (expected "major.minor")');
+  return parsed;
 }
 
 module.exports = {
@@ -33,21 +41,46 @@ module.exports = {
     res.json(skill);
   }),
 
-  createVersion: asyncHandler(async (req, res) => {
-    const skill = await skillService.createVersion(
+  createMinorVersion: asyncHandler(async (req, res) => {
+    const skill = await skillService.createMinorVersion(
       req.params.skillId,
-      req.body,
       userIdOf(req)
     );
+    res.status(201).json(skill);
+  }),
+
+  createMajorVersion: asyncHandler(async (req, res) => {
+    const { sourceMajor, sourceMinor } = req.body || {};
+    let source = null;
+    if (sourceMajor !== undefined) {
+      const sk = await skillService.getSkill(req.params.skillId);
+      source = (sk.versions || []).find(
+        (v) =>
+          v.versionMajor === Number(sourceMajor) &&
+          v.versionMinor === Number(sourceMinor || 0)
+      );
+    }
+    const skill = await skillService.createMajorVersion(req.params.skillId, {
+      source,
+      userId: userIdOf(req),
+    });
     res.status(201).json(skill);
   }),
 
   updateVersion: asyncHandler(async (req, res) => {
     const skill = await skillService.updateVersion(
       req.params.skillId,
-      req.params.versionNumber,
+      versionFromParam(req),
       req.body,
       userIdOf(req)
+    );
+    res.json(skill);
+  }),
+
+  deleteVersion: asyncHandler(async (req, res) => {
+    const skill = await skillService.deleteVersion(
+      req.params.skillId,
+      versionFromParam(req)
     );
     res.json(skill);
   }),
@@ -55,7 +88,7 @@ module.exports = {
   activateVersion: asyncHandler(async (req, res) => {
     const skill = await skillService.activateVersion(
       req.params.skillId,
-      req.params.versionNumber,
+      versionFromParam(req),
       req.body,
       userIdOf(req)
     );

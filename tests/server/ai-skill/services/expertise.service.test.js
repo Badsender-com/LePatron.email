@@ -18,7 +18,7 @@ function mockExpertiseDoc(overrides = {}) {
   return {
     expertiseId: 'a',
     status: 'DRAFT',
-    activeVersion: null,
+    activeVersion: { major: null, minor: 0 },
     versions: [],
     save: jest.fn().mockImplementation(async function () {
       return this;
@@ -40,70 +40,143 @@ describe('expertise.service', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
-  describe('updateVersion', () => {
-    it('updates a DRAFT version without requiring a changelog', async () => {
-      const doc = mockExpertiseDoc({
-        versions: [{ versionNumber: 1, body: 'old' }],
-      });
+  describe('createMajorVersion', () => {
+    it('starts at 1.0 when there is no version', async () => {
+      const doc = mockExpertiseDoc();
       Expertises.findOne.mockResolvedValue(doc);
-      await expertiseService.updateVersion('a', 1, { body: 'new' }, null);
-      expect(doc.versions[0].body).toBe('new');
-      expect(doc.save).toHaveBeenCalled();
+      await expertiseService.createMajorVersion('a', { userId: null });
+      expect(doc.versions[0].versionMajor).toBe(1);
+      expect(doc.versions[0].versionMinor).toBe(0);
+      expect(doc.versions[0].status).toBe('DRAFT');
     });
 
-    it('rejects edit on an activated version without changelog', async () => {
+    it('bumps major and clones the active version content', async () => {
       const doc = mockExpertiseDoc({
-        versions: [{ versionNumber: 1, activatedAt: new Date() }],
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'ACTIVE',
+            body: 'active body',
+            examplesGood: ['ok'],
+            examplesBad: [],
+          },
+        ],
       });
       Expertises.findOne.mockResolvedValue(doc);
+      await expertiseService.createMajorVersion('a', { userId: null });
+      const created = doc.versions[doc.versions.length - 1];
+      expect(created.versionMajor).toBe(2);
+      expect(created.versionMinor).toBe(0);
+      expect(created.body).toBe('active body');
+      expect(created.examplesGood).toEqual(['ok']);
+    });
+  });
+
+  describe('createMinorVersion', () => {
+    it('refuses when there is no active version', async () => {
+      const doc = mockExpertiseDoc();
+      Expertises.findOne.mockResolvedValue(doc);
       await expect(
-        expertiseService.updateVersion('a', 1, { body: 'x' }, null)
+        expertiseService.createMinorVersion('a', null)
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('accepts edit on an activated version when a changelog is provided', async () => {
+    it('increments minor and pre-fills the changelog', async () => {
       const doc = mockExpertiseDoc({
-        versions: [{ versionNumber: 1, body: 'old', activatedAt: new Date() }],
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'ACTIVE',
+            body: 'body',
+          },
+        ],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expertiseService.createMinorVersion('a', null);
+      const created = doc.versions[doc.versions.length - 1];
+      expect(created.versionMajor).toBe(1);
+      expect(created.versionMinor).toBe(1);
+      expect(created.changelog).toBe('Correction mineure');
+    });
+  });
+
+  describe('updateVersion', () => {
+    it('rejects edit on ACTIVE/ARCHIVED', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [{ versionMajor: 1, versionMinor: 0, status: 'ACTIVE' }],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expect(
+        expertiseService.updateVersion(
+          'a',
+          { major: 1, minor: 0 },
+          { body: 'x' },
+          null
+        )
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('updates DRAFT fields', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            body: 'old',
+          },
+        ],
       });
       Expertises.findOne.mockResolvedValue(doc);
       await expertiseService.updateVersion(
         'a',
-        1,
-        { body: 'new', changelog: 'fix typo' },
+        { major: 1, minor: 0 },
+        { body: 'new' },
         null
       );
       expect(doc.versions[0].body).toBe('new');
-      expect(doc.versions[0].changelog).toBe('fix typo');
     });
   });
 
-  it('createVersion increments versionNumber', async () => {
-    const doc = mockExpertiseDoc({
-      versions: [{ versionNumber: 1 }, { versionNumber: 2 }],
+  describe('activateVersion', () => {
+    it('requires changelog + releaseNotes for major', async () => {
+      const doc = mockExpertiseDoc({
+        versions: [{ versionMajor: 1, versionMinor: 0, status: 'DRAFT' }],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expect(
+        expertiseService.activateVersion('a', { major: 1, minor: 0 }, {}, null)
+      ).rejects.toMatchObject({ status: 400 });
     });
-    Expertises.findOne.mockResolvedValue(doc);
-    await expertiseService.createVersion('a', { body: '' }, null);
-    expect(doc.versions[2].versionNumber).toBe(3);
-  });
 
-  it('activateVersion requires changelog and releaseNotes', async () => {
-    const doc = mockExpertiseDoc({ versions: [{ versionNumber: 1 }] });
-    Expertises.findOne.mockResolvedValue(doc);
-    await expect(
-      expertiseService.activateVersion('a', 1, {}, null)
-    ).rejects.toMatchObject({ status: 400 });
-  });
-
-  it('activateVersion flips status and stamps activatedAt', async () => {
-    const doc = mockExpertiseDoc({ versions: [{ versionNumber: 1 }] });
-    Expertises.findOne.mockResolvedValue(doc);
-    await expertiseService.activateVersion(
-      'a',
-      1,
-      { changelog: 'c', releaseNotes: 'r' },
-      null
-    );
-    expect(doc.status).toBe('ACTIVE');
-    expect(doc.activeVersion).toBe(1);
+    it('archives the previously active version on activation', async () => {
+      const doc = mockExpertiseDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            changelog: 'fix',
+            releaseNotes: 'fix',
+          },
+        ],
+      });
+      Expertises.findOne.mockResolvedValue(doc);
+      await expertiseService.activateVersion(
+        'a',
+        { major: 1, minor: 1 },
+        {},
+        null
+      );
+      expect(doc.versions[0].status).toBe('ARCHIVED');
+      expect(doc.versions[1].status).toBe('ACTIVE');
+      expect(doc.activeVersion).toEqual({ major: 1, minor: 1 });
+    });
   });
 });

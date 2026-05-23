@@ -12,7 +12,7 @@ const { SkillStatuses } = require('../constant/skill-constants.js');
  * @param {string} [filters.emailType]
  * @param {string} [filters.language]
  * @param {string} [filters.category]
- * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionNumber: number}>>}
+ * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
 async function findApplicable({ scope, emailType, language, category } = {}) {
   const query = { status: SkillStatuses.ACTIVE };
@@ -40,9 +40,10 @@ async function findApplicable({ scope, emailType, language, category } = {}) {
 }
 
 function projectActiveVersion(doc) {
-  if (!doc.activeVersion) return null;
+  const av = doc.activeVersion || {};
+  if (av.major == null) return null;
   const version = (doc.versions || []).find(
-    (v) => v.versionNumber === doc.activeVersion
+    (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
   );
   if (!version) return null;
 
@@ -51,7 +52,8 @@ function projectActiveVersion(doc) {
     title: doc.title,
     category: doc.category,
     scope: doc.scope,
-    versionNumber: version.versionNumber,
+    versionMajor: version.versionMajor,
+    versionMinor: version.versionMinor,
     body: version.body,
     examplesGood: version.examplesGood || [],
     examplesBad: version.examplesBad || [],

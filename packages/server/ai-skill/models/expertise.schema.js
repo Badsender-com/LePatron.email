@@ -21,9 +21,17 @@ const SectionSchema = new Schema(
   { _id: false }
 );
 
+const VersionStatusValues = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
+
 const ExpertiseVersionSchema = new Schema(
   {
-    versionNumber: { type: Number, required: true, min: 1 },
+    versionMajor: { type: Number, required: true, min: 1 },
+    versionMinor: { type: Number, required: true, default: 0, min: 0 },
+    status: {
+      type: String,
+      enum: VersionStatusValues,
+      default: 'DRAFT',
+    },
     body: { type: String, default: '' },
     examplesGood: { type: [String], default: [] },
     examplesBad: { type: [String], default: [] },
@@ -35,6 +43,14 @@ const ExpertiseVersionSchema = new Schema(
     updatedAt: { type: Date, default: Date.now },
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
+const ActiveVersionSchema = new Schema(
+  {
+    major: { type: Number, default: null },
+    minor: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -65,7 +81,10 @@ const ExpertiseSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
-    activeVersion: { type: Number, default: null },
+    activeVersion: {
+      type: ActiveVersionSchema,
+      default: () => ({ major: null, minor: 0 }),
+    },
     versions: { type: [ExpertiseVersionSchema], default: [] },
   },
   {
@@ -86,12 +105,11 @@ ExpertiseSchema.index({ status: 1 });
  */
 ExpertiseSchema.pre('validate', function preValidate(next) {
   for (const version of this.versions || []) {
+    const label = `${version.versionMajor}.${version.versionMinor}`;
     const { sections, errors } = parseSections(version.body || '');
     if (errors.length > 0) {
       return next(
-        new Error(
-          `Expertise version ${version.versionNumber}: ${errors.join('; ')}`
-        )
+        new Error(`Expertise version ${label}: ${errors.join('; ')}`)
       );
     }
     version.sections = sections;

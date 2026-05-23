@@ -14,7 +14,8 @@ function buildExpertise(overrides = {}) {
     category: 'redaction',
     versions: [
       {
-        versionNumber: 1,
+        versionMajor: 1,
+        versionMinor: 0,
         body: '## [urgency] Urgence\nContenu.\n## [verbs] Verbes\nAutres.',
       },
     ],
@@ -34,7 +35,8 @@ describe('Expertise model', () => {
     const exp = buildExpertise({
       versions: [
         {
-          versionNumber: 1,
+          versionMajor: 1,
+          versionMinor: 0,
           body: '## [dup] A\n## [dup] B',
         },
       ],
@@ -46,7 +48,8 @@ describe('Expertise model', () => {
     const exp = buildExpertise({
       versions: [
         {
-          versionNumber: 1,
+          versionMajor: 1,
+          versionMinor: 0,
           body: '## [Bad ID] X',
         },
       ],
@@ -65,7 +68,13 @@ describe('Expertise model', () => {
 
   it('accepts a body without H2 sections', async () => {
     const exp = buildExpertise({
-      versions: [{ versionNumber: 1, body: 'Just paragraphs, no headings.' }],
+      versions: [
+        {
+          versionMajor: 1,
+          versionMinor: 0,
+          body: 'Just paragraphs, no headings.',
+        },
+      ],
     });
     await expect(exp.validate()).resolves.toBeUndefined();
     expect(exp.versions[0].sections.length).toBe(0);
