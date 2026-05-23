@@ -1184,6 +1184,10 @@ export default {
       saveDraft: 'Enregistrer le brouillon',
       duplicate: 'Dupliquer',
       duplicateHint: 'Partir de cette version pour en créer une nouvelle (brouillon).',
+      editActiveWarning: 'Cette version est active. Toute modification doit être accompagnée d\'un changelog.',
+      editChangelogLabel: 'Changelog de cette modification',
+      editChangelogHint: 'Décrire brièvement ce qui change et pourquoi.',
+      saveChanges: 'Enregistrer les modifications',
     },
     test: {
       tabLabel: 'Test',

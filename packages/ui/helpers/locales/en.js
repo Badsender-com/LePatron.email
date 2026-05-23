@@ -1171,6 +1171,10 @@ export default {
       saveDraft: 'Save draft',
       duplicate: 'Duplicate',
       duplicateHint: 'Start a new draft from this version.',
+      editActiveWarning: 'This version is active. Any change must come with a changelog entry.',
+      editChangelogLabel: 'Changelog for this edit',
+      editChangelogHint: 'Briefly describe what changes and why.',
+      saveChanges: 'Save changes',
     },
     test: {
       tabLabel: 'Test',

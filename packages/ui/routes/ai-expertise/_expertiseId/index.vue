@@ -110,16 +110,18 @@ export default {
         this.saving = false;
       }
     },
-    async saveVersion(v) {
+    async saveVersion({ version, changelog }) {
       this.saving = true;
       try {
+        const payload = {
+          body: version.body,
+          examplesGood: version.examplesGood,
+          examplesBad: version.examplesBad,
+        };
+        if (changelog) payload.changelog = changelog;
         this.exp = await this.$axios.$patch(
-          api.aiExpertiseVersion(this.exp.expertiseId, v.versionNumber),
-          {
-            body: v.body,
-            examplesGood: v.examplesGood,
-            examplesBad: v.examplesBad,
-          }
+          api.aiExpertiseVersion(this.exp.expertiseId, version.versionNumber),
+          payload
         );
         this.showSnackbar({
           text: this.$t('aiSkills.version.draftSaved'),
