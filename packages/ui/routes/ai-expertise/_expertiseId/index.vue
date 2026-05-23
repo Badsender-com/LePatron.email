@@ -7,7 +7,6 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/BsAiExpertiseDetailsForm.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/BsAiExpertiseVersionsPanel.vue';
-import BsAiExpertiseVersionModal from '~/components/ai-skill/BsAiExpertiseVersionModal.vue';
 import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
 
@@ -17,7 +16,6 @@ export default {
     BsAiDetailHeader,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
-    BsAiExpertiseVersionModal,
     BsAiActivateModal,
     BsAiArchiveModal,
   },
@@ -46,10 +44,16 @@ export default {
     pageTitle() {
       return this.exp ? this.exp.title : this.$t('aiSkills.tabs.expertise');
     },
+    activeVersionLabel() {
+      const av = this.exp && this.exp.activeVersion;
+      if (!av || av.major == null) return null;
+      return `${av.major}.${av.minor || 0}`;
+    },
     activeVersion() {
-      if (!this.exp) return null;
+      const av = this.exp && this.exp.activeVersion;
+      if (!av || av.major == null) return null;
       return (this.exp.versions || []).find(
-        (v) => v.versionNumber === this.exp.activeVersion
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
       );
     },
     sections() {
@@ -68,8 +72,6 @@ export default {
       this.showSnackbar({ text: msg, color: 'error' });
     },
     async saveDetails() {
-      // Force commit of any pending v-combobox tags (see saveDetails on
-      // the skill page for the rationale).
       if (document.activeElement && document.activeElement.blur) {
         document.activeElement.blur();
       }
@@ -98,14 +100,12 @@ export default {
         this.saving = false;
       }
     },
-    async createVersion(payload) {
+    async createMinorVersion() {
       this.saving = true;
       try {
         this.exp = await this.$axios.$post(
-          api.aiExpertiseVersions(this.exp.expertiseId),
-          payload
+          api.aiExpertiseVersionMinor(this.exp.expertiseId)
         );
-        this.$refs.versionModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.versionCreated'),
           color: 'success',
@@ -116,18 +116,45 @@ export default {
         this.saving = false;
       }
     },
-    async saveVersion({ version, changelog }) {
+    async createMajorVersion(source) {
       this.saving = true;
       try {
-        const payload = {
-          body: version.body,
-          examplesGood: version.examplesGood,
-          examplesBad: version.examplesBad,
-        };
-        if (changelog) payload.changelog = changelog;
+        const body = source
+          ? {
+              sourceMajor: source.versionMajor,
+              sourceMinor: source.versionMinor,
+            }
+          : {};
+        this.exp = await this.$axios.$post(
+          api.aiExpertiseVersionMajor(this.exp.expertiseId),
+          body
+        );
+        this.showSnackbar({
+          text: this.$t('aiSkills.version.versionCreated'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.saving = false;
+      }
+    },
+    async saveVersion({ version }) {
+      this.saving = true;
+      try {
         this.exp = await this.$axios.$patch(
-          api.aiExpertiseVersion(this.exp.expertiseId, version.versionNumber),
-          payload
+          api.aiExpertiseVersion(
+            this.exp.expertiseId,
+            version.versionMajor,
+            version.versionMinor
+          ),
+          {
+            body: version.body,
+            examplesGood: version.examplesGood,
+            examplesBad: version.examplesBad,
+            changelog: version.changelog,
+            releaseNotes: version.releaseNotes,
+          }
         );
         this.showSnackbar({
           text: this.$t('aiSkills.version.draftSaved'),
@@ -139,9 +166,30 @@ export default {
         this.saving = false;
       }
     },
+    async deleteVersion(version) {
+      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
+      this.saving = true;
+      try {
+        this.exp = await this.$axios.$delete(
+          api.aiExpertiseVersion(
+            this.exp.expertiseId,
+            version.versionMajor,
+            version.versionMinor
+          )
+        );
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.saving = false;
+      }
+    },
     askActivate(version) {
       this.activatingVersion = version;
-      this.$refs.activateModal.open();
+      if (version.versionMinor === 0) {
+        this.$refs.activateModal.open();
+      } else {
+        this.activateVersion({});
+      }
     },
     async activateVersion(payload) {
       this.saving = true;
@@ -149,11 +197,12 @@ export default {
         this.exp = await this.$axios.$post(
           api.aiExpertiseActivate(
             this.exp.expertiseId,
-            this.activatingVersion.versionNumber
+            this.activatingVersion.versionMajor,
+            this.activatingVersion.versionMinor
           ),
           payload
         );
-        this.$refs.activateModal.close();
+        if (this.$refs.activateModal) this.$refs.activateModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.activated'),
           color: 'success',
@@ -196,7 +245,9 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ exp.expertiseId }} · {{ categoryLabel(exp.category) }} ·
-      <span v-if="exp.activeVersion">{{ $t('aiSkills.skill.activeVersion') }} v{{ exp.activeVersion }}</span>
+      <span v-if="activeVersionLabel">{{ $t('aiSkills.skill.activeVersion') }} v{{
+        activeVersionLabel
+      }}</span>
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
@@ -228,10 +279,12 @@ export default {
           <bs-ai-expertise-versions-panel
             :expertise="exp"
             :saving="saving"
-            @create="$refs.versionModal.open()"
+            @create-minor="createMinorVersion"
+            @create-major="createMajorVersion(null)"
             @save="saveVersion"
             @activate="askActivate"
-            @duplicate="(v) => $refs.versionModal.openWith(v)"
+            @duplicate="createMajorVersion"
+            @delete="deleteVersion"
           />
         </v-tab-item>
         <v-tab-item value="sections">
@@ -261,11 +314,6 @@ export default {
       </v-tabs-items>
     </v-container>
 
-    <bs-ai-expertise-version-modal
-      ref="versionModal"
-      :loading="saving"
-      @submit="createVersion"
-    />
     <bs-ai-activate-modal
       ref="activateModal"
       :loading="saving"

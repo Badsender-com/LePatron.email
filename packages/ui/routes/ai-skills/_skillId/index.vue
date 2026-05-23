@@ -5,7 +5,6 @@ import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
-import BsAiSkillVersionModal from '~/components/ai-skill/BsAiSkillVersionModal.vue';
 import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
 import BsAiSkillVersionsPanel from '~/components/ai-skill/BsAiSkillVersionsPanel.vue';
@@ -17,7 +16,6 @@ export default {
   name: 'PageAiSkillDetail',
   components: {
     BsAiDetailHeader,
-    BsAiSkillVersionModal,
     BsAiActivateModal,
     BsAiArchiveModal,
     BsAiSkillVersionsPanel,
@@ -54,6 +52,11 @@ export default {
     pageTitle() {
       return this.skill ? this.skill.title : this.$t('aiSkills.tabs.skills');
     },
+    activeVersionLabel() {
+      const av = this.skill && this.skill.activeVersion;
+      if (!av || av.major == null) return null;
+      return `${av.major}.${av.minor || 0}`;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -62,11 +65,6 @@ export default {
     },
 
     async saveDetails() {
-      // Vuetify's v-combobox in multiple mode only commits a typed-but-
-      // unconfirmed tag on blur. When the user clicks "Save" without first
-      // pressing Enter/Tab, the click can race with the blur commit. Force
-      // a blur on the active element, then wait a tick so the v-model
-      // catches up before we read it.
       if (document.activeElement && document.activeElement.blur) {
         document.activeElement.blur();
       }
@@ -95,14 +93,13 @@ export default {
         this.saving = false;
       }
     },
-    async createVersion(payload) {
+
+    async createMinorVersion() {
       this.saving = true;
       try {
         this.skill = await this.$axios.$post(
-          api.aiSkillVersions(this.skill.skillId),
-          payload
+          api.aiSkillVersionMinor(this.skill.skillId)
         );
-        this.$refs.versionModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.versionCreated'),
           color: 'success',
@@ -113,7 +110,32 @@ export default {
         this.saving = false;
       }
     },
-    async saveVersion({ version, changelog }) {
+
+    async createMajorVersion(source) {
+      this.saving = true;
+      try {
+        const body = source
+          ? {
+              sourceMajor: source.versionMajor,
+              sourceMinor: source.versionMinor,
+            }
+          : {};
+        this.skill = await this.$axios.$post(
+          api.aiSkillVersionMajor(this.skill.skillId),
+          body
+        );
+        this.showSnackbar({
+          text: this.$t('aiSkills.version.versionCreated'),
+          color: 'success',
+        });
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async saveVersion({ version }) {
       this.saving = true;
       try {
         const payload = {
@@ -121,10 +143,15 @@ export default {
           skillBody: version.skillBody,
           inputTemplate: version.inputTemplate,
           modelHints: version.modelHints,
+          changelog: version.changelog,
+          releaseNotes: version.releaseNotes,
         };
-        if (changelog) payload.changelog = changelog;
         this.skill = await this.$axios.$patch(
-          api.aiSkillVersion(this.skill.skillId, version.versionNumber),
+          api.aiSkillVersion(
+            this.skill.skillId,
+            version.versionMajor,
+            version.versionMinor
+          ),
           payload
         );
         this.showSnackbar({
@@ -137,9 +164,34 @@ export default {
         this.saving = false;
       }
     },
+
+    async deleteVersion(version) {
+      if (!confirm(this.$t('aiSkills.version.deleteDraftConfirm'))) return;
+      this.saving = true;
+      try {
+        this.skill = await this.$axios.$delete(
+          api.aiSkillVersion(
+            this.skill.skillId,
+            version.versionMajor,
+            version.versionMinor
+          )
+        );
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.saving = false;
+      }
+    },
+
     askActivate(version) {
       this.activatingVersion = version;
-      this.$refs.activateModal.open();
+      // Minor releases publish directly with defaults; major releases need
+      // an explicit changelog/releaseNotes via the modal.
+      if (version.versionMinor === 0) {
+        this.$refs.activateModal.open();
+      } else {
+        this.activateVersion({});
+      }
     },
     async activateVersion(payload) {
       this.saving = true;
@@ -147,11 +199,12 @@ export default {
         this.skill = await this.$axios.$post(
           api.aiSkillActivate(
             this.skill.skillId,
-            this.activatingVersion.versionNumber
+            this.activatingVersion.versionMajor,
+            this.activatingVersion.versionMinor
           ),
           payload
         );
-        this.$refs.activateModal.close();
+        if (this.$refs.activateModal) this.$refs.activateModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.activated'),
           color: 'success',
@@ -162,6 +215,7 @@ export default {
         this.saving = false;
       }
     },
+
     async archive() {
       this.saving = true;
       try {
@@ -200,8 +254,8 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ skill.skillId }} · {{ categoryLabel(skill.category) }} ·
-      <span v-if="skill.activeVersion">{{ $t('aiSkills.skill.activeVersion') }} v{{
-        skill.activeVersion
+      <span v-if="activeVersionLabel">{{ $t('aiSkills.skill.activeVersion') }} v{{
+        activeVersionLabel
       }}</span>
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
@@ -226,7 +280,6 @@ export default {
 
     <v-container fluid>
       <v-tabs-items v-model="tab" class="transparent">
-        <!-- DETAILS -->
         <v-tab-item value="details">
           <bs-ai-skill-details-form
             :skill="skill"
@@ -236,24 +289,23 @@ export default {
           />
         </v-tab-item>
 
-        <!-- VERSIONS -->
         <v-tab-item value="versions">
           <bs-ai-skill-versions-panel
             :skill="skill"
             :saving="saving"
-            @create="$refs.versionModal.open()"
+            @create-minor="createMinorVersion"
+            @create-major="createMajorVersion(null)"
             @save="saveVersion"
             @activate="askActivate"
-            @duplicate="(v) => $refs.versionModal.openWith(v)"
+            @duplicate="createMajorVersion"
+            @delete="deleteVersion"
           />
         </v-tab-item>
 
-        <!-- TEST -->
         <v-tab-item value="test">
           <bs-ai-skill-test-panel :skill-id="skill.skillId" />
         </v-tab-item>
 
-        <!-- LOGS -->
         <v-tab-item value="logs">
           <bs-ai-skill-logs-panel
             v-if="tab === 'logs'"
@@ -263,11 +315,6 @@ export default {
       </v-tabs-items>
     </v-container>
 
-    <bs-ai-skill-version-modal
-      ref="versionModal"
-      :loading="saving"
-      @submit="createVersion"
-    />
     <bs-ai-activate-modal
       ref="activateModal"
       :loading="saving"
@@ -290,21 +337,5 @@ export default {
 }
 .detail-tabs {
   padding: 0 1.5rem;
-}
-.modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 1rem 0;
-}
-.code-block {
-  background: #f5f5f5;
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  max-height: 320px;
-  overflow: auto;
-  margin: 0;
 }
 </style>
