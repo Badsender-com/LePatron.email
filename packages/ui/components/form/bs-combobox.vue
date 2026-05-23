@@ -23,6 +23,13 @@ export default {
     chips: { type: Boolean, default: false },
     smallChips: { type: Boolean, default: false },
   },
+  data() {
+    return {
+      // Mirror of the v-combobox internal search input so we can commit any
+      // pending tag synchronously when the field loses focus.
+      searchInput: '',
+    };
+  },
   computed: {
     localValue: {
       get() {
@@ -45,6 +52,30 @@ export default {
       return this.errorMessages ? [this.errorMessages] : [];
     },
   },
+  methods: {
+    /**
+     * Vuetify's v-combobox commits a typed-but-unconfirmed tag on blur via
+     * an async internal handler, so clicking a Save button next to the
+     * field can race the commit. We push the pending searchInput into the
+     * value array synchronously on blur, guaranteeing the parent v-model
+     * is up-to-date by the time the click handler runs.
+     */
+    handleBlur(event) {
+      const pending = (this.searchInput || '').trim();
+      if (pending) {
+        if (this.multiple) {
+          const current = Array.isArray(this.localValue) ? this.localValue : [];
+          if (!current.includes(pending)) {
+            this.localValue = [...current, pending];
+          }
+        } else {
+          this.localValue = pending;
+        }
+        this.searchInput = '';
+      }
+      this.$emit('blur', event);
+    },
+  },
 };
 </script>
 
@@ -62,6 +93,7 @@ export default {
     </label>
     <v-combobox
       v-model="localValue"
+      :search-input.sync="searchInput"
       v-bind="$attrs"
       :items="items"
       :placeholder="placeholder"
@@ -76,6 +108,7 @@ export default {
       hide-details="auto"
       class="bs-combobox__input"
       v-on="$listeners"
+      @blur="handleBlur"
     />
     <div v-if="hint && !hasError" class="bs-combobox__hint">
       {{ hint }}
