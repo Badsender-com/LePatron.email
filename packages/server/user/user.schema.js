@@ -97,6 +97,12 @@ const UserSchema = Schema(
       of: Schema.Types.Mixed,
       default: {},
     },
+    // LePatron Skills IA — daily quota for the skill test-runner.
+    // `date` is the YYYY-MM-DD bucket; resets when a request comes in on a new day.
+    dailyTestInvocationCount: {
+      date: { type: String, default: null },
+      count: { type: Number, default: 0 },
+    },
   },
   {
     timestamps: true,
@@ -224,7 +230,8 @@ UserSchema.methods.comparePassword = function comparePassword(password) {
 UserSchema.statics.findOneForApi = async function findOneForApi(query = {}) {
   const mailing = await this.findOne(query).populate({
     path: '_company',
-    select: 'id name issuer entryPoint enableCrmIntelligence enableEmailBuilder',
+    select:
+      'id name issuer entryPoint enableCrmIntelligence enableEmailBuilder',
   });
   return mailing;
 };

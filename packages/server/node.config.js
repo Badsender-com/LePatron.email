@@ -71,6 +71,12 @@ const config = rc('lepatron', {
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';
 config.PORT = process.env.PORT || 3000;
+// Allow DATABASE_URL from the .env to override the rc defaults so local
+// environments can point to a non-standard MongoDB port without editing
+// the source or maintaining a `.lepatronrc` file.
+if (process.env.DATABASE_URL) {
+  config.database = process.env.DATABASE_URL;
+}
 
 config.isDev = config.NODE_ENV === 'development';
 config.isProd = config.NODE_ENV === 'production';

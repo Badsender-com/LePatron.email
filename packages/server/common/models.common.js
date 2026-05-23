@@ -27,6 +27,9 @@ const { CommentSchema } = require('../comment/comment.schema.js');
 const IntegrationSchema = require('../integration/integration.schema.js');
 const DashboardSchema = require('../dashboard/dashboard.schema.js');
 const AIFeatureConfigSchema = require('../ai-feature/ai-feature.schema.js');
+const LePatronSkillSchema = require('../ai-skill/models/le-patron-skill.schema.js');
+const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
+const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
 
 /// ///
 // EXPORTS
@@ -75,6 +78,15 @@ const AIFeatureConfigs = mongoose.model(
   modelNames.AIFeatureConfigModel,
   AIFeatureConfigSchema
 );
+const LePatronSkills = mongoose.model(
+  modelNames.LePatronSkillModel,
+  LePatronSkillSchema
+);
+const Expertises = mongoose.model(modelNames.ExpertiseModel, ExpertiseSchema);
+const AISkillInvocations = mongoose.model(
+  modelNames.AISkillInvocationModel,
+  AISkillInvocationSchema
+);
 
 module.exports = {
   mongoose,
@@ -100,4 +112,7 @@ module.exports = {
   Integrations,
   Dashboards,
   AIFeatureConfigs,
+  LePatronSkills,
+  Expertises,
+  AISkillInvocations,
 };

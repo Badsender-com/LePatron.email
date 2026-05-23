@@ -28,4 +28,8 @@ module.exports = Object.freeze({
   DashboardModel: 'Dashboard',
   // AI Features
   AIFeatureConfigModel: 'AIFeatureConfig',
+  // LePatron Skills IA
+  LePatronSkillModel: 'LePatronSkill',
+  ExpertiseModel: 'Expertise',
+  AISkillInvocationModel: 'AISkillInvocation',
 });
