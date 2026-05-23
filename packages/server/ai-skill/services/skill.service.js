@@ -113,10 +113,12 @@ async function updateVersion(skillId, versionNumber, patch, userId) {
     (v) => v.versionNumber === Number(versionNumber)
   );
   if (!version) throw createError(404, `Version ${versionNumber} not found`);
-  if (version.activatedAt) {
+  // Activated versions remain editable (user feedback v1.1), but a
+  // changelog is required on every patch to keep an audit trail.
+  if (version.activatedAt && !patch.changelog) {
     throw createError(
-      409,
-      'Activated versions are immutable — create a new version'
+      400,
+      'A changelog is required when editing an activated version'
     );
   }
   for (const key of [

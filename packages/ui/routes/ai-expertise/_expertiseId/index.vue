@@ -68,6 +68,12 @@ export default {
       this.showSnackbar({ text: msg, color: 'error' });
     },
     async saveDetails() {
+      // Force commit of any pending v-combobox tags (see saveDetails on
+      // the skill page for the rationale).
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      await this.$nextTick();
       this.saving = true;
       try {
         this.exp = await this.$axios.$patch(
