@@ -3,6 +3,14 @@
 const createError = require('http-errors');
 const { LePatronSkills } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
+const {
+  findVersion,
+  findActiveVersion,
+  maxMajor,
+  maxMinorFor,
+  assertDraft,
+  versionLabel,
+} = require('./version-helpers.js');
 
 const LIST_PROJECTION = {
   skillId: 1,
@@ -53,7 +61,7 @@ async function createSkill(data, userId) {
     intendedUseCases: data.intendedUseCases || [],
     owner: userId,
     status: SkillStatuses.DRAFT,
-    activeVersion: null,
+    activeVersion: { major: null, minor: 0 },
     versions: [],
   };
   try {
@@ -84,43 +92,95 @@ async function updateSkill(skillId, patch) {
   return skill;
 }
 
-async function createVersion(skillId, data, userId) {
+// ─── Versioning ────────────────────────────────────────────────────────────
+
+function blankVersionContent() {
+  return {
+    systemPrompt: '',
+    skillBody: '',
+    inputTemplate: '',
+    modelHints: {},
+    testCases: [],
+  };
+}
+
+function cloneVersionContent(source) {
+  if (!source) return blankVersionContent();
+  return {
+    systemPrompt: source.systemPrompt || '',
+    skillBody: source.skillBody || '',
+    inputTemplate: source.inputTemplate || '',
+    modelHints: source.modelHints
+      ? JSON.parse(JSON.stringify(source.modelHints))
+      : {},
+    testCases: source.testCases
+      ? JSON.parse(JSON.stringify(source.testCases))
+      : [],
+  };
+}
+
+/**
+ * Create a new minor draft on top of the currently active version.
+ * Errors if no active version exists.
+ */
+async function createMinorVersion(skillId, userId) {
   const skill = await getSkill(skillId);
-  const nextVersionNumber =
-    (skill.versions || []).reduce(
-      (max, v) => (v.versionNumber > max ? v.versionNumber : max),
-      0
-    ) + 1;
+  const active = findActiveVersion(skill);
+  if (!active) {
+    throw createError(
+      400,
+      'Cannot create a minor version: no active version on this skill'
+    );
+  }
+  const versionMajor = active.versionMajor;
+  const versionMinor = maxMinorFor(skill, versionMajor) + 1;
+  const now = new Date();
   skill.versions.push({
-    versionNumber: nextVersionNumber,
-    systemPrompt: data.systemPrompt || '',
-    skillBody: data.skillBody || '',
-    inputTemplate: data.inputTemplate || '',
-    modelHints: data.modelHints || {},
-    testCases: data.testCases || [],
+    versionMajor,
+    versionMinor,
+    status: 'DRAFT',
+    ...cloneVersionContent(active),
+    changelog: 'Correction mineure',
+    releaseNotes: 'Correction mineure sans changement de doctrine.',
     createdBy: userId,
-    createdAt: new Date(),
+    createdAt: now,
     updatedBy: userId,
-    updatedAt: new Date(),
+    updatedAt: now,
   });
   await skill.save();
   return skill;
 }
 
-async function updateVersion(skillId, versionNumber, patch, userId) {
+/**
+ * Create a new major draft. Optionally seeded from a specific version
+ * (used by the "Duplicate" flow). If no source is given, seeds from the
+ * currently active version, falling back to an empty version.
+ */
+async function createMajorVersion(skillId, { source, userId } = {}) {
   const skill = await getSkill(skillId);
-  const version = skill.versions.find(
-    (v) => v.versionNumber === Number(versionNumber)
-  );
-  if (!version) throw createError(404, `Version ${versionNumber} not found`);
-  // Activated versions remain editable (user feedback v1.1), but a
-  // changelog is required on every patch to keep an audit trail.
-  if (version.activatedAt && !patch.changelog) {
-    throw createError(
-      400,
-      'A changelog is required when editing an activated version'
-    );
-  }
+  const seed = source || findActiveVersion(skill);
+  const versionMajor = maxMajor(skill) + 1;
+  const now = new Date();
+  skill.versions.push({
+    versionMajor,
+    versionMinor: 0,
+    status: 'DRAFT',
+    ...cloneVersionContent(seed),
+    changelog: '',
+    releaseNotes: '',
+    createdBy: userId,
+    createdAt: now,
+    updatedBy: userId,
+    updatedAt: now,
+  });
+  await skill.save();
+  return skill;
+}
+
+async function updateVersion(skillId, { major, minor }, patch, userId) {
+  const skill = await getSkill(skillId);
+  const version = findVersion(skill, major, minor);
+  assertDraft(version);
   for (const key of [
     'systemPrompt',
     'skillBody',
@@ -138,24 +198,52 @@ async function updateVersion(skillId, versionNumber, patch, userId) {
   return skill;
 }
 
-async function activateVersion(skillId, versionNumber, payload, userId) {
+async function deleteVersion(skillId, { major, minor }) {
   const skill = await getSkill(skillId);
-  const version = skill.versions.find(
-    (v) => v.versionNumber === Number(versionNumber)
+  const version = findVersion(skill, major, minor);
+  assertDraft(version); // 404 if missing, 409 if not DRAFT
+  skill.versions = skill.versions.filter(
+    (v) => !(v.versionMajor === major && v.versionMinor === minor)
   );
-  if (!version) throw createError(404, `Version ${versionNumber} not found`);
-  if (!payload.changelog || !payload.releaseNotes) {
-    throw createError(
-      400,
-      'changelog and releaseNotes are required to activate a version'
-    );
+  await skill.save();
+  return skill;
+}
+
+async function activateVersion(skillId, { major, minor }, payload, userId) {
+  const skill = await getSkill(skillId);
+  const version = findVersion(skill, major, minor);
+  if (!version) throw createError(404, `Version ${major}.${minor} not found`);
+  if (version.status !== 'DRAFT') {
+    throw createError(409, 'Only DRAFT versions can be activated');
   }
-  version.changelog = payload.changelog;
-  version.releaseNotes = payload.releaseNotes;
+  // Major releases require explicit changelog and releaseNotes. Minor
+  // releases inherit the auto-filled defaults from createMinorVersion.
+  const isMajor = version.versionMinor === 0;
+  if (isMajor) {
+    if (!payload.changelog || !payload.releaseNotes) {
+      throw createError(
+        400,
+        'changelog and releaseNotes are required to activate a major version'
+      );
+    }
+  }
+  if (payload.changelog) version.changelog = payload.changelog;
+  if (payload.releaseNotes) version.releaseNotes = payload.releaseNotes;
+
+  // Archive the previously active version, if any.
+  const previousActive = findActiveVersion(skill);
+  if (previousActive && previousActive !== version) {
+    previousActive.status = 'ARCHIVED';
+  }
+
+  version.status = 'ACTIVE';
   version.activatedAt = new Date();
   version.updatedBy = userId;
   version.updatedAt = new Date();
-  skill.activeVersion = version.versionNumber;
+  skill.activeVersion = {
+    major: version.versionMajor,
+    minor: version.versionMinor,
+  };
   skill.status = SkillStatuses.ACTIVE;
   await skill.save();
   return skill;
@@ -173,8 +261,11 @@ module.exports = {
   getSkill,
   createSkill,
   updateSkill,
-  createVersion,
+  createMinorVersion,
+  createMajorVersion,
   updateVersion,
+  deleteVersion,
   activateVersion,
   archiveSkill,
+  versionLabel,
 };

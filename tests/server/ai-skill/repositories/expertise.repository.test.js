@@ -22,15 +22,18 @@ describe('expertise.repository', () => {
   describe('projectActiveVersion', () => {
     it('returns null when no activeVersion', () => {
       expect(
-        projectActiveVersion({ activeVersion: null, versions: [] })
+        projectActiveVersion({
+          activeVersion: { major: null, minor: 0 },
+          versions: [],
+        })
       ).toBeNull();
     });
 
     it('returns null when activeVersion points to a missing version', () => {
       expect(
         projectActiveVersion({
-          activeVersion: 2,
-          versions: [{ versionNumber: 1 }],
+          activeVersion: { major: 2, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
         })
       ).toBeNull();
     });
@@ -41,10 +44,11 @@ describe('expertise.repository', () => {
         title: 't',
         category: 'redaction',
         scope: ['cta'],
-        activeVersion: 1,
+        activeVersion: { major: 1, minor: 0 },
         versions: [
           {
-            versionNumber: 1,
+            versionMajor: 1,
+            versionMinor: 0,
             body: 'b',
             examplesGood: ['ok'],
             examplesBad: [],
@@ -53,7 +57,8 @@ describe('expertise.repository', () => {
       });
       expect(out).toMatchObject({
         expertiseId: 'a',
-        versionNumber: 1,
+        versionMajor: 1,
+        versionMinor: 0,
         body: 'b',
         examplesGood: ['ok'],
       });
@@ -100,11 +105,15 @@ describe('expertise.repository', () => {
 
     it('drops docs without a matching active version', async () => {
       mockReturnDocs([
-        { expertiseId: 'a', activeVersion: null, versions: [] },
+        {
+          expertiseId: 'a',
+          activeVersion: { major: null, minor: 0 },
+          versions: [],
+        },
         {
           expertiseId: 'b',
-          activeVersion: 1,
-          versions: [{ versionNumber: 1, body: 'x' }],
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
         },
       ]);
       const out = await findApplicable();

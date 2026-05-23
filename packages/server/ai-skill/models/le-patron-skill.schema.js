@@ -33,9 +33,17 @@ const ModelHintsSchema = new Schema(
   { _id: false }
 );
 
+const VersionStatusValues = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
+
 const SkillVersionSchema = new Schema(
   {
-    versionNumber: { type: Number, required: true, min: 1 },
+    versionMajor: { type: Number, required: true, min: 1 },
+    versionMinor: { type: Number, required: true, default: 0, min: 0 },
+    status: {
+      type: String,
+      enum: VersionStatusValues,
+      default: 'DRAFT',
+    },
     systemPrompt: { type: String, default: '' },
     skillBody: { type: String, default: '' },
     inputTemplate: { type: String, default: '' },
@@ -48,6 +56,14 @@ const SkillVersionSchema = new Schema(
     updatedBy: { type: ObjectId, ref: UserModel },
     activatedAt: { type: Date, default: null },
     testCases: { type: [TestCaseSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const ActiveVersionSchema = new Schema(
+  {
+    major: { type: Number, default: null },
+    minor: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -77,7 +93,10 @@ const LePatronSkillSchema = new Schema(
       enum: SkillStatusValues,
       default: SkillStatuses.DRAFT,
     },
-    activeVersion: { type: Number, default: null },
+    activeVersion: {
+      type: ActiveVersionSchema,
+      default: () => ({ major: null, minor: 0 }),
+    },
     versions: { type: [SkillVersionSchema], default: [] },
   },
   {
@@ -113,17 +132,18 @@ LePatronSkillSchema.pre('validate', function preValidate(next) {
   }
 
   for (const version of this.versions || []) {
+    const label = `${version.versionMajor}.${version.versionMinor}`;
     if (INPUT_PLACEHOLDER_REGEX.test(version.systemPrompt || '')) {
       return next(
         new Error(
-          `Version ${version.versionNumber}: {{input.*}} placeholders are not allowed in systemPrompt`
+          `Version ${label}: {{input.*}} placeholders are not allowed in systemPrompt`
         )
       );
     }
     if (INPUT_PLACEHOLDER_REGEX.test(version.skillBody || '')) {
       return next(
         new Error(
-          `Version ${version.versionNumber}: {{input.*}} placeholders are not allowed in skillBody`
+          `Version ${label}: {{input.*}} placeholders are not allowed in skillBody`
         )
       );
     }

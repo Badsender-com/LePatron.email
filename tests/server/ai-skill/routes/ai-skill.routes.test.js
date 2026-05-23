@@ -15,8 +15,10 @@ jest.mock(
     getSkill: jest.fn(),
     createSkill: jest.fn(),
     updateSkill: jest.fn(),
-    createVersion: jest.fn(),
+    createMinorVersion: jest.fn(),
+    createMajorVersion: jest.fn(),
     updateVersion: jest.fn(),
+    deleteVersion: jest.fn(),
     activateVersion: jest.fn(),
     archiveSkill: jest.fn(),
   })
@@ -36,8 +38,10 @@ jest.mock(
     getExpertise: jest.fn(),
     createExpertise: jest.fn(),
     updateExpertise: jest.fn(),
-    createVersion: jest.fn(),
+    createMinorVersion: jest.fn(),
+    createMajorVersion: jest.fn(),
     updateVersion: jest.fn(),
+    deleteVersion: jest.fn(),
     activateVersion: jest.fn(),
     archiveExpertise: jest.fn(),
   })
@@ -81,12 +85,10 @@ function makeApp({ asAdmin = true } = {}) {
   app.use('/api/ai-invocations', invocationsRouter);
   // Centralized error handler so http-errors propagates as JSON.
   app.use((err, _req, res, _next) => {
-    res
-      .status(err.status || 500)
-      .json({
-        message: err.message,
-        code: err.skillError && err.skillError.code,
-      });
+    res.status(err.status || 500).json({
+      message: err.message,
+      code: err.skillError && err.skillError.code,
+    });
   });
   return app;
 }
@@ -159,19 +161,26 @@ describe('ai-skill HTTP routes', () => {
     expect(skillInvocation.invoke).not.toHaveBeenCalled();
   });
 
-  it('full lifecycle: create → version → activate → archive', async () => {
+  it('full lifecycle: create → major version → activate → minor version → activate → archive', async () => {
     skillService.createSkill.mockResolvedValue({
       skillId: 'a',
       status: 'DRAFT',
     });
-    skillService.createVersion.mockResolvedValue({
+    skillService.createMajorVersion.mockResolvedValue({
       skillId: 'a',
-      versions: [{ versionNumber: 1 }],
+      versions: [{ versionMajor: 1, versionMinor: 0, status: 'DRAFT' }],
     });
     skillService.activateVersion.mockResolvedValue({
       skillId: 'a',
       status: 'ACTIVE',
-      activeVersion: 1,
+      activeVersion: { major: 1, minor: 0 },
+    });
+    skillService.createMinorVersion.mockResolvedValue({
+      skillId: 'a',
+      versions: [
+        { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+        { versionMajor: 1, versionMinor: 1, status: 'DRAFT' },
+      ],
     });
     skillService.archiveSkill.mockResolvedValue({
       skillId: 'a',
@@ -188,20 +197,21 @@ describe('ai-skill HTTP routes', () => {
     });
     expect(r1.status).toBe(201);
 
-    const r2 = await request(app)
-      .post('/api/ai-skills/a/versions')
-      .send({ systemPrompt: 'x', skillBody: 'y', inputTemplate: 'z' });
+    const r2 = await request(app).post('/api/ai-skills/a/versions/major');
     expect(r2.status).toBe(201);
 
     const r3 = await request(app)
-      .post('/api/ai-skills/a/versions/1/activate')
+      .post('/api/ai-skills/a/versions/1.0/activate')
       .send({ changelog: 'c', releaseNotes: 'r' });
     expect(r3.status).toBe(200);
     expect(r3.body.status).toBe('ACTIVE');
 
-    const r4 = await request(app).post('/api/ai-skills/a/archive');
-    expect(r4.status).toBe(200);
-    expect(r4.body.status).toBe('ARCHIVED');
+    const r4 = await request(app).post('/api/ai-skills/a/versions/minor');
+    expect(r4.status).toBe(201);
+
+    const r5 = await request(app).post('/api/ai-skills/a/archive');
+    expect(r5.status).toBe(200);
+    expect(r5.body.status).toBe('ARCHIVED');
   });
 
   it('GET /api/ai-invocations forwards filters as query', async () => {

@@ -31,7 +31,7 @@ function mockSkillDoc(overrides = {}) {
     skillId: 'generic.text',
     title: 't',
     status: 'DRAFT',
-    activeVersion: null,
+    activeVersion: { major: null, minor: 0 },
     versions: [],
     save: jest.fn().mockImplementation(async function () {
       return this;
@@ -82,6 +82,7 @@ describe('skill.service', () => {
       expect(payload.status).toBe('DRAFT');
       expect(payload.owner).toBe(userId);
       expect(payload.versions).toEqual([]);
+      expect(payload.activeVersion).toEqual({ major: null, minor: 0 });
     });
 
     it('throws 409 on duplicate skillId', async () => {
@@ -92,77 +93,209 @@ describe('skill.service', () => {
     });
   });
 
-  describe('createVersion', () => {
-    it('assigns the next versionNumber', async () => {
+  describe('createMajorVersion', () => {
+    it('starts a fresh major draft when the skill has no versions', async () => {
+      const doc = mockSkillDoc();
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.createMajorVersion('a', { userId: null });
+      expect(doc.versions).toHaveLength(1);
+      expect(doc.versions[0].versionMajor).toBe(1);
+      expect(doc.versions[0].versionMinor).toBe(0);
+      expect(doc.versions[0].status).toBe('DRAFT');
+      expect(doc.versions[0].changelog).toBe('');
+    });
+
+    it('bumps the major number and clones the active content', async () => {
       const doc = mockSkillDoc({
-        versions: [{ versionNumber: 1 }, { versionNumber: 3 }],
+        activeVersion: { major: 2, minor: 1 },
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ARCHIVED' },
+          {
+            versionMajor: 2,
+            versionMinor: 0,
+            status: 'ARCHIVED',
+            skillBody: 'old',
+          },
+          {
+            versionMajor: 2,
+            versionMinor: 1,
+            status: 'ACTIVE',
+            skillBody: 'active body',
+          },
+        ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
-      await skillService.createVersion('a', { systemPrompt: 'hi' }, null);
-      expect(doc.versions[2].versionNumber).toBe(4);
-      expect(doc.save).toHaveBeenCalled();
+      await skillService.createMajorVersion('a', { userId: null });
+      const created = doc.versions[doc.versions.length - 1];
+      expect(created.versionMajor).toBe(3);
+      expect(created.versionMinor).toBe(0);
+      expect(created.skillBody).toBe('active body');
+    });
+  });
+
+  describe('createMinorVersion', () => {
+    it('refuses when there is no active version', async () => {
+      const doc = mockSkillDoc();
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await expect(
+        skillService.createMinorVersion('a', null)
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('increments the minor on top of the active version and pre-fills changelog', async () => {
+      const doc = mockSkillDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'ACTIVE',
+            skillBody: 'body',
+          },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.createMinorVersion('a', null);
+      const created = doc.versions[doc.versions.length - 1];
+      expect(created.versionMajor).toBe(1);
+      expect(created.versionMinor).toBe(1);
+      expect(created.status).toBe('DRAFT');
+      expect(created.skillBody).toBe('body');
+      expect(created.changelog).toBe('Correction mineure');
+      expect(created.releaseNotes).toMatch(/Correction mineure/);
     });
   });
 
   describe('updateVersion', () => {
-    it('rejects edits on activated versions without changelog', async () => {
+    it('rejects edits on non-DRAFT versions', async () => {
       const doc = mockSkillDoc({
-        versions: [{ versionNumber: 1, activatedAt: new Date() }],
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          { versionMajor: 1, versionMinor: 1, status: 'ARCHIVED' },
+        ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await expect(
-        skillService.updateVersion('a', 1, { skillBody: 'x' }, null)
-      ).rejects.toMatchObject({ status: 400 });
+        skillService.updateVersion(
+          'a',
+          { major: 1, minor: 0 },
+          { skillBody: 'x' },
+          null
+        )
+      ).rejects.toMatchObject({ status: 409 });
+      await expect(
+        skillService.updateVersion(
+          'a',
+          { major: 1, minor: 1 },
+          { skillBody: 'x' },
+          null
+        )
+      ).rejects.toMatchObject({ status: 409 });
     });
 
-    it('accepts edits on activated versions when a changelog is provided', async () => {
+    it('updates DRAFT fields and stamps updatedAt/updatedBy', async () => {
+      const userId = new Types.ObjectId();
       const doc = mockSkillDoc({
         versions: [
-          { versionNumber: 1, skillBody: 'old', activatedAt: new Date() },
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'DRAFT',
+            skillBody: 'old',
+          },
         ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await skillService.updateVersion(
         'a',
-        1,
-        { skillBody: 'new', changelog: 'tighten wording' },
-        null
+        { major: 1, minor: 0 },
+        { skillBody: 'new' },
+        userId
       );
       expect(doc.versions[0].skillBody).toBe('new');
-      expect(doc.versions[0].changelog).toBe('tighten wording');
+      expect(doc.versions[0].updatedBy).toBe(userId);
+      expect(doc.versions[0].updatedAt).toBeInstanceOf(Date);
     });
+  });
 
-    it('updates DRAFT version fields', async () => {
+  describe('deleteVersion', () => {
+    it('removes a DRAFT version from the versions array', async () => {
       const doc = mockSkillDoc({
-        versions: [{ versionNumber: 1, skillBody: 'old' }],
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          { versionMajor: 1, versionMinor: 1, status: 'DRAFT' },
+        ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
-      await skillService.updateVersion('a', 1, { skillBody: 'new' }, null);
-      expect(doc.versions[0].skillBody).toBe('new');
+      await skillService.deleteVersion('a', { major: 1, minor: 1 });
+      expect(doc.versions).toHaveLength(1);
+      expect(doc.versions[0].versionMinor).toBe(0);
+    });
+
+    it('refuses to delete a non-DRAFT version', async () => {
+      const doc = mockSkillDoc({
+        versions: [{ versionMajor: 1, versionMinor: 0, status: 'ACTIVE' }],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await expect(
+        skillService.deleteVersion('a', { major: 1, minor: 0 })
+      ).rejects.toMatchObject({ status: 409 });
     });
   });
 
   describe('activateVersion', () => {
-    it('requires changelog and releaseNotes', async () => {
-      const doc = mockSkillDoc({ versions: [{ versionNumber: 1 }] });
+    it('requires changelog + releaseNotes for a major release', async () => {
+      const doc = mockSkillDoc({
+        versions: [{ versionMajor: 2, versionMinor: 0, status: 'DRAFT' }],
+      });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await expect(
-        skillService.activateVersion('a', 1, {}, null)
+        skillService.activateVersion('a', { major: 2, minor: 0 }, {}, null)
       ).rejects.toMatchObject({ status: 400 });
     });
 
-    it('flips skill status to ACTIVE and stamps activatedAt', async () => {
-      const doc = mockSkillDoc({ versions: [{ versionNumber: 1 }] });
+    it('accepts a minor release without payload (defaults from createMinor)', async () => {
+      const doc = mockSkillDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            changelog: 'Correction mineure',
+            releaseNotes: 'Correction mineure sans changement de doctrine.',
+          },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null);
+      const active = doc.versions.find((v) => v.status === 'ACTIVE');
+      expect(active.versionMinor).toBe(1);
+      const archived = doc.versions.find((v) => v.status === 'ARCHIVED');
+      expect(archived.versionMinor).toBe(0);
+      expect(doc.activeVersion).toEqual({ major: 1, minor: 1 });
+    });
+
+    it('archives the previously active version on activation', async () => {
+      const doc = mockSkillDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          { versionMajor: 2, versionMinor: 0, status: 'DRAFT' },
+        ],
+      });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await skillService.activateVersion(
         'a',
-        1,
+        { major: 2, minor: 0 },
         { changelog: 'c', releaseNotes: 'r' },
         null
       );
+      expect(doc.versions[0].status).toBe('ARCHIVED');
+      expect(doc.versions[1].status).toBe('ACTIVE');
+      expect(doc.activeVersion).toEqual({ major: 2, minor: 0 });
       expect(doc.status).toBe('ACTIVE');
-      expect(doc.activeVersion).toBe(1);
-      expect(doc.versions[0].activatedAt).toBeInstanceOf(Date);
     });
   });
 

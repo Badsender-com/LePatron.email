@@ -44,12 +44,13 @@ function buildSkill(overrides = {}) {
     _id: SKILL_OID,
     skillId: 'generic.text',
     status: 'ACTIVE',
-    activeVersion: 1,
+    activeVersion: { major: 1, minor: 0 },
     inputSchemaId: 'genericTextInput',
     outputSchemaId: 'genericTextOutput',
     versions: [
       {
-        versionNumber: 1,
+        versionMajor: 1,
+        versionMinor: 0,
         systemPrompt: 'You help.',
         skillBody: 'Reformulate.',
         inputTemplate: '<x>{{input.prompt}}</x>',

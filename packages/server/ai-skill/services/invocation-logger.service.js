@@ -17,7 +17,7 @@ async function logInvocation(params) {
   const doc = {
     _skill: params.skill._id,
     skillId: params.skill.skillId,
-    skillVersion: params.version.versionNumber,
+    skillVersion: `${params.version.versionMajor}.${params.version.versionMinor}`,
     _company: params.groupId,
     _user: params.userId || null,
     featureType: params.featureType || null,

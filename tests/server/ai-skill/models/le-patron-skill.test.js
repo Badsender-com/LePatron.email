@@ -17,7 +17,8 @@ function buildSkill(overrides = {}) {
     outputSchemaId: 'genericTextOutput',
     versions: [
       {
-        versionNumber: 1,
+        versionMajor: 1,
+        versionMinor: 0,
         systemPrompt: 'You are a helpful assistant.',
         skillBody: 'Reformulate the user text.',
         inputTemplate: '<user_input>{{input.prompt}}</user_input>',
@@ -52,7 +53,8 @@ describe('LePatronSkill model', () => {
     const skill = buildSkill({
       versions: [
         {
-          versionNumber: 1,
+          versionMajor: 1,
+          versionMinor: 0,
           systemPrompt: 'Hello {{input.name}}',
           skillBody: 'Do stuff',
           inputTemplate: '{{input.prompt}}',
@@ -66,7 +68,8 @@ describe('LePatronSkill model', () => {
     const skill = buildSkill({
       versions: [
         {
-          versionNumber: 1,
+          versionMajor: 1,
+          versionMinor: 0,
           systemPrompt: 'You help users',
           skillBody: 'Use {{input.prompt}}',
           inputTemplate: 'irrelevant',
@@ -80,7 +83,8 @@ describe('LePatronSkill model', () => {
     const skill = buildSkill({
       versions: [
         {
-          versionNumber: 1,
+          versionMajor: 1,
+          versionMinor: 0,
           systemPrompt: 'helper',
           skillBody: 'body',
           inputTemplate: '<x>{{input.prompt}}</x>',

@@ -62,7 +62,8 @@ const AISkillInvocationSchema = new Schema(
   {
     _skill: { type: ObjectId, ref: LePatronSkillModel },
     skillId: { type: String, required: true },
-    skillVersion: { type: Number },
+    // Format "<major>.<minor>", e.g. "1.0", "2.3".
+    skillVersion: { type: String },
 
     _company: { type: ObjectId, ref: GroupModel, required: true },
     _user: { type: ObjectId, ref: UserModel, default: null },

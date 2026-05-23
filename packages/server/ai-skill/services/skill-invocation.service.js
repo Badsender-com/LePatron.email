@@ -74,13 +74,18 @@ async function invoke({
     throw createError(404, `Skill "${skillId}" not found or not ACTIVE`);
   }
 
+  const activeRef = skill.activeVersion || {};
   const version = (skill.versions || []).find(
-    (v) => v.versionNumber === skill.activeVersion
+    (v) =>
+      v.versionMajor === activeRef.major &&
+      v.versionMinor === (activeRef.minor || 0)
   );
   if (!version) {
     throw createError(
       500,
-      `Skill "${skillId}" has activeVersion=${skill.activeVersion} but the version is missing`
+      `Skill "${skillId}" has activeVersion=${activeRef.major}.${
+        activeRef.minor || 0
+      } but the version is missing`
     );
   }
 
