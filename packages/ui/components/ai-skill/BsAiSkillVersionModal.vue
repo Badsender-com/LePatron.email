@@ -10,12 +10,27 @@ export default {
   },
   data() {
     return {
-      payload: { systemPrompt: '', skillBody: '', inputTemplate: '' },
+      payload: this.empty(),
     };
   },
   methods: {
+    empty() {
+      return { systemPrompt: '', skillBody: '', inputTemplate: '' };
+    },
     open() {
-      this.payload = { systemPrompt: '', skillBody: '', inputTemplate: '' };
+      this.payload = this.empty();
+      this.$refs.modal.open();
+    },
+    /**
+     * Open the modal pre-filled with an existing version's prompt content
+     * to start a new draft from it.
+     */
+    openWith(version) {
+      this.payload = {
+        systemPrompt: version.systemPrompt || '',
+        skillBody: version.skillBody || '',
+        inputTemplate: version.inputTemplate || '',
+      };
       this.$refs.modal.open();
     },
     close() {

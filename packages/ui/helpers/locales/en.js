@@ -1169,6 +1169,8 @@ export default {
       releaseNotes: 'Release notes',
       activated: 'Version activated',
       saveDraft: 'Save draft',
+      duplicate: 'Duplicate',
+      duplicateHint: 'Start a new draft from this version.',
     },
     test: {
       tabLabel: 'Test',

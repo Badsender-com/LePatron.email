@@ -1182,6 +1182,8 @@ export default {
       releaseNotes: 'Notes de version',
       activated: 'Version activée',
       saveDraft: 'Enregistrer le brouillon',
+      duplicate: 'Dupliquer',
+      duplicateHint: 'Partir de cette version pour en créer une nouvelle (brouillon).',
     },
     test: {
       tabLabel: 'Test',
