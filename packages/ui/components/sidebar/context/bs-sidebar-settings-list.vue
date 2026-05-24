@@ -50,7 +50,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import { Shield, Sparkles } from 'lucide-vue';
+import { Shield, Sparkles, FlaskConical } from 'lucide-vue';
 import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
@@ -58,6 +58,7 @@ export default {
   components: {
     LucideShield: Shield,
     LucideSparkles: Sparkles,
+    LucideFlaskConical: FlaskConical,
   },
   props: {
     collapsed: {
@@ -108,6 +109,13 @@ export default {
               route: '/groups',
               // Exact match: don't highlight when navigating into a specific group
               exact: true,
+              superAdminOnly: true,
+            },
+            {
+              id: 'ai-playground',
+              label: this.$t('aiPlayground.pageTitle'),
+              iconComponent: 'LucideFlaskConical',
+              route: '/ai-playground',
               superAdminOnly: true,
             },
             {
