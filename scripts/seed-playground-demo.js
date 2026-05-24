@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Seed a minimal AI Playground scenario for local/dev validation.
+ *
+ * Picks the first ACTIVE LePatronSkill named `generic.text` (falls back to
+ * any active skill) and creates one scenario without expertise. Idempotent:
+ * re-running updates the existing demo scenario instead of duplicating.
+ *
+ * Usage:
+ *   node scripts/seed-playground-demo.js
+ */
+
+const path = require('path');
+const mongoose = require('mongoose');
+
+require('dotenv').config();
+const config = require(path.resolve(
+  __dirname,
+  '..',
+  'packages',
+  'server',
+  'node.config.js'
+));
+const { LePatronSkills, AIPlaygroundScenarios } = require(path.resolve(
+  __dirname,
+  '..',
+  'packages',
+  'server',
+  'common',
+  'models.common.js'
+));
+
+const DEMO_SCENARIO_ID = 'demo-generic-text';
+
+async function main() {
+  await mongoose.connect(config.database, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+
+  const skill =
+    (await LePatronSkills.findOne({
+      skillId: 'generic.text',
+      status: 'ACTIVE',
+    }).lean()) || (await LePatronSkills.findOne({ status: 'ACTIVE' }).lean());
+
+  if (!skill) {
+    console.error('No ACTIVE LePatronSkill found — seed aborted.');
+    process.exit(1);
+  }
+
+  const payload = {
+    scenarioId: DEMO_SCENARIO_ID,
+    name: 'Démo — generic.text',
+    description: 'Scénario de démo généré par seed-playground-demo.js',
+    skillRef: { skillId: skill.skillId, mode: 'active' },
+    expertiseRefs: [],
+    expertiseFilter: null,
+    input: { prompt: 'Écris un slogan court pour une boulangerie artisanale.' },
+    tags: ['demo'],
+    providerOverride: null,
+    groupContext: null,
+  };
+
+  const existing = await AIPlaygroundScenarios.findOne({
+    scenarioId: DEMO_SCENARIO_ID,
+  });
+  if (existing) {
+    Object.assign(existing, payload);
+    await existing.save();
+    console.log(`Updated demo scenario "${DEMO_SCENARIO_ID}".`);
+  } else {
+    await AIPlaygroundScenarios.create(payload);
+    console.log(`Created demo scenario "${DEMO_SCENARIO_ID}".`);
+  }
+
+  await mongoose.disconnect();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
