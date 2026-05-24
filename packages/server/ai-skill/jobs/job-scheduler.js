@@ -4,6 +4,9 @@ const logger = require('../../utils/logger.js');
 const {
   registerJob: registerPurgeJob,
 } = require('./purge-skill-invocations.job.js');
+const {
+  registerJob: registerPlaygroundPurgeJob,
+} = require('../../ai-playground/jobs/purge-playground-runs.job.js');
 
 /**
  * Thin wrapper around `agenda` so the scheduler can be replaced with a mock
@@ -30,7 +33,10 @@ class JobScheduler {
       processEvery: '1 minute',
     });
 
-    this.registered = [registerPurgeJob(this.agenda)];
+    this.registered = [
+      registerPurgeJob(this.agenda),
+      registerPlaygroundPurgeJob(this.agenda),
+    ];
 
     await this.agenda.start();
     for (const job of this.registered) {

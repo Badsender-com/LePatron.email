@@ -32,4 +32,7 @@ module.exports = Object.freeze({
   LePatronSkillModel: 'LePatronSkill',
   ExpertiseModel: 'Expertise',
   AISkillInvocationModel: 'AISkillInvocation',
+  // AI Playground
+  AIPlaygroundScenarioModel: 'AIPlaygroundScenario',
+  AIPlaygroundRunModel: 'AIPlaygroundRun',
 });
