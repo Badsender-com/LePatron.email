@@ -1,29 +1,41 @@
 <script>
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import { mapGetters, mapMutations } from 'vuex';
 import { ERROR_CODES } from '~/helpers/constants/error-codes.js';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import { mapMutations } from 'vuex';
-import { groupsItemUsers, getWorkspace } from '~/helpers/api-routes.js';
+import { IS_ADMIN, USER } from '~/store/user';
+import {
+  groupsItem,
+  groupsItemUsers,
+  getWorkspace,
+} from '~/helpers/api-routes.js';
 import * as acls from '~/helpers/pages-acls.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import WorkspaceForm from '~/components/workspaces/workspace-form';
-import BsGroupMenu from '~/components/group/menu.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageUpdateWorkspace',
-  components: { WorkspaceForm, BsGroupMenu },
-  mixins: [mixinPageTitle],
+  components: {
+    WorkspaceForm,
+    BsPageHeader,
+  },
+  mixins: [mixinSettingsTitle],
   meta: {
-    acl: acls.ACL_GROUP_ADMIN,
+    acl: [acls.ACL_ADMIN, acls.ACL_GROUP_ADMIN],
   },
   async asyncData(nuxtContext) {
     const { $axios, params } = nuxtContext;
     try {
-      const workspace = await $axios.$get(getWorkspace(params?.workspaceId));
-      const { items: users } = await $axios.$get(groupsItemUsers(params));
+      const [workspace, groupResponse, usersResponse] = await Promise.all([
+        $axios.$get(getWorkspace(params.workspaceId)),
+        $axios.$get(groupsItem(params)),
+        $axios.$get(groupsItemUsers(params)),
+      ]);
 
       return {
         workspace,
-        groupUsers: users,
+        group: groupResponse,
+        groupUsers: usersResponse.items || [],
         isLoading: false,
       };
     } catch (error) {
@@ -33,44 +45,41 @@ export default {
   data() {
     return {
       group: {},
-      isLoading: true,
+      isLoading: false,
       isError: false,
       groupUsers: [],
       workspace: {},
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.editTeam')}`;
-    },
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     groupId() {
       return this.$route.params.groupId;
+    },
+    workspaceId() {
+      return this.$route.params.workspaceId;
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async updateWorkspace(values) {
-      const { $axios } = this;
       try {
         this.isLoading = true;
-        const { groupId, workspaceId } = this.$route.params;
-        await $axios.$put(`/workspaces/${workspaceId}`, {
+        await this.$axios.$put(`/workspaces/${this.workspaceId}`, {
           ...values,
-          groupId,
+          groupId: this.groupId,
         });
         this.showSnackbar({
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
-
-        this.$router.push(`/groups/${groupId}`);
+        this.$router.push(`/groups/${this.groupId}/settings/workspaces`);
       } catch (error) {
         const errorKey = `global.errors.${
           ERROR_CODES[error.response?.data] || 'errorOccured'
@@ -88,15 +97,28 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-menu />
-    </template>
-    <workspace-form
-      :workspace="workspace"
-      :group-users="groupUsers"
-      :is-loading="isLoading"
-      @submit="updateWorkspace"
-    />
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('global.editTeam') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <workspace-form
+        :workspace="workspace"
+        :group-users="groupUsers"
+        :is-loading="isLoading"
+        is-edit
+        @submit="updateWorkspace"
+      />
+    </v-container>
+  </div>
 </template>

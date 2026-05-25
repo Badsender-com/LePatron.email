@@ -9,6 +9,7 @@ const {
   Conflict,
   BadRequest,
   Unauthorized,
+  Forbidden,
 } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -33,7 +34,7 @@ async function listEmailsGroups(groupId) {
   }).sort({ name: 1 });
 }
 
-async function createEmailsGroup({ name, emails, user }) {
+async function createEmailsGroup({ name, emails, user, groupId }) {
   logger.log('emailsGroupService:createEmailsGroup');
   checkNameAndEmailsExists({ name, emails });
 
@@ -41,24 +42,39 @@ async function createEmailsGroup({ name, emails, user }) {
     throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
   }
 
-  if (await EmailsGroups.exists({ name, _company: user.group.id })) {
+  // Only super admins may target a group different from their own.
+  // Without this check, any group_admin could create an emails-group in another tenant.
+  if (!user.isAdmin && groupId && groupId !== user.group?.id) {
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
+  }
+
+  // Use explicit groupId if provided (for admin users), otherwise fallback to user's group
+  const companyId = groupId || user.group?.id;
+
+  if (!companyId) {
+    throw new BadRequest(ERROR_CODES.MISSING_GROUP_PARAM);
+  }
+
+  if (await EmailsGroups.exists({ name, _company: companyId })) {
     throw new Conflict(ERROR_CODES.EMAIL_GROUP_NAME_ALREADY_EXIST);
   }
 
   return EmailsGroups.create({
     name,
     emails,
-    _company: user.group.id,
+    _company: companyId,
   });
 }
 
-async function getEmailsGroup({ emailsGroupId, userGroupId }) {
+async function getEmailsGroup({ emailsGroupId, userGroupId, isAdmin }) {
   logger.log('emailsGroupService:getEmailsGroup');
   await checkIfEmailGroupExist(emailsGroupId);
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  if (emailsGroup.group?.toString() !== userGroupId) {
+  // Admin users can access any emails group
+  // Regular users can only access their own group's emails groups
+  if (!isAdmin && emailsGroup._company?.toString() !== userGroupId) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -77,7 +93,9 @@ async function editEmailsGroup({ emailsGroupId, name, emails, user }) {
 
   const emailsGroup = await EmailsGroups.findById(emailsGroupId);
 
-  if (emailsGroup.group?.toString() !== user.group.id) {
+  // Admin users can edit any emails group
+  // Regular users can only edit their own group's emails groups
+  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
 
@@ -94,11 +112,13 @@ async function deleteEmailsGroup({ emailsGroupId, user }) {
   logger.log('emailsGroupService:deleteEmailsGroup');
   const emailsGroup = await findOne(emailsGroupId);
 
-  const deleteEmailsGroupResponse = await deleteOne(emailsGroup.id);
-
-  if (emailsGroup.group?.toString() !== user.group.id) {
+  // Admin users can delete any emails group
+  // Regular users can only delete their own group's emails groups
+  if (!user.isAdmin && emailsGroup._company?.toString() !== user.group?.id) {
     throw new NotFound(ERROR_CODES.EMAIL_GROUP_NOT_FOUND);
   }
+
+  const deleteEmailsGroupResponse = await deleteOne(emailsGroup.id);
 
   if (deleteEmailsGroupResponse.ok !== 1) {
     throw new InternalServerError(ERROR_CODES.FAILED_EMAIL_GROUP_DELETE);

@@ -1,7 +1,6 @@
 # UI Components
 
-> **Source of truth**: This document + [preview/components.html](./preview/components.html)
-> **Tokens**: See [01-tokens.md](./01-tokens.md) for colors, typography, spacing.
+> **Source of truth**: This document + [preview/components.html](./preview/components.html) > **Tokens**: See [01-tokens.md](./01-tokens.md) for colors, typography, spacing.
 > **UX Patterns**: See [UX_GUIDELINES.md](../UX_GUIDELINES.md) for behavioral patterns.
 
 ---
@@ -30,24 +29,24 @@
 
 ### Variants
 
-| Variant | Background | Text | Border | Usage |
-|---------|------------|------|--------|-------|
-| **Accent** (primary action) | `--accent` | white | none | Save, Submit, Confirm |
-| **Primary** (secondary action) | `--primary` | white | none | Alternative actions |
-| **Text** | transparent | `--primary` | none | Cancel, Close |
-| **Outlined** | transparent | `--accent` | 1px `--accent` | Optional actions |
-| **Error** (destructive) | `--error` | white | none | Delete, Remove |
-| **Disabled** | any | any | any | `opacity: 0.5; cursor: not-allowed` |
+| Variant                        | Background  | Text        | Border         | Usage                               |
+| ------------------------------ | ----------- | ----------- | -------------- | ----------------------------------- |
+| **Accent** (primary action)    | `--accent`  | white       | none           | Save, Submit, Confirm               |
+| **Primary** (secondary action) | `--primary` | white       | none           | Alternative actions                 |
+| **Text**                       | transparent | `--primary` | none           | Cancel, Close                       |
+| **Outlined**                   | transparent | `--accent`  | 1px `--accent` | Optional actions                    |
+| **Error** (destructive)        | `--error`   | white       | none           | Delete, Remove                      |
+| **Disabled**                   | any         | any         | any            | `opacity: 0.5; cursor: not-allowed` |
 
 ### Hover States
 
 ```css
 .btn-accent:hover {
-  background: #0095c0;  /* Darkened accent */
+  background: #0095c0; /* Darkened accent */
 }
 
 .btn-primary:hover {
-  background: #072530;  /* Darkened primary */
+  background: #072530; /* Darkened primary */
 }
 
 .btn-text:hover {
@@ -55,7 +54,7 @@
 }
 
 .btn-error:hover {
-  background: #d32f2f;  /* Darkened error */
+  background: #d32f2f; /* Darkened error */
 }
 ```
 
@@ -227,11 +226,11 @@ Interactive pill-shaped elements for categories, filters, or status indicators.
 
 ### Semantic Variants (selected state)
 
-| Variant | Background |
-|---------|------------|
-| Info | `--info` (#2196F3) |
+| Variant | Background            |
+| ------- | --------------------- |
+| Info    | `--info` (#2196F3)    |
 | Warning | `--warning` (#fb8c00) |
-| Error | `--error` (#FF5252) |
+| Error   | `--error` (#FF5252)   |
 | Success | `--success` (#4caf50) |
 
 ### Chip Group
@@ -259,7 +258,7 @@ Pill-shaped badge with icon and count for status indicators.
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
-  color: white;  /* Always white text */
+  color: white; /* Always white text */
 }
 
 .status-badge .icon {
@@ -269,12 +268,12 @@ Pill-shaped badge with icon and count for status indicators.
 
 ### Variants
 
-| Status | Background | Icon |
-|--------|------------|------|
-| Pending | `--warning` (solid) | `schedule` / `mdi-clock-outline` |
-| Resolved | `--success` (solid) | `check` / `mdi-check` |
-| Error | `--error` (solid) | `error` / `mdi-alert` |
-| Info | `--info` (solid) | `info` / `mdi-information` |
+| Status   | Background          | Icon                             |
+| -------- | ------------------- | -------------------------------- |
+| Pending  | `--warning` (solid) | `schedule` / `mdi-clock-outline` |
+| Resolved | `--success` (solid) | `check` / `mdi-check`            |
+| Error    | `--error` (solid)   | `error` / `mdi-alert`            |
+| Info     | `--info` (solid)    | `info` / `mdi-information`       |
 
 > **Important**: Background is **solid** (100% opaque), not transparent/faded. Text is **always white**.
 
@@ -321,12 +320,12 @@ Small icon-only buttons for contextual actions (edit, delete, reply, etc.).
 
 ### Common Actions
 
-| Action | Icon | Hover variant |
-|--------|------|---------------|
-| Reply | `reply` / `mdi-reply` | default |
-| Edit | `edit` / `mdi-pencil` | default |
-| Resolve | `check` / `mdi-check` | success |
-| Delete | `delete` / `mdi-delete` | danger |
+| Action  | Icon                    | Hover variant |
+| ------- | ----------------------- | ------------- |
+| Reply   | `reply` / `mdi-reply`   | default       |
+| Edit    | `edit` / `mdi-pencil`   | default       |
+| Resolve | `check` / `mdi-check`   | success       |
+| Delete  | `delete` / `mdi-delete` | danger        |
 
 ---
 
@@ -471,12 +470,12 @@ Main navigation sidebar for switching between application modules.
 
 ### Item States
 
-| State | Icon Color | Background | Indicator | Usage |
-|-------|------------|------------|-----------|-------|
-| Default | `grey darken-1` | transparent | none | Inactive module |
-| Hover | `accent` | `#f5f5f5` | none | Mouse over |
-| Active | `accent` | `accent/12%` | **3px left bar accent** | Current module |
-| Disabled | `grey`, 40% opacity | transparent | none | Module not available |
+| State    | Icon Color          | Background   | Indicator               | Usage                |
+| -------- | ------------------- | ------------ | ----------------------- | -------------------- |
+| Default  | `grey darken-1`     | transparent  | none                    | Inactive module      |
+| Hover    | `accent`            | `#f5f5f5`    | none                    | Mouse over           |
+| Active   | `accent`            | `accent/12%` | **3px left bar accent** | Current module       |
+| Disabled | `grey`, 40% opacity | transparent  | none                    | Module not available |
 
 ### Active Indicator
 
@@ -547,15 +546,15 @@ The active state features a prominent **3px vertical bar** on the left side of t
 
 ### Icons
 
-Uses Material Design Icons (MDI) for consistency with the rest of the application:
+**Target Library**: Lucide (see [01-tokens.md](./01-tokens.md#icons) for migration mapping)
 
-| Module | Icon | MDI Name |
-|--------|------|----------|
-| Email Builder | Palette | `mdi-palette` |
-| CRM Intelligence | Line chart | `mdi-chart-line` |
-| Help | Question circle | `mdi-help-circle-outline` |
-| Logout | Exit door | `mdi-logout` |
-| Settings | Gear | `mdi-cog-outline` |
+| Module           | Icon            | Current (MDI)             | Target (Lucide) |
+| ---------------- | --------------- | ------------------------- | --------------- |
+| Email Builder    | Palette         | `mdi-palette`             | `Palette`       |
+| CRM Intelligence | Line chart      | `mdi-chart-line`          | `LineChart`     |
+| Help             | Question circle | `mdi-help-circle-outline` | `HelpCircle`    |
+| Logout           | Exit door       | `mdi-logout`              | `LogOut`        |
+| Settings         | Gear            | `mdi-cog-outline`         | `Settings`      |
 
 ### Usage (Vue)
 
@@ -565,11 +564,11 @@ Uses Material Design Icons (MDI) for consistency with the rest of the applicatio
 
 ### Related Files
 
-| File | Purpose |
-|------|---------|
-| `ui/components/module-sidebar.vue` | Main sidebar component |
-| `ui/components/sidebar-item.vue` | Reusable item component |
-| `ui/layouts/default.vue` | Mobile drawer implementation |
+| File                               | Purpose                      |
+| ---------------------------------- | ---------------------------- |
+| `ui/components/module-sidebar.vue` | Main sidebar component       |
+| `ui/components/sidebar-item.vue`   | Reusable item component      |
+| `ui/layouts/default.vue`           | Mobile drawer implementation |
 
 ---
 
@@ -678,7 +677,7 @@ Highlighted @mention within text content.
 ```css
 .mention {
   background: rgba(0, 172, 220, 0.15);
-  color: #0088a8;  /* --accent darkened ~20% */
+  color: #0088a8; /* --accent darkened ~20% */
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 500;
@@ -726,10 +725,18 @@ Inline link with trailing or leading icon.
   color: white;
 }
 
-.snackbar.success { background: var(--success); }
-.snackbar.error { background: var(--error); }
-.snackbar.warning { background: var(--warning); }
-.snackbar.info { background: var(--info); }
+.snackbar.success {
+  background: var(--success);
+}
+.snackbar.error {
+  background: var(--error);
+}
+.snackbar.warning {
+  background: var(--warning);
+}
+.snackbar.info {
+  background: var(--info);
+}
 ```
 
 ---
@@ -871,12 +878,42 @@ Inline link with trailing or leading icon.
 
 ## Icons
 
-| Library | Usage |
-|---------|-------|
-| **Material Design Icons** | Primary (Vue App + Editor migration) |
-| **Font Awesome 4.7** | Legacy (Editor, progressive migration) |
+**Target Library**: Lucide (https://lucide.dev)
 
-Reference: [materialdesignicons.com](https://materialdesignicons.com/)
+| Library                   | Usage                       | Status                |
+| ------------------------- | --------------------------- | --------------------- |
+| **Lucide**                | Target for Vue App + Editor | Migration in progress |
+| **Material Design Icons** | Legacy (Vue App)            | Being replaced        |
+| **Font Awesome 4.7**      | Legacy (Editor)             | Being replaced        |
+
+**Usage (Vue)**:
+
+```vue
+<script>
+import { Settings, HelpCircle, Trash2, Pencil, Plus, X } from 'lucide-vue';
+
+export default {
+  components: { Settings, HelpCircle, Trash2, Pencil, Plus, X },
+};
+</script>
+
+<template>
+  <Settings :size="24" />
+  <Pencil :size="20" color="currentColor" />
+</template>
+```
+
+**Common icons mapping** (see [01-tokens.md](./01-tokens.md#icon-systems-fixed) for full table):
+
+| Purpose  | MDI (legacy) | Lucide (target) |
+| -------- | ------------ | --------------- |
+| Settings | `mdi-cog`    | `Settings`      |
+| Edit     | `mdi-pencil` | `Pencil`        |
+| Delete   | `mdi-delete` | `Trash2`        |
+| Add      | `mdi-plus`   | `Plus`          |
+| Close    | `mdi-close`  | `X`             |
+
+Reference: [lucide.dev/icons](https://lucide.dev/icons)
 
 ---
 
@@ -905,11 +942,24 @@ Reference: [materialdesignicons.com](https://materialdesignicons.com/)
   <span class="ui-button-text">Save</span>
 </button>
 
-<!-- Icon (legacy) -->
+<!-- Icon (legacy FA) -->
 <i class="fa fa-cog"></i>
 
-<!-- Icon (target) -->
+<!-- Icon (legacy MDI) -->
 <span class="mdi mdi-cog"></span>
+
+<!-- Icon (target - Lucide inline SVG) -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="16"
+  height="16"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+>
+  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18..." />
+</svg>
 ```
 
 ### CSS Variables
@@ -927,15 +977,88 @@ var(--v-accent-base)     /* Vuetify */
 
 ## Reusable Components Inventory
 
-| Component | File | Usage |
-|-----------|------|-------|
-| `modal-confirm` | `ui/components/modal-confirm.vue` | Confirmation dialogs |
-| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs |
-| `snackbar` | `ui/components/snackbar.vue` | Notifications |
-| `loadingBar` | `ui/components/loadingBar.vue` | Loading indicator |
-| `module-sidebar` | `ui/components/module-sidebar.vue` | Main navigation sidebar |
-| `sidebar-item` | `ui/components/sidebar-item.vue` | Sidebar navigation item |
+| Component            | File                                   | Usage                |
+| -------------------- | -------------------------------------- | -------------------- |
+| `modal-confirm`      | `ui/components/modal-confirm.vue`      | Confirmation dialogs |
+| `modal-confirm-form` | `ui/components/modal-confirm-form.vue` | Form dialogs         |
+| `snackbar`           | `ui/components/snackbar.vue`           | Notifications        |
+| `loadingBar`         | `ui/components/loadingBar.vue`         | Loading indicator    |
 
 ---
 
-*Last updated: March 2026 (v2.3 - Module Sidebar with MDI icons and active indicator bar)*
+## Bs\* component family — two abstraction layers
+
+The `Bs*` prefix covers **two distinct kinds of components**, and the
+distinction is not just stylistic — it affects portability.
+
+### Primitives — pure, stateless, copy-paste safe
+
+These components are slot-forwarding wrappers around a Vuetify primitive. They
+take props in, emit events out, and have **no dependency on Vuex, Vue Router,
+vue-i18n or any application-level concern**. They can be extracted to a
+shared package or used in isolation in another app without modification.
+
+| Component         | File                                           | Wraps                              |
+| ----------------- | ---------------------------------------------- | ---------------------------------- |
+| `bs-data-table`   | `ui/components/data-table/bs-data-table.vue`   | `v-data-table` + design-system CSS |
+| `bs-text-field`   | `ui/components/form/bs-text-field.vue`         | `v-text-field` (label-above style) |
+| `bs-select`       | `ui/components/form/bs-select.vue`             | `v-select` (label-above style)     |
+| `bs-row-actions`  | `ui/components/row-actions/bs-row-actions.vue` | Quick action icons + kebab menu    |
+| `bs-breadcrumb`   | `ui/components/layout/bs-breadcrumb.vue`       | Breadcrumb trail                   |
+| `bs-page-header`  | `ui/components/layout/bs-page-header.vue`      | Page header shell + slots          |
+| `bs-form-section` | `ui/components/layout/bs-form-section.vue`     | Form section heading + content     |
+
+### Shells — feature-aware, app-coupled
+
+These components **consume Vuex, Vue Router, vue-i18n, Vuetify breakpoints or
+application state**. They are part of LePatron's application shell, not the
+design-system primitive layer. **They cannot be copy-pasted to another app or
+extracted to a shared package without bringing the matching stores, routes
+and i18n keys along.**
+
+If you ever extract the design-system to a separate package, **leave these
+behind** (or rename them under a different prefix, e.g. `AppSidebar*`).
+
+| Component                     | File                                                          | Dependencies                           |
+| ----------------------------- | ------------------------------------------------------------- | -------------------------------------- |
+| `bs-sidebar`                  | `ui/components/sidebar/bs-sidebar.vue`                        | Vuex (`sidebar`, `user`), router, i18n |
+| `bs-sidebar-brand`            | `ui/components/sidebar/bs-sidebar-brand.vue`                  | router, i18n                           |
+| `bs-sidebar-company-switcher` | `ui/components/sidebar/bs-sidebar-company-switcher.vue`       | Vuex `user`, router, i18n              |
+| `bs-sidebar-context-zone`     | `ui/components/sidebar/bs-sidebar-context-zone.vue`           | Vuex `sidebar`, router                 |
+| `bs-sidebar-module-list`      | `ui/components/sidebar/bs-sidebar-module-list.vue`            | Vuex `user`, router, i18n              |
+| `bs-sidebar-system-zone`      | `ui/components/sidebar/bs-sidebar-system-zone.vue`            | Vuex `user`, router, i18n              |
+| `bs-sidebar-toggle`           | `ui/components/sidebar/bs-sidebar-toggle.vue`                 | Vuex `sidebar`                         |
+| `bs-sidebar-dashboard-list`   | `ui/components/sidebar/context/bs-sidebar-dashboard-list.vue` | Vuex `user`, router, i18n              |
+| `bs-sidebar-settings-list`    | `ui/components/sidebar/context/bs-sidebar-settings-list.vue`  | Vuex `user`, router, i18n, ACL helpers |
+| `bs-sidebar-workspace-tree`   | `ui/components/sidebar/context/bs-sidebar-workspace-tree.vue` | Vuex `folder`, router, localStorage    |
+
+### Modals — three patterns coexisting (debt)
+
+There are currently three modal wrappers in `ui/components/`:
+
+| Component            | File                                    | Consumers                 |
+| -------------------- | --------------------------------------- | ------------------------- |
+| `modal-confirm`      | `ui/components/modal-confirm.vue`       | 15+ — current default     |
+| `modal-confirm-form` | `ui/components/modal-confirm-form.vue`  | 2 (workspaces, templates) |
+| `bs-modal-form`      | `ui/components/modal/bs-modal-form.vue` | 1 (`modal-create-group`)  |
+
+`bs-modal-form` was introduced as the intended new design-system standard
+but only one consumer was migrated, so it currently looks more like an
+abandoned alternative than a real standard. **TODO**: pick one (probably
+`bs-modal-form` if it represents the design-system direction) and migrate
+the rest, or remove `bs-modal-form` until the migration can actually be
+done across the codebase. Tracked separately, not in scope of the review
+PR.
+
+---
+
+## File naming convention
+
+All `Bs*` design-system components live under `ui/components/` and use
+**kebab-case** file names (e.g. `bs-data-table.vue`, `bs-sidebar.vue`). This
+matches AGENTS.md and lets us spot stale PascalCase imports easily on a
+case-sensitive CI filesystem.
+
+---
+
+_Last updated: 2026-05-15 (v2.5 - Primitive/shell distinction documented; Bs\* renamed to kebab-case across the board)_

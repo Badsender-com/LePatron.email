@@ -1,18 +1,21 @@
 <script>
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-
-import * as acls from '~/helpers/pages-acls.js';
-import ProfileForm from '~/components/profiles/profile-form';
-import BsGroupMenu from '~/components/group/menu.vue';
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { IS_ADMIN, USER } from '~/store/user';
 import { getProfiles } from '~/helpers/api-routes';
+import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import ProfileForm from '~/components/profiles/profile-form';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageNewProfile',
-  components: { ProfileForm, BsGroupMenu },
-  mixins: [mixinPageTitle],
+  components: {
+    ProfileForm,
+    BsPageHeader,
+  },
+  mixins: [mixinSettingsTitle],
   meta: {
     acl: acls.ACL_ADMIN,
   },
@@ -32,30 +35,29 @@ export default {
   data() {
     return {
       group: {},
+      isLoading: false,
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.newProfile')}`;
-    },
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     groupId() {
       return this.$route.params.groupId;
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     async createProfile(data) {
       const { $axios, $route } = this;
       const { groupId } = $route.params;
       try {
-        this.loading = true;
+        this.isLoading = true;
         await $axios.$post(getProfiles(), {
           _company: groupId,
           ...data,
@@ -64,65 +66,89 @@ export default {
           text: this.$t('snackbars.created'),
           color: 'success',
         });
-        this.$router.push(`/groups/${groupId}`);
+        this.$router.push(`/groups/${groupId}/settings/profiles`);
       } catch (error) {
-        switch (error?.response?.status) {
-          case 401:
-            this.showSnackbar({
-              text: this.$t('forms.profile.errors.apiKey.unauthorized'),
-              color: 'error',
-            });
-            break;
-          case 400: {
-            const errorCode = error?.response?.data?.message;
-
-            if (errorCode === 'ADOBE_INVALID_CLIENT') {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.invalidClient'),
-                color: 'error',
-              });
-            } else if (errorCode === 'ADOBE_INVALID_SECRET') {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.invalidSecret'),
-                color: 'error',
-              });
-            } else {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.creation'),
-                color: 'error',
-              });
-            }
-            break;
-          }
-          case 500: {
-            const logId = error?.response?.data?.logId;
-            let message = this.$t('forms.profile.errors.creation');
-            message = message.replace('{logId}', logId || 'N/A');
-            this.showSnackbar({
-              text: message,
-              color: 'error',
-            });
-            break;
-          }
-          default:
-            this.showSnackbar({
-              text: this.$t('global.errors.errorOccured'),
-              color: 'error',
-            });
-        }
+        this.handleError(error);
       } finally {
-        this.loading = false;
+        this.isLoading = false;
       }
+    },
+
+    handleError(error) {
+      switch (error?.response?.status) {
+        case 401:
+          this.showSnackbar({
+            text: this.$t('forms.profile.errors.apiKey.unauthorized'),
+            color: 'error',
+          });
+          break;
+        case 400: {
+          const errorCode = error?.response?.data?.message;
+          if (errorCode === 'ADOBE_INVALID_CLIENT') {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.invalidClient'),
+              color: 'error',
+            });
+          } else if (errorCode === 'ADOBE_INVALID_SECRET') {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.invalidSecret'),
+              color: 'error',
+            });
+          } else {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.creation'),
+              color: 'error',
+            });
+          }
+          break;
+        }
+        case 500: {
+          const logId = error?.response?.data?.logId;
+          let message = this.$t('forms.profile.errors.creation');
+          message = message.replace('{logId}', logId || 'N/A');
+          this.showSnackbar({
+            text: message,
+            color: 'error',
+          });
+          break;
+        }
+        default:
+          this.showSnackbar({
+            text: this.$t('global.errors.errorOccured'),
+            color: 'error',
+          });
+      }
+    },
+
+    onCancel() {
+      this.$router.push(`/groups/${this.groupId}/settings/profiles`);
     },
   },
 };
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-menu />
-    </template>
-    <profile-form :title="$t('global.newProfile')" @submit="createProfile" />
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('profiles.newProfile') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <profile-form
+        :is-loading="isLoading"
+        :is-edit="false"
+        @submit="createProfile"
+        @cancel="onCancel"
+      />
+    </v-container>
+  </div>
 </template>

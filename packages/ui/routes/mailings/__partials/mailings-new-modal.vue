@@ -5,6 +5,7 @@ import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrum
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing';
 import { TEMPLATE } from '~/store/template';
 import { mapState } from 'vuex';
+import { MailPlus } from 'lucide-vue';
 
 export default {
   name: 'MailingsModalNew',
@@ -12,6 +13,7 @@ export default {
     BsModalConfirm,
     MailingsBreadcrumbs,
     TemplateCard,
+    LucideMailPlus: MailPlus,
   },
   mixins: [mixinCreateMailing],
   props: {
@@ -79,6 +81,9 @@ export default {
     :title="$t('global.newMailing')"
     :is-form="true"
   >
+    <template #titlePrefix>
+      <lucide-mail-plus :size="20" />
+    </template>
     <v-form ref="form" @submit.prevent="submit">
       <div class="d-flex align-center mb-2">
         <div class="font-weight-bold">
@@ -89,12 +94,18 @@ export default {
         </div>
       </div>
 
+      <label class="form-label">
+        {{ $t('mailings.name') }}
+        <span class="form-label__required">*</span>
+      </label>
       <v-text-field
         v-model="defaultMailName"
-        class="pt-1"
         :rules="nameRule"
-        :label="this.$t('mailings.name')"
-        required
+        solo
+        flat
+        dense
+        hide-details="auto"
+        class="form-input"
       />
 
       <div class="mt-8 bs-templates_container">
@@ -115,7 +126,7 @@ export default {
           />
         </v-card>
       </div>
-      <v-divider />
+      <v-divider class="mt-4" />
       <v-card-actions>
         <v-spacer />
         <v-btn color="primary" text @click="close">
@@ -134,9 +145,61 @@ export default {
   </bs-modal-confirm>
 </template>
 
-<style>
+<style lang="scss" scoped>
 .bs-templates_container {
   max-height: 50vh;
   overflow: auto;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.375rem;
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+}
+
+.form-input {
+  &.v-text-field.v-text-field--solo {
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      background: #fff;
+      min-height: 36px;
+      padding: 0 12px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: var(--v-accent-base);
+    }
+
+    &.error--text ::v-deep .v-input__slot {
+      border-color: #f04e23;
+    }
+
+    ::v-deep input {
+      font-size: 0.875rem;
+      padding: 6px 0;
+    }
+
+    ::v-deep .v-text-field__details {
+      padding: 4px 0 0 0;
+      min-height: auto;
+    }
+
+    ::v-deep .v-messages__message {
+      font-size: 0.75rem;
+    }
+  }
 }
 </style>

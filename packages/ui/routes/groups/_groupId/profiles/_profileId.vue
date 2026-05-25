@@ -1,18 +1,22 @@
 <script>
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-
-import * as acls from '~/helpers/pages-acls.js';
-import ProfileForm from '~/components/profiles/profile-form';
-import BsGroupMenu from '~/components/group/menu.vue';
-import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import { IS_ADMIN, USER } from '~/store/user';
+import * as acls from '~/helpers/pages-acls.js';
+import * as apiRoutes from '~/helpers/api-routes.js';
+import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import ProfileForm from '~/components/profiles/profile-form';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageEditProfile',
-  components: { ProfileForm, BsGroupMenu },
-  mixins: [mixinPageTitle],
+  components: {
+    ProfileForm,
+    BsPageHeader,
+  },
+  mixins: [mixinSettingsTitle],
   meta: {
     acl: acls.ACL_ADMIN,
   },
@@ -20,9 +24,10 @@ export default {
     const { $axios, params } = nuxtContext;
     let profileData = {};
     try {
-      const profileResponse = await $axios.$get(
-        getProfileForAdmin(params.profileId)
-      );
+      const [profileResponse, groupResponse] = await Promise.all([
+        $axios.$get(getProfileForAdmin(params.profileId)),
+        $axios.$get(apiRoutes.groupsItem(params)),
+      ]);
 
       const {
         type,
@@ -116,24 +121,46 @@ export default {
 
       return {
         profile: profileData,
+        group: groupResponse,
       };
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      return {
+        profile: {},
+        group: {},
+      };
     }
   },
   data() {
     return {
       profile: {},
-      loading: false,
+      group: {},
+      isLoading: false,
     };
+  },
+  head() {
+    return { title: this.settingsTitle };
+  },
+  computed: {
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
+    groupId() {
+      return this.$route.params.groupId;
+    },
+    pageTitle() {
+      return this.profile.name || this.$tc('global.profile', 1);
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+
     async updateProfile(data) {
       const { $axios, $route } = this;
       const { groupId, profileId } = $route.params;
       try {
-        this.loading = true;
+        this.isLoading = true;
         await $axios.$post(getProfileId(profileId), {
           _company: groupId,
           ...data,
@@ -142,54 +169,57 @@ export default {
           text: this.$t('snackbars.updated'),
           color: 'success',
         });
-        this.$router.push(`/groups/${groupId}`);
+        this.$router.push(`/groups/${groupId}/settings/profiles`);
       } catch (error) {
-        switch (error?.response?.status) {
-          case 401:
-            this.showSnackbar({
-              text: this.$t('forms.profile.errors.apiKey.unauthorized'),
-              color: 'error',
-            });
-            break;
-          case 400: {
-            const errorCode = error?.response?.data?.message;
-
-            if (errorCode === 'ADOBE_INVALID_CLIENT') {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.invalidClient'),
-                color: 'error',
-              });
-            } else if (errorCode === 'ADOBE_INVALID_SECRET') {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.invalidSecret'),
-                color: 'error',
-              });
-            } else {
-              this.showSnackbar({
-                text: this.$t('forms.profile.errors.update'),
-                color: 'error',
-              });
-            }
-            break;
-          }
-          case 500: {
-            const logId = error?.response?.data?.logId;
-            let message = this.$t('forms.profile.errors.update');
-            message = message.replace('{logId}', logId || 'N/A');
-            this.showSnackbar({
-              text: message,
-              color: 'error',
-            });
-            break;
-          }
-          default:
-            this.showSnackbar({
-              text: this.$t('global.errors.errorOccured'),
-              color: 'error',
-            });
-        }
+        this.handleError(error);
       } finally {
-        this.loading = false;
+        this.isLoading = false;
+      }
+    },
+
+    handleError(error) {
+      switch (error?.response?.status) {
+        case 401:
+          this.showSnackbar({
+            text: this.$t('forms.profile.errors.apiKey.unauthorized'),
+            color: 'error',
+          });
+          break;
+        case 400: {
+          const errorCode = error?.response?.data?.message;
+          if (errorCode === 'ADOBE_INVALID_CLIENT') {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.invalidClient'),
+              color: 'error',
+            });
+          } else if (errorCode === 'ADOBE_INVALID_SECRET') {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.invalidSecret'),
+              color: 'error',
+            });
+          } else {
+            this.showSnackbar({
+              text: this.$t('forms.profile.errors.update'),
+              color: 'error',
+            });
+          }
+          break;
+        }
+        case 500: {
+          const logId = error?.response?.data?.logId;
+          let message = this.$t('forms.profile.errors.update');
+          message = message.replace('{logId}', logId || 'N/A');
+          this.showSnackbar({
+            text: message,
+            color: 'error',
+          });
+          break;
+        }
+        default:
+          this.showSnackbar({
+            text: this.$t('global.errors.errorOccured'),
+            color: 'error',
+          });
       }
     },
   },
@@ -197,18 +227,27 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-menu />
-    </template>
-    <profile-form
-      :title="
-        $t('global.editProfile', {
-          name: profile.name,
-        })
-      "
-      :profile="profile"
-      @submit="updateProfile"
-    />
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ pageTitle }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <profile-form
+        :profile="profile"
+        :is-loading="isLoading"
+        :is-edit="true"
+        @submit="updateProfile"
+      />
+    </v-container>
+  </div>
 </template>

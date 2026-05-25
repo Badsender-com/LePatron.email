@@ -23,7 +23,7 @@ module.exports = Object.freeze({
   TagModel: 'Tag',
   // Comments
   CommentModel: 'Comment',
-  // AI Integrations
+  // Integrations
   IntegrationModel: 'Integration',
   DashboardModel: 'Dashboard',
   AIFeatureConfigModel: 'AIFeatureConfig',

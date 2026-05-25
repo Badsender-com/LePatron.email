@@ -47,7 +47,7 @@ export function getTreeview(workspaces, callback) {
     };
 
     let mapWorkspaceToTreeviewTypeData = {
-      icon: 'mdi-account-multiple-outline',
+      icon: 'users',
       id: workspace._id,
       name: workspace.name,
       hasAccess: workspace.hasRights,

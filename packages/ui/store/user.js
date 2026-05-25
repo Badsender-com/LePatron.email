@@ -4,7 +4,6 @@ export const USER = 'user';
 
 export const state = () => ({
   info: null,
-  hasFtpAccess: false,
 });
 
 export const LOCALE = 'LOCALE';
@@ -12,8 +11,11 @@ export const IS_CONNECTED = 'IS_CONNECTED';
 export const IS_ADMIN = 'IS_ADMIN';
 export const IS_GROUP_ADMIN = 'IS_GROUP_ADMIN';
 export const SESSION_ACL = 'SESSION_ACL';
-export const USER_SET_HAS_FTP_ACCESS = 'USER_SET_HAS_FTP_ACCESS';
+// Derived from state.info.group.downloadMailingWithFtpImages. Used to be a
+// separate boolean kept in sync via USER_SET_HAS_FTP_ACCESS — removed to
+// keep one source of truth on the group document.
 export const HAS_FTP_ACCESS = 'HAS_FTP_ACCESS';
+export const GROUP = 'GROUP';
 
 export const getters = {
   [IS_CONNECTED](state) {
@@ -28,8 +30,15 @@ export const getters = {
   [LOCALE](state) {
     return state.info != null && state.info.lang;
   },
-  [HAS_FTP_ACCESS]() {
-    return state.hasFtpAccess;
+  [HAS_FTP_ACCESS](state) {
+    return !!(
+      state.info &&
+      state.info.group &&
+      state.info.group.downloadMailingWithFtpImages
+    );
+  },
+  [GROUP](state) {
+    return state.info != null && state.info.group ? state.info.group : null;
   },
   [SESSION_ACL](state) {
     const hasSession = state.info != null;
@@ -54,9 +63,6 @@ export const mutations = {
       ...user,
     };
   },
-  [USER_SET_HAS_FTP_ACCESS](state, hasFtpAccess) {
-    state.hasFtpAccess = hasFtpAccess;
-  },
 };
 
 export const USER_SET = 'USER_SET';
@@ -68,23 +74,24 @@ export const actions = {
 
     // Only fetch group if user has a valid group ID
     const groupId = user && user.group && user.group.id;
-    if (!groupId) {
-      commit(USER_SET_HAS_FTP_ACCESS, false);
-      return;
-    }
+    if (!groupId) return;
 
     let group;
     try {
       group = await this.$axios.$get(groupsItem({ groupId }));
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.error('[user store] Failed to fetch group:', error.message);
       }
     }
-    commit(
-      USER_SET_HAS_FTP_ACCESS,
-      !!(group && group.downloadMailingWithFtpImages)
-    );
+
+    // Update user info with complete group data (includes
+    // enableEmailBuilder, enableCrmIntelligence, downloadMailingWithFtpImages,
+    // ...). The HAS_FTP_ACCESS getter reads from here directly.
+    if (group) {
+      commit(M_USER_SET, { group });
+    }
   },
   // async [SET_LANG](vuexCtx, lang) {
   //     if (!SUPPORTED_LOCALES.includes(lang)) return

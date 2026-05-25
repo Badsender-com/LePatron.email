@@ -227,7 +227,10 @@ class AdobeProvider {
         const body = response['SOAP-ENV:Envelope']['SOAP-ENV:Body'];
         const rightsCollection =
           body.ExecuteQueryResponse.pdomOutput['rights-collection'];
-        return rightsCollection.rights.map((right) => ({
+        const rights = rightsCollection?.rights;
+        if (!rights) return [];
+        const rightsArray = Array.isArray(rights) ? rights : [rights];
+        return rightsArray.map((right) => ({
           fullName: right.folder.fullName,
           name: right.folder.name,
         }));
@@ -547,8 +550,7 @@ class AdobeProvider {
         </m:GetURL>
       `,
       formatResponseFn: (response) =>
-        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl
-          .$t,
+        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl,
     });
   }
 

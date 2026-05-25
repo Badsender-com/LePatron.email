@@ -4,12 +4,14 @@ export default {
     created: 'Created',
     deleted: 'Deleted',
     usersFetchError: 'Unable to access users\' list :(',
+    groupFetchError: 'Unable to load company data :(',
     emailSent: 'An email was sent',
   },
   global: {
     errors: {
       typeCampagneRequired: 'Campaign type is required.',
       errorOccured: 'Oops! An error has occurred :(',
+      createMailingFailed: 'An error has occurred while creating the mailing',
       required: 'This field is required',
       userRequired: 'A user is required',
       entityRequired: 'An entity is required',
@@ -94,6 +96,7 @@ export default {
     profile: 'ESP',
     user: 'User | Users',
     newUser: 'Add a user',
+    editUser: 'Edit user',
     newEmailsGroup: 'Add a test list',
     editEmailsGroup: 'Edit test list',
     newTeam: 'Add a workspace',
@@ -104,6 +107,8 @@ export default {
     group: 'Group | Groups',
     workspaces: 'Workspaces',
     newGroup: 'Add a group',
+    newCompany: 'Add a company',
+    companyName: 'Company name',
     workspace: 'Workspace',
     newWorkspace: 'Add a workspace',
     newMail: 'New email',
@@ -116,6 +121,7 @@ export default {
     update: 'Update',
     delete: 'Delete',
     reset: 'Reset',
+    clear: 'Clear',
     duplicate: 'Duplicate',
     apply: 'Apply',
     confirm: 'Confirm',
@@ -143,11 +149,14 @@ export default {
     comments: 'Comments',
     edit: 'Edit',
     move: 'Move',
+    moveTo: 'Move to…',
     emailsGroups: 'Test lists',
     variables: 'Variables',
     emailsGroupsEmpty: 'No test list available',
     continue: 'Continue',
+    all: 'All',
     downloadFtp: 'Download FTP',
+    noData: 'No data available',
   },
   layout: {
     logout: 'Logout',
@@ -159,7 +168,20 @@ export default {
         generalInfo: 'General information',
         imageHosting: 'Image hosting',
         authentication: 'Authentication',
+        authenticationDescription: 'Configure SAML authentication to allow your users to login with their enterprise account.',
         permissions: 'Permissions',
+        permissionsDescription: 'Manage user access rights to different workspaces.',
+        companyInfo: 'Company information',
+        companyInfoDescription: 'Enter the main information about the company.',
+      },
+      enableSaml: 'Enable SAML authentication',
+      entryPointHint: 'Login URL provided by your identity provider',
+      issuerHint: 'Unique identifier for your application at the provider',
+      dangerZone: {
+        title: 'Danger zone',
+        description: 'Actions in this zone are irreversible. Proceed with caution.',
+        deleteCompany: 'Delete company',
+        deleteTitle: 'Delete company',
       },
       name: 'Company name',
       downloadWithoutEnclosingFolder: {
@@ -169,9 +191,11 @@ export default {
       },
       color: {
         label: 'Custom color',
+        description: 'Define the colors available in the email editor for this group.',
       },
       defaultWorkspace: {
         label: 'Default workspace\'s name',
+        hint: 'Leave empty to use the default name',
       },
       status: {
         label: 'Status',
@@ -236,6 +260,10 @@ export default {
     emailsGroup: {
       emails: 'Emails',
       emailsPlaceholder: 'Example: email.01@domain.com;email.02@domain.com;',
+      emailsHint: 'Separate email addresses with semicolons (;)',
+      configuration: 'Test list configuration',
+      configurationDescription:
+        'Define the name and email addresses for this test list',
       errors: {
         name: {
           required: 'the list name is required',
@@ -278,6 +306,7 @@ export default {
     },
     modules: {
       title: 'Enabled modules',
+      description: 'Enable or disable the modules available for this company.',
       notEnabled: 'Module not enabled',
       emailBuilder: {
         name: 'Email Builder',
@@ -308,17 +337,19 @@ export default {
       deleteWarningMessage:
         'You are about to delete the workspace: <strong>{name}</strong>.<br/>This action can\'t be undone.',
       deleteSuccessful: 'Workspace deleted',
+      empty: 'No workspaces yet',
     },
     delete: {
       deleteWarningMessage:
-        'You are about to delete the group: <strong>{name}</strong>.<br/>This action can\'t be undone.',
-      confirmationField: 'Type the group name to confirm',
+        'You are about to delete the company: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+      confirmationField: 'Type the company name to confirm',
       deleteNotice:
-        'Administrators, users, templates, workspaces, folders, emails and emails test groups will also be deleted',
-      successful: 'Group deleted',
+        'Administrators, users, templates, workspaces, folders, emails and test lists will also be deleted.',
+      successful: 'Company deleted',
     },
   },
   mailings: {
+    noMailingsAvailable: 'No emails available',
     transfer: {
       label: 'Transfer email',
       success: 'Email transferred',
@@ -326,9 +357,13 @@ export default {
     list: 'Search in the email list',
     creationNotice: 'Click on any of above templates to create email',
     filters: {
+      title: 'Filters',
       createdBetween: 'Created between',
       updatedBetween: 'Updated between',
       and: 'and',
+      searchPlaceholder: 'Search by name...',
+      startDate: 'Start date',
+      endDate: 'End date',
     },
     deleteManySuccessful: 'Emails deleted',
     deleteConfirmationMessage:
@@ -345,16 +380,22 @@ export default {
       'A preview will be generated when opening the email editor',
     rename: 'Rename email',
     selectedCount: '{count} email selected | {count} emails selected',
+    selectedMailings: 'email selected | emails selected',
     selectedShortCount: '{count} email| {count} emails',
     deleteCount: 'Delete {count} email | Delete {count} emails',
     downloadCount: 'Download {count} email | Download {count} emails',
+    downloadFtp: 'Download FTP',
     downloadFtpCount:
       'Download ftp {count} email | Download ftp {count} emails',
     moveCount: 'Move {count} email | Move {count} emails',
     deleteNotice: 'This will definitely remove:',
     copyMailConfirmationMessage: 'Please choose the location of the copy:',
+    copyMailConfirmationMessageWithName:
+      'Please choose the location of the copy of email <strong>{name}</strong>:',
     copyMailSuccessful: 'Mail copied',
     moveMailConfirmationMessage: 'Please choose the destination:',
+    moveMailConfirmationMessageWithName:
+      'Please choose the destination of email <strong>{name}</strong>:',
     moveMailSuccessful: 'Email moved',
     moveManySuccessful: 'Emails moved',
     downloadManySuccessful: 'Emails download complete',
@@ -406,12 +447,18 @@ export default {
     list: 'Tags\' list',
     new: 'New tag',
     handle: 'Handle tags',
+    tag: 'Tag',
   },
   users: {
     actions: {
       reset: 'Reset',
       send: 'Send',
       resend: 'Resend',
+      activate: 'Activate user',
+      deactivate: 'Deactivate user',
+      sendPassword: 'Send password email',
+      resendPassword: 'Resend password email',
+      resetPassword: 'Reset password',
     },
     passwordTooltip: {
       reset: 'Reset password',
@@ -429,12 +476,39 @@ export default {
     lang: 'Language',
     details: 'Details',
     role: 'Role',
+    noUsersAvailable: 'No users available',
+    sections: {
+      statusSecurity: 'Status & Security',
+      statusSecurityDescription:
+        'Manage account status and password options.',
+    },
+    status: {
+      confirmed: 'Active',
+      saml: 'SSO',
+      passwordSent: 'Pending',
+      toInitialize: 'To initialize',
+      deactivated: 'Deactivated',
+    },
+    statusDescription: {
+      confirmed: 'The user has access to the platform.',
+      saml: 'The user authenticates via SAML SSO.',
+      passwordSent: 'A password email has been sent. Awaiting user confirmation.',
+      toInitialize: 'The user has not yet received a password email.',
+      deactivated: 'The user can no longer access the platform.',
+    },
   },
   workspaces: {
     name: 'Name',
     description: 'Descritpion',
     members: 'Users',
+    membersDescription:
+      'Select the users who will have access to this workspace.',
     userIsGroupAdmin: 'The user is a group admin',
+    noUsersAvailable: 'No users available',
+    sections: {
+      info: 'Information',
+      infoDescription: 'Set the workspace name.',
+    },
   },
   profiles: {
     name: 'Name',
@@ -452,6 +526,21 @@ export default {
     emptyState: 'No profile available',
     deleteWarningMessage:
       'You are about to delete the profile: <strong>{name}</strong>.<br/>This action can\'t be undone.',
+    newProfile: 'New ESP profile',
+    espType: 'ESP provider',
+    espTypeDescription: 'Select the email service provider for this profile.',
+    selectEsp: 'Email service provider',
+    apiConfiguration: 'API configuration',
+    apiConfigurationDescription:
+      'Enter the API credentials for your ESP account.',
+    senderConfiguration: 'Sender information',
+    senderConfigurationDescription:
+      'Configure the default sender details for emails sent via this profile.',
+    databaseConfiguration: 'Database configuration',
+    databaseConfigurationDescription:
+      'Configure the database entity and target table settings.',
+    targetTypeDescription:
+      'Select the target type for Adobe Campaign deliveries.',
   },
   folders: {
     name: 'Folder name',
@@ -460,42 +549,56 @@ export default {
     rename: 'Rename',
     created: 'Folder created',
     conflict: 'Folder already exists',
+    hasChildren: 'This folder contains subfolders and cannot be moved to another folder',
     moveFolderConfirmationMessage: 'Please choose the destination:',
+    moveFolderConfirmationMessageWithName:
+      'Please choose the destination of folder <strong>{name}</strong>:',
     moveFolderSuccessful: 'Folder moved',
   },
   tableHeaders: {
     groups: {
-      downloadWithoutEnclosingFolder: 'Download without parent folder',
-      cdnDownload: 'CDN download',
-      ftpDownload: 'FTP download',
+      cdnDownload: 'CDN',
+      ftpDownload: 'FTP',
       status: 'Status',
+      esp: 'ESP',
+      ai: 'AI',
     },
     users: {
       passwordMail: 'Password\' email',
     },
     templates: {
       markup: 'Markup?',
+      coverImage: 'Preview?',
+      imageCount: 'Images',
     },
     mailings: {
       rename: 'Rename',
       transfer: 'Transfer',
     },
+    workspaces: {
+      assigned: 'Access',
+    },
   },
   personalizedVariables: {
+    title: 'Custom variables',
+    description:
+      'Define custom variables that can be used in your email templates',
+    empty: 'No variables defined yet',
     status: 'Status',
     label: 'Label',
     variable: 'Variable',
     actions: 'Actions',
-    addRow: 'Add Row',
+    addRow: 'Add a variable',
     save: 'Save',
     delete: 'Delete',
-    deleteNotice: 'Are you sure you want to delete this variable?',
+    deleteTitle: 'Delete variable',
+    deleteNotice: 'Are you sure you want to delete the variable "{variable}"?',
     validation: {
       required: 'This field is required.',
     },
     snackbars: {
-      deleted: 'Personalized variable deleted successfully.',
-      updated: 'Personalized variables updated successfully.',
+      deleted: 'Variable deleted successfully.',
+      updated: 'Variables saved successfully.',
       error: 'An error occurred. Please try again.',
     },
   },
@@ -504,6 +607,19 @@ export default {
       'NMS_DELIVERY': 'Delivery',
       'NMS_DELIVERY_MODEL': 'Delivery Template'
     }
+  },
+  exportOptions: {
+    title: 'Export options',
+    sections: {
+      zipFormat: 'Zip file format',
+      zipFormatDescription: 'Configure the structure of the zip file downloaded by users.',
+      ftpHosting: 'FTP/SFTP hosting',
+      ftpHostingDescription: 'Configure an FTP or SFTP server to automatically host email images.',
+      cdnHosting: 'CDN hosting',
+      cdnHostingDescription: 'Configure a custom CDN to host email images.',
+    },
+    cdnEndpointHint: 'Base URL of your CDN (without protocol)',
+    cdnButtonLabelHint: 'Label displayed in the editor',
   },
   crmIntelligence: {
     title: 'CRM Intelligence',
@@ -516,35 +632,36 @@ export default {
       title: 'CRM Intelligence',
       subtitle: 'Centralize your CRM and Marketing KPIs in LePatron. Visualize your performance in real-time.',
       ctaPrimary: 'Request a demo',
+      ctaSecondary: 'Learn more',
       featuresTitle: 'Drive your data-driven strategy',
       features: [
         {
-          icon: 'mdi-chart-areaspline',
+          icon: 'area-chart',
           title: 'Campaign Performance',
           description: 'Track key metrics of your email sends in real-time.',
         },
         {
-          icon: 'mdi-email-check',
+          icon: 'mail-check',
           title: 'Deliverability',
           description: 'Analyze your deliverability rates and identify issues.',
         },
         {
-          icon: 'mdi-account-heart',
+          icon: 'heart-handshake',
           title: 'Customer Engagement',
           description: 'Measure your audience engagement across all channels.',
         },
         {
-          icon: 'mdi-currency-usd',
+          icon: 'dollar-sign',
           title: 'Marketing ROI',
           description: 'Calculate the return on investment of your campaigns.',
         },
         {
-          icon: 'mdi-view-dashboard',
+          icon: 'layout-dashboard',
           title: 'Custom Dashboards',
           description: 'Create dashboards tailored to your business needs.',
         },
         {
-          icon: 'mdi-database-sync',
+          icon: 'database',
           title: 'Metabase Integration',
           description: 'Connect your data sources via Metabase.',
         },
@@ -604,6 +721,7 @@ export default {
       dashboardName: 'Display name',
       dashboardNameRequired: 'Name is required',
       dashboardDescription: 'Description',
+      dashboardDescriptionPlaceholder: 'Optional dashboard description',
       noDashboards: 'No dashboards configured',
       noIntegrationsForDashboards: 'Create an integration first to add dashboards.',
       dashboardSaveSuccess: 'Dashboard saved',
@@ -613,6 +731,7 @@ export default {
       dashboardDeleteError: 'Error deleting dashboard',
       deleteDashboardConfirmTitle: 'Delete dashboard?',
       deleteDashboardConfirmText: 'This action cannot be undone.',
+      deleteDashboardConfirmTextWithName: 'Are you sure you want to delete the dashboard "{name}"? This action cannot be undone.',
       reorderError: 'Error reordering dashboards',
       moveUp: 'Move up',
       moveDown: 'Move down',
@@ -634,32 +753,32 @@ export default {
       featuresTitle: 'Everything you need',
       features: [
         {
-          icon: 'mdi-drag',
+          icon: 'grip-vertical',
           title: 'Intuitive Drag & Drop',
           description: 'Build your emails visually, without any code.',
         },
         {
-          icon: 'mdi-cellphone-link',
+          icon: 'smartphone',
           title: 'Native Responsive',
           description: 'Emails optimized for all devices and email clients.',
         },
         {
-          icon: 'mdi-puzzle',
+          icon: 'puzzle',
           title: 'Reusable Blocks',
           description: 'Create a component library for your teams.',
         },
         {
-          icon: 'mdi-palette',
+          icon: 'palette',
           title: 'Built-in Design System',
           description: 'Follow your brand guidelines with custom templates.',
         },
         {
-          icon: 'mdi-cloud-upload',
+          icon: 'cloud-upload',
           title: 'Multi-ESP Export',
           description: 'Export to Sendinblue, Mailchimp, Actito and more.',
         },
         {
-          icon: 'mdi-account-group',
+          icon: 'users',
           title: 'Team Collaboration',
           description: 'Work together with role management and workspaces.',
         },
@@ -669,10 +788,35 @@ export default {
     },
   },
   sidebar: {
-    modules: 'Modules',
+    modules: {
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+      deliverability: 'Deliverability',
+      designSystem: 'Design System',
+      aiStudio: 'AI Studio',
+    },
+    system: {
+      settings: 'Settings',
+      help: 'Help',
+      logout: 'Sign out',
+    },
+    aria: {
+      closeNavigation: 'Close navigation',
+      breadcrumb: 'Breadcrumb',
+      moreActions: 'More actions',
+    },
+    settingsHeader: 'Settings',
     utilities: 'Utilities',
-    help: 'Help',
-    logout: 'Logout',
+    collapse: 'Collapse sidebar',
+    expand: 'Expand sidebar',
+    resizeHandle:
+      'Resize sidebar (use arrow keys, Shift for larger steps, Home/End for min/max)',
+    selectModule: 'Select a module to get started',
+    moduleLockedLabel: '{module} (locked - upgrade required)',
+    upgradeRequired: 'Upgrade required',
+    upgradeMessage: 'The {module} module is not included in your current plan.',
+    contactAdmin: 'Please contact your administrator or reach out to Badsender to enable this feature.',
+    contactBadsender: 'Contact Badsender',
   },
   integrations: {
     title: 'Integrations',
@@ -736,6 +880,19 @@ export default {
       recommended: 'recommended',
     }
   },
+  settingsNav: {
+    categories: {
+      superAdmin: 'Super Admin',
+      general: 'General',
+      emailBuilder: 'Email Builder',
+      crmIntelligence: 'CRM Intelligence',
+    },
+    companiesList: 'Companies list',
+    companiesEmpty: 'No companies yet',
+    superAdminOnly: 'Super admin only',
+    switchCompany: 'Pick a company…',
+    colors: 'Colors',
+  },
   aiFeatures: {
     title: 'AI Features',
     selectIntegration: 'Integration to use',
@@ -743,9 +900,12 @@ export default {
     noIntegrationsWarning: 'No AI integration configured. First add an integration in the Integrations tab.',
     integrationInactiveWarning: 'The selected integration is inactive. Activate it to use this feature.',
     comingSoon: 'Coming soon',
+    upcomingFeatures: 'Upcoming features',
+    upcomingFeaturesDescription: 'Discover the upcoming AI features currently in development.',
     translation: {
       title: 'Translation',
       description: 'Automatically translate your emails into different languages using AI.',
+      enableLabel: 'Enable translation',
       model: 'AI Model',
       modelHint: 'More powerful models are more accurate but slower and more expensive',
       availableLanguages: 'Available languages',
@@ -770,5 +930,37 @@ export default {
     errors: {
       loadModelsFailed: 'Unable to load available models.',
     }
+  },
+  colors: {
+    palette: 'Color palette',
+    paletteDescription: 'These colors will be available in the email editor color picker for all users in this company.',
+    addColor: 'Add',
+    removeColor: 'Remove this color',
+    hint: '{count}/21 colors • Click on a color to edit it',
+  },
+  templates: {
+    noTemplates: 'No templates yet',
+    deleteConfirmTitle: 'Delete template?',
+    deleteWarningMessage: 'Are you sure you want to delete the template <strong>{name}</strong>? This action cannot be undone.',
+    confirmationField: 'Type the template name to confirm',
+    newTemplate: 'New template',
+    generalInfo: 'General information',
+    generalInfoDescription: 'Template name and description',
+    templateFiles: 'Template files',
+    templateFilesDescription: 'Upload the HTML markup and associated images',
+    markup: 'Markup (HTML file)',
+    markupUploaded: 'Markup uploaded',
+    dropMarkupHere: 'Drop file here or click to select',
+    markupFormats: 'Accepted format: .html',
+    invalidMarkupFormat: 'Invalid format. Please upload an HTML file.',
+    dropImagesHere: 'Drop images here or click to select',
+    imageFormats: 'Accepted formats: PNG, JPG, GIF, WEBP',
+    existingImages: '{count} uploaded images',
+    newImages: '{count} new images to upload',
+    removeAllImages: 'Remove all',
+    imagesRemoved: 'Images removed successfully',
+    previewDescription: 'Preview of the rendered template',
+    regeneratePreview: 'Regenerate preview',
+    filesAvailableAfterCreation: 'You can upload the HTML markup and images after creating the template.',
   }
 };

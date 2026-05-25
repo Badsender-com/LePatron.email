@@ -1,31 +1,39 @@
 <script>
 import { validationMixin } from 'vuelidate';
-import SENDINBLUEComponent from '../../components/profiles/esp/SENDINBLUEComponent';
-import ACTITOComponent from '../../components/profiles/esp/ACTITOComponent';
-import DSCComponent from '../../components/profiles/esp/DSCComponent';
 import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
-import ADOBEComponent from '../../components/profiles/esp/ADOBEComponent';
+import BsSelect from '~/components/form/bs-select.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
+import SENDINBLUEComponent from './esp/SENDINBLUEComponent.vue';
+import ACTITOComponent from './esp/ACTITOComponent.vue';
+import DSCComponent from './esp/DSCComponent.vue';
+import ADOBEComponent from './esp/ADOBEComponent.vue';
+import { Send, AlertTriangle } from 'lucide-vue';
 
 export default {
   name: 'ProfileForm',
   components: {
+    BsSelect,
+    BsFormSection,
     SENDINBLUEComponent,
     ACTITOComponent,
     DSCComponent,
     ADOBEComponent,
+    LucideSend: Send,
+    LucideAlertTriangle: AlertTriangle,
   },
   mixins: [validationMixin],
   props: {
-    title: { type: String, default: '' },
     profile: { type: Object, default: () => ({}) },
+    isLoading: { type: Boolean, default: false },
+    isEdit: { type: Boolean, default: false },
   },
   data: () => {
     return {
       group: {},
       authorizedEsps: [
         {
-          text: 'SendinBlue',
+          text: 'Brevo (ex-SendinBlue)',
           value: ESP_TYPES.SENDINBLUE,
         },
         {
@@ -37,7 +45,7 @@ export default {
           value: ESP_TYPES.DSC,
         },
         {
-          text: 'Adobe',
+          text: 'Adobe Campaign',
           value: ESP_TYPES.ADOBE,
         },
       ],
@@ -51,6 +59,9 @@ export default {
     },
     needsFtpConfig() {
       return this.selectedEsp !== ESP_TYPES.ADOBE;
+    },
+    showFtpWarning() {
+      return this.needsFtpConfig && !this.group.downloadMailingWithFtpImages;
     },
   },
   async mounted() {
@@ -69,7 +80,7 @@ export default {
       try {
         this.group = await $axios.$get(groupsItem(params));
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
     handleSubmit(newProfile) {
@@ -80,45 +91,64 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile tag="form">
-    <v-card-title v-if="title">
-      {{ title }}
-    </v-card-title>
-    <v-card-text>
-      <v-row v-if="needsFtpConfig && !group.downloadMailingWithFtpImages">
-        <v-col cols="12">
-          <v-alert
-            dense
-            border="left"
-            type="warning"
-            class="d-flex flex-row p-3"
-          >
-            {{ $t('profiles.warningNoFTP') }}
-          </v-alert>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-select
+  <form class="profile-form" @submit.prevent>
+    <!-- FTP Warning Alert -->
+    <v-alert
+      v-if="showFtpWarning"
+      type="warning"
+      border="left"
+      colored-border
+      class="profile-form__alert"
+    >
+      <div class="d-flex align-center">
+        <lucide-alert-triangle :size="20" class="mr-3" />
+        <span>{{ $t('profiles.warningNoFTP') }}</span>
+      </div>
+    </v-alert>
+
+    <!-- ESP Type Selection (own card so it visually anchors above the ESP-specific card) -->
+    <v-card flat tile>
+      <v-card-text>
+        <bs-form-section last>
+          <template #icon>
+            <lucide-send :size="20" />
+          </template>
+          <template #title>
+            {{ $t('profiles.espType') }}
+          </template>
+          <template #description>
+            {{ $t('profiles.espTypeDescription') }}
+          </template>
+          <bs-select
             v-model="selectedEsp"
             :items="authorizedEsps"
-            label="Esp"
-            solo
-            outlined
-            flat
-            @change="handleEspChange($event)"
+            :label="$t('profiles.selectEsp')"
+            :disabled="isEdit"
+            @change="handleEspChange"
           />
-          <client-only>
-            <component
-              :is="selectedEspName"
-              :profile-data="profile"
-              :disabled="needsFtpConfig && !group.downloadMailingWithFtpImages"
-              :loading="loading"
-              @submit="handleSubmit"
-            />
-          </client-only>
-        </v-col>
-      </v-row>
-    </v-card-text>
-  </v-card>
+        </bs-form-section>
+      </v-card-text>
+    </v-card>
+
+    <!-- ESP-specific Configuration (rendered dynamically) -->
+    <client-only>
+      <component
+        :is="selectedEspName"
+        :profile-data="profile"
+        :disabled="showFtpWarning"
+        :is-loading="isLoading"
+        :is-edit="isEdit"
+        class="mt-4"
+        @submit="handleSubmit"
+      />
+    </client-only>
+  </form>
 </template>
+
+<style lang="scss" scoped>
+.profile-form {
+  &__alert {
+    margin-bottom: 1.5rem;
+  }
+}
+</style>

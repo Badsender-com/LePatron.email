@@ -62,15 +62,15 @@
 @mosaico-helpwin-background-color: @helpwin-background-color;
 @mosaico-helpwin-text-color: @helpwin-text-color;
 @mosaico-accent-color: @accent-color;
-@mosaico-outline-color: currentcolor;
+@mosaico-outline-color: var(--gray-500, #9e9e9e);
 @mosaico-shadow-color: #808080;
-@mosaico-selection-color: #cc0000;
+@mosaico-selection-color: var(--v-accent-base, #00acdc);
 
 // Variabili base usate da voxmail: colori, stili
 @import 'style_variables.less';
 
-// Icone font-awesome (.fa-* , configurable via @fa-css-prefix)
-@import (optional) 'font-awesome/less/font-awesome.less';
+// Icons are now handled via lucide-icons.less (CSS mask-based SVG icons)
+// The old font-awesome import has been removed
 
 // Mosaico: editing tools (toolbar, left toolbox, right preview)
 @import 'style_mosaico_tools.less';
@@ -82,10 +82,10 @@
 // Styles for tinymce/moxiemanager (uses .moxman-* and .moxie-*)
 @import 'style_elements_moxie.less';
 
+// Legacy mixin - now icons use CSS mask approach via lucide-icons.less
+// This mixin is kept for compatibility but FontAwesome font is no longer loaded
 .makeFontAwesome() {
-  // TODO move this in style_utils?
   visibility: visible;
-  font-family: FontAwesome;
   color: #333332;
   position: relative;
   top: 1px;
@@ -93,20 +93,6 @@
   display: inline-block;
 }
 
-@keyframes border-color-selection-pulsate {
-  0% {
-    border-color: @mosaico-outline-color;
-  }
-  40% {
-    border-color: @mosaico-selection-color;
-  }
-  60% {
-    border-color: @mosaico-selection-color;
-  }
-  100% {
-    border-color: @mosaico-outline-color;
-  }
-}
 
 @keyframes droppable-pulsate {
   0% {
@@ -130,7 +116,7 @@
   top: -14px;
   left: -10px;
   height: 24px;
-  background-color: fade(@mosaico-selection-color, 60%);
+  background-color: rgba(0, 172, 220, 0.6); // accent at 60% opacity
   background-clip: content-box;
   color: white;
   right: -10px;
@@ -141,7 +127,9 @@
   pointer-events: none;
 }
 
-// Note that we avoid altering border/outline widths/opacity on hover/selection because of Webkit bugs (see safarihacks.css)
+// Selection and hover states use outline only (no borders) to avoid layout shifts
+// Outline doesn't take layout space, preventing block displacement on selection
+// Both states use identical dimensions - only color differs
 .makeSelectable(@size: 10px, @selectedSelector: ~'.selected', @selectedSize: 1px, @borderElementSelector: ~':after') {
   position: relative;
 
@@ -149,74 +137,46 @@
     content: '';
     display: block;
     position: absolute;
-    // z-index: 0;
-    top: -3px;
-    bottom: -3px;
-    left: -2px - @size;
-    right: -2px - @size;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 
-    // Use border for selection
-    border: 1px solid transparent;
-    border-width: @selectedSize;
-    border-left-width: @size;
-    border-right-width: @size;
-
-    // Use outline for hover effects
+    // Use outline for both hover and selection (no layout impact)
     outline: 1px solid transparent;
-    // outline-offset: -1px;
 
     // otherwise this catches clicks and prevent correct selection of underlying text
     pointer-events: none;
   }
+  // Selected state: accent color, 2px outline toward outside
   &@{selectedSelector}@{borderElementSelector} {
-    outline-color: transparent;
-    // border: @selectedSize dashed @mosaico-selection-color;
-    // border-left-width: @size;
-    // border-right-width: @size;
-    border-color: @mosaico-selection-color;
-    border-style: dashed solid;
-    animation: border-color-selection-pulsate 4s infinite;
+    outline-color: @mosaico-selection-color;
+    outline-width: 2px;
+    outline-offset: 0;
   }
+  // Hover state: gray color
   &:hover@{borderElementSelector} {
     outline-color: @mosaico-outline-color;
-    border-top-color: transparent !important;
-    border-bottom-color: transparent !important;
-    animation: none;
+  }
+  // Selected + hover: keep accent color and 2px width
+  &@{selectedSelector}:hover@{borderElementSelector} {
+    outline-color: @mosaico-selection-color;
+    outline-width: 2px;
+    outline-offset: 0;
   }
 
-  &@{selectedSelector} {
+  &:hover {
     z-index: 10;
   }
-  &:hover {
+  &@{selectedSelector} {
     z-index: 11;
   }
-}
-
-.makeEditableHover(@size, @editableSelector, @borderElementSelector: ~':before') {
-  @{editableSelector}@{borderElementSelector} {
-    content: '';
-    display: block;
-    position: absolute;
-    // z-index: 0;
-    top: -3px;
-    bottom: -3px;
-    left: -7px;
-    right: -7px;
-    border: 1px dashed transparent;
-    opacity: 0.3;
-
-    // otherwise this catches clicks and prevent correct selection of underlying text
-    pointer-events: none;
-  }
-
-  &:hover @{editableSelector}@{borderElementSelector} {
-    border-color: @mosaico-outline-color;
-  }
-
-  &:hover @{editableSelector}:hover@{borderElementSelector} {
-    border-color: transparent;
+  &@{selectedSelector}:hover {
+    z-index: 12;
   }
 }
+
+// .makeEditableHover mixin removed - was creating duplicate dashed borders on editable elements
 
 .resetFont() {
   font-family: @font-family;
@@ -455,19 +415,27 @@ a[disabledhref]:-moz-read-write {
 }
 
 body > .ui-tooltip {
-  .win();
-
   .resetFont();
-  // font-family: @font-family;
-  // font-size: 1em;
   font-size: 14px;
-
-  border-width: 0px;
-  padding: 8px;
+  line-height: 22px;
+  font-weight: 400;
+  background-color: rgba(97, 97, 97, 0.9);
+  color: #ffffff;
+  border: 0;
+  border-radius: 4px;
+  padding: 5px 16px;
   position: absolute;
   z-index: 9999;
   max-width: 300px;
-  box-shadow: 0px 0px 5px #aaa;
+  box-shadow: none;
+  pointer-events: none;
+  overflow: hidden;
+
+  &::before,
+  &::after,
+  .ui-tooltip-pointer {
+    display: none !important;
+  }
 }
 
 .ui-helper-hidden-accessible {

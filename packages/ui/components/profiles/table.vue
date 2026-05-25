@@ -1,17 +1,18 @@
 <script>
-import * as userStatusHelpers from '~/helpers/user-status.js';
-import ProfilesActionsDropdown from './profiles-actions-dropdown.vue';
-import ProfilesActionsDropdownItem from './profiles-actions-dropdown-item.vue';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Pencil, Trash2, Send } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsProfilesTable',
+  LucideSend: Send,
   components: {
-    ProfilesActionsDropdown,
-    ProfilesActionsDropdownItem,
+    BsDataTable,
     BsModalConfirmForm,
+    LucidePencil: Pencil,
+    LucideTrash2: Trash2,
   },
-  model: { prop: 'loading', event: 'update' },
   props: {
     profiles: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
@@ -29,32 +30,30 @@ export default {
           text: this.$t('profiles.name'),
           align: 'left',
           value: 'name',
-          sort: (a, b) => String(b.name).localeCompare(a.name),
         },
         {
           text: this.$t('profiles.type'),
-          align: 'center',
+          align: 'left',
           value: 'type',
-          sort: (a, b) => String(b.type).localeCompare(a.type),
         },
         {
           text: this.$t('profiles.createdAt'),
-          align: 'center',
+          align: 'left',
           value: 'createdAt',
         },
         {
-          text: this.$t('profiles.actions'),
+          text: this.$t('global.actions'),
           value: 'actions',
           sortable: false,
-          align: 'center',
-          class: 'table-column-action',
+          align: 'right',
         },
       ];
     },
   },
   methods: {
-    getStatusIcon(item) {
-      return userStatusHelpers.getStatusIcon(item.status);
+    escapeHtml,
+    goToProfile(profile) {
+      this.$router.push(`/groups/${this.groupId}/profiles/${profile.id}`);
     },
     openDeleteModal(profile = {}) {
       this.selectedProfile = profile;
@@ -66,52 +65,79 @@ export default {
     handleDelete() {
       this.$emit('delete', this.selectedProfile);
     },
-    closeModal() {
-      this.$refs.deleteDialog.close();
-    },
   },
 };
 </script>
 
 <template>
-  <!-- eslint-disable vue/valid-v-slot  -->
-  <div class="bs-users-table">
-    <v-data-table
+  <div>
+    <bs-data-table
       :headers="tableHeaders"
       :items="profiles"
       :loading="loading"
-      :no-data-text="$t('profiles.emptyState')"
+      :empty-icon="$options.LucideSend"
+      :empty-message="$t('profiles.emptyState')"
+      clickable
+      @click:row="goToProfile"
     >
       <template #item.name="{ item }">
-        <nuxt-link :to="`/groups/${groupId}/profiles/${item.id}`">
+        <nuxt-link
+          :to="`/groups/${groupId}/profiles/${item.id}`"
+          class="cell-link font-weight-medium"
+          @click.native.stop
+        >
           {{ item.name }}
         </nuxt-link>
       </template>
+
       <template #item.type="{ item }">
-        <span> {{ item.type }} </span>
+        <v-chip small outlined>
+          {{ item.type }}
+        </v-chip>
       </template>
+
       <template #item.createdAt="{ item }">
-        <span> {{ item.createdAt | preciseDateTime }} </span>
+        {{ item.createdAt | preciseDateTime }}
       </template>
+
       <template #item.actions="{ item }">
-        <profiles-actions-dropdown>
-          <profiles-actions-dropdown-item
-            icon="edit"
-            :to="`/groups/${groupId}/profiles/${item.id}`"
-          >
-            {{ $t('global.edit') }}
-          </profiles-actions-dropdown-item>
-          <profiles-actions-dropdown-item
-            icon="delete"
-            :on-click="() => openDeleteModal(item)"
-          >
-            {{ $t('profiles.delete') }}
-          </profiles-actions-dropdown-item>
-        </profiles-actions-dropdown>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="goToProfile(item)"
+            >
+              <lucide-pencil :size="18" />
+            </v-btn>
+          </template>
+          <span>{{ $t('global.edit') }}</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              class="error--text"
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="openDeleteModal(item)"
+            >
+              <lucide-trash2 :size="18" />
+            </v-btn>
+          </template>
+          <span>{{ $t('global.delete') }}</span>
+        </v-tooltip>
       </template>
-    </v-data-table>
+    </bs-data-table>
+
     <bs-modal-confirm-form
       ref="deleteDialog"
+      :title="`${$t('global.delete')} ?`"
+      :action-label="$t('global.delete')"
       :with-input-confirmation="false"
       @confirm="handleDelete"
     >
@@ -119,10 +145,115 @@ export default {
         class="black--text"
         v-html="
           $t('profiles.deleteWarningMessage', {
-            name: selectedProfile.name,
+            name: escapeHtml(selectedProfile.name),
           })
         "
       />
     </bs-modal-confirm-form>
   </div>
 </template>
+
+<style lang="scss" scoped>
+/* =========================================================================
+   BsDataTable Styles — LePatron Design System v1.0
+   ========================================================================= */
+
+/* Real <nuxt-link> on the name cell so middle-click opens in a new tab. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
+
+::v-deep .v-data-table thead th {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: rgba(0, 0, 0, 0.6) !important;
+  padding: 10px 16px !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+  height: 40px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+  white-space: nowrap;
+  user-select: none;
+}
+
+::v-deep .v-data-table tbody tr {
+  height: 40px !important;
+  cursor: pointer;
+  transition: background 0.15s ease-out;
+}
+
+::v-deep .v-data-table tbody td {
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  color: rgba(0, 0, 0, 0.87) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  height: 40px !important;
+  vertical-align: middle;
+}
+
+::v-deep .v-data-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+::v-deep .v-data-table tbody tr:hover {
+  background: rgba(0, 172, 220, 0.05) !important;
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected {
+  background: rgba(0, 172, 220, 0.06) !important;
+}
+
+::v-deep .v-data-table tbody tr.v-data-table__selected:hover {
+  background: rgba(0, 172, 220, 0.1) !important;
+}
+
+::v-deep .v-data-table__empty-wrapper {
+  padding: 48px 24px !important;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.87) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Name column - bold but inherits the default cell color so it stays
+   consistent with every other admin listing. */
+::v-deep .v-data-table tbody td:nth-child(1) {
+  font-weight: 500 !important;
+}
+
+/* Date column - tabular nums */
+::v-deep .v-data-table tbody td:nth-child(3) {
+  color: rgba(0, 0, 0, 0.7) !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Chips - small style */
+::v-deep .v-chip {
+  font-size: 11px !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  font-weight: 500 !important;
+}
+
+/* Actions column - right aligned */
+::v-deep .v-data-table tbody td:last-child {
+  text-align: right !important;
+  width: 1%;
+  white-space: nowrap;
+}
+
+::v-deep .v-data-table thead th:last-child {
+  text-align: right !important;
+  width: 1%;
+}
+</style>

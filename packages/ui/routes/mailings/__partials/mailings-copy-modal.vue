@@ -1,12 +1,20 @@
 <script>
 import BsModalConfirm from '~/components/modal-confirm';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
+import { FolderOpen, Folder, Users, Copy } from 'lucide-vue';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'MailingsCopyModal',
   components: {
     BsModalConfirm,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
+    LucideUsers: Users,
+    LucideCopy: Copy,
   },
+  SPACE_TYPE,
   mixins: [destinationTreeMixin],
   props: {
     confirmationInputLabel: { type: String, default: '' },
@@ -25,6 +33,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     submit() {
       if (this.isValidToBeCopied) {
         const location = this.selectedLocation;
@@ -50,43 +59,65 @@ export default {
 <template>
   <bs-modal-confirm
     ref="copyMailDialog"
-    :title="`${this.$t('global.copyMail')} <strong>${mailName}</strong>`"
+    :title="$t('global.copyMail')"
     :is-form="true"
     class="modal-confirm-copy-mail"
     @click-outside="close"
   >
-    <slot />
+    <template #titlePrefix>
+      <lucide-copy :size="20" />
+    </template>
+    <p
+      v-if="mailName"
+      class="black--text"
+      v-html="
+        $t('mailings.copyMailConfirmationMessageWithName', {
+          name: escapeHtml(mailName),
+        })
+      "
+    />
+    <slot v-else />
     <v-skeleton-loader
       type="list-item, list-item, list-item"
       :loading="areLoadingWorkspaces"
     >
-      <v-treeview
-        ref="tree"
-        item-key="id"
-        activatable
-        :items="treeviewWorkspacesHasRight"
-        :open="openNodes"
-        :active="activeNode"
-        hoverable
-        :dense="true"
-        :return-object="true"
-        class="pb-8"
-        @update:active="handleSelectDestination"
-      >
-        <template #prepend="{ item, open }">
-          <v-icon v-if="!item.icon" color="accent">
-            {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-          </v-icon>
-          <v-icon v-else color="accent">
-            {{ item.icon }}
-          </v-icon>
-        </template>
-        <template #label="{ item, active }">
-          <div @click="active ? $event.stopPropagation() : null">
-            {{ item.name }}
-          </div>
-        </template>
-      </v-treeview>
+      <div class="destination-tree">
+        <v-treeview
+          ref="tree"
+          item-key="id"
+          activatable
+          :items="treeviewWorkspacesHasRight"
+          :open="openNodes"
+          :active="activeNode"
+          hoverable
+          :dense="true"
+          :return-object="true"
+          @update:active="handleSelectDestination"
+        >
+          <template #prepend="{ item, active }">
+            <!-- Workspace icon -->
+            <lucide-users
+              v-if="item.type === $options.SPACE_TYPE.WORKSPACE"
+              :size="18"
+              :class="['tree-icon', { 'tree-icon--active': active }]"
+            />
+            <!-- Folder icons -->
+            <template v-else>
+              <lucide-folder-open
+                v-if="active"
+                :size="18"
+                class="tree-icon tree-icon--active"
+              />
+              <lucide-folder v-else :size="18" class="tree-icon" />
+            </template>
+          </template>
+          <template #label="{ item, active }">
+            <div @click="active ? $event.stopPropagation() : null">
+              {{ item.name }}
+            </div>
+          </template>
+        </v-treeview>
+      </div>
     </v-skeleton-loader>
     <v-divider />
     <v-card-actions>
@@ -106,19 +137,39 @@ export default {
   </bs-modal-confirm>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+/* Same destination-tree shell as the Dupliquer & traduire modal so all
+   destination-picker actions share the visual pattern. */
+.destination-tree {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+
+  ::v-deep .v-treeview-node--active {
+    cursor: pointer;
+  }
+
+  ::v-deep .v-treeview-node__label > div {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
 }
 
-.v-treeview {
-  overflow-y: auto;
-  max-height: 400px;
-}
-.v-treeview-node__label > div {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+/* Tree icon color states and alignment - aligned with sidebar */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+  vertical-align: middle;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
 }
 </style>

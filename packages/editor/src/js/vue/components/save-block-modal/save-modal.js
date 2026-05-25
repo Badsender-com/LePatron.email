@@ -123,7 +123,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
           </div>
           <form class="col s12">
               <div class="row">
-                  <div class="input-field col s12">
+                  <div class="bs-form-field col s12">
                       <input
                         id="blockName"
                         v-model="blockName"
@@ -132,7 +132,7 @@ const SaveBlockModalComponent = Vue.component('SaveBlockModal', {
                         :placeholder="vm.t('placeholder-block-name')">
                         <label for="blockName">{{ vm.t('block-name') }}</label>
                   </div>
-                  <div class="input-field col s12">
+                  <div class="bs-form-field col s12">
                       <input
                         id="blockCategory"
                         v-model="blockCategory"

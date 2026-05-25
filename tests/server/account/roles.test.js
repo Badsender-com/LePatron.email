@@ -1,4 +1,4 @@
-import Roles from './roles';
+import Roles from '../../../packages/server/account/roles';
 
 describe('Roles', () => {
   it('should match default roles', () => {

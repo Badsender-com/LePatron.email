@@ -4,6 +4,9 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
+import BsSelect from '~/components/form/bs-select.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
+import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 const FORMALITY_OPTIONS = [
   { value: 'default', textKey: 'aiFeatures.translation.formalityDefault' },
@@ -21,6 +24,14 @@ const FORMALITY_OPTIONS = [
 
 export default {
   name: 'BsGroupAiFeaturesTab',
+  components: {
+    BsSelect,
+    BsFormSection,
+    LucideLanguages: Languages,
+    LucideFileText: FileText,
+    LucideBadgeCheck: BadgeCheck,
+    LucideSparkles: Sparkles,
+  },
   props: {
     active: {
       type: Boolean,
@@ -140,11 +151,11 @@ export default {
     },
   },
   watch: {
-    active(isActive) {
-      if (isActive) {
-        this.fetchData();
-      }
-    },
+    // Note: a watch on `active` would re-fetch when the tab is re-shown, but
+    // every current consumer binds :active="true" statically, so the watcher
+    // would never fire — keeping it would just be dead weight on every render.
+    // If real tab switching is introduced later, reinstate it with an
+    // immediate-skip flag so it doesn't double-fetch with mounted().
     selectedIntegrationId: {
       immediate: true,
       handler(newId) {
@@ -242,149 +253,190 @@ export default {
           v-if="integrations.length === 0"
           type="info"
           outlined
-          class="mb-4"
+          class="mb-6"
         >
           {{ $t('aiFeatures.noIntegrationsWarning') }}
         </v-alert>
 
-        <!-- Translation Feature -->
-        <v-card outlined class="mb-4">
-          <v-card-title class="d-flex align-center">
-            <v-icon left>
-              mdi-translate
-            </v-icon>
+        <!-- Section: Translation Feature -->
+        <bs-form-section>
+          <template #icon>
+            <lucide-languages :size="20" />
+          </template>
+          <template #title>
             {{ $t('aiFeatures.translation.title') }}
-            <v-spacer />
+          </template>
+          <template #description>
+            {{ $t('aiFeatures.translation.description') }}
+          </template>
+
+          <!-- Activation switch -->
+          <div class="activation-row mb-4">
             <v-switch
               v-model="translationIsActive"
-              :label="$t('integrations.active')"
+              :label="$t('aiFeatures.translation.enableLabel')"
               :disabled="saving || !hasActiveIntegration"
               :loading="saving"
+              color="accent"
               hide-details
               class="mt-0"
             />
-          </v-card-title>
+          </div>
 
-          <v-card-text>
-            <p class="text--secondary mb-4">
-              {{ $t('aiFeatures.translation.description') }}
-            </p>
+          <!-- Warning if no active integration selected -->
+          <v-alert
+            v-if="selectedIntegrationId && !hasActiveIntegration"
+            type="warning"
+            dense
+            outlined
+            class="mb-4"
+          >
+            {{ $t('aiFeatures.integrationInactiveWarning') }}
+          </v-alert>
 
-            <!-- Integration Selection -->
-            <v-select
-              v-model="selectedIntegrationId"
-              :items="integrationOptions"
-              :label="$t('aiFeatures.selectIntegration')"
-              :disabled="saving"
-              :loading="saving"
-              outlined
-              dense
-              class="mb-4"
-            />
+          <v-row>
+            <v-col cols="12" md="6">
+              <bs-select
+                v-model="selectedIntegrationId"
+                :items="integrationOptions"
+                :label="$t('aiFeatures.selectIntegration')"
+                :disabled="saving"
+              />
+            </v-col>
 
-            <!-- Warning if no active integration selected -->
-            <v-alert
-              v-if="selectedIntegrationId && !hasActiveIntegration"
-              type="warning"
-              dense
-              outlined
-              class="mb-4"
-            >
-              {{ $t('aiFeatures.integrationInactiveWarning') }}
-            </v-alert>
-
-            <!-- Model Selection (for LLM providers) -->
-            <v-select
+            <v-col
               v-if="
                 supportsModelSelection &&
                   (modelOptions.length > 0 || loadingModels)
               "
-              v-model="selectedModel"
-              :items="modelOptions"
-              :label="$t('aiFeatures.translation.model')"
-              :disabled="saving || !selectedIntegrationId || loadingModels"
-              :loading="saving || loadingModels"
-              outlined
-              dense
-              class="mb-4"
-              :hint="$t('aiFeatures.translation.modelHint')"
-              persistent-hint
-            />
+              cols="12"
+              md="6"
+            >
+              <bs-select
+                v-model="selectedModel"
+                :items="modelOptions"
+                :label="$t('aiFeatures.translation.model')"
+                :hint="$t('aiFeatures.translation.modelHint')"
+                :disabled="saving || !selectedIntegrationId || loadingModels"
+              />
+            </v-col>
 
-            <!-- Formality Selection (for providers that support it) -->
-            <v-select
-              v-if="supportsFormality"
-              v-model="selectedFormality"
-              :items="formalityOptions"
-              :label="$t('aiFeatures.translation.formality')"
-              :disabled="saving || !selectedIntegrationId"
-              :loading="saving"
-              outlined
-              dense
-              class="mb-4"
-              :hint="$t('aiFeatures.translation.formalityHint')"
-              persistent-hint
-            />
+            <v-col v-if="supportsFormality" cols="12" md="6">
+              <bs-select
+                v-model="selectedFormality"
+                :items="formalityOptions"
+                :label="$t('aiFeatures.translation.formality')"
+                :hint="$t('aiFeatures.translation.formalityHint')"
+                :disabled="saving || !selectedIntegrationId"
+              />
+            </v-col>
 
-            <!-- Language Configuration -->
-            <v-select
-              v-model="selectedLanguages"
-              :items="languageOptions"
-              :label="$t('aiFeatures.translation.availableLanguages')"
-              :disabled="saving || !selectedIntegrationId"
-              :loading="saving"
-              :error-messages="languagesError"
-              :rules="[
-                (v) =>
-                  !v.length ||
-                  v.length >= 2 ||
-                  $t('aiFeatures.translation.minLanguagesError'),
-              ]"
-              multiple
-              chips
-              small-chips
-              deletable-chips
-              outlined
-              dense
-              :hint="$t('aiFeatures.translation.languagesHint')"
-              persistent-hint
-            />
-          </v-card-text>
-        </v-card>
+            <v-col cols="12" md="6">
+              <bs-select
+                v-model="selectedLanguages"
+                :items="languageOptions"
+                :label="$t('aiFeatures.translation.availableLanguages')"
+                :hint="$t('aiFeatures.translation.languagesHint')"
+                :error-messages="languagesError"
+                :disabled="saving || !selectedIntegrationId"
+                multiple
+              />
+            </v-col>
+          </v-row>
+        </bs-form-section>
 
-        <!-- Future Features Placeholder -->
-        <v-card outlined disabled class="mb-4">
-          <v-card-title class="d-flex align-center text--disabled">
-            <v-icon left disabled>
-              mdi-text-box-edit
-            </v-icon>
-            {{ $t('aiFeatures.textGeneration.title') }}
-            <v-spacer />
-            <v-chip small color="grey lighten-1" text-color="grey darken-2">
-              {{ $t('aiFeatures.comingSoon') }}
-            </v-chip>
-          </v-card-title>
-          <v-card-text class="text--disabled">
-            {{ $t('aiFeatures.textGeneration.description') }}
-          </v-card-text>
-        </v-card>
+        <!-- Section: Coming Soon Features -->
+        <bs-form-section last>
+          <template #icon>
+            <lucide-sparkles :size="20" />
+          </template>
+          <template #title>
+            {{ $t('aiFeatures.upcomingFeatures') }}
+          </template>
+          <template #description>
+            {{ $t('aiFeatures.upcomingFeaturesDescription') }}
+          </template>
 
-        <v-card outlined disabled>
-          <v-card-title class="d-flex align-center text--disabled">
-            <v-icon left disabled>
-              mdi-check-decagram
-            </v-icon>
-            {{ $t('aiFeatures.qualityCheck.title') }}
-            <v-spacer />
-            <v-chip small color="grey lighten-1" text-color="grey darken-2">
-              {{ $t('aiFeatures.comingSoon') }}
-            </v-chip>
-          </v-card-title>
-          <v-card-text class="text--disabled">
-            {{ $t('aiFeatures.qualityCheck.description') }}
-          </v-card-text>
-        </v-card>
+          <div class="upcoming-features">
+            <div class="upcoming-feature">
+              <lucide-file-text :size="20" class="upcoming-feature__icon" />
+              <div class="upcoming-feature__content">
+                <span class="upcoming-feature__title">
+                  {{ $t('aiFeatures.textGeneration.title') }}
+                </span>
+                <span class="upcoming-feature__description">
+                  {{ $t('aiFeatures.textGeneration.description') }}
+                </span>
+              </div>
+              <v-chip x-small outlined color="grey">
+                {{ $t('aiFeatures.comingSoon') }}
+              </v-chip>
+            </div>
+
+            <div class="upcoming-feature">
+              <lucide-badge-check :size="20" class="upcoming-feature__icon" />
+              <div class="upcoming-feature__content">
+                <span class="upcoming-feature__title">
+                  {{ $t('aiFeatures.qualityCheck.title') }}
+                </span>
+                <span class="upcoming-feature__description">
+                  {{ $t('aiFeatures.qualityCheck.description') }}
+                </span>
+              </div>
+              <v-chip x-small outlined color="grey">
+                {{ $t('aiFeatures.comingSoon') }}
+              </v-chip>
+            </div>
+          </div>
+        </bs-form-section>
       </template>
     </v-card-text>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.activation-row {
+  display: flex;
+  align-items: center;
+}
+
+.upcoming-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.upcoming-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+
+  &__icon {
+    flex-shrink: 0;
+    color: rgba(0, 0, 0, 0.4);
+    margin-top: 2px;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  &__description {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.125rem;
+  }
+}
+</style>

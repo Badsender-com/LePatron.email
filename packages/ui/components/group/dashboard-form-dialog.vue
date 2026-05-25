@@ -1,6 +1,7 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required } from 'vuelidate/lib/validators';
+import BsTextField from '~/components/form/bs-text-field';
 
 function createEmptyForm(overrides = {}) {
   return {
@@ -14,6 +15,7 @@ function createEmptyForm(overrides = {}) {
 
 export default {
   name: 'BsDashboardFormDialog',
+  components: { BsTextField },
   mixins: [validationMixin],
   props: {
     value: {
@@ -120,11 +122,9 @@ export default {
         {{ title }}
       </v-card-title>
       <v-card-text>
-        <v-text-field
+        <bs-text-field
           v-model="form.name"
           :label="$t('crmIntelligence.admin.dashboardName')"
-          outlined
-          dense
           class="mb-3"
           :error-messages="
             $v.form.name.$dirty && !$v.form.name.required
@@ -142,6 +142,12 @@ export default {
           class="mb-3"
         />
 
+        <!--
+          Kept as raw v-select: this dialog needs the scoped #item slot to
+          render a 2-line option (name + apiHost). BsSelect does not currently
+          forward scoped slots to its inner v-select. Migrating it cleanly is
+          tracked separately.
+        -->
         <v-select
           v-model="form.integrationId"
           :items="integrations"
@@ -165,14 +171,11 @@ export default {
           </template>
         </v-select>
 
-        <v-text-field
+        <bs-text-field
           v-model.number="form.providerDashboardId"
           :label="$t('crmIntelligence.admin.dashboardId')"
           :hint="$t('crmIntelligence.admin.dashboardIdHint')"
           type="number"
-          outlined
-          dense
-          persistent-hint
           :error-messages="
             $v.form.providerDashboardId.$dirty &&
               !$v.form.providerDashboardId.required

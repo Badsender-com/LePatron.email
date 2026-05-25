@@ -167,8 +167,45 @@ async function findMailings(query) {
 }
 
 async function findTags(query) {
-  const mailingQuery = applyFilters(query);
-  return Mailings.findTags(mailingQuery);
+  const { user, workspaceId, parentFolderId } = query;
+
+  // Admins have no `_company` on their user record, so the regular
+  // `addStrictGroupFilter` path produces a corrupt query and `Tag.find`
+  // returns nothing. Derive the relevant company from the workspace or
+  // parent folder being viewed instead.
+  let companyId;
+  if (user?.isAdmin) {
+    if (workspaceId) {
+      const workspace = await Workspaces.findById(workspaceId)
+        .select('_company')
+        .lean();
+      companyId = workspace?._company;
+    } else if (parentFolderId) {
+      const folder = await Folders.findById(parentFolderId)
+        .populate({ path: '_workspace', select: '_company' })
+        .lean();
+      companyId = folder?._workspace?._company;
+    }
+  } else {
+    companyId = user?.group?.id;
+  }
+
+  if (!companyId) return [];
+
+  // The `Tag` collection holds tags created via the "New label" flow, but
+  // historical mailings carry labels directly in `mailing.tags` without a
+  // corresponding `Tag` row. Returning the union avoids hiding tags that
+  // are actually applied on emails.
+  const [registeredTags, usedTags] = await Promise.all([
+    Mailings.findTags({ _company: companyId }),
+    Mailings.distinct('tags', { _company: companyId }),
+  ]);
+
+  const merged = Array.from(new Set([...registeredTags, ...usedTags])).filter(
+    Boolean
+  );
+  merged.sort((a, b) => a.localeCompare(b));
+  return merged;
 }
 
 async function findOne(mailingId) {

@@ -1,7 +1,7 @@
 'use strict';
 
-const groupFtpService = require('./group-ftp.service');
-const ERROR_CODES = require('../constant/error-codes');
+const groupFtpService = require('../../../packages/server/group/group-ftp.service');
+const ERROR_CODES = require('../../../packages/server/constant/error-codes');
 
 describe('Group FTP Service', () => {
   describe('validateSshKeyFormat', () => {
