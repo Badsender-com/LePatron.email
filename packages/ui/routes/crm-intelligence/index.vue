@@ -213,6 +213,18 @@ export default {
       </div>
     </section>
 
+    <!-- SCREENSHOT SECTION -->
+    <section v-if="screenshotAvailable" class="screenshot-section">
+      <div class="screenshot-wrapper">
+        <img
+          src="/img/marketing/crm-intelligence-screenshot.png"
+          :alt="$t('crmIntelligence.marketing.screenshotAlt')"
+          class="screenshot-image"
+          @error="onScreenshotError"
+        >
+      </div>
+    </section>
+
     <!-- FEATURES SECTION -->
     <section class="features-section">
       <h2 class="text-h5 text-center mb-8 primary--text font-weight-medium">
@@ -245,18 +257,6 @@ export default {
           </v-col>
         </v-row>
       </v-container>
-    </section>
-
-    <!-- SCREENSHOT SECTION -->
-    <section v-if="screenshotAvailable" class="screenshot-section">
-      <div class="screenshot-wrapper">
-        <img
-          src="/img/marketing/crm-intelligence-screenshot.png"
-          :alt="$t('crmIntelligence.marketing.screenshotAlt')"
-          class="screenshot-image"
-          @error="onScreenshotError"
-        >
-      </div>
     </section>
 
     <!-- FOOTER CTA -->
