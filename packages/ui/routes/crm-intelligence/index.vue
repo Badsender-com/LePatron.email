@@ -90,6 +90,7 @@ export default {
     selectedDashboard: null,
     embedUrl: null,
     loadingEmbed: false,
+    screenshotAvailable: true,
   }),
   computed: {
     title() {
