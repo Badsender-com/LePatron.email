@@ -4,12 +4,19 @@ import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
 import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Trash2, Pencil, Users } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsGroupWorkspacesTab',
   components: {
+    BsDataTable,
     BsModalConfirmForm,
+    LucideTrash2: Trash2,
+    LucidePencil: Pencil,
+    LucideUsers: Users,
   },
   data() {
     return {
@@ -30,9 +37,9 @@ export default {
           value: 'createdAt',
         },
         {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
-          align: 'center',
+          text: this.$t('global.actions'),
+          value: 'actions',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -53,6 +60,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     async fetchData() {
       const {
         $axios,
@@ -109,50 +117,99 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <v-card flat tile>
-        <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
-        <bs-modal-confirm-form
-          ref="deleteDialog"
-          :title="`${$t('global.delete')} ?`"
-          :action-label="$t('global.delete')"
-          :confirmation-input-label="
-            $t('groups.workspaceTab.confirmationField')
-          "
-          :confirm-check-box="confirmCheckBox"
-          :confirm-check-box-message="$t('groups.workspaceTab.deleteNotice')"
-          @confirm="deleteWorkspace"
+  <div>
+    <bs-modal-confirm-form
+      ref="deleteDialog"
+      :title="`${$t('global.delete')} ?`"
+      :action-label="$t('global.delete')"
+      :confirmation-input-label="$t('groups.workspaceTab.confirmationField')"
+      :confirm-check-box="confirmCheckBox"
+      :confirm-check-box-message="$t('groups.workspaceTab.deleteNotice')"
+      @confirm="deleteWorkspace"
+    >
+      <p
+        class="black--text"
+        v-html="
+          $t('groups.workspaceTab.deleteWarningMessage', {
+            name: escapeHtml(selectedWorkspace.name),
+          })
+        "
+      />
+    </bs-modal-confirm-form>
+
+    <bs-data-table
+      :headers="tableHeaders"
+      :items="workspaces"
+      :loading="loading"
+      :empty-icon="$options.components.LucideUsers"
+      :empty-message="$t('groups.workspaceTab.empty')"
+      clickable
+      @click:row="goToWorkspace"
+    >
+      <template #item.name="{ item }">
+        <nuxt-link
+          :to="`/groups/${$route.params.groupId}/workspace/${item.id}`"
+          class="cell-link font-weight-medium"
+          @click.native.stop
         >
-          <p
-            class="black--text"
-            v-html="
-              $t('groups.workspaceTab.deleteWarningMessage', {
-                name: selectedWorkspace.name,
-              })
-            "
-          />
-        </bs-modal-confirm-form>
-        <v-data-table
-          v-show="!loading"
-          :loading="loading"
-          :headers="tableHeaders"
-          :items="workspaces"
-        >
-          <template #item.name="{ item }">
-            <nuxt-link
-              :to="`/groups/${$route.params.groupId}/workspace/${item.id}`"
+          {{ item.name }}
+        </nuxt-link>
+      </template>
+
+      <template #item.users="{ item }">
+        <v-chip small outlined>
+          <lucide-users :size="14" class="mr-1" />
+          {{ item.users || 0 }}
+        </v-chip>
+      </template>
+
+      <template #item.actions="{ item }">
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="goToWorkspace(item)"
             >
-              {{ item.name }}
-            </nuxt-link>
-          </template>
-          <template #item.actionDelete="{ item }">
-            <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-              <v-icon>mdi-delete</v-icon>
+              <lucide-pencil :size="18" />
             </v-btn>
           </template>
-        </v-data-table>
-      </v-card>
-    </v-card-text>
-  </v-card>
+          <span>{{ $t('global.edit') }}</span>
+        </v-tooltip>
+
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              class="error--text"
+              v-bind="attrs"
+              v-on="on"
+              @click.stop="deleteItem(item)"
+            >
+              <lucide-trash2 :size="18" />
+            </v-btn>
+          </template>
+          <span>{{ $t('global.delete') }}</span>
+        </v-tooltip>
+      </template>
+    </bs-data-table>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+/* Real <nuxt-link> on the name cell so middle-click opens in a new tab. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
+</style>

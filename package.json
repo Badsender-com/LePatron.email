@@ -83,7 +83,7 @@
     "iso-language-codes": "1.1.0",
     "konva": "9.3.18",
     "lodash": "4.17.21",
-    "materialize-css": "1.0.0-rc.2",
+    "lucide-vue": "^0.517.0",
     "mime-types": "2.1.24",
     "moment": "2.24.0",
     "mongoose": "5.13.22",
@@ -239,7 +239,8 @@
     "winston": "3.2.1",
     "vue-server-renderer": "2.6.14",
     "@types/bson": "4.0.5",
-    "@types/minimatch": "5.1.2"
+    "@types/minimatch": "5.1.2",
+    "jsonwebtoken": "9.0.2"
   },
   "license": "GPL-3.0",
   "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",

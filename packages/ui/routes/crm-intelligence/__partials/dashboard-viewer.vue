@@ -1,6 +1,11 @@
 <script>
+import { AlertCircle } from 'lucide-vue';
+
 export default {
   name: 'DashboardViewer',
+  components: {
+    LucideAlertCircle: AlertCircle,
+  },
   props: {
     embedUrl: {
       type: String,
@@ -17,34 +22,15 @@ export default {
   },
   data: () => ({
     iframeLoaded: false,
-    refreshTimer: null,
   }),
   watch: {
     embedUrl() {
       this.iframeLoaded = false;
-      this.scheduleRefresh();
     },
-  },
-  beforeDestroy() {
-    this.clearRefreshTimer();
   },
   methods: {
     onIframeLoad() {
       this.iframeLoaded = true;
-    },
-    scheduleRefresh() {
-      this.clearRefreshTimer();
-      if (!this.embedUrl) return;
-      // Refresh 1 minute before the 10-minute JWT expiration
-      this.refreshTimer = setTimeout(() => {
-        this.$emit('refresh');
-      }, 9 * 60 * 1000);
-    },
-    clearRefreshTimer() {
-      if (this.refreshTimer) {
-        clearTimeout(this.refreshTimer);
-        this.refreshTimer = null;
-      }
     },
   },
 };
@@ -52,15 +38,20 @@ export default {
 
 <template>
   <div class="dashboard-viewer fill-height">
-    <!-- Loading State (only when actually loading, not when in error) -->
-    <div v-if="loading || (embedUrl && !iframeLoaded)" class="loading-overlay">
+    <!-- Loading State -->
+    <div v-if="loading || !iframeLoaded" class="loading-overlay">
       <v-progress-circular indeterminate color="primary" size="64" />
       <p class="mt-4 text-body-1 grey--text">
         {{ $t('crmIntelligence.loadingDashboard') }}
       </p>
     </div>
 
-    <!-- Dashboard iframe -->
+    <!-- Dashboard iframe.
+         allow-same-origin is intentionally OMITTED: combined with allow-scripts
+         it would let the framed page reach window.parent and effectively escape
+         the sandbox into the LePatron origin. Metabase signed-URL embeds work
+         without it. Server-side validation (HTTPS-only apiHost) is in
+         crm-intelligence.service.js — see the matching M2/M3 fix. -->
     <iframe
       v-if="embedUrl"
       ref="dashboardFrame"
@@ -69,16 +60,14 @@ export default {
       class="dashboard-iframe"
       :class="{ 'iframe-hidden': loading || !iframeLoaded }"
       frameborder="0"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-downloads"
+      sandbox="allow-scripts allow-popups allow-forms"
       allowfullscreen
       @load="onIframeLoad"
     />
 
     <!-- Error State -->
     <div v-if="!loading && !embedUrl" class="error-state">
-      <v-icon size="64" color="error">
-        mdi-alert-circle-outline
-      </v-icon>
+      <lucide-alert-circle :size="64" style="color: var(--v-error-base)" />
       <p class="mt-4 text-body-1 grey--text">
         {{ $t('crmIntelligence.errors.loadFailed') }}
       </p>

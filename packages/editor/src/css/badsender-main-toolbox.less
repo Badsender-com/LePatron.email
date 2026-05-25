@@ -29,21 +29,31 @@
   }
 
   .block-image::before {
-    content: "\f1c5"; // Unicode for icon "fa-file-image" */
+    content: '';
+    display: inline-block;
+    width: 1em;
+    height: 1em;
     margin-right: 0.3rem;
     margin-top: -0.1rem;
-    font-family: FontAwesome;
-    display: inline-block;
     vertical-align: middle;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
   }
 
-  .draggable-item {
+  // Scoped to #toolimages: the 3-column gallery layout. Without this scope
+  // the rule was bleeding into the block list and overriding its margin.
+  #toolimages .draggable-item {
     margin-left: @gallery-gutter;
     margin-right: @gallery-gutter;
     // // http://stackoverflow.com/questions/28200574/make-math-happen-inside-css-calc-with-less#answer-28210969
     width: calc(33% ~'-' (@gallery-gutter*2));
   }
-  .draggable-item:nth-child(3) ~ .draggable-item {
+  #toolimages .draggable-item:nth-child(3) ~ .draggable-item {
     margin-top: @gallery-gutter;
   }
   .draggable.image {
@@ -95,82 +105,110 @@
   .tooltabs__list {
     flex: 1 1 auto;
   }
+  // Back link - navigates back to mailings list
+  .tooltabs__back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: @topbar-height;
+    height: @topbar-height;
+    color: white;
+    text-decoration: none;
+    transition: background-color 150ms ease-out;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .lucide {
+      font-size: 20px;
+    }
+  }
+
+  // Legacy logo support (kept for backwards compatibility)
   .tooltabs__top-logo {
     height: @topbar-height;
     object-fit: contain;
     color: var(--v-primary-base);
     padding: 4px;
-    // a {
-    // }
 
     img {
       display: block;
       height: 100%;
       width: auto;
-      // height: @topbar-height - 4px;
-      // width: auto;
     }
   }
-  // .ool
-  .objEdit.level1.selectable.selecteditem:after {
-    border-color: var(--v-accent-base);
-  }
+  // Note: .objEdit.level1.selectable visual state is handled in style_mosaico_tools.less
+  // (subtle box-shadow elevation, no accent border).
 
-  ////////
-  // TOGGLES
-  ////////
+  // ==========================================================================
+  // TOGGLE SWITCHES - Vuetify v-switch Style
+  // Main styles are now in style_mosaico_tools.less for consistency
+  // This section only contains additional overrides if needed
+  // ==========================================================================
+
+  // ==========================================================================
+  // BLOCK CHECK TOGGLES (local/global switch) - Pill-style segmented control
+  // This is a different control from the standard toggle - it shows local/global
+  // ==========================================================================
 
   .blockCheck input[type='checkbox'] {
-    &:checked + .checkbox-replacer:after,
-    & + .checkbox-replacer:before {
-      border-radius: 50%;
-      box-shadow: 1px 1px 2px @shadow-color;
+    & + .checkbox-replacer {
+      position: relative !important;
+      display: inline-flex !important;
+      width: 56px !important;
+      height: 24px !important;
+      vertical-align: middle !important;
     }
 
-    & + .checkbox-replacer:after,
-    &:checked + .checkbox-replacer:before {
-      border-radius: 30px;
-      background-color: var(--v-accent-lighten3);
-      // color: @button-text-color;
+    // Right half (::after) - initially gray
+    & + .checkbox-replacer::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 28px !important;
+      width: 28px !important;
+      height: 24px !important;
+      background-color: var(--gray-400, #bdbdbd) !important;
+      border-radius: 0 12px 12px 0 !important;
+      transition: background-color 150ms ease-out !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      float: none !important;
+      display: block !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
     }
-    & + .checkbox-replacer:after {
-      padding-left: 15px;
-      margin-left: -15px;
-      border-color: transparent;
-    }
-    &:checked + .checkbox-replacer:before {
-      padding-right: 15px;
-      margin-right: -15px;
-      border-color: transparent;
-    }
-  }
 
-  .objEdit .propInput input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      margin-left: 20px;
-      background-color: var(--v-accent-base);
+    // Left half (::before) - initially accent
+    & + .checkbox-replacer::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 28px !important;
+      height: 24px !important;
+      background-color: var(--v-accent-base, #00ACDC) !important;
+      border-radius: 12px 0 0 12px !important;
+      transition: background-color 150ms ease-out !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      float: none !important;
+      display: block !important;
+      box-shadow: none !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
     }
-    & + .checkbox-replacer:before {
-      content: ' ';
-      display: block;
-      width: 20px;
-      height: 20px;
-      background-color: white;
-      border-radius: 50%;
-      font-size: 120%;
-      box-shadow: 1px 1px 3px @shadow-color;
+
+    // Checked state - swap colors (right becomes accent, left becomes gray)
+    &:checked + .checkbox-replacer::after {
+      background-color: var(--v-accent-base, #00ACDC) !important;
     }
-    &:checked + .checkbox-replacer:after {
-      background-color: var(--v-accent-lighten3);
-    }
-    & + .checkbox-replacer:after {
-      content: ' ';
-      display: block;
-      width: 34px;
-      height: 14px;
-      margin: -16px 2px 0 2px;
-      border-radius: 7px;
-      background-color: lighten(@text-color, 30%);
+
+    &:checked + .checkbox-replacer::before {
+      background-color: var(--gray-400, #bdbdbd) !important;
     }
   }
 }

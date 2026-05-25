@@ -66,6 +66,7 @@ const config = rc('lepatron', {
   adobeDefaultUser: process.env.ADOBE_DEFAULT_USER,
   encryptionKey: process.env.ENCRYPTION_KEY,
   NODE_ENV: process.env.NODE_ENV,
+  helpUrl: process.env.HELP_URL || 'https://docs.lepatron.email',
 });
 
 config.NODE_ENV = config.NODE_ENV || process.env.NODE_ENV || 'development';

@@ -9,7 +9,29 @@ const { Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
 
-const JWT_EXPIRATION_SECONDS = 10 * 60; // 10 minutes
+// Embed tokens are short-lived because they leak via URL bars / referer / logs.
+// 60s is enough for the iframe to fetch the dashboard; refresh-on-render covers
+// longer sessions.
+const JWT_EXPIRATION_SECONDS = 60;
+
+// Industry minimum for HS256 secret entropy. Anything shorter is brute-forceable.
+const MIN_API_KEY_LENGTH = 32;
+
+// TODO(security): replace this HTTPS-only check with a stricter host allowlist
+// (env var METABASE_ALLOWED_HOSTS or per-tenant config), tracked in a follow-up
+// infra PR. The current check still lets a compromised admin point apiHost at
+// any HTTPS host they control; the iframe sandbox now mitigates the worst
+// impact (no allow-same-origin → cannot reach window.parent in LePatron's
+// origin), but blocking host exfiltration entirely needs an allowlist.
+function isAllowedApiHost(apiHost) {
+  if (typeof apiHost !== 'string') return false;
+  try {
+    const parsed = new URL(apiHost);
+    return parsed.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
 
 /**
  * Get CRM Intelligence status for a group
@@ -72,9 +94,11 @@ async function getDashboards(groupId, group) {
  * @param {string} groupId - The group ID
  * @param {string} dashboardId - The dashboard MongoDB ID
  * @param {Object} group - Pre-loaded group (from middleware)
+ * @param {Object} [user] - Authenticated user (for token binding); optional for
+ *   backwards-compatibility but strongly recommended.
  * @returns {Promise<Object>} Object with embedUrl
  */
-async function getEmbedUrl(groupId, dashboardId, group) {
+async function getEmbedUrl(groupId, dashboardId, group, user) {
   if (!group.enableCrmIntelligence) {
     throw createError(403, ERROR_CODES.CRM_INTELLIGENCE_NOT_ENABLED);
   }
@@ -103,14 +127,35 @@ async function getEmbedUrl(groupId, dashboardId, group) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  const apiKey = integration.apiKey;
-  if (!apiKey || apiKey.length < 10) {
+  // HTTPS-only: prevent a misconfigured/malicious integration from pointing at
+  // an http:// host. See TODO in isAllowedApiHost for the planned allowlist.
+  if (!isAllowedApiHost(integration.apiHost)) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
+  const apiKey = integration.apiKey;
+  // HS256 needs ≥32 bytes of entropy to resist offline brute-force.
+  if (!apiKey || apiKey.length < MIN_API_KEY_LENGTH) {
+    throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
+  }
+
+  // Bind the token to the calling user so a token captured from one user's
+  // history can't be replayed by another user in the same group. Metabase's
+  // signed-params feature picks `user_id` / `user_email` for row-level
+  // filtering; we always include them so future dashboards can enforce it.
+  const userBoundParams = {
+    ...(dashboard.lockedParams || {}),
+  };
+  if (user && user.id) {
+    userBoundParams.user_id = String(user.id);
+  }
+  if (user && user.email) {
+    userBoundParams.user_email = String(user.email);
   }
 
   const payload = {
     resource: { dashboard: dashboard.providerDashboardId },
-    params: dashboard.lockedParams || {},
+    params: userBoundParams,
     exp: Math.round(Date.now() / 1000) + JWT_EXPIRATION_SECONDS,
   };
 

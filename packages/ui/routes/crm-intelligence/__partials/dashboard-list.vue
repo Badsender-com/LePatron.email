@@ -1,6 +1,11 @@
 <script>
+import { LineChart } from 'lucide-vue';
+
 export default {
   name: 'DashboardList',
+  components: {
+    LucideLineChart: LineChart,
+  },
   props: {
     dashboards: {
       type: Array,
@@ -13,9 +18,7 @@ export default {
   },
   computed: {
     sortedDashboards() {
-      return [...this.dashboards].sort(
-        (a, b) => (a.order || 0) - (b.order || 0)
-      );
+      return [...this.dashboards].sort((a, b) => (a.order || 0) - (b.order || 0));
     },
   },
   methods: {
@@ -43,9 +46,7 @@ export default {
           @click="selectDashboard(dashboard)"
         >
           <v-list-item-icon>
-            <v-icon :color="isSelected(dashboard) ? 'accent' : ''">
-              mdi-chart-line
-            </v-icon>
+            <lucide-line-chart :size="20" :style="{ color: isSelected(dashboard) ? 'var(--v-accent-base)' : '' }" />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ dashboard.name }}</v-list-item-title>
@@ -69,7 +70,7 @@ export default {
 
 <style scoped>
 .dashboard-item--selected {
-  background-color: rgba(var(--v-accent-rgb, 0, 172, 220), 0.12) !important;
-  border-left: 3px solid var(--v-accent-base, #00acdc);
+  background-color: rgba(0, 172, 220, 0.12) !important;
+  border-left: 3px solid #00acdc;
 }
 </style>

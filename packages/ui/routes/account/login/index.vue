@@ -2,14 +2,20 @@
 import { required } from 'vuelidate/lib/validators';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { mapMutations } from 'vuex';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-vue';
 
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
-import { USER, M_USER_SET } from '~/store/user';
+import { USER, USER_SET } from '~/store/user';
 
 export default {
   name: 'BsPageLogin',
   meta: { acl: acls.ACL_NOT_CONNECTED },
+  components: {
+    LucideArrowLeft: ArrowLeft,
+    LucideEye: Eye,
+    LucideEyeOff: EyeOff,
+  },
   layout: 'centered',
   data() {
     return {
@@ -111,11 +117,15 @@ export default {
             password,
           });
 
-          this.$store.commit(`${USER}/${M_USER_SET}`, {
-            isAdmin: user.isAdmin,
-          });
+          // Use action to fetch complete group data with module flags
+          await this.$store.dispatch(`${USER}/${USER_SET}`, user);
 
-          $router.go();
+          // Redirect to home page, which will handle routing to the first enabled module
+          if (user.isAdmin) {
+            await $router.push('/groups');
+          } else {
+            await $router.push('/');
+          }
         } catch (err) {
           this.isLoading = false;
           const errorMessage = this.$t(
@@ -258,7 +268,7 @@ export default {
           icon
           @click="back"
         >
-          <v-icon>{{ 'arrow_back' }}</v-icon>
+          <lucide-arrow-left :size="20" />
         </v-btn>
         <v-toolbar-title class="pl-0">
           {{ $t('forms.user.login') }}
@@ -307,10 +317,15 @@ export default {
               name="password"
               prepend-icon="lock"
               :type="showPassword ? 'text' : 'password'"
-              :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
               required
-              @click:append="showPassword = !showPassword"
-            />
+            >
+              <template #append>
+                <v-btn icon small @click="showPassword = !showPassword">
+                  <lucide-eye v-if="showPassword" :size="18" />
+                  <lucide-eye-off v-else :size="18" />
+                </v-btn>
+              </template>
+            </v-text-field>
           </v-form>
         </v-card-text>
         <v-card-actions>

@@ -1,13 +1,13 @@
 <script>
-import { mapMutations } from 'vuex';
-
+import { mapGetters, mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
-import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
+import { IS_ADMIN, USER } from '~/store/user';
 import * as acls from '~/helpers/pages-acls.js';
-import { getEmailsGroups } from '~/helpers/api-routes.js';
-import BsGroupMenu from '~/components/group/menu.vue';
-import FormEmailsGroup from '~/components/group/form-emails-group';
 import * as apiRoutes from '~/helpers/api-routes.js';
+import { getEmailsGroups } from '~/helpers/api-routes.js';
+import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
+import FormEmailsGroup from '~/components/group/form-emails-group';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 const errors = {
   409: 'global.errors.emailsGroupExist',
@@ -15,8 +15,8 @@ const errors = {
 
 export default {
   name: 'BsPageNewEmailsGroup',
-  components: { BsGroupMenu, FormEmailsGroup },
-  mixins: [mixinPageTitle],
+  components: { FormEmailsGroup, BsPageHeader },
+  mixins: [mixinSettingsTitle],
   meta: {
     acl: [acls.ACL_GROUP_ADMIN],
   },
@@ -44,18 +44,15 @@ export default {
     };
   },
   head() {
-    return { title: this.title };
+    return { title: this.settingsTitle };
   },
-
   computed: {
-    title() {
-      return `${this.$tc('global.settings', 1)} : ${this.$tc(
-        'global.group',
-        1
-      )} ${this.group.name} - ${this.$t('global.newEmailsGroup')}`;
-    },
+    ...mapGetters(USER, { isAdmin: IS_ADMIN }),
     groupId() {
       return this.$route.params.groupId;
+    },
+    showGroupBadge() {
+      return this.isAdmin && this.group.name;
     },
   },
   methods: {
@@ -82,7 +79,10 @@ export default {
           ),
           color: 'error',
         });
-        console.log(error);
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[new-emails-group] submit failed', error);
+        }
       } finally {
         this.loading = false;
       }
@@ -92,15 +92,26 @@ export default {
 </script>
 
 <template>
-  <bs-layout-left-menu>
-    <template #menu>
-      <bs-group-menu />
-    </template>
-    <form-emails-group
-      v-model="emailsGroup"
-      :title="$t('global.newEmailsGroup')"
-      :loading="loading"
-      @submit="createUser"
-    />
-  </bs-layout-left-menu>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $t('global.newEmailsGroup') }}
+      </template>
+      <template v-if="showGroupBadge" #badge>
+        <v-chip small outlined color="accent">
+          {{ group.name }}
+        </v-chip>
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <form-emails-group
+        v-model="emailsGroup"
+        :loading="loading"
+        @submit="createUser"
+      />
+    </v-container>
+  </div>
 </template>

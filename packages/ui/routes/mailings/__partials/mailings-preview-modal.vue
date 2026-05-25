@@ -1,11 +1,14 @@
 <script>
 import { imageFromPreviews } from '~/helpers/api-routes';
 import BsModalConfirm from '~/components/modal-confirm';
+import { AlertCircle, Eye } from 'lucide-vue';
 
 export default {
   name: 'MailingsPreviewModal',
   components: {
     BsModalConfirm,
+    LucideAlertCircle: AlertCircle,
+    LucideEye: Eye,
   },
   data() {
     return {
@@ -59,13 +62,14 @@ export default {
     :is-form="true"
     @click-outside="clickOutside"
   >
+    <template #titlePrefix>
+      <lucide-eye :size="20" />
+    </template>
     <div class="pb-8">
       <div class="px-1 max_height_img_container">
         <div v-if="errorPreview">
           <div class="d-flex align-start">
-            <v-icon color="warning">
-              error_outline
-            </v-icon>
+            <lucide-alert-circle :size="24" class="warning-icon" />
             <div class="pl-4">
               <p class="mb-0 text-h6" v-html="$t('mailings.errorPreview')" />
               <p
@@ -92,12 +96,18 @@ export default {
   </bs-modal-confirm>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .max_height_img_container {
   max-height: 500px;
   overflow-y: auto;
 }
+
 iframe {
   overflow: hidden;
+}
+
+.warning-icon {
+  color: #fb8c00; /* warning color equivalent */
+  flex-shrink: 0;
 }
 </style>

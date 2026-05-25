@@ -7,12 +7,13 @@ import { mailings } from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
 import * as mailingsHelpers from '~/helpers/mailings.js';
-import WorkspaceTree from '~/routes/mailings/__partials/workspace-tree';
+import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
-import MailingsHeader from '~/routes/mailings/__partials/mailings-header';
+import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, HAS_FTP_ACCESS, USER } from '~/store/user';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -28,17 +29,18 @@ import EmailBuilderPlaceholder from '~/routes/mailings/__partials/email-builder-
 export default {
   name: 'PageMailings',
   components: {
-    WorkspaceTree,
     MailingsTable,
     MailingsFilters,
     MailingsSelectionActions,
     BsMailingsModalNew,
-    MailingsHeader,
+    MailingsBreadcrumbs,
+    BsPageHeader,
     BsGroupLoading,
     EmailBuilderPlaceholder,
+    LucidePlus: Plus,
   },
   mixins: [mixinPageTitle, mixinCreateMailing, mixinCurrentLocation],
-  meta: { acl: ACL_USER },
+  meta: { acl: ACL_USER, sidebarModule: 'email-builder' },
   middleware({ store, redirect }) {
     if (store.getters[`${USER}/${IS_ADMIN}`]) {
       redirect('/groups');
@@ -74,10 +76,10 @@ export default {
       'pagination',
       'filters',
     ]),
-    ...mapState(USER, ['hasFtpAccess']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
+      hasFtpAccess: HAS_FTP_ACCESS,
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
@@ -86,9 +88,6 @@ export default {
       // Default to true if not set (backward compatibility)
       const enabled = this.$store.state.user?.info?.group?.enableEmailBuilder;
       return enabled !== false;
-    },
-    totalPages() {
-      return this.pagination?.pageCount || 1;
     },
     itemsLength() {
       return this.pagination?.itemsLength;
@@ -195,7 +194,9 @@ export default {
       });
     },
     async refreshLeftMenuData() {
-      await this.$refs.workspaceTree.fetchData();
+      // Workspace tree is now in the sidebar, refetch via Vuex
+      const { dispatch } = this.$store;
+      await dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
     },
   },
 };
@@ -206,92 +207,78 @@ export default {
   <email-builder-placeholder v-if="!isEmailBuilderEnabled" />
 
   <!-- Email Builder enabled: show normal UI -->
-  <bs-layout-left-menu v-else>
-    <template #menu>
-      <v-list>
-        <v-list-item class="justify-center">
-          <v-btn
-            large
-            color="accent"
-            elevation="0"
-            style="margin: 1em 0"
-            :disabled="!hasAccess"
-            @click="openNewMailModal"
-          >
-            <v-icon left>
-              add_box
-            </v-icon>
-            {{ $t('global.newMail') }}
-          </v-btn>
-        </v-list-item>
-      </v-list>
-      <workspace-tree ref="workspaceTree" />
-    </template>
-    <v-card flat tile>
-      <client-only>
-        <v-skeleton-loader
-          :loading="
-            isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
-          "
-          type="table"
+  <div v-else>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #breadcrumb>
+        <mailings-breadcrumbs />
+      </template>
+      <template #actions>
+        <v-btn
+          color="accent"
+          elevation="0"
+          :disabled="!hasAccess"
+          @click="openNewMailModal"
         >
-          <mailings-header @on-refresh="refreshLeftMenuData" />
-          <mailings-filters
-            :tags="tags"
-            @on-refresh="fetchMailListingForFilterUpdate"
-          />
-          <mailings-selection-actions
-            ref="mailingSelectionActions"
-            :mailings-selection="mailingsSelection"
-            :tags="tags"
-            :has-ftp-access="hasFtpAccess"
-            @createTag="onTagCreate"
-            @updateTags="onMailSelectionTagsUpdate"
-            @on-refetch="fetchMailListingForFilterUpdate"
-          />
-          <mailings-table
-            v-model="mailingsSelection"
-            :mailings="filteredMailings"
-            :has-ftp-access="hasFtpAccess"
-            :tags="tags"
-            @on-single-mail-download="handleDownloadSingleMail"
-            @on-refetch="fetchMailListingForFilterUpdate"
-            @update-tags="onMailTableTagsUpdate"
-          />
-          <v-card
-            flat
-            class="d-flex align-center justify-center mx-auto"
-            max-width="22rem"
+          <lucide-plus :size="18" class="mr-1" />
+          {{ $t('global.newMail') }}
+        </v-btn>
+      </template>
+    </bs-page-header>
+
+    <v-container fluid>
+      <v-card flat tile>
+        <client-only>
+          <v-skeleton-loader
+            :loading="
+              isLoadingMailingsForWorkspaceUpdate || isLoadingWorkspaceOrFolder
+            "
+            type="table"
           >
-            <v-pagination
-              v-if="parseInt(itemsLength) > 0"
-              v-model="currentPage"
-              :circle="true"
-              class="my-4 pagination-custom-style"
-              :length="totalPages"
+            <mailings-filters
+              :tags="tags"
+              @on-refresh="fetchMailListingForFilterUpdate"
             />
-          </v-card>
-        </v-skeleton-loader>
-        <bs-group-loading slot="placeholder" />
-      </client-only>
-    </v-card>
+            <mailings-selection-actions
+              ref="mailingSelectionActions"
+              :mailings-selection="mailingsSelection"
+              :tags="tags"
+              :has-ftp-access="hasFtpAccess"
+              @createTag="onTagCreate"
+              @updateTags="onMailSelectionTagsUpdate"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @clear-selection="resetMailingsSelection"
+            />
+            <mailings-table
+              v-model="mailingsSelection"
+              :mailings="filteredMailings"
+              :has-ftp-access="hasFtpAccess"
+              :tags="tags"
+              :current-page="currentPage"
+              :items-length="itemsLength"
+              @on-single-mail-download="handleDownloadSingleMail"
+              @on-refetch="fetchMailListingForFilterUpdate"
+              @update-tags="onMailTableTagsUpdate"
+              @update:page="currentPage = $event"
+            />
+          </v-skeleton-loader>
+          <bs-group-loading slot="placeholder" />
+        </client-only>
+      </v-card>
+    </v-container>
+
     <bs-mailings-modal-new
       ref="modalNewMailDialog"
       :loading-parent="loading"
       @create-new-mail="handleCreateNewMail"
     />
-  </bs-layout-left-menu>
+  </div>
 </template>
 
-<style>
-.pagination-custom-style > ul > li > .v-pagination__item,
-.pagination-custom-style > ul > li > .v-pagination__navigation {
-  box-shadow: none;
-  border: none;
-}
-
-.pagination-custom-style > ul > li > .v-pagination__navigation--disabled {
-  border: 1px solid #bbb2ad;
-  border: none;
+<style scoped>
+.settings-content {
+  padding: 0;
 }
 </style>

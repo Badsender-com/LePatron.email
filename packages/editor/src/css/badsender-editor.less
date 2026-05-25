@@ -1,25 +1,9 @@
 // this the equivalent of app_standalone_material.less
-@import '../../../../node_modules/font-awesome/less/font-awesome.less';
 
-// MDI - Material Design Icons (import icon classes)
-@import (less) '../../../../node_modules/@mdi/font/css/materialdesignicons.css';
-
-// Override MDI @font-face with correct absolute path
-// (the CSS import uses relative paths "../fonts/" that don't work after compilation)
-@font-face {
-  font-family: "Material Design Icons";
-  src: url("/mdi/fonts/materialdesignicons-webfont.eot?v=7.4.47");
-  src: url("/mdi/fonts/materialdesignicons-webfont.eot?#iefix&v=7.4.47") format("embedded-opentype"),
-       url("/mdi/fonts/materialdesignicons-webfont.woff2?v=7.4.47") format("woff2"),
-       url("/mdi/fonts/materialdesignicons-webfont.woff?v=7.4.47") format("woff"),
-       url("/mdi/fonts/materialdesignicons-webfont.ttf?v=7.4.47") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
+// Lucide Icons (CSS-based, replaces Font Awesome and MDI)
+@import 'lucide-icons.less';
 
 @import 'style_mosaico.less';
-
-@fa-font-path: '/fa/fonts';
 
 @import (less) '../../../../node_modules/toastr/toastr.less';
 
@@ -39,7 +23,7 @@
 
 @tab-text-color: #555;
 
-@font-family: 'Montserrat', sans-serif;
+@font-family: 'Inter', sans-serif;
 @standard-border-radius: 2px;
 @info-border-radius: @standard-border-radius;
 @button-border-radius: @standard-border-radius;
@@ -50,7 +34,7 @@
 @input-background-color: white;
 @input-border-color: lighten(@text-color, 20%);
 
-@mosaico-selection-color: @link-color;
+// Selection color now defined in style_mosaico.less using CSS variable --accent
 
 // ===========================================
 // Design System CSS Variables
@@ -214,18 +198,10 @@ body {
   }
 }
 
-@keyframes border-color-selection-pulsate {
-  0% {
-    border-color: @mosaico-outline-color;
-  }
-  40% {
-    border-color: var(--v-accent-base);
-  }
-  60% {
-    border-color: var(--v-accent-base);
-  }
-  100% {
-    border-color: @mosaico-outline-color;
+@keyframes border-color-selection-pulsate-REMOVED {
+  // Animation removed - kept empty keyframe to avoid build errors if referenced elsewhere
+  0%, 100% {
+    border-color: transparent;
   }
 }
 
@@ -258,22 +234,108 @@ body {
   background: white;
 }
 
-.addblockbutton {
-  box-shadow: none;
+// Hover-revealed "Add" button on TEMPLATE-block preview cards (cyan accent
+// pill). Custom blocks use a different layout (icons + add button) — see
+// .addblockbutton.custom below.
+.addblockbutton:not(.custom) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  background: var(--v-accent-base, #00acdc) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  text-transform: none !important;
+
+  &:hover {
+    background: var(--v-accent-darken1, #0097c4) !important;
+  }
+
+  .ui-button-text {
+    padding: 0 !important;
+    color: inherit !important;
+  }
 }
 
+// Custom-block actions row — transparent parent, individual button styles:
+// trash uses the destructive red-on-hover pattern, edit is neutral, add is
+// cyan accent (compact). Toned down to reduce overall blue presence.
+.addblockbutton.custom {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border: none !important;
+
+  .buttons-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    .ui-button {
+      background: transparent !important;
+      color: rgba(0, 0, 0, 0.6) !important;
+      box-shadow: none !important;
+      border: none !important;
+      padding: 6px !important;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 4px !important;
+      font-size: 12px !important;
+      font-weight: 500 !important;
+      text-transform: none !important;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.06) !important;
+        color: rgba(0, 0, 0, 0.87) !important;
+      }
+    }
+
+    // First button (delete) — destructive red-on-hover (matches .tool.delete)
+    > div:first-child .ui-button:hover {
+      background: rgba(240, 78, 35, 0.10) !important;
+      color: var(--v-error-base, #f04e23) !important;
+    }
+
+    // Last button (Add) — accent cyan, compact pill
+    > a:last-child {
+      background: var(--v-accent-base, #00acdc) !important;
+      color: white !important;
+      padding: 6px 12px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em;
+
+      &:hover {
+        background: var(--v-accent-darken1, #0097c4) !important;
+        color: white !important;
+      }
+
+      .ui-button-text { color: inherit !important; }
+    }
+  }
+}
+
+// Block name pill — subtle tag overlaid on the preview image, matching the
+// modern card style (light translucent bg + dark readable text).
 .block-name {
   display: inline-block;
-  padding: .25em 1em;
-  color: white;
-  background-color: var(--v-primary-base);
+  padding: 3px 8px;
+  color: rgba(0, 0, 0, 0.75);
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(2px);
+  border-radius: 3px;
   position: absolute;
-  top: 3px;
-  left: 0;
-  max-width: 100%;
+  top: 6px;
+  left: 6px;
+  max-width: calc(100% - 12px);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  z-index: 2;
 }
 
 .mo {
@@ -334,9 +396,9 @@ body {
 // OTHER THINGS
 ////////
 
-.mo .objEdit input[type='checkbox'] + .checkbox-replacer:before {
-  color: @button-background-color;
-}
+// (removed legacy rule that forced @button-background-color on every
+//  .checkbox-replacer:before — it tinted the propCheck reset icon red,
+//  which conflicts with the new "neutral block-action" styling.)
 
 .mo .propInput .data-select select {
   border-top-right-radius: 0;
@@ -362,74 +424,103 @@ body {
   color: var(--v-accent-base);
 }
 
-.mo .propInput .ui-spinner .ui-spinner-input {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
+// =============================================================================
+// NUMBER SPINNER - Modern chevrons
+// =============================================================================
 
-.mo .ui-button.ui-spinner-button {
-  background-color: transparent;
-  // color: lighten(@text-color, 30%);
-  .ui-button-text .ui-icon {
-    color: lighten(@text-color, 30%);
+.mo .propInput .ui-spinner {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: white;
+
+  &:focus-within {
+    border-color: var(--v-accent-base);
+    box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+  }
+
+  .ui-spinner-input {
+    border: none !important;
+    border-radius: 0 !important;
+    flex: 1;
+    margin: 0 !important;
+    box-shadow: none !important;
   }
 }
 
-#main-toolbox .objLabel.level1 {
-  font-weight: bold;
-  border-bottom-width: 1px;
+// Spinner buttons container - stacked vertically
+.mo .ui-button.ui-spinner-button {
+  background: #f5f5f5;
+  border: none;
+  border-left: 1px solid #e0e0e0;
+  width: 28px;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin: 0;
+  padding: 0;
+
+  &:hover {
+    background: #eeeeee;
+  }
+
+  &:active {
+    background: #e0e0e0;
+  }
+
+  .ui-button-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+
+    &:after {
+      width: 14px !important;
+      height: 14px !important;
+      color: #757575;
+    }
+  }
+
+  &:hover .ui-button-text:after {
+    color: var(--v-accent-base);
+  }
 }
+
+// Top button specific
+.mo .ui-spinner-up {
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 0 4px 0 0;
+}
+
+// Bottom button specific
+.mo .ui-spinner-down {
+  border-radius: 0 0 4px 0;
+}
+
+// =============================================================================
+// SECTION HEADERS — overrides removed
+// All level0/level1 layout & spacing rules have been consolidated in
+// style_mosaico_tools.less using @panel-* tokens (style_variables.less).
+// Do not re-add overrides here without updating those tokens.
+// =============================================================================
 
 .mo .objPreview {
   border-width: 0;
   box-shadow: 1px 1px 3px @shadow-color;
 }
 
-.mo .objLabel {
-  border-bottom: 0;
-  font-weight: bold;
-  font-size: 80%;
-}
-
-.mo .objEdit.level1 {
-  border-top: 2px solid rgba(0, 0, 0, 0.12);
-}
-
-#main-toolbox .objLabel.level1 {
-  font-size: 1em;
-  padding-top: 0.5em;
-}
-
-.mo #toolstyles .objLabel.level1,
-.mo #tooltheme .objLabel.level1 {
-  padding-left: 70px;
-}
-
-.mo .objLabel.level0 {
-  border-bottom: none;
-}
-
 .input-style() {
   box-shadow: none;
 }
 & when(true) {
-  .mo .objEdit.level1 {
-    background-color: white;
-    padding: 1em;
-    padding-top: 0.5em;
-  }
-
-  .mo #toolstyles,
-  .mo #tooltheme {
-    .objEdit.level1 {
-      border-top-left-radius: 0;
-      .objLabel.level1 {
-        padding-bottom: 0;
-        padding-top: 1em;
-      }
-    }
-  }
-
   .mo .objPreview {
     border-width: 0;
     box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.3);
@@ -437,41 +528,94 @@ body {
     left: 4px;
   }
 
-  .mo #toolstyles .objLabel.level1,
-  .mo #tooltheme .objLabel.level1 {
-    padding-left: 60px;
-  }
-
+  // Modern form fields - Design System aligned
+  // Full border box instead of underline-only
   .mo .propInput input[type='text'],
   .mo .propInput input[type='number'],
   .mo .propInput input[type='url'],
   .mo .propInput select,
   .mo .propInput .data-select select,
   .mo .propInput .ui-spinner .ui-spinner-input {
-    border-width: 0 0 2px 0;
-    background-color: transparent;
-    &:hover,
+    border: 1px solid #e0e0e0;  // gray-300
+    border-radius: 4px;
+    background-color: white;
+    padding: 8px 10px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #bdbdbd;  // gray-400
+    }
+
     &:focus {
-      border-color: var(--v-accent-lighten2);
+      border-color: var(--v-accent-base);
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+      outline: none;
     }
   }
 
-  .mo .propInput .data-color input[type='text'] {
-    margin-left: 35px;
-    &:hover,
-    &:focus {
-      margin-left: 35px;
-    }
+  // =============================================================================
+  // COLOR PICKER - Circular swatch design
+  // =============================================================================
+
+  // Container needs relative positioning for absolute swatch
+  .mo .propInput .data-color {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
   }
 
-  .mo .propInput .evo-pointer {
-    border-radius: 50%;
-    width: 30px;
-    border: 0;
-    box-shadow: 1px 1px 3px @shadow-color;
+  // Color swatch button - circular design positioned at start of container
+  .mo .propInput .data-color .evo-pointer {
+    position: absolute !important;
+    left: 4px !important;  // Centered in the 40px space (4px + 32px + 4px = 40px)
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    border: 2px solid #e0e0e0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transition: border-color 0.2s ease !important;
+    z-index: 1;
+
+    &:hover {
+      border-color: var(--v-accent-base) !important;
+    }
+
+    // Hide the chevron pseudo-element completely
     &:before {
-      content: none;
-      display: none;
+      content: none !important;
+      display: none !important;
+    }
+  }
+
+  // Color picker hex input - positioned next to color swatch
+  .mo .propInput .data-color input[type='text'] {
+    margin-left: 40px !important;
+    width: calc(100% - 40px) !important;
+    border: 1px solid #e0e0e0 !important;
+    background: white !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+
+    &:hover {
+      border-color: #bdbdbd !important;
+    }
+
+    &:focus {
+      border-color: var(--v-accent-base) !important;
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+      outline: none;
     }
   }
 
@@ -553,19 +697,29 @@ body {
   }
 }
 
-.mo .propInput input[type='text']:hover,
-.mo .propInput input[type='number']:hover,
-.mo .propInput input[type='url']:hover,
-.mo .propInput select:hover,
-.mo .propInput .data-select select:hover,
-.mo .propInput .ui-spinner .ui-spinner-input:hover,
-.mo .propInput input[type='text']:focus,
-.mo .propInput input[type='number']:focus,
-.mo .propInput input[type='url']:focus,
-.mo .propInput select:focus,
-.mo .propInput .data-select select:focus,
-.mo .propInput .ui-spinner .ui-spinner-input:focus {
-  border-color: var(--v-accent-base);
+// Hover/focus states now handled inline in the main form field styles above
+
+// Modern select dropdown with chevron indicator
+.mo .propInput select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 32px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+// Remove default arrow on IE
+.mo .propInput select::-ms-expand {
+  display: none;
+}
+
+// Hide the external pseudo-element chevron from .input-select() mixin
+.mo .propInput .data-select::after {
+  display: none !important;
 }
 
 .mo .ui-tabs-nav li:hover,
@@ -573,9 +727,150 @@ body {
   background: var(--v-accent-lightent4);
 }
 
+// =============================================================================
+// TRACKING SECTION - Modern styling
+// =============================================================================
+
+.tracking-section {
+  .tracking-help-link {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.85em;
+    margin-left: 8px;
+    text-decoration: underline;
+    color: rgba(0, 0, 0, 0.6);
+
+    &:hover {
+      color: var(--v-accent-base);
+    }
+  }
+
+  .tracking-param-row {
+    margin-bottom: 8px;
+  }
+
+  // .propEditor is already flex via style_mosaico_tools; tighten the gap for key=value pairs
+  .tracking-param-editor.propEditor {
+    gap: 8px;
+    margin-bottom: 0;  // outer .tracking-param-row handles spacing
+
+    // Cancel the global flex-order trick (label→reset→input) used elsewhere —
+    // the tracking row has its own DOM order: key, =, value, [×]
+    > * { order: 0; }
+  }
+
+  .tracking-input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .tracking-equals {
+    color: rgba(0, 0, 0, 0.4);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .tracking-remove-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #f04e23;
+      background: rgba(240, 78, 35, 0.1);
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .tracking-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 13px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      border-color: var(--v-accent-base);
+      color: var(--v-accent-base);
+      background: rgba(0, 172, 220, 0.05);
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-utm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--v-accent-base);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--v-accent-darken1);
+    }
+
+    &--active {
+      background: rgba(0, 0, 0, 0.1);
+      color: rgba(0, 0, 0, 0.7);
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .lucide {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .tracking-utm-fields {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+    .tracking-param-editor {
+      margin-bottom: 8px;
+    }
+  }
+}
+
 @import (less) './badsender-image-cropper.less';
 @import (less) './badsender-mobile-preview.less';
 @import (less) './badsender-colorpicker.less';
+@import (less) './badsender-modal.less';
 
 .mce-text-decoration-none {
   text-decoration: none;
@@ -655,3 +950,465 @@ body {
 // Comments Panel styles (extracted to separate file for maintainability)
 @import 'badsender-comments.less';
 
+// =============================================================================
+// BLOCK & IMAGE TOOLS - Modern Ghost Style
+// Overrides the default Mosaico tool buttons with a cleaner, modern design
+// Reference: docs/design-system/01-tokens.md
+// =============================================================================
+
+// Shared variables for tools styling
+@tools-bg: rgba(255, 255, 255, 0.95);
+@tools-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+@tools-border-radius: 6px;
+@tool-size: 28px;
+@tool-icon-size: 14px;
+@tool-color: var(--v-primary-base, #093040);
+@tool-hover-bg: rgba(0, 172, 220, 0.1);
+@tool-delete-color: var(--v-error-base, #F04E23);
+
+// Tools container - HORIZONTAL toolbar ABOVE the block, aligned left
+#main-edit-area .tools {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: @tools-bg;
+  backdrop-filter: blur(8px);
+  border-radius: @tools-border-radius;
+  box-shadow: @tools-shadow;
+  height: auto;
+  width: auto;
+  // Position above the block, aligned to left
+  left: 0;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 6px);
+  transform: none;
+  // High z-index to stay above image zones and other elements
+  z-index: 100 !important;
+  pointer-events: auto;
+
+  // Extend hover zone ABOVE toolbar to capture mouse before it enters previous block's image zone
+  &::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    right: -10px;
+    bottom: 100%;
+    height: 20px;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  // Extend hover zone BELOW to connect toolbar to block (prevents losing focus)
+  &::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    right: -10px;
+    top: 100%;
+    height: 12px;
+    background: transparent;
+    pointer-events: auto;
+  }
+}
+
+// Keep toolbar visible when block is SELECTED (not just hovered)
+#main-edit-area .editable.selected .tools {
+  visibility: visible !important;
+}
+
+// Hide toolbar container when it has no visible tool buttons (e.g., fixed header/footer blocks)
+#main-edit-area .tools:not(:has(.tool)) {
+  display: none !important;
+}
+
+// =============================================================================
+// IMAGE ZONE POINTER EVENTS FIX
+// Problem: .workzone and .mo-uploadzone cover the entire image area and capture
+// mouse events, preventing hover from reaching the block toolbar above.
+// Solution: Disable pointer events by default, enable only on image hover.
+// =============================================================================
+#main-edit-area .img-wysiwyg .workzone,
+#main-edit-area .img-wysiwyg .mo-uploadzone {
+  pointer-events: none;
+}
+
+#main-edit-area .img-wysiwyg:hover .workzone,
+#main-edit-area .img-wysiwyg:hover .mo-uploadzone {
+  pointer-events: auto;
+}
+
+// Individual tool button - ghost style
+#main-edit-area .tools .tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: @tool-size;
+  height: @tool-size;
+  min-height: @tool-size;
+  min-width: @tool-size;
+  padding: 0;
+  margin: 0 !important; // Override Mosaico margins (handle: 16px, delete: 16px)
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  box-shadow: none;
+  color: @tool-color;
+  font-size: @tool-icon-size;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  float: none !important; // Override Mosaico floats
+  line-height: 1;
+
+  &:hover {
+    background-color: @tool-hover-bg;
+  }
+
+  // Icon styling inside tools - ensure proper centering
+  .lucide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: @tool-icon-size;
+    color: inherit;
+
+    &::before {
+      display: block;
+    }
+  }
+}
+
+// Delete button - use error color, positioned at end with separator
+#main-edit-area .tools .tool.delete {
+  margin-left: 6px !important; // Keep separator margin
+  position: relative;
+
+  // Separator line before delete (vertical for horizontal toolbar)
+  &::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+
+  &:hover {
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
+  }
+
+  .lucide {
+    color: inherit;
+  }
+}
+
+// Handle (drag) - different cursor
+#main-edit-area .tools .tool.handle {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// Remove old margin overrides - no longer needed with flex layout
+#main-edit-area .tools .tool.moveup,
+#main-edit-area .tools .tool.movedown,
+#main-edit-area .tools .tool.save,
+#main-edit-area .tools .tool.comment {
+  margin: 0;
+}
+
+// Separator between navigation tools and action tools (vertical line for horizontal toolbar)
+#main-edit-area .tools .tool.clone {
+  margin: 0 !important;
+  margin-left: 6px !important;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Comment button - needs relative positioning for badge
+#main-edit-area .tools .tool.comment {
+  position: relative;
+}
+
+// Comment count badge
+#main-edit-area .tools .tool.comment .comment-count-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: var(--v-error-base, #F04E23);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  min-width: 14px;
+  height: 14px;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 7px;
+  padding: 0 3px;
+}
+
+// =============================================================================
+// IMAGE TOOLS (midtools) - Same modern style
+// =============================================================================
+
+#main-edit-area .midtools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: @tools-bg;
+  backdrop-filter: blur(8px);
+  border-radius: @tools-border-radius;
+  box-shadow: @tools-shadow;
+  bottom: 12px;
+  left: 12px;
+  margin-left: 0;
+
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: @tool-size;
+    height: @tool-size;
+    min-height: @tool-size;
+    padding: 0;
+    margin: 0 !important;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+    color: @tool-color;
+    font-size: @tool-icon-size;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background-color: @tool-hover-bg;
+    }
+
+    .lucide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: @tool-icon-size;
+      color: inherit;
+    }
+  }
+
+  .tool.delete:hover {
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
+  }
+}
+
+// =============================================================================
+// TOGGLE SWITCHES - Vuetify v-switch Style
+// Main styles are now consolidated in style_mosaico_tools.less
+// This section is kept for reference but styles have been moved
+// =============================================================================
+
+// =============================================================================
+// BACKGROUND IMAGE WIDGET BUTTONS - Vuetify Style
+// =============================================================================
+
+.bgimage-button-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  max-width: 100%;
+
+  // Visually place the trash icon BEFORE "Choisir image" — matches the reset
+  // icon convention (action icon left of the action input).
+  .bgimage-button-reset { order: 1; }
+  .bgimage-button-primary { order: 2; }
+}
+
+// Image-picker rows: keep the standard 60/40 grid (label aligned with other
+// rows) and right-align the button group inside .propInput so the trash icon
+// sits at the same vertical line as select chevrons.
+.mo .propEditor:has(.bgimage-button-group) > .propInput {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+// Compact primary button so "Choisir image" + trash fit the 40% column.
+.mo .bgimage-button-primary.ui-button {
+  padding: 0 10px;
+  font-size: 0.75rem;
+}
+
+// Primary button (Choisir image) - Accent color with icon + text
+.bgimage-button-primary.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  min-width: auto;
+  padding: 0 12px;
+  font-size: 0.8125rem; // 13px
+  font-weight: 500;
+  text-transform: none; // No uppercase
+  letter-spacing: normal;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--v-accent-base, #00acdc);
+  color: #ffffff;
+  box-shadow: none;
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1;
+
+  &:hover:not(.ui-button-disabled) {
+    background-color: var(--v-accent-darken1, #0097c4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &.ui-button-disabled {
+    background-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.26);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  // Lucide icon
+  .ui-icon.lucide {
+    font-size: 16px;
+    margin-right: 6px;
+    line-height: 1;
+
+    &::before {
+      color: inherit;
+    }
+  }
+
+  .ui-button-text {
+    display: inline;
+    line-height: 1;
+    color: inherit;
+  }
+}
+
+// Reset button — same "trash" pattern as block delete (.tool.delete):
+// neutral icon, red tint + light red background on hover.
+.bgimage-button-reset.ui-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  background-color: transparent;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+
+  &:hover:not(.ui-button-disabled):not(.ui-state-disabled) {
+    background-color: rgba(240, 78, 35, 0.1);
+    color: @tool-delete-color;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &.ui-button-disabled,
+  &.ui-state-disabled {
+    background-color: transparent;
+    color: rgba(0, 0, 0, 0.26);
+    cursor: not-allowed;
+  }
+
+  // Lucide icon - inherits color from button so hover turns it red
+  .ui-icon.lucide {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    margin: 0;
+    width: auto !important;
+    height: auto !important;
+    text-indent: 0 !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    color: inherit;
+
+    &::before {
+      display: inline-block !important;
+      color: inherit;
+      content: '' !important;
+      visibility: visible !important;
+    }
+  }
+
+  // When button is NOT disabled (image exists), make icon darker
+  &:not(.ui-button-disabled):not(.ui-state-disabled) .ui-icon.lucide {
+    color: rgba(0, 0, 0, 0.87); // Darker icon when button is active
+  }
+
+  // Force icon display even when disabled state is applied
+  &.ui-state-disabled .ui-icon.lucide,
+  &.ui-button-disabled .ui-icon.lucide {
+    display: inline-flex !important;
+    opacity: 1 !important;
+
+    &::before {
+      display: inline-block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  }
+
+  // Override any jQuery UI or mixin styles that hide icons - apply mask directly
+  .ui-icon.lucide-x::before {
+    content: '' !important;
+    display: inline-block !important;
+    width: 1em !important;
+    height: 1em !important;
+    background-color: currentColor !important;
+    -webkit-mask-image: @lucide-x !important;
+    mask-image: @lucide-x !important;
+    -webkit-mask-repeat: no-repeat !important;
+    mask-repeat: no-repeat !important;
+    -webkit-mask-size: contain !important;
+    mask-size: contain !important;
+    -webkit-mask-position: center !important;
+    mask-position: center !important;
+    vertical-align: middle !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .ui-button-text {
+    display: none !important; // Icon-only button
+  }
+}

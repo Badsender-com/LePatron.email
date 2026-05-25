@@ -22,6 +22,17 @@ import FolderMoveModal from './folder-move-modal';
 import FolderNewModal from '~/routes/mailings/__partials/folder-new-modal';
 import FolderDeleteModal from './folder-delete-modal';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import {
+  FolderOpen,
+  Folder,
+  Users,
+  Plus,
+  TextCursor,
+  FolderPlus,
+  FolderInput,
+  Trash2,
+} from 'lucide-vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -33,6 +44,11 @@ export default {
     FolderDeleteModal,
     FolderMoveModal,
     FolderNewModal,
+    BsRowActions,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
+    LucideUsers: Users,
+    LucidePlus: Plus,
   },
   mixins: [mixinCurrentLocation],
   data: () => ({
@@ -498,10 +514,11 @@ export default {
         });
         await this.fetchWorkspacesData();
       } catch (error) {
-        console.error('[WorkspaceTree] Error moving folder:', error);
         let errorKey = 'global.errors.errorOccured';
         if (error.response?.status === 409) {
           errorKey = 'folders.conflict';
+        } else if (error.response?.status === 406) {
+          errorKey = 'folders.hasChildren';
         }
         this.showSnackbar({
           text: this.$t(errorKey),
@@ -555,6 +572,50 @@ export default {
         }
       }
     },
+    /**
+     * Build menu actions for folder kebab menu
+     * Design System: Rename, New Folder (conditional), Move, Delete
+     */
+    buildFolderMenuActions(item) {
+      const actions = [];
+
+      // Rename
+      actions.push({
+        key: 'rename',
+        icon: TextCursor,
+        text: 'folders.rename',
+        onClick: () => this.openRenameFolderModal(item),
+      });
+
+      // New Folder (conditional)
+      if (this.hasRightToCreateFolder(item)) {
+        actions.push({
+          key: 'new-folder',
+          icon: FolderPlus,
+          text: 'global.newFolder',
+          onClick: (event) => this.openNewFolderModal(event, item),
+        });
+      }
+
+      // Move
+      actions.push({
+        key: 'move',
+        icon: FolderInput,
+        text: 'global.move',
+        onClick: () => this.displayMoveModal(item),
+      });
+
+      // Delete (danger variant)
+      actions.push({
+        key: 'delete',
+        icon: Trash2,
+        text: 'global.delete',
+        variant: 'danger',
+        onClick: () => this.displayDeleteModal(item),
+      });
+
+      return actions;
+    },
   },
 };
 </script>
@@ -577,16 +638,49 @@ export default {
       @update:active="handleSelectItemFromTreeView"
       @update:open="handleTreeUpdate"
     >
-      <template #prepend="{ item, open }">
-        <v-icon v-if="!item.icon" :color="item.hasAccess ? 'accent' : 'grey'">
-          {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-        </v-icon>
-        <v-icon v-else :color="item.hasAccess ? 'primary' : 'grey'">
-          {{ item.icon }}
-        </v-icon>
+      <template #prepend="{ item, active }">
+        <!-- Workspace icon -->
+        <lucide-users
+          v-if="item.type === 'workspace'"
+          :size="18"
+          :class="[
+            'tree-icon',
+            {
+              'tree-icon--active': active,
+              'tree-icon--disabled': !item.hasAccess,
+            },
+          ]"
+        />
+        <!-- Folder icons -->
+        <template v-else>
+          <lucide-folder-open
+            v-if="active"
+            :size="18"
+            :class="[
+              'tree-icon',
+              'tree-icon--active',
+              {
+                'tree-icon--disabled': !item.hasAccess,
+              },
+            ]"
+          />
+          <lucide-folder
+            v-else
+            :size="18"
+            :class="[
+              'tree-icon',
+              {
+                'tree-icon--disabled': !item.hasAccess,
+              },
+            ]"
+          />
+        </template>
       </template>
       <template #label="{ item, active }">
-        <div @click="active ? $event.stopPropagation() : null">
+        <div
+          :class="{ 'tree-label--no-access': !item.hasAccess }"
+          @click="active ? $event.stopPropagation() : null"
+        >
           {{ item.name }}
         </div>
       </template>
@@ -597,59 +691,12 @@ export default {
           icon
           @click="(event) => openNewFolderModal(event, item)"
         >
-          <v-icon>add</v-icon>
+          <lucide-plus :size="18" />
         </v-btn>
-        <v-menu v-if="checkIfAuthorizedFolderMenu(item)" offset-y>
-          <template #activator="{ on }">
-            <v-btn color="accent" dark icon v-on="on">
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
-          </template>
-          <v-list activable>
-            <v-list-item nuxt @click="openRenameFolderModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <v-icon>edit</v-icon>
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>{{ $t('folders.rename') }} </v-list-item-title>
-            </v-list-item>
-            <v-list-item
-              v-if="hasRightToCreateFolder(item)"
-              nuxt
-              @click="(event) => openNewFolderModal(event, item)"
-            >
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <v-icon>folder</v-icon>
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
-                {{ $t('global.newFolder') }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item nuxt @click="displayMoveModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <v-icon>drive_file_move</v-icon>
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
-                {{ $t('global.move') }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item nuxt @click="displayDeleteModal(item)">
-              <v-list-item-avatar>
-                <v-btn color="accent" icon>
-                  <v-icon>delete</v-icon>
-                </v-btn>
-              </v-list-item-avatar>
-              <v-list-item-title>
-                {{ $t('global.delete') }}
-              </v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <bs-row-actions
+          v-if="checkIfAuthorizedFolderMenu(item)"
+          :menu-actions="buildFolderMenuActions(item)"
+        />
       </template>
     </v-treeview>
     <folder-delete-modal
@@ -677,7 +724,27 @@ export default {
   </v-skeleton-loader>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+/* Tree icon color states and alignment */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+  vertical-align: middle;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
+
+  &--disabled {
+    color: rgba(0, 0, 0, 0.26);
+  }
+}
+
+/* Non-assigned workspace/folder label */
+.tree-label--no-access {
+  color: rgba(0, 0, 0, 0.5);
+}
+
 .v-treeview-node--active,
 .v-treeview--hoverable {
   cursor: pointer;
@@ -686,13 +753,51 @@ export default {
 .v-treeview {
   overflow-y: auto;
   font-size: 0.875rem;
+
+  ::v-deep {
+    .v-treeview-node__root {
+      padding-left: 8px;
+      min-height: 40px;
+      border-radius: 4px;
+      margin: 2px 4px;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    .v-treeview-node--active > .v-treeview-node__root {
+      background-color: rgba(0, 172, 220, 0.1);
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.15);
+      }
+    }
+
+    .v-treeview-node__content {
+      margin-left: 4px;
+    }
+
+    .v-treeview-node__label {
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+    }
+
+    .v-treeview-node--active .v-treeview-node__label {
+      color: var(--v-accent-base);
+      font-weight: 600;
+    }
+
+    .v-treeview-node__toggle {
+      color: rgba(0, 0, 0, 0.4);
+    }
+  }
 }
+
 .v-treeview-node__label > div {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-}
-.v-list-item__title {
-  font-size: 0.875rem;
 }
 </style>

@@ -7,9 +7,19 @@ import {
   getLanguageLabel,
 } from '~/helpers/constants/languages.js';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
+import { Languages, FolderOpen, Folder, Users } from 'lucide-vue';
+import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
+  components: {
+    LucideLanguages: Languages,
+    LucideFolderOpen: FolderOpen,
+    LucideFolder: Folder,
+    LucideUsers: Users,
+  },
+  SPACE_TYPE,
   mixins: [destinationTreeMixin],
   data() {
     return {
@@ -114,8 +124,14 @@ export default {
       return this.$t('translation.estimatedTime', { time });
     },
   },
+  beforeDestroy() {
+    // Otherwise the 2s polling interval keeps hitting the API after the user
+    // navigates away from a translation in progress.
+    this.stopPolling();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
 
     async open(mailing) {
       this.mailing = mailing;
@@ -370,9 +386,11 @@ export default {
   <v-dialog v-model="show" max-width="550" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
-        <v-icon left color="primary">
-          mdi-translate
-        </v-icon>
+        <lucide-languages
+          :size="20"
+          class="mr-2"
+          style="color: var(--v-primary-base)"
+        />
         {{ $t('translation.duplicateAndTranslate') }}
       </v-card-title>
 
@@ -436,42 +454,60 @@ export default {
               <p
                 class="text--secondary mb-4"
                 v-html="
-                  $t('translation.duplicateNotice', { name: mailingName })
+                  $t('translation.duplicateNotice', {
+                    name: escapeHtml(mailingName),
+                  })
                 "
               />
 
               <!-- Source Language -->
+              <label class="form-label">
+                {{ $t('translation.sourceLanguage') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-select
                 v-model="form.sourceLanguage"
                 :items="sourceLanguageOptions"
-                :label="$t('translation.sourceLanguage')"
                 :disabled="translating"
                 :rules="[(v) => !!v || $t('global.errors.required')]"
-                outlined
+                solo
+                flat
                 dense
-                class="mb-2"
+                hide-details="auto"
+                class="form-input mb-4"
               />
 
               <!-- Target Language -->
+              <label class="form-label">
+                {{ $t('translation.targetLanguage') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-select
                 v-model="form.targetLanguage"
                 :items="targetLanguageOptions"
-                :label="$t('translation.targetLanguage')"
                 :disabled="translating"
                 :rules="[(v) => !!v || $t('global.errors.required')]"
-                outlined
+                solo
+                flat
                 dense
-                class="mb-2"
+                hide-details="auto"
+                class="form-input mb-4"
               />
 
               <!-- New Name -->
+              <label class="form-label">
+                {{ $t('translation.newName') }}
+                <span class="form-label__required">*</span>
+              </label>
               <v-text-field
                 v-model="form.newName"
-                :label="$t('translation.newName')"
                 :disabled="translating"
                 :rules="[nameRequired]"
-                outlined
+                solo
+                flat
                 dense
+                hide-details="auto"
+                class="form-input"
               />
 
               <!-- Destination -->
@@ -495,13 +531,25 @@ export default {
                       :return-object="true"
                       @update:active="handleSelectDestination"
                     >
-                      <template #prepend="{ item, open }">
-                        <v-icon v-if="!item.icon" color="accent">
-                          {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-                        </v-icon>
-                        <v-icon v-else color="accent">
-                          {{ item.icon }}
-                        </v-icon>
+                      <template #prepend="{ item, active }">
+                        <!-- Workspace icon -->
+                        <lucide-users
+                          v-if="item.type === $options.SPACE_TYPE.WORKSPACE"
+                          :size="18"
+                          :class="[
+                            'tree-icon',
+                            { 'tree-icon--active': active },
+                          ]"
+                        />
+                        <!-- Folder icons -->
+                        <template v-else>
+                          <lucide-folder-open
+                            v-if="active"
+                            :size="18"
+                            class="tree-icon tree-icon--active"
+                          />
+                          <lucide-folder v-else :size="18" class="tree-icon" />
+                        </template>
                       </template>
                     </v-treeview>
                   </div>
@@ -515,7 +563,7 @@ export default {
         </template>
       </v-card-text>
 
-      <v-divider />
+      <v-divider class="mt-4" />
 
       <v-card-actions>
         <v-spacer />
@@ -528,9 +576,7 @@ export default {
           :disabled="!isFormValid"
           @click="handleTranslate"
         >
-          <v-icon left>
-            mdi-translate
-          </v-icon>
+          <lucide-languages :size="16" class="mr-2" />
           {{ $t('translation.translate') }}
         </v-btn>
         <v-btn
@@ -548,15 +594,81 @@ export default {
   </v-dialog>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .destination-tree {
   max-height: 200px;
   overflow-y: auto;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
+
+  .v-treeview-node--active {
+    cursor: pointer;
+  }
 }
 
-.destination-tree .v-treeview-node--active {
-  cursor: pointer;
+/* Tree icon color states and alignment - aligned with sidebar */
+.tree-icon {
+  color: rgba(0, 0, 0, 0.54);
+  transition: color 0.15s ease;
+  vertical-align: middle;
+
+  &--active {
+    color: var(--v-accent-base);
+  }
+}
+
+/* Form label styling - matching BsTextField */
+.form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.375rem;
+
+  &__required {
+    color: #f04e23;
+    margin-left: 2px;
+  }
+}
+
+/* Form input styling - matching BsTextField */
+.form-input {
+  &.v-text-field.v-text-field--solo,
+  &.v-select.v-text-field--solo {
+    ::v-deep .v-input__slot {
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      background: #fff;
+      min-height: 36px;
+      padding: 0 12px;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    &.v-input--is-focused ::v-deep .v-input__slot {
+      border-color: var(--v-accent-base);
+    }
+
+    &.error--text ::v-deep .v-input__slot {
+      border-color: #f04e23;
+    }
+
+    ::v-deep input,
+    ::v-deep .v-select__selection {
+      font-size: 0.875rem;
+    }
+
+    ::v-deep .v-text-field__details {
+      padding: 4px 0 0 0;
+      min-height: auto;
+    }
+
+    ::v-deep .v-messages__message {
+      font-size: 0.75rem;
+    }
+  }
 }
 </style>

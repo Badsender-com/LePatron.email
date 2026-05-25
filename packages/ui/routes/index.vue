@@ -26,14 +26,17 @@ export default {
     const isEmailBuilderEnabled = group?.enableEmailBuilder !== false;
     const isCrmIntelligenceEnabled = group?.enableCrmIntelligence === true;
 
-    // If Email Builder is disabled but CRM Intelligence is enabled,
-    // redirect to CRM Intelligence
-    if (!isEmailBuilderEnabled && isCrmIntelligenceEnabled) {
+    // Redirect to first enabled module:
+    // Priority: Email Builder > CRM Intelligence
+    if (isEmailBuilderEnabled) {
+      return redirect('/mailings');
+    }
+
+    if (isCrmIntelligenceEnabled) {
       return redirect('/crm-intelligence');
     }
 
-    // Otherwise, continue to Email Builder page
-    // (shows placeholder if Email Builder is disabled)
+    // If no modules are enabled, continue to show Email Builder placeholder
   },
 };
 </script>

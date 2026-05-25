@@ -118,8 +118,9 @@ function initEditor(parent, src, messages) {
   const tempContainer = document.createElement('div');
   tempContainer.innerHTML = modalContent;
 
-  // We add the container after the parent element
-  parent.after(tempContainer.firstElementChild)
+  // We add the container to the body to avoid stacking context issues
+  // This ensures the modal z-index works correctly above all other elements
+  document.body.appendChild(tempContainer.firstElementChild)
 
   const container = document.getElementById('konva-editor'); // Canvas area only
   const stage = new Konva.Stage({
@@ -803,7 +804,7 @@ function updateElementActions(disabled) {
  * @returns {string} - The editor content as html.
  */
 const modal = (messages) =>
-  `<aside class="editor-frame" id="editor-wrapper">
+  `<aside class="editor-frame mo" id="editor-wrapper">
     <div class="editor-layout">
 
       <div class="editor-header">

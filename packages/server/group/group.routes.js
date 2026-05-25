@@ -54,6 +54,7 @@ router.get(
 router.get(
   '/:groupId/email-groups',
   GUARD_USER, // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
   groups.readEmailGroups
 );
 

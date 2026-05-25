@@ -14,7 +14,12 @@ const emailsGroupService = require('../emails-group/emails-group.service.js');
 const personalizedVariableService = require('../personalized-variables/personalized-variable.service.js');
 const groupFtpService = require('../group/group-ftp.service.js');
 
-const { Groups, Templates, Mailings } = require('../common/models.common.js');
+const {
+  Groups,
+  Templates,
+  Mailings,
+  Profiles,
+} = require('../common/models.common.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -49,8 +54,16 @@ module.exports = {
  */
 
 async function list(req, res) {
-  const groups = await Groups.find({}).sort({ name: 1 });
-  res.json({ items: groups });
+  const [groups, groupsWithProfiles] = await Promise.all([
+    Groups.find({}).sort({ name: 1 }),
+    Profiles.distinct('_company'),
+  ]);
+  const profileGroupSet = new Set(groupsWithProfiles.map(String));
+  const items = groups.map((group) => ({
+    ...group.toJSON(),
+    hasProfiles: profileGroupSet.has(String(group._id)),
+  }));
+  res.json({ items });
 }
 
 /**
