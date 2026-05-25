@@ -352,15 +352,12 @@ export default {
 }
 
 .screenshot-section {
-  padding: 40px 24px;
+  padding: 0;
   background: var(--v-background-base, #fff);
 }
 
 .screenshot-wrapper {
-  max-width: 1000px;
-  margin: 0 auto;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  width: 100%;
   overflow: hidden;
   background: #f5f5f5;
 }
