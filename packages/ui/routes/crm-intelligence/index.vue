@@ -316,9 +316,18 @@ export default {
 
 <style scoped>
 /* Marketing Landing Page */
+/* Negative margins cancel the parent layout's .app-main__page padding
+   (32px sides / 32px bottom) so the marketing page spans edge-to-edge
+   like on staging. */
 .marketing-page {
   min-height: calc(100vh - 64px);
-  margin-left: 56px;
+  margin: 0 -32px -32px;
+}
+
+@media (max-width: 960px) {
+  .marketing-page {
+    margin: 0 -16px -16px;
+  }
 }
 
 .hero-section {
@@ -352,12 +361,15 @@ export default {
 }
 
 .screenshot-section {
-  padding: 0;
+  padding: 40px 24px;
   background: var(--v-background-base, #fff);
 }
 
 .screenshot-wrapper {
-  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
   overflow: hidden;
   background: #f5f5f5;
 }
