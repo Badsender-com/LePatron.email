@@ -778,6 +778,90 @@ body {
     min-width: 0;
   }
 
+  // Custom combobox for unlocked keys with multiple suggestions: editable
+  // <input> + chevron button + popover. Looks identical to the native
+  // <input>/<select> elements of the editor.
+  .tracking-combobox {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+
+    &__input {
+      // The generic .mo .propInput input[type='text'] rule already gives the
+      // border/padding/focus styles; we just reserve room for the chevron.
+      padding-right: 30px !important;
+      width: 100%;
+    }
+
+    &__chevron {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      color: #757575;
+      transition: transform 0.15s ease;
+
+      &:hover { color: rgba(0, 0, 0, 0.8); }
+    }
+    &--open &__chevron {
+      transform: rotate(180deg);
+    }
+
+    &__menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 4px 0;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      list-style: none;
+      z-index: 10;
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    &__option {
+      padding: 6px 10px;
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.87);
+      line-height: 18px;
+
+      &:hover {
+        background: rgba(0, 172, 220, 0.08);
+      }
+      &--active {
+        font-weight: 500;
+        color: var(--v-accent-base);
+      }
+      &--empty {
+        color: rgba(0, 0, 0, 0.4);
+        font-style: italic;
+      }
+    }
+
+    // Strict mode: input is read-only and acts as the toggle. Show a pointer
+    // cursor so the user perceives it as clickable (like a select header).
+    &--strict &__input {
+      cursor: pointer;
+      user-select: none;
+      background: white;
+    }
+  }
+
   .tracking-equals {
     color: rgba(0, 0, 0, 0.4);
     font-weight: 500;

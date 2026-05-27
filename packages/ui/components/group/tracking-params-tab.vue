@@ -77,6 +77,7 @@ export default {
         key: '',
         values: [],
         required: false,
+        lockedValues: false,
       });
       this.valuesInputs.push('');
       this.$nextTick(() => {
@@ -106,6 +107,9 @@ export default {
     },
     onRequiredChange(index, value) {
       this.config.params[index].required = Boolean(value);
+    },
+    onLockedValuesChange(index, value) {
+      this.config.params[index].lockedValues = Boolean(value);
     },
     onEnabledChange(value) {
       this.config.enabled = Boolean(value);
@@ -185,6 +189,9 @@ export default {
         <div class="params-table__col params-table__col--values">
           {{ $t('trackingConfig.values') }}
         </div>
+        <div class="params-table__col params-table__col--locked">
+          {{ $t('trackingConfig.locked') }}
+        </div>
         <div class="params-table__col params-table__col--required">
           {{ $t('trackingConfig.required') }}
         </div>
@@ -221,6 +228,23 @@ export default {
             dense
             @input="onValuesInput(index, $event)"
           />
+        </div>
+        <div class="params-table__col params-table__col--locked">
+          <v-tooltip top :disabled="param.values && param.values.length > 0">
+            <template #activator="{ on, attrs }">
+              <div v-bind="attrs" v-on="on">
+                <v-checkbox
+                  :input-value="param.lockedValues"
+                  :disabled="!param.values || param.values.length === 0"
+                  color="accent"
+                  hide-details
+                  class="ma-0 pa-0"
+                  @change="onLockedValuesChange(index, $event)"
+                />
+              </div>
+            </template>
+            <span>{{ $t('trackingConfig.lockedDisabledHint') }}</span>
+          </v-tooltip>
         </div>
         <div class="params-table__col params-table__col--required">
           <v-checkbox
@@ -331,6 +355,7 @@ export default {
       flex: 1;
       padding-right: 16px;
     }
+    &--locked,
     &--required {
       width: 100px;
       flex-shrink: 0;

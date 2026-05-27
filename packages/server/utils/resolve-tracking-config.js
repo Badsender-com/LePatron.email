@@ -68,6 +68,7 @@ function toResolved(cfg) {
       key: p.key,
       values: Array.isArray(p.values) ? [...p.values] : [],
       required: Boolean(p.required),
+      lockedValues: Boolean(p.lockedValues),
     })),
   };
 }

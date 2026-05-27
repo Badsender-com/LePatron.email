@@ -600,6 +600,11 @@ export default {
     values: 'Valeurs possibles',
     valuesHint: 'ex : newsletter, promo (séparés par des virgules)',
     required: 'Obligatoire',
+    locked: 'Verrouillé',
+    lockedHint:
+      'Si activé, l\'utilisateur ne peut pas saisir de valeur libre pour cette clé : il doit choisir parmi les valeurs définies ci-dessus.',
+    lockedDisabledHint:
+      'Définissez au moins une valeur possible pour pouvoir verrouiller cette clé.',
     empty: 'Aucun paramètre de tracking défini',
     inheritedFromGroup: 'Hérité de la configuration globale',
     cascade: {
