@@ -591,6 +591,11 @@ export default {
     values: 'Allowed values',
     valuesHint: 'e.g. newsletter, promo (comma-separated)',
     required: 'Required',
+    locked: 'Locked',
+    lockedHint:
+      'When enabled, users cannot enter a free-form value for this key — they must pick one of the values defined above.',
+    lockedDisabledHint:
+      'Define at least one possible value before locking this key.',
     empty: 'No tracking parameter defined',
     inheritedFromGroup: 'Inherited from the global configuration',
     cascade: {

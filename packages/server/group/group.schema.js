@@ -133,6 +133,7 @@ const GroupSchema = Schema(
           key: { type: String, required: true, set: trimString },
           values: { type: [String], default: [] },
           required: { type: Boolean, default: false },
+          lockedValues: { type: Boolean, default: false },
         },
       ],
     },

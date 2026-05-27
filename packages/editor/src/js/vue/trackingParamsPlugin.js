@@ -1,5 +1,101 @@
 const Vue = require('vue/dist/vue.common');
 
+// Small inline combobox: editable <input> + chevron button that opens a
+// suggestion popover. The current value stays editable at all times — the
+// suggestions only assist (no chip/tag, no "clear" button).
+const TrackingCombobox = {
+  props: {
+    value: { type: String, default: '' },
+    options: { type: Array, default: () => [] },
+    placeholder: { type: String, default: 'value' },
+    // In strict mode the input becomes read-only: only the menu can change
+    // the value. Used for locked keys so the dropdown look stays identical to
+    // the free-form combobox.
+    strict: { type: Boolean, default: false },
+  },
+  data: () => ({ isOpen: false }),
+  mounted() {
+    // Document-level mousedown closes the menu only when the click lands
+    // outside the combobox. Relying on the input's blur was flaky because
+    // some browsers blur the input on chevron click despite mousedown.prevent.
+    document.addEventListener('mousedown', this.handleDocMousedown);
+  },
+  beforeDestroy() {
+    document.removeEventListener('mousedown', this.handleDocMousedown);
+  },
+  methods: {
+    onInput(e) {
+      if (this.strict) return;
+      this.$emit('input', e.target.value);
+    },
+    openMenu() {
+      if (this.options.length > 0) this.isOpen = true;
+    },
+    toggleMenu() {
+      this.isOpen = !this.isOpen;
+      this.$nextTick(() => this.$refs.input && this.$refs.input.focus());
+    },
+    onInputMousedown(e) {
+      // In strict mode the input acts as a toggle for the menu (select-like).
+      if (!this.strict) return;
+      e.preventDefault();
+      this.toggleMenu();
+    },
+    selectOption(opt) {
+      this.$emit('input', opt);
+      this.isOpen = false;
+      this.$nextTick(() => this.$refs.input && this.$refs.input.focus());
+    },
+    handleDocMousedown(e) {
+      if (!this.isOpen) return;
+      if (this.$el && !this.$el.contains(e.target)) this.isOpen = false;
+    },
+  },
+  template: `
+    <div
+      class="tracking-combobox"
+      :class="{ 'tracking-combobox--open': isOpen, 'tracking-combobox--strict': strict }"
+    >
+      <input
+        ref="input"
+        type="text"
+        class="tracking-combobox__input"
+        :value="value"
+        :placeholder="placeholder"
+        :readonly="strict"
+        @input="onInput"
+        @focus="openMenu"
+        @mousedown="onInputMousedown"
+      />
+      <button
+        type="button"
+        class="tracking-combobox__chevron"
+        tabindex="-1"
+        aria-label="Show suggestions"
+        @mousedown.prevent="toggleMenu"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <ul v-if="isOpen && options.length" class="tracking-combobox__menu" role="listbox">
+        <li
+          v-if="strict"
+          class="tracking-combobox__option tracking-combobox__option--empty"
+          role="option"
+          @mousedown.prevent="selectOption('')"
+        >&mdash;</li>
+        <li
+          v-for="opt in options"
+          :key="opt"
+          class="tracking-combobox__option"
+          :class="{ 'tracking-combobox__option--active': opt === value }"
+          role="option"
+          @mousedown.prevent="selectOption(opt)"
+        >{{ opt }}</li>
+      </ul>
+    </div>
+  `,
+};
+
 module.exports = {
   viewModel(vm, ko) {},
   init(vm) {
@@ -12,7 +108,7 @@ module.exports = {
     );
 
     Vue.component('TrackingParamsPlugin', {
-      components: {},
+      components: { TrackingCombobox },
       data: () => ({
         hasGoogleAnalyticsUtmSubscription: null,
         trackingUrlsSubscription: null,
@@ -48,10 +144,16 @@ module.exports = {
           if (!this.isManaged) return [];
           return this.groupConfig.params.map((param) => {
             const existing = this.trackingUrls.find((tu) => tu && tu.key === param.key);
+            const values = Array.isArray(param.values) ? param.values : [];
+            // `lockedValues` is only meaningful when at least one value is defined.
+            // Falling back to false otherwise keeps the editor behavior sane for
+            // legacy configs that pre-date the flag.
+            const lockedValues = !!param.lockedValues && values.length > 0;
             return {
               key: param.key,
-              values: Array.isArray(param.values) ? param.values : [],
+              values,
               required: !!param.required,
+              lockedValues,
               value: existing ? existing.value || '' : '',
               missing: !!param.required && !(existing && existing.value),
             };
@@ -99,8 +201,22 @@ module.exports = {
           let mutated = false;
           this.groupConfig.params.forEach((param) => {
             const idx = current.findIndex((tu) => tu && tu.key === param.key);
+            // Pre-fill a row with the single allowed value when the key is
+            // unlocked and only one value exists: the value is suggested but
+            // remains editable. For locked keys, the prefill stays on @focus
+            // (the readonly input handles the strict path).
+            const values = Array.isArray(param.values) ? param.values : [];
+            const lockedValues = !!param.lockedValues && values.length > 0;
+            const shouldPrefillSingle =
+              !lockedValues && values.length === 1;
             if (idx === -1) {
-              current.push({ key: param.key, value: '' });
+              current.push({
+                key: param.key,
+                value: shouldPrefillSingle ? values[0] : '',
+              });
+              mutated = true;
+            } else if (shouldPrefillSingle && !current[idx].value) {
+              current[idx] = Object.assign({}, current[idx], { value: values[0] });
               mutated = true;
             }
           });
@@ -205,25 +321,37 @@ module.exports = {
                 </div>
                 <span class="tracking-equals">=</span>
                 <div class="propInput tracking-input">
-                  <select
-                    v-if="row.values.length > 1"
+                  <!-- Locked + multiple values: same combobox in strict mode
+                       (input read-only) so the dropdown look matches the
+                       unlocked case. -->
+                  <tracking-combobox
+                    v-if="row.lockedValues && row.values.length > 1"
+                    strict
                     :value="row.value"
-                    @change="setManagedValue(row.key, $event.target.value)"
-                  >
-                    <option value=""></option>
-                    <option
-                      v-for="v in row.values"
-                      :key="v"
-                      :value="v"
-                    >{{ v }}</option>
-                  </select>
+                    :options="row.values"
+                    placeholder="value"
+                    @input="(val) => setManagedValue(row.key, val)"
+                  ></tracking-combobox>
+                  <!-- Locked + single value: read-only, value forced -->
                   <input
-                    v-else-if="row.values.length === 1"
+                    v-else-if="row.lockedValues && row.values.length === 1"
                     type="text"
                     :value="row.values[0]"
                     readonly
                     @focus="setManagedValue(row.key, row.values[0])"
                   />
+                  <!-- Unlocked + multiple values: combobox (chevron opens
+                       the suggestion list; the input value stays editable). -->
+                  <tracking-combobox
+                    v-else-if="row.values.length > 1"
+                    :value="row.value"
+                    :options="row.values"
+                    placeholder="value"
+                    @input="(val) => setManagedValue(row.key, val)"
+                  ></tracking-combobox>
+                  <!-- Unlocked + 1 value (or no values): plain editable input.
+                       Single-value case is pre-filled by ensureManagedRows; no
+                       chevron needed because there is nothing to choose from. -->
                   <input
                     v-else
                     type="text"

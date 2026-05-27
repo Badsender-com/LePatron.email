@@ -39,7 +39,14 @@ describe('resolveTrackingConfig', () => {
     expect(result).toEqual({
       enabled: true,
       restrictValues: true,
-      params: [{ key: 'utm_source', values: ['newsletter'], required: true }],
+      params: [
+        {
+          key: 'utm_source',
+          values: ['newsletter'],
+          required: true,
+          lockedValues: false,
+        },
+      ],
     });
   });
 
