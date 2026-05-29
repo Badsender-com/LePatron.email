@@ -192,7 +192,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
         sortByKey = 'author';
         break;
       default:
-        sortByKey = paginationJSON.sortBy;
+        [sortByKey] = paginationJSON.sortBy;
     }
 
     additionalQueryParams.sort = {

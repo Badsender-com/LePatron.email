@@ -184,8 +184,11 @@ describe('CRM Intelligence Service', () => {
       expect(result.expiresIn).toBeLessThanOrEqual(60);
     });
 
-    it('M3: binds user_id and user_email into JWT params (Metabase row-level filter)', async () => {
-      mockDashboardLookup();
+    it('M3: binds user_id and user_email into JWT params when the dashboard declares them', async () => {
+      // Dashboard opts into row-level filtering by declaring the slots.
+      mockDashboardLookup({
+        lockedParams: { group_id: 'g123', user_id: '', user_email: '' },
+      });
 
       const result = await crmIntelligenceService.getEmbedUrl(
         VALID_GROUP_ID,
@@ -204,8 +207,29 @@ describe('CRM Intelligence Service', () => {
       });
     });
 
-    it('M3: works without user_email if the user has none — token still bound by user_id', async () => {
+    it('does NOT inject user_id/user_email when the dashboard does not declare them (Metabase rejects unknown signed params with 400)', async () => {
+      // baseDashboard only declares group_id.
       mockDashboardLookup();
+
+      const result = await crmIntelligenceService.getEmbedUrl(
+        VALID_GROUP_ID,
+        VALID_DASHBOARD_ID,
+        GROUP_ENABLED,
+        { id: 'user-1', email: 'alice@example.com' }
+      );
+
+      const token = result.embedUrl.split('/embed/dashboard/')[1].split('#')[0];
+      const decoded = jwt.verify(token, VALID_API_KEY);
+
+      expect(decoded.params).toEqual({ group_id: 'g123' });
+      expect(decoded.params.user_id).toBeUndefined();
+      expect(decoded.params.user_email).toBeUndefined();
+    });
+
+    it('M3: fills only the declared user slot — user_id without user_email', async () => {
+      mockDashboardLookup({
+        lockedParams: { group_id: 'g123', user_id: '' },
+      });
       const result = await crmIntelligenceService.getEmbedUrl(
         VALID_GROUP_ID,
         VALID_DASHBOARD_ID,
