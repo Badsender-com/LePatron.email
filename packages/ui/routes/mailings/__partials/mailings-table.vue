@@ -164,8 +164,12 @@ export default {
         return {
           page: this.currentPage,
           itemsPerPage: this.pagination?.itemsPerPage || 25,
-          sortBy: this.pagination?.sortBy ? [this.pagination.sortBy] : [],
-          sortDesc: this.pagination?.sortDesc ? [this.pagination.sortDesc] : [],
+          sortBy: Array.isArray(this.pagination?.sortBy)
+            ? this.pagination.sortBy
+            : [],
+          sortDesc: Array.isArray(this.pagination?.sortDesc)
+            ? this.pagination.sortDesc
+            : [],
         };
       },
       set() {
@@ -560,14 +564,17 @@ export default {
 
       const newPage = page;
       const newItemsPerPage = itemsPerPage;
-      const newSortBy = sortBy?.[0] || null;
-      const newSortDesc = sortDesc?.[0] || false;
+      // Keep sortBy/sortDesc as arrays end-to-end: the backend only applies the
+      // sort when both are arrays (mailing.schema.js findForApiWithPagination),
+      // so storing scalars here silently disabled column sorting.
+      const newSortBy = Array.isArray(sortBy) ? sortBy : [];
+      const newSortDesc = Array.isArray(sortDesc) ? sortDesc : [];
 
       const hasChanges =
         newPage !== this.currentPage ||
         newItemsPerPage !== currentPagination.itemsPerPage ||
-        newSortBy !== currentPagination.sortBy ||
-        newSortDesc !== currentPagination.sortDesc;
+        newSortBy[0] !== currentPagination.sortBy?.[0] ||
+        newSortDesc[0] !== currentPagination.sortDesc?.[0];
 
       if (hasChanges) {
         // Reset to page 1 when changing items per page
@@ -625,7 +632,10 @@ export default {
         :headers="tablesHeaders"
         :items="mailings"
         :server-items-length="itemsLength"
-        :options.sync="tableOptions"
+        :page="currentPage"
+        :items-per-page="tableOptions.itemsPerPage"
+        :sort-by="tableOptions.sortBy"
+        :sort-desc="tableOptions.sortDesc"
         must-sort
         :show-select="hasAccess"
         :hide-default-footer="hideFooter"
@@ -770,6 +780,17 @@ export default {
     background: rgba(0, 0, 0, 0.02) !important; // --gray-50
     border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
     height: 40px !important;
+    /* Keep the sort arrow inline next to the label instead of wrapping below
+       it: Vuetify renders sortable headers as inline-flex, but the uppercase
+       label + letter-spacing can push the icon onto a second line. */
+    white-space: nowrap !important;
+  }
+
+  /* Sortable header content (label + sort icon) stays on one row. */
+  .v-data-table thead th.sortable {
+    .v-data-table-header__icon {
+      margin-left: 4px;
+    }
   }
 
   /* -------- Table rows (BsDataTable spec) -------------------------------- */

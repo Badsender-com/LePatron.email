@@ -139,17 +139,27 @@ async function getEmbedUrl(groupId, dashboardId, group, user) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 
-  // Bind the token to the calling user so a token captured from one user's
-  // history can't be replayed by another user in the same group. Metabase's
-  // signed-params feature picks `user_id` / `user_email` for row-level
-  // filtering; we always include them so future dashboards can enforce it.
-  const userBoundParams = {
-    ...(dashboard.lockedParams || {}),
-  };
-  if (user && user.id) {
+  // Only send parameters the dashboard actually declares. Metabase rejects the
+  // whole embed with a 400 ("Unknown parameter :user_id") when a signed param
+  // is not declared on the target dashboard, so we must NOT inject user_id /
+  // user_email unconditionally. A dashboard that wants row-level filtering by
+  // user opts in by declaring `user_id` / `user_email` in its lockedParams;
+  // we then fill those slots with the calling user's values (binding the token
+  // to that user so it can't be replayed by another user in the same group).
+  const lockedParams = dashboard.lockedParams || {};
+  const userBoundParams = { ...lockedParams };
+  if (
+    Object.prototype.hasOwnProperty.call(lockedParams, 'user_id') &&
+    user &&
+    user.id
+  ) {
     userBoundParams.user_id = String(user.id);
   }
-  if (user && user.email) {
+  if (
+    Object.prototype.hasOwnProperty.call(lockedParams, 'user_email') &&
+    user &&
+    user.email
+  ) {
     userBoundParams.user_email = String(user.email);
   }
 

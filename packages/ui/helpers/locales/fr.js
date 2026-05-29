@@ -505,7 +505,7 @@ export default {
   },
   workspaces: {
     name: 'Nom',
-    description: 'Descritpion',
+    description: 'Description',
     members: 'Utilisateurs',
     membersDescription:
       'Sélectionnez les utilisateurs qui auront accès à ce workspace.',

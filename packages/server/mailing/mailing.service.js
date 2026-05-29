@@ -1001,16 +1001,28 @@ async function copyMailing(mailingId, destination, user) {
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
-  const copy = omit(mailing, [
+  // `findOne` returns a Mongoose document whose real data lives in an internal
+  // `_doc`; running lodash `omit` on it directly does not reliably strip the
+  // identity/location fields (some are schema aliases), so `Mailings.create`
+  // could keep the source `_id`/location and spawn a phantom copy at the
+  // source. Convert to a plain object first, then omit both real fields and
+  // their aliases/virtuals.
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
     '_id',
+    'id',
     'createdAt',
     'updatedAt',
     '_user',
+    'userId',
     'author',
+    'userName',
     'espIds',
     '_workspace',
     'workspace',
     '_parentFolder',
+    '__v',
   ]);
 
   if (workspaceId) {
@@ -1041,7 +1053,6 @@ async function copyMailing(mailingId, destination, user) {
     mailing._id?.toString(),
     copiedMailing._id?.toString()
   );
-  await copiedMailing.save();
 
   try {
     if (gallery) {
@@ -1086,14 +1097,28 @@ async function duplicateWithTranslatedData({
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
-  // Create copy object
-  const copy = omit(mailing, [
+  // Same Mongoose-document caveat as `copyMailing`: omit on the raw document
+  // does not reliably strip identity/location fields (some are aliases), which
+  // could leave the source location on the duplicate and create a phantom at
+  // the source when a different destination is chosen. Work off a plain object
+  // and strip both real fields and their aliases/virtuals, including the
+  // source location (`_workspace`/`workspace`/`_parentFolder`).
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
     '_id',
+    'id',
     'createdAt',
     'updatedAt',
     '_user',
+    'userId',
     'author',
+    'userName',
     'espIds',
+    '_workspace',
+    'workspace',
+    '_parentFolder',
+    '__v',
   ]);
 
   // Set new name
@@ -1110,20 +1135,22 @@ async function duplicateWithTranslatedData({
     copy.author = user.name;
   }
 
-  // Handle destination: use provided or keep original location
+  // Handle destination: use provided or fall back to the original location.
+  // The source location was stripped above, so the fallback re-applies it.
   if (folderId) {
     // Validate access to destination folder
     await folderService.hasAccess(folderId, user);
     copy._parentFolder = folderId;
-    delete copy.workspace;
   } else if (workspaceId) {
     // Validate access to destination workspace
     const destWorkspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
-    copy.workspace = workspaceId;
-    delete copy._parentFolder;
+    copy._workspace = workspaceId;
+  } else if (mailing._parentFolder) {
+    copy._parentFolder = mailing._parentFolder;
+  } else if (mailing._workspace) {
+    copy._workspace = mailing._workspace;
   }
-  // else: keep original location (existing behavior)
 
   // Create the new mailing
   const copiedMailing = await Mailings.create(copy);
@@ -1133,7 +1160,6 @@ async function duplicateWithTranslatedData({
     mailing._id?.toString(),
     copiedMailing._id?.toString()
   );
-  await copiedMailing.save();
 
   // Duplicate gallery if exists
   try {
