@@ -780,6 +780,17 @@ export default {
     background: rgba(0, 0, 0, 0.02) !important; // --gray-50
     border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
     height: 40px !important;
+    /* Keep the sort arrow inline next to the label instead of wrapping below
+       it: Vuetify renders sortable headers as inline-flex, but the uppercase
+       label + letter-spacing can push the icon onto a second line. */
+    white-space: nowrap !important;
+  }
+
+  /* Sortable header content (label + sort icon) stays on one row. */
+  .v-data-table thead th.sortable {
+    .v-data-table-header__icon {
+      margin-left: 4px;
+    }
   }
 
   /* -------- Table rows (BsDataTable spec) -------------------------------- */

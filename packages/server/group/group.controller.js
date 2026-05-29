@@ -258,7 +258,12 @@ async function readProfiles(req, res) {
 
 async function readMailings(req, res) {
   const { groupId } = req.params;
-  const { page: pageParam = 1, limit: limitParam = 10 } = req.query;
+  const {
+    page: pageParam = 1,
+    limit: limitParam = 10,
+    sortBy: sortByParam,
+    sortDesc: sortDescParam,
+  } = req.query;
   const page = parseInt(pageParam);
   let limit = parseInt(limitParam);
 
@@ -272,10 +277,27 @@ async function readMailings(req, res) {
     throw new NotFound();
   }
 
+  // Build the sort from the table headers. `templateName`/`userName` are only
+  // exposed via projection aliases, so map them to the stored fields the same
+  // way mailing.schema.js findForApiWithPagination does. Default: most recently
+  // updated first.
+  const SORT_FIELD_MAP = {
+    templateName: 'wireframe',
+    userName: 'author',
+  };
+  let sort = { updatedAt: -1 };
+  if (sortByParam) {
+    const sortKey = SORT_FIELD_MAP[sortByParam] || sortByParam;
+    const direction =
+      sortDescParam === 'true' || sortDescParam === true ? -1 : 1;
+    sort = { [sortKey]: direction };
+  }
+
   // Retrieve mailings excluding the 'previewHtml' and 'data' fields and their total count
   const [mailings, totalItems] = await Promise.all([
     Mailings.find({ _company: groupId })
       .select('-previewHtml -data') // Exclude the 'previewHtml' and data field
+      .sort(sort)
       // in case limit = -1, we want to retrieve all mailings
       .skip(skip)
       .limit(limit),
