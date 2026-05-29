@@ -2,15 +2,15 @@
   <div class="bs-row-actions">
     <!-- Quick action icons (always visible).
          aria-label carries the meaning for screen readers and keyboard
-         users; we don't render a hover tooltip — the icons are standard
-         (Pencil/Trash2/Send/...) and the kebab menu already exposes
-         text labels for less-obvious actions. -->
+         users; the native `title` adds a hover tooltip so the icon meaning
+         is discoverable with the mouse too. -->
     <button
       v-for="action in quickActions"
       :key="action.key"
       class="qa-btn"
       :class="{ 'qa-btn--danger': action.variant === 'danger' }"
       :aria-label="$t(action.text)"
+      :title="$t(action.text)"
       @click.stop="action.onClick"
     >
       <span v-if="action.badge" class="qa-badge-wrap">
@@ -40,6 +40,7 @@
           class="am-trigger"
           :class="{ 'am-trigger--open': value }"
           :aria-label="$t('sidebar.aria.moreActions')"
+          :title="$t('sidebar.aria.moreActions')"
           :aria-expanded="value"
           v-bind="attrs"
           v-on="on"

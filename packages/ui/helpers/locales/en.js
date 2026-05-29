@@ -499,7 +499,7 @@ export default {
   },
   workspaces: {
     name: 'Name',
-    description: 'Descritpion',
+    description: 'Description',
     members: 'Users',
     membersDescription:
       'Select the users who will have access to this workspace.',
