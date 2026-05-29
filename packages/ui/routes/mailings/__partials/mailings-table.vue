@@ -632,7 +632,10 @@ export default {
         :headers="tablesHeaders"
         :items="mailings"
         :server-items-length="itemsLength"
-        :options.sync="tableOptions"
+        :page="currentPage"
+        :items-per-page="tableOptions.itemsPerPage"
+        :sort-by="tableOptions.sortBy"
+        :sort-desc="tableOptions.sortDesc"
         must-sort
         :show-select="hasAccess"
         :hide-default-footer="hideFooter"
