@@ -16,6 +16,7 @@ import {
 } from '~/store/folder';
 import { USER } from '~/store/user';
 import { canCreateFolder } from '~/utils/workspaces';
+import { findNodeById, findNodesByIds, findPathToNode } from '~/utils/tree';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import FolderMoveModal from '~/routes/mailings/__partials/folder-move-modal';
@@ -93,7 +94,7 @@ export default {
     },
   },
   watch: {
-    $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
+    $route: ['onRouteChange', 'checkIfNotData'],
     treeviewWorkspaces: {
       handler(newWorkspaces, oldWorkspaces) {
         const isInitialLoad =
@@ -109,44 +110,23 @@ export default {
     },
   },
   methods: {
-    findNodeById(id, items) {
-      if (!items || items.length === 0 || !id) {
-        return null;
-      }
+    // Merge the ancestor branch of the currently selected node into openNodes
+    // without dropping any already-open node. Keeps the active folder visible
+    // and persists the expansion so a later refresh keeps it open too.
+    // (findNodeById / findNodesByIds / findPathToNode live in ~/utils/tree.js)
+    ensureCurrentPathOpen() {
+      const currentId = this.currentLocation;
+      if (!currentId || !this.treeviewWorkspaces?.length) return;
 
-      for (const node of items) {
-        if (node.id === id) {
-          return node;
-        }
-        if (node.children && node.children.length > 0) {
-          const found = this.findNodeById(id, node.children);
-          if (found) {
-            return found;
-          }
-        }
-      }
+      const pathNodes = findPathToNode(currentId, this.treeviewWorkspaces);
+      if (!pathNodes || pathNodes.length === 0) return;
 
-      return null;
-    },
-    findNodesByIds(ids, items) {
-      const result = [];
-      if (!items || items.length === 0 || !ids || ids.length === 0) {
-        return result;
-      }
+      const openIds = new Set(this.openNodes.map((node) => node.id));
+      const missing = pathNodes.filter((node) => !openIds.has(node.id));
+      if (missing.length === 0) return;
 
-      const findInTree = (nodes) => {
-        nodes.forEach((node) => {
-          if (ids.includes(node.id)) {
-            result.push(node);
-          }
-          if (node.children && node.children.length > 0) {
-            findInTree(node.children);
-          }
-        });
-      };
-
-      findInTree(items);
-      return result;
+      this.openNodes = [...this.openNodes, ...missing];
+      this.saveTreeState(this.openNodes.map((node) => node.id));
     },
     async initializeTreeState() {
       // Guard against concurrent initialization (race condition fix)
@@ -167,10 +147,7 @@ export default {
 
             if (saved) {
               const savedIds = JSON.parse(saved);
-              nodesToOpen = this.findNodesByIds(
-                savedIds,
-                this.treeviewWorkspaces
-              );
+              nodesToOpen = findNodesByIds(savedIds, this.treeviewWorkspaces);
             } else {
               nodesToOpen = [];
               this.saveTreeState([]);
@@ -191,6 +168,10 @@ export default {
         this.$nextTick(() => {
           this.openNodes = nodesToOpen;
           this.restoreSelectedNode();
+          // Always reveal the branch of the active folder, even if it wasn't
+          // part of the saved expansion state (fixes: tree collapsing on
+          // refresh / not revealing the folder when returning from a mail).
+          this.ensureCurrentPathOpen();
 
           // Wait one more tick so the v-treeview has finished applying
           // openNodes + activeNode reactively before we drop the
@@ -238,7 +219,7 @@ export default {
         }
 
         const { nodeId, nodeType } = parsedSavedCollection;
-        const node = this.findNodeById(nodeId, this.treeviewWorkspaces);
+        const node = findNodeById(nodeId, this.treeviewWorkspaces);
 
         if (node) {
           const currentQuery = this.$route.query;
@@ -358,6 +339,14 @@ export default {
           page: 1,
         }),
       ]);
+    },
+    // On every route change (navigation, refresh, return from the editor via
+    // ?fid=/?wid=), load the active location then reveal its branch so the
+    // selected folder is always visible without collapsing the rest of the tree.
+    async onRouteChange() {
+      await this.getFolderAndWorkspaceData();
+      if (this.isInitializing) return;
+      this.ensureCurrentPathOpen();
     },
     async fetchWorkspacesData() {
       await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
