@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
+const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -179,6 +180,10 @@ OUTPUT (valid JSON only):`;
     const startTime = Date.now();
 
     try {
+      // SSRF guard at call time (TOCTOU): re-validate the host right before the
+      // outbound request, in case DNS changed since the integration was saved.
+      await assertOutboundHostAllowed(this.baseUrl);
+
       const requestBody = {
         model,
         messages,

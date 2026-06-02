@@ -17,6 +17,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
+const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 
 module.exports = {
   createIntegration,
@@ -49,15 +50,15 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
- * Validate that a URL uses http or https scheme
+ * Validate that a URL uses an allowed scheme AND does not resolve to an
+ * internal/private address (SSRF guard). `apiHost` becomes the target of
+ * server-side requests carrying the integration's secret, so a bare scheme
+ * check is not enough — see utils/outbound-host.js.
  */
-function validateApiHost(apiHost) {
+async function validateApiHost(apiHost) {
   if (!apiHost) return;
   try {
-    const parsed = new URL(apiHost);
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      throw new Error('Invalid protocol');
-    }
+    await assertOutboundHostAllowed(apiHost);
   } catch {
     throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
   }
@@ -76,7 +77,7 @@ async function createIntegration({
   config,
   _company,
 }) {
-  validateApiHost(apiHost);
+  await validateApiHost(apiHost);
 
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
@@ -127,7 +128,7 @@ async function updateIntegration({
     }
   }
 
-  validateApiHost(apiHost);
+  await validateApiHost(apiHost);
 
   // Apply only fields explicitly provided in the request
   if (name !== undefined) integration.name = name;

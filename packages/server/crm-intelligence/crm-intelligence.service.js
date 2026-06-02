@@ -8,6 +8,7 @@ const DashboardService = require('../dashboard/dashboard.service');
 const { Integrations, Dashboards } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes');
 const IntegrationTypes = require('../constant/integration-type');
+const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 
 // Embed tokens are short-lived because they leak via URL bars / referer / logs.
 // 60s is enough for the iframe to fetch the dashboard; refresh-on-render covers
@@ -17,17 +18,18 @@ const JWT_EXPIRATION_SECONDS = 60;
 // Industry minimum for HS256 secret entropy. Anything shorter is brute-forceable.
 const MIN_API_KEY_LENGTH = 32;
 
-// TODO(security): replace this HTTPS-only check with a stricter host allowlist
-// (env var METABASE_ALLOWED_HOSTS or per-tenant config), tracked in a follow-up
-// infra PR. The current check still lets a compromised admin point apiHost at
-// any HTTPS host they control; the iframe sandbox now mitigates the worst
-// impact (no allow-same-origin → cannot reach window.parent in LePatron's
-// origin), but blocking host exfiltration entirely needs an allowlist.
-function isAllowedApiHost(apiHost) {
+// HTTPS-only AND not pointing at a private/internal address (SSRF guard).
+// The embedUrl built from apiHost carries a signed JWT, so a malicious apiHost
+// would both exfiltrate the token and let an admin probe internal services.
+// TODO(security): layer a stricter host allowlist (env var METABASE_ALLOWED_HOSTS
+// or per-tenant config) on top, tracked in a follow-up infra PR. Even with the
+// SSRF guard, a public HTTPS host the admin controls is still reachable; the
+// iframe sandbox (no allow-same-origin) mitigates the worst impact.
+async function isAllowedApiHost(apiHost) {
   if (typeof apiHost !== 'string') return false;
   try {
-    const parsed = new URL(apiHost);
-    return parsed.protocol === 'https:';
+    await assertOutboundHostAllowed(apiHost, { httpsOnly: true });
+    return true;
   } catch (_) {
     return false;
   }
@@ -129,7 +131,7 @@ async function getEmbedUrl(groupId, dashboardId, group, user) {
 
   // HTTPS-only: prevent a misconfigured/malicious integration from pointing at
   // an http:// host. See TODO in isAllowedApiHost for the planned allowlist.
-  if (!isAllowedApiHost(integration.apiHost)) {
+  if (!(await isAllowedApiHost(integration.apiHost))) {
     throw createError(500, ERROR_CODES.CRM_INTELLIGENCE_NOT_CONFIGURED);
   }
 

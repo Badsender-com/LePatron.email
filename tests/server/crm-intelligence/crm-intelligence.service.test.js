@@ -15,6 +15,19 @@ jest.mock('../../../packages/server/common/models.common', () => ({
 jest.mock('../../../packages/server/dashboard/dashboard.service', () => ({
   listDashboards: jest.fn(),
 }));
+// The SSRF guard does real DNS resolution, which we don't want in a unit test.
+// Mock it to enforce only the synchronous rules the CRM service relies on
+// (https-only + parseable URL), matching the real guard's behaviour for the
+// hosts used here without touching the network.
+jest.mock('../../../packages/server/utils/outbound-host.js', () => ({
+  assertOutboundHostAllowed: jest.fn(async (apiHost, options = {}) => {
+    const parsed = new URL(apiHost);
+    const allowed = options.httpsOnly ? ['https:'] : ['http:', 'https:'];
+    if (!allowed.includes(parsed.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+  }),
+}));
 
 const crmIntelligenceService = require('../../../packages/server/crm-intelligence/crm-intelligence.service');
 const DashboardService = require('../../../packages/server/dashboard/dashboard.service');
