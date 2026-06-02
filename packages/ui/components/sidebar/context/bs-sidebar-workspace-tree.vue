@@ -63,6 +63,10 @@ export default {
     conflictError: false,
     openNodes: [],
     isInitializing: false,
+    // Set briefly while a node is being SELECTED (label click) so we can ignore
+    // the spurious `update:open` that v-treeview may emit as a side effect —
+    // selecting a parent must not collapse its already-open children.
+    isSelecting: false,
     treeKey: 0,
   }),
   async fetch() {
@@ -282,6 +286,22 @@ export default {
         return;
       }
 
+      // A label-click selection can make v-treeview re-emit `update:open` with
+      // a shrunk list (dropping already-open children of the selected parent).
+      // Ignore those: only genuine chevron toggles should change expansion.
+      if (this.isSelecting) {
+        const currentIds = new Set(this.openNodes.map((node) => node.id));
+        const next = openNodes.filter((node) => currentIds.has(node.id));
+        const droppedSome = next.length < this.openNodes.length;
+        if (droppedSome) {
+          // Re-assert our state on next tick so v-treeview keeps the branch open.
+          this.$nextTick(() => {
+            this.openNodes = [...this.openNodes];
+          });
+          return;
+        }
+      }
+
       this.openNodes = openNodes;
       const openIds = openNodes.map((node) => node.id);
       this.saveTreeState(openIds);
@@ -361,6 +381,16 @@ export default {
       if (this.isInitializing) {
         return;
       }
+
+      // Guard the expansion state against the spurious update:open that may
+      // follow this selection (see handleTreeUpdate). Released after two ticks,
+      // by which point v-treeview has emitted any side-effect open event.
+      this.isSelecting = true;
+      this.$nextTick(() => {
+        this.$nextTick(() => {
+          this.isSelecting = false;
+        });
+      });
 
       const node = selectedItems[0] || null;
 
