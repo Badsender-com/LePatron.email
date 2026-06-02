@@ -54,6 +54,7 @@ module.exports = {
   findMailings,
   findTags,
   findOne,
+  findOneForUser,
   renameMailing,
   deleteMailing,
   deleteOne,
@@ -211,6 +212,25 @@ async function findTags(query) {
 async function findOne(mailingId) {
   await validateMailExist(mailingId);
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
+}
+
+// Group-scoped variant of `findOne`. `findOne` resolves a mailing by id with no
+// tenant boundary, so callers that act on behalf of a user (duplicate, copy,
+// duplicate-translate) MUST use this instead to avoid cross-tenant reads:
+// a group admin of group A could otherwise load a mailing of group B by id.
+// Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
+async function findOneForUser(mailingId, user) {
+  if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: mongoose.Types.ObjectId(mailingId),
+  });
+  const mailing = await Mailings.findOne(query);
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  return mailing;
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
@@ -988,7 +1008,9 @@ async function copyMailing(mailingId, destination, user) {
 
   checkEitherWorkspaceOrFolderDefined(workspaceId, folderId);
 
-  const mailing = await findOne(mailingId);
+  // Group-scoped load: prevent a group admin from copying a mailing of another
+  // group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
 
   if (mailing?._parentFolder) {
     await folderService.hasAccess(mailing._parentFolder, user);
@@ -1083,9 +1105,11 @@ async function duplicateWithTranslatedData({
   workspaceId,
   folderId,
 }) {
-  const mailing = await findOne(mailingId);
+  // Group-scoped load: prevent a group admin from duplicating+translating a
+  // mailing of another group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
 
-  // Check access to original mailing
+  // Check access to original mailing's folder (now throws on denial)
   if (mailing?._parentFolder) {
     await folderService.hasAccess(mailing._parentFolder, user);
   }

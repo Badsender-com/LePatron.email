@@ -20,6 +20,39 @@ const CREATE_FIELDS = [
 ];
 const UPDATE_FIELDS = [...CREATE_FIELDS, 'isActive'];
 
+// Explicit response whitelist. The integration document holds a decrypted
+// `apiKey` in memory (the encryption plugin decrypts it in a post-find hook),
+// and `mongoose-hidden` only strips it from `toJSON()` — NOT from `toObject()`
+// or a raw spread. Serializing the document directly is therefore one mistake
+// away from leaking the key. Build the client payload from this whitelist
+// instead of passing the Mongoose document to `res.json`.
+const RESPONSE_FIELDS = [
+  '_id',
+  'name',
+  'type',
+  'provider',
+  'apiHost',
+  'productId',
+  'config',
+  'isActive',
+  'validationStatus',
+  'lastValidatedAt',
+  'createdAt',
+  'updatedAt',
+];
+
+function toIntegrationDto(integration) {
+  if (!integration) return integration;
+  // Pick from a plain object so all whitelisted fields are present regardless
+  // of Mongoose getters/aliases. apiKey is never in RESPONSE_FIELDS, so even
+  // though toObject() exposes the decrypted key, it cannot reach the response.
+  const plain =
+    typeof integration.toObject === 'function'
+      ? integration.toObject()
+      : integration;
+  return pick(plain, RESPONSE_FIELDS);
+}
+
 module.exports = {
   createIntegration: asyncHandler(createIntegration),
   updateIntegration: asyncHandler(updateIntegration),
@@ -30,6 +63,8 @@ module.exports = {
   listProviders: asyncHandler(listProviders),
   getModels: asyncHandler(getModels),
   getDashboardCount: asyncHandler(getDashboardCount),
+  // exported for testing
+  toIntegrationDto,
 };
 
 /**
@@ -71,7 +106,7 @@ async function listIntegrations(req, res) {
     integrations = await integrationService.findAllByGroup({ groupId });
   }
 
-  res.json({ items: integrations });
+  res.json({ items: integrations.map(toIntegrationDto) });
 }
 
 /**
@@ -100,7 +135,7 @@ async function createIntegration(req, res) {
     _company: groupId,
   });
 
-  res.status(201).json(integration);
+  res.status(201).json(toIntegrationDto(integration));
 }
 
 /**
@@ -122,7 +157,7 @@ async function getIntegration(req, res) {
     }
   );
 
-  res.json(integration);
+  res.json(toIntegrationDto(integration));
 }
 
 /**
@@ -153,7 +188,7 @@ async function updateIntegration(req, res) {
     integrationId,
   });
 
-  res.json(integration);
+  res.json(toIntegrationDto(integration));
 }
 
 /**
