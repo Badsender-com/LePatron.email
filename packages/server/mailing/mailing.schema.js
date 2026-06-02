@@ -458,9 +458,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   if (user?.isAdmin) {
     redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
   } else {
+    // Target the Email Builder route directly (`/mailings`), not the app root
+    // (`/`). The root only redirects to the first enabled module and was
+    // dropping the query string, landing the user on an empty page with no
+    // sidebar. `/mailings?fid=/wid=` mounts the workspace tree on the right
+    // folder/workspace.
     redirectUrl = mailing?._parentFolder
-      ? `/?fid=${mailing._parentFolder}`
-      : `/?wid=${mailing._workspace}`;
+      ? `/mailings?fid=${mailing._parentFolder}`
+      : `/mailings?wid=${mailing._workspace}`;
   }
 
   return {
