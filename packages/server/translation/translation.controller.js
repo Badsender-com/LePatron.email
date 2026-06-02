@@ -5,6 +5,7 @@ const createError = require('http-errors');
 const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
 const { updatePreviewWithTranslations } = require('./preview-html-updater');
+const { sanitizePreviewHtml } = require('./preview-html-sanitizer');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
 const { Templates } = require('../common/models.common');
@@ -121,7 +122,13 @@ async function processTranslationAsync({
     // Heavy work that used to run synchronously inside the HTTP handler is
     // now done here so the 202 response can be sent without blocking the
     // event loop.
-    const originalMailing = await mailingService.findOne(mailingId);
+    // Group-scoped load: the source mailing must belong to the caller's group
+    // (or caller is super admin). Without this filter a group admin could
+    // translate+duplicate a mailing of another group by id (cross-tenant IDOR).
+    const originalMailing = await mailingService.findOneForUser(
+      mailingId,
+      user
+    );
 
     const groupId =
       (user.group && user.group.id) ||
@@ -186,9 +193,13 @@ async function processTranslationAsync({
           originalTexts,
           translations
         );
+        // Provider output was injected into previewHtml above; sanitize the
+        // final document before persisting it (stored-XSS protection — the
+        // preview is later served as text/html).
+        const safePreviewHtml = sanitizePreviewHtml(previewHtml);
         await mailingService.updatePreviewHtml(
           duplicatedMailing._id,
-          previewHtml
+          safePreviewHtml
         );
         previewGenerated = true;
         logger.log('[Translation] Preview HTML updated successfully');
