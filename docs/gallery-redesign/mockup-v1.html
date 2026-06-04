@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LePatron — Galerie refondue (maquette)</title>
+<style>
+  /* =========================================================
+     DESIGN TOKENS — alignés sur le design system LePatron
+     ========================================================= */
+  :root {
+    /* Palette — inspirée des captures fournies */
+    --lp-navy: #0d3b4f;         /* header sombre */
+    --lp-navy-hover: #0a2d3d;
+    --lp-cyan: #1bb5d6;         /* accent principal */
+    --lp-cyan-dark: #0f94b0;
+    --lp-cyan-soft: #e6f7fb;
+    --lp-bg: #f5f3ef;           /* fond général */
+    --lp-panel: #ffffff;
+    --lp-panel-alt: #faf9f6;
+    --lp-border: #e2e1dd;
+    --lp-border-strong: #c9c7c1;
+    --lp-text: #1e2a2f;
+    --lp-text-muted: #6b7478;
+    --lp-text-faint: #9aa1a4;
+    --lp-danger: #d84a3a;
+    --lp-danger-soft: #fdeceb;
+    --lp-success: #3a9b6b;
+    --lp-warning: #e8a93a;
+
+    /* Géométrie */
+    --lp-radius-sm: 4px;
+    --lp-radius: 6px;
+    --lp-radius-lg: 10px;
+
+    /* Ombres */
+    --lp-shadow-sm: 0 1px 2px rgba(13, 59, 79, 0.06);
+    --lp-shadow: 0 2px 8px rgba(13, 59, 79, 0.08);
+    --lp-shadow-lg: 0 8px 24px rgba(13, 59, 79, 0.12);
+
+    /* Panneau galerie — 364px utile */
+    --panel-width: 400px;
+    --panel-padding: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--lp-text);
+    background: var(--lp-bg);
+    height: 100vh;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* =========================================================
+     LAYOUT GLOBAL — reproduit l'environnement LePatron
+     ========================================================= */
+  .app {
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    height: 100vh;
+  }
+
+  /* Header du haut */
+  .header {
+    background: var(--lp-navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+  .header-right { display: flex; align-items: center; gap: 4px; }
+  .header-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #fff;
+    opacity: 0.75;
+    cursor: pointer;
+    border-radius: var(--lp-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .header-btn:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+  .header-btn.active {
+    background: var(--lp-cyan);
+    opacity: 1;
+  }
+  .header-btn svg { width: 18px; height: 18px; }
+  .header-save {
+    background: transparent;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .header-save:hover { opacity: 1; }
+
+  .main {
+    display: grid;
+    grid-template-columns: var(--panel-width) 1fr;
+    overflow: hidden;
+  }
+
+  /* =========================================================
+     PANNEAU GALERIE — le cœur de la refonte
+     ========================================================= */
+  .gallery {
+    background: var(--lp-panel);
+    border-right: 1px solid var(--lp-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Barre de titre du panneau */
+  .gallery-header {
+    padding: 14px var(--panel-padding) 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .gallery-title {
+    color: var(--lp-cyan);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .gallery-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--lp-cyan);
+    cursor: pointer;
+    border-radius: var(--lp-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .gallery-close:hover { background: var(--lp-cyan-soft); }
+  .gallery-close svg { width: 16px; height: 16px; }
+
+  /* Onglets */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--lp-border);
+    margin-top: 12px;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--lp-text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--lp-text); }
+  .tab.active {
+    color: var(--lp-navy);
+    border-bottom-color: var(--lp-cyan);
+  }
+
+  /* Toolbar recherche + filtres */
+  .toolbar {
+    padding: 12px var(--panel-padding) 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--lp-border);
+  }
+
+  .search {
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1px solid var(--lp-border-strong);
+    border-radius: var(--lp-radius);
+    font-size: 13px;
+    background: var(--lp-panel-alt);
+    font-family: inherit;
+    color: var(--lp-text);
+    transition: all 0.15s;
+  }
+  .search input:focus {
+    outline: none;
+    border-color: var(--lp-cyan);
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--lp-cyan-soft);
+  }
+  .search svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--lp-text-faint);
+    pointer-events: none;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .filter-chip {
+    padding: 4px 10px;
+    border: 1px solid var(--lp-border-strong);
+    border-radius: 14px;
+    background: var(--lp-panel);
+    color: var(--lp-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .filter-chip:hover {
+    border-color: var(--lp-cyan);
+    color: var(--lp-text);
+  }
+  .filter-chip.active {
+    background: var(--lp-cyan);
+    border-color: var(--lp-cyan);
+    color: #fff;
+  }
+
+  /* Barre collections (uniquement dans commun-template) */
+  .collections-bar {
+    padding: 10px var(--panel-padding);
+    border-bottom: 1px solid var(--lp-border);
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--lp-panel-alt);
+  }
+  .collections-bar.visible { display: flex; }
+
+  .collections-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .collections-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--lp-text-muted);
+  }
+  .collection-new {
+    background: transparent;
+    border: none;
+    color: var(--lp-cyan-dark);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 2px 6px;
+    border-radius: var(--lp-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .collection-new:hover { background: var(--lp-cyan-soft); }
+
+  .collection-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .collection-pill {
+    padding: 5px 11px;
+    border-radius: 14px;
+    border: 1px solid var(--lp-border-strong);
+    background: var(--lp-panel);
+    color: var(--lp-text);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .collection-pill:hover {
+    border-color: var(--lp-cyan);
+  }
+  .collection-pill.active {
+    background: var(--lp-navy);
+    border-color: var(--lp-navy);
+    color: #fff;
+  }
+  .collection-pill .count {
+    font-size: 10px;
+    opacity: 0.7;
+    font-weight: 500;
+  }
+  .collection-pill.special {
+    font-style: italic;
+    color: var(--lp-text-muted);
+  }
+  .collection-pill.special.active {
+    color: #fff;
+    font-style: italic;
+  }
+
+  /* Zone d'upload compacte */
+  .upload-zone {
+    margin: 10px var(--panel-padding);
+    padding: 8px 12px;
+    border: 1.5px dashed var(--lp-border-strong);
+    border-radius: var(--lp-radius);
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--lp-text-muted);
+    background: var(--lp-panel-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .upload-zone:hover {
+    border-color: var(--lp-cyan);
+    color: var(--lp-cyan-dark);
+    background: var(--lp-cyan-soft);
+  }
+  .upload-zone svg { width: 14px; height: 14px; }
+
+  /* Compteur + sélection mode */
+  .gallery-meta {
+    padding: 0 var(--panel-padding) 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--lp-text-muted);
+  }
+  .meta-count { font-weight: 500; }
+  .meta-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .meta-link {
+    background: none;
+    border: none;
+    color: var(--lp-cyan-dark);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 0;
+  }
+  .meta-link:hover { text-decoration: underline; }
+
+  /* Bulk actions bar (quand sélection active) */
+  .bulk-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px var(--panel-padding);
+    background: var(--lp-navy);
+    color: #fff;
+    font-size: 12px;
+  }
+  .bulk-bar.visible { display: flex; }
+  .bulk-count { font-weight: 500; }
+  .bulk-actions { display: flex; gap: 4px; }
+  .bulk-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: var(--lp-radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+  }
+  .bulk-btn:hover { background: rgba(255,255,255,0.2); }
+  .bulk-btn.danger:hover { background: var(--lp-danger); }
+  .bulk-btn svg { width: 13px; height: 13px; }
+
+  /* Grille d'images */
+  .grid-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px var(--panel-padding) 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .thumb {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--lp-panel-alt);
+    transition: all 0.15s;
+  }
+  .thumb:hover {
+    border-color: var(--lp-cyan);
+    box-shadow: var(--lp-shadow);
+    transform: translateY(-1px);
+  }
+  .thumb.selected {
+    border-color: var(--lp-cyan);
+    border-width: 2px;
+    box-shadow: 0 0 0 2px var(--lp-cyan-soft);
+  }
+  .thumb-img {
+    width: 100%;
+    height: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #f8f7f3;
+  }
+  .thumb-label {
+    height: 30%;
+    padding: 4px 6px;
+    font-size: 10.5px;
+    color: var(--lp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-top: 1px solid var(--lp-border);
+  }
+
+  /* Badge type/GIF */
+  .thumb-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(13, 59, 79, 0.85);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+  }
+  .thumb-badge.gif { background: var(--lp-warning); color: var(--lp-navy); }
+
+  /* Checkbox de sélection */
+  .thumb-check {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--lp-border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+    cursor: pointer;
+    z-index: 3;
+  }
+  .thumb:hover .thumb-check,
+  .thumb.selected .thumb-check,
+  .selection-mode .thumb-check {
+    opacity: 1;
+  }
+  .thumb-check.checked {
+    background: var(--lp-cyan);
+    border-color: var(--lp-cyan);
+  }
+  .thumb-check svg {
+    width: 12px;
+    height: 12px;
+    color: #fff;
+    display: none;
+  }
+  .thumb-check.checked svg { display: block; }
+
+  /* Overlay d'actions au survol */
+  .thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, transparent 40%, rgba(13,59,79,0.75) 100%);
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 6px;
+    z-index: 2;
+  }
+  .thumb:hover .thumb-overlay { opacity: 1; pointer-events: auto; }
+
+  .thumb-actions {
+    display: flex;
+    gap: 3px;
+    background: rgba(255,255,255,0.95);
+    border-radius: var(--lp-radius-sm);
+    padding: 3px;
+    box-shadow: var(--lp-shadow);
+  }
+  .thumb-action {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lp-text);
+    transition: all 0.15s;
+  }
+  .thumb-action:hover {
+    background: var(--lp-cyan-soft);
+    color: var(--lp-cyan-dark);
+  }
+  .thumb-action.danger:hover {
+    background: var(--lp-danger-soft);
+    color: var(--lp-danger);
+  }
+  .thumb-action svg { width: 14px; height: 14px; }
+
+  /* État vide */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--lp-text-muted);
+  }
+  .empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: var(--lp-text-faint);
+    margin-bottom: 12px;
+  }
+  .empty-state-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--lp-text);
+    margin-bottom: 4px;
+  }
+  .empty-state-msg {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* =========================================================
+     ZONE EMAIL À DROITE — reproduction fidèle du contexte
+     ========================================================= */
+  .email-canvas {
+    background: var(--lp-bg);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .email-preview {
+    width: 100%;
+    max-width: 600px;
+    background: #fff;
+    border: 2px solid var(--lp-cyan);
+    border-radius: 4px;
+  }
+  .email-preheader {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--lp-text-muted);
+  }
+  .email-preheader a { color: var(--lp-text-muted); }
+  .email-header-brand {
+    background: #ffd200;
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .email-body {
+    padding: 24px;
+    border: 2px solid #ffd200;
+    margin: 10px;
+    border-radius: 4px;
+  }
+  .email-title {
+    text-align: center;
+    color: #1a3a7a;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 10px 0 20px;
+  }
+  .email-image-slot {
+    background: repeating-linear-gradient(-45deg, #a8a8a8, #a8a8a8 10px, #9c9c9c 10px, #9c9c9c 20px);
+    height: 260px;
+    position: relative;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .email-image-slot::before {
+    content: "Déposer une image ici";
+    position: absolute;
+    top: 10px;
+    color: #000;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .email-image-slot span {
+    color: #e0e0e0;
+    font-size: 20px;
+  }
+  .email-text {
+    padding: 18px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+  }
+  .email-button {
+    display: block;
+    width: fit-content;
+    margin: 10px auto;
+    background: #ffd200;
+    color: #1a3a7a;
+    padding: 14px 30px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 3px;
+  }
+  .block-toolbar {
+    background: #fff;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    box-shadow: var(--lp-shadow);
+    margin: 8px;
+    position: absolute;
+  }
+  .block-toolbar button {
+    width: 28px; height: 28px;
+    border: none; background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lp-text-muted);
+    border-radius: 3px;
+  }
+  .block-toolbar button:hover { background: var(--lp-cyan-soft); color: var(--lp-cyan-dark); }
+  .block-toolbar button svg { width: 14px; height: 14px; }
+
+  /* =========================================================
+     PANNEAU DE DÉTAIL (modale latérale)
+     ========================================================= */
+  .detail-panel {
+    position: fixed;
+    top: 52px;
+    right: -400px;
+    bottom: 0;
+    width: 360px;
+    background: #fff;
+    border-left: 1px solid var(--lp-border);
+    box-shadow: var(--lp-shadow-lg);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+  }
+  .detail-panel.visible { right: 0; }
+  .detail-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--lp-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .detail-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--lp-navy);
+  }
+  .detail-close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--lp-text-muted);
+    width: 28px; height: 28px;
+    border-radius: var(--lp-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .detail-close:hover { background: var(--lp-bg); }
+  .detail-body { padding: 20px; overflow-y: auto; flex: 1; }
+  .detail-preview {
+    aspect-ratio: 1;
+    background: var(--lp-panel-alt);
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .detail-preview img { max-width: 100%; max-height: 100%; }
+  .detail-field {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--lp-border);
+    font-size: 12px;
+  }
+  .detail-field:last-child { border-bottom: none; }
+  .detail-label { color: var(--lp-text-muted); }
+  .detail-value { color: var(--lp-text); font-weight: 500; text-align: right; }
+  .detail-value.usage { color: var(--lp-success); }
+  .detail-value.unused { color: var(--lp-text-faint); font-style: italic; }
+  .detail-collections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .detail-coll {
+    background: var(--lp-cyan-soft);
+    color: var(--lp-cyan-dark);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .detail-actions {
+    padding: 16px 20px;
+    border-top: 1px solid var(--lp-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .detail-btn {
+    padding: 9px 14px;
+    border: 1px solid var(--lp-border-strong);
+    background: #fff;
+    border-radius: var(--lp-radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--lp-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .detail-btn:hover {
+    border-color: var(--lp-cyan);
+    color: var(--lp-cyan-dark);
+    background: var(--lp-cyan-soft);
+  }
+  .detail-btn.primary {
+    background: var(--lp-cyan);
+    color: #fff;
+    border-color: var(--lp-cyan);
+  }
+  .detail-btn.primary:hover {
+    background: var(--lp-cyan-dark);
+    color: #fff;
+  }
+  .detail-btn.danger {
+    color: var(--lp-danger);
+    border-color: var(--lp-border-strong);
+  }
+  .detail-btn.danger:hover {
+    background: var(--lp-danger-soft);
+    border-color: var(--lp-danger);
+  }
+  .detail-btn svg { width: 14px; height: 14px; }
+
+  /* =========================================================
+     MODALE gestion collections / confirm suppression
+     ========================================================= */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 59, 79, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .modal-backdrop.visible { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: var(--lp-radius-lg);
+    box-shadow: var(--lp-shadow-lg);
+    width: 420px;
+    max-width: 90vw;
+    overflow: hidden;
+  }
+  .modal-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--lp-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; color: var(--lp-navy); }
+  .modal-body { padding: 18px 20px; font-size: 13px; color: var(--lp-text); }
+  .modal-body p { margin: 0 0 10px; }
+  .modal-footer {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid var(--lp-border);
+    background: var(--lp-panel-alt);
+  }
+  .modal-btn {
+    padding: 8px 14px;
+    border-radius: var(--lp-radius);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--lp-border-strong);
+    background: #fff;
+    color: var(--lp-text);
+  }
+  .modal-btn:hover { background: var(--lp-panel-alt); }
+  .modal-btn.primary {
+    background: var(--lp-cyan);
+    border-color: var(--lp-cyan);
+    color: #fff;
+  }
+  .modal-btn.primary:hover { background: var(--lp-cyan-dark); }
+  .modal-btn.danger {
+    background: var(--lp-danger);
+    border-color: var(--lp-danger);
+    color: #fff;
+  }
+  .modal-btn.danger:hover { background: #b83a2d; }
+
+  .collection-checklist { list-style: none; padding: 0; margin: 0; }
+  .collection-checklist li {
+    padding: 8px 12px;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .collection-checklist li:hover { background: var(--lp-panel-alt); }
+  .collection-checklist input[type="checkbox"] { accent-color: var(--lp-cyan); }
+  .collection-new-inline {
+    margin-top: 12px;
+    display: flex;
+    gap: 6px;
+  }
+  .collection-new-inline input {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--lp-border-strong);
+    border-radius: var(--lp-radius);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .collection-new-inline input:focus { outline: none; border-color: var(--lp-cyan); }
+
+  /* Scrollbar discrète */
+  .grid-wrap::-webkit-scrollbar,
+  .detail-body::-webkit-scrollbar,
+  .email-canvas::-webkit-scrollbar { width: 8px; }
+  .grid-wrap::-webkit-scrollbar-thumb,
+  .detail-body::-webkit-scrollbar-thumb,
+  .email-canvas::-webkit-scrollbar-thumb { background: var(--lp-border-strong); border-radius: 4px; }
+
+  /* Tooltip d'info pour la démo */
+  .demo-tip {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    background: var(--lp-navy);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: var(--lp-radius);
+    font-size: 12px;
+    box-shadow: var(--lp-shadow-lg);
+    z-index: 50;
+    max-width: 340px;
+    line-height: 1.5;
+  }
+  .demo-tip strong { color: var(--lp-cyan); }
+  .demo-tip button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-top: 6px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .demo-tip button:hover { background: rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============= HEADER (fidèle à l'existant) ============= -->
+  <header class="header">
+    <div class="header-left">
+      <button class="header-btn" title="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <button class="header-btn" title="Blocs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </button>
+    </div>
+    <div class="header-title">test</div>
+    <div class="header-right">
+      <button class="header-btn" title="Vue desktop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </button>
+      <button class="header-btn" title="Vue mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+      </button>
+      <button class="header-btn active" title="Galerie d'images">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+      </button>
+      <button class="header-btn" title="Commentaires">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      </button>
+      <button class="header-btn" title="Annuler">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <span style="color: #fff; opacity: 0.6; font-size: 12px;">(19)</span>
+      <button class="header-btn" title="Rétablir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <button class="header-save">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Sauvegarder
+      </button>
+      <button class="header-btn" title="Envoyer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- ============= PANNEAU GALERIE (la refonte) ============= -->
+    <aside class="gallery">
+      <div class="gallery-header">
+        <div class="gallery-title">Galeries</div>
+        <button class="gallery-close" title="Fermer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <nav class="tabs">
+        <button class="tab" data-tab="email">Spécifique à l'email</button>
+        <button class="tab active" data-tab="template">Commun au template</button>
+      </nav>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Rechercher une image..." id="searchInput">
+        </div>
+        <div class="filters">
+          <button class="filter-chip active" data-filter="all">Tous</button>
+          <button class="filter-chip" data-filter="jpg">JPG</button>
+          <button class="filter-chip" data-filter="png">PNG</button>
+          <button class="filter-chip" data-filter="gif">GIF</button>
+          <button class="filter-chip" data-filter="recent" style="margin-left: auto;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Récent
+          </button>
+        </div>
+      </div>
+
+      <!-- Collections (visible uniquement en commun au template) -->
+      <div class="collections-bar visible" id="collectionsBar">
+        <div class="collections-head">
+          <span class="collections-label">Collections</span>
+          <button class="collection-new" onclick="showNewCollectionModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Nouvelle
+          </button>
+        </div>
+        <div class="collection-list" id="collectionList">
+          <button class="collection-pill active" data-collection="all">Toutes <span class="count">42</span></button>
+          <button class="collection-pill special" data-collection="unclassified">Non classées <span class="count">6</span></button>
+          <button class="collection-pill" data-collection="pictos">Pictos marque <span class="count">12</span></button>
+          <button class="collection-pill" data-collection="soldes">Soldes Printemps 26 <span class="count">8</span></button>
+          <button class="collection-pill" data-collection="hero">Bannières hero <span class="count">5</span></button>
+        </div>
+      </div>
+
+      <div class="upload-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Glisser-déposer ou cliquer pour uploader
+      </div>
+
+      <div class="gallery-meta">
+        <span class="meta-count" id="metaCount">42 images</span>
+        <div class="meta-actions">
+          <button class="meta-link" id="selectAllBtn">Tout sélectionner</button>
+        </div>
+      </div>
+
+      <!-- Barre de bulk actions (apparaît en mode sélection) -->
+      <div class="bulk-bar" id="bulkBar">
+        <span class="bulk-count"><span id="bulkCount">3</span> sélectionnée(s)</span>
+        <div class="bulk-actions">
+          <button class="bulk-btn" onclick="showCollectionModal(true)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Collections
+          </button>
+          <button class="bulk-btn danger" onclick="showDeleteModal(true)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Supprimer
+          </button>
+          <button class="bulk-btn" onclick="clearSelection()">Annuler</button>
+        </div>
+      </div>
+
+      <!-- Grille d'images -->
+      <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+      </div>
+    </aside>
+
+    <!-- ============= ZONE EMAIL (reproduction du contexte) ============= -->
+    <section class="email-canvas">
+      <div class="email-preview">
+        <div class="email-preheader">Preheader<br><a href="#">Voir la version en ligne</a></div>
+        <div class="email-header-brand">
+          <div style="background: #1a3a7a; color: #fff; padding: 8px 16px; font-weight: 700; letter-spacing: 1px; font-size: 13px;">LA POSTE</div>
+        </div>
+        <div class="email-body" style="position: relative;">
+          <div class="block-toolbar">
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></button>
+            <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+          </div>
+          <h1 class="email-title">Lorem Ipsum</h1>
+          <div class="email-image-slot">
+            <span>492 x 280</span>
+          </div>
+          <div class="email-text">
+            Omnimod quis quam, vendandi cor repudita ipsunt proratur sequid untium assitae velestio is est, corepudita quam vent laborei ciamust, quati aborio.
+          </div>
+          <a href="#" class="email-button">Cliquez-ici</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============= PANNEAU DE DÉTAIL ============= -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-head">
+    <div class="detail-title" id="detailTitle">Détails de l'image</div>
+    <button class="detail-close" onclick="closeDetail()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="detail-body">
+    <div class="detail-preview" id="detailPreview"></div>
+    <div class="detail-field">
+      <span class="detail-label">Libellé</span>
+      <span class="detail-value" id="detailLabel">—</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Dimensions</span>
+      <span class="detail-value" id="detailDims">—</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Format</span>
+      <span class="detail-value" id="detailFormat">—</span>
+    </div>
+    <div class="detail-field" id="detailWeightRow" style="display: none;">
+      <span class="detail-label">Poids</span>
+      <span class="detail-value" id="detailWeight">—</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Uploadée le</span>
+      <span class="detail-value" id="detailDate">—</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Par</span>
+      <span class="detail-value" id="detailAuthor">—</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Collections</span>
+      <div class="detail-collections" id="detailColls"></div>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Usage</span>
+      <span class="detail-value" id="detailUsage">—</span>
+    </div>
+  </div>
+  <div class="detail-actions">
+    <button class="detail-btn primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Éditer l'image
+    </button>
+    <button class="detail-btn" onclick="showCollectionModal(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Gérer les collections
+    </button>
+    <button class="detail-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M12 4v12M6 10l6 6 6-6"/></svg>
+      Renommer
+    </button>
+    <button class="detail-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Télécharger
+    </button>
+    <button class="detail-btn danger" onclick="showDeleteModal(false)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Supprimer
+    </button>
+  </div>
+</div>
+
+<!-- ============= MODALE COLLECTIONS ============= -->
+<div class="modal-backdrop" id="collectionModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Gérer les collections</div>
+      <button class="detail-close" onclick="closeCollectionModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="collectionModalDesc">Cochez les collections pour cette image :</p>
+      <ul class="collection-checklist">
+        <li><input type="checkbox" id="c1" checked><label for="c1">Pictos marque</label></li>
+        <li><input type="checkbox" id="c2"><label for="c2">Soldes Printemps 26</label></li>
+        <li><input type="checkbox" id="c3"><label for="c3">Bannières hero</label></li>
+      </ul>
+      <div class="collection-new-inline">
+        <input type="text" placeholder="Créer une nouvelle collection...">
+        <button class="modal-btn primary">Créer</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeCollectionModal()">Annuler</button>
+      <button class="modal-btn primary" onclick="closeCollectionModal()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============= MODALE CONFIRMATION SUPPRESSION ============= -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" style="color: var(--lp-danger);">Supprimer ?</div>
+    </div>
+    <div class="modal-body">
+      <p id="deleteWarning" style="font-weight: 500; color: var(--lp-danger);">⚠ Cette image est utilisée dans 2 emails.</p>
+      <p>Elle sera déplacée dans la corbeille et automatiquement supprimée après 30 jours. Vous pouvez la restaurer à tout moment d'ici là.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn" onclick="closeDeleteModal()">Annuler</button>
+      <button class="modal-btn danger" onclick="closeDeleteModal()">Déplacer dans la corbeille</button>
+    </div>
+  </div>
+</div>
+
+<!-- Astuce de démo -->
+<div class="demo-tip" id="demoTip">
+  <strong>Maquette interactive</strong> — Essayez : survoler une vignette, changer d'onglet, cliquer sur une collection, sélectionner plusieurs images, cliquer sur une image pour ouvrir les détails.
+  <br>
+  <button onclick="this.parentElement.style.display='none'">Compris</button>
+</div>
+
+<script>
+  // ========== DATA MOCK ==========
+  // Couleurs variées pour les thumbs, inspirées d'icônes/images marketing
+  const palette = [
+    ['#f7d794', '#e58e26'], ['#7ed6df', '#22a6b3'], ['#e77f67', '#cd6133'],
+    ['#778beb', '#4834d4'], ['#786fa6', '#574b90'], ['#f8a5c2', '#cc8e9e'],
+    ['#63cdda', '#3dc1d3'], ['#ea8685', '#b33939'], ['#f3a683', '#e15f41'],
+    ['#cf6a87', '#b53471'], ['#ffda79', '#ccae62'], ['#ea8685', '#c44569']
+  ];
+
+  const iconShapes = ['gift', 'heart', 'bag', 'tag', 'star', 'truck', 'shield', 'bell', 'diamond', 'flame', 'leaf', 'sun'];
+
+  function svgIcon(name, color) {
+    const icons = {
+      gift: '<rect x="4" y="10" width="24" height="18" rx="2"/><rect x="2" y="6" width="28" height="6"/><path d="M16 6v22M12 6c-2 0-4-2-4-4s2-2 4 0 4 4 4 4M20 6c2 0 4-2 4-4s-2-2-4 0-4 4-4 4"/>',
+      heart: '<path d="M16 28C8 22 3 18 3 12c0-4 3-7 7-7 2 0 4 1 6 3 2-2 4-3 6-3 4 0 7 3 7 7 0 6-5 10-13 16z"/>',
+      bag: '<path d="M6 10h20l-2 18H8L6 10z"/><path d="M11 10V6a5 5 0 0 1 10 0v4"/>',
+      tag: '<path d="M18 2l12 12-14 14L4 16V4h12z"/><circle cx="10" cy="10" r="2"/>',
+      star: '<path d="M16 3l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z"/>',
+      truck: '<rect x="2" y="10" width="16" height="12"/><path d="M18 14h8l4 5v3h-12z"/><circle cx="8" cy="24" r="3"/><circle cx="24" cy="24" r="3"/>',
+      shield: '<path d="M16 3l12 5v8c0 7-5 12-12 14C9 28 4 23 4 16V8z"/>',
+      bell: '<path d="M8 22V14a8 8 0 1 1 16 0v8l2 2H6z"/><path d="M13 26a3 3 0 0 0 6 0"/>',
+      diamond: '<path d="M8 4h16l6 8-14 16L2 12z"/>',
+      flame: '<path d="M16 2c4 6 10 10 10 16 0 5-4 10-10 10S6 23 6 18c0-4 3-6 5-10 2 4 4 6 5 6 0-6 0-10 0-12z"/>',
+      leaf: '<path d="M4 28c0-14 12-24 24-24 0 14-10 24-24 24z"/><path d="M4 28C10 20 18 14 28 4"/>',
+      sun: '<circle cx="16" cy="16" r="6"/><path d="M16 2v4M16 26v4M2 16h4M26 16h4M6 6l3 3M23 23l3 3M26 6l-3 3M9 23l-3 3"/>'
+    };
+    return `<svg viewBox="0 0 32 32" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" width="55%" height="55%">${icons[name] || icons.star}</svg>`;
+  }
+
+  function makeImage(i, format) {
+    const [bg, fg] = palette[i % palette.length];
+    const shape = iconShapes[i % iconShapes.length];
+    const labels = {
+      0: 'logo_clarins_red.png',
+      1: 'picto_livraison.svg',
+      2: 'picto_garantie.svg',
+      3: 'cover_soldes_hiver_26.jpg',
+      4: 'produit_serum_200ml.jpg',
+      5: 'banner_hero_printemps.jpg',
+      6: 'picto_retour_gratuit.png',
+      7: 'picto_paiement_securise.png',
+      8: 'visuel_rouge_levres.jpg',
+      9: 'animation_unboxing.gif',
+      10: 'picto_newsletter.png',
+      11: 'header_mothers_day.jpg'
+    };
+    return {
+      id: i,
+      label: labels[i % 12] || `image_${i + 1}.${format}`,
+      bg, fg, shape,
+      format: format || ['jpg', 'png', 'gif', 'png', 'jpg'][i % 5],
+      dims: ['1200 × 800 px', '600 × 600 px', '1920 × 1080 px', '400 × 400 px'][i % 4],
+      weight: '1.2 Mo',
+      date: '14 avril 2026',
+      author: ['Marie L.', 'Alex B.', 'Sophie R.', 'Thomas K.'][i % 4],
+      collections: [['Pictos marque'], ['Soldes Printemps 26'], ['Bannières hero'], [], ['Pictos marque', 'Soldes Printemps 26']][i % 5],
+      usage: i % 3 === 0 ? 'Utilisée dans 2 email(s)' : (i % 3 === 1 ? 'Utilisée dans 1 email' : 'Non utilisée')
+    };
+  }
+
+  let images = [];
+  for (let i = 0; i < 42; i++) images.push(makeImage(i));
+
+  let currentTab = 'template';
+  let selectedIds = new Set();
+  let currentCollection = 'all';
+
+  // ========== RENDU ==========
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    const collectionsBar = document.getElementById('collectionsBar');
+    const metaCount = document.getElementById('metaCount');
+
+    if (currentTab === 'email') {
+      collectionsBar.classList.remove('visible');
+      const emailImages = images.slice(0, 4);
+      if (emailImages.length === 0) {
+        grid.innerHTML = emptyStateHTML('email');
+        metaCount.textContent = '0 image';
+        return;
+      }
+      renderImages(emailImages);
+      metaCount.textContent = `${emailImages.length} images`;
+    } else {
+      collectionsBar.classList.add('visible');
+      let filtered = images;
+      if (currentCollection === 'unclassified') {
+        filtered = images.filter(im => im.collections.length === 0);
+      } else if (currentCollection !== 'all') {
+        const collMap = { pictos: 'Pictos marque', soldes: 'Soldes Printemps 26', hero: 'Bannières hero' };
+        filtered = images.filter(im => im.collections.includes(collMap[currentCollection]));
+      }
+      if (filtered.length === 0) {
+        grid.innerHTML = emptyStateHTML('collection');
+        metaCount.textContent = '0 image';
+        return;
+      }
+      renderImages(filtered);
+      metaCount.textContent = `${filtered.length} images`;
+    }
+  }
+
+  function emptyStateHTML(type) {
+    if (type === 'email') {
+      return `<div style="grid-column: 1/-1;" class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div class="empty-state-title">Aucune image pour cet email</div>
+        <div class="empty-state-msg">Déposez vos premières images ou récupérez-les depuis la galerie commune.</div>
+      </div>`;
+    }
+    return `<div style="grid-column: 1/-1;" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <div class="empty-state-title">Collection vide</div>
+      <div class="empty-state-msg">Ajoutez des images à cette collection via l'action "Gérer les collections".</div>
+    </div>`;
+  }
+
+  function renderImages(list) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = list.map(img => {
+      const isSelected = selectedIds.has(img.id);
+      const isGif = img.format === 'gif';
+      return `
+        <div class="thumb ${isSelected ? 'selected' : ''}" data-id="${img.id}" onclick="onThumbClick(event, ${img.id})">
+          <div class="thumb-check ${isSelected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleSelect(${img.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          ${isGif ? '<div class="thumb-badge gif">GIF</div>' : ''}
+          <div class="thumb-img" style="background: linear-gradient(135deg, ${img.bg}22, ${img.bg}55);">
+            ${svgIcon(img.shape, img.fg)}
+          </div>
+          <div class="thumb-label" title="${img.label}">${img.label}</div>
+          <div class="thumb-overlay">
+            <div class="thumb-actions">
+              <button class="thumb-action" title="Éditer" onclick="event.stopPropagation(); alert('Relance de l\\'éditeur Konva sur cette image')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button class="thumb-action" title="Collections" onclick="event.stopPropagation(); showCollectionModal(false)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </button>
+              <button class="thumb-action danger" title="Supprimer" onclick="event.stopPropagation(); showDeleteModal(false)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ========== INTERACTIONS ==========
+  function onThumbClick(e, id) {
+    // Si shift, on sélectionne
+    if (e.shiftKey || selectedIds.size > 0) {
+      toggleSelect(id);
+      return;
+    }
+    // Sinon on ouvre les détails
+    openDetail(id);
+  }
+
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    renderGrid();
+    updateBulkBar();
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    renderGrid();
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    if (selectedIds.size > 0) {
+      bar.classList.add('visible');
+      document.getElementById('bulkCount').textContent = selectedIds.size;
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  function openDetail(id) {
+    const img = images[id];
+    document.getElementById('detailLabel').textContent = img.label;
+    document.getElementById('detailDims').textContent = img.dims;
+    document.getElementById('detailFormat').textContent = img.format.toUpperCase();
+    document.getElementById('detailDate').textContent = img.date;
+    document.getElementById('detailAuthor').textContent = img.author;
+    // Poids uniquement si GIF
+    const weightRow = document.getElementById('detailWeightRow');
+    if (img.format === 'gif') {
+      weightRow.style.display = 'flex';
+      document.getElementById('detailWeight').textContent = img.weight;
+    } else {
+      weightRow.style.display = 'none';
+    }
+    // Collections
+    const colls = document.getElementById('detailColls');
+    if (img.collections.length === 0) {
+      colls.innerHTML = '<span style="color: var(--lp-text-faint); font-style: italic; font-size: 11px;">Non classée</span>';
+    } else {
+      colls.innerHTML = img.collections.map(c => `<span class="detail-coll">${c}</span>`).join('');
+    }
+    // Usage
+    const usage = document.getElementById('detailUsage');
+    usage.textContent = img.usage;
+    usage.className = 'detail-value ' + (img.usage.includes('Non') ? 'unused' : 'usage');
+    // Preview
+    document.getElementById('detailPreview').innerHTML = `
+      <div style="width: 80%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${img.bg}22, ${img.bg}55); border-radius: 6px;">
+        ${svgIcon(img.shape, img.fg).replace('width="55%"', 'width="60%"').replace('height="55%"', 'height="60%"')}
+      </div>
+    `;
+    document.getElementById('detailPanel').classList.add('visible');
+  }
+
+  function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('visible');
+  }
+
+  function showCollectionModal(bulk) {
+    document.getElementById('collectionModalDesc').textContent = bulk
+      ? `Ajouter les ${selectedIds.size} images sélectionnées à une collection :`
+      : 'Cochez les collections pour cette image :';
+    document.getElementById('collectionModal').classList.add('visible');
+  }
+  function closeCollectionModal() {
+    document.getElementById('collectionModal').classList.remove('visible');
+  }
+  function showNewCollectionModal() {
+    showCollectionModal(false);
+  }
+
+  function showDeleteModal(bulk) {
+    const warning = document.getElementById('deleteWarning');
+    if (bulk) {
+      warning.textContent = `⚠ ${selectedIds.size} image(s) sélectionnée(s). Certaines sont utilisées dans des emails.`;
+    } else {
+      warning.textContent = '⚠ Cette image est utilisée dans 2 emails.';
+    }
+    document.getElementById('deleteModal').classList.add('visible');
+  }
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('visible');
+  }
+
+  // ========== BINDINGS ==========
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      currentTab = t.dataset.tab;
+      selectedIds.clear();
+      updateBulkBar();
+      renderGrid();
+    });
+  });
+
+  document.querySelectorAll('.collection-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.collection-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      currentCollection = p.dataset.collection;
+      renderGrid();
+    });
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(f => {
+    f.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+      f.classList.add('active');
+    });
+  });
+
+  document.getElementById('selectAllBtn').addEventListener('click', () => {
+    const visibleImages = currentTab === 'email' ? images.slice(0, 4) : images;
+    if (selectedIds.size === visibleImages.length) {
+      selectedIds.clear();
+    } else {
+      visibleImages.forEach(im => selectedIds.add(im.id));
+    }
+    renderGrid();
+    updateBulkBar();
+  });
+
+  // Init
+  renderGrid();
+</script>
+</body>
+</html>
