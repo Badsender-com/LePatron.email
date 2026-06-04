@@ -26,9 +26,12 @@ const GallerySchema = Schema(
       type: [],
       // make sure we have the right format for a gallery
       get: (files) => {
-        return files.map((file) =>
-          formatFilenameForJqueryFileupload(file.name)
-        );
+        return files.map((file) => ({
+          ...formatFilenameForJqueryFileupload(file.name),
+          label: file.label || file.name,
+          source: file.source || 'upload',
+          externalMetadata: file.externalMetadata || {},
+        }));
       },
     },
   },
@@ -51,7 +54,9 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   // update the files names & path
   this.files = this.files.map((file) => {
     Object.keys(file).forEach((key) => {
-      file[key] = file[key].replace(oldCreationId, newCreationId);
+      if (typeof file[key] === 'string') {
+        file[key] = file[key].replace(oldCreationId, newCreationId);
+      }
     });
     return file;
   });

@@ -513,7 +513,15 @@ async function create(req, res) {
     formatter: 'editor',
   };
   const uploads = await fileManager.parseMultipart(req, multipartOptions);
-  await imageService.addFiles(mongoId, uploads.files);
+  await imageService.addFiles(
+    mongoId,
+    uploads.files.map((upload) => ({
+      ...upload,
+      label: upload.originalName,
+      source: 'upload',
+      externalMetadata: {},
+    }))
+  );
 
   // send only the new uploads
   // front-application will iterate over them to update the gallery previews
