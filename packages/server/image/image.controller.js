@@ -476,7 +476,12 @@ async function create(req, res) {
     const imageName = upload.name;
     const hasAlreadyCurrentFile = galleryImagesName.includes(imageName);
     if (hasAlreadyCurrentFile) return;
-    galleryImages.push(upload);
+    galleryImages.push({
+      ...upload,
+      label: upload.originalName,
+      source: 'upload',
+      externalMetadata: {},
+    });
   });
   safeGallery.files = galleryImages;
 
