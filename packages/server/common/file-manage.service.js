@@ -60,8 +60,11 @@ function handleTemplatesUploads(fields, files, resolve) {
 
 function handleEditorUpload(fields, files, resolve) {
   console.log('HANDLE JQUERY FILE UPLOAD');
-  let file = files['files[]'];
-  file = formatName(file.name);
+  const rawFile = files['files[]'];
+  const file = {
+    ...formatName(rawFile.name),
+    originalName: rawFile.originalName,
+  };
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
 }
