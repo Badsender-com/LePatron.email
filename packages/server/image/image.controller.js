@@ -32,6 +32,7 @@ module.exports = {
   createFromUrl: asyncHandler(createFromUrl),
   read,
   destroy,
+  updateLabel: asyncHandler(updateLabel),
 };
 
 /// ///
@@ -424,6 +425,7 @@ function read(req, res, next) {
 // …are handled separately in wireframes.js#update
 async function list(req, res) {
   const { mongoId } = req.params;
+  const { search, format, sortBy } = req.query;
 
   const gallery = await Galleries.findOne(
     {
@@ -434,7 +436,41 @@ async function list(req, res) {
 
   const responseGallery =
     gallery || (await imageService.createGallery(mongoId));
+
+  if (search || format || sortBy) {
+    const files = imageService.filterGalleryFiles(responseGallery.files, {
+      search,
+      format,
+      sortBy,
+    });
+    return res.json({ files });
+  }
+
   res.json(responseGallery);
+}
+
+async function updateLabel(req, res, next) {
+  const { imageName } = req.params;
+  const { label } = req.body;
+
+  if (!label || typeof label !== 'string' || label.trim() === '') {
+    return next(createError.BadRequest('label is required'));
+  }
+  if (label.length > 255) {
+    return next(createError.BadRequest('label too long (max 255 characters)'));
+  }
+
+  let mongoId = /^([a-f\d]{24})-/.exec(imageName);
+  if (!mongoId) return next(createError.UnprocessableEntity());
+  mongoId = mongoId[1];
+
+  const gallery = await imageService.renameLabel(
+    mongoId,
+    imageName,
+    label.trim()
+  );
+  const file = gallery.files.find((f) => f.name === imageName);
+  res.json(file);
 }
 
 /**
@@ -476,6 +512,7 @@ async function create(req, res) {
       label: upload.originalName,
       source: 'upload',
       externalMetadata: {},
+      uploadedAt: new Date(),
     });
   });
   safeGallery.files = galleryImages;
