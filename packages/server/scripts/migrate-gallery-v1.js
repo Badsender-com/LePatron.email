@@ -64,12 +64,14 @@ async function migrateGallery(gallery, dryRun) {
 // ---------------------------------------------------------------------------
 
 async function run() {
+  const dbUri = process.env.MONGODB_URI || config.database;
   mongoose.set('useFindAndModify', false);
   mongoose.set('useCreateIndex', true);
-  await mongoose.connect(config.database, {
+  await mongoose.connect(dbUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
+  console.log(`Connecté à : ${dbUri}`);
 
   if (isDryRun) {
     console.log('[DRY-RUN] Mode simulation — aucune écriture en base.\n');
