@@ -17,6 +17,43 @@ const DOWNLOAD_TIMEOUT_MS = 15000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DUPLICATE_KEY_ERROR = 11000;
 
+const normalizeExt = (ext) => (ext === 'jpeg' ? 'jpg' : ext);
+
+function filterGalleryFiles(files, { search, format, sortBy } = {}) {
+  let result = [...files];
+
+  if (search) {
+    const needle = search.toLowerCase();
+    result = result.filter((f) =>
+      (f.label || f.name).toLowerCase().includes(needle)
+    );
+  }
+
+  if (format) {
+    const normalizedFormat = format.toLowerCase();
+    result = result.filter((f) => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return normalizeExt(ext) === normalizedFormat;
+    });
+  }
+
+  if (sortBy === 'date_desc') {
+    result = result.sort((a, b) => {
+      const dateA = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
+      const dateB = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
+      return dateB - dateA;
+    });
+  } else if (sortBy === 'date_asc') {
+    result = result.sort((a, b) => {
+      const dateA = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
+      const dateB = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
+      return dateA - dateB;
+    });
+  }
+
+  return result;
+}
+
 // Every write below is a single atomic update. Reading the gallery, changing
 // its `files` and saving it back lost images: two uploads validated one after
 // the other overlap on the server (each waits for S3), the second save carries
@@ -128,10 +165,24 @@ async function createFromUrl(mongoId, imageUrl) {
   return uploadedFile;
 }
 
+// Atomic like the writes above: one positional $set instead of a read, edit
+// and save of the whole `files` array.
+async function renameLabel(mongoId, imageName, newLabel) {
+  const gallery = await Galleries.findOneAndUpdate(
+    { creationOrWireframeId: mongoId, 'files.name': imageName },
+    { $set: { 'files.$.label': newLabel } },
+    { new: true }
+  );
+  if (!gallery) throw new Error('Image not found');
+  return gallery;
+}
+
 module.exports = {
   destroy,
   createGallery,
   findOrCreateGallery,
   addFiles,
   createFromUrl,
+  filterGalleryFiles,
+  renameLabel,
 };
