@@ -9,6 +9,7 @@ jest.mock('../../../packages/server/common/models.common', () => ({
     findOne: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
+    updateOne: jest.fn(),
   },
   Integrations: {
     findOne: jest.fn(),
@@ -97,7 +98,8 @@ describe('AIFeatureService', () => {
       AIFeatureConfigs.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
-      AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+      AIFeatureConfigs.updateOne.mockResolvedValue({ modifiedCount: 1 });
+      AIFeatureConfigs.findById.mockReturnValue({
         populate: jest.fn().mockResolvedValue(backfilledConfig),
       });
 
@@ -105,18 +107,15 @@ describe('AIFeatureService', () => {
         groupId: mockGroupId,
       });
 
-      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalledWith(
-        mockConfigId,
+      // Conditional push (concurrency-safe): the $ne filter makes it a no-op if
+      // the type already exists.
+      expect(AIFeatureConfigs.updateOne).toHaveBeenCalledWith(
+        { _id: mockConfigId, 'features.featureType': { $ne: 'skill' } },
         {
           $push: {
-            features: {
-              $each: expect.arrayContaining([
-                expect.objectContaining({ featureType: 'skill' }),
-              ]),
-            },
+            features: expect.objectContaining({ featureType: 'skill' }),
           },
-        },
-        { new: true }
+        }
       );
       expect(result.features.map((f) => f.featureType)).toContain('skill');
     });

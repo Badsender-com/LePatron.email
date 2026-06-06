@@ -44,11 +44,18 @@ async function getOrCreateConfig({ groupId }) {
   const present = new Set(config.features.map((f) => f.featureType));
   const missing = AIFeatureTypeValues.filter((t) => !present.has(t));
   if (missing.length) {
-    config = await AIFeatureConfigs.findByIdAndUpdate(
-      config._id,
-      { $push: { features: { $each: missing.map(defaultFeature) } } },
-      { new: true }
-    ).populate('features.integration');
+    // Conditional push per type: the `$ne` filter makes each insert a no-op if
+    // the type is already there, so two concurrent getOrCreateConfig calls can't
+    // double-insert the same feature.
+    for (const featureType of missing) {
+      await AIFeatureConfigs.updateOne(
+        { _id: config._id, 'features.featureType': { $ne: featureType } },
+        { $push: { features: defaultFeature(featureType) } }
+      );
+    }
+    config = await AIFeatureConfigs.findById(config._id).populate(
+      'features.integration'
+    );
   }
 
   return config;
