@@ -75,7 +75,10 @@ const AIPlaygroundRunSchema = new Schema(
     feedback: { type: RunFeedbackSchema, default: null },
     isGolden: { type: Boolean, default: false },
 
-    createdBy: { type: ObjectId, ref: UserModel, required: true },
+    // Nullable: the Playground is a super-admin tool and the super-admin
+    // pseudo-account (config.admin) has no User row, so runs it triggers have
+    // no createdBy (same convention as the test-budget service's null userId).
+    createdBy: { type: ObjectId, ref: UserModel, default: null },
   },
   {
     timestamps: true,
