@@ -503,7 +503,7 @@ export default {
 .mapping-layout {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  align-items: flex-start;
 }
 
 .mapping-sidebar {
@@ -514,11 +514,14 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
 }
 
 .mapping-main {
   flex: 1;
-  overflow-y: auto;
+  min-width: 0;
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
