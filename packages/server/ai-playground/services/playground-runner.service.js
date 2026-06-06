@@ -66,18 +66,22 @@ async function executeScenario({
 
   const baseInput =
     overrides.input !== undefined ? overrides.input : scenario.input || {};
-  const composedInput = {
-    ...baseInput,
-    // The runner only auto-injects `expertise`. Everything else is the
-    // super-admin's responsibility on the scenario.input field.
-    expertise: resolvedExpertise.map((e) => ({
+  // The runner only auto-injects `expertise`, and ONLY when there is at least
+  // one resolved expertise. Injecting an empty `expertise: []` would break
+  // skills whose (strict) input schema doesn't declare an expertise field —
+  // e.g. `generic.text`. A skill that consumes expertise must declare an
+  // optional `expertise` field in its input schema. Everything else stays the
+  // super-admin's responsibility on scenario.input.
+  const composedInput = { ...baseInput };
+  if (resolvedExpertise.length) {
+    composedInput.expertise = resolvedExpertise.map((e) => ({
       expertiseId: e.expertiseId,
       title: e.title,
       body: e.body,
       examplesGood: e.examplesGood,
       examplesBad: e.examplesBad,
-    })),
-  };
+    }));
+  }
 
   await testBudget.consumeBudget(userId);
 
