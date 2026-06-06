@@ -1,6 +1,6 @@
 <script>
 /**
- * BsAiFeatureMoteurSkillSection
+ * BsAiFeatureSkillEngineSection
  *
  * Configures the generic "Skills" AI engine (AIFeatureConfig featureType
  * 'skill') for a group: integration + optional model + activation. This is the
@@ -8,7 +8,7 @@
  * AI Playground uses via the platform group.
  *
  * Self-contained: fetches its own config / integrations / models so the parent
- * tab only needs to drop <bs-ai-feature-moteur-skill-section :group-id="..."/>.
+ * tab only needs to drop <bs-ai-feature-skill-engine-section :group-id="..."/>.
  * Mirrors the translation section; when the étape 2bis hierarchy refactor lands,
  * the translation block can be extracted on the same model.
  */
@@ -23,7 +23,7 @@ import { Cpu } from 'lucide-vue';
 const FEATURE_TYPE = 'skill';
 
 export default {
-  name: 'BsAiFeatureMoteurSkillSection',
+  name: 'BsAiFeatureSkillEngineSection',
   components: {
     BsSelect,
     BsFormSection,

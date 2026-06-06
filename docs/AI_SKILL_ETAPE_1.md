@@ -43,7 +43,7 @@ axes ci-dessus, **avant** que `categoryOverride` n'existe, pour cadrer l'étape 
 
 ### 2. UI « Moteur Skills » dans Fonctionnalités IA (`feat/AI-skills-v1`)
 
-- **Composant extrait** `BsAiFeatureMoteurSkillSection.vue` (~260 l.,
+- **Composant extrait** `BsAiFeatureSkillEngineSection.vue` (~260 l.,
   auto-contenu : fetch config/intégrations/modèles, activation, sélection
   d'`Integration` + modèle). Réutilise `updateFeature('skill', …)`.
 - Intégré dans `ai-features-tab.vue` en ~6 lignes (le parent était déjà > 300 l. ;
