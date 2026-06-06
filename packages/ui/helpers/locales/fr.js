@@ -921,6 +921,13 @@ export default {
       formalityPreferMore: 'Plutôt formel',
       formalityPreferLess: 'Plutôt informel'
     },
+    skill: {
+      title: 'Moteur Skills',
+      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
+      enableLabel: 'Activer le moteur Skills',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux'
+    },
     textGeneration: {
       title: 'Génération de texte',
       description: 'Générez du contenu marketing personnalisé pour vos emails.'

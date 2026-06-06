@@ -133,6 +133,15 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
+    // Platform group: an internal Badsender-owned group that holds the AI
+    // engine used by the super-admin AI Playground (R&D / benchmark), instead
+    // of borrowing a client group's integration. Excluded from client-facing
+    // group listings. At most one platform group exists (see partial unique
+    // index below).
+    isPlatform: {
+      type: Boolean,
+      default: false,
+    },
     // LePatron Skills IA — log retention & RGPD switches
     logRetentionDays: {
       type: Number,
@@ -148,6 +157,18 @@ const GroupSchema = Schema(
     // See packages/server/integration/integration.schema.js
   },
   { timestamps: true, toJSON: { virtuals: true } }
+);
+
+// At most one platform group can exist. Partial unique index only constrains
+// documents where isPlatform === true, leaving normal groups unaffected. Same
+// belt-and-suspenders pattern as the single-golden-run index on playground runs.
+GroupSchema.index(
+  { isPlatform: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isPlatform: true },
+    name: 'unique_platform_group',
+  }
 );
 
 // easily hide keys from toJSON

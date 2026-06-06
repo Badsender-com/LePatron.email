@@ -6,6 +6,7 @@ import { getProviderLabel } from '~/components/integrations/provider-configs';
 import { LANGUAGE_OPTIONS } from '~/helpers/constants/languages.js';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsAiFeatureMoteurSkillSection from '~/components/group/BsAiFeatureMoteurSkillSection.vue';
 import { Languages, FileText, BadgeCheck, Sparkles } from 'lucide-vue';
 
 const FORMALITY_OPTIONS = [
@@ -27,6 +28,7 @@ export default {
   components: {
     BsSelect,
     BsFormSection,
+    BsAiFeatureMoteurSkillSection,
     LucideLanguages: Languages,
     LucideFileText: FileText,
     LucideBadgeCheck: BadgeCheck,
@@ -344,6 +346,10 @@ export default {
             </v-col>
           </v-row>
         </bs-form-section>
+
+        <!-- Section: Skills AI engine (generic engine for all skill invocations
+             + the super-admin Playground via the platform group) -->
+        <bs-ai-feature-moteur-skill-section :group-id="groupId" />
 
         <!-- Section: Coming Soon Features -->
         <bs-form-section last>

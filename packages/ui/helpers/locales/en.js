@@ -912,6 +912,13 @@ export default {
       formalityPreferMore: 'Prefer formal',
       formalityPreferLess: 'Prefer informal'
     },
+    skill: {
+      title: 'Skills engine',
+      description: 'Generic AI engine powering every skill invocation for this company (and Playground tests via the platform company).',
+      enableLabel: 'Enable the Skills engine',
+      model: 'AI model',
+      modelHint: 'More powerful models are more accurate but slower and more expensive'
+    },
     textGeneration: {
       title: 'Text generation',
       description: 'Generate personalized marketing content for your emails.'
