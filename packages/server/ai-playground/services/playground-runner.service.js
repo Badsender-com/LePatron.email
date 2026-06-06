@@ -6,6 +6,7 @@ const {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   LePatronSkills,
+  Groups,
 } = require('../../common/models.common.js');
 const skillInvocation = require('../../ai-skill/services/skill-invocation.service.js');
 const testBudget = require('../../ai-skill/services/test-budget.service.js');
@@ -40,12 +41,24 @@ async function executeScenario({
   if (!scenario) throw createError(404, `Scenario "${scenarioId}" not found`);
 
   const snapshot = JSON.parse(JSON.stringify(scenario.toObject()));
-  const effectiveGroupId = groupId || scenario.groupContext;
+  // Group resolution order: explicit runtime groupId > scenario.groupContext >
+  // the internal platform group. The platform group lets the playground run as
+  // a super-admin R&D engine without borrowing a client group's integration.
+  let effectiveGroupId = groupId || scenario.groupContext;
   if (!effectiveGroupId) {
-    throw createError(
-      400,
-      'A Group context is required to execute the scenario (set scenario.groupContext or pass groupId at run time)'
-    );
+    const platformGroup = await Groups.findOne(
+      { isPlatform: true },
+      { _id: 1 }
+    ).lean();
+    if (!platformGroup) {
+      throw createError(
+        400,
+        'No group context and no platform group found. Run ' +
+          'scripts/seed-platform-group.js, then configure its Skills engine ' +
+          'in "Fonctionnalités IA".'
+      );
+    }
+    effectiveGroupId = platformGroup._id;
   }
 
   const resolvedSkill = await loadActiveOrPinnedSkill(scenario.skillRef);

@@ -6,6 +6,7 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
   AIPlaygroundScenarios: { findOne: jest.fn() },
   AIPlaygroundRuns: { create: jest.fn() },
   LePatronSkills: { findOne: jest.fn() },
+  Groups: { findOne: jest.fn() },
   // Used by run.service tests (irrelevant here, but the import chain reaches it)
   AIPlaygroundScenarios_dummy: undefined,
 }));
@@ -29,6 +30,7 @@ const {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   LePatronSkills,
+  Groups,
 } = require('../../../../packages/server/common/models.common');
 const skillInvocation = require('../../../../packages/server/ai-skill/services/skill-invocation.service');
 const testBudget = require('../../../../packages/server/ai-skill/services/test-budget.service');
@@ -129,13 +131,46 @@ describe('playground-runner.executeScenario', () => {
     ]);
   });
 
-  it('refuses when neither scenario.groupContext nor groupId is provided', async () => {
+  it('refuses when no group context and no platform group exists', async () => {
     AIPlaygroundScenarios.findOne.mockResolvedValue(
       mockScenario({ groupContext: null })
     );
+    Groups.findOne.mockReturnValue({ lean: () => Promise.resolve(null) });
     await expect(
       executeScenario({ scenarioId: 'demo', userId: USER_ID })
     ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('falls back to the platform group when no group context is provided', async () => {
+    const PLATFORM_OID = new Types.ObjectId();
+    AIPlaygroundScenarios.findOne.mockResolvedValue(
+      mockScenario({ groupContext: null })
+    );
+    Groups.findOne.mockReturnValue({
+      lean: () => Promise.resolve({ _id: PLATFORM_OID }),
+    });
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockResolvedValue({
+      output: { text: 'ok' },
+      invocationId: new Types.ObjectId(),
+      tokenUsage: {},
+      latencyMs: 1,
+    });
+
+    await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    expect(skillInvocation.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: PLATFORM_OID })
+    );
   });
 
   it('throws 404 when the scenario does not exist', async () => {
