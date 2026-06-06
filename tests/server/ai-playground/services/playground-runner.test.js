@@ -131,6 +131,34 @@ describe('playground-runner.executeScenario', () => {
     ]);
   });
 
+  it('does not inject an empty expertise key when no expertise resolves', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockResolvedValue({
+      output: { text: 'ok' },
+      invocationId: new Types.ObjectId(),
+      tokenUsage: {},
+      latencyMs: 1,
+    });
+
+    await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    const composedInput = skillInvocation.invoke.mock.calls[0][0].input;
+    // No expertise → the runner must not pollute the input with `expertise`,
+    // which would break a strict skill schema (e.g. generic.text).
+    expect('expertise' in composedInput).toBe(false);
+    expect(composedInput.prompt).toBe('hi');
+  });
+
   it('refuses when no group context and no platform group exists', async () => {
     AIPlaygroundScenarios.findOne.mockResolvedValue(
       mockScenario({ groupContext: null })
