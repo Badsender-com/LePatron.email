@@ -40,9 +40,16 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
+        // All enum feature types present → no backfill.
         features: [
           {
             featureType: 'translation',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
+          },
+          {
+            featureType: 'skill',
             integration: null,
             isActive: false,
             config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
@@ -61,6 +68,57 @@ describe('AIFeatureService', () => {
 
       expect(result).toEqual(existingConfig);
       expect(AIFeatureConfigs.create).not.toHaveBeenCalled();
+      expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should backfill feature types missing from an existing config', async () => {
+      const existingConfig = {
+        _id: mockConfigId,
+        _company: mockGroupId,
+        // Predates the 'skill' type — only translation present.
+        features: [
+          {
+            featureType: 'translation',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
+          },
+        ],
+      };
+      const backfilledConfig = {
+        ...existingConfig,
+        features: [
+          ...existingConfig.features,
+          { featureType: 'skill', integration: null, isActive: false },
+        ],
+      };
+
+      groupService.findById.mockResolvedValue({ _id: mockGroupId });
+      AIFeatureConfigs.findOne.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(existingConfig),
+      });
+      AIFeatureConfigs.findByIdAndUpdate.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(backfilledConfig),
+      });
+
+      const result = await aiFeatureService.getOrCreateConfig({
+        groupId: mockGroupId,
+      });
+
+      expect(AIFeatureConfigs.findByIdAndUpdate).toHaveBeenCalledWith(
+        mockConfigId,
+        {
+          $push: {
+            features: {
+              $each: expect.arrayContaining([
+                expect.objectContaining({ featureType: 'skill' }),
+              ]),
+            },
+          },
+        },
+        { new: true }
+      );
+      expect(result.features.map((f) => f.featureType)).toContain('skill');
     });
 
     it('should create default config when not found', async () => {
@@ -225,6 +283,7 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
+        // All enum types present → no backfill.
         features: [
           {
             featureType: 'translation',
@@ -234,6 +293,12 @@ describe('AIFeatureService', () => {
               availableLanguages: ['fr', 'en'],
               defaultSourceLanguage: 'fr',
             },
+          },
+          {
+            featureType: 'skill',
+            integration: null,
+            isActive: false,
+            config: { availableLanguages: [], defaultSourceLanguage: 'auto' },
           },
         ],
       };
@@ -256,7 +321,12 @@ describe('AIFeatureService', () => {
       const existingConfig = {
         _id: mockConfigId,
         _company: mockGroupId,
-        features: [],
+        // All enum types present, so no backfill; we request a type that is
+        // not part of the enum to trigger the not-found path.
+        features: [
+          { featureType: 'translation', integration: null, isActive: false },
+          { featureType: 'skill', integration: null, isActive: false },
+        ],
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
@@ -267,7 +337,7 @@ describe('AIFeatureService', () => {
       await expect(
         aiFeatureService.getFeatureConfig({
           groupId: mockGroupId,
-          featureType: 'translation',
+          featureType: 'nonexistent_feature',
         })
       ).rejects.toThrow('AI_FEATURE_CONFIG_NOT_FOUND');
     });
