@@ -44,6 +44,7 @@ import {
   // Content & Data
   Mail,
   MailPlus,
+  AtSign,
   Inbox,
   User,
   Users,
@@ -127,6 +128,7 @@ const icons = {
   // Content & Data
   IconMail: Mail,
   IconMailPlus: MailPlus,
+  IconAtSign: AtSign,
   IconInbox: Inbox,
   IconUser: User,
   IconUsers: Users,

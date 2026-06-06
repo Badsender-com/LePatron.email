@@ -20,6 +20,7 @@ function enrichEntry(entry, itemMap) {
     _platform: entry.platformId ? itemMap.get(entry.platformId) || null : null,
     _usage: entry.usageId ? itemMap.get(entry.usageId) || null : null,
     _fromDomains: resolveIds(entry.fromDomainIds, itemMap),
+    _fromAddresses: resolveIds(entry.fromAddressIds, itemMap),
     _ips: resolveIds(entry.ipIds, itemMap),
     _mailFroms: resolveIds(entry.mailFromIds, itemMap),
     _replyTos: resolveIds(entry.replyToIds, itemMap),

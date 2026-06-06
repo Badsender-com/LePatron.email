@@ -91,6 +91,11 @@ const SECTIONS = [
     icon: 'icon-globe',
     labelKey: 'fromDomains',
   },
+  {
+    category: 'display_from_address',
+    icon: 'icon-at-sign',
+    labelKey: 'fromAddresses',
+  },
   { category: 'ip', icon: 'icon-network', labelKey: 'ips' },
   { category: 'mail_from_domain', icon: 'icon-mail', labelKey: 'mailFrom' },
   { category: 'reply_to', icon: 'icon-mail', labelKey: 'replyTo' },

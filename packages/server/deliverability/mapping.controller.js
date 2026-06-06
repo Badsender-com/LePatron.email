@@ -27,6 +27,7 @@ const ALLOWED_ENTRY_UPDATE_FIELDS = [
   'usageId',
   'groupId',
   'fromDomainIds',
+  'fromAddressIds',
   'ipIds',
   'mailFromIds',
   'replyToIds',

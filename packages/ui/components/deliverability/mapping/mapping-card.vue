@@ -17,7 +17,7 @@
               @keydown.enter.prevent="confirmName"
               @keydown.esc="cancelName"
               @blur="confirmName"
-            />
+            >
             <button
               v-if="nameValue"
               class="mapping-card__reset-name"
@@ -224,7 +224,7 @@
           type="checkbox"
           :checked="entry.usesSharedIps"
           @change="update('usesSharedIps', $event.target.checked)"
-        />
+        >
         {{ $t('deliverability.mapping.fields.sharedIps') }}
       </label>
 
@@ -258,6 +258,12 @@ const ARRAY_FIELDS = [
     category: 'display_from_domain',
     icon: 'icon-globe',
     labelKey: 'fromDomains',
+  },
+  {
+    key: 'fromAddressIds',
+    category: 'display_from_address',
+    icon: 'icon-at-sign',
+    labelKey: 'fromAddresses',
   },
   { key: 'ipIds', category: 'ip', icon: 'icon-network', labelKey: 'ips' },
   {

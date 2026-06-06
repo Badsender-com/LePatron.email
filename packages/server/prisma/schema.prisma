@@ -122,6 +122,7 @@ model MappingEntry {
 
   // Champs multi-value (tableaux d'IDs InventoryItem)
   fromDomainIds            String[] @default([]) @map("from_domain_ids")
+  fromAddressIds           String[] @default([]) @map("from_address_ids")
   ipIds                    String[] @default([]) @map("ip_ids")
   mailFromIds              String[] @default([]) @map("mail_from_ids")
   replyToIds               String[] @default([]) @map("reply_to_ids")
