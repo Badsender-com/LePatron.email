@@ -250,7 +250,7 @@
 import { mapState, mapActions } from 'vuex';
 import MappingRatingStars from './mapping-rating-stars.vue';
 import MappingDropZone from './mapping-drop-zone.vue';
-import { DELIVERABILITY, BULK_UPSERT_INVENTORY } from '~/store/deliverability';
+import { DELIVERABILITY, CREATE_INVENTORY_ITEM } from '~/store/deliverability';
 
 const ARRAY_FIELDS = [
   {
@@ -355,7 +355,7 @@ export default {
   },
   methods: {
     ...mapActions(DELIVERABILITY, {
-      bulkUpsertInventory: BULK_UPSERT_INVENTORY,
+      createInventoryItem: CREATE_INVENTORY_ITEM,
     }),
     update(field, value) {
       this.$emit('update', { field, value });
@@ -408,13 +408,11 @@ export default {
     async addManualArray(field, category, value) {
       if (!this.auditId || !value) return;
       try {
-        const items = await this.bulkUpsertInventory({
+        const created = await this.createInventoryItem({
           auditId: this.auditId,
           category,
-          items: [{ value }],
-          updateProgress: false,
+          value,
         });
-        const created = items.find((i) => i.value === value);
         if (created) this.addItem(field, created.id);
       } catch {
         // silent — inventory endpoint already shows an error if needed
@@ -423,13 +421,11 @@ export default {
     async addManualSingle(idField, category, value) {
       if (!this.auditId || !value) return;
       try {
-        const items = await this.bulkUpsertInventory({
+        const created = await this.createInventoryItem({
           auditId: this.auditId,
           category,
-          items: [{ value }],
-          updateProgress: false,
+          value,
         });
-        const created = items.find((i) => i.value === value);
         if (created) this.update(idField, created.id);
       } catch {
         // silent

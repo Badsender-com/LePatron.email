@@ -129,6 +129,7 @@ export const UPDATE_AUDIT = 'UPDATE_AUDIT';
 export const DELETE_AUDIT = 'DELETE_AUDIT';
 export const FETCH_INVENTORY_ITEMS = 'FETCH_INVENTORY_ITEMS';
 export const BULK_UPSERT_INVENTORY = 'BULK_UPSERT_INVENTORY';
+export const CREATE_INVENTORY_ITEM = 'CREATE_INVENTORY_ITEM';
 export const FETCH_MAPPING = 'FETCH_MAPPING';
 export const CREATE_MAPPING_GROUP = 'CREATE_MAPPING_GROUP';
 export const UPDATE_MAPPING_GROUP = 'UPDATE_MAPPING_GROUP';
@@ -249,6 +250,28 @@ export const actions = {
       return response.items;
     } catch (error) {
       console.error('Error upserting inventory items:', error);
+      throw error;
+    }
+  },
+
+  async [CREATE_INVENTORY_ITEM](
+    { commit, state },
+    { auditId, category, value, description, metadata }
+  ) {
+    try {
+      const response = await this.$axios.$post(
+        `deliverability/audits/${auditId}/inventory`,
+        { category: category.toUpperCase(), value, description, metadata }
+      );
+      const categoryKey = category.toLowerCase();
+      const existing = state.inventoryItems[categoryKey] || [];
+      commit(M_SET_INVENTORY_CATEGORY, {
+        category: categoryKey,
+        items: [...existing, response.item],
+      });
+      return response.item;
+    } catch (error) {
+      console.error('Error creating inventory item:', error);
       throw error;
     }
   },
