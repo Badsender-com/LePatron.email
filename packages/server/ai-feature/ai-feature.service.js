@@ -26,27 +26,44 @@ async function getOrCreateConfig({ groupId }) {
 
   if (!config) {
     // Create default config with all feature types
-    const defaultFeatures = AIFeatureTypeValues.map((featureType) => ({
-      featureType,
-      integration: null,
-      isActive: false,
-      config: {
-        availableLanguages: [],
-        defaultSourceLanguage: 'auto',
-      },
-    }));
-
     config = await AIFeatureConfigs.create({
       _company: Types.ObjectId(groupId),
-      features: defaultFeatures,
+      features: AIFeatureTypeValues.map(defaultFeature),
     });
 
     config = await AIFeatureConfigs.findById(config._id).populate(
       'features.integration'
     );
+    return config;
+  }
+
+  // Backfill feature types added to the enum AFTER this config was created
+  // (e.g. 'skill' on configs that predate it). Without this, a missing feature
+  // can't be configured: updateFeatureConfig's findIndex returns -1 and the
+  // write is lost. Idempotent — only adds the truly missing ones.
+  const present = new Set(config.features.map((f) => f.featureType));
+  const missing = AIFeatureTypeValues.filter((t) => !present.has(t));
+  if (missing.length) {
+    config = await AIFeatureConfigs.findByIdAndUpdate(
+      config._id,
+      { $push: { features: { $each: missing.map(defaultFeature) } } },
+      { new: true }
+    ).populate('features.integration');
   }
 
   return config;
+}
+
+function defaultFeature(featureType) {
+  return {
+    featureType,
+    integration: null,
+    isActive: false,
+    config: {
+      availableLanguages: [],
+      defaultSourceLanguage: 'auto',
+    },
+  };
 }
 
 /**
