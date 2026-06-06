@@ -69,11 +69,16 @@ un groupe **opérateur** (Badsender, ou le groupe interne d'un self-host). On le
 - `Group.isPlatform: Boolean` + **index unique partiel** (`unique_platform_group`)
   garantissant au plus une company plateforme (même pattern que l'index
   golden-run du playground).
-- **Commande CLI one-shot** `yarn flag-platform-group <groupId>`
-  (`scripts/flag-platform-group.js`) : pose `isPlatform: true` sur un groupe
-  existant. Valide que le groupe existe et qu'aucun autre n'est déjà flaggé.
-  Idempotent. ⚠️ La clé API (chiffrée) du moteur Skills se saisit ensuite via
-  l'UI.
+- Deux moyens de flagger un groupe existant (la clé API du moteur Skills se
+  saisit ensuite via l'UI dans tous les cas) :
+  - **UI** : action « Définir comme Group plateforme » par ligne sur la page
+    `/groups` (super-admin) + chip « Plateforme » sur le groupe courant. Endpoint
+    dédié `PUT /groups/:groupId/platform` qui **déplace** le flag (retire l'ancien
+    avant de poser le nouveau) — gère le singleton en un point.
+  - **CLI one-shot** `yarn flag-platform-group <groupId>`
+    (`scripts/flag-platform-group.js`) pour les installs headless/ops : pose le
+    flag si aucun autre groupe ne l'a déjà (sinon refuse explicitement),
+    idempotent.
 - **Pas de filtrage** : le groupe plateforme est un vrai groupe opérateur utilisé
   pour l'emailing réel → il apparaît dans les listes comme n'importe quel autre.
 - Le concept se **généralise** : pas de hardcoding « Badsender » ; un self-host

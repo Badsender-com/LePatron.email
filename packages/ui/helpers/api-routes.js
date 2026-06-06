@@ -15,6 +15,9 @@ export function groups() {
 export function groupsItem(routeParams = {}) {
   return `/groups/${routeParams.groupId}`;
 }
+export function groupPlatform(routeParams = {}) {
+  return `/groups/${routeParams.groupId}/platform`;
+}
 export function groupsItemUsers(routeParams = {}) {
   return `/groups/${routeParams.groupId}/users`;
 }

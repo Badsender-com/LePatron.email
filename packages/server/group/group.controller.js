@@ -37,6 +37,7 @@ module.exports = {
   readEmailGroups: asyncHandler(readEmailGroups),
   readColorScheme: asyncHandler(readColorScheme),
   update: asyncHandler(update),
+  setPlatform: asyncHandler(setPlatform),
   deleteGroup: asyncHandler(deleteGroup),
   readPersonalizedVariables: asyncHandler(readPersonalizedVariables),
   createOrUpdatePersonalizedVariables: asyncHandler(
@@ -70,6 +71,44 @@ async function list(req, res) {
     hasProfiles: profileGroupSet.has(String(group._id)),
   }));
   res.json({ items });
+}
+
+/**
+ * @api {put} /groups/:groupId/platform Set or unset the platform group
+ * @apiPermission admin
+ * @apiName SetPlatformGroup
+ * @apiGroup Groups
+ *
+ * @apiParam {string} groupId
+ * @apiParam (Body) {Boolean} [isPlatform=true] Whether this group becomes the
+ *   platform group. Setting it true moves the flag: any other platform group is
+ *   unset first (the platform group is a singleton, also enforced by a partial
+ *   unique index).
+ */
+async function setPlatform(req, res) {
+  const { groupId } = req.params;
+  const isPlatform = req.body.isPlatform !== false; // default true
+
+  const group = await Groups.findById(groupId);
+  if (!group) {
+    throw new NotFound();
+  }
+
+  if (!isPlatform) {
+    group.isPlatform = false;
+    await group.save();
+    return res.json(group.toJSON());
+  }
+
+  // Move the flag: clear any other platform group first so the partial unique
+  // index never trips, then mark this one.
+  await Groups.updateMany(
+    { isPlatform: true, _id: { $ne: group._id } },
+    { $set: { isPlatform: false } }
+  );
+  group.isPlatform = true;
+  await group.save();
+  res.json(group.toJSON());
 }
 
 /**
