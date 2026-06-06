@@ -305,6 +305,13 @@ export default {
     tabs: {
       general: 'General',
     },
+    platform: {
+      badge: 'Platform',
+      setAction: 'Set as platform group',
+      unsetAction: 'Remove platform role',
+      setDone: '"{name}" is now the platform group',
+      unsetDone: '"{name}" is no longer the platform group',
+    },
     modules: {
       title: 'Enabled modules',
       description: 'Enable or disable the modules available for this company.',

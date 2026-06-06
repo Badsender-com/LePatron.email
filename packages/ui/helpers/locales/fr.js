@@ -308,6 +308,13 @@ export default {
     tabs: {
       general: 'Général',
     },
+    platform: {
+      badge: 'Plateforme',
+      setAction: 'Définir comme Group plateforme',
+      unsetAction: 'Retirer le rôle plateforme',
+      setDone: '« {name} » est désormais le Group plateforme',
+      unsetDone: '« {name} » n\'est plus le Group plateforme',
+    },
     modules: {
       title: 'Modules activés',
       description: 'Activez ou désactivez les modules disponibles pour cette entreprise.',
