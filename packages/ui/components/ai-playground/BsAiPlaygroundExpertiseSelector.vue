@@ -150,7 +150,7 @@ export default {
     </v-alert>
 
     <template v-if="mode === 'explicit'">
-      <bs-combobox
+      <bs-select
         :value="expertiseIds"
         :items="expertiseItems"
         item-text="text"
