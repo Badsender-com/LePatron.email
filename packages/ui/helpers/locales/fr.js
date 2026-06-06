@@ -1038,6 +1038,51 @@ export default {
     switchCompany: 'Choisir une entreprise…',
     colors: 'Couleurs',
   },
+  aiFeatures: {
+    title: 'Fonctionnalités IA',
+    selectIntegration: 'Intégration à utiliser',
+    noIntegration: '-- Aucune intégration --',
+    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
+    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
+    comingSoon: 'Bientôt disponible',
+    upcomingFeatures: 'Fonctionnalités à venir',
+    upcomingFeaturesDescription: 'Découvrez les prochaines fonctionnalités IA en cours de développement.',
+    translation: {
+      title: 'Traduction',
+      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
+      enableLabel: 'Activer la traduction',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
+      availableLanguages: 'Langues disponibles',
+      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
+      formality: 'Niveau de formalité',
+      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityDefault: 'Par défaut',
+      formalityMore: 'Formel',
+      formalityLess: 'Informel',
+      formalityPreferMore: 'Plutôt formel',
+      formalityPreferLess: 'Plutôt informel'
+    },
+    skill: {
+      title: 'Moteur Skills',
+      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
+      enableLabel: 'Activer le moteur Skills',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux'
+    },
+    textGeneration: {
+      title: 'Génération de texte',
+      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+    },
+    qualityCheck: {
+      title: 'Contrôle qualité',
+      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
+    }
+  },
   colors: {
     palette: 'Palette de couleurs',
     paletteDescription: 'Ces couleurs seront proposées dans le sélecteur de couleurs de l\'éditeur d\'email pour tous les utilisateurs de cette entreprise.',

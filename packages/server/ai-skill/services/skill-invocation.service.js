@@ -52,12 +52,24 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * context (expertise, briefs, DSE) — that is the calling feature's job.
  * See PLAN-IMPLEMENTATION-V1 §4.2.
  *
+ * ── Two orthogonal axes that must NEVER be conflated ──────────────────────
+ *   • `featureType` (this param): the SOURCE of the invocation, for ANALYTICS
+ *     only ('playground' | 'admin-test' | a productive feature name). Stored on
+ *     AISkillInvocation and used to include/exclude rows from analytics. It does
+ *     NOT influence which LLM engine is used.
+ *   • [étape 2] `categoryOverride`: ENGINE RESOLUTION. Defaults to skill.category,
+ *     overridable by the consuming feature. It selects which AIFeatureConfig
+ *     featureType powers the call (redaction/qc/… → fallback 'skill'). See
+ *     resolveGroupIntegration().
+ *   Never use `featureType` to resolve the engine, and never use the engine
+ *   category for analytics. They answer different questions.
+ *
  * @param {Object} params
  * @param {string} params.skillId
  * @param {Object} params.input
  * @param {import('mongoose').Types.ObjectId | string} params.groupId
  * @param {import('mongoose').Types.ObjectId | string} [params.userId]
- * @param {string} [params.featureType]
+ * @param {string} [params.featureType] ANALYTICS source tag only — see contract above.
  * @param {string[]} [params.variantPath]
  * @param {Object} [params.options]
  * @param {boolean} [params.options.dryRun=false]
@@ -285,8 +297,15 @@ async function invoke({
 }
 
 /**
- * Resolve the Integration to use for a Group via the AIFeatureConfig with
- * featureType === 'skill'. Throws a CONFIG_ERROR if not configured.
+ * Resolve the Integration to use for a Group via the AIFeatureConfig.
+ *
+ * ENGINE RESOLUTION axis (NOT analytics — do not confuse with invoke()'s
+ * `featureType` param, which is the analytics source tag). Today this resolves
+ * the single generic 'skill' engine. [étape 2] it will take the skill's
+ * category (or a caller `categoryOverride`) and resolve in cascade:
+ *   category featureType (redaction/qc/…) → fallback 'skill' → CONFIG_ERROR.
+ *
+ * Throws a CONFIG_ERROR if not configured.
  */
 async function resolveGroupIntegration(groupId) {
   const group = await Groups.findById(groupId).lean();
