@@ -40,6 +40,12 @@ export default {
       type: Boolean,
       default: false,
     },
+    // Whether the current group is the platform group. Gates the Skills engine
+    // section (R&D-only for now — no client feature consumes skills yet).
+    isPlatform: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -349,8 +355,14 @@ export default {
         </bs-form-section>
 
         <!-- Section: Skills AI engine (generic engine for all skill invocations
-             + the super-admin Playground via the platform group) -->
-        <bs-ai-feature-skill-engine-section :group-id="groupId" />
+             + the super-admin Playground via the platform group).
+             Platform-group only for now. TODO: remove this v-if once productive
+             client features consume skills (étape 2bis / 3) — it then becomes a
+             normal feature like translation, visible to every group. -->
+        <bs-ai-feature-skill-engine-section
+          v-if="isPlatform"
+          :group-id="groupId"
+        />
 
         <!-- Section: Coming Soon Features -->
         <bs-form-section last>

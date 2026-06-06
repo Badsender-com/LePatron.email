@@ -53,39 +53,46 @@ axes ci-dessus, **avant** que `categoryOverride` n'existe, pour cadrer l'étape 
   `AIFeatureTypeValues` (dont `'skill'`), et `model` est déjà whitelisté dans
   `FEATURE_CONFIG_FIELDS`. `updateFeature('skill', …)` fonctionnait déjà.
 - i18n `aiFeatures.skill.*` (fr + en).
+- **Visibilité plateforme-only** : la section n'est rendue que si
+  `group.isPlatform === true` (prop passée par la route `ai-features.vue` au tab).
+  Tant qu'aucune feature productive client ne consomme les skills, exposer ce
+  moteur à tous les groupes serait du bruit. Asymétrie assumée avec la section
+  Traduction (feature productive shippée, visible partout). TODO de retrait du
+  `v-if` quand des features productives consommeront les skills (étape 2bis / 3).
 
 ### 3. Company plateforme (`feat/AI-skills-v1`)
+
+On **ne crée pas** de company dédiée : dans toute install LePatron il existe déjà
+un groupe **opérateur** (Badsender, ou le groupe interne d'un self-host). On le
+**flaggue**.
 
 - `Group.isPlatform: Boolean` + **index unique partiel** (`unique_platform_group`)
   garantissant au plus une company plateforme (même pattern que l'index
   golden-run du playground).
-- `scripts/seed-platform-group.js` : seed idempotent (company `isPlatform` +
-  `AIFeatureConfig` avec feature `skill` inactive). ⚠️ La clé API (chiffrée) doit
-  être saisie manuellement ensuite via l'UI.
-- **Filtre `excludePlatformGroups`** : `group.controller.js list()` exclut la
-  company plateforme (`isPlatform: { $ne: true }`). Audit préalable : c'est la
-  **seule** énumération client-facing de toutes les companies (la page liste **et**
-  le company switcher consomment le même endpoint), donc 1 seul point à filtrer.
-  Le super-admin atteint la config plateforme par URL directe.
-
-> **Portée transverse assumée** : `isPlatform` + le filtre touchent l'infra Group
-> générique, pas seulement le module skill. Regroupés sur `feat/AI-skills-v1` pour
-> livrer une fonctionnalité complète dans un PR cohérent. Titre de PR signalant le
-> débordement : `feat(ai-skill): platform group + skill engine config`.
+- **Commande CLI one-shot** `yarn flag-platform-group <groupId>`
+  (`scripts/flag-platform-group.js`) : pose `isPlatform: true` sur un groupe
+  existant. Valide que le groupe existe et qu'aucun autre n'est déjà flaggé.
+  Idempotent. ⚠️ La clé API (chiffrée) du moteur Skills se saisit ensuite via
+  l'UI.
+- **Pas de filtrage** : le groupe plateforme est un vrai groupe opérateur utilisé
+  pour l'emailing réel → il apparaît dans les listes comme n'importe quel autre.
+- Le concept se **généralise** : pas de hardcoding « Badsender » ; un self-host
+  flaggue son propre groupe opérateur.
 
 ### 4. Playground → défaut plateforme (`feat/ai-playground`, après merge)
 
 `executeScenario()` : si ni `groupId` (runtime) ni `scenario.groupContext`,
 fallback sur `Groups.findOne({ isPlatform: true })` au lieu de jeter
-« A Group context is required ». Échec explicite seulement si la company
-plateforme n'existe pas / n'a pas de moteur `skill` actif. `featureType: 'playground'` (analytics) inchangé.
+« A Group context is required ». Échec explicite seulement si aucun groupe
+plateforme n'est flaggé / n'a de moteur `skill` actif. `featureType: 'playground'`
+(analytics) inchangé.
 
 ## Critères de done (étape 1)
 
-1. Un super-admin configure une `Integration` sur le moteur **Skills** de la
-   company plateforme via l'UI.
-2. La company plateforme **n'apparaît pas** dans la liste des companies ni dans le
-   switcher.
+1. `yarn flag-platform-group <groupId>` flaggue un groupe opérateur existant, et
+   un super-admin y configure une `Integration` sur le moteur **Skills**.
+2. La section **Moteur Skills** n'est visible **que** sur le groupe plateforme ;
+   le groupe reste présent dans les listes / le switcher (pas de filtrage).
 3. Le run d'un scénario aboutit avec un output non nul (clé API saisie au
    préalable).
 4. Le contrat `featureType` ≠ `categoryOverride` est documenté (code + ce doc).

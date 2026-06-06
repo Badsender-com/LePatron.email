@@ -278,6 +278,7 @@
     "test": "jest --watch",
     "test-ci": "jest",
     "check-skills": "node scripts/check-skill-usage.js --dry",
+    "flag-platform-group": "node scripts/flag-platform-group.js",
     "test:e2e": "cypress",
     "test:e2e-ci": "cypress run"
   },

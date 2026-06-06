@@ -57,12 +57,11 @@ module.exports = {
  */
 
 async function list(req, res) {
-  // Exclude the internal platform group from client-facing listings (group
-  // list page + company switcher both consume this endpoint). Super-admins
-  // reach its settings by direct URL. This is the single client-facing
-  // enumeration of all groups, so filtering here is sufficient.
+  // The platform group is a real operator group (Badsender / self-host
+  // operator) used for actual emailing, so it appears in listings like any
+  // other group — no filtering.
   const [groups, groupsWithProfiles] = await Promise.all([
-    Groups.find({ isPlatform: { $ne: true } }).sort({ name: 1 }),
+    Groups.find({}).sort({ name: 1 }),
     Profiles.distinct('_company'),
   ]);
   const profileGroupSet = new Set(groupsWithProfiles.map(String));
