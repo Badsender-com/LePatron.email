@@ -11,7 +11,15 @@ import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsRowActions from '~/components/row-actions/BsRowActions.vue';
 import { IS_ADMIN, USER } from '~/store/user';
-import { Building2, Plus, Pencil, Check, XCircle, Trash2 } from 'lucide-vue';
+import {
+  Building2,
+  Plus,
+  Pencil,
+  Check,
+  XCircle,
+  Trash2,
+  Cpu,
+} from 'lucide-vue';
 
 export default {
   name: 'PageGroups',
@@ -136,6 +144,14 @@ export default {
     buildQuickActions(item) {
       return [
         {
+          key: 'platform',
+          icon: Cpu,
+          text: item.isPlatform
+            ? 'groups.platform.unsetAction'
+            : 'groups.platform.setAction',
+          onClick: () => this.togglePlatform(item),
+        },
+        {
           key: 'edit',
           icon: Pencil,
           text: 'global.edit',
@@ -149,6 +165,32 @@ export default {
           onClick: () => this.confirmDelete(item),
         },
       ];
+    },
+    async togglePlatform(item) {
+      const next = !item.isPlatform;
+      try {
+        await this.$axios.$put(apiRoutes.groupPlatform({ groupId: item.id }), {
+          isPlatform: next,
+        });
+        // The platform group is a singleton: when setting one, clear the flag
+        // on every other group locally so the table reflects the move.
+        this.groups = this.groups.map((g) => {
+          if (g.id === item.id) return { ...g, isPlatform: next };
+          return next ? { ...g, isPlatform: false } : g;
+        });
+        this.showSnackbar({
+          text: this.$t(
+            next ? 'groups.platform.setDone' : 'groups.platform.unsetDone',
+            { name: item.name }
+          ),
+          color: 'success',
+        });
+      } catch (error) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
     },
     confirmDelete(group) {
       this.deletingGroup = group;
@@ -230,6 +272,15 @@ export default {
         >
           <template #item.name="{ item }">
             <span class="font-weight-medium">{{ item.name }}</span>
+            <v-chip
+              v-if="item.isPlatform"
+              x-small
+              color="accent"
+              outlined
+              class="ml-2"
+            >
+              {{ $t('groups.platform.badge') }}
+            </v-chip>
           </template>
 
           <template #item.createdAt="{ item }">
