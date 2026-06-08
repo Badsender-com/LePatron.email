@@ -4,13 +4,23 @@ import { required } from 'vuelidate/lib/validators';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import { ADOBE_TARGET_TYPES } from '~/helpers/constants/adobe-target-types';
+import BsTextField from '~/components/form/bs-text-field.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
+import { Settings, Target } from 'lucide-vue';
 
 export default {
   name: 'ADOBEComponent',
+  components: {
+    BsTextField,
+    BsFormSection,
+    LucideSettings: Settings,
+    LucideTarget: Target,
+  },
   mixins: [validationMixin],
   props: {
     disabled: { type: Boolean, default: false },
     isLoading: { type: Boolean, default: false },
+    isEdit: { type: Boolean, default: false },
     profileData: { type: Object, default: () => ({}) },
   },
   data() {
@@ -46,22 +56,47 @@ export default {
   },
   computed: {
     nameErrors() {
-      return this.requiredValidationFunc('name');
+      const errors = [];
+      if (!this.$v.profile.name.$dirty) return errors;
+      if (!this.$v.profile.name.required) {
+        errors.push(this.$t('global.errors.nameRequired'));
+      }
+      return errors;
     },
     adobeImsUrlErrors() {
-      return this.requiredValidationFunc('adobeImsUrl');
+      const errors = [];
+      if (!this.$v.profile.adobeImsUrl.$dirty) return errors;
+      if (!this.$v.profile.adobeImsUrl.required) {
+        errors.push(this.$t('global.errors.adobeImsUrlRequired'));
+      }
+      return errors;
     },
     adobeBaseUrlErrors() {
-      return this.requiredValidationFunc('adobeBaseUrl');
+      const errors = [];
+      if (!this.$v.profile.adobeBaseUrl.$dirty) return errors;
+      if (!this.$v.profile.adobeBaseUrl.required) {
+        errors.push(this.$t('global.errors.adobeBaseUrlRequired'));
+      }
+      return errors;
     },
     apiKeyErrors() {
-      return this.requiredValidationFunc('apiKey');
+      const errors = [];
+      if (!this.$v.profile.apiKey.$dirty) return errors;
+      if (!this.$v.profile.apiKey.required) {
+        errors.push(this.$t('global.errors.apiKeyRequired'));
+      }
+      return errors;
     },
     secretKeyErrors() {
-      return this.requiredValidationFunc('secretKey');
+      const errors = [];
+      if (!this.$v.profile.secretKey.$dirty) return errors;
+      if (!this.$v.profile.secretKey.required) {
+        errors.push(this.$t('global.errors.secretKeyRequired'));
+      }
+      return errors;
     },
-    targetTypeErrors() {
-      return this.requiredValidationFunc('targetType');
+    submitLabel() {
+      return this.isEdit ? this.$t('global.save') : this.$t('global.create');
     },
   },
   methods: {
@@ -70,132 +105,149 @@ export default {
       if (this.$v.$invalid) {
         return;
       }
-
       this.$emit('submit', this.profile);
-    },
-    requiredValidationFunc(valueKey) {
-      const errors = [];
-      const dirty = this.$v?.profile[valueKey]?.$dirty;
-      dirty &&
-        !this.$v.profile[valueKey]?.required &&
-        errors.push(this.$t(`global.errors.${valueKey}Required`));
-      return errors;
     },
   },
 };
 </script>
 
 <template>
-  <v-card flat tag="form" :loading="isLoading" :disabled="isLoading">
-    <v-card-text class="pb-5">
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="name"
-            v-model="profile.name"
-            :label="$t('global.profileName')"
-            name="name"
-            required
-            :error-messages="nameErrors"
-            @input="$v.profile.name.$touch()"
-            @blur="$v.profile.name.$touch()"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="adobeImsUrl"
-            v-model="profile.adobeImsUrl"
-            :label="$t('global.adobeImsUrl')"
-            name="adobeImsUrl"
-            required
-            :error-messages="adobeImsUrlErrors"
-            @input="$v.profile.adobeImsUrl.$touch()"
-            @blur="$v.profile.adobeImsUrl.$touch()"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="adobeBaseUrl"
-            v-model="profile.adobeBaseUrl"
-            :label="$t('global.adobeBaseUrl')"
-            name="adobeBaseUrl"
-            required
-            :error-messages="adobeBaseUrlErrors"
-            placeholder="https://example.campaign.adobe.com/nl"
-            :hint="$t('global.adobeBaseUrlHelper')"
-            persistent-hint
-            @input="$v.profile.adobeBaseUrl.$touch()"
-            @blur="$v.profile.adobeBaseUrl.$touch()"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="apiKey"
-            v-model="profile.apiKey"
-            :label="$t('global.apiKey')"
-            name="apiKey"
-            required
-            :error-messages="apiKeyErrors"
-            @input="$v.profile.apiKey.$touch()"
-            @blur="$v.profile.apiKey.$touch()"
-          />
-        </v-col>
-      </v-row>
-
-      <v-row>
-        <v-col cols="12">
-          <v-text-field
-            id="secretKey"
-            v-model="profile.secretKey"
-            :label="$t('global.secretKey')"
-            name="secretKey"
-            required
-            :error-messages="secretKeyErrors"
-            @input="$v.profile.secretKey.$touch()"
-            @blur="$v.profile.secretKey.$touch()"
-          />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-radio-group
-            v-model="profile.targetType"
-            :label="$t('global.targetType')"
-            :error-messages="targetTypeErrors"
-            row
-            @change="$v.profile.targetType.$touch()"
-            @blur="$v.profile.targetType.$touch()"
-          >
-            <v-radio
-              v-for="(value, key) in adobeTargetTypes"
-              :key="key"
-              :label="$t(`adobe.targetTypes.${key}`)"
-              :value="value"
+  <v-card flat tile class="esp-form">
+    <v-card-text>
+      <!-- API Configuration Section -->
+      <bs-form-section>
+        <template #icon>
+          <lucide-settings :size="20" />
+        </template>
+        <template #title>
+          {{ $t('profiles.apiConfiguration') }}
+        </template>
+        <template #description>
+          {{ $t('profiles.apiConfigurationDescription') }}
+        </template>
+        <v-row>
+          <v-col cols="12" md="6">
+            <bs-text-field
+              v-model="profile.name"
+              :label="$t('global.profileName')"
+              :error-messages="nameErrors"
+              :disabled="isLoading"
+              required
+              @blur="$v.profile.name.$touch()"
             />
-          </v-radio-group>
-        </v-col>
-      </v-row>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12">
+            <bs-text-field
+              v-model="profile.adobeImsUrl"
+              :label="$t('global.adobeImsUrl')"
+              :error-messages="adobeImsUrlErrors"
+              :disabled="isLoading"
+              required
+              @blur="$v.profile.adobeImsUrl.$touch()"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12">
+            <bs-text-field
+              v-model="profile.adobeBaseUrl"
+              :label="$t('global.adobeBaseUrl')"
+              :error-messages="adobeBaseUrlErrors"
+              :disabled="isLoading"
+              placeholder="https://example.campaign.adobe.com/nl"
+              :hint="$t('global.adobeBaseUrlHelper')"
+              persistent-hint
+              required
+              @blur="$v.profile.adobeBaseUrl.$touch()"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12" md="6">
+            <bs-text-field
+              v-model="profile.apiKey"
+              :label="$t('global.apiKey')"
+              :error-messages="apiKeyErrors"
+              :disabled="isLoading"
+              required
+              @blur="$v.profile.apiKey.$touch()"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <bs-text-field
+              v-model="profile.secretKey"
+              :label="$t('global.secretKey')"
+              :error-messages="secretKeyErrors"
+              :disabled="isLoading"
+              required
+              @blur="$v.profile.secretKey.$touch()"
+            />
+          </v-col>
+        </v-row>
+      </bs-form-section>
+
+      <!-- Target Type Section -->
+      <bs-form-section last>
+        <template #icon>
+          <lucide-target :size="20" />
+        </template>
+        <template #title>
+          {{ $t('global.targetType') }}
+        </template>
+        <template #description>
+          {{ $t('profiles.targetTypeDescription') }}
+        </template>
+        <v-radio-group
+          v-model="profile.targetType"
+          :disabled="isLoading"
+          class="target-type-radio"
+        >
+          <v-radio
+            v-for="(value, key) in adobeTargetTypes"
+            :key="key"
+            :label="$t(`adobe.targetTypes.${key}`)"
+            :value="value"
+            color="accent"
+          />
+        </v-radio-group>
+      </bs-form-section>
     </v-card-text>
+
     <v-divider />
+
     <v-card-actions>
       <v-spacer />
+
       <v-btn
+        color="accent"
         elevation="0"
         :loading="isLoading"
         :disabled="disabled"
-        color="accent"
         @click="onSubmit"
       >
-        {{ $t('global.save') }}
+        {{ submitLabel }}
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.esp-form {
+  margin-top: 1rem;
+}
+
+.target-type-radio {
+  margin-top: 0;
+  padding-top: 0;
+
+  ::v-deep .v-input--selection-controls__input {
+    margin-right: 8px;
+  }
+
+  ::v-deep .v-label {
+    font-size: 0.875rem;
+  }
+}
+</style>

@@ -12,17 +12,14 @@
   //font-size: 1.1em;
   line-height: normal;
 
-  .propEditor .propInput .checkbox-replacer {
-    padding: 4px 2px;
-    font-size: 1.2em;
-  }
+  // Checkbox replacer base styling removed - now handled by Vuetify toggle styles below
+  // Old: .propEditor .propInput .checkbox-replacer { padding: 4px 2px; font-size: 1.2em; }
   .objLabel.level0,
   .pane-title {
-    font-size: 1.2em;
+    font-size: 1em;
   }
-  .objLabel.level1 {
-    font-size: 1.2em;
-  }
+  // .objLabel.level1 size is controlled in the consolidated rule below
+  // (look for "Level 1: subsection header") — do not redefine here.
   .noSelectedBlock,
   .customStyleHelp,
   .objEmpty,
@@ -64,7 +61,7 @@
     bottom: -10px;
   }
   .img-dropzone.ui-state-draghover:before {
-    background-color: fade(@mosaico-selection-color, 80%);
+    background-color: rgba(0, 172, 220, 0.8); // accent at 80% opacity
     animation: none;
   }
 
@@ -91,11 +88,8 @@
     overflow: visible; // preview icons to select desktop/tablet/smartphone are truncated without this.
   }
 
-  .fa {
-    // reset .fa
-    display: inline-block;
-    font-style: normal;
-  }
+  // .fa styles are handled by lucide-icons.less
+  // Do not reset .fa here to avoid overriding icon styles
 
   .buttons {
     text-align: center;
@@ -156,73 +150,87 @@
     }
   }
 
+  // Option row — flex left-align (single source of truth, see style_variables.less)
+  // flex-basis: 0 on .propInput stops native widget intrinsic size from triggering
+  // unwanted line-wraps; widgets shrink to fit the remaining 40% column.
   .propEditor {
-    display: table;
+    display: flex;
+    align-items: center;
+    gap: @panel-label-gap;
     width: 100%;
+    margin-bottom: @panel-row-gap;
   }
 
   .propLabel {
-    padding: 8px 8px;
-    padding-left: 0;
+    flex: 0 0 @panel-label-min-w;  // fixed 60% — does not shrink
+    min-width: 0;
+    text-align: left;
+    color: #757575;  // gray-600 - secondary text
+    font-size: 13px;
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 45%;
-    float: left;
-    text-align: right;
 
     // "?" for tooltips
-    &[title]:before {
-      .makeFontAwesome();
-      float: right;
-      position: initial;
-      color: lighten(@text-color, 20%);
-      content: '\f059';
+    &[title]:after {
+      color: #9e9e9e;  // gray-500 - muted
+      content: '';
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      background-color: currentColor;
+      vertical-align: middle;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
       font-size: 80%;
       line-height: 1.5em;
       margin-left: 0.5em;
+      transition: color 0.15s ease;
+    }
+
+    &[title]:hover:after {
+      color: var(--v-accent-base, #00acdc);
     }
   }
 
   .propInput {
-    width: 55%;
-    float: left;
+    flex: 1 1 0;       // basis 0 → ignore widget intrinsic size, stretch to fill
+    min-width: 0;
     input,
     select {
       width: 100%;
+      max-width: 100%;
     }
   }
 
-  .notnull.propEditor.checkboxes .propInput {
-    width: 50%;
-  }
-
+  // .propCheck sits BETWEEN .propLabel and .propInput visually (uses flex order)
+  // so the reset icon is read as "label → reset → input" rather than trailing
+  // off the row.
   .propCheck {
-    width: 5%;
-    float: left;
-    padding: 5px;
+    flex: 0 0 auto;
+    padding: 0;
+    order: 2;  // between label (1) and input (3)
     display: none;
   }
+  .propLabel { order: 1; }
+  .propInput { order: 3; }
   .notnull .propCheck {
     display: block;
   }
-
-  .propLabel:after,
-  .propInput:after,
-  .objEdit:after {
-    content: '';
-    display: table;
+  // When the reset icon is visible, shrink the label from 60% → 50% so the
+  // reset icon + input fit without truncating select values.
+  .propEditor.notnull > .propLabel {
+    flex-basis: 50%;
   }
 
   .objEdit {
     display: block;
     width: 100%;
-    /* background-color: rgba(0,0,0,0.02); */
-    &.level1 {
-      /* border-bottom: 2px solid #f1eee6; */
-      background-color: @mosaico-background-color;
-      padding: 2px;
-    }
   }
 
   .label.notused {
@@ -251,70 +259,112 @@
     display: none;
   }
 
-  .objEdit.level1 {
-    /*  border-bottom: 2px solid #CCC; */
-    padding-top: 4px;
-    padding-bottom: 2px;
-    margin-bottom: 3px;
-    /*  padding: 2px; */
-  }
-  .objLabel.level1 {
-    color: black;
-    display: block;
-    /* display: none; */
-  }
-
-  #toolstyles .objLabel.level1,
-  #tooltheme .objLabel.level1 {
-    padding-left: 60px;
-  }
-
+  // Base section label - minimal, no borders
   .objLabel {
-    // text-align: center;
-    border-bottom: 3px solid @accent-color;
-    color: @mosaico-text-color;
     display: block;
-    margin: -4px -2px 6px;
-    padding: 5px;
-    border-radius: 6px 6px 0 0;
+    color: #424242;  // gray-800 - primary text
+    font-size: 0.875rem;  // 14px
+    font-weight: 500;
+    margin: 0 0 8px;
+    padding: 8px 0;
+    border: none;
   }
 
+  // Level 0: main section header (Cover, Template Options, ...)
+  // Stretched edge-to-edge — relies on parent container having no horizontal padding.
   .objEdit.level0 {
-    // border: 1px solid @mosaico-text-color;
-    padding: 0px 1px;
-    margin-top: 12px;
+    margin-top: 20px;
   }
-
+  // Level 0 header — full-width since .ui-tabs-panel has no horizontal padding.
   .objLabel.level0 {
     display: block;
-    color: @mosaico-text-color;
-    background-color: @mosaico-background-color;
-    font-weight: bold;
-    font-size: 90%;
-    border-bottom: 3px solid @mosaico-text-color;
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #f5f5f5;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border: none;
+    border-left: 3px solid var(--v-accent-base, #00acdc);
     border-radius: 0;
-    padding: 3px 10px;
-    // margin: -4px -7px 6px -7px;
-    margin: 0px -7px 8px -7px;
-  }
-  .supportsCustomStyles .objLabel.level0 {
-    margin-right: 70px;
+    padding: 10px 12px;
+    margin: 0 0 12px;
+    text-transform: none;
+    letter-spacing: 0.01em;
   }
 
+  // Level 1: subsection card (Button, Image, Tracking, ...)
+  .objEdit.level1 {
+    background-color: white;
+    padding: @panel-section-pad;
+    border-radius: 4px;
+    margin-top: @panel-section-gap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    position: relative;
+  }
+  // First level1 right after a level0 header sits flush (level0 already provides separation)
+  .objEdit.level0 + .objEdit.level1,
+  .objLabel.level0 + .objEdit.level1 {
+    margin-top: 0;
+  }
+
+  // Level 1: subsection header
+  .objLabel.level1 {
+    display: block;
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 4px 0 8px 0;
+    margin: 0 0 8px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  // Scrollable container for the whole panel (Style/Theme tabs).
+  // No horizontal padding so the level0 header break-out (-0.7em) reaches
+  // the panel edges consistently, like in the Content tab.
   .objEdit.level-1 {
-    padding: 0 15px;
+    padding: 0;
     overflow: auto;
     height: 95%;
     background-color: @mosaico-background-color;
     border-radius: 6px;
   }
 
-  .objEdit {
-    position: relative;
+  // Top-level option rows (direct children of .objEdit.level0, NOT inside a
+  // .objEdit.level1 card) need the same horizontal inset as level1 card
+  // content (16px), so spacing feels consistent across the whole panel.
+  .objEdit.level0 > .propEditor {
+    padding-left: 16px;
+    padding-right: 16px;
   }
-  .objEdit.level1 {
-    margin-top: 15px;
+
+  // Long text/URL/email inputs (Lien, Alt text, Preheader, Mirror Link, ...)
+  // get a stacked layout: label above, input full-width below.
+  //
+  // editor.js wraps every generated input in <label class="data-{widget}">
+  // (see _propInput in packages/editor/src/js/converter/editor.js:70-77).
+  // We target only the wide-input widgets and skip narrow ones (color, select,
+  // font, integer, boolean). The Vue tracking section uses a different markup
+  // (input direct child of .propInput, no <label>) so it is naturally excluded.
+  .propEditor:has(> .propInput > label.data-url),
+  .propEditor:has(> .propInput > label.data-text),
+  .propEditor:has(> .propInput > label.data-string),
+  .propEditor:has(> .propInput > label.data-email) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+
+    > .propLabel {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+    > .propInput {
+      flex: 1 1 auto;
+      width: 100%;
+    }
   }
+
   .objPreview {
     width: 50px;
     height: 50px;
@@ -332,21 +382,10 @@
     left: 20%;
   }
 
-  .propEditor {
-    /* border-bottom: 2px solid #CCC; */
-    padding: 2px;
+  // Last row in a level1 card has no bottom margin (the card padding handles it)
+  .objEdit.level1 > .propEditor:last-child {
+    margin-bottom: 0;
   }
-  .objEdit .propEditor {
-    padding: 2px 0;
-    border: 0;
-  }
-
-  /* questo renderebbe grigini i dati default
-  .propInput.default input,
-  .propInput.default select {
-    color: #CCC;
-  }
-  */
 
   .propEditor.notnull {
     font-weight: bold;
@@ -369,132 +408,281 @@
     position: relative;
   }
 
+  // Modern color picker - Design System aligned
   .propInput .colorPicker {
-    padding-right: 30px;
+    padding-right: 36px;
   }
 
   .propInput .data-color input[type='text'] {
-    font-size: 90%;
-    font-family: monospace;
+    font-size: 12px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
     width: 5.5em;
     margin: 0;
     margin-left: 85px;
-    background-color: transparent;
-    border-color: fade(@mosaico-button-border-color, 20%);
-    box-shadow: none;
-    border-style: dashed;
+    background: white;
+    border: 1px solid #e0e0e0;  // gray-300
+    border-radius: 4px;
+    padding: 4px 8px;
+    transition: all 0.2s ease;
 
-    &:hover,
+    &:hover {
+      border-color: #bdbdbd;  // gray-400
+    }
+
     &:focus {
-      .input-style();
-
-      font-size: 90%;
-      font-family: monospace;
-      width: 5.5em;
-      margin: 0;
-      margin-left: 85px;
-      /*
-      background: none #e4dfcf;
-      border-radius: 5px;
-      border-color: @mosaico-button-border-color;
-      border-style: solid;
-      */
+      border-color: var(--v-accent-base, #00acdc);
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
+      outline: none;
     }
   }
 
   .propInput .evo-pointer {
     position: absolute;
-    .input-style();
     margin: 0;
-    //  right: 4px;
-    //  top: 6px;
     z-index: 5;
-
     left: 0px;
     top: 0px;
-    // border-radius: 5px;
     width: 80px;
     height: 30px;
-    // border-color: @mosaico-input-border-color;
 
-    // sovrapposizioni arrotondamenti
-    border-top-right-radius: 15px;
-    border-bottom-right-radius: 15px;
+    // Modern styling - solid border, consistent radius
+    background: white;
+    border: 1px solid #e0e0e0;  // gray-300
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #bdbdbd;  // gray-400
+    }
 
     &:before {
-      .button-style();
-
-      font-family: FontAwesome;
-      content: '\f0d7';
-      font-weight: normal;
-
-      // see .button_dropdown_split styles
-      border-left: @input-border-size solid
-        fade(@button-border-color-split, 50%) !important; // !important to work also on .big and .primary
-      border-top-left-radius: 0 !important;
-      border-bottom-left-radius: 0 !important;
-
+      // Modern chevron button - subtle gray background
+      content: '';
       position: absolute;
-      top: -1px;
-      right: -1px;
-      bottom: -1px;
-      line-height: 30px;
+      top: 0;
+      right: 0;
+      bottom: 0;
       width: 28px;
-      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;  // gray-100
+      border-left: 1px solid #e0e0e0;
+      border-radius: 0 3px 3px 0;
+      color: #757575;  // gray-600
+
+      // Chevron down icon using CSS mask
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      background-color: currentColor;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
       margin: 0;
+      padding: 0;
     }
   }
 
-  .objEdit input[type='checkbox'] {
+  // ==========================================================================
+  // TOGGLE SWITCHES - Vuetify v-switch Style (EXACT MATCH)
+  // Based on vuetify.css specifications:
+  // Track: 36x14px, border-radius: 8px, opacity: 0.6
+  // Thumb: 20x20px, transform: 20px when checked
+  // ==========================================================================
+
+  .objEdit .propInput input[type='checkbox'] {
+    display: none !important;
+
+    // Container - width: 38px (Vuetify selection-controls__input width)
+    & + .checkbox-replacer {
+      position: relative !important;
+      display: inline-block !important;
+      width: 38px !important;
+      height: 20px !important;
+      vertical-align: middle !important;
+      cursor: pointer !important;
+      text-align: left !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    // Track (background bar) - Vuetify specs: 36x14px, border-radius: 8px
+    & + .checkbox-replacer::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 3px !important;  // Center vertically: (20 - 14) / 2 = 3
+      left: 1px !important;
+      width: 36px !important;
+      height: 14px !important;
+      background-color: rgba(0, 0, 0, 0.38) !important;  // Vuetify theme--light track color
+      border-radius: 8px !important;
+      opacity: 0.6 !important;
+      transition: background-color 0.3s cubic-bezier(0.25, 0.8, 0.5, 1) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      float: none !important;
+      display: block !important;
+      // Reset mask (prevents icon display)
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+    }
+
+    // Thumb (circle) - Vuetify specs: 20x20px
+    & + .checkbox-replacer::before {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      background-color: #FFFFFF !important;  // Vuetify theme--light thumb color
+      border-radius: 50% !important;
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12) !important;  // elevation-1
+      transition: 0.3s cubic-bezier(0.25, 0.8, 0.5, 1) !important;
+      z-index: 1 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      float: none !important;
+      display: block !important;
+      font-size: inherit !important;
+      line-height: normal !important;
+      opacity: 1 !important;
+      // Reset mask (prevents icon display)
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+    }
+
+    // Checked state - Track becomes accent color
+    &:checked + .checkbox-replacer::after {
+      background-color: var(--v-accent-base, #00ACDC) !important;
+      opacity: 0.6 !important;  // Maintain opacity for checked state
+    }
+
+    // Checked state - Thumb slides right (20px as per Vuetify)
+    &:checked + .checkbox-replacer::before {
+      transform: translateX(18px) !important;  // 38 - 20 = 18px to align with right edge
+      background-color: var(--v-accent-base, #00ACDC) !important;
+    }
+
+    // Hover states - ripple effect simulation
+    & + .checkbox-replacer:hover::before {
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12),
+                  0 0 0 8px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    &:checked + .checkbox-replacer:hover::before {
+      box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+                  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+                  0 1px 3px 0 rgba(0, 0, 0, 0.12),
+                  0 0 0 8px rgba(0, 172, 220, 0.12) !important;
+    }
+  }
+
+  // .propCheck checkbox is a "revert to theme default" toggle (visible only when
+  // .notnull, i.e. the style differs from the theme). Rendered as a small
+  // circular-arrow button using the same visual language as the block-action
+  // toolbar (.tool buttons): primary-color icon, cyan-tinted hover bg.
+  .propCheck input[type='checkbox'] {
     display: none;
 
     & + .checkbox-replacer {
-      width: 1.28571429em;
-      display: block;
-      text-align: center;
-      // Rompe IE10
-      // visibility: hidden;
-    }
+      position: relative;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      margin: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      color: var(--v-primary-base, #093040);
+      transition: background-color 0.15s ease, color 0.15s ease;
 
-    /* , &:checked + .checkbox-replacer:before */
-    & + .checkbox-replacer:before {
-      .makeFontAwesome();
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: currentColor;
+        -webkit-mask-image: @lucide-rotate-ccw;
+        mask-image: @lucide-rotate-ccw;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        opacity: 1;
+      }
+
+      &::after {
+        content: none;
+      }
+
+      &:hover {
+        background-color: rgba(0, 172, 220, 0.1);
+      }
     }
   }
 
-  .objEdit input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      content: '\f205'; /* '\f096'; */
-    }
-    & + .checkbox-replacer:before {
-      font-size: 150%;
-      text-align: center;
-      content: '\f204'; /* '\f14a'; */
-    }
-  }
-
-  .propCheck input[type='checkbox'] {
-    &:checked + .checkbox-replacer:before {
-      content: '\f041'; /* tondo con punto */
-      content: '\f1b2'; /* cubo */
-      font-size: 14px;
-      opacity: 1;
-    }
-    & + .checkbox-replacer:before {
-      content: '\f0ac'; /* asterisco "\f069"; */
-      content: '\f1b3'; /* cubi */
-      font-size: 14px;
-      opacity: 0.8;
-    }
-  }
-
+  // Modern number spinner - Design System aligned
   .propInput .ui-spinner {
     width: 100%;
     margin: 0;
+    border: 1px solid #e0e0e0;  // gray-300
+    border-radius: 4px;
+    background: white;
+    overflow: hidden;
 
     .ui-spinner-input {
-      border-top-right-radius: 15px;
-      border-bottom-right-radius: 15px;
+      border: none;
+      border-radius: 4px 0 0 4px;
+      background: transparent;
+      box-shadow: none;
+
+      &:focus {
+        box-shadow: none;
+        outline: none;
+      }
+    }
+
+    // Spinner buttons - modern flat style
+    .ui-spinner-button {
+      background: #f5f5f5;  // gray-100
+      border: none;
+      border-left: 1px solid #e0e0e0;
+      width: 28px;
+
+      &:hover {
+        background: #eeeeee;  // gray-200
+      }
+
+      &:active {
+        background: #e0e0e0;  // gray-300
+      }
+
+      .ui-icon {
+        color: #757575;  // gray-600
+      }
+    }
+
+    // Focus state - accent border
+    &:focus-within {
+      border-color: var(--v-accent-base, #00acdc);
+      box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.1);
     }
 
     // NOTE: maybe this could be applied also to non-propInput spinners
@@ -511,17 +699,21 @@
     cursor: help;
   }
 
+  // Modern info boxes - Design System aligned
   .noSelectedBlock,
   .customStyleHelp,
   .objEmpty,
   .galleryEmpty,
   .blockDescription {
-    padding: 1em;
-    margin-bottom: 0.5em;
-    background-color: @mosaico-object-background-color;
-    border-radius: @mosaico-object-border-radius;
-    box-shadow: @mosaico-object-shadow;
-    color: #4f4f4f;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background-color: #fafafa;  // gray-50 - subtle background
+    border: 1px solid #eeeeee;  // gray-200
+    border-radius: 4px;
+    box-shadow: none;
+    color: #757575;  // gray-600 - secondary text
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .customStyleHelp,
@@ -648,21 +840,33 @@
     position: relative;
   }
 
+  // Custom-block card: light gray surface so it stands out from the white
+  // sidebar background — template-block cards keep the white surface from
+  // .draggable-item since they have their own image preview that fills it.
   .block-custom {
     min-height: 5rem;
-    margin-bottom: 5px;
-    background-color: #F3F3F3;
-    padding-top: 35px;
+    background: #fafafa;
+    padding: 36px 12px 12px 12px;  // top room for the .block-name pill
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
   }
 
   .block-content-custom {
-    margin-left: 10px;
+    margin: 0;
+    padding: 4px 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.4;
 
     .block-content-custom-text {
-      margin-top: 25px;
+      margin: 0;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
+    }
+
+    & + .block-content-custom {
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
   }
 
@@ -710,7 +914,7 @@
     }
     .ui-tabs-panel {
       margin: 0;
-      padding: 0.7em;
+      padding: 0;  // No outer padding — option panels manage their own horizontal inset
       position: absolute;
       bottom: @ui-tabs-panel-padding;
       left: @ui-tabs-panel-padding;
@@ -745,18 +949,27 @@
       // outline: 1px solid green;
     }
   }
+  // Modern block-preview card: white surface, rounded, soft shadow that lifts
+  // on hover. Replaces the legacy "scale(1.05) + heavy shadow" effect.
   .draggable-item {
     position: relative;
+    margin-left: 15px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 
     .addblockbutton {
       z-index: 1000;
       position: absolute;
-      bottom: 10px;
-      right: 5px;
+      bottom: 8px;
+      right: 8px;
       display: none;
 
       &.custom {
-        right: 10px;
+        right: 8px;
       }
 
       .buttons-container {
@@ -768,40 +981,69 @@
 
     .image,
     .block img {
-      box-shadow: 0 0 1px @mosaico-shadow-color;
-      margin: 3px 0;
+      display: block;
+      width: 100%;
+      box-shadow: none;
+      margin: 0;
     }
   }
 
-  .input-field.search-container {
+  // Modern search field for the custom-blocks list — markup is
+  // <div class="bs-form-field search-container">
+  //   <input class="search-input" />
+  //   <label><i class="fa fa-search search-icon"></i></label>
+  // </div>
+  .search-container {
     position: relative;
-    margin-bottom: 1rem;
+    margin: 0 15px 12px 15px;
+    display: block !important;          // override .bs-form-field column-reverse
+    flex-direction: row !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 
     .search-input {
-      width: 100%;
-      height: 2.3rem;
-      border: 2px solid #ccc; // Border color when not focused
-      border-radius: 4px; // Rounded corners
-      padding: 0.25rem 0.5rem; // Some padding for better appearance
-      transition: border-color 0.3s ease; // Transition effect for smooth change
+      width: 100% !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      padding: 0 12px 0 36px !important;  // left: room for search icon
+      border: 1px solid rgba(0, 0, 0, 0.15) !important;
+      border-radius: 4px !important;
+      background: white !important;
+      font-size: 13px !important;
+      color: rgba(0, 0, 0, 0.87) !important;
+      box-shadow: none !important;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 
+      &::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+      }
+
+      &:hover:not(:focus) {
+        border-color: rgba(0, 0, 0, 0.3) !important;
+      }
       &:focus {
-        border-width: 2px;
-        border-color: #26a69a; // Border color when focused
-        outline: none; // Remove default outline
+        border-color: var(--v-accent-base, #00acdc) !important;
+        box-shadow: 0 0 0 2px rgba(0, 172, 220, 0.12) !important;
+        outline: none !important;
       }
     }
 
-    label {
-      position: absolute;
-      right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
+    > label {
+      position: absolute !important;
+      left: 10px !important;
+      right: auto !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      pointer-events: none;
+      color: rgba(0, 0, 0, 0.4) !important;
+      font-size: 14px !important;
     }
 
     .search-icon {
-      cursor: pointer;
+      cursor: text;
+      color: inherit;
     }
   }
 
@@ -812,22 +1054,12 @@
   }
 
   .draggable-item:hover {
-    transform: scale(1.05, 1.05);
     z-index: 10;
-    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+    transform: translateY(-1px);
 
     .addblockbutton {
       display: block;
-    }
-
-    .image {
-      box-shadow: 0 0 15px @mosaico-shadow-color;
-    }
-    .block {
-      // outline: 2px solid red;
-      img {
-        box-shadow: 0 0 15px @mosaico-shadow-color;
-      }
     }
   }
 
@@ -929,10 +1161,10 @@
   .block-list {
     position: absolute;
     inset: 0;
-    top: 3rem;
-    padding: 0.7em;
+    top: 4rem;
+    padding: 0;
     // suppongo che le immagini siano create per i 340px
-    max-width: 346px;
+    max-width: 370px;
   }
 
   // mette i blocchi al 100%
@@ -941,8 +1173,18 @@
     width: 100%;
   }
 
+  // Selectable level1 sections still emit a click handler (synced with canvas
+  // selection) but no visual feedback — the canvas already shows the active
+  // selection, and the heavy outline was misleading.
   .objEdit.level1.selectable {
     .makeSelectable(5px, ~'.selecteditem', 0);
+
+    &:after,
+    &:hover:after,
+    &.selecteditem:after,
+    &.selecteditem:hover:after {
+      outline: none;
+    }
   }
 
   .blockCheck {
@@ -963,7 +1205,12 @@
     }
 
     & + .checkbox-replacer:after {
-      .makeFontAwesome;
+      display: inline-block;
+      background-color: currentColor;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
     }
 
     & + .checkbox-replacer:before,
@@ -984,14 +1231,32 @@
       box-sizing: content-box;
     }
 
+    // Cube icon (single block) - using CSS mask
     & + .checkbox-replacer:after,
     &:checked + .checkbox-replacer:after {
-      content: '\f1b2'; /* cubo */
+      content: '';
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
     }
 
+    // Boxes icon (multiple blocks) - using CSS mask
     & + .checkbox-replacer:before,
     &:checked + .checkbox-replacer:before {
-      content: '\f1b3'; /* cubi */
+      content: '';
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z'/%3E%3Cpath d='m7 16.5-4.74-2.85'/%3E%3Cpath d='m7 16.5 5-3'/%3E%3Cpath d='M7 16.5v5.17'/%3E%3Cpath d='M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z'/%3E%3Cpath d='m17 16.5-5-3'/%3E%3Cpath d='m17 16.5 4.74-2.85'/%3E%3Cpath d='M17 16.5v5.17'/%3E%3Cpath d='M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z'/%3E%3Cpath d='M12 8 7.26 5.15'/%3E%3Cpath d='m12 8 4.74-2.85'/%3E%3Cpath d='M12 13.5V8'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z'/%3E%3Cpath d='m7 16.5-4.74-2.85'/%3E%3Cpath d='m7 16.5 5-3'/%3E%3Cpath d='M7 16.5v5.17'/%3E%3Cpath d='M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z'/%3E%3Cpath d='m17 16.5-5-3'/%3E%3Cpath d='m17 16.5 4.74-2.85'/%3E%3Cpath d='M17 16.5v5.17'/%3E%3Cpath d='M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z'/%3E%3Cpath d='M12 8 7.26 5.15'/%3E%3Cpath d='m12 8 4.74-2.85'/%3E%3Cpath d='M12 13.5V8'/%3E%3C/svg%3E");
+    }
+
+    // Common mask properties for checkbox icons
+    & + .checkbox-replacer:after,
+    & + .checkbox-replacer:before,
+    &:checked + .checkbox-replacer:after,
+    &:checked + .checkbox-replacer:before {
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      background-color: currentColor;
     }
 
     & + .checkbox-replacer:after,
@@ -1074,9 +1339,18 @@
   }
 
   .customStyled:after {
-    .makeFontAwesome();
-    content: '\f1b2';
-    font-size: 14px;
+    // Box/cube icon using CSS mask (replaces fa-cube)
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background-color: currentColor;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpath d='m3.3 7 8.7 5 8.7-5'/%3E%3Cpath d='M12 22V12'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
     opacity: 1;
   }
 
@@ -1143,15 +1417,20 @@
 
     &:before {
       visibility: visible;
-      font-size: 24px;
-      font-family: FontAwesome;
-      content: '\f00d';
+      content: '';
       position: relative;
       top: 0px;
       right: 0px;
       width: 24px;
       height: 24px;
-      color: var(--v-accent-base);
+      display: inline-block;
+      background-color: var(--v-accent-base);
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
     }
   }
 

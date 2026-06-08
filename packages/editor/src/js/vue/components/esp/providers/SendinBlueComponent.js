@@ -61,11 +61,9 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
       subject: subject ?? '',
       id: id ?? '',
     };
-    M.updateTextFields();
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$v.$touch();
       if (this.$v.$invalid) {
         return;
@@ -101,7 +99,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="name"
               v-model="profile.campaignMailName"
@@ -123,7 +121,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="subject"
               type="text"
@@ -143,7 +141,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="sender-name"
               type="text"
@@ -156,7 +154,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="sender-mail"
               type="text"
@@ -169,7 +167,7 @@ const SendinBlueComponent = Vue.component('SendinBlueComponent', {
           </div>
         </div>
         <div class="row" :style="style.mb0">
-          <div class="input-field col s12" :style="style.mb0">
+          <div class="bs-form-field col s12" :style="style.mb0">
             <input
               id="replyto"
               type="text"

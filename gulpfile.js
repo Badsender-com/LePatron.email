@@ -128,7 +128,6 @@ const mosaicoLibList = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-process.js',
   'node_modules/blueimp-file-upload/js/jquery.fileupload-image.js',
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js',
-  'node_modules/materialize-css/dist/js/materialize.min.js',
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js',
   'node_modules/tinymce/tinymce.js',
 ];
@@ -149,7 +148,6 @@ const mosaicoLibListMin = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-image.js', // no min files
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js', // no min files
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
-  'node_modules/materialize-css/dist/js/materialize.min.js',
   'node_modules/tinymce/tinymce.min.js',
 ];
 
@@ -452,7 +450,7 @@ function rev() {
     .pipe(gulp.dest(SERVER_DIR));
 }
 rev.description =
-  'generate hash from mosaico\'s build files. This will help us to leverage browser caching';
+  "generate hash from mosaico's build files. This will help us to leverage browser caching";
 
 /// /////
 // DEV

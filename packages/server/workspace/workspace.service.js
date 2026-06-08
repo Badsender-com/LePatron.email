@@ -72,23 +72,29 @@ async function hasAccess(user, workspaceId) {
 
 async function getWorkspaceWithAccessRight(id, user) {
   const workspace = await getWorkspace(id);
-  const group = await Groups.findById(workspace.group);
+  const group = await Groups.findById(workspace._company);
 
-  if (!user.isGroupAdmin) {
+  // Super admins have full access to all workspaces
+  const isAdmin = user?.isAdmin;
+  const isGroupAdmin = user?.isGroupAdmin;
+
+  if (!isAdmin && !isGroupAdmin) {
     if (
       await restrictAccessingWorkspacesForNonMemberUser(workspace, user, group)
     ) {
       throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
   }
+
   let workspaceWithAccess = {
     ...workspace?.toObject(),
     hasAccess: false,
   };
 
   if (
-    user.isGroupAdmin ||
-    (!user.isGroupAdmin && workspaceContainsUser(workspaceWithAccess, user))
+    isAdmin ||
+    isGroupAdmin ||
+    workspaceContainsUser(workspaceWithAccess, user)
   ) {
     workspaceWithAccess = {
       ...workspaceWithAccess,
@@ -124,6 +130,21 @@ async function deleteFolderContent(folderId) {
 }
 
 async function createWorkspace(workspace) {
+  if (!workspace || !workspace.groupId) {
+    throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
+  // Validate that the target group exists. The previous controller path
+  // implicitly enforced this by checking `targetGroupId === req.user.group.id`,
+  // which only ever passed for a real group; the super-admin path skipped
+  // that comparison and could create orphan workspaces (with a _company
+  // pointing at a non-existent group) until a downstream consumer broke.
+  // Lean+_id-only so we never leak module flags or FTP config here.
+  const group = await Groups.findById(workspace.groupId).select('_id').lean();
+  if (!group) {
+    throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
   if (
     await existsByName({
       workspaceId: null,

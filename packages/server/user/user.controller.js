@@ -14,7 +14,7 @@ const { Users, Mailings, Groups } = require('../common/models.common.js');
 const config = require('../node.config.js');
 const userService = require('../user/user.service.js');
 const groupService = require('../group/group.service.js');
-const { ERROR_CODES } = require('../constant/error-codes.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -72,7 +72,11 @@ async function getCurrentUser(req, res, next) {
 
 async function list(req, res) {
   const users = await Users.find({})
-    .populate({ path: '_company', select: 'id name entryPoint issuer' })
+    .populate({
+      path: '_company',
+      select:
+        'id name entryPoint issuer enableCrmIntelligence enableEmailBuilder',
+    })
     .sort({ isDeactivated: 1, createdAt: -1 });
   res.json({ items: users });
 }
@@ -401,6 +405,13 @@ async function login(req, res, next) {
       // Update session tracking
       await updateSessionTracking(req, user);
 
+      // For super admin, return the user object directly (not in database)
+      // For regular users, fetch complete user data with populated group (includes module flags)
+      let completeUser = user;
+      if (user._id !== config.admin.id && user.id !== config.admin.id) {
+        completeUser = await Users.findOneForApi({ _id: user._id });
+      }
+
       // Force session save before sending response
       req.session.save((saveErr) => {
         if (saveErr) {
@@ -408,7 +419,7 @@ async function login(req, res, next) {
           return next(new createError.InternalServerError(saveErr));
         }
 
-        return res.json({ isAdmin: user.isAdmin });
+        return res.json(completeUser);
       });
     });
   })(req, res);

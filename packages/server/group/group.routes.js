@@ -54,6 +54,7 @@ router.get(
 router.get(
   '/:groupId/email-groups',
   GUARD_USER, // guard() will check if the user is logged
+  GUARD_CAN_ACCESS_GROUP,
   groups.readEmailGroups
 );
 
@@ -103,6 +104,9 @@ router.post(
   GUARD_ADMIN,
   groups.testFtpConnection
 );
+
+// Note: CRM Intelligence configuration is now done through /api/integrations routes
+// See packages/server/integration/integration.routes.js
 
 // catch anything and forward to error handler
 router.use((req, res, next) => {

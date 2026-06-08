@@ -14,6 +14,7 @@ const {
   CommentModel,
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
+const AIFeatureTypes = require('../constant/ai-feature-type');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -191,7 +192,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
         sortByKey = 'author';
         break;
       default:
-        sortByKey = paginationJSON.sortBy;
+        [sortByKey] = paginationJSON.sortBy;
     }
 
     additionalQueryParams.sort = {
@@ -424,7 +425,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   if (!mailing) return mailing;
 
   // group is needed to check zip format
-  // • a mailing without a group is from the “admin”
+  // • a mailing without a group is from the "admin"
   // • so group configuration will be find on the template
   // • admin will have the same option as a company user
   const Groups = mongoose.models[GroupModel];
@@ -436,14 +437,35 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   const groupId = group._id;
   const templateId = mailing._wireframe._id;
 
+  // Check if translation feature is available for this group
+  // Lazy require to avoid circular dependency
+  const aiFeatureService = require('../ai-feature/ai-feature.service');
+  const translationFeatureConfig = await aiFeatureService.getActiveFeatureWithIntegration(
+    {
+      groupId,
+      featureType: AIFeatureTypes.TRANSLATION,
+    }
+  );
+  const hasTranslationFeature = !!(
+    translationFeatureConfig &&
+    translationFeatureConfig.feature.isActive &&
+    translationFeatureConfig.integration &&
+    translationFeatureConfig.integration.isActive
+  );
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
     redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
   } else {
+    // Target the Email Builder route directly (`/mailings`), not the app root
+    // (`/`). The root only redirects to the first enabled module and was
+    // dropping the query string, landing the user on an empty page with no
+    // sidebar. `/mailings?fid=/wid=` mounts the workspace tree on the right
+    // folder/workspace.
     redirectUrl = mailing?._parentFolder
-      ? `/?fid=${mailing._parentFolder}`
-      : `/?wid=${mailing._workspace}`;
+      ? `/mailings?fid=${mailing._parentFolder}`
+      : `/mailings?wid=${mailing._workspace}`;
   }
 
   return {
@@ -453,6 +475,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       templateId,
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
+      hasTranslationFeature,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

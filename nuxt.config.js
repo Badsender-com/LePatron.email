@@ -1,5 +1,14 @@
 'use strict';
 
+// Suppress false-positive "PostCSS does nothing" warning from postcss 7
+// embedded in @vue/component-compiler-utils (used by vue-loader for <style> parsing)
+const _warn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('PostCSS does nothing'))
+    return;
+  _warn.apply(console, args);
+};
+
 const path = require('path');
 // Don't use ESM
 // • this will be also required in express app
@@ -22,6 +31,9 @@ module.exports = {
     store: 'store',
   },
   build: {
+    quiet: true,
+    // Transpile lucide-vue (uses modern JS syntax like optional chaining)
+    transpile: ['lucide-vue'],
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({
@@ -29,6 +41,8 @@ module.exports = {
         type: 'javascript/auto',
         loader: '@kazupon/vue-i18n-loader',
       });
+      config.performance = config.performance || {};
+      config.performance.hints = false;
     },
   },
   router: {
@@ -36,7 +50,7 @@ module.exports = {
   },
   plugins: [
     { src: '~/plugins/vue-filters.js', ssr: true },
-    { src: '~/plugins/badsender-global-components.js', ssr: true },
+    { src: '~/plugins/lucide-icons.js', ssr: true },
     { src: '~/plugins/vue-i18n.js', ssr: true },
     { src: '~/plugins/detect-browser-locale.js', ssr: false },
     { src: '~/plugins/axios-error-handler.js', ssr: false },
@@ -72,7 +86,11 @@ module.exports = {
     port: config.port,
   },
   axios: {
-    prefix: config.nuxt.API_PREFIX,
+    // baseURL is used for SSR (server-side requests)
+    // In production, SSR requests go through the same server, so we use localhost
+    // The external URL (with HTTPS/domain) is only needed for browser requests
+    baseURL: `http://127.0.0.1:${config.PORT}${config.nuxt.API_PREFIX}`,
+    // browserBaseURL is used for client-side requests (relative URL works for any domain/protocol)
     browserBaseURL: config.nuxt.API_PREFIX,
   },
   css: [
@@ -85,6 +103,7 @@ module.exports = {
     APP_VERSION: pkg.version,
     ADMIN_USERNAME: config.admin.username,
     API_PREFIX: config.nuxt.API_PREFIX,
+    HELP_URL: config.helpUrl,
     // API_BASE_URL: config.apiBaseURL,
     // // used for dev to call the "stateless" prevision API: /ext/v1
     // EXT_TOKEN: config.extToken,
@@ -103,7 +122,7 @@ module.exports = {
       {
         rel: 'stylesheet',
         href:
-          'https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap,',
+          'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
       },
       {
         rel: 'stylesheet',

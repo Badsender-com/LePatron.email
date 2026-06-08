@@ -36,10 +36,15 @@ const {
   mailingCommentsRouter,
   commentsRouter,
 } = require('./comment/comment.routes.js');
+const crmIntelligenceRouter = require('./crm-intelligence/crm-intelligence.routes.js');
+const integrationRouter = require('./integration/integration.routes.js');
+const dashboardRouter = require('./dashboard/dashboard.routes.js');
 const sessionValidationMiddleware = require('./account/session-validation.middleware.js');
 const {
   updateSessionTracking,
 } = require('./account/session-tracking.helper.js');
+const aiFeatureRouter = require('./ai-feature/ai-feature.routes');
+const translationRouter = require('./translation/translation.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -83,6 +88,8 @@ if (cluster.isMaster) {
     })
   );
 
+  mongoose.set('useFindAndModify', false);
+  mongoose.set('useCreateIndex', true);
   mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -277,9 +284,14 @@ if (cluster.isMaster) {
   app.use('/api/users', userRouter);
   app.use('/api/images', imageRouter);
   app.use('/api/emails-groups', EmailGroupRouter);
+  app.use('/api/integrations', integrationRouter);
+  app.use('/api/ai-features', aiFeatureRouter);
+  app.use('/api/translation', translationRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);
+  app.use('/api/crm-intelligence', crmIntelligenceRouter);
+  app.use('/api/dashboards', dashboardRouter);
 
   // Mosaico's editor route
   const mosaicoEditor = require('./mailing/mosaico-editor.controller.js');

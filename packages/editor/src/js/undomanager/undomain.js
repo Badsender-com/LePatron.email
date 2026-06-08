@@ -12,7 +12,7 @@ var addUndoStackExtensionMaker = function (performanceAwareCaller) {
     var undoRedoStack = undoManager(viewModel.content, {
       levels: 100,
       undoLabel: ko.computed(function () {
-        return viewModel.t('Undo (#COUNT#)');
+        return viewModel.t('Undo');
       }),
       redoLabel: ko.computed(function () {
         return viewModel.t('Redo');
@@ -24,6 +24,8 @@ var addUndoStackExtensionMaker = function (performanceAwareCaller) {
       'undo',
       viewModel.undo.execute
     );
+    viewModel.undoCount = undoRedoStack.undoCount;
+    viewModel.redoCount = undoRedoStack.redoCount;
     viewModel.redo = undoRedoStack.redoCommand;
     viewModel.redo.execute = performanceAwareCaller.bind(
       viewModel,

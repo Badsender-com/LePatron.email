@@ -587,7 +587,13 @@ async function deleteMailing(req, res) {
 
   // Find the email before deleting it
   const mailing = await Mailings.findById(mailingId);
-  const tagLabels = mailing.tags;
+
+  // If mailing doesn't exist, nothing to delete
+  if (!mailing) {
+    return res.send();
+  }
+
+  const tagLabels = mailing.tags || [];
 
   // Decrement the tag count if the tag is used
   if (tagLabels.length > 0) {

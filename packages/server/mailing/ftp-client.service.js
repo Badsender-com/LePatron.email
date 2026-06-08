@@ -45,7 +45,7 @@ class FTPClient {
       .update(currentDate + random)
       .digest('hex')}`;
 
-    fs.mkdirSync(tmpDir);
+    fs.ensureDirSync(tmpDir);
 
     try {
       await client.connect({

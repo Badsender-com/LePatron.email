@@ -3,10 +3,11 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsUsersTable from '~/components/users/table.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageUsers',
-  components: { BsUsersTable },
+  components: { BsUsersTable, BsPageHeader },
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -46,15 +47,21 @@ export default {
 </script>
 
 <template>
-  <v-container fluid>
-    <v-row>
-      <v-col cols="12">
-        <bs-users-table
-          v-model="loading"
-          :users="users"
-          @update="updateUserFromActions"
-        />
-      </v-col>
-    </v-row>
-  </v-container>
+  <div>
+    <bs-page-header
+      :show-mobile-menu="true"
+      @toggle-mobile-menu="$root.$emit('toggle-mobile-menu')"
+    >
+      <template #title>
+        {{ $tc('global.user', 2) }}
+      </template>
+    </bs-page-header>
+    <v-container fluid>
+      <bs-users-table
+        v-model="loading"
+        :users="users"
+        @update="updateUserFromActions"
+      />
+    </v-container>
+  </div>
 </template>

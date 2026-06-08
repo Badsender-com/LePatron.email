@@ -6,11 +6,16 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
 const templates = require('./template.controller.js');
 
 /// ///
 // TEMPLATES
 /// ///
+
+// All routes below require an authenticated user AND the Email Builder module
+// to be enabled on the user's group (super admins bypass the flag check).
+router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('/:templateId/markup', GUARD_USER, templates.readMarkup);
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);

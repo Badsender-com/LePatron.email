@@ -74,10 +74,11 @@
   width: 100%;
   height: 100%;
 }
+// Overlay - match Vuetify modal backdrop
 .ui-widget-overlay {
-  background: #aaaaaa none;
-  opacity: 0.6;
-  filter: Alpha(Opacity=60);
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  filter: none;
 }
 .ui-widget-shadow {
   margin: -8px 0 0 -8px;
@@ -123,67 +124,74 @@
   .buttonset-style();
 }
 
+// ==========================================================================
+// jQuery UI Dialog - Aligned with Vuetify design system (admin modals)
+// ==========================================================================
+
+@dialog-border-radius: 8px;
+
 .ui-dialog {
-  .win();
   position: absolute;
   overflow: hidden;
-  width: 300px;
   padding: 0;
   font-size: 1em;
   z-index: @zindex-dialog;
+  // Vuetify card style
+  background-color: #ffffff;
+  border-radius: @dialog-border-radius;
+  border: none;
+  box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+    0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12); // Vuetify elevation-24
 
+  // Header - white background, black title (like admin modals)
   .ui-dialog-titlebar {
-    .wintitle();
-    font-size: 1.1em;
+    position: relative;
+    padding: 16px 24px 8px 24px;
+    background: #ffffff;
+    border: none;
+    border-radius: @dialog-border-radius @dialog-border-radius 0 0;
 
     .ui-dialog-title {
       float: left;
-      margin: 0.1em 16px 0.2em 0;
+      margin: 0;
+      color: rgba(0, 0, 0, 0.87);
+      font-weight: 500;
+      font-size: 1.25rem;
+      line-height: 1.5;
     }
+
+    // Hide close button (like admin modals)
     .ui-dialog-titlebar-close {
-      position: absolute;
-      right: 0.3em;
-      top: 35%;
-      width: 21px;
-      margin: -10px 0 0 0;
-      padding: 1px;
-      height: 20px;
-      cursor: pointer;
-      border: 0 none;
-      background: none transparent;
-      //background-color: transparent;
-      box-shadow: none;
-      &::-moz-focus-inner {
-        border: none;
-      }
-
-      .ui-icon {
-        position: absolute;
-        top: 50%;
-        margin-top: -8px;
-        left: 50%;
-        margin-left: -8px;
-      }
-
-      &.ui-button-icon-only .ui-button-text {
-        display: block;
-        line-height: normal;
-        padding: 0.4em;
-        text-indent: -9999999px;
-      }
+      display: none;
     }
   }
+
+  // Content
   .ui-dialog-content {
-    border: 0;
-    padding: 0.5em 1em;
-    background: none;
+    border: 0 !important;
+    padding: 8px 24px 8px 24px !important; // Reduced bottom padding
+    background: #ffffff !important;
     zoom: 1;
-    max-height: 600px; // Il max-height
+    max-height: 600px;
     position: relative;
+    color: rgba(0, 0, 0, 0.6) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+
+    p {
+      margin: 0 0 0.5em 0;
+
+      &:last-child {
+        margin-bottom: 0; // No margin on last paragraph
+      }
+    }
+
     .async_loading_iframe {
       margin: -0.5em 0 0 0;
     }
   }
+
   .async_loading_iframe {
     width: 100%;
     height: 100%;
@@ -202,24 +210,66 @@
       top: 0;
     }
   }
+
+  // Footer with buttons - aligned right like admin modals
   .ui-dialog-buttonpane {
-    text-align: center;
-    background-image: none;
-    margin: 0.5em 0 0 0;
-    border: none;
-    padding: 0.3em 0;
+    background: #ffffff !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.12) !important;
+    margin: 0 !important;
+    padding: 12px 24px 20px 24px !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    border-radius: 0 0 @dialog-border-radius @dialog-border-radius !important;
+
+    .ui-dialog-buttonset {
+      display: flex !important;
+      gap: 8px !important;
+    }
+
+    // Button styling - Vuetify style
+    .ui-button {
+      border-radius: 4px !important;
+      height: 36px !important;
+      min-width: 64px !important;
+      padding: 0 16px !important;
+      border: none !important;
+      margin: 0 !important; // Remove inherited margins (10px top/bottom from .button-style)
+      cursor: pointer;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: background-color 0.2s ease;
+      // Primary button style (accent color)
+      background-color: var(--v-accent-base, #00acdc) !important;
+      color: #ffffff !important;
+
+      .ui-button-text {
+        text-transform: uppercase;
+        font-weight: 500;
+        font-size: 0.875rem;
+        letter-spacing: 0.0892857143em;
+        line-height: 1;
+        color: inherit;
+      }
+
+      &:hover {
+        background-color: var(--v-accent-darken1, #0097c4);
+      }
+    }
   }
+
+  // Legacy dialog type variants (keep for backwards compatibility)
   &.dialog_info .ui-dialog-titlebar {
-    background: none mix(@dialog-title-background-color, @blue, 50%);
+    background: #ffffff;
   }
   &.dialog_warn .ui-dialog-titlebar {
-    background: none mix(@dialog-title-background-color, @red, 50%);
+    background: #ffffff;
   }
   &.dialog_ok .ui-dialog-titlebar {
-    background: none mix(@dialog-title-background-color, @green, 50%);
+    background: #ffffff;
   }
   &.dialog_standard_href .ui-dialog-content {
-    // Dialog loaded using iframe (standard)
     padding: 0;
     min-height: 600px;
   }
@@ -231,7 +281,6 @@
   &.no-close .ui-dialog-titlebar-close {
     display: none;
   }
-  //.ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
 
   // Prevent dotted outline on full focused dialog on FF
   &:focus,
@@ -345,11 +394,17 @@
 }
 
 .ui-tooltip {
-  // TODO
-  .win();
+  background-color: rgba(97, 97, 97, 0.9);
+  color: #ffffff;
+  border: 0;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 22px;
+  padding: 5px 16px;
   max-width: 300px;
-  padding: 0.5em;
   z-index: @zindex-tooltip;
+  box-shadow: none;
+  overflow: hidden;
 }
 
 .ui-spinner {
@@ -397,9 +452,17 @@
     border-bottom: none;
     border-radius: 0 @button-border-radius 0 0;
     .ui-button-text:after {
-      font-family: FontAwesome;
-      font-weight: normal;
-      content: '\f0d8';
+      content: '';
+      display: inline-block;
+      width: 0.8em;
+      height: 0.8em;
+      background-color: currentColor;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
     }
   }
   .ui-spinner-down {
@@ -407,15 +470,22 @@
     border-top: none;
     border-radius: 0 0 @button-border-radius 0;
     .ui-button-text:after {
-      font-family: FontAwesome;
-      font-weight: normal;
-      content: '\f0d7';
+      content: '';
+      display: inline-block;
+      width: 0.8em;
+      height: 0.8em;
+      background-color: currentColor;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
     }
   }
 }
 
 .ui-icon {
-  font-family: FontAwesome;
   background: none repeat scroll 0 0 transparent;
   text-indent: 0;
   width: auto;
@@ -426,8 +496,21 @@
   margin-top: 0;
   margin-right: 0.5em;
 }
+.ui-icon-closethick {
+  // Use CSS mask for Lucide X icon
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
 .ui-icon-closethick:before {
-  content: @fa-var-times;
+  content: '';
 }
 
 .ui-draggable .ui-dialog-titlebar {

@@ -49,11 +49,11 @@ export const state = () => ({
     sortBy: ['updatedAt'],
     sortDesc: [true],
     page: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 25,
     pageStart: 0,
-    pageStop: 10,
+    pageStop: 25,
     pageCount: 1,
-    itemsLength: 10,
+    itemsLength: 25,
   },
   filters: {
     name: '',
@@ -195,11 +195,16 @@ export const actions = {
         const mailingsResponse = await this.$axios.$get(mailings(), {
           params: {
             ...queryMailing,
-            pagination: {
+            // The backend does JSON.parse(pagination)/JSON.parse(filters)
+            // (mailing.controller.js list()), so these must be sent as JSON
+            // strings. Sending raw objects makes axios serialize them as
+            // bracketed query params (pagination[sortBy][0]=...), which the
+            // backend can't parse — the sort/filters were silently dropped.
+            pagination: JSON.stringify({
               ...rootState.folder?.pagination,
               ...(pagination || {}),
-            },
-            filters: rootState.folder?.filters,
+            }),
+            filters: JSON.stringify(rootState.folder?.filters || {}),
           },
         });
         const { docs, ...paginationsData } = mailingsResponse?.items;

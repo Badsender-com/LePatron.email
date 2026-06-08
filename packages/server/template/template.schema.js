@@ -126,12 +126,27 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     templatesWithMarkup.map((t) => t._id.toString())
   );
 
-  const finalTemplates = templates.map(({ assets, ...template }) => ({
-    ...template,
-    id: template._id,
-    hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
-    coverImage: JSON.parse(assets)?.['_full.png'] || null,
-  }));
+  const finalTemplates = templates.map(({ assets, ...template }) => {
+    let coverImage = null;
+    let imageCount = 0;
+    if (assets) {
+      try {
+        const parsedAssets = JSON.parse(assets);
+        coverImage = parsedAssets?.['_full.png'] || null;
+        imageCount = Object.keys(parsedAssets).filter((k) => k !== '_full.png')
+          .length;
+      } catch (e) {
+        coverImage = null;
+      }
+    }
+    return {
+      ...template,
+      id: template._id,
+      hasMarkup: templatesWithMarkupSet.has(template._id.toString()),
+      coverImage,
+      imageCount,
+    };
+  });
   return finalTemplates;
 };
 module.exports = TemplateSchema;

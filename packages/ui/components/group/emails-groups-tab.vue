@@ -3,13 +3,18 @@ import { DATE_FORMAT } from '~/helpers/constants/date-formats.js';
 import moment from 'moment';
 import { mapMutations } from 'vuex';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
-import { getEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
+import { getGroupEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
+import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
+import { Pencil, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsEmailGroupTab',
   components: {
     BsModalConfirm,
+    BsDataTable,
+    BsRowActions,
   },
   data() {
     return {
@@ -28,9 +33,9 @@ export default {
           value: 'createdAt',
         },
         {
-          text: this.$t('global.delete'),
-          value: 'actionDelete',
-          align: 'center',
+          text: this.$t('global.actions'),
+          value: 'actions',
+          align: 'right',
           sortable: false,
         },
       ];
@@ -42,17 +47,16 @@ export default {
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async fetchData() {
-      /* const {
+      const {
         $axios,
         $route: { params },
-      } = this; */
-      const { $axios } = this;
+      } = this;
 
       try {
         this.loading = true;
         const {
           data: { items: emailsGroups },
-        } = await $axios.get(getEmailsGroups());
+        } = await $axios.get(getGroupEmailsGroups(params.groupId));
 
         this.emailsGroups = emailsGroups.map(({ createdAt, ...rest }) => ({
           ...rest,
@@ -66,6 +70,27 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    goToEmailsGroup(item) {
+      const { groupId } = this.$route.params;
+      this.$router.push(`/groups/${groupId}/emails-groups/${item.id}`);
+    },
+    buildQuickActions(item) {
+      return [
+        {
+          key: 'edit',
+          icon: Pencil,
+          text: 'global.edit',
+          onClick: () => this.goToEmailsGroup(item),
+        },
+        {
+          key: 'delete',
+          icon: Trash2,
+          text: 'global.delete',
+          variant: 'danger',
+          onClick: () => this.deleteItem(item),
+        },
+      ];
     },
     deleteItem(item) {
       this.selectedEmailsGroup = item;
@@ -99,32 +124,31 @@ export default {
 </script>
 
 <template>
-  <v-card flat tile>
-    <v-card-text>
-      <v-card flat tile>
-        <v-skeleton-loader v-if="loading" :loading="loading" type="table" />
-        <v-data-table
-          v-show="!loading"
-          :loading="loading"
-          :headers="tableHeaders"
-          :items="emailsGroups"
-          :no-data-text="$t('global.emailsGroupsEmpty')"
+  <div>
+    <bs-data-table
+      :headers="tableHeaders"
+      :items="emailsGroups"
+      :loading="loading"
+      :empty-icon="$options.components.LucideMail"
+      :empty-message="$t('global.emailsGroupsEmpty')"
+      clickable
+      @click:row="goToEmailsGroup"
+    >
+      <template #item.name="{ item }">
+        <nuxt-link
+          :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
+          class="cell-link font-weight-medium"
+          @click.native.stop
         >
-          <template #item.name="{ item }">
-            <nuxt-link
-              :to="`/groups/${$route.params.groupId}/emails-groups/${item.id}`"
-            >
-              {{ item.name }}
-            </nuxt-link>
-          </template>
-          <template #item.actionDelete="{ item }">
-            <v-btn icon class="mx-2" small @click.stop="deleteItem(item)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
-    </v-card-text>
+          {{ item.name }}
+        </nuxt-link>
+      </template>
+
+      <template #item.actions="{ item }">
+        <bs-row-actions :quick-actions="buildQuickActions(item)" />
+      </template>
+    </bs-data-table>
+
     <bs-modal-confirm
       ref="deleteDialog"
       :title="`${$t('global.delete')}`"
@@ -135,5 +159,20 @@ export default {
     >
       {{ $t('forms.emailsGroup.deleteNotice') }}
     </bs-modal-confirm>
-  </v-card>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+/* Real <nuxt-link> on the name cell so middle-click opens in a new tab. */
+.cell-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 2px;
+
+  &:hover {
+    text-decoration: underline;
+    color: var(--v-primary-base);
+  }
+}
+</style>

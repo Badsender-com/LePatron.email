@@ -1,10 +1,13 @@
 <script>
 import BsModalConfirmForm from '~/components/modal-confirm-form';
+import { Trash2 } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'FolderDeleteModal',
   components: {
     BsModalConfirmForm,
+    LucideTrash2: Trash2,
   },
   props: {
     loadingParent: { type: Boolean, default: false },
@@ -24,11 +27,10 @@ export default {
     close() {
       this.$refs.deleteDialog.close();
     },
-    async submit() {
-      if (this.$refs.deleteDialog.valid) {
-        await this.$emit('delete-folder', this.selectedFolder);
-      }
+    submit() {
+      this.$emit('delete-folder', this.selectedFolder);
     },
+    escapeHtml,
   },
 };
 </script>
@@ -41,11 +43,14 @@ export default {
     :confirm-check-box-message="$t('groups.mailingTab.deleteFolderNotice')"
     @confirm="submit"
   >
+    <template #titlePrefix>
+      <lucide-trash2 :size="20" />
+    </template>
     <p
       class="black--text"
       v-html="
         $t('groups.mailingTab.deleteFolderWarning', {
-          name: selectedFolder.name,
+          name: escapeHtml(selectedFolder.name),
         })
       "
     />

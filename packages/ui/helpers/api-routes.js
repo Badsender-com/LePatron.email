@@ -236,6 +236,10 @@ export function getEntitiesList() {
 // Email groups
 /// ///
 
+export function getGroupEmailsGroups(groupId) {
+  return `/groups/${groupId}/email-groups`;
+}
+
 export function getEmailsGroups() {
   return '/emails-groups';
 }
@@ -290,4 +294,117 @@ export function patchCommentResolve(commentId) {
 
 export function patchCommentUnresolve(commentId) {
   return `/comments/${commentId}/unresolve`;
+}
+
+/// ///
+// INTEGRATIONS
+/// ///
+
+export function integrations(groupId, type = null) {
+  const base = `/integrations/groups/${groupId}`;
+  return type ? `${base}?type=${type}` : base;
+}
+
+export function integrationsItem(integrationId) {
+  return `/integrations/${integrationId}`;
+}
+
+export function integrationsValidate(integrationId) {
+  return `/integrations/${integrationId}/validate`;
+}
+
+export function integrationsProviders() {
+  return '/integrations/providers';
+}
+
+export function integrationModels(integrationId) {
+  return `/integrations/${integrationId}/models`;
+}
+
+export function integrationDashboardCount(integrationId) {
+  return `/integrations/${integrationId}/dashboard-count`;
+}
+
+/// ///
+// AI FEATURES
+/// ///
+
+export function aiFeatures(groupId) {
+  return `/ai-features/groups/${groupId}`;
+}
+
+export function aiFeaturesItem(groupId, featureType) {
+  return `/ai-features/groups/${groupId}/features/${featureType}`;
+}
+
+export function aiFeaturesTypes() {
+  return '/ai-features/types';
+}
+
+/// ///
+// TRANSLATION
+/// ///
+
+export function translationLanguages() {
+  return '/translation/languages';
+}
+
+export function translationText() {
+  return '/translation/text';
+}
+
+export function mailingDuplicateTranslate(mailingId) {
+  return `/mailings/${mailingId}/duplicate-translate`;
+}
+
+export function translationJobStatus(jobId) {
+  return `/translation/jobs/${jobId}/status`;
+}
+
+export function translationJobCancel(jobId) {
+  return `/translation/jobs/${jobId}/cancel`;
+}
+
+/// ///
+// CRM INTELLIGENCE
+/// ///
+
+export function getCrmIntelligenceStatus() {
+  return '/crm-intelligence/status';
+}
+
+export function getCrmIntelligenceDashboards() {
+  return '/crm-intelligence/dashboards';
+}
+
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
+}
+
+/// ///
+// DASHBOARDS
+/// ///
+
+export function getDashboards(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function getDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function createDashboard(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function updateDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function deleteDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function reorderDashboards(groupId) {
+  return `/dashboards/groups/${groupId}/reorder`;
 }

@@ -54,10 +54,12 @@ module.exports = {
   findMailings,
   findTags,
   findOne,
+  findOneForUser,
   renameMailing,
   deleteMailing,
   deleteOne,
   copyMailing,
+  duplicateWithTranslatedData,
   moveMailing,
   moveManyMailings,
   findAllIn,
@@ -73,6 +75,7 @@ module.exports = {
   getGroupByCompanyId,
   getMailNameAndCompanyByMailingIdAndUser,
   handleTrackingData,
+  updatePreviewHtml,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -165,13 +168,69 @@ async function findMailings(query) {
 }
 
 async function findTags(query) {
-  const mailingQuery = applyFilters(query);
-  return Mailings.findTags(mailingQuery);
+  const { user, workspaceId, parentFolderId } = query;
+
+  // Admins have no `_company` on their user record, so the regular
+  // `addStrictGroupFilter` path produces a corrupt query and `Tag.find`
+  // returns nothing. Derive the relevant company from the workspace or
+  // parent folder being viewed instead.
+  let companyId;
+  if (user?.isAdmin) {
+    if (workspaceId) {
+      const workspace = await Workspaces.findById(workspaceId)
+        .select('_company')
+        .lean();
+      companyId = workspace?._company;
+    } else if (parentFolderId) {
+      const folder = await Folders.findById(parentFolderId)
+        .populate({ path: '_workspace', select: '_company' })
+        .lean();
+      companyId = folder?._workspace?._company;
+    }
+  } else {
+    companyId = user?.group?.id;
+  }
+
+  if (!companyId) return [];
+
+  // The `Tag` collection holds tags created via the "New label" flow, but
+  // historical mailings carry labels directly in `mailing.tags` without a
+  // corresponding `Tag` row. Returning the union avoids hiding tags that
+  // are actually applied on emails.
+  const [registeredTags, usedTags] = await Promise.all([
+    Mailings.findTags({ _company: companyId }),
+    Mailings.distinct('tags', { _company: companyId }),
+  ]);
+
+  const merged = Array.from(new Set([...registeredTags, ...usedTags])).filter(
+    Boolean
+  );
+  merged.sort((a, b) => a.localeCompare(b));
+  return merged;
 }
 
 async function findOne(mailingId) {
   await validateMailExist(mailingId);
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
+}
+
+// Group-scoped variant of `findOne`. `findOne` resolves a mailing by id with no
+// tenant boundary, so callers that act on behalf of a user (duplicate, copy,
+// duplicate-translate) MUST use this instead to avoid cross-tenant reads:
+// a group admin of group A could otherwise load a mailing of group B by id.
+// Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
+async function findOneForUser(mailingId, user) {
+  if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: mongoose.Types.ObjectId(mailingId),
+  });
+  const mailing = await Mailings.findOne(query);
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  return mailing;
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
@@ -949,7 +1008,9 @@ async function copyMailing(mailingId, destination, user) {
 
   checkEitherWorkspaceOrFolderDefined(workspaceId, folderId);
 
-  const mailing = await findOne(mailingId);
+  // Group-scoped load: prevent a group admin from copying a mailing of another
+  // group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
 
   if (mailing?._parentFolder) {
     await folderService.hasAccess(mailing._parentFolder, user);
@@ -962,16 +1023,28 @@ async function copyMailing(mailingId, destination, user) {
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
-  const copy = omit(mailing, [
+  // `findOne` returns a Mongoose document whose real data lives in an internal
+  // `_doc`; running lodash `omit` on it directly does not reliably strip the
+  // identity/location fields (some are schema aliases), so `Mailings.create`
+  // could keep the source `_id`/location and spawn a phantom copy at the
+  // source. Convert to a plain object first, then omit both real fields and
+  // their aliases/virtuals.
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
     '_id',
+    'id',
     'createdAt',
     'updatedAt',
     '_user',
+    'userId',
     'author',
+    'userName',
     'espIds',
     '_workspace',
     'workspace',
     '_parentFolder',
+    '__v',
   ]);
 
   if (workspaceId) {
@@ -1002,7 +1075,6 @@ async function copyMailing(mailingId, destination, user) {
     mailing._id?.toString(),
     copiedMailing._id?.toString()
   );
-  await copiedMailing.save();
 
   try {
     if (gallery) {
@@ -1013,6 +1085,121 @@ async function copyMailing(mailingId, destination, user) {
       `MAILING DUPLICATE – can't duplicate gallery for ${copiedMailing._id}`
     );
   }
+}
+
+/**
+ * Duplicate a mailing with translated/modified data
+ * Used for the "Duplicate + Translate" feature
+ * @param {Object} params
+ * @param {string} params.mailingId - Original mailing ID
+ * @param {Object} params.user - User performing the action
+ * @param {string} params.newName - Name for the new mailing
+ * @param {Object} params.translatedData - Translated Mosaico data to use
+ * @returns {Object} The newly created mailing
+ */
+async function duplicateWithTranslatedData({
+  mailingId,
+  user,
+  newName,
+  translatedData,
+  workspaceId,
+  folderId,
+}) {
+  // Group-scoped load: prevent a group admin from duplicating+translating a
+  // mailing of another group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
+
+  // Check access to original mailing's folder (now throws on denial)
+  if (mailing?._parentFolder) {
+    await folderService.hasAccess(mailing._parentFolder, user);
+  }
+
+  if (mailing?.workspace) {
+    const sourceWorkspace = await workspaceService.getWorkspace(
+      mailing.workspace
+    );
+    workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
+  }
+
+  // Same Mongoose-document caveat as `copyMailing`: omit on the raw document
+  // does not reliably strip identity/location fields (some are aliases), which
+  // could leave the source location on the duplicate and create a phantom at
+  // the source when a different destination is chosen. Work off a plain object
+  // and strip both real fields and their aliases/virtuals, including the
+  // source location (`_workspace`/`workspace`/`_parentFolder`).
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
+    '_id',
+    'id',
+    'createdAt',
+    'updatedAt',
+    '_user',
+    'userId',
+    'author',
+    'userName',
+    'espIds',
+    '_workspace',
+    'workspace',
+    '_parentFolder',
+    '__v',
+  ]);
+
+  // Set new name
+  copy.name = newName || `${mailing.name} - Translated`;
+
+  // Replace data with translated data
+  if (translatedData) {
+    copy.data = translatedData;
+  }
+
+  // Set user info
+  if (user.id) {
+    copy._user = user._id;
+    copy.author = user.name;
+  }
+
+  // Handle destination: use provided or fall back to the original location.
+  // The source location was stripped above, so the fallback re-applies it.
+  if (folderId) {
+    // Validate access to destination folder
+    await folderService.hasAccess(folderId, user);
+    copy._parentFolder = folderId;
+  } else if (workspaceId) {
+    // Validate access to destination workspace
+    const destWorkspace = await workspaceService.getWorkspace(workspaceId);
+    workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
+    copy._workspace = workspaceId;
+  } else if (mailing._parentFolder) {
+    copy._parentFolder = mailing._parentFolder;
+  } else if (mailing._workspace) {
+    copy._workspace = mailing._workspace;
+  }
+
+  // Create the new mailing
+  const copiedMailing = await Mailings.create(copy);
+
+  // Copy images
+  await fileManager.copyImages(
+    mailing._id?.toString(),
+    copiedMailing._id?.toString()
+  );
+
+  // Duplicate gallery if exists
+  try {
+    const gallery = await Galleries.findOne({
+      creationOrWireframeId: mailing._id,
+    });
+    if (gallery) {
+      gallery.duplicate(copiedMailing._id).save();
+    }
+  } catch (error) {
+    logger.warn(
+      `MAILING DUPLICATE TRANSLATE – can't duplicate gallery for ${copiedMailing._id}`
+    );
+  }
+
+  return copiedMailing;
 }
 
 async function renameMailing(
@@ -1242,4 +1429,8 @@ function applyFilters(query) {
   }
 
   return workspaceOrFolderFilter;
+}
+
+async function updatePreviewHtml(mailingId, previewHtml) {
+  return Mailings.findByIdAndUpdate(mailingId, { previewHtml });
 }

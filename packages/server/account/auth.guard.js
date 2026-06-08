@@ -11,7 +11,7 @@ const ClientPasswordStrategy = require('passport-oauth2-client-password')
   .Strategy;
 const BearerStrategy = require('passport-http-bearer').Strategy;
 const createError = require('http-errors');
-const xmlParser = require('xml2json');
+const { XMLParser } = require('fast-xml-parser');
 
 const config = require('../node.config.js');
 const Roles = require('./roles');
@@ -57,7 +57,7 @@ function guard(roles = [Roles.REGULAR_USER], redirect) {
 
     if (
       (isAdminRoute && user?.isAdmin) ||
-      (isGroupUserRoute && user?.isGroupAdmin) ||
+      (isGroupUserRoute && (user?.isGroupAdmin || user?.isAdmin)) ||
       (isUserRoute && !!user)
     ) {
       return next();
@@ -204,15 +204,15 @@ passport.use(
 
         if (!email) {
           const buff = Buffer.from(request.body.SAMLResponse, 'base64');
-          const jsonObject = xmlParser.toJson(buff.toString(), {
-            object: true,
-            sanitize: true,
-            trim: true,
+          const parser = new XMLParser({
+            ignoreAttributes: false,
+            trimValues: true,
           });
+          const jsonObject = parser.parse(buff.toString());
           email =
             jsonObject['saml2p:Response']['saml2:Assertion']['saml2:Subject'][
               'saml2:NameID'
-            ].$t;
+            ];
         }
 
         const user = await Users.findOne({

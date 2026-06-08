@@ -61,28 +61,3 @@
 .download-form {
   position: relative;
 }
-.download-form__menu {
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  top: (@topbar-height - 4px);
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 0.5s;
-  margin: 0;
-
-  .ui-button {
-    display: block;
-    margin: 0;
-    text-transform: none;
-    border-radius: 0;
-  }
-}
-.download-form:hover .download-form__menu,
-.download-form__menu:hover {
-  opacity: 1;
-  pointer-events: initial;
-}
-#toolbar .download-form__btn-menu {
-  margin: 0;
-}

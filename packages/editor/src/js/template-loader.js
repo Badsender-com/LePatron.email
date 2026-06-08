@@ -594,6 +594,8 @@ var templateCompiler = function (
     $('#incompatible-template').dialog({
       modal: true,
       appendTo: '#mo-body',
+      width: 420,
+      minWidth: 420,
       buttons: {
         Ok: function () {
           $(this).dialog('close');

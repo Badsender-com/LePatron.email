@@ -1,0 +1,267 @@
+<script>
+import {
+  Palette,
+  Mail,
+  ExternalLink,
+  GripVertical,
+  Smartphone,
+  Puzzle,
+  CloudUpload,
+  Users,
+} from 'lucide-vue';
+
+// Icon mapping from Lucide names to components
+const FEATURE_ICON_MAP = {
+  'grip-vertical': GripVertical,
+  smartphone: Smartphone,
+  puzzle: Puzzle,
+  palette: Palette,
+  'cloud-upload': CloudUpload,
+  users: Users,
+};
+
+export default {
+  name: 'EmailBuilderPlaceholder',
+  components: {
+    LucidePalette: Palette,
+    LucideMail: Mail,
+    LucideExternalLink: ExternalLink,
+    LucideGripVertical: GripVertical,
+    LucideSmartphone: Smartphone,
+    LucidePuzzle: Puzzle,
+    LucideCloudUpload: CloudUpload,
+    LucideUsers: Users,
+  },
+  computed: {
+    contactUrl() {
+      return this.$i18n.locale === 'fr'
+        ? 'https://www.badsender.com/contact/'
+        : 'https://www.badsender.com/en/contact/';
+    },
+    infoUrl() {
+      return 'https://www.lepatron.email/';
+    },
+    features() {
+      return this.$t('emailBuilder.marketing.features');
+    },
+  },
+  methods: {
+    getFeatureIconComponent(iconName) {
+      return FEATURE_ICON_MAP[iconName] || Palette;
+    },
+  },
+};
+</script>
+
+<template>
+  <div class="marketing-page">
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <lucide-palette :size="80" style="color: var(--v-accent-base)" />
+
+      <h1 class="text-h3 mt-6 primary--text font-weight-bold">
+        {{ $t('emailBuilder.marketing.title') }}
+      </h1>
+
+      <p class="text-h6 mt-4 grey--text text--darken-1 hero-subtitle">
+        {{ $t('emailBuilder.marketing.subtitle') }}
+      </p>
+
+      <div class="hero-actions mt-8">
+        <v-btn
+          color="accent"
+          x-large
+          elevation="0"
+          :href="contactUrl"
+          target="_blank"
+          class="mr-4"
+        >
+          <lucide-mail :size="20" class="mr-2" />
+          {{ $t('emailBuilder.marketing.ctaPrimary') }}
+        </v-btn>
+        <v-btn outlined x-large color="primary" :href="infoUrl" target="_blank">
+          {{ $t('emailBuilder.marketing.ctaSecondary') }}
+          <lucide-external-link :size="20" class="ml-2" />
+        </v-btn>
+      </div>
+    </section>
+
+    <!-- SCREENSHOT SECTION -->
+    <section class="screenshot-section">
+      <div class="screenshot-wrapper">
+        <img
+          src="/img/marketing/email-builder-screenshot.png"
+          alt="Email Builder Interface"
+          class="screenshot-image"
+        />
+      </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="features-section">
+      <h2 class="text-h5 text-center mb-8 primary--text font-weight-medium">
+        {{ $t('emailBuilder.marketing.featuresTitle') }}
+      </h2>
+
+      <v-container>
+        <v-row justify="center">
+          <v-col
+            v-for="(feature, index) in features"
+            :key="index"
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <div class="feature-card">
+              <component
+                :is="getFeatureIconComponent(feature.icon)"
+                :size="48"
+                style="color: var(--v-accent-base)"
+                class="mb-4"
+              />
+              <h3 class="text-subtitle-1 font-weight-medium mb-2">
+                {{ feature.title }}
+              </h3>
+              <p class="text-body-2 grey--text text--darken-1 mb-0">
+                {{ feature.description }}
+              </p>
+            </div>
+          </v-col>
+        </v-row>
+      </v-container>
+    </section>
+
+    <!-- FOOTER CTA -->
+    <section class="footer-cta">
+      <h2 class="text-h5 mb-6 primary--text">
+        {{ $t('emailBuilder.marketing.footerCta') }}
+      </h2>
+
+      <div class="footer-actions">
+        <v-btn
+          color="accent"
+          large
+          elevation="0"
+          :href="contactUrl"
+          target="_blank"
+          class="mr-4"
+        >
+          <lucide-mail :size="20" class="mr-2" />
+          {{ $t('emailBuilder.marketing.ctaPrimary') }}
+        </v-btn>
+        <v-btn outlined large color="primary" :href="infoUrl" target="_blank">
+          {{ $t('emailBuilder.marketing.ctaSecondary') }}
+          <lucide-external-link :size="20" class="ml-2" />
+        </v-btn>
+      </div>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.marketing-page {
+  min-height: calc(100vh - 64px);
+  margin-left: 56px;
+}
+
+/* Hero Section */
+.hero-section {
+  padding: 80px 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #f8f9fa 0%, #fff 100%);
+}
+
+.hero-subtitle {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  font-weight: 400;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Screenshot Section */
+.screenshot-section {
+  padding: 40px 24px;
+  background: #fff;
+}
+
+.screenshot-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.screenshot-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Features Section */
+.features-section {
+  padding: 60px 24px;
+  background: #fafafa;
+}
+
+.feature-card {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+/* Footer CTA */
+.footer-cta {
+  padding: 60px 24px;
+  text-align: center;
+  background: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .marketing-page {
+    margin-left: 0;
+  }
+
+  .hero-section {
+    padding: 48px 16px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-actions .v-btn {
+    width: 100%;
+    max-width: 280px;
+    margin-right: 0 !important;
+  }
+
+  .footer-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-actions .v-btn {
+    width: 100%;
+    max-width: 280px;
+    margin-right: 0 !important;
+  }
+}
+</style>

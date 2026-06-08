@@ -23,4 +23,10 @@ module.exports = Object.freeze({
   TagModel: 'Tag',
   // Comments
   CommentModel: 'Comment',
+  // Integrations
+  IntegrationModel: 'Integration',
+  DashboardModel: 'Dashboard',
+  AIFeatureConfigModel: 'AIFeatureConfig',
+  // Translation
+  TranslationJobModel: 'TranslationJob',
 });

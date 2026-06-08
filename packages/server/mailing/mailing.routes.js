@@ -6,7 +6,13 @@ const createError = require('http-errors');
 const router = express.Router();
 
 const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const { GUARD_EMAIL_BUILDER } = require('./email-builder.guard.js');
 const mailings = require('./mailing.controller.js');
+const translation = require('../translation/translation.controller.js');
+
+// All routes below require an authenticated user AND the Email Builder module
+// to be enabled on the user's group (super admins bypass the flag check).
+router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('', GUARD_USER, mailings.list);
 router.post('', GUARD_USER, mailings.create);
@@ -33,6 +39,11 @@ router.post('/download-multiple-zip', GUARD_USER, mailings.downloadMultipleZip);
 router.put('/:mailingId/mosaico', GUARD_USER, mailings.updateMosaico);
 router.get('/:mailingId/mosaico', GUARD_USER, mailings.readMosaico);
 router.post('/:mailingId/duplicate', GUARD_USER, mailings.duplicate);
+router.post(
+  '/:mailingId/duplicate-translate',
+  GUARD_USER,
+  translation.duplicateAndTranslate
+);
 router.post(
   '/:mailingId/transfer-to-user',
   GUARD_ADMIN,

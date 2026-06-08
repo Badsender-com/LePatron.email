@@ -52,7 +52,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
     this.profile.campaignMailName = this.vm.creationName();
     this.isFolderLoading = false;
 
-    M.updateTextFields();
     window.addEventListener("beforeunload", this.handleBeforeUnload);
   },
   beforeDestroy() {
@@ -72,7 +71,6 @@ const AdobeComponent = Vue.component('AdobeComponent', {
   },
   methods: {
     onSubmit() {
-      M.updateTextFields();
       this.$emit('submit', this.profile);
     },
     handleBeforeUnload(e) {
@@ -190,7 +188,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
               <div style="display: flex; gap: 24px;">
                 <div style="flex: 1;">
                   <div :class="fetchedFoldersError ?  'adobe-loader hide' : '' " >
-                    <div class="input-field col s12 adobe-label">
+                    <div class="bs-form-field col s12 adobe-label">
                       <label>{{ vm.t('select-folder') }}</label>
                     </div>
                     <smart-tree
@@ -224,7 +222,7 @@ const AdobeComponent = Vue.component('AdobeComponent', {
                 </div>
 
                 <div :class="!isDeliveryLoading && this.profile.folderFullName ? '' : 'adobe-loader hide'">
-                  <div class="input-field col s12 adobe-label">
+                  <div class="bs-form-field col s12 adobe-label">
                     <label>{{ deliveryLabel }}</label>
                   </div>
                   <smart-tree

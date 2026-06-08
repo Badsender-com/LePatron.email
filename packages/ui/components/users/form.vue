@@ -1,9 +1,12 @@
 <script>
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
+import BsTextField from '~/components/form/bs-text-field';
+import BsSelect from '~/components/form/bs-select';
 
 export default {
   name: 'BsUserForm',
+  components: { BsTextField, BsSelect },
   mixins: [validationMixin],
   model: { prop: 'user', event: 'update' },
   supportedLanguages: [
@@ -74,7 +77,7 @@ export default {
     <v-card-text>
       <v-row>
         <v-col cols="6">
-          <v-text-field
+          <bs-text-field
             id="email"
             v-model="localModel.email"
             :label="$t('users.email')"
@@ -87,7 +90,7 @@ export default {
           />
         </v-col>
         <v-col cols="6">
-          <v-text-field
+          <bs-text-field
             id="name"
             v-model="localModel.name"
             :label="$t('forms.user.name')"
@@ -98,7 +101,7 @@ export default {
           />
         </v-col>
         <v-col cols="6">
-          <v-text-field
+          <bs-text-field
             id="externalUsername"
             v-model="localModel.externalUsername"
             :label="
@@ -110,7 +113,7 @@ export default {
           />
         </v-col>
         <v-col cols="6">
-          <v-select
+          <bs-select
             id="lang"
             v-model="localModel.lang"
             :label="$t('users.lang')"
@@ -119,8 +122,8 @@ export default {
           />
         </v-col>
         <v-col cols="6">
-          <v-select
-            id="lang"
+          <bs-select
+            id="role"
             v-model="localModel.role"
             :label="$t('users.role')"
             name="role"
