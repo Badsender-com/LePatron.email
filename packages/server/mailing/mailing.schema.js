@@ -201,7 +201,15 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   }
   if (filtersJSON) {
     if (filtersJSON.name) {
-      restQuery.name = { $regex: filtersJSON.name, $options: 'i' };
+      // Escape regex metacharacters to avoid ReDoS and accidental pattern
+      // injection (a stray "(" or "[" in the name would break the query),
+      // and anchor with ^ so the { name: 1 } index can be used instead of a
+      // full collection scan.
+      const escapedName = filtersJSON.name.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&'
+      );
+      restQuery.name = { $regex: `^${escapedName}`, $options: 'i' };
     }
 
     if (
