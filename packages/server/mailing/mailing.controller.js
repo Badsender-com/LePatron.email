@@ -28,6 +28,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
+  listTags: asyncHandler(listTags),
   create: asyncHandler(create),
   read: asyncHandler(read),
   readMosaico: asyncHandler(readMosaico),
@@ -93,6 +94,29 @@ async function list(req, res) {
     { workspaceId, parentFolderId, user, paginationJSON, filtersJSON }
   );
   res.json(responseMailingList);
+}
+
+/**
+ * @api {get} /mailings/tags tags used in a workspace or folder
+ * @apiPermission user
+ * @apiName GetMailingsTags
+ * @apiGroup Mailings
+ *
+ * @apiSuccess {String[]} tags all the tags available for the filter dropdown
+ */
+
+// Served separately from GET /mailings so the costly distinct('tags') query
+// never blocks list navigation.
+async function listTags(req, res) {
+  const { user, query } = req;
+  const { workspaceId, parentFolderId } = query;
+
+  const responseTags = await mailingService.listTagsForWorkspaceOrFolder({
+    workspaceId,
+    parentFolderId,
+    user,
+  });
+  res.json(responseTags);
 }
 
 /**

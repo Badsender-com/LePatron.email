@@ -116,6 +116,9 @@ export const setUserPersistedLocalStorageKey = (key) =>
 export function mailings() {
   return '/mailings';
 }
+export function mailingsTags() {
+  return '/mailings/tags';
+}
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;
 }
