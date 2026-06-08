@@ -14,7 +14,10 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages, Galleries } = require('../common/models.common.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const imageService = require('./image.service');
+
+const SORT_BY_VALUES = ['date_desc', 'date_asc'];
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -429,9 +432,13 @@ function createGallery(mongoId) {
 // Those functions are accessible only from the editor
 // wireframes assets (preview & template fixed assets)…
 // …are handled separately in wireframes.js#update
-async function list(req, res) {
+async function list(req, res, next) {
   const { mongoId } = req.params;
   const { search, format, sortBy } = req.query;
+
+  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
+    return next(createError.BadRequest(ERROR_CODES.INVALID_SORT_PARAM));
+  }
 
   const gallery = await Galleries.findOne(
     {
@@ -442,7 +449,14 @@ async function list(req, res) {
 
   const responseGallery = gallery || (await createGallery(mongoId));
 
-  if (search || format || sortBy) {
+  // only switch to the filtered shape when a usable filter/sort is provided;
+  // empty params (?search=) keep the Mosaico-compatible full-document response
+  const hasFilter =
+    (typeof search === 'string' && search) ||
+    (typeof format === 'string' && format) ||
+    sortBy;
+
+  if (hasFilter) {
     const files = imageService.filterGalleryFiles(responseGallery.files, {
       search,
       format,
@@ -459,15 +473,22 @@ async function updateLabel(req, res, next) {
   const { label } = req.body;
 
   if (!label || typeof label !== 'string' || label.trim() === '') {
-    return next(createError.BadRequest('label is required'));
+    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
   }
   if (label.length > 255) {
-    return next(createError.BadRequest('label too long (max 255 characters)'));
+    return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
   }
 
   let mongoId = /^([a-f\d]{24})-/.exec(imageName);
-  if (!mongoId) return next(createError.UnprocessableEntity());
+  if (!mongoId) {
+    return next(
+      createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
+    );
+  }
   mongoId = mongoId[1];
+
+  // ensure the requester's group owns the gallery's parent before mutating it
+  await imageService.assertGalleryOwnership(req.user, mongoId);
 
   const gallery = await imageService.renameLabel(
     mongoId,
