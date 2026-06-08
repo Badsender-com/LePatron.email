@@ -29,7 +29,7 @@ router.all('/gallery*', GUARD_USER);
 router.get('/gallery/:mongoId', images.list);
 router.post('/gallery/:mongoId', images.create);
 router.post('/gallery/:mongoId/from-url', images.createFromUrl);
-router.patch('/:imageName/label', GUARD_USER, images.updateLabel);
+router.patch('/gallery/:mongoId/:imageName/label', images.updateLabel);
 router.get('/:imageName', images.read);
 router.delete('/:imageName', GUARD_USER, images.destroy);
 
