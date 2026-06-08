@@ -33,5 +33,9 @@ const TagSchema = new Schema(
 );
 
 TagSchema.index({ label: 1, companyId: 1 }, { unique: true });
+// findTags filters by companyId and sorts by label; the unique index above
+// has companyId in second position so it can't serve that query. This one
+// covers both the filter and the sort.
+TagSchema.index({ companyId: 1, label: 1 });
 
 module.exports = TagSchema;

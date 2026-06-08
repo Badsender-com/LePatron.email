@@ -93,6 +93,14 @@ if (cluster.isMaster) {
   mongoose.connect(config.database, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    // Bound the connection pool so a slow query can't starve every other
+    // request: without this a few heavy queries make the whole app hang.
+    maxPoolSize: 20,
+    // Fail fast instead of hanging when no server/connection is available.
+    serverSelectionTimeoutMS: 5000,
+    // Kill sockets stuck on a query that never returns, releasing the
+    // connection back to the pool.
+    socketTimeoutMS: 45000,
   });
 
   const db = mongoose.connection;
@@ -318,8 +326,13 @@ if (cluster.isMaster) {
 
   app.use(nuxt.render);
 
-  app.use(function apiErrorHandler(err, _req, res, _next) {
+  app.use(function apiErrorHandler(err, _req, res, next) {
     logger.error(err);
+    // If the response has already started streaming (e.g. an image stream to
+    // S3/Cellar aborted mid-flight), we can't send a JSON error body anymore.
+    // Delegate to Express' default handler, which closes the connection
+    // instead of throwing "Cannot set headers after they are sent".
+    if (res.headersSent) return next(err);
     // delete err.config;
     // anything can come here
     // • make sure we have the minimum error informations

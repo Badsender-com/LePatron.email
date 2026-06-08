@@ -65,6 +65,7 @@ module.exports = {
   findAllIn,
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
+  listTagsForWorkspaceOrFolder,
   previewMail,
   downloadZip,
   downloadMultipleZip,
@@ -126,12 +127,26 @@ async function listMailingForWorkspaceOrFolder({
     });
   }
 
-  const tags = await findTags({ user });
-
+  // Tags are no longer computed here: `findTags` runs a costly
+  // `distinct('tags')` over every mailing of the company and made each list
+  // load take ~50s. It is now served by the dedicated `GET /mailings/tags`
+  // endpoint (listTagsForWorkspaceOrFolder) so navigating the list stays fast.
   return {
-    meta: { tags },
+    meta: {},
     items: mailings,
   };
+}
+
+// Tags for the filter dropdown, served separately from the mailing list so the
+// expensive distinct() never blocks list navigation.
+async function listTagsForWorkspaceOrFolder({
+  workspaceId,
+  parentFolderId,
+  user,
+}) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  const tags = await findTags({ user, workspaceId, parentFolderId });
+  return { tags };
 }
 
 function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
