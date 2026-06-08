@@ -7,10 +7,16 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const createError = require('http-errors');
 
-const { Galleries } = require('../common/models.common.js');
+const {
+  Galleries,
+  Mailings,
+  Templates,
+} = require('../common/models.common.js');
 const fileManager = require('../common/file-manage.service.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
+const modelsUtils = require('../utils/model.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 
 const DOWNLOAD_TIMEOUT_MS = 15000;
@@ -19,17 +25,23 @@ const DUPLICATE_KEY_ERROR = 11000;
 
 const normalizeExt = (ext) => (ext === 'jpeg' ? 'jpg' : ext);
 
+// fallback to the epoch so files without an uploadedAt sort as the oldest
+const fileDate = (file) =>
+  file.uploadedAt ? new Date(file.uploadedAt) : new Date(0);
+
 function filterGalleryFiles(files, { search, format, sortBy } = {}) {
   let result = [...files];
 
-  if (search) {
+  // query params can arrive as arrays/objects (e.g. ?search[]=a) — only string
+  // values are meaningful for these text comparisons, anything else is ignored
+  if (typeof search === 'string' && search) {
     const needle = search.toLowerCase();
     result = result.filter((f) =>
       (f.label || f.name).toLowerCase().includes(needle)
     );
   }
 
-  if (format) {
+  if (typeof format === 'string' && format) {
     const normalizedFormat = format.toLowerCase();
     result = result.filter((f) => {
       const ext = f.name.split('.').pop().toLowerCase();
@@ -38,20 +50,28 @@ function filterGalleryFiles(files, { search, format, sortBy } = {}) {
   }
 
   if (sortBy === 'date_desc') {
-    result = result.sort((a, b) => {
-      const dateA = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
-      const dateB = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
-      return dateB - dateA;
-    });
+    result.sort((a, b) => fileDate(b) - fileDate(a));
   } else if (sortBy === 'date_asc') {
-    result = result.sort((a, b) => {
-      const dateA = a.uploadedAt ? new Date(a.uploadedAt) : new Date(0);
-      const dateB = b.uploadedAt ? new Date(b.uploadedAt) : new Date(0);
-      return dateA - dateB;
-    });
+    result.sort((a, b) => fileDate(a) - fileDate(b));
   }
 
   return result;
+}
+
+// a gallery is owned by its parent mailing or template (creationOrWireframeId);
+// galleries themselves carry no _company, so authorization is delegated to the
+// parent. Throws Forbidden if the parent doesn't belong to the user's group.
+async function assertGalleryOwnership(user, creationOrWireframeId) {
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: creationOrWireframeId,
+  });
+  const [mailing, template] = await Promise.all([
+    Mailings.findOne(query, '_id'),
+    Templates.findOne(query, '_id'),
+  ]);
+  if (!mailing && !template) {
+    throw new createError.Forbidden(ERROR_CODES.FORBIDDEN_GALLERY_ACCESS);
+  }
 }
 
 // Every write below is a single atomic update. Reading the gallery, changing
@@ -173,8 +193,15 @@ async function renameLabel(mongoId, imageName, newLabel) {
     { $set: { 'files.$.label': newLabel } },
     { new: true }
   );
-  if (!gallery) throw new Error('Image not found');
-  return gallery;
+  if (gallery) return gallery;
+  // Nothing matched: tell a missing gallery from a missing image.
+  const exists = await Galleries.findOne(
+    { creationOrWireframeId: mongoId },
+    '_id'
+  );
+  throw new createError.NotFound(
+    exists ? ERROR_CODES.GALLERY_IMAGE_NOT_FOUND : ERROR_CODES.GALLERY_NOT_FOUND
+  );
 }
 
 module.exports = {
@@ -185,4 +212,5 @@ module.exports = {
   createFromUrl,
   filterGalleryFiles,
   renameLabel,
+  assertGalleryOwnership,
 };

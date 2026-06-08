@@ -14,7 +14,11 @@ jest.mock('../../../packages/server/common/models.common.js', () => {
   Galleries.findOne = jest.fn();
   Galleries.updateOne = jest.fn();
   Galleries.findOneAndUpdate = jest.fn();
-  return { Galleries };
+  return {
+    Galleries,
+    Mailings: { findOne: jest.fn() },
+    Templates: { findOne: jest.fn() },
+  };
 });
 jest.mock(
   '../../../packages/server/helpers/format-filename-for-jquery-fileupload.js',
@@ -29,6 +33,8 @@ const {
 const fileManager = require('../../../packages/server/common/file-manage.service.js');
 const {
   Galleries,
+  Mailings,
+  Templates,
 } = require('../../../packages/server/common/models.common.js');
 
 const MONGO_ID = 'abc123';
@@ -375,41 +381,91 @@ describe('imageService.renameLabel', () => {
     jest.clearAllMocks();
   });
 
-  it('met à jour le label et sauvegarde la galerie', async () => {
-    const mockFiles = [{ name: IMAGE_NAME, label: 'ancien.jpg' }];
-    const mockGallery = {
-      files: mockFiles,
-      markModified: jest.fn(),
-      save: jest.fn().mockResolvedValue({ files: mockFiles }),
-    };
-    Galleries.findOne.mockResolvedValue(mockGallery);
+  it('met à jour le label par un seul $set positionnel', async () => {
+    const updated = { files: [{ name: IMAGE_NAME, label: 'nouveau.jpg' }] };
+    Galleries.findOneAndUpdate.mockResolvedValue(updated);
 
-    await imageService.renameLabel(GALLERY_MONGO_ID, IMAGE_NAME, 'nouveau.jpg');
+    const result = await imageService.renameLabel(
+      GALLERY_MONGO_ID,
+      IMAGE_NAME,
+      'nouveau.jpg'
+    );
 
-    expect(mockFiles[0].label).toBe('nouveau.jpg');
-    expect(mockGallery.markModified).toHaveBeenCalledWith('files');
-    expect(mockGallery.save).toHaveBeenCalled();
+    expect(Galleries.findOneAndUpdate).toHaveBeenCalledWith(
+      { creationOrWireframeId: GALLERY_MONGO_ID, 'files.name': IMAGE_NAME },
+      { $set: { 'files.$.label': 'nouveau.jpg' } },
+      { new: true }
+    );
+    expect(result).toBe(updated);
   });
 
   it('lève une erreur si la galerie est introuvable', async () => {
+    Galleries.findOneAndUpdate.mockResolvedValue(null);
     Galleries.findOne.mockResolvedValue(null);
 
     await expect(
       imageService.renameLabel(GALLERY_MONGO_ID, IMAGE_NAME, 'label.jpg')
-    ).rejects.toThrow('Gallery not found');
+    ).rejects.toThrow('GALLERY_NOT_FOUND');
   });
 
-  it('lève une erreur si l\'image est introuvable dans la galerie', async () => {
-    /* eslint-disable-line quotes */
-    const mockGallery = {
-      files: [{ name: 'autre-image.jpg', label: 'autre.jpg' }],
-      markModified: jest.fn(),
-      save: jest.fn(),
-    };
-    Galleries.findOne.mockResolvedValue(mockGallery);
+  it("lève une erreur si l'image est introuvable dans la galerie", async () => {
+    Galleries.findOneAndUpdate.mockResolvedValue(null);
+    Galleries.findOne.mockResolvedValue({ _id: 'gallery-id' });
 
     await expect(
       imageService.renameLabel(GALLERY_MONGO_ID, IMAGE_NAME, 'label.jpg')
-    ).rejects.toThrow('Image not found');
+    ).rejects.toThrow('GALLERY_IMAGE_NOT_FOUND');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// assertGalleryOwnership
+// ---------------------------------------------------------------------------
+
+describe('imageService.assertGalleryOwnership', () => {
+  const user = { isAdmin: false, group: { id: 'group-1' } };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('ne lève rien si un mailing du groupe possède la galerie', async () => {
+    Mailings.findOne.mockResolvedValue({ _id: MONGO_ID });
+    Templates.findOne.mockResolvedValue(null);
+
+    await expect(
+      imageService.assertGalleryOwnership(user, MONGO_ID)
+    ).resolves.toBeUndefined();
+  });
+
+  it('ne lève rien si un template du groupe possède la galerie', async () => {
+    Mailings.findOne.mockResolvedValue(null);
+    Templates.findOne.mockResolvedValue({ _id: MONGO_ID });
+
+    await expect(
+      imageService.assertGalleryOwnership(user, MONGO_ID)
+    ).resolves.toBeUndefined();
+  });
+
+  it('lève Forbidden si ni mailing ni template du groupe ne correspond', async () => {
+    Mailings.findOne.mockResolvedValue(null);
+    Templates.findOne.mockResolvedValue(null);
+
+    await expect(
+      imageService.assertGalleryOwnership(user, MONGO_ID)
+    ).rejects.toThrow('FORBIDDEN_GALLERY_ACCESS');
+  });
+
+  it("scope la requête au groupe de l'utilisateur (_company)", async () => {
+    /* eslint-disable-line quotes */
+    Mailings.findOne.mockResolvedValue({ _id: MONGO_ID });
+    Templates.findOne.mockResolvedValue(null);
+
+    await imageService.assertGalleryOwnership(user, MONGO_ID);
+
+    expect(Mailings.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: MONGO_ID, _company: 'group-1' }),
+      '_id'
+    );
   });
 });

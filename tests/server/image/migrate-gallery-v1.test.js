@@ -62,7 +62,7 @@ describe('buildMigratedFiles', () => {
       expect(updatedFiles[0].label).toBe(`${MONGO_ID}-hash.jpg`);
     });
 
-    it('préserve le label existant (même si c\'est le hash technique)', () => {
+    it("préserve le label existant (même si c'est le hash technique)", () => {
       const files = [{ name: `${MONGO_ID}-hash.jpg`, label: 'mon-logo.jpg' }];
 
       const { updatedFiles } = buildMigratedFiles(files, GALLERY_CREATED_AT);

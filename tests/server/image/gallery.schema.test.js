@@ -107,7 +107,7 @@ describe('gallery.schema — duplicate()', () => {
     ).not.toThrow();
   });
 
-  it('remplace l\'ancien creationId dans les champs string', () => {
+  it("remplace l'ancien creationId dans les champs string", () => {
     const doc = makeMockDoc([
       {
         name: `${OLD_ID}-hash.jpg`,
@@ -127,7 +127,7 @@ describe('gallery.schema — duplicate()', () => {
     expect(doc.files[0].deleteUrl).toBe(`/api/images/${NEW_ID}-hash.jpg`);
   });
 
-  it('ne modifie pas label et externalMetadata (pas d\'ancien creationId dedans)', () => {
+  it("ne modifie pas label et externalMetadata (pas d'ancien creationId dedans)", () => {
     const doc = makeMockDoc([
       {
         name: `${OLD_ID}-hash.jpg`,
