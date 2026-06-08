@@ -15,6 +15,9 @@ const translation = require('../translation/translation.controller.js');
 router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('', GUARD_USER, mailings.list);
+// Must be declared before the '/:mailingId' routes below, otherwise "tags"
+// would be captured as a mailingId.
+router.get('/tags', GUARD_USER, mailings.listTags);
 router.post('', GUARD_USER, mailings.create);
 router.patch('/:mailingId', GUARD_USER, mailings.rename);
 router.get('/:mailingId/preview', GUARD_USER, mailings.previewHtml);
