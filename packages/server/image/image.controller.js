@@ -469,7 +469,7 @@ async function list(req, res, next) {
 }
 
 async function updateLabel(req, res, next) {
-  const { imageName } = req.params;
+  const { mongoId, imageName } = req.params;
   const { label } = req.body;
 
   if (!label || typeof label !== 'string' || label.trim() === '') {
@@ -479,13 +479,13 @@ async function updateLabel(req, res, next) {
     return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
   }
 
-  let mongoId = /^([a-f\d]{24})-/.exec(imageName);
-  if (!mongoId) {
+  // the imageName is technically prefixed by its gallery's mongoId: enforce the
+  // match so a caller can't target an image outside the gallery in the URL
+  if (!imageName.startsWith(`${mongoId}-`)) {
     return next(
       createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
     );
   }
-  mongoId = mongoId[1];
 
   // ensure the requester's group owns the gallery's parent before mutating it
   await imageService.assertGalleryOwnership(req.user, mongoId);
