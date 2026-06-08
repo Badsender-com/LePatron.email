@@ -12,6 +12,9 @@ const formatFilenameForJqueryFileupload = require('../helpers/format-filename-fo
  * @apiSuccess {String} files.url used by mosaico editor
  * @apiSuccess {String} files.deleteUrl used by mosaico editor
  * @apiSuccess {String} files.thumbnailUrl used by mosaico editor
+ * @apiSuccess {String} files.label human-readable label (falls back to file.name for non-migrated images)
+ * @apiSuccess {String} files.source image origin (e.g. 'upload', 'dam_bynder')
+ * @apiSuccess {Object} files.externalMetadata metadata from external sources (DAM, etc.)
  */
 
 // This table is used to add a visible information on the images
@@ -26,9 +29,12 @@ const GallerySchema = Schema(
       type: [],
       // make sure we have the right format for a gallery
       get: (files) => {
-        return files.map((file) =>
-          formatFilenameForJqueryFileupload(file.name)
-        );
+        return files.map((file) => ({
+          ...formatFilenameForJqueryFileupload(file.name),
+          label: file.label || file.name,
+          source: file.source || 'upload',
+          externalMetadata: file.externalMetadata || {},
+        }));
       },
     },
   },
@@ -51,7 +57,9 @@ GallerySchema.methods.duplicate = function duplicate(newCreationId) {
   // update the files names & path
   this.files = this.files.map((file) => {
     Object.keys(file).forEach((key) => {
-      file[key] = file[key].replace(oldCreationId, newCreationId);
+      if (typeof file[key] === 'string') {
+        file[key] = file[key].replace(oldCreationId, newCreationId);
+      }
     });
     return file;
   });
