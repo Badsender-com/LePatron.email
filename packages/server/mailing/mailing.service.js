@@ -1027,14 +1027,20 @@ async function copyMailing(mailingId, destination, user) {
   // group by id (cross-tenant IDOR).
   const mailing = await findOneForUser(mailingId, user);
 
-  if (mailing?._parentFolder) {
-    await folderService.hasAccess(mailing._parentFolder, user);
-  }
+  // Copying is a READ operation on the source: a regular_user with
+  // consultation-only rights on the source workspace must be able to copy a
+  // mailing out of it. We therefore only require READ access on the source
+  // workspace — `folderService.hasAccess` would require workspace membership
+  // (write), which wrongly blocked read-only users copying from a folder.
+  // A mailing lives in either a workspace or a folder (never both); when it is
+  // in a folder, resolve the owning workspace to run the same read check.
+  const sourceWorkspace = mailing?._parentFolder
+    ? await folderService.getWorkspaceForFolder(mailing._parentFolder)
+    : mailing?.workspace
+    ? await workspaceService.getWorkspace(mailing.workspace)
+    : null;
 
-  if (mailing?.workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing.workspace
-    );
+  if (sourceWorkspace) {
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
