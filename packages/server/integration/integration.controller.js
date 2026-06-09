@@ -28,6 +28,7 @@ const UPDATE_FIELDS = [...CREATE_FIELDS, 'isActive'];
 // instead of passing the Mongoose document to `res.json`.
 const RESPONSE_FIELDS = [
   '_id',
+  'id',
   'name',
   'type',
   'provider',

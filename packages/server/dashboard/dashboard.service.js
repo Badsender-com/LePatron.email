@@ -93,6 +93,10 @@ async function createDashboard(groupId, data) {
     lockedParams,
   } = data;
 
+  if (!Types.ObjectId.isValid(integrationId)) {
+    throw createError(400, ERROR_CODES.INVALID_INTEGRATION);
+  }
+
   // Validate integration exists and belongs to the same group
   const integration = await Integrations.findOne({
     _id: Types.ObjectId(integrationId),
@@ -159,6 +163,10 @@ async function updateDashboard(dashboardId, data) {
 
   // If changing integration, validate it exists and belongs to the same group
   if (integrationId && integrationId !== dashboard._integration.toString()) {
+    if (!Types.ObjectId.isValid(integrationId)) {
+      throw createError(400, ERROR_CODES.INVALID_INTEGRATION);
+    }
+
     const integration = await Integrations.findOne({
       _id: Types.ObjectId(integrationId),
       _company: dashboard._company,
