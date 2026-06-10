@@ -148,6 +148,38 @@ describe('skill-invocation.invoke', () => {
       expect(user.content).not.toContain('Format de sortie');
     });
 
+    it('requests native JSON mode when the provider supports it', async () => {
+      wireHappyPath();
+      mockProvider.supportsJsonResponseFormat = jest.fn(() => true);
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        userId: USER_ID,
+        featureType: 'demo',
+      });
+      expect(
+        mockProvider.chatComplete.mock.calls[0][0].responseFormat
+      ).toEqual({ type: 'json_object' });
+      delete mockProvider.supportsJsonResponseFormat;
+    });
+
+    it('omits responseFormat when the provider does not support JSON mode', async () => {
+      wireHappyPath();
+      mockProvider.supportsJsonResponseFormat = jest.fn(() => false);
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        userId: USER_ID,
+        featureType: 'demo',
+      });
+      expect(
+        mockProvider.chatComplete.mock.calls[0][0].responseFormat
+      ).toBeUndefined();
+      delete mockProvider.supportsJsonResponseFormat;
+    });
+
     it('honors logSkillInvocationContent=false (null content)', async () => {
       wireHappyPath();
       Groups.findById.mockReturnValue({
