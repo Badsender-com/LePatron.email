@@ -18,9 +18,13 @@ const PLACEHOLDER_REGEX = /\{\{\s*input\.([a-zA-Z0-9_.]+)\s*\}\}/g;
  * @param {{ systemPrompt: string, skillBody: string, inputTemplate: string }} params.version
  * @param {Object} params.input
  * @param {string} [params.suffix] — optional fixed suffix (mainly for tests)
+ * @param {string|null} [params.outputContract] — auto-derived output-format
+ *   block (see schemas/output-contract.js). Appended to the END of the static
+ *   section (after skillBody): deterministic per skill version, so the static
+ *   prefix stays prompt-caching friendly.
  * @returns {{ messages: Array<{role: string, content: string}>, suffix: string }}
  */
-function buildPrompt({ version, input, suffix }) {
+function buildPrompt({ version, input, suffix, outputContract }) {
   const tagSuffix = suffix || randomSuffix();
   const openTag = `<user_input_${tagSuffix}>`;
   const closeTag = `</user_input_${tagSuffix}>`;
@@ -41,14 +45,15 @@ function buildPrompt({ version, input, suffix }) {
 
   const userContent = `${openTag}\n${interpolatedTemplate}\n${closeTag}`;
 
+  const staticParts = [
+    version.systemPrompt,
+    version.skillBody,
+    outputContract,
+  ].filter((part) => part && String(part).trim().length > 0);
+
   const messages = [];
-  if (version.systemPrompt && version.systemPrompt.trim().length > 0) {
-    messages.push({
-      role: 'system',
-      content: `${version.systemPrompt}\n\n${version.skillBody || ''}`.trim(),
-    });
-  } else if (version.skillBody && version.skillBody.trim().length > 0) {
-    messages.push({ role: 'system', content: version.skillBody });
+  if (staticParts.length) {
+    messages.push({ role: 'system', content: staticParts.join('\n\n').trim() });
   }
   messages.push({ role: 'user', content: userContent });
 

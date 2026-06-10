@@ -43,6 +43,7 @@ export default {
       tab: 'details',
       activatingVersion: null,
       saving: false,
+      versionWarnings: [],
     };
   },
   head() {
@@ -146,7 +147,7 @@ export default {
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
         };
-        this.skill = await this.$axios.$patch(
+        const res = await this.$axios.$patch(
           api.aiSkillVersion(
             this.skill.skillId,
             version.versionMajor,
@@ -154,6 +155,11 @@ export default {
           ),
           payload
         );
+        // Template ↔ input-schema coherence warnings (non-blocking on DRAFT
+        // save; out-of-schema placeholders block at activation).
+        this.versionWarnings = res.warnings || [];
+        delete res.warnings;
+        this.skill = res;
         this.showSnackbar({
           text: this.$t('aiSkills.version.draftSaved'),
           color: 'success',
@@ -290,6 +296,16 @@ export default {
         </v-tab-item>
 
         <v-tab-item value="versions">
+          <v-alert
+            v-for="(warning, i) in versionWarnings"
+            :key="`warn-${i}`"
+            type="warning"
+            dense
+            outlined
+            class="mb-3"
+          >
+            {{ warning }}
+          </v-alert>
           <bs-ai-skill-versions-panel
             :skill="skill"
             :saving="saving"

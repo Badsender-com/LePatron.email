@@ -129,6 +129,25 @@ describe('skill-invocation.invoke', () => {
       expect(logged.output).toEqual({ text: 'hello world' });
     });
 
+    it('injects the output-format contract derived from outputSchemaId into the system message', async () => {
+      wireHappyPath();
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        userId: USER_ID,
+        featureType: 'demo',
+      });
+
+      const { messages } = mockProvider.chatComplete.mock.calls[0][0];
+      const system = messages.find((m) => m.role === 'system');
+      const user = messages.find((m) => m.role === 'user');
+      expect(system.content).toContain('## Format de sortie (obligatoire)');
+      expect(system.content).toContain('"text"');
+      // Static section only — never inside the delimited user input.
+      expect(user.content).not.toContain('Format de sortie');
+    });
+
     it('honors logSkillInvocationContent=false (null content)', async () => {
       wireHappyPath();
       Groups.findById.mockReturnValue({
