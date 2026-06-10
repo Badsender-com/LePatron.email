@@ -64,6 +64,10 @@ async function logFailure(params) {
   err.invocationId = invocationId;
   err.invocationStatus = params.status;
   err.skillError = params.error;
+  // Transient decoration for UI consumption (inline field errors). Never
+  // persisted: logInvocation builds its doc from explicit picks and `error`
+  // is a typed subdoc — fieldErrors must stay out of both.
+  if (params.fieldErrors) err.fieldErrors = params.fieldErrors;
   throw err;
 }
 

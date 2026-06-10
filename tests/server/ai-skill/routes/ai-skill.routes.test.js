@@ -122,6 +122,25 @@ describe('ai-skill HTTP routes', () => {
     );
   });
 
+  it('GET /api/ai-skills/schemas/:schemaId/descriptor describes the schema', async () => {
+    const res = await request(makeApp()).get(
+      '/api/ai-skills/schemas/genericTextInput/descriptor'
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.hasExpertiseField).toBe(true);
+    expect(res.body.fields).toEqual([
+      { name: 'prompt', type: 'string', required: true, multiline: true },
+      { name: 'context', type: 'string', required: false, multiline: true },
+    ]);
+  });
+
+  it('GET /api/ai-skills/schemas/:schemaId/descriptor returns 404 for unknown schema', async () => {
+    const res = await request(makeApp()).get(
+      '/api/ai-skills/schemas/nope/descriptor'
+    );
+    expect(res.status).toBe(404);
+  });
+
   it('POST /api/ai-skills/:skillId/test enforces budget then invokes', async () => {
     testBudgetService.consumeBudget.mockResolvedValue({
       count: 1,
