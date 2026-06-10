@@ -42,6 +42,13 @@ export default {
           api.aiPlaygroundExecute(this.scenarioId)
         );
         this.latestRun = run;
+        // Structured validation errors (transient, execute response only) go
+        // up to the page, which relays them to the scenario form for inline
+        // display. Emit [] on any other outcome to clear previous errors.
+        this.$emit(
+          'validation-errors',
+          run.status === 'VALIDATION_ERROR' ? run.fieldErrors || [] : []
+        );
         await this.reloadRuns();
       } catch (err) {
         this.handleError(err);

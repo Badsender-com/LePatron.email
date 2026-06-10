@@ -3,32 +3,32 @@
 import * as skillApi from '~/helpers/ai-skill-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiPlaygroundExpertiseSelector from './BsAiPlaygroundExpertiseSelector.vue';
+import BsAiPlaygroundInputForm from './BsAiPlaygroundInputForm.vue';
 
 export default {
   name: 'BsAiPlaygroundScenarioForm',
   components: {
     BsTextField,
     BsSelect,
-    BsTextarea,
     BsCombobox,
     BsAiPlaygroundExpertiseSelector,
+    BsAiPlaygroundInputForm,
   },
   props: {
     scenario: { type: Object, required: true },
     expertiseMode: { type: String, default: 'none' },
     creating: { type: Boolean, default: false },
     saving: { type: Boolean, default: false },
+    // Structured validation errors from the latest execute, displayed inline.
+    fieldErrors: { type: Array, default: () => [] },
   },
   data() {
     return {
       skills: [],
       availableExpertise: [],
       groups: [],
-      inputDraft: this.formatInput(this.scenario.input),
-      inputError: null,
     };
   },
   computed: {
@@ -64,18 +64,16 @@ export default {
       }
       return null;
     },
+    selectedInputSchemaId() {
+      const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
+      const skill = this.skills.find((s) => s.skillId === id);
+      return (skill && skill.inputSchemaId) || null;
+    },
   },
   async mounted() {
     await Promise.all([this.loadSkills(), this.loadExpertise()]);
   },
   methods: {
-    formatInput(value) {
-      try {
-        return JSON.stringify(value || {}, null, 2);
-      } catch (e) {
-        return '{}';
-      }
-    },
     async loadSkills() {
       try {
         const res = await this.$axios.$get(skillApi.aiSkills(), {
@@ -143,17 +141,6 @@ export default {
         versionMajor: major,
         versionMinor: minor,
       };
-    },
-    onInputDraftInput(text) {
-      this.inputDraft = text;
-      try {
-        this.scenario.input = JSON.parse(text || '{}');
-        this.inputError = null;
-        this.$emit('input-valid', true);
-      } catch (e) {
-        this.inputError = e.message;
-        this.$emit('input-valid', false);
-      }
     },
   },
 };
@@ -239,12 +226,13 @@ export default {
     <p class="text-caption text--secondary mb-1">
       {{ $t('aiPlayground.form.inputHint') }}
     </p>
-    <bs-textarea
-      :value="inputDraft"
-      :rows="8"
-      monospace
-      :error-messages="inputError ? [$t('aiPlayground.form.inputInvalid')] : []"
-      @input="onInputDraftInput"
+    <bs-ai-playground-input-form
+      :value="scenario.input"
+      :schema-id="selectedInputSchemaId"
+      :field-errors="fieldErrors"
+      @input="scenario.input = $event"
+      @valid="$emit('input-valid', $event)"
+      @descriptor="$emit('descriptor', $event)"
     />
   </div>
 </template>
