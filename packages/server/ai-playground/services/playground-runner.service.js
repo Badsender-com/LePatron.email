@@ -127,11 +127,43 @@ async function executeScenario({
       : 'SUCCESS',
     latencyMs: (invocationResult && invocationResult.latencyMs) || null,
     tokenUsage: (invocationResult && invocationResult.tokenUsage) || {},
-    errorMessage: invocationError ? invocationError.message : null,
+    errorMessage: invocationError
+      ? humanizeErrorMessage(invocationError)
+      : null,
     createdBy: userId,
   });
 
+  if (invocationError && invocationError.fieldErrors) {
+    // Transient JS property, outside the mongoose schema: never persisted.
+    // The execute controller copies it explicitly into the HTTP payload
+    // (res.json would prune it through toJSON()).
+    run.fieldErrors = invocationError.fieldErrors;
+  }
+
   return run;
+}
+
+const FIELD_ISSUE_LABELS = {
+  required: 'obligatoire',
+  unrecognized: 'non reconnu par cette skill',
+  length: 'longueur invalide',
+  invalid: 'format invalide',
+};
+
+/**
+ * Persisted errorMessage: when structured field errors exist, store a
+ * human-readable summary instead of the raw zod message so historical failed
+ * runs stay legible to consultants. Other error types keep their message.
+ */
+function humanizeErrorMessage(invocationError) {
+  const fieldErrors = invocationError.fieldErrors;
+  if (!Array.isArray(fieldErrors) || !fieldErrors.length) {
+    return invocationError.message;
+  }
+  const parts = fieldErrors.map(
+    (e) => `${e.field} (${FIELD_ISSUE_LABELS[e.issue] || e.issue})`
+  );
+  return `Champs invalides : ${parts.join(' ; ')}`;
 }
 
 async function loadActiveOrPinnedSkill(skillRef) {

@@ -100,11 +100,23 @@ describe('ai-playground HTTP routes', () => {
     expect(scenarioService.createScenario).toHaveBeenCalled();
   });
 
+  // The runner returns a mongoose doc — the controller relies on toJSON().
+  function mockRunDoc(doc) {
+    return {
+      ...doc,
+      toJSON() {
+        const json = { ...this };
+        delete json.toJSON;
+        delete json.fieldErrors;
+        return json;
+      },
+    };
+  }
+
   it('POST /scenarios/:id/execute calls the runner with body overrides', async () => {
-    playgroundRunner.executeScenario.mockResolvedValue({
-      _id: new Types.ObjectId(),
-      status: 'SUCCESS',
-    });
+    playgroundRunner.executeScenario.mockResolvedValue(
+      mockRunDoc({ _id: new Types.ObjectId(), status: 'SUCCESS' })
+    );
     const groupId = new Types.ObjectId().toString();
     const res = await request(makeApp())
       .post('/api/ai-playground/scenarios/demo/execute')
@@ -119,12 +131,30 @@ describe('ai-playground HTTP routes', () => {
     );
   });
 
+  it('POST /scenarios/:id/execute exposes transient fieldErrors in the payload', async () => {
+    playgroundRunner.executeScenario.mockResolvedValue(
+      mockRunDoc({
+        _id: new Types.ObjectId(),
+        status: 'VALIDATION_ERROR',
+        errorMessage: 'Champs invalides : prompt (obligatoire)',
+        fieldErrors: [{ field: 'prompt', issue: 'required' }],
+      })
+    );
+    const res = await request(makeApp()).post(
+      '/api/ai-playground/scenarios/demo/execute'
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('VALIDATION_ERROR');
+    expect(res.body.fieldErrors).toEqual([
+      { field: 'prompt', issue: 'required' },
+    ]);
+  });
+
   it('full lifecycle: create → execute → mark-golden → unmark-golden → delete', async () => {
     scenarioService.createScenario.mockResolvedValue({ scenarioId: 'demo' });
-    playgroundRunner.executeScenario.mockResolvedValue({
-      _id: 'run-1',
-      status: 'SUCCESS',
-    });
+    playgroundRunner.executeScenario.mockResolvedValue(
+      mockRunDoc({ _id: 'run-1', status: 'SUCCESS' })
+    );
     runService.markGolden.mockResolvedValue({ _id: 'run-1', isGolden: true });
     runService.unmarkGolden.mockResolvedValue({
       _id: 'run-1',

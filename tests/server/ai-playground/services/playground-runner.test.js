@@ -159,6 +159,68 @@ describe('playground-runner.executeScenario', () => {
     expect(composedInput.prompt).toBe('hi');
   });
 
+  it('carries transient fieldErrors and humanizes the persisted errorMessage', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    const validationError = Object.assign(
+      new Error('prompt: Invalid input: expected string, received undefined'),
+      {
+        invocationStatus: 'VALIDATION_ERROR',
+        fieldErrors: [
+          { field: 'prompt', issue: 'required' },
+          { field: 'brief', issue: 'unrecognized' },
+        ],
+      }
+    );
+    skillInvocation.invoke.mockRejectedValue(validationError);
+
+    const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    expect(run.status).toBe('VALIDATION_ERROR');
+    // Transient property for the execute controller, never in the create doc.
+    expect(run.fieldErrors).toEqual(validationError.fieldErrors);
+    expect(
+      AIPlaygroundRuns.create.mock.calls[0][0].fieldErrors
+    ).toBeUndefined();
+    // Persisted message is the humanized summary, not the raw zod message.
+    expect(AIPlaygroundRuns.create.mock.calls[0][0].errorMessage).toBe(
+      'Champs invalides : prompt (obligatoire) ; brief (non reconnu par cette skill)'
+    );
+  });
+
+  it('keeps the raw message for non-validation errors', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(mockScenario());
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [{ versionMajor: 1, versionMinor: 0 }],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockRejectedValue(
+      Object.assign(new Error('Provider timeout'), {
+        invocationStatus: 'TIMEOUT',
+      })
+    );
+
+    const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    expect(run.errorMessage).toBe('Provider timeout');
+    expect(run.fieldErrors).toBeUndefined();
+  });
+
   it('refuses when no group context and no platform group exists', async () => {
     AIPlaygroundScenarios.findOne.mockResolvedValue(
       mockScenario({ groupContext: null })
