@@ -210,7 +210,7 @@ OUTPUT (valid JSON only):`;
 
   // ─── API call ─────────────────────────────────────────────────────────────
 
-  // eslint-disable-next-line camelcase
+  // Legacy translation code path: content string only.
   async _callChatCompletion({ model, messages, temperature, responseFormat }) {
     const data = await this._callChatCompletionRaw({
       model,
