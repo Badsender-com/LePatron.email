@@ -21,11 +21,8 @@ $.widget(`blueimp.fileupload`, $.blueimp.fileupload, {
       const {files, index, messages } = data;
       const originalFile = files[index];
       const { name, type } = originalFile;
-      //TODO improve this to be independ of the element name
-      // As this element exists in the Dom only when gallery is open,
-      // the button editImage, is in charge of opening the gallery panel too
-      // toolimagesgallery to open from the side panel
-      // dialoggallerymailing to open from the box when adding background image to a block
+      // The editor modal is appended to document.body in initEditor(), so this
+      // dropZone is only a legacy hint and may safely be null.
       const dropZone = document.getElementById("toolimagesgallery") || document.getElementById("dialoggallerymailing")
 
       if (/gif|svg/.test(type)) return next();
