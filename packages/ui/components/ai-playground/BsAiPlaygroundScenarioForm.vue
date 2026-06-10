@@ -1,8 +1,10 @@
 <script>
 /* eslint-disable vue/no-mutating-props */
 import * as skillApi from '~/helpers/ai-skill-routes.js';
+import slugify from '~/helpers/slugify.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiPlaygroundExpertiseSelector from './BsAiPlaygroundExpertiseSelector.vue';
 import BsAiPlaygroundInputForm from './BsAiPlaygroundInputForm.vue';
@@ -13,6 +15,7 @@ export default {
   components: {
     BsTextField,
     BsSelect,
+    BsTextarea,
     BsCombobox,
     BsAiPlaygroundExpertiseSelector,
     BsAiPlaygroundInputForm,
@@ -34,6 +37,11 @@ export default {
       // From the input form's descriptor: whether the selected skill accepts
       // expertise input. Default true so nothing is blocked before load.
       skillAcceptsExpertise: true,
+      // scenarioId auto-suggestion (creation only) — same pattern as the
+      // skill/expertise create modals: suggest from the name until the user
+      // edits the identifier by hand.
+      identifierManuallyEdited: false,
+      showIdentifier: false,
     };
   },
   computed: {
@@ -72,6 +80,13 @@ export default {
       const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
       const skill = this.skills.find((s) => s.skillId === id);
       return (skill && skill.category) || null;
+    },
+  },
+  watch: {
+    'scenario.name'(name) {
+      if (this.creating && !this.identifierManuallyEdited) {
+        this.scenario.scenarioId = slugify(name);
+      }
     },
   },
   async mounted() {
@@ -146,6 +161,10 @@ export default {
         versionMinor: minor,
       };
     },
+    onIdentifierInput(value) {
+      this.scenario.scenarioId = value;
+      this.identifierManuallyEdited = true;
+    },
     onDescriptor(descriptor) {
       // Unknown descriptor (no skill / 404): don't block expertise selection.
       this.skillAcceptsExpertise = descriptor
@@ -159,20 +178,31 @@ export default {
 
 <template>
   <div>
-    <!-- Identity (creation only — read-only afterwards) -->
-    <template v-if="creating">
-      <bs-text-field
-        v-model="scenario.scenarioId"
-        :label="$t('aiPlayground.form.scenarioId')"
-        :hint="$t('aiPlayground.form.scenarioIdHint')"
-        required
-      />
-    </template>
     <bs-text-field
       v-model="scenario.name"
       :label="$t('aiPlayground.form.name')"
       required
     />
+    <!-- Identity (creation only — read-only afterwards). Auto-suggested from
+         the name; collapsed so consultants never have to think about it. -->
+    <template v-if="creating">
+      <a
+        class="text-caption d-inline-block mb-2"
+        @click="showIdentifier = !showIdentifier"
+      >
+        {{ $t('aiPlayground.form.scenarioIdToggle') }}
+        <span v-if="!showIdentifier && scenario.scenarioId">
+          — {{ scenario.scenarioId }}</span>
+      </a>
+      <bs-text-field
+        v-if="showIdentifier"
+        :value="scenario.scenarioId"
+        :label="$t('aiPlayground.form.scenarioId')"
+        :hint="$t('aiPlayground.form.scenarioIdHint')"
+        required
+        @input="onIdentifierInput"
+      />
+    </template>
     <bs-textarea
       v-model="scenario.description"
       :label="$t('aiPlayground.form.description')"
