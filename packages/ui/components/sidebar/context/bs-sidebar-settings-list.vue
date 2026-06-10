@@ -115,6 +115,7 @@ export default {
               id: 'ai-skills',
               label: this.$t('aiSkills.pageTitle'),
               iconComponent: 'LucideSparkles',
+              icon: 'mdi-creation',
               route: '/ai-skills',
               superAdminOnly: true,
               activePatterns: ['/ai-skills', '/ai-expertise'],
