@@ -9,6 +9,7 @@ const testBudget = require('../services/test-budget.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
+const { templateWarnings } = require('../services/template-coherence.js');
 
 function userIdOf(req) {
   return req.user && !req.user.isAdmin ? req.user.id : null;
@@ -69,13 +70,24 @@ module.exports = {
   }),
 
   updateVersion: asyncHandler(async (req, res) => {
+    const { major, minor } = versionFromParam(req);
     const skill = await skillService.updateVersion(
       req.params.skillId,
-      versionFromParam(req),
+      { major, minor },
       req.body,
       userIdOf(req)
     );
-    res.json(skill);
+    // Non-blocking coherence warnings on DRAFT save (additive response key):
+    // the same unknown-field issue becomes a hard error at activation.
+    const saved = skill.versions.find(
+      (v) => v.versionMajor === major && v.versionMinor === minor
+    );
+    const payload = skill.toJSON();
+    payload.warnings = templateWarnings(
+      saved ? saved.inputTemplate : '',
+      skill.inputSchemaId
+    );
+    res.json(payload);
   }),
 
   deleteVersion: asyncHandler(async (req, res) => {

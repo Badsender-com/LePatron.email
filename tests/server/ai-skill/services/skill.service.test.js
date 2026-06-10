@@ -277,6 +277,49 @@ describe('skill.service', () => {
       expect(doc.activeVersion).toEqual({ major: 1, minor: 1 });
     });
 
+    it('blocks activation when the template references out-of-schema fields', async () => {
+      const doc = mockSkillDoc({
+        inputSchemaId: 'genericTextInput',
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            inputTemplate: '<brief>{{input.brief}}</brief>',
+            changelog: 'c',
+            releaseNotes: 'r',
+          },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await expect(
+        skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null)
+      ).rejects.toMatchObject({
+        status: 400,
+        message: expect.stringContaining('brief'),
+      });
+      expect(doc.versions[0].status).toBe('DRAFT');
+    });
+
+    it('activates when the template matches the input schema', async () => {
+      const doc = mockSkillDoc({
+        inputSchemaId: 'genericTextInput',
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 1,
+            status: 'DRAFT',
+            inputTemplate: '{{input.prompt}} {{input.context}}',
+            changelog: 'c',
+            releaseNotes: 'r',
+          },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.activateVersion('a', { major: 1, minor: 1 }, {}, null);
+      expect(doc.versions[0].status).toBe('ACTIVE');
+    });
+
     it('archives the previously active version on activation', async () => {
       const doc = mockSkillDoc({
         activeVersion: { major: 1, minor: 0 },
