@@ -40,6 +40,9 @@ function buildOutputContract(outputSchemaId) {
     'Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après,',
     'conforme à ce schéma :',
     JSON.stringify(jsonSchema, null, 2),
+    'Respecte STRICTEMENT les types du schéma : une propriété de type "string"',
+    'contient du texte (du Markdown si la réponse est structurée), JAMAIS un',
+    'objet ou un tableau imbriqué.',
     'Ne pose jamais de question en retour : si une information manque,',
     'fais des hypothèses raisonnables et produis quand même la sortie.',
   ].join('\n');
