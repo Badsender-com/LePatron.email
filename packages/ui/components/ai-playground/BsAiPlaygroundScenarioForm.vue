@@ -6,6 +6,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiPlaygroundExpertiseSelector from './BsAiPlaygroundExpertiseSelector.vue';
 import BsAiPlaygroundInputForm from './BsAiPlaygroundInputForm.vue';
+import BsAiSkillPicker from './BsAiSkillPicker.vue';
 
 export default {
   name: 'BsAiPlaygroundScenarioForm',
@@ -15,6 +16,7 @@ export default {
     BsCombobox,
     BsAiPlaygroundExpertiseSelector,
     BsAiPlaygroundInputForm,
+    BsAiSkillPicker,
   },
   props: {
     scenario: { type: Object, required: true },
@@ -29,15 +31,12 @@ export default {
       skills: [],
       availableExpertise: [],
       groups: [],
+      // From the input form's descriptor: whether the selected skill accepts
+      // expertise input. Default true so nothing is blocked before load.
+      skillAcceptsExpertise: true,
     };
   },
   computed: {
-    skillItems() {
-      return this.skills.map((s) => ({
-        value: s.skillId,
-        text: `${s.skillId} — ${s.title}`,
-      }));
-    },
     skillVersions() {
       const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
       const skill = this.skills.find((s) => s.skillId === id);
@@ -68,6 +67,11 @@ export default {
       const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
       const skill = this.skills.find((s) => s.skillId === id);
       return (skill && skill.inputSchemaId) || null;
+    },
+    selectedSkillCategory() {
+      const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
+      const skill = this.skills.find((s) => s.skillId === id);
+      return (skill && skill.category) || null;
     },
   },
   async mounted() {
@@ -142,6 +146,13 @@ export default {
         versionMinor: minor,
       };
     },
+    onDescriptor(descriptor) {
+      // Unknown descriptor (no skill / 404): don't block expertise selection.
+      this.skillAcceptsExpertise = descriptor
+        ? !!descriptor.hasExpertiseField
+        : true;
+      this.$emit('descriptor', descriptor);
+    },
   },
 };
 </script>
@@ -178,11 +189,9 @@ export default {
     <h3 class="form-section-title">
       {{ $t('aiPlayground.form.skillSection') }}
     </h3>
-    <bs-select
+    <bs-ai-skill-picker
       :value="(scenario.skillRef || {}).skillId"
-      :items="skillItems"
-      item-text="text"
-      item-value="value"
+      :skills="skills"
       :label="$t('aiPlayground.form.skillSelector')"
       @input="onSkillChange"
     />
@@ -215,6 +224,8 @@ export default {
       :expertise-refs="scenario.expertiseRefs"
       :expertise-filter="scenario.expertiseFilter"
       :available-expertise="availableExpertise"
+      :skill-category="selectedSkillCategory"
+      :skill-accepts-expertise="skillAcceptsExpertise"
       @update:mode="$emit('update:expertise-mode', $event)"
       @update:expertise-refs="scenario.expertiseRefs = $event"
       @update:expertise-filter="scenario.expertiseFilter = $event"
@@ -232,7 +243,7 @@ export default {
       :field-errors="fieldErrors"
       @input="scenario.input = $event"
       @valid="$emit('input-valid', $event)"
-      @descriptor="$emit('descriptor', $event)"
+      @descriptor="onDescriptor"
     />
   </div>
 </template>

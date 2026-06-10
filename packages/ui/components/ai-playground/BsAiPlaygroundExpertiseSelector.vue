@@ -3,17 +3,24 @@
 import * as api from '~/helpers/ai-playground-routes.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
 
 const MODES = ['none', 'explicit', 'filter'];
 
 export default {
   name: 'BsAiPlaygroundExpertiseSelector',
-  components: { BsCombobox, BsSelect },
+  components: { BsCombobox, BsSelect, BsAiExpertisePicker },
   props: {
     mode: { type: String, default: 'none' }, // 'none' | 'explicit' | 'filter'
     expertiseRefs: { type: Array, default: () => [] },
     expertiseFilter: { type: Object, default: () => ({}) },
     availableExpertise: { type: Array, default: () => [] },
+    // Category of the selected skill: same-category expertise is listed first.
+    skillCategory: { type: String, default: null },
+    // From the skill's schema descriptor: when false, the skill has no
+    // expertise input — selecting expertise would be silently useless, so the
+    // explicit/filter modes are blocked with an explanation.
+    skillAcceptsExpertise: { type: Boolean, default: true },
     disabled: { type: Boolean, default: false },
   },
   data() {
@@ -36,12 +43,6 @@ export default {
     expertiseIds() {
       return this.expertiseRefs.map((r) => r.expertiseId);
     },
-    expertiseItems() {
-      return this.availableExpertise.map((e) => ({
-        value: e.expertiseId,
-        text: `${e.expertiseId} — ${e.title}`,
-      }));
-    },
   },
   watch: {
     mode(next) {
@@ -62,6 +63,13 @@ export default {
       handler() {
         if (this.mode === 'filter') this.refreshFilterPreview();
       },
+    },
+    skillAcceptsExpertise(accepts) {
+      // The newly selected skill has no expertise input: selecting expertise
+      // would silently do nothing useful — fall back to 'none'.
+      if (!accepts && this.mode !== 'none') {
+        this.$emit('update:mode', 'none');
+      }
     },
   },
   mounted() {
@@ -129,7 +137,18 @@ export default {
 
 <template>
   <div>
+    <v-alert
+      v-if="!skillAcceptsExpertise"
+      type="info"
+      dense
+      outlined
+      class="mb-3"
+    >
+      {{ $t('aiPlayground.form.expertiseNotSupported') }}
+    </v-alert>
+
     <bs-select
+      v-if="skillAcceptsExpertise"
       :value="mode"
       :items="modeOptions"
       item-text="text"
@@ -140,7 +159,7 @@ export default {
     />
 
     <v-alert
-      v-if="mode === 'none'"
+      v-if="skillAcceptsExpertise && mode === 'none'"
       type="info"
       dense
       outlined
@@ -150,15 +169,11 @@ export default {
     </v-alert>
 
     <template v-if="mode === 'explicit'">
-      <bs-select
+      <bs-ai-expertise-picker
         :value="expertiseIds"
-        :items="expertiseItems"
-        item-text="text"
-        item-value="value"
+        :expertise="availableExpertise"
+        :skill-category="skillCategory"
         :label="$t('aiPlayground.form.expertiseSelector')"
-        multiple
-        chips
-        small-chips
         :disabled="disabled"
         @input="onExplicitChange"
       />
