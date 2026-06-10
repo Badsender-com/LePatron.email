@@ -95,16 +95,66 @@ function parseJsonFromLLM(raw) {
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)```/i);
   const candidate = (fenceMatch ? fenceMatch[1] : text).trim();
 
-  try {
-    return JSON.parse(candidate);
-  } catch (_e) {
-    // Fall back to the first JSON-looking block in the text.
-    const objMatch = candidate.match(/[{[][\s\S]*[}\]]/);
-    if (objMatch) {
-      return JSON.parse(objMatch[0]);
+  const attempts = [candidate];
+  // Fall back to the first JSON-looking block in the text.
+  const objMatch = candidate.match(/[{[][\s\S]*[}\]]/);
+  if (objMatch && objMatch[0] !== candidate) attempts.push(objMatch[0]);
+
+  for (const attempt of attempts) {
+    try {
+      return JSON.parse(attempt);
+    } catch (_e) {
+      // Repair pass: LLMs writing long Markdown inside a JSON string sometimes
+      // switch from escaped \n to RAW newlines mid-string (seen with Mistral on
+      // the QC skill) — invalid JSON. Re-escape raw control characters found
+      // inside string literals, then retry.
+      try {
+        return JSON.parse(escapeRawControlCharsInStrings(attempt));
+      } catch (_e2) {
+        // try the next candidate
+      }
     }
-    throw new Error('LLM output is not valid JSON');
   }
+  throw new Error('LLM output is not valid JSON');
+}
+
+/**
+ * Walks the candidate tracking JSON string-literal state (quote toggling,
+ * backslash escapes) and re-escapes raw \n, \r and \t found INSIDE strings.
+ * Characters outside string literals are left untouched.
+ */
+function escapeRawControlCharsInStrings(text) {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (const ch of text) {
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      continue;
+    }
+    if (escaped) {
+      out += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\') {
+      out += ch;
+      escaped = true;
+    } else if (ch === '"') {
+      inString = false;
+      out += ch;
+    } else if (ch === '\n') {
+      out += '\\n';
+    } else if (ch === '\r') {
+      out += '\\r';
+    } else if (ch === '\t') {
+      out += '\\t';
+    } else {
+      out += ch;
+    }
+  }
+  return out;
 }
 
 module.exports = {
