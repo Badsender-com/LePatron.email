@@ -60,6 +60,23 @@ describe('buildPrompt', () => {
     expect(messages[1].content).toContain('<x></x>');
   });
 
+  it('serializes object/array values as JSON (never "[object Object]")', () => {
+    const v = { ...version, inputTemplate: '{{input.expertise}}' };
+    const expertise = [
+      { expertiseId: 'redaction.cta.principes', title: 'CTA', body: 'Règles…' },
+    ];
+    const { messages } = buildPrompt({
+      version: v,
+      input: { expertise },
+      suffix: 's',
+    });
+    expect(messages[1].content).not.toContain('[object Object]');
+    expect(messages[1].content).toContain(
+      '"expertiseId": "redaction.cta.principes"'
+    );
+    expect(messages[1].content).toContain('"body": "Règles…"');
+  });
+
   it('omits the system message when both systemPrompt and skillBody are empty', () => {
     const { messages } = buildPrompt({
       version: { systemPrompt: '', skillBody: '', inputTemplate: 'x' },
