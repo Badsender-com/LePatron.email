@@ -52,6 +52,9 @@ export default {
       expertiseMode: 'none',
       inputValid: true,
       saving: false,
+      // Structured validation errors from the latest execute — the form and
+      // the run section are siblings, this page is their junction.
+      fieldErrors: [],
     };
   },
   head() {
@@ -172,6 +175,7 @@ export default {
         :scenario="scenario"
         :expertise-mode="expertiseMode"
         :saving="saving"
+        :field-errors="fieldErrors"
         @update:expertise-mode="expertiseMode = $event"
         @input-valid="inputValid = $event"
       />
@@ -184,6 +188,7 @@ export default {
         :can-execute="canExecute"
         :initial-runs="initialRuns"
         @golden-changed="onGoldenChanged"
+        @validation-errors="fieldErrors = $event"
       />
     </v-container>
 
