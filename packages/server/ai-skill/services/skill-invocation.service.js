@@ -28,6 +28,7 @@ const {
 
 const AIFeatureTypes = require('../../constant/ai-feature-type.js');
 const { getSchema } = require('../schemas');
+const { buildOutputContract } = require('../schemas/output-contract.js');
 const {
   SkillStatuses,
   InvocationStatuses,
@@ -164,9 +165,12 @@ async function invoke({
   });
 
   // ─── 4. Build the prompt with random XML tags ──────────────────────────
+  // The output-format contract is derived from the skill's outputSchemaId and
+  // injected automatically — skill authors must not write it by hand.
   const { messages } = buildPrompt({
     version,
     input: inputParse.data,
+    outputContract: buildOutputContract(skill.outputSchemaId),
   });
 
   if (options.dryRun) {

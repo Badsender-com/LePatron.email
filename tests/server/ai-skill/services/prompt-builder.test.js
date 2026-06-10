@@ -60,6 +60,41 @@ describe('buildPrompt', () => {
     expect(messages[1].content).toContain('<x></x>');
   });
 
+  it('appends the output contract to the STATIC section, before the user input', () => {
+    const { messages } = buildPrompt({
+      version,
+      input: { x: 'val' },
+      suffix: 's',
+      outputContract: '## Format de sortie (obligatoire)\n{"text": "..."}',
+    });
+    expect(messages).toHaveLength(2);
+    expect(messages[0].role).toBe('system');
+    expect(messages[0].content).toContain('## Format de sortie (obligatoire)');
+    // Static section only — never inside the delimited user input.
+    expect(messages[1].content).not.toContain('Format de sortie');
+    // After the skillBody (end of static section).
+    const sys = messages[0].content;
+    expect(sys.indexOf('Format de sortie')).toBeGreaterThan(
+      sys.indexOf(version.skillBody)
+    );
+  });
+
+  it('creates a system message for the contract even without systemPrompt/skillBody', () => {
+    const { messages } = buildPrompt({
+      version: { systemPrompt: '', skillBody: '', inputTemplate: 'x' },
+      input: {},
+      suffix: 's',
+      outputContract: 'CONTRAT',
+    });
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toEqual({ role: 'system', content: 'CONTRAT' });
+  });
+
+  it('keeps the previous behaviour when no contract is provided', () => {
+    const { messages } = buildPrompt({ version, input: {}, suffix: 's' });
+    expect(messages[0].content).not.toContain('Format de sortie');
+  });
+
   it('serializes object/array values as JSON (never "[object Object]")', () => {
     const v = { ...version, inputTemplate: '{{input.expertise}}' };
     const expertise = [

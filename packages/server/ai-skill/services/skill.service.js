@@ -11,6 +11,7 @@ const {
   assertDraft,
   versionLabel,
 } = require('./version-helpers.js');
+const { validateTemplateCoherence } = require('./template-coherence.js');
 
 const LIST_PROJECTION = {
   skillId: 1,
@@ -216,6 +217,24 @@ async function activateVersion(skillId, { major, minor }, payload, userId) {
   if (version.status !== 'DRAFT') {
     throw createError(409, 'Only DRAFT versions can be activated');
   }
+
+  // Publication gate: with strict input schemas, an out-of-schema placeholder
+  // is ALWAYS interpolated empty — a guaranteed bug, so activation is blocked.
+  // (A required field missing from the template stays a DRAFT-save warning:
+  // omitting it can be intentional.)
+  const { unknownFields } = validateTemplateCoherence(
+    version.inputTemplate,
+    skill.inputSchemaId
+  );
+  if (unknownFields.length) {
+    throw createError(
+      400,
+      'Le template référence des champs absents du schéma d\'entrée ' +
+        `« ${skill.inputSchemaId} » : ${unknownFields.join(', ')}. ` +
+        'Corrigez le template ou changez le schéma d\'entrée de la skill.'
+    );
+  }
+
   // Major releases require explicit changelog and releaseNotes. Minor
   // releases inherit the auto-filled defaults from createMinorVersion.
   const isMajor = version.versionMinor === 0;
