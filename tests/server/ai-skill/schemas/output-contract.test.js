@@ -14,6 +14,9 @@ describe('buildOutputContract', () => {
     expect(block).toContain('"required"');
     expect(block).toContain('"additionalProperties": false');
     expect(block).not.toContain('$schema');
+    // Type fidelity: prevents models from nesting an object inside a string
+    // field (seen with Mistral on the QC skill's structured report).
+    expect(block).toContain('Respecte STRICTEMENT les types du schéma');
     expect(block).toContain('Ne pose jamais de question en retour');
   });
 
