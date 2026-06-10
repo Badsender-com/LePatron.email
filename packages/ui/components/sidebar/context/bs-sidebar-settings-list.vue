@@ -103,6 +103,14 @@ export default {
               exact: true,
               superAdminOnly: true,
             },
+            {
+              id: 'ai-skills',
+              label: this.$t('aiSkills.pageTitle'),
+              icon: 'mdi-creation',
+              route: '/ai-skills',
+              superAdminOnly: true,
+              activePatterns: ['/ai-skills', '/ai-expertise'],
+            },
           ],
         });
       }
