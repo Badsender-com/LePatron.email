@@ -14,12 +14,30 @@ const { z } = require('zod');
  * rather than mutating the previous one. See ARCHITECTURE-CIBLE §6.1.
  */
 
+// --- Shared sub-schemas ---
+
+// Shape of the expertise entries the playground runner injects into the input
+// (only when at least one expertise resolves). Any skill that consumes
+// expertise must declare `expertise: expertiseArraySchema.optional()` in its
+// input schema — reuse this constant in future typed schemas
+// (redactionCtaInput, qcSubjectInput, …).
+const expertiseArraySchema = z.array(
+  z.object({
+    expertiseId: z.string(),
+    title: z.string(),
+    body: z.string(),
+    examplesGood: z.array(z.string()).optional(),
+    examplesBad: z.array(z.string()).optional(),
+  })
+);
+
 // --- Generic demonstration schemas (used by the seed skill `generic.text`) ---
 
 const genericTextInput = z
   .object({
     prompt: z.string().min(1),
     context: z.string().optional(),
+    expertise: expertiseArraySchema.optional(),
   })
   .strict();
 
@@ -62,4 +80,5 @@ module.exports = {
   getSchema,
   listSchemaIds,
   hasSchema,
+  expertiseArraySchema,
 };

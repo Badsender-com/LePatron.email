@@ -8,6 +8,7 @@ const skillInvocation = require('../services/skill-invocation.service.js');
 const testBudget = require('../services/test-budget.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
+const { describeSchema } = require('../schemas/describe-schema.js');
 
 function userIdOf(req) {
   return req.user && !req.user.isAdmin ? req.user.id : null;
@@ -120,5 +121,13 @@ module.exports = {
 
   listSchemas: asyncHandler(async (_req, res) => {
     res.json({ schemas: listSchemaIds() });
+  }),
+
+  getSchemaDescriptor: asyncHandler(async (req, res) => {
+    const descriptor = describeSchema(req.params.schemaId);
+    if (!descriptor) {
+      throw createError(404, `Unknown schema "${req.params.schemaId}"`);
+    }
+    res.json(descriptor);
   }),
 };

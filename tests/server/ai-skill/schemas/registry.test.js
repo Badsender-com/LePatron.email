@@ -41,4 +41,34 @@ describe('zod schema registry', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('genericTextInput accepts an optional expertise array', () => {
+    const result = schemas.genericTextInput.safeParse({
+      prompt: 'hi',
+      expertise: [
+        {
+          expertiseId: 'redaction.cta.principes',
+          title: 'Principes CTA',
+          body: 'Texte de l’expertise',
+          examplesGood: ['Bon exemple'],
+          examplesBad: [],
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('genericTextInput still validates without expertise', () => {
+    expect(schemas.genericTextInput.safeParse({ prompt: 'hi' }).success).toBe(
+      true
+    );
+  });
+
+  it('genericTextInput stays strict (unknown keys rejected)', () => {
+    const result = schemas.genericTextInput.safeParse({
+      prompt: 'hi',
+      brief: 'nope',
+    });
+    expect(result.success).toBe(false);
+  });
 });
