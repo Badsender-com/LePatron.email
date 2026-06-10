@@ -29,7 +29,13 @@ function buildPrompt({ version, input, suffix }) {
     PLACEHOLDER_REGEX,
     (_match, path) => {
       const value = getByPath(input, path);
-      return value === undefined || value === null ? '' : String(value);
+      if (value === undefined || value === null) return '';
+      // Objects/arrays (e.g. the injected `expertise` entries) must be
+      // serialized — String() would yield "[object Object]" and feed the LLM
+      // garbage instead of the expertise content.
+      return typeof value === 'object'
+        ? JSON.stringify(value, null, 2)
+        : String(value);
     }
   );
 
