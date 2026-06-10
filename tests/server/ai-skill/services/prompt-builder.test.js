@@ -150,4 +150,29 @@ describe('parseJsonFromLLM', () => {
   it('throws when no JSON found', () => {
     expect(() => parseJsonFromLLM('plain text no json')).toThrow();
   });
+
+  it('repairs RAW newlines inside a JSON string (Mistral long-Markdown failure)', () => {
+    // Exact real-world pattern: properly escaped \n for most of the string,
+    // then a switch to raw newlines mid-string.
+    const raw =
+      '```json\n{\n  "text": "# Rapport\\n\\n## Critère 1\\nok.\n2. **Suite** : brut.\nFin."\n}\n```';
+    const parsed = parseJsonFromLLM(raw);
+    expect(parsed.text).toContain('# Rapport');
+    expect(parsed.text).toContain('2. **Suite** : brut.');
+    expect(parsed.text).toContain('Fin.');
+  });
+
+  it('repairs raw tabs and carriage returns inside strings', () => {
+    const parsed = parseJsonFromLLM('{"a": "x\ty\r\nz"}');
+    expect(parsed.a).toBe('x\ty\r\nz');
+  });
+
+  it('does not alter control characters outside string literals', () => {
+    expect(parseJsonFromLLM('{\n  "a": 1\n}')).toEqual({ a: 1 });
+  });
+
+  it('repairs strings with escaped quotes followed by raw newlines', () => {
+    const parsed = parseJsonFromLLM('{"a": "dit \\"oui\\" puis\nla suite"}');
+    expect(parsed.a).toBe('dit "oui" puis\nla suite');
+  });
 });
