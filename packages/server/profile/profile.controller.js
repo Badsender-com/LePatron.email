@@ -320,7 +320,8 @@ async function sendCampaignMail(req, res) {
   } catch (error) {
     const logId = error.logId;
     res.status(error.statusCode || 500).json({
-      message: error.response.data.message || 'Erreur serveur',
+      message:
+        error?.response?.data?.message || error.message || 'Erreur serveur',
       ...(logId ? { logId } : {}),
     });
   }

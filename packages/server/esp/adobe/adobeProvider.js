@@ -377,11 +377,10 @@ class AdobeProvider {
 
         try {
           await this.uploadDeliveryImage({
-            image: blob.stream(),
+            image: Buffer.from(await blob.arrayBuffer()),
             optionImg: {
               filename: imageName,
               contentType: blob.type,
-              knownLength: await blob.size,
             },
           });
         } catch (uploadError) {
