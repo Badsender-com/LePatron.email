@@ -4,7 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsAiPlaygroundScenarioForm from '~/components/ai-playground/BsAiPlaygroundScenarioForm.vue';
 import BsAiPlaygroundRunSection from '~/components/ai-playground/BsAiPlaygroundRunSection.vue';
