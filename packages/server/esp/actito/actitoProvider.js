@@ -204,7 +204,12 @@ class ActitoProvider {
     }
   }
 
-  async setCampaignHtmlMail({ archive, campaignId, routingEntity, archiveName }) {
+  async setCampaignHtmlMail({
+    archive,
+    campaignId,
+    routingEntity,
+    archiveName,
+  }) {
     let tmpDir;
     try {
       const form = new FormData();
@@ -213,25 +218,30 @@ class ActitoProvider {
       const headerAccess = await this.getHeaderAccess();
       const headers = {
         Authorization: headerAccess.Authorization,
-        contentType: 'multipart/form-data',
         ...form.getHeaders(),
       };
-      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
+      this.checkIfCampaignIdAndRoutingEntityExists({
+        campaignId,
+        routingEntity,
+      });
 
       const writeStream = fs.createWriteStream(tmpZipFile);
       archive.pipe(writeStream);
 
-      // Wait for archive to be fully written before sending
       await new Promise((resolve, reject) => {
+        archive.on('error', reject);
         writeStream.on('close', resolve);
         writeStream.on('error', reject);
         archive.finalize();
       });
 
+      const zipBuffer = fs.readFileSync(tmpZipFile);
+      form.append('inputFile', zipBuffer, {
+        filename: `${archiveName}.zip`,
+        contentType: 'application/zip',
+      });
 
-      form.append('inputFile', fs.createReadStream(tmpZipFile));
-
-      return axios.post(
+      return await axios.post(
         `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/body?charset=utf8`,
         form,
         { headers }
@@ -254,7 +264,10 @@ class ActitoProvider {
 
   async getCampaignHtmlMail({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
+      this.checkIfCampaignIdAndRoutingEntityExists({
+        campaignId,
+        routingEntity,
+      });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
         `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/body`,
@@ -268,7 +281,10 @@ class ActitoProvider {
 
   async deleteCampaignMail({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
+      this.checkIfCampaignIdAndRoutingEntityExists({
+        campaignId,
+        routingEntity,
+      });
       const headerAccess = await this.getHeaderAccess();
       return axios.delete(
         `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}`,
@@ -282,7 +298,10 @@ class ActitoProvider {
 
   async setCampaignMailSubjectLine({ subject, campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
+      this.checkIfCampaignIdAndRoutingEntityExists({
+        campaignId,
+        routingEntity,
+      });
       const headerAccess = await this.getHeaderAccess();
       return axios.put(
         `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/subject`,
@@ -298,7 +317,10 @@ class ActitoProvider {
 
   async getCampaignMailSubjectLine({ campaignId, routingEntity }) {
     try {
-      this.checkIfCampaignIdAndRoutingEntityExists({ campaignId, routingEntity });
+      this.checkIfCampaignIdAndRoutingEntityExists({
+        campaignId,
+        routingEntity,
+      });
       const headerAccess = await this.getHeaderAccess();
       return axios.get(
         `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/${campaignId}/content/subject`,
@@ -327,7 +349,8 @@ class ActitoProvider {
 
     // Routing entity for URL path (brand-specific sending configuration)
     // Falls back to entity (database entity) for backward compatibility
-    const routingEntity = campaignMailData.routingEntity || campaignMailData.entity;
+    const routingEntity =
+      campaignMailData.routingEntity || campaignMailData.entity;
 
     const createCampaignMailResult = await this.saveCampaignMail({
       campaignMailData,
@@ -336,9 +359,13 @@ class ActitoProvider {
       mailingId,
       routingEntity,
       mailCampaignApi: async (data) =>
-        axios.post(`${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/`, data, {
-          headers: headerAccess,
-        }),
+        axios.post(
+          `${this.getV4ActitoUrl()}/entity/${routingEntity}/mail/`,
+          data,
+          {
+            headers: headerAccess,
+          }
+        ),
     });
 
     return createCampaignMailResult?.id;
@@ -355,7 +382,8 @@ class ActitoProvider {
 
     // Routing entity for URL path (brand-specific sending configuration)
     // Falls back to entity (database entity) for backward compatibility
-    const routingEntity = campaignMailData.routingEntity || campaignMailData.entity;
+    const routingEntity =
+      campaignMailData.routingEntity || campaignMailData.entity;
 
     return this.saveCampaignMail({
       campaignMailData,
@@ -515,12 +543,6 @@ class ActitoProvider {
         encodingType: encoding,
         subject,
       } = campaignMailData;
-
-      processedArchive.on('error', () => {
-        throw new InternalServerError(
-          ERROR_CODES.UNEXPECTED_ERROR_WHILE_ARCHIVING_PROCESSED_HTML
-        );
-      });
 
       return {
         from,
