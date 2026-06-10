@@ -33,6 +33,7 @@ const {
   InvocationStatuses,
 } = require('../constant/skill-constants.js');
 const { resolveConfig } = require('./config-resolver.service.js');
+const { buildFieldErrors } = require('./format-validation-error.js');
 const {
   buildPrompt,
   parseJsonFromLLM,
@@ -141,6 +142,10 @@ async function invoke({
         code: 'INPUT_VALIDATION',
         message: formatZodError(inputParse.error),
       },
+      // Structured per-field errors for UI display. Top-level on purpose:
+      // `error` is persisted as-is into AISkillInvocation.error (typed
+      // subdoc) — fieldErrors only decorate the thrown error, transiently.
+      fieldErrors: buildFieldErrors(inputParse.error, input),
       skipLogging: options.skipLogging,
     });
   }
