@@ -16,6 +16,11 @@ const DEFAULT_API_HOST = 'https://api.mistral.ai';
  * (e.g. "data.block.title" must stay as-is, not become { data: { block: { title } } }).
  */
 class MistralProvider extends BaseLLMProvider {
+  // OpenAI-compatible JSON mode: guarantees syntactically valid JSON output.
+  supportsJsonResponseFormat() {
+    return true;
+  }
+
   constructor(integration) {
     super(integration);
     this.baseUrl = this.apiHost || DEFAULT_API_HOST;

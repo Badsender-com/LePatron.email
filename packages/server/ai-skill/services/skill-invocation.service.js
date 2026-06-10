@@ -189,6 +189,15 @@ async function invoke({
     integration,
     groupFeatureConfig
   );
+  // Native JSON mode when the provider guarantees it: LLMs hand-writing JSON
+  // produce raw newlines / unescaped quotes inside long strings (two real QC
+  // runs failed in OUTPUT_PARSE). The repair pass in parseJsonFromLLM stays as
+  // defense-in-depth for providers without JSON mode.
+  const responseFormat =
+    typeof provider.supportsJsonResponseFormat === 'function' &&
+    provider.supportsJsonResponseFormat()
+      ? { type: 'json_object' }
+      : undefined;
   let providerResponse;
   try {
     providerResponse = await callWithTimeout(
@@ -197,6 +206,7 @@ async function invoke({
         messages,
         temperature: config.temperature,
         maxTokens: config.maxTokens,
+        responseFormat,
       }),
       options.timeoutMs || DEFAULT_TIMEOUT_MS
     );

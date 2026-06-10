@@ -161,6 +161,17 @@ OUTPUT (valid JSON only):`;
     return truncated.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[REDACTED]');
   }
 
+  /**
+   * Whether the provider's chat API guarantees syntactically valid JSON when
+   * passed `response_format: { type: 'json_object' }`. Conservative default:
+   * false — providers known to support it override to true. Used by the skill
+   * invocation service to harden structured outputs (LLMs hand-writing JSON
+   * produce raw newlines / unescaped quotes inside long strings).
+   */
+  supportsJsonResponseFormat() {
+    return false;
+  }
+
   // ─── public chat completion ───────────────────────────────────────────────
 
   /**
