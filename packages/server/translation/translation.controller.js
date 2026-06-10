@@ -5,10 +5,21 @@ const createError = require('http-errors');
 const translationService = require('./translation.service');
 const mailingService = require('../mailing/mailing.service');
 const { updatePreviewWithTranslations } = require('./preview-html-updater');
+const { sanitizePreviewHtml } = require('./preview-html-sanitizer');
 const translationJobs = require('./translation-jobs');
 const logger = require('../utils/logger.js');
-const { Mailings, Templates } = require('../common/models.common');
+const { Templates } = require('../common/models.common');
 const ERROR_CODES = require('../constant/error-codes.js');
+
+// TODO(security): /translation/block, /translation/text and
+// /mailings/:id/duplicate-translate forward arbitrary user payloads to the
+// external LLM/DeepL provider with no payload-size cap and no rate limit.
+// A malicious user can burn provider quota / generate cost by submitting
+// very large blobs or by hammering the endpoint. Two follow-ups are needed:
+//   1. Add per-user rate limiting (needs an infra decision: in-memory vs Redis).
+//   2. Cap blockContent / text payload size (50 KB / 100 keys / 10 000 chars)
+//      once we know how big legitimate translations get in practice.
+// Tracked separately so this review PR stays focused.
 
 module.exports = {
   duplicateAndTranslate: asyncHandler(duplicateAndTranslate),
@@ -48,63 +59,30 @@ async function duplicateAndTranslate(req, res) {
     throw createError(400, ERROR_CODES.TRANSLATION_TARGET_LANGUAGE_REQUIRED);
   }
 
-  // Get original mailing
-  const originalMailing = await mailingService.findOne(mailingId);
-
-  // Get user's group
-  const groupId =
-    (user.group && user.group.id) ||
-    (originalMailing._company && originalMailing._company.toString());
-
-  // Get template markup for translation protection config
-  let templateMarkup = null;
-  if (originalMailing._wireframe) {
-    const template = await Templates.findById(originalMailing._wireframe, {
-      markup: 1,
-    });
-    templateMarkup = template?.markup || null;
-  }
-
-  // Detect source language if not provided
-  const detectedSourceLanguage =
-    sourceLanguage === 'auto'
-      ? translationService.detectSourceLanguage(originalMailing)
-      : sourceLanguage;
-
-  // Get batch info for progress tracking
-  const batchInfo = await translationService.getBatchInfo({
-    groupId,
-    mailing: {
-      name: originalMailing.name,
-      data: originalMailing.data,
-      previewHtml: originalMailing.previewHtml,
-    },
-    templateMarkup,
-  });
-
-  // Create a job for progress tracking (include userId for authorization)
-  const job = translationJobs.createJob({
-    totalKeys: batchInfo.totalKeys,
-    totalBatches: batchInfo.totalBatches,
+  // Create the job up-front so the client can start polling immediately.
+  // Heavy work (DB lookups, text extraction, batching) is moved to the
+  // background task below to keep this handler from blocking the event loop.
+  const job = await translationJobs.createJob({
     userId: user.id || user._id.toString(),
   });
 
   // Return jobId immediately
   res.status(202).json({ jobId: job.jobId });
 
-  // Process translation asynchronously
+  // Process translation asynchronously (fire-and-forget after the 202 response)
   processTranslationAsync({
     jobId: job.jobId,
-    originalMailing,
     mailingId,
     user,
-    groupId,
-    sourceLanguage: detectedSourceLanguage,
+    sourceLanguage,
     targetLanguage,
     newName,
-    templateMarkup,
     workspaceId,
     folderId,
+  }).catch((error) => {
+    logger.error(
+      `[Translation] Unhandled error in background job ${job.jobId}: ${error.message}`
+    );
   });
 }
 
@@ -113,32 +91,61 @@ async function duplicateAndTranslate(req, res) {
  */
 async function processTranslationAsync({
   jobId,
-  originalMailing,
   mailingId,
   user,
-  groupId,
   sourceLanguage,
   targetLanguage,
   newName,
-  templateMarkup,
   workspaceId,
   folderId,
 }) {
   try {
     // Progress callback to update job status and check for cancellation
-    const onBatchProgress = (batchNumber, keysInBatch) => {
+    const onBatchProgress = async (batchNumber, keysInBatch) => {
       // Check if job was cancelled before processing next batch
-      if (translationJobs.isCancelled(jobId)) {
+      if (await translationJobs.isCancelled(jobId)) {
         throw new Error('TRANSLATION_CANCELLED');
       }
-      translationJobs.updateBatchProgress(jobId, batchNumber, keysInBatch);
+      await translationJobs.updateBatchProgress(
+        jobId,
+        batchNumber,
+        keysInBatch
+      );
     };
 
     // Check cancellation before starting
-    if (translationJobs.isCancelled(jobId)) {
+    if (await translationJobs.isCancelled(jobId)) {
       logger.log(`[Translation] Job ${jobId} cancelled before starting`);
       return;
     }
+
+    // Heavy work that used to run synchronously inside the HTTP handler is
+    // now done here so the 202 response can be sent without blocking the
+    // event loop.
+    // Group-scoped load: the source mailing must belong to the caller's group
+    // (or caller is super admin). Without this filter a group admin could
+    // translate+duplicate a mailing of another group by id (cross-tenant IDOR).
+    const originalMailing = await mailingService.findOneForUser(
+      mailingId,
+      user
+    );
+
+    const groupId =
+      (user.group && user.group.id) ||
+      (originalMailing._company && originalMailing._company.toString());
+
+    let templateMarkup = null;
+    if (originalMailing._wireframe) {
+      const template = await Templates.findById(originalMailing._wireframe, {
+        markup: 1,
+      });
+      templateMarkup = template?.markup || null;
+    }
+
+    const detectedSourceLanguage =
+      sourceLanguage === 'auto'
+        ? translationService.detectSourceLanguage(originalMailing)
+        : sourceLanguage;
 
     // Translate the mailing
     const {
@@ -153,9 +160,11 @@ async function processTranslationAsync({
         data: originalMailing.data,
         previewHtml: originalMailing.previewHtml,
       },
-      sourceLanguage,
+      sourceLanguage: detectedSourceLanguage,
       targetLanguage,
       templateMarkup,
+      onTotalsKnown: ({ totalKeys, totalBatches }) =>
+        translationJobs.setTotals(jobId, { totalKeys, totalBatches }),
       onBatchProgress,
     });
 
@@ -184,9 +193,14 @@ async function processTranslationAsync({
           originalTexts,
           translations
         );
-        await Mailings.findByIdAndUpdate(duplicatedMailing._id, {
-          previewHtml,
-        });
+        // Provider output was injected into previewHtml above; sanitize the
+        // final document before persisting it (stored-XSS protection — the
+        // preview is later served as text/html).
+        const safePreviewHtml = sanitizePreviewHtml(previewHtml);
+        await mailingService.updatePreviewHtml(
+          duplicatedMailing._id,
+          safePreviewHtml
+        );
         previewGenerated = true;
         logger.log('[Translation] Preview HTML updated successfully');
       } catch (error) {
@@ -200,12 +214,12 @@ async function processTranslationAsync({
 
     // Mark job as completed
     // Warning keys are translated by the frontend
-    translationJobs.setCompleted(jobId, {
+    await translationJobs.setCompleted(jobId, {
       mailingId: duplicatedMailing._id.toString(),
       mailingName: duplicatedMailing.name,
       previewGenerated,
       stats,
-      sourceLanguage,
+      sourceLanguage: detectedSourceLanguage,
       targetLanguage,
       warningKeys: [
         'translation.warnings.checkLinks',
@@ -221,15 +235,15 @@ async function processTranslationAsync({
     }
 
     logger.error(`[Translation] Job ${jobId} failed: ${error.message}`);
-    translationJobs.setFailed(jobId, error.message);
+    await translationJobs.setFailed(jobId, error.message);
   }
 }
 
 /**
  * Get a job by ID or throw 404/403
  */
-function getJobOrThrow(jobId, user) {
-  const job = translationJobs.getJob(jobId);
+async function getJobOrThrow(jobId, user) {
+  const job = await translationJobs.getJob(jobId);
   if (!job) {
     throw createError(404, ERROR_CODES.TRANSLATION_JOB_NOT_FOUND);
   }
@@ -249,7 +263,7 @@ function getJobOrThrow(jobId, user) {
  * @apiParam {String} jobId Job ID
  */
 async function getJobStatus(req, res) {
-  const job = getJobOrThrow(req.params.jobId, req.user);
+  const job = await getJobOrThrow(req.params.jobId, req.user);
   res.json(job);
 }
 
@@ -262,8 +276,8 @@ async function getJobStatus(req, res) {
  * @apiParam {String} jobId Job ID
  */
 async function cancelJob(req, res) {
-  getJobOrThrow(req.params.jobId, req.user);
-  const cancelled = translationJobs.cancelJob(req.params.jobId);
+  await getJobOrThrow(req.params.jobId, req.user);
+  const cancelled = await translationJobs.cancelJob(req.params.jobId);
 
   if (!cancelled) {
     throw createError(400, ERROR_CODES.TRANSLATION_JOB_CANCEL_FAILED);

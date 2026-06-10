@@ -5,7 +5,7 @@ import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import { CONTENT_ESP_TYPES } from '~/helpers/constants/content-esp-type';
 import { ADOBE_TARGET_TYPES } from '~/helpers/constants/adobe-target-types';
 import BsTextField from '~/components/form/bs-text-field.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Settings, Target } from 'lucide-vue';
 
 export default {

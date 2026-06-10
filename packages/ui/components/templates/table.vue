@@ -2,7 +2,7 @@
 import mixinCreateMailing from '~/helpers/mixins/mixin-create-mailing.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import { Check, Pencil, Trash2, FileText } from 'lucide-vue';
-import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
 export default {
   name: 'BsTemplatesTable',

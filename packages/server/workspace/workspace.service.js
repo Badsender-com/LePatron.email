@@ -130,6 +130,21 @@ async function deleteFolderContent(folderId) {
 }
 
 async function createWorkspace(workspace) {
+  if (!workspace || !workspace.groupId) {
+    throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
+  // Validate that the target group exists. The previous controller path
+  // implicitly enforced this by checking `targetGroupId === req.user.group.id`,
+  // which only ever passed for a real group; the super-admin path skipped
+  // that comparison and could create orphan workspaces (with a _company
+  // pointing at a non-existent group) until a downstream consumer broke.
+  // Lean+_id-only so we never leak module flags or FTP config here.
+  const group = await Groups.findById(workspace.groupId).select('_id').lean();
+  if (!group) {
+    throw new NotFound(ERROR_CODES.GROUP_NOT_FOUND);
+  }
+
   if (
     await existsByName({
       workspaceId: null,

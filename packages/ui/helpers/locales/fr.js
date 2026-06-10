@@ -4,6 +4,7 @@ export default {
     created: 'Créé',
     deleted: 'Supprimé',
     usersFetchError: 'Impossible d\'accéder à la liste des utilisateurs :(',
+    groupFetchError: 'Impossible de charger les données de l\'entreprise :(',
     emailSent: 'L\'email a bien été envoyé',
   },
   global: {
@@ -132,8 +133,6 @@ export default {
     previewMailAlt: 'Aperçu de l\'email',
     newPreview: 'Créer une prévisulisation',
     name: 'Nom',
-    title: 'Titre',
-    savedSuccessfully: 'Enregistré',
     externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
@@ -305,15 +304,15 @@ export default {
     },
   },
   groups: {
-    tabs: {
-      general: 'Général',
-    },
     platform: {
       badge: 'Plateforme',
       setAction: 'Définir comme Group plateforme',
       unsetAction: 'Retirer le rôle plateforme',
       setDone: '« {name} » est désormais le Group plateforme',
       unsetDone: '« {name} » n\'est plus le Group plateforme',
+    },
+    tabs: {
+      general: 'Général',
     },
     modules: {
       title: 'Modules activés',
@@ -513,7 +512,7 @@ export default {
   },
   workspaces: {
     name: 'Nom',
-    description: 'Descritpion',
+    description: 'Description',
     members: 'Utilisateurs',
     membersDescription:
       'Sélectionnez les utilisateurs qui auront accès à ce workspace.',
@@ -625,6 +624,113 @@ export default {
       'NMS_DELIVERY_MODEL': 'Modèle de livrable'
     }
   },
+  integrations: {
+    title: 'Intégrations',
+    name: 'Nom',
+    provider: 'Fournisseur',
+    status: 'Statut',
+    active: 'Actif',
+    apiKey: 'Clé API',
+    apiHost: 'URL de l\'API (optionnel)',
+    apiKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
+    productId: 'ID du produit',
+    add: 'Ajouter une intégration',
+    edit: 'Modifier l\'intégration',
+    created: 'Intégration créée avec succès',
+    updated: 'Intégration mise à jour avec succès',
+    deleted: 'Intégration supprimée avec succès',
+    validate: 'Tester la connexion',
+    validationSuccess: 'Connexion validée avec succès',
+    validationFailed: 'Échec de la validation des identifiants',
+    noIntegrations: 'Aucune intégration configurée',
+    deleteConfirmTitle: 'Supprimer l\'intégration',
+    deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
+    deleteWarningDashboards: 'Attention : {count} tableau(x) de bord associé(s) seront également supprimés.',
+    categories: {
+      bi: 'BI & Analytics',
+      aiGeneration: 'IA - Génération',
+      aiTranslation: 'IA - Traduction',
+    },
+    statusLabels: {
+      valid: 'Validé',
+      invalid: 'Invalide',
+      pending: 'En attente'
+    },
+    metabase: {
+      apiKeyPlaceholder: 'Votre clé secrète Metabase',
+      apiKeyLabel: 'Clé secrète Metabase',
+      apiHostHint: 'URL de votre instance Metabase (ex: https://metabase.example.com)'
+    },
+    openai: {
+      apiKeyPlaceholder: 'sk-...',
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
+    },
+    mistral: {
+      apiKeyPlaceholder: 'Votre clé API Mistral',
+      apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
+    },
+    infomaniak: {
+      apiKeyPlaceholder: 'Votre clé API Infomaniak',
+      productId: 'Product ID',
+      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
+    },
+    deepl: {
+      apiKeyPlaceholder: 'Votre clé API DeepL',
+      apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
+    },
+    models: {
+      fastEconomical: 'rapide, économique',
+      balanced: 'équilibré',
+      powerful: 'puissant',
+      fast: 'rapide',
+      recommended: 'recommandé',
+    }
+  },
+  aiFeatures: {
+    title: 'Fonctionnalités IA',
+    selectIntegration: 'Intégration à utiliser',
+    noIntegration: '-- Aucune intégration --',
+    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
+    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
+    comingSoon: 'Bientôt disponible',
+    upcomingFeatures: 'Fonctionnalités à venir',
+    upcomingFeaturesDescription: 'Découvrez les prochaines fonctionnalités IA en cours de développement.',
+    translation: {
+      title: 'Traduction',
+      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
+      enableLabel: 'Activer la traduction',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
+      availableLanguages: 'Langues disponibles',
+      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
+      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
+      formality: 'Niveau de formalité',
+      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
+      formalityDefault: 'Par défaut',
+      formalityMore: 'Formel',
+      formalityLess: 'Informel',
+      formalityPreferMore: 'Plutôt formel',
+      formalityPreferLess: 'Plutôt informel'
+    },
+    skill: {
+      title: 'Moteur Skills',
+      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
+      enableLabel: 'Activer le moteur Skills',
+      model: 'Modèle IA',
+      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux'
+    },
+    textGeneration: {
+      title: 'Génération de texte',
+      description: 'Générez du contenu marketing personnalisé pour vos emails.'
+    },
+    qualityCheck: {
+      title: 'Contrôle qualité',
+      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
+    },
+    errors: {
+      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
+    }
+  },
   exportOptions: {
     title: 'Options d\'export',
     sections: {
@@ -684,6 +790,7 @@ export default {
         },
       ],
       footerCta: 'Prêt à piloter votre performance ?',
+      screenshotAlt: 'Aperçu CRM Intelligence',
     },
     errors: {
       loadFailed: 'Impossible de charger le tableau de bord.',
@@ -800,6 +907,7 @@ export default {
         },
       ],
       footerCta: 'Prêt à créer vos premiers emails ?',
+      screenshotAlt: 'Interface Email Builder',
     },
   },
   sidebar: {
@@ -815,6 +923,12 @@ export default {
       help: 'Aide',
       logout: 'Se déconnecter',
     },
+    aria: {
+      closeNavigation: 'Fermer la navigation',
+      breadcrumb: 'Fil d\'Ariane',
+      moreActions: 'Plus d\'actions',
+    },
+    settingsHeader: 'Paramètres',
     utilities: 'Utilitaires',
     collapse: 'Réduire la barre latérale',
     expand: 'Développer la barre latérale',
@@ -827,68 +941,6 @@ export default {
     contactAdmin: 'Veuillez contacter votre administrateur ou Badsender pour activer cette fonctionnalité.',
     contactBadsender: 'Contacter Badsender',
   },
-  integrations: {
-    title: 'Intégrations',
-    name: 'Nom',
-    provider: 'Fournisseur',
-    status: 'Statut',
-    active: 'Actif',
-    apiKey: 'Clé API',
-    apiHost: 'URL de l\'API (optionnel)',
-    apiKeyHintEdit: 'Laissez vide pour conserver la clé actuelle',
-    productId: 'ID du produit',
-    add: 'Ajouter une intégration',
-    edit: 'Modifier l\'intégration',
-    created: 'Intégration créée avec succès',
-    updated: 'Intégration mise à jour avec succès',
-    deleted: 'Intégration supprimée avec succès',
-    validate: 'Tester la connexion',
-    validationSuccess: 'Connexion validée avec succès',
-    validationFailed: 'Échec de la validation des identifiants',
-    noIntegrations: 'Aucune intégration configurée',
-    deleteConfirmTitle: 'Supprimer l\'intégration',
-    deleteConfirmMessage: 'Êtes-vous sûr de vouloir supprimer l\'intégration "{name}" ?',
-    deleteWarningDashboards: 'Attention : {count} tableau(x) de bord associé(s) seront également supprimés.',
-    categories: {
-      bi: 'BI & Analytics',
-      aiGeneration: 'IA - Génération',
-      aiTranslation: 'IA - Traduction',
-    },
-    statusLabels: {
-      valid: 'Validé',
-      invalid: 'Invalide',
-      pending: 'En attente'
-    },
-    metabase: {
-      apiKeyPlaceholder: 'Votre clé secrète Metabase',
-      apiKeyLabel: 'Clé secrète Metabase',
-      apiHostHint: 'URL de votre instance Metabase (ex: https://metabase.example.com)'
-    },
-    openai: {
-      apiKeyPlaceholder: 'sk-...',
-      apiHostHint: 'Laissez vide pour utiliser l\'API officielle OpenAI'
-    },
-    mistral: {
-      apiKeyPlaceholder: 'Votre clé API Mistral',
-      apiHostHint: 'Laissez vide pour utiliser l\'API officielle Mistral'
-    },
-    infomaniak: {
-      apiKeyPlaceholder: 'Votre clé API Infomaniak',
-      productId: 'Product ID',
-      productIdHint: 'Trouvez votre Product ID dans la console Infomaniak > AI Tools'
-    },
-    deepl: {
-      apiKeyPlaceholder: 'Votre clé API DeepL',
-      apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
-    },
-    models: {
-      fastEconomical: 'rapide, économique',
-      balanced: 'équilibré',
-      powerful: 'puissant',
-      fast: 'rapide',
-      recommended: 'recommandé',
-    }
-  },
   settingsNav: {
     categories: {
       superAdmin: 'Super Admin',
@@ -896,88 +948,11 @@ export default {
       emailBuilder: 'Email Builder',
       crmIntelligence: 'CRM Intelligence',
     },
-    companiesList: 'Liste des companies',
-    companiesEmpty: 'Aucune company pour le moment',
+    companiesList: 'Liste des entreprises',
+    companiesEmpty: 'Aucune entreprise pour le moment',
     superAdminOnly: 'Super admin uniquement',
-    switchCompany: 'Choisir une company…',
+    switchCompany: 'Choisir une entreprise…',
     colors: 'Couleurs',
-  },
-  aiFeatures: {
-    title: 'Fonctionnalités IA',
-    selectIntegration: 'Intégration à utiliser',
-    noIntegration: '-- Aucune intégration --',
-    noIntegrationsWarning: 'Aucune intégration IA configurée. Ajoutez d\'abord une intégration dans l\'onglet Intégrations.',
-    integrationInactiveWarning: 'L\'intégration sélectionnée est inactive. Activez-la pour utiliser cette fonctionnalité.',
-    comingSoon: 'Bientôt disponible',
-    upcomingFeatures: 'Fonctionnalités à venir',
-    upcomingFeaturesDescription: 'Découvrez les prochaines fonctionnalités IA en cours de développement.',
-    translation: {
-      title: 'Traduction',
-      description: 'Traduisez automatiquement vos emails dans différentes langues grâce à l\'IA.',
-      enableLabel: 'Activer la traduction',
-      model: 'Modèle IA',
-      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux',
-      availableLanguages: 'Langues disponibles',
-      languagesHint: 'Sélectionnez au moins 2 langues (source et cible)',
-      minLanguagesError: 'Sélectionnez au moins 2 langues (une source et une cible)',
-      formality: 'Niveau de formalité',
-      formalityHint: 'Contrôle le niveau de formalité du texte traduit (selon la langue cible)',
-      formalityDefault: 'Par défaut',
-      formalityMore: 'Formel',
-      formalityLess: 'Informel',
-      formalityPreferMore: 'Plutôt formel',
-      formalityPreferLess: 'Plutôt informel'
-    },
-    skill: {
-      title: 'Moteur Skills',
-      description: 'Moteur IA générique qui alimente toutes les invocations de skills de cette company (et les tests du Playground via la company plateforme).',
-      enableLabel: 'Activer le moteur Skills',
-      model: 'Modèle IA',
-      modelHint: 'Les modèles plus puissants sont plus précis mais plus lents et coûteux'
-    },
-    textGeneration: {
-      title: 'Génération de texte',
-      description: 'Générez du contenu marketing personnalisé pour vos emails.'
-    },
-    qualityCheck: {
-      title: 'Contrôle qualité',
-      description: 'Vérifiez automatiquement la qualité et la cohérence de vos emails.'
-    },
-    errors: {
-      loadModelsFailed: 'Impossible de charger les modèles disponibles.',
-    }
-  },
-  colors: {
-    palette: 'Palette de couleurs',
-    paletteDescription: 'Ces couleurs seront proposées dans le sélecteur de couleurs de l\'éditeur d\'email pour tous les utilisateurs de cette company.',
-    addColor: 'Ajouter',
-    removeColor: 'Supprimer cette couleur',
-    hint: '{count}/21 couleurs • Cliquez sur une couleur pour la modifier',
-  },
-  templates: {
-    noTemplates: 'Aucun template pour le moment',
-    deleteConfirmTitle: 'Supprimer le template ?',
-    deleteWarningMessage: 'Êtes-vous sûr de vouloir supprimer le template <strong>{name}</strong> ? Cette action est irréversible.',
-    confirmationField: 'Tapez le nom du template pour confirmer',
-    newTemplate: 'Nouveau template',
-    generalInfo: 'Informations générales',
-    generalInfoDescription: 'Nom et description du template',
-    templateFiles: 'Fichiers du template',
-    templateFilesDescription: 'Uploadez le markup HTML et les images associées',
-    markup: 'Markup (fichier HTML)',
-    markupUploaded: 'Markup uploadé',
-    dropMarkupHere: 'Glissez un fichier ici ou cliquez pour sélectionner',
-    markupFormats: 'Format accepté : .html',
-    invalidMarkupFormat: 'Format invalide. Veuillez uploader un fichier HTML.',
-    dropImagesHere: 'Glissez des images ici ou cliquez pour sélectionner',
-    imageFormats: 'Formats acceptés : PNG, JPG, GIF, WEBP',
-    existingImages: '{count} images uploadées',
-    newImages: '{count} nouvelles images à uploader',
-    removeAllImages: 'Supprimer tout',
-    imagesRemoved: 'Images supprimées avec succès',
-    previewDescription: 'Aperçu du template rendu',
-    regeneratePreview: 'Régénérer l\'aperçu',
-    filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
   },
   aiSkills: {
     pageTitle: 'Skills & Expertise',
@@ -1121,5 +1096,37 @@ export default {
     logs: {
       tabLabel: 'Logs',
     },
+  },
+  colors: {
+    palette: 'Palette de couleurs',
+    paletteDescription: 'Ces couleurs seront proposées dans le sélecteur de couleurs de l\'éditeur d\'email pour tous les utilisateurs de cette entreprise.',
+    addColor: 'Ajouter',
+    removeColor: 'Supprimer cette couleur',
+    hint: '{count}/21 couleurs • Cliquez sur une couleur pour la modifier',
+  },
+  templates: {
+    noTemplates: 'Aucun template pour le moment',
+    deleteConfirmTitle: 'Supprimer le template ?',
+    deleteWarningMessage: 'Êtes-vous sûr de vouloir supprimer le template <strong>{name}</strong> ? Cette action est irréversible.',
+    confirmationField: 'Tapez le nom du template pour confirmer',
+    newTemplate: 'Nouveau template',
+    generalInfo: 'Informations générales',
+    generalInfoDescription: 'Nom et description du template',
+    templateFiles: 'Fichiers du template',
+    templateFilesDescription: 'Uploadez le markup HTML et les images associées',
+    markup: 'Markup (fichier HTML)',
+    markupUploaded: 'Markup uploadé',
+    dropMarkupHere: 'Glissez un fichier ici ou cliquez pour sélectionner',
+    markupFormats: 'Format accepté : .html',
+    invalidMarkupFormat: 'Format invalide. Veuillez uploader un fichier HTML.',
+    dropImagesHere: 'Glissez des images ici ou cliquez pour sélectionner',
+    imageFormats: 'Formats acceptés : PNG, JPG, GIF, WEBP',
+    existingImages: '{count} images uploadées',
+    newImages: '{count} nouvelles images à uploader',
+    removeAllImages: 'Supprimer tout',
+    imagesRemoved: 'Images supprimées avec succès',
+    previewDescription: 'Aperçu du template rendu',
+    regeneratePreview: 'Régénérer l\'aperçu',
+    filesAvailableAfterCreation: 'Vous pourrez uploader le markup HTML et les images après la création du template.',
   },
 };

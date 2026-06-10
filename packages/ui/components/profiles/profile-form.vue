@@ -3,7 +3,7 @@ import { validationMixin } from 'vuelidate';
 import { groupsItem } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import SENDINBLUEComponent from './esp/SENDINBLUEComponent.vue';
 import ACTITOComponent from './esp/ACTITOComponent.vue';
 import DSCComponent from './esp/DSCComponent.vue';

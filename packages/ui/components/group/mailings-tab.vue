@@ -9,6 +9,8 @@ export default {
     return {
       mailings: [],
       loading: false,
+      sortBy: 'updatedAt',
+      sortDesc: true,
       pagination: {
         page: 1,
         itemsPerPage: 25,
@@ -30,6 +32,16 @@ export default {
     handlePageChange(page) {
       this.pagination.page = page;
     },
+    handleOptionsChange(options) {
+      const newSortBy = options.sortBy?.[0] || 'updatedAt';
+      const newSortDesc = options.sortDesc?.[0] ?? true;
+      if (newSortBy !== this.sortBy || newSortDesc !== this.sortDesc) {
+        this.sortBy = newSortBy;
+        this.sortDesc = newSortDesc;
+        this.pagination.page = 1;
+        this.fetchMailings();
+      }
+    },
     async fetchMailings() {
       const {
         $axios,
@@ -41,7 +53,12 @@ export default {
         const response = await $axios.$get(
           apiRoutes.groupsItemMailings(params),
           {
-            params: { page: pagination.page, limit: pagination.itemsPerPage },
+            params: {
+              page: pagination.page,
+              limit: pagination.itemsPerPage,
+              sortBy: this.sortBy,
+              sortDesc: this.sortDesc,
+            },
           }
         );
         this.mailings = response.items;
@@ -70,9 +87,14 @@ export default {
   <bs-mailings-admin-table
     :mailings="mailings"
     :loading="loading"
-    :total-items="pagination.itemsLength"
     :server-items-length="pagination.itemsLength"
+    :page="pagination.page"
+    :items-per-page="pagination.itemsPerPage"
+    :sort-by="[sortBy]"
+    :sort-desc="[sortDesc]"
+    must-sort
     @update:page="handlePageChange"
     @update:items-per-page="handleItemsPerPageChange"
+    @update:options="handleOptionsChange"
   />
 </template>

@@ -124,13 +124,14 @@ export default {
       :confirmation-input-label="$t('templates.confirmationField')"
       @confirm="deleteTemplate"
     >
-      <p class="black--text">
-        {{
+      <p
+        class="black--text"
+        v-html="
           $t('templates.deleteWarningMessage', {
             name: selectedTemplate && selectedTemplate.name,
           })
-        }}
-      </p>
+        "
+      />
     </bs-modal-confirm-form>
 
     <bs-data-table

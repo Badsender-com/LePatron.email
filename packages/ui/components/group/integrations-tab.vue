@@ -300,7 +300,7 @@ export default {
       </template>
 
       <template #item.actions="{ item }">
-        <div class="d-flex align-center">
+        <div class="d-flex align-center justify-end">
           <v-tooltip bottom>
             <template #activator="{ on, attrs }">
               <v-btn

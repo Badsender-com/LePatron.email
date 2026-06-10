@@ -14,7 +14,17 @@ import {
   TrendingUp,
   Target,
   Zap,
+  AreaChart,
+  MailCheck,
+  HeartHandshake,
+  DollarSign,
+  LayoutDashboard,
+  Database,
 } from 'lucide-vue';
+import {
+  BADSENDER_CONTACT_URLS,
+  LEPATRON_HOME_URL,
+} from '~/helpers/constants/external-urls';
 
 // Icon mapping from Lucide names to components
 const FEATURE_ICON_MAP = {
@@ -30,25 +40,23 @@ const FEATURE_ICON_MAP = {
   'trending-up': TrendingUp,
   target: Target,
   zap: Zap,
+  'area-chart': AreaChart,
+  'mail-check': MailCheck,
+  'heart-handshake': HeartHandshake,
+  'dollar-sign': DollarSign,
+  'layout-dashboard': LayoutDashboard,
+  database: Database,
 };
 
 export default {
   name: 'ModuleMarketingPage',
+  // Only Mail and ExternalLink are referenced as <lucide-mail> / <lucide-external-link>
+  // tags in the template. The rest of the lucide icons imported above are used
+  // dynamically through FEATURE_ICON_MAP / heroIcon via <component :is="...">,
+  // so they don't need to be registered as local components.
   components: {
     LucideMail: Mail,
     LucideExternalLink: ExternalLink,
-    LucideGripVertical: GripVertical,
-    LucideSmartphone: Smartphone,
-    LucidePuzzle: Puzzle,
-    LucidePalette: Palette,
-    LucideCloudUpload: CloudUpload,
-    LucideUsers: Users,
-    LucideLineChart: LineChart,
-    LucideBarChart: BarChart,
-    LucidePieChart: PieChart,
-    LucideTrendingUp: TrendingUp,
-    LucideTarget: Target,
-    LucideZap: Zap,
   },
   props: {
     moduleId: {
@@ -56,14 +64,19 @@ export default {
       required: true,
     },
   },
+  data() {
+    return {
+      screenshotFailed: false,
+    };
+  },
   computed: {
     contactUrl() {
-      return this.$i18n.locale === 'fr'
-        ? 'https://www.badsender.com/contact/'
-        : 'https://www.badsender.com/en/contact/';
+      return (
+        BADSENDER_CONTACT_URLS[this.$i18n.locale] || BADSENDER_CONTACT_URLS.en
+      );
     },
     infoUrl() {
-      return 'https://www.lepatron.email/';
+      return LEPATRON_HOME_URL;
     },
     moduleKey() {
       // Convert module-id to camelCase for i18n keys
@@ -103,6 +116,11 @@ export default {
         crmIntelligence: '/img/marketing/crm-intelligence-screenshot.png',
       };
       return screenshots[this.moduleKey];
+    },
+  },
+  watch: {
+    moduleId() {
+      this.screenshotFailed = false;
     },
   },
   methods: {
@@ -158,13 +176,14 @@ export default {
     </section>
 
     <!-- SCREENSHOT SECTION -->
-    <section v-if="screenshot" class="screenshot-section">
+    <section v-if="screenshot && !screenshotFailed" class="screenshot-section">
       <div class="screenshot-wrapper">
         <img
           :src="screenshot"
           :alt="`${title} Interface`"
           class="screenshot-image"
-        >
+          @error="screenshotFailed = true"
+        />
       </div>
     </section>
 

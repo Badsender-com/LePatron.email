@@ -6,7 +6,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getGroupEmailsGroups, getEmailsGroup } from '~/helpers/api-routes.js';
 import BsModalConfirm from '~/components/modal-confirm';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import { Pencil, Trash2 } from 'lucide-vue';
 
 export default {

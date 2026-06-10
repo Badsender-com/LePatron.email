@@ -1,8 +1,10 @@
 <script>
+import { mapMutations } from 'vuex';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupForm from '~/components/group/form.vue';
+import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 
 export default {
   name: 'PageNewGroup',
@@ -44,6 +46,7 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     async createGroup() {
       const { $axios } = this;
       try {
@@ -51,7 +54,14 @@ export default {
         const group = await $axios.$post(apiRoutes.groups(), this.newGroup);
         this.$router.push(apiRoutes.groupsItem({ groupId: group.id }));
       } catch (error) {
-        console.log(error);
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.error('[groups/new] createGroup failed', error);
+        }
       } finally {
         this.loading = false;
       }

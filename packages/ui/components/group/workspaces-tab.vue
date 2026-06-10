@@ -7,6 +7,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import { Trash2, Pencil, Users } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsGroupWorkspacesTab',
@@ -59,6 +60,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     async fetchData() {
       const {
         $axios,
@@ -129,7 +131,7 @@ export default {
         class="black--text"
         v-html="
           $t('groups.workspaceTab.deleteWarningMessage', {
-            name: selectedWorkspace.name,
+            name: escapeHtml(selectedWorkspace.name),
           })
         "
       />

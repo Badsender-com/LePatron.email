@@ -9,6 +9,7 @@ const {
   Conflict,
   BadRequest,
   Unauthorized,
+  Forbidden,
 } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
@@ -39,6 +40,12 @@ async function createEmailsGroup({ name, emails, user, groupId }) {
 
   if (!user) {
     throw new Unauthorized(ERROR_CODES.UNAUTHORIZED);
+  }
+
+  // Only super admins may target a group different from their own.
+  // Without this check, any group_admin could create an emails-group in another tenant.
+  if (!user.isAdmin && groupId && groupId !== user.group?.id) {
+    throw new Forbidden(ERROR_CODES.FORBIDDEN_RESOURCE_OR_ACTION);
   }
 
   // Use explicit groupId if provided (for admin users), otherwise fallback to user's group

@@ -1,6 +1,6 @@
 <script>
 import BsColorScheme from '~/components/group/color-scheme';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Palette } from 'lucide-vue';
 
 export default {

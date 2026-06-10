@@ -3,6 +3,7 @@ import BsModalConfirm from '~/components/modal-confirm';
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { FolderOpen, Folder, Users, Copy } from 'lucide-vue';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'MailingsCopyModal',
@@ -32,6 +33,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     submit() {
       if (this.isValidToBeCopied) {
         const location = this.selectedLocation;
@@ -69,7 +71,9 @@ export default {
       v-if="mailName"
       class="black--text"
       v-html="
-        $t('mailings.copyMailConfirmationMessageWithName', { name: mailName })
+        $t('mailings.copyMailConfirmationMessageWithName', {
+          name: escapeHtml(mailName),
+        })
       "
     />
     <slot v-else />

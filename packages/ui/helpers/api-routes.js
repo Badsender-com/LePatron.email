@@ -119,6 +119,9 @@ export const setUserPersistedLocalStorageKey = (key) =>
 export function mailings() {
   return '/mailings';
 }
+export function mailingsTags() {
+  return '/mailings/tags';
+}
 export function mailingsItem(routeParams = {}) {
   return `/mailings/${routeParams.mailingId}`;
 }
@@ -300,22 +303,6 @@ export function patchCommentUnresolve(commentId) {
 }
 
 /// ///
-// CRM INTELLIGENCE
-/// ///
-
-export function getCrmIntelligenceStatus() {
-  return '/crm-intelligence/status';
-}
-
-export function getCrmIntelligenceDashboards() {
-  return '/crm-intelligence/dashboards';
-}
-
-export function getCrmIntelligenceEmbedUrl(dashboardId) {
-  return `/crm-intelligence/embed/${dashboardId}`;
-}
-
-/// ///
 // INTEGRATIONS
 /// ///
 
@@ -342,34 +329,6 @@ export function integrationModels(integrationId) {
 
 export function integrationDashboardCount(integrationId) {
   return `/integrations/${integrationId}/dashboard-count`;
-}
-
-/// ///
-// DASHBOARDS
-/// ///
-
-export function getDashboards(groupId) {
-  return `/dashboards/groups/${groupId}`;
-}
-
-export function getDashboard(dashboardId) {
-  return `/dashboards/${dashboardId}`;
-}
-
-export function createDashboard(groupId) {
-  return `/dashboards/groups/${groupId}`;
-}
-
-export function updateDashboard(dashboardId) {
-  return `/dashboards/${dashboardId}`;
-}
-
-export function deleteDashboard(dashboardId) {
-  return `/dashboards/${dashboardId}`;
-}
-
-export function reorderDashboards(groupId) {
-  return `/dashboards/groups/${groupId}/reorder`;
 }
 
 /// ///
@@ -410,4 +369,48 @@ export function translationJobStatus(jobId) {
 
 export function translationJobCancel(jobId) {
   return `/translation/jobs/${jobId}/cancel`;
+}
+
+/// ///
+// CRM INTELLIGENCE
+/// ///
+
+export function getCrmIntelligenceStatus() {
+  return '/crm-intelligence/status';
+}
+
+export function getCrmIntelligenceDashboards() {
+  return '/crm-intelligence/dashboards';
+}
+
+export function getCrmIntelligenceEmbedUrl(dashboardId) {
+  return `/crm-intelligence/embed/${dashboardId}`;
+}
+
+/// ///
+// DASHBOARDS
+/// ///
+
+export function getDashboards(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function getDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function createDashboard(groupId) {
+  return `/dashboards/groups/${groupId}`;
+}
+
+export function updateDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function deleteDashboard(dashboardId) {
+  return `/dashboards/${dashboardId}`;
+}
+
+export function reorderDashboards(groupId) {
+  return `/dashboards/groups/${groupId}/reorder`;
 }

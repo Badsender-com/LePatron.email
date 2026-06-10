@@ -54,6 +54,7 @@ module.exports = {
   findMailings,
   findTags,
   findOne,
+  findOneForUser,
   renameMailing,
   deleteMailing,
   deleteOne,
@@ -64,6 +65,7 @@ module.exports = {
   findAllIn,
   createInsideWorkspaceOrFolder,
   listMailingForWorkspaceOrFolder,
+  listTagsForWorkspaceOrFolder,
   previewMail,
   downloadZip,
   downloadMultipleZip,
@@ -74,6 +76,7 @@ module.exports = {
   getGroupByCompanyId,
   getMailNameAndCompanyByMailingIdAndUser,
   handleTrackingData,
+  updatePreviewHtml,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -124,12 +127,26 @@ async function listMailingForWorkspaceOrFolder({
     });
   }
 
-  const tags = await findTags({ user });
-
+  // Tags are no longer computed here: `findTags` runs a costly
+  // `distinct('tags')` over every mailing of the company and made each list
+  // load take ~50s. It is now served by the dedicated `GET /mailings/tags`
+  // endpoint (listTagsForWorkspaceOrFolder) so navigating the list stays fast.
   return {
-    meta: { tags },
+    meta: {},
     items: mailings,
   };
+}
+
+// Tags for the filter dropdown, served separately from the mailing list so the
+// expensive distinct() never blocks list navigation.
+async function listTagsForWorkspaceOrFolder({
+  workspaceId,
+  parentFolderId,
+  user,
+}) {
+  checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId);
+  const tags = await findTags({ user, workspaceId, parentFolderId });
+  return { tags };
 }
 
 function checkEitherWorkspaceOrFolderDefined(workspaceId, parentFolderId) {
@@ -210,6 +227,25 @@ async function findTags(query) {
 async function findOne(mailingId) {
   await validateMailExist(mailingId);
   return Mailings.findOne({ _id: mongoose.Types.ObjectId(mailingId) });
+}
+
+// Group-scoped variant of `findOne`. `findOne` resolves a mailing by id with no
+// tenant boundary, so callers that act on behalf of a user (duplicate, copy,
+// duplicate-translate) MUST use this instead to avoid cross-tenant reads:
+// a group admin of group A could otherwise load a mailing of group B by id.
+// Super admins (user.isAdmin) are unfiltered, matching addGroupFilter.
+async function findOneForUser(mailingId, user) {
+  if (!mailingId || !mongoose.Types.ObjectId.isValid(mailingId)) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  const query = modelsUtils.addGroupFilter(user, {
+    _id: mongoose.Types.ObjectId(mailingId),
+  });
+  const mailing = await Mailings.findOne(query);
+  if (!mailing) {
+    throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
+  }
+  return mailing;
 }
 
 // create a mail inside a workspace or a folder ( depending on the parameters provided )
@@ -987,29 +1023,49 @@ async function copyMailing(mailingId, destination, user) {
 
   checkEitherWorkspaceOrFolderDefined(workspaceId, folderId);
 
-  const mailing = await findOne(mailingId);
+  // Group-scoped load: prevent a group admin from copying a mailing of another
+  // group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
 
-  if (mailing?._parentFolder) {
-    await folderService.hasAccess(mailing._parentFolder, user);
-  }
+  // Copying is a READ operation on the source: a regular_user with
+  // consultation-only rights on the source workspace must be able to copy a
+  // mailing out of it. We therefore only require READ access on the source
+  // workspace — `folderService.hasAccess` would require workspace membership
+  // (write), which wrongly blocked read-only users copying from a folder.
+  // A mailing lives in either a workspace or a folder (never both); when it is
+  // in a folder, resolve the owning workspace to run the same read check.
+  const sourceWorkspace = mailing?._parentFolder
+    ? await folderService.getWorkspaceForFolder(mailing._parentFolder)
+    : mailing?.workspace
+    ? await workspaceService.getWorkspace(mailing.workspace)
+    : null;
 
-  if (mailing?.workspace) {
-    const sourceWorkspace = await workspaceService.getWorkspace(
-      mailing.workspace
-    );
+  if (sourceWorkspace) {
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
-  const copy = omit(mailing, [
+  // `findOne` returns a Mongoose document whose real data lives in an internal
+  // `_doc`; running lodash `omit` on it directly does not reliably strip the
+  // identity/location fields (some are schema aliases), so `Mailings.create`
+  // could keep the source `_id`/location and spawn a phantom copy at the
+  // source. Convert to a plain object first, then omit both real fields and
+  // their aliases/virtuals.
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
     '_id',
+    'id',
     'createdAt',
     'updatedAt',
     '_user',
+    'userId',
     'author',
+    'userName',
     'espIds',
     '_workspace',
     'workspace',
     '_parentFolder',
+    '__v',
   ]);
 
   if (workspaceId) {
@@ -1040,7 +1096,6 @@ async function copyMailing(mailingId, destination, user) {
     mailing._id?.toString(),
     copiedMailing._id?.toString()
   );
-  await copiedMailing.save();
 
   try {
     if (gallery) {
@@ -1071,9 +1126,11 @@ async function duplicateWithTranslatedData({
   workspaceId,
   folderId,
 }) {
-  const mailing = await findOne(mailingId);
+  // Group-scoped load: prevent a group admin from duplicating+translating a
+  // mailing of another group by id (cross-tenant IDOR).
+  const mailing = await findOneForUser(mailingId, user);
 
-  // Check access to original mailing
+  // Check access to original mailing's folder (now throws on denial)
   if (mailing?._parentFolder) {
     await folderService.hasAccess(mailing._parentFolder, user);
   }
@@ -1085,14 +1142,28 @@ async function duplicateWithTranslatedData({
     workspaceService.doesUserHaveReadAccess(user, sourceWorkspace);
   }
 
-  // Create copy object
-  const copy = omit(mailing, [
+  // Same Mongoose-document caveat as `copyMailing`: omit on the raw document
+  // does not reliably strip identity/location fields (some are aliases), which
+  // could leave the source location on the duplicate and create a phantom at
+  // the source when a different destination is chosen. Work off a plain object
+  // and strip both real fields and their aliases/virtuals, including the
+  // source location (`_workspace`/`workspace`/`_parentFolder`).
+  const source = mailing.toObject();
+
+  const copy = omit(source, [
     '_id',
+    'id',
     'createdAt',
     'updatedAt',
     '_user',
+    'userId',
     'author',
+    'userName',
     'espIds',
+    '_workspace',
+    'workspace',
+    '_parentFolder',
+    '__v',
   ]);
 
   // Set new name
@@ -1109,20 +1180,22 @@ async function duplicateWithTranslatedData({
     copy.author = user.name;
   }
 
-  // Handle destination: use provided or keep original location
+  // Handle destination: use provided or fall back to the original location.
+  // The source location was stripped above, so the fallback re-applies it.
   if (folderId) {
     // Validate access to destination folder
     await folderService.hasAccess(folderId, user);
     copy._parentFolder = folderId;
-    delete copy.workspace;
   } else if (workspaceId) {
     // Validate access to destination workspace
     const destWorkspace = await workspaceService.getWorkspace(workspaceId);
     workspaceService.doesUserHaveWriteAccess(user, destWorkspace);
-    copy.workspace = workspaceId;
-    delete copy._parentFolder;
+    copy._workspace = workspaceId;
+  } else if (mailing._parentFolder) {
+    copy._parentFolder = mailing._parentFolder;
+  } else if (mailing._workspace) {
+    copy._workspace = mailing._workspace;
   }
-  // else: keep original location (existing behavior)
 
   // Create the new mailing
   const copiedMailing = await Mailings.create(copy);
@@ -1132,7 +1205,6 @@ async function duplicateWithTranslatedData({
     mailing._id?.toString(),
     copiedMailing._id?.toString()
   );
-  await copiedMailing.save();
 
   // Duplicate gallery if exists
   try {
@@ -1378,4 +1450,8 @@ function applyFilters(query) {
   }
 
   return workspaceOrFolderFilter;
+}
+
+async function updatePreviewHtml(mailingId, previewHtml) {
+  return Mailings.findByIdAndUpdate(mailingId, { previewHtml });
 }

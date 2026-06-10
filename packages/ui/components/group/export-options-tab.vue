@@ -8,7 +8,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import BsFtpSettings from '~/components/group/ftp-settings';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Package, Server, Cloud } from 'lucide-vue';
 
 export default {

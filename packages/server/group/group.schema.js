@@ -133,11 +133,11 @@ const GroupSchema = Schema(
       type: Boolean,
       default: false,
     },
-    // Platform group: an internal Badsender-owned group that holds the AI
-    // engine used by the super-admin AI Playground (R&D / benchmark), instead
-    // of borrowing a client group's integration. Excluded from client-facing
-    // group listings. At most one platform group exists (see partial unique
-    // index below).
+    // Platform group: the operator-owned group (Badsender / self-host
+    // operator) whose AI engine powers the super-admin AI Playground, instead
+    // of borrowing a client group's integration. It is a real group and
+    // appears in listings like any other. At most one platform group exists
+    // (see partial unique index below).
     isPlatform: {
       type: Boolean,
       default: false,

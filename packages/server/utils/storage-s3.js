@@ -14,7 +14,18 @@ if (!config.isAws) {
 } else {
   AWS.config.update(config.storage.aws);
   const endpoint = new AWS.Endpoint(config.storage.aws.endpoint);
-  const s3 = new AWS.S3({ endpoint });
+  // Without explicit timeouts the AWS SDK defaults to a 120s socket timeout:
+  // when Cellar (S3) is slow, every image read holds a connection for 2
+  // minutes, exhausting server resources and making the whole app hang.
+  // Fail fast and retry instead.
+  const s3 = new AWS.S3({
+    endpoint,
+    maxRetries: 2,
+    httpOptions: {
+      connectTimeout: 5000,
+      timeout: 15000,
+    },
+  });
 
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-examples.html#Amazon_Simple_Storage_Service__Amazon_S3_
   // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html#getObject-property
@@ -42,8 +53,11 @@ if (!config.isAws) {
         Key: name,
         Body: source,
       },
-      function (err, data) {
-        logger.error(err, data);
+      function (err) {
+        // Only log real failures: the callback also fires on success with
+        // err === null, which previously produced misleading "error" log
+        // lines containing the successful upload's ETag/Location.
+        if (err) logger.error(err);
       }
     )
       .on('httpUploadProgress', (progress) => {
@@ -67,10 +81,9 @@ if (!config.isAws) {
         Key: name,
         Body: source,
       },
-      (err, data) => {
-        logger.error(err, data);
-        // if (err) return reject( err )
-        // resolve( data )
+      (err) => {
+        // Only log real failures (see writeStreamFromPath).
+        if (err) logger.error(err);
       }
     )
       .on('httpUploadProgress', (progress) => {
@@ -95,8 +108,9 @@ if (!config.isAws) {
         Key: name,
         Body: source,
       },
-      (err, data) => {
-        logger.error(err, data);
+      (err) => {
+        // Only log real failures (see writeStreamFromPath).
+        if (err) logger.error(err);
       }
     )
       .on('httpUploadProgress', (progress) => {

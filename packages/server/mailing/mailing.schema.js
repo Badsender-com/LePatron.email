@@ -192,7 +192,7 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
         sortByKey = 'author';
         break;
       default:
-        sortByKey = paginationJSON.sortBy;
+        [sortByKey] = paginationJSON.sortBy;
     }
 
     additionalQueryParams.sort = {
@@ -201,7 +201,15 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   }
   if (filtersJSON) {
     if (filtersJSON.name) {
-      restQuery.name = { $regex: filtersJSON.name, $options: 'i' };
+      // Escape regex metacharacters to avoid ReDoS and accidental pattern
+      // injection (a stray "(" or "[" in the name would break the query),
+      // and anchor with ^ so the { name: 1 } index can be used instead of a
+      // full collection scan.
+      const escapedName = filtersJSON.name.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&'
+      );
+      restQuery.name = { $regex: `^${escapedName}`, $options: 'i' };
     }
 
     if (
@@ -458,9 +466,14 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
   if (user?.isAdmin) {
     redirectUrl = `/groups/${groupId}?redirectTab=mailings`;
   } else {
+    // Target the Email Builder route directly (`/mailings`), not the app root
+    // (`/`). The root only redirects to the first enabled module and was
+    // dropping the query string, landing the user on an empty page with no
+    // sidebar. `/mailings?fid=/wid=` mounts the workspace tree on the right
+    // folder/workspace.
     redirectUrl = mailing?._parentFolder
-      ? `/?fid=${mailing._parentFolder}`
-      : `/?wid=${mailing._workspace}`;
+      ? `/mailings?fid=${mailing._parentFolder}`
+      : `/mailings?wid=${mailing._workspace}`;
   }
 
   return {

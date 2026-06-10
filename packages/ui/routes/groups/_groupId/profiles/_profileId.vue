@@ -8,7 +8,7 @@ import { getProfileForAdmin, getProfileId } from '~/helpers/api-routes';
 import { ESP_TYPES } from '~/helpers/constants/esp-type';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
 import ProfileForm from '~/components/profiles/profile-form';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 
 export default {
   name: 'PageEditProfile',

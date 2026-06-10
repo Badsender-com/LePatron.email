@@ -12,7 +12,7 @@ const encryptionPlugin = require('../utils/encryption-plugin.js');
  * @apiSuccess {String} id
  * @apiSuccess {String} name
  * @apiSuccess {String} type - Integration type (ai, dashboard, etc.)
- * @apiSuccess {String} provider - Provider identifier (metabase, openai, mistral, etc.)
+ * @apiSuccess {String} provider - Provider identifier (metabase, openai, etc.)
  * @apiSuccess {String} _company - Reference to Group
  * @apiSuccess {Boolean} isActive
  * @apiSuccess {String} validationStatus
@@ -26,6 +26,7 @@ const IntegrationSchema = Schema(
     name: {
       type: String,
       required: [true, 'Integration name is required'],
+      maxlength: [255, 'Name must be under 255 characters'],
     },
     type: {
       type: String,
@@ -48,13 +49,8 @@ const IntegrationSchema = Schema(
       type: String,
       required: [true, 'API key is required'],
     },
-    // API host for the provider (e.g., Metabase site URL, self-hosted instances)
+    // API host for the provider (e.g., Metabase site URL)
     apiHost: {
-      type: String,
-      required: false,
-    },
-    // Product ID for Infomaniak AI Tools
-    productId: {
       type: String,
       required: false,
     },
@@ -79,14 +75,33 @@ const IntegrationSchema = Schema(
   },
   {
     timestamps: true,
-    toJSON: {
-      virtuals: true,
-      transform: function (doc, ret) {
-        if (ret.apiKey) ret.apiKey = '••••••••';
-        return ret;
-      },
-    },
+    toJSON: { virtuals: true },
     toObject: { virtuals: true },
+  }
+);
+
+// Hide sensitive fields from JSON output.
+//
+// Two adjustments compared to the plugin defaults:
+//
+// 1. `defaultHidden: { __v: true }` — mongoose-hidden hides `_id` by default,
+//    but the UI references `integration._id` in 5 places (validate, dashboard
+//    count, edit, delete, loading state) and breaks silently with `undefined`
+//    in URLs when _id is dropped. We restore `_id` by overriding defaultHidden.
+//
+// 2. `autoHideObject: false` — without this, `apiKey` would also be stripped
+//    from `doc.toObject()`, which the ProviderFactory uses internally to build
+//    the provider instance. Stripping apiKey there breaks the actual
+//    /validate call (provider gets `apiKey: undefined` → 401 from upstream
+//    → validation reports false for every key). We only want apiKey hidden
+//    in the HTTP/JSON response, not in server-side internals.
+IntegrationSchema.plugin(
+  require('mongoose-hidden')({
+    defaultHidden: { __v: true },
+    autoHideObject: false,
+  }),
+  {
+    hidden: { apiKey: true },
   }
 );
 
