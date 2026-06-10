@@ -11,7 +11,6 @@ const {
   Profiles,
   Templates,
   EmailsGroups,
-  AISkillInvocations,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
@@ -104,7 +103,7 @@ async function seedGroups() {
 // document (which now carries module flags, FTP config, color schemes, etc.).
 // All current callers in the codebase use findById for this assert pattern.
 async function findById(groupId) {
-  const group = await Groups.findById(groupId);
+  const group = await Groups.findById(groupId).select('_id').lean();
   if (!group) {
     throw new NotFound(`no group with id ${groupId} found`);
   }
@@ -162,9 +161,6 @@ async function deleteGroup(groupId) {
       _company: mongoose.Types.ObjectId(groupId),
     }),
     EmailsGroups.deleteMany({
-      _company: mongoose.Types.ObjectId(groupId),
-    }),
-    AISkillInvocations.deleteMany({
       _company: mongoose.Types.ObjectId(groupId),
     }),
     Groups.deleteOne({
