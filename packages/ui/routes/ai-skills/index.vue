@@ -1,7 +1,7 @@
 <script>
 import * as acls from '~/helpers/pages-acls.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsAiSkillsTab from '~/components/ai-skill/BsAiSkillsTab.vue';
 import BsAiExpertiseTab from '~/components/ai-skill/BsAiExpertiseTab.vue';
 import BsAiInvocationsTab from '~/components/ai-skill/BsAiInvocationsTab.vue';

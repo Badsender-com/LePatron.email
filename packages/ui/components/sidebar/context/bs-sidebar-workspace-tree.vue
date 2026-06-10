@@ -32,7 +32,7 @@ import {
   FolderInput,
   Trash2,
 } from 'lucide-vue';
-import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';
@@ -192,9 +192,14 @@ export default {
           this.openNodes = nodesToOpen;
           this.restoreSelectedNode();
 
-          setTimeout(() => {
+          // Wait one more tick so the v-treeview has finished applying
+          // openNodes + activeNode reactively before we drop the
+          // isInitializing guard. Previously a setTimeout(100) was used as
+          // a "good enough" sleep; chaining $nextTick is the correct
+          // Vue-aware version of the same intent.
+          this.$nextTick(() => {
             this.isInitializing = false;
-          }, 100);
+          });
         });
       } catch (error) {
         console.error(
@@ -301,9 +306,9 @@ export default {
       this.saveTreeState(openIds);
     },
     async checkIfNotData() {
-      if (!this.selectedItem?.id && this.workspaces?.length > 0) {
+      if (!this.selectedItem?.id && this.treeviewWorkspaces?.length > 0) {
         await this.$router.push({
-          query: { wid: this.workspaces[0]?._id },
+          query: { wid: this.treeviewWorkspaces[0]?.id },
         });
       }
     },
@@ -376,10 +381,10 @@ export default {
           node.type === SPACE_TYPE.WORKSPACE
             ? { wid: node.id }
             : { fid: node.id };
-        this.$router.push({ query });
+        this.$router.push({ path: '/mailings', query });
       } else {
         this.clearSelection();
-        this.$router.replace({ query: {} });
+        this.$router.replace({ path: '/mailings', query: {} });
       }
     },
     displayDeleteModal(selected) {
@@ -414,7 +419,8 @@ export default {
         if (deletingCurrent || deletingParentOfCurrent) {
           this.clearSelection();
           await this.$router.replace({
-            query: { wid: this.workspaces[0]?._id },
+            path: '/mailings',
+            query: { wid: this.treeviewWorkspaces[0]?.id },
           });
           this.$nextTick(() => {
             this.$refs.tree.updateActive([]);
@@ -484,6 +490,7 @@ export default {
         }
 
         await this.$router.push({
+          path: '/mailings',
           query: routerRedirectionParam,
         });
         this.showSnackbar({
@@ -532,23 +539,23 @@ export default {
       const hasSel = !!localStorage.getItem(this.selectedNodeStorageKey);
       if (hasTree && hasSel) return;
 
-      if (!hasTree) {
-        const remoteTree = await this.getRemoteLocalStorageKey(this.storageKey);
-        if (remoteTree) {
-          localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
-        }
-      }
+      // Both fetches are independent, so parallelize. Doing them serially
+      // added one round-trip of latency on every cold sidebar open.
+      const [remoteTree, remoteSel] = await Promise.all([
+        hasTree ? null : this.getRemoteLocalStorageKey(this.storageKey),
+        hasSel
+          ? null
+          : this.getRemoteLocalStorageKey(this.selectedNodeStorageKey),
+      ]);
 
-      if (!hasSel) {
-        const remoteSel = await this.getRemoteLocalStorageKey(
-          this.selectedNodeStorageKey
+      if (!hasTree && remoteTree) {
+        localStorage.setItem(this.storageKey, JSON.stringify(remoteTree));
+      }
+      if (!hasSel && remoteSel) {
+        localStorage.setItem(
+          this.selectedNodeStorageKey,
+          JSON.stringify(remoteSel)
         );
-        if (remoteSel) {
-          localStorage.setItem(
-            this.selectedNodeStorageKey,
-            JSON.stringify(remoteSel)
-          );
-        }
       }
     },
     buildFolderMenuActions(item) {

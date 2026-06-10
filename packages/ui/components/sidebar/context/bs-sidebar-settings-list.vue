@@ -2,7 +2,9 @@
   <div v-if="!collapsed" class="bs-sidebar-settings-list">
     <!-- Section header -->
     <div class="settings-list-header">
-      <span class="settings-list-header__label">SETTINGS</span>
+      <span class="settings-list-header__label">{{
+        $t('sidebar.settingsHeader')
+      }}</span>
     </div>
 
     <!-- Settings nav items -->
@@ -21,13 +23,7 @@
           class="settings-item"
           :class="{ 'settings-item--active': isActive(item) }"
         >
-          <component
-            :is="item.iconComponent"
-            v-if="item.iconComponent"
-            :size="18"
-            class="settings-item__icon settings-item__icon--lucide"
-          />
-          <v-icon v-else small class="settings-item__icon">
+          <v-icon small class="settings-item__icon">
             {{ item.icon }}
           </v-icon>
           <span class="settings-item__label">{{ item.label }}</span>
@@ -48,14 +44,13 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import { Shield, Sparkles, FlaskConical } from 'lucide-vue';
+import { Shield } from 'lucide-vue';
+import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
   name: 'BsSidebarSettingsList',
   components: {
     LucideShield: Shield,
-    LucideSparkles: Sparkles,
-    LucideFlaskConical: FlaskConical,
   },
   props: {
     collapsed: {
@@ -109,19 +104,19 @@ export default {
               superAdminOnly: true,
             },
             {
-              id: 'ai-playground',
-              label: this.$t('aiPlayground.pageTitle'),
-              iconComponent: 'LucideFlaskConical',
-              route: '/ai-playground',
-              superAdminOnly: true,
-            },
-            {
               id: 'ai-skills',
               label: this.$t('aiSkills.pageTitle'),
-              iconComponent: 'LucideSparkles',
+              icon: 'mdi-creation',
               route: '/ai-skills',
               superAdminOnly: true,
               activePatterns: ['/ai-skills', '/ai-expertise'],
+            },
+            {
+              id: 'ai-playground',
+              label: this.$t('aiPlayground.pageTitle'),
+              icon: 'mdi-flask-outline',
+              route: '/ai-playground',
+              superAdminOnly: true,
             },
           ],
         });
@@ -266,8 +261,11 @@ export default {
       // Email Builder category - visible if:
       // - Super admin: always visible
       // - Group admin: only if module enabled
-      const showEmailBuilder =
-        this.isAdmin || this.group?.enableEmailBuilder !== false;
+      const showEmailBuilder = isFlagEnabled(
+        'enableEmailBuilder',
+        { isAdmin: this.isAdmin },
+        this.group
+      );
 
       if (emailBuilderItems.length > 0 && showEmailBuilder) {
         categories.push({
@@ -372,11 +370,6 @@ export default {
 .settings-item__icon {
   flex-shrink: 0;
   color: inherit !important;
-}
-
-.settings-item__icon--lucide {
-  width: 18px;
-  height: 18px;
 }
 
 .settings-item__label {

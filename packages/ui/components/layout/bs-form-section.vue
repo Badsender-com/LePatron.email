@@ -32,8 +32,11 @@ export default {
           <slot name="description" />
         </p>
       </div>
-      <div v-if="$slots.headerActions" class="bs-form-section__header-actions">
-        <slot name="headerActions" />
+      <div
+        v-if="$slots['header-actions']"
+        class="bs-form-section__header-actions"
+      >
+        <slot name="header-actions" />
       </div>
     </div>
     <div

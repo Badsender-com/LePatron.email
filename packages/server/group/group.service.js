@@ -11,8 +11,6 @@ const {
   Profiles,
   Templates,
   EmailsGroups,
-  AISkillInvocations,
-  AIPlaygroundScenarios,
 } = require('../common/models.common.js');
 const Roles = require('../account/roles');
 
@@ -21,6 +19,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   findById: asyncHandler(findById),
+  findFullById: asyncHandler(findFullById),
   createGroup: asyncHandler(createGroup),
   updateGroup: asyncHandler(updateGroup),
   deleteGroup: asyncHandler(deleteGroup),
@@ -99,7 +98,21 @@ async function seedGroups() {
   return companiesWithNoWorkspaces;
 }
 
+// Lean existence check. Returns only `_id` so callers that just want to assert
+// "this group exists, throw 404 otherwise" don't accidentally leak the full
+// document (which now carries module flags, FTP config, color schemes, etc.).
+// All current callers in the codebase use findById for this assert pattern.
 async function findById(groupId) {
+  const group = await Groups.findById(groupId).select('_id').lean();
+  if (!group) {
+    throw new NotFound(`no group with id ${groupId} found`);
+  }
+  return group;
+}
+
+// Use when you actually need the populated document. Be mindful of which
+// fields you expose downstream — never `res.json(group)` the result directly.
+async function findFullById(groupId) {
   const group = await Groups.findById(groupId);
   if (!group) {
     throw new NotFound(`no group with id ${groupId} found`);
@@ -150,15 +163,6 @@ async function deleteGroup(groupId) {
     EmailsGroups.deleteMany({
       _company: mongoose.Types.ObjectId(groupId),
     }),
-    AISkillInvocations.deleteMany({
-      _company: mongoose.Types.ObjectId(groupId),
-    }),
-    // Playground scenarios survive a Group delete; they just lose their
-    // groupContext pointer.
-    AIPlaygroundScenarios.updateMany(
-      { groupContext: mongoose.Types.ObjectId(groupId) },
-      { $set: { groupContext: null } }
-    ),
     Groups.deleteOne({
       _id: mongoose.Types.ObjectId(groupId),
     }),

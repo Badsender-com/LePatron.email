@@ -3,11 +3,6 @@
 module.exports = {
   // Dashboard providers
   METABASE: 'metabase',
-  // Future dashboard providers
-  // LOOKER: 'looker',
-  // TABLEAU: 'tableau',
-  // POWERBI: 'powerbi',
-
   // AI providers
   OPENAI: 'openai',
   MISTRAL: 'mistral',
@@ -15,4 +10,7 @@ module.exports = {
   DEEPL: 'deepl',
   // Future providers
   // SMARTCAT: 'smartcat',
+  // LOOKER: 'looker',
+  // TABLEAU: 'tableau',
+  // POWERBI: 'powerbi',
 };

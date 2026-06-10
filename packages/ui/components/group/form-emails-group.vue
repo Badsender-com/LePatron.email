@@ -2,7 +2,7 @@
 import { validationMixin } from 'vuelidate';
 import { required, email } from 'vuelidate/lib/validators';
 import BsTextField from '~/components/form/bs-text-field.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Mail } from 'lucide-vue';
 
 export default {

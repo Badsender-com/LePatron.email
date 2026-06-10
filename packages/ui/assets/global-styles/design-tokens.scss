@@ -1,0 +1,78 @@
+// =============================================================================
+// LePatron Design Tokens
+// =============================================================================
+//
+// Single source of truth for the colors, spacing, radii and elevations used by
+// the Bs* design-system components. Token names match the comments left in the
+// Bs* component sources (e.g. `// --gray-600`) so a search-and-replace from a
+// hardcoded rgba to its semantic name is unambiguous.
+//
+// White-label note: overriding these CSS variables at the :root level (or on a
+// scoped wrapper) is the supported way to retheme the application without
+// touching component source.
+//
+// Conventions:
+//   --gray-N    : neutrals (alpha on black), aligned with Material's text-on-light scale
+//   --color-*   : semantic colors (error, success, warning, info)
+//   --r-*       : border-radius scale
+//
+// These tokens are intentionally CSS custom properties (not Sass variables) so
+// runtime themes / multi-tenant overrides remain possible without a rebuild.
+// =============================================================================
+
+:root {
+  // Neutrals — alpha on black, matches Material Design text-on-light scale.
+  --gray-100: rgba(0, 0, 0, 0.04);
+  --gray-200: rgba(0, 0, 0, 0.08);
+  --gray-300: rgba(0, 0, 0, 0.12);
+  --gray-400: rgba(0, 0, 0, 0.26);
+  --gray-500: rgba(0, 0, 0, 0.38);
+  --gray-600: rgba(0, 0, 0, 0.54);
+  --gray-700: rgba(0, 0, 0, 0.6);
+  --gray-800: rgba(0, 0, 0, 0.7);
+  --gray-900: rgba(0, 0, 0, 0.87);
+
+  // Form field strokes. Outside the gray-N scale because their alpha steps
+  // (0.2 / 0.4 / 0.5) don't match the canonical Material text-on-light scale
+  // used by --gray-*.
+  --field-border: rgba(0, 0, 0, 0.2);
+  --field-border-hover: rgba(0, 0, 0, 0.4);
+  --field-placeholder: rgba(0, 0, 0, 0.5);
+
+  // Semantic colors. --v-primary-base / --v-accent-base / --v-error-base
+  // already exist as Vuetify-provided runtime variables and are referenced
+  // directly by components when a Vuetify-themed color is meant.
+  --color-error: #f04e23;
+  --color-error-bg: rgba(240, 78, 35, 0.08);
+  // Accent (LePatron azure) translucent tints for row hover/selection states.
+  // We can't use rgba() with a CSS variable color in Vuetify 2 (no
+  // color-mix() at the SCSS-compile target), so the alpha tints stay frozen
+  // here. White-label that wants to retheme the accent must override these
+  // three tokens too.
+  --accent-tint-hover: rgba(0, 172, 220, 0.05);
+  --accent-tint-selected: rgba(0, 172, 220, 0.06);
+  --accent-tint-selected-hover: rgba(0, 172, 220, 0.1);
+  --accent-tint-resize: rgba(0, 172, 220, 0.3);
+  --accent-tint-resize-active: rgba(0, 172, 220, 0.5);
+
+  // Surface backgrounds
+  --surface: #ffffff;
+  // Subtle row stripe / table header background — sits between transparent
+  // and --gray-100 (0.04). Used on table headers where --gray-100 reads too
+  // dark.
+  --surface-muted: rgba(0, 0, 0, 0.02);
+  // Foreground color used on top of accent-tinted backgrounds (badges, chips).
+  --text-on-accent: #ffffff;
+  // Soft border, lighter than --gray-300, used for the sidebar / app-shell
+  // separators where --gray-300 would feel too heavy.
+  --border-light: #e0e0e0;
+
+  // Border radii
+  --r-sm: 4px;
+  --r-md: 10px;
+  --r-pill: 9999px;
+
+  // Box shadows
+  --shadow-menu: 0 4px 14px rgba(9, 48, 64, 0.08),
+    0 1px 2px rgba(9, 48, 64, 0.05);
+}

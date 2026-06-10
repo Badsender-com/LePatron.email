@@ -7,7 +7,7 @@ import * as apiRoutes from '~/helpers/api-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import {
   FileText,
   Upload,

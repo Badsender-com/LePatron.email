@@ -1,6 +1,7 @@
 <script>
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import { Trash2 } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'FolderDeleteModal',
@@ -29,6 +30,7 @@ export default {
     submit() {
       this.$emit('delete-folder', this.selectedFolder);
     },
+    escapeHtml,
   },
 };
 </script>
@@ -48,7 +50,7 @@ export default {
       class="black--text"
       v-html="
         $t('groups.mailingTab.deleteFolderWarning', {
-          name: selectedFolder.name,
+          name: escapeHtml(selectedFolder.name),
         })
       "
     />

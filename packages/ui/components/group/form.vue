@@ -9,7 +9,8 @@ import { Status } from '~/helpers/constants/status';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import BsTextField from '~/components/form/bs-text-field';
 import BsSelect from '~/components/form/bs-select';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
+import { escapeHtml } from '~/helpers/escape-html';
 import {
   Palette,
   LineChart,
@@ -108,6 +109,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     requiredErrors(fieldName) {
       const errors = [];
       if (!this.$v.group[fieldName]?.$dirty) return errors;
@@ -383,7 +385,7 @@ export default {
         class="black--text"
         v-html="
           $t('groups.delete.deleteWarningMessage', {
-            name: group.name,
+            name: escapeHtml(group.name),
           })
         "
       />

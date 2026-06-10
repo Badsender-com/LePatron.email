@@ -5,11 +5,11 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import BsGroupLoading from '~/components/loadingBar';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsModalCreateGroup from '~/components/group/modal-create-group.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
-import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import { IS_ADMIN, USER } from '~/store/user';
 import {
   Building2,
@@ -20,6 +20,7 @@ import {
   Trash2,
   Cpu,
 } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'PageGroups',
@@ -30,12 +31,15 @@ export default {
     BsModalConfirmForm,
     BsDataTable,
     BsRowActions,
-    // eslint-disable-next-line vue/no-unused-components
-    LucideBuilding2: Building2,
     LucidePlus: Plus,
     LucideCheck: Check,
     LucideXCircle: XCircle,
   },
+  // BsDataTable's :empty-icon prop accepts a component reference; we pass
+  // Building2 directly (frozen as a $options value, not reactive data) so
+  // we don't need a LucideBuilding2 local registration that the template
+  // never references as a tag.
+  emptyIconComponent: Building2,
   mixins: [mixinPageTitle],
   meta: {
     acl: acls.ACL_ADMIN,
@@ -47,7 +51,10 @@ export default {
       const groupsResponse = await $axios.$get(apiRoutes.groups());
       return { groups: groupsResponse.items };
     } catch (error) {
-      console.error('[Groups] Failed to load groups:', error);
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.error('[Groups] Failed to load groups:', error);
+      }
       return { groups: [] };
     }
   },
@@ -135,6 +142,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
     openCreateModal() {
       this.$refs.createGroupModal.open();
     },
@@ -238,6 +246,14 @@ export default {
       const colors = { active: 'success', demo: 'info', inactive: 'grey' };
       return colors[status] || 'grey';
     },
+    getStatusLabel(status) {
+      const labels = {
+        active: this.$t('forms.group.status.active'),
+        demo: this.$t('forms.group.status.demo'),
+        inactive: this.$t('forms.group.status.inactive'),
+      };
+      return labels[status] || status;
+    },
   },
 };
 </script>
@@ -265,7 +281,7 @@ export default {
           :headers="tableHeaders"
           :items="groups"
           :loading="loading"
-          :empty-icon="$options.components.LucideBuilding2"
+          :empty-icon="$options.emptyIconComponent"
           :empty-message="$t('settingsNav.companiesEmpty')"
           clickable
           @click:row="goToGroup"
@@ -296,7 +312,7 @@ export default {
               :outlined="item.status !== 'active'"
               :dark="item.status === 'active'"
             >
-              {{ item.status }}
+              {{ getStatusLabel(item.status) }}
             </v-chip>
           </template>
 
@@ -374,7 +390,7 @@ export default {
             class="black--text"
             v-html="
               $t('groups.delete.deleteWarningMessage', {
-                name: deletingGroup && deletingGroup.name,
+                name: escapeHtml(deletingGroup && deletingGroup.name),
               })
             "
           />

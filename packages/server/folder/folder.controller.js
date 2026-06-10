@@ -45,9 +45,17 @@ async function hasAccess(req, res) {
     params: { folderId },
   } = req;
 
-  const hasAccess = await folderService.hasAccess(folderId, user);
+  // folderService.hasAccess now throws on denial instead of returning false.
+  // This endpoint is a pure access-probe whose contract is a boolean, so we
+  // translate the throw back into `{ hasAccess: false }`.
+  let access = false;
+  try {
+    access = await folderService.hasAccess(folderId, user);
+  } catch (err) {
+    access = false;
+  }
 
-  res.json({ hasAccess });
+  res.json({ hasAccess: access });
 }
 
 /**

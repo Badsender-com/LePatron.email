@@ -90,6 +90,7 @@ export default {
     selectedDashboard: null,
     embedUrl: null,
     loadingEmbed: false,
+    screenshotAvailable: true,
   }),
   computed: {
     title() {
@@ -154,6 +155,10 @@ export default {
       return FEATURE_ICON_MAP[iconName] || AreaChart;
     },
 
+    onScreenshotError() {
+      this.screenshotAvailable = false;
+    },
+
     async selectDashboard(dashboard) {
       if (this.selectedDashboard?.id === dashboard.id) return;
 
@@ -205,6 +210,18 @@ export default {
           <lucide-mail :size="20" class="mr-2" />
           {{ $t('crmIntelligence.marketing.ctaPrimary') }}
         </v-btn>
+      </div>
+    </section>
+
+    <!-- SCREENSHOT SECTION -->
+    <section v-if="screenshotAvailable" class="screenshot-section">
+      <div class="screenshot-wrapper">
+        <img
+          src="/img/marketing/crm-intelligence-screenshot.png"
+          :alt="$t('crmIntelligence.marketing.screenshotAlt')"
+          class="screenshot-image"
+          @error="onScreenshotError"
+        >
       </div>
     </section>
 
@@ -299,9 +316,18 @@ export default {
 
 <style scoped>
 /* Marketing Landing Page */
+/* Negative margins cancel the parent layout's .app-main__page padding
+   (32px sides / 32px bottom) so the marketing page spans edge-to-edge
+   like on staging. */
 .marketing-page {
   min-height: calc(100vh - 64px);
-  margin-left: 56px;
+  margin: 0 -32px -32px;
+}
+
+@media (max-width: 960px) {
+  .marketing-page {
+    margin: 0 -16px -16px;
+  }
 }
 
 .hero-section {
@@ -332,6 +358,26 @@ export default {
 .feature-card {
   text-align: center;
   padding: 24px 16px;
+}
+
+.screenshot-section {
+  padding: 40px 24px;
+  background: var(--v-background-base, #fff);
+}
+
+.screenshot-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.screenshot-image {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .footer-cta {

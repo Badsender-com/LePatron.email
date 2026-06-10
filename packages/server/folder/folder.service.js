@@ -46,10 +46,19 @@ async function hasAccess(folderId, user) {
       throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
   }
-  return (
+  // A group admin can reach this point for a workspace that belongs to ANOTHER
+  // group (the guard above is skipped for group admins). Previously this
+  // function returned a boolean here, and several callers ignored the return
+  // value (`await hasAccess(...)` with no check) — letting a group admin act on
+  // a folder outside their group (cross-tenant IDOR). Throw instead so every
+  // caller is protected uniformly.
+  const allowed =
     workspaceService.isWorkspaceInGroup(workspace, user?.group?.id) &&
-    workspaceService.isUserWorkspaceMember(user, workspace)
-  );
+    workspaceService.isUserWorkspaceMember(user, workspace);
+  if (!allowed) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  return true;
 }
 
 async function getWorkspaceForFolder(folderId) {
@@ -144,16 +153,17 @@ async function deleteFolder(user, folderId) {
   if (!(await Folders.exists({ _id: mongoose.Types.ObjectId(folderId) }))) {
     throw new NotFound(ERROR_CODES.FOLDER_NOT_FOUND);
   }
-  if (await hasAccess(folderId, user)) {
-    await workspaceService.deleteFolderContent(folderId);
+  // hasAccess now throws on denial (no longer returns a boolean).
+  await hasAccess(folderId, user);
 
-    const deleteResponse = await Folders.deleteOne({
-      _id: mongoose.Types.ObjectId(folderId),
-    });
+  await workspaceService.deleteFolderContent(folderId);
 
-    if (deleteResponse.ok !== 1) {
-      throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_DELETE);
-    }
+  const deleteResponse = await Folders.deleteOne({
+    _id: mongoose.Types.ObjectId(folderId),
+  });
+
+  if (deleteResponse.ok !== 1) {
+    throw new InternalServerError(ERROR_CODES.FAILED_FOLDER_DELETE);
   }
 }
 

@@ -42,11 +42,13 @@ async function soapRequest({
     if (errorFromAdobe) {
       const detail = errorFromAdobe.detail || '';
 
-      // If we get a 401 response, we try to refresh the token and perform the request again
+      // Retry on token expired: either the legacy "HTTP response code is 401" wording
+      // or the newer Adobe error containing "Access token has expired" (e.g. XSV-350392).
       const isTokenExpired =
         typeof detail === 'string' &&
         (detail.includes('HTTP response code is 401') ||
-          detail.includes('Access token has expired'));
+          detail.includes('Access token has expired') ||
+          detail.includes('XSV-350392'));
       if (shouldRetry && isTokenExpired) {
         const newToken = await refreshTokenFn();
         return soapRequest({
@@ -68,7 +70,8 @@ async function soapRequest({
   } catch (error) {
     const { response } = error;
 
-    // If we get a 401/403 HTTP response, try to refresh the token and retry once
+    // Retry once on HTTP 401/403 in case Adobe returns the expired-token error
+    // as a real HTTP status instead of wrapping it in a SOAP Fault.
     if (shouldRetry && (response?.status === 401 || response?.status === 403)) {
       const newToken = await refreshTokenFn();
       return soapRequest({

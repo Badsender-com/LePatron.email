@@ -3,6 +3,7 @@
 const fetch = require('node-fetch');
 const BaseLLMProvider = require('./base-llm-provider');
 const logger = require('../../utils/logger.js');
+const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_API_HOST = 'https://api.openai.com';
@@ -42,6 +43,9 @@ class OpenAIProvider extends BaseLLMProvider {
 
   async validateCredentials() {
     try {
+      // SSRF guard: never send the Bearer key to a private/internal host.
+      await assertOutboundHostAllowed(this.baseUrl);
+
       const response = await fetch(`${this.baseUrl}/v1/models`, {
         method: 'GET',
         headers: {

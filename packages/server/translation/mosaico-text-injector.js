@@ -87,9 +87,11 @@ function injectTexts(mailing, translations) {
 function validateTranslations(originalTexts, translations) {
   const originalKeys = Object.keys(originalTexts);
   const translatedKeys = Object.keys(translations);
+  const originalSet = new Set(originalKeys);
+  const translatedSet = new Set(translatedKeys);
 
-  const missing = originalKeys.filter((k) => !translatedKeys.includes(k));
-  const extra = translatedKeys.filter((k) => !originalKeys.includes(k));
+  const missing = originalKeys.filter((k) => !translatedSet.has(k));
+  const extra = translatedKeys.filter((k) => !originalSet.has(k));
 
   return {
     isValid: missing.length === 0 && extra.length === 0,

@@ -32,6 +32,7 @@ const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
+const TranslationJobSchema = require('../translation/translation-job.schema.js');
 
 /// ///
 // EXPORTS
@@ -97,6 +98,10 @@ const AIPlaygroundRuns = mongoose.model(
   modelNames.AIPlaygroundRunModel,
   AIPlaygroundRunSchema
 );
+const TranslationJobs = mongoose.model(
+  modelNames.TranslationJobModel,
+  TranslationJobSchema
+);
 
 module.exports = {
   mongoose,
@@ -127,4 +132,5 @@ module.exports = {
   AISkillInvocations,
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
+  TranslationJobs,
 };

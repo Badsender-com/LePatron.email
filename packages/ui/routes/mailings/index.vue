@@ -12,8 +12,8 @@ import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
 import MailingsBreadcrumbs from '~/routes/mailings/__partials/mailings-breadcrumbs';
 import MailingsSelectionActions from '~/routes/mailings/__partials/mailings-selection-actions';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
-import { IS_ADMIN, IS_GROUP_ADMIN, USER } from '~/store/user';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
+import { IS_ADMIN, IS_GROUP_ADMIN, HAS_FTP_ACCESS, USER } from '~/store/user';
 import {
   FOLDER,
   SET_PAGINATION,
@@ -76,10 +76,10 @@ export default {
       'pagination',
       'filters',
     ]),
-    ...mapState(USER, ['hasFtpAccess']),
     ...mapGetters(USER, {
       isAdmin: IS_ADMIN,
       isGroupAdmin: IS_GROUP_ADMIN,
+      hasFtpAccess: HAS_FTP_ACCESS,
     }),
     groupAdminUrl() {
       return `/groups/${this.$store.state.user?.info?.group?.id}`;
@@ -276,3 +276,9 @@ export default {
     />
   </div>
 </template>
+
+<style scoped>
+.settings-content {
+  padding: 0;
+}
+</style>

@@ -1,4 +1,6 @@
 <script>
+import { escapeHtml } from '~/helpers/escape-html';
+
 export default {
   name: 'BsMailingModalDuplicate',
   model: { prop: 'dialogInfo', event: 'update' },
@@ -19,6 +21,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     closeDialog() {
       this.$emit('close');
     },
@@ -42,7 +45,9 @@ export default {
       <v-card-text>
         <p
           v-html="
-            $t(`mailings.duplicateNotice`, { name: this.localModel.name })
+            $t(`mailings.duplicateNotice`, {
+              name: escapeHtml(localModel.name),
+            })
           "
         />
       </v-card-text>

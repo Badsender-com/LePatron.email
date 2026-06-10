@@ -126,14 +126,11 @@ export default {
       return errors;
     },
   },
-  watch: {
-    // Refresh data when tab becomes active (after adding integrations in another tab)
-    active(isActive) {
-      if (isActive) {
-        this.fetchData();
-      }
-    },
-  },
+  // Note: a watch on `active` would re-fetch when the tab is re-shown, but
+  // every current consumer binds :active="true" statically, so the watcher
+  // would never fire — keeping it would just cause confusion. If real tab
+  // switching is introduced later, reinstate the watcher with an
+  // immediate-skip flag so it doesn't double-fetch with mounted().
   async mounted() {
     await this.fetchData();
   },

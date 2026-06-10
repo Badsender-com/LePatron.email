@@ -7,6 +7,11 @@ const AIFeatureTypes = {
   // The legacy 'translation' featureType will eventually be migrated to a
   // dedicated skill (translation.text) — kept separate for now.
   SKILL: 'skill',
+  // Future features
+  // TEXT_GENERATION: 'text_generation',
+  // TEXT_IMPROVEMENT: 'text_improvement',
+  // QUALITY_CHECK: 'quality_check',
+  // SUBJECT_LINE: 'subject_line',
 };
 
 const AIFeatureTypeValues = Object.values(AIFeatureTypes);

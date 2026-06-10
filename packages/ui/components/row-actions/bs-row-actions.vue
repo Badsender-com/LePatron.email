@@ -1,6 +1,9 @@
 <template>
   <div class="bs-row-actions">
-    <!-- Quick action icons (always visible) -->
+    <!-- Quick action icons (always visible).
+         A Vuetify v-tooltip gives a styled hover bubble consistent with the
+         rest of the app (Templates/Profiles tables); aria-label still carries
+         the meaning for screen readers and keyboard users. -->
     <v-tooltip v-for="action in quickActions" :key="action.key" bottom>
       <template #activator="{ on, attrs }">
         <button
@@ -40,7 +43,8 @@
         <button
           class="am-trigger"
           :class="{ 'am-trigger--open': value }"
-          aria-label="More actions"
+          :aria-label="$t('sidebar.aria.moreActions')"
+          :title="$t('sidebar.aria.moreActions')"
           :aria-expanded="value"
           v-bind="attrs"
           v-on="on"
@@ -145,15 +149,15 @@ export default {
   justify-content: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px; // var(--r-sm)
-  color: rgba(0, 0, 0, 0.54); // --gray-600
+  border-radius: var(--r-sm);
+  color: var(--gray-600);
   cursor: pointer;
   transition: background 0.2s ease-out, color 0.2s ease-out;
   position: relative;
   padding: 0;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04); // --gray-100
+    background: var(--gray-100);
     color: var(--v-primary-base);
   }
 
@@ -163,11 +167,11 @@ export default {
   }
 
   &--danger {
-    color: #f04e23; // --color-error
+    color: var(--color-error);
 
     &:hover {
-      background: rgba(240, 78, 35, 0.08);
-      color: #f04e23;
+      background: var(--color-error-bg);
+      color: var(--color-error);
     }
   }
 }
@@ -186,7 +190,7 @@ export default {
   height: 16px;
   padding: 0 4px;
   background: var(--v-accent-base);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 10px;
   font-weight: 600;
   line-height: 16px;
@@ -200,7 +204,7 @@ export default {
 .actions-cell__divider {
   width: 1px;
   height: 18px;
-  background: rgba(0, 0, 0, 0.12); // --gray-300
+  background: var(--gray-300);
   margin: 0 4px;
 }
 
@@ -213,19 +217,19 @@ export default {
   justify-content: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
-  color: rgba(0, 0, 0, 0.54);
+  border-radius: var(--r-sm);
+  color: var(--gray-600);
   cursor: pointer;
   transition: background 0.2s ease-out, color 0.2s ease-out;
   padding: 0;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--gray-100);
     color: var(--v-primary-base);
   }
 
   &--open {
-    background: rgba(0, 0, 0, 0.08); // --gray-200
+    background: var(--gray-200);
     color: var(--v-primary-base);
   }
 }
@@ -237,14 +241,14 @@ export default {
    ========================================================================= */
 
 .bs-row-actions-menu {
-  border-radius: 10px !important; // --r-md
-  box-shadow: 0 4px 14px rgba(9, 48, 64, 0.08), 0 1px 2px rgba(9, 48, 64, 0.05) !important;
+  border-radius: var(--r-md) !important;
+  box-shadow: var(--shadow-menu) !important;
 
   .v-list {
     padding: 6px !important;
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.12) !important; // --gray-300
-    border-radius: 10px !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--gray-300) !important;
+    border-radius: var(--r-md) !important;
   }
 }
 
@@ -265,7 +269,7 @@ export default {
   border: none !important;
   background: transparent !important;
   border-radius: 6px !important;
-  color: rgba(0, 0, 0, 0.87) !important; // --gray-900
+  color: var(--gray-900) !important;
   font-size: 13px !important;
   font-weight: 400 !important;
   text-align: left !important;
@@ -278,12 +282,12 @@ export default {
   }
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04) !important; // --gray-100
+    background: var(--gray-100) !important;
   }
 
   &:focus-visible {
     outline: none !important;
-    background: rgba(0, 0, 0, 0.04) !important;
+    background: var(--gray-100) !important;
     box-shadow: inset 0 0 0 1px var(--v-accent-base) !important;
   }
 
@@ -291,7 +295,7 @@ export default {
     flex-shrink: 0;
     width: 16px;
     height: 16px;
-    color: rgba(0, 0, 0, 0.54); // --gray-600
+    color: var(--gray-600);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -306,21 +310,21 @@ export default {
 
   &__count {
     flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.08); // --gray-200
-    color: rgba(0, 0, 0, 0.6); // --gray-700
+    background: var(--gray-200);
+    color: var(--gray-700);
     font-size: 11px;
     font-weight: 500;
     padding: 1px 6px;
-    border-radius: 9999px; // --r-pill
+    border-radius: var(--r-pill);
   }
 
   // Disabled state
   &--disabled {
-    color: rgba(0, 0, 0, 0.26) !important; // --gray-400
+    color: var(--gray-400) !important;
     cursor: not-allowed !important;
 
     .am-item__icon {
-      color: rgba(0, 0, 0, 0.26) !important;
+      color: var(--gray-400) !important;
     }
 
     &:hover {
@@ -330,14 +334,14 @@ export default {
 
   // Danger variant
   &--danger {
-    color: #f04e23 !important; // --color-error
+    color: var(--color-error) !important;
 
     .am-item__icon {
-      color: #f04e23 !important;
+      color: var(--color-error) !important;
     }
 
     &:hover {
-      background: rgba(240, 78, 35, 0.08) !important;
+      background: var(--color-error-bg) !important;
     }
   }
 }
@@ -345,7 +349,7 @@ export default {
 /* Divider =============================================================== */
 .am-divider {
   height: 1px;
-  background: rgba(0, 0, 0, 0.08); // --gray-200
+  background: var(--gray-200);
   margin: 6px 4px;
 }
 </style>

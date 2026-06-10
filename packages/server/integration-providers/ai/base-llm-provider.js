@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const AbortController = require('abort-controller');
 const AIProviderInterface = require('./ai-provider.interface');
 const logger = require('../../utils/logger.js');
+const { assertOutboundHostAllowed } = require('../../utils/outbound-host.js');
 const {
   ProviderError,
   PROVIDER_ERROR_CODES: CODES,
@@ -160,78 +161,10 @@ OUTPUT (valid JSON only):`;
     return truncated.replace(/\b[A-Za-z0-9_-]{32,}\b/g, '[REDACTED]');
   }
 
-  // ─── public chat completion ───────────────────────────────────────────────
-
-  /**
-   * Public chat-completion entry point used by the LePatron Skills IA module.
-   *
-   * Unlike _callChatCompletion (which returns only the content string), this
-   * returns both the content and token usage so callers can log invocations.
-   *
-   * @param {Object} params
-   * @param {string} [params.model] — defaults to provider's default model
-   * @param {Array<{role: string, content: string}>} params.messages
-   * @param {number} [params.temperature]
-   * @param {number} [params.maxTokens]
-   * @param {Object} [params.responseFormat]
-   * @returns {Promise<{ content: string, usage: { promptTokens: number, completionTokens: number, totalTokens: number, cachedTokens: number } }>}
-   */
-  async chatComplete({
-    model,
-    messages,
-    temperature,
-    maxTokens,
-    responseFormat,
-  }) {
-    const resolvedModel = model || this._getDefaultModel();
-    const data = await this._callChatCompletionRaw({
-      model: resolvedModel,
-      messages,
-      temperature,
-      maxTokens,
-      responseFormat,
-    });
-    const content = data.choices[0].message.content;
-    const usage = data.usage || {};
-    return {
-      content,
-      usage: {
-        promptTokens: usage.prompt_tokens || 0,
-        completionTokens: usage.completion_tokens || 0,
-        totalTokens: usage.total_tokens || 0,
-        cachedTokens:
-          (usage.prompt_tokens_details &&
-            usage.prompt_tokens_details.cached_tokens) ||
-          0,
-      },
-    };
-  }
-
   // ─── API call ─────────────────────────────────────────────────────────────
 
   // eslint-disable-next-line camelcase
   async _callChatCompletion({ model, messages, temperature, responseFormat }) {
-    const data = await this._callChatCompletionRaw({
-      model,
-      messages,
-      temperature,
-      responseFormat,
-    });
-    return data.choices[0].message.content;
-  }
-
-  /**
-   * Returns the full parsed response (choices + usage). Used by chatComplete()
-   * which needs token-usage metadata; kept separate from _callChatCompletion()
-   * to preserve the legacy translation code path.
-   */
-  async _callChatCompletionRaw({
-    model,
-    messages,
-    temperature,
-    maxTokens,
-    responseFormat,
-  }) {
     const providerName = this.getProviderType();
     logger.log(
       `Calling ${providerName} API with model:`,
@@ -247,11 +180,15 @@ OUTPUT (valid JSON only):`;
     const startTime = Date.now();
 
     try {
+      // SSRF guard at call time (TOCTOU): re-validate the host right before the
+      // outbound request, in case DNS changed since the integration was saved.
+      await assertOutboundHostAllowed(this.baseUrl);
+
       const requestBody = {
         model,
         messages,
         temperature,
-        max_tokens: maxTokens || this._getMaxTokens(),
+        max_tokens: this._getMaxTokens(),
       };
 
       if (responseFormat) {
@@ -284,6 +221,7 @@ OUTPUT (valid JSON only):`;
         } catch {
           errorMessage = errorText || 'Unknown error';
         }
+        // Sanitize error message to prevent logging sensitive data
         const sanitizedMessage = this._sanitizeLogMessage(errorMessage);
         logger.error(
           `${providerName} API error:`,
@@ -312,14 +250,15 @@ OUTPUT (valid JSON only):`;
         );
       }
 
+      const content = data.choices[0].message.content;
       const usage = data.usage || {};
       logger.log(
-        `${providerName} response received in ${elapsed}s - tokens: ${
-          usage.total_tokens || 'N/A'
-        }`
+        `${providerName} response received in ${elapsed}s - length: ${
+          content ? content.length : 0
+        } chars, tokens: ${usage.total_tokens || 'N/A'}`
       );
 
-      return data;
+      return content;
     } catch (error) {
       clearTimeout(timeoutId);
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

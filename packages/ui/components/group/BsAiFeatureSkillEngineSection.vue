@@ -17,7 +17,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import { getProviderLabel } from '~/components/integrations/provider-configs';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Cpu } from 'lucide-vue';
 
 const FEATURE_TYPE = 'skill';

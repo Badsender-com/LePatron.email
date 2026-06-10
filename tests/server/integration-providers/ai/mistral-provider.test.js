@@ -3,6 +3,12 @@
 // Mock node-fetch before requiring the provider
 const mockFetch = jest.fn();
 jest.mock('node-fetch', () => mockFetch);
+// The SSRF guard does real DNS resolution; stub it so these unit tests stay
+// offline and deterministic. SSRF blocking itself is covered in
+// outbound-host.test.js.
+jest.mock('../../../../packages/server/utils/outbound-host.js', () => ({
+  assertOutboundHostAllowed: jest.fn().mockResolvedValue(undefined),
+}));
 
 const MistralProvider = require('../../../../packages/server/integration-providers/ai/mistral-provider');
 

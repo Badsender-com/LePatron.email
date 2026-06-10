@@ -9,6 +9,7 @@ import {
 import destinationTreeMixin from '~/helpers/mixins/mixin-destination-tree';
 import { Languages, FolderOpen, Folder, Users } from 'lucide-vue';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsMailingModalDuplicateTranslate',
@@ -123,8 +124,14 @@ export default {
       return this.$t('translation.estimatedTime', { time });
     },
   },
+  beforeDestroy() {
+    // Otherwise the 2s polling interval keeps hitting the API after the user
+    // navigates away from a translation in progress.
+    this.stopPolling();
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    escapeHtml,
 
     async open(mailing) {
       this.mailing = mailing;
@@ -447,7 +454,9 @@ export default {
               <p
                 class="text--secondary mb-4"
                 v-html="
-                  $t('translation.duplicateNotice', { name: mailingName })
+                  $t('translation.duplicateNotice', {
+                    name: escapeHtml(mailingName),
+                  })
                 "
               />
 

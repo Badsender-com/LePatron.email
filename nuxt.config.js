@@ -31,9 +31,9 @@ module.exports = {
     store: 'store',
   },
   build: {
+    quiet: true,
     // Transpile lucide-vue (uses modern JS syntax like optional chaining)
     transpile: ['lucide-vue'],
-    quiet: true,
     extend(config) {
       // take care of <i18n> tags inside Vue components
       config.module.rules.push({

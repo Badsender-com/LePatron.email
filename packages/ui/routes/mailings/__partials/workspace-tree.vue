@@ -32,7 +32,7 @@ import {
   FolderInput,
   Trash2,
 } from 'lucide-vue';
-import BsRowActions from '~/components/row-actions/BsRowActions.vue';
+import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 
 const TREE_STATE_STORAGE_KEY = 'lepatron_workspace_tree_state';
 const SELECTED_NODE_STORAGE_KEY = 'lepatron_selected_node';

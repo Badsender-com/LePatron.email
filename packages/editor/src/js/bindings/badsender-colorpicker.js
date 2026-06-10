@@ -56,7 +56,7 @@ const colorpicker = {
       container: $picker,
       position: `inline`,
       autoHide: false,
-      type: `sketch`,
+      type: `chromedevtool`,
       onChange: (color) => {
         $bucket.style.backgroundColor = color;
         va.color(color);

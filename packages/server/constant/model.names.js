@@ -28,6 +28,8 @@ module.exports = Object.freeze({
   DashboardModel: 'Dashboard',
   // AI Features
   AIFeatureConfigModel: 'AIFeatureConfig',
+  // Translation
+  TranslationJobModel: 'TranslationJob',
   // LePatron Skills IA
   LePatronSkillModel: 'LePatronSkill',
   ExpertiseModel: 'Expertise',

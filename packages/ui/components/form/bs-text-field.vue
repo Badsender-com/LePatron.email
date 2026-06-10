@@ -110,36 +110,36 @@ export default {
     display: block;
     font-size: 0.75rem;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.6);
+    color: var(--gray-700);
     margin-bottom: 0.375rem;
   }
 
   &__required {
-    color: #f04e23;
+    color: var(--color-error);
     margin-left: 2px;
   }
 
   &__input {
     &.v-text-field.v-text-field--solo {
       ::v-deep .v-input__slot {
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        background: #fff;
+        border: 1px solid var(--field-border);
+        border-radius: var(--r-sm);
+        background: var(--surface);
         min-height: 40px;
         padding: 0 12px;
         transition: border-color 0.2s ease;
 
         &:hover {
-          border-color: rgba(0, 0, 0, 0.4);
+          border-color: var(--field-border-hover);
         }
       }
 
       &.v-input--is-focused ::v-deep .v-input__slot {
-        border-color: #00acdc;
+        border-color: var(--v-accent-base, #00acdc);
       }
 
       &.error--text ::v-deep .v-input__slot {
-        border-color: #f04e23;
+        border-color: var(--color-error);
       }
 
       ::v-deep input {
@@ -160,7 +160,7 @@ export default {
 
   &__hint {
     font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.5);
+    color: var(--field-placeholder);
     margin-top: 0.25rem;
     padding-left: 2px;
   }
@@ -172,7 +172,7 @@ export default {
 
   &--error {
     .bs-text-field__label {
-      color: #f04e23;
+      color: var(--color-error);
     }
   }
 

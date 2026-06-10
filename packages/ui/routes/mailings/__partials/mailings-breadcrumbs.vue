@@ -6,7 +6,7 @@ import {
 import { mapState } from 'vuex';
 import { SPACE_TYPE } from '~/helpers/constants/space-type';
 import { FOLDER } from '~/store/folder';
-import BsBreadcrumb from '~/components/layout/BsBreadcrumb.vue';
+import BsBreadcrumb from '~/components/layout/bs-breadcrumb.vue';
 
 export default {
   name: 'MailingsBreadcrumbs',

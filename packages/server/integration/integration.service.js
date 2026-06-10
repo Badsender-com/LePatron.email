@@ -1,6 +1,10 @@
 'use strict';
 
-const { Integrations, AIFeatureConfigs, Dashboards } = require('../common/models.common');
+const {
+  Integrations,
+  AIFeatureConfigs,
+  Dashboards,
+} = require('../common/models.common');
 const { Types } = require('mongoose');
 const {
   NotFound,
@@ -13,6 +17,7 @@ const ERROR_CODES = require('../constant/error-codes.js');
 const groupService = require('../group/group.service.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
 const IntegrationTypes = require('../constant/integration-type.js');
+const { assertOutboundHostAllowed } = require('../utils/outbound-host.js');
 
 module.exports = {
   createIntegration,
@@ -45,6 +50,21 @@ async function checkIfUserIsAuthorizedToAccessIntegration({
 }
 
 /**
+ * Validate that a URL uses an allowed scheme AND does not resolve to an
+ * internal/private address (SSRF guard). `apiHost` becomes the target of
+ * server-side requests carrying the integration's secret, so a bare scheme
+ * check is not enough — see utils/outbound-host.js.
+ */
+async function validateApiHost(apiHost) {
+  if (!apiHost) return;
+  try {
+    await assertOutboundHostAllowed(apiHost);
+  } catch {
+    throw new Conflict(ERROR_CODES.INTEGRATION_VALIDATION_FAILED);
+  }
+}
+
+/**
  * Create a new integration
  */
 async function createIntegration({
@@ -57,6 +77,8 @@ async function createIntegration({
   config,
   _company,
 }) {
+  await validateApiHost(apiHost);
+
   // Check for duplicates
   if (await Integrations.exists({ name, _company, type })) {
     throw new Conflict(ERROR_CODES.INTEGRATION_NAME_ALREADY_EXIST);
@@ -106,19 +128,17 @@ async function updateIntegration({
     }
   }
 
-  // Keep only fields explicitly provided in the request
-  const updateData = Object.fromEntries(
-    Object.entries({
-      name,
-      type,
-      provider,
-      apiKey,
-      apiHost,
-      productId,
-      config,
-      isActive,
-    }).filter(([, value]) => value !== undefined)
-  );
+  await validateApiHost(apiHost);
+
+  // Apply only fields explicitly provided in the request
+  if (name !== undefined) integration.name = name;
+  if (type !== undefined) integration.type = type;
+  if (provider !== undefined) integration.provider = provider;
+  if (apiKey !== undefined) integration.apiKey = apiKey;
+  if (apiHost !== undefined) integration.apiHost = apiHost;
+  if (productId !== undefined) integration.productId = productId;
+  if (config !== undefined) integration.config = config;
+  if (isActive !== undefined) integration.isActive = isActive;
 
   // Reset validation status if credentials changed
   if (
@@ -126,22 +146,18 @@ async function updateIntegration({
     apiHost !== undefined ||
     productId !== undefined
   ) {
-    updateData.validationStatus = 'pending';
-    updateData.lastValidatedAt = null;
+    integration.validationStatus = 'pending';
+    integration.lastValidatedAt = null;
   }
 
-  const updated = await Integrations.findByIdAndUpdate(
-    Types.ObjectId(integrationId),
-    updateData,
-    { new: true }
-  );
+  await integration.save();
 
   // When an integration is deactivated, disable all AI features using it
   if (isActive === false) {
     await deactivateFeaturesForIntegration(integrationId);
   }
 
-  return updated;
+  return integration;
 }
 
 /**
@@ -254,9 +270,9 @@ async function deactivateFeaturesForIntegration(integrationId) {
     { $set: { 'features.$[feat].isActive': false } },
     { arrayFilters: [{ 'feat.integration': objectId, 'feat.isActive': true }] }
   );
-  if (result.nModified > 0) {
+  if (result.modifiedCount > 0) {
     logger.log(
-      `Deactivated AI features for integration ${integrationId} (${result.nModified} config(s) updated)`
+      `Deactivated AI features for integration ${integrationId} (${result.modifiedCount} config(s) updated)`
     );
   }
 }
@@ -284,9 +300,9 @@ async function validateCredentials({ integrationId, apiKey, apiHost }) {
       try {
         // Normalize URL: remove trailing slash
         siteUrl = siteUrl.replace(/\/+$/, '');
-        new URL(siteUrl);
+        const parsed = new URL(siteUrl);
         // For Metabase, validate that the secret key looks like a JWT secret (at least 32 chars)
-        isValid = secretKey.length >= 32;
+        isValid = !!parsed.hostname && secretKey.length >= 32;
       } catch {
         isValid = false;
       }

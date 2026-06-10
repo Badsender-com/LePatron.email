@@ -46,7 +46,16 @@ export default {
       </p>
     </div>
 
-    <!-- Dashboard iframe -->
+    <!-- Dashboard iframe.
+         allow-same-origin IS required: Metabase loads its dashboard data via
+         XHR to its own backend and relies on its embed session, which a null
+         (sandboxed) origin breaks — the requests get blocked (blocked:origin)
+         and the charts never render. The usual "allow-scripts + allow-same-origin
+         lets the frame escape into the parent" warning does NOT apply here: the
+         embed URL points at a *different* origin (the Metabase apiHost), so the
+         same-origin policy already prevents reaching window.parent on the
+         LePatron origin. Server-side validation (HTTPS-only apiHost) is in
+         crm-intelligence.service.js — see the matching M2/M3 fix. -->
     <iframe
       v-if="embedUrl"
       ref="dashboardFrame"
@@ -78,7 +87,7 @@ export default {
 
 .dashboard-iframe {
   width: 100%;
-  height: calc(100vh - 100px);
+  height: 100%;
   border: none;
 }
 

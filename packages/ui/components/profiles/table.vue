@@ -2,6 +2,7 @@
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirmForm from '~/components/modal-confirm-form';
 import { Pencil, Trash2, Send } from 'lucide-vue';
+import { escapeHtml } from '~/helpers/escape-html';
 
 export default {
   name: 'BsProfilesTable',
@@ -50,6 +51,7 @@ export default {
     },
   },
   methods: {
+    escapeHtml,
     goToProfile(profile) {
       this.$router.push(`/groups/${this.groupId}/profiles/${profile.id}`);
     },
@@ -143,7 +145,7 @@ export default {
         class="black--text"
         v-html="
           $t('profiles.deleteWarningMessage', {
-            name: selectedProfile.name,
+            name: escapeHtml(selectedProfile.name),
           })
         "
       />

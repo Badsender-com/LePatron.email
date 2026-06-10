@@ -1,6 +1,10 @@
 'use strict';
 
 // Zone 1: Modules (product surfaces that can be subscribed to)
+//
+// `pathPrefixes` lists every URL prefix that should map to this module's
+// "active" state in the sidebar. Adding a module = add a new row here;
+// nothing in BsSidebar.vue needs to be touched.
 export const SIDEBAR_MODULES = [
   {
     id: 'email-builder',
@@ -8,6 +12,7 @@ export const SIDEBAR_MODULES = [
     labelKey: 'sidebar.modules.emailBuilder',
     route: '/mailings',
     enabledFlag: 'enableEmailBuilder',
+    pathPrefixes: ['/mailings'],
   },
   {
     id: 'crm-intelligence',
@@ -15,6 +20,7 @@ export const SIDEBAR_MODULES = [
     labelKey: 'sidebar.modules.crmIntelligence',
     route: '/crm-intelligence',
     enabledFlag: 'enableCrmIntelligence',
+    pathPrefixes: ['/crm-intelligence'],
   },
   // Future modules (commented out until implemented):
   // {

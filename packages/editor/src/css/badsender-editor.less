@@ -1040,6 +1040,19 @@ body {
   pointer-events: auto;
 }
 
+// During an OS file drag, the mouse :hover state is not reliably triggered,
+// so .mo-uploadzone (the jQuery File Upload dropZone) would stay
+// pointer-events:none and never receive the drop. fudroppable adds
+// .ui-state-highlight (a drag is active anywhere in the window) and
+// .ui-state-draghover (the drag is over this image) — re-enable the dropzone
+// in those states so drag-and-drop from the Finder/file explorer works again.
+#main-edit-area .img-wysiwyg.ui-state-highlight .workzone,
+#main-edit-area .img-wysiwyg.ui-state-highlight .mo-uploadzone,
+#main-edit-area .img-wysiwyg.ui-state-draghover .workzone,
+#main-edit-area .img-wysiwyg.ui-state-draghover .mo-uploadzone {
+  pointer-events: auto;
+}
+
 // Individual tool button - ghost style
 #main-edit-area .tools .tool {
   display: flex;

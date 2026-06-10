@@ -1,5 +1,5 @@
 <script>
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import { Archive } from 'lucide-vue';
 
 export default {

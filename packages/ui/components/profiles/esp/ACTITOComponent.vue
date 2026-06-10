@@ -7,7 +7,7 @@ import { ENCODING_TYPE } from '~/helpers/constants/encoding-type';
 import { getTableTargetList, getEntitiesList } from '~/helpers/api-routes';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
-import BsFormSection from '~/components/layout/BsFormSection.vue';
+import BsFormSection from '~/components/layout/bs-form-section.vue';
 import { Settings, Mail, Database } from 'lucide-vue';
 import codes from 'iso-language-codes';
 

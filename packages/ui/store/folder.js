@@ -1,5 +1,6 @@
 import {
   mailings,
+  mailingsTags,
   getWorkspace,
   getFolder,
   getFolderAccess,
@@ -36,6 +37,7 @@ export const IS_LOADING_WORKSPACE_OR_FOLDER = 'IS_LOADING_WORKSPACE_OR_FOLDER';
 
 export const FETCH_WORKSPACES = 'FETCH_WORKSPACES';
 export const FETCH_MAILINGS = 'fetchMailings';
+export const FETCH_MAILINGS_TAGS = 'fetchMailingsTags';
 export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
 export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
   'fetchMailingsForWorkspaceUpdate';
@@ -186,26 +188,36 @@ export const actions = {
       commit(IS_LOADING_WORKSPACE_OR_FOLDER, false);
     }
   },
-  async [FETCH_MAILINGS]({ commit, rootState }, { query, $t, pagination }) {
+  async [FETCH_MAILINGS](
+    { commit, dispatch, rootState },
+    { query, $t, pagination }
+  ) {
     if (!!query?.wid || !!query?.fid) {
       const queryMailing = rootState.folder.folder?.id
         ? { parentFolderId: query?.fid }
         : { workspaceId: query?.wid };
+      // Fetch the filter tags in parallel and don't await it: tags are served
+      // by a separate endpoint and must never delay the mailing list render.
+      dispatch(FETCH_MAILINGS_TAGS, { queryMailing });
       try {
         const mailingsResponse = await this.$axios.$get(mailings(), {
           params: {
             ...queryMailing,
-            pagination: {
+            // The backend does JSON.parse(pagination)/JSON.parse(filters)
+            // (mailing.controller.js list()), so these must be sent as JSON
+            // strings. Sending raw objects makes axios serialize them as
+            // bracketed query params (pagination[sortBy][0]=...), which the
+            // backend can't parse — the sort/filters were silently dropped.
+            pagination: JSON.stringify({
               ...rootState.folder?.pagination,
               ...(pagination || {}),
-            },
-            filters: rootState.folder?.filters,
+            }),
+            filters: JSON.stringify(rootState.folder?.filters || {}),
           },
         });
         const { docs, ...paginationsData } = mailingsResponse?.items;
 
         commit(SET_MAILINGS, docs);
-        commit(SET_TAGS, mailingsResponse.meta?.tags);
         const {
           page,
           itemsPerPage,
@@ -234,6 +246,18 @@ export const actions = {
           );
         }
       }
+    }
+  },
+  async [FETCH_MAILINGS_TAGS]({ commit }, { queryMailing }) {
+    try {
+      const { tags } = await this.$axios.$get(mailingsTags(), {
+        params: queryMailing,
+      });
+      commit(SET_TAGS, tags || []);
+    } catch (e) {
+      // Tags only feed the filter dropdown: fail silently so a tags error
+      // never breaks the mailing list itself.
+      commit(SET_TAGS, []);
     }
   },
   async [FETCH_MAILINGS_FOR_FILTER_UPDATE](
