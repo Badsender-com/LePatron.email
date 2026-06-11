@@ -485,6 +485,22 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     translationFeatureConfig.integration.isActive
   );
 
+  // Skills engine active for the group → gates the block textgen button
+  // (POC: in practice only the platform group has it, so the feature stays
+  // naturally invisible for clients).
+  const skillFeatureConfig = await aiFeatureService.getActiveFeatureWithIntegration(
+    {
+      groupId,
+      featureType: AIFeatureTypes.SKILL,
+    }
+  );
+  const hasTextGenFeature = !!(
+    skillFeatureConfig &&
+    skillFeatureConfig.feature.isActive &&
+    skillFeatureConfig.integration &&
+    skillFeatureConfig.integration.isActive
+  );
+
   let redirectUrl = null;
 
   if (user?.isAdmin) {
@@ -508,6 +524,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
       name: mailing.name,
       hasHtmlPreview: !!mailing.previewHtml,
       hasTranslationFeature,
+      hasTextGenFeature,
       // Mosaico's template loading URL
       template: `/api/templates/${templateId}/markup`,
       url: {

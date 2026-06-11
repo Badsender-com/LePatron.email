@@ -53,6 +53,7 @@ const {
 } = require('./ai-skill/ai-skill.routes');
 const aiPlaygroundRouter = require('./ai-playground/ai-playground.routes');
 const translationRouter = require('./translation/translation.routes');
+const emailBuilderRouter = require('./email-builder/email-builder.routes');
 
 process.env.TMPDIR = path.join(process.env.HOME, 'badsender-vips');
 
@@ -316,6 +317,7 @@ if (cluster.isMaster) {
   app.use('/api/ai-invocations', aiInvocationsRouter);
   app.use('/api/ai-playground', aiPlaygroundRouter);
   app.use('/api/translation', translationRouter);
+  app.use('/api/email-builder', emailBuilderRouter);
   app.use('/api/account', accountRouter);
   app.use('/api/version', versionRouter);
   app.use('/api/comments', commentsRouter);
