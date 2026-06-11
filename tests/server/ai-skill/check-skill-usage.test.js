@@ -15,11 +15,17 @@ describe('check-skill-usage script', () => {
     expect(Array.isArray(translation.manifest.usedSkills)).toBe(true);
   });
 
-  it('scanInvocations does not pick up the service file itself (excluded)', () => {
+  it('scanInvocations finds the declared call sites and nothing else', () => {
     const map = scanInvocations();
-    // No real production caller exists yet → empty map. This test mostly
-    // guards against accidentally regressing the exclusion (which would
-    // produce false-positive undeclared invocations on every run).
-    expect(map.size).toBe(0);
+    // First real feature caller: the email-builder textgen POC. Every scanned
+    // skillId must be covered by a manifest — and the invoke service itself
+    // must stay excluded from the scan (no false positives).
+    expect([...map.keys()]).toEqual(['redaction.block.promo']);
+
+    const manifests = loadManifests();
+    const declared = manifests.flatMap((m) =>
+      (m.manifest.usedSkills || []).map((s) => s.skillId)
+    );
+    expect(declared).toContain('redaction.block.promo');
   });
 });
