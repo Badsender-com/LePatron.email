@@ -79,4 +79,22 @@ describe('email-builder HTTP routes', () => {
       expect.objectContaining({ groupId: 'group-1', userId: 'user-1' })
     );
   });
+
+  it('ignores a spoofed body groupId for regular users (locked to own group)', async () => {
+    textgenService.generateBlockText.mockResolvedValue({
+      generated: [],
+      omittedPaths: [],
+    });
+    await request(makeApp())
+      .post('/api/email-builder/textgen/block')
+      .set('x-test-user', '1')
+      .send({
+        instruction: 'Promo',
+        currentContent: [{ path: 'a', value: 'b' }],
+        groupId: 'someone-elses-group',
+      });
+    expect(textgenService.generateBlockText).toHaveBeenCalledWith(
+      expect.objectContaining({ groupId: 'group-1' })
+    );
+  });
 });

@@ -28,8 +28,16 @@ module.exports = {
       throw createError(400, 'currentContent must be a non-empty array');
     }
 
+    // Regular users are locked to their own group; the super-admin pseudo-user
+    // has no group, so it may target the mailing's group (sent by the editor
+    // from metadata.groupId) — demo case on the platform group.
+    const ownGroupId = req.user.group && req.user.group.id;
+    const groupId = req.user.isAdmin
+      ? req.body.groupId || ownGroupId
+      : ownGroupId;
+
     const result = await textgenService.generateBlockText({
-      groupId: req.user.group && req.user.group.id,
+      groupId,
       userId: req.user.isAdmin ? null : req.user.id,
       instruction,
       currentContent,

@@ -56,7 +56,12 @@ function uploadGalleryImageFromUrl(mailingId) {
   return `${prefixApi}/images/gallery/${mailingId}/from-url`;
 }
 
+function textGenBlock() {
+  return `${prefixApi}/email-builder/textgen/block`;
+}
+
 module.exports = {
+  textGenBlock,
   getEspIds,
   getProfileDetail,
   getCampaignDetail,

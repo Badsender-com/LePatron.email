@@ -339,6 +339,22 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // toggleTranslateBlockModal will be set by the Vue component
   viewModel.toggleTranslateBlockModal = ko.observable(null);
 
+  // block-wysiwyg.tmpl.html — POC textgen (mirror of translateBlock)
+  viewModel.textGenBlock = function (blockData, parent, index) {
+    const unwrappedBlock = recursivelyUnwrapObservable(blockData);
+    const blockIndex = ko.utils.unwrapObservable(index);
+
+    viewModel.toggleTextGenBlockModal(true, {
+      block: unwrappedBlock,
+      blockObservable: blockData, // Keep reference to observable for updates
+      parent: parent,
+      index: blockIndex,
+    });
+  };
+
+  // toggleTextGenBlockModal will be set by the Vue component
+  viewModel.toggleTextGenBlockModal = ko.observable(null);
+
   // block-wysiwyg.tmpl.html
   viewModel.openContentFeedModal = function (blockData, parent, index) {
     const unwrappedBlock = recursivelyUnwrapObservable(blockData);
