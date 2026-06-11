@@ -71,4 +71,53 @@ describe('zod schema registry', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('blockTextGenInput accepts dot-notation paths as pair VALUES (BSON-safe)', () => {
+    const result = schemas.blockTextGenInput.safeParse({
+      instruction: 'Rédige un bloc promo vestes',
+      currentContent: [
+        { path: 'titleText', value: 'Section Title' },
+        { path: 'longText', value: '<p>Far far away…</p>' },
+        { path: 'buttonLink.text', value: 'BUTTON' },
+      ],
+      expertise: [{ expertiseId: 'e1', title: 'T', body: 'B' }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('blockTextGenInput rejects empty content, bad values and unknown keys', () => {
+    expect(
+      schemas.blockTextGenInput.safeParse({
+        instruction: 'x',
+        currentContent: [],
+      }).success
+    ).toBe(false);
+    expect(
+      schemas.blockTextGenInput.safeParse({
+        instruction: 'x',
+        currentContent: [{ path: 'titleText', value: 42 }],
+      }).success
+    ).toBe(false);
+    expect(
+      schemas.blockTextGenInput.safeParse({
+        instruction: 'x',
+        currentContent: [{ path: 'a', value: 'b' }],
+        rogue: true,
+      }).success
+    ).toBe(false);
+  });
+
+  it('blockTextGenOutput is an array of {path, value} string pairs', () => {
+    expect(
+      schemas.blockTextGenOutput.safeParse([
+        { path: 'titleText', value: 'Nouveau titre' },
+        { path: 'buttonLink.text', value: 'Découvrir' },
+      ]).success
+    ).toBe(true);
+    expect(
+      schemas.blockTextGenOutput.safeParse([
+        { path: 'titleText', value: { nested: 'x' } },
+      ]).success
+    ).toBe(false);
+  });
 });

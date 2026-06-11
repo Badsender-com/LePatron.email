@@ -47,9 +47,37 @@ const genericTextOutput = z
   })
   .strict();
 
+// --- Block text generation (editor feature, first consumer: POC textgen) ---
+
+// Generic over ANY block of ANY template (same doctrine as block-translation):
+// the editor's block-content-extractor produces dot-notation paths
+// ("buttonLink.text") for the block's text fields. Paths are carried as
+// VALUES of {path, value} pairs — NOT as object keys: invocation inputs are
+// persisted in Mongo Mixed fields and BSON forbids dots in keys (verified:
+// "key buttonLink.text must not contain '.'" on this driver). The skill must
+// answer with the SAME paths; path fidelity is enforced by the consuming
+// feature (output filtered to the input paths before injection), not by zod.
+const blockFieldSchema = z.object({
+  path: z.string().min(1),
+  value: z.string(),
+});
+
+const blockTextGenInput = z
+  .object({
+    instruction: z.string().min(1),
+    currentContent: z.array(blockFieldSchema).min(1),
+    fieldConstraints: z.string().optional(),
+    expertise: expertiseArraySchema.optional(),
+  })
+  .strict();
+
+const blockTextGenOutput = z.array(blockFieldSchema);
+
 const schemas = Object.freeze({
   genericTextInput,
   genericTextOutput,
+  blockTextGenInput,
+  blockTextGenOutput,
 });
 
 /**
