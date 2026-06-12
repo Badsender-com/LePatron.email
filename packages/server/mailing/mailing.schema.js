@@ -157,6 +157,17 @@ MailingSchema.index({ tags: -1 });
 MailingSchema.index({ _company: 1, tags: 1 });
 MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
+// Admin group-wide listing (GET /groups/:groupId/mailings → group.controller
+// readMailings) sorts ALL of a company's mailings by one column. Without a
+// composite { _company, <sortField> } index, Mongo scans a global single-field
+// index and filters _company doc-by-doc, which times out on large companies.
+// One index per sortable column of the admin table (admin-table.vue); a single
+// direction suffices since Mongo can read an index in reverse.
+MailingSchema.index({ _company: 1, updatedAt: -1 });
+MailingSchema.index({ _company: 1, createdAt: -1 });
+MailingSchema.index({ _company: 1, name: 1 });
+MailingSchema.index({ _company: 1, wireframe: 1 });
+MailingSchema.index({ _company: 1, author: 1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
