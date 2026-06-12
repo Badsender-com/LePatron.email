@@ -5,6 +5,7 @@ const {
   AIPlaygroundRuns,
   AIPlaygroundScenarios,
 } = require('../../common/models.common.js');
+const { FeedbackRatingValues } = require('../constant/playground-constants.js');
 
 const LIST_PROJECTION = {
   _scenario: 1,
@@ -57,6 +58,18 @@ async function getRun(runId) {
 }
 
 async function setRunFeedback(runId, feedback, userId) {
+  // Validate up front: a bad rating/score must answer 400, not surface as a
+  // Mongoose ValidationError turned 500.
+  if (feedback.rating && !FeedbackRatingValues.includes(feedback.rating)) {
+    throw createError(
+      400,
+      `rating must be one of: ${FeedbackRatingValues.join(', ')}`
+    );
+  }
+  const score = feedback.score;
+  if (score != null && !(Number.isFinite(score) && score >= 1 && score <= 5)) {
+    throw createError(400, 'score must be a number between 1 and 5');
+  }
   const run = await AIPlaygroundRuns.findById(runId);
   if (!run) throw createError(404, 'Run not found');
   run.feedback = {
@@ -71,12 +84,14 @@ async function setRunFeedback(runId, feedback, userId) {
 }
 
 /**
- * Mark a run as the golden reference for its scenario. Atomic logic:
- *  1. Unmark the previously golden run for this scenario (if any). The DB
- *     partial-unique index on { _scenario, isGolden: true } makes this step
- *     mandatory before flipping the new one to avoid a write conflict.
+ * Mark a run as the golden reference for its scenario:
+ *  1. Unmark the previously golden run for this scenario (if any).
  *  2. Mark the new run as golden.
  *  3. Update scenario.goldenRunId.
+ * NOT atomic (no transaction): the partial-unique index on
+ * { _scenario, isGolden: true } is the backstop — two concurrent markGolden
+ * calls on the same scenario make the loser fail on E11000, answered as a
+ * 409 the caller can simply retry.
  */
 async function markGolden(runId) {
   const run = await AIPlaygroundRuns.findById(runId);
@@ -89,7 +104,17 @@ async function markGolden(runId) {
     { $set: { isGolden: false } }
   );
   run.isGolden = true;
-  await run.save();
+  try {
+    await run.save();
+  } catch (err) {
+    if (err && err.code === 11000) {
+      throw createError(
+        409,
+        'Another run was just marked golden for this scenario — retry'
+      );
+    }
+    throw err;
+  }
   await AIPlaygroundScenarios.updateOne(
     { _id: run._scenario },
     { $set: { goldenRunId: run._id } }

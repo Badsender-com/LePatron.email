@@ -38,8 +38,6 @@ export default {
         // are excluded server-side by default — this opt-in includes them.
         includeNonProductive: false,
       },
-      // Hides non-productive invocations (admin-test, playground) by default.
-      includeNonProd: false,
       dateFromMenu: false,
       dateToMenu: false,
       detail: null,
@@ -51,17 +49,6 @@ export default {
         value,
         text: this.$t(`aiSkills.statuses.${value}`),
       }));
-    },
-    /**
-     * Non-productive featureTypes ('admin-test', 'playground') are excluded
-     * client-side by default. The toggle lets a super-admin opt-in to seeing
-     * them when debugging the test runner or the playground itself.
-     */
-    visibleItems() {
-      if (this.includeNonProd) return this.items;
-      return this.items.filter(
-        (i) => i.featureType !== 'admin-test' && i.featureType !== 'playground'
-      );
     },
     tableHeaders() {
       return [
@@ -210,13 +197,6 @@ export default {
         class="filter-field"
         @change="fetchData"
       />
-      <v-checkbox
-        v-model="includeNonProd"
-        :label="$t('aiSkills.invocation.includeNonProd')"
-        dense
-        hide-details
-        class="filter-toggle"
-      />
       <v-menu
         v-model="dateFromMenu"
         :close-on-content-click="false"
@@ -295,7 +275,7 @@ export default {
 
     <bs-data-table
       :headers="tableHeaders"
-      :items="visibleItems"
+      :items="items"
       :loading="loading"
       item-key="_id"
       clickable
@@ -335,9 +315,7 @@ export default {
       <template #item.provider="{ item }">
         <span class="text-caption">
           {{ item.provider || '—' }}
-          <span v-if="item.model" class="text--secondary"
-            >· {{ item.model }}</span
-          >
+          <span v-if="item.model" class="text--secondary">· {{ item.model }}</span>
         </span>
       </template>
       <template #no-data>
@@ -369,10 +347,8 @@ export default {
           >
             {{ statusLabel(detail.status) }}
           </v-chip>
-          <span class="text-caption ml-2"
-            >{{ detail.latencyMs }} ms · {{ detail.provider }} ·
-            {{ detail.model }}</span
-          >
+          <span class="text-caption ml-2">{{ detail.latencyMs }} ms · {{ detail.provider }} ·
+            {{ detail.model }}</span>
         </p>
         <v-alert v-if="detail.error" type="error" dense outlined class="mb-3">
           <strong>{{ detail.error.code }}</strong> — {{ detail.error.message }}

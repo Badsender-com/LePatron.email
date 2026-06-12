@@ -77,6 +77,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    // Returns true on success so callers (execute flow) can abort on failure.
     async saveScenario() {
       if (document.activeElement && document.activeElement.blur) {
         document.activeElement.blur();
@@ -103,8 +104,10 @@ export default {
           text: this.$t('aiPlayground.updated'),
           color: 'success',
         });
+        return true;
       } catch (err) {
         this.handleError(err);
+        return false;
       } finally {
         this.saving = false;
       }
@@ -187,6 +190,7 @@ export default {
         :golden-run-id="scenario.goldenRunId"
         :can-execute="canExecute"
         :initial-runs="initialRuns"
+        :before-execute="saveScenario"
         @golden-changed="onGoldenChanged"
         @validation-errors="fieldErrors = $event"
       />
