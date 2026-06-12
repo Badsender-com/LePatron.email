@@ -17,7 +17,10 @@ const {
  * (BSON forbids dots in persisted object keys server-side) — the extractor's
  * flat map is converted at both boundaries.
  */
-const TextGenBlockModalComponent = Vue.component('TextGenBlockModal', {
+// NB: the global name MUST camelize-match the kebab tag used in the plugin
+// template: <textgen-block-modal> resolves to 'TextgenBlockModal' (lowercase
+// "gen" — "textgen" is one word), NOT 'TextGenBlockModal'.
+const TextGenBlockModalComponent = Vue.component('TextgenBlockModal', {
   components: {
     ModalComponent,
   },

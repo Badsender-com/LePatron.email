@@ -98,6 +98,12 @@ Pattern of the recent modals (`translate-block-modal` = the reference):
 3. Registration: `packages/editor/src/js/vue/customizedBlockPlugin.js`
    (require + `components` + tag in the template). The mount node
    `#customizedBlockModal` already exists (`tmpl-badsender/toolbox.tmpl.html`).
+   ⚠️ Resolution happens through the GLOBAL `Vue.component('Name', …)` name,
+   which must camelize-match the kebab tag exactly: `<textgen-block-modal>`
+   resolves to `'TextgenBlockModal'` (lowercase "gen"), NOT
+   `'TextGenBlockModal'` — a mismatch fails at runtime with
+   "Unknown custom element" and the click is silently absorbed by the KO
+   placeholder.
 4. API calls: URL helpers in `packages/editor/src/js/vue/utils/apis.js`
    (axios, `/api` prefix, session-cookie auth).
 
