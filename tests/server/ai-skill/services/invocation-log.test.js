@@ -49,6 +49,34 @@ describe('invocation-log.service', () => {
       expect(query.startedAt.$gte).toBeInstanceOf(Date);
       expect(query.startedAt.$lte).toBeInstanceOf(Date);
     });
+
+    it('excludes non-productive featureTypes by default', async () => {
+      AISkillInvocations.find.mockReturnValue(chain([]));
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      await invocationService.listInvocations({});
+      const query = AISkillInvocations.find.mock.calls[0][0];
+      expect(query.featureType).toEqual({
+        $nin: ['admin-test', 'playground'],
+        $not: /^poc\./,
+      });
+    });
+
+    it('includes everything when includeNonProductive is set', async () => {
+      AISkillInvocations.find.mockReturnValue(chain([]));
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      // Query-string transport: the controller passes 'true' as a string.
+      await invocationService.listInvocations({ includeNonProductive: 'true' });
+      const query = AISkillInvocations.find.mock.calls[0][0];
+      expect(query.featureType).toBeUndefined();
+    });
+
+    it('lets an explicit featureType filter win over the exclusion', async () => {
+      AISkillInvocations.find.mockReturnValue(chain([]));
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      await invocationService.listInvocations({ featureType: 'playground' });
+      const query = AISkillInvocations.find.mock.calls[0][0];
+      expect(query.featureType).toBe('playground');
+    });
   });
 
   describe('getInvocation', () => {
