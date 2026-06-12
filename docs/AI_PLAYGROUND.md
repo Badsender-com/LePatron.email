@@ -1,6 +1,8 @@
 # AI Playground
 
-Module super-admin permettant de composer, exécuter, sauvegarder et rejouer des **scénarios de test** combinant skill + expertises + paramètres provider.
+> Dernière mise à jour : 2026-06-12 — reflète l'état final de la branche avant review.
+
+Module super-admin permettant de composer, exécuter, sauvegarder et rejouer des **scénarios de test** combinant skill + expertises.
 
 ## Cas d'usage
 
@@ -22,8 +24,13 @@ Configuration **réutilisable** comprenant :
   - **Sélection explicite** — `expertiseRefs[]` avec optionally `mode: 'pinned'` + version.
   - **Filtre dynamique** — `expertiseFilter: { scope, emailType, language }`. Le runner délègue à `expertiseRepo.findApplicable()` au moment de l'exécution.
 - `input` (objet libre, passé tel quel à la skill).
-- `providerOverride` optionnel (`integration`, `model`, `temperature`, `maxTokens`).
-- `groupContext` optionnel (référence à un Group ; passé à `invoke()`).
+- Champs **dormants par design** (aucune UI ne les expose en v1, cf. annotations
+  `// Réservé étape N` dans `ai-playground-scenario.schema.js`) :
+  - `providerOverride` — réservé étape 3 (mode benchmark). Le runner le
+    transmet en enveloppe forward-compat dans `options.providerOverride`, mais
+    le provider effectif vient toujours de l'Integration moteur du Group.
+  - `groupContext` — réservé étape 2 (sélecteur de Group). S'il est vide, le
+    runner retombe sur le **Group plateforme** (`Group.isPlatform`).
 
 ### Run (`AIPlaygroundRun`)
 
@@ -41,6 +48,19 @@ Snapshot **complet et reproductible** d'une exécution :
 Le runner **n'auto-injecte qu'un seul champ** dans `composedInput` : `expertise` (les bodies + exemples des expertises résolues). Tous les autres champs (`brandVoice`, `brief`, `userInput`, etc.) restent dans `scenario.input` et sont saisis manuellement.
 
 Principe : _le playground orchestre, la skill est une fonction pure de son input._ Toute future auto-injection (ex. brand voice du Group) devra être **explicite et nommée** dans la config du scénario, jamais une convention cachée.
+
+## Exécution
+
+- **Résolution du Group** : `groupId` runtime > `scenario.groupContext` > Group
+  plateforme (`yarn flag-platform-group` ou bouton sur /groups). Le moteur
+  (Integration, modèle) vient de la config "Fonctionnalités IA" de ce Group.
+- **Budget de test** : l'exécution consomme le budget quotidien admin partagé
+  (`test-budget.service.js`, `MaxDailyTestInvocations`) ; épuisé → HTTP 429,
+  affiché en clair dans l'UI.
+- **Contrat de sortie** : injecté automatiquement par le moteur de skills depuis
+  `outputSchemaId`, avec mode natif `response_format: json_object` quand le
+  provider le supporte — rien à configurer côté playground
+  (cf. [AI_SKILL_AUTHORING.md](./AI_SKILL_AUTHORING.md)).
 
 ## `featureType: 'playground'`
 
