@@ -108,5 +108,10 @@ export default {
         class="text--secondary"
       />
     </template>
+    <template #no-data>
+      <p class="text--disabled text-center my-4">
+        {{ $t('aiPlayground.runs.empty') }}
+      </p>
+    </template>
   </bs-data-table>
 </template>
