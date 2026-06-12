@@ -3,6 +3,12 @@
 const createError = require('http-errors');
 const { AISkillInvocations } = require('../../common/models.common.js');
 
+// Reserved non-productive featureTypes (cf. docs/AI_SKILL_AUTHORING.md):
+// excluded from the Invocations list by default so test traffic does not
+// drown real feature analytics. The UI exposes an opt-in toggle.
+const NonProductiveFeatureTypes = ['admin-test', 'playground'];
+const NonProductivePrefixRegex = /^poc\./;
+
 const LIST_PROJECTION = {
   skillId: 1,
   skillVersion: 1,
@@ -27,12 +33,22 @@ async function listInvocations({
   groupId,
   startedFrom,
   startedTo,
+  includeNonProductive,
   page = 1,
   pageSize = 50,
 } = {}) {
   const query = {};
   if (skillId) query.skillId = skillId;
-  if (featureType) query.featureType = featureType;
+  if (featureType) {
+    // An explicit featureType filter always wins over the default exclusion
+    // (filtering on 'playground' means you want to see playground runs).
+    query.featureType = featureType;
+  } else if (includeNonProductive !== true && includeNonProductive !== 'true') {
+    query.featureType = {
+      $nin: NonProductiveFeatureTypes,
+      $not: NonProductivePrefixRegex,
+    };
+  }
   if (status) query.status = status;
   if (groupId) query._company = groupId;
   if (startedFrom || startedTo) {

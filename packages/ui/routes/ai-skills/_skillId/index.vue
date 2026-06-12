@@ -11,6 +11,7 @@ import BsAiSkillVersionsPanel from '~/components/ai-skill/BsAiSkillVersionsPanel
 import BsAiSkillTestPanel from '~/components/ai-skill/BsAiSkillTestPanel.vue';
 import BsAiSkillDetailsForm from '~/components/ai-skill/BsAiSkillDetailsForm.vue';
 import BsAiSkillLogsPanel from '~/components/ai-skill/BsAiSkillLogsPanel.vue';
+import BsAiSkillLinkedExpertisePanel from '~/components/ai-skill/BsAiSkillLinkedExpertisePanel.vue';
 
 export default {
   name: 'PageAiSkillDetail',
@@ -22,6 +23,7 @@ export default {
     BsAiSkillTestPanel,
     BsAiSkillDetailsForm,
     BsAiSkillLogsPanel,
+    BsAiSkillLinkedExpertisePanel,
   },
   mixins: [mixinPageTitle],
   meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
@@ -281,6 +283,9 @@ export default {
       <v-tab href="#logs">
         {{ $t('aiSkills.logs.tabLabel') }}
       </v-tab>
+      <v-tab href="#expertise">
+        {{ $t('aiSkills.skill.linkedExpertiseTab') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -325,6 +330,13 @@ export default {
         <v-tab-item value="logs">
           <bs-ai-skill-logs-panel
             v-if="tab === 'logs'"
+            :skill-id="skill.skillId"
+          />
+        </v-tab-item>
+
+        <v-tab-item value="expertise">
+          <bs-ai-skill-linked-expertise-panel
+            v-if="tab === 'expertise'"
             :skill-id="skill.skillId"
           />
         </v-tab-item>

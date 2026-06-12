@@ -7,6 +7,7 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/BsAiExpertiseDetailsForm.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/BsAiExpertiseVersionsPanel.vue';
+import BsAiExpertiseConsumersPanel from '~/components/ai-skill/BsAiExpertiseConsumersPanel.vue';
 import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
 
@@ -16,6 +17,7 @@ export default {
     BsAiDetailHeader,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
+    BsAiExpertiseConsumersPanel,
     BsAiActivateModal,
     BsAiArchiveModal,
   },
@@ -263,6 +265,9 @@ export default {
       <v-tab href="#sections">
         {{ $t('aiSkills.expertise.sectionsTab') }}
       </v-tab>
+      <v-tab href="#consumers">
+        {{ $t('aiSkills.expertise.consumedByTab') }}
+      </v-tab>
     </v-tabs>
     <v-divider />
 
@@ -310,6 +315,11 @@ export default {
               {{ $t('aiSkills.expertise.noSections') }}
             </p>
           </v-card>
+        </v-tab-item>
+        <v-tab-item value="consumers">
+          <bs-ai-expertise-consumers-panel
+            :skill-ids="exp.consumedBySkills || []"
+          />
         </v-tab-item>
       </v-tabs-items>
     </v-container>
