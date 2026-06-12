@@ -55,7 +55,9 @@ async function logFailure(params) {
     completedAt,
     latencyMs: completedAt - params.startedAt,
     output: null,
-    allowContent: true,
+    // The Group's logSkillInvocationContent opt-out applies to failures too —
+    // callers pass allowContent once the group is resolved (default: allowed).
+    allowContent: params.allowContent,
   });
   const err = createError(
     params.status === InvocationStatuses.VALIDATION_ERROR ? 400 : 502,

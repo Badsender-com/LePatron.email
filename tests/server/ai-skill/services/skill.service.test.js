@@ -93,6 +93,55 @@ describe('skill.service', () => {
     });
   });
 
+  describe('updateSkill', () => {
+    it('refuses an inputSchemaId change incoherent with the ACTIVE template', async () => {
+      // Active template references {{input.prompt}}; genericTextOutput has no
+      // `prompt` field — the activation gate must not be bypassable via PATCH.
+      LePatronSkills.findOne.mockResolvedValue(
+        mockSkillDoc({
+          status: 'ACTIVE',
+          inputSchemaId: 'genericTextInput',
+          activeVersion: { major: 1, minor: 0 },
+          versions: [
+            {
+              versionMajor: 1,
+              versionMinor: 0,
+              status: 'ACTIVE',
+              inputTemplate: '<x>{{input.prompt}}</x>',
+            },
+          ],
+        })
+      );
+      await expect(
+        skillService.updateSkill('generic.text', {
+          inputSchemaId: 'genericTextOutput',
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('accepts an inputSchemaId change coherent with the ACTIVE template', async () => {
+      const doc = mockSkillDoc({
+        status: 'ACTIVE',
+        inputSchemaId: 'genericTextOutput',
+        activeVersion: { major: 1, minor: 0 },
+        versions: [
+          {
+            versionMajor: 1,
+            versionMinor: 0,
+            status: 'ACTIVE',
+            inputTemplate: '<x>{{input.prompt}}</x>',
+          },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.updateSkill('generic.text', {
+        inputSchemaId: 'genericTextInput',
+      });
+      expect(doc.save).toHaveBeenCalled();
+      expect(doc.inputSchemaId).toBe('genericTextInput');
+    });
+  });
+
   describe('createMajorVersion', () => {
     it('starts a fresh major draft when the skill has no versions', async () => {
       const doc = mockSkillDoc();
