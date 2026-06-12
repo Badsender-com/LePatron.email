@@ -4,12 +4,14 @@ import {
   getWorkspace,
   getFolder,
   getFolderAccess,
+  getFolderChildren,
   getWorkspaceAccess,
   workspacesByGroup,
 } from '~/helpers/api-routes';
 import { parsePaginationData } from '~/utils/parsePagination';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import { mapChildFolderToTreeviewNode } from '~/utils/folders';
 
 export const FOLDER = 'folder';
 export const SET_FOLDER = 'SET_FOLDER';
@@ -42,6 +44,7 @@ export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
 export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
   'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
+export const FETCH_FOLDER_CHILDREN = 'fetchFolderChildren';
 
 export const state = () => ({
   workspace: {},
@@ -275,6 +278,18 @@ export const actions = {
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+  },
+  // Lazy-loads the direct children of a tree node on expand. Returns the
+  // children mapped to the treeview shape; the caller (v-treeview load-children)
+  // is responsible for inserting them into the node's `children` array.
+  async [FETCH_FOLDER_CHILDREN](_store, { node }) {
+    if (!this.$axios || !node?.id) {
+      return [];
+    }
+    const { items } = await this.$axios.$get(getFolderChildren(node.id));
+    return (items || []).map((child) =>
+      mapChildFolderToTreeviewNode(child, node.hasAccess, node.path)
+    );
   },
   async [FETCH_WORKSPACES]({ commit }) {
     const { $axios } = this;

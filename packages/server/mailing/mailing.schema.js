@@ -257,6 +257,10 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       espIds: 1,
       updatedAt: 1,
       createdAt: 1,
+      // Projected only to derive the preview-badge flag below (so we avoid a
+      // second `find({ previewHtml: { $exists: true } })` round-trip per page).
+      // The raw HTML is stripped from each doc before returning.
+      previewHtml: 1,
     },
     lean: true,
     ...additionalQueryParams,
@@ -265,13 +269,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const { docs, ...restPaginationProperties } = result;
 
   const ids = docs.map((doc) => doc._id);
-  const mailingsWithHtmlPreview = await this.find(
-    { _id: { $in: ids }, previewHtml: { $exists: true } },
-    { _id: 1 }
-  ).lean();
-  const mailingsWithHtmlPreviewSet = new Set(
-    mailingsWithHtmlPreview.map((mailing) => mailing._id.toString())
-  );
 
   // Get unresolved comment counts for each mailing
   const Comment = mongoose.models[CommentModel];
@@ -299,9 +296,11 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     }, {});
   }
 
-  const finalDocs = docs.map((doc) => ({
+  const finalDocs = docs.map(({ previewHtml, ...doc }) => ({
     ...doc,
-    hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
+    // Mirrors the previous `{ previewHtml: { $exists: true } }` check: a
+    // missing field is projected as `undefined` by lean find.
+    hasHtmlPreview: previewHtml !== undefined,
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
   }));
 

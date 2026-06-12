@@ -207,6 +207,10 @@ export function getFolder(folderID) {
   return `/folders/${folderID}`;
 }
 
+export function getFolderChildren(folderID) {
+  return `/folders/${folderID}/children`;
+}
+
 export function getFolderAccess(folderID) {
   return `/folders/${folderID}/has-access`;
 }

@@ -7,6 +7,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   list: asyncHandler(list),
+  listChildren: asyncHandler(listChildren),
   hasAccess: asyncHandler(hasAccess),
   create: asyncHandler(create),
   getFolder: asyncHandler(getFolder),
@@ -56,6 +57,28 @@ async function hasAccess(req, res) {
   }
 
   res.json({ hasAccess: access });
+}
+
+/**
+ * @api {get} /folders/:folderId/children direct children of a folder
+ * @apiPermission user
+ * @apiName GetFolderChildren
+ * @apiGroup Folders
+ *
+ * @apiParam {string} folderId
+ *
+ * @apiUse folder
+ * @apiSuccess {folders[]} items direct child folders (with `hasChildren`)
+ */
+async function listChildren(req, res) {
+  const {
+    user,
+    params: { folderId },
+  } = req;
+
+  const children = await folderService.listChildren(folderId, user);
+
+  res.json({ items: children });
 }
 
 /**
