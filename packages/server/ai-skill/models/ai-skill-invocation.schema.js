@@ -127,5 +127,9 @@ const AISkillInvocationSchema = new Schema(
 AISkillInvocationSchema.index({ _company: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ skillId: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ status: 1 });
+// The Invocations tab default view has no skillId/groupId filter (only the
+// non-productive featureType exclusion) and sorts by startedAt — without
+// this index it collection-scans.
+AISkillInvocationSchema.index({ startedAt: -1 });
 
 module.exports = AISkillInvocationSchema;

@@ -196,7 +196,9 @@ export default {
         </v-chip>
       </template>
       <template #item.activeVersion="{ item }">
-        <span v-if="item.activeVersion">v{{ item.activeVersion }}</span>
+        <span v-if="item.activeVersion && item.activeVersion.major != null">
+          v{{ item.activeVersion.major }}.{{ item.activeVersion.minor || 0 }}
+        </span>
         <span v-else class="text--disabled">—</span>
       </template>
       <template #item.updatedAt="{ item }">

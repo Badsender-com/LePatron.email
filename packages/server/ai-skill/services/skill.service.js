@@ -89,6 +89,27 @@ async function updateSkill(skillId, patch) {
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
   }
+  // The activation gate guarantees the ACTIVE template only references
+  // in-schema fields — changing inputSchemaId afterwards must not bypass it
+  // (out-of-schema placeholders interpolate empty on every invocation).
+  if (patch.inputSchemaId !== undefined) {
+    const active = findActiveVersion(skill);
+    if (active) {
+      const { unknownFields } = validateTemplateCoherence(
+        active.inputTemplate,
+        skill.inputSchemaId
+      );
+      if (unknownFields.length) {
+        throw createError(
+          400,
+          `Le schéma d'entrée « ${skill.inputSchemaId} » est incompatible ` +
+            'avec le template de la version active : champs inconnus ' +
+            `${unknownFields.join(', ')}. Publiez d'abord une version ` +
+            'corrigée, puis changez le schéma.'
+        );
+      }
+    }
+  }
   await skill.save();
   return skill;
 }

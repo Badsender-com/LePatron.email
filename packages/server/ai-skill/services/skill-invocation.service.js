@@ -73,6 +73,9 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * @param {import('mongoose').Types.ObjectId | string} [params.userId]
  * @param {string} [params.featureType] ANALYTICS source tag only — see contract above.
  * @param {string[]} [params.variantPath]
+ * @param {{major: number, minor?: number}} [params.version] Pin a specific
+ *   version instead of the active one (the playground's "pinned" mode). The
+ *   skill itself must still be ACTIVE.
  * @param {Object} [params.options]
  * @param {boolean} [params.options.dryRun=false]
  * @param {boolean} [params.options.skipLogging=false] — internal flag for the test runner
@@ -85,11 +88,12 @@ async function invoke({
   userId,
   featureType,
   variantPath,
+  version: versionRef,
   options = {},
 }) {
   const startedAt = new Date();
 
-  // ─── 1. Load the skill and its active version ──────────────────────────
+  // ─── 1. Load the skill and pick the version (pinned or active) ─────────
   const skill = await LePatronSkills.findOne(
     { skillId, status: SkillStatuses.ACTIVE },
     {
@@ -105,17 +109,19 @@ async function invoke({
   }
 
   const activeRef = skill.activeVersion || {};
+  const wantedMajor = versionRef ? versionRef.major : activeRef.major;
+  const wantedMinor = versionRef ? versionRef.minor || 0 : activeRef.minor || 0;
   const version = (skill.versions || []).find(
-    (v) =>
-      v.versionMajor === activeRef.major &&
-      v.versionMinor === (activeRef.minor || 0)
+    (v) => v.versionMajor === wantedMajor && v.versionMinor === wantedMinor
   );
   if (!version) {
+    // A missing pinned version is the caller's mistake (404); a missing
+    // active version is a data integrity bug (500).
     throw createError(
-      500,
-      `Skill "${skillId}" has activeVersion=${activeRef.major}.${
-        activeRef.minor || 0
-      } but the version is missing`
+      versionRef ? 404 : 500,
+      versionRef
+        ? `Version ${wantedMajor}.${wantedMinor} of skill "${skillId}" not found`
+        : `Skill "${skillId}" has activeVersion=${wantedMajor}.${wantedMinor} but the version is missing`
     );
   }
 
@@ -157,6 +163,10 @@ async function invoke({
     groupFeatureConfig,
     group,
   } = await resolveGroupIntegration(groupId);
+  // Group-level content-logging opt-out — applies to success AND failure
+  // paths below. (The INPUT_VALIDATION failure above happens before the
+  // group is resolved; nothing was sent to a provider at that point.)
+  const allowContent = group ? group.logSkillInvocationContent !== false : true;
   const config = resolveConfig({
     integration,
     groupFeatureConfig,
@@ -222,6 +232,7 @@ async function invoke({
       input: inputParse.data,
       startedAt,
       resolvedConfig: config,
+      allowContent,
       status: isTimeout
         ? InvocationStatuses.TIMEOUT
         : InvocationStatuses.PROVIDER_ERROR,
@@ -252,6 +263,7 @@ async function invoke({
       startedAt,
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
+      allowContent,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: { code: 'OUTPUT_PARSE', message: err.message },
       skipLogging: options.skipLogging,
@@ -272,6 +284,7 @@ async function invoke({
       startedAt,
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
+      allowContent,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: {
         code: 'OUTPUT_VALIDATION',
@@ -284,7 +297,6 @@ async function invoke({
   // ─── 7. Log success ────────────────────────────────────────────────────
   const completedAt = new Date();
   const latencyMs = completedAt - startedAt;
-  const allowContent = group ? group.logSkillInvocationContent !== false : true;
 
   const invocationId = await logInvocation({
     skill,
@@ -326,16 +338,24 @@ async function invoke({
  *
  * Throws a CONFIG_ERROR if not configured.
  */
+function configError(status, message) {
+  const err = createError(status, message);
+  // Lets callers (the playground runner) persist the right run status
+  // instead of defaulting to PROVIDER_ERROR.
+  err.invocationStatus = InvocationStatuses.CONFIG_ERROR;
+  return err;
+}
+
 async function resolveGroupIntegration(groupId) {
   const group = await Groups.findById(groupId).lean();
   if (!group) {
-    throw createError(404, `Group ${groupId} not found`);
+    throw configError(404, `Group ${groupId} not found`);
   }
   const featureConfig = await AIFeatureConfigs.findOne({
     _company: groupId,
   }).lean();
   if (!featureConfig) {
-    throw createError(
+    throw configError(
       400,
       `Group ${groupId} has no AIFeatureConfig — configure a 'skill' integration`
     );
@@ -344,14 +364,14 @@ async function resolveGroupIntegration(groupId) {
     (f) => f.featureType === AIFeatureTypes.SKILL && f.isActive
   );
   if (!skillFeature || !skillFeature.integration) {
-    throw createError(
+    throw configError(
       400,
       `Group ${groupId} has no active 'skill' feature configuration`
     );
   }
   const integration = await Integrations.findById(skillFeature.integration);
   if (!integration || !integration.isActive) {
-    throw createError(
+    throw configError(
       400,
       `Integration ${skillFeature.integration} is missing or inactive`
     );

@@ -197,6 +197,58 @@ describe('skill-invocation.invoke', () => {
       expect(logged.rawOutput).toBeNull();
     });
 
+    it('executes the pinned version when params.version is provided', async () => {
+      wireHappyPath({
+        skill: buildSkill({
+          activeVersion: { major: 2, minor: 0 },
+          versions: [
+            {
+              versionMajor: 1,
+              versionMinor: 0,
+              systemPrompt: 'OLD-V1-PROMPT',
+              skillBody: 'Reformulate.',
+              inputTemplate: '<x>{{input.prompt}}</x>',
+              modelHints: {},
+            },
+            {
+              versionMajor: 2,
+              versionMinor: 0,
+              systemPrompt: 'NEW-V2-PROMPT',
+              skillBody: 'Reformulate.',
+              inputTemplate: '<x>{{input.prompt}}</x>',
+              modelHints: {},
+            },
+          ],
+        }),
+      });
+      await skillInvocation.invoke({
+        skillId: 'generic.text',
+        input: { prompt: 'hi' },
+        groupId: GROUP_ID,
+        version: { major: 1, minor: 0 },
+      });
+      const { messages } = mockProvider.chatComplete.mock.calls[0][0];
+      const system = messages.find((m) => m.role === 'system');
+      // The PINNED version's prompt must run — not the active one.
+      expect(system.content).toContain('OLD-V1-PROMPT');
+      expect(system.content).not.toContain('NEW-V2-PROMPT');
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.skillVersion).toBe('1.0');
+    });
+
+    it('throws 404 when the pinned version does not exist', async () => {
+      wireHappyPath();
+      await expect(
+        skillInvocation.invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'hi' },
+          groupId: GROUP_ID,
+          version: { major: 9, minor: 0 },
+        })
+      ).rejects.toMatchObject({ status: 404 });
+      expect(mockProvider.chatComplete).not.toHaveBeenCalled();
+    });
+
     it('strips ```json fences from raw output before parsing', async () => {
       wireHappyPath({
         providerResponse: {
@@ -214,6 +266,26 @@ describe('skill-invocation.invoke', () => {
   });
 
   describe('error paths', () => {
+    it('honors logSkillInvocationContent=false on failure paths too', async () => {
+      wireHappyPath();
+      Groups.findById.mockReturnValue({
+        lean: () =>
+          Promise.resolve({ _id: GROUP_ID, logSkillInvocationContent: false }),
+      });
+      mockProvider.chatComplete.mockRejectedValue(new Error('provider down'));
+      await expect(
+        skillInvocation.invoke({
+          skillId: 'generic.text',
+          input: { prompt: 'hi' },
+          groupId: GROUP_ID,
+        })
+      ).rejects.toThrow();
+      const logged = AISkillInvocations.create.mock.calls[0][0];
+      expect(logged.status).toBe('PROVIDER_ERROR');
+      expect(logged.input).toBeNull();
+      expect(logged.rawOutput).toBeNull();
+    });
+
     it('logs VALIDATION_ERROR and throws when input is invalid', async () => {
       wireHappyPath();
       await expect(
