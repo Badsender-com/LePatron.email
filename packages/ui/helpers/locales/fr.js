@@ -972,6 +972,7 @@ export default {
       skillId: 'Identifiant skill',
       feature: 'Fonctionnalité',
       groupId: 'Identifiant de groupe',
+      includeNonProductive: 'Inclure les tests (admin-test, playground, poc.*)',
     },
     categories: {
       redaction: 'Rédaction',
@@ -1011,6 +1012,10 @@ export default {
       archiveTitle: 'Archiver cette skill ?',
       archiveBody: 'La skill ne pourra plus être invoquée. Cette action est réversible.',
       archived: 'Skill archivée',
+      linkedExpertiseTab: 'Expertises liées',
+      linkedExpertiseCaption: 'Expertises qui déclarent cette skill comme consommatrice (champ « Consommée par les skills »).',
+      noLinkedExpertise: 'Aucune expertise liée à cette skill.',
+      noLinkedExpertiseHint: 'Déclarez le lien depuis la fiche d\'une expertise, champ « Consommée par les skills ».',
     },
     expertise: {
       intro: 'Savoir-faire Badsender documenté en Markdown structuré. Les expertises sont consommées en input par les skills pour leur fournir le contexte métier (principes de rédaction, règles de design, conseils de délivrabilité, etc.).',
@@ -1035,6 +1040,11 @@ export default {
       sectionsTab: 'Sections',
       sectionsCaption: 'Sections extraites du contenu de la version active.',
       noSections: 'Aucune section détectée.',
+      consumedByTab: 'Consommée par',
+      consumedByCaption: 'Skills déclarées dans le champ « Consommée par les skills » de cette expertise.',
+      noConsumers: 'Aucune skill déclarée comme consommatrice.',
+      noConsumersHint: 'Renseignez le champ « Consommée par les skills » dans l\'onglet Détails.',
+      unknownSkill: 'Aucune skill avec cet identifiant',
     },
     invocation: {
       intro: 'Journal observable de tous les appels aux skills. Permet de monitorer la latence, le coût en tokens, les erreurs de validation ou de provider, et d\'inspecter en détail chaque exécution.',

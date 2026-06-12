@@ -963,6 +963,7 @@ export default {
       skillId: 'Skill ID',
       feature: 'Feature',
       groupId: 'Group ID',
+      includeNonProductive: 'Include tests (admin-test, playground, poc.*)',
     },
     categories: {
       redaction: 'Copywriting',
@@ -1002,6 +1003,10 @@ export default {
       archiveTitle: 'Archive this skill?',
       archiveBody: 'The skill will no longer be invokable. This action is reversible.',
       archived: 'Skill archived',
+      linkedExpertiseTab: 'Linked expertise',
+      linkedExpertiseCaption: 'Expertise declaring this skill as a consumer ("Consumed by skills" field).',
+      noLinkedExpertise: 'No expertise linked to this skill.',
+      noLinkedExpertiseHint: 'Declare the link from an expertise page, "Consumed by skills" field.',
     },
     expertise: {
       intro: 'Badsender know-how documented in structured Markdown. Expertise modules are consumed as input by skills to provide business context (copywriting principles, design rules, deliverability guidance, etc.).',
@@ -1026,6 +1031,11 @@ export default {
       sectionsTab: 'Sections',
       sectionsCaption: 'Sections parsed from the active version body.',
       noSections: 'No sections detected.',
+      consumedByTab: 'Consumed by',
+      consumedByCaption: 'Skills declared in this expertise\'s "Consumed by skills" field.',
+      noConsumers: 'No skill declared as a consumer.',
+      noConsumersHint: 'Fill the "Consumed by skills" field in the Details tab.',
+      unknownSkill: 'No skill with this id',
     },
     invocation: {
       intro: 'Observable log of every skill call. Monitor latency, token cost, validation or provider errors, and drill into the details of each execution.',

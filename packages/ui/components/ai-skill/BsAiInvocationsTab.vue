@@ -34,6 +34,9 @@ export default {
         groupId: '',
         startedFrom: null,
         startedTo: null,
+        // Reserved non-productive featureTypes (admin-test, playground, poc.*)
+        // are excluded server-side by default — this opt-in includes them.
+        includeNonProductive: false,
       },
       // Hides non-productive invocations (admin-test, playground) by default.
       includeNonProd: false,
@@ -280,6 +283,14 @@ export default {
           "
         />
       </v-menu>
+      <v-switch
+        v-model="filters.includeNonProductive"
+        :label="$t('aiSkills.filters.includeNonProductive')"
+        dense
+        hide-details
+        class="mt-0 pt-0"
+        @change="fetchData"
+      />
     </div>
 
     <bs-data-table

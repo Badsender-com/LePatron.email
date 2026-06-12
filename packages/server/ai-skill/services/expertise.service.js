@@ -31,12 +31,16 @@ const LIST_PROJECTION = {
 async function listExpertise({
   category,
   status,
+  consumedBySkill,
   page = 1,
   pageSize = 50,
 } = {}) {
   const query = {};
   if (category) query.category = category;
   if (status) query.status = status;
+  // Reverse lookup for the skill page's "linked expertise" tab: expertise
+  // declaring this skillId in its consumedBySkills field.
+  if (consumedBySkill) query.consumedBySkills = consumedBySkill;
   const limit = Math.min(Math.max(parseInt(pageSize, 10) || 50, 1), 200);
   const skip = Math.max((parseInt(page, 10) || 1) - 1, 0) * limit;
   const [items, total] = await Promise.all([
