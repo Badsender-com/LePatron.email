@@ -48,5 +48,8 @@ FolderSchema.virtual('childFolders', {
 });
 
 FolderSchema.index({ _parentFolder: 1 });
+// Serves "root folders of a workspace" ({ _workspace, _parentFolder: null })
+// and "children of a folder" ({ _parentFolder }) for the lazy-loaded tree.
+FolderSchema.index({ _workspace: 1, _parentFolder: 1 });
 
 module.exports = FolderSchema;

@@ -153,3 +153,5 @@ docker/data/
 start-local.sh
 seed-local.js
 seed-mailings.js
+
+.notes

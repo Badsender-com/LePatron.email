@@ -6,7 +6,6 @@ import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import { mailings } from '~/helpers/api-routes.js';
 import BsMailingsModalNew from '~/routes/mailings/__partials/mailings-new-modal.vue';
 import { ACL_USER } from '~/helpers/pages-acls.js';
-import * as mailingsHelpers from '~/helpers/mailings.js';
 import { Plus } from 'lucide-vue';
 import MailingsTable from '~/routes/mailings/__partials/mailings-table';
 import MailingsFilters from '~/routes/mailings/__partials/mailings-filters';
@@ -58,13 +57,8 @@ export default {
   data: () => ({
     loading: false,
     mailingsSelection: [],
-    filterValues: null,
   }),
   computed: {
-    filteredMailings() {
-      const filterFunction = mailingsHelpers.createFilters(this.filterValues);
-      return this.mailings.filter(filterFunction);
-    },
     title() {
       return this.$t('modules.emailBuilder');
     },
@@ -114,9 +108,6 @@ export default {
     },
     openNewMailModal() {
       this.$refs.modalNewMailDialog.open();
-    },
-    handleFilterChange(filterValues) {
-      this.filterValues = filterValues;
     },
     async handleCreateNewMail(createMailModalData) {
       this.loading = true;
@@ -253,7 +244,7 @@ export default {
             />
             <mailings-table
               v-model="mailingsSelection"
-              :mailings="filteredMailings"
+              :mailings="mailings"
               :has-ftp-access="hasFtpAccess"
               :tags="tags"
               :current-page="currentPage"
