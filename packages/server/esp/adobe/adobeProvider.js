@@ -548,8 +548,17 @@ class AdobeProvider {
           </document>
         </m:GetURL>
       `,
-      formatResponseFn: (response) =>
-        response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl,
+      formatResponseFn: (response) => {
+        const pstrUrl =
+          response['SOAP-ENV:Envelope']['SOAP-ENV:Body'].GetURLResponse.pstrUrl;
+        // Adobe returns <pstrUrl xsi:type="xsd:string">URL</pstrUrl>. Because the
+        // element carries the xsi:type attribute, fast-xml-parser yields an object
+        // { '#text': URL, 'xsi:type': 'xsd:string' } instead of a plain string.
+        // Read the text node when present, otherwise the value is already a string.
+        return typeof pstrUrl === 'object' && pstrUrl !== null
+          ? pstrUrl['#text']
+          : pstrUrl;
+      },
     });
   }
 
