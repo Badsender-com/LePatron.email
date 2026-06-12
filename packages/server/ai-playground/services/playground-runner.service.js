@@ -54,7 +54,7 @@ async function executeScenario({
       throw createError(
         400,
         'No group context and no platform group found. Run ' +
-          'scripts/seed-platform-group.js, then configure its Skills engine ' +
+          '`yarn flag-platform-group`, then configure its Skills engine ' +
           'in "Fonctionnalités IA".'
       );
     }

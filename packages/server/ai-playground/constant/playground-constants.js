@@ -6,12 +6,9 @@ const MaxScenarioIdLength = 100;
 const VersionRefModes = Object.freeze({ ACTIVE: 'active', PINNED: 'pinned' });
 const VersionRefModeValues = Object.values(VersionRefModes);
 
-const ExpertiseSelectionModes = Object.freeze({
-  NONE: 'none',
-  EXPLICIT: 'explicit',
-  FILTER: 'filter',
-});
-const ExpertiseSelectionModeValues = Object.values(ExpertiseSelectionModes);
+// NB: the expertise selection mode is implicit on the scenario (non-empty
+// expertiseRefs wins over expertiseFilter, cf. expertise-resolver.service.js)
+// — there is deliberately no persisted enum for it.
 
 const RunStatuses = Object.freeze({
   SUCCESS: 'SUCCESS',
@@ -38,11 +35,7 @@ module.exports = {
   MaxScenarioIdLength,
   VersionRefModes,
   VersionRefModeValues,
-  ExpertiseSelectionModes,
-  ExpertiseSelectionModeValues,
-  RunStatuses,
   RunStatusValues,
-  FeedbackRatings,
   FeedbackRatingValues,
   DefaultPlaygroundRunRetentionDays,
   PlaygroundFeatureType,

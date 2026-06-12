@@ -146,9 +146,14 @@ export default {
       this.$refs.compareView.open();
     },
     handleError(err) {
+      // Consultant-friendly message for the daily test budget (HTTP 429) —
+      // the raw server message is English and technical.
+      const status = err.response && err.response.status;
       const msg =
-        (err.response && err.response.data && err.response.data.message) ||
-        this.$t('global.errors.errorOccured');
+        status === 429
+          ? this.$t('aiPlayground.runs.budgetExhausted')
+          : (err.response && err.response.data && err.response.data.message) ||
+            this.$t('global.errors.errorOccured');
       this.showSnackbar({ text: msg, color: 'error' });
     },
   },
