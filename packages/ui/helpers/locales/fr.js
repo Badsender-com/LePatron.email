@@ -1390,7 +1390,7 @@ export default {
       tabs: {
         input: 'Input',
         output: 'Output',
-        raw: 'Sortie brute',
+        raw: 'Output (JSON)',
         feedback: 'Feedback',
       },
       feedback: {

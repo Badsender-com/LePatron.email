@@ -1377,7 +1377,7 @@ export default {
       tabs: {
         input: 'Input',
         output: 'Output',
-        raw: 'Raw output',
+        raw: 'Output (JSON)',
         feedback: 'Feedback',
       },
       feedback: {

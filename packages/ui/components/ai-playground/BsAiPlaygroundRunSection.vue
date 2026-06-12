@@ -22,6 +22,9 @@ export default {
     goldenRunId: { type: String, default: null },
     canExecute: { type: Boolean, default: false },
     initialRuns: { type: Array, default: () => [] },
+    // Async hook run before executing (the page saves the scenario here, so
+    // what runs is always what is on screen). Return false to abort.
+    beforeExecute: { type: Function, default: null },
   },
   data() {
     return {
@@ -38,6 +41,10 @@ export default {
     async execute() {
       this.executing = true;
       try {
+        if (this.beforeExecute) {
+          const ok = await this.beforeExecute();
+          if (ok === false) return;
+        }
         const run = await this.$axios.$post(
           api.aiPlaygroundExecute(this.scenarioId)
         );
