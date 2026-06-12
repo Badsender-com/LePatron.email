@@ -1,5 +1,7 @@
 # Moteur LLM des Skills — Étape 1 (déblocage Playground)
 
+> Dernière mise à jour : 2026-06-12 — reflète l'état final des branches avant review.
+
 > Brief d'implémentation validé. Première étape d'une refonte plus large du choix
 > du moteur LLM (voir « Étape 2 » en fin de document). Objectif : un playground
 > qui tourne bout-en-bout, en s'exécutant par défaut sur une **company plateforme**

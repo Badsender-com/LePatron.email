@@ -76,7 +76,16 @@ function randomSuffix() {
 }
 
 /**
- * Tolerant JSON extraction from a raw LLM output:
+ * Tolerant JSON extraction from a raw LLM output.
+ *
+ * Defense hierarchy (in order): (1) providers that support it are asked for
+ * native `response_format: json_object` in skill-invocation — syntactically
+ * valid JSON guaranteed; (2) the repair pass below covers providers WITHOUT
+ * JSON mode (raw control chars inside strings — a real Mistral failure mode
+ * pre-json_object); (3) failure surfaces as OUTPUT_PARSE. Every branch here
+ * is reachable: json_object only covers openai/mistral today.
+ *
+ * Mechanics:
  *   - strips optional ```json ... ``` code fences,
  *   - trims whitespace,
  *   - falls back to the first `{...}` or `[...]` block if the whole thing

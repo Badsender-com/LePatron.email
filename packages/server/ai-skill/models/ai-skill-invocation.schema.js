@@ -59,10 +59,11 @@ const InvocationErrorSchema = new Schema(
 );
 
 /**
- * Optional human-in-the-loop feedback on the invocation output. Populated
- * later by the AI Playground (and possibly by features that surface a
- * rating UI). The corrected output captured here is intended to seed a
- * RAG layer with vetted examples in future iterations.
+ * Réservé étape 2 (RAG) — optional human-in-the-loop feedback on the
+ * invocation output. No route writes it in v1 (the Playground has its OWN
+ * feedback on AIPlaygroundRun, independent from this one): the field exists
+ * so vetted examples can later seed a RAG layer without a migration.
+ * Cf. docs/REVIEW_GUIDE_AI_MODULES.md.
  */
 const InvocationFeedbackSchema = new Schema(
   {
@@ -87,7 +88,8 @@ const AISkillInvocationSchema = new Schema(
     _user: { type: ObjectId, ref: UserModel, default: null },
     featureType: { type: String },
 
-    // v2 preparation — never populated in v1, kept for analytics shape.
+    // Réservé étape 2 (DSE v2) — never populated in v1; kept so the analytics
+    // shape is stable when prompt variants land. Cf. docs/REVIEW_GUIDE_AI_MODULES.md.
     variantPath: { type: [String], default: [] },
 
     expertiseConsumed: { type: [ExpertiseConsumedSchema], default: [] },

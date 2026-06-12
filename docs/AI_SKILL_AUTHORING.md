@@ -1,5 +1,7 @@
 # Rédaction des skills — règles de cohérence prompt ↔ schémas
 
+> Dernière mise à jour : 2026-06-12 — reflète l'état final des branches avant review.
+
 > Le schéma zod est la source de vérité. Tout ce qui peut être dérivé du
 > schéma (contrat de sortie, liste des champs valides) ne repose jamais sur la
 > mémoire d'un rédacteur. Ces deux garde-fous sont nés de la campagne de smoke
@@ -25,3 +27,11 @@ référencés) ne sont que des avertissements non bloquants affichés dans l'UI.
 Note : `{{input.expertise}}` n'est valide que si le schéma d'entrée déclare un
 champ `expertise` (cf. `expertiseArraySchema`) ; le contenu injecté par le
 playground y est sérialisé en JSON.
+
+## FeatureTypes réservés (non productifs)
+
+`'admin-test'` (runner de test super-admin), `'playground'` (AI Playground) et
+tout type préfixé `'poc.'` (proofs of concept) sont réservés aux invocations
+non productives : ils sont exclus par défaut des analytics de l'onglet
+Invocations. Une feature productive utilise son propre featureType, déclaré
+dans son `skill-manifest.js`.

@@ -9,9 +9,11 @@ function todayKey(now = new Date()) {
 }
 
 // In-memory counter for the pseudo-admin user (config.admin has no User row).
-// Resets on a new day or on process restart. Sufficient to stop runaway loops
-// from burning the LLM budget; not a strong audit log (use AISkillInvocation
-// for that). See PLAN-IMPLEMENTATION-V1 §5.4.
+// Resets on a new day or on process restart, and is PER-PROCESS: in a
+// multi-instance deployment each instance has its own admin budget. Known
+// and accepted limit — sufficient to stop runaway loops from burning the LLM
+// budget; not a strong audit log (use AISkillInvocation for that).
+// See PLAN-IMPLEMENTATION-V1 §5.4.
 const adminBudget = { date: null, count: 0 };
 
 function _resetAdminBudgetForTests() {
