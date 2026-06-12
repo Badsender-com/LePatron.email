@@ -97,6 +97,12 @@ async function executeScenario({
       userId,
       featureType: PlaygroundFeatureType,
       variantPath: scenario.variantPath || [],
+      // Always pass the resolved version: in pinned mode this is what makes
+      // the pinned version actually RUN (not just be displayed on the run).
+      version: {
+        major: resolvedSkill.versionMajor,
+        minor: resolvedSkill.versionMinor,
+      },
       options: invocationOptions,
     });
   } catch (err) {

@@ -270,6 +270,46 @@ describe('playground-runner.executeScenario', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 
+  it('passes the pinned version to invoke() so it actually runs', async () => {
+    AIPlaygroundScenarios.findOne.mockResolvedValue(
+      mockScenario({
+        skillRef: {
+          skillId: 'generic.text',
+          mode: 'pinned',
+          versionMajor: 1,
+          versionMinor: 0,
+        },
+      })
+    );
+    LePatronSkills.findOne.mockReturnValue({
+      lean: () =>
+        Promise.resolve({
+          skillId: 'generic.text',
+          status: 'ACTIVE',
+          // Active is v2.0 — the run must execute the pinned v1.0 anyway.
+          activeVersion: { major: 2, minor: 0 },
+          versions: [
+            { versionMajor: 1, versionMinor: 0 },
+            { versionMajor: 2, versionMinor: 0 },
+          ],
+        }),
+    });
+    resolveExpertise.mockResolvedValue([]);
+    skillInvocation.invoke.mockResolvedValue({
+      output: { text: 'ok' },
+      invocationId: new Types.ObjectId(),
+      tokenUsage: {},
+      latencyMs: 1,
+    });
+
+    const run = await executeScenario({ scenarioId: 'demo', userId: USER_ID });
+
+    expect(skillInvocation.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({ version: { major: 1, minor: 0 } })
+    );
+    expect(run.resolvedSkill.versionMajor).toBe(1);
+  });
+
   it('throws 404 when the pinned skill version does not exist', async () => {
     AIPlaygroundScenarios.findOne.mockResolvedValue(
       mockScenario({
