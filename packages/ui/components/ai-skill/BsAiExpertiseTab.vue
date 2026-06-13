@@ -130,10 +130,18 @@ export default {
         </v-chip>
       </template>
       <template #item.scope="{ item }">
-        <span v-if="item.scope && item.scope.length">{{
+        <v-chip v-if="item.isTransversal" x-small outlined color="primary">
+          {{ $t('aiSkills.expertise.transversalChip') }}
+        </v-chip>
+        <span v-else-if="item.scope && item.scope.length">{{
           item.scope.join(', ')
         }}</span>
-        <span v-else class="text--disabled">—</span>
+        <v-tooltip v-else bottom>
+          <template #activator="{ on, attrs }">
+            <span class="text--disabled" v-bind="attrs" v-on="on">—</span>
+          </template>
+          <span>{{ $t('aiSkills.expertise.noScopeTooltip') }}</span>
+        </v-tooltip>
       </template>
       <template #item.updatedAt="{ item }">
         <span class="text-caption text--secondary">{{

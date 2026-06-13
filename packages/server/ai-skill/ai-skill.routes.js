@@ -32,6 +32,10 @@ const expertiseRouter = express.Router();
 expertiseRouter.use(GUARD_ADMIN);
 expertiseRouter.get('/', expertise.listExpertise);
 expertiseRouter.post('/', expertise.createExpertise);
+expertiseRouter.get(
+  '/:expertiseId/activation-impact',
+  expertise.getActivationImpact
+);
 expertiseRouter.get('/:expertiseId', expertise.getExpertise);
 expertiseRouter.patch('/:expertiseId', expertise.updateExpertise);
 expertiseRouter.post(

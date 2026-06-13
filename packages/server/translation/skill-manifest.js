@@ -14,4 +14,7 @@ module.exports = {
   description: 'Email translation (legacy pipeline — not yet a skill)',
   usedSkills: [],
   usedExpertise: [],
+  // No findApplicable call yet (legacy pipeline). Declared empty on purpose so
+  // the activation-impact registry never lists translation as a consumer.
+  expertiseFilters: [],
 };

@@ -1,32 +1,53 @@
 'use strict';
 
+const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
 
 /**
- * Find ACTIVE expertise modules matching the given filters, projecting only
- * the active version of each. Used by features composing skill inputs.
+ * Find ACTIVE expertise modules matching an invocation context, projecting
+ * only the active version of each. Used by features composing skill inputs.
+ *
+ * ALL callers must pass both `scope` AND `categories` — a caller that wants a
+ * broad mix enumerates explicitly. The verbosity is deliberate: the expertise
+ * mix of a feature is a decision that must be visible in code review.
+ *
+ * Matching rules — an expertise matches when:
+ *   - status ACTIVE
+ *   - AND ( isTransversal === true  OR  intersection(expertise.scope, scope) ≠ ∅ )
+ *   - AND expertise.category ∈ categories
+ *   - AND ( appliesToEmailTypes empty  OR  emailType ∈ appliesToEmailTypes )
+ *   - AND ( appliesToLanguages empty   OR  language ∈ appliesToLanguages )
+ *
+ * NB: an expertise with an empty scope that is NOT transversal NEVER matches
+ * (inverted semantics). isTransversal short-circuits ONLY the scope clause —
+ * never categories / emailType / language.
  *
  * @param {Object} filters
- * @param {string|string[]} [filters.scope]
+ * @param {string|string[]} filters.scope — REQUIRED
+ * @param {string[]} filters.categories — REQUIRED, non-empty
  * @param {string} [filters.emailType]
  * @param {string} [filters.language]
- * @param {string} [filters.category]
  * @returns {Promise<Array<{expertiseId: string, title: string, body: string, examplesGood: string[], examplesBad: string[], versionMajor: number, versionMinor: number}>>}
  */
-async function findApplicable({ scope, emailType, language, category } = {}) {
-  // For each multi-valued filter, an empty array on the document means
-  // "applies to all values" — i.e. the document is always a match for that
-  // filter. We build $and / $or clauses so that the document matches when
-  // EITHER it lists the requested value, OR its own list is empty.
-  const and = [{ status: SkillStatuses.ACTIVE }];
-
-  if (scope) {
-    const scopes = Array.isArray(scope) ? scope : [scope];
-    and.push({
-      $or: [{ scope: { $in: scopes } }, { scope: { $size: 0 } }],
-    });
+async function findApplicable({ scope, categories, emailType, language } = {}) {
+  const scopes = Array.isArray(scope) ? scope : scope ? [scope] : [];
+  if (!scopes.length || !Array.isArray(categories) || !categories.length) {
+    throw createError(
+      400,
+      'findApplicable requiert un scope et au moins une catégorie — précisez le mix d\'expertise de votre feature'
+    );
   }
+
+  // Empty arrays on emailType/language documents still mean "applies to all".
+  // For scope the semantics are INVERTED: empty scope no longer matches —
+  // only a non-empty intersection or the isTransversal flag does.
+  const and = [
+    { status: SkillStatuses.ACTIVE },
+    { $or: [{ isTransversal: true }, { scope: { $in: scopes } }] },
+    { category: { $in: categories } },
+  ];
+
   if (emailType) {
     and.push({
       $or: [
@@ -43,12 +64,8 @@ async function findApplicable({ scope, emailType, language, category } = {}) {
       ],
     });
   }
-  if (category) {
-    and.push({ category });
-  }
 
-  const query = and.length === 1 ? and[0] : { $and: and };
-  const docs = await Expertises.find(query).lean();
+  const docs = await Expertises.find({ $and: and }).lean();
 
   return docs.map((doc) => projectActiveVersion(doc)).filter((d) => d !== null);
 }
@@ -66,6 +83,7 @@ function projectActiveVersion(doc) {
     title: doc.title,
     category: doc.category,
     scope: doc.scope,
+    isTransversal: !!doc.isTransversal,
     versionMajor: version.versionMajor,
     versionMinor: version.versionMinor,
     body: version.body,

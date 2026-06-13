@@ -40,6 +40,59 @@ describe('expertise.service', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
+  it('createExpertise persists isTransversal', async () => {
+    Expertises.create.mockResolvedValue({});
+    await expertiseService.createExpertise(
+      {
+        expertiseId: 'a',
+        title: 't',
+        category: 'redaction',
+        isTransversal: true,
+      },
+      null
+    );
+    expect(Expertises.create.mock.calls[0][0].isTransversal).toBe(true);
+  });
+
+  it('createExpertise defaults isTransversal to false', async () => {
+    Expertises.create.mockResolvedValue({});
+    await expertiseService.createExpertise(
+      { expertiseId: 'a', title: 't', category: 'redaction' },
+      null
+    );
+    expect(Expertises.create.mock.calls[0][0].isTransversal).toBe(false);
+  });
+
+  it('updateExpertise patches isTransversal', async () => {
+    const doc = mockExpertiseDoc({ isTransversal: false });
+    Expertises.findOne.mockResolvedValue(doc);
+    await expertiseService.updateExpertise('a', { isTransversal: true });
+    expect(doc.isTransversal).toBe(true);
+    expect(doc.save).toHaveBeenCalled();
+  });
+
+  describe('getActivationImpact', () => {
+    it('throws 404 when the expertise is missing', async () => {
+      Expertises.findOne.mockResolvedValue(null);
+      await expect(
+        expertiseService.getActivationImpact('missing')
+      ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('returns an array of manifest matches', async () => {
+      Expertises.findOne.mockResolvedValue(
+        mockExpertiseDoc({
+          category: 'redaction',
+          scope: ['cta'],
+          isTransversal: false,
+          appliesToEmailTypes: [],
+        })
+      );
+      const out = await expertiseService.getActivationImpact('a');
+      expect(Array.isArray(out)).toBe(true);
+    });
+  });
+
   describe('createMajorVersion', () => {
     it('starts at 1.0 when there is no version', async () => {
       const doc = mockExpertiseDoc();

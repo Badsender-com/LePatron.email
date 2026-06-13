@@ -69,6 +69,43 @@ function loadManifests() {
   return manifests;
 }
 
+/**
+ * Validate the SHAPE of a manifest's optional `expertiseFilters` field (the
+ * findApplicable filters a feature declares). Declarative in v1 — no
+ * cross-check against actual call sites.
+ *
+ * @returns {string[]} error messages (empty if valid)
+ */
+function validateExpertiseFilters(file, manifest) {
+  const errors = [];
+  const filters = manifest.expertiseFilters;
+  if (filters === undefined) return errors;
+  if (!Array.isArray(filters)) {
+    errors.push(`${file}: expertiseFilters must be an array`);
+    return errors;
+  }
+  filters.forEach((f, i) => {
+    const at = `${file}: expertiseFilters[${i}]`;
+    if (!f || typeof f !== 'object') {
+      errors.push(`${at} must be an object`);
+      return;
+    }
+    const scopeOk =
+      (typeof f.scope === 'string' && f.scope.length > 0) ||
+      (Array.isArray(f.scope) && f.scope.length > 0);
+    if (!scopeOk) {
+      errors.push(`${at}.scope must be a non-empty string or array`);
+    }
+    if (!Array.isArray(f.categories) || f.categories.length === 0) {
+      errors.push(`${at}.categories must be a non-empty array`);
+    }
+    if (f.emailType !== undefined && typeof f.emailType !== 'string') {
+      errors.push(`${at}.emailType must be a string when present`);
+    }
+  });
+  return errors;
+}
+
 async function checkDB(declaredSkillIds, declaredExpertiseIds, allowDraft) {
   const { LePatronSkills, Expertises } = require(path.join(
     SERVER_DIR,
@@ -150,6 +187,10 @@ async function main() {
     }
   }
 
+  for (const { file, manifest } of manifests) {
+    errors.push(...validateExpertiseFilters(file, manifest));
+  }
+
   if (!dry) {
     try {
       const dbErrors = await checkDB(
@@ -189,4 +230,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { scanInvocations, loadManifests };
+module.exports = { scanInvocations, loadManifests, validateExpertiseFilters };

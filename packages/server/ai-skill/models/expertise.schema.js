@@ -72,6 +72,14 @@ const ExpertiseSchema = new Schema(
       required: true,
     },
     scope: { type: [String], default: [] },
+    // Transversal expertise is loaded whatever the requested scope (e.g. a
+    // brand voice), but stays filtered by categories / emailType / language —
+    // "transversal" crosses PERIMETERS, never categories. An empty scope that
+    // is NOT transversal matches no filtered query (cf. findApplicable):
+    // forgetting to set a scope becomes visible instead of silently global.
+    // The backend tolerates scope + isTransversal coexisting; the flag wins
+    // over the scope (the UI disables/clears scope when it is checked).
+    isTransversal: { type: Boolean, default: false },
     appliesToEmailTypes: { type: [String], default: [] },
     appliesToLanguages: { type: [String], default: [] },
     owner: { type: ObjectId, ref: UserModel },
@@ -96,6 +104,8 @@ const ExpertiseSchema = new Schema(
 
 ExpertiseSchema.index({ category: 1 });
 ExpertiseSchema.index({ scope: 1 });
+// findApplicable reads this on every filtered query (scope OR isTransversal).
+ExpertiseSchema.index({ isTransversal: 1 });
 ExpertiseSchema.index({ appliesToEmailTypes: 1 });
 ExpertiseSchema.index({ status: 1 });
 

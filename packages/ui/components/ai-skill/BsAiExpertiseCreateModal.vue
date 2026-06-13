@@ -69,9 +69,14 @@ export default {
         description: '',
         category: 'redaction',
         scope: [],
+        isTransversal: false,
         appliesToEmailTypes: [],
         appliesToLanguages: [],
       };
+    },
+    onTransversalChange(checked) {
+      // Scope and transversal are contradictory; the flag wins.
+      if (checked) this.expertise.scope = [];
     },
     open() {
       this.expertise = this.emptyExpertise();
@@ -152,6 +157,16 @@ export default {
         :label="$t('aiSkills.filters.category')"
         :disabled="loading"
       />
+      <v-checkbox
+        v-model="expertise.isTransversal"
+        :label="$t('aiSkills.expertise.transversal')"
+        :hint="$t('aiSkills.expertise.transversalHint')"
+        persistent-hint
+        dense
+        class="mt-0"
+        :disabled="loading"
+        @change="onTransversalChange"
+      />
       <bs-combobox
         v-model="expertise.scope"
         :label="$t('aiSkills.expertise.scope')"
@@ -159,7 +174,7 @@ export default {
         multiple
         chips
         small-chips
-        :disabled="loading"
+        :disabled="loading || expertise.isTransversal"
       />
       <bs-combobox
         v-model="expertise.appliesToEmailTypes"

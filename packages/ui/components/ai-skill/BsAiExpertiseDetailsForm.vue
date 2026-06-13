@@ -50,6 +50,13 @@ export default {
       this.knownSkillIds = [];
     }
   },
+  methods: {
+    onTransversalChange(checked) {
+      // Scope and transversal are contradictory; the flag wins. Clear the
+      // scope so the saved state matches what the disabled field shows.
+      if (checked) this.expertise.scope = [];
+    },
+  },
 };
 </script>
 
@@ -68,9 +75,19 @@ export default {
       item-value="value"
       :label="$t('aiSkills.filters.category')"
     />
+    <v-checkbox
+      v-model="expertise.isTransversal"
+      :label="$t('aiSkills.expertise.transversal')"
+      :hint="$t('aiSkills.expertise.transversalHint')"
+      persistent-hint
+      dense
+      class="mt-0"
+      @change="onTransversalChange"
+    />
     <bs-combobox
       v-model="expertise.scope"
       :label="$t('aiSkills.expertise.scope')"
+      :disabled="expertise.isTransversal"
       multiple
       chips
       small-chips
