@@ -1,6 +1,6 @@
 # Guide de review — Modules IA (Skills, Expertise, Playground)
 
-> Dernière mise à jour : 2026-06-12. Écrit pour le reviewer qui découvre ces
+> Dernière mise à jour : 2026-06-13. Écrit pour le reviewer qui découvre ces
 > modules sans avoir suivi la démarche. Deux PRs : **PR1** `feat/AI-skills-v1`
 > (skills + expertise + invocations) et **PR2** `feat/ai-playground` (le
 > playground, basée sur la PR1). Un POC séparé (`poc/ai-textgen`) n'est PAS à
@@ -62,6 +62,19 @@ une violation, c'est un bug :
   garantie = bug). Warnings non bloquants à la sauvegarde de brouillon.
 - **Pas de point dans les clés persistées** (Mongoose 5.12/BSON ancien) : les
   structures à clés dynamiques sont stockées en `[{path, value}]`.
+- **`findApplicable` exige scope ET categories** (sinon 400) : le mix
+  d'expertise d'une feature est explicite et visible en review. Le filtrage par
+  catégorie empêche qu'une expertise d'une autre catégorie (ex. `qc.cta.*`)
+  pollue les prompts d'une feature de rédaction au même scope.
+- **Transversalité explicite** : `Expertise.isTransversal` charge l'expertise
+  hors scope (mais jamais hors catégorie). Un scope vide non transversal n'est
+  chargé **nulle part** (sémantique inversée — l'oubli devient visible). Seul
+  `redaction.brand-voice-defaults` est flaggé (migration explicite par id).
+- **Manifests avec `expertiseFilters`** : une feature déclare les filtres
+  `findApplicable` qu'elle émet ; le registre
+  (`ai-skill/services/manifest-registry.js`) calcule l'**alerte d'impact** non
+  bloquante à l'activation d'une expertise (qui la chargera). `check-skills`
+  valide la forme du champ.
 
 ## 3. Dormant par design (ne pas signaler, ne pas supprimer)
 

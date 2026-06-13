@@ -36,6 +36,7 @@ export default {
       exp: null,
       tab: 'details',
       activatingVersion: null,
+      activationImpact: [],
       saving: false,
     };
   },
@@ -87,6 +88,7 @@ export default {
             description: this.exp.description,
             category: this.exp.category,
             scope: this.exp.scope,
+            isTransversal: this.exp.isTransversal,
             appliesToEmailTypes: this.exp.appliesToEmailTypes,
             appliesToLanguages: this.exp.appliesToLanguages,
             consumedBySkills: this.exp.consumedBySkills,
@@ -185,9 +187,19 @@ export default {
         this.saving = false;
       }
     },
-    askActivate(version) {
+    async askActivate(version) {
       this.activatingVersion = version;
       if (version.versionMinor === 0) {
+        // Informed consent: surface which features will load this expertise.
+        this.activationImpact = [];
+        try {
+          const res = await this.$axios.$get(
+            api.aiExpertiseActivationImpact(this.exp.expertiseId)
+          );
+          this.activationImpact = res.matches || [];
+        } catch (err) {
+          this.activationImpact = [];
+        }
         this.$refs.activateModal.open();
       } else {
         this.activateVersion({});
@@ -247,9 +259,11 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ exp.expertiseId }} · {{ categoryLabel(exp.category) }} ·
-      <span v-if="activeVersionLabel">{{ $t('aiSkills.skill.activeVersion') }} v{{
-        activeVersionLabel
-      }}</span>
+      <span v-if="activeVersionLabel"
+        >{{ $t('aiSkills.skill.activeVersion') }} v{{
+          activeVersionLabel
+        }}</span
+      >
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
@@ -327,6 +341,8 @@ export default {
     <bs-ai-activate-modal
       ref="activateModal"
       :loading="saving"
+      :show-impact="true"
+      :impact="activationImpact"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal
