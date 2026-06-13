@@ -46,6 +46,10 @@ const ExpertiseRefSchema = new Schema(
 const ExpertiseFilterSchema = new Schema(
   {
     scope: { type: [String], default: [] },
+    // findApplicable now requires categories alongside scope (cf.
+    // expertise.repository). Pre-filled in the UI with the scenario skill's
+    // category; a filter is applied only when BOTH scope and categories are set.
+    categories: { type: [String], default: [] },
     emailType: { type: String, default: null },
     language: { type: String, default: null },
   },

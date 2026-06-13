@@ -27,13 +27,16 @@ async function resolveExpertise(scenario) {
     return resolveExplicit(scenario.expertiseRefs);
   }
   const filter = scenario.expertiseFilter || {};
-  const hasFilter =
-    (Array.isArray(filter.scope) && filter.scope.length > 0) ||
-    filter.emailType ||
-    filter.language;
-  if (hasFilter) {
+  const hasScope = Array.isArray(filter.scope) && filter.scope.length > 0;
+  const hasCategories =
+    Array.isArray(filter.categories) && filter.categories.length > 0;
+  // findApplicable requires BOTH scope and categories. A filter missing either
+  // is treated as "no filter" (returns no expertise) rather than throwing —
+  // same outcome as an empty filter today.
+  if (hasScope && hasCategories) {
     return expertiseRepo.findApplicable({
-      scope: filter.scope && filter.scope.length ? filter.scope : undefined,
+      scope: filter.scope,
+      categories: filter.categories,
       emailType: filter.emailType || undefined,
       language: filter.language || undefined,
     });
