@@ -1141,6 +1141,16 @@ export default {
       idResetHint: 'Recompute identifier from Category, Scope and Title',
       scope: 'Scope',
       scopeHint: 'e.g. cta, subject, …',
+      transversal: 'Transversal expertise',
+      transversalHint:
+        'Loaded by features whatever the requested scope (e.g. a brand voice). Still filtered by category, email type and language. Check deliberately — an expertise with no scope and not transversal is loaded nowhere.',
+      transversalChip: 'Transversal',
+      noScopeTooltip:
+        'No scope: this expertise is loaded by no feature in filtered mode',
+      impactTitle: 'Activation impact',
+      impactLoadedBy: 'This expertise will be loaded by:',
+      impactNone:
+        'No declared feature currently loads this scope. The expertise stays usable by explicit selection (playground).',
       appliesToEmailTypes: 'Applies to email types',
       appliesToLanguages: 'Languages (empty = all)',
       consumedBySkills: 'Consumed by skills',

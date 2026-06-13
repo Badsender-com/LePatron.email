@@ -1,6 +1,20 @@
 'use strict';
 
 /**
+ * Feature / Invocation / Skill — the conceptual contract
+ * ------------------------------------------------------
+ *   • Feature: a product capability (e.g. the textgen block button). It
+ *     ORCHESTRATES and owns the skill-manifest. One feature → N invocations,
+ *     potentially of DIFFERENT skills, each with its OWN expertise mix.
+ *   • Invocation: one atomic call — exactly ONE skill (skillId is always a
+ *     literal, never a dynamic selection) + one composed input. It is the unit
+ *     of logging, cost and traceability (one AISkillInvocation row).
+ *   • Composition lives in the FEATURE's code (ordering, chaining outputs,
+ *     error handling) — a consequence of rejecting skill-to-skill invocation.
+ *   • Expertise is loaded PER INVOCATION, not per feature: each invoke()
+ *     receives an input already composed by the feature (via findApplicable
+ *     with that invocation's own scope + categories).
+ *
  * featureType convention
  * -----------------------
  * Each AISkillInvocation log carries a `featureType` string that names the

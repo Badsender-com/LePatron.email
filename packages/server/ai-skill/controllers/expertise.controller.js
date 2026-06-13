@@ -25,6 +25,14 @@ module.exports = {
     res.json(await expertiseService.getExpertise(req.params.expertiseId));
   }),
 
+  getActivationImpact: asyncHandler(async (req, res) => {
+    res.json({
+      matches: await expertiseService.getActivationImpact(
+        req.params.expertiseId
+      ),
+    });
+  }),
+
   createExpertise: asyncHandler(async (req, res) => {
     const exp = await expertiseService.createExpertise(req.body, userIdOf(req));
     res.status(201).json(exp);

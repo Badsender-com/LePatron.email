@@ -1192,6 +1192,16 @@ export default {
       idResetHint: 'Recalculer l\'identifiant depuis Catégorie, Périmètre et Titre',
       scope: 'Périmètre',
       scopeHint: 'ex. cta, subject, …',
+      transversal: 'Expertise transversale',
+      transversalHint:
+        'Chargée par les fonctionnalités quel que soit le périmètre demandé (ex. une voix de marque). Reste filtrée par catégorie, type d\'email et langue. À cocher délibérément — une expertise sans périmètre et non transversale n\'est chargée nulle part.',
+      transversalChip: 'Transversale',
+      noScopeTooltip:
+        'Aucun périmètre : cette expertise n\'est chargée par aucune fonctionnalité en mode filtré',
+      impactTitle: 'Impact de l\'activation',
+      impactLoadedBy: 'Cette expertise sera chargée par :',
+      impactNone:
+        'Aucune fonctionnalité déclarée ne charge actuellement ce périmètre. L\'expertise restera utilisable par sélection explicite (playground).',
       appliesToEmailTypes: 'Types d\'email concernés',
       appliesToLanguages: 'Langues (vide = toutes)',
       consumedBySkills: 'Consommée par les skills',

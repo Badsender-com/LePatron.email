@@ -11,6 +11,7 @@ const {
   assertDraft,
   versionLabel,
 } = require('./version-helpers.js');
+const manifestRegistry = require('./manifest-registry.js');
 
 const LIST_PROJECTION = {
   expertiseId: 1,
@@ -18,6 +19,7 @@ const LIST_PROJECTION = {
   description: 1,
   category: 1,
   scope: 1,
+  isTransversal: 1,
   appliesToEmailTypes: 1,
   appliesToLanguages: 1,
   status: 1,
@@ -67,6 +69,7 @@ async function createExpertise(data, userId) {
     description: data.description || '',
     category: data.category,
     scope: data.scope || [],
+    isTransversal: !!data.isTransversal,
     appliesToEmailTypes: data.appliesToEmailTypes || [],
     appliesToLanguages: data.appliesToLanguages || [],
     consumedBySkills: data.consumedBySkills || [],
@@ -93,6 +96,7 @@ const PATCHABLE_FIELDS = [
   'description',
   'category',
   'scope',
+  'isTransversal',
   'appliesToEmailTypes',
   'appliesToLanguages',
   'consumedBySkills',
@@ -249,6 +253,25 @@ async function archiveExpertise(expertiseId) {
   return exp;
 }
 
+/**
+ * Activation-impact preview: which declared features would load this
+ * expertise (informational, non-blocking — the "informed consent" shown in
+ * the activation modal). Depends only on document-level fields
+ * (scope/category/emailType/isTransversal), which are already persisted, so
+ * the draft being activated does not change the answer.
+ *
+ * @returns {Promise<Array<{featureType, description, matchedFilter}>>}
+ */
+async function getActivationImpact(expertiseId) {
+  const exp = await getExpertise(expertiseId);
+  return manifestRegistry.computeActivationImpact({
+    category: exp.category,
+    scope: exp.scope || [],
+    isTransversal: !!exp.isTransversal,
+    appliesToEmailTypes: exp.appliesToEmailTypes || [],
+  });
+}
+
 module.exports = {
   listExpertise,
   getExpertise,
@@ -260,5 +283,6 @@ module.exports = {
   deleteVersion,
   activateVersion,
   archiveExpertise,
+  getActivationImpact,
   versionLabel,
 };
