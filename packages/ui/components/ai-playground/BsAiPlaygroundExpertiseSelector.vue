@@ -6,6 +6,15 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
 
 const MODES = ['none', 'explicit', 'filter'];
+const CATEGORIES = [
+  'redaction',
+  'qc',
+  'design',
+  'html_integration',
+  'deliverability',
+  'translation',
+  'other',
+];
 
 export default {
   name: 'BsAiPlaygroundExpertiseSelector',
@@ -43,6 +52,12 @@ export default {
     expertiseIds() {
       return this.expertiseRefs.map((r) => r.expertiseId);
     },
+    categoryOptions() {
+      return CATEGORIES.map((value) => ({
+        value,
+        text: this.$t(`aiSkills.categories.${value}`),
+      }));
+    },
   },
   watch: {
     mode(next) {
@@ -53,9 +68,23 @@ export default {
       if (next === 'none' || next === 'explicit') {
         this.$emit('update:expertise-filter', {
           scope: [],
+          categories: [],
           emailType: null,
           language: null,
         });
+      }
+      // Entering filter mode: pre-fill categories with the skill's category
+      // (a good default — findApplicable requires categories). Editable.
+      if (next === 'filter') {
+        const current = this.expertiseFilter || {};
+        const hasCategories =
+          Array.isArray(current.categories) && current.categories.length;
+        if (!hasCategories && this.skillCategory) {
+          this.$emit('update:expertise-filter', {
+            ...current,
+            categories: [this.skillCategory],
+          });
+        }
       }
     },
     expertiseFilter: {
@@ -97,6 +126,12 @@ export default {
         scope: Array.isArray(scope) ? scope : [scope].filter(Boolean),
       });
     },
+    onCategoriesChange(categories) {
+      this.$emit('update:expertise-filter', {
+        ...this.expertiseFilter,
+        categories: Array.isArray(categories) ? categories : [],
+      });
+    },
     onEmailTypeChange(value) {
       this.$emit('update:expertise-filter', {
         ...this.expertiseFilter,
@@ -127,6 +162,9 @@ export default {
       const f = this.expertiseFilter || {};
       const params = {};
       if (Array.isArray(f.scope) && f.scope.length) params.scope = f.scope;
+      if (Array.isArray(f.categories) && f.categories.length) {
+        params.categories = f.categories;
+      }
       if (f.emailType) params.emailType = f.emailType;
       if (f.language) params.language = f.language;
       return params;
@@ -180,6 +218,18 @@ export default {
     </template>
 
     <template v-if="mode === 'filter'">
+      <bs-select
+        :value="expertiseFilter.categories || []"
+        :items="categoryOptions"
+        item-text="text"
+        item-value="value"
+        :label="$t('aiPlayground.form.filterCategories')"
+        multiple
+        chips
+        small-chips
+        :disabled="disabled"
+        @input="onCategoriesChange"
+      />
       <bs-combobox
         :value="expertiseFilter.scope"
         :label="$t('aiPlayground.form.filterScope')"

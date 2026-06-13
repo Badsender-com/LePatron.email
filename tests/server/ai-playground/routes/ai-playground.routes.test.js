@@ -195,7 +195,7 @@ describe('ai-playground HTTP routes', () => {
     ]);
     const res = await request(makeApp())
       .get('/api/ai-playground/preview-expertise-filter')
-      .query({ scope: 'cta', emailType: 'promo' });
+      .query({ scope: 'cta', categories: 'redaction', emailType: 'promo' });
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
     expect(res.body.items[0].expertiseId).toBe('a');
@@ -203,6 +203,7 @@ describe('ai-playground HTTP routes', () => {
       expertiseRefs: [],
       expertiseFilter: {
         scope: ['cta'],
+        categories: ['redaction'],
         emailType: 'promo',
         language: null,
       },

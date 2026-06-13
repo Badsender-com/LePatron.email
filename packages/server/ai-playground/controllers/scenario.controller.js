@@ -63,12 +63,10 @@ module.exports = {
     // Accept the filter either in query (GET) or body (POST); GET is simpler
     // for the UI to call from the scenario form when the filter changes.
     const source = req.method === 'GET' ? req.query : req.body || {};
+    const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
     const filter = {
-      scope: Array.isArray(source.scope)
-        ? source.scope
-        : source.scope
-        ? [source.scope]
-        : [],
+      scope: toArray(source.scope),
+      categories: toArray(source.categories),
       emailType: source.emailType || null,
       language: source.language || null,
     };

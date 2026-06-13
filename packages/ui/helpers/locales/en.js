@@ -1160,6 +1160,7 @@ export default {
       expertiseRecommended: 'Recommended for this skill',
       expertiseAll: 'All expertise modules',
       expertiseNotSupported: 'This skill does not accept expertise input.',
+      filterCategories: 'Categories',
       filterScope: 'Scope',
       filterEmailType: 'Email type',
       filterLanguage: 'Language',

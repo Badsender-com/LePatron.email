@@ -1169,6 +1169,7 @@ export default {
       expertiseRecommended: 'Recommandées pour cette skill',
       expertiseAll: 'Toutes les expertises',
       expertiseNotSupported: 'Cette skill n\'accepte pas d\'expertise en entrée.',
+      filterCategories: 'Catégories',
       filterScope: 'Périmètre',
       filterEmailType: 'Type d\'email',
       filterLanguage: 'Langue',

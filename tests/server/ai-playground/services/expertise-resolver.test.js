@@ -33,28 +33,44 @@ describe('expertise-resolver.resolveExpertise', () => {
     expect(expertiseRepo.findApplicable).not.toHaveBeenCalled();
   });
 
-  it('returns [] when filter does not match any expertise (delegated to repo)', async () => {
-    expertiseRepo.findApplicable.mockResolvedValue([]);
+  it('does NOT call the repo when the filter has a scope but no categories', async () => {
     const out = await resolveExpertise({
       expertiseRefs: [],
       expertiseFilter: { scope: ['cta'] },
     });
     expect(out).toEqual([]);
+    expect(expertiseRepo.findApplicable).not.toHaveBeenCalled();
+  });
+
+  it('returns [] when filter does not match any expertise (delegated to repo)', async () => {
+    expertiseRepo.findApplicable.mockResolvedValue([]);
+    const out = await resolveExpertise({
+      expertiseRefs: [],
+      expertiseFilter: { scope: ['cta'], categories: ['redaction'] },
+    });
+    expect(out).toEqual([]);
     expect(expertiseRepo.findApplicable).toHaveBeenCalledWith({
       scope: ['cta'],
+      categories: ['redaction'],
       emailType: undefined,
       language: undefined,
     });
   });
 
-  it('passes filter args correctly when scope+emailType+language are set', async () => {
+  it('passes scope+categories+emailType+language to the repo', async () => {
     expertiseRepo.findApplicable.mockResolvedValue([]);
     await resolveExpertise({
       expertiseRefs: [],
-      expertiseFilter: { scope: ['cta'], emailType: 'promo', language: 'fr' },
+      expertiseFilter: {
+        scope: ['cta'],
+        categories: ['redaction'],
+        emailType: 'promo',
+        language: 'fr',
+      },
     });
     expect(expertiseRepo.findApplicable).toHaveBeenCalledWith({
       scope: ['cta'],
+      categories: ['redaction'],
       emailType: 'promo',
       language: 'fr',
     });
