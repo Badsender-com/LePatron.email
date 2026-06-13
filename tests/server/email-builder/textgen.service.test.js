@@ -90,6 +90,7 @@ describe('textgen.service.generateBlockText', () => {
     ]);
     expect(expertiseRepo.findApplicable).toHaveBeenCalledWith({
       scope: 'cta',
+      categories: ['redaction'],
       emailType: 'promo',
     });
   });

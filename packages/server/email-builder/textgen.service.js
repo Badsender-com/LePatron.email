@@ -18,10 +18,11 @@ const ERROR_CODES = require('../constant/error-codes.js');
  * an array of { path, value } pairs (dot-notation paths as VALUES — BSON
  * forbids dots in persisted object keys).
  *
- * POC shortcut (to revisit for the real feature): the expertise scope is
- * hardcoded to { scope: 'cta', emailType: 'promo' } — the real feature must
- * resolve the scope from the nature of the block's fields (DSE/block-doc
- * design input).
+ * POC shortcut (to revisit for the real feature): the expertise filter is
+ * hardcoded to { scope: 'cta', categories: ['redaction'], emailType: 'promo' }
+ * — the real feature must resolve the scope from the nature of the block's
+ * fields (DSE/block-doc design input). The categories filter keeps a future
+ * qc.cta.* expertise out of this generation prompt (cf. findApplicable).
  */
 async function generateBlockText({
   groupId,
@@ -42,6 +43,7 @@ async function generateBlockText({
 
   const applicable = await expertiseRepo.findApplicable({
     scope: 'cta',
+    categories: ['redaction'],
     emailType: 'promo',
   });
 

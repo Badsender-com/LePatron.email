@@ -20,4 +20,9 @@ module.exports = {
     { expertiseId: 'redaction.cta.promo-specifics' },
     { expertiseId: 'redaction.brand-voice-defaults' },
   ],
+  // The findApplicable filter this feature issues. Feeds the activation-impact
+  // alert: activating a redaction/cta expertise surfaces "loaded by POC textgen".
+  expertiseFilters: [
+    { scope: 'cta', categories: ['redaction'], emailType: 'promo' },
+  ],
 };
