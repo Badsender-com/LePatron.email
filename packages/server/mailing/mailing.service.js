@@ -208,20 +208,17 @@ async function findTags(query) {
 
   if (!companyId) return [];
 
-  // The `Tag` collection holds tags created via the "New label" flow, but
-  // historical mailings carry labels directly in `mailing.tags` without a
-  // corresponding `Tag` row. Returning the union avoids hiding tags that
-  // are actually applied on emails.
-  const [registeredTags, usedTags] = await Promise.all([
-    Mailings.findTags({ _company: companyId }),
-    Mailings.distinct('tags', { _company: companyId }),
-  ]);
-
-  const merged = Array.from(new Set([...registeredTags, ...usedTags])).filter(
-    Boolean
-  );
-  merged.sort((a, b) => a.localeCompare(b));
-  return merged;
+  // The `Tag` collection is the single source of truth for the filter dropdown.
+  // It is read through an index ({ companyId, label }), so this stays fast even
+  // for companies with many mailings.
+  //
+  // Previously this also merged a live `Mailings.distinct('tags', { _company })`
+  // to surface labels of historical mailings that had no `Tag` row (the feature
+  // shipped without a data migration). That distinct scans every mailing of the
+  // company and timed out in production. A one-off backfill migration populates
+  // the missing `Tag` rows from `mailing.tags`, and MUST be run once before/at
+  // the deploy of this change so historical labels stay in the dropdown.
+  return Mailings.findTags({ _company: companyId });
 }
 
 async function findOne(mailingId) {
