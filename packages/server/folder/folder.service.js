@@ -18,6 +18,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
+  listChildren,
   hasAccess,
   create,
   rename,
@@ -29,6 +30,27 @@ module.exports = {
 
 async function listFolders() {
   return Folders.find({}).populate('_parentFolder');
+}
+
+// Direct children of a folder, for lazy-loading the tree on expand. Folders
+// are at most 2 levels deep (a subfolder cannot itself have children — see
+// `checkIsParent`/PARENT_FOLDER_IS_SUBFOLDER), so children are always leaves
+// and therefore reported with `hasChildren: false`.
+async function listChildren(folderId, user) {
+  // Throws if the user can't reach the parent folder's workspace.
+  await hasAccess(folderId, user);
+
+  const children = await Folders.find({
+    _parentFolder: mongoose.Types.ObjectId(folderId),
+  })
+    .sort({ name: 1 })
+    .lean();
+
+  return children.map((folder) => ({
+    ...folder,
+    id: folder._id.toString(),
+    hasChildren: false,
+  }));
 }
 
 async function hasAccess(folderId, user) {
