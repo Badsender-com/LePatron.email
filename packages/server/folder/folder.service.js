@@ -32,10 +32,10 @@ async function listFolders() {
   return Folders.find({}).populate('_parentFolder');
 }
 
-// Direct children of a folder, for lazy-loading the tree on expand. Folders
-// are at most 2 levels deep (a subfolder cannot itself have children — see
-// `checkIsParent`/PARENT_FOLDER_IS_SUBFOLDER), so children are always leaves
-// and therefore reported with `hasChildren: false`.
+// Direct children of a folder, for lazy-loading the tree on expand. Each child
+// is flagged with `hasChildren` (computed in a single aggregation) so the tree
+// shows an expand arrow for any child that has its own children — without
+// assuming a fixed nesting depth.
 async function listChildren(folderId, user) {
   // Throws if the user can't reach the parent folder's workspace.
   await hasAccess(folderId, user);
@@ -46,10 +46,23 @@ async function listChildren(folderId, user) {
     .sort({ name: 1 })
     .lean();
 
+  if (children.length === 0) {
+    return [];
+  }
+
+  const childIds = children.map((folder) => folder._id);
+  const parentsWithChildren = await Folders.aggregate([
+    { $match: { _parentFolder: { $in: childIds } } },
+    { $group: { _id: '$_parentFolder' } },
+  ]);
+  const parentsWithChildrenSet = new Set(
+    parentsWithChildren.map((doc) => doc._id.toString())
+  );
+
   return children.map((folder) => ({
     ...folder,
     id: folder._id.toString(),
-    hasChildren: false,
+    hasChildren: parentsWithChildrenSet.has(folder._id.toString()),
   }));
 }
 

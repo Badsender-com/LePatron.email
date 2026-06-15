@@ -13,6 +13,7 @@ import {
   SET_PAGINATION,
   FETCH_WORKSPACES,
   FETCH_FOLDER_OR_WORKSPACE,
+  FETCH_FOLDER_CHILDREN,
 } from '~/store/folder';
 import { USER } from '~/store/user';
 import { canCreateFolder } from '~/utils/workspaces';
@@ -362,6 +363,18 @@ export default {
     async fetchWorkspacesData() {
       await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
     },
+    // Vuetify calls this the first time a node with an (empty) `children` array
+    // is expanded. We fetch the direct children on demand. The store action also
+    // persists them onto the matching node in `treeviewWorkspaces`, so they
+    // survive a tree recreation (treeKey++); here we additionally fill Vuetify's
+    // own `item.children` so they render immediately on this expand.
+    async loadChildren(item) {
+      const children = await this.$store.dispatch(
+        `${FOLDER}/${FETCH_FOLDER_CHILDREN}`,
+        { node: item }
+      );
+      item.children.splice(0, item.children.length, ...children);
+    },
     checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
     },
@@ -618,6 +631,7 @@ export default {
         :active="[selectedItem]"
         :items="treeviewWorkspaces"
         :open="openNodes"
+        :load-children="loadChildren"
         hoverable
         return-object
         dense
