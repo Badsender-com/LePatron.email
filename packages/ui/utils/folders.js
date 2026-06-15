@@ -53,6 +53,20 @@ export const getFolders = (folder, hasAccess, parentPath, callback) => {
           }
         : {}),
     };
+  } else if (folder.hasChildren) {
+    // Lazy-loading: an empty `children` array makes Vuetify render the expand
+    // arrow and trigger `load-children` on first open. The actual children are
+    // fetched on demand via GET /folders/:id/children.
+    mapFolderToTreeviewTypeData = {
+      ...mapFolderToTreeviewTypeData,
+      children: [],
+    };
   }
   return mapFolderToTreeviewTypeData;
 };
+
+// Maps a single lazy-loaded child folder (from GET /folders/:id/children) to
+// the treeview node shape, building its breadcrumb path from the parent's.
+export function mapChildFolderToTreeviewNode(folder, hasAccess, parentPath) {
+  return getFolders(folder, hasAccess, parentPath, null);
+}
