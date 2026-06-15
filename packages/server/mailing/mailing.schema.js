@@ -268,10 +268,6 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
       espIds: 1,
       updatedAt: 1,
       createdAt: 1,
-      // Projected only to derive the preview-badge flag below (so we avoid a
-      // second `find({ previewHtml: { $exists: true } })` round-trip per page).
-      // The raw HTML is stripped from each doc before returning.
-      previewHtml: 1,
     },
     lean: true,
     ...additionalQueryParams,
@@ -280,6 +276,24 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const { docs, ...restPaginationProperties } = result;
 
   const ids = docs.map((doc) => doc._id);
+
+  // Derive the preview-badge flag without transferring the (potentially large)
+  // rendered-email HTML for every row. A find() projection can't compute a
+  // boolean from `previewHtml` because mongoose-paginate-v2 uses .find(), whose
+  // projection rejects aggregation expressions ($ne/$cond/$ifNull) — so we fetch
+  // only the _ids that have it. This _id-only query is cheap.
+  //
+  // "Has a preview" means non-empty, not merely present: the download/FTP flow
+  // sends `previewHtml` verbatim as the email body (mailing.service.js), so an
+  // empty string is nothing to download. Matches the `!!previewHtml` semantics
+  // used by the other listing path (findWithHasPreview).
+  const mailingsWithHtmlPreview = await this.find(
+    { _id: { $in: ids }, previewHtml: { $exists: true, $nin: [null, ''] } },
+    { _id: 1 }
+  ).lean();
+  const mailingsWithHtmlPreviewSet = new Set(
+    mailingsWithHtmlPreview.map((mailing) => mailing._id.toString())
+  );
 
   // Get unresolved comment counts for each mailing
   const Comment = mongoose.models[CommentModel];
@@ -307,11 +321,13 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     }, {});
   }
 
-  const finalDocs = docs.map(({ previewHtml, ...doc }) => ({
+  // Strip previewHtml defensively: the projection above already omits it, but
+  // destructuring it out here keeps the "never serve the blob in the listing"
+  // invariant even if a future change reprojects it. `hasHtmlPreview` carries
+  // the only bit the client needs.
+  const finalDocs = docs.map(({ previewHtml: _previewHtml, ...doc }) => ({
     ...doc,
-    // Mirrors the previous `{ previewHtml: { $exists: true } }` check: a
-    // missing field is projected as `undefined` by lean find.
-    hasHtmlPreview: previewHtml !== undefined,
+    hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
   }));
 
