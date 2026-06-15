@@ -379,14 +379,16 @@ export default {
       await this.$store.dispatch(`${FOLDER}/${FETCH_WORKSPACES}`);
     },
     // Vuetify calls this the first time a node with an (empty) `children` array
-    // is expanded. We fetch the direct children on demand and push them into
-    // the node's `children` array; Vuetify then caches them and won't re-call.
+    // is expanded. We fetch the direct children on demand. The store action also
+    // persists them onto the matching node in `treeviewWorkspaces`, so they
+    // survive a tree recreation (treeKey++); here we additionally fill Vuetify's
+    // own `item.children` so they render immediately on this expand.
     async loadChildren(item) {
       const children = await this.$store.dispatch(
         `${FOLDER}/${FETCH_FOLDER_CHILDREN}`,
         { node: item }
       );
-      item.children.push(...children);
+      item.children.splice(0, item.children.length, ...children);
     },
     checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
