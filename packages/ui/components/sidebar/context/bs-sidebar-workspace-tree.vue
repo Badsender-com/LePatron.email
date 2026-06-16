@@ -369,11 +369,18 @@ export default {
     // survive a tree recreation (treeKey++); here we additionally fill Vuetify's
     // own `item.children` so they render immediately on this expand.
     async loadChildren(item) {
-      const children = await this.$store.dispatch(
-        `${FOLDER}/${FETCH_FOLDER_CHILDREN}`,
-        { node: item }
-      );
-      item.children.splice(0, item.children.length, ...children);
+      // Vuetify keeps the node's lazy-load spinner up until this promise
+      // settles. If the fetch rejects (e.g. a 404) we must still resolve here,
+      // otherwise the loader spins forever. Fall back to an empty list.
+      try {
+        const children = await this.$store.dispatch(
+          `${FOLDER}/${FETCH_FOLDER_CHILDREN}`,
+          { node: item }
+        );
+        item.children.splice(0, item.children.length, ...children);
+      } catch (err) {
+        item.children.splice(0, item.children.length);
+      }
     },
     checkIfAuthorizedFolderMenu(item) {
       return item.hasAccess && item?.type === SPACE_TYPE.FOLDER;
