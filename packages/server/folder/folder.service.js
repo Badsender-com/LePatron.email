@@ -37,8 +37,18 @@ async function listFolders() {
 // shows an expand arrow for any child that has its own children — without
 // assuming a fixed nesting depth.
 async function listChildren(folderId, user) {
-  // Throws if the user can't reach the parent folder's workspace.
-  await hasAccess(folderId, user);
+  // Listing children is a pure READ. Use read-access semantics (same-group
+  // check) — the same gate `getFolder` applies — rather than the stricter
+  // `hasAccess` (workspace membership). A read-only / non-assigned user can
+  // already see the workspace and its top-level folders in the tree, so they
+  // must be able to expand a folder to reveal its subfolders too. Using the
+  // membership gate here threw a 404 for those users on any folder with
+  // subfolders, which left the tree's lazy-load loader spinning forever.
+  const workspace = await getWorkspaceForFolder(folderId);
+  if (!workspace) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  workspaceService.doesUserHaveReadAccess(user, workspace);
 
   const children = await Folders.find({
     _parentFolder: mongoose.Types.ObjectId(folderId),
