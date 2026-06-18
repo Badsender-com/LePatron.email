@@ -383,7 +383,7 @@ export default {
 </script>
 
 <template>
-  <v-dialog v-model="show" max-width="550" persistent>
+  <v-dialog v-model="show" max-width="650" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
         <lucide-languages
@@ -596,7 +596,7 @@ export default {
 
 <style lang="scss" scoped>
 .destination-tree {
-  max-height: 200px;
+  max-height: 50vh;
   overflow-y: auto;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
