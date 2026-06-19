@@ -22,239 +22,261 @@
 
 ---
 
-## US-00 — Spike : investigation Mosaico 🔴
+**US-00 — Spike Mosaico** ✅ (terminée)
 
-**Objectif** : comprendre exactement comment Mosaico interagit avec les images de LePatron, avant de toucher au modèle de données ou aux endpoints.
+- Investigation de la compatibilité Mosaico
+- Identification des contraintes architecturales
+- Décision : approche Option 3 (Vue à côté de Mosaico)
 
-**Tâches** :
+**US-01 — Modèle de données : extensions Image** ✅ (terminée)
 
-- Lire le code de l'intégration Mosaico dans `packages/editor/`
-- Identifier les endpoints API consommés par Mosaico pour les images (upload, list, delete…)
-- Identifier le format de réponse attendu par Mosaico
-- Lister les champs d'image utilisés par Mosaico (id, url, dimensions…)
-- Documenter dans un fichier `docs/gallery-redesign/MOSAICO_COMPAT.md` les contraintes à respecter
+- Ajout des champs `label`, `source`, `externalMetadata`
+- Index Mongo sur libellé, format, date
+- Tests unitaires Jest
 
-**Livrable** : document Markdown listant les contraintes Mosaico.
+**US-02 — API backend : recherche et filtres** ✅ (terminée)
 
-⏱ 1 jour
-⚠ Si on ne fait pas ce spike, on risque de casser l'éditeur email à la première modif. Investissement essentiel.
-🧪 Pas de tests automatisés, mais une PR "documentation" mergée dans develop.
+- Endpoint `GET /api/templates/:templateId/images` enrichi
+- Endpoint `PATCH /api/images/:id/label`
+- Tests Jest, compatibilité Mosaico préservée
 
----
+**US-03 — Script de migration des données** ✅ (terminée)
 
-## US-01 — Modèle de données : extensions du schéma Image 🔴
+- Migration idempotente, resumable, dry-run
+- Initialisation des libellés et thumbnails standardisés
 
-**Objectif** : faire évoluer le modèle Mongoose `Image` pour ajouter les champs nécessaires à la V1, **sans casser la compatibilité Mosaico**.
+**US-04 — Infrastructure Vue dans l'éditeur**
 
-**Tâches** :
+Mise en place de l'infrastructure technique pour héberger un composant Vue dans le contexte éditeur, sans toucher à Mosaico.
 
-- Ajouter le champ `label` (libellé d'affichage, distinct du nom de fichier technique)
-  - Par défaut, à l'upload, `label = nom de fichier original` (avant renommage technique)
-- Ajouter le champ `source` (String, default `upload`)
-- Ajouter le champ `externalMetadata` (Mixed, default `{}`)
-- **Aucune modification ni suppression de champ existant**
-- Ajouter les index Mongo nécessaires :
-  - `templateId + label` (recherche)
-  - `templateId + format` (filtre type)
-  - `templateId + createdAt` (tri date)
-- Adapter les sérializeurs API pour exposer ces nouveaux champs aux nouveaux endpoints, sans les exposer aux endpoints consommés par Mosaico (à valider via US-00)
+- Injection d'un `<div id="gallery-panel">` dans un template de l'éditeur (template Knockout `tmpl-badsender/toolbox.tmpl.html`), monté via le pattern plugin existant
+- Bootstrap d'une instance Vue 2 sur ce div — **Vue nu, sans Vuetify** (voir note d'architecture ci-dessous)
+- Canal de communication Knockout ↔ Vue (événements custom + souscriptions aux observables)
+- Coexistence Knockout + Vue validée sur les flows critiques de Mosaico
 
-⏱ 0.5 jour
-⚠ La compat Mosaico est cruciale : ne pas modifier les champs existants. Voir US-00.
-🧪 Tests unitaires Jest sur le modèle (validation, defaults, virtuals).
+> **Note d'architecture (décidée en US-04, juin 2026).** L'UI de la galerie est construite en **Vue nu avec templates inline**, à l'identique des 4 plugins Vue déjà présents dans l'éditeur (`espPlugin`, `customizedBlockPlugin`, `personalizedBlocksPlugin`, `trackingParamsPlugin`), et bundlée par le build gulp/browserify existant. **Pas de Vuetify, pas de fichiers `.vue`.** Raisons : (1) l'éditeur Mosaico n'utilise pas Vuetify — seule la UI de gestion Nuxt l'utilise ; (2) le build gulp de l'éditeur ne compile pas les `.vue` (ni `vue-loader` ni `vueify`) ; (3) le CSS global de Vuetify 1.12 (`.v-application`, resets) entrerait en collision avec le CSS de Mosaico dans le même DOM, ce qui contredirait le mandat « ne rien casser ». La cohérence visuelle vient du mockup et de la palette (navy `#0d3b4f`, cyan `#1bb5d6`), appliquée en **CSS scopé** au panneau. La virtualisation (US-05) utilise `vue-virtual-scroller` (lib autonome, indépendante de Vuetify).
 
-**Hors scope V1** :
+**Procédure de test pour cette US** :
 
-- ❌ `deletedAt` / soft delete (reporté V2)
-- ❌ Relation Image ↔ Collection (reporté V2, pas de collections en V1)
+- Tests unitaires Jest sur les helpers d'injection et de communication
+- Tests Cypress de non-régression Mosaico :
+  - Ouverture de l'éditeur
+  - Création d'un nouveau bloc
+  - Drag-and-drop d'un bloc
+  - Modification d'un texte
+  - Modification d'une image (insertion, déplacement)
+  - Upload d'une image (galerie + drop direct)
+  - Sauvegarde
+  - Export
+- Test manuel approfondi : 30 min d'utilisation libre de l'éditeur pour détecter d'éventuels comportements inattendus
+- Mesure de la mémoire consommée avant/après injection Vue (Chrome DevTools)
+- Mesure du temps de chargement de l'éditeur avant/après injection Vue
+- Test sur navigateurs : Chrome, Firefox, Safari récents (Edge si supporté)
+- Test sur 3 tailles d'écran : 13", 15", 27"
+- ⚠ Aucune fonctionnalité utilisateur visible à cette étape, c'est uniquement de la plomberie technique
 
----
+**US-05 — Grille refondue (sans interactions)**
 
-## US-02 — API backend : recherche, filtres, renommage 🔴
+Affichage de la nouvelle grille à la place de l'ancienne, sans encore brancher les interactions.
 
-**Objectif** : enrichir l'endpoint de liste d'images existant pour supporter recherche et filtres, et ajouter un endpoint de renommage.
+- Composant Vue `galleryPanel` (template inline, cf. note d'architecture US-04) qui affiche la grille
+- Vignettes carrées avec damier sur transparence
+- Libellé sous chaque vignette
+- Compteur d'images
+- Scroll virtualisé (lib type `vue-virtual-scroller` compatible Vue 2)
+- Pas d'overlay, pas de recherche, pas de filtres dans cette US (réservés aux suivantes)
 
-**Endpoints à modifier ou créer** :
+**Procédure de test pour cette US** :
 
-- `GET /api/templates/:templateId/images` (modification) :
-  - Filtres : `?search=`, `?format=jpg|png|gif`, `?sortBy=date_desc|date_asc`
-  - Pagination/curseur pour scroll virtualisé
-  - La normalisation du paramètre `format` doit gérer toutes les variantes de casse (JPG, jpg, JpG…) et matcher JPG ET JPEG pour le filtre "JPG"
-- `PATCH /api/images/:id/label` (nouveau) :
-  - Modifier le libellé d'une image
-  - Le nom de fichier technique reste inchangé
+- Tests unitaires Jest sur le composant `thumb` (template inline, cf. note d'architecture US-04)
+- Tests Cypress :
+  - Ouverture galerie, affichage des vignettes
+  - Affichage du damier sur PNG, pas sur JPG
+  - Affichage du badge GIF
+  - Affichage du libellé
+  - Affichage du compteur
+- Test avec différents volumes : 0 image, 1 image, 10 images, 100 images, 500 images
+- Mesure de performance : temps d'affichage initial de la grille à chaque volume
+- Vérification visuelle des thumbnails sur 5 templates clients différents (Clarins, Editis...)
+- Test de non-régression Mosaico (cf. US-04)
 
-**Compat Mosaico** : tous les endpoints existants utilisés par Mosaico doivent rester compatibles (voir US-00). Si nécessaire, dupliquer un endpoint plutôt que modifier celui consommé par Mosaico.
+**US-06 — Recherche par libellé**
 
-⏱ 1 jour
-⚠ Préserver la compat Mosaico. Performance de recherche : utiliser un index Mongo sur `label`.
-🧪 Tests Jest sur chaque endpoint (cas nominal + cas d'erreur). Test sur les variantes de casse du filtre format.
+Branchement de la barre de recherche sur l'API.
 
-**Hors scope V1** :
+- Barre de recherche en haut du panneau
+- Debounce de 300ms pour éviter de saturer l'API
+- Requête vers `GET /api/templates/:templateId/images?search=`
+- Affichage du résultat dans la grille
+- État vide soigné si recherche sans résultat
 
-- ❌ Endpoints de soft delete / restore / corbeille (reporté V2)
-- ❌ Endpoints de collections (reporté V2)
-- ❌ Endpoints de bulk (reporté V2)
-- ❌ Endpoint d'usage `?usedIn` (reporté V2)
+**Procédure de test pour cette US** :
 
----
+- Tests unitaires Jest sur la logique de debounce et d'appel API
+- Tests Cypress :
+  - Recherche d'une image existante
+  - Recherche d'une image inexistante (état vide)
+  - Effacement de la recherche (retour à la galerie complète)
+  - Recherche avec caractères spéciaux (accents, espaces, casse mixte)
+- Mesure de performance : temps de réponse de la recherche sur galerie de 500 images (cible : <300ms)
+- Vérification que la recherche ne re-render pas toutes les vignettes inutilement
 
-## US-03 — Script de migration des données existantes 🔴
+**US-07 — Filtres par type et par date**
 
-**Objectif** : migrer les images existantes vers le nouveau modèle, sans interruption de service.
+Branchement des filtres rapides.
 
-**Tâches** :
+- Filtres : Tous / JPG / PNG / GIF
+- Filtres : Récent / Ancien (tri)
+- Requêtes vers l'API avec `?format=` et `?sortBy=`
+- Cumul avec la recherche (recherche + filtre)
 
-- Script `packages/server/scripts/migrate-gallery-v1.js`
-- Pour chaque image existante :
-  - Initialiser `label` à partir du nom de fichier original (ou nom technique si non disponible)
-  - Initialiser `source = 'upload'`
-  - Initialiser `externalMetadata = {}`
-  - Régénérer les thumbnails standardisés via Sharp si nécessaire
-- Propriétés :
-  - **Idempotent** : skip les images déjà migrées (`label` non vide = skip)
-  - **Resumable** : reprend là où il s'est arrêté (via curseur ou checkpoint)
-  - **Dry-run** : option `--dry-run`
-  - **Batched** : traite par lots de 100 images
-  - **Logs progressifs** : `[1234/5678] Migrée image XYZ`
-- Documentation d'utilisation dans `packages/server/scripts/README.md`
+**Procédure de test pour cette US** :
 
-⏱ 1 jour
-⚠ Tester sur un dump de prod avant de lancer en réel. Prévoir une fenêtre de maintenance pour le run réel.
-🧪 Tests Jest unitaires sur les fonctions de migration. Un test E2E sur un dataset de 10 images mock.
+- Tests unitaires Jest sur la logique de combinaison filtres + recherche
+- Tests Cypress :
+  - Filtre JPG, vérification que seuls les JPG s'affichent
+  - Filtre JPG avec variantes JPEG, jpg, JPEG, JpG (toutes variantes de casse)
+  - Tri récent, tri ancien
+  - Combinaison filtre + recherche
+  - Désactivation de tous les filtres (retour à "Tous")
+- Mesure de performance : temps d'application d'un filtre sur galerie de 500 images
+- Test que les requêtes ne sont pas dupliquées (vérifier le réseau dans DevTools)
 
----
+**US-08 — Overlay au survol des vignettes**
 
-## US-04 — Refonte de la grille galerie (panneau gauche) 🟡
+Affichage des actions au survol.
 
-**Objectif** : remplacer l'UI actuelle de la galerie par la nouvelle version. **Sans introduire de panneau droit, sans collections, sans sélection multiple.**
+- Overlay foncé en bas de la vignette au survol
+- 2 boutons : Éditer (icône crayon), Supprimer (icône poubelle)
+- Animation discrète à l'apparition
+- Pas de comportement encore branché sur les boutons (US suivantes)
 
-**Tâches** :
+**Procédure de test pour cette US** :
 
-- Composant `GalleryPanel.vue` (ou équivalent, nom à valider à l'exploration) qui contient :
-  - Onglets `Spécifique à l'email` / `Commun au template` (inchangés)
-  - Barre de recherche (debounce 300ms, requête API avec `?search=`)
-  - Filtres rapides (JPG/PNG/GIF) → requête API avec `?format=`
-  - Filtres rapides date (récent/ancien) → requête API avec `?sortBy=`
-  - Zone d'upload compacte (réduite quand des images existent — drag & drop + clic)
-  - Grille virtualisée (lib type `vue-virtual-scroller` ou équivalent compatible Vue 2 / Vuetify 1.12)
-  - Compteur d'images
-- Composant `Thumb.vue` (ou équivalent) :
-  - Vignette carrée
-  - Damier si fond transparent (PNG/GIF), fond uni si JPG
-  - Libellé sous la vignette (tronqué avec ellipsis si trop long)
-  - Badge GIF si applicable
-  - Tooltip au survol prolongé : libellé complet, dimensions, format, date d'upload
-  - Overlay au survol avec 2 actions : **Éditer** / **Supprimer**
-    - L'action "Renommer" peut être déclenchée par un double-clic sur le libellé (interaction subtile, pas dans l'overlay)
-    - Ou via menu contextuel ⋯ — à arbitrer en cours de dev
-- Empty state quand 0 image (galerie vide, recherche sans résultat, filtre sans résultat)
+- Tests Cypress :
+  - Survol d'une vignette → overlay visible
+  - Sortie de la vignette → overlay disparaît
+  - Survol multiple successif sur plusieurs vignettes
+- Test visuel sur 3 navigateurs
+- Test au clavier (focus visible attendu pour l'accessibilité de base)
+- Vérification qu'aucune impact perf n'est introduit (pas de re-render à chaque hover)
 
-**Hors scope dans cette US** :
+**US-09 — Tooltip au survol prolongé**
 
-- ❌ Panneau droit (reporté V2)
-- ❌ Mode Détails (reporté V2)
-- ❌ Sélection multiple, checkboxes, bulk (reporté V2)
-- ❌ Action "Collections" dans l'overlay (reporté V2)
-- ❌ Avertissement à la suppression (décision produit : ISO existant)
+Ajout du tooltip avec métadonnées.
 
-⏱ 2.5 jours
-🧪 Cypress : ouverture galerie, recherche d'une image, filtre par format, filtre par date, upload d'une image, survol d'une vignette pour voir le tooltip, ouverture de l'overlay.
+- Tooltip composant custom (pas de Vuetify, cf. note d'architecture US-04)
+- Affiche : libellé complet, dimensions, format, date d'upload
+- Apparition après 500ms de survol pour éviter le bruit visuel
+- Disparition immédiate à la sortie
 
----
+**Procédure de test pour cette US** :
 
-## US-05 — Action Éditer depuis la galerie 🟡
+- Tests Cypress :
+  - Survol prolongé → tooltip apparaît avec les bonnes infos
+  - Vérification du contenu : libellé, dimensions, format, date
+  - Tooltip se ferme à la sortie de la vignette
+- Vérification visuelle sur 5 images avec libellés courts/longs
+- Test de non-superposition avec l'overlay d'actions
 
-**Objectif** : pouvoir relancer l'éditeur Konva sur une image déjà uploadée.
+**US-10 — Action Éditer (relance Konva)**
 
-**Tâches** :
+Branchement du bouton Éditer pour relancer Konva sur une image existante.
 
-- Identifier le composant existant qui lance l'éditeur Konva lors d'un upload
-- Créer un point d'entrée pour relancer cet éditeur sur une image existante :
-  - Charger l'image source depuis le storage (FS ou S3)
-  - Ouvrir l'éditeur Konva avec cette image
-  - À la sauvegarde : remplacer l'image originale (pas de nouvelle version dans la V1)
-- Brancher depuis l'action "Éditer" de l'overlay au survol d'une vignette
-- À la sauvegarde, mettre à jour le thumbnail et invalider le cache front si nécessaire
+- Au clic sur le bouton Éditer de l'overlay → ouverture de l'éditeur Konva avec l'image source chargée
+- À la sauvegarde dans Konva → remplacement de l'image originale (pas de nouvelle version)
+- Régénération automatique du thumbnail via Sharp
+- Mise à jour de la vignette dans la galerie
 
-**Décision produit confirmée** : on **remplace** l'image originale (plus simple, conforme au comportement actuel d'upload). L'historique des versions est explicitement reporté.
+**Procédure de test pour cette US** :
 
-⏱ 1.5 jour
-⚠ Konva est explicitement hors scope de modifications. On l'utilise, on ne le modifie pas. Vérifier que la sauvegarde régénère bien le thumbnail Sharp.
-🧪 Cypress : ouvrir une image existante dans l'éditeur, modifier, sauvegarder, vérifier que la vignette est mise à jour.
+- Tests Cypress :
+  - Clic sur Éditer → Konva s'ouvre avec la bonne image
+  - Modification dans Konva → sauvegarde
+  - Retour à la galerie → thumbnail mis à jour
+  - Annulation dans Konva → galerie inchangée
+- Test sur différents formats (JPG, PNG, GIF)
+- Test sur différentes dimensions (petites images, grandes images)
+- Vérification que l'image dans les emails utilisant cette image n'est pas affectée (ISO comportement)
+- Test que le thumbnail est bien régénéré (pas de cache stale)
 
----
+**US-11 — Action Renommer (édition inline)**
 
-## US-06 — Action Renommer le libellé 🟡
+Édition inline du libellé par double-clic.
 
-**Objectif** : permettre de renommer le libellé d'une image (le nom de fichier technique reste inchangé).
-
-**Tâches** :
-
-- Implémenter l'UI de renommage : **double-clic sur le libellé sous la vignette → champ inline éditable** (style Figma / Finder / Notion)
-  - Valider par Entrée ou perte de focus
-  - Annuler par Échap
-  - Sélectionner tout le texte à l'entrée en mode édition (UX standard)
-- Appel à l'endpoint `PATCH /api/images/:id/label`
+- Double-clic sur le libellé d'une vignette → champ input apparaît
+- Sélection automatique du texte à l'entrée en édition
+- Validation par Entrée ou par perte de focus
+- Annulation par Échap
+- Appel à `PATCH /api/images/:id/label`
 - Mise à jour optimiste dans l'UI
-- Gestion d'erreur (si le libellé est vide, trop long, ou en erreur réseau)
+- Gestion d'erreur (libellé vide, trop long, erreur réseau)
 
-**Fallback si la solution s'avère complexe à implémenter proprement** : menu contextuel `⋯` sur la vignette → "Renommer" → input ou petite modale. À ne mobiliser qu'en dernier recours, avec validation du PO.
+**Procédure de test pour cette US** :
 
-⏱ 0.5 jour
-🧪 Cypress : renommer une image, vérifier l'affichage, vérifier la persistence après refresh.
+- Tests unitaires Jest sur la logique d'édition inline
+- Tests Cypress :
+  - Double-clic → input apparaît avec le texte sélectionné
+  - Modification + Entrée → libellé mis à jour
+  - Modification + perte de focus → libellé mis à jour
+  - Modification + Échap → libellé non modifié
+  - Libellé vide → message d'erreur ou refus
+  - Persistence après refresh
+- Test que le nom de fichier technique reste inchangé
+- Test que la recherche fonctionne avec le nouveau libellé immédiatement
+- Test sur libellés avec caractères spéciaux, accents, émojis
 
----
+**US-12 — Polissage et finitions**
 
-## US-07 — Polissage 🟢
+Améliorations transversales et finalisation.
 
-**Objectif** : finaliser les détails qui font la différence côté UX.
-
-**Tâches** :
-
-- Animations légères (apparition de l'overlay, transitions)
-- États vides soignés (galerie vide, recherche sans résultat)
+- Animations légères (apparition overlay, transitions filtres)
+- États vides soignés (galerie vide, recherche sans résultat, filtre sans résultat)
+- Loading states (squelettes pendant le chargement)
+- Gestion des erreurs réseau (timeout, 5xx, etc.)
 - Accessibilité de base (rôles ARIA, focus visible, navigation clavier)
-- Gestion des erreurs (upload qui échoue, network error, timeout)
-- Tooltips sur les icônes au survol prolongé
-- Loading states (squelettes pendant le chargement de la grille)
-- Cohérence visuelle finale avec le design system LePatron (validation avec Jonathan/Olivier)
-- Tests de non-régression sur l'ensemble du flux
-- Vérification finale de la compat Mosaico (test manuel : upload, édition d'email avec images, export)
+- Audit final de cohérence visuelle avec Jonathan/Olivier
 
-⏱ 0.5 à 1 jour
-🧪 Cypress sur les états vides, les erreurs réseau (avec interception). Test manuel Mosaico complet.
+**Procédure de test pour cette US** :
 
----
+- Tests Cypress sur tous les états vides
+- Tests Cypress sur les erreurs réseau (avec interception)
+- Test au clavier complet (Tab, Entrée, Échap, flèches)
+- Audit Lighthouse sur la page de l'éditeur
+- Test sur navigateurs : Chrome, Firefox, Safari récents
+- Test sur 3 tailles d'écran
+- Vérification finale du respect des métriques de performance définies
+- Recette par toi (PO) sur 3 cas d'usage réels
 
-## Total estimé
+### Estimation V1 actualisée
 
-| Phase          | US                  | Jours              |
-| -------------- | ------------------- | ------------------ |
-| Investigation  | US-00               | 1                  |
-| Backend & data | US-01 à US-03       | 2.5                |
-| UI             | US-04, US-05, US-06 | 4.5                |
-| Polissage      | US-07               | 0.5 - 1            |
-| **TOTAL V1**   |                     | **~8.5 à 9 jours** |
+Avec l'approche Option 3 (sortir de Mosaico) et le découpage en petites PRs :
 
-À ajouter : temps de review, allers-retours, intégration continue, débuggage en environnement de test. Compter probablement **2 à 3 semaines de calendrier** pour une exécution sereine à 1 développeur.
+| Lot                  | US                         | Estimation                  |
+| -------------------- | -------------------------- | --------------------------- |
+| Backend (terminé)    | US-00 à US-03              | ✅                          |
+| Infrastructure       | US-04                      | 2-3 jours                   |
+| UI - Affichage       | US-05, US-08, US-09        | 3-4 jours                   |
+| UI - Interactions    | US-06, US-07, US-10, US-11 | 4-5 jours                   |
+| Finition             | US-12                      | 1-2 jours                   |
+| **TOTAL V1 restant** |                            | **10-14 jours-développeur** |
 
----
+Calendrier réaliste : **3 à 4 semaines** en intégrant le temps de review par le prestataire externe et les éventuels allers-retours.
 
-## V2 — Prévisualisation du périmètre suivant
+### Risques techniques identifiés
 
-À titre indicatif, la V2 ajoutera probablement, dans l'ordre :
+- **Coexistence Knockout + Vue** : conflits possibles sur le DOM, les événements clavier, le CSS. À adresser dans l'US-04 et tester systématiquement par la suite.
+- **Performance en production** : contexte de dégradation observée, vigilance accrue à chaque PR.
+- **Mosaico** : compatibilité de l'API images existante à préserver absolument (validée lors de l'US-00).
+- **Vue 2 / Vuetify 1.12** : versions anciennes, pas de migration dans ce projet, on reste cohérent avec l'existant.
+- **Migration des données** : script de migration géré dans l'US-03 (terminée).
+- **Préservation du comportement asymétrique existant** : upload dans la galerie déclenche l'éditeur Konva, upload direct dans l'email déclenche le resize auto. Ce comportement reste inchangé.
 
-1. Architecture 3 colonnes (panneau droit dédié)
-2. Mode Détails dans le panneau droit (preview enrichie, métadonnées étendues, usage)
-3. Soft delete + corbeille 30j + UI de restauration
-4. Collections (création, gestion, navigation, vue "Non classées")
-5. Sélection multiple + bulk actions
-6. Indicateur d'usage généralisé
-7. Avertissement à la suppression
+### Méthode de travail (post-discussion équipe)
 
-L'estimation V2 sera à faire au moment venu, en intégrant les retours utilisateurs sur la V1.
-
----
-
-_Ce découpage est indicatif. À ajuster en cours de chantier selon les découvertes, les retours de review, et les priorités du PO._
+- **Petites PRs** : chaque US = sa propre PR (validé après discussion avec le prestataire de review)
+- **Tests systématiques** : chaque PR inclut une procédure de test documentée (cf. US ci-dessus)
+- **Non-régression Mosaico** : test systématique à chaque PR qui touche l'infrastructure ou le DOM partagé
+- **Performance** : mesure avant/après pour les PRs touchant l'affichage ou les requêtes
+- **Recette PO** : validation par toi avant merge final
+- **Déploiement en test** : chaque PR mergée est déployée en environnement de test pour validation manuelle

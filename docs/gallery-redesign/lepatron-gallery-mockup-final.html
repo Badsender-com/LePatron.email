@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>LePatron — Galerie V2 (référence visuelle)</title>
+<style>
+  :root {
+    --lp-navy: #0d3b4f;
+    --lp-cyan: #1bb5d6;
+    --lp-cyan-dark: #0f94b0;
+    --lp-cyan-soft: #e6f7fb;
+    --lp-bg: #f4f5f7;
+    --lp-panel: #ffffff;
+    --lp-panel-alt: #f9fafb;
+    --lp-border: #e4e7eb;
+    --lp-border-strong: #cfd4da;
+    --lp-text: #1f2937;
+    --lp-text-muted: #6b7280;
+    --lp-text-faint: #9ca3af;
+    --lp-danger: #d84a3a;
+    --lp-danger-soft: #fdeceb;
+    --lp-success: #059669;
+    --lp-warning: #e8a93a;
+    --lp-radius-sm: 4px;
+    --lp-radius: 6px;
+    --lp-radius-lg: 10px;
+    --lp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --lp-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    --lp-shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.18);
+
+    --panel-width: 400px;
+    --panel-content-width: 364px;
+    --panel-padding: 18px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--lp-text);
+    background: var(--lp-bg);
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    height: 100vh;
+  }
+
+  .header {
+    background: var(--lp-navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 14px;
+  }
+  .header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .header-btn {
+    width: 32px; height: 32px;
+    border: none; background: transparent;
+    color: #fff; opacity: 0.75;
+    cursor: pointer; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-btn:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+  .header-btn.active { background: var(--lp-cyan); opacity: 1; }
+  .header-btn svg { width: 16px; height: 16px; }
+
+  .main {
+    display: grid;
+    grid-template-columns: var(--panel-width) 1fr;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* =========================================================
+     PANNEAU GAUCHE — la galerie entière
+     ========================================================= */
+  .gallery {
+    background: var(--lp-panel);
+    border-right: 1px solid var(--lp-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .gallery-header {
+    padding: 14px var(--panel-padding) 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .gallery-title {
+    color: var(--lp-cyan);
+    font-size: 17px;
+    font-weight: 500;
+  }
+  .gallery-close {
+    width: 28px; height: 28px;
+    border: none; background: transparent;
+    color: var(--lp-cyan); cursor: pointer;
+    border-radius: var(--lp-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gallery-close:hover { background: var(--lp-cyan-soft); }
+  .gallery-close svg { width: 16px; height: 16px; }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--lp-border);
+    margin-top: 12px;
+  }
+  .tab {
+    flex: 1;
+    padding: 11px 8px;
+    border: none; background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--lp-text-muted);
+    border-bottom: 2px solid transparent;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--lp-text); }
+  .tab.active {
+    color: var(--lp-navy);
+    border-bottom-color: var(--lp-cyan);
+  }
+
+  .toolbar {
+    padding: 12px var(--panel-padding) 8px;
+  }
+  .search {
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .search input {
+    width: 100%;
+    padding: 7px 10px 7px 30px;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    font-size: 12px;
+    background: var(--lp-panel-alt);
+    font-family: inherit;
+  }
+  .search input:focus {
+    outline: none;
+    border-color: var(--lp-cyan);
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--lp-cyan-soft);
+  }
+  .search svg {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--lp-text-faint);
+  }
+
+  .filters {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .filter-chip {
+    padding: 3px 9px;
+    border: 1px solid var(--lp-border);
+    border-radius: 12px;
+    background: var(--lp-panel);
+    color: var(--lp-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .filter-chip:hover { border-color: var(--lp-border-strong); color: var(--lp-text); }
+  .filter-chip.active {
+    background: var(--lp-navy);
+    border-color: var(--lp-navy);
+    color: #fff;
+  }
+
+  /* ===== Sélecteur de collection (collapsed state) ===== */
+  .collection-selector-wrap {
+    padding: 4px var(--panel-padding) 0;
+  }
+  .collection-selector {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--lp-border-strong);
+    background: var(--lp-panel);
+    border-radius: var(--lp-radius);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--lp-text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.15s;
+  }
+  .collection-selector:hover {
+    border-color: var(--lp-cyan);
+    background: var(--lp-cyan-soft);
+  }
+  .collection-selector.open {
+    border-color: var(--lp-cyan);
+    box-shadow: 0 0 0 3px var(--lp-cyan-soft);
+  }
+  .selector-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+  .selector-icon {
+    color: var(--lp-cyan-dark);
+    flex-shrink: 0;
+  }
+  .selector-icon svg { width: 16px; height: 16px; display: block; }
+  .selector-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .selector-count {
+    color: var(--lp-text-muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .selector-chevron {
+    color: var(--lp-text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .selector-chevron svg { width: 14px; height: 14px; display: block; }
+  .collection-selector.open .selector-chevron { transform: rotate(180deg); }
+
+  /* ===== POPOVER COMMUN (deux variantes) ===== */
+  .popover {
+    position: fixed;
+    background: #fff;
+    border: 1px solid var(--lp-border-strong);
+    border-radius: var(--lp-radius-lg);
+    box-shadow: var(--lp-shadow-lg);
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    max-height: 420px;
+  }
+  .popover.visible { display: flex; }
+
+  .popover-search {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--lp-border);
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-radius: var(--lp-radius-lg) var(--lp-radius-lg) 0 0;
+  }
+  .popover-search-inner {
+    position: relative;
+  }
+  .popover-search input {
+    width: 100%;
+    padding: 6px 10px 6px 28px;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    font-size: 12px;
+    background: var(--lp-panel-alt);
+    font-family: inherit;
+  }
+  .popover-search input:focus {
+    outline: none;
+    border-color: var(--lp-cyan);
+    background: #fff;
+  }
+  .popover-search svg {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 13px;
+    height: 13px;
+    color: var(--lp-text-faint);
+  }
+
+  .popover-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  .popover-section-label {
+    padding: 6px 12px 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--lp-text-faint);
+    font-weight: 600;
+  }
+  .popover-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--lp-text);
+    transition: background 0.1s;
+    position: relative;
+  }
+  .popover-item:hover { background: var(--lp-panel-alt); }
+  .popover-item.active { background: var(--lp-cyan-soft); color: var(--lp-cyan-dark); font-weight: 500; }
+  .popover-item-check {
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--lp-cyan-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .popover-item-check svg {
+    width: 14px;
+    height: 14px;
+    display: none;
+  }
+  .popover-item.active .popover-item-check svg { display: block; }
+  .popover-item-icon {
+    color: var(--lp-text-muted);
+    flex-shrink: 0;
+    display: flex;
+  }
+  .popover-item-icon svg { width: 14px; height: 14px; }
+  .popover-item.active .popover-item-icon { color: var(--lp-cyan-dark); }
+  .popover-item-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .popover-item-count {
+    color: var(--lp-text-muted);
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .popover-item.special .popover-item-name { font-style: italic; }
+  .popover-item-menu {
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--lp-text-muted);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .popover-item:hover .popover-item-menu { display: flex; }
+  .popover-item-menu:hover { background: rgba(0,0,0,0.07); color: var(--lp-text); }
+  .popover-item-menu svg { width: 13px; height: 13px; }
+
+  .popover-divider {
+    height: 1px;
+    background: var(--lp-border);
+    margin: 4px 0;
+  }
+
+  .popover-empty {
+    padding: 16px 12px;
+    text-align: center;
+    color: var(--lp-text-muted);
+    font-size: 12px;
+  }
+
+  /* Footer sticky avec actions */
+  .popover-footer {
+    padding: 8px 12px;
+    border-top: 1px solid var(--lp-border);
+    background: var(--lp-panel-alt);
+    border-radius: 0 0 var(--lp-radius-lg) var(--lp-radius-lg);
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .popover-footer-btn {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--lp-radius);
+    background: transparent;
+    color: var(--lp-cyan-dark);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .popover-footer-btn:hover {
+    background: var(--lp-cyan-soft);
+  }
+  .popover-footer-btn svg { width: 14px; height: 14px; }
+  .popover-footer-btn.secondary {
+    color: var(--lp-text-muted);
+    font-size: 12px;
+  }
+  .popover-footer-btn.secondary:hover {
+    background: rgba(0,0,0,0.04);
+  }
+
+  /* Item "Créer X" suggéré */
+  .popover-create-suggestion {
+    background: linear-gradient(to right, var(--lp-cyan-soft), transparent);
+    color: var(--lp-cyan-dark);
+    font-weight: 500;
+  }
+  .popover-create-suggestion .popover-item-icon { color: var(--lp-cyan-dark); }
+
+  /* ===== Upload ===== */
+  .upload-zone {
+    margin: 8px var(--panel-padding);
+    padding: 7px 10px;
+    border: 1.5px dashed var(--lp-border-strong);
+    border-radius: var(--lp-radius);
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--lp-text-muted);
+    background: var(--lp-panel-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .upload-zone:hover {
+    border-color: var(--lp-cyan);
+    color: var(--lp-cyan-dark);
+    background: var(--lp-cyan-soft);
+  }
+  .upload-zone svg { width: 12px; height: 12px; }
+
+  /* ===== Meta + bulk bar ===== */
+  .gallery-meta {
+    padding: 0 var(--panel-padding) 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--lp-text-muted);
+  }
+  .meta-link {
+    background: none;
+    border: none;
+    color: var(--lp-cyan-dark);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 0;
+  }
+  .meta-link:hover { text-decoration: underline; }
+
+  /* ===== Grille ===== */
+  .grid-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px var(--panel-padding) 16px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .thumb {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--lp-panel-alt);
+    transition: all 0.12s;
+  }
+  .thumb:hover {
+    border-color: var(--lp-cyan);
+    box-shadow: var(--lp-shadow);
+    transform: translateY(-1px);
+  }
+  .thumb.selected {
+    border-color: var(--lp-cyan);
+    border-width: 2px;
+    box-shadow: 0 0 0 2px var(--lp-cyan-soft);
+  }
+  .thumb-img {
+    width: 100%;
+    height: 72%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    background-image:
+      linear-gradient(45deg, #e8eaed 25%, transparent 25%),
+      linear-gradient(-45deg, #e8eaed 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e8eaed 75%),
+      linear-gradient(-45deg, transparent 75%, #e8eaed 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+  .thumb-img.solid { background-image: none; }
+  .thumb-img-inner {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .thumb-label {
+    height: 28%;
+    padding: 4px 6px;
+    font-size: 10.5px;
+    color: var(--lp-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-top: 1px solid var(--lp-border);
+  }
+  .thumb-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(13, 59, 79, 0.85);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 3px;
+    z-index: 2;
+  }
+  .thumb-badge.gif { background: var(--lp-warning); color: var(--lp-navy); }
+
+  .thumb-check {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--lp-border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.12s;
+    cursor: pointer;
+    z-index: 3;
+  }
+  .thumb:hover .thumb-check,
+  .thumb.selected .thumb-check { opacity: 1; }
+  .thumb-check.checked {
+    background: var(--lp-cyan);
+    border-color: var(--lp-cyan);
+  }
+  .thumb-check svg { width: 12px; height: 12px; color: #fff; display: none; }
+  .thumb-check.checked svg { display: block; }
+
+  .thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, transparent 55%, rgba(13,59,79,0.75) 100%);
+    opacity: 0;
+    transition: opacity 0.12s;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 4px;
+    z-index: 2;
+  }
+  .thumb:hover .thumb-overlay { opacity: 1; pointer-events: auto; }
+  .thumb-actions {
+    display: flex;
+    gap: 2px;
+    background: rgba(255,255,255,0.96);
+    border-radius: var(--lp-radius-sm);
+    padding: 2px;
+    box-shadow: var(--lp-shadow);
+  }
+  .thumb-action {
+    width: 22px; height: 22px;
+    border: none; background: transparent;
+    cursor: pointer; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lp-text);
+  }
+  .thumb-action:hover { background: var(--lp-cyan-soft); color: var(--lp-cyan-dark); }
+  .thumb-action.danger:hover { background: var(--lp-danger-soft); color: var(--lp-danger); }
+  .thumb-action svg { width: 12px; height: 12px; }
+
+  /* ===== Barre bulk bottom (panneau gauche) ===== */
+  .bulk-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px var(--panel-padding);
+    background: var(--lp-navy);
+    color: #fff;
+    font-size: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .bulk-bar.visible { display: flex; }
+  .bulk-actions { display: flex; gap: 4px; }
+  .bulk-btn {
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: #fff;
+    padding: 5px 9px;
+    border-radius: var(--lp-radius-sm);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .bulk-btn:hover { background: rgba(255,255,255,0.2); }
+  .bulk-btn.danger:hover { background: var(--lp-danger); }
+  .bulk-btn svg { width: 12px; height: 12px; }
+
+  /* ===== Vue détails (remplace la grille) ===== */
+  .details-view {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .details-view.visible { display: flex; }
+
+  .details-header {
+    padding: 10px var(--panel-padding);
+    border-bottom: 1px solid var(--lp-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .details-back {
+    border: none;
+    background: transparent;
+    color: var(--lp-cyan-dark);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 4px 8px;
+    border-radius: var(--lp-radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .details-back:hover { background: var(--lp-cyan-soft); }
+  .details-back svg { width: 14px; height: 14px; }
+
+  .details-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px var(--panel-padding);
+  }
+  .details-preview {
+    aspect-ratio: 4 / 3;
+    background-color: #fff;
+    background-image:
+      linear-gradient(45deg, #e8eaed 25%, transparent 25%),
+      linear-gradient(-45deg, #e8eaed 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e8eaed 75%),
+      linear-gradient(-45deg, transparent 75%, #e8eaed 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+    border: 1px solid var(--lp-border);
+    border-radius: var(--lp-radius);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .details-preview.solid { background-image: none; }
+  .details-preview .inner {
+    width: 60%; height: 60%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .details-zoom {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--lp-border);
+    color: var(--lp-text);
+    padding: 4px 8px;
+    border-radius: var(--lp-radius);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: var(--lp-shadow);
+  }
+  .details-zoom:hover { background: #fff; color: var(--lp-cyan-dark); }
+  .details-zoom svg { width: 11px; height: 11px; }
+
+  .details-filename {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--lp-text);
+    margin-bottom: 2px;
+    word-break: break-all;
+  }
+  .details-subline {
+    font-size: 11px;
+    color: var(--lp-text-muted);
+    margin-bottom: 14px;
+  }
+  .details-fields {
+    background: var(--lp-panel-alt);
+    border-radius: var(--lp-radius);
+    padding: 2px 12px;
+    margin-bottom: 14px;
+  }
+  .details-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--lp-border);
+    font-size: 12px;
+  }
+  .details-field:last-child { border-bottom: none; }
+  .details-label-text { color: var(--lp-text-muted); }
+  .details-value { color: var(--lp-text); font-weight: 500; }
+  .usage-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .usage-pill.used { background: rgba(5, 150, 105, 0.1); color: var(--lp-success); }
+  .usage-pill.unused {
+    background: var(--lp-panel-alt);
+    color: var(--lp-text-faint);
+    font-style: italic;
+  }
+  .details-collections-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .coll-pill {
+    background: var(--lp-cyan-soft);
+    color: var(--lp-cyan-dark);
+    padding: 3px 9px;
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .details-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--lp-text-muted);
+    margin-bottom: 6px;
+  }
+
+  .details-actions {
+    padding: 12px var(--panel-padding);
+    border-top: 1px solid var(--lp-border);
+    background: var(--lp-panel-alt);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .action-btn {
+    padding: 8px 10px;
+    border: 1px solid var(--lp-border);
+    background: #fff;
+    border-radius: var(--lp-radius);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--lp-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .action-btn:hover {
+    border-color: var(--lp-cyan);
+    color: var(--lp-cyan-dark);
+    background: var(--lp-cyan-soft);
+  }
+  .action-btn.primary {
+    background: var(--lp-cyan);
+    border-color: var(--lp-cyan);
+    color: #fff;
+    grid-column: span 2;
+  }
+  .action-btn.primary:hover {
+    background: var(--lp-cyan-dark);
+    color: #fff;
+  }
+  .action-btn.danger { color: var(--lp-danger); }
+  .action-btn.danger:hover {
+    background: var(--lp-danger-soft);
+    border-color: var(--lp-danger);
+  }
+  .action-btn svg { width: 13px; height: 13px; }
+
+  /* ===== Canvas email ===== */
+  .email-canvas {
+    background: var(--lp-bg);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .email-preview {
+    width: 100%;
+    max-width: 540px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: var(--lp-shadow);
+  }
+  .email-preheader {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--lp-text-muted);
+  }
+  .email-header-brand { background: #ffd200; padding: 20px; text-align: right; }
+  .email-header-brand .logo {
+    display: inline-block;
+    background: #1a3a7a;
+    color: #fff;
+    padding: 8px 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: 12px;
+  }
+  .email-body { padding: 20px; border: 2px solid #ffd200; margin: 10px; border-radius: 4px; }
+  .email-title { text-align: center; color: #1a3a7a; font-size: 22px; font-weight: 700; margin: 6px 0 16px; }
+  .email-image-slot {
+    background: repeating-linear-gradient(-45deg, #a8a8a8, #a8a8a8 10px, #9c9c9c 10px, #9c9c9c 20px);
+    height: 220px;
+    position: relative;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .email-image-slot::before {
+    content: "Déposer une image ici";
+    position: absolute;
+    top: 10px;
+    color: #000;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .email-image-slot span { color: #e0e0e0; font-size: 17px; }
+  .email-text { padding: 14px 0; font-size: 12px; line-height: 1.6; color: #333; }
+  .email-button {
+    display: block;
+    width: fit-content;
+    margin: 8px auto;
+    background: #ffd200;
+    color: #1a3a7a;
+    padding: 12px 26px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  .grid-wrap::-webkit-scrollbar,
+  .details-body::-webkit-scrollbar,
+  .email-canvas::-webkit-scrollbar,
+  .popover-list::-webkit-scrollbar { width: 6px; }
+  .grid-wrap::-webkit-scrollbar-thumb,
+  .details-body::-webkit-scrollbar-thumb,
+  .email-canvas::-webkit-scrollbar-thumb,
+  .popover-list::-webkit-scrollbar-thumb { background: var(--lp-border-strong); border-radius: 3px; }
+
+  .demo-tip {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--lp-navy);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: var(--lp-radius);
+    font-size: 12px;
+    box-shadow: var(--lp-shadow-lg);
+    z-index: 150;
+    max-width: 600px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .demo-tip strong { color: var(--lp-cyan); }
+  .demo-tip button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ===== Variantes spécifiques (positionnement géré dynamiquement en JS) ===== */
+  /* Largeur et position calculées dans togglePopover() pour assurer un positionnement correct
+     quelle que soit la taille de la fenêtre */
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <button class="header-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+    <div class="header-title">test shine 2</div>
+    <button class="header-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+    <button class="header-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg></button>
+    <button class="header-btn active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></button>
+  </header>
+
+  <div class="main">
+    <aside class="gallery">
+      <div class="gallery-header">
+        <div class="gallery-title">Galeries</div>
+        <button class="gallery-close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <nav class="tabs">
+        <button class="tab" data-tab="email">Spécifique à l'email</button>
+        <button class="tab active" data-tab="template">Commun au template</button>
+      </nav>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Rechercher une image...">
+        </div>
+        <div class="filters">
+          <button class="filter-chip active">Tous</button>
+          <button class="filter-chip">JPG</button>
+          <button class="filter-chip">PNG</button>
+          <button class="filter-chip">GIF</button>
+        </div>
+      </div>
+
+      <div class="collection-selector-wrap">
+        <button class="collection-selector" id="collectionSelector">
+          <div class="selector-left">
+            <span class="selector-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
+            <span class="selector-name" id="selectorName">Toutes les images</span>
+            <span class="selector-count" id="selectorCount">(42)</span>
+          </div>
+          <span class="selector-chevron">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
+      </div>
+
+      <!-- POPOVER COLLECTIONS -->
+      <div class="popover" id="collectionPopover">
+        <div class="popover-search">
+          <div class="popover-search-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="popoverSearch" placeholder="Filtrer les collections...">
+          </div>
+        </div>
+        <div class="popover-list" id="popoverList">
+          <!-- Rendu dynamique -->
+        </div>
+        <div class="popover-footer">
+          <button class="popover-footer-btn" id="newCollectionBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Nouvelle collection
+          </button>
+          <button class="popover-footer-btn secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Gérer toutes les collections
+          </button>
+        </div>
+      </div>
+
+      <div class="upload-zone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Glisser-déposer ou cliquer pour uploader
+      </div>
+
+      <div class="gallery-meta">
+        <span id="metaCount">42 images</span>
+        <button class="meta-link">Tout sélectionner</button>
+      </div>
+
+      <div class="grid-wrap" id="gridWrap">
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <!-- Vue détails (remplace la grille) -->
+      <div class="details-view" id="detailsView">
+        <div class="details-header">
+          <button class="details-back" onclick="closeDetails()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Retour à la galerie
+          </button>
+        </div>
+        <div class="details-body">
+          <div class="details-preview" id="detailPreview">
+            <div class="inner" id="detailPreviewInner"></div>
+            <button class="details-zoom">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              Agrandir
+            </button>
+          </div>
+          <div class="details-filename" id="detailLabel">—</div>
+          <div class="details-subline" id="detailSubline">—</div>
+          <div class="details-fields">
+            <div class="details-field"><span class="details-label-text">Dimensions</span><span class="details-value" id="detailDims">—</span></div>
+            <div class="details-field"><span class="details-label-text">Format</span><span class="details-value" id="detailFormat">—</span></div>
+            <div class="details-field" id="detailWeightRow" style="display: none;"><span class="details-label-text">Poids</span><span class="details-value" id="detailWeight">—</span></div>
+            <div class="details-field"><span class="details-label-text">Uploadée le</span><span class="details-value" id="detailDate">—</span></div>
+            <div class="details-field"><span class="details-label-text">Par</span><span class="details-value" id="detailAuthor">—</span></div>
+            <div class="details-field"><span class="details-label-text">Usage</span><span class="details-value" id="detailUsage">—</span></div>
+          </div>
+          <div class="details-section-title">Collections</div>
+          <div class="details-collections-wrap" id="detailColls"></div>
+        </div>
+        <div class="details-actions">
+          <button class="action-btn primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Éditer l'image
+          </button>
+          <button class="action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Collections
+          </button>
+          <button class="action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Renommer
+          </button>
+          <button class="action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Télécharger
+          </button>
+          <button class="action-btn danger" style="grid-column: span 2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Supprimer
+          </button>
+        </div>
+      </div>
+
+      <!-- Barre bulk -->
+      <div class="bulk-bar" id="bulkBar">
+        <span><strong><span id="bulkCount">0</span></strong> sélectionnée(s)</span>
+        <div class="bulk-actions">
+          <button class="bulk-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Coll.
+          </button>
+          <button class="bulk-btn danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            Suppr.
+          </button>
+          <button class="bulk-btn" onclick="clearSelection()">Annuler</button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="email-canvas">
+      <div class="email-preview">
+        <div class="email-preheader"><a href="#" style="color: var(--lp-text-muted);">Version web</a></div>
+        <div class="email-header-brand">
+          <span class="logo">LA POSTE</span>
+        </div>
+        <div class="email-body">
+          <h1 class="email-title">Lorem Ipsum</h1>
+          <div class="email-image-slot">
+            <span>492 × 280</span>
+          </div>
+          <div class="email-text">
+            Omnimod quis quam, vendandi cor repudita ipsunt proratur sequid untium assitae velestio is est.
+          </div>
+          <a href="#" class="email-button">Cliquez-ici</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="demo-tip">
+  <span><strong>Maquette galerie V2</strong> — Teste : clique sur le sélecteur de collection, tape dans la recherche du popover (essaie "Nouvelle"), clique sur une image pour voir les détails.</span>
+  <button onclick="this.parentElement.style.display='none'">OK</button>
+</div>
+
+<script>
+  // Data mock
+  const palette = [
+    ['#f7d794', '#e58e26'], ['#7ed6df', '#22a6b3'], ['#e77f67', '#cd6133'],
+    ['#778beb', '#4834d4'], ['#786fa6', '#574b90'], ['#f8a5c2', '#cc8e9e'],
+    ['#63cdda', '#3dc1d3'], ['#ea8685', '#b33939'], ['#f3a683', '#e15f41'],
+    ['#cf6a87', '#b53471'], ['#ffda79', '#ccae62'], ['#ea8685', '#c44569']
+  ];
+  const iconShapes = ['gift', 'heart', 'bag', 'tag', 'star', 'truck', 'shield', 'bell', 'diamond', 'flame', 'leaf', 'sun'];
+
+  function svgIcon(name, color, size = '60%') {
+    const icons = {
+      gift: '<rect x="4" y="10" width="24" height="18" rx="2"/><rect x="2" y="6" width="28" height="6"/><path d="M16 6v22M12 6c-2 0-4-2-4-4s2-2 4 0 4 4 4 4M20 6c2 0 4-2 4-4s-2-2-4 0-4 4-4 4"/>',
+      heart: '<path d="M16 28C8 22 3 18 3 12c0-4 3-7 7-7 2 0 4 1 6 3 2-2 4-3 6-3 4 0 7 3 7 7 0 6-5 10-13 16z"/>',
+      bag: '<path d="M6 10h20l-2 18H8L6 10z"/><path d="M11 10V6a5 5 0 0 1 10 0v4"/>',
+      tag: '<path d="M18 2l12 12-14 14L4 16V4h12z"/><circle cx="10" cy="10" r="2"/>',
+      star: '<path d="M16 3l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z"/>',
+      truck: '<rect x="2" y="10" width="16" height="12"/><path d="M18 14h8l4 5v3h-12z"/><circle cx="8" cy="24" r="3"/><circle cx="24" cy="24" r="3"/>',
+      shield: '<path d="M16 3l12 5v8c0 7-5 12-12 14C9 28 4 23 4 16V8z"/>',
+      bell: '<path d="M8 22V14a8 8 0 1 1 16 0v8l2 2H6z"/><path d="M13 26a3 3 0 0 0 6 0"/>',
+      diamond: '<path d="M8 4h16l6 8-14 16L2 12z"/>',
+      flame: '<path d="M16 2c4 6 10 10 10 16 0 5-4 10-10 10S6 23 6 18c0-4 3-6 5-10 2 4 4 6 5 6 0-6 0-10 0-12z"/>',
+      leaf: '<path d="M4 28c0-14 12-24 24-24 0 14-10 24-24 24z"/><path d="M4 28C10 20 18 14 28 4"/>',
+      sun: '<circle cx="16" cy="16" r="6"/><path d="M16 2v4M16 26v4M2 16h4M26 16h4M6 6l3 3M23 23l3 3M26 6l-3 3M9 23l-3 3"/>'
+    };
+    return `<svg viewBox="0 0 32 32" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" width="${size}" height="${size}">${icons[name] || icons.star}</svg>`;
+  }
+
+  // Mock de 32 collections pour démontrer la scalabilité
+  const allCollections = [
+    { id: 'pictos', name: 'Pictos marque', count: 12 },
+    { id: 'soldes-printemps', name: 'Soldes Printemps 26', count: 8 },
+    { id: 'hero', name: 'Bannières hero', count: 5 },
+    { id: 'logos', name: 'Logos partenaires', count: 4 },
+    { id: 'noel', name: 'Campagne Noël 25', count: 14 },
+    { id: 'black-friday', name: 'Black Friday 25', count: 9 },
+    { id: 'rentree', name: 'Rentrée 25', count: 11 },
+    { id: 'ete', name: 'Soldes Été 25', count: 7 },
+    { id: 'mothers-day', name: "Fête des mères 26", count: 6 },
+    { id: 'fathers-day', name: "Fête des pères 26", count: 5 },
+    { id: 'pictos-livraison', name: 'Pictos livraison', count: 4 },
+    { id: 'pictos-paiement', name: 'Pictos paiement', count: 3 },
+    { id: 'pictos-social', name: 'Pictos réseaux sociaux', count: 8 },
+    { id: 'header-fr', name: 'Headers FR', count: 6 },
+    { id: 'header-uk', name: 'Headers UK', count: 6 },
+    { id: 'header-de', name: 'Headers DE', count: 6 },
+    { id: 'visuels-produit', name: 'Visuels produit Q1', count: 22 },
+    { id: 'visuels-produit-q2', name: 'Visuels produit Q2', count: 18 },
+    { id: 'lancement-2026', name: 'Lancement gamme 2026', count: 13 },
+    { id: 'newsletter-mensuelle', name: 'Newsletter mensuelle', count: 9 },
+    { id: 'beauty', name: 'Beauty pack', count: 11 },
+    { id: 'gift-cards', name: 'Cartes cadeaux', count: 5 },
+    { id: 'avis-clients', name: 'Avis clients', count: 4 },
+    { id: 'tutorials', name: 'Tutoriels vidéo', count: 7 },
+    { id: 'lookbook-25', name: 'Lookbook 25', count: 24 },
+    { id: 'lookbook-26', name: 'Lookbook 26', count: 19 },
+    { id: 'partenaires-week', name: 'Semaine partenaires', count: 8 },
+    { id: 'cyber-monday', name: 'Cyber Monday', count: 6 },
+    { id: 'st-valentin', name: 'Saint Valentin 26', count: 7 },
+    { id: 'paques-26', name: 'Pâques 26', count: 5 },
+    { id: 'jeu-concours', name: 'Jeu concours mai', count: 4 },
+    { id: 'fidelite', name: 'Programme fidélité', count: 9 },
+  ];
+
+  function makeImage(i) {
+    const [bg, fg] = palette[i % palette.length];
+    const shape = iconShapes[i % iconShapes.length];
+    const labels = {
+      0: 'logo_clarins_red.png',
+      1: 'picto_livraison.png',
+      2: 'picto_garantie.png',
+      3: 'cover_soldes_hiver_26.jpg',
+      4: 'produit_serum_200ml.jpg',
+      5: 'banner_hero_printemps.jpg',
+      6: 'picto_retour_gratuit.png',
+      7: 'picto_paiement_securise.png',
+      8: 'visuel_rouge_levres.jpg',
+      9: 'animation_unboxing.gif',
+      10: 'picto_newsletter.png',
+      11: 'header_mothers_day.jpg'
+    };
+    const format = ['jpg', 'png', 'gif', 'png', 'jpg'][i % 5];
+    const hasTransparency = format === 'png' || format === 'gif';
+    return {
+      id: i,
+      label: labels[i % 12] || `image_${i + 1}.${format}`,
+      bg, fg, shape, format, hasTransparency,
+      dims: ['1200 × 800 px', '600 × 600 px', '1920 × 1080 px', '400 × 400 px'][i % 4],
+      weight: '1.2 Mo',
+      date: '14 avril 2026',
+      author: ['Marie L.', 'Alex B.', 'Sophie R.', 'Thomas K.'][i % 4],
+      collections: [['Pictos marque'], ['Soldes Printemps 26'], ['Bannières hero'], [], ['Pictos marque', 'Soldes Printemps 26']][i % 5],
+      usageCount: i % 3 === 0 ? 2 : (i % 3 === 1 ? 1 : 0)
+    };
+  }
+
+  let images = [];
+  for (let i = 0; i < 42; i++) images.push(makeImage(i));
+
+  let selectedIds = new Set();
+  let currentCollection = 'all';
+  let currentCollectionName = 'Toutes les images';
+  let currentCollectionCount = 42;
+
+  // ===== Rendu de la grille =====
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = images.map(img => {
+      const isSelected = selectedIds.has(img.id);
+      const isGif = img.format === 'gif';
+      const thumbBg = img.hasTransparency ? '' : 'solid';
+      const innerBg = img.hasTransparency ? '' : `background: linear-gradient(135deg, ${img.bg}44, ${img.bg}88);`;
+      return `
+        <div class="thumb ${isSelected ? 'selected' : ''}" data-id="${img.id}" onclick="onThumbClick(event, ${img.id})">
+          <div class="thumb-check ${isSelected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleSelect(${img.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          ${isGif ? '<div class="thumb-badge gif">GIF</div>' : ''}
+          <div class="thumb-img ${thumbBg}">
+            <div class="thumb-img-inner" style="${innerBg}">
+              ${svgIcon(img.shape, img.fg, '58%')}
+            </div>
+          </div>
+          <div class="thumb-label">${img.label}</div>
+          <div class="thumb-overlay">
+            <div class="thumb-actions">
+              <button class="thumb-action" onclick="event.stopPropagation(); alert('Édition Konva')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+              <button class="thumb-action danger" onclick="event.stopPropagation();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ===== Popover collections =====
+  let popoverSearch = '';
+  function renderPopover() {
+    const search = popoverSearch.toLowerCase().trim();
+    const filteredCollections = allCollections.filter(c =>
+      c.name.toLowerCase().includes(search)
+    );
+
+    let html = '';
+
+    // Vues spéciales (toujours visibles si pas de recherche)
+    if (!search) {
+      html += `
+        <div class="popover-item ${currentCollection === 'all' ? 'active' : ''}" onclick="selectCollection('all', 'Toutes les images', 42)">
+          <span class="popover-item-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="popover-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </span>
+          <span class="popover-item-name">Toutes les images</span>
+          <span class="popover-item-count">42</span>
+        </div>
+        <div class="popover-item special ${currentCollection === 'unclassified' ? 'active' : ''}" onclick="selectCollection('unclassified', 'Non classées', 6)">
+          <span class="popover-item-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="popover-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span>
+          <span class="popover-item-name">Non classées</span>
+          <span class="popover-item-count">6</span>
+        </div>
+        <div class="popover-divider"></div>
+        <div class="popover-section-label">Collections (${allCollections.length})</div>
+      `;
+    }
+
+    if (filteredCollections.length === 0 && search) {
+      html += `
+        <div class="popover-create-suggestion popover-item" onclick="createCollection('${search}')">
+          <span class="popover-item-check"></span>
+          <span class="popover-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span class="popover-item-name">Créer la collection "${popoverSearch}"</span>
+        </div>
+      `;
+    } else {
+      filteredCollections.forEach(c => {
+        html += `
+          <div class="popover-item ${currentCollection === c.id ? 'active' : ''}" onclick="selectCollection('${c.id}', '${c.name.replace(/'/g, "\\'")}', ${c.count})">
+            <span class="popover-item-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span class="popover-item-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </span>
+            <span class="popover-item-name">${c.name}</span>
+            <span class="popover-item-count">${c.count}</span>
+            <button class="popover-item-menu" onclick="event.stopPropagation();">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+          </div>
+        `;
+      });
+
+      // Si recherche active mais résultats existants, ajouter "Créer X" comme suggestion supplémentaire
+      if (search && filteredCollections.length > 0) {
+        const exactMatch = filteredCollections.some(c => c.name.toLowerCase() === search);
+        if (!exactMatch) {
+          html += `
+            <div class="popover-divider"></div>
+            <div class="popover-create-suggestion popover-item" onclick="createCollection('${search}')">
+              <span class="popover-item-check"></span>
+              <span class="popover-item-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+              <span class="popover-item-name">Créer "${popoverSearch}"</span>
+            </div>
+          `;
+        }
+      }
+    }
+
+    document.getElementById('popoverList').innerHTML = html;
+  }
+
+  function togglePopover() {
+    const popover = document.getElementById('collectionPopover');
+    const selector = document.getElementById('collectionSelector');
+    const isVisible = popover.classList.contains('visible');
+    if (isVisible) {
+      popover.classList.remove('visible');
+      selector.classList.remove('open');
+    } else {
+      // Positionnement fixed par rapport au viewport
+      const selectorRect = selector.getBoundingClientRect();
+      const top = selectorRect.bottom + 4; // 4px de marge sous le sélecteur
+      popover.style.top = top + 'px';
+      popover.style.left = selectorRect.left + 'px';
+      popover.style.width = '420px';
+
+      popover.classList.add('visible');
+      selector.classList.add('open');
+      renderPopover();
+      setTimeout(() => document.getElementById('popoverSearch').focus(), 50);
+    }
+  }
+
+  function selectCollection(id, name, count) {
+    currentCollection = id;
+    currentCollectionName = name;
+    currentCollectionCount = count;
+    document.getElementById('selectorName').textContent = name;
+    document.getElementById('selectorCount').textContent = `(${count})`;
+    document.getElementById('metaCount').textContent = `${count} image${count > 1 ? 's' : ''}`;
+    togglePopover();
+    popoverSearch = '';
+    document.getElementById('popoverSearch').value = '';
+  }
+
+  function createCollection(name) {
+    allCollections.push({
+      id: 'new-' + Date.now(),
+      name: name,
+      count: 0
+    });
+    alert(`Collection "${name}" créée !`);
+    popoverSearch = '';
+    document.getElementById('popoverSearch').value = '';
+    renderPopover();
+  }
+
+  // ===== Détails =====
+  function onThumbClick(e, id) {
+    if (e.shiftKey || selectedIds.size > 0) {
+      toggleSelect(id);
+      return;
+    }
+    openDetails(id);
+  }
+
+  function openDetails(id) {
+    const img = images[id];
+    document.getElementById('detailLabel').textContent = img.label;
+    document.getElementById('detailSubline').textContent = `Uploadée par ${img.author} · ${img.date}`;
+    document.getElementById('detailDims').textContent = img.dims;
+    document.getElementById('detailFormat').textContent = img.format.toUpperCase();
+    document.getElementById('detailDate').textContent = img.date;
+    document.getElementById('detailAuthor').textContent = img.author;
+    const weightRow = document.getElementById('detailWeightRow');
+    if (img.format === 'gif') {
+      weightRow.style.display = 'flex';
+      document.getElementById('detailWeight').textContent = img.weight;
+    } else {
+      weightRow.style.display = 'none';
+    }
+    const colls = document.getElementById('detailColls');
+    if (img.collections.length === 0) {
+      colls.innerHTML = '<span style="color: var(--lp-text-faint); font-style: italic; font-size: 11px;">Non classée</span>';
+    } else {
+      colls.innerHTML = img.collections.map(c => `<span class="coll-pill">${c}</span>`).join('');
+    }
+    const usage = document.getElementById('detailUsage');
+    if (img.usageCount === 0) {
+      usage.innerHTML = '<span class="usage-pill unused">Non utilisée</span>';
+    } else {
+      usage.innerHTML = `<span class="usage-pill used">${img.usageCount} email${img.usageCount > 1 ? 's' : ''}</span>`;
+    }
+    const preview = document.getElementById('detailPreview');
+    const inner = document.getElementById('detailPreviewInner');
+    preview.classList.toggle('solid', !img.hasTransparency);
+    inner.style.background = img.hasTransparency ? '' : `linear-gradient(135deg, ${img.bg}44, ${img.bg}88)`;
+    inner.innerHTML = svgIcon(img.shape, img.fg, '80%');
+
+    document.getElementById('gridWrap').style.display = 'none';
+    document.getElementById('detailsView').classList.add('visible');
+  }
+
+  function closeDetails() {
+    document.getElementById('detailsView').classList.remove('visible');
+    document.getElementById('gridWrap').style.display = 'block';
+  }
+
+  // ===== Sélection multiple =====
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    renderGrid();
+    const bar = document.getElementById('bulkBar');
+    if (selectedIds.size > 0) {
+      bar.classList.add('visible');
+      document.getElementById('bulkCount').textContent = selectedIds.size;
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+  function clearSelection() {
+    selectedIds.clear();
+    renderGrid();
+    document.getElementById('bulkBar').classList.remove('visible');
+  }
+
+  // ===== Bindings =====
+  document.getElementById('collectionSelector').addEventListener('click', togglePopover);
+  document.getElementById('popoverSearch').addEventListener('input', (e) => {
+    popoverSearch = e.target.value;
+    renderPopover();
+  });
+  // Fermer popover si clic hors
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('collectionPopover');
+    const selector = document.getElementById('collectionSelector');
+    if (popover.classList.contains('visible') &&
+        !popover.contains(e.target) &&
+        !selector.contains(e.target)) {
+      togglePopover();
+    }
+  });
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(f => {
+    f.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+      f.classList.add('active');
+    });
+  });
+
+  renderGrid();
+</script>
+</body>
+</html>
