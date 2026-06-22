@@ -17,6 +17,7 @@ import {
 } from '~/store/folder';
 import { USER } from '~/store/user';
 import { canCreateFolder } from '~/utils/workspaces';
+import { findPathToNode } from '~/utils/tree';
 import mixinCurrentLocation from '~/helpers/mixins/mixin-current-location';
 import FolderRenameModal from '~/routes/mailings/__partials/folder-rename-modal';
 import FolderMoveModal from '~/routes/mailings/__partials/folder-move-modal';
@@ -94,7 +95,7 @@ export default {
     },
   },
   watch: {
-    $route: ['getFolderAndWorkspaceData', 'checkIfNotData'],
+    $route: ['onRouteChange', 'checkIfNotData'],
     treeviewWorkspaces: {
       handler(newWorkspaces, oldWorkspaces) {
         const isInitialLoad =
@@ -108,6 +109,14 @@ export default {
       },
       immediate: true,
     },
+  },
+  created() {
+    // Non-reactive instance state: per-key timers to debounce the remote (DB)
+    // persistence PUTs so rapid navigation doesn't spam the backend.
+    this._remoteSaveTimers = {};
+  },
+  beforeDestroy() {
+    Object.values(this._remoteSaveTimers || {}).forEach((t) => clearTimeout(t));
   },
   methods: {
     findNodeById(id, items) {
@@ -187,11 +196,36 @@ export default {
           nodesToOpen = [];
         }
 
+        // With lazy-loading, treeviewWorkspaces only holds workspaces + their
+        // first-level folders on a fresh load. The active node may be a deeper
+        // sub-folder absent from the tree, which would make restoreSelectedNode
+        // fail to find it (collapsing the tree to the first workspace). Load the
+        // active folder's branch first so it (and its saved expansion) resolves.
+        await this.loadActiveBranch();
+        // Re-resolve saved open nodes now that the active branch is loaded.
+        if (nodesToOpen.length === 0 && typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem(this.storageKey);
+          if (saved) {
+            nodesToOpen = this.findNodesByIds(
+              JSON.parse(saved),
+              this.treeviewWorkspaces
+            );
+          }
+        }
+
         this.treeKey++;
 
         this.$nextTick(() => {
           this.openNodes = nodesToOpen;
+          // Restore the saved selection (or fall back to the first workspace
+          // when there's none). NB: an explicit "always go to first workspace
+          // on a bare /mailings URL" still races with other navigations on cold
+          // load and is handled in a follow-up — see restoreSelectedNode.
           this.restoreSelectedNode();
+          // Reveal the branch of the active folder so it stays visible on
+          // refresh / return from the editor, even if its ancestors weren't in
+          // the saved expansion state.
+          this.ensureCurrentPathOpen();
 
           // Wait one more tick so the v-treeview has finished applying
           // openNodes + activeNode reactively before we drop the
@@ -219,22 +253,14 @@ export default {
         );
 
         if (!savedSelection) {
-          if (this.treeviewWorkspaces?.length) {
-            this.$router.replace({
-              query: { wid: this.treeviewWorkspaces[0].id },
-            });
-          }
+          this.selectFirstWorkspace();
           return;
         }
 
         const parsedSavedCollection = JSON.parse(savedSelection);
 
         if (parsedSavedCollection === null) {
-          if (this.treeviewWorkspaces?.length) {
-            this.$router.replace({
-              query: { wid: this.treeviewWorkspaces[0].id },
-            });
-          }
+          this.selectFirstWorkspace();
           return;
         }
 
@@ -252,13 +278,14 @@ export default {
             (queryParam.fid && queryParam.fid !== currentQuery.fid) ||
             (queryParam.wid && queryParam.wid !== currentQuery.wid)
           ) {
-            this.$router.replace({ query: queryParam });
+            this.safeNavigate('replace', { query: queryParam });
           }
-        } else if (
-          this.treeviewWorkspaces &&
-          this.treeviewWorkspaces.length > 0
-        ) {
+        } else {
+          // Saved selection points to a node that no longer exists (deleted
+          // folder): drop it and fall back to the first workspace instead of
+          // leaving the tree with nothing selected.
           this.clearSelection();
+          this.selectFirstWorkspace();
         }
       } catch (error) {
         console.error(
@@ -307,11 +334,102 @@ export default {
       this.saveTreeState(openIds);
     },
     async checkIfNotData() {
+      // Don't run while initializeTreeState is choosing the selection — both
+      // would call selectFirstWorkspace and their navigations would cancel each
+      // other ("Navigation cancelled with a new navigation"). Init owns the
+      // cold-load selection; this only covers later route changes that land on
+      // /mailings with nothing selected.
+      if (this.isInitializing) return;
       if (!this.selectedItem?.id && this.treeviewWorkspaces?.length > 0) {
-        await this.$router.push({
-          query: { wid: this.treeviewWorkspaces[0]?.id },
-        });
+        this.selectFirstWorkspace();
       }
+    },
+    // Default selection: the first workspace. Used when arriving on the email
+    // builder with nothing selected (menu, bare /mailings URL, or a saved
+    // selection that no longer exists). Persists it and updates the route.
+    selectFirstWorkspace() {
+      const firstWorkspace = this.treeviewWorkspaces?.[0];
+      if (!firstWorkspace) return;
+
+      this.saveSelectedNode(firstWorkspace.id, firstWorkspace.type);
+      if (this.$route.query.wid !== firstWorkspace.id) {
+        this.safeNavigate('replace', { query: { wid: firstWorkspace.id } });
+      }
+    },
+    // On every route change, load the active location then reveal its branch so
+    // the selected folder stays visible without collapsing the rest of the tree.
+    async onRouteChange() {
+      await this.getFolderAndWorkspaceData();
+      if (this.isInitializing) return;
+      this.ensureCurrentPathOpen();
+    },
+    // Open the ancestors of the active folder (without dropping already-open
+    // nodes) so it stays visible after a refresh / return from the editor.
+    // findPathToNode resolves them from the in-memory tree: to be on a
+    // sub-folder the user expanded its branch, whose expansion is restored
+    // before this runs. Folders are capped at workspace > folder > sub-folder,
+    // so there is no deeper, not-yet-loaded case.
+    ensureCurrentPathOpen() {
+      const currentId = this.currentLocation;
+      if (!currentId || !this.treeviewWorkspaces?.length) return;
+
+      const ancestors = findPathToNode(currentId, this.treeviewWorkspaces);
+      if (!ancestors || ancestors.length === 0) return;
+
+      const openIds = new Set(this.openNodes.map((node) => node.id));
+      const missing = ancestors.filter((node) => !openIds.has(node.id));
+      if (missing.length === 0) return;
+
+      this.openNodes = [...this.openNodes, ...missing];
+      this.saveTreeState(this.openNodes.map((node) => node.id));
+    },
+    // On a fresh load the active node may be a sub-folder that lazy-loading
+    // hasn't put in the tree yet, so restoreSelectedNode/ensureCurrentPathOpen
+    // can't find it. The active folder doc (store) carries its _parentFolder;
+    // its parent is a first-level folder already present in the tree, so we
+    // load that parent's children to make the sub-folder resolvable. Folders
+    // are capped at workspace > folder > sub-folder, so one level suffices.
+    async loadActiveBranch() {
+      const parentId =
+        this.folder?._parentFolder?.toString?.() || this.folder?._parentFolder;
+      if (!parentId) return;
+
+      const parentNode = this.findNodeById(parentId, this.treeviewWorkspaces);
+      // Empty children array => has children, not loaded yet.
+      if (
+        parentNode &&
+        Array.isArray(parentNode.children) &&
+        parentNode.children.length === 0
+      ) {
+        try {
+          await this.$store.dispatch(`${FOLDER}/${FETCH_FOLDER_CHILDREN}`, {
+            node: parentNode,
+          });
+        } catch (err) {
+          console.error(
+            '[BsSidebarWorkspaceTree] Error loading active branch:',
+            err
+          );
+        }
+      }
+    },
+    // vue-router's push/replace rejects on benign cases (NavigationDuplicated
+    // when targeting the current route, NavigationCancelled when a newer
+    // navigation supersedes it) and, depending on the build, may return
+    // undefined instead of a promise. Wrap both so callers never crash on
+    // `.catch` and the console stays clean.
+    safeNavigate(method, location) {
+      const result = this.$router[method](location);
+      if (!result || typeof result.catch !== 'function') {
+        return Promise.resolve();
+      }
+      return result.catch((err) => {
+        const name = err?.name || '';
+        if (name === 'NavigationDuplicated' || name === 'NavigationCancelled') {
+          return;
+        }
+        throw err;
+      });
     },
     hasRightToCreateFolder(item) {
       return item.hasAccess && canCreateFolder(item?.id, item);
@@ -329,9 +447,7 @@ export default {
         });
         await this.fetchWorkspacesData();
         this.$emit('on-refresh');
-        await this.$router.push({
-          query: { fid: folder?._id },
-        });
+        await this.safeNavigate('push', { query: { fid: folder?._id } });
         this.conflictError = false;
         this.showSnackbar({
           text: this.$t('folders.created'),
@@ -401,11 +517,25 @@ export default {
           node.type === SPACE_TYPE.WORKSPACE
             ? { wid: node.id }
             : { fid: node.id };
-        this.$router.push({ path: '/mailings', query });
-      } else {
-        this.clearSelection();
-        this.$router.replace({ path: '/mailings', query: {} });
+        this.safeNavigate('push', { path: '/mailings', query });
+        return;
       }
+
+      // Vuetify's `activatable` toggles selection off when the active node is
+      // re-clicked, emitting []. The sidebar is a navigation tree: there's
+      // always a current context and the listing keeps showing it, so a
+      // "nothing selected" state is inconsistent. Don't navigate away; instead
+      // re-assert the active node in the treeview so the highlight stays (the
+      // :active binding alone won't, since currentLocation is unchanged).
+      if (this.currentLocation) {
+        this.$nextTick(() => {
+          this.$refs.tree?.updateActive(this.currentLocation, true);
+        });
+        return;
+      }
+
+      this.clearSelection();
+      this.safeNavigate('replace', { path: '/mailings', query: {} });
     },
     displayDeleteModal(selected) {
       this.selectedItemToDelete = selected;
@@ -437,14 +567,12 @@ export default {
         );
 
         if (deletingCurrent || deletingParentOfCurrent) {
+          // Active folder (or its parent) was deleted: fall back to the first
+          // workspace. selectFirstWorkspace persists the new selection and
+          // navigates; :active follows selectedItem, so the workspace becomes
+          // active on its own — no manual updateActive([]).
           this.clearSelection();
-          await this.$router.replace({
-            path: '/mailings',
-            query: { wid: this.treeviewWorkspaces[0]?.id },
-          });
-          this.$nextTick(() => {
-            this.$refs.tree.updateActive([]);
-          });
+          this.selectFirstWorkspace();
         }
       } catch (error) {
         console.error('[BsSidebarWorkspaceTree] Error deleting folder:', error);
@@ -509,7 +637,7 @@ export default {
           routerRedirectionParam = { wid: destinationParam?.workspaceId };
         }
 
-        await this.$router.push({
+        await this.safeNavigate('push', {
           path: '/mailings',
           query: routerRedirectionParam,
         });
@@ -542,15 +670,25 @@ export default {
         return null;
       }
     },
-    async setRemoteLocalStorageKey(key, value) {
-      this.$axios
-        .$put(setUserPersistedLocalStorageKey(key), { value })
-        .catch((e) =>
-          console.error(
-            '[BsSidebarWorkspaceTree] Remote localStorage update failed:',
-            e
-          )
-        );
+    // Debounced per key: rapid navigation fires several saves per click
+    // (selection + branch expansion). Browser localStorage is already updated
+    // synchronously by callers; here we only coalesce the remote (DB) PUT so we
+    // don't spam the backend. Last value within the window wins.
+    setRemoteLocalStorageKey(key, value) {
+      if (this._remoteSaveTimers[key]) {
+        clearTimeout(this._remoteSaveTimers[key]);
+      }
+      this._remoteSaveTimers[key] = setTimeout(() => {
+        delete this._remoteSaveTimers[key];
+        this.$axios
+          .$put(setUserPersistedLocalStorageKey(key), { value })
+          .catch((e) =>
+            console.error(
+              '[BsSidebarWorkspaceTree] Remote localStorage update failed:',
+              e
+            )
+          );
+      }, 600);
     },
     async hydrateBrowserFromDbIfEmpty() {
       if (typeof localStorage === 'undefined') return;
