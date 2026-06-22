@@ -83,7 +83,7 @@ export default {
     ref="moveFolderDialog"
     :title="$t('global.moveFolderAction')"
     :is-form="true"
-    modal-width="650"
+    modal-width="clamp(500px, 60vw, 800px)"
     class="modal-confirm-move-mail"
     @click-outside="close"
   >
@@ -164,7 +164,7 @@ export default {
 /* Same destination-tree shell as the Dupliquer & traduire modal so all
    destination-picker actions share the visual pattern. */
 .destination-tree {
-  max-height: 50vh;
+  max-height: clamp(280px, 70vh, 720px);
   overflow-y: auto;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
