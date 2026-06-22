@@ -90,6 +90,7 @@ export default {
           :items="treeviewWorkspacesHasRight"
           :open="openNodes"
           :active="activeNode"
+          :load-children="loadDestinationChildren"
           hoverable
           :dense="true"
           :return-object="true"

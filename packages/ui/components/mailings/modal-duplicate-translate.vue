@@ -526,6 +526,7 @@ export default {
                       :items="treeviewWorkspacesHasRight"
                       :open="openNodes"
                       :active="activeNode"
+                      :load-children="loadDestinationChildren"
                       hoverable
                       dense
                       :return-object="true"
