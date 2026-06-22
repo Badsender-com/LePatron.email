@@ -468,9 +468,11 @@
 .bs-modal-overlay {
   // Smart Tree component styling for Adobe modal
   smart-tree {
-    // Grow the trees to fill the tall full-width Adobe modal so users can see
-    // many folders/deliveries at once. Caps at 60vh on short screens.
-    --smart-tree-default-height: min(60vh, 560px);
+    // Grow the trees to fill the tall full-width Adobe modal: target 60vh,
+    // never below 200px (short screens) nor above 560px. clamp() is emitted
+    // as-is by LESS — unlike min(), which LESS evaluates and chokes on for
+    // mixed vh/px units, breaking the editor CSS build.
+    --smart-tree-default-height: clamp(200px, 60vh, 560px);
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 4px;
   }
