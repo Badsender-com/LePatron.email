@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import * as acls from '~/helpers/pages-acls.js';
 import * as apiRoutes from '~/helpers/api-routes.js';
 import mixinSettingsTitle from '~/helpers/mixins/mixin-settings-title.js';
-import BsPageHeader from '~/components/layout/BsPageHeader.vue';
+import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import TrackingParamsTab from '~/components/group/tracking-params-tab.vue';
 import TemplateTrackingTab from '~/components/template/template-tracking-tab.vue';
 import { IS_ADMIN, USER } from '~/store/user';
