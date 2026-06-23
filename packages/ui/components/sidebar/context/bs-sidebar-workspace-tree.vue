@@ -217,11 +217,12 @@ export default {
 
         this.$nextTick(() => {
           this.openNodes = nodesToOpen;
-          // Restore the saved selection (or fall back to the first workspace
-          // when there's none). NB: an explicit "always go to first workspace
-          // on a bare /mailings URL" still races with other navigations on cold
-          // load and is handled in a follow-up — see restoreSelectedNode.
-          this.restoreSelectedNode();
+          const { wid, fid } = this.$route.query;
+          if (!wid && !fid) {
+            this.selectFirstWorkspace();
+          } else {
+            this.restoreSelectedNode();
+          }
           // Reveal the branch of the active folder so it stays visible on
           // refresh / return from the editor, even if its ancestors weren't in
           // the saved expansion state.
@@ -340,7 +341,19 @@ export default {
       // cold-load selection; this only covers later route changes that land on
       // /mailings with nothing selected.
       if (this.isInitializing) return;
-      if (!this.selectedItem?.id && this.treeviewWorkspaces?.length > 0) {
+
+      // Source of truth is the route query, NOT currentLocation. When the user
+      // re-clicks the already-active "Email Builder" menu, the router pushes a
+      // bare /mailings (query cleared) but the tree component is never
+      // remounted (it lives in the persistent layout and activeModule doesn't
+      // change), so initializeTreeState's immediate watcher never re-fires.
+      // Meanwhile FETCH_FOLDER_OR_WORKSPACE is a no-op on an empty query, so the
+      // store keeps the previous folder/workspace and currentLocation stays
+      // stale — making a `!selectedItem.id` guard wrongly believe something is
+      // still selected. Keying off the empty query instead reliably re-selects
+      // the first workspace.
+      const { wid, fid } = this.$route.query;
+      if (!wid && !fid && this.treeviewWorkspaces?.length > 0) {
         this.selectFirstWorkspace();
       }
     },
@@ -534,8 +547,15 @@ export default {
         return;
       }
 
-      this.clearSelection();
-      this.safeNavigate('replace', { path: '/mailings', query: {} });
+      // No current location AND no node selected. This fires spuriously right
+      // after selectFirstWorkspace() on a bare /mailings: the replace(?wid) has
+      // not yet populated the store, so currentLocation is still undefined and
+      // :active resolves to [], which makes the treeview emit []. Navigating to
+      // a bare /mailings here would CANCEL the in-flight ?wid navigation
+      // ("Navigation cancelled ... with a new navigation"), leaving the route
+      // empty and the listing spinner stuck forever. The sidebar always wants a
+      // selection, so re-assert the first workspace instead of clearing.
+      this.selectFirstWorkspace();
     },
     displayDeleteModal(selected) {
       this.selectedItemToDelete = selected;
