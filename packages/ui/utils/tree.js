@@ -44,9 +44,10 @@ export function findNodesByIds(ids, items) {
 // Returns the list of ancestor nodes leading to (and excluding) the node with
 // the given id — i.e. the branch that must be open for that node to be visible.
 // Returns null when the id is not found, [] when the node is a top-level node.
-// Note: only resolves ancestors already present in the in-memory tree; with
-// lazy-loading, deep ancestors must first be loaded (see ensureCurrentPathOpen
-// in the sidebar tree, which uses the /folders/:id/path endpoint).
+// Note: only resolves ancestors already present in the in-memory tree. With
+// lazy-loading, a deep node's branch must first be loaded (see loadActiveBranch
+// in the sidebar tree, which fetches the parent's children via
+// FETCH_FOLDER_CHILDREN) before ensureCurrentPathOpen can resolve it here.
 export function findPathToNode(id, items, ancestors = []) {
   if (!items || items.length === 0 || !id) {
     return null;
