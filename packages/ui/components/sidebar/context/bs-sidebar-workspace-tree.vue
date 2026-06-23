@@ -374,6 +374,12 @@ export default {
     async onRouteChange() {
       await this.getFolderAndWorkspaceData();
       if (this.isInitializing) return;
+      // The active folder may be a sub-folder whose parent's children aren't
+      // loaded in the tree yet (e.g. just after creating a sub-folder, or
+      // landing on a deep ?fid URL): load its branch first so findPathToNode
+      // can resolve it, otherwise ensureCurrentPathOpen reveals nothing and the
+      // sidebar stays collapsed on the new node.
+      await this.loadActiveBranch();
       this.ensureCurrentPathOpen();
     },
     // Open the ancestors of the active folder (without dropping already-open
