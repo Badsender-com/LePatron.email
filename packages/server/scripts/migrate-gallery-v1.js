@@ -15,7 +15,6 @@ const mongoose = require('mongoose');
 const config = require('../node.config.js');
 const { Galleries } = require('../common/models.common.js');
 
-const BATCH_SIZE = 10;
 const isDryRun = process.argv.includes('--dry-run');
 
 // ---------------------------------------------------------------------------
@@ -78,66 +77,48 @@ async function run() {
   }
 
   const totalGalleries = await Galleries.countDocuments();
-  const allGalleriesLean = await Galleries.find({}, 'files').lean();
-  const totalImages = allGalleriesLean.reduce(
-    (sum, g) => sum + g.files.length,
-    0
-  );
 
   console.log('Migration galerie V1');
-  console.log(
-    `Galeries : ${totalGalleries} | Images totales : ${totalImages}\n`
-  );
+  console.log(`Galeries : ${totalGalleries}\n`);
 
   let galleryCount = 0;
   let totalMigrated = 0;
   let totalSkipped = 0;
   let totalErrors = 0;
 
+  // Stream galleries one by one — the cursor keeps memory flat even on a
+  // large collection. Each gallery is saved sequentially, so there is no
+  // throughput gain in buffering a batch.
   const cursor = Galleries.find({}).cursor();
-  let batch = [];
-
-  const processBatch = async (galleries) => {
-    for (const gallery of galleries) {
-      galleryCount++;
-      const galleryId = String(gallery.creationOrWireframeId);
-
-      try {
-        const { migrated, skipped } = await migrateGallery(gallery, isDryRun);
-        totalMigrated += migrated;
-        totalSkipped += skipped;
-
-        console.log(
-          `[${galleryCount}/${totalGalleries}] ${galleryId} — ` +
-            `${migrated} migrée(s), ${skipped} déjà à jour`
-        );
-      } catch (err) {
-        totalErrors++;
-        console.error(
-          `[${galleryCount}/${totalGalleries}] ${galleryId} — ERREUR : ${err.message}`
-        );
-      }
-    }
-  };
 
   for (
     let gallery = await cursor.next();
     gallery !== null;
     gallery = await cursor.next()
   ) {
-    batch.push(gallery);
-    if (batch.length >= BATCH_SIZE) {
-      await processBatch(batch);
-      batch = [];
-    }
-  }
+    galleryCount++;
+    const galleryId = String(gallery.creationOrWireframeId);
 
-  if (batch.length > 0) {
-    await processBatch(batch);
+    try {
+      const { migrated, skipped } = await migrateGallery(gallery, isDryRun);
+      totalMigrated += migrated;
+      totalSkipped += skipped;
+
+      console.log(
+        `[${galleryCount}/${totalGalleries}] ${galleryId} — ` +
+          `${migrated} migrée(s), ${skipped} déjà à jour`
+      );
+    } catch (err) {
+      totalErrors++;
+      console.error(
+        `[${galleryCount}/${totalGalleries}] ${galleryId} — ERREUR : ${err.message}`
+      );
+    }
   }
 
   console.log('\n--- Résultat ---');
   console.log(`Galeries traitées : ${galleryCount}/${totalGalleries}`);
+  console.log(`Images totales    : ${totalMigrated + totalSkipped}`);
   console.log(`Images migrées    : ${totalMigrated}`);
   console.log(`Images skippées   : ${totalSkipped}`);
   if (totalErrors > 0) {

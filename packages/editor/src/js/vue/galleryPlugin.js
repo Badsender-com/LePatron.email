@@ -4,7 +4,13 @@ const Vue = require('vue/dist/vue.common');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 
 module.exports = {
-  viewModel(vm, ko) {},
+  viewModel(vm, ko) {
+    // Expose the bridge to Knockout (mirrors badsender-events-hub's
+    // `vm.bsEventsHub`) so KO-side code can dispatch GALLERY_REFRESH and
+    // listen to GALLERY_IMAGE_SELECTED. Without this the Vue→KO methods
+    // would be unreachable from the Mosaico viewModel.
+    vm.galleryBridge = galleryBridge;
+  },
   init(vm) {
     Vue.component('GalleryPanelPlugin', {
       data: () => ({
