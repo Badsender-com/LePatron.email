@@ -383,7 +383,7 @@ export default {
 </script>
 
 <template>
-  <v-dialog v-model="show" max-width="650" persistent>
+  <v-dialog v-model="show" width="clamp(500px, 60vw, 800px)" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
         <lucide-languages
@@ -526,6 +526,7 @@ export default {
                       :items="treeviewWorkspacesHasRight"
                       :open="openNodes"
                       :active="activeNode"
+                      :load-children="loadDestinationChildren"
                       hoverable
                       dense
                       :return-object="true"
@@ -596,7 +597,7 @@ export default {
 
 <style lang="scss" scoped>
 .destination-tree {
-  max-height: 50vh;
+  max-height: clamp(280px, 70vh, 720px);
   overflow-y: auto;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
