@@ -5,14 +5,28 @@
 // Prerequisites: server running + CYPRESS_MAILING_ID env variable defined.
 
 describe('US-04 — Vue gallery infrastructure: Mosaico non-regression', () => {
+  // Captures console.error calls emitted while the editor window loads, so the
+  // "no critical console errors" test asserts on something real.
+  let consoleErrorSpy;
+
   before(() => {
     cy.login();
+    // Register the spy before openEditor() triggers the editor page load.
+    cy.on('window:before:load', (win) => {
+      consoleErrorSpy = cy.spy(win.console, 'error');
+    });
     cy.openEditor();
   });
 
   describe('Editor loading', () => {
     it('loads without critical console errors', () => {
       cy.get('#page').should('exist');
+      cy.then(() => {
+        expect(
+          consoleErrorSpy,
+          'console.error during editor load'
+        ).to.have.callCount(0);
+      });
     });
 
     it('mounts the Vue #gallery-panel mount point', () => {
