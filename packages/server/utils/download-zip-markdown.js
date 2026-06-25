@@ -211,15 +211,16 @@ const getUrlWithTrackingParams = (
       if (!enforced) return;
       result = upsertUrlParam(result, key, enforced, reCache);
     } else if (!hasQueryParam(link, key)) {
-      // Free-form param: "skip if already present as a query param" — inherited
-      // from the original tracking implementation (PR #668, commit 3cc1c00a,
-      // Feb 2023). The check is anchored on `?key=`/`&key=` (hasQueryParam) so
-      // a key that merely appears as a substring of the host or of another
-      // param name is NOT treated as already-present.
+      // Free-form param: only added when the key is NOT already present in the
+      // link. This is the documented product behavior, surfaced to the user by
+      // the editor tooltip (trackingOverrideBehavior): "Les paramètres ajoutés
+      // manuellement ici ne sont ajoutés que s'ils n'existent pas déjà dans le
+      // lien." (Unlike managed/global params, which DO override existing
+      // values via upsertUrlParam above.)
       //
-      // TODO(product): confirm whether free-form params should also OVERRIDE
-      // existing values that exist in the link (like managed params do).
-      // Decision pending — see PO note in the tracking-per-company ticket.
+      // The check is anchored on `?key=`/`&key=` (hasQueryParam) so a key that
+      // merely appears as a substring of the host or of another param name is
+      // NOT treated as already-present.
       freeFormParams.set(key, value);
     }
   };
