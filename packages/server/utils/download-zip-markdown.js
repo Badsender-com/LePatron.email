@@ -194,7 +194,11 @@ const getUrlWithTrackingParams = (
     context || buildTrackingContext(groupTrackingConfig);
 
   let result = link;
-  const freeFormParams = [];
+  // key -> value for free-form params. A Map dedups same-key rows with the
+  // LAST value winning (consistent with managed params, which upsert to the
+  // last value). Without this, `ref=A` + `ref=B` would emit `?ref=A&ref=B`,
+  // an ambiguous duplicate the destination server resolves arbitrarily.
+  const freeFormParams = new Map();
 
   const handlePair = (key, value) => {
     if (!key || !value) return;
@@ -214,11 +218,9 @@ const getUrlWithTrackingParams = (
       // param name is NOT treated as already-present.
       //
       // TODO(product): confirm whether free-form params should also OVERRIDE
-      // existing values (like managed params do above) for consistency.
+      // existing values that exist in the link (like managed params do).
       // Decision pending — see PO note in the tracking-per-company ticket.
-      freeFormParams.push(
-        `${encodeTrackingComponent(key)}=${encodeTrackingComponent(value)}`
-      );
+      freeFormParams.set(key, value);
     }
   };
 
@@ -237,9 +239,15 @@ const getUrlWithTrackingParams = (
     handlePair(tracking.utmCampaignKey, tracking.utmCampaignValue);
   }
 
-  if (freeFormParams.length > 0) {
+  if (freeFormParams.size > 0) {
+    const encoded = [];
+    freeFormParams.forEach((value, key) => {
+      encoded.push(
+        `${encodeTrackingComponent(key)}=${encodeTrackingComponent(value)}`
+      );
+    });
     const sep = hasUrlAlreadyParams(result) ? '&' : '?';
-    result = `${result}${sep}${freeFormParams.join('&')}`;
+    result = `${result}${sep}${encoded.join('&')}`;
   }
   return result;
 };

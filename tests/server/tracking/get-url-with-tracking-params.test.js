@@ -71,6 +71,34 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?ref=old');
     });
 
+    it('dedups two free-form rows with the same key — last value wins', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        {
+          trackingUrls: [
+            { key: 'ref', value: 'first' },
+            { key: 'ref', value: 'last' },
+          ],
+        },
+        null
+      );
+      expect(out).toBe('https://x.com?ref=last');
+    });
+
+    it('keeps distinct free-form keys in order', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        {
+          trackingUrls: [
+            { key: 'a', value: '1' },
+            { key: 'b', value: '2' },
+          ],
+        },
+        null
+      );
+      expect(out).toBe('https://x.com?a=1&b=2');
+    });
+
     it('appends Google Analytics UTM fields when enabled', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',
