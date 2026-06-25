@@ -81,18 +81,39 @@ const hasUrlAlreadyParams = (url) => {
 };
 
 /**
+ * Encode a tracking key/value before injecting it into a URL.
+ *
+ * We do NOT use encodeURIComponent because tracking values may contain
+ * personalization placeholders ({{token}}, [[token]]) that must reach the
+ * email client untouched. Instead we escape only the characters that are
+ * dangerous in a query string OR that would let the value break out of the
+ * surrounding href="..." attribute in the generated HTML:
+ *   "  -> escapes the attribute delimiter (HTML injection)
+ *   <> -> markup injection
+ *   #  -> truncates the URL / starts a fragment
+ *   &  -> forges extra query params
+ *   space -> breaks the attribute / URL
+ * Placeholders are preserved because { } | [ ] are intentionally left alone.
+ */
+const encodeTrackingComponent = (raw) => {
+  return String(raw).replace(/[<>"#& ]/g, (c) => encodeURIComponent(c));
+};
+
+/**
  * Replace (or insert) a query parameter in a URL.
  * Uses regex-based replacement instead of URL API to keep relative paths,
  * template placeholders ({{token}}), and unusual schemes intact.
  */
 const upsertUrlParam = (link, key, value) => {
   const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const encKey = encodeTrackingComponent(key);
+  const encValue = encodeTrackingComponent(value);
   const re = new RegExp(`([?&])${escapedKey}=[^&#]*`, 'g');
   if (re.test(link)) {
-    return link.replace(re, `$1${key}=${value}`);
+    return link.replace(re, `$1${encKey}=${encValue}`);
   }
   const sep = hasUrlAlreadyParams(link) ? '&' : '?';
-  return `${link}${sep}${key}=${value}`;
+  return `${link}${sep}${encKey}=${encValue}`;
 };
 
 const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
@@ -133,7 +154,9 @@ const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
       // TODO(product): confirm whether free-form params should also OVERRIDE
       // existing values (like managed params do above) for consistency.
       // Decision pending — see PO note in the tracking-per-company ticket.
-      freeFormParams.push(`${key}=${value}`);
+      freeFormParams.push(
+        `${encodeTrackingComponent(key)}=${encodeTrackingComponent(value)}`
+      );
     }
   };
 

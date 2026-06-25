@@ -202,4 +202,67 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?a=1&utm_source=news&b=2#fragment');
     });
   });
+
+  describe('encoding / injection safety', () => {
+    it('escapes a double quote so the value cannot break out of href', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        {
+          trackingUrls: [
+            { key: 'utm_source', value: 'x" onmouseover="alert(1)' },
+          ],
+        },
+        null
+      );
+      expect(out).not.toContain('"');
+      expect(out).toBe(
+        'https://x.com?utm_source=x%22%20onmouseover=%22alert(1)'
+      );
+    });
+
+    it('escapes < and > to prevent markup injection', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: '<script>' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?utm_source=%3Cscript%3E');
+    });
+
+    it('escapes & so a value cannot forge extra query params', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'a&admin=1' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?utm_source=a%26admin=1');
+    });
+
+    it('escapes # so a value cannot truncate the URL with a fragment', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'a#frag' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?utm_source=a%23frag');
+    });
+
+    it('preserves personalization placeholders ({{token}})', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: '{{contact.id}}' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?utm_source={{contact.id}}');
+    });
+
+    it('encodes free-form param values too', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'ref', value: 'a"b' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?ref=a%22b');
+    });
+  });
 });
