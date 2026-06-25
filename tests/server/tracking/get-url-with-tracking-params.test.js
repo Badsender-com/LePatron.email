@@ -265,4 +265,54 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?ref=a%22b');
     });
   });
+
+  describe('server-side value enforcement (lockedValues / allowed list)', () => {
+    it('forces the configured value when lockedValues is set, ignoring the client value', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        {
+          enabled: true,
+          params: [
+            { key: 'utm_source', values: ['official'], lockedValues: true },
+          ],
+        }
+      );
+      expect(out).toBe('https://x.com?utm_source=official');
+    });
+
+    it('drops a managed value not in the allowed list (restricted, not locked)', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        {
+          enabled: true,
+          params: [{ key: 'utm_source', values: ['a', 'b'] }],
+        }
+      );
+      // forged value is not injected
+      expect(out).toBe('https://x.com');
+    });
+
+    it('keeps a managed value that IS in the allowed list', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'b' }] },
+        {
+          enabled: true,
+          params: [{ key: 'utm_source', values: ['a', 'b'] }],
+        }
+      );
+      expect(out).toBe('https://x.com?utm_source=b');
+    });
+
+    it('accepts any value for a managed key with no allowed list and not locked', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'anything' }] },
+        { enabled: true, params: [{ key: 'utm_source', values: [] }] }
+      );
+      expect(out).toBe('https://x.com?utm_source=anything');
+    });
+  });
 });

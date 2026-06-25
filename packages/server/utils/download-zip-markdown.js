@@ -121,12 +121,13 @@ const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
     return link;
   }
 
-  // Keys controlled by the group config — used to filter and to detect overrides
-  const groupKeys = new Set(
+  // Keys controlled by the group config, mapped to their param definition so
+  // we can enforce server-side value constraints (lockedValues / allowed list).
+  const managedParams = new Map(
     (groupTrackingConfig && groupTrackingConfig.enabled
       ? groupTrackingConfig.params || []
       : []
-    ).map((p) => p.key)
+    ).map((p) => [p.key, p])
   );
   const restrictValues = Boolean(
     groupTrackingConfig &&
@@ -134,15 +135,37 @@ const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
       groupTrackingConfig.restrictValues
   );
 
+  // For a managed key, never trust the client-supplied value blindly: the
+  // admin may have locked the value or restricted it to an allowed list.
+  // Returns the value to actually inject, or null to drop the pair entirely.
+  //   - lockedValues: ignore the client value, force the configured one.
+  //   - allowed list present: keep the client value only if it's in the list.
+  // This is the server-side guarantee behind the "valeur verrouillée" UI —
+  // a forged freshTracking payload cannot inject an arbitrary value.
+  const resolveManagedValue = (param, value) => {
+    const allowed = Array.isArray(param.values) ? param.values : [];
+    if (param.lockedValues) {
+      return allowed.length > 0 ? allowed[0] : value;
+    }
+    if (allowed.length > 0) {
+      return allowed.includes(value) ? value : null;
+    }
+    return value;
+  };
+
   let result = link;
   const freeFormParams = [];
 
   const handlePair = (key, value) => {
     if (!key || !value) return;
-    if (restrictValues && !groupKeys.has(key)) return;
-    if (groupKeys.has(key)) {
-      // Group-controlled key: override the value in the link (or insert if missing)
-      result = upsertUrlParam(result, key, value);
+    const managedParam = managedParams.get(key);
+    if (restrictValues && !managedParam) return;
+    if (managedParam) {
+      // Group-controlled key: enforce server-side value constraints, then
+      // override the value in the link (or insert if missing).
+      const enforced = resolveManagedValue(managedParam, value);
+      if (!enforced) return;
+      result = upsertUrlParam(result, key, enforced);
     } else if (!link.includes(key)) {
       // Free-form param: "skip if already present" — inherited from the
       // original tracking implementation (PR #668, commit 3cc1c00a, Feb 2023).
