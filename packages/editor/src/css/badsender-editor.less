@@ -778,6 +778,20 @@ body {
     min-width: 0;
   }
 
+  // Inline validation for free-form rows (duplicate / reserved key).
+  .tracking-input--error input,
+  input.tracking-input--error {
+    border-color: #d32f2f !important;
+  }
+
+  .tracking-error {
+    margin: 4px 0 0;
+    padding: 0;
+    color: #d32f2f;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
   // Custom combobox for unlocked keys with multiple suggestions: editable
   // <input> + chevron button + popover. Looks identical to the native
   // <input>/<select> elements of the editor.

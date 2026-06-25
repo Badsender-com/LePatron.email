@@ -161,10 +161,64 @@ module.exports = {
         },
         freeFormRows() {
           if (!this.isManaged) return this.trackingUrls;
-          // free-form rows are those whose key isn't in the group whitelist
+          // Free-form rows are the ones the user added manually. We must NOT
+          // filter them out the moment their key becomes a managed key, else
+          // the row vanishes mid-typing (the key field loses its row as soon
+          // as you finish typing e.g. "utm_source"). Instead we keep every row
+          // that is not the dedicated managed row for that key, and flag the
+          // collision via freeFormErrors so the user sees an inline message.
+          // A row is "managed" (and thus hidden from the free-form list) only
+          // when it is the unique row whose key matches a group key AND it is
+          // the first such row — managedRows already renders that one.
+          const managedFirstIndexByKey = {};
+          this.trackingUrls.forEach((tu, i) => {
+            if (
+              tu &&
+              this.groupKeys.indexOf(tu.key) !== -1 &&
+              managedFirstIndexByKey[tu.key] === undefined
+            ) {
+              managedFirstIndexByKey[tu.key] = i;
+            }
+          });
           return this.trackingUrls.filter(
-            (tu) => tu && this.groupKeys.indexOf(tu.key) === -1
+            (tu, i) =>
+              tu && managedFirstIndexByKey[tu.key] !== i
           );
+        },
+        // Per-row collision detection for free-form rows. Returns a Map keyed
+        // by the row object so the template can show an inline error without
+        // relying on a fragile index. A row is in error when its (non-empty)
+        // key duplicates a managed key OR another free-form key.
+        freeFormErrors() {
+          const errors = new Map();
+          if (!this.isManaged) {
+            // legacy mode: only free-form vs free-form duplicates
+            const counts = {};
+            this.trackingUrls.forEach((tu) => {
+              if (tu && tu.key) counts[tu.key] = (counts[tu.key] || 0) + 1;
+            });
+            this.trackingUrls.forEach((tu) => {
+              if (tu && tu.key && counts[tu.key] > 1) {
+                errors.set(tu, 'trackingDuplicateKey');
+              }
+            });
+            return errors;
+          }
+          const freeForm = this.freeFormRows;
+          const seen = {};
+          freeForm.forEach((tu) => {
+            if (tu && tu.key) seen[tu.key] = (seen[tu.key] || 0) + 1;
+          });
+          freeForm.forEach((tu) => {
+            if (!tu || !tu.key) return;
+            if (this.groupKeys.indexOf(tu.key) !== -1) {
+              // collides with a managed (group) key
+              errors.set(tu, 'trackingReservedKey');
+            } else if (seen[tu.key] > 1) {
+              errors.set(tu, 'trackingDuplicateKey');
+            }
+          });
+          return errors;
         },
       },
       methods: {
@@ -186,6 +240,11 @@ module.exports = {
         },
         getOverrideBehaviorTooltip() {
           return vm.t('trackingOverrideBehavior');
+        },
+        // Returns the translated inline error for a free-form row, or '' if ok.
+        getFreeFormError(trackingUrl) {
+          const code = this.freeFormErrors.get(trackingUrl);
+          return code ? vm.t(code) : '';
         },
         updateHasGoogleAnalyticsUtm(newHasGoogleAnalyticsUtm) {
           this.hasGoogleAnalyticsUtm = newHasGoogleAnalyticsUtm;
@@ -393,7 +452,12 @@ module.exports = {
               >
                 <div class="propEditor tracking-param-editor">
                   <div class="propInput tracking-input">
-                    <input type="text" placeholder="key" v-model="trackingUrl.key" />
+                    <input
+                      type="text"
+                      placeholder="key"
+                      v-model="trackingUrl.key"
+                      :class="{ 'tracking-input--error': !!getFreeFormError(trackingUrl) }"
+                    />
                   </div>
                   <span class="tracking-equals">=</span>
                   <div class="propInput tracking-input">
@@ -407,6 +471,10 @@ module.exports = {
                     <span class="lucide lucide-x"></span>
                   </button>
                 </div>
+                <p
+                  v-if="getFreeFormError(trackingUrl)"
+                  class="tracking-error"
+                >{{ getFreeFormError(trackingUrl) }}</p>
               </div>
               <div class="tracking-actions">
                 <button @click.prevent="addTrackingUrl" class="tracking-add-btn">
@@ -419,10 +487,15 @@ module.exports = {
 
           <!-- Free-form mode (legacy: no group config) -->
           <template v-else>
-            <div v-for="(trackingUrl, index) in trackingUrls" class="tracking-param-row">
+            <div v-for="(trackingUrl, index) in trackingUrls" :key="'legacy-' + index" class="tracking-param-row">
               <div class="propEditor tracking-param-editor">
                 <div class="propInput tracking-input">
-                  <input type="text" placeholder="key" v-model="trackingUrl.key" />
+                  <input
+                    type="text"
+                    placeholder="key"
+                    v-model="trackingUrl.key"
+                    :class="{ 'tracking-input--error': !!getFreeFormError(trackingUrl) }"
+                  />
                 </div>
                 <span class="tracking-equals">=</span>
                 <div class="propInput tracking-input">
@@ -437,6 +510,10 @@ module.exports = {
                   <span class="lucide lucide-x"></span>
                 </button>
               </div>
+              <p
+                v-if="getFreeFormError(trackingUrl)"
+                class="tracking-error"
+              >{{ getFreeFormError(trackingUrl) }}</p>
             </div>
             <div class="tracking-actions">
               <button @click.prevent="addTrackingUrl" class="tracking-add-btn">
