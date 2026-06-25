@@ -96,7 +96,86 @@ function validateRequiredTrackingParams(tracking, resolvedConfig) {
   return requiredKeys.filter((k) => !filledKeys.has(k));
 }
 
+/**
+ * Validate and normalize a trackingConfig payload coming from the client
+ * before it is persisted. The UI enforces these rules (non-empty/unique keys,
+ * etc.) but the UI is bypassable, so the server must guarantee shape integrity:
+ * an invalid config could otherwise make a mailing impossible to send (a
+ * required param that can never be filled) or persist unexpected fields.
+ *
+ * Throws an Error with `.code = INVALID_TRACKING_CONFIG` on invalid shape.
+ * Strips unknown fields and returns a clean object safe to persist.
+ *
+ * @param {Object} raw            the req.body trackingConfig payload
+ * @param {Object} [options]
+ * @param {Boolean} [options.allowOverrideGroupTracking] true for templates
+ * @returns {Object}              sanitized { enabled, restrictValues, params }
+ */
+function sanitizeTrackingConfig(raw, options = {}) {
+  const fail = (message) => {
+    const err = new Error(message);
+    err.code = 'INVALID_TRACKING_CONFIG';
+    err.statusCode = 422;
+    return err;
+  };
+
+  const cfg = raw && typeof raw === 'object' ? raw : {};
+  if (cfg.params != null && !Array.isArray(cfg.params)) {
+    throw fail('trackingConfig.params must be an array');
+  }
+
+  const seenKeys = new Set();
+  const params = (cfg.params || []).map((p, i) => {
+    if (!p || typeof p !== 'object') {
+      throw fail(`trackingConfig.params[${i}] must be an object`);
+    }
+    const key = typeof p.key === 'string' ? p.key.trim() : '';
+    if (!key) {
+      throw fail(`trackingConfig.params[${i}].key is required`);
+    }
+    if (seenKeys.has(key)) {
+      throw fail(`trackingConfig.params has a duplicate key: ${key}`);
+    }
+    seenKeys.add(key);
+
+    if (p.values != null && !Array.isArray(p.values)) {
+      throw fail(`trackingConfig.params[${i}].values must be an array`);
+    }
+    const values = (p.values || []).map((v, j) => {
+      if (typeof v !== 'string') {
+        throw fail(`trackingConfig.params[${i}].values[${j}] must be a string`);
+      }
+      return v;
+    });
+
+    const lockedValues = Boolean(p.lockedValues);
+    // A locked param with no allowed value can never inject anything and a
+    // required+locked param with no value can never be satisfied → reject.
+    if (lockedValues && values.length === 0) {
+      throw fail(`trackingConfig.params[${i}] is locked but has no value`);
+    }
+
+    return {
+      key,
+      values,
+      required: Boolean(p.required),
+      lockedValues,
+    };
+  });
+
+  const sanitized = {
+    enabled: Boolean(cfg.enabled),
+    restrictValues: Boolean(cfg.restrictValues),
+    params,
+  };
+  if (options.allowOverrideGroupTracking) {
+    sanitized.overrideGroupTracking = Boolean(cfg.overrideGroupTracking);
+  }
+  return sanitized;
+}
+
 module.exports = {
   resolveTrackingConfig,
   validateRequiredTrackingParams,
+  sanitizeTrackingConfig,
 };

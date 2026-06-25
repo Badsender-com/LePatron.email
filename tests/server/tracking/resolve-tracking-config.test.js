@@ -3,6 +3,7 @@
 const {
   resolveTrackingConfig,
   validateRequiredTrackingParams,
+  sanitizeTrackingConfig,
 } = require('../../../packages/server/utils/resolve-tracking-config.js');
 
 function group(cfg) {
@@ -269,5 +270,101 @@ describe('validateRequiredTrackingParams', () => {
         cfg
       )
     ).toEqual([]);
+  });
+});
+
+describe('sanitizeTrackingConfig', () => {
+  const expectInvalid = (fn) => {
+    let thrown;
+    try {
+      fn();
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeDefined();
+    expect(thrown.code).toBe('INVALID_TRACKING_CONFIG');
+    expect(thrown.statusCode).toBe(422);
+  };
+
+  it('normalizes a valid config and coerces booleans', () => {
+    expect(
+      sanitizeTrackingConfig({
+        enabled: 1,
+        restrictValues: 'yes',
+        params: [{ key: ' utm_source ', values: ['a'], required: 1 }],
+      })
+    ).toEqual({
+      enabled: true,
+      restrictValues: true,
+      params: [
+        {
+          key: 'utm_source',
+          values: ['a'],
+          required: true,
+          lockedValues: false,
+        },
+      ],
+    });
+  });
+
+  it('defaults to an empty disabled config when body is empty', () => {
+    expect(sanitizeTrackingConfig(undefined)).toEqual({
+      enabled: false,
+      restrictValues: false,
+      params: [],
+    });
+  });
+
+  it('strips unknown fields', () => {
+    const out = sanitizeTrackingConfig({
+      enabled: true,
+      hacker: 'x',
+      params: [{ key: 'k', evil: true }],
+    });
+    expect(out.hacker).toBeUndefined();
+    expect(out.params[0].evil).toBeUndefined();
+  });
+
+  it('rejects a non-array params', () => {
+    expectInvalid(() => sanitizeTrackingConfig({ params: 'nope' }));
+  });
+
+  it('rejects an empty/whitespace key', () => {
+    expectInvalid(() => sanitizeTrackingConfig({ params: [{ key: '  ' }] }));
+  });
+
+  it('rejects duplicate keys', () => {
+    expectInvalid(() =>
+      sanitizeTrackingConfig({
+        params: [{ key: 'utm_source' }, { key: 'utm_source' }],
+      })
+    );
+  });
+
+  it('rejects a locked param with no allowed value', () => {
+    expectInvalid(() =>
+      sanitizeTrackingConfig({
+        params: [{ key: 'utm_source', lockedValues: true, values: [] }],
+      })
+    );
+  });
+
+  it('rejects non-string values', () => {
+    expectInvalid(() =>
+      sanitizeTrackingConfig({ params: [{ key: 'k', values: [1, 2] }] })
+    );
+  });
+
+  it('keeps overrideGroupTracking only when allowed (template)', () => {
+    expect(
+      sanitizeTrackingConfig(
+        { overrideGroupTracking: true, params: [] },
+        { allowOverrideGroupTracking: true }
+      ).overrideGroupTracking
+    ).toBe(true);
+    expect(
+      sanitizeTrackingConfig({ overrideGroupTracking: true, params: [] })
+        .overrideGroupTracking
+    ).toBeUndefined();
   });
 });

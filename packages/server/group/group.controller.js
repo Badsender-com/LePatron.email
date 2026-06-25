@@ -20,6 +20,9 @@ const {
   Mailings,
   Profiles,
 } = require('../common/models.common.js');
+const {
+  sanitizeTrackingConfig,
+} = require('../utils/resolve-tracking-config.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -398,6 +401,14 @@ async function update(req, res) {
     id: req.params.groupId,
     ...processedBody,
   };
+
+  // Validate/normalize the tracking config shape before persisting (the UI
+  // guards are bypassable). Only when the payload actually carries it.
+  if (groupToUpdate.trackingConfig != null) {
+    groupToUpdate.trackingConfig = sanitizeTrackingConfig(
+      groupToUpdate.trackingConfig
+    );
+  }
 
   if (user.isGroupAdmin) {
     groupToUpdate = pick(groupToUpdate, [

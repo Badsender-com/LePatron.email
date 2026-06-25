@@ -15,6 +15,9 @@ const modelsUtils = require('../utils/model.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const {
+  sanitizeTrackingConfig,
+} = require('../utils/resolve-tracking-config.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -207,7 +210,9 @@ async function updateTrackingConfig(req, res) {
       throw new createError.Forbidden();
     }
   }
-  template.trackingConfig = req.body || {};
+  template.trackingConfig = sanitizeTrackingConfig(req.body, {
+    allowOverrideGroupTracking: true,
+  });
   await template.save();
   res.json(template);
 }
