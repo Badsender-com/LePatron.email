@@ -316,20 +316,20 @@ module.exports = {
           const oldValue = vm.content().tracking().trackingUrls();
           vm.content().tracking().trackingUrls([...oldValue, { key: '', value: '' }]);
         },
-        removeTrackingUrl(targetKey, targetIndex) {
+        removeTrackingUrl(targetKey, targetRow) {
           const current = (vm.content().tracking().trackingUrls() || []).slice();
-          // When called with key, drop the first matching key entry;
-          // otherwise drop by index (legacy free-form list).
+          // Two call styles:
+          //  - managed rows: a key string → drop the first matching key entry.
+          //  - free-form rows: the row OBJECT itself → drop by identity.
+          // We deliberately do NOT drop by index into a re-derived free-form
+          // list: that list (freeFormRows) keeps collision rows, while a naive
+          // re-filter here would not, misaligning indexes and deleting the
+          // wrong row when a free-form key collides with a managed key.
           let removeIdx = -1;
           if (typeof targetKey === 'string' && targetKey.length > 0) {
             removeIdx = current.findIndex((tu) => tu && tu.key === targetKey);
-          } else {
-            // For legacy free-form rows, indexes refer to the filtered freeFormRows list.
-            const freeForm = current.filter(
-              (tu) => tu && this.groupKeys.indexOf(tu.key) === -1
-            );
-            const target = freeForm[targetIndex];
-            if (target) removeIdx = current.indexOf(target);
+          } else if (targetRow) {
+            removeIdx = current.indexOf(targetRow);
           }
           if (removeIdx >= 0) {
             current.splice(removeIdx, 1);
@@ -464,7 +464,7 @@ module.exports = {
                     <input type="text" placeholder="value" v-model="trackingUrl.value" />
                   </div>
                   <button
-                    @click.prevent="() => removeTrackingUrl(null, index)"
+                    @click.prevent="() => removeTrackingUrl(null, trackingUrl)"
                     class="tracking-remove-btn"
                     title="Remove parameter"
                   >
@@ -503,7 +503,7 @@ module.exports = {
                 </div>
                 <button
                   v-if="trackingUrls.length > 1"
-                  @click.prevent="() => removeTrackingUrl(null, index)"
+                  @click.prevent="() => removeTrackingUrl(null, trackingUrl)"
                   class="tracking-remove-btn"
                   title="Remove parameter"
                 >

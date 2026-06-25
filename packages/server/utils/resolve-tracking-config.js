@@ -83,17 +83,35 @@ function toResolved(cfg) {
  */
 function validateRequiredTrackingParams(tracking, resolvedConfig) {
   if (!resolvedConfig || !resolvedConfig.enabled) return [];
-  const requiredKeys = resolvedConfig.params
-    .filter((p) => p.required)
-    .map((p) => p.key);
-  if (requiredKeys.length === 0) return [];
+  const requiredParams = resolvedConfig.params.filter((p) => p.required);
+  if (requiredParams.length === 0) return [];
 
-  const filledKeys = new Set(
+  const restrictValues = Boolean(resolvedConfig.restrictValues);
+  const valueByKey = new Map(
     ((tracking && tracking.trackingUrls) || [])
       .filter((tu) => tu && tu.key && tu.value && tu.value.length > 0)
-      .map((tu) => tu.key)
+      .map((tu) => [tu.key, tu.value])
   );
-  return requiredKeys.filter((k) => !filledKeys.has(k));
+
+  // A required param is "missing" if it has no usable value. Crucially, the
+  // notion of "usable" must match what injection (resolveManagedValue) will
+  // actually keep — otherwise a value that passes validation but gets dropped
+  // at injection (locked, or out-of-list under restrictValues) would silently
+  // vanish from the links with no error to the user.
+  return requiredParams
+    .filter((p) => {
+      const allowed = Array.isArray(p.values) ? p.values : [];
+      // Locked params are always satisfied: injection forces values[0].
+      if (p.lockedValues && allowed.length > 0) return false;
+      const value = valueByKey.get(p.key);
+      if (!value) return true;
+      // Under restrictValues, only an allowed value survives injection.
+      if (restrictValues && allowed.length > 0 && !allowed.includes(value)) {
+        return true;
+      }
+      return false;
+    })
+    .map((p) => p.key);
 }
 
 /**

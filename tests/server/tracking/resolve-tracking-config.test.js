@@ -271,6 +271,58 @@ describe('validateRequiredTrackingParams', () => {
       )
     ).toEqual([]);
   });
+
+  // Validation must match what injection actually keeps, otherwise a required
+  // value that passes here but gets dropped at injection vanishes silently.
+  it('treats a locked required param as satisfied (value forced at injection)', () => {
+    const lockedCfg = {
+      enabled: true,
+      params: [
+        {
+          key: 'utm_source',
+          required: true,
+          lockedValues: true,
+          values: ['x'],
+        },
+      ],
+    };
+    // even with no user value, the locked param is not "missing"
+    expect(validateRequiredTrackingParams({}, lockedCfg)).toEqual([]);
+  });
+
+  it('flags a required param whose value is out of the allowed list under restrictValues', () => {
+    const restrictedCfg = {
+      enabled: true,
+      restrictValues: true,
+      params: [{ key: 'utm_source', required: true, values: ['a', 'b'] }],
+    };
+    expect(
+      validateRequiredTrackingParams(
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        restrictedCfg
+      )
+    ).toEqual(['utm_source']);
+    // an allowed value is accepted
+    expect(
+      validateRequiredTrackingParams(
+        { trackingUrls: [{ key: 'utm_source', value: 'a' }] },
+        restrictedCfg
+      )
+    ).toEqual([]);
+  });
+
+  it('accepts any value for a required param when restrictValues is off', () => {
+    const cfgNoRestrict = {
+      enabled: true,
+      params: [{ key: 'utm_source', required: true, values: ['a', 'b'] }],
+    };
+    expect(
+      validateRequiredTrackingParams(
+        { trackingUrls: [{ key: 'utm_source', value: 'custom' }] },
+        cfgNoRestrict
+      )
+    ).toEqual([]);
+  });
 });
 
 describe('sanitizeTrackingConfig', () => {
