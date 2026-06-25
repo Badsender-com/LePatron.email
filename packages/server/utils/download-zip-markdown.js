@@ -120,16 +120,23 @@ const buildTrackingContext = (groupTrackingConfig) => {
 };
 
 /**
- * For a managed key, never trust the client-supplied value blindly: the
- * admin may have locked the value or restricted it to an allowed list.
- * Returns the value to actually inject, or null to drop the pair entirely.
+ * For a managed key, decide which value to actually inject.
+ *
+ * The `values` list is only a CONSTRAINT when the admin made it one:
+ *   - `lockedValues`        → the value is imposed, force the configured one.
+ *   - `restrictValues` (group-global) → the value must belong to the list.
+ * Otherwise `values` is just a SUGGESTION list and any value (including a
+ * custom one typed by the user) is accepted. This mirrors the editor UX:
+ * an unlocked, unrestricted list lets the user pick OR type their own.
+ *
+ * Returns the value to inject, or null to drop the pair entirely.
  */
-const resolveManagedValue = (param, value) => {
+const resolveManagedValue = (param, value, restrictValues) => {
   const allowed = Array.isArray(param.values) ? param.values : [];
   if (param.lockedValues) {
     return allowed.length > 0 ? allowed[0] : value;
   }
-  if (allowed.length > 0) {
+  if (restrictValues && allowed.length > 0) {
     return allowed.includes(value) ? value : null;
   }
   return value;
@@ -184,7 +191,7 @@ const getUrlWithTrackingParams = (
     if (managedParam) {
       // Group-controlled key: enforce server-side value constraints, then
       // override the value in the link (or insert if missing).
-      const enforced = resolveManagedValue(managedParam, value);
+      const enforced = resolveManagedValue(managedParam, value, restrictValues);
       if (!enforced) return;
       result = upsertUrlParam(result, key, enforced, reCache);
     } else if (!link.includes(key)) {

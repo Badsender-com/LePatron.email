@@ -281,25 +281,40 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?utm_source=official');
     });
 
-    it('drops a managed value not in the allowed list (restricted, not locked)', () => {
+    it('accepts a custom value when the list is a suggestion (not locked, not restricted)', () => {
+      // An allowed list alone is just a suggestion: a value outside it must
+      // still be injected. This mirrors the editor combobox (pick OR type).
       const out = getUrlWithTrackingParams(
         'https://x.com',
-        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        { trackingUrls: [{ key: 'utm_source', value: 'custom' }] },
         {
           enabled: true,
           params: [{ key: 'utm_source', values: ['a', 'b'] }],
         }
       );
-      // forged value is not injected
+      expect(out).toBe('https://x.com?utm_source=custom');
+    });
+
+    it('drops a value outside the list only when restrictValues is on', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        {
+          enabled: true,
+          restrictValues: true,
+          params: [{ key: 'utm_source', values: ['a', 'b'] }],
+        }
+      );
       expect(out).toBe('https://x.com');
     });
 
-    it('keeps a managed value that IS in the allowed list', () => {
+    it('keeps a value inside the list when restrictValues is on', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',
         { trackingUrls: [{ key: 'utm_source', value: 'b' }] },
         {
           enabled: true,
+          restrictValues: true,
           params: [{ key: 'utm_source', values: ['a', 'b'] }],
         }
       );

@@ -201,22 +201,31 @@ module.exports = {
           let mutated = false;
           this.groupConfig.params.forEach((param) => {
             const idx = current.findIndex((tu) => tu && tu.key === param.key);
-            // Pre-fill a row with the single allowed value when the key is
-            // unlocked and only one value exists: the value is suggested but
-            // remains editable. For locked keys, the prefill stays on @focus
-            // (the readonly input handles the strict path).
             const values = Array.isArray(param.values) ? param.values : [];
             const lockedValues = !!param.lockedValues && values.length > 0;
-            const shouldPrefillSingle =
-              !lockedValues && values.length === 1;
+            // Determine the value to pre-fill so the row is never left empty
+            // when a value is effectively imposed/suggested:
+            //   - locked: the value is imposed by the admin → always force it
+            //     (values[0]). It must not depend on the user focusing the
+            //     field, otherwise a required+locked param stays "missing".
+            //   - unlocked with a single allowed value → suggest it (editable).
+            // Anything else (multiple unlocked values, no value) stays empty
+            // so the user actively picks/types.
+            let prefill = '';
+            if (lockedValues) prefill = values[0];
+            else if (values.length === 1) prefill = values[0];
             if (idx === -1) {
-              current.push({
-                key: param.key,
-                value: shouldPrefillSingle ? values[0] : '',
+              current.push({ key: param.key, value: prefill });
+              mutated = true;
+            } else if (lockedValues && current[idx].value !== values[0]) {
+              // Locked value must always reflect the admin-imposed value,
+              // overriding any stale/forged value already present.
+              current[idx] = Object.assign({}, current[idx], {
+                value: values[0],
               });
               mutated = true;
-            } else if (shouldPrefillSingle && !current[idx].value) {
-              current[idx] = Object.assign({}, current[idx], { value: values[0] });
+            } else if (prefill && !current[idx].value) {
+              current[idx] = Object.assign({}, current[idx], { value: prefill });
               mutated = true;
             }
           });
