@@ -587,6 +587,61 @@ export default {
       assigned: 'Accès',
     },
   },
+  trackingConfig: {
+    sidebarLabel: 'Tracking',
+    title: 'Tracking global',
+    description:
+      'Définissez les paramètres UTM appliqués automatiquement à tous les emails (configuration globale). Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
+    enabled: 'Activer le tracking global',
+    restrictValues:
+      'Limiter aux paramètres ci-dessous (désactiver la saisie libre dans le builder)',
+    addParam: 'Ajouter un paramètre',
+    key: 'Clé',
+    values: 'Valeurs possibles',
+    valuesHint: 'ex : newsletter, promo (séparés par des virgules)',
+    required: 'Obligatoire',
+    locked: 'Verrouillé',
+    lockedHint:
+      'Si activé, l\'utilisateur ne peut pas saisir de valeur libre pour cette clé : il doit choisir parmi les valeurs définies ci-dessus.',
+    lockedDisabledHint:
+      'Définissez au moins une valeur possible pour pouvoir verrouiller cette clé.',
+    empty: 'Aucun paramètre de tracking défini',
+    inheritedFromGroup: 'Hérité de la configuration globale',
+    cascade: {
+      label: 'Configuration du tracking pour ce template',
+      inherit: 'Hériter de la configuration globale',
+      inheritDescription:
+        'Les paramètres définis au niveau global s\'appliquent tels quels.',
+      extend: 'Hériter et ajouter des paramètres spécifiques',
+      extendDescription:
+        'Les paramètres globaux restent actifs ; ceux ajoutés ci-dessous viennent les compléter (ou les remplacer pour une clé en conflit).',
+      replace: 'Remplacer la configuration globale par une configuration spécifique',
+      replaceDescription:
+        'Seuls les paramètres définis ci-dessous sont appliqués ; la configuration globale est ignorée.',
+    },
+    validation: {
+      emptyKey: 'La clé est requise',
+      duplicateKey: 'Cette clé est dupliquée',
+    },
+    snackbars: {
+      updated: 'Configuration de tracking enregistrée.',
+      error: 'Erreur lors de l\'enregistrement.',
+    },
+    builder: {
+      requiredMissing: 'Paramètres de tracking obligatoires manquants',
+      requiredMissingDescription:
+        'Veuillez renseigner ces paramètres avant de télécharger : {keys}',
+    },
+    templates: {
+      sectionTitle: 'Tracking spécifique par template',
+      sectionDescription:
+        'Vous pouvez surcharger ou compléter la configuration globale ci-dessus pour chaque template.',
+      empty: 'Aucun template disponible.',
+      statusInherits: 'Hérite de la configuration globale',
+      statusMerge: 'Configuration complémentaire à la configuration globale',
+      statusOverride: 'Configuration spécifique (remplace la configuration globale)',
+    },
+  },
   personalizedVariables: {
     title: 'Variables personnalisées',
     description:

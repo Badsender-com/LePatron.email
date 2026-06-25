@@ -80,51 +80,177 @@ const hasUrlAlreadyParams = (url) => {
   return url.includes('?');
 };
 
-const getUrlWithTrackingParams = (link, tracking) => {
-  if (!tracking) {
+/**
+ * Encode a tracking key/value before injecting it into a URL.
+ *
+ * We do NOT use encodeURIComponent because tracking values may contain
+ * personalization placeholders ({{token}}, [[token]]) that must reach the
+ * email client untouched. Instead we escape only the characters that are
+ * dangerous in a query string OR that would let the value break out of the
+ * surrounding href="..." attribute in the generated HTML:
+ *   "  -> escapes the attribute delimiter (HTML injection)
+ *   <> -> markup injection
+ *   #  -> truncates the URL / starts a fragment
+ *   &  -> forges extra query params
+ *   space -> breaks the attribute / URL
+ * Placeholders are preserved because { } | [ ] are intentionally left alone.
+ */
+const encodeTrackingComponent = (raw) => {
+  return String(raw).replace(/[<>"#& ]/g, (c) => encodeURIComponent(c));
+};
+
+// Characters that must be escaped in a regex literal.
+const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/g;
+
+/**
+ * True when `key` already exists as an actual query parameter of the URL
+ * (i.e. preceded by `?` or `&` and followed by `=`). Used instead of a naive
+ * link.includes(key), which false-positives when the key is a substring of the
+ * host, scheme, or another param name — e.g. `includes('utm')` matches
+ * `?utm_source=x`, silently dropping a legitimate free-form `utm` param.
+ */
+const hasQueryParam = (link, key) => {
+  const escapedKey = key.replace(REGEX_ESCAPE, '\\$&');
+  return new RegExp(`[?&]${escapedKey}=`).test(link);
+};
+
+/**
+ * Pre-compute everything that depends only on the tracking config (NOT on the
+ * link), so it can be built once per email instead of once per link. Called
+ * once by handleTrackingData; the returned context is reused for every link.
+ */
+const buildTrackingContext = (groupTrackingConfig) => {
+  const enabled = Boolean(groupTrackingConfig && groupTrackingConfig.enabled);
+  const params = enabled ? groupTrackingConfig.params || [] : [];
+  return {
+    // key -> param definition (value constraints)
+    managedParams: new Map(params.map((p) => [p.key, p])),
+    restrictValues: Boolean(enabled && groupTrackingConfig.restrictValues),
+    // key -> compiled upsert RegExp, built lazily and cached across links
+    reCache: new Map(),
+  };
+};
+
+/**
+ * For a managed key, decide which value to actually inject.
+ *
+ * The `values` list is only a CONSTRAINT when the admin made it one:
+ *   - `lockedValues`        → the value is imposed, force the configured one.
+ *   - `restrictValues` (group-global) → the value must belong to the list.
+ * Otherwise `values` is just a SUGGESTION list and any value (including a
+ * custom one typed by the user) is accepted. This mirrors the editor UX:
+ * an unlocked, unrestricted list lets the user pick OR type their own.
+ *
+ * Returns the value to inject, or null to drop the pair entirely.
+ */
+const resolveManagedValue = (param, value, restrictValues) => {
+  const allowed = Array.isArray(param.values) ? param.values : [];
+  if (param.lockedValues) {
+    return allowed.length > 0 ? allowed[0] : value;
+  }
+  if (restrictValues && allowed.length > 0) {
+    return allowed.includes(value) ? value : null;
+  }
+  return value;
+};
+
+/**
+ * Replace (or insert) a query parameter in a URL.
+ * Uses regex-based replacement instead of URL API to keep relative paths,
+ * template placeholders ({{token}}), and unusual schemes intact.
+ * The per-key RegExp is cached on `reCache` so it is compiled once per email,
+ * not once per link.
+ */
+const upsertUrlParam = (link, key, value, reCache) => {
+  const encKey = encodeTrackingComponent(key);
+  const encValue = encodeTrackingComponent(value);
+  let re = reCache && reCache.get(key);
+  if (!re) {
+    const escapedKey = key.replace(REGEX_ESCAPE, '\\$&');
+    re = new RegExp(`([?&])${escapedKey}=[^&#]*`, 'g');
+    if (reCache) reCache.set(key, re);
+  }
+  re.lastIndex = 0;
+  if (re.test(link)) {
+    return link.replace(re, `$1${encKey}=${encValue}`);
+  }
+  const sep = hasUrlAlreadyParams(link) ? '&' : '?';
+  return `${link}${sep}${encKey}=${encValue}`;
+};
+
+const getUrlWithTrackingParams = (
+  link,
+  tracking,
+  groupTrackingConfig,
+  context
+) => {
+  if (!tracking && !groupTrackingConfig) {
     return link;
   }
 
-  let paramsToAdd = hasUrlAlreadyParams(link) ? '&' : '?';
+  // Reuse a pre-built context when provided (hot path: once per email);
+  // otherwise build it on the fly (standalone calls / tests).
+  const { managedParams, restrictValues, reCache } =
+    context || buildTrackingContext(groupTrackingConfig);
 
-  if (tracking?.trackingUrls) {
+  let result = link;
+  // key -> value for free-form params. A Map dedups same-key rows with the
+  // LAST value winning (consistent with managed params, which upsert to the
+  // last value). Without this, `ref=A` + `ref=B` would emit `?ref=A&ref=B`,
+  // an ambiguous duplicate the destination server resolves arbitrarily.
+  const freeFormParams = new Map();
+
+  const handlePair = (key, value) => {
+    if (!key || !value) return;
+    const managedParam = managedParams.get(key);
+    if (restrictValues && !managedParam) return;
+    if (managedParam) {
+      // Group-controlled key: enforce server-side value constraints, then
+      // override the value in the link (or insert if missing).
+      const enforced = resolveManagedValue(managedParam, value, restrictValues);
+      if (!enforced) return;
+      result = upsertUrlParam(result, key, enforced, reCache);
+    } else if (!hasQueryParam(link, key)) {
+      // Free-form param: only added when the key is NOT already present in the
+      // link. This is the documented product behavior, surfaced to the user by
+      // the editor tooltip (trackingOverrideBehavior): "Les paramètres ajoutés
+      // manuellement ici ne sont ajoutés que s'ils n'existent pas déjà dans le
+      // lien." (Unlike managed/global params, which DO override existing
+      // values via upsertUrlParam above.)
+      //
+      // The check is anchored on `?key=`/`&key=` (hasQueryParam) so a key that
+      // merely appears as a substring of the host or of another param name is
+      // NOT treated as already-present.
+      freeFormParams.set(key, value);
+    }
+  };
+
+  if (tracking && Array.isArray(tracking.trackingUrls)) {
     for (const trackingUrl of tracking.trackingUrls) {
-      const { key, value } = trackingUrl;
-      if (key?.length > 0 && value?.length > 0) {
-        if (!link.includes(key) && key?.length > 0 && value?.length > 0) {
-          paramsToAdd += `${key}=${value}&`;
-        }
-      }
+      handlePair(
+        trackingUrl && trackingUrl.key,
+        trackingUrl && trackingUrl.value
+      );
     }
   }
 
-  if (tracking.hasGoogleAnalyticsUtm) {
-    if (
-      !link.includes(tracking.utmSourceKey) &&
-      tracking?.utmSourceKey?.length > 0 &&
-      tracking?.utmSourceValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmSourceKey}=${tracking.utmSourceValue}&`;
-    }
-
-    if (
-      !link.includes(tracking.utmMediumKey) &&
-      tracking?.utmMediumKey?.length > 0 &&
-      tracking?.utmMediumValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmMediumKey}=${tracking.utmMediumValue}&`;
-    }
-
-    if (
-      !link.includes(tracking.utmCampaignKey) &&
-      tracking?.utmCampaignKey?.length > 0 &&
-      tracking?.utmCampaignValue?.length > 0
-    ) {
-      paramsToAdd += `${tracking.utmCampaignKey}=${tracking.utmCampaignValue}&`;
-    }
+  if (tracking && tracking.hasGoogleAnalyticsUtm) {
+    handlePair(tracking.utmSourceKey, tracking.utmSourceValue);
+    handlePair(tracking.utmMediumKey, tracking.utmMediumValue);
+    handlePair(tracking.utmCampaignKey, tracking.utmCampaignValue);
   }
 
-  return `${link}${paramsToAdd.slice(0, -1)}`;
+  if (freeFormParams.size > 0) {
+    const encoded = [];
+    freeFormParams.forEach((value, key) => {
+      encoded.push(
+        `${encodeTrackingComponent(key)}=${encodeTrackingComponent(value)}`
+      );
+    });
+    const sep = hasUrlAlreadyParams(result) ? '&' : '?';
+    result = `${result}${sep}${encoded.join('&')}`;
+  }
+  return result;
 };
 
 function createCdnMarkdownNotice(name, CDN_PATH, relativesImagesNames) {
@@ -212,6 +338,7 @@ module.exports = {
   getName,
   getImageName,
   getUrlWithTrackingParams,
+  buildTrackingContext,
   createCdnMarkdownNotice,
   createHtmlNotice,
   asyncReplace,

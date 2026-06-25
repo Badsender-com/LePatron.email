@@ -34,6 +34,31 @@ module.exports = {
   getAdobeDeliveries,
 };
 
+/**
+ * Throws 422 (TRACKING_REQUIRED_PARAMS_MISSING + missingParams[]) when the
+ * resolved tracking config of the mailing has required keys without a value.
+ *
+ * Acts as an early upstream gate before any ESP export entry point so we fail
+ * BEFORE making any API call to the provider. The same validation also runs
+ * downstream when each provider goes through mailingService.processHtmlWithFTPOption /
+ * downloadZip (Brevo, Actito, DSC) or directly through resolveMailingTrackingContext
+ * (Adobe) — that's defense in depth, the redundancy is intentional and cheap.
+ */
+async function assertRequiredTrackingParamsFilled({
+  mailingId,
+  user,
+  freshTracking,
+}) {
+  const mailing = await mailingService.getMailByMailingIdAndUser({
+    mailingId,
+    user,
+  });
+  // resolveMailingTrackingContext throws 422 itself when params are missing.
+  // Pass freshTracking when available so we validate the live builder state
+  // instead of the (possibly stale) persisted mailing.data.tracking.
+  await mailingService.resolveMailingTrackingContext(mailing, freshTracking);
+}
+
 async function checkIfUserIsAuthorizedToAccessProfile({ user, profileId }) {
   const profile = await findOne(profileId);
   if (!user.isAdmin) {
@@ -171,8 +196,11 @@ async function updateEspCampaign({
   mailingId,
   campaignId,
   type,
+  freshTracking,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
+  // Block ESP export when required group/template tracking params are missing
+  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 
   const {
@@ -230,6 +258,7 @@ async function updateEspCampaign({
           mailingId,
           campaignMailData,
           campaignId,
+          freshTracking,
           ...additionalApiData,
         })
       : await espProvider.updateTemplate({
@@ -238,6 +267,7 @@ async function updateEspCampaign({
           mailingId,
           campaignMailData,
           campaignId,
+          freshTracking,
         });
 
   return {
@@ -253,8 +283,11 @@ async function sendEspCampaign({
   html,
   mailingId,
   type,
+  freshTracking,
 }) {
   const { subject, campaignMailName, planification } = espSendingMailData;
+  // Block ESP export when required group/template tracking params are missing
+  await assertRequiredTrackingParamsFilled({ mailingId, user, freshTracking });
   const profile = await findOne(profileId);
 
   /*
@@ -320,12 +353,14 @@ async function sendEspCampaign({
           html,
           mailingId,
           campaignMailData,
+          freshTracking,
         })
       : await espProvider.createTemplate({
           user,
           html,
           mailingId,
           campaignMailData,
+          freshTracking,
         });
 
   await mailingService.updateMailEspIds(mailingId, {
