@@ -258,6 +258,7 @@ async function updateEspCampaign({
           mailingId,
           campaignMailData,
           campaignId,
+          freshTracking,
           ...additionalApiData,
         })
       : await espProvider.updateTemplate({
@@ -266,6 +267,7 @@ async function updateEspCampaign({
           mailingId,
           campaignMailData,
           campaignId,
+          freshTracking,
         });
 
   return {
@@ -351,12 +353,14 @@ async function sendEspCampaign({
           html,
           mailingId,
           campaignMailData,
+          freshTracking,
         })
       : await espProvider.createTemplate({
           user,
           html,
           mailingId,
           campaignMailData,
+          freshTracking,
         });
 
   await mailingService.updateMailEspIds(mailingId, {
