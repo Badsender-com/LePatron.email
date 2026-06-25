@@ -376,6 +376,7 @@ async function processHtmlWithFTPOption({
     cdnProtocol,
     cdnEndPoint,
     name,
+    group,
   } = await extractFTPparams({
     mailing,
     downloadOptions: {
@@ -393,7 +394,7 @@ async function processHtmlWithFTPOption({
   const {
     tracking: trackingCtx,
     groupTrackingConfig,
-  } = await resolveMailingTrackingContext(mailing, freshTracking);
+  } = await resolveMailingTrackingContext(mailing, freshTracking, group);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
     tracking: trackingCtx,
@@ -453,17 +454,16 @@ async function downloadZip({
     cdnProtocol,
     cdnEndPoint,
     name,
+    group,
   } = await extractFTPparams({
     mailing,
     downloadOptions,
   });
 
-  console.log('download zip', name);
-
   const {
     tracking: trackingCtx,
     groupTrackingConfig,
-  } = await resolveMailingTrackingContext(mailing, freshTracking);
+  } = await resolveMailingTrackingContext(mailing, freshTracking, group);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
     tracking: trackingCtx,
@@ -640,6 +640,7 @@ async function downloadMultipleZip({
       cdnProtocol,
       cdnEndPoint,
       name,
+      group,
     } = await extractFTPparams({
       mailing,
       parentContainer: MULTIPLE_DOWNLOAD_ZIP_NAME,
@@ -651,7 +652,7 @@ async function downloadMultipleZip({
     const {
       tracking: trackingCtx,
       groupTrackingConfig,
-    } = await resolveMailingTrackingContext(mailing);
+    } = await resolveMailingTrackingContext(mailing, undefined, group);
     const { html: htmlWithTracking } = handleTrackingData({
       html: mailing.previewHtml,
       tracking: trackingCtx,
@@ -733,8 +734,6 @@ async function extractFTPparams({
   parentContainer = null,
   overrideMailName = null,
 }) {
-  console.log('Calling extract ftp params');
-
   if (!mailing || !mailing?._wireframe?._company || !mailing.name)
     throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
 
@@ -822,6 +821,8 @@ async function extractFTPparams({
     cdnProtocol,
     cdnEndPoint,
     name,
+    // Returned so the tracking resolver can reuse it instead of re-fetching.
+    group,
   };
 }
 
@@ -1046,7 +1047,14 @@ async function handleRelativeOrFtpImages({
 // just typed in the builder, not yet saved), pass it here. Otherwise we fall
 // back to the persisted value. This avoids forcing users to "Save" before
 // every Download / ESP send when they've just filled a required field.
-async function resolveMailingTrackingContext(mailing, freshTracking) {
+// `prefetchedGroup` lets callers that already loaded the group (e.g.
+// extractFTPparams) avoid a redundant Groups.findById — it is only reused when
+// its id matches the mailing's resolved group, otherwise we fetch.
+async function resolveMailingTrackingContext(
+  mailing,
+  freshTracking,
+  prefetchedGroup = null
+) {
   const persistedTracking =
     mailing && mailing._doc && mailing._doc.data
       ? mailing._doc.data.tracking
@@ -1058,7 +1066,16 @@ async function resolveMailingTrackingContext(mailing, freshTracking) {
   const template = mailing && mailing._wireframe;
   const groupId =
     (template && template._company) || (mailing && mailing._company);
-  const group = groupId ? await Groups.findById(groupId).lean() : null;
+  const prefetchedMatches =
+    prefetchedGroup &&
+    groupId &&
+    String(prefetchedGroup._id) === String(groupId);
+  let group;
+  if (prefetchedMatches) {
+    group = prefetchedGroup;
+  } else {
+    group = groupId ? await Groups.findById(groupId).lean() : null;
+  }
   const groupTrackingConfig = resolveTrackingConfig(group, template);
   const missingParams = validateRequiredTrackingParams(
     tracking,
