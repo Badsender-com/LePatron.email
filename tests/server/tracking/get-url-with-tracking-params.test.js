@@ -42,6 +42,35 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?utm_source=existing');
     });
 
+    it('injects a free-form key that is a substring of an existing param name', () => {
+      // Regression: link.includes('utm') matched '?utm_source=' and wrongly
+      // dropped a legitimate free-form 'utm' param.
+      const out = getUrlWithTrackingParams(
+        'https://x.com?utm_source=x',
+        { trackingUrls: [{ key: 'utm', value: 'v' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?utm_source=x&utm=v');
+    });
+
+    it('injects a free-form key that is a substring of the host/scheme', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'https', value: 'v' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?https=v');
+    });
+
+    it('still skips a free-form key already present as a real query param', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com?ref=old',
+        { trackingUrls: [{ key: 'ref', value: 'new' }] },
+        null
+      );
+      expect(out).toBe('https://x.com?ref=old');
+    });
+
     it('appends Google Analytics UTM fields when enabled', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',

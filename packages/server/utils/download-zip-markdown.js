@@ -103,6 +103,18 @@ const encodeTrackingComponent = (raw) => {
 const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
 /**
+ * True when `key` already exists as an actual query parameter of the URL
+ * (i.e. preceded by `?` or `&` and followed by `=`). Used instead of a naive
+ * link.includes(key), which false-positives when the key is a substring of the
+ * host, scheme, or another param name — e.g. `includes('utm')` matches
+ * `?utm_source=x`, silently dropping a legitimate free-form `utm` param.
+ */
+const hasQueryParam = (link, key) => {
+  const escapedKey = key.replace(REGEX_ESCAPE, '\\$&');
+  return new RegExp(`[?&]${escapedKey}=`).test(link);
+};
+
+/**
  * Pre-compute everything that depends only on the tracking config (NOT on the
  * link), so it can be built once per email instead of once per link. Called
  * once by handleTrackingData; the returned context is reused for every link.
@@ -194,13 +206,12 @@ const getUrlWithTrackingParams = (
       const enforced = resolveManagedValue(managedParam, value, restrictValues);
       if (!enforced) return;
       result = upsertUrlParam(result, key, enforced, reCache);
-    } else if (!link.includes(key)) {
-      // Free-form param: "skip if already present" — inherited from the
-      // original tracking implementation (PR #668, commit 3cc1c00a, Feb 2023).
-      // No tests, no comment in the original code documents this intent — it
-      // looks more like a defensive "don't duplicate" guard than a deliberate
-      // product decision. Result: a free-form key that already exists in the
-      // link is silently ignored on export, which can surprise users.
+    } else if (!hasQueryParam(link, key)) {
+      // Free-form param: "skip if already present as a query param" — inherited
+      // from the original tracking implementation (PR #668, commit 3cc1c00a,
+      // Feb 2023). The check is anchored on `?key=`/`&key=` (hasQueryParam) so
+      // a key that merely appears as a substring of the host or of another
+      // param name is NOT treated as already-present.
       //
       // TODO(product): confirm whether free-form params should also OVERRIDE
       // existing values (like managed params do above) for consistency.
