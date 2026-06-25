@@ -99,16 +99,59 @@ const encodeTrackingComponent = (raw) => {
   return String(raw).replace(/[<>"#& ]/g, (c) => encodeURIComponent(c));
 };
 
+// Characters that must be escaped in a regex literal.
+const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/g;
+
+/**
+ * Pre-compute everything that depends only on the tracking config (NOT on the
+ * link), so it can be built once per email instead of once per link. Called
+ * once by handleTrackingData; the returned context is reused for every link.
+ */
+const buildTrackingContext = (groupTrackingConfig) => {
+  const enabled = Boolean(groupTrackingConfig && groupTrackingConfig.enabled);
+  const params = enabled ? groupTrackingConfig.params || [] : [];
+  return {
+    // key -> param definition (value constraints)
+    managedParams: new Map(params.map((p) => [p.key, p])),
+    restrictValues: Boolean(enabled && groupTrackingConfig.restrictValues),
+    // key -> compiled upsert RegExp, built lazily and cached across links
+    reCache: new Map(),
+  };
+};
+
+/**
+ * For a managed key, never trust the client-supplied value blindly: the
+ * admin may have locked the value or restricted it to an allowed list.
+ * Returns the value to actually inject, or null to drop the pair entirely.
+ */
+const resolveManagedValue = (param, value) => {
+  const allowed = Array.isArray(param.values) ? param.values : [];
+  if (param.lockedValues) {
+    return allowed.length > 0 ? allowed[0] : value;
+  }
+  if (allowed.length > 0) {
+    return allowed.includes(value) ? value : null;
+  }
+  return value;
+};
+
 /**
  * Replace (or insert) a query parameter in a URL.
  * Uses regex-based replacement instead of URL API to keep relative paths,
  * template placeholders ({{token}}), and unusual schemes intact.
+ * The per-key RegExp is cached on `reCache` so it is compiled once per email,
+ * not once per link.
  */
-const upsertUrlParam = (link, key, value) => {
-  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const upsertUrlParam = (link, key, value, reCache) => {
   const encKey = encodeTrackingComponent(key);
   const encValue = encodeTrackingComponent(value);
-  const re = new RegExp(`([?&])${escapedKey}=[^&#]*`, 'g');
+  let re = reCache && reCache.get(key);
+  if (!re) {
+    const escapedKey = key.replace(REGEX_ESCAPE, '\\$&');
+    re = new RegExp(`([?&])${escapedKey}=[^&#]*`, 'g');
+    if (reCache) reCache.set(key, re);
+  }
+  re.lastIndex = 0;
   if (re.test(link)) {
     return link.replace(re, `$1${encKey}=${encValue}`);
   }
@@ -116,42 +159,20 @@ const upsertUrlParam = (link, key, value) => {
   return `${link}${sep}${encKey}=${encValue}`;
 };
 
-const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
+const getUrlWithTrackingParams = (
+  link,
+  tracking,
+  groupTrackingConfig,
+  context
+) => {
   if (!tracking && !groupTrackingConfig) {
     return link;
   }
 
-  // Keys controlled by the group config, mapped to their param definition so
-  // we can enforce server-side value constraints (lockedValues / allowed list).
-  const managedParams = new Map(
-    (groupTrackingConfig && groupTrackingConfig.enabled
-      ? groupTrackingConfig.params || []
-      : []
-    ).map((p) => [p.key, p])
-  );
-  const restrictValues = Boolean(
-    groupTrackingConfig &&
-      groupTrackingConfig.enabled &&
-      groupTrackingConfig.restrictValues
-  );
-
-  // For a managed key, never trust the client-supplied value blindly: the
-  // admin may have locked the value or restricted it to an allowed list.
-  // Returns the value to actually inject, or null to drop the pair entirely.
-  //   - lockedValues: ignore the client value, force the configured one.
-  //   - allowed list present: keep the client value only if it's in the list.
-  // This is the server-side guarantee behind the "valeur verrouillée" UI —
-  // a forged freshTracking payload cannot inject an arbitrary value.
-  const resolveManagedValue = (param, value) => {
-    const allowed = Array.isArray(param.values) ? param.values : [];
-    if (param.lockedValues) {
-      return allowed.length > 0 ? allowed[0] : value;
-    }
-    if (allowed.length > 0) {
-      return allowed.includes(value) ? value : null;
-    }
-    return value;
-  };
+  // Reuse a pre-built context when provided (hot path: once per email);
+  // otherwise build it on the fly (standalone calls / tests).
+  const { managedParams, restrictValues, reCache } =
+    context || buildTrackingContext(groupTrackingConfig);
 
   let result = link;
   const freeFormParams = [];
@@ -165,7 +186,7 @@ const getUrlWithTrackingParams = (link, tracking, groupTrackingConfig) => {
       // override the value in the link (or insert if missing).
       const enforced = resolveManagedValue(managedParam, value);
       if (!enforced) return;
-      result = upsertUrlParam(result, key, enforced);
+      result = upsertUrlParam(result, key, enforced, reCache);
     } else if (!link.includes(key)) {
       // Free-form param: "skip if already present" — inherited from the
       // original tracking implementation (PR #668, commit 3cc1c00a, Feb 2023).
@@ -290,6 +311,7 @@ module.exports = {
   getName,
   getImageName,
   getUrlWithTrackingParams,
+  buildTrackingContext,
   createCdnMarkdownNotice,
   createHtmlNotice,
   asyncReplace,

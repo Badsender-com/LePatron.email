@@ -26,6 +26,7 @@ const {
   createCdnMarkdownNotice,
   createHtmlNotice,
   getUrlWithTrackingParams,
+  buildTrackingContext,
 } = require('../utils/download-zip-markdown');
 const {
   resolveTrackingConfig,
@@ -1076,6 +1077,9 @@ async function resolveMailingTrackingContext(mailing, freshTracking) {
 // This will add tracking information in links
 function handleTrackingData({ html, tracking, groupTrackingConfig }) {
   const linksRegex = /(<a .*?) *(https?:[^"]+)(")/g;
+  // Build the config-derived context (managed-key map, restrictValues flag,
+  // per-key RegExp cache) ONCE per email instead of once per link.
+  const trackingContext = buildTrackingContext(groupTrackingConfig);
 
   const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
     // The browser's outerHTML serializer encodes `&` to `&amp;` inside
@@ -1090,7 +1094,8 @@ function handleTrackingData({ html, tracking, groupTrackingConfig }) {
     const processed = getUrlWithTrackingParams(
       decoded,
       tracking,
-      groupTrackingConfig
+      groupTrackingConfig,
+      trackingContext
     );
     const reencoded = processed.replace(/&/g, '&amp;');
     return `${p1}${reencoded}${p3}`;
