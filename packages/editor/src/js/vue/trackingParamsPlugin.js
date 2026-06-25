@@ -126,7 +126,18 @@ module.exports = {
       mounted() {
         this.hasGoogleAnalyticsUtmSubscription = vm.content().tracking().hasGoogleAnalyticsUtm.subscribe(this.updateHasGoogleAnalyticsUtm);
         this.trackingUrlsSubscription = vm.content().tracking().trackingUrls.subscribe(this.updateTrackingUrls);
-        if (this.isManaged) this.ensureManagedRows();
+        if (this.isManaged) {
+          // The Google-Analytics UTM helper fields are only editable in legacy
+          // (non-managed) mode. If a mailing carries a stale hasGoogleAnalyticsUtm
+          // flag from before the group enabled managed tracking, those values are
+          // invisible here but would otherwise leak into the export. Clear the
+          // flag so the persisted state matches what the editor shows.
+          if (this.hasGoogleAnalyticsUtm) {
+            this.hasGoogleAnalyticsUtm = false;
+            vm.content().tracking().hasGoogleAnalyticsUtm(false);
+          }
+          this.ensureManagedRows();
+        }
       },
       beforeDestroy() {
         this.hasGoogleAnalyticsUtmSubscription.dispose();

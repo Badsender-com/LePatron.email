@@ -101,7 +101,8 @@ function validateRequiredTrackingParams(tracking, resolvedConfig) {
   return requiredParams
     .filter((p) => {
       const allowed = Array.isArray(p.values) ? p.values : [];
-      // Locked params are always satisfied: injection forces values[0].
+      // Locked params are always satisfied: injection keeps the user's in-list
+      // choice, or falls back to values[0] — never empty.
       if (p.lockedValues && allowed.length > 0) return false;
       const value = valueByKey.get(p.key);
       if (!value) return true;

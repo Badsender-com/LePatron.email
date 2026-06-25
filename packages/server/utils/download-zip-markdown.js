@@ -135,7 +135,12 @@ const buildTrackingContext = (groupTrackingConfig) => {
  * For a managed key, decide which value to actually inject.
  *
  * The `values` list is only a CONSTRAINT when the admin made it one:
- *   - `lockedValues`        → the value is imposed, force the configured one.
+ *   - `lockedValues` + a SINGLE allowed value → the value is fully imposed,
+ *     force it (the editor shows a read-only input).
+ *   - `lockedValues` + MULTIPLE allowed values → the user PICKS one from the
+ *     list (the editor shows a strict combobox); keep that choice as long as
+ *     it belongs to the list, otherwise fall back to the first allowed value
+ *     so a locked param is never left empty/forged.
  *   - `restrictValues` (group-global) → the value must belong to the list.
  * Otherwise `values` is just a SUGGESTION list and any value (including a
  * custom one typed by the user) is accepted. This mirrors the editor UX:
@@ -146,7 +151,10 @@ const buildTrackingContext = (groupTrackingConfig) => {
 const resolveManagedValue = (param, value, restrictValues) => {
   const allowed = Array.isArray(param.values) ? param.values : [];
   if (param.lockedValues) {
-    return allowed.length > 0 ? allowed[0] : value;
+    if (allowed.length === 0) return value;
+    // Single locked value → imposed. Multiple → honor the user's in-list
+    // choice, else fall back to the first allowed value.
+    return allowed.includes(value) ? value : allowed[0];
   }
   if (restrictValues && allowed.length > 0) {
     return allowed.includes(value) ? value : null;
@@ -234,7 +242,14 @@ const getUrlWithTrackingParams = (
     }
   }
 
-  if (tracking && tracking.hasGoogleAnalyticsUtm) {
+  // The Google-Analytics UTM helper fields only exist in the LEGACY (no group
+  // config) editor mode. Once a group enables managed tracking, those fields
+  // are no longer rendered, so any value still persisted on the mailing from a
+  // pre-config state is a "ghost": invisible in the editor but otherwise
+  // re-injected here (even overriding a managed value, same key → last wins).
+  // Skip them entirely in managed mode so the export mirrors the editor.
+  const isManaged = managedParams.size > 0;
+  if (!isManaged && tracking && tracking.hasGoogleAnalyticsUtm) {
     handlePair(tracking.utmSourceKey, tracking.utmSourceValue);
     handlePair(tracking.utmMediumKey, tracking.utmMediumValue);
     handlePair(tracking.utmCampaignKey, tracking.utmCampaignValue);

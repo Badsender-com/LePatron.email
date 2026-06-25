@@ -223,7 +223,10 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?utm_source=newsletter');
     });
 
-    it('drops UTM fields not in the whitelist when restrictValues is on', () => {
+    it('ignores the GA UTM fields entirely in managed mode (not rendered in the editor)', () => {
+      // groupConfig.params is non-empty → managed mode. The GA UTM helper
+      // fields have no editor UI there, so they must not be injected even when
+      // a key matches a managed key.
       const out = getUrlWithTrackingParams(
         'https://x.com',
         {
@@ -235,7 +238,7 @@ describe('getUrlWithTrackingParams', () => {
         },
         groupConfig
       );
-      expect(out).toBe('https://x.com?utm_source=news');
+      expect(out).toBe('https://x.com');
     });
   });
 
@@ -336,6 +339,88 @@ describe('getUrlWithTrackingParams', () => {
         }
       );
       expect(out).toBe('https://x.com?utm_source=official');
+    });
+
+    it('keeps the user-picked value for a locked param with multiple allowed values', () => {
+      // Locked + multiple values is a strict combobox in the editor: the user
+      // PICKS from the list. The chosen in-list value must survive export
+      // (regression: it used to be overwritten by the first allowed value).
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'adobe' }] },
+        {
+          enabled: true,
+          params: [
+            {
+              key: 'utm_source',
+              values: ['newsletter', 'adobe', 'trigger'],
+              lockedValues: true,
+            },
+          ],
+        }
+      );
+      expect(out).toBe('https://x.com?utm_source=adobe');
+    });
+
+    it('falls back to the first allowed value when a locked multi-value pick is out of list', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        {
+          enabled: true,
+          params: [
+            {
+              key: 'utm_source',
+              values: ['newsletter', 'adobe', 'trigger'],
+              lockedValues: true,
+            },
+          ],
+        }
+      );
+      expect(out).toBe('https://x.com?utm_source=newsletter');
+    });
+
+    it('ignores stale Google-Analytics UTM fields in managed mode (ghost values)', () => {
+      // The GA UTM helper fields are only editable in legacy mode. In managed
+      // mode they are invisible in the editor and must not leak into export,
+      // even when a value lingers from a pre-config state.
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        {
+          trackingUrls: [{ key: 'utm_source', value: 'adobe' }],
+          hasGoogleAnalyticsUtm: true,
+          utmSourceKey: 'utm_source',
+          utmSourceValue: 'ghost',
+          utmMediumKey: 'utm_medium',
+          utmMediumValue: 'ghost_medium',
+        },
+        {
+          enabled: true,
+          params: [
+            {
+              key: 'utm_source',
+              values: ['newsletter', 'adobe'],
+              lockedValues: true,
+            },
+          ],
+        }
+      );
+      // utm_source keeps the managed pick (not the GA ghost), and the GA-only
+      // utm_medium is dropped entirely.
+      expect(out).toBe('https://x.com?utm_source=adobe');
+    });
+
+    it('still applies Google-Analytics UTM fields in legacy mode (no group config)', () => {
+      const out = getUrlWithTrackingParams(
+        'https://x.com',
+        {
+          hasGoogleAnalyticsUtm: true,
+          utmSourceKey: 'utm_source',
+          utmSourceValue: 'news',
+        },
+        { enabled: false, params: [] }
+      );
+      expect(out).toBe('https://x.com?utm_source=news');
     });
 
     it('accepts a custom value when the list is a suggestion (not locked, not restricted)', () => {
