@@ -160,13 +160,19 @@ module.exports = {
             // Falling back to false otherwise keeps the editor behavior sane for
             // legacy configs that pre-date the flag.
             const lockedValues = !!param.lockedValues && values.length > 0;
+            const required = !!param.required;
             return {
               key: param.key,
               values,
-              required: !!param.required,
+              required,
               lockedValues,
+              // A single allowed value is imposed (read-only, pre-filled) only
+              // when it is BOTH locked and required. Otherwise the user must
+              // pick it explicitly via the locked combobox (kept empty by
+              // default), per the product rule "required = empty by default".
+              forcedSingle: lockedValues && required && values.length === 1,
               value: existing ? existing.value || '' : '',
-              missing: !!param.required && !(existing && existing.value),
+              missing: required && !(existing && existing.value),
             };
           });
         },
@@ -273,29 +279,30 @@ module.exports = {
             const idx = current.findIndex((tu) => tu && tu.key === param.key);
             const values = Array.isArray(param.values) ? param.values : [];
             const lockedValues = !!param.lockedValues && values.length > 0;
-            // Determine the value to pre-fill so the row is never left empty
-            // when a value is effectively imposed/suggested:
-            //   - locked: the value is imposed by the admin → always force it
-            //     (values[0]). It must not depend on the user focusing the
-            //     field, otherwise a required+locked param stays "missing".
-            //   - unlocked with a single allowed value → suggest it (editable).
-            // Anything else (multiple unlocked values, no value) stays empty
-            // so the user actively picks/types.
-            let prefill = '';
-            if (lockedValues) prefill = values[0];
-            else if (values.length === 1) prefill = values[0];
+            const required = !!param.required;
+            // Pre-filling only happens when a value is BOTH imposed and
+            // mandatory with no real choice to make, i.e. locked + required
+            // + a single allowed value. In that and only that case the value
+            // (values[0]) is forced.
+            //
+            // Every other case must stay EMPTY by default so the user takes
+            // an explicit action:
+            //   - required (any flavour) means "the user must pick/type" →
+            //     never silently fill it.
+            //   - non-required, single value → leave empty (it is optional).
+            //   - locked multi-value → the user picks among the locked values.
+            const forcedSingle =
+              lockedValues && required && values.length === 1;
+            const prefill = forcedSingle ? values[0] : '';
             if (idx === -1) {
               current.push({ key: param.key, value: prefill });
               mutated = true;
-            } else if (lockedValues && current[idx].value !== values[0]) {
-              // Locked value must always reflect the admin-imposed value,
+            } else if (forcedSingle && current[idx].value !== values[0]) {
+              // The imposed single value must always reflect the admin value,
               // overriding any stale/forged value already present.
               current[idx] = Object.assign({}, current[idx], {
                 value: values[0],
               });
-              mutated = true;
-            } else if (prefill && !current[idx].value) {
-              current[idx] = Object.assign({}, current[idx], { value: prefill });
               mutated = true;
             }
           });
@@ -400,25 +407,26 @@ module.exports = {
                 </div>
                 <span class="tracking-equals">=</span>
                 <div class="propInput tracking-input">
-                  <!-- Locked + multiple values: same combobox in strict mode
-                       (input read-only) so the dropdown look matches the
-                       unlocked case. -->
+                  <!-- Locked + single value + required: the value is imposed,
+                       pre-filled by ensureManagedRows. Read-only display. -->
+                  <input
+                    v-if="row.forcedSingle"
+                    type="text"
+                    :value="row.value"
+                    readonly
+                  />
+                  <!-- Any other locked case (multi-value, or single value but
+                       not required): strict combobox so the user picks among
+                       the locked value(s). Empty by default; nothing is forced
+                       so an optional locked param can legitimately stay empty. -->
                   <tracking-combobox
-                    v-if="row.lockedValues && row.values.length > 1"
+                    v-else-if="row.lockedValues"
                     strict
                     :value="row.value"
                     :options="row.values"
                     placeholder="value"
                     @input="(val) => setManagedValue(row.key, val)"
                   ></tracking-combobox>
-                  <!-- Locked + single value: read-only, value forced -->
-                  <input
-                    v-else-if="row.lockedValues && row.values.length === 1"
-                    type="text"
-                    :value="row.values[0]"
-                    readonly
-                    @focus="setManagedValue(row.key, row.values[0])"
-                  />
                   <!-- Unlocked + multiple values: combobox (chevron opens
                        the suggestion list; the input value stays editable). -->
                   <tracking-combobox
@@ -428,9 +436,9 @@ module.exports = {
                     placeholder="value"
                     @input="(val) => setManagedValue(row.key, val)"
                   ></tracking-combobox>
-                  <!-- Unlocked + 1 value (or no values): plain editable input.
-                       Single-value case is pre-filled by ensureManagedRows; no
-                       chevron needed because there is nothing to choose from. -->
+                  <!-- Unlocked + 1 value (or no values): plain editable input,
+                       empty by default (the single value is only a suggestion,
+                       not imposed); no chevron since there is nothing to pick. -->
                   <input
                     v-else
                     type="text"

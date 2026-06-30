@@ -290,6 +290,41 @@ describe('validateRequiredTrackingParams', () => {
     expect(validateRequiredTrackingParams({}, lockedCfg)).toEqual([]);
   });
 
+  // Locked + required + MULTIPLE allowed values: the user must actively pick
+  // one (strict combobox, empty by default). It is no longer auto-filled, so
+  // an empty or out-of-list value must be flagged as missing.
+  it('flags a locked required multi-value param when nothing is picked', () => {
+    const lockedMultiCfg = {
+      enabled: true,
+      params: [
+        {
+          key: 'utm_source',
+          required: true,
+          lockedValues: true,
+          values: ['newsletter', 'adobe'],
+        },
+      ],
+    };
+    // no value chosen → missing
+    expect(validateRequiredTrackingParams({}, lockedMultiCfg)).toEqual([
+      'utm_source',
+    ]);
+    // out-of-list value → still missing (it is dropped at injection)
+    expect(
+      validateRequiredTrackingParams(
+        { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
+        lockedMultiCfg
+      )
+    ).toEqual(['utm_source']);
+    // an in-list pick satisfies it
+    expect(
+      validateRequiredTrackingParams(
+        { trackingUrls: [{ key: 'utm_source', value: 'adobe' }] },
+        lockedMultiCfg
+      )
+    ).toEqual([]);
+  });
+
   it('flags a required param whose value is out of the allowed list under restrictValues', () => {
     const restrictedCfg = {
       enabled: true,

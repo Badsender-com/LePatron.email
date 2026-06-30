@@ -362,7 +362,11 @@ describe('getUrlWithTrackingParams', () => {
       expect(out).toBe('https://x.com?utm_source=adobe');
     });
 
-    it('falls back to the first allowed value when a locked multi-value pick is out of list', () => {
+    it('drops a locked multi-value param when the picked value is out of list', () => {
+      // The user must PICK an in-list value (the editor shows a strict combobox,
+      // empty by default). An out-of-list/forged value is NOT silently coerced
+      // to the first allowed value: it is dropped. A required param left without
+      // a valid choice is caught upstream by validateRequiredTrackingParams.
       const out = getUrlWithTrackingParams(
         'https://x.com',
         { trackingUrls: [{ key: 'utm_source', value: 'forged' }] },
@@ -377,7 +381,7 @@ describe('getUrlWithTrackingParams', () => {
           ],
         }
       );
-      expect(out).toBe('https://x.com?utm_source=newsletter');
+      expect(out).toBe('https://x.com');
     });
 
     it('ignores stale Google-Analytics UTM fields in managed mode (ghost values)', () => {
