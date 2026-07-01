@@ -138,9 +138,10 @@ const buildTrackingContext = (groupTrackingConfig) => {
  *   - `lockedValues` + a SINGLE allowed value → the value is fully imposed,
  *     force it (the editor shows a read-only input).
  *   - `lockedValues` + MULTIPLE allowed values → the user PICKS one from the
- *     list (the editor shows a strict combobox); keep that choice as long as
- *     it belongs to the list, otherwise fall back to the first allowed value
- *     so a locked param is never left empty/forged.
+ *     list (the editor shows a strict combobox, empty by default); keep that
+ *     choice if it belongs to the list, otherwise DROP the pair (null). We do
+ *     not force values[0]: a required param without a choice is rejected
+ *     upstream, and an optional one must stay empty.
  *   - `restrictValues` (group-global) → the value must belong to the list.
  * Otherwise `values` is just a SUGGESTION list and any value (including a
  * custom one typed by the user) is accepted. This mirrors the editor UX:
@@ -152,9 +153,15 @@ const resolveManagedValue = (param, value, restrictValues) => {
   const allowed = Array.isArray(param.values) ? param.values : [];
   if (param.lockedValues) {
     if (allowed.length === 0) return value;
-    // Single locked value → imposed. Multiple → honor the user's in-list
-    // choice, else fall back to the first allowed value.
-    return allowed.includes(value) ? value : allowed[0];
+    // Single locked value → imposed: always inject it (the editor shows it as
+    // a read-only field, and a required one is auto-filled).
+    if (allowed.length === 1) return allowed[0];
+    // Multiple locked values → the user PICKS one. Inject that choice only if
+    // it belongs to the list. An empty or out-of-list value is dropped (null)
+    // rather than silently forced to values[0]: a required param is caught
+    // upstream by validateRequiredTrackingParams, and an optional one must
+    // stay empty when the user did not choose.
+    return allowed.includes(value) ? value : null;
   }
   if (restrictValues && allowed.length > 0) {
     return allowed.includes(value) ? value : null;

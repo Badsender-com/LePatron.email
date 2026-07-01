@@ -101,10 +101,17 @@ function validateRequiredTrackingParams(tracking, resolvedConfig) {
   return requiredParams
     .filter((p) => {
       const allowed = Array.isArray(p.values) ? p.values : [];
-      // Locked params are always satisfied: injection keeps the user's in-list
-      // choice, or falls back to values[0] — never empty.
-      if (p.lockedValues && allowed.length > 0) return false;
       const value = valueByKey.get(p.key);
+      // Locked param with a SINGLE allowed value → imposed and auto-filled by
+      // the editor (read-only). It is always satisfied.
+      if (p.lockedValues && allowed.length === 1) return false;
+      // Locked param with MULTIPLE allowed values → the user must actively pick
+      // one from the list (it is empty by default). Missing if no in-list value
+      // was chosen. We do NOT silently fall back to values[0] anymore, so that
+      // "required" keeps its meaning: an explicit choice is mandatory.
+      if (p.lockedValues && allowed.length > 1) {
+        return !value || !allowed.includes(value);
+      }
       if (!value) return true;
       // Under restrictValues, only an allowed value survives injection.
       if (restrictValues && allowed.length > 0 && !allowed.includes(value)) {
