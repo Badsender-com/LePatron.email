@@ -81,22 +81,20 @@ const hasUrlAlreadyParams = (url) => {
 };
 
 /**
- * Encode a tracking key/value before injecting it into a URL.
+ * Inject a tracking key/value into a URL, verbatim (no encoding).
  *
- * We do NOT use encodeURIComponent because tracking values may contain
- * personalization placeholders ({{token}}, [[token]]) that must reach the
- * email client untouched. Instead we escape only the characters that are
- * dangerous in a query string OR that would let the value break out of the
- * surrounding href="..." attribute in the generated HTML:
- *   "  -> escapes the attribute delimiter (HTML injection)
- *   <> -> markup injection
- *   #  -> truncates the URL / starts a fragment
- *   &  -> forges extra query params
- *   space -> breaks the attribute / URL
- * Placeholders are preserved because { } | [ ] are intentionally left alone.
+ * Tracking values are authored by the group admin / template designer, not by
+ * end users, and they routinely contain ESP personalization placeholders that
+ * MUST reach the email client byte-for-byte:
+ *   <%= delivery.label %>   (EJS / Adobe Campaign — note the spaces and < >)
+ *   {{token}}, [[token]]    (Handlebars / bracket)
+ *   %%FIRSTNAME%%           (ESP/CRM merge tags)
+ * Any encoding here corrupts those placeholders: e.g. `<%= delivery.label %>`
+ * would become `%3C%=%20delivery.label%20%3E`. Because these values are trusted
+ * and must stay intact, we deliberately pass them through unchanged.
  */
 const encodeTrackingComponent = (raw) => {
-  return String(raw).replace(/[<>"#& ]/g, (c) => encodeURIComponent(c));
+  return String(raw);
 };
 
 // Characters that must be escaped in a regex literal.
