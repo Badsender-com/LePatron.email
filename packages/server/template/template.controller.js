@@ -15,6 +15,9 @@ const modelsUtils = require('../utils/model.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
+const {
+  sanitizeTrackingConfig,
+} = require('../utils/resolve-tracking-config.js');
 
 module.exports = {
   list: asyncHandler(list),
@@ -22,6 +25,7 @@ module.exports = {
   read: asyncHandler(read),
   readMarkup: asyncHandler(readMarkup),
   update: asyncHandler(update),
+  updateTrackingConfig: asyncHandler(updateTrackingConfig),
   destroy: asyncHandler(destroy),
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
@@ -184,6 +188,33 @@ async function update(req, res) {
     select: 'id name',
   });
   res.json(responseTemplate);
+}
+
+/**
+ * @api {put} /templates/:templateId/tracking-config update template tracking config
+ * @apiPermission group-admin (own group only) or super-admin
+ * @apiName UpdateTemplateTrackingConfig
+ * @apiGroup Templates
+ */
+async function updateTrackingConfig(req, res) {
+  const { templateId } = req.params;
+  const { user } = req;
+  const template = await Templates.findById(templateId);
+  if (!template) throw new createError.NotFound();
+  // Group admins can only edit tracking config for templates of their own
+  // company. Super admins (isAdmin) can edit any template.
+  if (!user.isAdmin) {
+    const templateCompanyId = template._company && template._company.toString();
+    const userCompanyId = user.group && user.group.id;
+    if (!templateCompanyId || templateCompanyId !== userCompanyId) {
+      throw new createError.Forbidden();
+    }
+  }
+  template.trackingConfig = sanitizeTrackingConfig(req.body, {
+    allowOverrideGroupTracking: true,
+  });
+  await template.save();
+  res.json(template);
 }
 
 /**

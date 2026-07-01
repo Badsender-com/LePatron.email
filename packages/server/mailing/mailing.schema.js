@@ -15,6 +15,7 @@ const {
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
+const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -451,7 +452,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     })
     .populate({
       path: '_wireframe',
-      select: { _id: 1, name: 1, _company: 1, assets: 1 },
+      select: { _id: 1, name: 1, _company: 1, assets: 1, trackingConfig: 1 },
     });
   if (!mailing) return mailing;
 
@@ -522,6 +523,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         ftpImages: group.downloadMailingWithFtpImages,
         ftpButtonLabel: group.ftpButtonLabel,
       },
+      trackingConfig: resolveTrackingConfig(group, mailing._wireframe),
       fileuploadConfig: {
         url: {
           mailing: `/api/images/gallery/${mailingId}`,

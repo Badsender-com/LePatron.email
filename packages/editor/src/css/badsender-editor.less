@@ -732,6 +732,20 @@ body {
 // =============================================================================
 
 .tracking-section {
+  .tracking-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: help;
+    vertical-align: middle;
+
+    &:hover {
+      color: var(--v-accent-base);
+    }
+  }
+
   .tracking-help-link {
     font-style: italic;
     font-weight: normal;
@@ -764,6 +778,104 @@ body {
     min-width: 0;
   }
 
+  // Inline validation for free-form rows (duplicate / reserved key).
+  .tracking-input--error input,
+  input.tracking-input--error {
+    border-color: #d32f2f !important;
+  }
+
+  .tracking-error {
+    margin: 4px 0 0;
+    padding: 0;
+    color: #d32f2f;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  // Custom combobox for unlocked keys with multiple suggestions: editable
+  // <input> + chevron button + popover. Looks identical to the native
+  // <input>/<select> elements of the editor.
+  .tracking-combobox {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+
+    &__input {
+      // The generic .mo .propInput input[type='text'] rule already gives the
+      // border/padding/focus styles; we just reserve room for the chevron.
+      padding-right: 30px !important;
+      width: 100%;
+    }
+
+    &__chevron {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      color: #757575;
+      transition: transform 0.15s ease;
+
+      &:hover { color: rgba(0, 0, 0, 0.8); }
+    }
+    &--open &__chevron {
+      transform: rotate(180deg);
+    }
+
+    &__menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 4px 0;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      list-style: none;
+      z-index: 10;
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    &__option {
+      padding: 6px 10px;
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.87);
+      line-height: 18px;
+
+      &:hover {
+        background: rgba(0, 172, 220, 0.08);
+      }
+      &--active {
+        font-weight: 500;
+        color: var(--v-accent-base);
+      }
+      &--empty {
+        color: rgba(0, 0, 0, 0.4);
+        font-style: italic;
+      }
+    }
+
+    // Strict mode: input is read-only and acts as the toggle. Show a pointer
+    // cursor so the user perceives it as clickable (like a select header).
+    &--strict &__input {
+      cursor: pointer;
+      user-select: none;
+      background: white;
+    }
+  }
+
   .tracking-equals {
     color: rgba(0, 0, 0, 0.4);
     font-weight: 500;
@@ -779,6 +891,11 @@ body {
     border-radius: 4px;
     transition: all 0.15s ease;
     flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       color: #f04e23;
@@ -788,6 +905,44 @@ body {
     .lucide {
       width: 16px;
       height: 16px;
+    }
+  }
+
+  // Disabled remove button on managed rows: visually present (greyed X) so
+  // the row alignment matches free-form rows, but not clickable. Tooltip
+  // explains why on hover.
+  .tracking-remove-btn--locked {
+    cursor: not-allowed;
+    color: rgba(0, 0, 0, 0.18);
+    pointer-events: auto; // allow tooltip on hover
+    background: none !important;
+
+    &:hover {
+      // keep the disabled look even on hover (no red, no bg change)
+      color: rgba(0, 0, 0, 0.28);
+      background: none !important;
+    }
+  }
+
+  .tracking-key-label {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+  }
+
+  .tracking-required {
+    display: inline-block;
+    margin-left: 4px;
+    color: #f04e23;
+    font-weight: 700;
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  .tracking-param-row--missing .propInput.tracking-input:not(.tracking-input--readonly) {
+    select,
+    input {
+      border-color: #f04e23;
+      box-shadow: 0 0 0 1px rgba(240, 78, 35, 0.3);
     }
   }
 
@@ -864,6 +1019,55 @@ body {
     .tracking-param-editor {
       margin-bottom: 8px;
     }
+  }
+}
+
+// Tracking-required modal: reuses the editor's existing .bs-modal-* framework
+// (see badsender-modal.less). Only the inline alert and key chips inside
+// .modal-content are added here.
+.tracking-modal {
+  // The modal is appended to <body>, which has no explicit font-family — it
+  // would inherit the browser default (serif) instead of the editor's Inter
+  // applied on .mo. Force the editor font-family here.
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+
+  .tracking-modal__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(240, 78, 35, 0.1);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.75);
+  }
+
+  .tracking-modal__alert-icon {
+    color: #f04e23;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: inline-flex;
+  }
+
+  .tracking-modal__keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tracking-modal__key {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(240, 78, 35, 0.1);
+    border: 1px solid rgba(240, 78, 35, 0.3);
+    color: #c43d1c;
+    border-radius: 4px;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 13px;
+    font-weight: 500;
   }
 }
 

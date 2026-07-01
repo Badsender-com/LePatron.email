@@ -23,6 +23,7 @@ const {
 const {
   handleTrackingData,
   getMailByMailingIdAndUser,
+  resolveMailingTrackingContext,
 } = require('../../mailing/mailing.service.js');
 const processMosaicoHtmlRender = require('../../utils/process-mosaico-html-render.js');
 
@@ -332,20 +333,43 @@ class AdobeProvider {
     });
   }
 
-  async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async updateCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     // The logic to update and create is the same because the SOAP request that we do
     // for Adobe is an upsert
-    await this.createCampaignMail({ campaignMailData, user, html, mailingId });
+    await this.createCampaignMail({
+      campaignMailData,
+      user,
+      html,
+      mailingId,
+      freshTracking,
+    });
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     const { name, adobe } = campaignMailData;
 
     const mailing = await getMailByMailingIdAndUser({ mailingId, user });
 
+    const {
+      tracking,
+      groupTrackingConfig,
+    } = await resolveMailingTrackingContext(mailing, freshTracking);
     const htmlWithAdobeUrls = await this.sendAndProcessImageIntoAdobe({
       html,
-      tracking: mailing?._doc?.data?.tracking,
+      tracking,
+      groupTrackingConfig,
     });
 
     await this.saveDeliveryTemplate({
@@ -357,10 +381,20 @@ class AdobeProvider {
     return name;
   }
 
-  async sendAndProcessImageIntoAdobe({ html, tracking }) {
+  // Adobe pipeline diverges from the other ESPs: it does NOT call
+  // mailingService.processHtmlWithFTPOption (which is the hub where Brevo,
+  // DSC and Actito get their tracking applied). The reason is the image
+  // handling — Adobe Campaign requires each image to be uploaded via SOAP
+  // and the <img src> rewritten to internal Adobe references (see the
+  // upload/save/publish block below). So we apply handleTrackingData directly
+  // here. The `groupTrackingConfig` argument carries the resolved
+  // group→template merge so the UTM keys defined at the group level are
+  // injected (and override stale values already present in the link).
+  async sendAndProcessImageIntoAdobe({ html, tracking, groupTrackingConfig }) {
     const { html: htmlWithTracking } = handleTrackingData({
       html,
       tracking,
+      groupTrackingConfig,
     });
     const urlsRegexUrl = /https?:\S+\.(jpg|jpeg|png|gif|webp)/g;
 

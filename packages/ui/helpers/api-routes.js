@@ -50,6 +50,9 @@ export function templates() {
 export function templatesItem(routeParams = {}) {
   return `/templates/${routeParams.templateId}`;
 }
+export function templatesItemTrackingConfig(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/tracking-config`;
+}
 export function templatesItemPreview(routeParams = {}) {
   return `/templates/${routeParams.templateId}/preview`;
 }

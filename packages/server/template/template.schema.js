@@ -82,6 +82,20 @@ const TemplateSchema = Schema(
         return JSON.stringify(v);
       },
     },
+    // Tracking parameters override / merge on top of the group config
+    trackingConfig: {
+      overrideGroupTracking: { type: Boolean, default: false },
+      enabled: { type: Boolean, default: false },
+      restrictValues: { type: Boolean, default: false },
+      params: [
+        {
+          key: { type: String, required: true, set: trimString },
+          values: { type: [String], default: [] },
+          required: { type: Boolean, default: false },
+          lockedValues: { type: Boolean, default: false },
+        },
+      ],
+    },
   },
   { timestamps: true, toJSON: { virtuals: true, getters: true } }
 );
@@ -110,6 +124,7 @@ TemplateSchema.statics.findForApi = async function findForApi(query = {}) {
     updatedAt: 1,
     _company: 1,
     assets: 1,
+    trackingConfig: 1,
   })
     .populate({ path: '_company', select: 'id name' })
     .sort({ name: 1 })
