@@ -263,66 +263,51 @@ describe('getUrlWithTrackingParams', () => {
     });
   });
 
-  describe('encoding / injection safety', () => {
-    it('escapes a double quote so the value cannot break out of href', () => {
+  describe('placeholder preservation (no encoding)', () => {
+    // Tracking values are authored by the group admin / template designer, not
+    // by end users. They must reach the email client byte-for-byte so ESP
+    // personalization placeholders (which contain <, >, spaces, etc.) survive.
+    // encodeTrackingComponent is therefore a pass-through — see its doc comment.
+    it('preserves EJS / Adobe Campaign placeholders (<%= ... %>) verbatim', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',
         {
           trackingUrls: [
-            { key: 'utm_source', value: 'x" onmouseover="alert(1)' },
+            { key: 'utm_campaign', value: '<%= delivery.label %>' },
+            { key: 'recipientid', value: '<%= recipient.id %>' },
           ],
         },
         null
       );
-      expect(out).not.toContain('"');
       expect(out).toBe(
-        'https://x.com?utm_source=x%22%20onmouseover=%22alert(1)'
+        'https://x.com?utm_campaign=<%= delivery.label %>&recipientid=<%= recipient.id %>'
       );
     });
 
-    it('escapes < and > to prevent markup injection', () => {
+    it('preserves { }, [ ] and %% %% placeholders verbatim', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',
-        { trackingUrls: [{ key: 'utm_source', value: '<script>' }] },
+        {
+          trackingUrls: [
+            { key: 'a', value: '{{contact.id}}' },
+            { key: 'b', value: '[[firstName]]' },
+            { key: 'c', value: '%%FIRSTNAME%%' },
+          ],
+        },
         null
       );
-      expect(out).toBe('https://x.com?utm_source=%3Cscript%3E');
+      expect(out).toBe(
+        'https://x.com?a={{contact.id}}&b=[[firstName]]&c=%%FIRSTNAME%%'
+      );
     });
 
-    it('escapes & so a value cannot forge extra query params', () => {
+    it('leaves free-form param values untouched too', () => {
       const out = getUrlWithTrackingParams(
         'https://x.com',
-        { trackingUrls: [{ key: 'utm_source', value: 'a&admin=1' }] },
+        { trackingUrls: [{ key: 'ref', value: '<%= foo %>' }] },
         null
       );
-      expect(out).toBe('https://x.com?utm_source=a%26admin=1');
-    });
-
-    it('escapes # so a value cannot truncate the URL with a fragment', () => {
-      const out = getUrlWithTrackingParams(
-        'https://x.com',
-        { trackingUrls: [{ key: 'utm_source', value: 'a#frag' }] },
-        null
-      );
-      expect(out).toBe('https://x.com?utm_source=a%23frag');
-    });
-
-    it('preserves personalization placeholders ({{token}})', () => {
-      const out = getUrlWithTrackingParams(
-        'https://x.com',
-        { trackingUrls: [{ key: 'utm_source', value: '{{contact.id}}' }] },
-        null
-      );
-      expect(out).toBe('https://x.com?utm_source={{contact.id}}');
-    });
-
-    it('encodes free-form param values too', () => {
-      const out = getUrlWithTrackingParams(
-        'https://x.com',
-        { trackingUrls: [{ key: 'ref', value: 'a"b' }] },
-        null
-      );
-      expect(out).toBe('https://x.com?ref=a%22b');
+      expect(out).toBe('https://x.com?ref=<%= foo %>');
     });
   });
 
