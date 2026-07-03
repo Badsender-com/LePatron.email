@@ -22,7 +22,20 @@ module.exports = function createGalleryDraggable(vm) {
       el.classList.add('image');
       ko.utils.domData.set(el, DRAGKEY, file);
       $(el).draggable({
-        helper: 'clone',
+        // Small drag proxy centered on the cursor (cursorAt) instead of a
+        // full-size clone: keeps the drop hit-point aligned with the pointer,
+        // which matters for small upload zones. Reads the current file from
+        // DOM data so it stays correct across virtual-scroller node recycling.
+        helper() {
+          const dragged = ko.utils.domData.get(el, DRAGKEY);
+          const proxy = document.createElement('div');
+          proxy.className = 'gallery-drag-helper';
+          if (dragged && dragged.thumbnailUrl) {
+            proxy.style.backgroundImage = 'url("' + dragged.thumbnailUrl + '")';
+          }
+          return proxy;
+        },
+        cursorAt: { top: 24, left: 24 },
         appendTo: '#page',
         connectToSortable: '.ko_container',
         start() {
