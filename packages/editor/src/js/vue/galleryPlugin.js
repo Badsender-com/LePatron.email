@@ -1,12 +1,10 @@
 'use strict';
 
 const Vue = require('vue/dist/vue.common');
+const ko = require('knockout');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
 const createGalleryDraggable = require('./directives/gallery-draggable');
-
-// Tab index exposed by Mosaico's `selectedImageTab` observable
-const TAB_TEMPLATE = 1;
 
 module.exports = {
   viewModel(vm, ko) {
@@ -16,21 +14,17 @@ module.exports = {
     vm.galleryBridge = galleryBridge;
   },
   init(vm) {
-    Vue.component('GalleryPanelPlugin', {
+    const GalleryPanel = {
       components: { Thumb },
       directives: { galleryDraggable: createGalleryDraggable(vm) },
+      props: {
+        // 'mailing' or 'template' — one instance per gallery pane
+        type: { type: String, required: true },
+      },
       data: () => ({
-        mailingImages: [],
-        templateImages: [],
-        selectedTab: 0,
+        images: [],
       }),
       computed: {
-        // Active gallery based on the Knockout tab selection
-        images() {
-          return this.selectedTab === TAB_TEMPLATE
-            ? this.templateImages
-            : this.mailingImages;
-        },
         count() {
           return this.images.length;
         },
@@ -41,44 +35,31 @@ module.exports = {
         },
       },
       created() {
-        this._subscriptions = [];
+        this._subscription = null;
       },
       mounted() {
-        // Mirror Knockout observableArrays into Vue reactive data. Vue cannot
-        // observe KO observables directly, so we snapshot + subscribe.
-        this.syncObservable(vm.mailingGallery, 'mailingImages');
-        this.syncObservable(vm.templateGallery, 'templateImages');
-        if (vm.selectedImageTab) {
-          this.selectedTab = vm.selectedImageTab();
-          this._subscriptions.push(
-            vm.selectedImageTab.subscribe((tab) => {
-              this.selectedTab = tab;
-            })
-          );
+        // Mirror the Knockout observableArray into Vue reactive data. Vue
+        // cannot observe KO observables directly, so we snapshot + subscribe.
+        const observable = vm[this.type + 'Gallery'];
+        if (observable) {
+          this.images = observable().slice();
+          this._subscription = observable.subscribe((array) => {
+            this.images = array.slice();
+          });
         }
         galleryBridge.ready();
       },
       beforeDestroy() {
-        this._subscriptions.forEach((sub) => sub.dispose());
+        if (this._subscription) this._subscription.dispose();
       },
       methods: {
-        syncObservable(observable, key) {
-          if (!observable) return;
-          this[key] = observable().slice();
-          this._subscriptions.push(
-            observable.subscribe((array) => {
-              this[key] = array.slice();
-            })
-          );
-        },
         // ISO with the previous grid: click replaces the selected email image
         onSelect(file) {
           vm.addImage(file);
         },
         // ISO with the previous grid: delete the image from the gallery
         onRemove(file) {
-          const type = this.selectedTab === TAB_TEMPLATE ? 'template' : 'mailing';
-          vm.removeImage(file, type);
+          vm.removeImage(file, this.type);
         },
       },
       template: `
@@ -96,8 +77,24 @@ module.exports = {
           </div>
         </div>
       `,
-    });
+    };
 
-    new Vue({ el: '#gallery-panel' });
+    // Knockout binding: mount the Vue grid when KO creates the element (the
+    // gallery panel lives behind a `ko if: showGallery`, so it is created and
+    // destroyed dynamically), and tear it down on disposal.
+    ko.bindingHandlers.vueGalleryPanel = {
+      init(element, valueAccessor) {
+        const type = ko.unwrap(valueAccessor());
+        const mountPoint = document.createElement('div');
+        element.appendChild(mountPoint);
+        const instance = new Vue({
+          render: (h) => h(GalleryPanel, { props: { type } }),
+        }).$mount(mountPoint);
+        ko.utils.domNodeDisposal.addDisposeCallback(element, () => {
+          instance.$destroy();
+        });
+        return { controlsDescendantBindings: true };
+      },
+    };
   },
 };

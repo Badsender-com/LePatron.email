@@ -166,7 +166,8 @@
       <!-- ko if: $root.mailingGalleryStatus() === 0 -->
       <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The mailing gallery is empty</div>
       <!-- /ko -->
-      <!-- US-05: thumbnails now rendered by the Vue #gallery-panel below -->
+      <!-- US-05: Vue thumbnail grid for the mailing gallery -->
+      <div class="gallery-vue-host" data-bind="vueGalleryPanel: 'mailing'"></div>
     </div>
 
     <div id="toolimagesgallerytemplate" class="gallery-panel">
@@ -185,15 +186,11 @@
       <!-- ko if: $root.templateGalleryStatus() === 0 -->
       <div class="galleryEmpty" data-bind="text: $root.t('gallery-mailing-empty')">The template gallery is empty</div>
       <!-- /ko -->
-      <!-- US-05: thumbnails now rendered by the Vue #gallery-panel below -->
+      <!-- US-05: Vue thumbnail grid for the template gallery -->
+      <div class="gallery-vue-host" data-bind="vueGalleryPanel: 'template'"></div>
     </div>
   </div>
   <!-- /ko -->
-
-  <!-- Vue gallery panel — renders the redesigned thumbnail grid (US-05) -->
-  <div id="gallery-panel">
-    <gallery-panel-plugin />
-  </div>
 
 </div>
 
