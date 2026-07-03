@@ -28,6 +28,8 @@ module.exports = {
     'This image has been removed from the gallery',
   'gallery-remove-image-fail':
     'An error has occured while removing the image :(',
+  'gallery-image-count-one': '__count__ image',
+  'gallery-image-count': '__count__ images',
 
   // bgimage widget
   'widget-bgimage-button': 'Pick an image',

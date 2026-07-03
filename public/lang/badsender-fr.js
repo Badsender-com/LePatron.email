@@ -27,6 +27,8 @@ module.exports = {
   'gallery-remove-image-success': "L'image a bien été supprimée de la galerie",
   'gallery-remove-image-fail':
     "Une erreur est survenue lors de la suppression de l'image :(",
+  'gallery-image-count-one': '__count__ image',
+  'gallery-image-count': '__count__ images',
 
   // bgimage widget
   'widget-bgimage-button': 'Choisir image',
