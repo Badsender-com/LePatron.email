@@ -3,6 +3,7 @@
 const Vue = require('vue/dist/vue.common');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
+const createGalleryDraggable = require('./directives/gallery-draggable');
 
 // Tab index exposed by Mosaico's `selectedImageTab` observable
 const TAB_TEMPLATE = 1;
@@ -17,6 +18,7 @@ module.exports = {
   init(vm) {
     Vue.component('GalleryPanelPlugin', {
       components: { Thumb },
+      directives: { galleryDraggable: createGalleryDraggable(vm) },
       data: () => ({
         mailingImages: [],
         templateImages: [],
@@ -86,6 +88,7 @@ module.exports = {
             <thumb
               v-for="file in images"
               :key="file.name"
+              v-gallery-draggable="file"
               :file="file"
               @select="onSelect"
               @remove="onRemove"
