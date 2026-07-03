@@ -122,6 +122,7 @@ scope: server, ui, editor, etc.
 - Extensions in `/src/js/ext/`
 - Templates in `/src/tmpl-badsender/`
 - Editor locales in `/public/lang/` (badsender-fr.js, badsender-en.js)
+- Vue plugins in `/src/js/vue/` — **bare Vue with inline string templates only** (NO `.vue` SFC, NO Vuetify: the gulp/browserify build has no `vue-loader`, and Vuetify's global CSS collides with Mosaico). Register the plugin in the `extensions` array in `/src/js/app.js` and mount it on a `<div id="...">` placed in a Knockout template. For Knockout↔Vue interop, expose an `EventTarget` singleton on the viewModel (pattern: `badsender-events-hub.js`, `badsender-gallery-bridge.js`)
 
 ## Design System
 
@@ -129,27 +130,30 @@ LePatron.email has a documented design system for UI consistency and white-label
 
 ### Documentation
 
-| Document | Content |
-|----------|---------|
-| [docs/design-system/](./docs/design-system/) | Visual specifications (tokens, components, patterns) |
-| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies |
-| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md) | Editor-specific documentation |
-| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md) | UX patterns, accessibility |
-| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md) | UI modernization roadmap (11 phases) |
+| Document                                                                           | Content                                              |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [docs/design-system/](./docs/design-system/)                                       | Visual specifications (tokens, components, patterns) |
+| [docs/design-system/05-debt-registry.md](./docs/design-system/05-debt-registry.md) | Known UI inconsistencies                             |
+| [docs/design-system/07-editor-stack.md](./docs/design-system/07-editor-stack.md)   | Editor-specific documentation                        |
+| [docs/UX_GUIDELINES.md](./docs/UX_GUIDELINES.md)                                   | UX patterns, accessibility                           |
+| [docs/plans/ui-progressive-update.md](./docs/plans/ui-progressive-update.md)       | UI modernization roadmap (11 phases)                 |
 
 ### Key Constraints
 
 **Vue App (`packages/ui/`):**
+
 - Use Vuetify 2.x components (never raw HTML for standard UI)
 - Use Material Design Icons via `v-icon`
 - Use CSS variables for colors (enables white-label)
 - Target font: Work Sans (currently Montserrat)
 
 **Email Editor (`packages/editor/`):**
+
 - Use LESS variables from `style_variables.less`
 - Use CSS variables for theme integration (`--v-primary-base`, etc.)
 - Use jQuery UI widgets and Knockout bindings
 - Use Font Awesome 4.7 icons (`fa fa-*`)
+- Vue plugins here use **bare Vue with inline templates, never Vuetify** (see packages/editor guidelines above)
 
 ### White-Label Architecture
 

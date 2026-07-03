@@ -167,6 +167,17 @@ Index Mongo à ajouter pour les performances de recherche/filtre :
 - `templateId + format` (filtre type)
 - `templateId + createdAt` (tri date)
 
+### Intégration Vue dans l'éditeur (pattern, décidé US-04)
+
+L'UI galerie s'injecte dans l'éditeur Mosaico via le **pattern plugin Vue existant** (comme `espPlugin`, `trackingParamsPlugin`), **sans toucher au cœur Mosaico** :
+
+- Composants en **Vue nu + templates inline** (fichiers `.js`), bundlés par le build gulp/browserify de l'éditeur. **Pas de Vuetify, pas de fichiers `.vue`** : le build éditeur n'a pas de `vue-loader`, et le CSS global de Vuetify entrerait en collision avec celui de Mosaico dans le même DOM. Vuetify 1.12 reste réservé à l'UI de gestion Nuxt (`packages/ui`).
+- Plugin dans `packages/editor/src/js/vue/`, enregistré dans le tableau `extensions` de `app.js`, monté sur un `<div id="...">` placé dans un template Knockout (`tmpl-badsender/`).
+- **Communication Knockout ↔ Vue** :
+  - _KO → Vue_ : closure `vm` + `.subscribe()` sur les observables.
+  - _Vue → KO_ : `galleryBridge` (un `EventTarget` singleton, `packages/editor/src/js/ext/badsender-gallery-bridge.js`) exposé au viewModel via le hook `viewModel()` (`vm.galleryBridge`), sur le modèle de `bsEventsHub` (`badsender-events-hub.js`).
+- CSS **scopé** au panneau (`.gallery-vue-panel`), couleurs aliasées sur les tokens design-system (`style_variables.less`), sans reset global.
+
 ---
 
 ## 6. Stack technique
@@ -193,6 +204,7 @@ Index Mongo à ajouter pour les performances de recherche/filtre :
 - Pas de TypeScript (JS only)
 - Pas de migration de versions Vue/Vuetify dans ce projet
 - Rester cohérent avec l'existant
+- La ligne « Front » ci-dessus (Vuetify 1.12) concerne l'**UI de gestion Nuxt** (`packages/ui`). La galerie embarquée dans l'**éditeur** est en **Vue nu, sans Vuetify** — voir section 5, « Intégration Vue dans l'éditeur ».
 
 ---
 
