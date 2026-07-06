@@ -99,7 +99,8 @@ describe('ProviderFactory', () => {
       expect(providers).toContain(IntegrationProviders.MISTRAL);
       expect(providers).toContain(IntegrationProviders.INFOMANIAK);
       expect(providers).toContain(IntegrationProviders.DEEPL);
-      expect(providers.length).toBe(4);
+      expect(providers).toContain(IntegrationProviders.RSS);
+      expect(providers.length).toBe(5);
     });
   });
 });

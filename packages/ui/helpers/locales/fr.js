@@ -698,6 +698,7 @@ export default {
       bi: 'BI & Analytics',
       aiGeneration: 'IA - Génération',
       aiTranslation: 'IA - Traduction',
+      contentFeed: 'Flux de contenu',
     },
     statusLabels: {
       valid: 'Validé',
@@ -726,6 +727,9 @@ export default {
       apiKeyPlaceholder: 'Votre clé API DeepL',
       apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
     },
+    rss: {
+      apiHostHint: 'URL publique du flux RSS ou Atom'
+    },
     models: {
       fastEconomical: 'rapide, économique',
       balanced: 'équilibré',
@@ -733,6 +737,41 @@ export default {
       fast: 'rapide',
       recommended: 'recommandé',
     }
+  },
+  feedMappings: {
+    title: 'Flux de contenu',
+    template: 'Template',
+    block: 'Bloc',
+    integration: 'Source du flux',
+    active: 'Actif',
+    add: 'Ajouter un mapping de flux',
+    edit: 'Modifier le mapping de flux',
+    created: 'Mapping de flux créé avec succès',
+    updated: 'Mapping de flux mis à jour avec succès',
+    deleted: 'Mapping de flux supprimé avec succès',
+    noFeedMappings: 'Aucun flux de contenu configuré',
+    loadingBlocks: 'Chargement des blocs...',
+    columnCount: 'Nombre de colonnes',
+    columnCountHint:
+      'Pour les blocs multi-colonnes (ex: bloc articles sur 3 colonnes) — un mapping de champs par colonne',
+    column: 'Colonne {n}',
+    ctaDefaultLabel: 'Libellé par défaut du bouton CTA',
+    ctaDefaultLabelHint:
+      'Appliqué lors de l\'insertion d\'un item — reste modifiable ensuite dans l\'éditeur',
+    deleteConfirmTitle: 'Supprimer le mapping de flux',
+    deleteConfirmMessage:
+      'Êtes-vous sûr de vouloir supprimer ce mapping de flux ?',
+    fieldColumnHeader: 'Champ du bloc',
+    roleColumnHeader: 'Correspond à',
+    roleNone: '— Ignorer —',
+    feedFields: {
+      title: 'titre de l\'item (title)',
+      link: 'lien de l\'item (link)',
+      description: 'description de l\'item (description)',
+      image: 'image de l\'item (image)',
+      pubDate: 'date de publication (pubDate)',
+      ctaLabel: 'libellé CTA par défaut (texte statique)',
+    },
   },
   aiFeatures: {
     title: 'Fonctionnalités IA',
