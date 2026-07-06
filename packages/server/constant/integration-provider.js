@@ -8,6 +8,8 @@ module.exports = {
   MISTRAL: 'mistral',
   INFOMANIAK: 'infomaniak',
   DEEPL: 'deepl',
+  // Data feed providers
+  RSS: 'rss',
   // Future providers
   // SMARTCAT: 'smartcat',
   // LOOKER: 'looker',

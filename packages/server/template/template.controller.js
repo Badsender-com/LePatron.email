@@ -14,6 +14,7 @@ const logger = require('../utils/logger.js');
 const modelsUtils = require('../utils/model.js');
 const fileManager = require('../common/file-manage.service.js');
 const generatePreview = require('./generate-preview.controller.js');
+const templateBlocks = require('./template-blocks.controller.js');
 const _getTemplateImagePrefix = require('../utils/get-template-image-prefix.js');
 const {
   sanitizeTrackingConfig,
@@ -30,6 +31,8 @@ module.exports = {
   destroyImages: asyncHandler(destroyImages),
   // expose generate preview controllers
   ...generatePreview,
+  // expose block introspection controllers (used by content-feed mapping config)
+  ...templateBlocks,
 };
 
 /**
