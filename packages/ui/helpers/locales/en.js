@@ -899,7 +899,6 @@ export default {
       bi: 'BI & Analytics',
       aiGeneration: 'AI - Generation',
       aiTranslation: 'AI - Translation',
-      contentFeed: 'Content Feed',
     },
     statusLabels: {
       valid: 'Valid',
@@ -928,9 +927,6 @@ export default {
       apiKeyPlaceholder: 'Your DeepL API key',
       apiKeyHint: 'Your DeepL API key (Free or Pro)'
     },
-    rss: {
-      apiHostHint: 'Public RSS or Atom feed URL'
-    },
     models: {
       fastEconomical: 'fast, economical',
       balanced: 'balanced',
@@ -938,38 +934,6 @@ export default {
       fast: 'fast',
       recommended: 'recommended',
     }
-  },
-  feedMappings: {
-    title: 'Content Feeds',
-    template: 'Template',
-    block: 'Block',
-    integration: 'Feed source',
-    active: 'Active',
-    add: 'Add feed mapping',
-    edit: 'Edit feed mapping',
-    created: 'Feed mapping created successfully',
-    updated: 'Feed mapping updated successfully',
-    deleted: 'Feed mapping deleted successfully',
-    noFeedMappings: 'No content feed configured',
-    loadingBlocks: 'Loading blocks...',
-    columnCount: 'Number of columns',
-    columnCountHint: 'For multi-column blocks (e.g. a 3-across article block) — one field mapping per column',
-    column: 'Column {n}',
-    ctaDefaultLabel: 'Default CTA button label',
-    ctaDefaultLabelHint: 'Applied when an item is inserted — editable afterwards in the builder',
-    deleteConfirmTitle: 'Delete feed mapping',
-    deleteConfirmMessage: 'Are you sure you want to delete this feed mapping?',
-    fieldColumnHeader: 'Block field',
-    roleColumnHeader: 'Comes from',
-    roleNone: '— Ignore —',
-    feedFields: {
-      title: 'item title (title)',
-      link: 'item link (link)',
-      description: 'item description (description)',
-      image: 'item image (image)',
-      pubDate: 'item publication date (pubDate)',
-      ctaLabel: 'default CTA label (static text)',
-    },
   },
   settingsNav: {
     categories: {

@@ -44,18 +44,6 @@ function getTranslationLanguages() {
   return `${prefixApi}/translation/languages`;
 }
 
-function getFeedMappingsForTemplate(templateId) {
-  return `${prefixApi}/feed-mappings?templateId=${templateId}`;
-}
-
-function getFeedItems(integrationId, limit) {
-  return `${prefixApi}/integrations/${integrationId}/items?limit=${limit}`;
-}
-
-function uploadGalleryImageFromUrl(mailingId) {
-  return `${prefixApi}/images/gallery/${mailingId}/from-url`;
-}
-
 module.exports = {
   getEspIds,
   getProfileDetail,
@@ -68,7 +56,4 @@ module.exports = {
   deletePersonalizedBlock,
   translateBlock,
   getTranslationLanguages,
-  getFeedMappingsForTemplate,
-  getFeedItems,
-  uploadGalleryImageFromUrl,
 };

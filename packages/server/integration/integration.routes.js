@@ -52,11 +52,6 @@ router.post(
 // Get available models for an integration
 router.get('/:integrationId/models', GUARD_GROUP_ADMIN, integrations.getModels);
 
-// Fetch normalized items from a data feed integration (e.g. RSS).
-// GUARD_USER on purpose: any user editing a mailing may browse feed items,
-// not just group admins (who own create/update/delete of the integration itself).
-router.get('/:integrationId/items', GUARD_USER, integrations.getFeedItems);
-
 // Get dashboard count for an integration (used before delete to show warning)
 router.get(
   '/:integrationId/dashboard-count',

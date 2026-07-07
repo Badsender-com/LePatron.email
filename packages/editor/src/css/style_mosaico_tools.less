@@ -840,31 +840,6 @@
     position: relative;
   }
 
-  // Overlay badge on a template-block thumbnail indicating a content feed
-  // is mappable to it — see .content-feed-item etc. below for the modal
-  // that this badge's block opens (via the block's own toolbar icon once
-  // it's placed in the canvas).
-  .block-feed-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    z-index: 5;
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--v-accent-base, #00acdc);
-    color: white;
-    border-radius: 50%;
-    font-size: 14px;
-    box-shadow: 0 0 0 2px white;
-
-    .lucide {
-      font-size: 14px;
-    }
-  }
-
   // Custom-block card: light gray surface so it stands out from the white
   // sidebar background — template-block cards keep the white surface from
   // .draggable-item since they have their own image preview that fills it.
@@ -1179,7 +1154,6 @@
     color: gray;
     padding: 1rem;
   }
-
 
   .blockType {
     display: none;
@@ -1557,130 +1531,4 @@
   width: 250%;
   height: 250%;
   transform: scale(0.4);
-}
-
-/****************************************************************************************************************************
- * CONTENT FEED MODAL — opened from a block's toolbar icon (block-wysiwyg.tmpl.html)
- ***************************************************************************************************************************/
-
-// `class="content-feed-modal"` passed to <modal-component> lands on its root
-// (.bs-modal-overlay), so this self-contained block doesn't depend on where
-// in the DOM the modal actually renders — see .medium-modal above for the
-// same pattern already relied on by the translate-block modal.
-.content-feed-modal {
-  .content-feed-max-hint {
-    font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.5);
-    padding: 4px 2px 8px;
-  }
-
-  #content-feed-list {
-    .content-feed-loading,
-    .content-feed-empty {
-      text-align: center;
-      font-size: 0.9em;
-      color: #888;
-      padding: 0.75rem 0;
-    }
-
-    max-height: 260px;
-    overflow-y: auto;
-
-    .content-feed-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 2px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-      cursor: pointer;
-      font-size: 0.85em;
-      line-height: 1.3;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.03);
-      }
-
-      &--disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-
-        &:hover {
-          background: none;
-        }
-      }
-    }
-
-    .content-feed-item-checkbox {
-      flex-shrink: 0;
-      margin: 0;
-    }
-
-    .content-feed-item-title {
-      flex: 1 1 auto;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: rgba(0, 0, 0, 0.87);
-    }
-
-    .content-feed-item-date {
-      flex-shrink: 0;
-      color: rgba(0, 0, 0, 0.45);
-      font-size: 0.9em;
-    }
-  }
-
-  .content-feed-order {
-    margin-top: 12px;
-
-    &__label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: rgba(0, 0, 0, 0.5);
-      margin-bottom: 6px;
-    }
-  }
-
-  .content-feed-order-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    margin-bottom: 4px;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 4px;
-    cursor: grab;
-    font-size: 0.85em;
-
-    &:active {
-      cursor: grabbing;
-    }
-
-    &--drag-over {
-      background: rgba(0, 172, 220, 0.12);
-      outline: 2px dashed var(--v-accent-base, #00acdc);
-      outline-offset: -2px;
-    }
-
-    &__position {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--v-accent-base, #00acdc);
-      color: white;
-      border-radius: 50%;
-      font-size: 0.7em;
-    }
-
-    &__title {
-      flex: 1 1 auto;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
 }

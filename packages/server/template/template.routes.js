@@ -22,15 +22,6 @@ const templates = require('./template.controller.js');
 router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('/:templateId/markup', GUARD_USER, templates.readMarkup);
-// Block introspection: used by the content-feed mapping config UI to let a
-// group admin pick a block + its field paths without hand-typing Mosaico
-// internal property names.
-router.get('/:templateId/blocks', GUARD_GROUP_ADMIN, templates.listBlocks);
-router.get(
-  '/:templateId/blocks/:blockName/fields',
-  GUARD_GROUP_ADMIN,
-  templates.listBlockFields
-);
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);
 router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
 router.get('/:templateId/events', GUARD_ADMIN, templates.previewEvents);

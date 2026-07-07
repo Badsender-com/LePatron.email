@@ -15,7 +15,6 @@ const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages, Galleries } = require('../common/models.common.js');
 const imageService = require('./image.service');
-const logger = require('../utils/logger.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -27,7 +26,6 @@ module.exports = {
   checkSizes,
   list: asyncHandler(list),
   create: asyncHandler(create),
-  createFromUrl: asyncHandler(createFromUrl),
   read,
   destroy,
 };
@@ -405,6 +403,16 @@ function read(req, res, next) {
 // EDITOR SPECIFIC
 /// ///
 
+function createGallery(mongoId) {
+  // create the gallery in DB
+  return fileManager.list(mongoId).then((files) => {
+    return new Galleries({
+      creationOrWireframeId: mongoId,
+      files,
+    }).save();
+  });
+}
+
 /**
  * @api {get} /images/gallery/:mailingOrTemplateId gallery images list
  * @apiPermission public
@@ -430,8 +438,7 @@ async function list(req, res) {
     'files'
   );
 
-  const responseGallery =
-    gallery || (await imageService.createGallery(mongoId));
+  const responseGallery = gallery || (await createGallery(mongoId));
   res.json(responseGallery);
 }
 
@@ -461,7 +468,7 @@ async function create(req, res) {
 
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
-  const safeGallery = gallery || (await imageService.createGallery(mongoId));
+  const safeGallery = gallery || (await createGallery(mongoId));
   const galleryImages = safeGallery.files.map((file) => ({ ...file }));
   const galleryImagesName = galleryImages.map((file) => file.name);
 
@@ -479,38 +486,6 @@ async function create(req, res) {
   // send only the new uploads
   // front-application will iterate over them to update the gallery previews
   res.json(uploads);
-}
-
-/**
- * @api {post} /images/gallery/:mongoId/from-url download an external image into the gallery
- * @apiPermission user
- * @apiName PostGalleryImageFromUrl
- * @apiGroup Images
- *
- * @apiParam {string} mongoId
- * @apiParam (Body) {String} url External image URL to download
- *
- * @apiUse galleryImages
- */
-async function createFromUrl(req, res) {
-  const { mongoId } = req.params;
-  const { url: imageUrl } = req.body;
-
-  if (!imageUrl) {
-    throw new createError.BadRequest('url is required');
-  }
-
-  let uploadedFile;
-  try {
-    uploadedFile = await imageService.createFromUrl(mongoId, imageUrl);
-  } catch (error) {
-    logger.error('Failed to download image from url', imageUrl, error.message);
-    throw new createError.BadGateway(
-      `Failed to download image: ${error.message}`
-    );
-  }
-
-  res.json({ files: [uploadedFile] });
 }
 
 // destroy an image is not a real deletion…

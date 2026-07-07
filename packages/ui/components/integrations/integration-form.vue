@@ -94,9 +94,6 @@ export default {
     showProductIdField() {
       return this.selectedProviderConfig.showProductId === true;
     },
-    isApiKeyRequired() {
-      return this.selectedProviderConfig.apiKeyRequired !== false;
-    },
   },
   watch: {
     integration: {
@@ -136,9 +133,8 @@ export default {
         provider: { required },
       },
     };
-    // API key required only for new integrations, and only for providers
-    // that actually need one (e.g. public RSS feeds don't)
-    if (!this.isEdit && this.isApiKeyRequired) {
+    // API key required only for new integrations
+    if (!this.isEdit) {
       rules.form.apiKey = { required };
     }
     if (this.showProductIdField) {
@@ -233,13 +229,10 @@ export default {
           @blur="$v.form.provider.$touch()"
         />
 
-        <div v-if="isApiKeyRequired" class="bs-text-field">
+        <div class="bs-text-field">
           <label class="bs-text-field__label">
             {{ apiKeyLabel }}
-            <span
-              v-if="!isEdit && isApiKeyRequired"
-              class="bs-text-field__required"
-            >*</span>
+            <span v-if="!isEdit" class="bs-text-field__required">*</span>
           </label>
           <v-text-field
             v-model="form.apiKey"

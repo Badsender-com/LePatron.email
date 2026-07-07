@@ -189,27 +189,6 @@ module.exports = {
     'Aucun résultat trouvé pour votre recherche.',
   'personalized-blocks-search-placeholder': 'Rechercher...',
 
-  // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
-  'Content feed available for this block':
-    'Flux de contenu disponible pour ce bloc',
-  'Import from feed': 'Importer depuis le flux',
-
-  // ContentFeedModal translations
-  'content-feed-modal-title': 'Importer un flux',
-  'content-feed-loading': 'Chargement des éléments du flux...',
-  'content-feed-empty': 'Aucun élément trouvé dans ce flux.',
-  'content-feed-fetch-error':
-    "Une erreur s'est produite lors de la récupération des éléments du flux.",
-  'content-feed-image-error':
-    "Impossible de télécharger l'image — l'item a été ajouté sans image.",
-  'content-feed-order-label': 'Ordre (glisser pour réorganiser)',
-  'content-feed-cancel': 'Annuler',
-  'content-feed-add-selection': 'Ajouter la sélection',
-  'content-feed-adding': 'Ajout en cours...',
-  'content-feed-success': 'Contenu importé depuis le flux.',
-  'content-feed-max-selectable':
-    "Ce bloc a __count__ colonne(s) — sélectionnez jusqu'à __count__ élément(s).",
-
   // DeleteBlockModal translations
   'title-delete-block': 'Supprimer le bloc',
   'confirm-delete-block':

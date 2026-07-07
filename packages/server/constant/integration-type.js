@@ -3,7 +3,8 @@
 module.exports = {
   AI: 'ai',
   DASHBOARD: 'dashboard',
-  DATA_FEED: 'data_feed',
   // Future types
+  // DATA_FEED: 'data_feed',
+  // RSS: 'rss',
   // PRODUCT_CATALOG: 'product_catalog',
 };

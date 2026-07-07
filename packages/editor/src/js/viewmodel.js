@@ -111,21 +111,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.content = content;
   viewModel.blockDefs = blockDefs;
 
-  // Used by the content-feed modal to insert brand new blocks (beyond the
-  // first item, which fills the block it was opened from in place instead —
-  // see ContentFeedModalComponent) without knowing anything about Knockout
-  // observables. Clones the exact block instance passed in — same source
-  // duplicateBlock below uses — and blanks `id`, since an inserted clone
-  // would otherwise share its id with the block it was copied from (see the
-  // personalized-blocks-list component for another place this same rule
-  // already applies).
-  viewModel.cloneBlockInstance = function (blockObservable) {
-    if (!blockObservable) return null;
-    var instance = ko.toJS(blockObservable);
-    if (typeof instance.id !== 'undefined') instance.id = '';
-    return instance;
-  };
-
   viewModel.notifier = toastr;
 
   // Does token substitution in i18next style
@@ -340,22 +325,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.toggleTranslateBlockModal = ko.observable(null);
 
   // block-wysiwyg.tmpl.html
-  viewModel.openContentFeedModal = function (blockData, parent, index) {
-    const unwrappedBlock = recursivelyUnwrapObservable(blockData);
-    const blockIndex = ko.utils.unwrapObservable(index);
-
-    viewModel.toggleContentFeedModal(true, {
-      block: unwrappedBlock,
-      blockObservable: blockData, // Keep reference to observable for updates
-      parent: parent,
-      index: blockIndex,
-    });
-  };
-
-  // toggleContentFeedModal will be set by the Vue component
-  viewModel.toggleContentFeedModal = ko.observable(null);
-
-  // block-wysiwyg.tmpl.html
   viewModel.moveBlock = function (index, parent, up) {
     var idx = ko.utils.unwrapObservable(index);
     var parentBlocks = ko.utils.unwrapObservable(parent.blocks);
@@ -452,10 +421,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     var added = viewModel.content().mainBlocks().blocks()[pos]();
     viewModel.selectBlock(added, true);
 
-    // blockInformation only exists on blocks that came from the personalized-
-    // blocks library — a plain template block (or a clone of one, as the
-    // content-feed panel inserts) has no such field.
-    if (typeof added.blockInformation === 'function' && added.blockInformation()) {
+    if (added.blockInformation()) {
       const blockToAdd = recursivelyUnwrapObservable(added);
       viewModel.mainPersonalizedBlocks([...viewModel.mainPersonalizedBlocks(), blockToAdd]);
     }

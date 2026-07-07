@@ -44,16 +44,10 @@ const IntegrationSchema = Schema(
       alias: 'group',
       required: [true, 'Group is required'],
     },
-    // Encrypted credentials - API key or secret key.
-    // Not required for data feed providers (e.g. public RSS URLs need no key).
+    // Encrypted credentials - API key or secret key
     apiKey: {
       type: String,
-      required: [
-        function () {
-          return this.type !== IntegrationTypes.DATA_FEED;
-        },
-        'API key is required',
-      ],
+      required: [true, 'API key is required'],
     },
     // API host for the provider (e.g., Metabase site URL)
     apiHost: {

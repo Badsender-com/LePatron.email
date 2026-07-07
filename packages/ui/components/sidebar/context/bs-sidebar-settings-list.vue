@@ -245,12 +245,6 @@ export default {
             label: this.$t('trackingConfig.sidebarLabel'),
             icon: 'mdi-link-variant',
             route: `${this.settingsBasePath}/tracking`,
-          },
-          {
-            id: 'feed-mappings',
-            label: this.$t('feedMappings.title'),
-            icon: 'mdi-rss',
-            route: `${this.settingsBasePath}/feed-mappings`,
           }
         );
       }

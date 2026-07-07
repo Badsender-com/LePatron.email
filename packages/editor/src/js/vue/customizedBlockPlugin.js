@@ -8,9 +8,6 @@ const {
 const {
   TranslateBlockModalComponent,
 } = require('./components/translate-block-modal/translate-block-modal');
-const {
-  ContentFeedModalComponent,
-} = require('./components/content-feed-modal/content-feed-modal');
 
 module.exports = {
   viewModel(vm, ko) {},
@@ -21,7 +18,6 @@ module.exports = {
         SaveBlockModalComponent,
         DeleteBlockModalComponent,
         TranslateBlockModalComponent,
-        ContentFeedModalComponent,
       },
       data: () => ({
         viewModel: vm,
@@ -31,7 +27,6 @@ module.exports = {
           <save-block-modal :vm="viewModel"></save-block-modal>
           <delete-block-modal :vm="viewModel"></delete-block-modal>
           <translate-block-modal :vm="viewModel"></translate-block-modal>
-          <content-feed-modal :vm="viewModel"></content-feed-modal>
         </div>
       `,
     });

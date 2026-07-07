@@ -16,7 +16,6 @@ import {
   BarChart3,
   Bot,
   Languages,
-  Rss,
 } from 'lucide-vue';
 
 // Icon mapping from Lucide icon names to components
@@ -24,7 +23,6 @@ const CATEGORY_ICON_MAP = {
   'bar-chart-3': BarChart3,
   bot: Bot,
   languages: Languages,
-  rss: Rss,
   puzzle: Puzzle,
 };
 

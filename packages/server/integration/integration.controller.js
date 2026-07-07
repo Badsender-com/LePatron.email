@@ -1,19 +1,13 @@
 'use strict';
 
 const asyncHandler = require('express-async-handler');
-const createError = require('http-errors');
 const pick = require('lodash').pick;
 const integrationService = require('./integration.service');
 const groupService = require('../group/group.service');
 const IntegrationTypes = require('../constant/integration-type.js');
 const IntegrationProviders = require('../constant/integration-provider.js');
 const ProviderFactory = require('../integration-providers/provider-factory.js');
-const { ProviderError } = require('../integration-providers/provider-error.js');
-const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
-
-const MAX_FEED_ITEMS_LIMIT = 50;
-const DEFAULT_FEED_ITEMS_LIMIT = 10;
 
 const CREATE_FIELDS = [
   'name',
@@ -70,7 +64,6 @@ module.exports = {
   listProviders: asyncHandler(listProviders),
   getModels: asyncHandler(getModels),
   getDashboardCount: asyncHandler(getDashboardCount),
-  getFeedItems: asyncHandler(getFeedItems),
   // exported for testing
   toIntegrationDto,
 };
@@ -248,50 +241,6 @@ async function validateCredentials(req, res) {
   });
 
   res.json({ valid: isValid });
-}
-
-/**
- * @api {get} /integrations/:integrationId/items Fetch normalized items from a data feed integration
- * @apiPermission user
- * @apiName GetFeedItems
- * @apiGroup Integrations
- *
- * @apiParam {String} integrationId Integration ID
- * @apiQuery {Number} [limit] Max number of items to return (default 10, capped at 50)
- *
- * @apiSuccess {Object[]} items Normalized feed items ({ title, link, description, image, pubDate })
- */
-async function getFeedItems(req, res) {
-  const { user, params, query } = req;
-  const { integrationId } = params;
-
-  const integration = await integrationService.checkIfUserIsAuthorizedToAccessIntegration(
-    {
-      user,
-      integrationId,
-    }
-  );
-
-  const requestedLimit = parseInt(query.limit, 10);
-  const limit = Number.isNaN(requestedLimit)
-    ? DEFAULT_FEED_ITEMS_LIMIT
-    : Math.min(Math.max(requestedLimit, 1), MAX_FEED_ITEMS_LIMIT);
-
-  const provider = ProviderFactory.createProvider(integration);
-
-  let items;
-  try {
-    items = await provider.fetchItems({ limit });
-  } catch (error) {
-    logger.error('Failed to fetch feed items:', error.message);
-    const status = error instanceof ProviderError ? error.httpStatus : 502;
-    throw createError(
-      status,
-      ERROR_CODES.FEED_ITEMS_FETCH_FAILED + ': ' + error.message
-    );
-  }
-
-  res.json({ items });
 }
 
 /**
