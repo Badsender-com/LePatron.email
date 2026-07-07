@@ -29,10 +29,10 @@ async function create({
   ctaDefaultLabel,
 }) {
   await assertIntegrationInGroup({ integrationId, user });
-  await assertTemplateInGroup({ templateId, user });
+  const template = await assertTemplateInGroup({ templateId, user });
 
   return FeedMappings.create({
-    _company: user.group.id,
+    _company: template._company,
     _integration: integrationId,
     _template: templateId,
     blockName,
@@ -159,4 +159,5 @@ async function assertTemplateInGroup({ templateId, user }) {
   ) {
     throw new Conflict(ERROR_CODES.FEED_MAPPING_INVALID_TEMPLATE);
   }
+  return template;
 }
