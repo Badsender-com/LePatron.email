@@ -182,6 +182,11 @@ module.exports = {
   'personalized-blocks-empty-search': 'No results found for your search.',
   'personalized-blocks-search-placeholder': 'Search...',
 
+  // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
+  'Content feed available for this block':
+    'Content feed available for this block',
+  'Import from feed': 'Import from feed',
+
   // ContentFeedModal translations
   'content-feed-modal-title': 'Import from feed',
   'content-feed-loading': 'Loading feed items...',

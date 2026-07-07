@@ -189,6 +189,11 @@ module.exports = {
     'Aucun résultat trouvé pour votre recherche.',
   'personalized-blocks-search-placeholder': 'Rechercher...',
 
+  // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
+  'Content feed available for this block':
+    'Flux de contenu disponible pour ce bloc',
+  'Import from feed': 'Importer depuis le flux',
+
   // ContentFeedModal translations
   'content-feed-modal-title': 'Importer un flux',
   'content-feed-loading': 'Chargement des éléments du flux...',
