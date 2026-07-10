@@ -15,6 +15,8 @@ const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages, Galleries } = require('../common/models.common.js');
 const imageService = require('./image.service');
+const mailingService = require('../mailing/mailing.service.js');
+const ERROR_CODES = require('../constant/error-codes.js');
 const logger = require('../utils/logger.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
@@ -500,14 +502,23 @@ async function createFromUrl(req, res) {
     throw new createError.BadRequest('url is required');
   }
 
+  // Authorize the target gallery before doing anything else. `mongoId` is a
+  // mailing id (the content-feed modal always passes currentMailing().id):
+  // findOneForUser validates the ObjectId format — so a crafted value can't
+  // reach the filename builder in image.service — and enforces group
+  // ownership, so a user can't write into another group's gallery. Throws
+  // NotFound on both invalid and cross-tenant ids.
+  await mailingService.findOneForUser(mongoId, req.user);
+
   let uploadedFile;
   try {
     uploadedFile = await imageService.createFromUrl(mongoId, imageUrl);
   } catch (error) {
+    // Log the real cause server-side, but return a generic message: the
+    // upstream fetch error would otherwise leak internal reachability info
+    // (SSRF oracle) — connection refused vs 404 vs timeout on a probed host.
     logger.error('Failed to download image from url', imageUrl, error.message);
-    throw new createError.BadGateway(
-      `Failed to download image: ${error.message}`
-    );
+    throw new createError.BadGateway(ERROR_CODES.IMAGE_DOWNLOAD_FAILED);
   }
 
   res.json({ files: [uploadedFile] });
