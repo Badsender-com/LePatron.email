@@ -47,16 +47,26 @@ const FeedMappingSchema = Schema(
     // One entry per column: a single-column block (the common case) has
     // exactly one; a multi-column block (e.g. a 3-across article block) has
     // one per column, so selecting N feed items fills N columns of the same
-    // block instance instead of inserting N separate blocks. Each column is
-    // a free-form { [blockFieldPath]: feedPropertyName } map — no block
-    // field is mandatory, and the same feed property (e.g. "link") can back
-    // more than one block field (e.g. both an image link and a CTA link).
+    // block instance instead of inserting N separate blocks.
+    //
+    // Each column is an array of { blockField, feedProperty } pairs — NOT an
+    // object keyed by block field path. Block field paths (e.g.
+    // "imageOptions.src") contain dots, and MongoDB forbids dots in document
+    // KEYS, so keying an object by them fails at BSON serialization. Storing
+    // them as pair VALUES sidesteps that entirely. The service converts
+    // to/from the object shape the API and consumers use (toStorage/toApi).
+    // No block field is mandatory, and the same feed property (e.g. "link")
+    // can back more than one block field.
     fieldMapping: {
       type: [Schema.Types.Mixed],
       required: [true, 'Field mapping is required'],
       validate: {
         validator: (columns) =>
-          Array.isArray(columns) && columns.length >= 1 && columns.length <= 4,
+          Array.isArray(columns) &&
+          columns.length >= 1 &&
+          columns.length <= 4 &&
+          // Every column must be a pair array (post-conversion shape).
+          columns.every((column) => Array.isArray(column)),
         message: 'fieldMapping must have between 1 and 4 columns',
       },
     },

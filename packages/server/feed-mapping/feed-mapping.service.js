@@ -18,7 +18,52 @@ module.exports = {
   findById,
   findAllByGroup,
   findActiveByTemplate,
+  // exported for testing
+  toStorageFieldMapping,
+  toApiFieldMapping,
 };
+
+// Block field paths (the keys clients map from, e.g. "imageOptions.src")
+// contain dots, which MongoDB forbids in document keys. So we never store the
+// mapping as an object keyed by field path — we store each column as an array
+// of { blockField, feedProperty } pairs (dots live in values, which are fine),
+// and convert back to the convenient object shape on the way out so the API
+// contract and both consumers (admin form, editor modal) stay object-based.
+
+// object-per-column  ->  array-of-pairs-per-column  (for storage)
+function toStorageFieldMapping(columns) {
+  if (!Array.isArray(columns)) return columns;
+  return columns.map((column) => {
+    // Already in storage (array) shape — leave as-is (idempotent).
+    if (Array.isArray(column)) return column;
+    if (!column || typeof column !== 'object') return [];
+    return Object.keys(column).map((blockField) => ({
+      blockField,
+      feedProperty: column[blockField],
+    }));
+  });
+}
+
+// array-of-pairs-per-column  ->  object-per-column  (for API / consumers)
+function toApiFieldMapping(columns) {
+  if (!Array.isArray(columns)) return columns;
+  return columns.map((column) => {
+    // Already object shape (legacy/defensive) — pass through.
+    if (!Array.isArray(column)) return column || {};
+    return column.reduce((acc, pair) => {
+      if (pair && pair.blockField) acc[pair.blockField] = pair.feedProperty;
+      return acc;
+    }, {});
+  });
+}
+
+// Return a plain feed-mapping object with fieldMapping converted back to the
+// object shape the API exposes. Accepts a Mongoose doc or plain object.
+function toApiDto(feedMapping) {
+  if (!feedMapping) return feedMapping;
+  const obj = feedMapping.toObject ? feedMapping.toObject() : feedMapping;
+  return { ...obj, fieldMapping: toApiFieldMapping(obj.fieldMapping) };
+}
 
 async function create({
   user,
@@ -31,14 +76,16 @@ async function create({
   await assertIntegrationInGroup({ integrationId, user });
   const template = await assertTemplateInGroup({ templateId, user });
 
-  return FeedMappings.create({
+  const created = await FeedMappings.create({
     _company: template._company,
     _integration: integrationId,
     _template: templateId,
     blockName,
-    fieldMapping,
+    fieldMapping: toStorageFieldMapping(fieldMapping),
     ctaDefaultLabel,
   });
+
+  return toApiDto(created);
 }
 
 async function update({ user, feedMappingId, fields }) {
@@ -63,13 +110,13 @@ async function update({ user, feedMappingId, fields }) {
   }
   if (blockName !== undefined) feedMapping.blockName = blockName;
   if (nextFieldMapping !== undefined)
-    feedMapping.fieldMapping = nextFieldMapping;
+    feedMapping.fieldMapping = toStorageFieldMapping(nextFieldMapping);
   if (ctaDefaultLabel !== undefined)
     feedMapping.ctaDefaultLabel = ctaDefaultLabel;
   if (isActive !== undefined) feedMapping.isActive = isActive;
 
   await feedMapping.save();
-  return feedMapping;
+  return toApiDto(feedMapping);
 }
 
 async function deleteFeedMapping({ user, feedMappingId }) {
@@ -113,11 +160,11 @@ async function findByIdForUser({ feedMappingId, user }) {
 }
 
 async function findAllByGroup({ groupId }) {
-  return FeedMappings.find({ _company: mongoose.Types.ObjectId(groupId) }).sort(
-    {
-      createdAt: -1,
-    }
-  );
+  const items = await FeedMappings.find({
+    _company: mongoose.Types.ObjectId(groupId),
+  }).sort({ createdAt: -1 });
+
+  return items.map(toApiDto);
 }
 
 // Used by the editor's content-feed panel: only active mappings, scoped to
@@ -128,7 +175,8 @@ async function findActiveByTemplate({ templateId, user }) {
     isActive: true,
   });
 
-  return FeedMappings.find(filter);
+  const items = await FeedMappings.find(filter);
+  return items.map(toApiDto);
 }
 
 async function assertIntegrationInGroup({ integrationId, user }) {
