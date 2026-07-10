@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { getFeedMappingsForTemplate } = require('../vue/utils/apis');
 
 // Fetches the list of block names that have an active feed mapping for the
 // current mailing's template, and exposes it on the viewModel so plain
@@ -33,7 +34,7 @@ module.exports = () => {
         return;
       }
       axios
-        .get(`/api/feed-mappings?templateId=${templateId}`)
+        .get(getFeedMappingsForTemplate(templateId))
         .then((response) => {
           const names = (response.data.items || []).map((m) => m.blockName);
           viewModel.feedMappableBlockNames(

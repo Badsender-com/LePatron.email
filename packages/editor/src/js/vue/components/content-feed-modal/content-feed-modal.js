@@ -11,6 +11,33 @@ const {
 } = require('../../../utils/block-content-extractor');
 
 const MANUAL_ITEMS_LIMIT = 20;
+// Cap concurrent image downloads: each one triggers a server-side fetch of an
+// external URL, so we parallelize to cut perceived latency (a 4-column block
+// went 4× sequential round-trips) without flooding the backend with outbound
+// requests for a large selection.
+const IMAGE_DOWNLOAD_CONCURRENCY = 3;
+
+// Run `task(item, index)` over every item with at most `limit` in flight at
+// once, preserving result order. Rejections are not expected — `task` is the
+// image resolver, which resolves to '' on failure — but a throw would reject
+// the whole batch, so callers keep tasks self-contained.
+async function mapWithConcurrency(items, limit, task) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await task(items[index], index);
+    }
+  }
+  const workers = [];
+  for (let i = 0; i < Math.min(limit, items.length); i += 1) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+  return results;
+}
 
 // `columnMapping` is now a free-form { [blockFieldPath]: feedPropertyName }
 // map — any number of block fields, each pointing at one of the feed's real
@@ -200,6 +227,10 @@ const ContentFeedModalComponent = Vue.component('ContentFeedModal', {
     // item's image is downloaded and pushed into this mailing's gallery
     // first, exactly like a manual upload. On failure, the block still gets
     // filled in (title/paragraph/CTA), just without an image.
+    // Downloads one external image into this mailing's gallery. Resolves to
+    // the stored URL, or '' on failure/absence — never throws, so a single
+    // bad image URL can't abort a batch. Failures are surfaced once by the
+    // caller, not here, to avoid a toast storm when several fail at once.
     async resolveImageSrc(imageUrl) {
       if (!imageUrl) return '';
       const mailingId = this.vm.currentMailing()?.id;
@@ -212,9 +243,31 @@ const ContentFeedModalComponent = Vue.component('ContentFeedModal', {
         );
         return response.data?.files?.[0]?.url || '';
       } catch (error) {
-        this.vm.notifier.error(this.vm.t('content-feed-image-error'));
         return '';
       }
+    },
+    // Pre-download every image the selected items need, in parallel (bounded),
+    // BEFORE the block-injection loops — which stay sequential so clone order
+    // is deterministic. Returns an array of resolved srcs aligned with `items`
+    // ('' where no image is needed or the download failed). A single summary
+    // toast is shown if any requested image failed to download.
+    async resolveImageSources(items, needsImageAt) {
+      const anyNeedsImage = items.some((_, i) => needsImageAt(i));
+      if (!anyNeedsImage) return items.map(() => '');
+
+      const sources = await mapWithConcurrency(
+        items,
+        IMAGE_DOWNLOAD_CONCURRENCY,
+        (item, i) => (needsImageAt(i) ? this.resolveImageSrc(item.image) : '')
+      );
+
+      const someFailed = items.some(
+        (item, i) => needsImageAt(i) && item.image && !sources[i]
+      );
+      if (someFailed) {
+        this.vm.notifier.error(this.vm.t('content-feed-image-error'));
+      }
+      return sources;
     },
     async handleSubmit() {
       const mapping = this.activeMapping;
@@ -223,29 +276,31 @@ const ContentFeedModalComponent = Vue.component('ContentFeedModal', {
 
       this.isSubmitting = true;
 
-      if (mapping.fieldMapping.length > 1) {
-        await this.fillBlockColumns(items, mapping);
-      } else {
-        await this.insertSeparateBlocks(items, mapping);
+      try {
+        if (mapping.fieldMapping.length > 1) {
+          await this.fillBlockColumns(items, mapping);
+        } else {
+          await this.insertSeparateBlocks(items, mapping);
+        }
+        this.vm.notifier.success(this.vm.t('content-feed-success'));
+        this.closeModal();
+      } finally {
+        this.isSubmitting = false;
       }
-
-      this.vm.notifier.success(this.vm.t('content-feed-success'));
-      this.isSubmitting = false;
-      this.closeModal();
     },
     // Multi-column block: one instance (the block this modal was opened
     // from), each selected item fills a different column of it in place —
     // no new blocks are added.
     async fillBlockColumns(items, mapping) {
+      const imageSources = await this.resolveImageSources(items, (i) =>
+        columnNeedsImage(mapping.fieldMapping[i])
+      );
+
       for (let i = 0; i < items.length; i += 1) {
-        const columnMapping = mapping.fieldMapping[i];
-        const imageSrc = columnNeedsImage(columnMapping)
-          ? await this.resolveImageSrc(items[i].image)
-          : '';
         const values = buildFieldValues(
-          columnMapping,
+          mapping.fieldMapping[i],
           items[i],
-          imageSrc,
+          imageSources[i],
           mapping.ctaDefaultLabel
         );
         injectBlockTranslations(this.blockObservable, values);
@@ -258,14 +313,16 @@ const ContentFeedModalComponent = Vue.component('ContentFeedModal', {
       const columnMapping = mapping.fieldMapping[0];
       const needsImage = columnNeedsImage(columnMapping);
 
+      const imageSources = await this.resolveImageSources(
+        items,
+        () => needsImage
+      );
+
       for (let i = 0; i < items.length; i += 1) {
-        const imageSrc = needsImage
-          ? await this.resolveImageSrc(items[i].image)
-          : '';
         const values = buildFieldValues(
           columnMapping,
           items[i],
-          imageSrc,
+          imageSources[i],
           mapping.ctaDefaultLabel
         );
 
