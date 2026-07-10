@@ -27,6 +27,12 @@ export const providerCategories = {
     icon: 'languages',
     order: 3,
   },
+  contentFeed: {
+    key: 'contentFeed',
+    labelKey: 'integrations.categories.contentFeed',
+    icon: 'rss',
+    order: 4,
+  },
 };
 
 /**
@@ -83,6 +89,17 @@ export const providerConfigs = {
     apiHostHintKey: '',
     showProductId: false,
   },
+
+  // Content feed providers
+  rss: {
+    category: 'contentFeed',
+    type: 'data_feed',
+    apiKeyRequired: false,
+    apiHostPlaceholder: 'https://example.com/feed.xml',
+    apiHostHintKey: 'integrations.rss.apiHostHint',
+    apiHostRequired: true,
+    showProductId: false,
+  },
 };
 
 /**
@@ -106,6 +123,8 @@ export const providerLabels = {
   infomaniak: 'Infomaniak AI Tools',
   // AI - Translation
   deepl: 'DeepL',
+  // Content feed
+  rss: 'RSS',
 };
 
 /**

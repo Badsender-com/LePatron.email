@@ -28,6 +28,7 @@ router.get(
 router.all('/gallery*', GUARD_USER);
 router.get('/gallery/:mongoId', images.list);
 router.post('/gallery/:mongoId', images.create);
+router.post('/gallery/:mongoId/from-url', images.createFromUrl);
 router.get('/:imageName', images.read);
 router.delete('/:imageName', GUARD_USER, images.destroy);
 
