@@ -25,11 +25,12 @@ router.get('/:templateId/markup', GUARD_USER, templates.readMarkup);
 // Block introspection: used by the content-feed mapping config UI to let a
 // group admin pick a block + its field paths without hand-typing Mosaico
 // internal property names.
-router.get('/:templateId/blocks', GUARD_GROUP_ADMIN, templates.listBlocks);
+// Every block + its field paths in a single payload: the mapping UI parses the
+// (expensive-to-parse) markup once per template rather than once per block.
 router.get(
-  '/:templateId/blocks/:blockName/fields',
+  '/:templateId/blocks-with-fields',
   GUARD_GROUP_ADMIN,
-  templates.listBlockFields
+  templates.listBlocksWithFields
 );
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);
 router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
