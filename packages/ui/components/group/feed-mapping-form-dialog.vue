@@ -53,6 +53,11 @@ export default {
     isEdit() {
       return !!this.feedMapping;
     },
+    // A block was picked but has no mappable field: a feed item has nowhere to
+    // land, so saving would produce an empty mapping that imports nothing.
+    hasNoFieldsForBlock() {
+      return !!this.form.blockName && !this.blockFields.length;
+    },
     title() {
       return this.isEdit
         ? this.$t('feedMappings.edit')
@@ -243,7 +248,7 @@ export default {
 
     onSubmit() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (this.$v.$invalid || this.hasNoFieldsForBlock) return;
 
       const { columnCount: _columnCount, ...payload } = this.form;
       this.$emit('save', payload);
@@ -298,7 +303,17 @@ export default {
           @blur="$v.form.blockName.$touch()"
         />
 
-        <template v-if="form.blockName">
+        <v-alert
+          v-if="hasNoFieldsForBlock"
+          type="warning"
+          text
+          dense
+          class="feed-mapping-no-fields"
+        >
+          {{ $t('feedMappings.noBlockFields') }}
+        </v-alert>
+
+        <template v-if="form.blockName && blockFields.length">
           <bs-select
             :value="form.columnCount"
             :items="columnCountOptions"
@@ -371,7 +386,13 @@ export default {
       <v-btn text color="primary" :disabled="loading" @click="onCancel">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn color="accent" elevation="0" :loading="loading" @click="onSubmit">
+      <v-btn
+        color="accent"
+        elevation="0"
+        :loading="loading"
+        :disabled="hasNoFieldsForBlock"
+        @click="onSubmit"
+      >
         {{ $t('global.save') }}
       </v-btn>
     </div>
@@ -385,6 +406,10 @@ export default {
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem;
+}
+
+.feed-mapping-no-fields {
+  margin-top: 0.5rem;
 }
 
 .feed-mapping-column {

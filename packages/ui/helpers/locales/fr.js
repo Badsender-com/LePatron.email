@@ -751,6 +751,8 @@ export default {
     deleted: 'Mapping de flux supprimé avec succès',
     noFeedMappings: 'Aucun flux de contenu configuré',
     loadingBlocks: 'Chargement des blocs...',
+    noBlockFields:
+      'Aucun champ mappable n\'a été trouvé pour ce bloc. Les items du flux ne peuvent pas y être mappés — choisissez un autre bloc.',
     columnCount: 'Nombre de colonnes',
     columnCountHint:
       'Pour les blocs multi-colonnes (ex: bloc articles sur 3 colonnes) — un mapping de champs par colonne',
