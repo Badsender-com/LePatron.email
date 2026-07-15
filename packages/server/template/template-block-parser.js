@@ -1,7 +1,6 @@
 'use strict';
 
 const crypto = require('crypto');
-const cheerio = require('cheerio');
 
 const FIELD_ATTRIBUTES = ['data-ko-editable', 'data-ko-link'];
 
@@ -21,15 +20,45 @@ const KO_ATTR_BINDING_PATTERN = new RegExp(
   'g'
 );
 
-// Parsing a template's markup with cheerio is expensive — a single large
-// template measured at ~2s per cheerio.load(), and this app runs on small
-// (single-core) instances. The mapping-config UI hits these helpers
-// repeatedly (once for the block list, once per block for its fields, and
-// again every time the modal is re-opened), so without memoization a handful
-// of concurrent calls saturate the event loop and requests start timing out
-// (504) or never get served at all. We parse each distinct markup exactly
-// once and cache the fully-derived result (block names + every block's field
-// paths), keyed by a content hash so an edited template re-parses on its own.
+// HTML void elements: they never have children, so they must not be pushed
+// onto the block stack (there is no matching close tag to pop them).
+const VOID_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+]);
+
+// Elements whose text content is CDATA-like and may legitimately contain `<`
+// and `>` that are NOT markup (notably <style>, which in these templates holds
+// a huge `@supports -ko-blockdefs { ... }` block). We skip straight to the
+// matching close tag rather than tokenising their contents.
+const RAWTEXT_ELEMENTS = new Set(['script', 'style', 'textarea', 'title']);
+
+// Matches one HTML tag. The attribute part tolerates quoted values that may
+// themselves contain `>` (e.g. style="... a > b ..."). Not a general HTML
+// parser — just enough to walk element boundaries and read attributes without
+// ever materialising a DOM (cheerio.load on a 10 MB template costs ~1.7s and
+// ~500 MB RSS, which OOM-kills small instances; this scan is ~50x cheaper).
+const TAG_PATTERN = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:"[^"]*"|'[^']*'|[^>])*?)(\/?)>/g;
+
+// Matches one attribute (quoted or unquoted value, or valueless).
+const ATTR_PATTERN = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)(?:\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+
+// Parsing is expensive, and the mapping-config UI can request the same
+// template repeatedly (reopening the modal, several rows for one template),
+// so we memoize the fully-derived result keyed by a content hash — an edited
+// template re-parses on its own because its hash changes.
 const CACHE_MAX_ENTRIES = 50;
 // Map keeps insertion order, which we use for a trivial LRU eviction.
 const parseCache = new Map();
@@ -38,18 +67,50 @@ function hashMarkup(markup) {
   return crypto.createHash('sha1').update(markup).digest('hex');
 }
 
+function readAttributes(attrString) {
+  const attrs = {};
+  if (!attrString) return attrs;
+  ATTR_PATTERN.lastIndex = 0;
+  let match;
+  while ((match = ATTR_PATTERN.exec(attrString))) {
+    const name = match[1].toLowerCase();
+    // Value is whichever of the double-quoted / single-quoted / unquoted
+    // capture groups matched; valueless attributes get an empty string.
+    const value =
+      match[3] !== undefined
+        ? match[3]
+        : match[4] !== undefined
+        ? match[4]
+        : match[5] !== undefined
+        ? match[5]
+        : '';
+    attrs[name] = value;
+    // Guard against a zero-width match looping forever on odd input.
+    if (match.index === ATTR_PATTERN.lastIndex) ATTR_PATTERN.lastIndex += 1;
+  }
+  return attrs;
+}
+
 /**
  * Parse a template's markup once and derive, for every block it contains, the
  * distinct field paths bound inside it. Result shape:
  *   { blockNames: string[], fieldsByBlock: { [blockName]: string[] } }
- * The result is memoized by markup content hash — callers may invoke this on
- * the same markup many times per request cycle without re-paying the parse.
+ *
+ * Implemented as a single streaming pass over HTML tags (no DOM): a stack
+ * tracks the nearest enclosing `data-ko-block` so each field is attributed to
+ * the same block cheerio's `.closest('[data-ko-block]')` would have picked.
+ * Fields from every rendered variant are collected (e.g. per-market fragments
+ * toggled by `data-ko-display`) since those paths are exactly the properties
+ * Mosaico instantiates on the block object regardless of which is visible.
+ *
+ * The result is memoized by markup content hash.
  * @param {string} markup
  * @returns {{ blockNames: string[], fieldsByBlock: Object<string, string[]> }}
  */
 function parseTemplateBlocks(markup) {
-  const empty = { blockNames: [], fieldsByBlock: {} };
-  if (!markup || typeof markup !== 'string') return empty;
+  if (!markup || typeof markup !== 'string') {
+    return { blockNames: [], fieldsByBlock: {} };
+  }
 
   const cacheKey = hashMarkup(markup);
   const cached = parseCache.get(cacheKey);
@@ -59,8 +120,6 @@ function parseTemplateBlocks(markup) {
     parseCache.set(cacheKey, cached);
     return cached;
   }
-
-  const $ = cheerio.load(markup);
 
   const blockNames = [];
   const seenBlocks = new Set();
@@ -75,31 +134,13 @@ function parseTemplateBlocks(markup) {
     return fieldSetsByBlock.get(blockName);
   };
 
-  // Register every block up front so blocks with no mappable field still
-  // appear in the list (matches the previous listBlockNames behaviour).
-  $('[data-ko-block]').each((_, element) => {
-    const blockName = $(element).attr('data-ko-block');
-    if (blockName) fieldSetFor(blockName);
-  });
-
-  // Single pass over the elements that can carry a field binding, attributing
-  // each to its enclosing block via one upward `.closest()` walk per element.
-  const bindingSelector = FIELD_ATTRIBUTES.map((attr) => `[${attr}]`)
-    .concat('[style]')
-    .join(',');
-
-  $(bindingSelector).each((_, element) => {
-    const $el = $(element);
-    const blockName = $el.closest('[data-ko-block]').attr('data-ko-block');
-    if (!blockName) return;
+  const collectFields = (blockName, attrs) => {
     const fields = fieldSetFor(blockName);
-
     FIELD_ATTRIBUTES.forEach((attribute) => {
-      const fieldPath = $el.attr(attribute);
+      const fieldPath = attrs[attribute];
       if (fieldPath) fields.add(fieldPath);
     });
-
-    const style = $el.attr('style');
+    const style = attrs.style;
     if (style) {
       KO_ATTR_BINDING_PATTERN.lastIndex = 0;
       let match;
@@ -107,7 +148,52 @@ function parseTemplateBlocks(markup) {
         fields.add(match[1]);
       }
     }
-  });
+  };
+
+  // Stack of the enclosing block for each currently-open element. The top is
+  // the nearest `data-ko-block` ancestor (null when outside any block).
+  const blockStack = [];
+  const currentBlock = () =>
+    blockStack.length ? blockStack[blockStack.length - 1] : null;
+
+  TAG_PATTERN.lastIndex = 0;
+  let tag;
+  while ((tag = TAG_PATTERN.exec(markup))) {
+    const isClosing = tag[1] === '/';
+    const tagName = tag[2].toLowerCase();
+    const attrString = tag[3] || '';
+    const selfClosed = tag[4] === '/';
+
+    if (isClosing) {
+      if (blockStack.length) blockStack.pop();
+      continue;
+    }
+
+    const attrs = readAttributes(attrString);
+    const ownBlock = attrs['data-ko-block'];
+    if (ownBlock) fieldSetFor(ownBlock);
+
+    // The block this element belongs to: itself if it declares data-ko-block,
+    // otherwise its nearest ancestor block.
+    const elementBlock = ownBlock || currentBlock();
+    if (elementBlock) collectFields(elementBlock, attrs);
+
+    // Void / self-closed elements have no matching close tag, so they don't
+    // affect the stack. Rawtext elements (style/script/...) can contain markup-
+    // like characters in their body; skip to their close tag.
+    if (VOID_ELEMENTS.has(tagName) || selfClosed) continue;
+
+    if (RAWTEXT_ELEMENTS.has(tagName)) {
+      const closePattern = new RegExp(`</${tagName}\\s*>`, 'ig');
+      closePattern.lastIndex = TAG_PATTERN.lastIndex;
+      const close = closePattern.exec(markup);
+      // Resume tokenising right after the close tag (or at EOF if unterminated).
+      TAG_PATTERN.lastIndex = close ? closePattern.lastIndex : markup.length;
+      continue;
+    }
+
+    blockStack.push(elementBlock);
+  }
 
   const fieldsByBlock = {};
   fieldSetsByBlock.forEach((set, blockName) => {

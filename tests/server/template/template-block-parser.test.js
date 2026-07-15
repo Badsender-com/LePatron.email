@@ -154,5 +154,61 @@ describe('Template Block Parser', () => {
       expect(parseTemplateBlocks(markupA).blockNames).toEqual(['a']);
       expect(parseTemplateBlocks(markupB).blockNames).toEqual(['b']);
     });
+
+    // The DOM-free scanner must not mistake markup-like characters inside a
+    // <style>/<script> body for real tags — templates embed a large
+    // `@supports -ko-blockdefs { ... }` block there, full of `{`, `:` and `>`.
+    it('should ignore field-like tokens inside <style> and <script> bodies', () => {
+      const markup = `
+        <html>
+          <head><style>@supports -ko-blockdefs { foo { a > b; } }</style></head>
+          <body>
+            <div data-ko-block="realBlock">
+              <span data-ko-editable="real.title"></span>
+            </div>
+          </body>
+        </html>
+      `;
+      const { blockNames, fieldsByBlock } = parseTemplateBlocks(markup);
+      expect(blockNames).toEqual(['realBlock']);
+      expect(fieldsByBlock.realBlock).toEqual(['real.title']);
+    });
+
+    it('should attribute a field to its nearest enclosing block when blocks nest', () => {
+      const markup = `
+        <div data-ko-block="outerBlock">
+          <span data-ko-editable="outer.title"></span>
+          <div data-ko-block="innerBlock">
+            <span data-ko-editable="inner.title"></span>
+          </div>
+          <span data-ko-editable="outer.footer"></span>
+        </div>
+      `;
+      const { fieldsByBlock } = parseTemplateBlocks(markup);
+      expect(fieldsByBlock.outerBlock.sort()).toEqual(
+        ['outer.title', 'outer.footer'].sort()
+      );
+      expect(fieldsByBlock.innerBlock).toEqual(['inner.title']);
+    });
+
+    it('should handle void/self-closed elements without corrupting block scope', () => {
+      const markup = `
+        <div data-ko-block="imgBlock">
+          <img data-ko-editable="img.src" style="-ko-attr-alt: @[(img.alt)]" />
+          <br>
+          <span data-ko-editable="img.caption"></span>
+        </div>
+        <div data-ko-block="afterBlock">
+          <span data-ko-editable="after.text"></span>
+        </div>
+      `;
+      const { fieldsByBlock } = parseTemplateBlocks(markup);
+      expect(fieldsByBlock.imgBlock.sort()).toEqual(
+        ['img.src', 'img.alt', 'img.caption'].sort()
+      );
+      // A stray <br> or a self-closed <img> must not leak imgBlock's scope into
+      // the sibling block.
+      expect(fieldsByBlock.afterBlock).toEqual(['after.text']);
+    });
   });
 });
