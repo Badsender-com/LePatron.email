@@ -47,6 +47,15 @@ export default {
       fieldsByBlock: {},
       blockFields: [],
       loadingBlocks: false,
+      // The template whose blocks are currently loaded/loading. Used to drop
+      // stale/duplicate fetches: this dialog stays mounted inside a v-dialog, so
+      // clicking several rows (or reopening the modal) re-fires the watcher and
+      // would otherwise stack concurrent block requests — heavy on big
+      // templates and enough to overwhelm a small instance (503).
+      loadedTemplateId: null,
+      // The template of the in-flight fetch, so we can drop stale responses
+      // when the user switches template before the previous one resolves.
+      pendingTemplateId: null,
     };
   },
   computed: {
@@ -159,6 +168,7 @@ export default {
       this.blocks = [];
       this.fieldsByBlock = {};
       this.blockFields = [];
+      this.loadedTemplateId = null;
       this.$v.$reset();
     },
 
@@ -173,15 +183,29 @@ export default {
     // The server parses the (expensive-to-parse) markup a single time; picking
     // a block afterwards is a pure client-side lookup with no further request.
     async fetchBlocks(templateId) {
+      // Skip if this template's blocks are already loaded or currently loading —
+      // the watcher can re-fire for the same template (reopening the modal,
+      // re-selecting the same row) and we must not stack duplicate requests.
+      if (
+        templateId === this.loadedTemplateId ||
+        (this.loadingBlocks && templateId === this.pendingTemplateId)
+      ) {
+        return;
+      }
+      this.pendingTemplateId = templateId;
       this.loadingBlocks = true;
       try {
         const { blocks, fieldsByBlock } = await this.$axios.$get(
           apiRoutes.templatesItemBlocksWithFields({ templateId })
         );
+        // A newer template may have been requested while this was in flight —
+        // drop this now-stale response rather than clobbering the current one.
+        if (templateId !== this.pendingTemplateId) return;
         this.blocks = blocks || [];
         this.fieldsByBlock = fieldsByBlock || {};
+        this.loadedTemplateId = templateId;
       } finally {
-        this.loadingBlocks = false;
+        if (templateId === this.pendingTemplateId) this.loadingBlocks = false;
       }
     },
 
@@ -191,6 +215,7 @@ export default {
       this.blocks = [];
       this.fieldsByBlock = {};
       this.blockFields = [];
+      this.loadedTemplateId = null;
       if (templateId) this.fetchBlocks(templateId);
     },
 
