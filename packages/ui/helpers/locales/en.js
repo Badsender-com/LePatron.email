@@ -952,6 +952,7 @@ export default {
     deleted: 'Feed mapping deleted successfully',
     noFeedMappings: 'No content feed configured',
     loadingBlocks: 'Loading blocks...',
+    noBlockFields: 'No mappable field was found for this block. Feed items cannot be mapped onto it — pick another block.',
     columnCount: 'Number of columns',
     columnCountHint: 'For multi-column blocks (e.g. a 3-across article block) — one field mapping per column',
     column: 'Column {n}',

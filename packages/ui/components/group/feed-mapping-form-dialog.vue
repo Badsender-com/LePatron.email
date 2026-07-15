@@ -40,14 +40,23 @@ export default {
       form: emptyForm(),
       templates: [],
       blocks: [],
+      // Every block's field paths, keyed by block name, fetched in one shot
+      // with the block list. Selecting a block then reads from here instead of
+      // firing a per-block request — parsing the template markup is expensive
+      // server-side, so we parse it once per template rather than once per block.
+      fieldsByBlock: {},
       blockFields: [],
       loadingBlocks: false,
-      loadingFields: false,
     };
   },
   computed: {
     isEdit() {
       return !!this.feedMapping;
+    },
+    // A block was picked but has no mappable field: a feed item has nowhere to
+    // land, so saving would produce an empty mapping that imports nothing.
+    hasNoFieldsForBlock() {
+      return !!this.form.blockName && !this.blockFields.length;
     },
     title() {
       return this.isEdit
@@ -101,8 +110,9 @@ export default {
     // (below) own the "user changed the dropdown" side effects instead.
     feedMapping: {
       immediate: true,
-      handler(val) {
+      async handler(val) {
         this.blocks = [];
+        this.fieldsByBlock = {};
         this.blockFields = [];
         if (val) {
           const columns = Array.isArray(val.fieldMapping)
@@ -119,9 +129,13 @@ export default {
             ctaDefaultLabel: val.ctaDefaultLabel || '',
             isActive: val.isActive !== false,
           };
-          if (val._template) this.fetchBlocks(val._template);
-          if (val._template && val.blockName) {
-            this.fetchBlockFields(val._template, val.blockName);
+          if (val._template) {
+            await this.fetchBlocks(val._template);
+            // Field paths for the block being edited now come straight from the
+            // batch payload — no extra request.
+            if (val.blockName) {
+              this.blockFields = this.fieldsByBlock[val.blockName] || [];
+            }
           }
         } else {
           this.resetForm();
@@ -143,6 +157,7 @@ export default {
     resetForm() {
       this.form = emptyForm();
       this.blocks = [];
+      this.fieldsByBlock = {};
       this.blockFields = [];
       this.$v.$reset();
     },
@@ -154,27 +169,19 @@ export default {
       this.templates = items || [];
     },
 
+    // One request per template: the block list AND every block's field paths.
+    // The server parses the (expensive-to-parse) markup a single time; picking
+    // a block afterwards is a pure client-side lookup with no further request.
     async fetchBlocks(templateId) {
       this.loadingBlocks = true;
       try {
-        const { items } = await this.$axios.$get(
-          apiRoutes.templatesItemBlocks({ templateId })
+        const { blocks, fieldsByBlock } = await this.$axios.$get(
+          apiRoutes.templatesItemBlocksWithFields({ templateId })
         );
-        this.blocks = items || [];
+        this.blocks = blocks || [];
+        this.fieldsByBlock = fieldsByBlock || {};
       } finally {
         this.loadingBlocks = false;
-      }
-    },
-
-    async fetchBlockFields(templateId, blockName) {
-      this.loadingFields = true;
-      try {
-        const { items } = await this.$axios.$get(
-          apiRoutes.templatesItemBlockFields({ templateId, blockName })
-        );
-        this.blockFields = items || [];
-      } finally {
-        this.loadingFields = false;
       }
     },
 
@@ -182,18 +189,19 @@ export default {
       this.form.templateId = templateId;
       this.form.blockName = '';
       this.blocks = [];
+      this.fieldsByBlock = {};
       this.blockFields = [];
       if (templateId) this.fetchBlocks(templateId);
     },
 
     onBlockChange(blockName) {
       this.form.blockName = blockName;
-      this.blockFields = [];
       // Field paths are specific to the previous block — a mapping carried
       // over from it wouldn't make sense for a different one.
       this.form.columnCount = 1;
       this.form.fieldMapping = [{}];
-      if (blockName) this.fetchBlockFields(this.form.templateId, blockName);
+      // Already fetched with the block list — no request needed.
+      this.blockFields = blockName ? this.fieldsByBlock[blockName] || [] : [];
     },
 
     // Multi-column blocks (e.g. a 3-across article block) need one field
@@ -240,7 +248,7 @@ export default {
 
     onSubmit() {
       this.$v.$touch();
-      if (this.$v.$invalid) return;
+      if (this.$v.$invalid || this.hasNoFieldsForBlock) return;
 
       const { columnCount: _columnCount, ...payload } = this.form;
       this.$emit('save', payload);
@@ -295,7 +303,17 @@ export default {
           @blur="$v.form.blockName.$touch()"
         />
 
-        <template v-if="form.blockName">
+        <v-alert
+          v-if="hasNoFieldsForBlock"
+          type="warning"
+          text
+          dense
+          class="feed-mapping-no-fields"
+        >
+          {{ $t('feedMappings.noBlockFields') }}
+        </v-alert>
+
+        <template v-if="form.blockName && blockFields.length">
           <bs-select
             :value="form.columnCount"
             :items="columnCountOptions"
@@ -368,7 +386,13 @@ export default {
       <v-btn text color="primary" :disabled="loading" @click="onCancel">
         {{ $t('global.cancel') }}
       </v-btn>
-      <v-btn color="accent" elevation="0" :loading="loading" @click="onSubmit">
+      <v-btn
+        color="accent"
+        elevation="0"
+        :loading="loading"
+        :disabled="hasNoFieldsForBlock"
+        @click="onSubmit"
+      >
         {{ $t('global.save') }}
       </v-btn>
     </div>
@@ -382,6 +406,10 @@ export default {
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 1rem;
+}
+
+.feed-mapping-no-fields {
+  margin-top: 0.5rem;
 }
 
 .feed-mapping-column {

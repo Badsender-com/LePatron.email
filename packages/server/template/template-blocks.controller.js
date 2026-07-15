@@ -5,44 +5,32 @@ const asyncHandler = require('express-async-handler');
 
 const { Templates } = require('../common/models.common.js');
 const modelsUtils = require('../utils/model.js');
-const {
-  listBlockNames,
-  getBlockFieldPaths,
-} = require('./template-block-parser.js');
+const { parseTemplateBlocks } = require('./template-block-parser.js');
 
 module.exports = {
-  listBlocks: asyncHandler(listBlocks),
-  listBlockFields: asyncHandler(listBlockFields),
+  listBlocksWithFields: asyncHandler(listBlocksWithFields),
 };
 
 /**
- * @api {get} /templates/:templateId/blocks list block names found in a template's markup
+ * @api {get} /templates/:templateId/blocks-with-fields list every block and its field paths
  * @apiPermission groupAdmin
- * @apiName ListTemplateBlocks
+ * @apiName ListTemplateBlocksWithFields
  * @apiGroup Templates
  *
- * @apiParam {String} templateId
- * @apiSuccess {String[]} items Block names (e.g. "articlesBlock")
- */
-async function listBlocks(req, res) {
-  const template = await findTemplateForUser(req);
-  res.json({ items: listBlockNames(template.markup) });
-}
-
-/**
- * @api {get} /templates/:templateId/blocks/:blockName/fields list field paths for a block
- * @apiPermission groupAdmin
- * @apiName ListTemplateBlockFields
- * @apiGroup Templates
+ * @apiDescription Parses the template markup once and returns every block name
+ * together with its field paths, so the feed-mapping UI can populate the whole
+ * block/field picker with a single request instead of one call per block. The
+ * template markup is expensive to parse (cheerio), so collapsing N+1 requests
+ * into one materially reduces CPU load on small instances.
  *
  * @apiParam {String} templateId
- * @apiParam {String} blockName
- * @apiSuccess {String[]} items Block property paths (e.g. "imageOptions.src")
+ * @apiSuccess {String[]} blocks Block names (e.g. "articlesBlock")
+ * @apiSuccess {Object} fieldsByBlock Map of block name to its field paths
  */
-async function listBlockFields(req, res) {
-  const { blockName } = req.params;
+async function listBlocksWithFields(req, res) {
   const template = await findTemplateForUser(req);
-  res.json({ items: getBlockFieldPaths(template.markup, blockName) });
+  const { blockNames, fieldsByBlock } = parseTemplateBlocks(template.markup);
+  res.json({ blocks: blockNames, fieldsByBlock });
 }
 
 async function findTemplateForUser(req) {
