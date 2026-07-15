@@ -46,6 +46,12 @@
             <div title="Click or drag to add this block to the template" class="handle"
               data-bind="attr: { title: $root.t('Click or drag to add this block to the template') }, tooltips: {}">
             </div>
+            <!-- ko if: $root.isFeedMappableBlock($data) -->
+            <div class="block-feed-badge" title="Content feed available for this block"
+              data-bind="attr: { title: $root.t('Content feed available for this block') }, tooltips: {}">
+              <span class="lucide lucide-rss"></span>
+            </div>
+            <!-- /ko -->
             <img
               data-bind="attr: { alt: $root.t('__name__', { name: ko.utils.unwrapObservable(type) }), src: $root.templatePath('edres/'+ko.utils.unwrapObservable(type)+'.png') }"
               alt="__name__" />
@@ -99,7 +105,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
   <div id="toolcontents" data-bind="scrollable: true">

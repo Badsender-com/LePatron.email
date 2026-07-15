@@ -67,6 +67,9 @@ export function templatesItemMarkup(routeParams = {}) {
 export function templatesItemEvents(routeParams = {}) {
   return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
 }
+export function templatesItemBlocksWithFields(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/blocks-with-fields`;
+}
 
 /// ///
 // ACCOUNT
@@ -333,6 +336,22 @@ export function integrationModels(integrationId) {
 
 export function integrationDashboardCount(integrationId) {
   return `/integrations/${integrationId}/dashboard-count`;
+}
+
+/// ///
+// FEED MAPPINGS
+/// ///
+
+export function feedMappings(groupId) {
+  return `/feed-mappings/groups/${groupId}`;
+}
+
+export function feedMappingsCreate() {
+  return '/feed-mappings';
+}
+
+export function feedMappingsItem(feedMappingId) {
+  return `/feed-mappings/${feedMappingId}`;
 }
 
 /// ///
