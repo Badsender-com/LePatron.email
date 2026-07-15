@@ -3,6 +3,7 @@
 const {
   listBlockNames,
   getBlockFieldPaths,
+  parseTemplateBlocks,
 } = require('../../../packages/server/template/template-block-parser');
 
 describe('Template Block Parser', () => {
@@ -25,7 +26,8 @@ describe('Template Block Parser', () => {
 
   describe('getBlockFieldPaths', () => {
     it('should return an empty array when markup or blockName is missing', () => {
-      const markup = '<div data-ko-block="articlesBlock"><span data-ko-editable="titleText"></span></div>';
+      const markup =
+        '<div data-ko-block="articlesBlock"><span data-ko-editable="titleText"></span></div>';
       expect(getBlockFieldPaths(null, 'articlesBlock')).toEqual([]);
       expect(getBlockFieldPaths(markup, '')).toEqual([]);
     });
@@ -90,6 +92,67 @@ describe('Template Block Parser', () => {
       expect(getBlockFieldPaths(markup, 'columns_v2Block')).toEqual([
         'columns1_Options.url',
       ]);
+    });
+
+    it('should return an empty array for an unknown block name', () => {
+      const markup =
+        '<div data-ko-block="articlesBlock"><span data-ko-editable="titleText"></span></div>';
+      expect(getBlockFieldPaths(markup, 'nope')).toEqual([]);
+    });
+  });
+
+  describe('parseTemplateBlocks', () => {
+    it('should return empty structures when markup is missing', () => {
+      expect(parseTemplateBlocks(null)).toEqual({
+        blockNames: [],
+        fieldsByBlock: {},
+      });
+      expect(parseTemplateBlocks('')).toEqual({
+        blockNames: [],
+        fieldsByBlock: {},
+      });
+    });
+
+    it('should return every block and its fields in a single parse', () => {
+      const markup = `
+        <div data-ko-block="articlesBlock">
+          <span data-ko-editable="titleText"></span>
+          <a data-ko-link="button.url"></a>
+          <img style="-ko-attr-alt: @[(image.alt)]" data-ko-editable="image.src" />
+        </div>
+        <div data-ko-block="footerBlock">
+          <span data-ko-editable="footerText"></span>
+        </div>
+        <div data-ko-block="emptyBlock"></div>
+      `;
+      const { blockNames, fieldsByBlock } = parseTemplateBlocks(markup);
+      expect(blockNames.sort()).toEqual(
+        ['articlesBlock', 'footerBlock', 'emptyBlock'].sort()
+      );
+      expect(fieldsByBlock.articlesBlock.sort()).toEqual(
+        ['titleText', 'button.url', 'image.alt', 'image.src'].sort()
+      );
+      expect(fieldsByBlock.footerBlock).toEqual(['footerText']);
+      // A block with no mappable field is still listed, with an empty field set.
+      expect(fieldsByBlock.emptyBlock).toEqual([]);
+    });
+
+    it('should return a cached (identical) result for the same markup', () => {
+      const markup =
+        '<div data-ko-block="articlesBlock"><span data-ko-editable="titleText"></span></div>';
+      const first = parseTemplateBlocks(markup);
+      const second = parseTemplateBlocks(markup);
+      // Memoized: same object reference is returned on repeated calls.
+      expect(second).toBe(first);
+    });
+
+    it('should re-parse when the markup content changes', () => {
+      const markupA =
+        '<div data-ko-block="a"><span data-ko-editable="x"></span></div>';
+      const markupB =
+        '<div data-ko-block="b"><span data-ko-editable="y"></span></div>';
+      expect(parseTemplateBlocks(markupA).blockNames).toEqual(['a']);
+      expect(parseTemplateBlocks(markupB).blockNames).toEqual(['b']);
     });
   });
 });

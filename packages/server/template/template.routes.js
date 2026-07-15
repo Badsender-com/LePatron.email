@@ -26,6 +26,15 @@ router.get('/:templateId/markup', GUARD_USER, templates.readMarkup);
 // group admin pick a block + its field paths without hand-typing Mosaico
 // internal property names.
 router.get('/:templateId/blocks', GUARD_GROUP_ADMIN, templates.listBlocks);
+// Single-request variant: every block + its field paths in one payload, so the
+// mapping UI avoids an N+1 storm of per-block /fields calls (each of which
+// re-parses the whole markup). Registered before the more specific /blocks/...
+// route below purely for readability — path-to-regexp disambiguates them.
+router.get(
+  '/:templateId/blocks-with-fields',
+  GUARD_GROUP_ADMIN,
+  templates.listBlocksWithFields
+);
 router.get(
   '/:templateId/blocks/:blockName/fields',
   GUARD_GROUP_ADMIN,

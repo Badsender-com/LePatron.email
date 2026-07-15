@@ -8,11 +8,13 @@ const modelsUtils = require('../utils/model.js');
 const {
   listBlockNames,
   getBlockFieldPaths,
+  parseTemplateBlocks,
 } = require('./template-block-parser.js');
 
 module.exports = {
   listBlocks: asyncHandler(listBlocks),
   listBlockFields: asyncHandler(listBlockFields),
+  listBlocksWithFields: asyncHandler(listBlocksWithFields),
 };
 
 /**
@@ -43,6 +45,28 @@ async function listBlockFields(req, res) {
   const { blockName } = req.params;
   const template = await findTemplateForUser(req);
   res.json({ items: getBlockFieldPaths(template.markup, blockName) });
+}
+
+/**
+ * @api {get} /templates/:templateId/blocks-with-fields list every block and its field paths
+ * @apiPermission groupAdmin
+ * @apiName ListTemplateBlocksWithFields
+ * @apiGroup Templates
+ *
+ * @apiDescription Parses the template markup once and returns every block name
+ * together with its field paths, so the feed-mapping UI can populate the whole
+ * block/field picker with a single request instead of one call per block. The
+ * template markup is expensive to parse (cheerio), so collapsing N+1 requests
+ * into one materially reduces CPU load on small instances.
+ *
+ * @apiParam {String} templateId
+ * @apiSuccess {String[]} blocks Block names (e.g. "articlesBlock")
+ * @apiSuccess {Object} fieldsByBlock Map of block name to its field paths
+ */
+async function listBlocksWithFields(req, res) {
+  const template = await findTemplateForUser(req);
+  const { blockNames, fieldsByBlock } = parseTemplateBlocks(template.markup);
+  res.json({ blocks: blockNames, fieldsByBlock });
 }
 
 async function findTemplateForUser(req) {

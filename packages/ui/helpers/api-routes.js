@@ -73,6 +73,9 @@ export function templatesItemBlocks(routeParams = {}) {
 export function templatesItemBlockFields(routeParams = {}) {
   return `/templates/${routeParams.templateId}/blocks/${routeParams.blockName}/fields`;
 }
+export function templatesItemBlocksWithFields(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/blocks-with-fields`;
+}
 
 /// ///
 // ACCOUNT
