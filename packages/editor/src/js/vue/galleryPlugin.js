@@ -2,9 +2,15 @@
 
 const Vue = require('vue/dist/vue.common');
 const ko = require('knockout');
+const { RecycleScroller } = require('vue-virtual-scroller');
 const { galleryBridge } = require('../ext/badsender-gallery-bridge');
 const Thumb = require('./components/gallery/thumb');
 const createGalleryDraggable = require('./directives/gallery-draggable');
+
+// Fixed cell size for the virtualised grid. The gallery sidebar has a fixed
+// usable width (~364px), so 3 columns of 118px fit with margin to spare.
+const GRID_COLUMNS = 3;
+const CELL_SIZE = 118;
 
 module.exports = {
   viewModel(vm, ko) {
@@ -15,7 +21,7 @@ module.exports = {
   },
   init(vm) {
     const GalleryPanel = {
-      components: { Thumb },
+      components: { Thumb, RecycleScroller },
       directives: { galleryDraggable: createGalleryDraggable(vm) },
       props: {
         // 'mailing' or 'template' — one instance per gallery pane
@@ -23,6 +29,8 @@ module.exports = {
       },
       data: () => ({
         images: [],
+        cellSize: CELL_SIZE,
+        gridColumns: GRID_COLUMNS,
       }),
       computed: {
         count() {
@@ -65,16 +73,24 @@ module.exports = {
       template: `
         <div class="gallery-vue-panel" data-gallery-vue="ready">
           <div class="gallery-vue-panel__count">{{ countLabel }}</div>
-          <div class="gallery-vue-grid">
-            <thumb
-              v-for="file in images"
-              :key="file.name"
-              v-gallery-draggable="file"
-              :file="file"
-              @select="onSelect"
-              @remove="onRemove"
-            />
-          </div>
+          <recycle-scroller
+            class="gallery-vue-scroller"
+            :items="images"
+            :item-size="cellSize"
+            :grid-items="gridColumns"
+            :item-secondary-size="cellSize"
+            key-field="name"
+            v-slot="{ item }"
+          >
+            <div class="gallery-vue-cell">
+              <thumb
+                v-gallery-draggable="item"
+                :file="item"
+                @select="onSelect"
+                @remove="onRemove"
+              />
+            </div>
+          </recycle-scroller>
         </div>
       `,
     };
