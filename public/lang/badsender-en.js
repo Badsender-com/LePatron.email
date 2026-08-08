@@ -182,6 +182,26 @@ module.exports = {
   'personalized-blocks-empty-search': 'No results found for your search.',
   'personalized-blocks-search-placeholder': 'Search...',
 
+  // Content feed toolbar/toolbox tooltips (raw-string keys, same convention as "Comment block")
+  'Content feed available for this block':
+    'Content feed available for this block',
+  'Import from feed': 'Import from feed',
+
+  // ContentFeedModal translations
+  'content-feed-modal-title': 'Import from feed',
+  'content-feed-loading': 'Loading feed items...',
+  'content-feed-empty': 'No items found in this feed.',
+  'content-feed-fetch-error': 'An error occurred while fetching feed items.',
+  'content-feed-image-error':
+    'Could not download the image — the item was added without one.',
+  'content-feed-order-label': 'Order (drag to reorder)',
+  'content-feed-cancel': 'Cancel',
+  'content-feed-add-selection': 'Add selection',
+  'content-feed-adding': 'Adding...',
+  'content-feed-success': 'Content imported from the feed.',
+  'content-feed-max-selectable':
+    'This block has __count__ column(s) — pick up to __count__ item(s).',
+
   // DeleteBlockModal translations
   'title-delete-block': 'Delete block',
   'confirm-delete-block': 'Are you sure you want to delete the custom block:',

@@ -27,7 +27,11 @@ export default {
   <v-dialog v-model="show" max-width="500">
     <v-card>
       <v-card-title class="d-flex align-center">
-        <lucide-check-circle2 :size="20" class="mr-2" style="color: var(--v-primary-base)" />
+        <lucide-check-circle2
+          :size="20"
+          class="mr-2"
+          style="color: var(--v-primary-base)"
+        />
         {{ $t('translation.successTitle') }}
       </v-card-title>
 

@@ -15,6 +15,7 @@ const {
 } = require('../constant/model.names');
 const logger = require('../utils/logger.js');
 const AIFeatureTypes = require('../constant/ai-feature-type');
+const { resolveTrackingConfig } = require('../utils/resolve-tracking-config');
 
 const { Schema, Types } = mongoose;
 const { ObjectId } = Schema.Types;
@@ -157,6 +158,17 @@ MailingSchema.index({ tags: -1 });
 MailingSchema.index({ _company: 1, tags: 1 });
 MailingSchema.index({ _company: 1, _parentFolder: 1, updatedAt: -1 });
 MailingSchema.index({ _company: 1, _workspace: 1, updatedAt: -1 });
+// Admin group-wide listing (GET /groups/:groupId/mailings → group.controller
+// readMailings) sorts ALL of a company's mailings by one column. Without a
+// composite { _company, <sortField> } index, Mongo scans a global single-field
+// index and filters _company doc-by-doc, which times out on large companies.
+// One index per sortable column of the admin table (admin-table.vue); a single
+// direction suffices since Mongo can read an index in reverse.
+MailingSchema.index({ _company: 1, updatedAt: -1 });
+MailingSchema.index({ _company: 1, createdAt: -1 });
+MailingSchema.index({ _company: 1, name: 1 });
+MailingSchema.index({ _company: 1, wireframe: 1 });
+MailingSchema.index({ _company: 1, author: 1 });
 MailingSchema.index({ _user: 1 });
 MailingSchema.index({ _parentFolder: 1 });
 
@@ -201,15 +213,12 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   }
   if (filtersJSON) {
     if (filtersJSON.name) {
-      // Escape regex metacharacters to avoid ReDoS and accidental pattern
-      // injection (a stray "(" or "[" in the name would break the query),
-      // and anchor with ^ so the { name: 1 } index can be used instead of a
-      // full collection scan.
+      // Escape regex metacharacters to avoid ReDoS and accidental pattern injection.
       const escapedName = filtersJSON.name.replace(
         /[.*+?^${}()|[\]\\]/g,
         '\\$&'
       );
-      restQuery.name = { $regex: `^${escapedName}`, $options: 'i' };
+      restQuery.name = { $regex: escapedName, $options: 'i' };
     }
 
     if (
@@ -268,8 +277,19 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
   const { docs, ...restPaginationProperties } = result;
 
   const ids = docs.map((doc) => doc._id);
+
+  // Derive the preview-badge flag without transferring the (potentially large)
+  // rendered-email HTML for every row. A find() projection can't compute a
+  // boolean from `previewHtml` because mongoose-paginate-v2 uses .find(), whose
+  // projection rejects aggregation expressions ($ne/$cond/$ifNull) — so we fetch
+  // only the _ids that have it. This _id-only query is cheap.
+  //
+  // "Has a preview" means non-empty, not merely present: the download/FTP flow
+  // sends `previewHtml` verbatim as the email body (mailing.service.js), so an
+  // empty string is nothing to download. Matches the `!!previewHtml` semantics
+  // used by the other listing path (findWithHasPreview).
   const mailingsWithHtmlPreview = await this.find(
-    { _id: { $in: ids }, previewHtml: { $exists: true } },
+    { _id: { $in: ids }, previewHtml: { $exists: true, $nin: [null, ''] } },
     { _id: 1 }
   ).lean();
   const mailingsWithHtmlPreviewSet = new Set(
@@ -302,7 +322,11 @@ MailingSchema.statics.findForApiWithPagination = async function findForApiWithPa
     }, {});
   }
 
-  const finalDocs = docs.map((doc) => ({
+  // Strip previewHtml defensively: the projection above already omits it, but
+  // destructuring it out here keeps the "never serve the blob in the listing"
+  // invariant even if a future change reprojects it. `hasHtmlPreview` carries
+  // the only bit the client needs.
+  const finalDocs = docs.map(({ previewHtml: _previewHtml, ...doc }) => ({
     ...doc,
     hasHtmlPreview: mailingsWithHtmlPreviewSet.has(doc._id.toString()),
     unresolvedCommentsCount: commentCountsMap[doc._id.toString()] || 0,
@@ -428,7 +452,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
     })
     .populate({
       path: '_wireframe',
-      select: { _id: 1, name: 1, _company: 1, assets: 1 },
+      select: { _id: 1, name: 1, _company: 1, assets: 1, trackingConfig: 1 },
     });
   if (!mailing) return mailing;
 
@@ -499,6 +523,7 @@ MailingSchema.statics.findOneForMosaico = async function findOneForMosaico(
         ftpImages: group.downloadMailingWithFtpImages,
         ftpButtonLabel: group.ftpButtonLabel,
       },
+      trackingConfig: resolveTrackingConfig(group, mailing._wireframe),
       fileuploadConfig: {
         url: {
           mailing: `/api/images/gallery/${mailingId}`,

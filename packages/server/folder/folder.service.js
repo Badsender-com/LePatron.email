@@ -18,6 +18,7 @@ const workspaceService = require('../workspace/workspace.service.js');
 
 module.exports = {
   listFolders,
+  listChildren,
   hasAccess,
   create,
   rename,
@@ -29,6 +30,50 @@ module.exports = {
 
 async function listFolders() {
   return Folders.find({}).populate('_parentFolder');
+}
+
+// Direct children of a folder, for lazy-loading the tree on expand. Each child
+// is flagged with `hasChildren` (computed in a single aggregation) so the tree
+// shows an expand arrow for any child that has its own children — without
+// assuming a fixed nesting depth.
+async function listChildren(folderId, user) {
+  // Listing children is a pure READ. Use read-access semantics (same-group
+  // check) — the same gate `getFolder` applies — rather than the stricter
+  // `hasAccess` (workspace membership). A read-only / non-assigned user can
+  // already see the workspace and its top-level folders in the tree, so they
+  // must be able to expand a folder to reveal its subfolders too. Using the
+  // membership gate here threw a 404 for those users on any folder with
+  // subfolders, which left the tree's lazy-load loader spinning forever.
+  const workspace = await getWorkspaceForFolder(folderId);
+  if (!workspace) {
+    throw new NotFound(ERROR_CODES.WORKSPACE_NOT_FOUND);
+  }
+  workspaceService.doesUserHaveReadAccess(user, workspace);
+
+  const children = await Folders.find({
+    _parentFolder: mongoose.Types.ObjectId(folderId),
+  })
+    .sort({ name: 1 })
+    .lean();
+
+  if (children.length === 0) {
+    return [];
+  }
+
+  const childIds = children.map((folder) => folder._id);
+  const parentsWithChildren = await Folders.aggregate([
+    { $match: { _parentFolder: { $in: childIds } } },
+    { $group: { _id: '$_parentFolder' } },
+  ]);
+  const parentsWithChildrenSet = new Set(
+    parentsWithChildren.map((doc) => doc._id.toString())
+  );
+
+  return children.map((folder) => ({
+    ...folder,
+    id: folder._id.toString(),
+    hasChildren: parentsWithChildrenSet.has(folder._id.toString()),
+  }));
 }
 
 async function hasAccess(folderId, user) {

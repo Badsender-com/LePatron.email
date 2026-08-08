@@ -42,7 +42,10 @@ export default {
             :key="index"
           >
             <v-list-item-icon class="mr-2">
-              <lucide-check-circle2 :size="16" style="color: var(--v-success-base)" />
+              <lucide-check-circle2
+                :size="16"
+                style="color: var(--v-success-base)"
+              />
             </v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title class="text-body-2">

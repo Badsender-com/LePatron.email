@@ -142,11 +142,11 @@ $body-font-family: 'Inter', sans-serif;
 
 ### Current State (Legacy)
 
-| Stack       | Font Family  | Status    | Target  |
-| ----------- | ------------ | --------- | ------- |
-| **Vue App** | Montserrat   | Current   | Inter   |
-| **Editor**  | Trebuchet MS | Legacy    | Inter   |
-| **Website** | Work Sans    | Current   | Inter   |
+| Stack       | Font Family  | Status  | Target |
+| ----------- | ------------ | ------- | ------ |
+| **Vue App** | Montserrat   | Current | Inter  |
+| **Editor**  | Trebuchet MS | Legacy  | Inter  |
+| **Website** | Work Sans    | Current | Inter  |
 
 Vue App (`packages/ui/assets/global-styles/variables.scss`):
 
@@ -296,10 +296,10 @@ Icons are fixed to maintain consistent UX across all instances.
 
 ### Target State
 
-| System     | Location | Usage                                      |
-| ---------- | -------- | ------------------------------------------ |
-| **Lucide** | Vue App  | `<lucide-icon name="settings" />`          |
-| **Lucide** | Editor   | `<lucide-icon name="settings" />` or SVG   |
+| System     | Location | Usage                                    |
+| ---------- | -------- | ---------------------------------------- |
+| **Lucide** | Vue App  | `<lucide-icon name="settings" />`        |
+| **Lucide** | Editor   | `<lucide-icon name="settings" />` or SVG |
 
 **Why Lucide?**
 
@@ -327,8 +327,8 @@ yarn add lucide-vue-next  # For Vue 3
 import { Settings, User, Mail, Trash2, Edit, Plus, X } from 'lucide-vue';
 
 export default {
-  components: { Settings, User, Mail, Trash2, Edit, Plus, X }
-}
+  components: { Settings, User, Mail, Trash2, Edit, Plus, X },
+};
 </script>
 
 <template>
@@ -339,38 +339,38 @@ export default {
 
 **Common icons mapping (MDI → Lucide)**:
 
-| Purpose        | MDI (legacy)           | Lucide (target)    |
-| -------------- | ---------------------- | ------------------ |
-| Settings       | `mdi-cog`              | `Settings`         |
-| User           | `mdi-account`          | `User`             |
-| Email          | `mdi-email`            | `Mail`             |
-| Delete         | `mdi-delete`           | `Trash2`           |
-| Edit           | `mdi-pencil`           | `Edit` or `Pencil` |
-| Add            | `mdi-plus`             | `Plus`             |
-| Close          | `mdi-close`            | `X`                |
-| Help           | `mdi-help-circle`      | `HelpCircle`       |
-| Logout         | `mdi-logout`           | `LogOut`           |
-| Dashboard      | `mdi-view-dashboard`   | `LayoutDashboard`  |
-| Chart          | `mdi-chart-line`       | `LineChart`        |
-| Palette        | `mdi-palette`          | `Palette`          |
-| Arrow Up       | `mdi-arrow-up`         | `ArrowUp`          |
-| Arrow Down     | `mdi-arrow-down`       | `ArrowDown`        |
-| Check          | `mdi-check`            | `Check`            |
-| Alert          | `mdi-alert`            | `AlertTriangle`    |
-| Info           | `mdi-information`      | `Info`             |
-| Search         | `mdi-magnify`          | `Search`           |
-| Menu           | `mdi-menu`             | `Menu`             |
-| More (dots)    | `mdi-dots-vertical`    | `MoreVertical`     |
-| External link  | `mdi-open-in-new`      | `ExternalLink`     |
-| Save           | `mdi-content-save`     | `Save`             |
-| Folder         | `mdi-folder`           | `Folder`           |
-| File           | `mdi-file`             | `File`             |
-| Copy           | `mdi-content-copy`     | `Copy`             |
-| Download       | `mdi-download`         | `Download`         |
-| Upload         | `mdi-upload`           | `Upload`           |
-| Refresh        | `mdi-refresh`          | `RefreshCw`        |
-| Eye            | `mdi-eye`              | `Eye`              |
-| Eye Off        | `mdi-eye-off`          | `EyeOff`           |
+| Purpose       | MDI (legacy)         | Lucide (target)    |
+| ------------- | -------------------- | ------------------ |
+| Settings      | `mdi-cog`            | `Settings`         |
+| User          | `mdi-account`        | `User`             |
+| Email         | `mdi-email`          | `Mail`             |
+| Delete        | `mdi-delete`         | `Trash2`           |
+| Edit          | `mdi-pencil`         | `Edit` or `Pencil` |
+| Add           | `mdi-plus`           | `Plus`             |
+| Close         | `mdi-close`          | `X`                |
+| Help          | `mdi-help-circle`    | `HelpCircle`       |
+| Logout        | `mdi-logout`         | `LogOut`           |
+| Dashboard     | `mdi-view-dashboard` | `LayoutDashboard`  |
+| Chart         | `mdi-chart-line`     | `LineChart`        |
+| Palette       | `mdi-palette`        | `Palette`          |
+| Arrow Up      | `mdi-arrow-up`       | `ArrowUp`          |
+| Arrow Down    | `mdi-arrow-down`     | `ArrowDown`        |
+| Check         | `mdi-check`          | `Check`            |
+| Alert         | `mdi-alert`          | `AlertTriangle`    |
+| Info          | `mdi-information`    | `Info`             |
+| Search        | `mdi-magnify`        | `Search`           |
+| Menu          | `mdi-menu`           | `Menu`             |
+| More (dots)   | `mdi-dots-vertical`  | `MoreVertical`     |
+| External link | `mdi-open-in-new`    | `ExternalLink`     |
+| Save          | `mdi-content-save`   | `Save`             |
+| Folder        | `mdi-folder`         | `Folder`           |
+| File          | `mdi-file`           | `File`             |
+| Copy          | `mdi-content-copy`   | `Copy`             |
+| Download      | `mdi-download`       | `Download`         |
+| Upload        | `mdi-upload`         | `Upload`           |
+| Refresh       | `mdi-refresh`        | `RefreshCw`        |
+| Eye           | `mdi-eye`            | `Eye`              |
+| Eye Off       | `mdi-eye-off`        | `EyeOff`           |
 
 ### Current State (Legacy)
 
@@ -385,16 +385,16 @@ export default {
 
 ## Summary: White-Label Tokens
 
-| Token           | Customizable | Default           | Target    |
-| --------------- | ------------ | ----------------- | --------- |
-| Primary Color   | Yes          | `#093040`         | —         |
-| Secondary Color | Yes          | `#265090`         | —         |
-| Accent Color    | Yes          | `#00ACDC`         | —         |
-| Logo            | Yes          | LePatron SVG      | —         |
-| Favicon         | Yes          | LePatron favicon  | —         |
-| Font Family     | No           | Montserrat        | Inter     |
-| Semantic Colors | No           | Fixed             | —         |
-| Spacing         | No           | Vuetify 4px scale | —         |
-| Border Radius   | No           | 5px default       | —         |
-| Shadows         | No           | Vuetify elevation | —         |
-| Icons           | No           | MDI / FA          | Lucide    |
+| Token           | Customizable | Default           | Target |
+| --------------- | ------------ | ----------------- | ------ |
+| Primary Color   | Yes          | `#093040`         | —      |
+| Secondary Color | Yes          | `#265090`         | —      |
+| Accent Color    | Yes          | `#00ACDC`         | —      |
+| Logo            | Yes          | LePatron SVG      | —      |
+| Favicon         | Yes          | LePatron favicon  | —      |
+| Font Family     | No           | Montserrat        | Inter  |
+| Semantic Colors | No           | Fixed             | —      |
+| Spacing         | No           | Vuetify 4px scale | —      |
+| Border Radius   | No           | 5px default       | —      |
+| Shadows         | No           | Vuetify elevation | —      |
+| Icons           | No           | MDI / FA          | Lucide |

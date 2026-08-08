@@ -33,6 +33,7 @@ const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.
 const AIPlaygroundScenarioSchema = require('../ai-playground/models/ai-playground-scenario.schema.js');
 const AIPlaygroundRunSchema = require('../ai-playground/models/ai-playground-run.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
+const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
 
 /// ///
 // EXPORTS
@@ -102,6 +103,10 @@ const TranslationJobs = mongoose.model(
   modelNames.TranslationJobModel,
   TranslationJobSchema
 );
+const FeedMappings = mongoose.model(
+  modelNames.FeedMappingModel,
+  FeedMappingSchema
+);
 
 module.exports = {
   mongoose,
@@ -133,4 +138,5 @@ module.exports = {
   AIPlaygroundScenarios,
   AIPlaygroundRuns,
   TranslationJobs,
+  FeedMappings,
 };

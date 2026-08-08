@@ -26,7 +26,12 @@ const {
   createCdnMarkdownNotice,
   createHtmlNotice,
   getUrlWithTrackingParams,
+  buildTrackingContext,
 } = require('../utils/download-zip-markdown');
+const {
+  resolveTrackingConfig,
+  validateRequiredTrackingParams,
+} = require('../utils/resolve-tracking-config');
 
 const IMAGES_FOLDER = 'images';
 
@@ -77,6 +82,7 @@ module.exports = {
   getMailNameAndCompanyByMailingIdAndUser,
   handleTrackingData,
   updatePreviewHtml,
+  resolveMailingTrackingContext,
 };
 
 async function listMailingForWorkspaceOrFolder({
@@ -208,20 +214,17 @@ async function findTags(query) {
 
   if (!companyId) return [];
 
-  // The `Tag` collection holds tags created via the "New label" flow, but
-  // historical mailings carry labels directly in `mailing.tags` without a
-  // corresponding `Tag` row. Returning the union avoids hiding tags that
-  // are actually applied on emails.
-  const [registeredTags, usedTags] = await Promise.all([
-    Mailings.findTags({ _company: companyId }),
-    Mailings.distinct('tags', { _company: companyId }),
-  ]);
-
-  const merged = Array.from(new Set([...registeredTags, ...usedTags])).filter(
-    Boolean
-  );
-  merged.sort((a, b) => a.localeCompare(b));
-  return merged;
+  // The `Tag` collection is the single source of truth for the filter dropdown.
+  // It is read through an index ({ companyId, label }), so this stays fast even
+  // for companies with many mailings.
+  //
+  // Previously this also merged a live `Mailings.distinct('tags', { _company })`
+  // to surface labels of historical mailings that had no `Tag` row (the feature
+  // shipped without a data migration). That distinct scans every mailing of the
+  // company and timed out in production. A one-off backfill migration populates
+  // the missing `Tag` rows from `mailing.tags`, and MUST be run once before/at
+  // the deploy of this change so historical labels stay in the dropdown.
+  return Mailings.findTags({ _company: companyId });
 }
 
 async function findOne(mailingId) {
@@ -343,12 +346,24 @@ async function createMailing(mailing) {
   return Mailings.create(mailing);
 }
 
-// Process html to the final result state based on ftp
+// Process html to the final result state based on ftp.
+//
+// IMPORTANT — central hub for HTML pre-processing on the export path:
+//   - Brevo / Sendinblue → sendinBlueProvider.formatSendinBlueData
+//   - DSC                → dscProvider.formatDscData
+// Both providers call this function (and so does `downloadZip` below, used by
+// the ZIP download AND by actitoProvider.formatActitoData). As a result, the
+// tracking pipeline (resolveMailingTrackingContext + handleTrackingData with
+// the groupTrackingConfig) is automatically applied to those ESPs as well —
+// no per-provider call is needed. Adobe is the exception: it bypasses this
+// function and applies handleTrackingData directly because it has to upload
+// images into Adobe Campaign (see adobeProvider.sendAndProcessImageIntoAdobe).
 async function processHtmlWithFTPOption({
   mailingId,
   html,
   user,
   doesWaitForFtp,
+  freshTracking,
 }) {
   logger.log('Calling processHtmlWithFTPOption');
   const mailing = await this.getMailByMailingIdAndUser({ mailingId, user });
@@ -361,6 +376,7 @@ async function processHtmlWithFTPOption({
     cdnProtocol,
     cdnEndPoint,
     name,
+    group,
   } = await extractFTPparams({
     mailing,
     downloadOptions: {
@@ -375,9 +391,14 @@ async function processHtmlWithFTPOption({
     );
   }
 
+  const {
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  } = await resolveMailingTrackingContext(mailing, freshTracking, group);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
-    tracking: mailing?._doc?.data?.tracking,
+    tracking: trackingCtx,
+    groupTrackingConfig,
   });
 
   const {
@@ -417,6 +438,7 @@ async function downloadZip({
   archive,
   user,
   downloadOptions,
+  freshTracking,
 }) {
   if (!archive) {
     throw new InternalServerError(ERROR_CODES.ARCHIVE_IS_NULL);
@@ -432,16 +454,20 @@ async function downloadZip({
     cdnProtocol,
     cdnEndPoint,
     name,
+    group,
   } = await extractFTPparams({
     mailing,
     downloadOptions,
   });
 
-  console.log('download zip', name);
-
+  const {
+    tracking: trackingCtx,
+    groupTrackingConfig,
+  } = await resolveMailingTrackingContext(mailing, freshTracking, group);
   const { html: htmlWithTracking } = handleTrackingData({
     html,
-    tracking: mailing?._doc?.data?.tracking,
+    tracking: trackingCtx,
+    groupTrackingConfig,
   });
 
   const {
@@ -614,6 +640,7 @@ async function downloadMultipleZip({
       cdnProtocol,
       cdnEndPoint,
       name,
+      group,
     } = await extractFTPparams({
       mailing,
       parentContainer: MULTIPLE_DOWNLOAD_ZIP_NAME,
@@ -622,9 +649,14 @@ async function downloadMultipleZip({
       downloadOptions,
     });
 
+    const {
+      tracking: trackingCtx,
+      groupTrackingConfig,
+    } = await resolveMailingTrackingContext(mailing, undefined, group);
     const { html: htmlWithTracking } = handleTrackingData({
       html: mailing.previewHtml,
-      tracking: mailing?._doc?.data?.tracking,
+      tracking: trackingCtx,
+      groupTrackingConfig,
     });
 
     const {
@@ -702,8 +734,6 @@ async function extractFTPparams({
   parentContainer = null,
   overrideMailName = null,
 }) {
-  console.log('Calling extract ftp params');
-
   if (!mailing || !mailing?._wireframe?._company || !mailing.name)
     throw new NotFound(ERROR_CODES.MAILING_MISSING_SOURCE);
 
@@ -791,6 +821,8 @@ async function extractFTPparams({
     cdnProtocol,
     cdnEndPoint,
     name,
+    // Returned so the tracking resolver can reuse it instead of re-fetching.
+    group,
   };
 }
 
@@ -1006,13 +1038,84 @@ async function handleRelativeOrFtpImages({
   return { relativesImagesNames, archive, html };
 }
 
+// Resolve the tracking context for a mailing: fetch group + template, build
+// the merged config, and verify required params are filled. Throws 422 with
+// the missing keys when required params are missing.
+//
+// `freshTracking` (optional) — when the caller has a more recent tracking
+// state than what's persisted in mailing.data.tracking (typically the values
+// just typed in the builder, not yet saved), pass it here. Otherwise we fall
+// back to the persisted value. This avoids forcing users to "Save" before
+// every Download / ESP send when they've just filled a required field.
+// `prefetchedGroup` lets callers that already loaded the group (e.g.
+// extractFTPparams) avoid a redundant Groups.findById — it is only reused when
+// its id matches the mailing's resolved group, otherwise we fetch.
+async function resolveMailingTrackingContext(
+  mailing,
+  freshTracking,
+  prefetchedGroup = null
+) {
+  const persistedTracking =
+    mailing && mailing._doc && mailing._doc.data
+      ? mailing._doc.data.tracking
+      : undefined;
+  const tracking =
+    freshTracking !== undefined && freshTracking !== null
+      ? freshTracking
+      : persistedTracking;
+  const template = mailing && mailing._wireframe;
+  const groupId =
+    (template && template._company) || (mailing && mailing._company);
+  const prefetchedMatches =
+    prefetchedGroup &&
+    groupId &&
+    String(prefetchedGroup._id) === String(groupId);
+  let group;
+  if (prefetchedMatches) {
+    group = prefetchedGroup;
+  } else {
+    group = groupId ? await Groups.findById(groupId).lean() : null;
+  }
+  const groupTrackingConfig = resolveTrackingConfig(group, template);
+  const missingParams = validateRequiredTrackingParams(
+    tracking,
+    groupTrackingConfig
+  );
+  if (missingParams.length > 0) {
+    const err = new UnprocessableEntity(
+      ERROR_CODES.TRACKING_REQUIRED_PARAMS_MISSING
+    );
+    err.missingParams = missingParams;
+    throw err;
+  }
+  return { tracking, groupTrackingConfig };
+}
+
 // This will add tracking information in links
-function handleTrackingData({ html, tracking }) {
+function handleTrackingData({ html, tracking, groupTrackingConfig }) {
   const linksRegex = /(<a .*?) *(https?:[^"]+)(")/g;
+  // Build the config-derived context (managed-key map, restrictValues flag,
+  // per-key RegExp cache) ONCE per email instead of once per link.
+  const trackingContext = buildTrackingContext(groupTrackingConfig);
 
   const htmlWithTracking = html.replace(linksRegex, (_, p1, p2, p3) => {
-    const urlWithTrackingParams = getUrlWithTrackingParams(p2, tracking);
-    return `${p1}${urlWithTrackingParams}${p3}`;
+    // The browser's outerHTML serializer encodes `&` to `&amp;` inside
+    // attribute values. Without decoding, the regex-based upsert in
+    // getUrlWithTrackingParams cannot recognise existing `&key=` params
+    // (it sees `;key=` after the `&amp;` entity), so the param gets
+    // appended instead of replaced → duplicates like
+    // `?utm_medium=stale&...&utm_medium=email`. Decode before processing,
+    // re-encode after so the HTML stays valid until processMosaicoHtmlRender
+    // does its own decode pass.
+    const decoded = p2.replace(/&amp;/g, '&');
+    const processed = getUrlWithTrackingParams(
+      decoded,
+      tracking,
+      groupTrackingConfig,
+      trackingContext
+    );
+    const reencoded = processed.replace(/&/g, '&amp;');
+    return `${p1}${reencoded}${p3}`;
   });
 
   return { html: htmlWithTracking };

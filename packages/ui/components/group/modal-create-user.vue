@@ -122,7 +122,9 @@ export default {
         <v-col cols="12" md="6">
           <bs-text-field
             v-model="user.externalUsername"
-            :label="$t('forms.user.externalUsername') + $t('forms.user.optional')"
+            :label="
+              $t('forms.user.externalUsername') + $t('forms.user.optional')
+            "
             :disabled="loading"
           />
         </v-col>

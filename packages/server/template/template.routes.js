@@ -5,7 +5,11 @@ const createError = require('http-errors');
 
 const router = express.Router();
 
-const { GUARD_USER, GUARD_ADMIN } = require('../account/auth.guard.js');
+const {
+  GUARD_USER,
+  GUARD_ADMIN,
+  GUARD_GROUP_ADMIN,
+} = require('../account/auth.guard.js');
 const { GUARD_EMAIL_BUILDER } = require('../mailing/email-builder.guard.js');
 const templates = require('./template.controller.js');
 
@@ -18,11 +22,30 @@ const templates = require('./template.controller.js');
 router.use(GUARD_USER, GUARD_EMAIL_BUILDER);
 
 router.get('/:templateId/markup', GUARD_USER, templates.readMarkup);
+// Block introspection: used by the content-feed mapping config UI to let a
+// group admin pick a block + its field paths without hand-typing Mosaico
+// internal property names.
+// Every block + its field paths in a single payload: the mapping UI parses the
+// (expensive-to-parse) markup once per template rather than once per block.
+router.get(
+  '/:templateId/blocks-with-fields',
+  GUARD_GROUP_ADMIN,
+  templates.listBlocksWithFields
+);
 router.get('/:templateId/preview', GUARD_ADMIN, templates.previewMarkup);
 router.post('/:templateId/preview', GUARD_ADMIN, templates.generatePreviews);
 router.get('/:templateId/events', GUARD_ADMIN, templates.previewEvents);
 router.delete('/:templateId/images', GUARD_ADMIN, templates.destroyImages);
 router.delete('/:templateId', GUARD_ADMIN, templates.destroy);
+// Tracking config is editable by group admins of the template's company
+// (not only super admins as for the rest of the template edition flow).
+// The controller enforces that constraint by checking req.user against
+// template._company.
+router.put(
+  '/:templateId/tracking-config',
+  GUARD_GROUP_ADMIN,
+  templates.updateTrackingConfig
+);
 router.put('/:templateId', GUARD_ADMIN, templates.update);
 router.get('/:templateId', GUARD_USER, templates.read);
 router.post('', GUARD_ADMIN, templates.create);

@@ -154,7 +154,13 @@ class DscProvider {
     }
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       logger.log('Creating campaign mail for DSC: ', campaignMailData?.name);
       const emailCampaignsData = await this.formatDscData({
@@ -162,6 +168,7 @@ class DscProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       const createCampaignApiResult = await this.createCampaignMailApi(
@@ -183,7 +190,13 @@ class DscProvider {
     }
   }
 
-  async updateCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async updateCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       logger.log('Updating campaign mail for DSC: ', campaignMailData?.name);
 
@@ -192,6 +205,7 @@ class DscProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       const updateCampaignApiResult = await this.updateCampaignMailApi(
@@ -218,13 +232,20 @@ class DscProvider {
     return new DscProvider(initialData);
   }
 
-  async formatDscData({ campaignMailData, user, html, mailingId }) {
+  async formatDscData({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       const processedHtml = await mailingService.processHtmlWithFTPOption({
         user,
         html,
         mailingId,
         doesWaitForFtp: false,
+        freshTracking,
       });
 
       const { subject, name, planification, typeCampagne } = campaignMailData;

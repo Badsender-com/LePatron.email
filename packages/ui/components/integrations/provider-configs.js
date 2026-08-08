@@ -27,6 +27,12 @@ export const providerCategories = {
     icon: 'languages',
     order: 3,
   },
+  contentFeed: {
+    key: 'contentFeed',
+    labelKey: 'integrations.categories.contentFeed',
+    icon: 'rss',
+    order: 4,
+  },
 };
 
 /**
@@ -83,6 +89,17 @@ export const providerConfigs = {
     apiHostHintKey: '',
     showProductId: false,
   },
+
+  // Content feed providers
+  rss: {
+    category: 'contentFeed',
+    type: 'data_feed',
+    apiKeyRequired: false,
+    apiHostPlaceholder: 'https://example.com/feed.xml',
+    apiHostHintKey: 'integrations.rss.apiHostHint',
+    apiHostRequired: true,
+    showProductId: false,
+  },
 };
 
 /**
@@ -106,6 +123,8 @@ export const providerLabels = {
   infomaniak: 'Infomaniak AI Tools',
   // AI - Translation
   deepl: 'DeepL',
+  // Content feed
+  rss: 'RSS',
 };
 
 /**
@@ -143,7 +162,10 @@ export function getProvidersGroupedByCategory(providerKeys) {
     const categoryKey = config.category || 'other';
     if (!groups[categoryKey]) {
       groups[categoryKey] = {
-        category: providerCategories[categoryKey] || { key: 'other', order: 99 },
+        category: providerCategories[categoryKey] || {
+          key: 'other',
+          order: 99,
+        },
         providers: [],
       };
     }
@@ -155,5 +177,7 @@ export function getProvidersGroupedByCategory(providerKeys) {
   }
 
   // Sort by category order
-  return Object.values(groups).sort((a, b) => a.category.order - b.category.order);
+  return Object.values(groups).sort(
+    (a, b) => a.category.order - b.category.order
+  );
 }
