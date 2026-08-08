@@ -221,7 +221,7 @@ export default {
           :alt="$t('crmIntelligence.marketing.screenshotAlt')"
           class="screenshot-image"
           @error="onScreenshotError"
-        >
+        />
       </div>
     </section>
 

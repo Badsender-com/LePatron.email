@@ -350,7 +350,7 @@ export default {
                     v-model="user.externalUsername"
                     :label="
                       $t('forms.user.externalUsername') +
-                        $t('forms.user.optional')
+                      $t('forms.user.optional')
                     "
                   />
                 </v-col>
@@ -386,7 +386,9 @@ export default {
               <!-- Status display -->
               <div class="status-display mb-4">
                 <div class="d-flex align-center">
-                  <span class="text-body-2 mr-3">{{ $t('global.status') }} :</span>
+                  <span class="text-body-2 mr-3"
+                    >{{ $t('global.status') }} :</span
+                  >
                   <v-chip
                     small
                     :color="statusColor"

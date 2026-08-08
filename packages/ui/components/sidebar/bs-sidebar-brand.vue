@@ -6,7 +6,7 @@
       src="/pique_aiguille.svg"
       alt="LePatron"
       class="bs-sidebar-brand__mark"
-    >
+    />
 
     <!-- Expanded: show full logo -->
     <img
@@ -14,7 +14,7 @@
       src="/logo_lepatron_black.svg"
       alt="LePatron"
       class="bs-sidebar-brand__logo"
-    >
+    />
   </div>
 </template>
 

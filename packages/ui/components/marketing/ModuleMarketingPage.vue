@@ -183,7 +183,7 @@ export default {
           :alt="`${title} Interface`"
           class="screenshot-image"
           @error="screenshotFailed = true"
-        >
+        />
       </div>
     </section>
 
