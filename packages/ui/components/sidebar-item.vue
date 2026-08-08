@@ -1,30 +1,6 @@
 <script>
-import {
-  Palette,
-  LineChart,
-  Settings,
-  HelpCircle,
-  LogOut,
-} from 'lucide-vue';
-
-// Map icon names to Lucide components
-const ICON_MAP = {
-  palette: Palette,
-  'line-chart': LineChart,
-  settings: Settings,
-  'help-circle': HelpCircle,
-  'log-out': LogOut,
-};
-
 export default {
   name: 'BsSidebarItem',
-  components: {
-    Palette,
-    LineChart,
-    Settings,
-    HelpCircle,
-    LogOut,
-  },
   props: {
     to: {
       type: String,
@@ -66,12 +42,6 @@ export default {
       if (this.href) return { href: this.href, target: this.target };
       return {};
     },
-    lucideIcon() {
-      return ICON_MAP[this.icon] || null;
-    },
-    iconColor() {
-      return this.active ? '#00acdc' : '#757575';
-    },
   },
 };
 </script>
@@ -90,12 +60,9 @@ export default {
     <div class="sidebar-item__indicator" />
 
     <div class="sidebar-item__icon">
-      <component
-        :is="lucideIcon"
-        :size="22"
-        :color="iconColor"
-        :stroke-width="2"
-      />
+      <v-icon :color="active ? 'accent' : 'grey darken-1'" size="22">
+        {{ icon }}
+      </v-icon>
     </div>
     <span class="sidebar-item__label">
       {{ label }}
@@ -122,7 +89,7 @@ export default {
 }
 
 .sidebar-item--active {
-  background-color: rgba(0, 172, 220, 0.12);
+  background-color: rgba(var(--v-accent-rgb, 0, 172, 220), 0.12);
 }
 
 .sidebar-item--disabled {
@@ -143,7 +110,7 @@ export default {
 }
 
 .sidebar-item--active .sidebar-item__indicator {
-  background-color: #00acdc;
+  background-color: var(--v-accent-base, #00acdc);
 }
 
 /* Icon container */
@@ -156,11 +123,11 @@ export default {
   justify-content: center;
 }
 
-.sidebar-item:hover .sidebar-item__icon svg {
+.sidebar-item:hover .sidebar-item__icon .v-icon {
   transform: scale(1.05);
 }
 
-.sidebar-item__icon svg {
+.sidebar-item__icon .v-icon {
   transition: transform 150ms ease;
 }
 
@@ -177,6 +144,6 @@ export default {
 
 .sidebar-item--active .sidebar-item__label {
   font-weight: 500;
-  color: #00acdc;
+  color: var(--v-accent-base, #00acdc);
 }
 </style>

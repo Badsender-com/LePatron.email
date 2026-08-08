@@ -101,5 +101,12 @@
   "Picture with no link": "Picture with no link",
   "remove": "Remove",
   "addParamText": "Add param",
-  "needHelpText": "Need help?"
+  "needHelpText": "Need help?",
+  "trackingRequiredTitle": "Required tracking parameters are missing",
+  "trackingRequiredDescription": "Please fill in these parameters before downloading:",
+  "trackingRequiredClose": "Close",
+  "trackingGlobalParamLocked": "Global tracking parameter — cannot be removed",
+  "trackingOverrideBehavior": "Parameters defined by the global tracking configuration override any value already present in the links. Parameters added manually here are only inserted if the key is not already in the link.",
+  "trackingDuplicateKey": "This key is already used by another parameter.",
+  "trackingReservedKey": "This key is reserved by the global tracking."
 }

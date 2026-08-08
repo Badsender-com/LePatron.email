@@ -6,10 +6,7 @@
       class="color-card"
       @click="handleColorChange(i)"
     >
-      <div
-        class="color-card__preview"
-        :style="{ backgroundColor: color }"
-      />
+      <div class="color-card__preview" :style="{ backgroundColor: color }" />
       <div class="color-card__hex">
         {{ formatHex(color) }}
       </div>

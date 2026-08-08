@@ -5,7 +5,12 @@ const console = require('console');
 const $ = require('jquery');
 const ko = require('knockout');
 const _omit = require('lodash.omit');
-const { getErrorsForControlQuality, displayErrors } = require('../ext/badsender-control-quality');
+const {
+  getErrorsForControlQuality,
+  displayErrors,
+  checkRequiredTrackingParams,
+  displayTrackingError,
+} = require('../ext/badsender-control-quality');
 
 function getData(viewModel) {
   // gather meta
@@ -91,6 +96,18 @@ function loader(opts) {
     const dlDefault = { forCdn: false, forFtp: false };
     downloadCmd.execute = function downloadMail(downloadOptions = dlDefault) {
       // ====================================
+      // Block download if required tracking params are missing
+      const missingTracking = checkRequiredTrackingParams(viewModel);
+      if (missingTracking.length > 0) {
+        displayTrackingError(missingTracking, viewModel);
+        document.getElementById('main-wysiwyg-area').scrollTo({
+          behavior: 'smooth',
+          top: 0,
+        });
+        return;
+      }
+
+      // ====================================
       // Check for missing input values
       const errors = getErrorsForControlQuality(viewModel);
       if (errors && errors.length > 0) {
@@ -117,6 +134,10 @@ function loader(opts) {
           filename: viewModel.metadata.name(),
           downLoadForCdn: downloadOptions.forCdn,
           downLoadForFtp: downloadOptions.forFtp,
+          // Send the live tracking state from the builder so the backend
+          // validates / rewrites against the latest values rather than the
+          // last saved snapshot in mailing.data.tracking.
+          tracking: ko.toJS(viewModel.content().tracking),
         }),
         xhrFields: { responseType: 'blob' },
         success: function(blob) {

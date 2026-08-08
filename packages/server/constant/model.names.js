@@ -28,6 +28,7 @@ module.exports = Object.freeze({
   DashboardModel: 'Dashboard',
   // AI Features
   AIFeatureConfigModel: 'AIFeatureConfig',
+  FeedMappingModel: 'FeedMapping',
   // Translation
   TranslationJobModel: 'TranslationJob',
   // LePatron Skills IA

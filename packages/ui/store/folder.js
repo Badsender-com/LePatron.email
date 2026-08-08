@@ -4,12 +4,14 @@ import {
   getWorkspace,
   getFolder,
   getFolderAccess,
+  getFolderChildren,
   getWorkspaceAccess,
   workspacesByGroup,
 } from '~/helpers/api-routes';
 import { parsePaginationData } from '~/utils/parsePagination';
 import { PAGE, SHOW_SNACKBAR } from '~/store/page';
 import { getTreeviewWorkspaces } from '~/utils/workspaces';
+import { mapChildFolderToTreeviewNode } from '~/utils/folders';
 
 export const FOLDER = 'folder';
 export const SET_FOLDER = 'SET_FOLDER';
@@ -31,6 +33,7 @@ export const SET_WORKSPACES_HAS_RIGHT = 'SET_WORKSPACES_HAS_RIGHT';
 export const SET_TREEVIEW_WORKSPACES = 'SET_TREEVIEW_WORKSPACES';
 export const SET_TREEVIEW_WORKSPACES_HASRIGHT =
   'SET_TREEVIEW_WORKSPACES_HASRIGHT';
+export const SET_NODE_CHILDREN = 'SET_NODE_CHILDREN';
 export const SET_ARE_LOADING_WORKSPACES = 'SET_ARE_LOADING_WORKSPACES';
 
 export const IS_LOADING_WORKSPACE_OR_FOLDER = 'IS_LOADING_WORKSPACE_OR_FOLDER';
@@ -42,6 +45,7 @@ export const FETCH_MAILINGS_FOR_FILTER_UPDATE = 'fetchMailingsForFilterUpdate';
 export const FETCH_MAILINGS_FOR_WORKSPACE_UPDATE =
   'fetchMailingsForWorkspaceUpdate';
 export const FETCH_FOLDER_OR_WORKSPACE = 'fetchFolderOrWorkspace';
+export const FETCH_FOLDER_CHILDREN = 'fetchFolderChildren';
 
 export const state = () => ({
   workspace: {},
@@ -96,6 +100,27 @@ export const mutations = {
   },
   [SET_TREEVIEW_WORKSPACES_HASRIGHT](store, treeviewWorkspacesHasRight) {
     store.treeviewWorkspacesHasRight = treeviewWorkspacesHasRight;
+  },
+  // Persists lazy-loaded children onto the matching node IN THE STORE (both tree
+  // arrays), not just on Vuetify's internal node. This survives a v-treeview
+  // recreation (`treeKey++`), which rebuilds the tree from `treeviewWorkspaces`
+  // and would otherwise drop children pushed only into Vuetify's copy.
+  [SET_NODE_CHILDREN](store, { nodeId, children }) {
+    const applyToTree = (nodes) => {
+      if (!Array.isArray(nodes)) return false;
+      for (const node of nodes) {
+        if (node.id === nodeId) {
+          node.children = children;
+          return true;
+        }
+        if (node.children && applyToTree(node.children)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    applyToTree(store.treeviewWorkspaces);
+    applyToTree(store.treeviewWorkspacesHasRight);
   },
   [IS_LOADING_WORKSPACE_OR_FOLDER](store, isLoadingWorkspaceOrFolder) {
     store.isLoadingWorkspaceOrFolder = isLoadingWorkspaceOrFolder;
@@ -275,6 +300,22 @@ export const actions = {
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, true);
     await dispatch(FETCH_MAILINGS, { query, $t, pagination });
     commit(SET_IS_LOADING_MAILINGS_FOR_WORKSPACE_UPDATE, false);
+  },
+  // Lazy-loads the direct children of a tree node on expand. Returns the
+  // children mapped to the treeview shape; the caller (v-treeview load-children)
+  // is responsible for inserting them into the node's `children` array.
+  async [FETCH_FOLDER_CHILDREN]({ commit }, { node }) {
+    if (!this.$axios || !node?.id) {
+      return [];
+    }
+    const { items } = await this.$axios.$get(getFolderChildren(node.id));
+    const children = (items || []).map((child) =>
+      mapChildFolderToTreeviewNode(child, node.hasAccess, node.path)
+    );
+    // Persist on the store node too, so the children survive a tree recreation
+    // (treeKey++) and don't have to be re-fetched.
+    commit(SET_NODE_CHILDREN, { nodeId: node.id, children });
+    return children;
   },
   async [FETCH_WORKSPACES]({ commit }) {
     const { $axios } = this;

@@ -69,7 +69,13 @@ class SendinBlueProvider {
     };
   }
 
-  async createCampaignMail({ campaignMailData, user, html, mailingId }) {
+  async createCampaignMail({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
       let emailCampaignsData = new SibApiV3Sdk.CreateEmailCampaign();
@@ -79,6 +85,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       const createCampaignApiResult = await apiEmailCampaignsInstance.createEmailCampaign(
@@ -96,7 +103,13 @@ class SendinBlueProvider {
     }
   }
 
-  async createTemplate({ campaignMailData, user, html, mailingId }) {
+  async createTemplate({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       const apiTemplateInstance = new SibApiV3Sdk.TransactionalEmailsApi();
       let templateData = new SibApiV3Sdk.CreateSmtpTemplate();
@@ -106,6 +119,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       const createTemplateApiResult = await apiTemplateInstance.createSmtpTemplate(
@@ -131,6 +145,7 @@ class SendinBlueProvider {
     html,
     mailingId,
     campaignId,
+    freshTracking,
   }) {
     try {
       console.log('update a template ...');
@@ -143,6 +158,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       await apiTemplateInstance.updateSmtpTemplate(campaignId, {
@@ -163,6 +179,7 @@ class SendinBlueProvider {
     html,
     mailingId,
     campaignId,
+    freshTracking,
   }) {
     try {
       const apiEmailCampaignsInstance = new SibApiV3Sdk.EmailCampaignsApi();
@@ -172,6 +189,7 @@ class SendinBlueProvider {
         user,
         html,
         mailingId,
+        freshTracking,
       });
 
       return await apiEmailCampaignsInstance.updateEmailCampaign(
@@ -184,13 +202,20 @@ class SendinBlueProvider {
     }
   }
 
-  async formatSendinBlueData({ campaignMailData, user, html, mailingId }) {
+  async formatSendinBlueData({
+    campaignMailData,
+    user,
+    html,
+    mailingId,
+    freshTracking,
+  }) {
     try {
       const processedHtml = await mailingService.processHtmlWithFTPOption({
         user,
         html,
         mailingId,
         doesWaitForFtp: false,
+        freshTracking,
       });
 
       const {

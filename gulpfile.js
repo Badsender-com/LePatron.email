@@ -450,7 +450,7 @@ function rev() {
     .pipe(gulp.dest(SERVER_DIR));
 }
 rev.description =
-  'generate hash from mosaico\'s build files. This will help us to leverage browser caching';
+  "generate hash from mosaico's build files. This will help us to leverage browser caching";
 
 /// /////
 // DEV

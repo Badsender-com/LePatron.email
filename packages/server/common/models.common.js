@@ -31,6 +31,7 @@ const LePatronSkillSchema = require('../ai-skill/models/le-patron-skill.schema.j
 const ExpertiseSchema = require('../ai-skill/models/expertise.schema.js');
 const AISkillInvocationSchema = require('../ai-skill/models/ai-skill-invocation.schema.js');
 const TranslationJobSchema = require('../translation/translation-job.schema.js');
+const FeedMappingSchema = require('../feed-mapping/feed-mapping.schema.js');
 
 /// ///
 // EXPORTS
@@ -92,6 +93,10 @@ const TranslationJobs = mongoose.model(
   modelNames.TranslationJobModel,
   TranslationJobSchema
 );
+const FeedMappings = mongoose.model(
+  modelNames.FeedMappingModel,
+  FeedMappingSchema
+);
 
 module.exports = {
   mongoose,
@@ -121,4 +126,5 @@ module.exports = {
   Expertises,
   AISkillInvocations,
   TranslationJobs,
+  FeedMappings,
 };

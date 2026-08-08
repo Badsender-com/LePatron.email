@@ -6,7 +6,7 @@
  * - Handling destination selection
  */
 import { mapState } from 'vuex';
-import { FOLDER } from '~/store/folder';
+import { FOLDER, FETCH_FOLDER_CHILDREN } from '~/store/folder';
 import { findNestedLocation } from '~/utils/workspaces';
 
 export default {
@@ -176,6 +176,34 @@ export default {
       }
 
       return ids;
+    },
+    /**
+     * Lazily fetch a node's direct children on expand.
+     *
+     * The destination tree reuses the sidebar's Vuex state
+     * (`treeviewWorkspacesHasRight`), which is lazy-loaded: a folder with
+     * `hasChildren` is given an empty `children: []` array so Vuetify renders
+     * the expand arrow, but its real children are only fetched when expanded.
+     * Without this handler, folders never expanded in the sidebar appear in the
+     * modal but cannot be opened. We reuse the same store action as the sidebar;
+     * it also persists the children onto the store node so they survive.
+     *
+     * Bind this to `:load-children` on the modal's v-treeview.
+     * @param {Object} item - The tree node being expanded
+     */
+    async loadDestinationChildren(item) {
+      // Vuetify keeps the lazy-load spinner up until this promise settles, so we
+      // must always resolve even on error, otherwise it spins forever.
+      try {
+        const children = await this.$store.dispatch(
+          `${FOLDER}/${FETCH_FOLDER_CHILDREN}`,
+          { node: item }
+        );
+        item.children.splice(0, item.children.length, ...children);
+      } catch (err) {
+        console.error('[destinationTree] failed to load folder children:', err);
+        item.children.splice(0, item.children.length);
+      }
     },
     /**
      * Handle tree selection

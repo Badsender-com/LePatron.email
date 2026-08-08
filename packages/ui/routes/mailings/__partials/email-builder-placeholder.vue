@@ -13,11 +13,11 @@ import {
 // Icon mapping from Lucide names to components
 const FEATURE_ICON_MAP = {
   'grip-vertical': GripVertical,
-  'smartphone': Smartphone,
-  'puzzle': Puzzle,
-  'palette': Palette,
+  smartphone: Smartphone,
+  puzzle: Puzzle,
+  palette: Palette,
   'cloud-upload': CloudUpload,
-  'users': Users,
+  users: Users,
 };
 
 export default {
@@ -79,13 +79,7 @@ export default {
           <lucide-mail :size="20" class="mr-2" />
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
-        <v-btn
-          outlined
-          x-large
-          color="primary"
-          :href="infoUrl"
-          target="_blank"
-        >
+        <v-btn outlined x-large color="primary" :href="infoUrl" target="_blank">
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
           <lucide-external-link :size="20" class="ml-2" />
         </v-btn>
@@ -99,7 +93,7 @@ export default {
           src="/img/marketing/email-builder-screenshot.png"
           alt="Email Builder Interface"
           class="screenshot-image"
-        >
+        />
       </div>
     </section>
 
@@ -155,13 +149,7 @@ export default {
           <lucide-mail :size="20" class="mr-2" />
           {{ $t('emailBuilder.marketing.ctaPrimary') }}
         </v-btn>
-        <v-btn
-          outlined
-          large
-          color="primary"
-          :href="infoUrl"
-          target="_blank"
-        >
+        <v-btn outlined large color="primary" :href="infoUrl" target="_blank">
           {{ $t('emailBuilder.marketing.ctaSecondary') }}
           <lucide-external-link :size="20" class="ml-2" />
         </v-btn>

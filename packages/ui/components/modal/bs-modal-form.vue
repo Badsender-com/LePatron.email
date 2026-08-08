@@ -135,12 +135,7 @@ export default {
 
           <div class="bs-modal-form__actions">
             <v-spacer />
-            <v-btn
-              text
-              color="primary"
-              :disabled="loading"
-              @click="onCancel"
-            >
+            <v-btn text color="primary" :disabled="loading" @click="onCancel">
               {{ computedCancelLabel }}
             </v-btn>
             <v-btn

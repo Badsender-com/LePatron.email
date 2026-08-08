@@ -187,6 +187,10 @@ async function updateWorkspace(workspace) {
 }
 
 async function findWorkspaces({ groupId }) {
+  // Only load root folders for the initial tree; children are lazy-loaded on
+  // expand via GET /folders/:folderId/children. The nested `childFolders`
+  // populate (which loaded the whole hierarchy in one query and froze the UI
+  // for large companies) has been removed.
   const workspaces = await Workspaces.find({ _company: groupId })
     .populate({
       path: 'users',
@@ -194,11 +198,8 @@ async function findWorkspaces({ groupId }) {
     .populate({
       path: 'folders',
       options: { sort: { name: 1 } },
-      populate: {
-        path: 'childFolders',
-        options: { sort: { name: 1 } },
-      },
     });
+
   // to discard nested folders as direct children of each workspace
   workspaces.forEach((workspace) => {
     if (workspace.folders) {
@@ -208,15 +209,54 @@ async function findWorkspaces({ groupId }) {
     }
   });
 
-  return workspaces;
+  // Return plain objects so the computed `hasChildren` flag survives (a later
+  // `.toObject()` on a Mongoose doc would regenerate `folders` from the virtual
+  // and drop it).
+  const plainWorkspaces = workspaces.map((workspace) => workspace.toObject());
+
+  await attachHasChildrenFlag(plainWorkspaces);
+
+  return plainWorkspaces;
+}
+
+// Computes, in a single aggregation, which of the supplied root folders have
+// at least one child folder — so the tree can show an expand arrow only where
+// relevant without populating the whole hierarchy.
+async function attachHasChildrenFlag(workspaces) {
+  const rootFolderIds = workspaces
+    .flatMap((workspace) => workspace.folders || [])
+    .map((folder) => folder._id);
+
+  if (rootFolderIds.length === 0) {
+    return;
+  }
+
+  const parentsWithChildren = await Folders.aggregate([
+    { $match: { _parentFolder: { $in: rootFolderIds } } },
+    { $group: { _id: '$_parentFolder' } },
+  ]);
+  const parentsWithChildrenSet = new Set(
+    parentsWithChildren.map((doc) => doc._id.toString())
+  );
+
+  workspaces.forEach((workspace) => {
+    if (workspace.folders) {
+      workspace.folders = workspace.folders.map((folder) => ({
+        ...folder,
+        hasChildren: parentsWithChildrenSet.has(folder._id.toString()),
+      }));
+    }
+  });
 }
 
 async function findWorkspacesWithRights({ groupId, userId, isGroupAdmin }) {
   const workspaces = await findWorkspaces({ groupId });
   const group = await Groups.findById(groupId);
 
+  // findWorkspaces already returns plain objects (folders enriched with
+  // `hasChildren`), so no `.toObject()` is needed here.
   let workspacesWithRights = workspaces?.map((workspace) => ({
-    ...workspace.toObject(),
+    ...workspace,
     hasRights: true,
   }));
 

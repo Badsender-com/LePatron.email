@@ -16,7 +16,18 @@ if (mailConfig.service) {
 }
 const transporter = nodemailer.createTransport(config.emailTransport);
 
-const mailReady = transporter.verify();
+// Verify the SMTP connection at startup. `mailReady` is exposed so callers can
+// await readiness. Skipped under test: it does a real network round-trip on
+// every module import, and its async rejection (bad/absent SMTP creds) would
+// otherwise surface as an unhandled rejection that Jest mis-attributes to an
+// unrelated test. A catch is attached so a startup failure (e.g. in dev/CI)
+// stays a logged warning rather than crashing the process.
+const mailReady =
+  config.NODE_ENV === 'test' ? Promise.resolve() : transporter.verify();
+mailReady.catch(function (err) {
+  console.log(chalk.red('smtp verification failed'));
+  console.log(err.message);
+});
 
 function send(options) {
   const mailOptions = extend({}, options, pick(config.emailOptions, ['from']));

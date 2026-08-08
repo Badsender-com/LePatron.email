@@ -14,16 +14,15 @@ if (!config.isAws) {
 } else {
   AWS.config.update(config.storage.aws);
   const endpoint = new AWS.Endpoint(config.storage.aws.endpoint);
-  // Without explicit timeouts the AWS SDK defaults to a 120s socket timeout:
-  // when Cellar (S3) is slow, every image read holds a connection for 2
-  // minutes, exhausting server resources and making the whole app hang.
-  // Fail fast and retry instead.
+  // connectTimeout: fail fast if Cellar is unreachable (5s).
+  // timeout: socket idle timeout — must be long enough for large image reads/writes;
+  // 15s was too short and caused TimeoutError on slow S3 streams (statusCode 200).
   const s3 = new AWS.S3({
     endpoint,
     maxRetries: 2,
     httpOptions: {
       connectTimeout: 5000,
-      timeout: 15000,
+      timeout: 60000,
     },
   });
 

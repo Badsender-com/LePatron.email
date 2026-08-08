@@ -14,10 +14,10 @@ const { green, red } = require('chalk');
 const config = require('../node.config.js');
 const fileManager = require('../common/file-manage.service.js');
 const { CacheImages, Galleries } = require('../common/models.common.js');
-const ERROR_CODES = require('../constant/error-codes.js');
 const imageService = require('./image.service');
-
-const SORT_BY_VALUES = ['date_desc', 'date_asc'];
+const mailingService = require('../mailing/mailing.service.js');
+const ERROR_CODES = require('../constant/error-codes.js');
+const logger = require('../utils/logger.js');
 
 console.log('[IMAGES] config.images.cache', config.images.cache);
 
@@ -29,9 +29,9 @@ module.exports = {
   checkSizes,
   list: asyncHandler(list),
   create: asyncHandler(create),
+  createFromUrl: asyncHandler(createFromUrl),
   read,
   destroy,
-  updateLabel: asyncHandler(updateLabel),
 };
 
 /// ///
@@ -87,7 +87,7 @@ const onWriteResizeEnd = (datas) => () => {
     .save()
     .then(() => console.log(green('cache image infos saved in DB', path)))
     .catch((e) => {
-      console.log(red("[IMAGE] can't save cache image infos in DB"), path);
+      console.log(red('[IMAGE] can\'t save cache image infos in DB'), path);
       console.log(inspect(e));
     });
 };
@@ -98,7 +98,7 @@ const getResizedImageName = (path) => {
 };
 
 const onWriteResizeError = (path) => (e) => {
-  console.log("[IMAGE] can't upload resize/placeholder result", path);
+  console.log('[IMAGE] can\'t upload resize/placeholder result', path);
   console.log(inspect(e));
 };
 
@@ -407,16 +407,6 @@ function read(req, res, next) {
 // EDITOR SPECIFIC
 /// ///
 
-function createGallery(mongoId) {
-  // create the gallery in DB
-  return fileManager.list(mongoId).then((files) => {
-    return new Galleries({
-      creationOrWireframeId: mongoId,
-      files,
-    }).save();
-  });
-}
-
 /**
  * @api {get} /images/gallery/:mailingOrTemplateId gallery images list
  * @apiPermission public
@@ -432,13 +422,8 @@ function createGallery(mongoId) {
 // Those functions are accessible only from the editor
 // wireframes assets (preview & template fixed assets)…
 // …are handled separately in wireframes.js#update
-async function list(req, res, next) {
+async function list(req, res) {
   const { mongoId } = req.params;
-  const { search, format, sortBy } = req.query;
-
-  if (sortBy && !SORT_BY_VALUES.includes(sortBy)) {
-    return next(createError.BadRequest(ERROR_CODES.INVALID_SORT_PARAM));
-  }
 
   const gallery = await Galleries.findOne(
     {
@@ -447,56 +432,9 @@ async function list(req, res, next) {
     'files'
   );
 
-  const responseGallery = gallery || (await createGallery(mongoId));
-
-  // only switch to the filtered shape when a usable filter/sort is provided;
-  // empty params (?search=) keep the Mosaico-compatible full-document response
-  const hasFilter =
-    (typeof search === 'string' && search) ||
-    (typeof format === 'string' && format) ||
-    sortBy;
-
-  if (hasFilter) {
-    const files = imageService.filterGalleryFiles(responseGallery.files, {
-      search,
-      format,
-      sortBy,
-    });
-    return res.json({ files });
-  }
-
+  const responseGallery =
+    gallery || (await imageService.createGallery(mongoId));
   res.json(responseGallery);
-}
-
-async function updateLabel(req, res, next) {
-  const { mongoId, imageName } = req.params;
-  const { label } = req.body;
-
-  if (!label || typeof label !== 'string' || label.trim() === '') {
-    return next(createError.BadRequest(ERROR_CODES.LABEL_NOT_PROVIDED));
-  }
-  if (label.length > 255) {
-    return next(createError.BadRequest(ERROR_CODES.LABEL_TOO_LONG));
-  }
-
-  // the imageName is technically prefixed by its gallery's mongoId: enforce the
-  // match so a caller can't target an image outside the gallery in the URL
-  if (!imageName.startsWith(`${mongoId}-`)) {
-    return next(
-      createError.UnprocessableEntity(ERROR_CODES.INVALID_IMAGE_NAME)
-    );
-  }
-
-  // ensure the requester's group owns the gallery's parent before mutating it
-  await imageService.assertGalleryOwnership(req.user, mongoId);
-
-  const gallery = await imageService.renameLabel(
-    mongoId,
-    imageName,
-    label.trim()
-  );
-  const file = gallery.files.find((f) => f.name === imageName);
-  res.json(file);
 }
 
 /**
@@ -525,7 +463,7 @@ async function create(req, res) {
 
   // gallery could not be created at this point
   // without opening galleries panel in the editor no automatic DB gallery creation :(
-  const safeGallery = gallery || (await createGallery(mongoId));
+  const safeGallery = gallery || (await imageService.createGallery(mongoId));
   const galleryImages = safeGallery.files.map((file) => ({ ...file }));
   const galleryImagesName = galleryImages.map((file) => file.name);
 
@@ -533,13 +471,7 @@ async function create(req, res) {
     const imageName = upload.name;
     const hasAlreadyCurrentFile = galleryImagesName.includes(imageName);
     if (hasAlreadyCurrentFile) return;
-    galleryImages.push({
-      ...upload,
-      label: upload.originalName,
-      source: 'upload',
-      externalMetadata: {},
-      uploadedAt: new Date(),
-    });
+    galleryImages.push(upload);
   });
   safeGallery.files = galleryImages;
 
@@ -549,6 +481,47 @@ async function create(req, res) {
   // send only the new uploads
   // front-application will iterate over them to update the gallery previews
   res.json(uploads);
+}
+
+/**
+ * @api {post} /images/gallery/:mongoId/from-url download an external image into the gallery
+ * @apiPermission user
+ * @apiName PostGalleryImageFromUrl
+ * @apiGroup Images
+ *
+ * @apiParam {string} mongoId
+ * @apiParam (Body) {String} url External image URL to download
+ *
+ * @apiUse galleryImages
+ */
+async function createFromUrl(req, res) {
+  const { mongoId } = req.params;
+  const { url: imageUrl } = req.body;
+
+  if (!imageUrl) {
+    throw new createError.BadRequest('url is required');
+  }
+
+  // Authorize the target gallery before doing anything else. `mongoId` is a
+  // mailing id (the content-feed modal always passes currentMailing().id):
+  // findOneForUser validates the ObjectId format — so a crafted value can't
+  // reach the filename builder in image.service — and enforces group
+  // ownership, so a user can't write into another group's gallery. Throws
+  // NotFound on both invalid and cross-tenant ids.
+  await mailingService.findOneForUser(mongoId, req.user);
+
+  let uploadedFile;
+  try {
+    uploadedFile = await imageService.createFromUrl(mongoId, imageUrl);
+  } catch (error) {
+    // Log the real cause server-side, but return a generic message: the
+    // upstream fetch error would otherwise leak internal reachability info
+    // (SSRF oracle) — connection refused vs 404 vs timeout on a probed host.
+    logger.error('Failed to download image from url', imageUrl, error.message);
+    throw new createError.BadGateway(ERROR_CODES.IMAGE_DOWNLOAD_FAILED);
+  }
+
+  res.json({ files: [uploadedFile] });
 }
 
 // destroy an image is not a real deletion…

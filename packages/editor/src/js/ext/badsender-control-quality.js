@@ -147,7 +147,103 @@ function displaySizeWarning(viewModel) {
 
 
 
+/**
+ * Returns the list of required tracking keys (as defined by the group config)
+ * that have no value set in vm.content().tracking().trackingUrls.
+ */
+function checkRequiredTrackingParams(viewModel) {
+  const cfg = viewModel && viewModel.metadata && viewModel.metadata.trackingConfig;
+  if (!cfg || !cfg.enabled || !Array.isArray(cfg.params)) return [];
+  const requiredKeys = cfg.params
+    .filter((p) => p && p.required)
+    .map((p) => p.key);
+  if (requiredKeys.length === 0) return [];
+
+  let trackingUrls = [];
+  try {
+    trackingUrls = viewModel.content().tracking().trackingUrls() || [];
+  } catch (_e) {
+    trackingUrls = [];
+  }
+  const filled = new Set(
+    trackingUrls
+      .filter((tu) => tu && tu.key && tu.value && String(tu.value).length > 0)
+      .map((tu) => tu.key)
+  );
+  return requiredKeys.filter((k) => !filled.has(k));
+}
+
+/**
+ * Display a blocking-style modal when required tracking params are missing.
+ * Reuses the editor's existing modal framework (.bs-modal-overlay /
+ * .bs-modal-card / .modal-content / .modal-footer / .btn / .btn-flat) so the
+ * look-and-feel matches save-block-modal, delete-block-modal, etc.
+ */
+function displayTrackingError(missingKeys, viewModel) {
+  $('.bs-modal-overlay.tracking-modal').remove();
+
+  const title = viewModel.t('trackingRequiredTitle');
+  const description = viewModel.t('trackingRequiredDescription');
+  const closeLabel = viewModel.t('trackingRequiredClose');
+
+  const escapeHtml = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
+  const keysHtml = missingKeys
+    .map((k) => `<code class="tracking-modal__key">${escapeHtml(k)}</code>`)
+    .join(' ');
+
+  // Lucide alert-circle, inlined to avoid asset dependencies
+  const alertIcon =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+
+  const $overlay = $(`
+    <div class="bs-modal-overlay tracking-modal small-modal" role="dialog" aria-modal="true" aria-labelledby="tracking-modal-title">
+      <div class="bs-modal-container">
+        <div class="bs-modal-card">
+          <div class="bs-modal-content-wrapper">
+            <div class="modal-content">
+              <h5 id="tracking-modal-title">${escapeHtml(title)}</h5>
+              <div class="tracking-modal__alert">
+                <span class="tracking-modal__alert-icon">${alertIcon}</span>
+                <span>${escapeHtml(description)}</span>
+              </div>
+              <div class="tracking-modal__keys">${keysHtml}</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn waves-effect waves-light tracking-modal__close">${escapeHtml(closeLabel)}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  const close = () => {
+    $overlay.remove();
+    $(document).off('keydown.bsTrackingModal');
+  };
+
+  $overlay.on('click', (evt) => {
+    if (evt.target === $overlay[0]) close();
+  });
+  $overlay.on('click', '.tracking-modal__close', close);
+  $(document).on('keydown.bsTrackingModal', (evt) => {
+    if (evt.key === 'Escape') close();
+  });
+
+  $('body').append($overlay);
+  $overlay.find('.tracking-modal__close').focus();
+}
+
 module.exports = {
   getErrorsForControlQuality,
   displayErrors,
+  checkRequiredTrackingParams,
+  displayTrackingError,
 }

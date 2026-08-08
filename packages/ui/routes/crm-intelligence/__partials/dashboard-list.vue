@@ -18,7 +18,9 @@ export default {
   },
   computed: {
     sortedDashboards() {
-      return [...this.dashboards].sort((a, b) => (a.order || 0) - (b.order || 0));
+      return [...this.dashboards].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+      );
     },
   },
   methods: {
@@ -46,7 +48,12 @@ export default {
           @click="selectDashboard(dashboard)"
         >
           <v-list-item-icon>
-            <lucide-line-chart :size="20" :style="{ color: isSelected(dashboard) ? 'var(--v-accent-base)' : '' }" />
+            <lucide-line-chart
+              :size="20"
+              :style="{
+                color: isSelected(dashboard) ? 'var(--v-accent-base)' : '',
+              }"
+            />
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>{{ dashboard.name }}</v-list-item-title>

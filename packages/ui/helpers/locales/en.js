@@ -586,6 +586,61 @@ export default {
       assigned: 'Access',
     },
   },
+  trackingConfig: {
+    sidebarLabel: 'Tracking',
+    title: 'Global tracking',
+    description:
+      'Define UTM parameters automatically applied to every email (global configuration). Values defined here override any existing values in template links.',
+    enabled: 'Enable global tracking',
+    restrictValues:
+      'Restrict to the parameters below (disable free-form input in the builder)',
+    addParam: 'Add a parameter',
+    key: 'Key',
+    values: 'Allowed values',
+    valuesHint: 'e.g. newsletter, promo (comma-separated)',
+    required: 'Required',
+    locked: 'Locked',
+    lockedHint:
+      'When enabled, users cannot enter a free-form value for this key — they must pick one of the values defined above.',
+    lockedDisabledHint:
+      'Define at least one possible value before locking this key.',
+    empty: 'No tracking parameter defined',
+    inheritedFromGroup: 'Inherited from the global configuration',
+    cascade: {
+      label: 'Tracking configuration for this template',
+      inherit: 'Inherit from the global configuration',
+      inheritDescription:
+        'The parameters defined at the global level apply as-is.',
+      extend: 'Inherit and add template-specific parameters',
+      extendDescription:
+        'Global parameters stay active; the ones added below extend them (or override on key conflict).',
+      replace: 'Replace the global configuration with a template-specific one',
+      replaceDescription:
+        'Only the parameters defined below apply; the global configuration is ignored.',
+    },
+    validation: {
+      emptyKey: 'Key is required',
+      duplicateKey: 'This key is duplicated',
+    },
+    snackbars: {
+      updated: 'Tracking configuration saved.',
+      error: 'An error occurred while saving.',
+    },
+    builder: {
+      requiredMissing: 'Required tracking parameters are missing',
+      requiredMissingDescription:
+        'Please fill in these parameters before downloading: {keys}',
+    },
+    templates: {
+      sectionTitle: 'Per-template tracking overrides',
+      sectionDescription:
+        'You can override or extend the global configuration above for each template.',
+      empty: 'No template available.',
+      statusInherits: 'Inherits from the global configuration',
+      statusMerge: 'Extends the global configuration',
+      statusOverride: 'Specific configuration (overrides the global configuration)',
+    },
+  },
   personalizedVariables: {
     title: 'Custom variables',
     description:
@@ -851,6 +906,7 @@ export default {
       bi: 'BI & Analytics',
       aiGeneration: 'AI - Generation',
       aiTranslation: 'AI - Translation',
+      contentFeed: 'Content Feed',
     },
     statusLabels: {
       valid: 'Valid',
@@ -879,6 +935,9 @@ export default {
       apiKeyPlaceholder: 'Your DeepL API key',
       apiKeyHint: 'Your DeepL API key (Free or Pro)'
     },
+    rss: {
+      apiHostHint: 'Public RSS or Atom feed URL'
+    },
     models: {
       fastEconomical: 'fast, economical',
       balanced: 'balanced',
@@ -886,6 +945,39 @@ export default {
       fast: 'fast',
       recommended: 'recommended',
     }
+  },
+  feedMappings: {
+    title: 'Content Feeds',
+    template: 'Template',
+    block: 'Block',
+    integration: 'Feed source',
+    active: 'Active',
+    add: 'Add feed mapping',
+    edit: 'Edit feed mapping',
+    created: 'Feed mapping created successfully',
+    updated: 'Feed mapping updated successfully',
+    deleted: 'Feed mapping deleted successfully',
+    noFeedMappings: 'No content feed configured',
+    loadingBlocks: 'Loading blocks...',
+    noBlockFields: 'No mappable field was found for this block. Feed items cannot be mapped onto it — pick another block.',
+    columnCount: 'Number of columns',
+    columnCountHint: 'For multi-column blocks (e.g. a 3-across article block) — one field mapping per column',
+    column: 'Column {n}',
+    ctaDefaultLabel: 'Default CTA button label',
+    ctaDefaultLabelHint: 'Applied when an item is inserted — editable afterwards in the builder',
+    deleteConfirmTitle: 'Delete feed mapping',
+    deleteConfirmMessage: 'Are you sure you want to delete this feed mapping?',
+    fieldColumnHeader: 'Block field',
+    roleColumnHeader: 'Comes from',
+    roleNone: '— Ignore —',
+    feedFields: {
+      title: 'item title (title)',
+      link: 'item link (link)',
+      description: 'item description (description)',
+      image: 'item image (image)',
+      pubDate: 'item publication date (pubDate)',
+      ctaLabel: 'default CTA label (static text)',
+    },
   },
   settingsNav: {
     categories: {

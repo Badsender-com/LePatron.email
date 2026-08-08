@@ -594,6 +594,61 @@ export default {
       assigned: 'Accès',
     },
   },
+  trackingConfig: {
+    sidebarLabel: 'Tracking',
+    title: 'Tracking global',
+    description:
+      'Définissez les paramètres UTM appliqués automatiquement à tous les emails (configuration globale). Les valeurs renseignées ici écrasent celles déjà présentes dans les liens.',
+    enabled: 'Activer le tracking global',
+    restrictValues:
+      'Limiter aux paramètres ci-dessous (désactiver la saisie libre dans le builder)',
+    addParam: 'Ajouter un paramètre',
+    key: 'Clé',
+    values: 'Valeurs possibles',
+    valuesHint: 'ex : newsletter, promo (séparés par des virgules)',
+    required: 'Obligatoire',
+    locked: 'Verrouillé',
+    lockedHint:
+      'Si activé, l\'utilisateur ne peut pas saisir de valeur libre pour cette clé : il doit choisir parmi les valeurs définies ci-dessus.',
+    lockedDisabledHint:
+      'Définissez au moins une valeur possible pour pouvoir verrouiller cette clé.',
+    empty: 'Aucun paramètre de tracking défini',
+    inheritedFromGroup: 'Hérité de la configuration globale',
+    cascade: {
+      label: 'Configuration du tracking pour ce template',
+      inherit: 'Hériter de la configuration globale',
+      inheritDescription:
+        'Les paramètres définis au niveau global s\'appliquent tels quels.',
+      extend: 'Hériter et ajouter des paramètres spécifiques',
+      extendDescription:
+        'Les paramètres globaux restent actifs ; ceux ajoutés ci-dessous viennent les compléter (ou les remplacer pour une clé en conflit).',
+      replace: 'Remplacer la configuration globale par une configuration spécifique',
+      replaceDescription:
+        'Seuls les paramètres définis ci-dessous sont appliqués ; la configuration globale est ignorée.',
+    },
+    validation: {
+      emptyKey: 'La clé est requise',
+      duplicateKey: 'Cette clé est dupliquée',
+    },
+    snackbars: {
+      updated: 'Configuration de tracking enregistrée.',
+      error: 'Erreur lors de l\'enregistrement.',
+    },
+    builder: {
+      requiredMissing: 'Paramètres de tracking obligatoires manquants',
+      requiredMissingDescription:
+        'Veuillez renseigner ces paramètres avant de télécharger : {keys}',
+    },
+    templates: {
+      sectionTitle: 'Tracking spécifique par template',
+      sectionDescription:
+        'Vous pouvez surcharger ou compléter la configuration globale ci-dessus pour chaque template.',
+      empty: 'Aucun template disponible.',
+      statusInherits: 'Hérite de la configuration globale',
+      statusMerge: 'Configuration complémentaire à la configuration globale',
+      statusOverride: 'Configuration spécifique (remplace la configuration globale)',
+    },
+  },
   personalizedVariables: {
     title: 'Variables personnalisées',
     description:
@@ -650,6 +705,7 @@ export default {
       bi: 'BI & Analytics',
       aiGeneration: 'IA - Génération',
       aiTranslation: 'IA - Traduction',
+      contentFeed: 'Flux de contenu',
     },
     statusLabels: {
       valid: 'Validé',
@@ -678,6 +734,9 @@ export default {
       apiKeyPlaceholder: 'Votre clé API DeepL',
       apiKeyHint: 'Votre clé API DeepL (Free ou Pro)'
     },
+    rss: {
+      apiHostHint: 'URL publique du flux RSS ou Atom'
+    },
     models: {
       fastEconomical: 'rapide, économique',
       balanced: 'équilibré',
@@ -685,6 +744,43 @@ export default {
       fast: 'rapide',
       recommended: 'recommandé',
     }
+  },
+  feedMappings: {
+    title: 'Flux de contenu',
+    template: 'Template',
+    block: 'Bloc',
+    integration: 'Source du flux',
+    active: 'Actif',
+    add: 'Ajouter un mapping de flux',
+    edit: 'Modifier le mapping de flux',
+    created: 'Mapping de flux créé avec succès',
+    updated: 'Mapping de flux mis à jour avec succès',
+    deleted: 'Mapping de flux supprimé avec succès',
+    noFeedMappings: 'Aucun flux de contenu configuré',
+    loadingBlocks: 'Chargement des blocs...',
+    noBlockFields:
+      'Aucun champ mappable n\'a été trouvé pour ce bloc. Les items du flux ne peuvent pas y être mappés — choisissez un autre bloc.',
+    columnCount: 'Nombre de colonnes',
+    columnCountHint:
+      'Pour les blocs multi-colonnes (ex: bloc articles sur 3 colonnes) — un mapping de champs par colonne',
+    column: 'Colonne {n}',
+    ctaDefaultLabel: 'Libellé par défaut du bouton CTA',
+    ctaDefaultLabelHint:
+      'Appliqué lors de l\'insertion d\'un item — reste modifiable ensuite dans l\'éditeur',
+    deleteConfirmTitle: 'Supprimer le mapping de flux',
+    deleteConfirmMessage:
+      'Êtes-vous sûr de vouloir supprimer ce mapping de flux ?',
+    fieldColumnHeader: 'Champ du bloc',
+    roleColumnHeader: 'Correspond à',
+    roleNone: '— Ignorer —',
+    feedFields: {
+      title: 'titre de l\'item (title)',
+      link: 'lien de l\'item (link)',
+      description: 'description de l\'item (description)',
+      image: 'image de l\'item (image)',
+      pubDate: 'date de publication (pubDate)',
+      ctaLabel: 'libellé CTA par défaut (texte statique)',
+    },
   },
   aiFeatures: {
     title: 'Fonctionnalités IA',

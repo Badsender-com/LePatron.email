@@ -53,6 +53,9 @@ export function templates() {
 export function templatesItem(routeParams = {}) {
   return `/templates/${routeParams.templateId}`;
 }
+export function templatesItemTrackingConfig(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/tracking-config`;
+}
 export function templatesItemPreview(routeParams = {}) {
   return `/templates/${routeParams.templateId}/preview`;
 }
@@ -66,6 +69,9 @@ export function templatesItemMarkup(routeParams = {}) {
 // this is not used by axios (SSE with EventSource)
 export function templatesItemEvents(routeParams = {}) {
   return `${API_PREFIX}/templates/${routeParams.templateId}/events`;
+}
+export function templatesItemBlocksWithFields(routeParams = {}) {
+  return `/templates/${routeParams.templateId}/blocks-with-fields`;
 }
 
 /// ///
@@ -210,6 +216,10 @@ export function getFolder(folderID) {
   return `/folders/${folderID}`;
 }
 
+export function getFolderChildren(folderID) {
+  return `/folders/${folderID}/children`;
+}
+
 export function getFolderAccess(folderID) {
   return `/folders/${folderID}/has-access`;
 }
@@ -329,6 +339,22 @@ export function integrationModels(integrationId) {
 
 export function integrationDashboardCount(integrationId) {
   return `/integrations/${integrationId}/dashboard-count`;
+}
+
+/// ///
+// FEED MAPPINGS
+/// ///
+
+export function feedMappings(groupId) {
+  return `/feed-mappings/groups/${groupId}`;
+}
+
+export function feedMappingsCreate() {
+  return '/feed-mappings';
+}
+
+export function feedMappingsItem(feedMappingId) {
+  return `/feed-mappings/${feedMappingId}`;
 }
 
 /// ///

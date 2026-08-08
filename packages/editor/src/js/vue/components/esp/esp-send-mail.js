@@ -10,6 +10,8 @@ const { ESP_TYPE } = require('../../constant/esp-type');
 const {
   getErrorsForControlQuality,
   displayErrors,
+  checkRequiredTrackingParams,
+  displayTrackingError,
 } = require('../../../ext/badsender-control-quality');
 
 const {
@@ -17,6 +19,7 @@ const {
   getProfileDetail,
 } = require('../../../vue/utils/apis');
 const axios = require('axios');
+const ko = require('knockout');
 
 const EspComponent = Vue.component('EspForm', {
   components: {
@@ -157,6 +160,16 @@ const EspComponent = Vue.component('EspForm', {
         });
     },
     handleProfileSelect(profile) {
+      // Pre-flight: block BEFORE the ESP form opens so the user doesn't fill
+      // in campaign details (subject, name, etc.) only to be told the tracking
+      // is incomplete. Reads the live KO state — works even if no save has
+      // happened since editing. Backend re-checks the same in
+      // profile.service.assertRequiredTrackingParamsFilled (defense in depth).
+      const missingTracking = checkRequiredTrackingParams(this.vm);
+      if (missingTracking.length > 0) {
+        displayTrackingError(missingTracking, this.vm);
+        return;
+      }
       this.selectedProfile = profile;
       this.fetchData().then(() => {
         this.checkIfAlreadySendMailWithProfile();
@@ -190,6 +203,11 @@ const EspComponent = Vue.component('EspForm', {
       if (!this.vm?.metadata?.url?.sendCampaignMail) {
         return;
       }
+      // Tracking pre-check is done in handleProfileSelect, before this modal
+      // opens. The backend also re-validates (profile.service
+      // .assertRequiredTrackingParamsFilled). No need to re-check here: the
+      // tracking panel isn't accessible while this modal is open, so the
+      // state cannot have drifted.
 
       this.isLoadingExport = true;
       const unprocessedHtml = this.vm.exportHTML();
@@ -202,6 +220,9 @@ const EspComponent = Vue.component('EspForm', {
           type: this.fetchedProfile.type,
           contentSentType: this.fetchedProfile.contentSentType,
           campaignId: this.campaignId,
+          // Live tracking state from the builder — used by the backend to
+          // validate / rewrite UTMs without requiring a prior Save.
+          tracking: ko.toJS(this.vm.content().tracking),
           espSendingMailData: {
             campaignMailName: data?.campaignMailName,
             adobe: {
