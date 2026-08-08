@@ -18,13 +18,9 @@
  * featureType convention
  * -----------------------
  * Each AISkillInvocation log carries a `featureType` string that names the
- * caller. Two values are reserved for non-production traffic and should be
- * excluded from product analytics by default:
- *
- *   - 'admin-test'  → invocations triggered from the super-admin Test runner
- *                     (page detail of a skill > Test tab).
- *   - 'playground'  → invocations issued by the AI Playground module
- *                     (work-in-progress, see future work).
+ * caller. `'playground'` (invocations issued by the AI Playground module) and
+ * the `'poc.*'` prefix are reserved for non-production traffic and excluded
+ * from product analytics by default.
  *
  * Any other value is a productive feature (e.g. 'translation', 'qc.subject',
  * 'redaction.cta', …) declared by a skill manifest.
@@ -70,7 +66,7 @@ const DEFAULT_TIMEOUT_MS = 30000;
  *
  * ── Two orthogonal axes that must NEVER be conflated ──────────────────────
  *   • `featureType` (this param): the SOURCE of the invocation, for ANALYTICS
- *     only ('playground' | 'admin-test' | a productive feature name). Stored on
+ *     only ('playground' | a productive feature name). Stored on
  *     AISkillInvocation and used to include/exclude rows from analytics. It does
  *     NOT influence which LLM engine is used.
  *   • [étape 2] `categoryOverride`: ENGINE RESOLUTION. Defaults to skill.category,

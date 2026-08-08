@@ -4,8 +4,6 @@ const asyncHandler = require('express-async-handler');
 const createError = require('http-errors');
 
 const skillService = require('../services/skill.service.js');
-const skillInvocation = require('../services/skill-invocation.service.js');
-const testBudget = require('../services/test-budget.service.js');
 const { parseVersionParam } = require('../services/version-helpers.js');
 const { listSchemaIds } = require('../schemas');
 const { describeSchema } = require('../schemas/describe-schema.js');
@@ -111,24 +109,6 @@ module.exports = {
   archiveSkill: asyncHandler(async (req, res) => {
     const skill = await skillService.archiveSkill(req.params.skillId);
     res.json(skill);
-  }),
-
-  testSkill: asyncHandler(async (req, res) => {
-    const { input, groupId } = req.body;
-    if (!groupId) throw createError(400, 'groupId is required');
-    const budget = await testBudget.consumeBudget(userIdOf(req));
-    const result = await skillInvocation.invoke({
-      skillId: req.params.skillId,
-      input,
-      groupId,
-      userId: userIdOf(req),
-      featureType: 'admin-test',
-    });
-    res.json({ ...result, budget });
-  }),
-
-  getBudget: asyncHandler(async (req, res) => {
-    res.json(await testBudget.getBudget(userIdOf(req)));
   }),
 
   listSchemas: asyncHandler(async (_req, res) => {

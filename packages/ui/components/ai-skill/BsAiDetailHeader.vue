@@ -1,14 +1,21 @@
 <script>
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
-import { Archive } from 'lucide-vue';
+import { Archive, FlaskConical } from 'lucide-vue';
 
 export default {
   name: 'BsAiDetailHeader',
-  components: { BsPageHeader, LucideArchive: Archive },
+  components: {
+    BsPageHeader,
+    LucideArchive: Archive,
+    LucideFlask: FlaskConical,
+  },
   props: {
     title: { type: String, required: true },
     status: { type: String, required: true },
     backTo: { type: String, required: true },
+    // Optional "Test in the playground" link (skill pages only). The route
+    // lives on the playground branch; harmless until the branches are merged.
+    playgroundTo: { type: String, default: null },
   },
   computed: {
     statusColor() {
@@ -45,6 +52,10 @@ export default {
       </v-chip>
     </template>
     <template #actions>
+      <v-btn v-if="playgroundTo" text color="primary" :to="playgroundTo">
+        <lucide-flask :size="18" class="mr-2" />
+        {{ $t('aiSkills.skill.testInPlayground') }}
+      </v-btn>
       <v-btn
         v-if="status !== 'ARCHIVED'"
         outlined

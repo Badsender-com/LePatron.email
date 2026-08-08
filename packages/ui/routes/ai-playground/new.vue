@@ -20,6 +20,12 @@ export default {
       saving: false,
     };
   },
+  created() {
+    // Prefill the skill when arriving from a skill page's "Test in the
+    // playground" link (/ai-playground/new?skillId=…).
+    const { skillId } = this.$route.query;
+    if (skillId) this.scenario.skillRef.skillId = skillId;
+  },
   head() {
     return { title: this.$t('aiPlayground.actions.newScenario') };
   },

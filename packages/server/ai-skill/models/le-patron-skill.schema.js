@@ -87,7 +87,6 @@ const LePatronSkillSchema = new Schema(
     inputSchemaId: { type: String, required: true },
     outputSchemaId: { type: String, required: true },
     owner: { type: ObjectId, ref: UserModel },
-    intendedUseCases: { type: [String], default: [] },
     status: {
       type: String,
       enum: SkillStatusValues,
