@@ -83,7 +83,6 @@ const ExpertiseSchema = new Schema(
     appliesToEmailTypes: { type: [String], default: [] },
     appliesToLanguages: { type: [String], default: [] },
     owner: { type: ObjectId, ref: UserModel },
-    consumedBySkills: { type: [String], default: [] },
     status: {
       type: String,
       enum: SkillStatusValues,

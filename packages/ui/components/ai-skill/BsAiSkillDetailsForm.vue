@@ -7,7 +7,6 @@
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsCombobox from '~/components/form/bs-combobox.vue';
 
 const CATEGORIES = [
   'redaction',
@@ -21,7 +20,7 @@ const CATEGORIES = [
 
 export default {
   name: 'BsAiSkillDetailsForm',
-  components: { BsTextField, BsSelect, BsTextarea, BsCombobox },
+  components: { BsTextField, BsSelect, BsTextarea },
   props: {
     skill: { type: Object, required: true },
     schemas: { type: Array, default: () => [] },
@@ -68,13 +67,6 @@ export default {
       v-model="skill.outputSchemaId"
       :items="outputSchemas"
       :label="$t('aiSkills.skill.outputSchemaId')"
-    />
-    <bs-combobox
-      v-model="skill.intendedUseCases"
-      :label="$t('aiSkills.skill.intendedUseCases')"
-      multiple
-      chips
-      small-chips
     />
     <div class="d-flex justify-end mt-3">
       <v-btn

@@ -6,6 +6,8 @@ const { AISkillInvocations } = require('../../common/models.common.js');
 // Reserved non-productive featureTypes (cf. docs/AI_SKILL_AUTHORING.md):
 // excluded from the Invocations list by default so test traffic does not
 // drown real feature analytics. The UI exposes an opt-in toggle.
+// 'admin-test' is kept for historical logs only — the super-admin Test runner
+// that produced it was removed; no new code emits this featureType.
 const NonProductiveFeatureTypes = ['admin-test', 'playground'];
 const NonProductivePrefixRegex = /^poc\./;
 

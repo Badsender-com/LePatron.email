@@ -31,11 +31,15 @@ playground y est sérialisé en JSON.
 
 ## FeatureTypes réservés (non productifs)
 
-`'admin-test'` (runner de test super-admin), `'playground'` (AI Playground) et
-tout type préfixé `'poc.'` (proofs of concept) sont réservés aux invocations
-non productives : ils sont exclus par défaut des analytics de l'onglet
-Invocations. Une feature productive utilise son propre featureType, déclaré
-dans son `skill-manifest.js`.
+`'playground'` (AI Playground) et tout type préfixé `'poc.'` (proofs of
+concept) sont réservés aux invocations non productives : ils sont exclus par
+défaut des analytics de l'onglet Invocations. Une feature productive utilise
+son propre featureType, déclaré dans son `skill-manifest.js`.
+
+> Historique : un featureType `'admin-test'` existait pour un runner de test
+> super-admin (onglet Test de la page skill), supprimé depuis. Il reste dans la
+> liste d'exclusion analytics pour d'éventuels logs historiques, mais aucun
+> code ne l'émet plus — on teste désormais une skill via le Playground.
 
 ## Modèle conceptuel : feature / invocation / skill
 

@@ -29,14 +29,8 @@ export function aiSkillActivate(skillId, major, minor) {
 export function aiSkillArchive(skillId) {
   return `/ai-skills/${skillId}/archive`;
 }
-export function aiSkillTest(skillId) {
-  return `/ai-skills/${skillId}/test`;
-}
 export function aiSkillSchemas() {
   return '/ai-skills/schemas';
-}
-export function aiSkillBudget() {
-  return '/ai-skills/budget';
 }
 
 export function aiExpertiseList() {

@@ -77,6 +77,20 @@ describe('invocation-log.service', () => {
       const query = AISkillInvocations.find.mock.calls[0][0];
       expect(query.featureType).toBe('playground');
     });
+
+    it('a skill Logs query (skillId + includeNonProductive) keeps playground runs', async () => {
+      // The skill's own Logs tab passes includeNonProductive:true → no
+      // featureType exclusion, so its playground runs show without any toggle.
+      AISkillInvocations.find.mockReturnValue(chain([]));
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      await invocationService.listInvocations({
+        skillId: 'redaction.cta.promo',
+        includeNonProductive: true,
+      });
+      const query = AISkillInvocations.find.mock.calls[0][0];
+      expect(query.skillId).toBe('redaction.cta.promo');
+      expect(query.featureType).toBeUndefined();
+    });
   });
 
   describe('getInvocation', () => {

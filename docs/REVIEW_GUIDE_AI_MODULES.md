@@ -1,6 +1,6 @@
 # Guide de review — Modules IA (Skills, Expertise, Playground)
 
-> Dernière mise à jour : 2026-06-13. Écrit pour le reviewer qui découvre ces
+> Dernière mise à jour : 2026-06-18. Écrit pour le reviewer qui découvre ces
 > modules sans avoir suivi la démarche. Deux PRs : **PR1** `feat/AI-skills-v1`
 > (skills + expertise + invocations) et **PR2** `feat/ai-playground` (le
 > playground, basée sur la PR1). Un POC séparé (`poc/ai-textgen`) n'est PAS à
@@ -104,6 +104,37 @@ La migration `scripts/migrate-version-major-minor.js` est conservée
   (rétroactivement sur `/api/translation` aussi), DOMPurify sur les sorties
   HTML (translate inclus), résolution du scope d'expertise depuis les champs
   du bloc. Détail : `docs/poc-textgen-report.md` (branche `poc/ai-textgen`).
+
+## 4bis. Surfaces retirées avant la review (« où est passé X ? »)
+
+Trois surfaces mortes ont été supprimées pour ne pas générer d'allers-retours :
+
+- **Runner de test super-admin** (onglet « Test » de la page skill, route
+  `POST /ai-skills/:id/test`, controller `testSkill`, `getBudget` + route
+  `/budget`, featureType `admin-test`). Remplacé par un lien **« Tester dans le
+  playground »** dans le header de la page skill. `test-budget.service` est
+  **conservé** (consommé par le playground pour le quota 50/jour).
+- **Champ `consumedBySkills`** (Expertise) + les onglets « Expertises liées »
+  (page skill) et « Consommée par » (page expertise). Le lien réel
+  skill↔expertise sera affiché **post-v1 depuis les manifests et les logs
+  d'invocation** (cf. registre de manifests, §2) — pas hand-déclaré.
+- **Champ `intendedUseCases`** (Skill) : champ de gouvernance déclaratif
+  jamais exploité.
+
+Migration `scripts/migrate-drop-dead-ai-fields.js` (`$unset` idempotent des
+deux champs). `admin-test` reste dans la liste d'exclusion analytics pour
+d'éventuels logs historiques (commenté comme tel) — aucun code ne l'émet plus.
+
+## 4ter. Journal de commits ≠ diff
+
+Le log de ces branches contient des commits **design-system** (avril–mai,
+Jonathan + Olivier Fredon) et **gallery-redesign** dont le contenu a depuis été
+intégré à develop par ses **propres PRs** : leur diff net vs develop est **nul
+ou marginal** (mesuré : ~88 % du diff est de l'IA pure, le design-system pèse
+~300 lignes nettes). **La review se fait sur les fichiers du diff, pas sur le
+log.** Ces commits n'ont pas été extraits : réécrire un historique traversé de
+merges porteurs de résolutions (regreffe `chatComplete`, merges develop) pour
+~2 % de diff a un rapport risque/bénéfice défavorable.
 
 ## 5. Preuves de validation déjà passées
 

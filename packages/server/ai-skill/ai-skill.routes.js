@@ -12,7 +12,6 @@ skillsRouter.use(GUARD_ADMIN);
 
 skillsRouter.get('/schemas', skill.listSchemas);
 skillsRouter.get('/schemas/:schemaId/descriptor', skill.getSchemaDescriptor);
-skillsRouter.get('/budget', skill.getBudget);
 skillsRouter.get('/', skill.listSkills);
 skillsRouter.post('/', skill.createSkill);
 skillsRouter.get('/:skillId', skill.getSkill);
@@ -26,7 +25,6 @@ skillsRouter.post(
   skill.activateVersion
 );
 skillsRouter.post('/:skillId/archive', skill.archiveSkill);
-skillsRouter.post('/:skillId/test', skill.testSkill);
 
 const expertiseRouter = express.Router();
 expertiseRouter.use(GUARD_ADMIN);
