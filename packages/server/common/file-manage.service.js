@@ -7,7 +7,6 @@ const chalk = require('chalk');
 const formidable = require('formidable');
 
 const config = require('../node.config.js');
-const logger = require('../utils/logger.js');
 const defer = require('../helpers/create-promise.js');
 const formatName = require('../helpers/format-filename-for-jquery-fileupload.js');
 const slugFilename = require('../helpers/slug-filename.js');
@@ -60,12 +59,9 @@ function handleTemplatesUploads(fields, files, resolve) {
 }
 
 function handleEditorUpload(fields, files, resolve) {
-  logger.log('Handling jQuery file upload');
-  const rawFile = files['files[]'];
-  const file = {
-    ...formatName(rawFile.name),
-    originalName: rawFile.originalName,
-  };
+  console.log('HANDLE JQUERY FILE UPLOAD');
+  let file = files['files[]'];
+  file = formatName(file.name);
   // knockout jquery-fileupload binding expect this format
   resolve({ files: [file] });
 }
