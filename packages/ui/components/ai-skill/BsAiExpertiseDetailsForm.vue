@@ -2,7 +2,6 @@
 // Parent owns the expertise object and accepts in-place edits via v-model;
 // see BsAiSkillDetailsForm for rationale.
 /* eslint-disable vue/no-mutating-props */
-import * as api from '~/helpers/ai-skill-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
@@ -25,13 +24,6 @@ export default {
     expertise: { type: Object, required: true },
     saving: { type: Boolean, default: false },
   },
-  data() {
-    return {
-      // Existing skillIds offered as suggestions in the consumedBySkills
-      // combobox — free slugs stay allowed (the skill may not exist yet).
-      knownSkillIds: [],
-    };
-  },
   computed: {
     categoryOptions() {
       return CATEGORIES.map((value) => ({
@@ -39,16 +31,6 @@ export default {
         text: this.$t(`aiSkills.categories.${value}`),
       }));
     },
-  },
-  async mounted() {
-    try {
-      const res = await this.$axios.$get(api.aiSkills(), {
-        params: { pageSize: 200 },
-      });
-      this.knownSkillIds = (res.items || []).map((s) => s.skillId);
-    } catch (err) {
-      this.knownSkillIds = [];
-    }
   },
   methods: {
     onTransversalChange(checked) {
@@ -102,14 +84,6 @@ export default {
     <bs-combobox
       v-model="expertise.appliesToLanguages"
       :label="$t('aiSkills.expertise.appliesToLanguages')"
-      multiple
-      chips
-      small-chips
-    />
-    <bs-combobox
-      v-model="expertise.consumedBySkills"
-      :label="$t('aiSkills.expertise.consumedBySkills')"
-      :items="knownSkillIds"
       multiple
       chips
       small-chips

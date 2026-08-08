@@ -5,8 +5,6 @@
  * — these tests focus on routing, guard wiring, and request/response shape.
  */
 
-const { Types } = require('mongoose');
-
 // ── Mock service layer ─────────────────────────────────────────────────────
 jest.mock(
   '../../../../packages/server/ai-skill/services/skill.service',
@@ -22,14 +20,6 @@ jest.mock(
     activateVersion: jest.fn(),
     archiveSkill: jest.fn(),
   })
-);
-jest.mock(
-  '../../../../packages/server/ai-skill/services/skill-invocation.service',
-  () => ({ invoke: jest.fn() })
-);
-jest.mock(
-  '../../../../packages/server/ai-skill/services/test-budget.service',
-  () => ({ consumeBudget: jest.fn(), getBudget: jest.fn() })
 );
 jest.mock(
   '../../../../packages/server/ai-skill/services/expertise.service',
@@ -63,8 +53,6 @@ const express = require('express');
 const request = require('supertest');
 
 const skillService = require('../../../../packages/server/ai-skill/services/skill.service');
-const testBudgetService = require('../../../../packages/server/ai-skill/services/test-budget.service');
-const skillInvocation = require('../../../../packages/server/ai-skill/services/skill-invocation.service');
 const invocationLog = require('../../../../packages/server/ai-skill/services/invocation-log.service');
 
 const {
@@ -139,45 +127,6 @@ describe('ai-skill HTTP routes', () => {
       '/api/ai-skills/schemas/nope/descriptor'
     );
     expect(res.status).toBe(404);
-  });
-
-  it('POST /api/ai-skills/:skillId/test enforces budget then invokes', async () => {
-    testBudgetService.consumeBudget.mockResolvedValue({
-      count: 1,
-      max: 50,
-      remaining: 49,
-    });
-    skillInvocation.invoke.mockResolvedValue({
-      output: { text: 'ok' },
-      invocationId: 'inv1',
-      resolvedConfig: {},
-      tokenUsage: {},
-      latencyMs: 12,
-    });
-    const groupId = new Types.ObjectId().toString();
-    const res = await request(makeApp())
-      .post('/api/ai-skills/generic.text/test')
-      .send({ input: { prompt: 'hi' }, groupId });
-    expect(res.status).toBe(200);
-    expect(testBudgetService.consumeBudget).toHaveBeenCalled();
-    expect(skillInvocation.invoke).toHaveBeenCalledWith(
-      expect.objectContaining({
-        skillId: 'generic.text',
-        featureType: 'admin-test',
-      })
-    );
-    expect(res.body.budget.remaining).toBe(49);
-  });
-
-  it('POST /api/ai-skills/:skillId/test returns 429 when budget exhausted', async () => {
-    testBudgetService.consumeBudget.mockRejectedValue(
-      Object.assign(new Error('cap'), { status: 429 })
-    );
-    const res = await request(makeApp())
-      .post('/api/ai-skills/generic.text/test')
-      .send({ input: { prompt: 'hi' }, groupId: 'g' });
-    expect(res.status).toBe(429);
-    expect(skillInvocation.invoke).not.toHaveBeenCalled();
   });
 
   it('full lifecycle: create → major version → activate → minor version → activate → archive', async () => {

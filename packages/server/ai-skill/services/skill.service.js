@@ -20,7 +20,6 @@ const LIST_PROJECTION = {
   category: 1,
   status: 1,
   activeVersion: 1,
-  intendedUseCases: 1,
   inputSchemaId: 1,
   outputSchemaId: 1,
   owner: 1,
@@ -59,7 +58,6 @@ async function createSkill(data, userId) {
     category: data.category,
     inputSchemaId: data.inputSchemaId,
     outputSchemaId: data.outputSchemaId,
-    intendedUseCases: data.intendedUseCases || [],
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
@@ -81,7 +79,6 @@ const PATCHABLE_FIELDS = [
   'category',
   'inputSchemaId',
   'outputSchemaId',
-  'intendedUseCases',
 ];
 
 async function updateSkill(skillId, patch) {

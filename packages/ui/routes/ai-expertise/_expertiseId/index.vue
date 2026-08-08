@@ -7,7 +7,6 @@ import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsAiDetailHeader from '~/components/ai-skill/BsAiDetailHeader.vue';
 import BsAiExpertiseDetailsForm from '~/components/ai-skill/BsAiExpertiseDetailsForm.vue';
 import BsAiExpertiseVersionsPanel from '~/components/ai-skill/BsAiExpertiseVersionsPanel.vue';
-import BsAiExpertiseConsumersPanel from '~/components/ai-skill/BsAiExpertiseConsumersPanel.vue';
 import BsAiActivateModal from '~/components/ai-skill/BsAiActivateModal.vue';
 import BsAiArchiveModal from '~/components/ai-skill/BsAiArchiveModal.vue';
 
@@ -17,7 +16,6 @@ export default {
     BsAiDetailHeader,
     BsAiExpertiseDetailsForm,
     BsAiExpertiseVersionsPanel,
-    BsAiExpertiseConsumersPanel,
     BsAiActivateModal,
     BsAiArchiveModal,
   },
@@ -91,7 +89,6 @@ export default {
             isTransversal: this.exp.isTransversal,
             appliesToEmailTypes: this.exp.appliesToEmailTypes,
             appliesToLanguages: this.exp.appliesToLanguages,
-            consumedBySkills: this.exp.consumedBySkills,
           }
         );
         this.showSnackbar({
@@ -259,11 +256,9 @@ export default {
 
     <p class="text-caption text--secondary detail-meta">
       {{ exp.expertiseId }} · {{ categoryLabel(exp.category) }} ·
-      <span v-if="activeVersionLabel"
-        >{{ $t('aiSkills.skill.activeVersion') }} v{{
-          activeVersionLabel
-        }}</span
-      >
+      <span v-if="activeVersionLabel">{{ $t('aiSkills.skill.activeVersion') }} v{{
+        activeVersionLabel
+      }}</span>
       <span v-else class="text--disabled">{{
         $t('aiSkills.skill.noActiveVersion')
       }}</span>
@@ -278,9 +273,6 @@ export default {
       </v-tab>
       <v-tab href="#sections">
         {{ $t('aiSkills.expertise.sectionsTab') }}
-      </v-tab>
-      <v-tab href="#consumers">
-        {{ $t('aiSkills.expertise.consumedByTab') }}
       </v-tab>
     </v-tabs>
     <v-divider />
@@ -329,11 +321,6 @@ export default {
               {{ $t('aiSkills.expertise.noSections') }}
             </p>
           </v-card>
-        </v-tab-item>
-        <v-tab-item value="consumers">
-          <bs-ai-expertise-consumers-panel
-            :skill-ids="exp.consumedBySkills || []"
-          />
         </v-tab-item>
       </v-tabs-items>
     </v-container>

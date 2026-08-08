@@ -3,7 +3,6 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
-import BsCombobox from '~/components/form/bs-combobox.vue';
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
 import { RefreshCw } from 'lucide-vue';
 
@@ -24,7 +23,6 @@ export default {
     BsTextField,
     BsSelect,
     BsTextarea,
-    BsCombobox,
     LucideRefreshCw: RefreshCw,
   },
   props: {
@@ -76,7 +74,6 @@ export default {
         category: 'redaction',
         inputSchemaId: '',
         outputSchemaId: '',
-        intendedUseCases: [],
       };
     },
     open() {
@@ -174,14 +171,6 @@ export default {
         v-model="skill.outputSchemaId"
         :items="outputSchemas"
         :label="$t('aiSkills.skill.outputSchemaId')"
-        :disabled="loading"
-      />
-      <bs-combobox
-        v-model="skill.intendedUseCases"
-        :label="$t('aiSkills.skill.intendedUseCases')"
-        multiple
-        chips
-        small-chips
         :disabled="loading"
       />
       <v-divider class="mt-4" />
