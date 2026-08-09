@@ -135,6 +135,7 @@ export default {
     name: 'Name',
     title: 'Title',
     savedSuccessfully: 'Saved',
+    search: 'Search',
     externalUsername: 'External Username',
     description: 'Description',
     author: 'Author',
@@ -1149,6 +1150,18 @@ export default {
         'No declared feature currently loads this scope. The expertise stays usable by explicit selection (playground).',
       appliesToEmailTypes: 'Applies to email types',
       appliesToLanguages: 'Languages (empty = all)',
+      technicalId: 'Technical identifier',
+      createScope: 'Create scope "{value}"',
+      categoryHelp:
+        'Classifies the expertise by broad family. The category will also, eventually, determine which AI engine is used for this kind of feature.',
+      scopeHelp:
+        'Loading key: features fetch expertise by scope before calling the AI (e.g. CTA generation loads the "cta" scope).',
+      emailTypeHelp:
+        'Restricts the expertise to some typologies (e.g. "promo"). Empty = all types.',
+      languageHelp:
+        'Languages of the content this know-how applies to — e.g. a French risky-words list only applies to FR content. Empty = all.',
+      descriptionHelp:
+        'Shown in the selectors (playground and features) to help pick the right expertise.',
       goodExamples: 'Good examples',
       badExamples: 'Bad examples',
       bodyLabel: 'Markdown body — use ## [section-id] Title',

@@ -135,6 +135,7 @@ export default {
     name: 'Nom',
     title: 'Titre',
     savedSuccessfully: 'Enregistré',
+    search: 'Rechercher',
     externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
@@ -1200,6 +1201,18 @@ export default {
         'Aucune fonctionnalité déclarée ne charge actuellement ce périmètre. L\'expertise restera utilisable par sélection explicite (playground).',
       appliesToEmailTypes: 'Types d\'email concernés',
       appliesToLanguages: 'Langues (vide = toutes)',
+      technicalId: 'Identifiant technique',
+      createScope: 'Créer le périmètre « {value} »',
+      categoryHelp:
+        'Classe l\'expertise par grande famille. La catégorie déterminera aussi, à terme, quel moteur IA est utilisé pour ce type de fonctionnalité.',
+      scopeHelp:
+        'Clé de chargement : les fonctionnalités récupèrent les expertises par périmètre avant d\'appeler l\'IA (ex. la génération de CTA charge le périmètre « cta »).',
+      emailTypeHelp:
+        'Restreint l\'expertise à certaines typologies (ex. « promo »). Vide = tous les types.',
+      languageHelp:
+        'Langues des contenus auxquels ce savoir-faire s\'applique — ex. une liste de mots à risque en français ne vaut que pour des contenus FR. Vide = toutes.',
+      descriptionHelp:
+        'Affichée dans les sélecteurs (playground et fonctionnalités) pour aider à choisir la bonne expertise.',
       goodExamples: 'Bons exemples',
       badExamples: 'Mauvais exemples',
       bodyLabel: 'Contenu Markdown — utilisez ## [section-id] Titre',

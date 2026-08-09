@@ -6,6 +6,7 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
     findOne: jest.fn(),
     countDocuments: jest.fn(),
     create: jest.fn(),
+    distinct: jest.fn(),
   },
 }));
 
@@ -30,6 +31,19 @@ function mockExpertiseDoc(overrides = {}) {
 beforeEach(() => jest.clearAllMocks());
 
 describe('expertise.service', () => {
+  it('getFacets returns sorted, non-null distinct scopes and emailTypes', async () => {
+    Expertises.distinct.mockImplementation((field) =>
+      Promise.resolve(
+        field === 'scope'
+          ? ['subject', null, 'cta']
+          : [null, 'promo', 'newsletter']
+      )
+    );
+    const facets = await expertiseService.getFacets();
+    expect(facets.scopes).toEqual(['cta', 'subject']);
+    expect(facets.emailTypes).toEqual(['newsletter', 'promo']);
+  });
+
   it('createExpertise throws 409 on duplicate', async () => {
     Expertises.create.mockRejectedValue({ code: 11000 });
     await expect(

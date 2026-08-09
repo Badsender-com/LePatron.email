@@ -4,6 +4,7 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsAiSkillCreateModal from '~/components/ai-skill/BsAiSkillCreateModal.vue';
+import BsTimestamp from '~/components/ai-skill/BsTimestamp.vue';
 import { Sparkles } from 'lucide-vue';
 
 const CATEGORIES = [
@@ -22,6 +23,7 @@ export default {
   components: {
     BsDataTable,
     BsAiSkillCreateModal,
+    BsTimestamp,
     LucideSparkles: Sparkles,
   },
   data() {
@@ -202,9 +204,7 @@ export default {
         <span v-else class="text--disabled">—</span>
       </template>
       <template #item.updatedAt="{ item }">
-        <span class="text-caption text--secondary">{{
-          formatDate(item.updatedAt)
-        }}</span>
+        <bs-timestamp :value="item.updatedAt" />
       </template>
       <template #no-data>
         <div class="text-center pa-6">

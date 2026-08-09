@@ -2,10 +2,12 @@
 // Parent owns the expertise object and accepts in-place edits via v-model;
 // see BsAiSkillDetailsForm for rationale.
 /* eslint-disable vue/no-mutating-props */
+import * as api from '~/helpers/ai-skill-routes.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
+import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 
 const CATEGORIES = [
   'redaction',
@@ -24,6 +26,9 @@ export default {
     expertise: { type: Object, required: true },
     saving: { type: Boolean, default: false },
   },
+  data() {
+    return { scopeFacets: [], emailTypeFacets: [] };
+  },
   computed: {
     categoryOptions() {
       return CATEGORIES.map((value) => ({
@@ -31,6 +36,19 @@ export default {
         text: this.$t(`aiSkills.categories.${value}`),
       }));
     },
+    languageOptions() {
+      return isoLanguageOptions();
+    },
+  },
+  async mounted() {
+    try {
+      const res = await this.$axios.$get(api.aiExpertiseFacets());
+      this.scopeFacets = res.scopes || [];
+      this.emailTypeFacets = res.emailTypes || [];
+    } catch (err) {
+      this.scopeFacets = [];
+      this.emailTypeFacets = [];
+    }
   },
   methods: {
     onTransversalChange(checked) {
@@ -48,6 +66,8 @@ export default {
     <bs-textarea
       v-model="expertise.description"
       :label="$t('global.description')"
+      :hint="$t('aiSkills.expertise.descriptionHelp')"
+      persistent-hint
       :rows="2"
     />
     <bs-select
@@ -56,6 +76,8 @@ export default {
       item-text="text"
       item-value="value"
       :label="$t('aiSkills.filters.category')"
+      :hint="$t('aiSkills.expertise.categoryHelp')"
+      persistent-hint
     />
     <v-checkbox
       v-model="expertise.isTransversal"
@@ -63,12 +85,15 @@ export default {
       :hint="$t('aiSkills.expertise.transversalHint')"
       persistent-hint
       dense
-      class="mt-0"
+      class="mt-2"
       @change="onTransversalChange"
     />
     <bs-combobox
       v-model="expertise.scope"
+      :items="scopeFacets"
       :label="$t('aiSkills.expertise.scope')"
+      :hint="$t('aiSkills.expertise.scopeHelp')"
+      persistent-hint
       :disabled="expertise.isTransversal"
       multiple
       chips
@@ -76,14 +101,22 @@ export default {
     />
     <bs-combobox
       v-model="expertise.appliesToEmailTypes"
+      :items="emailTypeFacets"
       :label="$t('aiSkills.expertise.appliesToEmailTypes')"
+      :hint="$t('aiSkills.expertise.emailTypeHelp')"
+      persistent-hint
       multiple
       chips
       small-chips
     />
-    <bs-combobox
+    <bs-select
       v-model="expertise.appliesToLanguages"
+      :items="languageOptions"
+      item-text="text"
+      item-value="value"
       :label="$t('aiSkills.expertise.appliesToLanguages')"
+      :hint="$t('aiSkills.expertise.languageHelp')"
+      persistent-hint
       multiple
       chips
       small-chips
