@@ -1,6 +1,7 @@
 <script>
 /* eslint-disable vue/no-mutating-props */
 import * as skillApi from '~/helpers/ai-skill-routes.js';
+import * as playgroundApi from '~/helpers/ai-playground-routes.js';
 import slugify from '~/helpers/slugify.js';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
@@ -33,6 +34,7 @@ export default {
     return {
       skills: [],
       availableExpertise: [],
+      knownTags: [],
       groups: [],
       // From the input form's descriptor: whether the selected skill accepts
       // expertise input. Default true so nothing is blocked before load.
@@ -71,10 +73,28 @@ export default {
       }
       return null;
     },
+    // Schemas are versioned (§3): resolve the input schema of the version the
+    // scenario targets (pinned or the skill's active version).
     selectedInputSchemaId() {
-      const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
-      const skill = this.skills.find((s) => s.skillId === id);
-      return (skill && skill.inputSchemaId) || null;
+      const ref = this.scenario.skillRef || {};
+      const skill = this.skills.find((s) => s.skillId === ref.skillId);
+      if (!skill) return null;
+      const versions = skill.versions || [];
+      let v;
+      if (ref.mode === 'pinned' && ref.versionMajor != null) {
+        v = versions.find(
+          (x) =>
+            x.versionMajor === ref.versionMajor &&
+            x.versionMinor === (ref.versionMinor || 0)
+        );
+      } else {
+        const av = skill.activeVersion || {};
+        v = versions.find(
+          (x) =>
+            x.versionMajor === av.major && x.versionMinor === (av.minor || 0)
+        );
+      }
+      return (v && v.inputSchemaId) || null;
     },
     selectedSkillCategory() {
       const id = this.scenario.skillRef && this.scenario.skillRef.skillId;
@@ -90,7 +110,15 @@ export default {
     },
   },
   async mounted() {
-    await Promise.all([this.loadSkills(), this.loadExpertise()]);
+    await Promise.all([
+      this.loadSkills(),
+      this.loadExpertise(),
+      this.loadTags(),
+    ]);
+    // Edit case: a skill is already selected — load its versions so the input
+    // form can resolve the (versioned) schema.
+    const selected = this.scenario.skillRef && this.scenario.skillRef.skillId;
+    if (selected) await this.ensureSkillVersionsLoaded(selected);
   },
   methods: {
     async loadSkills() {
@@ -129,6 +157,22 @@ export default {
         this.availableExpertise = res.items || [];
       } catch (e) {
         this.availableExpertise = [];
+      }
+    },
+    async loadTags() {
+      // Suggest existing scenario tags in the tags combobox (free create too).
+      try {
+        const res = await this.$axios.$get(
+          playgroundApi.aiPlaygroundScenarios(),
+          { params: { pageSize: 200 } }
+        );
+        const set = new Set();
+        for (const s of res.items || []) {
+          for (const t of s.tags || []) set.add(t);
+        }
+        this.knownTags = [...set].sort();
+      } catch (e) {
+        this.knownTags = [];
       }
     },
     onSkillChange(skillId) {
@@ -186,14 +230,20 @@ export default {
     <!-- Identity (creation only — read-only afterwards). Auto-suggested from
          the name; collapsed so consultants never have to think about it. -->
     <template v-if="creating">
-      <a
-        class="text-caption d-inline-block mb-2"
+      <v-btn
+        text
+        small
+        color="primary"
+        class="px-0 mb-1"
         @click="showIdentifier = !showIdentifier"
       >
         {{ $t('aiPlayground.form.scenarioIdToggle') }}
-        <span v-if="!showIdentifier && scenario.scenarioId">
+        <span v-if="!showIdentifier && scenario.scenarioId" class="ml-1">
           — {{ scenario.scenarioId }}</span>
-      </a>
+        <v-icon :size="18">
+          {{ showIdentifier ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+        </v-icon>
+      </v-btn>
       <bs-text-field
         v-if="showIdentifier"
         :value="scenario.scenarioId"
@@ -210,6 +260,7 @@ export default {
     />
     <bs-combobox
       v-model="scenario.tags"
+      :items="knownTags"
       :label="$t('aiPlayground.form.tags')"
       multiple
       chips

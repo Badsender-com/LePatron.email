@@ -1092,7 +1092,7 @@ export default {
       skillId: 'Skill ID',
       feature: 'Feature',
       groupId: 'Group ID',
-      includeNonProductive: 'Include tests (admin-test, playground, poc.*)',
+      includeNonProductive: 'Include tests (playground, poc.*)',
     },
     categories: {
       redaction: 'Copywriting',
@@ -1211,8 +1211,8 @@ export default {
       tokens: 'Tokens',
       group: 'Group',
       providerModel: 'Provider / Model',
-      noInvocations: 'No invocation recorded yet',
-      noInvocationsHint: 'Invocations will appear here as soon as a LePatron feature consumes a skill.',
+      noInvocations: 'No invocation visible',
+      noInvocationsHint: 'Test invocations are hidden by default — enable "Include tests" to show them.',
       dateFrom: 'From',
       dateTo: 'To',
       includeNonProd: 'Include admin-test / playground',
@@ -1302,10 +1302,15 @@ export default {
       skill: 'Skill',
       status: 'Status',
       golden: 'Reference',
+      goldenTooltip:
+        'A reference run is set — new runs can be compared against it',
       when: 'When',
       latency: 'Latency',
       tokens: 'Tokens',
       feedback: 'Feedback',
+      lastRun: 'Last run',
+      lastRunStatus: 'Status',
+      runs: 'Runs',
     },
     form: {
       scenarioId: 'Identifier',
@@ -1331,8 +1336,15 @@ export default {
       expertiseNotSupported: 'This skill does not accept expertise input.',
       filterCategories: 'Categories',
       filterScope: 'Scope',
+      filterScopeHint:
+        'Query criterion: expertise whose scope matches will be loaded (e.g. "cta"). Required.',
       filterEmailType: 'Email type',
+      filterEmailTypeHint:
+        'Keeps only expertise applicable to this email type. Empty = all.',
       filterLanguage: 'Language',
+      filterLanguageHint:
+        'Keeps only expertise applicable to this language. Empty = all.',
+      filterSelectScope: 'Select a scope to preview.',
       filterPreviewCount: '{count} expertise(s) match this filter.',
       inputSection: 'Request content',
       inputHint: 'Fill in what the skill should work on. Fields marked * are required.',
@@ -1343,6 +1355,8 @@ export default {
       modeForm: 'Form',
       modeJson: 'Advanced mode (JSON)',
       unknownTypeFallback: 'This skill uses an advanced input format — JSON editing required.',
+      templateHelp: 'Template derived from the input schema:',
+      insertTemplate: 'Insert template',
       unknownKeysWarning: 'Some fields do not match the skill\'s schema (kept, but rejected at run time): {keys}',
       expertiseInjected: 'The expertise selected above is added to the request automatically — nothing to type here.',
       skillChangeConfirmTitle: 'Change skill?',
@@ -1372,6 +1386,7 @@ export default {
     runs: {
       title: 'Run history',
       empty: 'No run yet on this scenario. Trigger one to start.',
+      runOf: 'Run of {date}',
       latestRun: 'Latest run',
       executing: 'Running, may take up to 30 seconds…',
       budgetExhausted: 'Daily test budget reached (50/50). Try again tomorrow.',

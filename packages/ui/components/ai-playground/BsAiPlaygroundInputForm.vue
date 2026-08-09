@@ -82,6 +82,19 @@ export default {
         (e) => !this.knownFieldNames.includes(e.field)
       );
     },
+    // Skeleton derived from the descriptor's fields — a starting point for
+    // advanced JSON input (§6). Empty object when the schema exposes no fields.
+    schemaTemplate() {
+      const fields = (this.descriptor && this.descriptor.fields) || [];
+      const skeleton = {};
+      for (const f of fields) {
+        skeleton[f.name] = this.templateValueFor(f.type);
+      }
+      return skeleton;
+    },
+    schemaTemplateJson() {
+      return JSON.stringify(this.schemaTemplate, null, 2);
+    },
   },
   watch: {
     schemaId: {
@@ -195,6 +208,28 @@ export default {
         this.$emit('valid', false);
       }
     },
+    templateValueFor(type) {
+      switch (type) {
+        case 'number':
+          return 0;
+        case 'boolean':
+          return false;
+        case 'array':
+          return [];
+        case 'object':
+          return {};
+        default:
+          return '';
+      }
+    },
+    insertTemplate() {
+      // Merge the skeleton under any keys the user already typed.
+      const merged = { ...this.schemaTemplate, ...(this.value || {}) };
+      this.jsonDraft = JSON.stringify(merged, null, 2);
+      this.jsonError = null;
+      this.$emit('input', merged);
+      this.$emit('valid', true);
+    },
   },
 };
 </script>
@@ -275,17 +310,38 @@ export default {
         />
       </template>
 
-      <bs-textarea
-        v-if="mode === 'json'"
-        :value="jsonDraft"
-        :rows="8"
-        monospace
-        :error-messages="
-          jsonError ? [$t('aiPlayground.form.inputInvalid')] : []
-        "
-        :disabled="disabled"
-        @input="onJsonInput"
-      />
+      <template v-if="mode === 'json'">
+        <bs-textarea
+          :value="jsonDraft"
+          :rows="8"
+          monospace
+          :error-messages="
+            jsonError ? [$t('aiPlayground.form.inputInvalid')] : []
+          "
+          :disabled="disabled"
+          @input="onJsonInput"
+        />
+        <div
+          v-if="descriptor && descriptor.fields.length"
+          class="template-help mt-2"
+        >
+          <div class="d-flex align-center" style="gap: 0.5rem">
+            <span class="text-caption text--secondary">
+              {{ $t('aiPlayground.input.templateHelp') }}
+            </span>
+            <v-btn
+              x-small
+              text
+              color="primary"
+              :disabled="disabled"
+              @click="insertTemplate"
+            >
+              {{ $t('aiPlayground.input.insertTemplate') }}
+            </v-btn>
+          </div>
+          <pre class="template-skeleton">{{ schemaTemplateJson }}</pre>
+        </div>
+      </template>
     </template>
 
     <bs-ai-playground-skill-change-dialog
@@ -295,3 +351,14 @@ export default {
     />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.template-skeleton {
+  background: #f5f5f5;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0;
+  overflow-x: auto;
+}
+</style>

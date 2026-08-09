@@ -10,7 +10,7 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
     create: jest.fn(),
     deleteOne: jest.fn(),
   },
-  AIPlaygroundRuns: { deleteMany: jest.fn() },
+  AIPlaygroundRuns: { deleteMany: jest.fn(), aggregate: jest.fn() },
   LePatronSkills: { findOne: jest.fn() },
   Expertises: { findOne: jest.fn() },
 }));
@@ -34,6 +34,53 @@ function mockSkillLean(value) {
 beforeEach(() => jest.clearAllMocks());
 
 describe('scenario.service', () => {
+  describe('listScenarios', () => {
+    it('decorates each scenario with lastRunAt / lastRunStatus / runCount', async () => {
+      const id = new Types.ObjectId();
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => Promise.resolve([{ _id: id, scenarioId: 's1' }]),
+            }),
+          }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(1);
+      AIPlaygroundRuns.aggregate.mockResolvedValue([
+        {
+          _id: id,
+          lastRunAt: new Date(0),
+          lastRunStatus: 'SUCCESS',
+          runCount: 3,
+        },
+      ]);
+      const res = await scenarioService.listScenarios({});
+      expect(res.items[0].runCount).toBe(3);
+      expect(res.items[0].lastRunStatus).toBe('SUCCESS');
+      expect(res.items[0].lastRunAt).toBeInstanceOf(Date);
+    });
+
+    it('sets zero/null decoration for a scenario with no runs', async () => {
+      const id = new Types.ObjectId();
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({
+            limit: () => ({
+              lean: () => Promise.resolve([{ _id: id, scenarioId: 's1' }]),
+            }),
+          }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(1);
+      AIPlaygroundRuns.aggregate.mockResolvedValue([]);
+      const res = await scenarioService.listScenarios({});
+      expect(res.items[0].runCount).toBe(0);
+      expect(res.items[0].lastRunStatus).toBeNull();
+      expect(res.items[0].lastRunAt).toBeNull();
+    });
+  });
+
   describe('createScenario', () => {
     it('throws 400 when the referenced skill does not exist', async () => {
       mockSkillLean(null);

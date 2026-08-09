@@ -1,11 +1,13 @@
 <script>
 /* eslint-disable vue/no-mutating-props */
 import * as api from '~/helpers/ai-playground-routes.js';
+import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
 
 const MODES = ['none', 'explicit', 'filter'];
+const EMAIL_TYPES = ['promo', 'newsletter', 'transactional'];
 const CATEGORIES = [
   'redaction',
   'qc',
@@ -57,6 +59,18 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
+    },
+    emailTypeOptions() {
+      return EMAIL_TYPES;
+    },
+    languageOptions() {
+      return isoLanguageOptions();
+    },
+    // findApplicable requires a scope in filter mode — drives the required
+    // marker and the "select a scope" preview message.
+    hasScope() {
+      const s = this.expertiseFilter && this.expertiseFilter.scope;
+      return Array.isArray(s) && s.length > 0;
     },
   },
   watch: {
@@ -145,6 +159,11 @@ export default {
       });
     },
     async refreshFilterPreview() {
+      // findApplicable requires a scope — no scope, no preview.
+      if (!this.hasScope) {
+        this.filterPreviewCount = null;
+        return;
+      }
       this.previewPending = true;
       try {
         const res = await this.$axios.$get(
@@ -232,38 +251,48 @@ export default {
       />
       <bs-combobox
         :value="expertiseFilter.scope"
-        :label="$t('aiPlayground.form.filterScope')"
+        :label="`${$t('aiPlayground.form.filterScope')} *`"
+        :hint="$t('aiPlayground.form.filterScopeHint')"
+        persistent-hint
         multiple
         chips
         small-chips
         :disabled="disabled"
         @input="onScopeChange"
       />
-      <bs-combobox
-        :value="expertiseFilter.emailType ? [expertiseFilter.emailType] : []"
+      <bs-select
+        :value="expertiseFilter.emailType || null"
+        :items="emailTypeOptions"
         :label="$t('aiPlayground.form.filterEmailType')"
-        chips
-        small-chips
+        :hint="$t('aiPlayground.form.filterEmailTypeHint')"
+        persistent-hint
+        clearable
         :disabled="disabled"
-        @input="(v) => onEmailTypeChange(Array.isArray(v) ? v[0] : v)"
+        @input="onEmailTypeChange"
       />
-      <bs-combobox
-        :value="expertiseFilter.language ? [expertiseFilter.language] : []"
+      <bs-select
+        :value="expertiseFilter.language || null"
+        :items="languageOptions"
+        item-text="text"
+        item-value="value"
         :label="$t('aiPlayground.form.filterLanguage')"
-        chips
-        small-chips
+        :hint="$t('aiPlayground.form.filterLanguageHint')"
+        persistent-hint
+        clearable
         :disabled="disabled"
-        @input="(v) => onLanguageChange(Array.isArray(v) ? v[0] : v)"
+        @input="onLanguageChange"
       />
-      <p
-        v-if="filterPreviewCount !== null"
-        class="text-caption text--secondary mb-3"
-      >
-        {{
-          $t('aiPlayground.form.filterPreviewCount', {
-            count: filterPreviewCount,
-          })
-        }}
+      <p class="text-caption text--secondary mb-3 mt-2">
+        <span v-if="!hasScope">
+          {{ $t('aiPlayground.form.filterSelectScope') }}
+        </span>
+        <span v-else-if="filterPreviewCount !== null">
+          {{
+            $t('aiPlayground.form.filterPreviewCount', {
+              count: filterPreviewCount,
+            })
+          }}
+        </span>
       </p>
     </template>
   </div>

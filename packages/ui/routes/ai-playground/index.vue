@@ -6,6 +6,7 @@ import * as api from '~/helpers/ai-playground-routes.js';
 import mixinPageTitle from '~/helpers/mixins/mixin-page-title.js';
 import BsPageHeader from '~/components/layout/bs-page-header.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsTimestamp from '~/components/ai-skill/BsTimestamp.vue';
 import { Plus, FlaskConical, Star } from 'lucide-vue';
 
 export default {
@@ -13,6 +14,7 @@ export default {
   components: {
     BsPageHeader,
     BsDataTable,
+    BsTimestamp,
     LucidePlus: Plus,
     LucideFlaskConical: FlaskConical,
     LucideStar: Star,
@@ -46,6 +48,16 @@ export default {
         { text: this.$t('aiPlayground.headers.name'), value: 'name' },
         { text: this.$t('aiPlayground.headers.skill'), value: 'skillRef' },
         {
+          text: this.$t('aiPlayground.headers.runs'),
+          value: 'runCount',
+          align: 'right',
+        },
+        { text: this.$t('aiPlayground.headers.lastRun'), value: 'lastRunAt' },
+        {
+          text: this.$t('aiPlayground.headers.lastRunStatus'),
+          value: 'lastRunStatus',
+        },
+        {
           text: this.$t('aiPlayground.headers.golden'),
           value: 'goldenRunId',
           align: 'center',
@@ -64,8 +76,11 @@ export default {
       }
       return r.skillId;
     },
-    formatDate(d) {
-      return d ? new Date(d).toLocaleString() : '';
+    statusColor(s) {
+      return s === 'SUCCESS' ? 'success' : 'error';
+    },
+    statusLabel(s) {
+      return s ? this.$t(`aiPlayground.status.${s}`) : '';
     },
     async reload() {
       const params = {};
@@ -156,18 +171,43 @@ export default {
         <template #item.skillRef="{ item }">
           <span class="text-caption">{{ skillLabel(item) }}</span>
         </template>
+        <template #item.runCount="{ item }">
+          <span v-if="item.runCount" class="text-caption">{{
+            item.runCount
+          }}</span>
+          <span v-else class="text--disabled">—</span>
+        </template>
+        <template #item.lastRunAt="{ item }">
+          <bs-timestamp :value="item.lastRunAt" />
+        </template>
+        <template #item.lastRunStatus="{ item }">
+          <v-chip
+            v-if="item.lastRunStatus"
+            small
+            :color="statusColor(item.lastRunStatus)"
+            :outlined="item.lastRunStatus !== 'SUCCESS'"
+            :dark="item.lastRunStatus === 'SUCCESS'"
+          >
+            {{ statusLabel(item.lastRunStatus) }}
+          </v-chip>
+          <span v-else class="text--disabled">—</span>
+        </template>
         <template #item.goldenRunId="{ item }">
-          <lucide-star
-            v-if="item.goldenRunId"
-            :size="16"
-            class="accent--text"
-            fill="currentColor"
-          />
+          <v-tooltip v-if="item.goldenRunId" bottom>
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" v-on="on">
+                <lucide-star
+                  :size="16"
+                  class="accent--text"
+                  fill="currentColor"
+                />
+              </span>
+            </template>
+            <span>{{ $t('aiPlayground.headers.goldenTooltip') }}</span>
+          </v-tooltip>
         </template>
         <template #item.updatedAt="{ item }">
-          <span class="text-caption text--secondary">{{
-            formatDate(item.updatedAt)
-          }}</span>
+          <bs-timestamp :value="item.updatedAt" />
         </template>
         <template #no-data>
           <div class="text-center pa-6">
