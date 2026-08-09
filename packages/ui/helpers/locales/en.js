@@ -133,6 +133,8 @@ export default {
     previewMailAlt: 'Preview of the email',
     newPreview: 'Create a preview',
     name: 'Name',
+    title: 'Title',
+    search: 'Search',
     externalUsername: 'External Username',
     description: 'Description',
     author: 'Author',
@@ -1085,6 +1087,8 @@ export default {
       idResetHint: 'Recompute identifier from Category and Title',
       inputSchemaId: 'Input schema',
       outputSchemaId: 'Output schema',
+      schemasOnVersionNote:
+        'Input/output schemas are chosen at the version level (Versions tab), like the prompts.',
       activeVersion: 'Active version',
       noActiveVersion: 'No active version',
       addSkill: 'Add skill',
@@ -1115,6 +1119,18 @@ export default {
         'No declared feature currently loads this scope. The expertise stays usable by explicit selection (playground).',
       appliesToEmailTypes: 'Applies to email types',
       appliesToLanguages: 'Languages (empty = all)',
+      technicalId: 'Technical identifier',
+      createScope: 'Create scope "{value}"',
+      categoryHelp:
+        'Classifies the expertise by broad family. The category will also, eventually, determine which AI engine is used for this kind of feature.',
+      scopeHelp:
+        'Loading key: features fetch expertise by scope before calling the AI (e.g. CTA generation loads the "cta" scope).',
+      emailTypeHelp:
+        'Restricts the expertise to some typologies (e.g. "promo"). Empty = all types.',
+      languageHelp:
+        'Languages of the content this know-how applies to — e.g. a French risky-words list only applies to FR content. Empty = all.',
+      descriptionHelp:
+        'Shown in the selectors (playground and features) to help pick the right expertise.',
       goodExamples: 'Good examples',
       badExamples: 'Bad examples',
       bodyLabel: 'Markdown body — use ## [section-id] Title',
@@ -1158,11 +1174,19 @@ export default {
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
       changelog: 'Changelog',
+      changelogPlaceholder:
+        'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
       releaseNotes: 'Release notes',
+      releaseNotesPlaceholder:
+        'What to know about this version — e.g. "Tested on FR promo emails only; exceptions section to validate in the field"',
+      outputFormatNote:
+        'The JSON output format is added automatically from the output schema — do not write it.',
+      schemasHelp:
+        'Technical contract of the version: the input validates what features send and generates the playground form; the output is imposed on the LLM automatically. Schemas are defined in code — contact the dev team to add one.',
       activated: 'Version activated',
       saveDraft: 'Save draft',
       duplicate: 'Duplicate',
-      duplicateHint: 'Start a new major draft from this version.',
+      duplicateHint: 'Duplicate as a new major version',
       saveChanges: 'Save changes',
       newMinor: 'New minor version',
       newMinorHint: 'Quick fix, no doctrine change.',

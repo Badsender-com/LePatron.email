@@ -33,6 +33,10 @@ module.exports = {
     });
   }),
 
+  getFacets: asyncHandler(async (_req, res) => {
+    res.json(await expertiseService.getFacets());
+  }),
+
   createExpertise: asyncHandler(async (req, res) => {
     const exp = await expertiseService.createExpertise(req.body, userIdOf(req));
     res.status(201).json(exp);

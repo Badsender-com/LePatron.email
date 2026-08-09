@@ -26,7 +26,6 @@ export default {
     LucideRefreshCw: RefreshCw,
   },
   props: {
-    schemas: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
   },
   data() {
@@ -41,12 +40,6 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
-    },
-    inputSchemas() {
-      return this.schemas.filter((s) => /Input$/.test(s));
-    },
-    outputSchemas() {
-      return this.schemas.filter((s) => /Output$/.test(s));
     },
     suggestedIdentifier() {
       return suggestIdentifier({
@@ -72,19 +65,11 @@ export default {
         title: '',
         description: '',
         category: 'redaction',
-        inputSchemaId: '',
-        outputSchemaId: '',
       };
     },
     open() {
       this.skill = this.emptySkill();
       this.identifierManuallyEdited = false;
-      if (this.inputSchemas.length > 0) {
-        this.skill.inputSchemaId = this.inputSchemas[0];
-      }
-      if (this.outputSchemas.length > 0) {
-        this.skill.outputSchemaId = this.outputSchemas[0];
-      }
       this.$refs.modal.open();
     },
     close() {
@@ -161,18 +146,9 @@ export default {
         :label="$t('aiSkills.filters.category')"
         :disabled="loading"
       />
-      <bs-select
-        v-model="skill.inputSchemaId"
-        :items="inputSchemas"
-        :label="$t('aiSkills.skill.inputSchemaId')"
-        :disabled="loading"
-      />
-      <bs-select
-        v-model="skill.outputSchemaId"
-        :items="outputSchemas"
-        :label="$t('aiSkills.skill.outputSchemaId')"
-        :disabled="loading"
-      />
+      <p class="text-caption text--secondary mt-2 mb-0">
+        {{ $t('aiSkills.skill.schemasOnVersionNote') }}
+      </p>
       <v-divider class="mt-4" />
       <div class="modal-actions">
         <v-btn text color="primary" :disabled="loading" @click="close">

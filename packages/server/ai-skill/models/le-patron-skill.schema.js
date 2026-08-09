@@ -47,6 +47,11 @@ const SkillVersionSchema = new Schema(
     systemPrompt: { type: String, default: '' },
     skillBody: { type: String, default: '' },
     inputTemplate: { type: String, default: '' },
+    // Schemas live at the version level (editable while DRAFT, frozen once
+    // ACTIVE/ARCHIVED — same rule as prompts). Empty on a fresh draft; the
+    // activation gate requires them to be set before publishing.
+    inputSchemaId: { type: String, default: '' },
+    outputSchemaId: { type: String, default: '' },
     modelHints: { type: ModelHintsSchema, default: () => ({}) },
     changelog: { type: String, default: '' },
     releaseNotes: { type: String, default: '' },
@@ -84,8 +89,6 @@ const LePatronSkillSchema = new Schema(
       enum: SkillCategoryValues,
       required: true,
     },
-    inputSchemaId: { type: String, required: true },
-    outputSchemaId: { type: String, required: true },
     owner: { type: ObjectId, ref: UserModel },
     status: {
       type: String,
@@ -110,28 +113,28 @@ LePatronSkillSchema.index({ status: 1 });
 
 /**
  * Validation hook:
- * - Ensure inputSchemaId / outputSchemaId exist in the zod registry.
+ * - Per version: if schemas are set (they may be empty on a fresh DRAFT),
+ *   ensure inputSchemaId / outputSchemaId exist in the zod registry.
  * - Ensure `{{input.*}}` placeholders never appear outside `inputTemplate`
  *   (prompt-injection guard — see PLAN §4.4).
  */
 LePatronSkillSchema.pre('validate', function preValidate(next) {
-  if (!hasSchema(this.inputSchemaId)) {
-    return next(
-      new Error(
-        `Unknown inputSchemaId "${this.inputSchemaId}" (not in zod registry)`
-      )
-    );
-  }
-  if (!hasSchema(this.outputSchemaId)) {
-    return next(
-      new Error(
-        `Unknown outputSchemaId "${this.outputSchemaId}" (not in zod registry)`
-      )
-    );
-  }
-
   for (const version of this.versions || []) {
     const label = `${version.versionMajor}.${version.versionMinor}`;
+    if (version.inputSchemaId && !hasSchema(version.inputSchemaId)) {
+      return next(
+        new Error(
+          `Version ${label}: unknown inputSchemaId "${version.inputSchemaId}" (not in zod registry)`
+        )
+      );
+    }
+    if (version.outputSchemaId && !hasSchema(version.outputSchemaId)) {
+      return next(
+        new Error(
+          `Version ${label}: unknown outputSchemaId "${version.outputSchemaId}" (not in zod registry)`
+        )
+      );
+    }
     if (INPUT_PLACEHOLDER_REGEX.test(version.systemPrompt || '')) {
       return next(
         new Error(

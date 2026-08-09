@@ -56,6 +56,13 @@ export default {
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
     },
+    activeVersion() {
+      const av = this.skill && this.skill.activeVersion;
+      if (!av || av.major == null) return null;
+      return (this.skill.versions || []).find(
+        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
+      );
+    },
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -74,8 +81,6 @@ export default {
           title: this.skill.title,
           description: this.skill.description,
           category: this.skill.category,
-          inputSchemaId: this.skill.inputSchemaId,
-          outputSchemaId: this.skill.outputSchemaId,
         };
         this.skill = await this.$axios.$patch(
           api.aiSkill(this.skill.skillId),
@@ -140,6 +145,8 @@ export default {
           systemPrompt: version.systemPrompt,
           skillBody: version.skillBody,
           inputTemplate: version.inputTemplate,
+          inputSchemaId: version.inputSchemaId,
+          outputSchemaId: version.outputSchemaId,
           modelHints: version.modelHints,
           changelog: version.changelog,
           releaseNotes: version.releaseNotes,
@@ -284,7 +291,7 @@ export default {
         <v-tab-item value="details">
           <bs-ai-skill-details-form
             :skill="skill"
-            :schemas="schemas"
+            :active-version="activeVersion"
             :saving="saving"
             @save="saveDetails"
           />
@@ -303,6 +310,7 @@ export default {
           </v-alert>
           <bs-ai-skill-versions-panel
             :skill="skill"
+            :schemas="schemas"
             :saving="saving"
             @create-minor="createMinorVersion"
             @create-major="createMajorVersion(null)"

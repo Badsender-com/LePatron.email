@@ -45,12 +45,13 @@ function buildSkill(overrides = {}) {
     skillId: 'generic.text',
     status: 'ACTIVE',
     activeVersion: { major: 1, minor: 0 },
-    inputSchemaId: 'genericTextInput',
-    outputSchemaId: 'genericTextOutput',
     versions: [
       {
         versionMajor: 1,
         versionMinor: 0,
+        // Schemas live on the version now (UX review §3).
+        inputSchemaId: 'genericTextInput',
+        outputSchemaId: 'genericTextOutput',
         systemPrompt: 'You help.',
         skillBody: 'Reformulate.',
         inputTemplate: '<x>{{input.prompt}}</x>',
@@ -205,6 +206,8 @@ describe('skill-invocation.invoke', () => {
             {
               versionMajor: 1,
               versionMinor: 0,
+              inputSchemaId: 'genericTextInput',
+              outputSchemaId: 'genericTextOutput',
               systemPrompt: 'OLD-V1-PROMPT',
               skillBody: 'Reformulate.',
               inputTemplate: '<x>{{input.prompt}}</x>',
@@ -213,6 +216,8 @@ describe('skill-invocation.invoke', () => {
             {
               versionMajor: 2,
               versionMinor: 0,
+              inputSchemaId: 'genericTextInput',
+              outputSchemaId: 'genericTextOutput',
               systemPrompt: 'NEW-V2-PROMPT',
               skillBody: 'Reformulate.',
               inputTemplate: '<x>{{input.prompt}}</x>',

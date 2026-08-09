@@ -133,6 +133,8 @@ export default {
     previewMailAlt: 'Aperçu de l\'email',
     newPreview: 'Créer une prévisulisation',
     name: 'Nom',
+    title: 'Titre',
+    search: 'Rechercher',
     externalUsername: 'Nom externe',
     description: 'Description',
     author: 'Auteur',
@@ -1098,6 +1100,8 @@ export default {
       idResetHint: 'Recalculer l\'identifiant depuis Catégorie et Titre',
       inputSchemaId: 'Schéma d\'entrée',
       outputSchemaId: 'Schéma de sortie',
+      schemasOnVersionNote:
+        'Les schémas d\'entrée/sortie se choisissent au niveau de la version (onglet Versions), comme les prompts.',
       activeVersion: 'Version active',
       noActiveVersion: 'Aucune version active',
       addSkill: 'Ajouter une skill',
@@ -1128,6 +1132,18 @@ export default {
         'Aucune fonctionnalité déclarée ne charge actuellement ce périmètre. L\'expertise restera utilisable par sélection explicite (playground).',
       appliesToEmailTypes: 'Types d\'email concernés',
       appliesToLanguages: 'Langues (vide = toutes)',
+      technicalId: 'Identifiant technique',
+      createScope: 'Créer le périmètre « {value} »',
+      categoryHelp:
+        'Classe l\'expertise par grande famille. La catégorie déterminera aussi, à terme, quel moteur IA est utilisé pour ce type de fonctionnalité.',
+      scopeHelp:
+        'Clé de chargement : les fonctionnalités récupèrent les expertises par périmètre avant d\'appeler l\'IA (ex. la génération de CTA charge le périmètre « cta »).',
+      emailTypeHelp:
+        'Restreint l\'expertise à certaines typologies (ex. « promo »). Vide = tous les types.',
+      languageHelp:
+        'Langues des contenus auxquels ce savoir-faire s\'applique — ex. une liste de mots à risque en français ne vaut que pour des contenus FR. Vide = toutes.',
+      descriptionHelp:
+        'Affichée dans les sélecteurs (playground et fonctionnalités) pour aider à choisir la bonne expertise.',
       goodExamples: 'Bons exemples',
       badExamples: 'Mauvais exemples',
       bodyLabel: 'Contenu Markdown — utilisez ## [section-id] Titre',
@@ -1171,11 +1187,19 @@ export default {
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
       changelog: 'Changelog',
+      changelogPlaceholder:
+        'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',
       releaseNotes: 'Notes de version',
+      releaseNotesPlaceholder:
+        'À savoir sur cette version — ex. « Testée uniquement sur les emails promo FR ; section exceptions à valider terrain »',
+      outputFormatNote:
+        'Le format de sortie JSON est ajouté automatiquement depuis le schéma de sortie — ne le rédigez pas.',
+      schemasHelp:
+        'Contrat technique de la version : l\'entrée valide ce que les fonctionnalités envoient et génère le formulaire du playground ; la sortie est imposée automatiquement au LLM. Les schémas sont définis en code — contactez l\'équipe dev pour en ajouter.',
       activated: 'Version activée',
       saveDraft: 'Enregistrer le brouillon',
       duplicate: 'Dupliquer',
-      duplicateHint: 'Partir de cette version pour créer un nouveau brouillon majeur.',
+      duplicateHint: 'Dupliquer en nouvelle version majeure',
       saveChanges: 'Enregistrer les modifications',
       newMinor: 'Nouvelle version mineure',
       newMinorHint: 'Correction rapide sans changement de doctrine.',

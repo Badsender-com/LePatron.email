@@ -94,51 +94,17 @@ describe('skill.service', () => {
   });
 
   describe('updateSkill', () => {
-    it('refuses an inputSchemaId change incoherent with the ACTIVE template', async () => {
-      // Active template references {{input.prompt}}; genericTextOutput has no
-      // `prompt` field — the activation gate must not be bypassable via PATCH.
-      LePatronSkills.findOne.mockResolvedValue(
-        mockSkillDoc({
-          status: 'ACTIVE',
-          inputSchemaId: 'genericTextInput',
-          activeVersion: { major: 1, minor: 0 },
-          versions: [
-            {
-              versionMajor: 1,
-              versionMinor: 0,
-              status: 'ACTIVE',
-              inputTemplate: '<x>{{input.prompt}}</x>',
-            },
-          ],
-        })
-      );
-      await expect(
-        skillService.updateSkill('generic.text', {
-          inputSchemaId: 'genericTextOutput',
-        })
-      ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it('accepts an inputSchemaId change coherent with the ACTIVE template', async () => {
-      const doc = mockSkillDoc({
-        status: 'ACTIVE',
-        inputSchemaId: 'genericTextOutput',
-        activeVersion: { major: 1, minor: 0 },
-        versions: [
-          {
-            versionMajor: 1,
-            versionMinor: 0,
-            status: 'ACTIVE',
-            inputTemplate: '<x>{{input.prompt}}</x>',
-          },
-        ],
-      });
+    it('patches title/description/category (schemas are versioned, not here)', async () => {
+      const doc = mockSkillDoc({ title: 'old' });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await skillService.updateSkill('generic.text', {
-        inputSchemaId: 'genericTextInput',
+        title: 'new',
+        // schemas are no longer skill-level — ignored here
+        inputSchemaId: 'genericTextOutput',
       });
+      expect(doc.title).toBe('new');
+      expect(doc.inputSchemaId).toBeUndefined();
       expect(doc.save).toHaveBeenCalled();
-      expect(doc.inputSchemaId).toBe('genericTextInput');
     });
   });
 
@@ -292,10 +258,30 @@ describe('skill.service', () => {
     });
   });
 
+  const SCHEMAS = {
+    inputSchemaId: 'genericTextInput',
+    outputSchemaId: 'genericTextOutput',
+  };
+
   describe('activateVersion', () => {
-    it('requires changelog + releaseNotes for a major release', async () => {
+    it('requires the version schemas to be set before publishing', async () => {
       const doc = mockSkillDoc({
         versions: [{ versionMajor: 2, versionMinor: 0, status: 'DRAFT' }],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await expect(
+        skillService.activateVersion('a', { major: 2, minor: 0 }, {}, null)
+      ).rejects.toMatchObject({
+        status: 400,
+        message: expect.stringContaining('schémas'),
+      });
+    });
+
+    it('requires changelog + releaseNotes for a major release', async () => {
+      const doc = mockSkillDoc({
+        versions: [
+          { versionMajor: 2, versionMinor: 0, status: 'DRAFT', ...SCHEMAS },
+        ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);
       await expect(
@@ -307,11 +293,12 @@ describe('skill.service', () => {
       const doc = mockSkillDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
-          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE', ...SCHEMAS },
           {
             versionMajor: 1,
             versionMinor: 1,
             status: 'DRAFT',
+            ...SCHEMAS,
             changelog: 'Correction mineure',
             releaseNotes: 'Correction mineure sans changement de doctrine.',
           },
@@ -328,12 +315,12 @@ describe('skill.service', () => {
 
     it('blocks activation when the template references out-of-schema fields', async () => {
       const doc = mockSkillDoc({
-        inputSchemaId: 'genericTextInput',
         versions: [
           {
             versionMajor: 1,
             versionMinor: 1,
             status: 'DRAFT',
+            ...SCHEMAS,
             inputTemplate: '<brief>{{input.brief}}</brief>',
             changelog: 'c',
             releaseNotes: 'r',
@@ -352,12 +339,12 @@ describe('skill.service', () => {
 
     it('activates when the template matches the input schema', async () => {
       const doc = mockSkillDoc({
-        inputSchemaId: 'genericTextInput',
         versions: [
           {
             versionMajor: 1,
             versionMinor: 1,
             status: 'DRAFT',
+            ...SCHEMAS,
             inputTemplate: '{{input.prompt}} {{input.context}}',
             changelog: 'c',
             releaseNotes: 'r',
@@ -373,8 +360,8 @@ describe('skill.service', () => {
       const doc = mockSkillDoc({
         activeVersion: { major: 1, minor: 0 },
         versions: [
-          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE' },
-          { versionMajor: 2, versionMinor: 0, status: 'DRAFT' },
+          { versionMajor: 1, versionMinor: 0, status: 'ACTIVE', ...SCHEMAS },
+          { versionMajor: 2, versionMinor: 0, status: 'DRAFT', ...SCHEMAS },
         ],
       });
       LePatronSkills.findOne.mockResolvedValue(doc);

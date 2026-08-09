@@ -30,6 +30,8 @@ const expertiseRouter = express.Router();
 expertiseRouter.use(GUARD_ADMIN);
 expertiseRouter.get('/', expertise.listExpertise);
 expertiseRouter.post('/', expertise.createExpertise);
+// Static path — must precede '/:expertiseId' so it is not captured as an id.
+expertiseRouter.get('/facets', expertise.getFacets);
 expertiseRouter.get(
   '/:expertiseId/activation-impact',
   expertise.getActivationImpact

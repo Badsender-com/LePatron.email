@@ -83,7 +83,7 @@ module.exports = {
     const payload = skill.toJSON();
     payload.warnings = templateWarnings(
       saved ? saved.inputTemplate : '',
-      skill.inputSchemaId
+      saved ? saved.inputSchemaId : ''
     );
     res.json(payload);
   }),
