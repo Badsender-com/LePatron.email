@@ -1087,6 +1087,8 @@ export default {
       idResetHint: 'Recompute identifier from Category and Title',
       inputSchemaId: 'Input schema',
       outputSchemaId: 'Output schema',
+      schemasOnVersionNote:
+        'Input/output schemas are chosen at the version level (Versions tab), like the prompts.',
       activeVersion: 'Active version',
       noActiveVersion: 'No active version',
       addSkill: 'Add skill',
@@ -1172,11 +1174,19 @@ export default {
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
       changelog: 'Changelog',
+      changelogPlaceholder:
+        'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
       releaseNotes: 'Release notes',
+      releaseNotesPlaceholder:
+        'What to know about this version — e.g. "Tested on FR promo emails only; exceptions section to validate in the field"',
+      outputFormatNote:
+        'The JSON output format is added automatically from the output schema — do not write it.',
+      schemasHelp:
+        'Technical contract of the version: the input validates what features send and generates the playground form; the output is imposed on the LLM automatically. Schemas are defined in code — contact the dev team to add one.',
       activated: 'Version activated',
       saveDraft: 'Save draft',
       duplicate: 'Duplicate',
-      duplicateHint: 'Start a new major draft from this version.',
+      duplicateHint: 'Duplicate as a new major version',
       saveChanges: 'Save changes',
       newMinor: 'New minor version',
       newMinorHint: 'Quick fix, no doctrine change.',

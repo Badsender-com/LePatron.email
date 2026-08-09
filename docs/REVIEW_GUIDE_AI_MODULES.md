@@ -43,6 +43,14 @@ une violation, c'est un bug :
   contexte métier ; l'appelant (runner playground, future feature) compose
   l'input. Le seul enrichissement automatique est le contrat de format de
   sortie, dérivé de `outputSchemaId`.
+- **Les schémas sont versionnés** (`inputSchemaId`/`outputSchemaId` sur la
+  version, plus sur la racine skill — UX review §3). Éditables en DRAFT comme
+  les prompts, figés sur ACTIVE/ARCHIVED, requis à la publication (gate).
+  `invoke()` et la gate de cohérence lisent les schémas de la version résolue
+  (active ou épinglée). Onglet Détails de la skill = affichage lecture seule
+  des schémas de la version active. Migration :
+  `scripts/migrate-skill-schemas-to-version.js` (recopie racine→versions puis
+  `$unset` racine, idempotente).
 - **`featureType` (analytics) ≠ résolution moteur.** Le `featureType` d'une
   `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
   `'poc.*'` réservés non productifs, exclus par défaut de l'onglet
