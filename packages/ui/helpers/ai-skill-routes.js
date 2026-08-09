@@ -42,6 +42,9 @@ export function aiExpertise(expertiseId) {
 export function aiExpertiseActivationImpact(expertiseId) {
   return `/ai-expertise/${expertiseId}/activation-impact`;
 }
+export function aiExpertiseFacets() {
+  return '/ai-expertise/facets';
+}
 export function aiExpertiseVersionMinor(expertiseId) {
   return `/ai-expertise/${expertiseId}/versions/minor`;
 }

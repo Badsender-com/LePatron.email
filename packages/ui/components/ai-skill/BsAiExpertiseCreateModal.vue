@@ -1,10 +1,12 @@
 <script>
+import * as api from '~/helpers/ai-skill-routes.js';
 import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
+import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import { RefreshCw } from 'lucide-vue';
 
 const CATEGORIES = [
@@ -34,6 +36,9 @@ export default {
     return {
       expertise: this.emptyExpertise(),
       identifierManuallyEdited: false,
+      showIdentifier: false,
+      scopeFacets: [],
+      emailTypeFacets: [],
     };
   },
   computed: {
@@ -42,6 +47,9 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
+    },
+    languageOptions() {
+      return isoLanguageOptions();
     },
     suggestedIdentifier() {
       return suggestIdentifier({
@@ -78,10 +86,22 @@ export default {
       // Scope and transversal are contradictory; the flag wins.
       if (checked) this.expertise.scope = [];
     },
-    open() {
+    async open() {
       this.expertise = this.emptyExpertise();
       this.identifierManuallyEdited = false;
+      this.showIdentifier = false;
       this.$refs.modal.open();
+      await this.loadFacets();
+    },
+    async loadFacets() {
+      try {
+        const res = await this.$axios.$get(api.aiExpertiseFacets());
+        this.scopeFacets = res.scopes || [];
+        this.emailTypeFacets = res.emailTypes || [];
+      } catch (err) {
+        this.scopeFacets = [];
+        this.emailTypeFacets = [];
+      }
     },
     close() {
       this.$refs.modal.close();
@@ -110,33 +130,6 @@ export default {
     modal-width="600"
   >
     <v-form @submit.prevent="onSubmit">
-      <div class="identifier-row">
-        <bs-text-field
-          :value="expertise.expertiseId"
-          :label="$t('aiSkills.expertise.id')"
-          :hint="$t('aiSkills.expertise.idHint')"
-          placeholder="redaction.cta.principles"
-          :disabled="loading"
-          required
-          class="identifier-row__field"
-          @input="onIdentifierInput"
-        />
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              icon
-              :disabled="loading || !suggestedIdentifier"
-              class="identifier-row__reset"
-              v-bind="attrs"
-              v-on="on"
-              @click="resetIdentifier"
-            >
-              <lucide-refresh-cw :size="18" />
-            </v-btn>
-          </template>
-          <span>{{ $t('aiSkills.expertise.idResetHint') }}</span>
-        </v-tooltip>
-      </div>
       <bs-text-field
         v-model="expertise.title"
         :label="$t('global.title')"
@@ -146,6 +139,8 @@ export default {
       <bs-textarea
         v-model="expertise.description"
         :label="$t('global.description')"
+        :hint="$t('aiSkills.expertise.descriptionHelp')"
+        persistent-hint
         :rows="2"
         :disabled="loading"
       />
@@ -155,6 +150,8 @@ export default {
         item-text="text"
         item-value="value"
         :label="$t('aiSkills.filters.category')"
+        :hint="$t('aiSkills.expertise.categoryHelp')"
+        persistent-hint
         :disabled="loading"
       />
       <v-checkbox
@@ -163,14 +160,16 @@ export default {
         :hint="$t('aiSkills.expertise.transversalHint')"
         persistent-hint
         dense
-        class="mt-0"
+        class="mt-2"
         :disabled="loading"
         @change="onTransversalChange"
       />
       <bs-combobox
         v-model="expertise.scope"
+        :items="scopeFacets"
         :label="$t('aiSkills.expertise.scope')"
-        :hint="$t('aiSkills.expertise.scopeHint')"
+        :hint="$t('aiSkills.expertise.scopeHelp')"
+        persistent-hint
         multiple
         chips
         small-chips
@@ -178,20 +177,70 @@ export default {
       />
       <bs-combobox
         v-model="expertise.appliesToEmailTypes"
+        :items="emailTypeFacets"
         :label="$t('aiSkills.expertise.appliesToEmailTypes')"
+        :hint="$t('aiSkills.expertise.emailTypeHelp')"
+        persistent-hint
         multiple
         chips
         small-chips
         :disabled="loading"
       />
-      <bs-combobox
+      <bs-select
         v-model="expertise.appliesToLanguages"
+        :items="languageOptions"
+        item-text="text"
+        item-value="value"
         :label="$t('aiSkills.expertise.appliesToLanguages')"
+        :hint="$t('aiSkills.expertise.languageHelp')"
+        persistent-hint
         multiple
         chips
         small-chips
         :disabled="loading"
       />
+
+      <div class="technical-id mt-4">
+        <v-btn
+          text
+          small
+          color="primary"
+          class="px-0"
+          @click="showIdentifier = !showIdentifier"
+        >
+          {{ $t('aiSkills.expertise.technicalId') }}
+          <v-icon :size="18">
+            {{ showIdentifier ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+          </v-icon>
+        </v-btn>
+        <div v-if="showIdentifier" class="identifier-row">
+          <bs-text-field
+            :value="expertise.expertiseId"
+            :label="$t('aiSkills.expertise.id')"
+            placeholder="redaction.cta.principles"
+            :disabled="loading"
+            required
+            class="identifier-row__field"
+            @input="onIdentifierInput"
+          />
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                :disabled="loading || !suggestedIdentifier"
+                class="identifier-row__reset"
+                v-bind="attrs"
+                v-on="on"
+                @click="resetIdentifier"
+              >
+                <lucide-refresh-cw :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('aiSkills.expertise.idResetHint') }}</span>
+          </v-tooltip>
+        </div>
+      </div>
+
       <v-divider class="mt-4" />
       <div class="modal-actions">
         <v-btn text color="primary" :disabled="loading" @click="close">

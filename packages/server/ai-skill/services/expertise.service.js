@@ -57,6 +57,20 @@ async function getExpertise(expertiseId) {
   return exp;
 }
 
+/**
+ * Distinct values already present in the collection — feeds the scope /
+ * emailType comboboxes in the create & edit forms (anti-typo: a misspelled
+ * scope silently breaks findApplicable).
+ */
+async function getFacets() {
+  const [scopes, emailTypes] = await Promise.all([
+    Expertises.distinct('scope'),
+    Expertises.distinct('appliesToEmailTypes'),
+  ]);
+  const clean = (arr) => arr.filter((v) => typeof v === 'string' && v).sort();
+  return { scopes: clean(scopes), emailTypes: clean(emailTypes) };
+}
+
 async function createExpertise(data, userId) {
   const payload = {
     expertiseId: data.expertiseId,
@@ -277,5 +291,6 @@ module.exports = {
   activateVersion,
   archiveExpertise,
   getActivationImpact,
+  getFacets,
   versionLabel,
 };
