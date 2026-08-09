@@ -3,6 +3,7 @@ import BsModalConfirm from '~/components/modal-confirm.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
+import { dateTime } from '~/helpers/format-date.js';
 import { Star, GitCompare } from 'lucide-vue';
 
 export default {
@@ -30,6 +31,20 @@ export default {
     };
   },
   computed: {
+    isSuccess() {
+      return !!this.run && this.run.status === 'SUCCESS';
+    },
+    // "Run du 09/08/2026 10:06 · qc.subject v1.2" (mirrors the invocation modal).
+    runTitle() {
+      if (!this.run) return '';
+      const rs = this.run.resolvedSkill || {};
+      const skillPart = rs.skillId
+        ? ` · ${rs.skillId} v${rs.versionMajor}.${rs.versionMinor || 0}`
+        : '';
+      return `${this.$t('aiPlayground.runs.runOf', {
+        date: dateTime(this.run.createdAt),
+      })}${skillPart}`;
+    },
     ratingOptions() {
       return ['positive', 'neutral', 'negative'].map((r) => ({
         value: r,
@@ -97,7 +112,7 @@ export default {
 <template>
   <bs-modal-confirm
     ref="modal"
-    :title="run ? `Run ${run._id}` : ''"
+    :title="runTitle"
     :is-form="true"
     modal-width="900"
   >
@@ -111,19 +126,21 @@ export default {
         >
           {{ $t(`aiPlayground.status.${run.status}`) }}
         </v-chip>
-        <span class="text-caption text--secondary">
+        <span v-if="isSuccess" class="text-caption text--secondary">
           {{ run.latencyMs }} ms ·
           {{ (run.tokenUsage && run.tokenUsage.promptTokens) || 0 }}/{{
             (run.tokenUsage && run.tokenUsage.completionTokens) || 0
           }}
           tokens
         </span>
+        <span v-else class="text-caption text--disabled">—</span>
         <v-spacer />
         <v-btn
           text
           small
           :color="run.isGolden ? 'accent' : 'primary'"
           :loading="loading"
+          :disabled="!isSuccess"
           @click="toggleGolden"
         >
           <lucide-star :size="16" class="mr-1" />
@@ -133,7 +150,13 @@ export default {
               : $t('aiPlayground.actions.markGolden')
           }}
         </v-btn>
-        <v-btn text small color="primary" @click="$emit('compare')">
+        <v-btn
+          text
+          small
+          color="primary"
+          :disabled="!isSuccess"
+          @click="$emit('compare')"
+        >
           <lucide-git-compare :size="16" class="mr-1" />
           {{ $t('aiPlayground.actions.compare') }}
         </v-btn>
@@ -156,7 +179,10 @@ export default {
 
       <v-tabs-items v-model="tab">
         <v-tab-item value="output">
-          <bs-markdown-renderer :source="outputAsMarkdown" />
+          <v-alert v-if="!isSuccess" type="error" dense outlined class="mb-0">
+            {{ run.errorMessage || $t(`aiPlayground.status.${run.status}`) }}
+          </v-alert>
+          <bs-markdown-renderer v-else :source="outputAsMarkdown" />
         </v-tab-item>
         <v-tab-item value="input">
           <pre class="code-block">{{ inputJson }}</pre>

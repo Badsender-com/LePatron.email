@@ -1070,7 +1070,7 @@ export default {
       skillId: 'Identifiant skill',
       feature: 'Fonctionnalité',
       groupId: 'Identifiant de groupe',
-      includeNonProductive: 'Inclure les tests (admin-test, playground, poc.*)',
+      includeNonProductive: 'Inclure les tests (playground, poc.*)',
     },
     categories: {
       redaction: 'Rédaction',
@@ -1167,8 +1167,8 @@ export default {
       tokens: 'Tokens',
       group: 'Groupe',
       providerModel: 'Provider / Modèle',
-      noInvocations: 'Aucune invocation enregistrée',
-      noInvocationsHint: 'Les invocations apparaîtront ici dès qu\'une feature LePatron consommera une skill.',
+      noInvocations: 'Aucune invocation visible',
+      noInvocationsHint: 'Les invocations de test sont masquées par défaut — activez « Inclure les tests » pour les afficher.',
       dateFrom: 'Depuis',
       dateTo: 'Jusqu\'à',
       detailInput: 'Entrée',
@@ -1244,10 +1244,15 @@ export default {
       skill: 'Skill',
       status: 'Statut',
       golden: 'Référence',
+      goldenTooltip:
+        'Un run de référence est défini — les nouveaux runs peuvent lui être comparés',
       when: 'Quand',
       latency: 'Latence',
       tokens: 'Tokens',
       feedback: 'Feedback',
+      lastRun: 'Dernier run',
+      lastRunStatus: 'Statut',
+      runs: 'Runs',
     },
     form: {
       scenarioId: 'Identifiant',
@@ -1273,8 +1278,15 @@ export default {
       expertiseNotSupported: 'Cette skill n\'accepte pas d\'expertise en entrée.',
       filterCategories: 'Catégories',
       filterScope: 'Périmètre',
+      filterScopeHint:
+        'Critère de requête : les expertises dont le périmètre correspond seront chargées (ex. « cta »). Requis.',
       filterEmailType: 'Type d\'email',
+      filterEmailTypeHint:
+        'Ne garde que les expertises applicables à ce type d\'email. Vide = tous.',
       filterLanguage: 'Langue',
+      filterLanguageHint:
+        'Ne garde que les expertises applicables à cette langue. Vide = toutes.',
+      filterSelectScope: 'Sélectionnez un périmètre pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
       inputSection: 'Contenu de la demande',
       inputHint: 'Renseignez ce que la skill doit traiter. Les champs marqués * sont obligatoires.',
@@ -1285,6 +1297,8 @@ export default {
       modeForm: 'Formulaire',
       modeJson: 'Mode avancé (JSON)',
       unknownTypeFallback: 'Cette skill utilise un format d\'entrée avancé, édition en JSON requise.',
+      templateHelp: 'Gabarit dérivé du schéma d\'entrée :',
+      insertTemplate: 'Insérer le gabarit',
       unknownKeysWarning: 'Certains champs ne correspondent pas au schéma de la skill (conservés, mais rejetés à l\'exécution) : {keys}',
       expertiseInjected: 'Les expertises sélectionnées ci-dessus sont ajoutées automatiquement à la demande — rien à saisir ici.',
       skillChangeConfirmTitle: 'Changer de skill ?',
@@ -1314,6 +1328,7 @@ export default {
     runs: {
       title: 'Historique des runs',
       empty: 'Aucun run pour ce scénario. Lance une exécution pour commencer.',
+      runOf: 'Run du {date}',
       latestRun: 'Dernier run',
       executing: 'Invocation en cours, peut prendre jusqu\'à 30 secondes…',
       budgetExhausted: 'Budget de test quotidien atteint (50/50). Réessayer demain.',

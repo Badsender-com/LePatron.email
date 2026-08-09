@@ -50,7 +50,36 @@ async function listScenarios({
       .lean(),
     AIPlaygroundScenarios.countDocuments(query),
   ]);
+  await decorateWithLastRun(items);
   return { items, total, page: Math.floor(skip / limit) + 1, pageSize: limit };
+}
+
+/**
+ * Attach { lastRunAt, lastRunStatus, runCount } to each scenario in place.
+ * One aggregation for the whole page — cheap at super-admin scale.
+ */
+async function decorateWithLastRun(items) {
+  if (!items.length) return;
+  const ids = items.map((s) => s._id);
+  const stats = await AIPlaygroundRuns.aggregate([
+    { $match: { _scenario: { $in: ids } } },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: '$_scenario',
+        lastRunAt: { $first: '$createdAt' },
+        lastRunStatus: { $first: '$status' },
+        runCount: { $sum: 1 },
+      },
+    },
+  ]);
+  const byId = new Map(stats.map((s) => [String(s._id), s]));
+  for (const item of items) {
+    const s = byId.get(String(item._id));
+    item.lastRunAt = s ? s.lastRunAt : null;
+    item.lastRunStatus = s ? s.lastRunStatus : null;
+    item.runCount = s ? s.runCount : 0;
+  }
 }
 
 async function getScenario(scenarioId) {
