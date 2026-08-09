@@ -20,8 +20,6 @@ const LIST_PROJECTION = {
   category: 1,
   status: 1,
   activeVersion: 1,
-  inputSchemaId: 1,
-  outputSchemaId: 1,
   owner: 1,
   createdAt: 1,
   updatedAt: 1,
@@ -56,8 +54,6 @@ async function createSkill(data, userId) {
     title: data.title,
     description: data.description || '',
     category: data.category,
-    inputSchemaId: data.inputSchemaId,
-    outputSchemaId: data.outputSchemaId,
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
@@ -73,39 +69,14 @@ async function createSkill(data, userId) {
   }
 }
 
-const PATCHABLE_FIELDS = [
-  'title',
-  'description',
-  'category',
-  'inputSchemaId',
-  'outputSchemaId',
-];
+// Schemas are NOT here anymore — they live on the version and are edited via
+// updateVersion (DRAFT only), like the prompts.
+const PATCHABLE_FIELDS = ['title', 'description', 'category'];
 
 async function updateSkill(skillId, patch) {
   const skill = await getSkill(skillId);
   for (const key of PATCHABLE_FIELDS) {
     if (patch[key] !== undefined) skill[key] = patch[key];
-  }
-  // The activation gate guarantees the ACTIVE template only references
-  // in-schema fields — changing inputSchemaId afterwards must not bypass it
-  // (out-of-schema placeholders interpolate empty on every invocation).
-  if (patch.inputSchemaId !== undefined) {
-    const active = findActiveVersion(skill);
-    if (active) {
-      const { unknownFields } = validateTemplateCoherence(
-        active.inputTemplate,
-        skill.inputSchemaId
-      );
-      if (unknownFields.length) {
-        throw createError(
-          400,
-          `Le schéma d'entrée « ${skill.inputSchemaId} » est incompatible ` +
-            'avec le template de la version active : champs inconnus ' +
-            `${unknownFields.join(', ')}. Publiez d'abord une version ` +
-            'corrigée, puis changez le schéma.'
-        );
-      }
-    }
   }
   await skill.save();
   return skill;
@@ -204,6 +175,8 @@ async function updateVersion(skillId, { major, minor }, patch, userId) {
     'systemPrompt',
     'skillBody',
     'inputTemplate',
+    'inputSchemaId',
+    'outputSchemaId',
     'modelHints',
     'testCases',
     'changelog',
@@ -236,20 +209,28 @@ async function activateVersion(skillId, { major, minor }, payload, userId) {
     throw createError(409, 'Only DRAFT versions can be activated');
   }
 
+  // Schemas are required to publish (they may be empty on a DRAFT).
+  if (!version.inputSchemaId || !version.outputSchemaId) {
+    throw createError(
+      400,
+      'Les schémas d\'entrée et de sortie doivent être renseignés avant de publier cette version.'
+    );
+  }
+
   // Publication gate: with strict input schemas, an out-of-schema placeholder
   // is ALWAYS interpolated empty — a guaranteed bug, so activation is blocked.
   // (A required field missing from the template stays a DRAFT-save warning:
   // omitting it can be intentional.)
   const { unknownFields } = validateTemplateCoherence(
     version.inputTemplate,
-    skill.inputSchemaId
+    version.inputSchemaId
   );
   if (unknownFields.length) {
     throw createError(
       400,
       'Le template référence des champs absents du schéma d\'entrée ' +
-        `« ${skill.inputSchemaId} » : ${unknownFields.join(', ')}. ` +
-        'Corrigez le template ou changez le schéma d\'entrée de la skill.'
+        `« ${version.inputSchemaId} » : ${unknownFields.join(', ')}. ` +
+        'Corrigez le template ou changez le schéma d\'entrée de la version.'
     );
   }
 

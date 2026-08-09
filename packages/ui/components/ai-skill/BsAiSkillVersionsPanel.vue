@@ -3,12 +3,14 @@
 // individual version fields. See BsAiSkillDetailsForm for rationale.
 /* eslint-disable vue/no-mutating-props */
 import BsTextarea from '~/components/form/bs-textarea.vue';
+import BsSelect from '~/components/form/bs-select.vue';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
 
 export default {
   name: 'BsAiSkillVersionsPanel',
   components: {
     BsTextarea,
+    BsSelect,
     LucidePlus: Plus,
     LucideCheckCircle2: CheckCircle2,
     LucideCopy: Copy,
@@ -17,11 +19,19 @@ export default {
   props: {
     skill: { type: Object, required: true },
     saving: { type: Boolean, default: false },
+    // Schema ids from the zod registry — schemas are versioned (UX review §3).
+    schemas: { type: Array, default: () => [] },
   },
   computed: {
     hasActive() {
       const av = this.skill && this.skill.activeVersion;
       return !!(av && av.major != null);
+    },
+    inputSchemas() {
+      return this.schemas.filter((s) => /Input$/.test(s));
+    },
+    outputSchemas() {
+      return this.schemas.filter((s) => /Output$/.test(s));
     },
     sortedVersions() {
       return [...(this.skill.versions || [])].sort((a, b) => {
@@ -48,9 +58,6 @@ export default {
         : v.status === 'ARCHIVED'
         ? 'grey'
         : 'warning';
-    },
-    isMajorDraft(v) {
-      return v.status === 'DRAFT' && v.versionMinor === 0;
     },
   },
 };
@@ -111,6 +118,12 @@ export default {
               <span class="text-caption text--secondary">
                 {{ formatDate(v.updatedAt || v.createdAt) }}
               </span>
+              <span
+                v-if="v.changelog"
+                class="text-caption text--secondary text-truncate version-changelog"
+              >
+                — {{ v.changelog }}
+              </span>
               <v-spacer />
               <v-tooltip left>
                 <template #activator="{ on, attrs }">
@@ -143,6 +156,9 @@ export default {
               :readonly="v.status !== 'DRAFT'"
               monospace
             />
+            <p class="text-caption text--secondary output-format-note">
+              {{ $t('aiSkills.version.outputFormatNote') }}
+            </p>
             <bs-textarea
               v-model="v.inputTemplate"
               :label="$t('aiSkills.version.inputTemplate')"
@@ -150,16 +166,37 @@ export default {
               :readonly="v.status !== 'DRAFT'"
               monospace
             />
+            <div class="schema-row">
+              <bs-select
+                v-model="v.inputSchemaId"
+                :items="inputSchemas"
+                :label="$t('aiSkills.skill.inputSchemaId')"
+                :readonly="v.status !== 'DRAFT'"
+                :disabled="v.status !== 'DRAFT'"
+              />
+              <bs-select
+                v-model="v.outputSchemaId"
+                :items="outputSchemas"
+                :label="$t('aiSkills.skill.outputSchemaId')"
+                :readonly="v.status !== 'DRAFT'"
+                :disabled="v.status !== 'DRAFT'"
+              />
+            </div>
+            <p class="text-caption text--secondary schema-help">
+              {{ $t('aiSkills.version.schemasHelp') }}
+            </p>
             <bs-textarea
-              v-if="isMajorDraft(v)"
+              v-if="v.status === 'DRAFT'"
               v-model="v.changelog"
               :label="$t('aiSkills.version.changelog')"
+              :placeholder="$t('aiSkills.version.changelogPlaceholder')"
               :rows="2"
             />
             <bs-textarea
-              v-if="isMajorDraft(v)"
+              v-if="v.status === 'DRAFT'"
               v-model="v.releaseNotes"
               :label="$t('aiSkills.version.releaseNotes')"
+              :placeholder="$t('aiSkills.version.releaseNotesPlaceholder')"
               :rows="2"
             />
             <div
@@ -203,3 +240,23 @@ export default {
     </v-card>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.version-changelog {
+  max-width: 320px;
+}
+.schema-row {
+  display: flex;
+  gap: 0.75rem;
+
+  > * {
+    flex: 1;
+  }
+}
+.output-format-note {
+  margin: -0.25rem 0 0.75rem;
+}
+.schema-help {
+  margin: -0.25rem 0 0.75rem;
+}
+</style>

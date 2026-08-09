@@ -33,7 +33,6 @@ export default {
       total: 0,
       filterCategory: null,
       filterStatus: null,
-      schemas: [],
       saving: false,
     };
   },
@@ -97,13 +96,9 @@ export default {
         const params = {};
         if (this.filterCategory) params.category = this.filterCategory;
         if (this.filterStatus) params.status = this.filterStatus;
-        const [list, schemasRes] = await Promise.all([
-          this.$axios.$get(api.aiSkills(), { params }),
-          this.$axios.$get(api.aiSkillSchemas()),
-        ]);
+        const list = await this.$axios.$get(api.aiSkills(), { params });
         this.items = list.items || [];
         this.total = list.total || 0;
-        this.schemas = schemasRes.schemas || [];
       } catch (err) {
         this.showSnackbar({
           text: this.$t('global.errors.errorOccured'),
@@ -218,7 +213,6 @@ export default {
 
     <bs-ai-skill-create-modal
       ref="createModal"
-      :schemas="schemas"
       :loading="saving"
       @submit="createSkill"
     />

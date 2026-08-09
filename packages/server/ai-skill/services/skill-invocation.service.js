@@ -109,8 +109,6 @@ async function invoke({
     {
       skillId: 1,
       activeVersion: 1,
-      inputSchemaId: 1,
-      outputSchemaId: 1,
       versions: 1,
     }
   );
@@ -135,12 +133,12 @@ async function invoke({
     );
   }
 
-  // ─── 2. Validate input against zod schema ──────────────────────────────
-  const inputSchema = getSchema(skill.inputSchemaId);
+  // ─── 2. Validate input against zod schema (schemas live on the version) ──
+  const inputSchema = getSchema(version.inputSchemaId);
   if (!inputSchema) {
     throw createError(
       500,
-      `Skill "${skillId}" references unknown input schema "${skill.inputSchemaId}"`
+      `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown input schema "${version.inputSchemaId}"`
     );
   }
   const inputParse = inputSchema.safeParse(input);
@@ -190,7 +188,7 @@ async function invoke({
   const { messages } = buildPrompt({
     version,
     input: inputParse.data,
-    outputContract: buildOutputContract(skill.outputSchemaId),
+    outputContract: buildOutputContract(version.outputSchemaId),
   });
 
   if (options.dryRun) {
@@ -256,7 +254,7 @@ async function invoke({
   }
 
   // ─── 6. Parse + validate output ────────────────────────────────────────
-  const outputSchema = getSchema(skill.outputSchemaId);
+  const outputSchema = getSchema(version.outputSchemaId);
   let parsedOutput;
   try {
     parsedOutput = parseJsonFromLLM(providerResponse.content);

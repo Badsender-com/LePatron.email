@@ -8,20 +8,22 @@ const SkillModel =
   mongoose.models.__TestSkill ||
   mongoose.model('__TestSkill', LePatronSkillSchema);
 
-function buildSkill(overrides = {}) {
+function buildSkill(overrides = {}, versionOverrides = {}) {
   return new SkillModel({
     skillId: 'generic.text',
     title: 'Generic text',
     category: 'redaction',
-    inputSchemaId: 'genericTextInput',
-    outputSchemaId: 'genericTextOutput',
     versions: [
       {
         versionMajor: 1,
         versionMinor: 0,
+        // Schemas live on the version now (UX review §3).
+        inputSchemaId: 'genericTextInput',
+        outputSchemaId: 'genericTextOutput',
         systemPrompt: 'You are a helpful assistant.',
         skillBody: 'Reformulate the user text.',
         inputTemplate: '<user_input>{{input.prompt}}</user_input>',
+        ...versionOverrides,
       },
     ],
     ...overrides,
@@ -39,13 +41,13 @@ describe('LePatronSkill model', () => {
     await expect(skill.validate()).rejects.toThrow(/skillId/);
   });
 
-  it('rejects unknown inputSchemaId', async () => {
-    const skill = buildSkill({ inputSchemaId: 'nope' });
+  it('rejects unknown inputSchemaId on a version', async () => {
+    const skill = buildSkill({}, { inputSchemaId: 'nope' });
     await expect(skill.validate()).rejects.toThrow(/inputSchemaId/);
   });
 
-  it('rejects unknown outputSchemaId', async () => {
-    const skill = buildSkill({ outputSchemaId: 'nope' });
+  it('rejects unknown outputSchemaId on a version', async () => {
+    const skill = buildSkill({}, { outputSchemaId: 'nope' });
     await expect(skill.validate()).rejects.toThrow(/outputSchemaId/);
   });
 
