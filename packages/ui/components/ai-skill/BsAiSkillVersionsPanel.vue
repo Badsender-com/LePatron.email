@@ -32,6 +32,9 @@ export default {
       // schemaId → descriptor|null, populated lazily to power the placeholder
       // helper (§C2). Null means "unknown / failed to load".
       descriptorCache: {},
+      // Held in JS (not inline in the template): a literal `}}` inside a
+      // mustache expression breaks the Vue template parser.
+      expertiseToken: '{{input.expertise}}',
     };
   },
   computed: {
@@ -121,6 +124,10 @@ export default {
         tokens.push({ token: '{{input.expertise}}', required: false });
       }
       return tokens.length ? tokens : null;
+    },
+    hasExpertiseFor(v) {
+      const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
+      return !!(d && d.hasExpertiseField);
     },
   },
 };
@@ -270,6 +277,16 @@ export default {
               <span class="text-caption text--disabled">
                 {{ $t('aiSkills.version.placeholdersRequiredHint') }}
               </span>
+              <p class="text-caption text--secondary mt-1 mb-0">
+                {{ $t('aiSkills.version.placeholdersInvocationNote') }}
+                <template v-if="hasExpertiseFor(v)">
+                  {{
+                    $t('aiSkills.version.placeholdersExpertiseNote', {
+                      token: expertiseToken,
+                    })
+                  }}
+                </template>
+              </p>
             </div>
             <bs-textarea
               v-if="v.status === 'DRAFT'"

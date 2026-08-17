@@ -32,6 +32,7 @@ export default {
     return {
       skill: this.emptySkill(),
       identifierManuallyEdited: false,
+      showIdentifier: false,
     };
   },
   computed: {
@@ -70,6 +71,7 @@ export default {
     open() {
       this.skill = this.emptySkill();
       this.identifierManuallyEdited = false;
+      this.showIdentifier = false;
       this.$refs.modal.open();
     },
     close() {
@@ -99,33 +101,6 @@ export default {
     modal-width="600"
   >
     <v-form @submit.prevent="onSubmit">
-      <div class="identifier-row">
-        <bs-text-field
-          :value="skill.skillId"
-          :label="$t('aiSkills.skill.id')"
-          :hint="$t('aiSkills.skill.idHint')"
-          placeholder="redaction.cta"
-          :disabled="loading"
-          required
-          class="identifier-row__field"
-          @input="onIdentifierInput"
-        />
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <v-btn
-              icon
-              :disabled="loading || !suggestedIdentifier"
-              class="identifier-row__reset"
-              v-bind="attrs"
-              v-on="on"
-              @click="resetIdentifier"
-            >
-              <lucide-refresh-cw :size="18" />
-            </v-btn>
-          </template>
-          <span>{{ $t('aiSkills.skill.idResetHint') }}</span>
-        </v-tooltip>
-      </div>
       <bs-text-field
         v-model="skill.title"
         :label="$t('global.title')"
@@ -146,6 +121,48 @@ export default {
         :label="$t('aiSkills.filters.category')"
         :disabled="loading"
       />
+
+      <div class="technical-id mt-4">
+        <v-btn
+          text
+          small
+          color="primary"
+          class="px-0"
+          @click="showIdentifier = !showIdentifier"
+        >
+          {{ $t('aiSkills.skill.technicalId') }}
+          <v-icon :size="18">
+            {{ showIdentifier ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+          </v-icon>
+        </v-btn>
+        <div v-if="showIdentifier" class="identifier-row">
+          <bs-text-field
+            :value="skill.skillId"
+            :label="$t('aiSkills.skill.id')"
+            placeholder="redaction.cta"
+            :disabled="loading"
+            required
+            class="identifier-row__field"
+            @input="onIdentifierInput"
+          />
+          <v-tooltip top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                icon
+                :disabled="loading || !suggestedIdentifier"
+                class="identifier-row__reset"
+                v-bind="attrs"
+                v-on="on"
+                @click="resetIdentifier"
+              >
+                <lucide-refresh-cw :size="18" />
+              </v-btn>
+            </template>
+            <span>{{ $t('aiSkills.skill.idResetHint') }}</span>
+          </v-tooltip>
+        </div>
+      </div>
+
       <p class="text-caption text--secondary mt-2 mb-0">
         {{ $t('aiSkills.skill.schemasOnVersionNote') }}
       </p>

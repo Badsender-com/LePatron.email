@@ -76,17 +76,55 @@ describe('validateTemplateCoherence', () => {
     expect(validateTemplateCoherence('{{input.x}}', 'nope')).toEqual({
       unknownFields: [],
       missingRequired: [],
+      missingExpertise: false,
     });
+  });
+
+  it('flags an expertise-capable schema whose template omits {{input.expertise}}', () => {
+    const { missingExpertise } = validateTemplateCoherence(
+      '{{input.prompt}} {{input.context}}',
+      'genericTextInput'
+    );
+    expect(missingExpertise).toBe(true);
+  });
+
+  it('does not flag missingExpertise when the template inserts it', () => {
+    const { missingExpertise } = validateTemplateCoherence(
+      V11_TEMPLATE,
+      'genericTextInput'
+    );
+    expect(missingExpertise).toBe(false);
+  });
+
+  it('does not flag missingExpertise when the schema has no expertise field', () => {
+    const { missingExpertise } = validateTemplateCoherence(
+      '{{input.text}}',
+      'genericTextOutput'
+    );
+    expect(missingExpertise).toBe(false);
   });
 });
 
 describe('templateWarnings', () => {
-  it('builds humanized warnings for both issue kinds', () => {
+  it('builds humanized warnings for every issue kind', () => {
+    // References only {{input.brief}}: unknown field + missing required prompt
+    // + missing expertise (genericTextInput accepts expertises).
     const warnings = templateWarnings('{{input.brief}}', 'genericTextInput');
-    expect(warnings).toHaveLength(2);
+    expect(warnings).toHaveLength(3);
     expect(warnings[0]).toContain('brief');
     expect(warnings[0]).toContain('genericTextInput');
     expect(warnings[1]).toContain('prompt');
+    expect(warnings[2]).toContain('expertises');
+  });
+
+  it('warns when an expertise-capable schema omits {{input.expertise}}', () => {
+    const warnings = templateWarnings(
+      '{{input.prompt}} {{input.context}}',
+      'genericTextInput'
+    );
+    expect(warnings).toEqual([
+      expect.stringContaining('elles seraient ignorées à l\'invocation'),
+    ]);
   });
 
   it('returns no warning for a coherent template', () => {

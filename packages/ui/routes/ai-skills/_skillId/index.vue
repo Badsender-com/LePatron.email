@@ -192,9 +192,10 @@ export default {
     askActivate(version) {
       this.activatingVersion = version;
       // Minor releases publish directly with defaults; major releases need
-      // an explicit changelog/releaseNotes via the modal.
+      // an explicit changelog/releaseNotes via the modal, pre-filled with the
+      // draft's values (§2).
       if (version.versionMinor === 0) {
-        this.$refs.activateModal.open();
+        this.$refs.activateModal.open(version);
       } else {
         this.activateVersion({});
       }
@@ -202,7 +203,7 @@ export default {
     async activateVersion(payload) {
       this.saving = true;
       try {
-        this.skill = await this.$axios.$post(
+        const res = await this.$axios.$post(
           api.aiSkillActivate(
             this.skill.skillId,
             this.activatingVersion.versionMajor,
@@ -210,6 +211,10 @@ export default {
           ),
           payload
         );
+        // Non-blocking coherence warnings surface post-activation too (§3).
+        this.versionWarnings = res.warnings || [];
+        delete res.warnings;
+        this.skill = res;
         if (this.$refs.activateModal) this.$refs.activateModal.close();
         this.showSnackbar({
           text: this.$t('aiSkills.version.activated'),

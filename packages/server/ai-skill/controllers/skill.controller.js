@@ -13,6 +13,21 @@ function userIdOf(req) {
   return req.user && !req.user.isAdmin ? req.user.id : null;
 }
 
+// Serialize a skill and append non-blocking template↔schema coherence warnings
+// for the given version (DRAFT save AND activation surface them). Tolerant of a
+// plain object so the service layer can be mocked in routing tests.
+function withVersionWarnings(skill, major, minor) {
+  const version = (skill.versions || []).find(
+    (v) => v.versionMajor === major && v.versionMinor === minor
+  );
+  const payload = typeof skill.toJSON === 'function' ? skill.toJSON() : skill;
+  payload.warnings = templateWarnings(
+    version ? version.inputTemplate : '',
+    version ? version.inputSchemaId : ''
+  );
+  return payload;
+}
+
 function versionFromParam(req) {
   const parsed = parseVersionParam(req.params.version);
   if (!parsed)
@@ -77,15 +92,7 @@ module.exports = {
     );
     // Non-blocking coherence warnings on DRAFT save (additive response key):
     // the same unknown-field issue becomes a hard error at activation.
-    const saved = skill.versions.find(
-      (v) => v.versionMajor === major && v.versionMinor === minor
-    );
-    const payload = skill.toJSON();
-    payload.warnings = templateWarnings(
-      saved ? saved.inputTemplate : '',
-      saved ? saved.inputSchemaId : ''
-    );
-    res.json(payload);
+    res.json(withVersionWarnings(skill, major, minor));
   }),
 
   deleteVersion: asyncHandler(async (req, res) => {
@@ -97,13 +104,16 @@ module.exports = {
   }),
 
   activateVersion: asyncHandler(async (req, res) => {
+    const { major, minor } = versionFromParam(req);
     const skill = await skillService.activateVersion(
       req.params.skillId,
-      versionFromParam(req),
+      { major, minor },
       req.body,
       userIdOf(req)
     );
-    res.json(skill);
+    // Non-blocking coherence warnings surface post-activation too (e.g. a
+    // schema that accepts expertises but a template that never inserts them).
+    res.json(withVersionWarnings(skill, major, minor));
   }),
 
   archiveSkill: asyncHandler(async (req, res) => {
