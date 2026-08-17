@@ -73,16 +73,29 @@ describe('skill.service', () => {
           skillId: 'redaction.cta',
           title: 't',
           category: 'redaction',
-          inputSchemaId: 'genericTextInput',
-          outputSchemaId: 'genericTextOutput',
         },
         userId
       );
       const payload = LePatronSkills.create.mock.calls[0][0];
       expect(payload.status).toBe('DRAFT');
       expect(payload.owner).toBe(userId);
-      expect(payload.versions).toEqual([]);
       expect(payload.activeVersion).toEqual({ major: null, minor: 0 });
+    });
+
+    it('seeds a v1.0 DRAFT with the generic schemas pre-filled (§B1)', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'redaction.cta', title: 't', category: 'redaction' },
+        new Types.ObjectId()
+      );
+      const payload = LePatronSkills.create.mock.calls[0][0];
+      expect(payload.versions).toHaveLength(1);
+      const [v] = payload.versions;
+      expect(v.versionMajor).toBe(1);
+      expect(v.versionMinor).toBe(0);
+      expect(v.status).toBe('DRAFT');
+      expect(v.inputSchemaId).toBe('genericTextInput');
+      expect(v.outputSchemaId).toBe('genericTextOutput');
     });
 
     it('throws 409 on duplicate skillId', async () => {

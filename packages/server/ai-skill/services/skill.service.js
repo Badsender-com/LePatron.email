@@ -48,7 +48,15 @@ async function getSkill(skillId) {
   return skill;
 }
 
+// Every new skill starts on the generic text contract: the author iterates
+// without picking a schema up front, and the coherence gate has something to
+// validate the template against from day one. Switching to a typed schema is
+// a later, deliberate move (via a new major version).
+const DEFAULT_INPUT_SCHEMA_ID = 'genericTextInput';
+const DEFAULT_OUTPUT_SCHEMA_ID = 'genericTextOutput';
+
 async function createSkill(data, userId) {
+  const now = new Date();
   const payload = {
     skillId: data.skillId,
     title: data.title,
@@ -57,7 +65,23 @@ async function createSkill(data, userId) {
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
-    versions: [],
+    // Seed a v1.0 DRAFT with the generic schemas pre-filled (§B1).
+    versions: [
+      {
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'DRAFT',
+        ...blankVersionContent(),
+        inputSchemaId: DEFAULT_INPUT_SCHEMA_ID,
+        outputSchemaId: DEFAULT_OUTPUT_SCHEMA_ID,
+        changelog: '',
+        releaseNotes: '',
+        createdBy: userId,
+        createdAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+      },
+    ],
   };
   try {
     return await LePatronSkills.create(payload);

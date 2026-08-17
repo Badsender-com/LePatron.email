@@ -38,7 +38,10 @@ export default {
     return {
       skill: null,
       schemas: [],
-      tab: 'details',
+      // Landing tab / auto-expanded version come from the query — the create
+      // flow redirects here with `?tab=versions&expand=1.0` (§B2).
+      tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
+      autoExpandVersion: this.$route.query.expand || null,
       activatingVersion: null,
       saving: false,
       versionWarnings: [],
@@ -55,13 +58,6 @@ export default {
       const av = this.skill && this.skill.activeVersion;
       if (!av || av.major == null) return null;
       return `${av.major}.${av.minor || 0}`;
-    },
-    activeVersion() {
-      const av = this.skill && this.skill.activeVersion;
-      if (!av || av.major == null) return null;
-      return (this.skill.versions || []).find(
-        (v) => v.versionMajor === av.major && v.versionMinor === (av.minor || 0)
-      );
     },
   },
   methods: {
@@ -291,7 +287,6 @@ export default {
         <v-tab-item value="details">
           <bs-ai-skill-details-form
             :skill="skill"
-            :active-version="activeVersion"
             :saving="saving"
             @save="saveDetails"
           />
@@ -311,6 +306,7 @@ export default {
           <bs-ai-skill-versions-panel
             :skill="skill"
             :schemas="schemas"
+            :auto-expand-version="autoExpandVersion"
             :saving="saving"
             @create-minor="createMinorVersion"
             @create-major="createMajorVersion(null)"
