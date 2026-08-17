@@ -99,6 +99,28 @@ describe('expertise-resolver.resolveExpertise', () => {
     expect(out[0].versionMajor).toBe(2);
   });
 
+  it('explicit mode preserves expertiseRefs order (not the DB order)', async () => {
+    // The $in query returns docs in an arbitrary order; the resolver must
+    // follow expertiseRefs — that order is what the prompt composes with.
+    const mk = (id) => ({
+      expertiseId: id,
+      title: id,
+      category: 'redaction',
+      scope: ['cta'],
+      activeVersion: { major: 1, minor: 0 },
+      versions: [{ versionMajor: 1, versionMinor: 0, body: id }],
+    });
+    findReturn([mk('c'), mk('a'), mk('b')]);
+    const out = await resolveExpertise({
+      expertiseRefs: [
+        { expertiseId: 'a', mode: 'active' },
+        { expertiseId: 'b', mode: 'active' },
+        { expertiseId: 'c', mode: 'active' },
+      ],
+    });
+    expect(out.map((e) => e.expertiseId)).toEqual(['a', 'b', 'c']);
+  });
+
   it('explicit mode pinned: picks the requested version', async () => {
     findReturn([
       {

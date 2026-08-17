@@ -5,6 +5,7 @@ import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
+import { ArrowUp, ArrowDown } from 'lucide-vue';
 
 const MODES = ['none', 'explicit', 'filter'];
 const EMAIL_TYPES = ['promo', 'newsletter', 'transactional'];
@@ -20,7 +21,13 @@ const CATEGORIES = [
 
 export default {
   name: 'BsAiPlaygroundExpertiseSelector',
-  components: { BsCombobox, BsSelect, BsAiExpertisePicker },
+  components: {
+    BsCombobox,
+    BsSelect,
+    BsAiExpertisePicker,
+    LucideArrowUp: ArrowUp,
+    LucideArrowDown: ArrowDown,
+  },
   props: {
     mode: { type: String, default: 'none' }, // 'none' | 'explicit' | 'filter'
     expertiseRefs: { type: Array, default: () => [] },
@@ -53,6 +60,20 @@ export default {
     },
     expertiseIds() {
       return this.expertiseRefs.map((r) => r.expertiseId);
+    },
+    // Selected expertises in their prompt order, hydrated with a display title
+    // (falls back to the id when the expertise list has not loaded yet).
+    orderedExpertise() {
+      const byId = new Map(
+        (this.availableExpertise || []).map((e) => [e.expertiseId, e])
+      );
+      return this.expertiseRefs.map((ref) => {
+        const doc = byId.get(ref.expertiseId);
+        return {
+          expertiseId: ref.expertiseId,
+          title: (doc && doc.title) || ref.expertiseId,
+        };
+      });
     },
     categoryOptions() {
       return CATEGORIES.map((value) => ({
@@ -121,6 +142,16 @@ export default {
   methods: {
     onModeChange(value) {
       this.$emit('update:mode', value);
+    },
+    // Reorder the explicit selection: the runner composes the prompt in
+    // expertiseRefs order, so this list is the order the model sees.
+    moveExpertise(index, delta) {
+      const next = index + delta;
+      if (next < 0 || next >= this.expertiseRefs.length) return;
+      const refs = [...this.expertiseRefs];
+      const [moved] = refs.splice(index, 1);
+      refs.splice(next, 0, moved);
+      this.$emit('update:expertise-refs', refs);
     },
     onExplicitChange(values) {
       // values is an array of expertiseId strings (from combobox); turn each
@@ -234,6 +265,40 @@ export default {
         :disabled="disabled"
         @input="onExplicitChange"
       />
+      <template v-if="orderedExpertise.length">
+        <ul class="expertise-order">
+          <li
+            v-for="(e, i) in orderedExpertise"
+            :key="e.expertiseId"
+            class="expertise-order__item"
+          >
+            <span class="expertise-order__rank">{{ i + 1 }}.</span>
+            <span class="expertise-order__title" :title="e.expertiseId">
+              {{ e.title }}
+            </span>
+            <v-spacer />
+            <v-btn
+              icon
+              x-small
+              :disabled="disabled || i === 0"
+              @click="moveExpertise(i, -1)"
+            >
+              <lucide-arrow-up :size="16" />
+            </v-btn>
+            <v-btn
+              icon
+              x-small
+              :disabled="disabled || i === orderedExpertise.length - 1"
+              @click="moveExpertise(i, 1)"
+            >
+              <lucide-arrow-down :size="16" />
+            </v-btn>
+          </li>
+        </ul>
+        <p class="text-caption text--secondary mb-3">
+          {{ $t('aiPlayground.form.expertiseOrderHint') }}
+        </p>
+      </template>
     </template>
 
     <template v-if="mode === 'filter'">
@@ -282,7 +347,7 @@ export default {
         :disabled="disabled"
         @input="onLanguageChange"
       />
-      <p class="text-caption text--secondary mb-3 mt-2">
+      <p class="text-caption text--secondary mb-1 mt-2">
         <span v-if="!hasScope">
           {{ $t('aiPlayground.form.filterSelectScope') }}
         </span>
@@ -294,6 +359,40 @@ export default {
           }}
         </span>
       </p>
+      <p class="text-caption text--disabled mb-3">
+        {{ $t('aiPlayground.form.filterOrderHint') }}
+      </p>
     </template>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.expertise-order {
+  list-style: none;
+  margin: 0 0 0.25rem;
+  padding: 0;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    margin-bottom: 0.25rem;
+  }
+
+  &__rank {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    min-width: 1.25rem;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+</style>

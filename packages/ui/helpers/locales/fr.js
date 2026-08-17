@@ -1297,6 +1297,10 @@ export default {
         'Ne garde que les expertises applicables à cette langue. Vide = toutes.',
       filterSelectScope: 'Sélectionnez un périmètre pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
+      filterOrderHint:
+        'Ordre de chargement : expertises transversales d\'abord, puis par identifiant alphabétique. Pour un ordre sur mesure, utilisez la sélection explicite.',
+      expertiseOrderHint:
+        'L\'ordre est celui d\'apparition dans le prompt — placez les expertises générales avant les spécifiques.',
       inputSection: 'Contenu de la demande',
       inputHint: 'Renseignez ce que la skill doit traiter. Les champs marqués * sont obligatoires.',
       inputInvalid: 'JSON invalide',

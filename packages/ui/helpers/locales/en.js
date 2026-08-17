@@ -1284,6 +1284,10 @@ export default {
         'Keeps only expertise applicable to this language. Empty = all.',
       filterSelectScope: 'Select a scope to preview.',
       filterPreviewCount: '{count} expertise(s) match this filter.',
+      filterOrderHint:
+        'Load order: transversal expertises first, then alphabetical by identifier. For a custom order, use explicit selection.',
+      expertiseOrderHint:
+        'The order is the order of appearance in the prompt — place general expertises before specific ones.',
       inputSection: 'Request content',
       inputHint: 'Fill in what the skill should work on. Fields marked * are required.',
       inputInvalid: 'Invalid JSON',
