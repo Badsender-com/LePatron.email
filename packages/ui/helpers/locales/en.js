@@ -1216,6 +1216,10 @@ export default {
         'The JSON output format is added automatically from the output schema — do not write it.',
       schemasHelp:
         'Technical contract of the version: the input validates what features send and generates the playground form; the output is imposed on the LLM automatically. Schemas are defined in code — contact the dev team to add one.',
+      placeholdersHelp:
+        'Placeholders usable in the skill body and input template, derived from the input schema:',
+      placeholdersRequiredHint:
+        'Placeholders marked with an asterisk (*) map to fields required by the input schema.',
       activated: 'Version activated',
       saveDraft: 'Save draft',
       duplicate: 'Duplicate',

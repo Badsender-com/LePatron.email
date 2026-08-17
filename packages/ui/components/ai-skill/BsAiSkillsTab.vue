@@ -117,7 +117,13 @@ export default {
           color: 'success',
         });
         this.$refs.createModal.close();
-        this.$router.push(`/ai-skills/${created.skillId}`);
+        // Land on the Versions tab with the seeded v1.0 DRAFT expanded (§B2):
+        // the author edits the version straight away, no detour via Details.
+        const seed = (created.versions && created.versions[0]) || {};
+        const expand = `${seed.versionMajor || 1}.${seed.versionMinor || 0}`;
+        this.$router.push(
+          `/ai-skills/${created.skillId}?tab=versions&expand=${expand}`
+        );
       } catch (err) {
         const msg =
           (err.response && err.response.data && err.response.data.message) ||

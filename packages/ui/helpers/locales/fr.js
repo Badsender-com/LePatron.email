@@ -1267,6 +1267,10 @@ export default {
         'Le format de sortie JSON est ajouté automatiquement depuis le schéma de sortie — ne le rédigez pas.',
       schemasHelp:
         'Contrat technique de la version : l\'entrée valide ce que les fonctionnalités envoient et génère le formulaire du playground ; la sortie est imposée automatiquement au LLM. Les schémas sont définis en code — contactez l\'équipe dev pour en ajouter.',
+      placeholdersHelp:
+        'Placeholders utilisables dans le corps de la skill et le modèle d\'entrée, dérivés du schéma d\'entrée :',
+      placeholdersRequiredHint:
+        'Les placeholders marqués d\'un astérisque (*) correspondent à des champs requis par le schéma d\'entrée.',
       activated: 'Version activée',
       saveDraft: 'Enregistrer le brouillon',
       duplicate: 'Dupliquer',

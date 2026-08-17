@@ -32,6 +32,9 @@ export function aiSkillArchive(skillId) {
 export function aiSkillSchemas() {
   return '/ai-skills/schemas';
 }
+export function aiSkillSchemaDescriptor(schemaId) {
+  return `/ai-skills/schemas/${schemaId}/descriptor`;
+}
 
 export function aiExpertiseList() {
   return '/ai-expertise';
