@@ -1,6 +1,7 @@
 <script>
 /* eslint-disable vue/no-mutating-props */
 import * as api from '~/helpers/ai-playground-routes.js';
+import { aiExpertiseFacets } from '~/helpers/ai-skill-routes.js';
 import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
@@ -45,6 +46,9 @@ export default {
     return {
       filterPreviewCount: null,
       previewPending: false,
+      // Existing scope values (same source as the expertise modal) so the
+      // filter-mode scope field proposes known scopes; free entry stays allowed.
+      scopeFacets: [],
     };
   },
   computed: {
@@ -137,9 +141,18 @@ export default {
     },
   },
   mounted() {
+    this.loadScopeFacets();
     if (this.mode === 'filter') this.refreshFilterPreview();
   },
   methods: {
+    async loadScopeFacets() {
+      try {
+        const res = await this.$axios.$get(aiExpertiseFacets());
+        this.scopeFacets = (res && res.scopes) || [];
+      } catch (e) {
+        this.scopeFacets = [];
+      }
+    },
     onModeChange(value) {
       this.$emit('update:mode', value);
     },
@@ -245,6 +258,12 @@ export default {
       :disabled="disabled"
       @input="onModeChange"
     />
+    <p
+      v-if="skillAcceptsExpertise"
+      class="text-caption text--secondary mt-n2 mb-3"
+    >
+      {{ $t('aiPlayground.form.expertiseModeHelp') }}
+    </p>
 
     <v-alert
       v-if="skillAcceptsExpertise && mode === 'none'"
@@ -273,8 +292,9 @@ export default {
             class="expertise-order__item"
           >
             <span class="expertise-order__rank">{{ i + 1 }}.</span>
-            <span class="expertise-order__title" :title="e.expertiseId">
-              {{ e.title }}
+            <span class="expertise-order__labels">
+              <span class="expertise-order__title">{{ e.title }}</span>
+              <span class="expertise-order__slug">{{ e.expertiseId }}</span>
             </span>
             <v-spacer />
             <v-btn
@@ -316,6 +336,7 @@ export default {
       />
       <bs-combobox
         :value="expertiseFilter.scope"
+        :items="scopeFacets"
         :label="`${$t('aiPlayground.form.filterScope')} *`"
         :hint="$t('aiPlayground.form.filterScopeHint')"
         persistent-hint
@@ -388,11 +409,23 @@ export default {
     min-width: 1.25rem;
   }
 
+  &__labels {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   &__title {
     font-size: 0.875rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__slug {
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.45);
+    font-family: monospace;
   }
 }
 </style>

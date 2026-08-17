@@ -14,6 +14,8 @@ router.use(GUARD_ADMIN);
 router.get('/preview-expertise-filter', scenario.previewExpertiseFilter);
 
 router.get('/scenarios', scenario.listScenarios);
+// Facets before /scenarios/:scenarioId so "facets" is not read as an id.
+router.get('/scenarios/facets', scenario.getScenarioFacets);
 router.post('/scenarios', scenario.createScenario);
 router.get('/scenarios/:scenarioId', scenario.getScenario);
 router.patch('/scenarios/:scenarioId', scenario.updateScenario);

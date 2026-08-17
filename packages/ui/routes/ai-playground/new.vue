@@ -20,12 +20,6 @@ export default {
       saving: false,
     };
   },
-  created() {
-    // Prefill the skill when arriving from a skill page's "Test in the
-    // playground" link (/ai-playground/new?skillId=…).
-    const { skillId } = this.$route.query;
-    if (skillId) this.scenario.skillRef.skillId = skillId;
-  },
   head() {
     return { title: this.$t('aiPlayground.actions.newScenario') };
   },
@@ -38,6 +32,12 @@ export default {
         this.inputValid
       );
     },
+  },
+  created() {
+    // Prefill the skill when arriving from a skill page's "Test in the
+    // playground" link (/ai-playground/new?skillId=…).
+    const { skillId } = this.$route.query;
+    if (skillId) this.scenario.skillRef.skillId = skillId;
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
@@ -118,6 +118,17 @@ export default {
         @update:expertise-mode="expertiseMode = $event"
         @input-valid="inputValid = $event"
       />
+      <div class="d-flex justify-end mt-4">
+        <v-btn
+          color="accent"
+          elevation="0"
+          :loading="saving"
+          :disabled="!canSubmit || saving"
+          @click="submit"
+        >
+          {{ $t('global.create') }}
+        </v-btn>
+      </div>
     </v-container>
   </div>
 </template>

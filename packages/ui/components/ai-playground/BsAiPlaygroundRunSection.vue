@@ -170,6 +170,9 @@ export default {
 <template>
   <div>
     <div class="d-flex align-center mb-3" style="gap: 0.75rem">
+      <!-- Parent injects secondary actions here (e.g. Save) so they sit in the
+           same row as Execute (§11b). -->
+      <slot name="actions-start" />
       <v-btn
         color="accent"
         elevation="0"

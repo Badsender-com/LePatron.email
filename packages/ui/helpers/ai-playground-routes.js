@@ -4,6 +4,9 @@
 export function aiPlaygroundScenarios() {
   return '/ai-playground/scenarios';
 }
+export function aiPlaygroundScenarioFacets() {
+  return '/ai-playground/scenarios/facets';
+}
 export function aiPlaygroundScenario(scenarioId) {
   return `/ai-playground/scenarios/${scenarioId}`;
 }
