@@ -5,8 +5,8 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
+import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
-import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import { RefreshCw } from 'lucide-vue';
 
 const CATEGORIES = [
@@ -27,6 +27,7 @@ export default {
     BsSelect,
     BsTextarea,
     BsCombobox,
+    BsAiLanguagePicker,
     LucideRefreshCw: RefreshCw,
   },
   props: {
@@ -47,9 +48,6 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
-    },
-    languageOptions() {
-      return isoLanguageOptions();
     },
     suggestedIdentifier() {
       return suggestIdentifier({
@@ -186,18 +184,12 @@ export default {
         small-chips
         :disabled="loading"
       />
-      <bs-select
-        v-model="expertise.appliesToLanguages"
-        :items="languageOptions"
-        item-text="text"
-        item-value="value"
+      <bs-ai-language-picker
+        :value="expertise.appliesToLanguages"
         :label="$t('aiSkills.expertise.appliesToLanguages')"
         :hint="$t('aiSkills.expertise.languageHelp')"
-        persistent-hint
-        multiple
-        chips
-        small-chips
         :disabled="loading"
+        @input="expertise.appliesToLanguages = $event"
       />
 
       <div class="technical-id mt-4">
