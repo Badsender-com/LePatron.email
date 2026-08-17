@@ -8,6 +8,13 @@ export function hasFilterScope(filter) {
   return Array.isArray(scope) && scope.length > 0;
 }
 
+// findApplicable ALSO requires at least one category — the preview is gated on
+// both (an incomplete filter must not silently call the endpoint).
+export function hasFilterCategories(filter) {
+  const categories = filter && filter.categories;
+  return Array.isArray(categories) && categories.length > 0;
+}
+
 // Turn a filter into the query params sent to the preview endpoint. Empty
 // values are omitted so they don't over-constrain the count.
 export function serialiseExpertiseFilter(filter) {
