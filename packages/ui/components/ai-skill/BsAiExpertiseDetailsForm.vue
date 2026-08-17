@@ -7,7 +7,7 @@ import BsTextField from '~/components/form/bs-text-field.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
-import { isoLanguageOptions } from '~/helpers/iso-languages.js';
+import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
 
 const CATEGORIES = [
   'redaction',
@@ -21,7 +21,13 @@ const CATEGORIES = [
 
 export default {
   name: 'BsAiExpertiseDetailsForm',
-  components: { BsTextField, BsSelect, BsTextarea, BsCombobox },
+  components: {
+    BsTextField,
+    BsSelect,
+    BsTextarea,
+    BsCombobox,
+    BsAiLanguagePicker,
+  },
   props: {
     expertise: { type: Object, required: true },
     saving: { type: Boolean, default: false },
@@ -35,9 +41,6 @@ export default {
         value,
         text: this.$t(`aiSkills.categories.${value}`),
       }));
-    },
-    languageOptions() {
-      return isoLanguageOptions();
     },
   },
   async mounted() {
@@ -109,17 +112,11 @@ export default {
       chips
       small-chips
     />
-    <bs-select
-      v-model="expertise.appliesToLanguages"
-      :items="languageOptions"
-      item-text="text"
-      item-value="value"
+    <bs-ai-language-picker
+      :value="expertise.appliesToLanguages"
       :label="$t('aiSkills.expertise.appliesToLanguages')"
       :hint="$t('aiSkills.expertise.languageHelp')"
-      persistent-hint
-      multiple
-      chips
-      small-chips
+      @input="expertise.appliesToLanguages = $event"
     />
     <div class="d-flex justify-end mt-3">
       <v-btn
