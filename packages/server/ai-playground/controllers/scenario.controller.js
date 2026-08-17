@@ -4,9 +4,7 @@ const asyncHandler = require('express-async-handler');
 
 const scenarioService = require('../services/scenario.service.js');
 const playgroundRunner = require('../services/playground-runner.service.js');
-const {
-  resolveExpertise,
-} = require('../services/expertise-resolver.service.js');
+const expertiseRepo = require('../../ai-skill/repositories/expertise.repository.js');
 
 function userIdOf(req) {
   return req.user && !req.user.isAdmin ? req.user.id : null;
@@ -74,10 +72,13 @@ module.exports = {
       emailType: source.emailType || null,
       language: source.language || null,
     };
-    const matches = await resolveExpertise({
-      expertiseRefs: [],
-      expertiseFilter: filter,
-    });
+    // findApplicable throws 400 when scope OR categories is missing — the
+    // preview must not silently return count 0 for an incomplete filter (§1.2).
+    // resolveExpertise() swallows that case (correct for the runner, wrong here).
+    const matches = await expertiseRepo.findApplicable(filter);
+    // The count must reflect every response, even two identical ones — kill the
+    // 304 conditional-GET that froze the UI (§1.3).
+    res.set('Cache-Control', 'no-store');
     res.json({
       count: matches.length,
       items: matches.map((m) => ({

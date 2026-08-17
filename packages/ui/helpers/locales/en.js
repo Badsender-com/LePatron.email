@@ -1345,6 +1345,7 @@ export default {
       filterLanguageHint:
         'Keeps only expertise applicable to this language. Empty = all.',
       filterSelectScope: 'Select a scope to preview.',
+      filterSelectCategory: 'Select at least one category to preview.',
       filterPreviewCount: '{count} expertise(s) match this filter.',
       expertiseModeHelp:
         'None: the skill is invoked without expertise. Explicit selection: you choose the expertises and their order — recommended for reproducible tests. Dynamic filter: expertises are loaded automatically from the criteria below (category, scope, email type, language). This is the mechanism production features use — it is what lets you enrich the doctrine without a redeploy.',

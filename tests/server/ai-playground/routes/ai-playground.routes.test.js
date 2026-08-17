@@ -21,6 +21,10 @@ jest.mock(
   () => ({ resolveExpertise: jest.fn() })
 );
 jest.mock(
+  '../../../../packages/server/ai-skill/repositories/expertise.repository',
+  () => ({ findApplicable: jest.fn() })
+);
+jest.mock(
   '../../../../packages/server/ai-playground/services/run.service',
   () => ({
     listRunsForScenario: jest.fn(),
@@ -44,8 +48,8 @@ const request = require('supertest');
 const scenarioService = require('../../../../packages/server/ai-playground/services/scenario.service');
 const playgroundRunner = require('../../../../packages/server/ai-playground/services/playground-runner.service');
 const {
-  resolveExpertise,
-} = require('../../../../packages/server/ai-playground/services/expertise-resolver.service');
+  findApplicable,
+} = require('../../../../packages/server/ai-skill/repositories/expertise.repository');
 const runService = require('../../../../packages/server/ai-playground/services/run.service');
 
 const router = require('../../../../packages/server/ai-playground/ai-playground.routes');
@@ -188,8 +192,8 @@ describe('ai-playground HTTP routes', () => {
     expect(r5.body.deleted).toBe(true);
   });
 
-  it('GET /preview-expertise-filter forwards filter and returns count + items', async () => {
-    resolveExpertise.mockResolvedValue([
+  it('GET /preview-expertise-filter forwards scope + categories and returns count', async () => {
+    findApplicable.mockResolvedValue([
       { expertiseId: 'a', title: 'A', versionMajor: 1, versionMinor: 0 },
       { expertiseId: 'b', title: 'B', versionMajor: 2, versionMinor: 1 },
     ]);
@@ -199,15 +203,27 @@ describe('ai-playground HTTP routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
     expect(res.body.items[0].expertiseId).toBe('a');
-    expect(resolveExpertise).toHaveBeenCalledWith({
-      expertiseRefs: [],
-      expertiseFilter: {
-        scope: ['cta'],
-        categories: ['redaction'],
-        emailType: 'promo',
-        language: null,
-      },
+    // categories[] is forwarded (the §1 regression: it was dropped).
+    expect(findApplicable).toHaveBeenCalledWith({
+      scope: ['cta'],
+      categories: ['redaction'],
+      emailType: 'promo',
+      language: null,
     });
+    // No 304 caching on the preview count (§1.3).
+    expect(res.headers['cache-control']).toBe('no-store');
+  });
+
+  it('GET /preview-expertise-filter surfaces the 400 when categories is missing', async () => {
+    // findApplicable rejects (400) when categories is empty — the preview must
+    // not swallow it into a silent count 0 (§1.2).
+    const err = new Error('categories required');
+    err.status = 400;
+    findApplicable.mockRejectedValue(err);
+    const res = await request(makeApp())
+      .get('/api/ai-playground/preview-expertise-filter')
+      .query({ scope: 'cta' });
+    expect(res.status).toBe(400);
   });
 
   it('PATCH /runs/:id/feedback persists rating + comment', async () => {

@@ -5,6 +5,7 @@ import { aiExpertiseFacets } from '~/helpers/ai-skill-routes.js';
 import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import {
   hasFilterScope,
+  hasFilterCategories,
   serialiseExpertiseFilter,
 } from '~/helpers/expertise-filter.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
@@ -100,6 +101,9 @@ export default {
     hasScope() {
       return hasFilterScope(this.expertiseFilter);
     },
+    hasCategories() {
+      return hasFilterCategories(this.expertiseFilter);
+    },
   },
   watch: {
     mode(next) {
@@ -134,6 +138,14 @@ export default {
       // would silently do nothing useful — fall back to 'none'.
       if (!accepts && this.mode !== 'none') {
         this.$emit('update:mode', 'none');
+      }
+    },
+    // When the skill is chosen AFTER switching to filter mode, its category
+    // arrives late — pre-fill categories then (findApplicable requires them,
+    // and without this the preview stayed at 0). §1.1
+    skillCategory(next) {
+      if (this.mode === 'filter' && next && !this.hasCategories) {
+        this.emitFilter({ categories: [next] });
       }
     },
   },
@@ -204,8 +216,9 @@ export default {
       this.refreshFilterPreviewFor(this.expertiseFilter);
     },
     async refreshFilterPreviewFor(filter) {
-      // findApplicable requires a scope — no scope, no preview.
-      if (!hasFilterScope(filter)) {
+      // findApplicable requires BOTH scope and categories — an incomplete
+      // filter shows an explicit message instead of calling the endpoint.
+      if (!hasFilterScope(filter) || !hasFilterCategories(filter)) {
         this.filterPreviewCount = null;
         return;
       }
@@ -317,7 +330,7 @@ export default {
         :items="categoryOptions"
         item-text="text"
         item-value="value"
-        :label="$t('aiPlayground.form.filterCategories')"
+        :label="`${$t('aiPlayground.form.filterCategories')} *`"
         multiple
         chips
         small-chips
@@ -361,6 +374,9 @@ export default {
       <p class="text-caption text--secondary mb-1 mt-2">
         <span v-if="!hasScope">
           {{ $t('aiPlayground.form.filterSelectScope') }}
+        </span>
+        <span v-else-if="!hasCategories">
+          {{ $t('aiPlayground.form.filterSelectCategory') }}
         </span>
         <span v-else-if="filterPreviewCount !== null">
           {{

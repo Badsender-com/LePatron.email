@@ -1358,6 +1358,8 @@ export default {
       filterLanguageHint:
         'Ne garde que les expertises applicables à cette langue. Vide = toutes.',
       filterSelectScope: 'Sélectionnez un périmètre pour prévisualiser.',
+      filterSelectCategory:
+        'Sélectionnez au moins une catégorie pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
       expertiseModeHelp:
         'Aucune : la skill est invoquée sans expertise. Sélection explicite : vous choisissez les expertises et leur ordre — recommandé pour les tests reproductibles. Filtre dynamique : les expertises sont chargées automatiquement selon les critères ci-dessous (catégorie, périmètre, type d\'email, langue). C\'est le mécanisme des fonctionnalités en production — c\'est lui qui permet d\'enrichir la doctrine sans redéploiement.',
