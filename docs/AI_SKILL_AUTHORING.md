@@ -72,6 +72,17 @@ Une expertise matche si :
 - ET ( `appliesToEmailTypes` vide OU `emailType ∈ appliesToEmailTypes` )
 - ET ( `appliesToLanguages` vide OU `language ∈ appliesToLanguages` )
 
+### Ordre de retour (déterministe)
+
+`findApplicable` trie les expertises de façon stable = **l'ordre d'apparition
+dans le prompt composé** : les **transversales d'abord** (les générales, ex.
+voix de marque), puis par **`expertiseId` alphabétique**. Objectif : un mix
+prévisible et reviewable, les principes généraux posés avant les règles
+spécifiques. En mode filtre du playground, l'aperçu suit ce même ordre. Pour un
+ordre sur mesure, utiliser la **sélection explicite** (liste réordonnançable) —
+il n'y a volontairement pas de champ de priorité en mode filtre (différé tant
+qu'un besoin réel n'est pas constaté).
+
 ### Transversalité — « traverse les périmètres, pas les catégories »
 
 `isTransversal: true` charge l'expertise **quel que soit le périmètre demandé**

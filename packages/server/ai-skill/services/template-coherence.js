@@ -9,9 +9,10 @@ const { describeSchema } = require('../schemas/describe-schema.js');
  * a guaranteed content bug, not a design choice.
  *
  * Severity is decided by the caller:
- *   - DRAFT save     → both lists are non-blocking warnings;
- *   - activation     → unknownFields blocks, missingRequired stays a warning
- *                      (omitting a required field can be intentional).
+ *   - DRAFT save     → all findings are non-blocking warnings;
+ *   - activation     → unknownFields blocks; missingRequired and
+ *                      missingExpertise stay warnings (omitting them can be
+ *                      intentional, but is worth flagging).
  */
 
 // First segment of each placeholder only (nested paths validated on their
@@ -21,12 +22,14 @@ const PLACEHOLDER_FIELD_REGEX = /\{\{\s*input\.([a-zA-Z0-9_]+)/g;
 /**
  * @param {string} inputTemplate
  * @param {string} inputSchemaId
- * @returns {{ unknownFields: string[], missingRequired: string[] }}
- *   Empty lists when the schema is unknown (nothing to validate against).
+ * @returns {{ unknownFields: string[], missingRequired: string[], missingExpertise: boolean }}
+ *   Empty/false when the schema is unknown (nothing to validate against).
  */
 function validateTemplateCoherence(inputTemplate, inputSchemaId) {
   const descriptor = describeSchema(inputSchemaId);
-  if (!descriptor) return { unknownFields: [], missingRequired: [] };
+  if (!descriptor) {
+    return { unknownFields: [], missingRequired: [], missingExpertise: false };
+  }
 
   const referenced = new Set();
   for (const match of String(inputTemplate || '').matchAll(
@@ -43,8 +46,12 @@ function validateTemplateCoherence(inputTemplate, inputSchemaId) {
   const missingRequired = descriptor.fields
     .filter((f) => f.required && !referenced.has(f.name))
     .map((f) => f.name);
+  // The schema accepts expertises but the template never inserts them: the
+  // selected expertises would be silently dropped at invocation.
+  const missingExpertise =
+    !!descriptor.hasExpertiseField && !referenced.has('expertise');
 
-  return { unknownFields, missingRequired };
+  return { unknownFields, missingRequired, missingExpertise };
 }
 
 /**
@@ -52,10 +59,11 @@ function validateTemplateCoherence(inputTemplate, inputSchemaId) {
  * @returns {string[]}
  */
 function templateWarnings(inputTemplate, inputSchemaId) {
-  const { unknownFields, missingRequired } = validateTemplateCoherence(
-    inputTemplate,
-    inputSchemaId
-  );
+  const {
+    unknownFields,
+    missingRequired,
+    missingExpertise,
+  } = validateTemplateCoherence(inputTemplate, inputSchemaId);
   const warnings = [];
   if (unknownFields.length) {
     warnings.push(
@@ -68,6 +76,12 @@ function templateWarnings(inputTemplate, inputSchemaId) {
     warnings.push(
       `Champ(s) requis du schéma « ${inputSchemaId} » non référencé(s) dans le ` +
         `template : ${missingRequired.join(', ')}.`
+    );
+  }
+  if (missingExpertise) {
+    warnings.push(
+      'Le schéma accepte des expertises mais le template ne les insère pas : ' +
+        'elles seraient ignorées à l\'invocation.'
     );
   }
   return warnings;

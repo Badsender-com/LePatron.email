@@ -134,6 +134,34 @@ describe('expertise.repository', () => {
       expect(out[0].isTransversal).toBe(true);
     });
 
+    it('returns a deterministic order: transversal first, then expertiseId alpha', async () => {
+      // DB order is intentionally shuffled — the repository must reorder.
+      const mk = (expertiseId, isTransversal) => ({
+        expertiseId,
+        isTransversal,
+        category: 'redaction',
+        scope: ['cta'],
+        activeVersion: { major: 1, minor: 0 },
+        versions: [{ versionMajor: 1, versionMinor: 0, body: 'x' }],
+      });
+      mockReturnDocs([
+        mk('redaction.cta.zebra', false),
+        mk('redaction.brand-voice', true),
+        mk('redaction.cta.alpha', false),
+        mk('redaction.tone', true),
+      ]);
+      const out = await findApplicable({
+        scope: 'cta',
+        categories: ['redaction'],
+      });
+      expect(out.map((e) => e.expertiseId)).toEqual([
+        'redaction.brand-voice', // transversal, alpha
+        'redaction.tone', // transversal, alpha
+        'redaction.cta.alpha', // scoped, alpha
+        'redaction.cta.zebra', // scoped, alpha
+      ]);
+    });
+
     it('keeps the emailType / language fallback clauses', async () => {
       mockReturnDocs([]);
       await findApplicable({
