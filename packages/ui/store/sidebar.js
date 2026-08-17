@@ -22,13 +22,8 @@ export const state = () => ({
   mobileOpen: false, // Mobile sidebar drawer state
   // Last seen groupId — used by SettingsList to keep linking to the
   // current customer group when the route doesn't expose it (e.g. on
-  // /templates/<id> reached from /groups/<id>/settings/templates, or after a
-  // reload of an admin-global page like /ai-skills). Persisted so a reload
-  // restores the selected company and its admin menu (§8).
-  lastGroupId:
-    typeof localStorage !== 'undefined'
-      ? localStorage.getItem('lepatron_last_group_id') || null
-      : null,
+  // /templates/<id> reached from /groups/<id>/settings/templates).
+  lastGroupId: null,
 });
 
 // Mutations
@@ -62,10 +57,6 @@ export const mutations = {
 
   SET_LAST_GROUP_ID(state, groupId) {
     state.lastGroupId = groupId || null;
-    if (typeof localStorage !== 'undefined') {
-      if (groupId) localStorage.setItem('lepatron_last_group_id', groupId);
-      else localStorage.removeItem('lepatron_last_group_id');
-    }
   },
 };
 

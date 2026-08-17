@@ -1,8 +1,7 @@
 'use strict';
 
 const { pick } = require('lodash');
-const mongoose = require('mongoose');
-const { NotFound, BadRequest } = require('http-errors');
+const { NotFound } = require('http-errors');
 const asyncHandler = require('express-async-handler');
 const {
   createWorkspace,
@@ -372,12 +371,7 @@ async function readMailings(req, res) {
 
 async function readWorkspaces(req, res, next) {
   const { groupId } = req.params;
-  // Admins bypass the group guard, so an admin page with no company selected
-  // can hit this with groupId "undefined" (a string) — validate it explicitly
-  // instead of letting Mongoose throw a 500 CastError on `_company`.
-  if (!groupId || !mongoose.isValidObjectId(groupId)) {
-    return next(new BadRequest('Invalid or missing groupId'));
-  }
+  if (!groupId) next(new NotFound());
   const workspaces = await findWorkspaces({ groupId });
   return res.json({ items: workspaces });
 }
