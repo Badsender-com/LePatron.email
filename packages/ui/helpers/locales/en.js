@@ -115,6 +115,7 @@ export default {
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
+    savedSuccessfully: 'Saved successfully',
     cancel: 'Cancel',
     create: 'Create',
     createTag: 'Create tag',
@@ -1135,6 +1136,8 @@ export default {
       goodExamples: 'Good examples',
       badExamples: 'Bad examples',
       bodyLabel: 'Markdown body — use ## [section-id] Title',
+      sectionIdHelp:
+        '[section-id] sections structure the doctrine into identifiable bricks: they are listed in the Sections tab and will eventually allow targeted per-client overrides (design system). If several expertises cover the same concept, reuse the same section identifier (e.g. [length] for any length rule).',
       addExpertise: 'Add expertise',
       newExpertise: 'New expertise',
       noExpertise: 'No expertise yet',

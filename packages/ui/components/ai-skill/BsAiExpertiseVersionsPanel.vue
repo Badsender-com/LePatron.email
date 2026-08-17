@@ -17,6 +17,12 @@ export default {
   props: {
     expertise: { type: Object, required: true },
     saving: { type: Boolean, default: false },
+    // "major.minor" of the version to expand on load (create flow lands here
+    // with the seeded v1.0 DRAFT open — §4).
+    autoExpandVersion: { type: String, default: null },
+  },
+  data() {
+    return { openPanel: null };
   },
   computed: {
     hasActive() {
@@ -31,6 +37,14 @@ export default {
         return b.versionMinor - a.versionMinor;
       });
     },
+  },
+  mounted() {
+    if (this.autoExpandVersion) {
+      const idx = this.sortedVersions.findIndex(
+        (v) => this.versionLabel(v) === this.autoExpandVersion
+      );
+      if (idx >= 0) this.openPanel = idx;
+    }
   },
   methods: {
     formatDate(d) {
@@ -92,7 +106,7 @@ export default {
       </v-tooltip>
     </div>
     <v-card outlined>
-      <v-expansion-panels accordion flat>
+      <v-expansion-panels v-model="openPanel" accordion flat>
         <v-expansion-panel
           v-for="v in sortedVersions"
           :key="`${v.versionMajor}.${v.versionMinor}`"
@@ -136,6 +150,9 @@ export default {
               :readonly="v.status !== 'DRAFT'"
               monospace
             />
+            <p class="text-caption text--secondary section-id-help">
+              {{ $t('aiSkills.expertise.sectionIdHelp') }}
+            </p>
             <bs-combobox
               v-model="v.examplesGood"
               :label="$t('aiSkills.expertise.goodExamples')"

@@ -20,14 +20,14 @@ describe('suggestIdentifier', () => {
     ).toBe('redaction.cta.principes-generaux-des-ctas');
   });
 
-  it('uses only the first scope value when multiple are provided', () => {
+  it('omits the scope segment when several scopes are selected (§3)', () => {
     expect(
       suggest({
         category: 'redaction',
         scope: ['cta', 'subject', 'preheader'],
         title: 'Promo',
       })
-    ).toBe('redaction.cta.promo');
+    ).toBe('redaction.promo');
   });
 
   it('skips the scope segment when scope is empty', () => {

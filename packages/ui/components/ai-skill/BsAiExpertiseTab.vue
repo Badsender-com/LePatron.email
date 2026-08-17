@@ -135,7 +135,13 @@ export default {
           color: 'success',
         });
         this.$refs.createModal.close();
-        this.$router.push(`/ai-expertise/${created.expertiseId}`);
+        // Land on the Versions tab with the seeded v1.0 DRAFT expanded (§4),
+        // parity with the skill create flow.
+        const seed = (created.versions && created.versions[0]) || {};
+        const expand = `${seed.versionMajor || 1}.${seed.versionMinor || 0}`;
+        this.$router.push(
+          `/ai-expertise/${created.expertiseId}?tab=versions&expand=${expand}`
+        );
       } catch (err) {
         const msg =
           (err.response && err.response.data && err.response.data.message) ||
