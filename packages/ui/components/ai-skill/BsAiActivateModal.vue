@@ -28,8 +28,14 @@ export default {
     },
   },
   methods: {
-    open() {
-      this.payload = { changelog: '', releaseNotes: '' };
+    // `seed` is the DRAFT version being activated: its changelog / release
+    // notes pre-fill the fields (still editable — the value confirmed here is
+    // what gets persisted at activation).
+    open(seed) {
+      this.payload = {
+        changelog: (seed && seed.changelog) || '',
+        releaseNotes: (seed && seed.releaseNotes) || '',
+      };
       this.$refs.modal.open();
     },
     close() {

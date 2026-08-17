@@ -1098,6 +1098,7 @@ export default {
       id: 'Identifiant',
       idHint: 'Slug, dot-hiérarchique — ex. redaction.cta',
       idResetHint: 'Recalculer l\'identifiant depuis Catégorie et Titre',
+      technicalId: 'Identifiant technique',
       inputSchemaId: 'Schéma d\'entrée',
       outputSchemaId: 'Schéma de sortie',
       schemasOnVersionNote:
@@ -1200,6 +1201,10 @@ export default {
         'Placeholders utilisables dans le corps de la skill et le modèle d\'entrée, dérivés du schéma d\'entrée :',
       placeholdersRequiredHint:
         'Les placeholders marqués d\'un astérisque (*) correspondent à des champs requis par le schéma d\'entrée.',
+      placeholdersInvocationNote:
+        'Ces champs sont fournis à l\'invocation — seuls ceux référencés dans le modèle d\'entrée sont transmis au LLM.',
+      placeholdersExpertiseNote:
+        '{token} porte les expertises sélectionnées : sans lui, elles ne seront pas vues par le modèle.',
       activated: 'Version activée',
       saveDraft: 'Enregistrer le brouillon',
       duplicate: 'Dupliquer',

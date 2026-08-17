@@ -67,7 +67,16 @@ async function findApplicable({ scope, categories, emailType, language } = {}) {
 
   const docs = await Expertises.find({ $and: and }).lean();
 
-  return docs.map((doc) => projectActiveVersion(doc)).filter((d) => d !== null);
+  // Deterministic order = the order expertises appear in the composed prompt:
+  // transversal (general) first, then alphabetical by expertiseId. Stable so
+  // features and the playground filter mode get a predictable, reviewable mix.
+  return docs
+    .map((doc) => projectActiveVersion(doc))
+    .filter((d) => d !== null)
+    .sort((a, b) => {
+      if (a.isTransversal !== b.isTransversal) return a.isTransversal ? -1 : 1;
+      return a.expertiseId.localeCompare(b.expertiseId);
+    });
 }
 
 function projectActiveVersion(doc) {

@@ -1085,6 +1085,7 @@ export default {
       id: 'ID',
       idHint: 'Slug, dot-hierarchical — e.g. redaction.cta',
       idResetHint: 'Recompute identifier from Category and Title',
+      technicalId: 'Technical identifier',
       inputSchemaId: 'Input schema',
       outputSchemaId: 'Output schema',
       schemasOnVersionNote:
@@ -1187,6 +1188,10 @@ export default {
         'Placeholders usable in the skill body and input template, derived from the input schema:',
       placeholdersRequiredHint:
         'Placeholders marked with an asterisk (*) map to fields required by the input schema.',
+      placeholdersInvocationNote:
+        'These fields are provided at invocation — only those referenced in the input template are sent to the LLM.',
+      placeholdersExpertiseNote:
+        '{token} carries the selected expertises: without it, they will not be seen by the model.',
       activated: 'Version activated',
       saveDraft: 'Save draft',
       duplicate: 'Duplicate',
