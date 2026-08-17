@@ -54,6 +54,7 @@ module.exports = {
     { src: '~/plugins/vue-i18n.js', ssr: true },
     { src: '~/plugins/detect-browser-locale.js', ssr: false },
     { src: '~/plugins/axios-error-handler.js', ssr: false },
+    { src: '~/plugins/restore-last-group.client.js', ssr: false },
   ],
   // https://vuetifyjs.com/en/getting-started/quick-start#nuxt-install
   // https://nuxtjs.org/guide/modules#build-only-modules

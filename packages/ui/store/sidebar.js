@@ -20,9 +20,12 @@ export const state = () => ({
         )
       : DEFAULT_WIDTH,
   mobileOpen: false, // Mobile sidebar drawer state
-  // Last seen groupId — used by SettingsList to keep linking to the
-  // current customer group when the route doesn't expose it (e.g. on
-  // /templates/<id> reached from /groups/<id>/settings/templates).
+  // Last seen groupId — used by SettingsList to keep linking to the current
+  // customer group when the route doesn't expose it (e.g. after a reload of an
+  // admin-global page like /ai-skills). Persisted in localStorage (write in the
+  // mutation below) and restored client-side by the restore-last-group plugin
+  // — NOT initialised here, because state() runs server-side under SSR where
+  // localStorage is undefined and the client would hydrate with that null.
   lastGroupId: null,
 });
 
@@ -57,6 +60,10 @@ export const mutations = {
 
   SET_LAST_GROUP_ID(state, groupId) {
     state.lastGroupId = groupId || null;
+    if (typeof localStorage !== 'undefined') {
+      if (groupId) localStorage.setItem('lepatron_last_group_id', groupId);
+      else localStorage.removeItem('lepatron_last_group_id');
+    }
   },
 };
 

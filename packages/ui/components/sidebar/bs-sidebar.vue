@@ -128,6 +128,15 @@ export default {
     // lives in SIDEBAR_MODULES so adding a new module is a single-file edit.
     detectedModule() {
       const path = this.$route.path;
+      // Explicit page override wins: admin-global pages (e.g. /ai-skills,
+      // /ai-expertise, /ai-playground) declare `meta.sidebarModule: 'settings'`
+      // but have no /settings path — without this they'd fall through to the
+      // module picker and lose the admin context (incl. the super-admin menu).
+      const metaModule = []
+        .concat(this.$route.meta || [])
+        .map((m) => m && m.sidebarModule)
+        .find(Boolean);
+      if (metaModule) return metaModule;
       const match = SIDEBAR_MODULES.find((m) =>
         (m.pathPrefixes || []).some((prefix) => path.startsWith(prefix))
       );

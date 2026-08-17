@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const mongoose = require('mongoose');
 const createError = require('http-errors');
 
 const router = express.Router();
@@ -14,6 +15,17 @@ const {
 const Roles = require('../account/roles.js');
 const groups = require('./group.controller.js');
 const { GUARD_CAN_ACCESS_GROUP } = require('./group.guard.js');
+
+// Central guard: any `:groupId` that is not a valid ObjectId (e.g. the literal
+// string "undefined" sent when an admin page reloads with no company selected)
+// is rejected with a 400 BEFORE any controller runs — never a 500 CastError on
+// the `_id`/`_company` ObjectId paths. Covers every /:groupId route below.
+router.param('groupId', (req, res, next, groupId) => {
+  if (!mongoose.isValidObjectId(groupId)) {
+    return next(createError(400, 'Invalid groupId'));
+  }
+  return next();
+});
 
 router.get('/', GUARD_ADMIN, groups.list);
 router.post('', GUARD_ADMIN, groups.create);
