@@ -194,6 +194,101 @@ describe('skill.service', () => {
     });
   });
 
+  // Anti-bug-class: every version-creation path that copies from a source MUST
+  // reproduce ALL content fields. Driven by the same exported list the service
+  // clones from, so a newly-added content field is covered automatically —
+  // this is the test that would have caught inputSchemaId/outputSchemaId being
+  // dropped after the §3 migration.
+  describe('version content cloning (all fields, all paths)', () => {
+    const { VERSION_CONTENT_FIELDS } = skillService;
+
+    function distinctiveValue(field) {
+      if (field.deep) {
+        const empty = field.default();
+        return Array.isArray(empty)
+          ? [{ marker: field.name }]
+          : { marker: field.name };
+      }
+      return `val-${field.name}`;
+    }
+
+    function makeSource(overrides = {}) {
+      const source = {
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'ACTIVE',
+        ...overrides,
+      };
+      for (const field of VERSION_CONTENT_FIELDS) {
+        source[field.name] = distinctiveValue(field);
+      }
+      return source;
+    }
+
+    function expectAllContentCopied(created, source) {
+      for (const field of VERSION_CONTENT_FIELDS) {
+        expect(created[field.name]).toEqual(source[field.name]);
+      }
+    }
+
+    it('sanity: the list is non-empty and includes the versioned schemas', () => {
+      const names = VERSION_CONTENT_FIELDS.map((f) => f.name);
+      expect(names).toEqual(
+        expect.arrayContaining(['inputSchemaId', 'outputSchemaId'])
+      );
+    });
+
+    it('minor version copies all content fields from the active version', async () => {
+      const source = makeSource();
+      const doc = mockSkillDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [source],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.createMinorVersion('a', null);
+      expectAllContentCopied(doc.versions[doc.versions.length - 1], source);
+    });
+
+    it('major version copies all content fields from the active version', async () => {
+      const source = makeSource();
+      const doc = mockSkillDoc({
+        activeVersion: { major: 1, minor: 0 },
+        versions: [source],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.createMajorVersion('a', { userId: null });
+      expectAllContentCopied(doc.versions[doc.versions.length - 1], source);
+    });
+
+    it('duplicate copies all content fields from an arbitrary source version', async () => {
+      const source = makeSource({ versionMajor: 1, status: 'ARCHIVED' });
+      const doc = mockSkillDoc({
+        activeVersion: { major: 2, minor: 0 },
+        versions: [
+          source,
+          { versionMajor: 2, versionMinor: 0, status: 'ACTIVE' },
+        ],
+      });
+      LePatronSkills.findOne.mockResolvedValue(doc);
+      await skillService.createMajorVersion('a', { source, userId: null });
+      expectAllContentCopied(doc.versions[doc.versions.length - 1], source);
+    });
+
+    it('seed path (createSkill) carries every content field', async () => {
+      LePatronSkills.create.mockResolvedValue({ skillId: 'a' });
+      await skillService.createSkill(
+        { skillId: 'a', title: 't', category: 'redaction' },
+        new Types.ObjectId()
+      );
+      const [seeded] = LePatronSkills.create.mock.calls[0][0].versions;
+      for (const field of VERSION_CONTENT_FIELDS) {
+        expect(seeded[field.name]).toBeDefined();
+      }
+      expect(seeded.inputSchemaId).toBe('genericTextInput');
+      expect(seeded.outputSchemaId).toBe('genericTextOutput');
+    });
+  });
+
   describe('updateVersion', () => {
     it('rejects edits on non-DRAFT versions', async () => {
       const doc = mockSkillDoc({
