@@ -4,6 +4,8 @@ import { PAGE, SHOW_SNACKBAR } from '~/store/page.js';
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsModalConfirm from '~/components/modal-confirm.vue';
+import BsLatency from '~/components/ai-skill/BsLatency.vue';
+import { latencySeconds } from '~/helpers/format-latency.js';
 import { History } from 'lucide-vue';
 
 const STATUSES = [
@@ -20,6 +22,7 @@ export default {
   components: {
     BsDataTable,
     BsModalConfirm,
+    BsLatency,
     LucideHistory: History,
   },
   data() {
@@ -84,6 +87,7 @@ export default {
   },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
+    latencySeconds,
     statusLabel(value) {
       return value ? this.$t(`aiSkills.statuses.${value}`) : '';
     },
@@ -301,7 +305,7 @@ export default {
         </v-chip>
       </template>
       <template #item.latencyMs="{ item }">
-        <span v-if="item.latencyMs != null">{{ item.latencyMs }} ms</span>
+        <bs-latency :value="item.latencyMs" />
       </template>
       <template #item.group="{ item }">
         <span class="text-caption">{{ groupName(item) }}</span>
@@ -347,7 +351,7 @@ export default {
           >
             {{ statusLabel(detail.status) }}
           </v-chip>
-          <span class="text-caption ml-2">{{ detail.latencyMs }} ms · {{ detail.provider }} ·
+          <span class="text-caption ml-2" :title="`${detail.latencyMs} ms`">{{ latencySeconds(detail.latencyMs) }} · {{ detail.provider }} ·
             {{ detail.model }}</span>
         </p>
         <v-alert v-if="detail.error" type="error" dense outlined class="mb-3">

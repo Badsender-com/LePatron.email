@@ -31,6 +31,7 @@ export default {
       loading: false,
       items: [],
       total: 0,
+      search: '',
       filterCategory: null,
       filterStatus: null,
       saving: false,
@@ -49,10 +50,19 @@ export default {
         text: this.$t(`aiSkills.statuses.${value}`),
       }));
     },
+    filteredItems() {
+      // Client-side text search over title + identifier (parity with the
+      // expertise list). `clearable` sets search to null on clear — guard it.
+      const q = (this.search || '').trim().toLowerCase();
+      if (!q) return this.items;
+      return this.items.filter((s) =>
+        `${s.title || ''} ${s.skillId || ''}`.toLowerCase().includes(q)
+      );
+    },
     tableHeaders() {
       return [
-        { text: this.$t('aiSkills.skill.id'), value: 'skillId' },
         { text: this.$t('global.title'), value: 'title' },
+        { text: this.$t('aiSkills.skill.id'), value: 'skillId' },
         { text: this.$t('aiSkills.filters.category'), value: 'category' },
         { text: this.$t('global.status'), value: 'status' },
         {
@@ -144,6 +154,15 @@ export default {
     </p>
 
     <div class="filters-row">
+      <v-text-field
+        v-model="search"
+        :label="$t('global.search')"
+        dense
+        outlined
+        hide-details
+        clearable
+        class="filter-field filter-field--search"
+      />
       <v-select
         v-model="filterCategory"
         :items="categoryOptions"
@@ -174,14 +193,17 @@ export default {
 
     <bs-data-table
       :headers="tableHeaders"
-      :items="items"
+      :items="filteredItems"
       :loading="loading"
       item-key="skillId"
       clickable
       @click:row="openSkill"
     >
+      <template #item.title="{ item }">
+        <span class="font-weight-medium">{{ item.title }}</span>
+      </template>
       <template #item.skillId="{ item }">
-        <span class="font-weight-medium">{{ item.skillId }}</span>
+        <span class="text-caption text--secondary">{{ item.skillId }}</span>
       </template>
       <template #item.status="{ item }">
         <v-chip
@@ -241,5 +263,8 @@ export default {
 }
 .filter-field {
   max-width: 220px;
+}
+.filter-field--search {
+  max-width: 280px;
 }
 </style>

@@ -25,6 +25,10 @@ export default {
     // "major.minor" of the version to expand on load (create flow lands here
     // with the seeded v1.0 DRAFT open — §B2).
     autoExpandVersion: { type: String, default: null },
+    // Coherence warnings shown inline next to the concerned version's action
+    // row (§1.1), so they are visible where the buttons are.
+    warnings: { type: Array, default: () => [] },
+    warningsVersionKey: { type: String, default: null },
   },
   data() {
     return {
@@ -128,6 +132,10 @@ export default {
     hasExpertiseFor(v) {
       const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
       return !!(d && d.hasExpertiseField);
+    },
+    warningsFor(v) {
+      if (this.versionLabel(v) !== this.warningsVersionKey) return [];
+      return this.warnings || [];
     },
   },
 };
@@ -302,6 +310,16 @@ export default {
               :placeholder="$t('aiSkills.version.releaseNotesPlaceholder')"
               :rows="2"
             />
+            <v-alert
+              v-for="(warning, i) in warningsFor(v)"
+              :key="`warn-${i}`"
+              type="warning"
+              dense
+              outlined
+              class="mt-3 mb-0"
+            >
+              {{ warning }}
+            </v-alert>
             <div
               v-if="v.status === 'DRAFT'"
               class="d-flex justify-end mt-2"
