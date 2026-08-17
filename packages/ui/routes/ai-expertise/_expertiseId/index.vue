@@ -32,7 +32,10 @@ export default {
   data() {
     return {
       exp: null,
-      tab: 'details',
+      // Landing tab / auto-expanded version come from the query — the create
+      // flow redirects here with ?tab=versions&expand=1.0 (§4).
+      tab: this.$route.query.tab === 'versions' ? 'versions' : 'details',
+      autoExpandVersion: this.$route.query.expand || null,
       activatingVersion: null,
       activationImpact: [],
       saving: false,
@@ -197,7 +200,9 @@ export default {
         } catch (err) {
           this.activationImpact = [];
         }
-        this.$refs.activateModal.open();
+        // Pre-fill changelog / release notes from the draft (§6), same shared
+        // modal as skills.
+        this.$refs.activateModal.open(version);
       } else {
         this.activateVersion({});
       }
@@ -289,6 +294,7 @@ export default {
         <v-tab-item value="versions">
           <bs-ai-expertise-versions-panel
             :expertise="exp"
+            :auto-expand-version="autoExpandVersion"
             :saving="saving"
             @create-minor="createMinorVersion"
             @create-major="createMajorVersion(null)"

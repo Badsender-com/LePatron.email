@@ -24,6 +24,9 @@ export default {
     hint: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
   },
+  data() {
+    return { searchText: '' };
+  },
   computed: {
     options() {
       return isoLanguageOptions();
@@ -34,6 +37,11 @@ export default {
     filter(item, queryText) {
       return normalize(item.text).includes(normalize(queryText));
     },
+    onInput(event) {
+      // Clear the typed search on selection so it doesn't linger (§2).
+      this.searchText = '';
+      this.$emit('input', event);
+    },
   },
 };
 </script>
@@ -43,6 +51,7 @@ export default {
     <label v-if="label" class="bs-ai-language-picker__label">{{ label }}</label>
     <v-autocomplete
       :value="value"
+      :search-input.sync="searchText"
       :items="options"
       item-text="text"
       item-value="value"
@@ -58,7 +67,7 @@ export default {
       outlined
       dense
       hide-details="auto"
-      @input="$emit('input', $event)"
+      @input="onInput"
     />
     <div v-if="hint" class="bs-ai-language-picker__hint">
       {{ hint }}
