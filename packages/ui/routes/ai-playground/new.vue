@@ -96,17 +96,6 @@ export default {
       <template #title>
         {{ $t('aiPlayground.actions.newScenario') }}
       </template>
-      <template #actions>
-        <v-btn
-          color="accent"
-          elevation="0"
-          :loading="saving"
-          :disabled="!canSubmit || saving"
-          @click="submit"
-        >
-          {{ $t('global.create') }}
-        </v-btn>
-      </template>
     </bs-page-header>
 
     <v-container fluid>

@@ -3,6 +3,10 @@
 import * as api from '~/helpers/ai-playground-routes.js';
 import { aiExpertiseFacets } from '~/helpers/ai-skill-routes.js';
 import { isoLanguageOptions } from '~/helpers/iso-languages.js';
+import {
+  hasFilterScope,
+  serialiseExpertiseFilter,
+} from '~/helpers/expertise-filter.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
@@ -94,8 +98,7 @@ export default {
     // findApplicable requires a scope in filter mode — drives the required
     // marker and the "select a scope" preview message.
     hasScope() {
-      const s = this.expertiseFilter && this.expertiseFilter.scope;
-      return Array.isArray(s) && s.length > 0;
+      return hasFilterScope(this.expertiseFilter);
     },
   },
   watch: {
@@ -125,12 +128,6 @@ export default {
           });
         }
       }
-    },
-    expertiseFilter: {
-      deep: true,
-      handler() {
-        if (this.mode === 'filter') this.refreshFilterPreview();
-      },
     },
     skillAcceptsExpertise(accepts) {
       // The newly selected skill has no expertise input: selecting expertise
@@ -178,33 +175,37 @@ export default {
       );
       this.$emit('update:expertise-refs', next);
     },
+    // Each filter change emits the updated filter AND refreshes the preview
+    // from that exact value (§4 fix). The preview is driven directly by the
+    // field event, not by a round-trip through the parent prop — the combobox
+    // change was no longer re-triggering the count otherwise.
+    emitFilter(patch) {
+      const next = { ...this.expertiseFilter, ...patch };
+      this.$emit('update:expertise-filter', next);
+      if (this.mode === 'filter') this.refreshFilterPreviewFor(next);
+    },
     onScopeChange(scope) {
-      this.$emit('update:expertise-filter', {
-        ...this.expertiseFilter,
+      this.emitFilter({
         scope: Array.isArray(scope) ? scope : [scope].filter(Boolean),
       });
     },
     onCategoriesChange(categories) {
-      this.$emit('update:expertise-filter', {
-        ...this.expertiseFilter,
+      this.emitFilter({
         categories: Array.isArray(categories) ? categories : [],
       });
     },
     onEmailTypeChange(value) {
-      this.$emit('update:expertise-filter', {
-        ...this.expertiseFilter,
-        emailType: value || null,
-      });
+      this.emitFilter({ emailType: value || null });
     },
     onLanguageChange(value) {
-      this.$emit('update:expertise-filter', {
-        ...this.expertiseFilter,
-        language: value || null,
-      });
+      this.emitFilter({ language: value || null });
     },
-    async refreshFilterPreview() {
+    refreshFilterPreview() {
+      this.refreshFilterPreviewFor(this.expertiseFilter);
+    },
+    async refreshFilterPreviewFor(filter) {
       // findApplicable requires a scope — no scope, no preview.
-      if (!this.hasScope) {
+      if (!hasFilterScope(filter)) {
         this.filterPreviewCount = null;
         return;
       }
@@ -212,7 +213,7 @@ export default {
       try {
         const res = await this.$axios.$get(
           api.aiPlaygroundPreviewExpertiseFilter(),
-          { params: this.serialisedFilter() }
+          { params: serialiseExpertiseFilter(filter) }
         );
         this.filterPreviewCount = res.count;
       } catch (e) {
@@ -220,17 +221,6 @@ export default {
       } finally {
         this.previewPending = false;
       }
-    },
-    serialisedFilter() {
-      const f = this.expertiseFilter || {};
-      const params = {};
-      if (Array.isArray(f.scope) && f.scope.length) params.scope = f.scope;
-      if (Array.isArray(f.categories) && f.categories.length) {
-        params.categories = f.categories;
-      }
-      if (f.emailType) params.emailType = f.emailType;
-      if (f.language) params.language = f.language;
-      return params;
     },
   },
 };
