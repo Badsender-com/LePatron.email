@@ -4,6 +4,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
 import { dateTime } from '~/helpers/format-date.js';
+import { latencySeconds } from '~/helpers/format-latency.js';
 import { Star, GitCompare } from 'lucide-vue';
 
 export default {
@@ -88,6 +89,7 @@ export default {
     },
   },
   methods: {
+    latencySeconds,
     open() {
       this.tab = 'output';
       this.$refs.modal.open();
@@ -126,8 +128,12 @@ export default {
         >
           {{ $t(`aiPlayground.status.${run.status}`) }}
         </v-chip>
-        <span v-if="isSuccess" class="text-caption text--secondary">
-          {{ run.latencyMs }} ms ·
+        <span
+          v-if="isSuccess"
+          class="text-caption text--secondary"
+          :title="`${run.latencyMs} ms`"
+        >
+          {{ latencySeconds(run.latencyMs) }} ·
           {{ (run.tokenUsage && run.tokenUsage.promptTokens) || 0 }}/{{
             (run.tokenUsage && run.tokenUsage.completionTokens) || 0
           }}

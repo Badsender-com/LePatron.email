@@ -1359,6 +1359,8 @@ export default {
         'Ne garde que les expertises applicables à cette langue. Vide = toutes.',
       filterSelectScope: 'Sélectionnez un périmètre pour prévisualiser.',
       filterPreviewCount: '{count} expertise(s) correspondent à ces filtres.',
+      expertiseModeHelp:
+        'Aucune : la skill est invoquée sans expertise. Sélection explicite : vous choisissez les expertises et leur ordre — recommandé pour les tests reproductibles. Filtre dynamique : les expertises sont chargées automatiquement selon les critères ci-dessous, comme le fera une fonctionnalité en production.',
       filterOrderHint:
         'Ordre de chargement : expertises transversales d\'abord, puis par identifiant alphabétique. Pour un ordre sur mesure, utilisez la sélection explicite.',
       expertiseOrderHint:

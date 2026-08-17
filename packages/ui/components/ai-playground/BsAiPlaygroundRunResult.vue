@@ -1,5 +1,6 @@
 <script>
 import BsMarkdownRenderer from '~/components/form/bs-markdown-renderer.vue';
+import { latencySeconds } from '~/helpers/format-latency.js';
 
 export default {
   name: 'BsAiPlaygroundRunResult',
@@ -32,6 +33,7 @@ export default {
       return (u.promptTokens || 0) + (u.completionTokens || 0);
     },
   },
+  methods: { latencySeconds },
 };
 </script>
 
@@ -46,8 +48,8 @@ export default {
       >
         {{ statusLabel }}
       </v-chip>
-      <span class="text-caption text--secondary">
-        {{ run.latencyMs }} ms · {{ totalTokens }} tokens
+      <span class="text-caption text--secondary" :title="`${run.latencyMs} ms`">
+        {{ latencySeconds(run.latencyMs) }} · {{ totalTokens }} tokens
       </span>
       <v-spacer />
       <span v-if="run.resolvedSkill" class="text-caption text--secondary">

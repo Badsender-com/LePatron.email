@@ -1,11 +1,13 @@
 <script>
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsLatency from '~/components/ai-skill/BsLatency.vue';
 import { Star, MessageSquare } from 'lucide-vue';
 
 export default {
   name: 'BsAiPlaygroundRunsList',
   components: {
     BsDataTable,
+    BsLatency,
     LucideStar: Star,
     LucideMessageSquare: MessageSquare,
   },
@@ -85,7 +87,7 @@ export default {
       </v-chip>
     </template>
     <template #item.latencyMs="{ item }">
-      <span v-if="item.latencyMs != null">{{ item.latencyMs }} ms</span>
+      <bs-latency :value="item.latencyMs" />
     </template>
     <template #item.tokens="{ item }">
       <span v-if="totalTokens(item)" class="text-caption">{{

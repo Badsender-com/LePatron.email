@@ -15,6 +15,9 @@ export default {
     skillCategory: { type: String, default: null },
     disabled: { type: Boolean, default: false },
   },
+  data() {
+    return { searchText: '' };
+  },
   computed: {
     items() {
       if (!this.skillCategory) return this.expertise;
@@ -34,6 +37,12 @@ export default {
     },
   },
   methods: {
+    onInput(event) {
+      // Clear the typed search on selection so the next pick starts fresh
+      // (§9 — "prin" must not linger in the field after selecting).
+      this.searchText = '';
+      this.$emit('input', event);
+    },
     categoryLabel(value) {
       return value ? this.$t(`aiSkills.categories.${value}`) : '';
     },
@@ -60,6 +69,7 @@ export default {
     </label>
     <v-autocomplete
       :value="value"
+      :search-input.sync="searchText"
       :items="items"
       item-text="title"
       item-value="expertiseId"
@@ -74,13 +84,16 @@ export default {
       outlined
       dense
       hide-details="auto"
-      @input="$emit('input', $event)"
+      @input="onInput"
     >
       <template #item="{ item }">
         <v-list-item-content>
-          <v-list-item-title :title="item.expertiseId">
+          <v-list-item-title>
             {{ item.title }}
           </v-list-item-title>
+          <v-list-item-subtitle class="expertise-slug">
+            {{ item.expertiseId }}
+          </v-list-item-subtitle>
           <v-list-item-subtitle v-if="item.description">
             {{ truncate(item.description) }}
           </v-list-item-subtitle>
@@ -117,5 +130,10 @@ export default {
     color: rgba(0, 0, 0, 0.6);
     margin-bottom: 0.375rem;
   }
+}
+.expertise-slug {
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.45);
+  font-family: monospace;
 }
 </style>

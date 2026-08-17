@@ -88,6 +88,21 @@ async function getScenario(scenarioId) {
   return doc;
 }
 
+/**
+ * Distinct values that populate the scenario list filters (skills that have at
+ * least one scenario, and tags in use), so the Skill/Tag filters are pick-lists
+ * of real values instead of exact-match free text.
+ */
+async function getScenarioFacets() {
+  const [skillIds, tags] = await Promise.all([
+    AIPlaygroundScenarios.distinct('skillRef.skillId'),
+    AIPlaygroundScenarios.distinct('tags'),
+  ]);
+  const clean = (arr) =>
+    (arr || []).filter((v) => typeof v === 'string' && v).sort();
+  return { skillIds: clean(skillIds), tags: clean(tags) };
+}
+
 async function createScenario(data, userId) {
   await assertReferencesExist(data);
   try {
@@ -210,6 +225,7 @@ function escapeRegex(s) {
 module.exports = {
   listScenarios,
   getScenario,
+  getScenarioFacets,
   createScenario,
   updateScenario,
   deleteScenario,

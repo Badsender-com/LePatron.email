@@ -9,6 +9,7 @@ jest.mock('../../../../packages/server/common/models.common', () => ({
     countDocuments: jest.fn(),
     create: jest.fn(),
     deleteOne: jest.fn(),
+    distinct: jest.fn(),
   },
   AIPlaygroundRuns: { deleteMany: jest.fn(), aggregate: jest.fn() },
   LePatronSkills: { findOne: jest.fn() },
@@ -78,6 +79,47 @@ describe('scenario.service', () => {
       expect(res.items[0].runCount).toBe(0);
       expect(res.items[0].lastRunStatus).toBeNull();
       expect(res.items[0].lastRunAt).toBeNull();
+    });
+
+    // Non-regression on the wiring of the three list filters (§6): each maps to
+    // the expected Mongo query clause.
+    it('wires skillId / tag / search into the query', async () => {
+      AIPlaygroundScenarios.find.mockReturnValue({
+        sort: () => ({
+          skip: () => ({ limit: () => ({ lean: () => Promise.resolve([]) }) }),
+        }),
+      });
+      AIPlaygroundScenarios.countDocuments.mockResolvedValue(0);
+      await scenarioService.listScenarios({
+        skillId: 'qc.subject',
+        tag: 'promo',
+        search: 'hello',
+      });
+      const query = AIPlaygroundScenarios.find.mock.calls[0][0];
+      expect(query['skillRef.skillId']).toBe('qc.subject');
+      expect(query.tags).toBe('promo');
+      expect(query.$or).toEqual([
+        { name: expect.any(RegExp) },
+        { description: expect.any(RegExp) },
+        { scenarioId: expect.any(RegExp) },
+      ]);
+      // Search is a case-insensitive match on the raw term.
+      expect(query.$or[0].name.test('say HELLO now')).toBe(true);
+    });
+  });
+
+  describe('getScenarioFacets', () => {
+    it('returns sorted distinct skillIds and tags', async () => {
+      AIPlaygroundScenarios.distinct.mockImplementation((field) =>
+        Promise.resolve(
+          field === 'tags'
+            ? ['promo', 'newsletter', '', null]
+            : ['qc.subject', 'redaction.cta']
+        )
+      );
+      const facets = await scenarioService.getScenarioFacets();
+      expect(facets.skillIds).toEqual(['qc.subject', 'redaction.cta']);
+      expect(facets.tags).toEqual(['newsletter', 'promo']);
     });
   });
 

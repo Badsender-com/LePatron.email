@@ -162,14 +162,6 @@ export default {
           <lucide-trash2 :size="18" class="mr-2" />
           {{ $t('aiPlayground.actions.delete') }}
         </v-btn>
-        <v-btn
-          color="accent"
-          elevation="0"
-          :loading="saving"
-          @click="saveScenario"
-        >
-          {{ $t('global.save') }}
-        </v-btn>
       </template>
     </bs-page-header>
 
@@ -193,7 +185,19 @@ export default {
         :before-execute="saveScenario"
         @golden-changed="onGoldenChanged"
         @validation-errors="fieldErrors = $event"
-      />
+      >
+        <template #actions-start>
+          <v-btn
+            outlined
+            color="primary"
+            large
+            :loading="saving"
+            @click="saveScenario"
+          >
+            {{ $t('global.save') }}
+          </v-btn>
+        </template>
+      </bs-ai-playground-run-section>
     </v-container>
 
     <bs-modal-confirm

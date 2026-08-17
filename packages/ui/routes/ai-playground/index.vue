@@ -23,8 +23,18 @@ export default {
   meta: { acl: acls.ACL_ADMIN, sidebarModule: 'settings' },
   async asyncData({ $axios }) {
     try {
-      const res = await $axios.$get(api.aiPlaygroundScenarios());
-      return { items: res.items || [], total: res.total || 0 };
+      const [res, facets] = await Promise.all([
+        $axios.$get(api.aiPlaygroundScenarios()),
+        $axios.$get(api.aiPlaygroundScenarioFacets()).catch(() => ({})),
+      ]);
+      return {
+        items: res.items || [],
+        total: res.total || 0,
+        facets: {
+          skillIds: (facets && facets.skillIds) || [],
+          tags: (facets && facets.tags) || [],
+        },
+      };
     } catch (err) {
       return { items: [], total: 0 };
     }
@@ -33,7 +43,8 @@ export default {
     return {
       items: [],
       total: 0,
-      filters: { skillId: '', tag: '', search: '' },
+      filters: { skillId: null, tag: null, search: '' },
+      facets: { skillIds: [], tags: [] },
     };
   },
   head() {
@@ -123,8 +134,9 @@ export default {
       </p>
 
       <div class="filters-row">
-        <v-text-field
+        <v-select
           v-model="filters.skillId"
+          :items="facets.skillIds"
           :label="$t('aiPlayground.filters.skill')"
           dense
           outlined
@@ -133,8 +145,9 @@ export default {
           class="filter-field"
           @change="reload"
         />
-        <v-text-field
+        <v-select
           v-model="filters.tag"
+          :items="facets.tags"
           :label="$t('aiPlayground.filters.tag')"
           dense
           outlined

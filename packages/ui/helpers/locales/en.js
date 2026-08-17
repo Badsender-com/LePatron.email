@@ -1346,6 +1346,8 @@ export default {
         'Keeps only expertise applicable to this language. Empty = all.',
       filterSelectScope: 'Select a scope to preview.',
       filterPreviewCount: '{count} expertise(s) match this filter.',
+      expertiseModeHelp:
+        'None: the skill is invoked without expertise. Explicit selection: you choose the expertises and their order — recommended for reproducible tests. Dynamic filter: expertises are loaded automatically from the criteria below, as a production feature will do.',
       filterOrderHint:
         'Load order: transversal expertises first, then alphabetical by identifier. For a custom order, use explicit selection.',
       expertiseOrderHint:

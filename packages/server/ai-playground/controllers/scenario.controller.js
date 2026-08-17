@@ -21,6 +21,10 @@ module.exports = {
     res.json(await scenarioService.getScenario(req.params.scenarioId));
   }),
 
+  getScenarioFacets: asyncHandler(async (_req, res) => {
+    res.json(await scenarioService.getScenarioFacets());
+  }),
+
   createScenario: asyncHandler(async (req, res) => {
     const scenario = await scenarioService.createScenario(
       req.body,
