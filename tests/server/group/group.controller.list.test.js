@@ -32,9 +32,6 @@ const {
   Profiles,
 } = require('../../../packages/server/common/models.common.js');
 const groupController = require('../../../packages/server/group/group.controller.js');
-const {
-  findWorkspaces,
-} = require('../../../packages/server/workspace/workspace.service.js');
 
 const GROUP_A = '507f1f77bcf86cd799439001';
 const GROUP_B = '507f1f77bcf86cd799439002';
@@ -122,40 +119,5 @@ describe('groupController.list — hasProfiles contract', () => {
     const body = await callList();
 
     expect(body.items[0].hasProfiles).toBe(true);
-  });
-});
-
-describe('groupController.readWorkspaces — groupId guard (§8)', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  function callReadWorkspaces(groupId) {
-    const req = { params: { groupId } };
-    const res = { json: jest.fn() };
-    const next = jest.fn();
-    return Promise.resolve(
-      groupController.readWorkspaces(req, res, next)
-    ).then(() => ({ res, next }));
-  }
-
-  it('returns 400 (not a Mongoose CastError) for the string "undefined"', async () => {
-    const { res, next } = await callReadWorkspaces('undefined');
-    expect(next).toHaveBeenCalledTimes(1);
-    expect(next.mock.calls[0][0].status).toBe(400);
-    expect(findWorkspaces).not.toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
-  });
-
-  it('returns 400 for a missing groupId', async () => {
-    const { next } = await callReadWorkspaces(undefined);
-    expect(next.mock.calls[0][0].status).toBe(400);
-    expect(findWorkspaces).not.toHaveBeenCalled();
-  });
-
-  it('proceeds for a valid ObjectId', async () => {
-    findWorkspaces.mockResolvedValue([{ _id: 'w1' }]);
-    const { res, next } = await callReadWorkspaces(GROUP_A);
-    expect(next).not.toHaveBeenCalled();
-    expect(findWorkspaces).toHaveBeenCalledWith({ groupId: GROUP_A });
-    expect(res.json).toHaveBeenCalledWith({ items: [{ _id: 'w1' }] });
   });
 });

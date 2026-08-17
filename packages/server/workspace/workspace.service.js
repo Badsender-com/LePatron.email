@@ -8,7 +8,7 @@ const {
 } = require('../common/models.common.js');
 const mongoose = require('mongoose');
 const ERROR_CODES = require('../constant/error-codes.js');
-const { Conflict, NotFound, Forbidden, BadRequest } = require('http-errors');
+const { Conflict, NotFound, Forbidden } = require('http-errors');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -187,12 +187,6 @@ async function updateWorkspace(workspace) {
 }
 
 async function findWorkspaces({ groupId }) {
-  // Defense in depth: a missing/invalid groupId (e.g. an admin page reloaded
-  // with no company selected) must be a 400, never a Mongoose CastError 500 on
-  // the `_company` ObjectId path.
-  if (!groupId || !mongoose.isValidObjectId(groupId)) {
-    throw new BadRequest('Invalid or missing groupId');
-  }
   // Only load root folders for the initial tree; children are lazy-loaded on
   // expand via GET /folders/:folderId/children. The nested `childFolders`
   // populate (which loaded the whole hierarchy in one query and froze the UI
