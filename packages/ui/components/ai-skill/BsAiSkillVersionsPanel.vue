@@ -4,6 +4,7 @@
 /* eslint-disable vue/no-mutating-props */
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
+import { aiSkillSchemaDescriptor } from '~/helpers/ai-skill-routes.js';
 import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
 
 export default {
@@ -21,6 +22,17 @@ export default {
     saving: { type: Boolean, default: false },
     // Schema ids from the zod registry — schemas are versioned (UX review §3).
     schemas: { type: Array, default: () => [] },
+    // "major.minor" of the version to expand on load (create flow lands here
+    // with the seeded v1.0 DRAFT open — §B2).
+    autoExpandVersion: { type: String, default: null },
+  },
+  data() {
+    return {
+      openPanel: null,
+      // schemaId → descriptor|null, populated lazily to power the placeholder
+      // helper (§C2). Null means "unknown / failed to load".
+      descriptorCache: {},
+    };
   },
   computed: {
     hasActive() {
@@ -41,6 +53,25 @@ export default {
         return b.versionMinor - a.versionMinor;
       });
     },
+    // Watched as a stable string so a change to any version's input schema
+    // triggers a descriptor (re)load.
+    inputSchemaIds() {
+      return this.sortedVersions.map((v) => v.inputSchemaId || '').join(',');
+    },
+  },
+  watch: {
+    inputSchemaIds() {
+      this.ensureDescriptors();
+    },
+  },
+  mounted() {
+    this.ensureDescriptors();
+    if (this.autoExpandVersion) {
+      const idx = this.sortedVersions.findIndex(
+        (v) => this.versionLabel(v) === this.autoExpandVersion
+      );
+      if (idx >= 0) this.openPanel = idx;
+    }
   },
   methods: {
     formatDate(d) {
@@ -58,6 +89,38 @@ export default {
         : v.status === 'ARCHIVED'
         ? 'grey'
         : 'warning';
+    },
+    ensureDescriptors() {
+      const ids = new Set(
+        this.sortedVersions.map((v) => v.inputSchemaId).filter(Boolean)
+      );
+      ids.forEach((id) => this.loadDescriptor(id));
+    },
+    async loadDescriptor(schemaId) {
+      if (!schemaId || schemaId in this.descriptorCache) return;
+      // Reserve the slot so concurrent expansions don't double-fetch.
+      this.$set(this.descriptorCache, schemaId, null);
+      try {
+        const d = await this.$axios.$get(aiSkillSchemaDescriptor(schemaId));
+        this.$set(this.descriptorCache, schemaId, d);
+      } catch (e) {
+        this.$set(this.descriptorCache, schemaId, null);
+      }
+    },
+    // Placeholders usable in the skill body / input template, derived from the
+    // version's input-schema descriptor (§C2). Returns null while the
+    // descriptor is loading or unknown, so the helper block stays hidden.
+    placeholdersFor(v) {
+      const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
+      if (!d) return null;
+      const tokens = (d.fields || []).map((f) => ({
+        token: `{{input.${f.name}}}`,
+        required: !!f.required,
+      }));
+      if (d.hasExpertiseField) {
+        tokens.push({ token: '{{input.expertise}}', required: false });
+      }
+      return tokens.length ? tokens : null;
     },
   },
 };
@@ -99,7 +162,7 @@ export default {
       </v-tooltip>
     </div>
     <v-card outlined>
-      <v-expansion-panels accordion flat>
+      <v-expansion-panels v-model="openPanel" accordion flat>
         <v-expansion-panel
           v-for="v in sortedVersions"
           :key="`${v.versionMajor}.${v.versionMinor}`"
@@ -142,6 +205,25 @@ export default {
             </div>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
+            <div class="schema-row">
+              <bs-select
+                v-model="v.inputSchemaId"
+                :items="inputSchemas"
+                :label="$t('aiSkills.skill.inputSchemaId')"
+                :readonly="v.status !== 'DRAFT'"
+                :disabled="v.status !== 'DRAFT'"
+              />
+              <bs-select
+                v-model="v.outputSchemaId"
+                :items="outputSchemas"
+                :label="$t('aiSkills.skill.outputSchemaId')"
+                :readonly="v.status !== 'DRAFT'"
+                :disabled="v.status !== 'DRAFT'"
+              />
+            </div>
+            <p class="text-caption text--secondary schema-help">
+              {{ $t('aiSkills.version.schemasHelp') }}
+            </p>
             <bs-textarea
               v-model="v.systemPrompt"
               :label="$t('aiSkills.version.systemPrompt')"
@@ -166,25 +248,29 @@ export default {
               :readonly="v.status !== 'DRAFT'"
               monospace
             />
-            <div class="schema-row">
-              <bs-select
-                v-model="v.inputSchemaId"
-                :items="inputSchemas"
-                :label="$t('aiSkills.skill.inputSchemaId')"
-                :readonly="v.status !== 'DRAFT'"
-                :disabled="v.status !== 'DRAFT'"
-              />
-              <bs-select
-                v-model="v.outputSchemaId"
-                :items="outputSchemas"
-                :label="$t('aiSkills.skill.outputSchemaId')"
-                :readonly="v.status !== 'DRAFT'"
-                :disabled="v.status !== 'DRAFT'"
-              />
+            <div v-if="placeholdersFor(v)" class="placeholder-help mb-3">
+              <span class="text-caption text--secondary">
+                {{ $t('aiSkills.version.placeholdersHelp') }}
+              </span>
+              <div class="mt-1">
+                <v-chip
+                  v-for="p in placeholdersFor(v)"
+                  :key="p.token"
+                  x-small
+                  label
+                  outlined
+                  class="mr-1 mb-1 placeholder-chip"
+                >
+                  <code>{{ p.token }}</code>
+                  <span v-if="p.required" class="placeholder-required ml-1">
+                    *
+                  </span>
+                </v-chip>
+              </div>
+              <span class="text-caption text--disabled">
+                {{ $t('aiSkills.version.placeholdersRequiredHint') }}
+              </span>
             </div>
-            <p class="text-caption text--secondary schema-help">
-              {{ $t('aiSkills.version.schemasHelp') }}
-            </p>
             <bs-textarea
               v-if="v.status === 'DRAFT'"
               v-model="v.changelog"
@@ -258,5 +344,18 @@ export default {
 }
 .schema-help {
   margin: -0.25rem 0 0.75rem;
+}
+.placeholder-help {
+  margin-top: -0.25rem;
+
+  code {
+    font-size: 0.72rem;
+    background: none;
+    padding: 0;
+  }
+}
+.placeholder-required {
+  color: var(--v-error-base, #d32f2f);
+  font-weight: 600;
 }
 </style>

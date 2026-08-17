@@ -47,10 +47,24 @@ une violation, c'est un bug :
   version, plus sur la racine skill — UX review §3). Éditables en DRAFT comme
   les prompts, figés sur ACTIVE/ARCHIVED, requis à la publication (gate).
   `invoke()` et la gate de cohérence lisent les schémas de la version résolue
-  (active ou épinglée). Onglet Détails de la skill = affichage lecture seule
-  des schémas de la version active. Migration :
+  (active ou épinglée). L'onglet Détails ne porte que Titre / Description /
+  Catégorie : les schémas ne s'affichent et ne s'éditent que dans l'éditeur de
+  version (seule source de vérité — correctif recette). Migration :
   `scripts/migrate-skill-schemas-to-version.js` (recopie racine→versions puis
   `$unset` racine, idempotente).
+- **Création d'une skill = démarrage sur le contrat générique.** `createSkill`
+  seed une v1.0 DRAFT avec `inputSchemaId: 'genericTextInput'` /
+  `outputSchemaId: 'genericTextOutput'` pré-remplis ; l'UI redirige vers
+  l'onglet Versions avec cette v1.0 dépliée (`?tab=versions&expand=1.0`). La
+  bascule vers un schéma typé est un geste ultérieur (nouvelle version majeure).
+- **Éditeur de version ordonné selon le flux réel** (contrat d'abord) :
+  schémas d'entrée/sortie → system prompt → corps → modèle d'entrée. Sous le
+  modèle, un helper de placeholders dérivé du descripteur du schéma d'entrée
+  (`GET /ai-skills/schemas/:id/descriptor`) liste `{{input.<champ>}}` (+
+  `{{input.expertise}}` si `hasExpertiseField`), astérisque sur les requis, mis
+  à jour au changement de schéma. Comportement de la gate de cohérence
+  inchangé au changement de schéma sur un DRAFT (placeholders orphelins
+  signalés à l'enregistrement).
 - **`featureType` (analytics) ≠ résolution moteur.** Le `featureType` d'une
   `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
   `'poc.*'` réservés non productifs, exclus par défaut de l'onglet
