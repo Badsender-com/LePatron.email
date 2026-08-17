@@ -108,29 +108,50 @@ async function updateSkill(skillId, patch) {
 
 // ─── Versioning ────────────────────────────────────────────────────────────
 
+// Single source of truth for the content fields of a version — the fields
+// that a new version inherits from its source (as opposed to metadata like
+// versionMajor/status/changelog/timestamps, which are set per creation).
+//
+// EVERY copy path (minor, major, duplicate) and the blank seed derive their
+// field list from here, and so does the generic non-regression test. Adding a
+// content field to the version model? Add it here — the copy and its test move
+// together, so a field can never again be silently dropped from cloning (the
+// bug that left inputSchemaId/outputSchemaId empty after the §3 migration, and
+// the "empty system prompt" false alarm before it).
+//
+// `deep: true` marks fields that must be structurally cloned (objects/arrays);
+// the rest are primitives copied by value. `default` yields a fresh empty value
+// when the source lacks the field.
+const VERSION_CONTENT_FIELDS = [
+  { name: 'systemPrompt', default: () => '' },
+  { name: 'skillBody', default: () => '' },
+  { name: 'inputTemplate', default: () => '' },
+  { name: 'inputSchemaId', default: () => '' },
+  { name: 'outputSchemaId', default: () => '' },
+  { name: 'modelHints', default: () => ({}), deep: true },
+  { name: 'testCases', default: () => [], deep: true },
+];
+
 function blankVersionContent() {
-  return {
-    systemPrompt: '',
-    skillBody: '',
-    inputTemplate: '',
-    modelHints: {},
-    testCases: [],
-  };
+  const out = {};
+  for (const field of VERSION_CONTENT_FIELDS) out[field.name] = field.default();
+  return out;
 }
 
 function cloneVersionContent(source) {
   if (!source) return blankVersionContent();
-  return {
-    systemPrompt: source.systemPrompt || '',
-    skillBody: source.skillBody || '',
-    inputTemplate: source.inputTemplate || '',
-    modelHints: source.modelHints
-      ? JSON.parse(JSON.stringify(source.modelHints))
-      : {},
-    testCases: source.testCases
-      ? JSON.parse(JSON.stringify(source.testCases))
-      : [],
-  };
+  const out = {};
+  for (const field of VERSION_CONTENT_FIELDS) {
+    const value = source[field.name];
+    if (value === undefined || value === null) {
+      out[field.name] = field.default();
+    } else if (field.deep) {
+      out[field.name] = JSON.parse(JSON.stringify(value));
+    } else {
+      out[field.name] = value;
+    }
+  }
+  return out;
 }
 
 /**
@@ -299,6 +320,7 @@ async function archiveSkill(skillId) {
 }
 
 module.exports = {
+  VERSION_CONTENT_FIELDS,
   listSkills,
   getSkill,
   createSkill,
