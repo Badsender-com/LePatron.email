@@ -45,6 +45,7 @@ export default {
       total: 0,
       filters: { skillId: null, tag: null, search: '' },
       facets: { skillIds: [], tags: [] },
+      searchTimer: null,
     };
   },
   head() {
@@ -77,6 +78,9 @@ export default {
       ];
     },
   },
+  beforeDestroy() {
+    clearTimeout(this.searchTimer);
+  },
   methods: {
     ...mapMutations(PAGE, { showSnackbar: SHOW_SNACKBAR }),
     skillLabel(item) {
@@ -103,6 +107,13 @@ export default {
       });
       this.items = res.items || [];
       this.total = res.total || 0;
+    },
+    // Live search with a 300ms debounce (parity with the skills/expertise
+    // lists), instead of requiring Enter/blur.
+    onSearchInput(value) {
+      this.filters.search = value;
+      clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(() => this.reload(), 300);
     },
     openScenario(item) {
       this.$router.push(`/ai-playground/${item.scenarioId}`);
@@ -157,14 +168,14 @@ export default {
           @change="reload"
         />
         <v-text-field
-          v-model="filters.search"
+          :value="filters.search"
           :label="$t('aiPlayground.filters.search')"
           dense
           outlined
           hide-details
           clearable
           class="filter-field"
-          @change="reload"
+          @input="onSearchInput"
         />
       </div>
 
