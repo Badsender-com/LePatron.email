@@ -72,6 +72,7 @@ async function getFacets() {
 }
 
 async function createExpertise(data, userId) {
+  const now = new Date();
   const payload = {
     expertiseId: data.expertiseId,
     title: data.title,
@@ -84,7 +85,22 @@ async function createExpertise(data, userId) {
     owner: userId,
     status: SkillStatuses.DRAFT,
     activeVersion: { major: null, minor: 0 },
-    versions: [],
+    // Seed a v1.0 DRAFT (empty content — expertise has no schemas) so the
+    // author lands straight in the version editor, parity with skills (§4).
+    versions: [
+      {
+        versionMajor: 1,
+        versionMinor: 0,
+        status: 'DRAFT',
+        ...blankVersionContent(),
+        changelog: '',
+        releaseNotes: '',
+        createdBy: userId,
+        createdAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+      },
+    ],
   };
   try {
     return await Expertises.create(payload);

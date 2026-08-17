@@ -77,6 +77,20 @@ describe('expertise.service', () => {
     expect(Expertises.create.mock.calls[0][0].isTransversal).toBe(false);
   });
 
+  it('createExpertise seeds a v1.0 DRAFT (empty content) — §4', async () => {
+    Expertises.create.mockResolvedValue({});
+    await expertiseService.createExpertise(
+      { expertiseId: 'a', title: 't', category: 'redaction' },
+      null
+    );
+    const { versions } = Expertises.create.mock.calls[0][0];
+    expect(versions).toHaveLength(1);
+    expect(versions[0].versionMajor).toBe(1);
+    expect(versions[0].versionMinor).toBe(0);
+    expect(versions[0].status).toBe('DRAFT');
+    expect(versions[0].body).toBe('');
+  });
+
   it('updateExpertise patches isTransversal', async () => {
     const doc = mockExpertiseDoc({ isTransversal: false });
     Expertises.findOne.mockResolvedValue(doc);

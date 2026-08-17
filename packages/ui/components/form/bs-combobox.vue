@@ -36,6 +36,9 @@ export default {
         return this.value;
       },
       set(val) {
+        // Clear the typed search once a value is committed so it doesn't
+        // linger in the field after a selection (§2).
+        this.searchInput = '';
         this.$emit('input', val);
       },
     },

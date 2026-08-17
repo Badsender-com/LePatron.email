@@ -115,6 +115,7 @@ export default {
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Enregistrer',
+    savedSuccessfully: 'Enregistré avec succès',
     settings: 'Réglages',
     cancel: 'Annuler',
     create: 'Créer',
@@ -1148,6 +1149,8 @@ export default {
       goodExamples: 'Bons exemples',
       badExamples: 'Mauvais exemples',
       bodyLabel: 'Contenu Markdown — utilisez ## [section-id] Titre',
+      sectionIdHelp:
+        'Les sections [section-id] structurent la doctrine en briques identifiables : elles sont listées dans l\'onglet Sections et permettront, à terme, des surcharges ciblées par client (design system). Si plusieurs expertises traitent du même concept, utilisez le même identifiant de section (ex. [length] pour toute règle de longueur).',
       addExpertise: 'Ajouter une expertise',
       newExpertise: 'Nouvelle expertise',
       noExpertise: 'Aucune expertise',
