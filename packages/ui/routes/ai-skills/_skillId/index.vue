@@ -45,6 +45,9 @@ export default {
       activatingVersion: null,
       saving: false,
       versionWarnings: [],
+      // "major.minor" of the version the warnings belong to, so the panel can
+      // show them inline next to that version's action row (§1.1).
+      warningsVersionKey: null,
     };
   },
   head() {
@@ -158,6 +161,7 @@ export default {
         // Template ↔ input-schema coherence warnings (non-blocking on DRAFT
         // save; out-of-schema placeholders block at activation).
         this.versionWarnings = res.warnings || [];
+        this.warningsVersionKey = `${version.versionMajor}.${version.versionMinor}`;
         delete res.warnings;
         this.skill = res;
         this.showSnackbar({
@@ -213,6 +217,7 @@ export default {
         );
         // Non-blocking coherence warnings surface post-activation too (§3).
         this.versionWarnings = res.warnings || [];
+        this.warningsVersionKey = `${this.activatingVersion.versionMajor}.${this.activatingVersion.versionMinor}`;
         delete res.warnings;
         this.skill = res;
         if (this.$refs.activateModal) this.$refs.activateModal.close();
@@ -298,20 +303,12 @@ export default {
         </v-tab-item>
 
         <v-tab-item value="versions">
-          <v-alert
-            v-for="(warning, i) in versionWarnings"
-            :key="`warn-${i}`"
-            type="warning"
-            dense
-            outlined
-            class="mb-3"
-          >
-            {{ warning }}
-          </v-alert>
           <bs-ai-skill-versions-panel
             :skill="skill"
             :schemas="schemas"
             :auto-expand-version="autoExpandVersion"
+            :warnings="versionWarnings"
+            :warnings-version-key="warningsVersionKey"
             :saving="saving"
             @create-minor="createMinorVersion"
             @create-major="createMajorVersion(null)"

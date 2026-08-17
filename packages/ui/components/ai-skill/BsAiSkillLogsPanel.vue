@@ -1,10 +1,11 @@
 <script>
 import * as api from '~/helpers/ai-skill-routes.js';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
+import BsLatency from '~/components/ai-skill/BsLatency.vue';
 
 export default {
   name: 'BsAiSkillLogsPanel',
-  components: { BsDataTable },
+  components: { BsDataTable, BsLatency },
   props: {
     skillId: { type: String, required: true },
   },
@@ -100,7 +101,7 @@ export default {
         </v-chip>
       </template>
       <template #item.latencyMs="{ item }">
-        <span v-if="item.latencyMs != null">{{ item.latencyMs }} ms</span>
+        <bs-latency :value="item.latencyMs" />
       </template>
       <template #no-data>
         <p class="text--disabled text-center my-4">

@@ -70,7 +70,8 @@ export default {
       ];
     },
     filteredItems() {
-      const q = this.search.trim().toLowerCase();
+      // `clearable` sets this.search to null on clear — guard the trim.
+      const q = (this.search || '').trim().toLowerCase();
       return this.items.filter((e) => {
         if (this.filterCategory && e.category !== this.filterCategory)
           return false;
