@@ -1190,6 +1190,7 @@ export default {
       activate: 'Activer',
       activateTitle: 'Activer cette version',
       activateBody: 'Activer une version la rend immuable. Le changelog et les notes de version sont obligatoires.',
+      activateBodyMinor: 'Activer cette version mineure la rend immuable et change immédiatement la doctrine consommée par les fonctionnalités. Changelog et notes pré-remplis depuis le brouillon (facultatifs pour une mineure).',
       changelog: 'Changelog',
       changelogPlaceholder:
         'Ce qui change par rapport à la version précédente — ex. « Ajout de la règle d\'urgence, reformulation du critère de longueur »',

@@ -189,23 +189,21 @@ export default {
     },
     async askActivate(version) {
       this.activatingVersion = version;
-      if (version.versionMinor === 0) {
-        // Informed consent: surface which features will load this expertise.
+      // Both major AND minor go through the modal: activating any version
+      // instantly changes the doctrine features consume, so the impact alert
+      // must show either way. Informed consent: surface which features will
+      // load this expertise. Changelog/notes required for major only.
+      this.activationImpact = [];
+      try {
+        const res = await this.$axios.$get(
+          api.aiExpertiseActivationImpact(this.exp.expertiseId)
+        );
+        this.activationImpact = res.matches || [];
+      } catch (err) {
         this.activationImpact = [];
-        try {
-          const res = await this.$axios.$get(
-            api.aiExpertiseActivationImpact(this.exp.expertiseId)
-          );
-          this.activationImpact = res.matches || [];
-        } catch (err) {
-          this.activationImpact = [];
-        }
-        // Pre-fill changelog / release notes from the draft (§6), same shared
-        // modal as skills.
-        this.$refs.activateModal.open(version);
-      } else {
-        this.activateVersion({});
       }
+      // Pre-fill changelog / release notes from the draft, shared modal.
+      this.$refs.activateModal.open(version);
     },
     async activateVersion(payload) {
       this.saving = true;
@@ -336,6 +334,7 @@ export default {
       :loading="saving"
       :show-impact="true"
       :impact="activationImpact"
+      :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal

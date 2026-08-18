@@ -16,6 +16,9 @@ export default {
     showImpact: { type: Boolean, default: false },
     // Matches: [{ featureType, description, matchedFilter:{scope,categories,emailType} }].
     impact: { type: Array, default: () => [] },
+    // Changelog / release notes are mandatory for a major version, optional for
+    // a minor (both go through this modal so the impact alert always shows).
+    isMajor: { type: Boolean, default: true },
   },
   data() {
     return {
@@ -24,6 +27,7 @@ export default {
   },
   computed: {
     canSubmit() {
+      if (!this.isMajor) return true;
       return !!this.payload.changelog && !!this.payload.releaseNotes;
     },
   },
@@ -70,7 +74,11 @@ export default {
   >
     <v-form @submit.prevent="onSubmit">
       <p class="text-caption text--secondary mb-3">
-        {{ $t('aiSkills.version.activateBody') }}
+        {{
+          isMajor
+            ? $t('aiSkills.version.activateBody')
+            : $t('aiSkills.version.activateBodyMinor')
+        }}
       </p>
       <bs-textarea
         v-model="payload.changelog"
