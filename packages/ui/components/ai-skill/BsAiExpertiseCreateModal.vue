@@ -7,6 +7,7 @@ import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
 import suggestIdentifier from '~/helpers/suggest-skill-identifier.js';
+import { emailTypeLabel } from '~/helpers/email-types.js';
 import { RefreshCw } from 'lucide-vue';
 
 const CATEGORIES = [
@@ -68,6 +69,9 @@ export default {
     },
   },
   methods: {
+    emailTypeLabel(value) {
+      return emailTypeLabel(this, value);
+    },
     emptyExpertise() {
       return {
         expertiseId: '',
@@ -183,7 +187,16 @@ export default {
         chips
         small-chips
         :disabled="loading"
-      />
+      >
+        <template #selection="{ item }">
+          <v-chip small>
+            {{ emailTypeLabel(item) }}
+          </v-chip>
+        </template>
+        <template #item="{ item }">
+          {{ emailTypeLabel(item) }}
+        </template>
+      </bs-combobox>
       <bs-ai-language-picker
         :value="expertise.appliesToLanguages"
         :label="$t('aiSkills.expertise.appliesToLanguages')"

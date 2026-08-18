@@ -1069,6 +1069,11 @@ export default {
       translation: 'Translation',
       other: 'Other',
     },
+    emailTypes: {
+      promo: 'Promotional',
+      newsletter: 'Newsletter',
+      transactional: 'Transactional',
+    },
     statuses: {
       DRAFT: 'Draft',
       ACTIVE: 'Active',
