@@ -15,6 +15,14 @@ export function hasFilterCategories(filter) {
   return Array.isArray(categories) && categories.length > 0;
 }
 
+// In filter mode, categories defaults to the selected skill's category. This is
+// true whichever order the user picks (skill→mode or mode→skill): the rule is
+// reactive, so it fires when mode becomes 'filter' OR when the skill category
+// becomes known, as long as no category is set yet.
+export function needsCategoryDefault(mode, skillCategory, filter) {
+  return mode === 'filter' && !!skillCategory && !hasFilterCategories(filter);
+}
+
 // Turn a filter into the query params sent to the preview endpoint. Empty
 // values are omitted so they don't over-constrain the count.
 export function serialiseExpertiseFilter(filter) {
