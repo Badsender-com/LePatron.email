@@ -6,6 +6,7 @@ import { isoLanguageOptions } from '~/helpers/iso-languages.js';
 import {
   hasFilterScope,
   hasFilterCategories,
+  needsCategoryDefault,
   serialiseExpertiseFilter,
 } from '~/helpers/expertise-filter.js';
 import BsCombobox from '~/components/form/bs-combobox.vue';
@@ -104,6 +105,16 @@ export default {
     hasCategories() {
       return hasFilterCategories(this.expertiseFilter);
     },
+    // Reactive rule (both input orders): in filter mode, categories defaults to
+    // the skill's category as long as none is set. Fires when mode becomes
+    // 'filter' OR when the skill category resolves — no ad-hoc pre-fill to race.
+    categoryDefaultNeeded() {
+      return needsCategoryDefault(
+        this.mode,
+        this.skillCategory,
+        this.expertiseFilter
+      );
+    },
   },
   watch: {
     mode(next) {
@@ -119,33 +130,20 @@ export default {
           language: null,
         });
       }
-      // Entering filter mode: pre-fill categories with the skill's category
-      // (a good default — findApplicable requires categories). Editable.
-      if (next === 'filter') {
-        const current = this.expertiseFilter || {};
-        const hasCategories =
-          Array.isArray(current.categories) && current.categories.length;
-        if (!hasCategories && this.skillCategory) {
-          this.$emit('update:expertise-filter', {
-            ...current,
-            categories: [this.skillCategory],
-          });
-        }
-      }
+    },
+    categoryDefaultNeeded: {
+      immediate: true,
+      handler(needed) {
+        // emitFilter also refreshes the preview, so the count updates as soon
+        // as scope is present — regardless of skill→mode vs mode→skill order.
+        if (needed) this.emitFilter({ categories: [this.skillCategory] });
+      },
     },
     skillAcceptsExpertise(accepts) {
       // The newly selected skill has no expertise input: selecting expertise
       // would silently do nothing useful — fall back to 'none'.
       if (!accepts && this.mode !== 'none') {
         this.$emit('update:mode', 'none');
-      }
-    },
-    // When the skill is chosen AFTER switching to filter mode, its category
-    // arrives late — pre-fill categories then (findApplicable requires them,
-    // and without this the preview stayed at 0). §1.1
-    skillCategory(next) {
-      if (this.mode === 'filter' && next && !this.hasCategories) {
-        this.emitFilter({ categories: [next] });
       }
     },
   },

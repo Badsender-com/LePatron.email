@@ -3,6 +3,7 @@
 const {
   hasFilterScope,
   hasFilterCategories,
+  needsCategoryDefault,
   serialiseExpertiseFilter,
 } = require('../../../packages/ui/helpers/expertise-filter');
 
@@ -21,6 +22,32 @@ describe('hasFilterCategories', () => {
     expect(hasFilterCategories({ categories: [] })).toBe(false);
     expect(hasFilterCategories({})).toBe(false);
     expect(hasFilterCategories(null)).toBe(false);
+  });
+});
+
+describe('needsCategoryDefault (both input orders) — filter category pre-fill', () => {
+  it('only defaults in filter mode', () => {
+    expect(needsCategoryDefault('none', 'qc', {})).toBe(false);
+    expect(needsCategoryDefault('explicit', 'qc', {})).toBe(false);
+    expect(needsCategoryDefault('filter', 'qc', {})).toBe(true);
+  });
+
+  it('skill→mode: category known before switching to filter → default needed', () => {
+    // Skill already chosen (category qc), user switches to filter, no category.
+    expect(needsCategoryDefault('filter', 'qc', { scope: ['subject'] })).toBe(
+      true
+    );
+  });
+
+  it('mode→skill: filter first, category resolves later → default needed then', () => {
+    expect(needsCategoryDefault('filter', null, {})).toBe(false); // skill not chosen yet
+    expect(needsCategoryDefault('filter', 'qc', {})).toBe(true); // category arrives
+  });
+
+  it('does not override a category the user already set', () => {
+    expect(
+      needsCategoryDefault('filter', 'qc', { categories: ['redaction'] })
+    ).toBe(false);
   });
 });
 
