@@ -195,14 +195,11 @@ export default {
 
     askActivate(version) {
       this.activatingVersion = version;
-      // Minor releases publish directly with defaults; major releases need
-      // an explicit changelog/releaseNotes via the modal, pre-filled with the
-      // draft's values (§2).
-      if (version.versionMinor === 0) {
-        this.$refs.activateModal.open(version);
-      } else {
-        this.activateVersion({});
-      }
+      // Both major AND minor go through the modal: activating any version
+      // instantly changes the doctrine features consume. Pre-filled from the
+      // draft (one click). Only difference: changelog/notes are required for a
+      // major (versionMinor === 0), optional for a minor.
+      this.$refs.activateModal.open(version);
     },
     async activateVersion(payload) {
       this.saving = true;
@@ -331,6 +328,7 @@ export default {
     <bs-ai-activate-modal
       ref="activateModal"
       :loading="saving"
+      :is-major="!!activatingVersion && activatingVersion.versionMinor === 0"
       @confirm="activateVersion"
     />
     <bs-ai-archive-modal
