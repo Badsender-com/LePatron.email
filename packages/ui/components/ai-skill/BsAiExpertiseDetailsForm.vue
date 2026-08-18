@@ -8,6 +8,7 @@ import BsSelect from '~/components/form/bs-select.vue';
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsCombobox from '~/components/form/bs-combobox.vue';
 import BsAiLanguagePicker from '~/components/ai-skill/BsAiLanguagePicker.vue';
+import { emailTypeLabel } from '~/helpers/email-types.js';
 
 const CATEGORIES = [
   'redaction',
@@ -54,6 +55,9 @@ export default {
     }
   },
   methods: {
+    emailTypeLabel(value) {
+      return emailTypeLabel(this, value);
+    },
     onTransversalChange(checked) {
       // Scope and transversal are contradictory; the flag wins. Clear the
       // scope so the saved state matches what the disabled field shows.
@@ -111,7 +115,16 @@ export default {
       multiple
       chips
       small-chips
-    />
+    >
+      <template #selection="{ item }">
+        <v-chip small>
+          {{ emailTypeLabel(item) }}
+        </v-chip>
+      </template>
+      <template #item="{ item }">
+        {{ emailTypeLabel(item) }}
+      </template>
+    </bs-combobox>
     <bs-ai-language-picker
       :value="expertise.appliesToLanguages"
       :label="$t('aiSkills.expertise.appliesToLanguages')"

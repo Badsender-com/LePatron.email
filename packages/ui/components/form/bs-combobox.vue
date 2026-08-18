@@ -112,7 +112,13 @@ export default {
       class="bs-combobox__input"
       v-on="$listeners"
       @blur="handleBlur"
-    />
+    >
+      <!-- Forward any scoped slot (e.g. #selection / #item) to v-combobox so
+           callers can customise display without changing stored values. -->
+      <template v-for="(_, name) in $scopedSlots" #[name]="slotProps">
+        <slot :name="name" v-bind="slotProps" />
+      </template>
+    </v-combobox>
     <div v-if="hint && !hasError" class="bs-combobox__hint">
       {{ hint }}
     </div>

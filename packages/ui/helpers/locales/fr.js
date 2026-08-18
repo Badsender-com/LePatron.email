@@ -1153,6 +1153,11 @@ export default {
       translation: 'Traduction',
       other: 'Autre',
     },
+    emailTypes: {
+      promo: 'Promotionnel',
+      newsletter: 'Newsletter',
+      transactional: 'Transactionnel',
+    },
     statuses: {
       DRAFT: 'Brouillon',
       ACTIVE: 'Active',
