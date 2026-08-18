@@ -3,6 +3,7 @@
 import * as api from '~/helpers/ai-playground-routes.js';
 import { aiExpertiseFacets } from '~/helpers/ai-skill-routes.js';
 import { isoLanguageOptions } from '~/helpers/iso-languages.js';
+import { emailTypeOptions } from '~/helpers/email-types.js';
 import {
   hasFilterScope,
   hasFilterCategories,
@@ -15,7 +16,6 @@ import BsAiExpertisePicker from './BsAiExpertisePicker.vue';
 import { ArrowUp, ArrowDown } from 'lucide-vue';
 
 const MODES = ['none', 'explicit', 'filter'];
-const EMAIL_TYPES = ['promo', 'newsletter', 'transactional'];
 const CATEGORIES = [
   'redaction',
   'qc',
@@ -92,7 +92,7 @@ export default {
       }));
     },
     emailTypeOptions() {
-      return EMAIL_TYPES;
+      return emailTypeOptions(this);
     },
     languageOptions() {
       return isoLanguageOptions();
@@ -350,6 +350,8 @@ export default {
       <bs-select
         :value="expertiseFilter.emailType || null"
         :items="emailTypeOptions"
+        item-text="text"
+        item-value="value"
         :label="$t('aiPlayground.form.filterEmailType')"
         :hint="$t('aiPlayground.form.filterEmailTypeHint')"
         persistent-hint

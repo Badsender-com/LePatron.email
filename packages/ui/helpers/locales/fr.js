@@ -1440,7 +1440,7 @@ export default {
       VALIDATION_ERROR: 'Erreur de validation',
       PROVIDER_ERROR: 'Erreur provider',
       TIMEOUT: 'Délai dépassé',
-      CANCELLED: 'Annulé',
+      CANCELLED: 'Annulée',
       CONFIG_ERROR: 'Erreur de configuration',
     },
     deleteScenarioConfirm: 'Supprimer ce scénario et tous ses runs ?',

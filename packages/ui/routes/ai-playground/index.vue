@@ -102,11 +102,18 @@ export default {
       if (this.filters.skillId) params.skillId = this.filters.skillId;
       if (this.filters.tag) params.tag = this.filters.tag;
       if (this.filters.search) params.search = this.filters.search;
-      const res = await this.$axios.$get(api.aiPlaygroundScenarios(), {
-        params,
-      });
-      this.items = res.items || [];
-      this.total = res.total || 0;
+      try {
+        const res = await this.$axios.$get(api.aiPlaygroundScenarios(), {
+          params,
+        });
+        this.items = res.items || [];
+        this.total = res.total || 0;
+      } catch (err) {
+        this.showSnackbar({
+          text: this.$t('global.errors.errorOccured'),
+          color: 'error',
+        });
+      }
     },
     // Live search with a 300ms debounce (parity with the skills/expertise
     // lists), instead of requiring Enter/blur.
