@@ -214,3 +214,85 @@ MEDIUM. Les écarts suivants sont **connus et assumés** :
 - Un scénario peut épingler une version DRAFT, qui reste supprimable →
   exécution en 404 explicite. Assumé : le playground est l'outil même qui
   sert à tester les DRAFT ; le 404 est clair et l'état réparable.
+
+## 6bis. Passe de review 4 agents (pré-PR)
+
+Avant ouverture, les branches ont été repassées par les 4 agents du projet
+(security-auditor → architect → code-reviewer → ux-reviewer). **Aucun
+CRITICAL ni HIGH** sur les axes bug/sécurité/architecture. Les findings
+MEDIUM/LOW ci-dessous sont **connus et assumés** pour ces PRs (politique :
+seuls CRITICAL/HIGH sont corrigés avant PR ; le reste est documenté ici, et les
+incohérences UX portent sur des parcours déjà validés en recette — leur
+alignement est un lot de polish séparé, pas un correctif de cette review).
+
+### Sécurité (aucun CRITICAL/HIGH)
+
+Guards super-admin montés en tête de chaque router IA, input Zod `.strict()`
+avant le LLM, balises anti-injection en `crypto.randomBytes` (non
+prédictibles), `apiKey` jamais copiée dans `resolvedConfig`, purges/deletes
+scopés, golden préservé. Les 2 écarts LOW (cast ObjectId → 500 au lieu de
+400 ; opérateur Mongo injectable dans un filtre de liste admin read-only) sont
+déjà couverts au §6 (« Casting/validation léger des query params admin »).
+
+### Architecture
+
+- **MEDIUM — `JobScheduler` sous `ai-skill` connaît `ai-playground`** :
+  `ai-skill/jobs/job-scheduler.js` require le job de purge du playground (câblage
+  ajouté par la PR2 dans un fichier possédé par la PR1). Assumé : une seule
+  instance `agenda`, PR1 seule reste cohérente (l'import n'existe pas sur
+  `feat/AI-skills-v1`). Refactor = sortir le scheduler vers une composition-root
+  neutre alimentée par des registrars → backlog (c'est un redesign, hors
+  périmètre « corrige, ne redessine pas »).
+- **LOW — `manifest-registry.filterMatchesExpertise` miroir manuel de
+  `findApplicable`** ayant déjà divergé (clause `language` absente du miroir).
+  Impact nul aujourd'hui (les manifests présents déclarent `expertiseFilters: []`). Réaligner ou extraire un prédicat unique → backlog.
+
+### Qualité de code
+
+- **MEDIUM — `expertise.service` ne suit pas le pattern `VERSION_CONTENT_FIELDS`**
+  (liste unique) introduit côté `skill.service` : `body/examplesGood/examplesBad`
+  sont énumérés à 3 endroits. Ajouter un champ de contenu d'expertise rouvrirait
+  la classe de bug refermée côté skill. Assumé : le jeu de champs d'expertise est
+  stable ; à mutualiser avec la factory de service versionné → backlog.
+- **MEDIUM — Français en dur dans quelques messages serveur** (gate d'activation,
+  changelog par défaut « Correction mineure »), et un mélange EN/FR dans
+  `activateVersion`. Écart à AGENTS.md assumé : produit FR, messages surfacés
+  dans une UI FR ; homogénéisation EN + `ERROR_CODES` → backlog (modifierait des
+  textes vus en recette).
+- **MEDIUM — Garde défensive asymétrique** : `inputSchema` est null-checké,
+  `outputSchema` non (`skill-invocation.service.js`). Cas rendu improbable par les
+  hooks de validation/activation ; un `outputSchemaId` invalide au runtime ferait
+  un 500 opaque. → backlog (guard 3 lignes).
+- **MEDIUM — 11 fichiers > 300 lignes** dans le périmètre (`.vue` majoritairement
+  template+style ; le dense est `skill-invocation.service.js` à 394). Découpe =
+  refactor → backlog.
+- **LOW** : `console.error` au lieu de `logger` pour le scheduler dans `index.js`
+  (cohérent avec le style local du fichier) ; `reload()` du playground sans
+  try/catch ; `latencyMillis` interpole `${ms}` brut ; `statusColor` colore
+  `CANCELLED` en rouge. Tous cosmétiques/robustesse → backlog.
+
+### Cohérence UX (incohérences inter-parcours, parcours validés en recette)
+
+Alignements reportés en **lot de polish UI** (aucune régression, chaque écran
+validé individuellement) :
+
+- **Types d'email** (`promo/newsletter/transactional`) rendus bruts alors que les
+  catégories/statuts sont traduits (sélecteur playground + modale/form expertise)
+  → prévoir un dico `aiSkills.emailTypes.*`.
+- **`BsTimestamp` appliqué à moitié** : listes d'entités oui, tables runs/
+  invocations et en-têtes de version non (refont un `toLocaleString()` local).
+- **Filtrage divergent** Skills (catégorie/statut = refetch serveur, recherche
+  client) vs Expertise (tout client) sous le même écran à onglets.
+- **Identifiant technique** : replié en bas + bouton reset côté skill/expertise ;
+  en haut, sans reset, côté scénario.
+- **Changelog/notes** éditables sur tout brouillon côté skill, majeure seulement
+  côté expertise (+ placeholders présents skill, absents expertise).
+- **Suppression de brouillon** via `confirm()` natif alors que les autres actions
+  destructives passent par une modale stylée.
+- **Dico de statuts dupliqué** (`aiSkills.statuses.*` vs `aiPlayground.status.*`)
+  avec divergence de genre FR (`Annulé`/`Annulée`).
+- **« Publier » (bouton) vs « Activer » (modale)** pour un même geste.
+- LOW : icône/position du champ recherche, chip de catégorie de la liste
+  expertise plus gros, latence des vues détail ré-implémentée hors `BsLatency`.
+
+Suggestions d'amélioration (hors incohérences) → issues GitHub post-PR.
