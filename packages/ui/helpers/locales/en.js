@@ -1210,6 +1210,7 @@ export default {
       activate: 'Activate',
       activateTitle: 'Activate this version',
       activateBody: 'Activating a version makes it immutable. Changelog and release notes are required.',
+      activateBodyMinor: 'Activating this minor version makes it immutable and immediately changes the doctrine features consume. Changelog and notes are pre-filled from the draft (optional for a minor).',
       changelog: 'Changelog',
       changelogPlaceholder:
         'What changes vs the previous version — e.g. "Added the urgency rule, reworded the length criterion"',
