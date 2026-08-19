@@ -8,6 +8,7 @@ var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 const {
   HTML_CODE_BLOCK_TYPE,
+  HTML_CODE_PROPERTY,
 } = require('./ext/html-code-block/constants.js');
 
 var toastr = require('toastr');
@@ -120,6 +121,20 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   viewModel.isSyntheticBlock = function (blockDef) {
     if (!blockDef) return false;
     return ko.utils.unwrapObservable(blockDef.type) === HTML_CODE_BLOCK_TYPE;
+  };
+
+  // An "HTML code" block with no markup yet renders nothing at all — its
+  // content is wrapped in a `ko if` by data-ko-display — and
+  // `#main-edit-area .editable` has no min-height, so the block would be flat
+  // and impossible to click. block-wysiwyg.tmpl.html uses this to show a
+  // clickable placeholder instead. Edit mode only: that template is never used
+  // for the export, which resolves `<type>-show`.
+  viewModel.isEmptyHtmlBlock = function (block) {
+    if (!block) return false;
+    var unwrapped = ko.utils.unwrapObservable(block);
+    if (!unwrapped || unwrapped.type !== HTML_CODE_BLOCK_TYPE) return false;
+    var html = ko.utils.unwrapObservable(unwrapped[HTML_CODE_PROPERTY]);
+    return !html;
   };
 
   // Used by the content-feed modal to insert brand new blocks (beyond the

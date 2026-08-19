@@ -32,4 +32,11 @@
     <!-- /ko -->
   </div>
   <!-- ko block: $data --><!-- /ko -->
+  <!-- Placeholder for an empty HTML code block: its content is hidden by a
+       `ko if` until markup is pasted, leaving nothing to click on. This template
+       is only used in edit mode (the export resolves `<type>-show`), so it can
+       never leak into the exported HTML. -->
+  <!-- ko if: $root.isEmptyHtmlBlock && $root.isEmptyHtmlBlock($rawData) -->
+  <div class="lp-html-block-empty" data-bind="text: $root.t('html-code-block-empty')"></div>
+  <!-- /ko -->
 </div>

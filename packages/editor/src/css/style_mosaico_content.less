@@ -5,6 +5,26 @@
   // display: table;
 }
 
+/* Empty "HTML code" block: give the block a clickable surface and an invite.
+   Scoped to #main-edit-area, an id that never exists in the exported HTML, and
+   defined in the editor bundle which is never part of an export. */
+#main-edit-area .lp-html-block-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  margin: 0;
+  padding: 1rem;
+  font-family: @font-family;
+  font-size: @base-font-size * 1.2;
+  color: @mosaico-text-color;
+  text-align: center;
+  background: #fafafa;
+  border: 2px dashed @mosaico-outline-color;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 /* minimum size for empty dropzones */
 #main-edit-area .sortable-blocks-edit.empty {
   min-height: 200px;

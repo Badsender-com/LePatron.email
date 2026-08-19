@@ -130,6 +130,10 @@ const mosaicoLibList = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js',
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js',
   'node_modules/tinymce/tinymce.js',
+  // Global, like tinymce above: used to neutralize the canvas preview of the
+  // HTML code block (see ext/html-code-block/neutralize-html.js). Not bundled
+  // through browserify so it stays out of the editor bundle's require graph.
+  'node_modules/dompurify/dist/purify.js',
 ];
 
 // TODO: minifiy not minfied libs!
@@ -149,6 +153,7 @@ const mosaicoLibListMin = [
   'node_modules/blueimp-file-upload/js/jquery.fileupload-validate.js', // no min files
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
   'node_modules/tinymce/tinymce.min.js',
+  'node_modules/dompurify/dist/purify.min.js',
 ];
 
 const orderLibs = (lib) => /[^/]*\.js$/.exec(lib)[0];
@@ -450,7 +455,7 @@ function rev() {
     .pipe(gulp.dest(SERVER_DIR));
 }
 rev.description =
-  "generate hash from mosaico's build files. This will help us to leverage browser caching";
+  'generate hash from mosaico\'s build files. This will help us to leverage browser caching';
 
 /// /////
 // DEV
