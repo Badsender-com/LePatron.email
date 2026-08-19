@@ -1,20 +1,25 @@
 'use strict';
 
 /**
- * Sanitizer for translated preview HTML.
+ * Sanitizer for preview HTML. Two callers, one threat model.
  *
- * The translation pipeline replaces original texts with the LLM/DeepL provider
- * response inside the rendered previewHtml (see preview-html-updater.js). That
- * provider output is UNTRUSTED: a model can return markup (e.g.
- * `<img src=x onerror=...>`) spontaneously or via prompt injection from the
- * email content. The resulting previewHtml is later stored and served as
- * `text/html` (mailing.controller previewHtml → res.send), so unsanitized
- * provider output is a stored-XSS sink.
+ * 1. Translation (translation.controller.js): the pipeline replaces original
+ *    texts with the LLM/DeepL provider response inside the rendered previewHtml
+ *    (see preview-html-updater.js). That provider output is UNTRUSTED — a model
+ *    can return markup (e.g. `<img src=x onerror=...>`) spontaneously or via
+ *    prompt injection from the email content. There it runs BEFORE storage.
  *
- * We never trust LLM output as HTML. This re-sanitizes the FINAL previewHtml
- * with DOMPurify before it is persisted, which is context-aware (unlike the
- * regex-based updater) and strips scripts, event handlers and dangerous URLs
- * while keeping the email-safe structure (tables, inline styles, images...).
+ * 2. Serving a preview (mailing.service.js previewMail): previewHtml is served
+ *    as `text/html` and rendered in an iframe `:srcDoc` without `sandbox`, so
+ *    anything scriptable in it executes with the session of whoever opens the
+ *    preview. The HTML code block lets a user paste a `<script>` where TinyMCE
+ *    used to filter it out. There it runs ON THE WAY OUT, never on the stored
+ *    value: previewHtml is also the body of the multi-mailing ZIP export
+ *    (mailing.service.js downloadMultipleZip), which must stay verbatim.
+ *
+ * DOMPurify is context-aware (unlike a regex pass) and strips scripts, event
+ * handlers and dangerous URLs while keeping the email-safe structure (tables,
+ * inline styles, images...).
  */
 
 const { JSDOM } = require('jsdom');

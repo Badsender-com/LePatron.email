@@ -12,7 +12,7 @@
 // DOMPurify rather than a hand-rolled stripper: `<img src=x onerror>`,
 // `<svg/onload>`, unquoted attributes and mutation-XSS make regex or naive DOM
 // filtering unsafe, and the server already relies on DOMPurify for the very same
-// reason (packages/server/translation/preview-html-sanitizer.js).
+// reason (packages/server/utils/preview-html-sanitizer.js).
 //
 // DOMPurify is a global provided by the concatenated editor libs
 // (see gulpfile.js mosaicoLibList), not a browserify dependency.
