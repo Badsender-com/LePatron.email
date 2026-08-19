@@ -1215,7 +1215,6 @@ export default {
       noInvocationsHint: 'Test invocations are hidden by default — enable "Include tests" to show them.',
       dateFrom: 'From',
       dateTo: 'To',
-      includeNonProd: 'Include admin-test / playground',
       detailInput: 'Input',
       detailOutput: 'Output',
       detailResolvedConfig: 'Resolved config',

@@ -1228,7 +1228,6 @@ export default {
       noInvocationsHint: 'Les invocations de test sont masquées par défaut — activez « Inclure les tests » pour les afficher.',
       dateFrom: 'Depuis',
       dateTo: 'Jusqu\'à',
-      includeNonProd: 'Inclure admin-test / playground',
       detailInput: 'Entrée',
       detailOutput: 'Sortie',
       detailResolvedConfig: 'Configuration résolue',
