@@ -283,4 +283,7 @@ module.exports = {
   'comments-block-deleted': 'Block deleted',
   'comments-mention-placeholder': 'Type @ to mention',
   'comments-no-block': 'This comment is not linked to a block',
+  // HTML code block
+  'html-code-block-name': 'HTML code',
+  'html-code-block-empty': 'HTML code block — click to edit',
 };

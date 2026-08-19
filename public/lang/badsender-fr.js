@@ -292,4 +292,7 @@ module.exports = {
   'comments-block-deleted': 'Bloc supprimé',
   'comments-mention-placeholder': 'Tapez @ pour mentionner',
   'comments-no-block': "Ce commentaire n'est pas lié à un bloc",
+  // HTML code block
+  'html-code-block-name': 'Code HTML',
+  'html-code-block-empty': 'Bloc Code HTML — cliquez pour éditer',
 };

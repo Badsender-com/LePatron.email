@@ -6,6 +6,9 @@ var ko = require('knockout');
 const _omit = require('lodash.omit');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
+const {
+  HTML_CODE_BLOCK_TYPE,
+} = require('./ext/html-code-block/constants.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -110,6 +113,14 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
   viewModel.blockDefs = blockDefs;
+
+  // The "HTML code" block is injected by LePatron rather than declared by the
+  // template, so it has no `edres/<type>.png` thumbnail in any client template.
+  // The palette falls back to an icon and a translated label for it.
+  viewModel.isSyntheticBlock = function (blockDef) {
+    if (!blockDef) return false;
+    return ko.utils.unwrapObservable(blockDef.type) === HTML_CODE_BLOCK_TYPE;
+  };
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
