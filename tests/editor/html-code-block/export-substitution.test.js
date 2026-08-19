@@ -149,6 +149,27 @@ describe('export substitution', () => {
       }
     );
 
+    // Characterisation of a case the review asked about explicitly. Before
+    // substitution, a pasted `data-bind` was stripped by the shared cascade,
+    // exactly like Mosaico's own bindings — a documented limitation. Substituting
+    // last means the attribute now survives, since the markup never meets that
+    // regex. Harmless either way (an inert attribute in an email), and strictly
+    // more faithful, but the behaviour changed and is pinned here.
+    describe('a pasted data-bind attribute', () => {
+      it('survives the export, where it used to be stripped', () => {
+        const raw = '<div data-bind="text: 1" class="x">hello</div>';
+        const marker = registerMarkup(raw);
+        expect(substituteMarkers(runCascade(marker))).toBe(raw);
+      });
+
+      it('is still stripped outside the block, on the template markup', () => {
+        // Same cascade, no marker: Mosaico's own bindings keep being removed.
+        expect(runCascade('<div data-bind="block: content">x</div>')).toBe(
+          '<div>x</div>'
+        );
+      });
+    });
+
     // Cases the cascade mangles when the markup goes through it directly.
     describe('markup the cascade would otherwise have eaten', () => {
       const eaten = [
