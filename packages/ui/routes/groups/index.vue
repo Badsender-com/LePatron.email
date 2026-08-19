@@ -11,7 +11,6 @@ import BsModalConfirmForm from '~/components/modal-confirm-form.vue';
 import BsDataTable from '~/components/data-table/bs-data-table.vue';
 import BsRowActions from '~/components/row-actions/bs-row-actions.vue';
 import { IS_ADMIN, USER } from '~/store/user';
-import { Building2, Plus, Pencil, Check, XCircle, Trash2 } from 'lucide-vue';
 import { escapeHtml } from '~/helpers/escape-html';
 import {
   Building2,

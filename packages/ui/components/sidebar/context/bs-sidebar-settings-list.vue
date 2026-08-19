@@ -50,9 +50,8 @@
 <script>
 import { mapGetters } from 'vuex';
 import { IS_ADMIN, IS_GROUP_ADMIN, USER, GROUP } from '~/store/user';
-import { Shield } from 'lucide-vue';
-import { isFlagEnabled } from '~/helpers/module-activation';
 import { Shield, Sparkles } from 'lucide-vue';
+import { isFlagEnabled } from '~/helpers/module-activation';
 
 export default {
   name: 'BsSidebarSettingsList',
