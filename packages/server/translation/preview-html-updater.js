@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  transformOutsideHtmlCodeBlocks,
+} = require('./html-code-block-protection.js');
+
 /**
  * Updates a previewHtml string by replacing original texts with their translations.
  *
@@ -57,10 +61,16 @@ function updatePreviewWithTranslations(
     }
   }
 
-  let html = previewHtml;
-  html = replaceAllFromLookup(html, directLookup);
-  html = replaceAllFromLookup(html, encodedLookup);
-  return html;
+  // Never replace inside an "HTML code" block: its markup is excluded from
+  // translation everywhere (see html-code-block-protection.js). Without this
+  // guard, previewHtml — which feeds the preview and the multi-mailing ZIP — got
+  // translated while the editor export, regenerated from `data`, did not.
+  return transformOutsideHtmlCodeBlocks(previewHtml, (segment) => {
+    let html = segment;
+    html = replaceAllFromLookup(html, directLookup);
+    html = replaceAllFromLookup(html, encodedLookup);
+    return html;
+  });
 }
 
 /**
