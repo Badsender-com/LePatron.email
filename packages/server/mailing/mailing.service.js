@@ -37,6 +37,7 @@ const IMAGES_FOLDER = 'images';
 
 const createPromise = require('../helpers/create-promise.js');
 const processMosaicoHtmlRender = require('../utils/process-mosaico-html-render.js');
+const { sanitizePreviewHtml } = require('../utils/preview-html-sanitizer.js');
 const Ftp = require('./ftp-client.service.js');
 
 const request = require('request');
@@ -1364,7 +1365,13 @@ async function previewMail(mailingId) {
   if (!mailWithPreview) throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
   if (!mailWithPreview.previewHtml)
     throw new NotFound(ERROR_CODES.MAILING_NOT_FOUND);
-  return mailWithPreview.previewHtml;
+  // Sanitized on the way out only. This response is served as `text/html` and
+  // rendered in an iframe `:srcDoc` without `sandbox`, so anything scriptable
+  // would run with the session of whoever opens the preview — and the HTML code
+  // block lets a user paste a `<script>` where TinyMCE used to filter it out.
+  // The stored value and every deliverable stay verbatim: downloadZip and
+  // downloadMultipleZip read previewHtml straight from the document.
+  return sanitizePreviewHtml(mailWithPreview.previewHtml);
 }
 
 async function deleteMailing({ mailingId, workspaceId, parentFolderId, user }) {
