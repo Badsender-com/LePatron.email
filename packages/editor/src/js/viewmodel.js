@@ -10,6 +10,9 @@ const {
   isHtmlCodeBlock,
   isEmptyHtmlCodeBlock,
 } = require('./ext/html-code-block/block-state.js');
+const {
+  stripEmptyHtmlCodeBlocks,
+} = require('./ext/html-code-block/strip-empty-blocks.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -695,6 +698,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     content = content.replace(/ data-bind="[^"]*"/gm, '');
     // Remove trash leftover by TinyMCE
     content = content.replace(/ data-mce-(href|src|style)="[^"]*"/gm, '');
+
+    // Drop the leftover root of an EMPTY "HTML code" block. Its payload is
+    // already gone (data-ko-display), but Mosaico never lets a block root
+    // disappear, so an untouched block would ship an empty div. Runs after the
+    // data-bind removal above, so the root is bare by now, and only ever matches
+    // an empty root of ours — a mail without such a block is unchanged.
+    content = stripEmptyHtmlCodeBlocks(content);
 
     // Replace "replacedstyle" to "style" attributes (chrome puts replacedstyle after style)
     content = content.replace(
