@@ -41,25 +41,34 @@ const BLOCK_DEFS_STYLE = [
   '</style>',
 ].join('\n');
 
-// Deliberately neutral wrapper: no `class="vb-outer"` (it would inherit the
-// template's `.vb-outer` rules), no max-width, no bgcolor, no theme binding.
-// The user provides a complete table; LePatron adds no layout of its own.
+// Two bare <div>s and nothing else. This wrapper carries NO presentation at all:
+// no table, no cell, no class on the root, no width, no align, no valign, no
+// bgcolor, no theme binding. Anything of the sort would either style the pasted
+// markup or override what it inherits.
 //
-// `data-ko-display` is required, and must sit on a descendant of the block root:
-//   - without it the property is never "used", `_usecount` stays undefined and
-//     _propEditor returns '' — the widget would never show up in the panel
-//     (converter/editor.js, converter/model.js);
-//   - `$('[data-ko-display]', element)` is a scoped jQuery selector, so it does
-//     not match the block root — placed on the <table> the attribute would be
-//     ignored *and* leak into the export.
-// It sits on the <div> rather than the <td> so an empty block renders a valid
-// `<td></td>` instead of an empty `<tr>`.
+// Why no `<table><tr><td>`: an `align` on that cell set the pasted markup's
+// alignment context, overriding the `text-align` it inherits from the template
+// (`align` maps to `text-align`, which IS inherited), so a table pasted with
+// align="center" would not center like a native block does. `valign` went with
+// it: it applied to a single cell whose content is self-contained, so it changed
+// nothing, and the wrapper is now strictly neutral.
+//
+// Why the pasted markup sits one level down, behind `data-ko-display`:
+//   - `data-ko-display` is required, or the property is never "used",
+//     `_usecount` stays undefined and _propEditor returns '' — the widget would
+//     never show up in the panel (converter/editor.js, converter/model.js);
+//   - it CANNOT go on the block root: the converter throws outright
+//     ("Unsupported data-ko-display used together with data-ko-block"), and the
+//     same holds for data-ko-wrap;
+//   - so the whole visible payload hangs off it, and an empty block exports the
+//     bare root and nothing else.
+//
+// An empty block cannot export literally nothing: templateCreator stores the
+// block root's outerHTML (template-loader.js), and Mosaico binds the block id
+// onto it, so `<div id="ko_htmlCodeBlock_N"></div>` is the floor. That is one
+// empty, style-free element — no table, no cell, no visual footprint.
 const BLOCK_MARKUP = [
-  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"' +
-    ' border="0" data-ko-block="' +
-    HTML_CODE_BLOCK_TYPE +
-    '">',
-  '<tr><td align="left" valign="top">',
+  '<div data-ko-block="' + HTML_CODE_BLOCK_TYPE + '">',
   '<div class="' +
     HTML_CODE_MARKER_CLASS +
     '" data-ko-display="' +
@@ -69,8 +78,7 @@ const BLOCK_MARKUP = [
     ': ' +
     HTML_CODE_PROPERTY +
     '"></div>',
-  '</td></tr>',
-  '</table>',
+  '</div>',
 ].join('');
 
 const HEAD_CLOSE = /<\/head\s*>/i;
