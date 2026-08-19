@@ -303,4 +303,7 @@ module.exports = {
   'email-metadata-error-no-company':
     'This email belongs to no company: the email type cannot be saved',
   'email-metadata-error-invalid': 'One of the values was refused',
+  // HTML code block
+  'html-code-block-name': 'HTML code',
+  'html-code-block-empty': 'HTML code block — click to edit',
 };

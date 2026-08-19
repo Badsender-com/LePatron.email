@@ -312,4 +312,7 @@ module.exports = {
   'email-metadata-error-no-company':
     "Cet email n'est rattaché à aucune entreprise : la typologie ne peut pas être enregistrée",
   'email-metadata-error-invalid': 'Une des valeurs saisies a été refusée',
+  // HTML code block
+  'html-code-block-name': 'Code HTML',
+  'html-code-block-empty': 'Bloc Code HTML — cliquez pour éditer',
 };
