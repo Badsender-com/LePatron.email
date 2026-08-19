@@ -10,7 +10,11 @@ const {
 } = require('../../../packages/editor/src/js/ext/html-code-block/inject-html-code-block.js');
 const {
   HTML_CODE_BLOCK_TYPE,
+  HTML_CODE_ROOT_CLASS,
 } = require('../../../packages/editor/src/js/ext/html-code-block/constants.js');
+
+// The block's opening tag, as the injector emits it.
+const BLOCK_OPEN = `<div class="${HTML_CODE_ROOT_CLASS}" data-ko-block="${HTML_CODE_BLOCK_TYPE}">`;
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -85,9 +89,7 @@ describe('injectHtmlCodeBlock', () => {
 
   it('places the markup right after the container opening tag', () => {
     const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
-    expect(result).toContain(
-      `<div data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
-    );
+    expect(result).toContain(`<div data-ko-container="main">${BLOCK_OPEN}`);
   });
 
   it('puts the block definitions before </head>', () => {
@@ -115,9 +117,7 @@ describe('injectHtmlCodeBlock', () => {
   // TinyMCE would attach to a data-ko-editable field and rewrite the markup.
   it('never uses data-ko-editable', () => {
     const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
-    const block = result.slice(
-      result.indexOf(`<div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`)
-    );
+    const block = result.slice(result.indexOf(BLOCK_OPEN));
     expect(block).not.toContain('data-ko-editable');
   });
 
@@ -157,7 +157,7 @@ describe('injectHtmlCodeBlock', () => {
     const result = injectHtmlCodeBlock(markup);
     // The block must land after the full opening tag, not in the middle of it.
     expect(result).toContain(
-      `<div style="font: a > b" data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
+      `<div style="font: a > b" data-ko-container="main">${BLOCK_OPEN}`
     );
   });
 
@@ -169,9 +169,7 @@ describe('injectHtmlCodeBlock', () => {
       '</body></html>',
     ].join('');
     const result = injectHtmlCodeBlock(markup);
-    expect(result).toContain(
-      `<div data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
-    );
+    expect(result).toContain(`<div data-ko-container="main">${BLOCK_OPEN}`);
     expect(result).toContain('<div data-ko-container="preheader"></div>');
   });
 });
@@ -225,7 +223,7 @@ describe('orderPaletteBlockDefs', () => {
   });
 });
 
-const INJECTED_BLOCK_OPENING = `<div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`;
+const INJECTED_BLOCK_OPENING = BLOCK_OPEN;
 const INJECTED_BLOCK_CLOSING = '</div></div>';
 
 function removeInjectedBlock(markup) {

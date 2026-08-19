@@ -25,6 +25,15 @@ const HTML_CODE_PROPERTY = 'htmlCode';
 // leftover every Mosaico export already carries (`vb-outer`, `vb-row`...).
 const HTML_CODE_MARKER_CLASS = 'lp-html-block';
 
+// Marks the block root. Mosaico never lets a block root disappear — the
+// converter throws on data-ko-display/data-ko-wrap there, and templateCreator
+// stores the root's outerHTML — so an empty block would still export
+// `<div id="ko_htmlCodeBlock_N"></div>`. This class is what lets the export
+// strip that leftover (see strip-empty-blocks.js). A class rather than a
+// `data-*` attribute for the same reason as above: the export cascade warns
+// about unknown `data-*` attributes but ignores classes.
+const HTML_CODE_ROOT_CLASS = 'lp-html-block-root';
+
 // Knockout binding rendering the pasted markup.
 const HTML_CODE_BINDING = 'lpHtmlCode';
 
@@ -37,6 +46,7 @@ module.exports = {
   HTML_CODE_BLOCK_TYPE,
   HTML_CODE_PROPERTY,
   HTML_CODE_MARKER_CLASS,
+  HTML_CODE_ROOT_CLASS,
   HTML_CODE_BINDING,
   HTML_CODE_MAX_LENGTH,
 };

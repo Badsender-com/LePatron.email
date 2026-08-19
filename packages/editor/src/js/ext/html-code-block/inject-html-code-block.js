@@ -4,6 +4,7 @@ const {
   HTML_CODE_BLOCK_TYPE,
   HTML_CODE_PROPERTY,
   HTML_CODE_MARKER_CLASS,
+  HTML_CODE_ROOT_CLASS,
   HTML_CODE_BINDING,
 } = require('./constants.js');
 const { isHtmlCodeBlock } = require('./block-state.js');
@@ -63,12 +64,17 @@ const BLOCK_DEFS_STYLE = [
 //   - so the whole visible payload hangs off it, and an empty block exports the
 //     bare root and nothing else.
 //
-// An empty block cannot export literally nothing: templateCreator stores the
-// block root's outerHTML (template-loader.js), and Mosaico binds the block id
-// onto it, so `<div id="ko_htmlCodeBlock_N"></div>` is the floor. That is one
-// empty, style-free element — no table, no cell, no visual footprint.
+// The root carries HTML_CODE_ROOT_CLASS so the export can drop it when the block
+// is empty: Mosaico never lets a block root disappear on its own (it throws on
+// data-ko-display/data-ko-wrap there, and templateCreator stores the root's
+// outerHTML), so `<div id="ko_htmlCodeBlock_N"></div>` would otherwise survive.
+// See strip-empty-blocks.js. The class is unstyled — it exists purely as a hook.
 const BLOCK_MARKUP = [
-  '<div data-ko-block="' + HTML_CODE_BLOCK_TYPE + '">',
+  '<div class="' +
+    HTML_CODE_ROOT_CLASS +
+    '" data-ko-block="' +
+    HTML_CODE_BLOCK_TYPE +
+    '">',
   '<div class="' +
     HTML_CODE_MARKER_CLASS +
     '" data-ko-display="' +

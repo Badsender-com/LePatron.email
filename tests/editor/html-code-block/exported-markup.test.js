@@ -18,6 +18,9 @@ global.ko = ko;
 const {
   injectHtmlCodeBlock,
 } = require('../../../packages/editor/src/js/ext/html-code-block/inject-html-code-block.js');
+const {
+  stripEmptyHtmlCodeBlocks,
+} = require('../../../packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js');
 const converter = require('../../../packages/editor/src/js/converter/main.js');
 
 const BARE_TEMPLATE = [
@@ -109,10 +112,12 @@ describe('the exported markup of an HTML code block', () => {
       expect(showTemplate).not.toMatch(/\bstyle=/i);
     });
 
-    // .vb-outer and friends are styled by the template's own CSS.
-    it('puts no template class on the root', () => {
+    // .vb-outer and friends are styled by the template's own CSS; the root
+    // carries only our unstyled hook, used to strip an empty block on export.
+    it('puts no styled template class on the root', () => {
       const root = /^<div[^>]*>/.exec(showTemplate)[0];
-      expect(root).not.toMatch(/class=/i);
+      expect(root).toContain('class="lp-html-block-root"');
+      expect(root).not.toMatch(/vb-outer|vb-row|vb-content/);
     });
   });
 
@@ -129,15 +134,21 @@ describe('the exported markup of an HTML code block', () => {
         },
         host
       );
-      // Mirror what the export cascade strips (viewmodel.js exportHTML).
-      return host.innerHTML
+      // Mirror the export cascade, in the same order as viewmodel.js exportHTML.
+      const serialized = host.innerHTML
         .replace(/<!-- ko ((?!--).)*? -->/g, '')
         .replace(/<!-- \/ko -->/g, '')
         .replace(/ data-bind="[^"]*"/g, '');
+      return stripEmptyHtmlCodeBlocks(serialized);
     };
 
-    it('exports the bare block root and nothing else', () => {
-      expect(render('')).toBe('<div id="ko_htmlCodeBlock_3"></div>');
+    // The requirement: an empty block ships nothing whatsoever.
+    it('exports absolutely nothing', () => {
+      expect(render('')).toBe('');
+    });
+
+    it('leaves no empty block root behind', () => {
+      expect(render('')).not.toContain('lp-html-block-root');
     });
 
     it('exports no cell, no row and no table', () => {
@@ -145,8 +156,8 @@ describe('the exported markup of an HTML code block', () => {
       expect(exported).not.toMatch(/<t(able|r|d)/i);
     });
 
-    it('exports no marker element, since the payload is gone with it', () => {
-      expect(render('')).not.toContain('lp-html-block');
+    it('exports no marker element either', () => {
+      expect(render('')).not.toContain('class="lp-html-block"');
     });
 
     // The empty-state placeholder is an edit-mode affordance and must never
@@ -169,7 +180,9 @@ describe('the exported markup of an HTML code block', () => {
 
     it('puts the marker element inside that conditional', () => {
       const ifIndex = showTemplate.indexOf('<!-- ko if:');
-      const markerIndex = showTemplate.indexOf('lp-html-block');
+      // `class="lp-html-block"` exactly: a bare 'lp-html-block' search would
+      // also hit 'lp-html-block-root' on the block root, before the conditional.
+      const markerIndex = showTemplate.indexOf('class="lp-html-block"');
       const endIndex = showTemplate.indexOf('<!-- /ko -->');
       expect(ifIndex).toBeGreaterThan(-1);
       expect(markerIndex).toBeGreaterThan(ifIndex);
