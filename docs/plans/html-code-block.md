@@ -1,7 +1,7 @@
 # Bloc « Code HTML » — plan de référence
 
 > **Branche** : `feat/html-code-block` > **Type de document** : plan d'implémentation (rédigé avant le code, tenu à jour pendant)
-> **Statut** : en cours d'implémentation — une seule branche, une seule PR jusqu'au MVP
+> **Statut** : MVP implémenté — une seule branche, une seule PR. Voir §5 pour l'état commit par commit.
 
 ---
 
@@ -105,6 +105,11 @@ Fonction **pure** (string → string) qui ajoute :
    supprimé par le parser (les `<style>` vidés sont retirés).
 3. Cela rend le bloc portable d'un template à l'autre — prérequis de la v2 « bloc
    réutilisable ».
+
+**Nom réservé** : `htmlCodeBlock` et la propriété `htmlCode` sont désormais réservés
+pour les développeurs de templates. L'injecteur s'abstient si le markup déclare déjà
+un bloc de ce nom, donc un template qui l'utiliserait pour autre chose désactiverait
+silencieusement la fonctionnalité pour lui-même.
 
 Pas de pollution des nouveaux mails : `translateTemplate` fait
 `domutils.removeElements(containerBlocks, true)` (`converter/parser.js:698-712`) ; les
@@ -297,6 +302,38 @@ les booléens arrivent en `"true"`/`"false"`. Mongoose casterait la chaîne `"fa
 | 7   | Neutralisation aperçu        | sanitize en sortie de `previewMail()`                                 |
 | 8   | Tests de caractérisation     | payloads ESP, injection, neutralisation, pipeline                     |
 | 9   | Documentation                | ce document + doc technique                                           |
+
+### Fichiers principaux
+
+| Rôle                         | Fichier                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| Constantes partagées         | `packages/editor/src/js/ext/html-code-block/constants.js`                  |
+| Injection + ordre palette    | `packages/editor/src/js/ext/html-code-block/inject-html-code-block.js`     |
+| Neutralisation aperçu canvas | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
+| Zone protégée inliner        | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
+| Limite de taille (éditeur)   | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
+| Binding de rendu             | `packages/editor/src/js/bindings/html-code-block.js`                       |
+| Widget `code`                | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
+| Modale CodeMirror            | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
+| Limite de taille (serveur)   | `packages/server/mailing/html-code-block-guard.js`                         |
+| Sanitizer d'aperçu           | `packages/server/utils/preview-html-sanitizer.js`                          |
+| Payloads de caractérisation  | `tests/fixtures/esp-payloads.js`                                           |
+
+### Points d'accroche dans le code existant
+
+Toutes ces retouches sont additives — sans bloc HTML dans le document, le
+comportement est inchangé :
+
+- `template-loader.js` — appel de l'injecteur dans `onSuccess`, et
+  `paletteBlockDefs` passé à `initializeViewmodel` (`blockDefs` reste complet
+  pour `checkModel`) ;
+- `viewmodel.js` — `isSyntheticBlock`, `isEmptyHtmlBlock` ;
+- `ext/inliner.js` — détachement/réinsertion autour de `inlineDocument` ;
+- `tmpl/block-wysiwyg.tmpl.html` — `ko if` de l'état vide ;
+- `tmpl-badsender/toolbox.tmpl.html` — icône et libellé de palette ;
+- `ext/badsender-extensions.js`, `vue/customizedBlockPlugin.js`,
+  `ko-bindings.js` — enregistrements ;
+- `gulpfile.js` — DOMPurify et CodeMirror dans les deux listes de libs.
 
 ---
 
