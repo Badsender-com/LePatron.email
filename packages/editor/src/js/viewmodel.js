@@ -13,6 +13,11 @@ const {
 const {
   stripEmptyHtmlCodeBlocks,
 } = require('./ext/html-code-block/strip-empty-blocks.js');
+const {
+  beginExportSubstitution,
+  endExportSubstitution,
+  substituteMarkers,
+} = require('./ext/html-code-block/export-substitution.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -663,6 +668,11 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   viewModel.exportHTML = function () {
     var id = 'exportframe';
+    // Open the substitution session BEFORE the frame is bound: from here on, the
+    // HTML code block renders an inert marker instead of the pasted markup, and
+    // the raw bytes are put back at the very end of this function — after every
+    // regex below has run. See ext/html-code-block/export-substitution.js.
+    beginExportSubstitution();
     // sandbox="allow-same-origin" hardens this frame: it is a LIVE, same-origin
     // document, so a <script> reaching it would run in the app's context with the
     // exporting user's session — and the HTML code block lets one be pasted.
@@ -780,6 +790,11 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     // Remove successful blink lines
     var blackLinesRegex = /^\s*[\r\n]/gm;
     content = content.replace(blackLinesRegex, '');
+
+    // LAST step, on purpose: put the pasted markup of every HTML code block back,
+    // byte for byte, now that none of the transformations above can reach it.
+    content = substituteMarkers(content);
+    endExportSubstitution();
 
     return content;
   };

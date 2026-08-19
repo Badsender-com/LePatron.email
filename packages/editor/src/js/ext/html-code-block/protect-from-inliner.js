@@ -16,6 +16,12 @@ const { HTML_CODE_MARKER_CLASS } = require('./constants.js');
 //
 // Purely additive: with no HTML code block in the document there is nothing to
 // detach and the inlining is bit-for-bit what it was before.
+//
+// Since export-substitution.js landed, an export renders an inert marker here
+// instead of the markup, so during an export there is usually only a text node to
+// move and juice could not have styled anything anyway. This stays as the safety
+// net for any render that reaches the inliner WITHOUT a substitution session open,
+// where the markup is injected directly.
 
 /**
  * Detach the pasted markup of every HTML code block.

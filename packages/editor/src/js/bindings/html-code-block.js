@@ -5,6 +5,9 @@ const { HTML_CODE_BINDING } = require('../ext/html-code-block/constants.js');
 const {
   neutralizeHtmlForPreview,
 } = require('../ext/html-code-block/neutralize-html.js');
+const {
+  registerMarkup,
+} = require('../ext/html-code-block/export-substitution.js');
 
 // Renders the pasted markup of an "HTML code" block.
 //
@@ -33,7 +36,18 @@ ko.bindingHandlers[HTML_CODE_BINDING] = {
     const isCanvas =
       bindingContext && bindingContext.templateMode === 'wysiwyg';
     const html = ko.utils.unwrapObservable(valueAccessor());
-    const rendered = isCanvas ? neutralizeHtmlForPreview(html) : html;
+
+    let rendered;
+    if (isCanvas) {
+      rendered = neutralizeHtmlForPreview(html);
+    } else {
+      // During an export, render an inert marker and let the raw bytes be swapped
+      // back at the end of the cascade, so the markup never goes through the DOM
+      // or the shared regexes. Outside an export there is no session and the
+      // markup is rendered directly, exactly as before.
+      const marker = registerMarkup(html);
+      rendered = marker === null ? html : marker;
+    }
 
     return ko.bindingHandlers.html.update(element, function () {
       return rendered;

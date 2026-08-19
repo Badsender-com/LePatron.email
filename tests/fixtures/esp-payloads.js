@@ -33,6 +33,47 @@ const ESP_PAYLOADS = [
     html: '<td><#list items as i>${i.name}</#list></td>',
     preserved: true,
   },
+
+  // --- Adobe Campaign JSSP, the syntax our Adobe clients actually use --------
+  // (they do not use Freemarker). These four are the reference cases for the
+  // block's fidelity guarantee.
+  {
+    key: 'jssp-include-unsub',
+    html: '<td><%@ include view=\'CLAAUT_unsubLink\' %></td>',
+    preserved: true,
+    espCritical: true,
+  },
+  {
+    key: 'jssp-include-mirror',
+    html: '<td><%@ include view=\'MirrorPageUrl\' %></td>',
+    preserved: true,
+    espCritical: true,
+  },
+  {
+    key: 'jssp-target-data',
+    html: '<td><%= targetData.productInfo1.productName %></td>',
+    preserved: true,
+    espCritical: true,
+  },
+  {
+    // THE critical case: two JSSP tags on one line is exactly what the greedy,
+    // single-line restore pattern in viewmodel.js:707 mangles — it decodes
+    // everything between the FIRST `<%` and the LAST `%>` as one span.
+    key: 'jssp-two-tags-one-line',
+    html:
+      '<td><%@ include view=\'CLAAUT_unsubLink\' %> | ' +
+      '<%@ include view=\'MirrorPageUrl\' %></td>',
+    preserved: true,
+    espCritical: true,
+  },
+  {
+    // Same trap across lines: `.` does not cross newlines, so this was never
+    // restored at all.
+    key: 'jssp-multiline',
+    html: '<td><%@ include\n  view=\'CLAAUT_unsubLink\'\n%></td>',
+    preserved: true,
+    espCritical: true,
+  },
   {
     key: 'asp-single-line',
     html: '<td><% if (x) { %>a<% } %></td>',
@@ -103,4 +144,10 @@ const ESP_PAYLOADS = [
 
 const byKey = (key) => ESP_PAYLOADS.find((payload) => payload.key === key);
 
-module.exports = { ESP_PAYLOADS, byKey };
+// The payloads that MUST come out byte-perfect from the block's export: the
+// syntax our Adobe Campaign clients use in production.
+const ESP_CRITICAL_PAYLOADS = ESP_PAYLOADS.filter(
+  (payload) => payload.espCritical
+);
+
+module.exports = { ESP_PAYLOADS, ESP_CRITICAL_PAYLOADS, byKey };
