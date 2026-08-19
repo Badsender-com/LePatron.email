@@ -86,7 +86,7 @@ describe('injectHtmlCodeBlock', () => {
   it('places the markup right after the container opening tag', () => {
     const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
     expect(result).toContain(
-      '<div data-ko-container="main"><table role="presentation"'
+      `<div data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
     );
   });
 
@@ -107,7 +107,7 @@ describe('injectHtmlCodeBlock', () => {
   // match the block root, and the attribute would leak into the export.
   it('keeps data-ko-display off the block root', () => {
     const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
-    const root = /<table[^>]*data-ko-block="htmlCodeBlock"[^>]*>/.exec(result);
+    const root = /<div[^>]*data-ko-block="htmlCodeBlock"[^>]*>/.exec(result);
     expect(root[0]).not.toContain('data-ko-display');
     expect(result).toContain('data-ko-display="htmlCode"');
   });
@@ -115,7 +115,9 @@ describe('injectHtmlCodeBlock', () => {
   // TinyMCE would attach to a data-ko-editable field and rewrite the markup.
   it('never uses data-ko-editable', () => {
     const result = injectHtmlCodeBlock(MINIMAL_TEMPLATE);
-    const block = result.slice(result.indexOf('<table role="presentation"'));
+    const block = result.slice(
+      result.indexOf(`<div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`)
+    );
     expect(block).not.toContain('data-ko-editable');
   });
 
@@ -155,7 +157,7 @@ describe('injectHtmlCodeBlock', () => {
     const result = injectHtmlCodeBlock(markup);
     // The block must land after the full opening tag, not in the middle of it.
     expect(result).toContain(
-      '<div style="font: a > b" data-ko-container="main"><table'
+      `<div style="font: a > b" data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
     );
   });
 
@@ -167,7 +169,9 @@ describe('injectHtmlCodeBlock', () => {
       '</body></html>',
     ].join('');
     const result = injectHtmlCodeBlock(markup);
-    expect(result).toContain('<div data-ko-container="main"><table');
+    expect(result).toContain(
+      `<div data-ko-container="main"><div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`
+    );
     expect(result).toContain('<div data-ko-container="preheader"></div>');
   });
 });
@@ -221,16 +225,17 @@ describe('orderPaletteBlockDefs', () => {
   });
 });
 
-const INJECTED_BLOCK_OPENING =
-  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"' +
-  ` border="0" data-ko-block="${HTML_CODE_BLOCK_TYPE}">`;
+const INJECTED_BLOCK_OPENING = `<div data-ko-block="${HTML_CODE_BLOCK_TYPE}">`;
+const INJECTED_BLOCK_CLOSING = '</div></div>';
 
 function removeInjectedBlock(markup) {
-  // Anchor on the injected block's exact opening tag: real templates contain
-  // plenty of other `<table role="presentation">` elements of their own.
+  // Anchor on the injected block's exact opening tag; real templates are full
+  // of <div>s of their own.
   const start = markup.indexOf(INJECTED_BLOCK_OPENING);
   expect(start).toBeGreaterThan(-1);
-  const end = markup.indexOf('</table>', start) + '</table>'.length;
+  const end =
+    markup.indexOf(INJECTED_BLOCK_CLOSING, start) +
+    INJECTED_BLOCK_CLOSING.length;
   return markup.slice(0, start) + markup.slice(end);
 }
 
