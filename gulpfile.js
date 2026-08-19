@@ -134,6 +134,15 @@ const mosaicoLibList = [
   // HTML code block (see ext/html-code-block/neutralize-html.js). Not bundled
   // through browserify so it stays out of the editor bundle's require graph.
   'node_modules/dompurify/dist/purify.js',
+  // CodeMirror 5 for the HTML code block editor. Concatenated as globals rather
+  // than required through browserify: it must load before its own modes and
+  // addons, which register themselves on the global CodeMirror.
+  'node_modules/codemirror/lib/codemirror.js',
+  'node_modules/codemirror/mode/xml/xml.js',
+  'node_modules/codemirror/mode/javascript/javascript.js',
+  'node_modules/codemirror/mode/css/css.js',
+  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
+  'node_modules/codemirror/addon/display/placeholder.js',
 ];
 
 // TODO: minifiy not minfied libs!
@@ -154,6 +163,13 @@ const mosaicoLibListMin = [
   'node_modules/knockout-jqueryui/dist/knockout-jqueryui.js', // no min files
   'node_modules/tinymce/tinymce.min.js',
   'node_modules/dompurify/dist/purify.min.js',
+  // CodeMirror ships no minified build; same order constraint as above.
+  'node_modules/codemirror/lib/codemirror.js',
+  'node_modules/codemirror/mode/xml/xml.js',
+  'node_modules/codemirror/mode/javascript/javascript.js',
+  'node_modules/codemirror/mode/css/css.js',
+  'node_modules/codemirror/mode/htmlmixed/htmlmixed.js',
+  'node_modules/codemirror/addon/display/placeholder.js',
 ];
 
 const orderLibs = (lib) => /[^/]*\.js$/.exec(lib)[0];

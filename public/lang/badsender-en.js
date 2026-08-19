@@ -286,4 +286,12 @@ module.exports = {
   // HTML code block
   'html-code-block-name': 'HTML code',
   'html-code-block-empty': 'HTML code block — click to edit',
+  'widget-code-edit': 'Edit HTML code',
+  'html-code-modal-title': 'HTML code',
+  'html-code-modal-apply': 'Apply',
+  'html-code-modal-cancel': 'Cancel',
+  'html-code-placeholder':
+    'Paste your HTML code here. Provide a complete table: width, responsive and dark mode are your responsibility.',
+  'html-code-too-large':
+    'The HTML code exceeds the __max__ character limit. Shorten it before applying.',
 };

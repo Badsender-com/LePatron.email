@@ -295,4 +295,12 @@ module.exports = {
   // HTML code block
   'html-code-block-name': 'Code HTML',
   'html-code-block-empty': 'Bloc Code HTML — cliquez pour éditer',
+  'widget-code-edit': 'Éditer le code HTML',
+  'html-code-modal-title': 'Code HTML',
+  'html-code-modal-apply': 'Appliquer',
+  'html-code-modal-cancel': 'Annuler',
+  'html-code-placeholder':
+    'Collez ici votre code HTML. Fournissez une table complète : largeur, responsive et dark mode sont sous votre responsabilité.',
+  'html-code-too-large':
+    "Le code HTML dépasse la limite de __max__ caractères. Réduisez-le avant d'appliquer.",
 };

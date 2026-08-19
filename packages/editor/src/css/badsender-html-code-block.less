@@ -1,0 +1,48 @@
+// HTML code block: side-panel widget button and CodeMirror modal.
+// The empty-block placeholder lives in style_mosaico_content.less, next to the
+// empty-container rules it is modelled on.
+
+.html-code-widget {
+  padding: 0.5rem 0;
+
+  &__button {
+    width: 100%;
+  }
+}
+
+.html-code-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+
+  &__title {
+    margin: 0 0 1rem;
+  }
+
+  // Fills the modal height so the editor is usable on a full-page paste.
+  &__editor {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+
+    .CodeMirror {
+      height: 60vh;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
+        monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  &__counter {
+    margin: 0.5rem 0 0;
+    text-align: right;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.54);
+
+    &--error {
+      color: #f04e23;
+      font-weight: bold;
+    }
+  }
+}
