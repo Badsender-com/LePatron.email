@@ -663,8 +663,18 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   viewModel.exportHTML = function () {
     var id = 'exportframe';
+    // sandbox="allow-same-origin" hardens this frame: it is a LIVE, same-origin
+    // document, so a <script> reaching it would run in the app's context with the
+    // exporting user's session — and the HTML code block lets one be pasted.
+    // Without `allow-scripts` nothing in the frame executes, while
+    // `allow-same-origin` keeps contentWindow.document readable from here, which
+    // the inlining and the serialization below both need.
+    // This changes no byte of the serialized output: the attribute lives on the
+    // frame element, in the parent document, never in what gets exported.
     $('body').append(
-      '<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>'
+      '<iframe id="' +
+        id +
+        '" sandbox="allow-same-origin" data-bind="bindIframe: $data"></iframe>'
     );
     var frameEl = global.document.getElementById(id);
     ko.applyBindings(viewModel, frameEl);
