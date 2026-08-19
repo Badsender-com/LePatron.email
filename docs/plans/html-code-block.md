@@ -134,73 +134,76 @@ filtré) est passé à `initializeViewmodel`, `blockDefs` restant **intact** pou
 ### 4.2 Markup injecté
 
 ```html
-<table
-  role="presentation"
-  width="100%"
-  cellpadding="0"
-  cellspacing="0"
-  border="0"
-  data-ko-block="htmlCodeBlock"
->
-  <tr>
-    <td align="left" valign="top">
-      <div
-        class="lp-html-block"
-        data-ko-display="htmlCode"
-        data-bind="lpHtmlCode: htmlCode"
-      ></div>
-    </td>
-  </tr>
-</table>
+<div class="lp-html-block-root" data-ko-block="htmlCodeBlock">
+  <div
+    class="lp-html-block"
+    data-ko-display="htmlCode"
+    data-bind="lpHtmlCode: htmlCode"
+  ></div>
+</div>
 ```
+
+Deux `<div>` nus, et rien d'autre. L'enveloppe ne porte **aucune présentation** : pas de
+table, pas de cellule, pas de `width`, pas d'`align`, pas de `valign`, pas de `bgcolor`,
+pas de `style`, pas de classe stylée. Tout cela styleraient le HTML collé ou écraseraient
+ce qu'il hérite.
 
 Contraintes qui imposent cette forme :
 
+- **Pas de `<td align>`.** `align` est mappé sur `text-align`, qui **est héritée** : un
+  `align="left"` sur la cellule fixait le contexte d'alignement et écrasait celui hérité
+  du template, empêchant une table collée en `align="center"` de se centrer comme un bloc
+  natif. `valign` est parti avec la cellule : appliqué à une cellule unique dont le
+  contenu est autoporteur, il ne changeait rien tout en rendant l'enveloppe moins neutre.
 - **`data-ko-display` est obligatoire.** `_propEditor` retourne `''` si
   `model._usecount === undefined` (`converter/editor.js:248-255`), et `_usecount` n'est
   incrémenté que par `_increaseUseCount` (`converter/model.js:413-424`), atteint
   uniquement via le `bindingProvider` — que `wrapElementWithCondition`
   (`converter/parser.js:12-29`) appelle. Sans lui, **le widget serait invisible dans le
   panneau**.
-- **Il doit être sur un descendant.** `$('[data-ko-display]', element)`
-  (`converter/parser.js:264`) est un sélecteur à contexte qui ne matche pas la racine ;
-  posé sur la `<table>`, l'attribut serait ignoré _et_ fuiterait dans l'export.
-- **Sur le `<div>`, pas sur le `<td>`.** `data-ko-display` entoure son élément d'un
-  `<!-- ko if -->` : sur le `<td>`, un bloc vide produirait `<tr></tr>` (invalide) ; sur
-  le `<div>`, il produit `<td></td>` (valide).
-- **Pas de `class="vb-outer"`** sur la table, pour ne pas hériter des règles du template
-  (`.vb-outer { min-width: 0 !important; }`).
+- **Il ne peut PAS être sur la racine du bloc.** Le converter lève une erreur explicite
+  (« Unsupported data-ko-display used together with data-ko-block »), et il en va de même
+  pour `data-ko-wrap`. Tout le contenu visible pend donc de cet attribut.
+- **Pas de classe du template** (`vb-outer` et consorts), pour ne pas hériter de ses
+  règles CSS. Les deux classes présentes (`lp-html-block-root`, `lp-html-block`) ne sont
+  jamais stylées : ce sont des points d'accroche.
 - À ne pas utiliser : `data-ko-editable` (le converter le transforme en `wysiwygOrHtml`,
   `parser.js:311`, qui attache **TinyMCE** en mode wysiwyg et détruirait le HTML collé) ;
   `data-ko-properties` sur la racine (lu ligne 147 mais **non retiré** de la racine → il
   fuiterait dans l'export).
 
-### 4.3 Devenir du wrapper et du marqueur dans l'export
+### 4.3 Ce qu'un bloc exporte réellement
 
-| Étage         | Fichier:ligne                    | Effet sur l'enveloppe                                       |
-| ------------- | -------------------------------- | ----------------------------------------------------------- |
-| Parsing       | `parser.js:119`                  | `data-ko-block` retiré                                      |
-| Parsing       | `parser.js:19`                   | `data-ko-display` retiré → `<!-- ko if -->` autour du div   |
-| Export client | `viewmodel.js:675-676`           | commentaires `ko` retirés                                   |
-| Export client | `viewmodel.js:678`               | `data-bind` retiré                                          |
-| Export client | `viewmodel.js:729-737`           | _trash check_ `/ data-[^ =]+(="[^"]+")? /` → `console.warn` |
-| Serveur       | `process-mosaico-html-render.js` | **ne retire aucun attribut ni élément**                     |
+| Étage         | Fichier:ligne                    | Effet sur l'enveloppe                                         |
+| ------------- | -------------------------------- | ------------------------------------------------------------- |
+| Parsing       | `parser.js:119`                  | `data-ko-block` retiré                                        |
+| Parsing       | `parser.js:19`                   | `data-ko-display` retiré → `<!-- ko if -->` autour du contenu |
+| Export client | `viewmodel.js:675-676`           | commentaires `ko` retirés                                     |
+| Export client | `viewmodel.js:678`               | `data-bind` retiré                                            |
+| Export client | `strip-empty-blocks.js`          | **racine d'un bloc vide retirée**                             |
+| Export client | `viewmodel.js:729-737`           | _trash check_ `/ data-[^ =]+(="[^"]+")? /` → `console.warn`   |
+| Serveur       | `process-mosaico-html-render.js` | **ne retire aucun attribut ni élément**                       |
 
-**Le marqueur est une classe CSS `lp-html-block`, pas un attribut `data-*`.** Un
+**Bloc rempli** → l'enveloppe est deux `<div>` sans style autour du HTML collé.
+
+**Bloc vide → zéro markup.** `data-ko-display` ne masque que le contenu ; la racine du
+bloc survit toujours, Mosaico n'offrant aucun moyen de la supprimer (erreur explicite sur
+`data-ko-display`/`data-ko-wrap`, et `templateCreator` enregistre l'`outerHTML` de la
+racine — `template-loader.js:133`). Elle est donc retirée de la **chaîne sérialisée**, en
+fin de cascade d'export, via la classe d'accroche `lp-html-block-root`. Cette étape est
+strictement additive : elle ne matche qu'une racine **vide** de ce bloc, laisse intact un
+bloc rempli, et ne matche rien du tout dans un mail qui n'en contient pas.
+
+**Les marqueurs sont des classes CSS, pas des attributs `data-*`.** Un
 `data-lp-html-block` survivrait intégralement (aucune regex ne le cible) _et_
-déclencherait le warning du trash check. Une classe, elle :
+déclencherait le warning du trash check. Une classe ne déclenche aucun warning, est
+ignorée par tous les clients mail (Outlook compris), et est du même type que les artefacts
+déjà présents dans tous les exports Mosaico (`vb-outer`, `vb-row`, `vb-content`,
+`mobile-full`, `links-color`).
 
-- ne demande **aucune** regex additive dans `exportHTML` — donc aucune fonction partagée
-  modifiée ;
-- ne déclenche aucun warning ;
-- est ignorée par tous les clients mail, Outlook compris, et est du même type que les
-  artefacts déjà présents dans tous les exports Mosaico (`vb-outer`, `vb-row`,
-  `vb-content`, `mobile-full`, `links-color`).
-
-**L'enveloppe `table > tr > td > div` survit et c'est assumé** : c'est exactement la
-structure de tout bloc versafix (`template-versafix-1.html:425-431`), et Mosaico exige que
-le bloc soit un élément unique de premier niveau dans le conteneur. L'export n'est donc
-pas le HTML collé seul, mais le HTML collé dans une enveloppe de 4 éléments neutres.
+Le nom de classe est délimité **sur les espaces** et non avec `\b` : les frontières de mot
+des regex traitent `-` comme un séparateur, donc `\blp-html-block-root\b` matcherait
+aussi à l'intérieur de `not-lp-html-block-root-either`.
 
 ### 4.4 Rendu dans le canvas, et état vide
 
@@ -323,6 +326,8 @@ les booléens arrivent en `"true"`/`"false"`. Mongoose casterait la chaîne `"fa
 | Neutralisation aperçu canvas | `packages/editor/src/js/ext/html-code-block/neutralize-html.js`            |
 | Zone protégée inliner        | `packages/editor/src/js/ext/html-code-block/protect-from-inliner.js`       |
 | Limite de taille (éditeur)   | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
+| Prédicats d'état d'un bloc   | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
+| Retrait d'un bloc vide       | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
 | Binding de rendu             | `packages/editor/src/js/bindings/html-code-block.js`                       |
 | Widget `code`                | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
 | Modale CodeMirror            | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
@@ -340,6 +345,7 @@ comportement est inchangé :
   pour `checkModel`) ;
 - `viewmodel.js` — `isSyntheticBlock`, `isEmptyHtmlBlock` ;
 - `ext/inliner.js` — détachement/réinsertion autour de `inlineDocument` ;
+- `viewmodel.js` (`exportHTML`) — retrait de la racine d'un bloc vide, en fin de cascade ;
 - `tmpl/block-wysiwyg.tmpl.html` — `ko if` de l'état vide ;
 - `tmpl-badsender/toolbox.tmpl.html` — icône et libellé de palette ;
 - `ext/badsender-extensions.js`, `vue/customizedBlockPlugin.js`,
@@ -387,3 +393,8 @@ Sur un template versafix, flag activé :
 8. Une créa **sans** bloc HTML → export **binairement identique** à celui de `develop`.
 9. Envoi de test et export ESP → mêmes vérifications sur les tags ESP.
 10. Dépassement de 100 000 caractères → message clair, pas d'écriture du modèle.
+11. **Alignement hérité** : coller une table en `align="center"` avec un `max-width` →
+    elle se centre comme un bloc natif du template, sans réglage supplémentaire.
+12. **Bloc vide muet** : laisser un bloc vide dans une créa, exporter → **aucune trace**
+    dans le HTML (ni `<div>`, ni `<table>`, ni `lp-html-block-root`), alors que le bloc
+    reste visible et cliquable dans le canvas.
