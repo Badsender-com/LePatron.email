@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const ko = require('knockout');
 
 const {
   injectHtmlCodeBlock,
@@ -192,8 +193,10 @@ describe('orderPaletteBlockDefs', () => {
     expect(result).toEqual([textBlock, imageBlock, htmlBlock]);
   });
 
+  // A real observable, not a bare function: ko.utils.unwrapObservable only
+  // unwraps things ko.isObservable recognises.
   it('unwraps an observable type', () => {
-    const observableTyped = { type: () => HTML_CODE_BLOCK_TYPE };
+    const observableTyped = { type: ko.observable(HTML_CODE_BLOCK_TYPE) };
     const result = orderPaletteBlockDefs([observableTyped, textBlock], false);
     expect(result).toEqual([textBlock]);
   });

@@ -6,6 +6,7 @@ const {
   HTML_CODE_MARKER_CLASS,
   HTML_CODE_BINDING,
 } = require('./constants.js');
+const { isHtmlCodeBlock } = require('./block-state.js');
 
 // Pure string -> string preprocessing of a Mosaico template, applied before the
 // template is compiled (see template-loader.js). It makes the generic "HTML
@@ -151,16 +152,9 @@ function injectHtmlCodeBlock(markup) {
  */
 function orderPaletteBlockDefs(blockDefs, htmlBlockEnabled) {
   if (!Array.isArray(blockDefs)) return blockDefs;
-  // `type` may be a plain string or a Knockout observable depending on where the
-  // definition comes from; unwrap without depending on ko in this pure module.
-  const isHtmlBlock = (def) => {
-    if (!def) return false;
-    const type = typeof def.type === 'function' ? def.type() : def.type;
-    return type === HTML_CODE_BLOCK_TYPE;
-  };
-  const others = blockDefs.filter((def) => !isHtmlBlock(def));
+  const others = blockDefs.filter((def) => !isHtmlCodeBlock(def));
   if (!htmlBlockEnabled) return others;
-  return others.concat(blockDefs.filter(isHtmlBlock));
+  return others.concat(blockDefs.filter(isHtmlCodeBlock));
 }
 
 module.exports = { injectHtmlCodeBlock, orderPaletteBlockDefs };
