@@ -57,6 +57,12 @@ const EXCLUDED_FIELDS = [
   'textStyle',
   'titleTextStyle',
   'bodyTextStyle',
+  // Pasted markup of the "HTML code" block: sending it to the LLM would have it
+  // rewritten, and the block's whole promise is that its HTML is never altered.
+  // It already fails every TRANSLATABLE_FIELD_PATTERNS above, but only by accident
+  // of its name — listing it makes the exclusion explicit and survives a rename or
+  // a new pattern. See docs/plans/html-code-block.md
+  'htmlCode',
 ];
 
 // Field names that contain URLs (never translate)

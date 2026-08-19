@@ -23,8 +23,9 @@
       <!-- /ko -->
     </div>
     <!-- ko if: typeof $data._nextVariant != 'undefined' --><div title="Switch block variant" class="tool variant" data-bind="attr: { title: $root.t('Switch block variant') }, click: $data._nextVariant"><span class="lucide lucide-fw lucide-wand-2"></span></div><!-- /ko -->
-    <!-- Translate block -->
-    <!-- ko if: $root.metadata.hasTranslationFeature --><div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-languages"></span></div><!-- /ko -->
+    <!-- Translate block — hidden on the HTML code block: AI translation would
+         rewrite the pasted markup, and htmlCode is already excluded engine-side. -->
+    <!-- ko if: $root.metadata.hasTranslationFeature && !($root.isSyntheticBlock && $root.isSyntheticBlock($rawData)) --><div title="Translate block" class="tool translate" data-bind="attr: { title: $root.t('Translate block') }, click: $root.translateBlock.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-languages"></span></div><!-- /ko -->
     <!-- Import from content feed (only for blocks with an active feed mapping) -->
     <!-- ko if: $root.isFeedMappableBlock($rawData) --><div title="Import from feed" class="tool content-feed" data-bind="attr: { title: $root.t('Import from feed') }, click: $root.openContentFeedModal.bind($element, $rawData, $parent, $index)"><span class="lucide lucide-fw lucide-rss"></span></div><!-- /ko -->
     <!-- Delete block (destructive action - always last) -->
