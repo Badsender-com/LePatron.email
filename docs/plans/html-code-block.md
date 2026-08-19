@@ -62,6 +62,14 @@ Freemarker, tags accentués, indentation par tabulations, lignes vides, et
 Les tags JSSP de nos clients Adobe Campaign sont **ASCII pur**, donc byte-parfaits
 de bout en bout — c'est ce que la suite de caractérisation vérifie.
 
+**Le contenu du bloc n'est pas traduit automatiquement.** La traduction IA le
+laisserait réécrire par le modèle, ce qui contredirait la promesse du bloc. L'exclusion
+est cohérente sur **tous** les chemins : `mailing.data` (via `EXCLUDED_FIELDS` de
+l'extracteur) **et** `previewHtml` (via le garde de remplacement, §4.9). Sans le second,
+l'aperçu et le ZIP multiple — qui lisent `previewHtml` — divergeaient de l'export
+éditeur, régénéré depuis `data` : deux livrables différents pour une même créa. Une
+traduction **opt-in** du bloc est une piste v2, hors périmètre.
+
 ---
 
 ## 3. Décisions produit (actées)
@@ -364,6 +372,31 @@ comportement est figé par un test, qui vérifie aussi que les bindings de Mosai
 
 ---
 
+### 4.9 Exclusion de la traduction, sur tous les chemins
+
+Deux chemins traduisent une créa, et il fallait les couvrir tous les deux :
+
+| Chemin         | Mécanisme                          | Exclusion du bloc                                               |
+| -------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `mailing.data` | extraction champ par champ         | `htmlCode` dans `EXCLUDED_FIELDS` (`mosaico-text-extractor.js`) |
+| `previewHtml`  | remplacement de chaînes en aveugle | garde de zone (`html-code-block-protection.js`)                 |
+
+Le second était le trou : `updatePreviewWithTranslations` remplace les textes source
+partout dans la chaîne, donc un texte identique à celui d'un bloc natif était aussi
+réécrit **à l'intérieur** du HTML collé.
+
+`transformOutsideHtmlCodeBlocks` applique le remplacement à tous les segments **sauf**
+les zones `lp-html-block`. La zone est délimitée en comptant la profondeur des `<div>`
+depuis l'élément marqueur, en **ignorant les commentaires HTML** — un commentaire
+conditionnel contient couramment un `<div>` non apparié pour Outlook, qui déséquilibrerait
+le comptage.
+
+Si le HTML collé est malgré tout déséquilibré, le garde protège **jusqu'à la fin du
+document** et le journalise : une créa dont la fin n'est pas traduite est un problème
+visible et réparable, du HTML collé corrompu en silence ne l'est pas.
+
+---
+
 ## 5. Feuille de route (une branche, un commit par étape)
 
 | #   | Étape                        | Portée                                                                |
@@ -390,6 +423,7 @@ comportement est figé par un test, qui vérifie aussi que les bindings de Mosai
 | Prédicats d'état d'un bloc   | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
 | Retrait d'un bloc vide       | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
 | Substitution à l'export      | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
+| Garde de traduction          | `packages/server/translation/html-code-block-protection.js`                |
 | Binding de rendu             | `packages/editor/src/js/bindings/html-code-block.js`                       |
 | Widget `code`                | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
 | Modale CodeMirror            | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
@@ -473,3 +507,7 @@ Sur un template versafix, flag activé :
     pour un tag réparti sur plusieurs lignes.
 15. **Pas de traduction sur ce bloc** : la barre d'outils du bloc Code HTML n'affiche
     pas l'icône de traduction, alors qu'elle reste présente sur les blocs natifs.
+16. **Traduction cohérente** : dans une créa contenant un bloc natif et un bloc Code
+    HTML partageant le même texte, lancer la traduction de l'email complet → le bloc
+    natif est traduit, le contenu du bloc Code HTML est **inchangé**, et l'aperçu, le
+    ZIP multiple et l'export éditeur montrent **le même** HTML de bloc.
