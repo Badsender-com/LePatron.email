@@ -7,9 +7,9 @@ const _omit = require('lodash.omit');
 var console = require('console');
 var performanceAwareCaller = require('./timed-call.js').timedCall;
 const {
-  HTML_CODE_BLOCK_TYPE,
-  HTML_CODE_PROPERTY,
-} = require('./ext/html-code-block/constants.js');
+  isHtmlCodeBlock,
+  isEmptyHtmlCodeBlock,
+} = require('./ext/html-code-block/block-state.js');
 
 var toastr = require('toastr');
 toastr.options = {
@@ -118,10 +118,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // The "HTML code" block is injected by LePatron rather than declared by the
   // template, so it has no `edres/<type>.png` thumbnail in any client template.
   // The palette falls back to an icon and a translated label for it.
-  viewModel.isSyntheticBlock = function (blockDef) {
-    if (!blockDef) return false;
-    return ko.utils.unwrapObservable(blockDef.type) === HTML_CODE_BLOCK_TYPE;
-  };
+  viewModel.isSyntheticBlock = isHtmlCodeBlock;
 
   // An "HTML code" block with no markup yet renders nothing at all — its
   // content is wrapped in a `ko if` by data-ko-display — and
@@ -129,13 +126,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   // and impossible to click. block-wysiwyg.tmpl.html uses this to show a
   // clickable placeholder instead. Edit mode only: that template is never used
   // for the export, which resolves `<type>-show`.
-  viewModel.isEmptyHtmlBlock = function (block) {
-    if (!block) return false;
-    var unwrapped = ko.utils.unwrapObservable(block);
-    if (!unwrapped || unwrapped.type !== HTML_CODE_BLOCK_TYPE) return false;
-    var html = ko.utils.unwrapObservable(unwrapped[HTML_CODE_PROPERTY]);
-    return !html;
-  };
+  viewModel.isEmptyHtmlBlock = isEmptyHtmlCodeBlock;
 
   // Used by the content-feed modal to insert brand new blocks (beyond the
   // first item, which fills the block it was opened from in place instead —
