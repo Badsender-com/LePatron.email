@@ -2,11 +2,46 @@
 // The empty-block placeholder lives in style_mosaico_content.less, next to the
 // empty-container rules it is modelled on.
 
-.html-code-widget {
-  padding: 0.5rem 0;
+// Opening the editor is this block's primary action, and its label is far too long
+// for the 40% `.propInput` column of the standard property row
+// (see style_mosaico_tools.less): it overflowed and got clipped by the panel edge.
+//
+// So the row gets the stacked layout that the wide-input widgets (data-url,
+// data-text, ...) already use in that same file — label above, control full width
+// below. No locale can clip the label that way, whatever its length.
+.mo .propEditor:has(.html-code-widget) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 
-  &__button {
+  > .propLabel {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  > .propInput {
+    flex: 1 1 auto;
     width: 100%;
+  }
+}
+
+.html-code-widget {
+  padding: 0.25rem 0;
+
+  // `.ui-button` because the jQuery UI button binding adds it, and it carries the
+  // uppercase transform this label must not inherit.
+  &__button.ui-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
   }
 }
 
