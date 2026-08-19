@@ -87,6 +87,7 @@ const TranslationJobs = mongoose.model(
 const FeedMappings = mongoose.model(
   modelNames.FeedMappingModel,
   FeedMappingSchema
+);
 const LePatronSkills = mongoose.model(
   modelNames.LePatronSkillModel,
   LePatronSkillSchema
