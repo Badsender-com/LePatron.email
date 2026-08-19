@@ -1054,5 +1054,12 @@ export default {
     previewDescription: 'Preview of the rendered template',
     regeneratePreview: 'Regenerate preview',
     filesAvailableAfterCreation: 'You can upload the HTML markup and images after creating the template.',
+    advancedOptions: 'Advanced options',
+    advancedOptionsDescription: 'Features you can enable on a per-template basis',
+    htmlBlock: {
+      name: 'HTML code block',
+      description: 'Allows pasting free HTML code between two template blocks.',
+      hint: 'The block will show up at the end of the editor palette.',
+    },
   }
 };
