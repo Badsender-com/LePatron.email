@@ -413,8 +413,6 @@ export default {
             >{{ latencySeconds(detail.latencyMs) }} · {{ detail.provider }} ·
             {{ detail.model }}</span
           >
-          <span class="text-caption ml-2">{{ detail.latencyMs }} ms · {{ detail.provider }} ·
-            {{ detail.model }}</span>
         </p>
         <v-alert v-if="detail.error" type="error" dense outlined class="mb-3">
           <strong>{{ detail.error.code }}</strong> — {{ detail.error.message }}
