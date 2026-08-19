@@ -92,8 +92,19 @@ templatecode = injectHtmlCodeBlock(templatecode);
 Fonction **pure** (string → string) qui ajoute :
 
 - un `<style>` **autonome** avant `</head>` portant les blockdefs ;
-- le markup du bloc **juste avant la balise fermante** du `data-ko-container`
-  (dernière position, cf. décision 12).
+- le markup du bloc **juste après la balise ouvrante** du `data-ko-container`.
+
+La balise ouvrante est localisée par un **scan linéaire**, pas par une regex : un motif
+de liste d'attributs répété autour de l'attribut provoque un backtracking
+catastrophique sur les vrais templates (plusieurs centaines de Ko, attributs `style`
+contenant `>`) et gelait l'éditeur au chargement.
+
+La **dernière position en palette** (décision 12) est obtenue en réordonnant
+`blockDefs`, pas en cherchant la balise fermante du conteneur — cela éviterait de
+compter la profondeur d'imbrication en ignorant les commentaires conditionnels, pour
+un résultat identique. L'ordre dans le conteneur n'a pas d'autre effet : les enfants
+`data-ko-block` sont retirés du DOM par le parser et ne servent qu'à générer les
+définitions.
 
 **L'injection n'est jamais conditionnée au flag.** Trois raisons :
 
