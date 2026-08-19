@@ -29,23 +29,38 @@ Aucune fonction partagée n'est modifiée au-delà de retouches strictement addi
 
 Conséquences assumées :
 
-- pas de tokenisation des tags ESP (toucherait tous les chemins d'export) ;
-- pas de correction des regex de restauration ESP (`viewmodel.js:707,716`) ;
-- `process-mosaico-html-render.js` n'est pas modifié ;
-- `handleTrackingData` n'est pas corrigé ;
-- les tests sont des **tests de caractérisation** : ils figent le comportement actuel
-  pour prouver que le bloc HTML se comporte comme un bloc texte, pas pour l'améliorer.
+- **aucune** regex partagée n'est corrigée : ni celles de restauration ESP
+  (`viewmodel.js:707,716`), ni `process-mosaico-html-render.js`, ni
+  `handleTrackingData`. Leurs défauts restent, pour tout le reste du contenu ;
+- là où ces défauts touchaient le bloc, il est **contourné localement** plutôt que
+  corrigé globalement : le HTML collé est sorti de leur chemin (§4.8) au lieu de
+  réécrire des fonctions traversées par tous les clients ;
+- les tests restent des **tests de caractérisation** pour tout ce qui passe par la
+  chaîne partagée : ils figent le comportement réel, y compris là où il altère le
+  contenu, plutôt que de décrire un comportement souhaité.
 
 ### Garantie officielle de fidélité
 
-> Le bloc se comporte **comme un bloc texte, ni mieux ni pire**.
+> **À l'intérieur du bloc, le HTML collé ressort byte pour byte de l'export
+> client.** Sur le reste de la chaîne, le bloc se comporte comme un bloc texte,
+> ni mieux ni pire.
 
-Concrètement : équivalence sémantique du HTML, et pour les tags de personnalisation ESP,
-le même niveau de préservation que les blocs texte existants — soit byte-identité pour
-les tags mono-ligne en ASCII sans `<`, `>`, `&`. **Pas** de byte-identité globale : elle
-est impossible (re-sérialisation DOM, void tags auto-fermés, tabulations converties en
-espaces, caractères non-ASCII encodés). Les tests de caractérisation documentent
-précisément où la fidélité s'arrête.
+Obtenu par **substitution par marqueur** (§4.8) : pendant un export, le HTML collé
+ne traverse ni le DOM ni la cascade de regex partagée ; il est réinjecté tel quel
+en toute dernière étape. Cela immunise le bloc contre toute la famille des bugs de
+restauration : tags multi-lignes, regex gloutonne sur deux tags d'une même ligne,
+Freemarker, tags accentués, indentation par tabulations, lignes vides, et
+`data-bind`/`<!-- ko -->`/`<script type="text/html">` collés.
+
+**Altérations résiduelles**, dues aux étages **serveur** communs, non modifiés :
+
+- `processMosaicoHtmlRender` encode tout caractère **non-ASCII** en entité décimale
+  (`%%prénom%%` → `%%pr&#233;nom%%`) et convertit les **tabulations** en espaces ;
+- `handleTrackingData` ajoute les paramètres de tracking aux `<a href="http…">`
+  collés (décision 9, comportement voulu).
+
+Les tags JSSP de nos clients Adobe Campaign sont **ASCII pur**, donc byte-parfaits
+de bout en bout — c'est ce que la suite de caractérisation vérifie.
 
 ---
 
@@ -301,6 +316,52 @@ Route déjà protégée : `router.put('/:templateId', GUARD_ADMIN, templates.upd
 les booléens arrivent en `"true"`/`"false"`. Mongoose casterait la chaîne `"false"` en
 `true`. Normalisation explicite obligatoire.
 
+### 4.8 Substitution par marqueur à l'export
+
+Le HTML collé **ne traverse plus le DOM d'export ni la cascade de regex partagée**.
+
+Pendant un export (`exportHTML`) :
+
+1. `beginExportSubstitution()` ouvre une session, avant que la frame d'export ne soit
+   bindée ;
+2. le binding `lpHtmlCode`, en mode non-wysiwyg, enregistre la chaîne brute et rend
+   un **marqueur inerte** ASCII (`@@LPHTMLBLOCK_<nonce>_<index>@@`) à sa place ;
+3. `substituteMarkers()` réinjecte les octets exacts en **toute dernière étape**,
+   après que chaque transformation a été appliquée ;
+4. `endExportSubstitution()` referme la session.
+
+Hors export, il n'y a pas de session : le binding rend le HTML directement, et aucun
+autre chemin de rendu ne change de comportement.
+
+Pourquoi c'était nécessaire : `<%`/`%>` sont échappés par le DOM puis restaurés par
+`/&lt;%.*%&gt;/g` (`viewmodel.js:707`), **gloutonne et mono-ligne**. Sur
+`<%@ include view='A' %> | <%@ include view='B' %>` elle décode tout l'intervalle
+entre le premier `<%` et le dernier `%>` comme un seul bloc ; un tag multi-lignes
+n'est jamais restauré. Corriger cette regex aurait touché l'export de tous les
+clients — la substitution règle le problème **sans y toucher**.
+
+Points de vigilance encodés dans le code :
+
+- le marqueur est ASCII sans `<`, `>`, `&` : aucune regex de la cascade ne le matche
+  et le DOM le sérialise tel quel ;
+- **nonce aléatoire par export**, pour qu'un utilisateur collant littéralement le
+  motif du marqueur ne déclenche pas de substitution ;
+- le remplacement utilise une **fonction**, jamais une chaîne : du HTML collé
+  contient couramment `$&`, `$1` ou `` $`  ``, qu'une chaîne interpréterait ;
+- la session est réinitialisée à chaque `begin`, donc un export interrompu par une
+  exception ne peut pas polluer le suivant.
+
+Portée : uniquement l'intérieur d'une zone `lp-html-block`. Les blocs du design
+system et le markup du template n'ont pas de source brute à substituer et conservent
+le comportement actuel — vérifié par le test de non-régression sur les templates
+générés.
+
+Effet de bord assumé : un `data-bind` collé (ainsi qu'un `<!-- ko -->` ou un
+`<script type="text/html">`) **survit** désormais à l'export, alors qu'il était retiré
+avant. C'est plus fidèle, et inoffensif — un attribut inerte dans un email. Le
+comportement est figé par un test, qui vérifie aussi que les bindings de Mosaico,
+**hors** du bloc, continuent d'être retirés.
+
 ---
 
 ## 5. Feuille de route (une branche, un commit par étape)
@@ -328,6 +389,7 @@ les booléens arrivent en `"true"`/`"false"`. Mongoose casterait la chaîne `"fa
 | Limite de taille (éditeur)   | `packages/editor/src/js/ext/html-code-block/validate.js`                   |
 | Prédicats d'état d'un bloc   | `packages/editor/src/js/ext/html-code-block/block-state.js`                |
 | Retrait d'un bloc vide       | `packages/editor/src/js/ext/html-code-block/strip-empty-blocks.js`         |
+| Substitution à l'export      | `packages/editor/src/js/ext/html-code-block/export-substitution.js`        |
 | Binding de rendu             | `packages/editor/src/js/bindings/html-code-block.js`                       |
 | Widget `code`                | `packages/editor/src/js/ext/badsender-widget-code.js`                      |
 | Modale CodeMirror            | `packages/editor/src/js/vue/components/html-code-modal/html-code-modal.js` |
@@ -361,8 +423,11 @@ Bugs réels, vérifiés dans le code, **volontairement non corrigés** ici :
 - `viewmodel.js:707,716` — regex de restauration ESP **gloutonnes et mono-ligne** : les
   tags multi-ligne ne sont jamais restaurés ; sur une ligne à deux tags, tout
   l'intervalle est décodé, ce qui peut transformer du texte littéral en balises.
+  **Le bloc Code HTML n'y est plus exposé** (substitution par marqueur, §4.8) ; le
+  reste du contenu, si.
 - `process-mosaico-html-render.js:25` — `he.encode(decimal:true)` encode tout
   non-ASCII : un tag ESP accentué (`%%prénom%%` → `%%pr&#233;nom%%`) est altéré.
+  S'applique **aussi** au bloc, la substitution étant client et cet étage serveur.
 - `mailing.service.js:1096` — `linksRegex = /(<a .*?) *(https?:[^"]+)(")/g` : `[^"]+`
   peut traverser `</a><a href=`, donc une URL nue dans du texte corrompt le balisage.
 - `esp/adobe/adobeProvider.js` — regex d'images `/https?:\S+\.(jpg|…)/g` non ancrée sur
@@ -398,3 +463,13 @@ Sur un template versafix, flag activé :
 12. **Bloc vide muet** : laisser un bloc vide dans une créa, exporter → **aucune trace**
     dans le HTML (ni `<div>`, ni `<table>`, ni `lp-html-block-root`), alors que le bloc
     reste visible et cliquable dans le canvas.
+13. **Script inerte au téléchargement** : coller
+    `<script>alert('xss2')</script>`, puis (a) télécharger le ZIP et (b) lancer le
+    contrôle qualité → **aucune exécution** dans les deux cas, alors que le script
+    est bien **présent tel quel** dans le HTML du ZIP.
+14. **Tags JSSP byte-parfaits** : coller
+    `<%@ include view='CLAAUT_unsubLink' %> | <%@ include view='MirrorPageUrl' %>`
+    puis exporter → les deux tags ressortent identiques, sur la même ligne. Idem
+    pour un tag réparti sur plusieurs lignes.
+15. **Pas de traduction sur ce bloc** : la barre d'outils du bloc Code HTML n'affiche
+    pas l'icône de traduction, alors qu'elle reste présente sur les blocs natifs.
