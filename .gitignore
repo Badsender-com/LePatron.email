@@ -156,3 +156,6 @@ seed-mailings.js
 backfill-tags.local.js
 
 .notes
+
+# Claude Code local settings
+.claude/settings.json
