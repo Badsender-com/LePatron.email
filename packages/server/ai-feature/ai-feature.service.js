@@ -5,6 +5,7 @@ const { Types } = require('mongoose');
 const { NotFound, BadRequest } = require('http-errors');
 const ERROR_CODES = require('../constant/error-codes.js');
 const { AIFeatureTypeValues } = require('../constant/ai-feature-type.js');
+const IntegrationTypes = require('../constant/integration-type.js');
 const groupService = require('../group/group.service.js');
 
 module.exports = {
@@ -74,7 +75,10 @@ function defaultFeature(featureType) {
 }
 
 /**
- * Validate that integration exists and belongs to the group
+ * Validate that integration exists, belongs to the group, and is an AI
+ * integration. The type check matters: without it a `dashboard` (Metabase) or
+ * `data_feed` (RSS) integration can be wired as an AI engine — the client-side
+ * `type=ai` filter on the selectors is a convenience, not a guarantee.
  */
 async function validateIntegrationOwnership({ integrationId, groupId }) {
   const integration = await Integrations.findOne({
@@ -83,6 +87,9 @@ async function validateIntegrationOwnership({ integrationId, groupId }) {
   });
   if (!integration) {
     throw new NotFound(ERROR_CODES.INTEGRATION_NOT_FOUND);
+  }
+  if (integration.type !== IntegrationTypes.AI) {
+    throw new BadRequest(ERROR_CODES.UNAUTHORIZED_INTEGRATION_TYPE);
   }
 }
 

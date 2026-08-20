@@ -186,7 +186,10 @@ describe('AIFeatureService', () => {
       };
 
       groupService.findById.mockResolvedValue({ _id: mockGroupId });
-      Integrations.findOne.mockResolvedValue({ _id: mockIntegrationId });
+      Integrations.findOne.mockResolvedValue({
+        _id: mockIntegrationId,
+        type: 'ai',
+      });
       AIFeatureConfigs.findOne.mockReturnValue({
         populate: jest.fn().mockResolvedValue(existingConfig),
       });
@@ -275,6 +278,28 @@ describe('AIFeatureService', () => {
         })
       ).rejects.toThrow('INTEGRATION_NOT_FOUND');
     });
+
+    // A Metabase (dashboard) or RSS (data_feed) integration belongs to the same
+    // group, so ownership alone accepted it as an AI engine.
+    it.each(['dashboard', 'data_feed'])(
+      'should reject a %s integration as an AI engine',
+      async (type) => {
+        groupService.findById.mockResolvedValue({ _id: mockGroupId });
+        Integrations.findOne.mockResolvedValue({
+          _id: mockIntegrationId,
+          type,
+        });
+
+        await expect(
+          aiFeatureService.updateFeatureConfig({
+            groupId: mockGroupId,
+            featureType: 'skill',
+            integrationId: mockIntegrationId,
+          })
+        ).rejects.toThrow('UNAUTHORIZED_INTEGRATION_TYPE');
+        expect(AIFeatureConfigs.findByIdAndUpdate).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('getFeatureConfig', () => {

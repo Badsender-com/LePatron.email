@@ -115,7 +115,6 @@ export default {
     image: 'Image | Images',
     actions: 'Actions',
     save: 'Save',
-    savedSuccessfully: 'Saved successfully',
     cancel: 'Cancel',
     create: 'Create',
     createTag: 'Create tag',
@@ -1027,7 +1026,9 @@ export default {
       description: 'Generic AI engine powering every skill invocation for this company (and Playground tests via the platform company).',
       enableLabel: 'Enable the Skills engine',
       model: 'AI model',
-      modelHint: 'More powerful models are more accurate but slower and more expensive'
+      modelHint: 'More powerful models are more accurate but slower and more expensive',
+      modelDefaultOption: 'Provider default ({model})',
+      modelDefaultOptionUnknown: 'Provider default'
     },
     textGeneration: {
       title: 'Text generation',
@@ -1227,7 +1228,7 @@ export default {
       schemasHelp:
         'Technical contract of the version: the input validates what features send and generates the playground form; the output is imposed on the LLM automatically. Schemas are defined in code — contact the dev team to add one.',
       placeholdersHelp:
-        'Placeholders usable in the skill body and input template, derived from the input schema:',
+        'Placeholders usable in the input template only — they are rejected in the system prompt and in the skill body. Derived from the input schema:',
       placeholdersRequiredHint:
         'Placeholders marked with an asterisk (*) map to fields required by the input schema.',
       placeholdersInvocationNote:
