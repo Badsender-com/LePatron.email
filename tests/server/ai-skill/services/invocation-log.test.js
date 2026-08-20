@@ -50,12 +50,12 @@ describe('invocation-log.service', () => {
       expect(query.startedAt.$lte).toBeInstanceOf(Date);
     });
 
-    it('excludes non-productive featureTypes by default', async () => {
+    it('excludes non-productive invocation sources by default', async () => {
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
       await invocationService.listInvocations({});
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toEqual({
+      expect(query.invocationSource).toEqual({
         $nin: ['admin-test', 'playground'],
         $not: /^poc\./,
       });
@@ -67,20 +67,22 @@ describe('invocation-log.service', () => {
       // Query-string transport: the controller passes 'true' as a string.
       await invocationService.listInvocations({ includeNonProductive: 'true' });
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toBeUndefined();
+      expect(query.invocationSource).toBeUndefined();
     });
 
-    it('lets an explicit featureType filter win over the exclusion', async () => {
+    it('lets an explicit invocationSource filter win over the exclusion', async () => {
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
-      await invocationService.listInvocations({ featureType: 'playground' });
+      await invocationService.listInvocations({
+        invocationSource: 'playground',
+      });
       const query = AISkillInvocations.find.mock.calls[0][0];
-      expect(query.featureType).toBe('playground');
+      expect(query.invocationSource).toBe('playground');
     });
 
     it('a skill Logs query (skillId + includeNonProductive) keeps playground runs', async () => {
       // The skill's own Logs tab passes includeNonProductive:true → no
-      // featureType exclusion, so its playground runs show without any toggle.
+      // source exclusion, so its playground runs show without any toggle.
       AISkillInvocations.find.mockReturnValue(chain([]));
       AISkillInvocations.countDocuments.mockResolvedValue(0);
       await invocationService.listInvocations({
@@ -89,7 +91,7 @@ describe('invocation-log.service', () => {
       });
       const query = AISkillInvocations.find.mock.calls[0][0];
       expect(query.skillId).toBe('redaction.cta.promo');
-      expect(query.featureType).toBeUndefined();
+      expect(query.invocationSource).toBeUndefined();
     });
   });
 

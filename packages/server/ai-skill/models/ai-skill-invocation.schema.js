@@ -86,7 +86,11 @@ const AISkillInvocationSchema = new Schema(
 
     _company: { type: ObjectId, ref: GroupModel, required: true },
     _user: { type: ObjectId, ref: UserModel, default: null },
-    featureType: { type: String },
+    // WHO issued this invocation, for analytics: 'playground', a 'poc.*'
+    // prefix, or a productive feature name. Deliberately NOT called
+    // `featureType`: that name belongs to AIFeatureConfig, where it means the
+    // engine type ('translation' | 'skill') — an orthogonal axis (see invoke()).
+    invocationSource: { type: String },
 
     // Réservé étape 2 (DSE v2) — never populated in v1; kept so the analytics
     // shape is stable when prompt variants land. Cf. docs/REVIEW_GUIDE_AI_MODULES.md.
@@ -128,7 +132,7 @@ AISkillInvocationSchema.index({ _company: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ skillId: 1, startedAt: -1 });
 AISkillInvocationSchema.index({ status: 1 });
 // The Invocations tab default view has no skillId/groupId filter (only the
-// non-productive featureType exclusion) and sorts by startedAt — without
+// non-productive invocationSource exclusion) and sorts by startedAt — without
 // this index it collection-scans.
 AISkillInvocationSchema.index({ startedAt: -1 });
 

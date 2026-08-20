@@ -115,7 +115,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
 
       expect(result.output).toEqual({ text: 'hello world' });
@@ -137,7 +137,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
 
       const { messages } = mockProvider.chatComplete.mock.calls[0][0];
@@ -157,7 +157,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
       expect(
         mockProvider.chatComplete.mock.calls[0][0].responseFormat
@@ -173,7 +173,7 @@ describe('skill-invocation.invoke', () => {
         input: { prompt: 'hi' },
         groupId: GROUP_ID,
         userId: USER_ID,
-        featureType: 'demo',
+        invocationSource: 'demo',
       });
       expect(
         mockProvider.chatComplete.mock.calls[0][0].responseFormat

@@ -65,11 +65,13 @@ une violation, c'est un bug :
   à jour au changement de schéma. Comportement de la gate de cohérence
   inchangé au changement de schéma sur un DRAFT (placeholders orphelins
   signalés à l'enregistrement).
-- **`featureType` (analytics) ≠ résolution moteur.** Le `featureType` d'une
-  `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
+- **`invocationSource` (analytics) ≠ résolution moteur.** L'`invocationSource`
+  d'une `AISkillInvocation` dit _qui a appelé_ (`'admin-test'`, `'playground'`,
   `'poc.*'` réservés non productifs, exclus par défaut de l'onglet
   Invocations). La config moteur (provider/modèle) vient de l'`AIFeatureConfig`
-  `featureType='skill'` du Group — deux notions homonymes, jamais croisées.
+  `featureType='skill'` du Group. Les deux champs s'appelaient `featureType` :
+  l'homonymie est levée (review A7), migration
+  `scripts/migrate-invocation-source.js`.
 - **Contenu skills/expertise en clair en DB** : décision documentée
   (AI_SKILL_ETAPE_1.md) — c'est du savoir-faire interne, pas du secret, et le
   chiffrement aurait coûté l'observabilité (recherche, diff de versions).
@@ -133,7 +135,7 @@ Trois surfaces mortes ont été supprimées pour ne pas générer d'allers-retou
 
 - **Runner de test super-admin** (onglet « Test » de la page skill, route
   `POST /ai-skills/:id/test`, controller `testSkill`, `getBudget` + route
-  `/budget`, featureType `admin-test`). Remplacé par un lien **« Tester dans le
+  `/budget`, invocationSource `admin-test`). Remplacé par un lien **« Tester dans le
   playground »** dans le header de la page skill. `test-budget.service` est
   **conservé** (consommé par le playground pour le quota 50/jour).
 - **Champ `consumedBySkills`** (Expertise) + les onglets « Expertises liées »

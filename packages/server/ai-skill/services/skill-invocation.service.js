@@ -15,11 +15,11 @@
  *     receives an input already composed by the feature (via findApplicable
  *     with that invocation's own scope + categories).
  *
- * featureType convention
- * -----------------------
- * Each AISkillInvocation log carries a `featureType` string that names the
- * caller. `'playground'` (invocations issued by the AI Playground module) and
- * the `'poc.*'` prefix are reserved for non-production traffic and excluded
+ * invocationSource convention
+ * ---------------------------
+ * Each AISkillInvocation log carries an `invocationSource` string that names
+ * the caller. `'playground'` (invocations issued by the AI Playground module)
+ * and the `'poc.*'` prefix are reserved for non-production traffic and excluded
  * from product analytics by default.
  *
  * Any other value is a productive feature (e.g. 'translation', 'qc.subject',
@@ -65,23 +65,23 @@ const DEFAULT_TIMEOUT_MS = 30000;
  * See PLAN-IMPLEMENTATION-V1 §4.2.
  *
  * ── Two orthogonal axes that must NEVER be conflated ──────────────────────
- *   • `featureType` (this param): the SOURCE of the invocation, for ANALYTICS
- *     only ('playground' | a productive feature name). Stored on
+ *   • `invocationSource` (this param): the SOURCE of the invocation, for
+ *     ANALYTICS only ('playground' | a productive feature name). Stored on
  *     AISkillInvocation and used to include/exclude rows from analytics. It does
  *     NOT influence which LLM engine is used.
  *   • [étape 2] `categoryOverride`: ENGINE RESOLUTION. Defaults to skill.category,
  *     overridable by the consuming feature. It selects which AIFeatureConfig
  *     featureType powers the call (redaction/qc/… → fallback 'skill'). See
  *     resolveGroupIntegration().
- *   Never use `featureType` to resolve the engine, and never use the engine
- *   category for analytics. They answer different questions.
+ *   The two used to share the name `featureType`, an invariant held by
+ *   documentation alone; the distinct names are the invariant now.
  *
  * @param {Object} params
  * @param {string} params.skillId
  * @param {Object} params.input
  * @param {import('mongoose').Types.ObjectId | string} params.groupId
  * @param {import('mongoose').Types.ObjectId | string} [params.userId]
- * @param {string} [params.featureType] ANALYTICS source tag only — see contract above.
+ * @param {string} [params.invocationSource] ANALYTICS source tag only — see contract above.
  * @param {string[]} [params.variantPath]
  * @param {{major: number, minor?: number}} [params.version] Pin a specific
  *   version instead of the active one (the playground's "pinned" mode). The
@@ -96,7 +96,7 @@ async function invoke({
   input,
   groupId,
   userId,
-  featureType,
+  invocationSource,
   variantPath,
   version: versionRef,
   options = {},
@@ -158,7 +158,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input,
       startedAt,
@@ -245,7 +245,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       startedAt,
@@ -274,7 +274,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -295,7 +295,7 @@ async function invoke({
       version,
       groupId,
       userId,
-      featureType,
+      invocationSource,
       variantPath,
       input: inputParse.data,
       rawOutput: providerResponse.content,
@@ -321,7 +321,7 @@ async function invoke({
     version,
     groupId,
     userId,
-    featureType,
+    invocationSource,
     variantPath,
     input: inputParse.data,
     output: outputParse.data,
@@ -348,8 +348,8 @@ async function invoke({
 /**
  * Resolve the Integration to use for a Group via the AIFeatureConfig.
  *
- * ENGINE RESOLUTION axis (NOT analytics — do not confuse with invoke()'s
- * `featureType` param, which is the analytics source tag). Today this resolves
+ * ENGINE RESOLUTION axis (NOT analytics — that is invoke()'s
+ * `invocationSource` param). Today this resolves
  * the single generic 'skill' engine. [étape 2] it will take the skill's
  * category (or a caller `categoryOverride`) and resolve in cascade:
  *   category featureType (redaction/qc/…) → fallback 'skill' → CONFIG_ERROR.

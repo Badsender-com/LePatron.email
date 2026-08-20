@@ -20,7 +20,7 @@ async function logInvocation(params) {
     skillVersion: `${params.version.versionMajor}.${params.version.versionMinor}`,
     _company: params.groupId,
     _user: params.userId || null,
-    featureType: params.featureType || null,
+    invocationSource: params.invocationSource || null,
     variantPath: params.variantPath || [],
     provider: params.resolvedConfig ? params.resolvedConfig.provider : null,
     model: params.resolvedConfig ? params.resolvedConfig.model : null,

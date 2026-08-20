@@ -29,16 +29,21 @@ Note : `{{input.expertise}}` n'est valide que si le schéma d'entrée déclare u
 champ `expertise` (cf. `expertiseArraySchema`) ; le contenu injecté par le
 playground y est sérialisé en JSON.
 
-## FeatureTypes réservés (non productifs)
+## Sources d'invocation réservées (non productives)
 
-`'playground'` (AI Playground) et tout type préfixé `'poc.'` (proofs of
-concept) sont réservés aux invocations non productives : ils sont exclus par
-défaut des analytics de l'onglet Invocations. Une feature productive utilise
-son propre featureType, déclaré dans son `skill-manifest.js`.
+`'playground'` (AI Playground) et toute source préfixée `'poc.'` (proofs of
+concept) sont réservées aux invocations non productives : elles sont exclues par
+défaut des analytics de l'onglet Invocations. Une feature productive utilise sa
+propre source, déclarée dans son `skill-manifest.js`.
 
-> Historique : un featureType `'admin-test'` existait pour un runner de test
-> super-admin (onglet Test de la page skill), supprimé depuis. Il reste dans la
-> liste d'exclusion analytics pour d'éventuels logs historiques, mais aucun
+> La source est le champ `invocationSource` d'`AISkillInvocation`, passé en
+> paramètre d'`invoke()`. Il s'appelait `featureType` — homonyme du
+> `featureType` d'`AIFeatureConfig`, qui désigne le _type de moteur_ et n'a
+> rien à voir. Migration : `scripts/migrate-invocation-source.js`.
+
+> Historique : une source `'admin-test'` existait pour un runner de test
+> super-admin (onglet Test de la page skill), supprimé depuis. Elle reste dans
+> la liste d'exclusion analytics pour d'éventuels logs historiques, mais aucun
 > code ne l'émet plus — on teste désormais une skill via le Playground.
 
 ## Modèle conceptuel : feature / invocation / skill

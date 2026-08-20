@@ -3,12 +3,12 @@
 const createError = require('http-errors');
 const { AISkillInvocations } = require('../../common/models.common.js');
 
-// Reserved non-productive featureTypes (cf. docs/AI_SKILL_AUTHORING.md):
+// Reserved non-productive invocation sources (cf. docs/AI_SKILL_AUTHORING.md):
 // excluded from the Invocations list by default so test traffic does not
 // drown real feature analytics. The UI exposes an opt-in toggle.
 // 'admin-test' is kept for historical logs only — the super-admin Test runner
-// that produced it was removed; no new code emits this featureType.
-const NonProductiveFeatureTypes = ['admin-test', 'playground'];
+// that produced it was removed; no new code emits this source.
+const NonProductiveSources = ['admin-test', 'playground'];
 const NonProductivePrefixRegex = /^poc\./;
 
 // Whitelisted sort fields. The sort runs in Mongo, so a client-supplied field
@@ -17,7 +17,7 @@ const NonProductivePrefixRegex = /^poc\./;
 const SortableFields = [
   'startedAt',
   'skillId',
-  'featureType',
+  'invocationSource',
   'status',
   'latencyMs',
   'provider',
@@ -38,7 +38,7 @@ function buildSort(sortBy, sortDesc) {
 const LIST_PROJECTION = {
   skillId: 1,
   skillVersion: 1,
-  featureType: 1,
+  invocationSource: 1,
   _company: 1,
   _user: 1,
   provider: 1,
@@ -54,7 +54,7 @@ const LIST_PROJECTION = {
 
 async function listInvocations({
   skillId,
-  featureType,
+  invocationSource,
   status,
   groupId,
   startedFrom,
@@ -67,13 +67,13 @@ async function listInvocations({
 } = {}) {
   const query = {};
   if (skillId) query.skillId = skillId;
-  if (featureType) {
-    // An explicit featureType filter always wins over the default exclusion
+  if (invocationSource) {
+    // An explicit source filter always wins over the default exclusion
     // (filtering on 'playground' means you want to see playground runs).
-    query.featureType = featureType;
+    query.invocationSource = invocationSource;
   } else if (includeNonProductive !== true && includeNonProductive !== 'true') {
-    query.featureType = {
-      $nin: NonProductiveFeatureTypes,
+    query.invocationSource = {
+      $nin: NonProductiveSources,
       $not: NonProductivePrefixRegex,
     };
   }

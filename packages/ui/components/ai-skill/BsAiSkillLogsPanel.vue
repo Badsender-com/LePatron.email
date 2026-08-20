@@ -10,7 +10,7 @@ export default {
     skillId: { type: String, required: true },
   },
   data() {
-    // A skill's own Logs tab shows ALL featureTypes by default — seeing this
+    // A skill's own Logs tab shows ALL invocation sources by default — seeing this
     // skill's playground runs is precisely the point here (unlike the global
     // Invocations tab, which keeps the analytics exclusion). The toggle
     // re-applies the exclusion on demand.
@@ -25,7 +25,10 @@ export default {
           value: 'skillVersion',
           align: 'center',
         },
-        { text: this.$t('aiSkills.invocation.feature'), value: 'featureType' },
+        {
+          text: this.$t('aiSkills.invocation.feature'),
+          value: 'invocationSource',
+        },
         { text: this.$t('global.status'), value: 'status' },
         {
           text: this.$t('aiSkills.invocation.latency'),

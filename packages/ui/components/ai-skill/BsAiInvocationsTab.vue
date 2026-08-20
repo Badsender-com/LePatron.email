@@ -39,12 +39,12 @@ export default {
       sortDesc: true,
       filters: {
         skillId: '',
-        featureType: '',
+        invocationSource: '',
         status: null,
         groupId: '',
         startedFrom: null,
         startedTo: null,
-        // Reserved non-productive featureTypes (admin-test, playground, poc.*)
+        // Reserved non-productive sources (admin-test, playground, poc.*)
         // are excluded server-side by default — this opt-in includes them.
         includeNonProductive: false,
       },
@@ -73,7 +73,10 @@ export default {
           align: 'center',
           sortable: false,
         },
-        { text: this.$t('aiSkills.invocation.feature'), value: 'featureType' },
+        {
+          text: this.$t('aiSkills.invocation.feature'),
+          value: 'invocationSource',
+        },
         {
           text: this.$t('aiSkills.invocation.group'),
           value: 'group',
@@ -215,7 +218,7 @@ export default {
         @change="applyFilters"
       />
       <v-text-field
-        v-model="filters.featureType"
+        v-model="filters.invocationSource"
         :label="$t('aiSkills.filters.feature')"
         dense
         outlined
