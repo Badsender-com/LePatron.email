@@ -11,6 +11,30 @@ const { AISkillInvocations } = require('../../common/models.common.js');
 const NonProductiveFeatureTypes = ['admin-test', 'playground'];
 const NonProductivePrefixRegex = /^poc\./;
 
+// Whitelisted sort fields. The sort runs in Mongo, so a client-supplied field
+// name must never reach the query as-is. Computed columns (token total, group
+// name, version) and unindexed ones stay out; the UI marks them non-sortable.
+const SortableFields = [
+  'startedAt',
+  'skillId',
+  'featureType',
+  'status',
+  'latencyMs',
+  'provider',
+];
+const DefaultSort = Object.freeze({ startedAt: -1 });
+
+/**
+ * @returns {Object} a Mongo sort spec — the default when the requested field is
+ * absent or not whitelisted.
+ */
+function buildSort(sortBy, sortDesc) {
+  const field = Array.isArray(sortBy) ? sortBy[0] : sortBy;
+  if (!field || !SortableFields.includes(field)) return DefaultSort;
+  const desc = Array.isArray(sortDesc) ? sortDesc[0] : sortDesc;
+  return { [field]: desc === true || desc === 'true' ? -1 : 1 };
+}
+
 const LIST_PROJECTION = {
   skillId: 1,
   skillVersion: 1,
@@ -38,6 +62,8 @@ async function listInvocations({
   includeNonProductive,
   page = 1,
   pageSize = 50,
+  sortBy,
+  sortDesc,
 } = {}) {
   const query = {};
   if (skillId) query.skillId = skillId;
@@ -63,7 +89,7 @@ async function listInvocations({
 
   const [items, total] = await Promise.all([
     AISkillInvocations.find(query, LIST_PROJECTION)
-      .sort({ startedAt: -1 })
+      .sort(buildSort(sortBy, sortDesc))
       .skip(skip)
       .limit(limit)
       .populate('_company', 'name')
@@ -79,4 +105,8 @@ async function getInvocation(id) {
   return inv;
 }
 
-module.exports = { listInvocations, getInvocation };
+module.exports = {
+  listInvocations,
+  getInvocation,
+  SortableFields,
+};

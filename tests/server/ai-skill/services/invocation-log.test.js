@@ -93,6 +93,59 @@ describe('invocation-log.service', () => {
     });
   });
 
+  describe('pagination and sort', () => {
+    function listWith(params) {
+      const c = chain([]);
+      AISkillInvocations.find.mockReturnValue(c);
+      AISkillInvocations.countDocuments.mockResolvedValue(0);
+      return invocationService.listInvocations(params).then(() => c);
+    }
+
+    it('defaults to the first page of 50, newest first', async () => {
+      const c = await listWith({});
+      expect(c.sort).toHaveBeenCalledWith({ startedAt: -1 });
+      expect(c.skip).toHaveBeenCalledWith(0);
+      expect(c.limit).toHaveBeenCalledWith(50);
+    });
+
+    it('translates page/pageSize into skip/limit', async () => {
+      const c = await listWith({ page: 3, pageSize: 25 });
+      expect(c.skip).toHaveBeenCalledWith(50);
+      expect(c.limit).toHaveBeenCalledWith(25);
+    });
+
+    it('accepts a whitelisted sort field, in both directions', async () => {
+      let c = await listWith({ sortBy: 'latencyMs', sortDesc: true });
+      expect(c.sort).toHaveBeenCalledWith({ latencyMs: -1 });
+      c = await listWith({ sortBy: 'skillId', sortDesc: false });
+      expect(c.sort).toHaveBeenCalledWith({ skillId: 1 });
+    });
+
+    it('reads sortDesc sent as a query string', async () => {
+      const c = await listWith({ sortBy: 'status', sortDesc: 'true' });
+      expect(c.sort).toHaveBeenCalledWith({ status: -1 });
+    });
+
+    it('falls back to the default sort for a field outside the whitelist', async () => {
+      // The value reaches a Mongo sort spec, so an arbitrary client string
+      // must never be honoured.
+      for (const sortBy of [
+        'error.message',
+        'tokenUsage.totalTokens',
+        '$where',
+      ]) {
+        const c = await listWith({ sortBy, sortDesc: true });
+        expect(c.sort).toHaveBeenCalledWith({ startedAt: -1 });
+      }
+    });
+
+    it('exposes the whitelist so the UI can mirror it', () => {
+      expect(invocationService.SortableFields).toContain('startedAt');
+      expect(invocationService.SortableFields).not.toContain('tokens');
+      expect(invocationService.SortableFields).not.toContain('group');
+    });
+  });
+
   describe('getInvocation', () => {
     it('throws 404 when not found', async () => {
       AISkillInvocations.findById.mockReturnValue({
