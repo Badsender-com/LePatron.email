@@ -1244,6 +1244,9 @@ export default {
         'Placeholders utilisables dans le modèle d\'entrée uniquement — ils sont refusés dans le prompt système et dans le corps de la skill. Dérivés du schéma d\'entrée :',
       placeholdersRequiredHint:
         'Les placeholders marqués d\'un astérisque (*) correspondent à des champs requis par le schéma d\'entrée.',
+      placeholderCopyHint: 'Cliquer pour copier ce placeholder',
+      placeholderCopyFailed:
+        'Copie impossible depuis ce navigateur — sélectionnez le texte du placeholder à la main.',
       placeholdersInvocationNote:
         'Ces champs sont fournis à l\'invocation — seuls ceux référencés dans le modèle d\'entrée sont transmis au LLM.',
       placeholdersExpertiseNote:

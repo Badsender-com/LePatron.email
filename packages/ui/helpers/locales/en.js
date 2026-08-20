@@ -1231,6 +1231,9 @@ export default {
         'Placeholders usable in the input template only — they are rejected in the system prompt and in the skill body. Derived from the input schema:',
       placeholdersRequiredHint:
         'Placeholders marked with an asterisk (*) map to fields required by the input schema.',
+      placeholderCopyHint: 'Click to copy this placeholder',
+      placeholderCopyFailed:
+        'Copy is unavailable in this browser — select the placeholder text by hand.',
       placeholdersInvocationNote:
         'These fields are provided at invocation — only those referenced in the input template are sent to the LLM.',
       placeholdersExpertiseNote:

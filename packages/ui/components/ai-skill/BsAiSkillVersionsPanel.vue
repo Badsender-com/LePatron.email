@@ -5,7 +5,11 @@
 import BsTextarea from '~/components/form/bs-textarea.vue';
 import BsSelect from '~/components/form/bs-select.vue';
 import { aiSkillSchemaDescriptor } from '~/helpers/ai-skill-routes.js';
-import { Plus, CheckCircle2, Copy, Trash2 } from 'lucide-vue';
+import copyToClipboard from '~/helpers/copy-to-clipboard.js';
+import { Plus, CheckCircle2, Check, Copy, Trash2 } from 'lucide-vue';
+
+// How long a copied chip keeps its confirmation mark.
+const COPIED_FEEDBACK_MS = 1500;
 
 export default {
   name: 'BsAiSkillVersionsPanel',
@@ -13,6 +17,7 @@ export default {
     BsTextarea,
     BsSelect,
     LucidePlus: Plus,
+    LucideCheck: Check,
     LucideCheckCircle2: CheckCircle2,
     LucideCopy: Copy,
     LucideTrash2: Trash2,
@@ -39,6 +44,11 @@ export default {
       // Held in JS (not inline in the template): a literal `}}` inside a
       // mustache expression breaks the Vue template parser.
       expertiseToken: '{{input.expertise}}',
+      // Token of the placeholder chip just copied, and whether the copy
+      // failed — the panel has no access to the page snackbar, so the feedback
+      // is local to the chip row.
+      copiedToken: null,
+      copyFailed: false,
     };
   },
   computed: {
@@ -79,6 +89,9 @@ export default {
       );
       if (idx >= 0) this.openPanel = idx;
     }
+  },
+  beforeDestroy() {
+    clearTimeout(this.copiedTimer);
   },
   methods: {
     formatDate(d) {
@@ -128,6 +141,21 @@ export default {
         tokens.push({ token: '{{input.expertise}}', required: false });
       }
       return tokens.length ? tokens : null;
+    },
+    // The placeholders are only ever valid in the input template (the schema's
+    // pre('validate') hook rejects them in systemPrompt / skillBody), so the
+    // chips just hand the token over — there is no ambiguity about the target
+    // field, and nothing to retype by hand.
+    async copyPlaceholder(token) {
+      const copied = await copyToClipboard(token);
+      clearTimeout(this.copiedTimer);
+      this.copyFailed = !copied;
+      this.copiedToken = copied ? token : null;
+      if (copied) {
+        this.copiedTimer = setTimeout(() => {
+          this.copiedToken = null;
+        }, COPIED_FEEDBACK_MS);
+      }
     },
     hasExpertiseFor(v) {
       const d = v.inputSchemaId && this.descriptorCache[v.inputSchemaId];
@@ -275,13 +303,26 @@ export default {
                   label
                   outlined
                   class="mr-1 mb-1 placeholder-chip"
+                  :title="$t('aiSkills.version.placeholderCopyHint')"
+                  @click="copyPlaceholder(p.token)"
                 >
                   <code>{{ p.token }}</code>
                   <span v-if="p.required" class="placeholder-required ml-1">
                     *
                   </span>
+                  <lucide-check
+                    v-if="copiedToken === p.token"
+                    :size="12"
+                    class="ml-1 placeholder-copied"
+                  />
                 </v-chip>
               </div>
+              <span
+                v-if="copyFailed"
+                class="text-caption placeholder-copy-failed"
+              >
+                {{ $t('aiSkills.version.placeholderCopyFailed') }}
+              </span>
               <span class="text-caption text--disabled">
                 {{ $t('aiSkills.version.placeholdersRequiredHint') }}
               </span>
@@ -392,5 +433,15 @@ export default {
 .placeholder-required {
   color: var(--v-error-base, #d32f2f);
   font-weight: 600;
+}
+.placeholder-chip {
+  cursor: pointer;
+}
+.placeholder-copied {
+  color: var(--v-success-base, #4caf50);
+}
+.placeholder-copy-failed {
+  display: block;
+  color: var(--v-error-base, #d32f2f);
 }
 </style>
