@@ -12,10 +12,14 @@ export function emailTypeLabel(vm, value) {
   return label === key ? value : label;
 }
 
-// Options for a fixed <select> of the canonical types (value kept raw).
-export function emailTypeOptions(vm) {
-  return EMAIL_TYPES.map((value) => ({
-    value,
-    text: emailTypeLabel(vm, value),
-  }));
+// Items for an email-type facet combobox: the canonical types first, then any
+// extra value already present in database. Facets alone are not enough — they
+// are a `distinct` over existing expertises, so on a fresh base the selector
+// would offer nothing and the first expertise would have to be tagged blind.
+// Values stay raw; the display is translated by emailTypeLabel.
+export function emailTypeItems(facets = []) {
+  const extras = facets.filter(
+    (value) => value && !EMAIL_TYPES.includes(value)
+  );
+  return [...EMAIL_TYPES, ...[...new Set(extras)].sort()];
 }
