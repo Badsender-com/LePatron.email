@@ -3,14 +3,11 @@
 
 /**
  * CI gate: verify that every `skillInvocation.invoke({ skillId: '...' })` call
- * detected in packages/server/** is declared by a feature manifest, that
- * declared skills/expertise actually exist in DB and are ACTIVE, and that every
- * schema id stored on a live skill version resolves in the zod registry.
+ * detected in packages/server/** is declared by a feature manifest, and that
+ * declared skills/expertise actually exist in DB and are ACTIVE.
  *
- * Optional `--dry` flag skips the DB checks (useful in environments without
+ * Optional `--dry` flag skips the DB check (useful in environments without
  * Mongo, e.g. CI on a fresh checkout). The static AST/regex scan still runs.
- * Note that the schema cross-check needs the DB, so it only runs non-dry —
- * point the script at an environment to get the guarantee.
  *
  * Exit codes:
  *   0  OK
@@ -109,53 +106,6 @@ function validateExpertiseFilters(file, manifest) {
   return errors;
 }
 
-/**
- * Cross-check the schema ids stored on skill versions against the zod registry
- * that lives in code.
- *
- * The link is verified nowhere else once the data is written: the schema's
- * pre('validate') hook only runs when the document is saved, so renaming or
- * deleting a schema in code silently breaks every version still pointing at it
- * — a 500 at the first invocation, in production.
- *
- * ARCHIVED versions are skipped: they can no longer be invoked, so a schema
- * removed after they were archived must not fail forever.
- *
- * @returns {Promise<string[]>} error messages (empty if every id resolves)
- */
-async function checkSchemaReferences() {
-  const { LePatronSkills } = require(path.join(
-    SERVER_DIR,
-    'common',
-    'models.common.js'
-  ));
-  const { hasSchema } = require(path.join(SERVER_DIR, 'ai-skill', 'schemas'));
-
-  const skills = await LePatronSkills.find(
-    {},
-    { skillId: 1, versions: 1 }
-  ).lean();
-
-  const errors = [];
-  for (const skill of skills) {
-    for (const version of skill.versions || []) {
-      if (version.status === 'ARCHIVED') continue;
-      for (const field of ['inputSchemaId', 'outputSchemaId']) {
-        const schemaId = version[field];
-        // Empty is legitimate on a DRAFT — the activation gate requires both
-        // ids to be set before the version can be published.
-        if (!schemaId) continue;
-        if (!hasSchema(schemaId)) {
-          errors.push(
-            `Skill "${skill.skillId}" v${version.versionMajor}.${version.versionMinor} (${version.status}) references unknown ${field} "${schemaId}" — not in the zod registry`
-          );
-        }
-      }
-    }
-  }
-  return errors;
-}
-
 async function checkDB(declaredSkillIds, declaredExpertiseIds, allowDraft) {
   const { LePatronSkills, Expertises } = require(path.join(
     SERVER_DIR,
@@ -195,9 +145,6 @@ async function checkDB(declaredSkillIds, declaredExpertiseIds, allowDraft) {
       }
     }
   }
-
-  errors.push(...(await checkSchemaReferences()));
-
   return errors;
 }
 
@@ -283,9 +230,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = {
-  scanInvocations,
-  loadManifests,
-  validateExpertiseFilters,
-  checkSchemaReferences,
-};
+module.exports = { scanInvocations, loadManifests, validateExpertiseFilters };

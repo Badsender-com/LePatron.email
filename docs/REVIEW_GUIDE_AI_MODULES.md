@@ -306,20 +306,20 @@ retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
 
 ### Traités dans la PR
 
-| Réf          | Sujet                                                                                                                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous). |
-| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                              |
-| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                          |
-| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                            |
-| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                   |
-| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                              |
-| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                              |
-| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                   |
-| **A3** 🟠    | `schemaId` en base croisés avec le registre zod (`check-skill-usage.js`) + résolution du schéma de sortie **avant** l'appel provider facturé.                           |
-| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                             |
-| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                 |
-| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                           |
+| Réf          | Sujet                                                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous).                                       |
+| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                                                                    |
+| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                                                                |
+| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                                                                  |
+| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                                                         |
+| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                                                                    |
+| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                                                                    |
+| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                                                         |
+| **A3** 🟠    | Le schéma de sortie est résolu **avant** l'appel provider (il l'était après, d'où un TypeError une fois la requête LLM facturée). Le croisement base↔registre en CI n'a **pas** été retenu — voir ci-dessous. |
+| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                                                                   |
+| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                                                       |
+| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                                                                 |
 
 Au passage, trois clés i18n dupliquées issues du rebase (bloc `aiFeatures`
 entier dans `fr.js`, `global.savedSuccessfully` dans `fr.js` et `en.js`), toutes
@@ -344,6 +344,39 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
   Touche `translation` → étape 2.
 - **A6** 🟡 — **résolu par le TTL** : le scheduler n'existe plus, donc plus rien
   à déplacer.
+
+### A3 : traité au runtime, pas dans `check-skill-usage.js`
+
+La recommandation était d'ajouter le croisement `schemaId` base↔registre zod au
+script (~15 lignes, « ça transforme une panne runtime en échec de CI »). Écrit,
+puis retiré après examen — le script est resté identique à la branche de base.
+
+Raisons :
+
+- **Ça n'aurait été un échec de CI dans aucun scénario.** `yarn check-skills`
+  passe `--dry`, qui saute tous les contrôles base ; aucun workflow n'appelle le
+  script ; et lancé sans `--dry` avec une base injoignable il logue
+  `DB check skipped` et **sort en 0**. Un filet qui n'attrape rien.
+- **Le contrôle ne peut structurellement pas être un contrôle de build** : la
+  réponse dépend de l'environnement (une skill ACTIVE en recette peut être
+  absente en prod). Il n'y a pas de vérité à vérifier au moment du build.
+- **Le code vérifie déjà, au bon moment.** La panne se produit à l'invocation ;
+  c'est là qu'elle est détectée, avec la donnée réelle. Avoir besoin d'un
+  contrôle périodique pour surveiller ça signalerait que l'échec est mal traité
+  à l'endroit où il se produit.
+
+Ce qui a été retenu, et qui règle le problème signalé : `getSchema(outputSchemaId)`
+est résolu à l'étape 2 de `invoke()`, à côté du schéma d'entrée, au lieu de
+l'étape 6. Un identifiant qui ne résout plus (schéma renommé ou supprimé en code
+alors qu'une version ACTIVE le référence) échoue désormais avec un message
+explicite **avant** l'appel provider, là où il produisait un TypeError **après**
+une requête LLM facturée.
+
+Point connexe relevé au passage, non traité : quand un appelant **épingle** une
+version (`version: { major, minor }`), la recherche est un `versions.find()`
+**sans filtre de statut** — une version ARCHIVED reste donc invocable par
+épinglage. Vraisemblablement voulu pour le mode épinglé du playground ; à
+trancher côté PR2, qui est la seule consommatrice de l'épinglage.
 
 ### Rétention des invocations : TTL au lieu d'un job planifié
 
