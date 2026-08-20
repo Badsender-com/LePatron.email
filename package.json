@@ -46,7 +46,6 @@
     "@poziworld/oauth2orize": "1.11.1",
     "@smarthtmlelements/smart-elements": "6.2.0",
     "abort-controller": "3.0.0",
-    "agenda": "^5.0.0",
     "apidoc": "0.19.0",
     "archiver": "5.2.0",
     "aws-sdk": "2.543.0",

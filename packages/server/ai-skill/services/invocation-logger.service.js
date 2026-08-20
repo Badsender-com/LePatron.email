@@ -2,8 +2,52 @@
 
 const createError = require('http-errors');
 const logger = require('../../utils/logger.js');
-const { AISkillInvocations } = require('../../common/models.common.js');
-const { InvocationStatuses } = require('../constant/skill-constants.js');
+const { AISkillInvocations, Groups } = require('../../common/models.common.js');
+const {
+  InvocationStatuses,
+  DefaultLogRetentionDays,
+} = require('../constant/skill-constants.js');
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Deadline stamped on every invocation, consumed by the TTL index on
+ * AISkillInvocation.expiresAt. Retention is a per-Group setting, so it cannot
+ * live in the index itself.
+ *
+ * @param {Date} startedAt
+ * @param {number} retentionDays
+ * @returns {Date}
+ */
+function computeExpiresAt(startedAt, retentionDays) {
+  const days = retentionDays || DefaultLogRetentionDays;
+  const from = startedAt instanceof Date ? startedAt : new Date();
+  return new Date(from.getTime() + days * MS_PER_DAY);
+}
+
+/**
+ * The Group's retention, from the caller when it already loaded the Group.
+ *
+ * The INPUT_VALIDATION failure path logs before the Group document is fetched
+ * (nothing has been sent to a provider at that point), so this reads it rather
+ * than falling back to the default: a Group that asked for 7 days must not end
+ * up keeping a log carrying its input for 30.
+ *
+ * @returns {Promise<number|undefined>}
+ */
+async function resolveRetentionDays(params) {
+  if (typeof params.retentionDays === 'number') return params.retentionDays;
+  if (!params.groupId) return undefined;
+  try {
+    const group = await Groups.findById(params.groupId, {
+      logRetentionDays: 1,
+    }).lean();
+    return group ? group.logRetentionDays : undefined;
+  } catch (err) {
+    logger.error('Failed to read Group retention:', err.message);
+    return undefined;
+  }
+}
 
 /**
  * Persist an AISkillInvocation document. Failure to log is swallowed (logged
@@ -14,6 +58,7 @@ const { InvocationStatuses } = require('../constant/skill-constants.js');
 async function logInvocation(params) {
   if (params.skipLogging) return null;
   const allowContent = params.allowContent !== false;
+  const startedAt = params.startedAt;
   const doc = {
     _skill: params.skill._id,
     skillId: params.skill.skillId,
@@ -29,7 +74,8 @@ async function logInvocation(params) {
     rawOutput: allowContent ? params.rawOutput : null,
     resolvedConfig: params.resolvedConfig,
     tokenUsage: params.tokenUsage,
-    startedAt: params.startedAt,
+    startedAt,
+    expiresAt: computeExpiresAt(startedAt, await resolveRetentionDays(params)),
     completedAt: params.completedAt,
     latencyMs: params.latencyMs,
     status: params.status,
@@ -100,6 +146,7 @@ function truncate(str, max) {
 }
 
 module.exports = {
+  computeExpiresAt,
   logInvocation,
   logFailure,
   formatZodError,

@@ -109,6 +109,11 @@ const AISkillInvocationSchema = new Schema(
     resolvedConfig: { type: ResolvedConfigSchema, default: () => ({}) },
 
     startedAt: { type: Date, default: Date.now },
+    // When Mongo may delete this document, computed at write time from the
+    // Group's logRetentionDays (see the TTL index below). Null means "never
+    // expires" as far as the TTL monitor is concerned — only documents written
+    // before the retention migration are in that state.
+    expiresAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     latencyMs: { type: Number, default: null },
     tokenUsage: { type: TokenUsageSchema, default: () => ({}) },
@@ -135,5 +140,11 @@ AISkillInvocationSchema.index({ status: 1 });
 // non-productive invocationSource exclusion) and sorts by startedAt — without
 // this index it collection-scans.
 AISkillInvocationSchema.index({ startedAt: -1 });
+// RGPD retention, enforced by Mongo's own TTL monitor rather than a scheduled
+// job: retention is per-Group (Group.logRetentionDays), so the deadline is
+// stamped on each document at write time and this index expires it in place.
+// Same mechanism as translation-job.schema.js — no scheduler, no extra
+// dependency, and nothing to keep running per worker.
+AISkillInvocationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = AISkillInvocationSchema;

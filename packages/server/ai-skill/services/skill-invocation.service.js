@@ -185,6 +185,9 @@ async function invoke({
   // paths below. (The INPUT_VALIDATION failure above happens before the
   // group is resolved; nothing was sent to a provider at that point.)
   const allowContent = group ? group.logSkillInvocationContent !== false : true;
+  // Passed to every log call below so the TTL deadline is stamped without the
+  // logger having to re-read the Group.
+  const retentionDays = group ? group.logRetentionDays : undefined;
   const config = resolveConfig({
     integration,
     groupFeatureConfig,
@@ -251,6 +254,7 @@ async function invoke({
       startedAt,
       resolvedConfig: config,
       allowContent,
+      retentionDays,
       status: isTimeout
         ? InvocationStatuses.TIMEOUT
         : InvocationStatuses.PROVIDER_ERROR,
@@ -282,6 +286,7 @@ async function invoke({
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
       allowContent,
+      retentionDays,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: { code: 'OUTPUT_PARSE', message: err.message },
       skipLogging: options.skipLogging,
@@ -303,6 +308,7 @@ async function invoke({
       resolvedConfig: config,
       tokenUsage: providerResponse.usage,
       allowContent,
+      retentionDays,
       status: InvocationStatuses.VALIDATION_ERROR,
       error: {
         code: 'OUTPUT_VALIDATION',
@@ -333,6 +339,7 @@ async function invoke({
     latencyMs,
     status: InvocationStatuses.SUCCESS,
     allowContent,
+    retentionDays,
     skipLogging: options.skipLogging,
   });
 

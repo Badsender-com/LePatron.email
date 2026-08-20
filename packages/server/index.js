@@ -16,7 +16,6 @@ const { Nuxt, Builder } = require('nuxt');
 
 const terminate = require('./utils/terminate.js');
 const cluster = require('cluster');
-const JobScheduler = require('./ai-skill/jobs/job-scheduler.js');
 
 const config = require('./node.config.js');
 const nuxtConfig = require('../../nuxt.config.js');
@@ -112,16 +111,8 @@ if (cluster.isMaster) {
 
   const db = mongoose.connection;
   db.on('error', console.error.bind(console, 'connection error:'));
-
-  // LePatron Skills IA — Agenda-based scheduler for nightly invocation purge.
-  // Started after the DB is open; stopped on SIGTERM/SIGINT (see below).
-  const aiSkillScheduler = new JobScheduler({ mongoUrl: config.database });
-
   db.once('open', () => {
     console.log(chalk.green('DB Connection open'));
-    aiSkillScheduler.start().catch((err) => {
-      console.error('[ai-skill scheduler] failed to start:', err.message);
-    });
   });
 
   app.use(cookieParser());
@@ -384,16 +375,8 @@ if (cluster.isMaster) {
   });
   //
 
-  const shutdown = async (signal) => {
-    try {
-      await aiSkillScheduler.stop();
-    } catch (err) {
-      console.error('[ai-skill scheduler] stop failed:', err.message);
-    }
-    exitHandler(0, signal)();
-  };
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', exitHandler(0, 'SIGTERM'));
+  process.on('SIGINT', exitHandler(0, 'SIGINT'));
 
   process.on('uncaughtException', (err) => {
     console.error('UNCAUGHT EXCEPTION:', err);

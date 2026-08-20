@@ -191,14 +191,16 @@ les échecs, gate de cohérence non contournable via PATCH du schéma, exécutio
 playground qui sauvegarde d'abord le scénario), ainsi que la majorité des
 MEDIUM. Les écarts suivants sont **connus et assumés** :
 
-- **Pagination UI absente** sur les listes (skills, expertises, invocations,
-  scénarios, runs) alors que le serveur pagine (50 par défaut, `total`
-  renvoyé). Assumé : volumes super-admin actuels très en dessous de 50 ;
-  l'API est prête, c'est un ajout UI pur quand le besoin arrivera.
-- **Purge des invocations de Groups supprimés** : le job de rétention itère
-  les Groups existants ; les invocations orphelines ne sont pas purgées.
-  Assumé pour la v1 (la suppression de Group est exceptionnelle) — à traiter
-  avec la politique de suppression de Group globale.
+- **Pagination UI absente** sur les listes (skills, expertises, scénarios,
+  runs) alors que le serveur pagine (50 par défaut, `total` renvoyé). Assumé :
+  volumes super-admin actuels très en dessous de 50 ; l'API est prête, c'est un
+  ajout UI pur quand le besoin arrivera. **L'onglet Invocations est sorti de cet
+  écart** (review A8) : c'est la seule collection à croissance non bornée, elle
+  pagine et trie désormais côté serveur.
+- ~~**Purge des invocations de Groups supprimés**~~ : **résolu** par le passage
+  à l'index TTL (review R1). La deadline est stampée sur chaque document à
+  l'écriture, donc elle ne dépend plus de l'existence du Group : les invocations
+  orphelines expirent comme les autres.
 - **Casting/validation léger des query params admin** (`?status[$ne]=…`
   injecte un opérateur Mongo ; IDs malformés → CastError 500 au lieu de 400).
   Routes GUARD_ADMIN, lecture seule — à durcir en étape 2 avec un middleware
@@ -238,13 +240,12 @@ déjà couverts au §6 (« Casting/validation léger des query params admin »).
 
 ### Architecture
 
-- **MEDIUM — `JobScheduler` sous `ai-skill` connaît `ai-playground`** :
-  `ai-skill/jobs/job-scheduler.js` require le job de purge du playground (câblage
-  ajouté par la PR2 dans un fichier possédé par la PR1). Assumé : une seule
-  instance `agenda`, PR1 seule reste cohérente (l'import n'existe pas sur
-  `feat/AI-skills-v1`). Refactor = sortir le scheduler vers une composition-root
-  neutre alimentée par des registrars → backlog (c'est un redesign, hors
-  périmètre « corrige, ne redessine pas »).
+- ~~**MEDIUM — `JobScheduler` sous `ai-skill` connaît `ai-playground`**~~ :
+  **sans objet** — le scheduler n'existe plus (review R1/A6). Il n'y a plus de
+  composition root à sortir, ni d'instance `agenda` partagée entre modules.
+  **Impact PR2** : son job de purge des runs de playground n'a plus de
+  `job-scheduler.js` à requérir ; il doit passer au même modèle TTL (index
+  `expireAfterSeconds` sur la collection de runs).
 - **LOW — `manifest-registry.filterMatchesExpertise` miroir manuel de
   `findApplicable`** ayant déjà divergé (clause `language` absente du miroir).
   Impact nul aujourd'hui (les manifests présents déclarent `expertiseFilters: []`). Réaligner ou extraire un prédicat unique → backlog.
@@ -268,8 +269,7 @@ déjà couverts au §6 (« Casting/validation léger des query params admin »).
 - **MEDIUM — 11 fichiers > 300 lignes** dans le périmètre (`.vue` majoritairement
   template+style ; le dense est `skill-invocation.service.js` à 394). Découpe =
   refactor → backlog.
-- **LOW** : `console.error` au lieu de `logger` pour le scheduler dans `index.js`
-  (cohérent avec le style local du fichier) ; `reload()` du playground sans
+- **LOW** : `reload()` du playground sans
   try/catch ; `latencyMillis` interpole `${ms}` brut ; `statusColor` colore
   `CANCELLED` en rouge. Tous cosmétiques/robustesse → backlog.
 
@@ -306,20 +306,20 @@ retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
 
 ### Traités dans la PR
 
-| Réf          | Sujet                                                                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais. Épinglé `^5.0.0` + tests de `JobScheduler.start()` (dont un garde de version).        |
-| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                    |
-| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                |
-| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                  |
-| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                         |
-| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                    |
-| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                    |
-| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                         |
-| **A3** 🟠    | `schemaId` en base croisés avec le registre zod (`check-skill-usage.js`) + résolution du schéma de sortie **avant** l'appel provider facturé. |
-| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                   |
-| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                       |
-| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                 |
+| Réf          | Sujet                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais, la purge RGPD n'a jamais tourné. **agenda supprimé** au profit d'un index TTL sur `expiresAt` (cf. ci-dessous). |
+| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                                              |
+| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                                          |
+| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                                            |
+| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                                                   |
+| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                                              |
+| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                                              |
+| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                                                   |
+| **A3** 🟠    | `schemaId` en base croisés avec le registre zod (`check-skill-usage.js`) + résolution du schéma de sortie **avant** l'appel provider facturé.                           |
+| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                                             |
+| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                                                 |
+| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                                           |
 
 Au passage, trois clés i18n dupliquées issues du rebase (bloc `aiFeatures`
 entier dans `fr.js`, `global.savedSuccessfully` dans `fr.js` et `en.js`), toutes
@@ -342,5 +342,32 @@ masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
 - **A2** 🟠 — déléguer la résolution group→integration à
   `getActiveFeatureWithIntegration` en l'enrichissant d'une raison de rejet.
   Touche `translation` → étape 2.
-- **A6** 🟡 — sortir `JobScheduler` de `ai-skill/jobs/` vers une composition
-  root. Bon moment : le merge de la PR2, quand le second consommateur apparaît.
+- **A6** 🟡 — **résolu par le TTL** : le scheduler n'existe plus, donc plus rien
+  à déplacer.
+
+### Rétention des invocations : TTL au lieu d'un job planifié
+
+Le correctif R1 initial épinglait `agenda@^5`. Revu ensuite : agenda apportait
+une file de jobs distribuée complète (plus son propre `mongodb@4` imbriqué, donc
+un second driver et **une connexion par worker de cluster**) pour une unique
+tâche quotidienne. Remplacé par le mécanisme déjà utilisé par
+`translation-job.schema.js` :
+
+- `AISkillInvocation.expiresAt`, calculé à l'écriture depuis
+  `Group.logRetentionDays` (le Group est déjà chargé par `invoke()` — aucune
+  requête ajoutée ; seul le chemin d'échec `INPUT_VALIDATION`, qui logue avant la
+  résolution du Group, lit la rétention lui-même plutôt que de retomber sur le
+  défaut et de sur-conserver).
+- Index `{ expiresAt: 1 }, { expireAfterSeconds: 0 }` : Mongo purge lui-même.
+- Supprimés : la dépendance `agenda`, `ai-skill/jobs/` (scheduler + job de purge)
+  et le câblage dans `index.js` (dont le wrapper `shutdown` ajouté par la PR,
+  revenu à la forme de `develop`).
+- Backfill des documents antérieurs :
+  `node scripts/migrate-invocation-expires-at.js [--dry-run]` — sans `expiresAt`,
+  un document est invisible pour le moniteur TTL et n'expirerait jamais.
+  Idempotent.
+
+**Compromis assumé** : une rétention modifiée ne se réapplique pas aux documents
+déjà écrits. Aujourd'hui `logRetentionDays` n'est exposé dans aucune UI
+(modifiable en base uniquement) ; si ça change, un `updateMany` recalculant
+`expiresAt` au changement de config suffit.
