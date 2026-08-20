@@ -298,3 +298,49 @@ validé individuellement) :
   expertise plus gros, latence des vues détail ré-implémentée hors `BsLatency`.
 
 Suggestions d'amélioration (hors incohérences) → issues GitHub post-PR.
+
+## 7. Retours de review PR #1075 — traités / reportés
+
+Passe de review externe sur la PR #1075 : 12 retours bug/UX (R1–R12) et 8
+retours d'architecture (A1–A8). Corrigés sur `fix/ai-skills-review-1075`.
+
+### Traités dans la PR
+
+| Réf          | Sujet                                                                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R1** 🔴    | `agenda@6` ESM-only → le scheduler ne démarrait jamais. Épinglé `^5.0.0` + tests de `JobScheduler.start()` (dont un garde de version).        |
+| **R3** 🟠    | Intégrations filtrées sur `type=ai` côté UI **et** refusées côté serveur (`validateIntegrationOwnership`).                                    |
+| **R4** 🟠    | Modèle par défaut du provider exposé (`defaultModel` sur `/models`) et nommé dans le select — seul chemin de retour au défaut.                |
+| **R5** 🟠    | Changement d'intégration → `config.model` remis à `null` dans le même appel.                                                                  |
+| **R6** 🟠    | Sélecteurs de type d'email alimentés par `EMAIL_TYPES` ∪ facettes (`emailTypeItems`).                                                         |
+| **R7** 🟠    | `placeholdersHelp` corrigé fr/en : les placeholders ne valent que dans le modèle d'entrée.                                                    |
+| **R8** 🟡    | Chips de placeholders copiables au clic (`helpers/copy-to-clipboard.js`, fallback hors contexte sécurisé).                                    |
+| **R9** 🟡    | Override `DATABASE_URL` supprimé de `node.config.js`.                                                                                         |
+| **A3** 🟠    | `schemaId` en base croisés avec le registre zod (`check-skill-usage.js`) + résolution du schéma de sortie **avant** l'appel provider facturé. |
+| **A4/A5** 🟡 | Conventions actées : règle plat/sous-dossiers dans `AGENTS.md`, rôle de `repositories/` en tête de fichier.                                   |
+| **A7** 🟡    | `AISkillInvocation.featureType` → `invocationSource` + migration `$rename` idempotente.                                                       |
+| **A8** 🟡    | Onglet Invocations paginé et trié côté serveur (tri sur whitelist de champs).                                                                 |
+
+Au passage, trois clés i18n dupliquées issues du rebase (bloc `aiFeatures`
+entier dans `fr.js`, `global.savedSuccessfully` dans `fr.js` et `en.js`), toutes
+masquées par une définition ultérieure et invisibles jusqu'à ce qu'eslint
+`no-dupe-keys` soit déclenché sur ces fichiers.
+
+### Reportés, décision consciente
+
+- **R2** 🔴 — normalisation + garde CI des périmètres d'expertise (`scope`).
+  Question de conception ouverte (texte libre normalisé vs constante partagée
+  type `SkillCategories`) : **à trancher avant correctif**, la panne étant
+  silencieuse dans les deux cas. Le seul retour bloquant non traité.
+- **R10** 🟡 — section « Anatomie d'une skill » dans `AI_SKILL_AUTHORING.md`.
+- **R11** 🟡 — garde-fou anti-perte de saisie (~½ journée) et écrasement entre
+  deux panneaux de versions dépliés.
+- **R12** 🟡 — publication d'une version au contenu entièrement vide.
+- **A1** 🔴 — factoriser la machine à états versionnée dupliquée entre
+  `skill.service` et `expertise.service`. Refactor de code validé en recette :
+  **prérequis avant une troisième entité versionnée**, pas maintenant.
+- **A2** 🟠 — déléguer la résolution group→integration à
+  `getActiveFeatureWithIntegration` en l'enrichissant d'une raison de rejet.
+  Touche `translation` → étape 2.
+- **A6** 🟡 — sortir `JobScheduler` de `ai-skill/jobs/` vers une composition
+  root. Bon moment : le merge de la PR2, quand le second consommateur apparaît.
