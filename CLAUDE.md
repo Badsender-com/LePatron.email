@@ -20,6 +20,12 @@ yarn code:fix          # Auto-fix errors and format code
 yarn test              # Run all tests
 ```
 
+## Skills
+
+| Skill      | Use for                                                                    |
+| ---------- | -------------------------------------------------------------------------- |
+| `git-sync` | Keeping the branch rebased on `origin/develop` with a clean worktree        |
+
 ## Available Subagents
 
 | Agent              | Use for                        |
