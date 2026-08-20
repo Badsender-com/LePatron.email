@@ -1,5 +1,12 @@
 'use strict';
 
+/**
+ * `repositories/` is NOT a general persistence layer for this module — it holds
+ * the complex matching queries only. Everything else (skill, invocation) talks
+ * to its model straight from its service, on purpose. Do not add a
+ * `skill.repository.js` "for symmetry": that would create an empty layer.
+ */
+
 const createError = require('http-errors');
 const { Expertises } = require('../../common/models.common.js');
 const { SkillStatuses } = require('../constant/skill-constants.js');
