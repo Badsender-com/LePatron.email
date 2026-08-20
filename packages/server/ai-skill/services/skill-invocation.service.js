@@ -141,6 +141,16 @@ async function invoke({
       `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown input schema "${version.inputSchemaId}"`
     );
   }
+  // Checked here, next to the input schema, rather than where it is used at
+  // step 6: an id that no longer resolves (schema renamed or removed in code
+  // while a version still points at it) otherwise surfaced as a TypeError
+  // *after* the provider call had been made and billed.
+  if (!getSchema(version.outputSchemaId)) {
+    throw createError(
+      500,
+      `Skill "${skillId}" v${wantedMajor}.${wantedMinor} references unknown output schema "${version.outputSchemaId}"`
+    );
+  }
   const inputParse = inputSchema.safeParse(input);
   if (!inputParse.success) {
     return logFailure({

@@ -403,6 +403,30 @@ describe('skill-invocation.invoke', () => {
         })
       ).rejects.toThrow(/skill/);
     });
+
+    // Schemas live in code while versions store only their id, so a rename or a
+    // deletion leaves ACTIVE versions pointing at nothing. Both ids must fail
+    // before the provider is called, or the billed request is wasted.
+    it.each([
+      ['inputSchemaId', /unknown input schema/],
+      ['outputSchemaId', /unknown output schema/],
+    ])(
+      'throws before calling the provider when %s no longer resolves',
+      async (field, message) => {
+        const skill = buildSkill();
+        skill.versions[0][field] = 'schemaRenamedAway';
+        wireHappyPath({ skill });
+
+        await expect(
+          skillInvocation.invoke({
+            skillId: 'generic.text',
+            input: { prompt: 'x' },
+            groupId: GROUP_ID,
+          })
+        ).rejects.toThrow(message);
+        expect(mockProvider.chatComplete).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('dryRun', () => {
